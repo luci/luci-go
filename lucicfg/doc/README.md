@@ -714,8 +714,8 @@ into the generated output:
 
 ```python
 lucicfg.emit(
-    dest = 'tricium.cfg',
-    data = io.read_file('//tricium.cfg'),
+    dest = 'foo.cfg',
+    data = io.read_file('//foo.cfg'),
 )
 ```
 
@@ -2458,6 +2458,67 @@ For example:
         luci.builder(name = name, ...)
         luci.cq_tryjob_verifier(builder = name, cq_group = 'Main CQ')
 
+
+#### Declaring a Tricium analyzer
+
+`cq_tryjob_verifier` can be used to declare a [Tricium] analyzer by
+providing the builder and `mode_allowlist=[cq.MODE_ANAYLZER_RUN]`. It will
+generate Tricium config as well as CQ config which will work seamlessly
+after Tricium is merged into CV.
+
+However, the following restrictions apply until CV takes on Tricium:
+
+* Most CQ features are not supported except for `location_regexp` and
+`owner_whitelist`. If provided, they must meet the following conditions:
+    * `location_regexp` must start with `.+\.` and followed by a
+    file extension name. It instructs Tricium to run this analyzer
+    only on certain type of files.
+    * `owner_whitelist` must be the same for all analyzers declared
+    in this cq_group.
+* Analyzer will run on changes targeting **all refs** of the Gerrit repos
+watched by the containing cq_group even though refs or refs_exclude
+may be provided.
+* All analyzers must be declared in a single [luci.cq_group(...)](#luci.cq_group).
+
+For example:
+
+    luci.project(tricium="tricium-prod.appspot.com")
+
+    luci.cq_group(
+        name = 'Main CQ',
+        ...
+        verifiers = [
+            luci.cq_tryjob_verifier(
+                builder = "spell-checker",
+                owner_whitelist = ["project-committer"],
+                mode_allowlist = [cq.MODE_ANALYZER_RUN],
+            ),
+            luci.cq_tryjob_verifier(
+                builder = "go-linter",
+                location_regexp = [".+\.go"]
+                owner_whitelist = ["project-committer"],
+                mode_allowlist = [cq.MODE_ANALYZER_RUN],
+            ),
+            luci.cq_tryjob_verifier(builder = "Presubmit"),
+            ...
+        ],
+    )
+
+Note for migrating to lucicfg for LUCI Projects whose sole purpose is
+to host a single Tricium config today
+([Example](https://fuchsia.googlesource.com/infra/config/+/HEAD/repositories/infra/recipes/tricium-prod.cfg)):
+
+Due to the restrictions mentioned above, it is not possible to merge those
+auxillary Projects back to the main LUCI Project. It will be unblocked
+after Tricium is folded into CV. To migrate, users can declare new
+[luci.cq_group(...)](#luci.cq_group)s in those Projects to host Tricium analyzers.
+However, CQ config should not be generated because the config groups will
+overlap with the config group in the main LUCI Project (i.e. watch same
+refs) and break CQ. This can be done by asking lucicfg to track only
+Tricium config: `lucicfg.config(tracked_files=["tricium-prod.cfg"])`.
+
+[Tricium]: https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tricium
+
 #### Arguments {#luci.cq_tryjob_verifier-args}
 
 * **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Required.
@@ -2473,7 +2534,7 @@ For example:
 * **equivalent_builder**: an optional alternative builder for the CQ to choose instead. If provided, the CQ will choose only one of the equivalent builders as required based purely on the given CL and CL's owner and **regardless** of the possibly already completed try jobs.
 * **equivalent_builder_percentage**: a percentage expressing probability of the CQ triggering `equivalent_builder` instead of `builder`. A choice itself is made deterministically based on CL alone, hereby all CQ attempts on all patchsets of a given CL will trigger the same builder, assuming CQ config doesn't change in the mean time. Note that if `equivalent_builder_whitelist` is also specified, the choice over which of the two builders to trigger will be made only for CLs owned by the accounts in the whitelisted group. Defaults to 0, meaning the equivalent builder is never triggered by the CQ, but an existing build can be re-used.
 * **equivalent_builder_whitelist**: a group name with accounts to enable the equivalent builder substitution for. If set, only CLs that are owned by someone from this group have a chance to be verified by the equivalent builder. All other CLs are verified via the main builder.
-* **mode_allowlist**: a list of modes that CQ will trigger this verifier for. CQ supports `cq.MODE_DRY_RUN` and `cq.MODE_FULL_RUN` out of the box. Additional Run modes can be defined via `luci.cq_group(additional_modes=[[cq.run_mode(...)](#cq.run_mode),])`.
+* **mode_allowlist**: a list of modes that CQ will trigger this verifier for. CQ supports `cq.MODE_DRY_RUN` and `cq.MODE_FULL_RUN` out of the box. Additional Run modes can be defined via `luci.cq_group(additional_modes=...)`.
 
 
 

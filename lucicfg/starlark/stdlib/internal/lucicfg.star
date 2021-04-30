@@ -185,8 +185,8 @@ def _emit(*, dest = None, data = None):
 
     ```python
     lucicfg.emit(
-        dest = 'tricium.cfg',
-        data = io.read_file('//tricium.cfg'),
+        dest = 'foo.cfg',
+        data = io.read_file('//foo.cfg'),
     )
     ```
 

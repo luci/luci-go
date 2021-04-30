@@ -157,6 +157,67 @@ def _cq_tryjob_verifier(
             luci.builder(name = name, ...)
             luci.cq_tryjob_verifier(builder = name, cq_group = 'Main CQ')
 
+
+    #### Declaring a Tricium analyzer
+
+    `cq_tryjob_verifier` can be used to declare a [Tricium] analyzer by
+    providing the builder and `mode_allowlist=[cq.MODE_ANAYLZER_RUN]`. It will
+    generate Tricium config as well as CQ config which will work seamlessly
+    after Tricium is merged into CV.
+
+    However, the following restrictions apply until CV takes on Tricium:
+
+    * Most CQ features are not supported except for `location_regexp` and
+    `owner_whitelist`. If provided, they must meet the following conditions:
+        * `location_regexp` must start with `.+\\.` and followed by a
+        file extension name. It instructs Tricium to run this analyzer
+        only on certain type of files.
+        * `owner_whitelist` must be the same for all analyzers declared
+        in this cq_group.
+    * Analyzer will run on changes targeting **all refs** of the Gerrit repos
+    watched by the containing cq_group even though refs or refs_exclude
+    may be provided.
+    * All analyzers must be declared in a single luci.cq_group(...).
+
+    For example:
+
+        luci.project(tricium="tricium-prod.appspot.com")
+
+        luci.cq_group(
+            name = 'Main CQ',
+            ...
+            verifiers = [
+                luci.cq_tryjob_verifier(
+                    builder = "spell-checker",
+                    owner_whitelist = ["project-committer"],
+                    mode_allowlist = [cq.MODE_ANALYZER_RUN],
+                ),
+                luci.cq_tryjob_verifier(
+                    builder = "go-linter",
+                    location_regexp = [".+\\.go"]
+                    owner_whitelist = ["project-committer"],
+                    mode_allowlist = [cq.MODE_ANALYZER_RUN],
+                ),
+                luci.cq_tryjob_verifier(builder = "Presubmit"),
+                ...
+            ],
+        )
+
+    Note for migrating to lucicfg for LUCI Projects whose sole purpose is
+    to host a single Tricium config today
+    ([Example](https://fuchsia.googlesource.com/infra/config/+/HEAD/repositories/infra/recipes/tricium-prod.cfg)):
+
+    Due to the restrictions mentioned above, it is not possible to merge those
+    auxillary Projects back to the main LUCI Project. It will be unblocked
+    after Tricium is folded into CV. To migrate, users can declare new
+    luci.cq_group(...)s in those Projects to host Tricium analyzers.
+    However, CQ config should not be generated because the config groups will
+    overlap with the config group in the main LUCI Project (i.e. watch same
+    refs) and break CQ. This can be done by asking lucicfg to track only
+    Tricium config: `lucicfg.config(tracked_files=["tricium-prod.cfg"])`.
+
+    [Tricium]: https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tricium
+
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).
       builder: a builder to launch when verifying a CL, see luci.builder(...).
@@ -229,7 +290,7 @@ def _cq_tryjob_verifier(
       mode_allowlist: a list of modes that CQ will trigger this verifier for.
         CQ supports `cq.MODE_DRY_RUN` and `cq.MODE_FULL_RUN` out of the box.
         Additional Run modes can be defined via
-        `luci.cq_group(additional_modes=[cq.run_mode(...),])`.
+        `luci.cq_group(additional_modes=...)`.
     """
     builder = keys.builder_ref(builder, attr = "builder", allow_external = True)
 
