@@ -123,6 +123,7 @@ func TestExportToBigQuery(t *testing.T) {
 				So(tr.Exported.Id, ShouldEqual, "a")
 				So(tr.Exported.Realm, ShouldEqual, "testproject:testrealm")
 				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D")
+				So(tr.Name, ShouldEqual, pbutil.TestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId))
 			}
 		})
 

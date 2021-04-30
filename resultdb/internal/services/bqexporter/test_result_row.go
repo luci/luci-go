@@ -88,6 +88,7 @@ func (i *testResultRowInput) row() protoiface.MessageV1 {
 	ret := &bqpb.TestResultRow{
 		Exported:      invocationProtoToRecord(i.exported),
 		Parent:        invocationProtoToRecord(i.parent),
+		Name:          tr.Name,
 		TestId:        tr.TestId,
 		ResultId:      tr.ResultId,
 		Variant:       pbutil.VariantToStringPairs(tr.Variant),
