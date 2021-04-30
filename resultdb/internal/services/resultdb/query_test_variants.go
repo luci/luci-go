@@ -54,6 +54,7 @@ func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVari
 		InvocationIDs: invs,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
+		Status:        in.Status,
 	}
 
 	var tvs []*uipb.TestVariant
