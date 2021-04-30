@@ -1,6 +1,160 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1dc3dd79_b56efa1b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "large CL, but it makes sense.\n\nI must admit I don\u0027t have a strong sense of how good test coverage is (and I don\u0027t mean just naive line-based coverage).",
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "95412fb7_106d9685",
+        "filename": "common/sync/dispatcher/buffer/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "nit: switch is prob a good fit here.",
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39cf6136_ada20d86",
+        "filename": "common/sync/dispatcher/buffer/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "ah, this is s.t. nil current batch can\u0027t accept items. clever.",
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e92d230a_5a39575f",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e7c0780_7d4412e2",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "👍 very useful now.",
+      "range": {
+        "startLine": 196,
+        "startChar": 0,
+        "endLine": 197,
+        "endChar": 21
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7477295e_cc5df00b",
+        "filename": "common/sync/dispatcher/buffer/buffer_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "😄",
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "781bbc31_6badd564",
+        "filename": "common/sync/dispatcher/buffer/full_behavior.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "My reading of buffer.Options{} doc is that this should panic.",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 66,
+        "endChar": 63
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53912d6f_dc516437",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "👍 very very lgmt.",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 61
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d7672479_640edfe9",
@@ -14,6 +168,30 @@
       "writtenOn": "2021-04-30T15:09:26Z",
       "side": 1,
       "message": "I\u0027m curious what\u0027s wrong with zero sized items. For example, it\u0027s possible to upload a zero-sized artifact in reuslt-sink?",
+      "range": {
+        "startLine": 179,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 24
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f46bf517_c8a66481",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "this an good question.\n\nI\u0027m fine with non-0 size, since in practice each item usually has extra metadata, so maybe the resultsink should track sizes as\n  sizeof(metadata) + len(data)",
+      "parentUuid": "d7672479_640edfe9",
       "range": {
         "startLine": 179,
         "startChar": 1,
@@ -42,6 +220,53 @@
         "startChar": 1,
         "endLine": 183,
         "endChar": 2
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "25367f7f_8c6dd222",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "+1. I think it should panic",
+      "parentUuid": "401046de_e44ab840",
+      "range": {
+        "startLine": 177,
+        "startChar": 1,
+        "endLine": 183,
+        "endChar": 2
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d166449d_24a4b9ef",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "should panic if size is negative.",
+      "range": {
+        "startLine": 234,
+        "startChar": 4,
+        "endLine": 234,
+        "endChar": 44
       },
       "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -88,6 +313,53 @@
         "startChar": 15,
         "endLine": 119,
         "endChar": 23
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5600aa49_e7738e4e",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "a54eda21_3d7e778c",
+      "range": {
+        "startLine": 119,
+        "startChar": 15,
+        "endLine": 119,
+        "endChar": 23
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4a255df_9135acb4",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:30:17Z",
+      "side": 1,
+      "message": "don\u0027t you mean \"positive\"?",
+      "range": {
+        "startLine": 126,
+        "startChar": 18,
+        "endLine": 126,
+        "endChar": 26
       },
       "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
