@@ -16,6 +16,80 @@
       "message": "PTAL",
       "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6fe10772_28e5a8a3",
+        "filename": "resultdb/internal/services/resultdb/query_test_variants.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-30T16:02:03Z",
+      "side": 1,
+      "message": "nit: same here, maybe place it before paging fields",
+      "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1a784066_ca5eddad",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-30T16:02:03Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d882351_c1870c47",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-30T16:02:03Z",
+      "side": 1,
+      "message": "not for this CL: seems like we have this pattern a lot: allocate a buffer, execute a template with some params, generate a *spanner.Statement.\n\nmaybe make a helper func in spanutil?",
+      "range": {
+        "startLine": 112,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 41
+      },
+      "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0bb03dc4_6510abb2",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-30T16:02:03Z",
+      "side": 1,
+      "message": "it would be good to confirm that spanner query optimizer actually pushes these filters to testVariantsWithUnexpectedResults (as opposed to computing the entire result of testVariantsWithUnexpectedResults subquery and then filtering).",
+      "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
