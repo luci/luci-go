@@ -260,12 +260,12 @@ func runForever(ctx context.Context, ar archivist.Archivist, flags *CommandLineF
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
 	if err := a.flags.Validate(); err != nil {
+		log.WithError(err).Errorf(c, "Bad flags")
 		return err
 	}
 
 	// Initialize our Storage.
-	// TODO(crbug.com/1204268): Read the storage config from flags.
-	st, err := a.IntermediateStorage(c, true)
+	st, err := service.IntermediateStorage(c, &a.flags.Storage)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get storage instance.")
 		return err
