@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0e946a2_1edce55f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-30T20:56:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63f7d7db_cbc5b140",
+      "range": {
+        "startLine": 161,
+        "startChar": 20,
+        "endLine": 161,
+        "endChar": 21
+      },
+      "revId": "2f8137c5db5d007f4a6df74d5898e55397e36361",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2e4b4551_167e412f",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-04-30T11:51:32Z",
       "side": 1,
       "message": "the",
+      "range": {
+        "startLine": 168,
+        "startChar": 12,
+        "endLine": 168,
+        "endChar": 13
+      },
+      "revId": "2f8137c5db5d007f4a6df74d5898e55397e36361",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a35ee92_cd553330",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-30T20:56:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e4b4551_167e412f",
       "range": {
         "startLine": 168,
         "startChar": 12,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "afb84753_083fef65",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-30T20:56:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c77ae661_a7d11599",
+      "range": {
+        "startLine": 171,
+        "startChar": 50,
+        "endLine": 171,
+        "endChar": 51
+      },
+      "revId": "2f8137c5db5d007f4a6df74d5898e55397e36361",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e4c888a5_42cfdece",
@@ -127,6 +199,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "be1c7b65_2536948e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-30T20:56:33Z",
+      "side": 1,
+      "message": "Good point. This is true for all restrictions mentioned here. So I mention it at the top.",
+      "parentUuid": "e4c888a5_42cfdece",
+      "range": {
+        "startLine": 179,
+        "startChar": 19,
+        "endLine": 179,
+        "endChar": 20
+      },
+      "revId": "2f8137c5db5d007f4a6df74d5898e55397e36361",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc4fffe2_d6583e58",
@@ -140,6 +236,30 @@
       "writtenOn": "2021-04-30T11:51:32Z",
       "side": 1,
       "message": "must",
+      "range": {
+        "startLine": 180,
+        "startChar": 20,
+        "endLine": 180,
+        "endChar": 26
+      },
+      "revId": "2f8137c5db5d007f4a6df74d5898e55397e36361",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "43c1798f_4aacb12c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-30T20:56:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc4fffe2_d6583e58",
       "range": {
         "startLine": 180,
         "startChar": 20,
@@ -186,6 +306,54 @@
       "writtenOn": "2021-04-30T11:51:32Z",
       "side": 1,
       "message": "this term isn\u0027t widely understood.\nMaybe \"Note for migrating LUCI projects whose sole purpose is hosting a single Tricium config\"",
+      "range": {
+        "startLine": 206,
+        "startChar": 39,
+        "endLine": 206,
+        "endChar": 48
+      },
+      "revId": "2f8137c5db5d007f4a6df74d5898e55397e36361",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49cfa52e_488c583f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-30T20:56:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6b6520d_61f80eaa",
+      "range": {
+        "startLine": 206,
+        "startChar": 19,
+        "endLine": 206,
+        "endChar": 20
+      },
+      "revId": "2f8137c5db5d007f4a6df74d5898e55397e36361",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d23641b1_d8541e6c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-30T20:56:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d212b0b2_326facd6",
       "range": {
         "startLine": 206,
         "startChar": 39,
