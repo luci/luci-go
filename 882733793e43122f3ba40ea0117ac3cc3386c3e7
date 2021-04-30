@@ -16,6 +16,47 @@
       "message": "Sorry this is a big one 😞. Adding batch sizes touched a lot of things.\n\nI already pulled most of the refactory bits to previous CLs, but let me know if you see easy ways to cut this up.",
       "revId": "882733793e43122f3ba40ea0117ac3cc3386c3e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5221904_14886b80",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T01:09:43Z",
+      "side": 1,
+      "message": "I\u0027ll pull this into a separate CL",
+      "revId": "882733793e43122f3ba40ea0117ac3cc3386c3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8ee5e75_506d265b",
+        "filename": "common/sync/dispatcher/channel_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 626,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T01:09:43Z",
+      "side": 1,
+      "message": "\u003e Error return value is not checked\n\nUseful, but not for the right reasons :p",
+      "parentUuid": "d04d0021_8a4fd45f",
+      "range": {
+        "startLine": 625,
+        "startChar": 7,
+        "endLine": 626,
+        "endChar": 0
+      },
+      "revId": "882733793e43122f3ba40ea0117ac3cc3386c3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
