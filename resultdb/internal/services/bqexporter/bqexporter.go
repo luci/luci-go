@@ -220,7 +220,7 @@ func ensureBQTable(ctx context.Context, t table, newSchema bigquery.Schema) erro
 		switch {
 		case ok && apiErr.Code == http.StatusNotFound:
 			// Table doesn't exist. Create it and cache its existence for 5 minutes.
-			return nil, 5 * time.Minute, createBQTable(ctx, t, newSchema)
+			return nil, 5 * time.Minute, errors.Annotate(createBQTable(ctx, t, newSchema), "create bq table").Err()
 
 		case ok && apiErr.Code == http.StatusForbidden:
 			// No read table permission.
@@ -232,7 +232,8 @@ func ensureBQTable(ctx context.Context, t table, newSchema bigquery.Schema) erro
 
 		// Table exists and is accessible.
 		// Ensure its schema is up to date and remember that for 5 minutes.
-		return nil, 5 * time.Minute, ensureBQTableFields(ctx, t, newSchema)
+		err = ensureBQTableFields(ctx, t, newSchema)
+		return nil, 5 * time.Minute, errors.Annotate(err, "ensure bq table fields").Err()
 	})
 
 	return err
@@ -408,7 +409,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 
 	client, err := getBQClient(ctx, luciProject, bqExport)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "new bq client").Err()
 	}
 	defer client.Close()
 
@@ -420,14 +421,14 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 	switch bqExport.ResultType.(type) {
 	case *pb.BigQueryExport_TestResults_:
 		if err := ensureBQTable(ctx, table, testResultRowSchema.Relax()); err != nil {
-			return err
+			return errors.Annotate(err, "ensure test results bq table").Err()
 		}
-		return b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport)
+		return errors.Annotate(b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport), "export test results").Err()
 	case *pb.BigQueryExport_TextArtifacts_:
 		if err := ensureBQTable(ctx, table, textArtifactRowSchema.Relax()); err != nil {
-			return err
+			return errors.Annotate(err, "ensure text artifacts bq table").Err()
 		}
-		return b.exportTextArtifactsToBigQuery(ctx, ins, invID, bqExport)
+		return errors.Annotate(b.exportTextArtifactsToBigQuery(ctx, ins, invID, bqExport), "export text artifacts").Err()
 	case nil:
 		return fmt.Errorf("bqExport.ResultType is unspecified")
 	default:
