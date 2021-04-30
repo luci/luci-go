@@ -85,6 +85,29 @@ message Archivist {
   // is not specified.
   ArchiveIndexConfig archive_index_config = 10;
 
+  // The number of archival tasks to lease from the taskqueue per one cycle.
+  //
+  // TaskQueue has a limit of 10qps for leasing tasks, so the batch size must
+  // be set to:
+  // lease_batch_size * 10 > (max expected stream creation QPS)
+  //
+  // In 2020, max stream QPS is approximately 1000 QPS
+  int32 lease_batch_size = 4;
+
+  // The amount of time to to lease the batch of tasks for.
+  //
+  // We need:
+  // (time to process avg stream) * lease_batch_size < lease_time
+  //
+  // As of 2020, 90th percentile process time per stream is ~5s, 95th
+  // percentile of the loop time is 25m.
+  google.protobuf.Duration lease_time = 5;
+
+  // The maximum number of archival tasks to process concurrently.
+  //
+  // 0 means "unlimited".
+  int32 max_concurrent_tasks = 6;
+
   reserved "subscription", "tasks", "render_all_streams";
   reserved 1, 2, 13;
 }
