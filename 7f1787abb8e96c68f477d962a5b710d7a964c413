@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1629cfae_8062244d",
+        "filename": "logdog/server/cmd/logdog_archivist/flags.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T23:44:49Z",
+      "side": 0,
+      "message": "They are now parsed by the shared code.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 0
+      },
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8bcdbb3_80863fbb",
+        "filename": "logdog/server/cmd/logdog_collector/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T23:44:49Z",
+      "side": 0,
+      "message": "I removed this. It\u0027s not like we changing the subscription often (we never did), and errors from failing pulls will be a good enough indicator that something is misconfigured.",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 0
+      },
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3ec0e5f_0c65087f",
+        "filename": "logdog/server/cmd/logdog_collector/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T23:44:49Z",
+      "side": 0,
+      "message": "I\u0027m not sure we should ever exit this loop... Imagine some unexpected fatal error happens and we exit here and shutdown the process. Kubernetes will just restart it again. We might just as well retry ourselves, it will be less painful.",
+      "range": {
+        "startLine": 165,
+        "startChar": 1,
+        "endLine": 165,
+        "endChar": 7
+      },
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8355e4b1_96dafe0c",
+        "filename": "logdog/server/service/service.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T23:44:49Z",
+      "side": 0,
+      "message": "this was incorrect, it is a LUCI project, not a cloud project",
+      "range": {
+        "startLine": 271,
+        "startChar": 24,
+        "endLine": 271,
+        "endChar": 31
+      },
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
