@@ -308,16 +308,7 @@ func (a *application) runArchivist(c context.Context) error {
 		CLClientFactory: clClientFactory,
 	}
 
-	// Application shutdown will now operate by stopping the Iterator.
-	c, cancelFunc := context.WithCancel(c)
-	defer cancelFunc()
-
-	// Application shutdown will now operate by cancelling the Archivist's
-	// shutdown Context.
-	a.SetShutdownFunc(cancelFunc)
-
 	runForever(c, ar, &a.flags)
-
 	return nil
 }
 

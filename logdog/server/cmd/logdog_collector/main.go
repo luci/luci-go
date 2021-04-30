@@ -77,24 +77,14 @@ func (a *application) runCollector(c context.Context) error {
 		return err
 	}
 
-	ccfg := a.ServiceConfig.GetCollector()
-	if ccfg == nil {
-		return errors.New("no collector configuration")
-	}
-
-	pscfg := a.ServiceConfig.GetTransport().GetPubsub()
-	if pscfg == nil {
-		return errors.New("missing Pub/Sub configuration")
-	}
-
 	// Our Subscription must be a valid one.
-	sub := gcps.NewSubscription(pscfg.Project, pscfg.Subscription)
+	sub := gcps.NewSubscription(a.flags.PubSubProject, a.flags.PubSubSubscription)
 	if err := sub.Validate(); err != nil {
 		return fmt.Errorf("invalid Pub/Sub subscription %q: %v", sub, err)
 	}
 
 	// New PubSub instance with the authenticated client.
-	psClient, err := a.Service.PubSubSubscriberClient(c, pscfg.Project)
+	psClient, err := a.Service.PubSubSubscriberClient(c, a.flags.PubSubProject)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey:   err,
@@ -103,7 +93,7 @@ func (a *application) runCollector(c context.Context) error {
 		return err
 	}
 
-	psSub := psClient.Subscription(pscfg.Subscription)
+	psSub := psClient.Subscription(a.flags.PubSubSubscription)
 	exists, err := psSub.Exists(c)
 	if err != nil {
 		log.Fields{
@@ -114,8 +104,8 @@ func (a *application) runCollector(c context.Context) error {
 	}
 	psSub.ReceiveSettings = pubsub.ReceiveSettings{
 		MaxExtension:           24 * time.Hour,
-		MaxOutstandingMessages: int(ccfg.MaxConcurrentMessages), // If < 1, default.
-		MaxOutstandingBytes:    0,                               // Default.
+		MaxOutstandingMessages: a.flags.MaxConcurrentMessages, // If < 1, default.
+		MaxOutstandingBytes:    0,                             // Default.
 	}
 
 	if !exists {
@@ -144,22 +134,16 @@ func (a *application) runCollector(c context.Context) error {
 
 	// Initialize our Collector service object using a caching Coordinator
 	// interface.
-	coord := coordinator.NewCoordinator(coordClient)
-	coord = coordinator.NewCache(coord, int(ccfg.StateCacheSize), ccfg.StateCacheExpiration.AsDuration())
-
 	coll := collector.Collector{
-		Coordinator:       coord,
+		Coordinator: coordinator.NewCache(
+			coordinator.NewCoordinator(coordClient),
+			a.flags.StateCacheSize,
+			a.flags.StateCacheExpiration,
+		),
 		Storage:           st,
-		MaxMessageWorkers: int(ccfg.MaxMessageWorkers),
+		MaxMessageWorkers: a.flags.MaxMessageWorkers,
 	}
 	defer coll.Close()
-
-	c, cancelFunc := context.WithCancel(c)
-	defer cancelFunc()
-
-	// Application shutdown will now operate by cancelling the Collector's
-	// shutdown Context.
-	a.SetShutdownFunc(cancelFunc)
 
 	// Execute our main subscription pull loop. It will run until the supplied
 	// Context is cancelled.
