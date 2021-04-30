@@ -108,8 +108,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		panic("PageSize < 0")
 	}
 
-	var st spanner.Statement
-	st, err = spanutil.GenerateSpannerStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]interface{}{
+	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]interface{}{
 		"StatusFilter": q.Predicate.GetStatus() != 0,
 	})
 	if err != nil {
