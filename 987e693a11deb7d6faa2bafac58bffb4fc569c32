@@ -44,6 +44,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "577cc5f4_76347aec",
+        "filename": "logdog/server/cmd/logdog_collector/flags.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T06:53:59Z",
+      "side": 1,
+      "message": "Indeed. Removed. Turns out all defaults will be at 0 anyway.",
+      "parentUuid": "407f2244_e16bca74",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 0
+      },
+      "revId": "987e693a11deb7d6faa2bafac58bffb4fc569c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "3c820ba2_53857e16",
         "filename": "logdog/server/service/service.go",
         "patchSetId": 1
@@ -78,6 +102,24 @@
       "writtenOn": "2021-04-30T06:33:35Z",
       "side": 1,
       "message": "BTStorageFlags?",
+      "revId": "987e693a11deb7d6faa2bafac58bffb4fc569c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "48784486_103b98b3",
+        "filename": "logdog/server/service/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T06:53:59Z",
+      "side": 1,
+      "message": "Well, it is used to construct some abstract storage.Storage, and one of the flags can potentially specify what kind of a storage to construct. So I think it is more appropriate to calls it StorageFlags.",
+      "parentUuid": "91cd3c8a_32c63636",
       "revId": "987e693a11deb7d6faa2bafac58bffb4fc569c32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
