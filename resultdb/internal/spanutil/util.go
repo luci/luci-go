@@ -81,7 +81,7 @@ func isMessageNil(m proto.Message) bool {
 }
 
 // GenerateSpannerStatement generates a spanner statement from a text template.
-func GenerateSpannerStatement(tmpl *template.Template, input map[string]interface{}) (spanner.Statement, error) {
+func GenerateSpannerStatement(tmpl *template.Template, input interface{}) (spanner.Statement, error) {
 	sql := &bytes.Buffer{}
 	err := tmpl.Execute(sql, input)
 	if err != nil {
