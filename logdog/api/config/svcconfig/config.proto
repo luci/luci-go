@@ -8,7 +8,6 @@ package svcconfig;
 
 option go_package = "go.chromium.org/luci/logdog/api/config/svcconfig";
 
-import "go.chromium.org/luci/logdog/api/config/svcconfig/archival.proto";
 import "go.chromium.org/luci/logdog/api/config/svcconfig/storage.proto";
 import "go.chromium.org/luci/logdog/api/config/svcconfig/transport.proto";
 
@@ -20,13 +19,11 @@ message Config {
   Transport transport = 10;
   // Configuration for intermediate Storage.
   Storage storage = 11;
-
   // Coordinator is the coordinator service configuration.
   Coordinator coordinator = 20;
-  // Collector is the collector fleet configuration.
-  Collector collector = 21;
-  // Archivist microservice configuration.
-  Archivist archivist = 22;
+
+  reserved "collector", "archivist";
+  reserved 21, 22;
 }
 
 // Coordinator is the Coordinator service configuration.
@@ -52,39 +49,4 @@ message Coordinator {
 
   reserved "archive_topic", "archive_settle_delay", "archive_delay_max";
   reserved 30, 31, 32;
-}
-
-// Collector is the set of configuration parameters for Collector instances.
-message Collector {
-  // The maximum number of concurrent transport messages to process. If <= 0,
-  // a default will be chosen based on the transport.
-  int32 max_concurrent_messages = 1;
-
-  // The maximum number of concurrent workers to process each ingested message.
-  // If <= 0, collector.DefaultMaxMessageWorkers will be used.
-  int32 max_message_workers = 2;
-
-  // The maximum number of log stream states to cache locally. If <= 0, a
-  // default will be used.
-  int32 state_cache_size = 3;
-
-  // The maximum amount of time that cached stream state is valid. If <= 0, a
-  // default will be used.
-  google.protobuf.Duration state_cache_expiration = 4;
-}
-
-// Configuration for the Archivist microservice.
-message Archivist {
-  // The name of the staging storage bucket. All projects will share the same
-  // staging bucket. Logs for a project will be staged under:
-  //
-  // gs://<gs_staging_bucket>/<app-id>/<project-name>/...
-  string gs_staging_bucket = 3;
-
-  // Service-wide index configuration. This is used if per-project configuration
-  // is not specified.
-  ArchiveIndexConfig archive_index_config = 10;
-
-  reserved "subscription", "tasks", "render_all_streams";
-  reserved 1, 2, 13;
 }
