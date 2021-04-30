@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f4c29da3_3cbd1993",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2021-04-30T02:16:57Z",
+      "side": 1,
+      "message": "This sounds like we are taking testing on production approach.  \"Give it a shot\" is good for once or twice.  However, I am feeling we continue doing that for a long time.  I do not think it healthy to do.\nI wonder why you cannot test this before checking-into the repo.\n\nWhat do you think?",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 40
+      },
+      "revId": "f86c54ea6324cb783d2fd9c2e64c995dada9de59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "be366fc6_7e5e2619",
         "filename": "common/data/embeddedkvs/kvs.go",
         "patchSetId": 2
