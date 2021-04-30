@@ -293,8 +293,12 @@ func (a *application) runArchivist(c context.Context) error {
 	}
 
 	// Initialize a Coordinator client that bundles requests together.
+	coordRPC, err := service.Coordinator(c, &a.flags.Coordinator)
+	if err != nil {
+		return err
+	}
 	coordClient := &bundleServicesClient.Client{
-		ServicesClient:       a.Coordinator,
+		ServicesClient:       coordRPC,
 		DelayThreshold:       time.Second,
 		BundleCountThreshold: 100,
 	}
