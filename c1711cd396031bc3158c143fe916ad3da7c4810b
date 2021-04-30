@@ -33,6 +33,24 @@
       "message": "it is quite possible that we will add more filters in the future, so let\u0027s make a TestVariantPredicate message, like in other QueryXXX RPCs",
       "revId": "c1711cd396031bc3158c143fe916ad3da7c4810b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e18a7489_b167c3e1",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-30T18:47:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "014c1461_68cdbbe0",
+      "revId": "c1711cd396031bc3158c143fe916ad3da7c4810b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
