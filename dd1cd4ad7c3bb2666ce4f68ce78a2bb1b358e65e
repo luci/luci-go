@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b957667b_996bdd67",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-30T21:07:16Z",
+      "side": 1,
+      "message": "st, err :\u003d \n\n?",
+      "range": {
+        "startLine": 111,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 10
+      },
+      "revId": "dd1cd4ad7c3bb2666ce4f68ce78a2bb1b358e65e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
