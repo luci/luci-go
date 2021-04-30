@@ -30,6 +30,11 @@ import (
 	"go.chromium.org/luci/common/retry"
 )
 
+// These errors can be returned from AddNoBlock.
+var (
+	ErrBufferFull = errors.New("buffer is full")
+)
+
 // Buffer batches individual data items into Batch objects.
 //
 // All access to the Buffer (as well as invoking ACK/NACK on LeasedBatches) must
@@ -141,13 +146,18 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 
 // AddNoBlock adds the item to the Buffer.
 //
-// Possibly drops a batch according to FullBehavior. If
-// FullBehavior.ComputeState returns okToInsert=false, AddNoBlock panics.
-func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch) {
+// Possibly drops a batch according to FullBehavior.
+//
+// Returns an error under the following conditions:
+//
+//  - ErrBufferFull - If FullBehavior.ComputeState returns okToInsert=false.
+func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch, err error) {
 	okToInsert, dropBatch := buf.opts.FullBehavior.ComputeState(buf.stats)
 	if !okToInsert {
-		panic(errors.New("buffer is full"))
+		return nil, ErrBufferFull
 	}
+	// All error checks done above before we modify any state in buf.
+
 	if dropBatch {
 		dropped = buf.dropOldest()
 	}
@@ -218,7 +228,7 @@ func (buf *Buffer) Stats() Stats {
 }
 
 // CanAddItem returns true iff the Buffer will accept an item from AddNoBlock
-// without panicing.
+// without returning ErrBufferFull.
 func (buf *Buffer) CanAddItem() bool {
 	okToInsert, _ := buf.opts.FullBehavior.ComputeState(buf.stats)
 	return okToInsert
