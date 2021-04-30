@@ -335,7 +335,8 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 	})
 	switch code := grpcutil.Code(err); code {
 	case codes.OK:
-		return f.setGitDeps(ctx, resp.GetChanges())
+		f.setGitDeps(ctx, resp.GetChanges())
+		return nil
 	case codes.PermissionDenied, codes.NotFound:
 		// Getting this right after successfully fetching ChangeInfo should
 		// typically be due to eventual consistency of Gerrit, and rarely due to
@@ -349,7 +350,10 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 
 // setGitDeps sets GerritGitDeps based on list of related changes provided by
 // Gerrit.GetRelatedChanges RPC.
-func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) error {
+//
+// If GetRelatedChanges output is invalid, doesn't set GerritGitDep and adds an
+// appropriate CLError to Snapshot.Errors.
+func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) {
 	// Gerrit does not provide API that returns just the changes which a given
 	// change depends on, but has the API call that returns the following changes:
 	//   (1) those on which this change depends, transitively. Among these,
@@ -360,11 +364,12 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 	if len(related) == 0 {
 		// Gerrit may not bother to return the CL itself if there are no related
 		// changes.
-		return nil
+		return
 	}
-	this, err := f.matchCurrentAmongRelated(ctx, related)
-	if err != nil {
-		return err
+	this, clErr := f.matchCurrentAmongRelated(ctx, related)
+	if clErr != nil {
+		f.toUpdate.Snapshot.Errors = append(f.toUpdate.Snapshot.Errors, clErr)
+		return
 	}
 
 	// Construct a map from revision to a list of changes that it represents.
@@ -383,7 +388,7 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 	if thisParentsCount == 0 {
 		// Quick exit if there are no dependencies of this change (1), only changes
 		// depending on this change (3).
-		return nil
+		return
 	}
 
 	// Now starting from `this` change and following parents relation,
@@ -454,11 +459,13 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 		})
 	}
 	f.toUpdate.Snapshot.GetGerrit().GitDeps = deps
-	return nil
 }
 
-func (f *fetcher) matchCurrentAmongRelated(ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) (
-	this *gerritpb.GetRelatedChangesResponse_ChangeAndCommit, err error) {
+func (f *fetcher) matchCurrentAmongRelated(
+	ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit,
+) (*gerritpb.GetRelatedChangesResponse_ChangeAndCommit, *changelist.CLError) {
+
+	var this *gerritpb.GetRelatedChangesResponse_ChangeAndCommit
 	matched := 0
 	for _, r := range related {
 		if r.GetNumber() == f.change {
@@ -466,11 +473,18 @@ func (f *fetcher) matchCurrentAmongRelated(ctx context.Context, related []*gerri
 			this = r
 		}
 	}
-	// Sanity check for better error message if Gerrit API changes.
 	if matched != 1 {
-		logging.Errorf(ctx, "Gerrit.GetRelatedChanges should have exactly 1 change "+
-			"matching the given one %s, got %d (all related %s)", f, matched, related)
-		return nil, errors.Reason("Unexpected Gerrit.GetRelatedChangesResponse for %s, see logs", f).Err()
+		// Apparently in rare cases, Gerrit may get confused and substitute this CL
+		// for some other CL in the output (see https://crbug.com/1199471).
+		msg := fmt.Sprintf(
+			("Gerrit related changes should return the %s/%d CL itself exactly once, but got %d." +
+				" Maybe https://crbug.com/1199471 is affecting you?"), f.host, f.change, matched)
+		logging.Errorf(ctx, "%s Related output: %s", msg, related)
+		return nil, &changelist.CLError{
+			Kind: &changelist.CLError_CorruptGerritMetadata{
+				CorruptGerritMetadata: msg,
+			},
+		}
 	}
 	return this, nil
 }

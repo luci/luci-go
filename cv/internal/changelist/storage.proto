@@ -51,6 +51,10 @@ message Snapshot {
   // can be canceled.
   int32 min_equivalent_patchset = 5;
 
+  // If set, indicates problems while ingesting CL into CV, which ought to be
+  // communicated back to user.
+  repeated CLError errors = 6;
+
   // CL-kind specific data.
   oneof kind {
     Gerrit gerrit = 11;
@@ -240,6 +244,7 @@ message CLError {
     InvalidDeps invalid_deps = 3;
     string unsupported_mode = 4;
     bool self_cq_depend = 5;
+    string corrupt_gerrit_metadata = 6;
   }
 
   message WatchedByManyConfigGroups {
