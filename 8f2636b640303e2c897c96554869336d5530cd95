@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39de8d76_9cec8778",
+        "filename": "common/sync/dispatcher/buffer/full_behavior.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T01:31:55Z",
+      "side": 1,
+      "message": "oops",
+      "range": {
+        "startLine": 87,
+        "startChar": 5,
+        "endLine": 87,
+        "endChar": 11
+      },
+      "revId": "8f2636b640303e2c897c96554869336d5530cd95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c524fd0_547e49c0",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T01:31:55Z",
+      "side": 1,
+      "message": "sigh",
+      "range": {
+        "startLine": 96,
+        "startChar": 5,
+        "endLine": 96,
+        "endChar": 11
+      },
+      "revId": "8f2636b640303e2c897c96554869336d5530cd95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e7d7358_075af704",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T01:31:55Z",
+      "side": 1,
+      "message": "\"Why doesn\u0027t this just return an error? Then you wouldn\u0027t have to duplicate the error checking above, dummy\"\n\nA very good idea, indeed, self-reviewer. Maybe in a followup CL?",
+      "range": {
+        "startLine": 263,
+        "startChar": 27,
+        "endLine": 263,
+        "endChar": 37
+      },
+      "revId": "8f2636b640303e2c897c96554869336d5530cd95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eaef7fc9_4510f704",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T01:31:55Z",
+      "side": 1,
+      "message": "lmk if there\u0027s a better way to document this; It\u0027s only required if you\u0027ve configured the buffer to enforce size stuff.",
+      "revId": "8f2636b640303e2c897c96554869336d5530cd95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
