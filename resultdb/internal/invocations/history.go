@@ -15,7 +15,6 @@
 package invocations
 
 import (
-	"bytes"
 	"context"
 	"text/template"
 	"time"
@@ -87,13 +86,12 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 		panic(errors.Reason("unexpected variant predicate %q", q.Predicate.GetVariant()).Err())
 	}
 
-	sql := &bytes.Buffer{}
-	if err = queryTmpl.Execute(sql, map[string]interface{}{
+	st, err := spanutil.GenerateStatement(queryTmpl, map[string]interface{}{
 		"MatchVariant": len(variant) != 0,
-	}); err != nil {
+	})
+	if err != nil {
 		return err
 	}
-	st := spanner.NewStatement(sql.String())
 	st.Params["realm"] = q.Realm
 	st.Params["minTime"] = minTime
 	st.Params["maxTime"] = maxTime
