@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "673d9ad1_ed408bba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T01:57:16Z",
+      "side": 1,
+      "message": "PTAL as an alternative to https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2861706.\n\nI think I like flags approach more, since it would allow to remove the weird self-termination mechanism and will simplify switching to server.Server.",
+      "revId": "5061f286593ec785f60244adb7c35272c9e5ae3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
