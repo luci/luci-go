@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4673062_b2783663",
+        "filename": "resultdb/internal/services/resultdb/query_test_variants.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-30T19:43:44Z",
+      "side": 1,
+      "message": "Both this comment and the one in query.go starts with \"same here\", is there another comment you added then removed?\n\nBut I assume the comments are about placing status (now predicate) before page fields. Done.",
+      "parentUuid": "6fe10772_28e5a8a3",
+      "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1a784066_ca5eddad",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-04-30T16:02:03Z",
       "side": 1,
       "message": "same here",
+      "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "48186337_37e6f25f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-30T19:43:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a784066_ca5eddad",
       "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -75,6 +111,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d92bfcfd_70297d03",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-30T19:43:44Z",
+      "side": 1,
+      "message": "Added the util function and used it here.\n\nWill modify other queries in a follow-up CL",
+      "parentUuid": "4d882351_c1870c47",
+      "range": {
+        "startLine": 112,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 41
+      },
+      "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0bb03dc4_6510abb2",
@@ -88,6 +148,24 @@
       "writtenOn": "2021-04-30T16:02:03Z",
       "side": 1,
       "message": "it would be good to confirm that spanner query optimizer actually pushes these filters to testVariantsWithUnexpectedResults (as opposed to computing the entire result of testVariantsWithUnexpectedResults subquery and then filtering).",
+      "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "464a1fde_08a0786b",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-30T19:43:44Z",
+      "side": 1,
+      "message": "I think it does filter beforehand:\n\nWith filter: https://screenshot.googleplex.com/5FEAx6uyiLZtbNq\nW/o filter: https://screenshot.googleplex.com/B3Qn2m9CKYB7N5g",
+      "parentUuid": "0bb03dc4_6510abb2",
       "revId": "763d7ea24517f5ceed66e46b3c0aed4791098226",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
