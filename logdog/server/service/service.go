@@ -45,15 +45,12 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/common/storage"
-	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/logdog/server/config"
 	serverAuth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/gae/impl/cloud"
 
-	cloudBT "cloud.google.com/go/bigtable"
 	"cloud.google.com/go/datastore"
 	cl "cloud.google.com/go/logging"
 	"cloud.google.com/go/pubsub"
@@ -376,46 +373,6 @@ func (s *Service) shutdown() {
 
 func (s *Service) shutdownImmediately() {
 	os.Exit(1)
-}
-
-// IntermediateStorage instantiates the configured intermediate Storage
-// instance.
-//
-// If "rw" is true, Read/Write access will be requested. Otherwise, read-only
-// access will be requested.
-func (s *Service) IntermediateStorage(c context.Context, rw bool) (storage.Storage, error) {
-	storageCfg := s.ServiceConfig.GetStorage()
-	if storageCfg == nil {
-		log.Errorf(c, "Missing storage configuration.")
-		return nil, ErrInvalidConfig
-	}
-
-	btcfg := storageCfg.GetBigtable()
-	if btcfg == nil {
-		log.Errorf(c, "Missing BigTable storage configuration")
-		return nil, ErrInvalidConfig
-	}
-
-	// Determine our scopes.
-	scopes := bigtable.StorageReadOnlyScopes
-	if rw {
-		scopes = bigtable.StorageScopes
-	}
-
-	// Initialize RPC credentials.
-	ts, err := serverAuth.GetTokenSource(c, serverAuth.AsSelf, serverAuth.WithScopes(scopes...))
-	if err != nil {
-		return nil, err
-	}
-	client, err := cloudBT.NewClient(c, btcfg.Project, btcfg.Instance,
-		option.WithUserAgent(s.getUserAgent()), option.WithTokenSource(ts))
-	if err != nil {
-		return nil, err
-	}
-	return &bigtable.Storage{
-		Client:   client,
-		LogTable: btcfg.LogTableName,
-	}, nil
 }
 
 // GSClient returns an authenticated Google Storage client instance.
