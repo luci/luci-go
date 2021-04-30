@@ -53,6 +53,9 @@ message QueryTestVariantsRequest {
   // When paginating, all other parameters provided to `QueryTestVariants` MUST
   // match the call that provided the page token.
   string page_token = 5;
+
+  // A test variant must satisfy this predicate.
+  TestVariantPredicate predicate = 6;
 }
 
 // A response message for QueryTestVariants RPC.
@@ -124,4 +127,11 @@ enum TestVariantStatus {
   EXONERATED = 40;
   // The test variant has no exonerations, and all results are expected.
   EXPECTED = 50;
+}
+
+// Represents a function TestVariant -> bool.
+// Empty message matches all test variants.
+message TestVariantPredicate {
+  // A test variant must have this status.
+  TestVariantStatus status = 1;
 }
