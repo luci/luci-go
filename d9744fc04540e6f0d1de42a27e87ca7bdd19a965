@@ -1,6 +1,52 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "6efc7a79_cade58cc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T00:20:57Z",
+      "side": 1,
+      "message": "!!!!",
+      "range": {
+        "startLine": 10,
+        "startChar": 61,
+        "endLine": 10,
+        "endChar": 68
+      },
+      "revId": "d9744fc04540e6f0d1de42a27e87ca7bdd19a965",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "61bc3bce_eaeefeee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T00:20:57Z",
+      "side": 1,
+      "message": "is the command line approach really worse than having the program point a gun at it\u0027s own head, assuming that it will come back to life again?",
+      "range": {
+        "startLine": 11,
+        "startChar": 57,
+        "endLine": 11,
+        "endChar": 60
+      },
+      "revId": "d9744fc04540e6f0d1de42a27e87ca7bdd19a965",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "996567a6_1cb92c74",
@@ -14,6 +60,40 @@
       "writtenOn": "2021-04-30T00:09:54Z",
       "side": 1,
       "message": "PTAL\n\nRemoves dependency on some deprecated GAE stuff.",
+      "revId": "d9744fc04540e6f0d1de42a27e87ca7bdd19a965",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c5ee845_70bd3b02",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T00:20:57Z",
+      "side": 1,
+      "message": "lgtm?",
+      "revId": "d9744fc04540e6f0d1de42a27e87ca7bdd19a965",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1343a9f3_c10996fd",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T00:20:57Z",
+      "side": 1,
+      "message": "worth documenting these defaults? Or are you planning to remove these?",
       "revId": "d9744fc04540e6f0d1de42a27e87ca7bdd19a965",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
