@@ -16,16 +16,18 @@ package main
 
 import (
 	"context"
+	"flag"
 	"time"
 
+	cloudlogging "cloud.google.com/go/logging"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
-	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
@@ -33,19 +35,16 @@ import (
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	montypes "go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/archivist"
-	"go.chromium.org/luci/logdog/server/bundleServicesClient"
 	"go.chromium.org/luci/logdog/server/service"
 )
 
 var (
-	errInvalidConfig = errors.New("invalid configuration")
-	errNoWorkToDo    = errors.New("no work to do")
-
 	leaseRetryParams = func() retry.Iterator {
 		return &retry.ExponentialBackoff{
 			Limited: retry.Limited{
@@ -104,13 +103,13 @@ var (
 	// false if it was not.
 	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/archivist/task_processing_time_ms_ng",
 		"The amount of time (in milliseconds) that a single task takes to process in the new pipeline.",
-		&montypes.MetricMetadata{Units: montypes.Milliseconds},
+		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
 
 	tsLoopCycleTime = metric.NewCumulativeDistribution("logdog/archivist/loop_cycle_time_ms",
 		"The amount of time a single batch of leases takes to process.",
-		&montypes.MetricMetadata{Units: montypes.Milliseconds},
+		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer)
 
 	tsLeaseCount = metric.NewCounter("logdog/archivist/tasks_leased",
@@ -126,14 +125,8 @@ var (
 		nil)
 )
 
-// application is the Archivist application state.
-type application struct {
-	service.Service
-	flags CommandLineFlags
-}
-
 // runForever runs the archivist loop forever.
-func runForever(ctx context.Context, ar archivist.Archivist, flags *CommandLineFlags) {
+func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLineFlags) {
 	type archiveJob struct {
 		deadline time.Time
 		task     *logdog.ArchiveTask
@@ -253,79 +246,60 @@ func runForever(ctx context.Context, ar archivist.Archivist, flags *CommandLineF
 			}
 		}
 	}
-
-	logging.Infof(ctx, "runForever no longer running forever: ctx.Err() == %s", ctx.Err())
 }
 
-// run is the main execution function.
-func (a *application) runArchivist(c context.Context) error {
-	if err := a.flags.Validate(); err != nil {
-		log.WithError(err).Errorf(c, "Bad flags")
-		return err
-	}
-
-	// Initialize our Storage.
-	st, err := service.IntermediateStorage(c, &a.flags.Storage)
+// googleStorageClient returns an authenticated Google Storage client instance.
+func googleStorageClient(ctx context.Context, luciProject string) (gs.Client, error) {
+	// TODO(vadimsh): Switch to AsProject + WithProject(project) once
+	// we are ready to roll out project scoped service accounts in Logdog.
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get storage instance.")
-		return err
+		return nil, errors.Annotate(err, "failed to get the authenticating transport").Err()
 	}
-	defer st.Close()
-
-	// Defines our Google Storage client project scoped factory.
-	gsClientFactory := func(ctx context.Context, project string) (gs.Client, error) {
-		gsClient, err := a.GSClient(ctx, project)
-		if err != nil {
-			log.WithError(err).Errorf(c, "Failed to get Google Storage client.")
-			return nil, err
-		}
-		return gsClient, nil
-	}
-
-	// Defines our Cloud Logging client factory.
-	clClientFactory := func(ctx context.Context, project, dest string, useProjectScope bool) (archivist.CLClient, error) {
-		clClient, err := a.CLClient(ctx, project, dest, useProjectScope)
-		if err != nil {
-			log.WithError(err).Errorf(c, "Failed to get Cloud Logging client.")
-			return nil, err
-		}
-		return clClient, nil
-	}
-
-	// Initialize a Coordinator client that bundles requests together.
-	coordRPC, err := service.Coordinator(c, &a.flags.Coordinator)
+	client, err := gs.NewProdClient(ctx, tr)
 	if err != nil {
-		return err
+		return nil, errors.Annotate(err, "failed to create Google Storage client").Err()
 	}
-	coordClient := &bundleServicesClient.Client{
-		ServicesClient:       coordRPC,
-		DelayThreshold:       time.Second,
-		BundleCountThreshold: 100,
-	}
-	defer coordClient.Flush()
+	return client, nil
+}
 
-	ar := archivist.Archivist{
-		Service:         coordClient,
-		SettingsLoader:  GetSettingsLoader(a.ServiceID, &a.flags),
-		Storage:         st,
-		GSClientFactory: gsClientFactory,
-		CLClientFactory: clClientFactory,
+// cloudLoggingClient returns an authenticated Cloud Logging client instance.
+func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, useProjectScope bool) (archivist.CLClient, error) {
+	kind, rpcOpts := auth.AsSelf, []auth.RPCOption{}
+	if useProjectScope {
+		kind = auth.AsProject
+		rpcOpts = append(rpcOpts, auth.WithProject(luciProject))
 	}
-
-	runForever(c, ar, &a.flags)
-	return nil
+	cred, err := auth.GetPerRPCCredentials(ctx, kind, rpcOpts...)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()
+	}
+	return cloudlogging.NewClient(ctx, cloudProject, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)))
 }
 
 // Entry point.
 func main() {
-	mathrand.SeedRandomly()
-	a := application{
-		Service: service.Service{
-			Name:               "archivist",
-			DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
-		},
-		flags: DefaultCommandLineFlags(),
-	}
-	a.flags.Register(&a.Flags)
-	a.Run(context.Background(), a.runArchivist)
+	flags := DefaultCommandLineFlags()
+	flags.Register(flag.CommandLine)
+
+	service.Main(func(srv *server.Server, impl *service.Implementations) error {
+		if err := flags.Validate(); err != nil {
+			return err
+		}
+
+		// Initialize the archivist.
+		ar := &archivist.Archivist{
+			Service:         impl.Coordinator,
+			SettingsLoader:  GetSettingsLoader(srv.Options.CloudProject, &flags),
+			Storage:         impl.Storage,
+			GSClientFactory: googleStorageClient,
+			CLClientFactory: cloudLoggingClient,
+		}
+
+		// Run the archivist loop until the server closes.
+		srv.RunInBackground("archivist", func(ctx context.Context) {
+			runForever(ctx, ar, &flags)
+		})
+		return nil
+	})
 }

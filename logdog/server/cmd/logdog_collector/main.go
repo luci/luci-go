@@ -16,35 +16,29 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"flag"
 	"time"
 
+	"cloud.google.com/go/pubsub"
+	"google.golang.org/api/option"
+
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
-	gcps "go.chromium.org/luci/common/gcloud/pubsub"
-	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
-	"go.chromium.org/luci/logdog/server/bundleServicesClient"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/logdog/server/collector"
 	"go.chromium.org/luci/logdog/server/collector/coordinator"
 	"go.chromium.org/luci/logdog/server/service"
-
-	"cloud.google.com/go/pubsub"
 )
 
-var (
-	errInvalidConfig = errors.New("invalid configuration")
-)
-
-// Metrics.
 var (
 	// tsPubsubCount counts the number of Pub/Sub messages processed by the
 	// Archivist.
@@ -64,93 +58,8 @@ var (
 		distribution.DefaultBucketer)
 )
 
-// application is the Collector application state.
-type application struct {
-	service.Service
-	flags CommandLineFlags
-}
-
-// run is the main execution function.
-func (a *application) runCollector(c context.Context) error {
-	if err := a.flags.Validate(); err != nil {
-		log.WithError(err).Errorf(c, "Bad flags")
-		return err
-	}
-
-	// Our Subscription must be a valid one.
-	sub := gcps.NewSubscription(a.flags.PubSubProject, a.flags.PubSubSubscription)
-	if err := sub.Validate(); err != nil {
-		return fmt.Errorf("invalid Pub/Sub subscription %q: %v", sub, err)
-	}
-
-	// New PubSub instance with the authenticated client.
-	psClient, err := a.Service.PubSubSubscriberClient(c, a.flags.PubSubProject)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey:   err,
-			"subscription": sub,
-		}.Errorf(c, "Failed to create Pub/Sub client.")
-		return err
-	}
-
-	psSub := psClient.Subscription(a.flags.PubSubSubscription)
-	exists, err := psSub.Exists(c)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey:   err,
-			"subscription": sub,
-		}.Errorf(c, "Could not confirm Pub/Sub subscription.")
-		return errInvalidConfig
-	}
-	psSub.ReceiveSettings = pubsub.ReceiveSettings{
-		MaxExtension:           24 * time.Hour,
-		MaxOutstandingMessages: a.flags.MaxConcurrentMessages, // If < 1, default.
-		MaxOutstandingBytes:    0,                             // Default.
-	}
-
-	if !exists {
-		log.Fields{
-			"subscription": sub,
-		}.Errorf(c, "Subscription does not exist.")
-		return errInvalidConfig
-	}
-	log.Fields{
-		"subscription": sub,
-	}.Infof(c, "Successfully validated Pub/Sub subscription.")
-
-	st, err := service.IntermediateStorage(c, &a.flags.Storage)
-	if err != nil {
-		return err
-	}
-	defer st.Close()
-
-	// Initialize a Coordinator client that bundles requests together.
-	coordRPC, err := service.Coordinator(c, &a.flags.Coordinator)
-	if err != nil {
-		return err
-	}
-	coordClient := &bundleServicesClient.Client{
-		ServicesClient:       coordRPC,
-		DelayThreshold:       time.Second,
-		BundleCountThreshold: 100,
-	}
-	defer coordClient.Flush()
-
-	// Initialize our Collector service object using a caching Coordinator
-	// interface.
-	coll := collector.Collector{
-		Coordinator: coordinator.NewCache(
-			coordinator.NewCoordinator(coordClient),
-			a.flags.StateCacheSize,
-			a.flags.StateCacheExpiration,
-		),
-		Storage:           st,
-		MaxMessageWorkers: a.flags.MaxMessageWorkers,
-	}
-	defer coll.Close()
-
-	// Execute our main subscription pull loop. It will run until the supplied
-	// Context is cancelled.
+// runForever runs the collector loop until the context closes.
+func runForever(ctx context.Context, coll *collector.Collector, sub *pubsub.Subscription) {
 	retryForever := func() retry.Iterator {
 		return &retry.ExponentialBackoff{
 			Limited: retry.Limited{
@@ -162,84 +71,120 @@ func (a *application) runCollector(c context.Context) error {
 		}
 	}
 
-	err = retry.Retry(c, transient.Only(retryForever), func() error {
-		return grpcutil.WrapIfTransient(psSub.Receive(c, func(c context.Context, msg *pubsub.Message) {
-			c = log.SetField(c, "messageID", msg.ID)
-			if a.processMessage(c, &coll, msg) {
+	retry.Retry(ctx, retryForever, func() error {
+		return sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+			ctx = logging.SetField(ctx, "messageID", msg.ID)
+			if processMessage(ctx, coll, msg) {
 				// ACK the message, removing it from Pub/Sub.
 				msg.Ack()
 			} else {
 				// NACK the message. It will be redelivered and processed.
 				msg.Nack()
 			}
-		}))
+		})
 	}, func(err error, d time.Duration) {
-		log.Fields{
-			log.ErrorKey: err,
-			"delay":      d,
-		}.Warningf(c, "Transient error during subscription Receive loop; retrying...")
+		logging.Fields{
+			"error": err,
+			"delay": d,
+		}.Errorf(ctx, "Error during subscription Receive loop; retrying...")
 	})
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed during Pub/Sub Receive.")
-		return err
-	}
-
-	log.Debugf(c, "Collector finished.")
-	return nil
 }
 
 // processMessage returns true if the message should be ACK'd (deleted from
 // Pub/Sub) or false if the message should not be ACK'd.
-func (a *application) processMessage(c context.Context, coll *collector.Collector, msg *pubsub.Message) bool {
-	log.Fields{
+func processMessage(ctx context.Context, coll *collector.Collector, msg *pubsub.Message) bool {
+	logging.Fields{
 		"size": len(msg.Data),
-	}.Infof(c, "Received Pub/Sub Message.")
+	}.Infof(ctx, "Received Pub/Sub Message.")
 
-	startTime := clock.Now(c)
-	err := coll.Process(c, msg.Data)
-	duration := clock.Now(c).Sub(startTime)
+	startTime := clock.Now(ctx)
+	err := coll.Process(ctx, msg.Data)
+	duration := clock.Now(ctx).Sub(startTime)
 
 	// We track processing time in milliseconds.
-	tsTaskProcessingTime.Add(c, duration.Seconds()*1000)
+	tsTaskProcessingTime.Add(ctx, duration.Seconds()*1000)
 
 	switch {
-	case transient.Tag.In(err):
+	case transient.Tag.In(err) || errors.Contains(err, context.Canceled):
 		// Do not consume
-		log.Fields{
-			log.ErrorKey: err,
-			"duration":   duration,
-		}.Warningf(c, "TRANSIENT error ingesting Pub/Sub message.")
-		tsPubsubCount.Add(c, 1, "transient_failure")
+		logging.Fields{
+			"error":    err,
+			"duration": duration,
+		}.Warningf(ctx, "TRANSIENT error ingesting Pub/Sub message.")
+		tsPubsubCount.Add(ctx, 1, "transient_failure")
 		return false
 
 	case err == nil:
-		log.Fields{
+		logging.Fields{
 			"size":     len(msg.Data),
 			"duration": duration,
-		}.Infof(c, "Message successfully processed; ACKing.")
-		tsPubsubCount.Add(c, 1, "success")
+		}.Infof(ctx, "Message successfully processed; ACKing.")
+		tsPubsubCount.Add(ctx, 1, "success")
 		return true
 
 	default:
-		log.Fields{
-			log.ErrorKey: err,
-			"size":       len(msg.Data),
-			"duration":   duration,
-		}.Errorf(c, "Non-transient error ingesting Pub/Sub message; ACKing.")
-		tsPubsubCount.Add(c, 1, "failure")
+		logging.Fields{
+			"error":    err,
+			"size":     len(msg.Data),
+			"duration": duration,
+		}.Errorf(ctx, "Non-transient error ingesting Pub/Sub message; ACKing.")
+		tsPubsubCount.Add(ctx, 1, "failure")
 		return true
 	}
 }
 
+// pubSubClient returns an authenticated Google PubSub client instance.
+func pubSubClient(ctx context.Context, cloudProject string) (*pubsub.Client, error) {
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get the token source").Err()
+	}
+	client, err := pubsub.NewClient(ctx, cloudProject, option.WithTokenSource(ts))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create the PubSub client").Err()
+	}
+	return client, nil
+}
+
 // Entry point.
 func main() {
-	mathrand.SeedRandomly()
-	a := application{
-		Service: service.Service{
-			Name:               "collector",
-			DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
-		},
-	}
-	a.flags.Register(&a.Flags)
-	a.Run(context.Background(), a.runCollector)
+	flags := CommandLineFlags{}
+	flags.Register(flag.CommandLine)
+
+	service.Main(func(srv *server.Server, impl *service.Implementations) error {
+		if err := flags.Validate(); err != nil {
+			return err
+		}
+
+		// Initialize our Collector service object using a caching Coordinator
+		// interface.
+		coll := &collector.Collector{
+			Coordinator: coordinator.NewCache(
+				coordinator.NewCoordinator(impl.Coordinator),
+				flags.StateCacheSize,
+				flags.StateCacheExpiration,
+			),
+			Storage:           impl.Storage,
+			MaxMessageWorkers: flags.MaxMessageWorkers,
+		}
+		srv.RegisterCleanup(func(context.Context) { coll.Close() })
+
+		// Initialize a Subscription object ready to pull messages.
+		psClient, err := pubSubClient(srv.Context, flags.PubSubProject)
+		if err != nil {
+			return err
+		}
+		psSub := psClient.Subscription(flags.PubSubSubscription)
+		psSub.ReceiveSettings = pubsub.ReceiveSettings{
+			MaxExtension:           24 * time.Hour,
+			MaxOutstandingMessages: flags.MaxConcurrentMessages, // If < 1, default.
+			MaxOutstandingBytes:    0,                           // Default.
+		}
+
+		// Run the collector loop until the server closes.
+		srv.RunInBackground("collector", func(ctx context.Context) {
+			runForever(ctx, coll, psSub)
+		})
+		return nil
+	})
 }
