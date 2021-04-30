@@ -26,6 +26,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
 
 // TestResultRow represents a row in a BigQuery table for result of a functional
 // test case.
+// Next id: 18.
 message TestResultRow {
   // Exported contains info of the exported invocation.
   //
@@ -38,6 +39,13 @@ message TestResultRow {
 
   // Parent contains info of the result's immediate parent invocation.
   InvocationRecord parent = 2;
+
+  // Name of the test result.
+  // Format:
+  // "invocations/{PARENT.ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
+  // where URL_ESCAPED_TEST_ID is test_id escaped with
+  // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+  string name = 17;
 
   // Is a unique identifier of the test in a LUCI project.
   // Refer to TestResult.test_id for details.
