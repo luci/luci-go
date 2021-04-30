@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1a47601_c1cba3b6",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-30T22:35:36Z",
+      "side": 1,
+      "message": "nit: maybe spanutil.GenerateStatement?\n\nthe package name already has \"span\" word, so no need to say Spanner twice",
+      "range": {
+        "startLine": 127,
+        "startChar": 21,
+        "endLine": 127,
+        "endChar": 45
+      },
+      "revId": "43c78bc49e775635fb6dd4a96002fcbc206971dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
