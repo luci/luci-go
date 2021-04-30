@@ -39,6 +39,30 @@
       },
       "revId": "d056ccd516a3ca8b8e00fb1b52a8bfa6c4c35f40",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "92669407_93ae86d2",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T14:53:33Z",
+      "side": 1,
+      "message": "Actually, I think I fixed the need for this, entirely, in a subsequent CL (where AddNoBlock returns an error instead of panicing)... I\u0027ll move some CLs in the stack around.",
+      "parentUuid": "ccd6c0ae_dbb0156f",
+      "range": {
+        "startLine": 84,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 20
+      },
+      "revId": "d056ccd516a3ca8b8e00fb1b52a8bfa6c4c35f40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
