@@ -15,7 +15,6 @@
 package artifacts
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -125,12 +124,10 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 	}
 	input.Q = q
 
-	sql := &bytes.Buffer{}
-	if err = tmplQueryArtifacts.Execute(sql, input); err != nil {
+	st, err := spanutil.GenerateStatement(tmplQueryArtifacts, input)
+	if err != nil {
 		return
 	}
-
-	st := spanner.NewStatement(sql.String())
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 	st.Params["contentTypeRegexp"] = fmt.Sprintf("^%s$", q.ContentTypeRegexp)
