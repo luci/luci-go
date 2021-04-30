@@ -24,17 +24,13 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	commonAuth "go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
-	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/sdlogger"
 	"go.chromium.org/luci/common/logging/teelogger"
@@ -43,7 +39,6 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/config"
 	serverAuth "go.chromium.org/luci/server/auth"
@@ -55,7 +50,6 @@ import (
 	cl "cloud.google.com/go/logging"
 	"cloud.google.com/go/pubsub"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
@@ -99,13 +93,8 @@ type Service struct {
 	// This is synonymous with the cloud "project ID" and the AppEngine "app ID".
 	ServiceID string
 
-	// ServiceConfig is services.cfg at the moment the process started.
-	ServiceConfig *svcconfig.Config
-
 	// Coordinator is the cached Coordinator client.
 	Coordinator logdog.ServicesClient
-
-	shutdownFunc atomic.Value
 
 	loggingFlags log.Config
 	authFlags    authcli.Flags
@@ -114,17 +103,6 @@ type Service struct {
 
 	coordinatorHost     string
 	coordinatorInsecure bool
-
-	// killCheckInterval is the amount of time in between service configuration
-	// checks. If set, this service will periodically reload its service
-	// configuration. If that configuration has changed, the service will kill
-	// itself.
-	//
-	// Since, in production, this is running under an execution harness such as
-	// Kubernetes, the service processes will **all** restart at once to load the
-	// new configuration, simulating a mini outage. This is apparently easier than
-	// implementing in-process configuration updating.
-	killCheckInterval clockflag.Duration
 
 	// configStore caches configs in local memory.
 	configStore config.Store
@@ -172,7 +150,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	}
 	defer s.profiler.Stop()
 
-	// Cancel our Context after we're done our run loop.
+	// Cancel our Context after we're done with the run loop or on a signal.
 	c, cancelFunc := context.WithCancel(c)
 	defer cancelFunc()
 
@@ -195,6 +173,9 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	// Install a process-wide cache.
 	c = caching.WithEmptyProcessCache(c)
 
+	// Add a in-memory config caching to avoid hitting datastore all the time.
+	c = config.WithStore(c, &s.configStore)
+
 	// Configure our signal handler. It will listen for terminating signals and
 	// issue a shutdown signal if one is received.
 	signalC := make(chan os.Signal)
@@ -205,12 +186,13 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 				hasShutdownAlready = true
 
 				log.Warningf(log.SetField(c, "signal", sig), "Received close signal. Send again to terminate immediately.")
-				s.shutdown()
+				cancelFunc()
 				continue
 			}
 
 			// No shutdown function registered; just exit immediately.
-			s.shutdownImmediately()
+			log.Warningf(c, "Received the second signal, exiting immediately...")
+			os.Exit(1)
 			panic("never reached")
 		}
 	}(c)
@@ -234,15 +216,6 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	if s.Coordinator, err = s.initCoordinatorClient(c); err != nil {
 		return errors.Annotate(err, "failed to setup Coordinator client").Err()
 	}
-
-	// Initialize and install our config service client, and load our initial
-	// service config.
-	if c, err = s.initConfig(c); err != nil {
-		return errors.Annotate(err, "failed to setup config client").Err()
-	}
-
-	// Clear our shutdown function on termination.
-	defer s.SetShutdownFunc(nil)
 
 	// Run main service function.
 	return f(c)
@@ -274,8 +247,6 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 		"The Coordinator service's [host][:port].")
 	fs.BoolVar(&s.coordinatorInsecure, "coordinator-insecure", s.coordinatorInsecure,
 		"Connect to Coordinator over HTTP (instead of HTTPS).")
-	fs.Var(&s.killCheckInterval, "config-kill-interval",
-		"If non-zero, poll for configuration changes and kill the application if one is detected.")
 }
 
 func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, error) {
@@ -313,66 +284,6 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 		prpcClient.Options.Insecure = true
 	}
 	return logdog.NewServicesPRPCClient(&prpcClient), nil
-}
-
-func (s *Service) initConfig(ctx context.Context) (context.Context, error) {
-	// Add a in-memory caching layer to avoid hitting datastore all the time.
-	ctx = config.WithStore(ctx, &s.configStore)
-
-	// Load our service configuration.
-	var err error
-	s.ServiceConfig, err = config.Config(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to load service config").Err()
-	}
-
-	// Create a poller that kills the process when the service config changes.
-	// See comments for killCheckInterval.
-	if s.killCheckInterval > 0 {
-		pctx, cancel := context.WithCancel(ctx)
-		go func() {
-			for {
-				if clock.Sleep(pctx, time.Duration(s.killCheckInterval)).Incomplete() {
-					return // context canceled
-				}
-
-				fresh, err := config.Config(pctx)
-				if err != nil {
-					logging.Errorf(pctx, "Error when loading service config to check if it has changed: %s", err)
-					continue // just skip this cycle
-				}
-
-				// When a configuration change is detected, stop future polling and call
-				// our shutdown function.
-				if !proto.Equal(s.ServiceConfig, fresh) {
-					logging.Warningf(pctx, "New service config detected")
-					cancel()
-					s.shutdown()
-					return
-				}
-			}
-		}()
-	}
-
-	return ctx, nil
-}
-
-// SetShutdownFunc sets the service shutdown function.
-func (s *Service) SetShutdownFunc(f func()) {
-	s.shutdownFunc.Store(f)
-}
-
-func (s *Service) shutdown() {
-	v := s.shutdownFunc.Load()
-	if f, ok := v.(func()); ok {
-		f()
-	} else {
-		s.shutdownImmediately()
-	}
-}
-
-func (s *Service) shutdownImmediately() {
-	os.Exit(1)
 }
 
 // GSClient returns an authenticated Google Storage client instance.
