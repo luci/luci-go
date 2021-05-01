@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package test;
 
-option go_package = "tmp;test";
+option go_package = "testdata/twoFiles";
 
 service S1 {
     rpc M(Req) returns (Res) {};

@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package test.helloworld;
 
-option go_package = "tmp;test_helloworld";
+option go_package = "testdata/helloworldNoGRPC";
 
 // The greeting service definition.
 service Greeter {
