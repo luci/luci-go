@@ -50,6 +50,24 @@
       "message": "pro tip: if you use backticks around `[host][:port]` it\u0027ll show up in the help string as the argument for the flag.",
       "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e973367c_955c4852",
+        "filename": "logdog/server/service/coordinator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-01T02:15:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "00699dcb_6126b057",
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
