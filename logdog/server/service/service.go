@@ -38,8 +38,6 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/grpc/prpc"
-	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/config"
 	serverAuth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
@@ -59,12 +57,6 @@ var (
 	// ErrInvalidConfig is an error that is returned when the supplied
 	// configuration is invalid.
 	ErrInvalidConfig = errors.New("invalid configuration")
-
-	// CoordinatorScopes is the set of OAuth2 scopes to use for the Coordinator
-	// client.
-	CoordinatorScopes = []string{
-		commonAuth.OAuthScopeEmail,
-	}
 )
 
 const (
@@ -93,16 +85,10 @@ type Service struct {
 	// This is synonymous with the cloud "project ID" and the AppEngine "app ID".
 	ServiceID string
 
-	// Coordinator is the cached Coordinator client.
-	Coordinator logdog.ServicesClient
-
 	loggingFlags log.Config
 	authFlags    authcli.Flags
 	tsMonFlags   tsmon.Flags
 	profiler     profiling.Profiler
-
-	coordinatorHost     string
-	coordinatorInsecure bool
 
 	// configStore caches configs in local memory.
 	configStore config.Store
@@ -212,11 +198,6 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	}
 	defer tsmon.Shutdown(c)
 
-	// Initialize our Client instantiations.
-	if s.Coordinator, err = s.initCoordinatorClient(c); err != nil {
-		return errors.Annotate(err, "failed to setup Coordinator client").Err()
-	}
-
 	// Run main service function.
 	return f(c)
 }
@@ -243,10 +224,6 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	fs.StringVar(&s.ServiceID, "service-id", s.ServiceID,
 		"Specify the service ID that this instance is supporting. This should match the "+
 			"App ID of the Coordinator.")
-	fs.StringVar(&s.coordinatorHost, "coordinator", s.coordinatorHost,
-		"The Coordinator service's [host][:port].")
-	fs.BoolVar(&s.coordinatorInsecure, "coordinator-insecure", s.coordinatorInsecure,
-		"Connect to Coordinator over HTTP (instead of HTTPS).")
 }
 
 func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, error) {
@@ -259,31 +236,6 @@ func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, err
 	return datastore.NewClient(c, s.ServiceID,
 		option.WithUserAgent(s.getUserAgent()),
 		option.WithTokenSource(ts))
-}
-
-func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClient, error) {
-	if s.coordinatorHost == "" {
-		log.Errorf(c, "Missing Coordinator URL (-coordinator).")
-		return nil, ErrInvalidConfig
-	}
-
-	transport, err := serverAuth.GetRPCTransport(c, serverAuth.AsSelf, serverAuth.WithScopes(CoordinatorScopes...))
-	if err != nil {
-		log.Errorf(c, "Failed to create authenticated transport for Coordinator client.")
-		return nil, err
-	}
-
-	prpcClient := prpc.Client{
-		C: &http.Client{
-			Transport: transport,
-		},
-		Host:    s.coordinatorHost,
-		Options: prpc.DefaultOptions(),
-	}
-	if s.coordinatorInsecure {
-		prpcClient.Options.Insecure = true
-	}
-	return logdog.NewServicesPRPCClient(&prpcClient), nil
 }
 
 // GSClient returns an authenticated Google Storage client instance.
