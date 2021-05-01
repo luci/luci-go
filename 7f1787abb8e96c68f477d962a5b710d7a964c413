@@ -49,6 +49,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e1796e6a_790a64c6",
+        "filename": "logdog/server/cmd/logdog_collector/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-01T01:05:15Z",
+      "side": 0,
+      "message": "sgtm",
+      "parentUuid": "d8bcdbb3_80863fbb",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 0
+      },
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c3ec0e5f_0c65087f",
         "filename": "logdog/server/cmd/logdog_collector/main.go",
         "patchSetId": 1
@@ -60,6 +84,30 @@
       "writtenOn": "2021-04-30T23:44:49Z",
       "side": 0,
       "message": "I\u0027m not sure we should ever exit this loop... Imagine some unexpected fatal error happens and we exit here and shutdown the process. Kubernetes will just restart it again. We might just as well retry ourselves, it will be less painful.",
+      "range": {
+        "startLine": 165,
+        "startChar": 1,
+        "endLine": 165,
+        "endChar": 7
+      },
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9de2c1dc_b089ea99",
+        "filename": "logdog/server/cmd/logdog_collector/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-01T01:05:15Z",
+      "side": 0,
+      "message": "can this just be a loop instead of retry.Retry then?",
+      "parentUuid": "c3ec0e5f_0c65087f",
       "range": {
         "startLine": 165,
         "startChar": 1,

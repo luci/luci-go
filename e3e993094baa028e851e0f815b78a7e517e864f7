@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "e3e993094baa028e851e0f815b78a7e517e864f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9500b71f_b7d73213",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-01T01:05:15Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "e3e993094baa028e851e0f815b78a7e517e864f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff625bc3_aeba9894",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-01T01:05:15Z",
+      "side": 1,
+      "message": "(imo \"types\" is in the top-5 most annoying library names. logdog does this too, iirc)",
+      "range": {
+        "startLine": 38,
+        "startChar": 36,
+        "endLine": 38,
+        "endChar": 41
+      },
+      "revId": "e3e993094baa028e851e0f815b78a7e517e864f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
