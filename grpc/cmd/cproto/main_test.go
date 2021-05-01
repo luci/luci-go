@@ -51,7 +51,9 @@ func TestMain(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer os.RemoveAll(tmpGoPath)
 
-			pkgPath := filepath.Join(tmpGoPath, "src", "tmp")
+			// Put temp files under the same package (relative to "cproto" dir e.g.
+			// "testdata/helloworld"), just under the temp GOPATH.
+			pkgPath := filepath.Join(tmpGoPath, "src", sourceDir)
 			err = os.MkdirAll(pkgPath, 0777)
 			So(err, ShouldBeNil)
 
