@@ -26,6 +26,9 @@ import (
 //
 // It is exposed via CLI flags.
 type CommandLineFlags struct {
+	// Coordinator contains configuration of how to contact the coordinator.
+	Coordinator service.CoordinatorFlags
+
 	// Storage contains the intermediate storage (e.g. BigTable) flags.
 	//
 	// All fields are required.
@@ -69,6 +72,7 @@ type CommandLineFlags struct {
 
 // Register registers flags in the flag set.
 func (f *CommandLineFlags) Register(fs *flag.FlagSet) {
+	f.Coordinator.Register(fs)
 	f.Storage.Register(fs)
 	fs.IntVar(&f.MaxConcurrentMessages, "max-concurrent-messages", f.MaxConcurrentMessages,
 		"Maximum number of concurrent transport messages to process.")
@@ -86,6 +90,9 @@ func (f *CommandLineFlags) Register(fs *flag.FlagSet) {
 
 // Validate returns an error if some parsed flags have invalid values.
 func (f *CommandLineFlags) Validate() error {
+	if err := f.Coordinator.Validate(); err != nil {
+		return err
+	}
 	if err := f.Storage.Validate(); err != nil {
 		return err
 	}
