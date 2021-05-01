@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4878a98_7560d39e",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-01T00:19:14Z",
+      "side": 1,
+      "message": "cfg.Resultdb is definitely not nil (L55), but cfg.Resultdb.HistoryOptions may be.",
+      "revId": "48e07f1cdd685e7c95d8f26e7caa9d64bd3ef28e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
