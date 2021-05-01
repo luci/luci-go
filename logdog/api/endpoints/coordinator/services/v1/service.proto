@@ -51,7 +51,7 @@ message RegisterStreamResponse {
   // The Coordinator ID of the log stream.
   string id = 1;
   // The state of the requested log stream.
-  LogStreamState state = 2;
+  InternalLogStreamState state = 2;
 
   // Error is the error response.
   Error error = 3;
@@ -71,7 +71,7 @@ message LoadStreamRequest {
 // The response message for the LoadStream RPC.
 message LoadStreamResponse {
   // The state of the requested log stream.
-  LogStreamState state = 1;
+  InternalLogStreamState state = 1;
 
   // If requested, the serialized log stream descriptor. The protobuf version
   // of this descriptor will match the "proto_version" field in "state".

@@ -317,7 +317,7 @@ func TestHandleArchive(t *testing.T) {
 
 		// Set up our test Coordinator client stubs.
 		stream := logdog.LoadStreamResponse{
-			State: &logdog.LogStreamState{
+			State: &logdog.InternalLogStreamState{
 				ProtoVersion:  logpb.Version,
 				TerminalIndex: -1,
 				Archived:      false,

@@ -51,8 +51,8 @@ var (
 		field.Bool("terminate"))
 )
 
-func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamState) *logdog.LogStreamState {
-	st := logdog.LogStreamState{
+func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamState) *logdog.InternalLogStreamState {
+	st := logdog.InternalLogStreamState{
 		ProtoVersion:  ls.ProtoVersion,
 		Secret:        lst.Secret,
 		TerminalIndex: lst.TerminalIndex,

@@ -85,7 +85,7 @@ func TestRegisterStream(t *testing.T) {
 
 				expResp := &logdog.RegisterStreamResponse{
 					Id: string(tls.Stream.ID),
-					State: &logdog.LogStreamState{
+					State: &logdog.InternalLogStreamState{
 						Secret:        tls.Prefix.Secret,
 						ProtoVersion:  logpb.Version,
 						TerminalIndex: -1,
