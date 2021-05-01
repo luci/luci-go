@@ -28,10 +28,11 @@ import (
 
 // GetBuildOpts are the options for GetBuild.
 type GetBuildOpts struct {
-	BuildbucketHost string
-	BuildID         int64
-	PinBotID        bool
-	KitchenSupport  job.KitchenSupport
+	BuildbucketHost  string
+	BuildID          int64
+	PinBotID         bool
+	PreservePriority bool
+	KitchenSupport   job.KitchenSupport
 }
 
 // GetBuild retrieves a job Definition from a Buildbucket build.
@@ -62,10 +63,11 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 	}
 
 	return GetFromSwarmingTask(ctx, authClient, GetFromSwarmingTaskOpts{
-		SwarmingHost:   swarmingHostname,
-		TaskID:         swarmingTaskID,
-		PinBotID:       opts.PinBotID,
-		Name:           fmt.Sprintf("get-build %d", opts.BuildID),
-		KitchenSupport: opts.KitchenSupport,
+		SwarmingHost:     swarmingHostname,
+		TaskID:           swarmingTaskID,
+		PinBotID:         opts.PinBotID,
+		Name:             fmt.Sprintf("get-build %d", opts.BuildID),
+		PreservePriority: opts.PreservePriority,
+		KitchenSupport:   opts.KitchenSupport,
 	})
 }

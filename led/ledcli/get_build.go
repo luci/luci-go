@@ -48,8 +48,9 @@ which is useful when copying it from ci.chromium.org URL.`,
 type cmdGetBuild struct {
 	cmdBase
 
-	bbHost   string
-	pinBotID bool
+	bbHost           string
+	pinBotID         bool
+	preservePriority bool
 
 	buildID int64
 }
@@ -60,6 +61,9 @@ func (c *cmdGetBuild) initFlags(opts cmdBaseOptions) {
 
 	c.Flags.BoolVar(&c.pinBotID, "pin-bot-id", false,
 		"Pin the bot id in the generated job Definition's dimensions.")
+
+	c.Flags.BoolVar(&c.preservePriority, "preserve-priority", false,
+		"Preserve the original priority. Otherwise, the generated job priority will be bumped by 10.")
 
 	c.cmdBase.initFlags(opts)
 }
@@ -83,10 +87,11 @@ func (c *cmdGetBuild) validateFlags(ctx context.Context, positionals []string, e
 
 func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	return ledcmd.GetBuild(ctx, authClient, ledcmd.GetBuildOpts{
-		BuildbucketHost: c.bbHost,
-		BuildID:         c.buildID,
-		PinBotID:        c.pinBotID,
-		KitchenSupport:  c.kitchenSupport,
+		BuildbucketHost:  c.bbHost,
+		BuildID:          c.buildID,
+		PinBotID:         c.pinBotID,
+		PreservePriority: c.preservePriority,
+		KitchenSupport:   c.kitchenSupport,
 	})
 }
 

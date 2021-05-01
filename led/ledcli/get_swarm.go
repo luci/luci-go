@@ -44,9 +44,10 @@ func getSwarmCmd(opts cmdBaseOptions) *subcommands.Command {
 type cmdGetSwarm struct {
 	cmdBase
 
-	taskID       string
-	swarmingHost string
-	pinBotID     bool
+	taskID           string
+	swarmingHost     string
+	pinBotID         bool
+	preservePriority bool
 }
 
 func (c *cmdGetSwarm) initFlags(opts cmdBaseOptions) {
@@ -55,6 +56,9 @@ func (c *cmdGetSwarm) initFlags(opts cmdBaseOptions) {
 
 	c.Flags.BoolVar(&c.pinBotID, "pin-bot-id", false,
 		"Pin the bot id in the generated job Definition's dimensions.")
+
+	c.Flags.BoolVar(&c.preservePriority, "preserve-priority", false,
+		"Preserve the original priority. Otherwise, the generated job priority will be bumped by 10.")
 
 	c.cmdBase.initFlags(opts)
 }
@@ -69,10 +73,11 @@ func (c *cmdGetSwarm) validateFlags(ctx context.Context, positionals []string, e
 
 func (c *cmdGetSwarm) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	return ledcmd.GetFromSwarmingTask(ctx, authClient, ledcmd.GetFromSwarmingTaskOpts{
-		Name:         fmt.Sprintf("led get-swarm %s", c.taskID),
-		PinBotID:     c.pinBotID,
-		SwarmingHost: c.swarmingHost,
-		TaskID:       c.taskID,
+		Name:             fmt.Sprintf("led get-swarm %s", c.taskID),
+		PinBotID:         c.pinBotID,
+		SwarmingHost:     c.swarmingHost,
+		TaskID:           c.taskID,
+		PreservePriority: c.preservePriority,
 
 		KitchenSupport: c.kitchenSupport,
 	})

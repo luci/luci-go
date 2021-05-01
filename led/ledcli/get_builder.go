@@ -45,9 +45,10 @@ func getBuilderCmd(opts cmdBaseOptions) *subcommands.Command {
 type cmdGetBuilder struct {
 	cmdBase
 
-	tags   stringlistflag.Flag
-	bbHost string
-	canary bool
+	tags             stringlistflag.Flag
+	bbHost           string
+	canary           bool
+	preservePriority bool
 
 	bucket  string
 	builder string
@@ -60,7 +61,8 @@ func (c *cmdGetBuilder) initFlags(opts cmdBaseOptions) {
 		"The buildbucket hostname to grab the definition from.")
 	c.Flags.BoolVar(&c.canary, "canary", false,
 		"Get a 'canary' build, rather than a 'prod' build.")
-
+	c.Flags.BoolVar(&c.preservePriority, "preserve-priority", false,
+		"Preserve the original priority. Otherwise, the generated job priority will be bumped by 10.")
 	c.cmdBase.initFlags(opts)
 }
 
@@ -90,11 +92,12 @@ func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string,
 
 func (c *cmdGetBuilder) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	return ledcmd.GetBuilder(ctx, authClient, ledcmd.GetBuildersOpts{
-		BuildbucketHost: c.bbHost,
-		Bucket:          c.bucket,
-		Builder:         c.builder,
-		Canary:          c.canary,
-		ExtraTags:       c.tags,
+		BuildbucketHost:  c.bbHost,
+		Bucket:           c.bucket,
+		Builder:          c.builder,
+		Canary:           c.canary,
+		ExtraTags:        c.tags,
+		PreservePriority: c.preservePriority,
 
 		KitchenSupport: c.kitchenSupport,
 	})

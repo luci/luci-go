@@ -30,11 +30,12 @@ import (
 
 // GetBuildersOpts are the options for GetBuilder.
 type GetBuildersOpts struct {
-	BuildbucketHost string
-	Bucket          string
-	Builder         string
-	Canary          bool
-	ExtraTags       []string
+	BuildbucketHost  string
+	Bucket           string
+	Builder          string
+	Canary           bool
+	ExtraTags        []string
+	PreservePriority bool
 
 	KitchenSupport job.KitchenSupport
 }
@@ -83,7 +84,7 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, newTask, fmt.Sprintf(`get-builder %s:%s`, opts.Bucket, opts.Builder),
-		answer.SwarmingHost, opts.KitchenSupport)
+		answer.SwarmingHost, opts.KitchenSupport, opts.PreservePriority)
 	if err != nil {
 		return nil, err
 	}
