@@ -8,9 +8,9 @@ package logdog;
 
 option go_package = "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1;logdog";
 
-// LogStreamState is the log stream state value communicated to
+// InternalLogStreamState is the log stream state value communicated to
 // services.
-message LogStreamState {
+message InternalLogStreamState {
   // ProtoVersion is the protobuf version for this stream.
   string proto_version = 1;
 
