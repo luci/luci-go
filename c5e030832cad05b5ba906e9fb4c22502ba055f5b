@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6fe5c022_0d51588a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-05-01T03:14:18Z",
+      "side": 1,
+      "message": "Tested it locally which worked. Can you help to review it? Thanks.",
+      "revId": "c5e030832cad05b5ba906e9fb4c22502ba055f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
