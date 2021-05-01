@@ -144,6 +144,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b05263c4_5453483c",
+        "filename": "logdog/server/cmd/logdog_collector/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-01T01:20:58Z",
+      "side": 0,
+      "message": "Good point",
+      "parentUuid": "443806c4_c7983f87",
+      "range": {
+        "startLine": 165,
+        "startChar": 1,
+        "endLine": 165,
+        "endChar": 7
+      },
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8355e4b1_96dafe0c",
         "filename": "logdog/server/service/service.go",
         "patchSetId": 1
