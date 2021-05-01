@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "6bc0c014b54b6571d2b918de5d590a027145377e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4f1fa7f_c938a867",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-01T01:06:25Z",
+      "side": 1,
+      "message": "lgtm... so it\u0027s not a conflict with a \u0027built in\u0027 name, it\u0027s literally a conflict with its own proto messages.....",
+      "revId": "6bc0c014b54b6571d2b918de5d590a027145377e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
