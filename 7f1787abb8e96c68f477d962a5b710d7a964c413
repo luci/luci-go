@@ -120,6 +120,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "443806c4_c7983f87",
+        "filename": "logdog/server/cmd/logdog_collector/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-01T01:15:46Z",
+      "side": 0,
+      "message": "Backing off on errors is still useful.",
+      "parentUuid": "9de2c1dc_b089ea99",
+      "range": {
+        "startLine": 165,
+        "startChar": 1,
+        "endLine": 165,
+        "endChar": 7
+      },
+      "revId": "7f1787abb8e96c68f477d962a5b710d7a964c413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8355e4b1_96dafe0c",
         "filename": "logdog/server/service/service.go",
         "patchSetId": 1
