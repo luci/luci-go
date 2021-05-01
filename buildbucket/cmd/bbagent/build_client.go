@@ -155,7 +155,7 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 		if b.Meta != nil {
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
 		} else {
-			build := b.Data[0].(*bbpb.Build)
+			build := b.Data[0].Item.(*bbpb.Build)
 			req = &bbpb.UpdateBuildRequest{
 				Build: build,
 				UpdateMask: &field_mask.FieldMask{
@@ -170,7 +170,7 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 				req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.tags")
 			}
 			b.Meta = req
-			b.Data[0] = nil
+			b.Data[0].Item = nil
 		}
 
 		// This RPC is currently served by an AppEngine frontend instance which
