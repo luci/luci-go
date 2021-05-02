@@ -27,6 +27,7 @@ import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
+import { consumer } from '../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../libs/error_handler';
 import commonStyle from '../styles/common_style.css';
 
@@ -35,13 +36,19 @@ import commonStyle from '../styles/common_style.css';
  */
 @customElement('milo-test-results-tab')
 @errorHandler(forwardWithoutMsg)
-@consumeInvocationState
-@consumeConfigsStore
-@consumeAppState
+@consumer
 export class TestResultsTabElement extends MiloBaseElement {
-  @observable.ref appState!: AppState;
-  @observable.ref configsStore!: UserConfigsStore;
-  @observable.ref invocationState!: InvocationState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeConfigsStore
+  configsStore!: UserConfigsStore;
+
+  @observable.ref
+  @consumeInvocationState
+  invocationState!: InvocationState;
 
   private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {

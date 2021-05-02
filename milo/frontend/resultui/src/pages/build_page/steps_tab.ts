@@ -23,16 +23,21 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
+import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-steps-tab')
 @errorHandler(forwardWithoutMsg)
-@consumeConfigsStore
-@consumeAppState
+@consumer
 export class StepsTabElement extends MiloBaseElement {
-  @observable.ref appState!: AppState;
-  @observable.ref configsStore!: UserConfigsStore;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeConfigsStore
+  configsStore!: UserConfigsStore;
 
   connectedCallback() {
     super.connectedCallback();
