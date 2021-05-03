@@ -22,6 +22,30 @@
       },
       "revId": "b30ec55612ba885157e8df5c5eef8a3edfd45968",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f9afbf2_4b554764",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-03T17:42:44Z",
+      "side": 1,
+      "message": "the doc is *now* correct. I didn\u0027t change default here, I only implemented the \"Supports the module-scoped default.\" (see L170)",
+      "parentUuid": "c7462960_2224ef71",
+      "range": {
+        "startLine": 167,
+        "startChar": 67,
+        "endLine": 168,
+        "endChar": 19
+      },
+      "revId": "b30ec55612ba885157e8df5c5eef8a3edfd45968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
