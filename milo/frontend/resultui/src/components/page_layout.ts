@@ -25,6 +25,7 @@ import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
+import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
 import { genFeedbackUrl } from '../libs/utils';
 import { router } from '../routes';
 import commonStyle from '../styles/common_style.css';
@@ -61,6 +62,7 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
 export class PageLayoutElement extends MobxLitElement implements BeforeEnterObserver {
   @provideAppState readonly appState = new AppState();
   @provideConfigsStore readonly configsStore = new UserConfigsStore();
+  @provideNotifier readonly notifier = new ProgressiveNotifier();
 
   constructor() {
     super();
