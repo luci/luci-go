@@ -136,10 +136,11 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Enqueued TQ tasks.
-			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.TryFinalizeInvocation{
-				{InvocationId: "finalizing2"},
-				{InvocationId: "finalizing1"},
-			})
+			So(sched.Tasks().Payloads(), ShouldHaveLength, 2)
+			// Check only prefix, the order doesn't matter.
+			So(sched.Tasks().Payloads()[0].(*taskspb.TryFinalizeInvocation).InvocationId, ShouldStartWith, "finalizing")
+			So(sched.Tasks().Payloads()[1].(*taskspb.TryFinalizeInvocation).InvocationId, ShouldStartWith, "finalizing")
+
 		})
 
 		Convey(`Enqueues more bq_export tasks`, func() {

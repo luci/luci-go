@@ -16,11 +16,16 @@ package integrationtests
 
 import (
 	"context"
+	"time"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
+
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -70,5 +75,19 @@ func (c *testClient) Include(ctx context.Context, including, included string) {
 func (c *testClient) FinalizeInvocation(ctx context.Context, name string) {
 	ctx = c.withUpdateTokenFor(ctx, name)
 	_, err := c.app.Recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: name})
+	So(err, ShouldBeNil)
+}
+
+func (c *testClient) MakeInvocationOverdue(ctx context.Context, name string) {
+	ctx = c.withUpdateTokenFor(ctx, name)
+	_, err := c.app.Recorder.UpdateInvocation(ctx, &pb.UpdateInvocationRequest{
+		Invocation: &pb.Invocation{
+			Name:     name,
+			Deadline: pbutil.MustTimestampProto(clock.Now(ctx).Add(-10 * time.Minute)),
+		},
+		UpdateMask: &field_mask.FieldMask{
+			Paths: []string{"deadline"},
+		},
+	})
 	So(err, ShouldBeNil)
 }

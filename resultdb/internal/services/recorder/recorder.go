@@ -30,6 +30,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// DefaultMinDeadlineOffset specifies that by default recorder requires that
+// all updates to invocations' deadlines be at least 10 seconds into the future.
+const DefaultMinDeadlineOffset = time.Duration(10 * time.Second)
+
 // recorderServer implements pb.RecorderServer.
 //
 // It does not return gRPC-native errors; use DecoratedRecorder with
@@ -51,6 +55,9 @@ type Options struct {
 	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
 	// storage. Example: "projects/luci-resultdb/instances/artifacts".
 	ArtifactRBEInstance string
+
+	// In certain tests we want to set deadlines outside of allowable ranges.
+	SkipDeadlineCheck bool
 }
 
 // InitServer initializes a recorder server.
