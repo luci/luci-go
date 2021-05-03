@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "78e910b5_397e396d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-03T23:47:04Z",
+      "side": 1,
+      "message": "from https://cloud.google.com/appengine/docs/standard/go/how-instances-are-managed#timeout, it looks like timeout for all type of requests are 10 minute regardless of services.",
+      "revId": "389918af87502dfb42547822039af93304311896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
