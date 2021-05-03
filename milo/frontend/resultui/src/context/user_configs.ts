@@ -15,7 +15,7 @@
 import merge from 'lodash-es/merge';
 import { computed, observable } from 'mobx';
 
-import { consumeContext, provideContext } from '../libs/context';
+import { createContextLink } from '../libs/context';
 
 // Backward incompatible changes are not allowed.
 export interface UserConfigs {
@@ -133,5 +133,4 @@ export class UserConfigsStore {
   }
 }
 
-export const consumeConfigsStore = consumeContext<'configsStore', UserConfigsStore>('configsStore');
-export const provideConfigsStore = provideContext<'configsStore', UserConfigsStore>('configsStore');
+export const [provideConfigsStore, consumeConfigsStore] = createContextLink<UserConfigsStore>();

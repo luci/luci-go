@@ -20,13 +20,16 @@ import { observable } from 'mobx';
 
 import '../drag_tracker';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import { consumer } from '../../libs/context';
 import commonStyle from '../../styles/common_style.css';
 import { DragEvent } from '../drag_tracker';
 
 @customElement('milo-tvt-column-header')
-@consumeInvocationState
+@consumer
 export class TestVariantsTableColumnHeader extends MobxLitElement {
-  @observable.ref invocationState!: InvocationState;
+  @observable.ref
+  @consumeInvocationState
+  invocationState!: InvocationState;
 
   // Setting the colIndex also makes the column resizable.
   @observable.ref colIndex?: number;

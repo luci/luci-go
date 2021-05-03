@@ -21,6 +21,7 @@ import './build_step_entry';
 import '../dot_spinner';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
+import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { BuildStatus } from '../../services/buildbucket';
 import commonStyle from '../../styles/common_style.css';
@@ -29,11 +30,15 @@ import { BuildStepEntryElement } from './build_step_entry';
 
 @customElement('milo-build-step-list')
 @errorHandler(forwardWithoutMsg)
-@consumeBuildState
-@consumeConfigsStore
+@consumer
 export class BuildStepListElement extends MiloBaseElement {
-  @observable.ref configsStore!: UserConfigsStore;
-  @observable.ref buildState!: BuildState;
+  @observable.ref
+  @consumeConfigsStore
+  configsStore!: UserConfigsStore;
+
+  @observable.ref
+  @consumeBuildState
+  buildState!: BuildState;
 
   @computed private get stepsConfig() {
     return this.configsStore.userConfigs.steps;
