@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "381fb56c_ad4a9084",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-03T19:36:01Z",
+      "side": 1,
+      "message": "Not a fan. See also https://g3doc.corp.google.com/go/g3doc/style/decisions.md?cl\u003dhead#import-blank",
+      "revId": "435b4081e8b8fd9abdae7f0a99c0cf7d3ecea73f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
