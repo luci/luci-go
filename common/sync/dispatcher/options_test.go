@@ -31,6 +31,7 @@ func TestOptionValidationGood(t *testing.T) {
 		ErrorFn:  func(*buffer.Batch, error) bool { return false },
 		DropFn:   DropFnQuiet,
 		QPSLimit: rate.NewLimiter(rate.Inf, 0),
+		Buffer:   buffer.Defaults,
 	}
 
 	var goodOptions = []struct {
@@ -39,10 +40,13 @@ func TestOptionValidationGood(t *testing.T) {
 		expected Options
 	}{
 		{
-			name:    "minimal",
-			options: Options{},
+			name: "minimal",
+			options: Options{
+				Buffer: buffer.Defaults,
+			},
 			expected: Options{
 				QPSLimit: rate.NewLimiter(rate.Inf, 0),
+				Buffer:   buffer.Defaults,
 			},
 		},
 
@@ -60,12 +64,17 @@ func TestOptionValidationGood(t *testing.T) {
 				myOptions := options.options
 				expect := options.expected
 
+				// ShouldResemble has issues with function pointers; don't care about
+				// testing buffer options in this test.
+				myOptions.Buffer.Retry = nil
+				expect.Buffer.Retry = nil
+
 				So(myOptions.normalize(ctx), ShouldBeNil)
 
 				// Directly compare function pointers; ShouldResemble doesn't compare
 				// them sensibly.
 				if expect.ErrorFn == nil {
-					So(myOptions.ErrorFn, ShouldNotBeNil)
+					So(myOptions.ErrorFn, ShouldNotBeNil) // default is non-nil
 				} else {
 					So(myOptions.ErrorFn, ShouldEqual, expect.ErrorFn)
 					expect.ErrorFn = nil
@@ -73,12 +82,20 @@ func TestOptionValidationGood(t *testing.T) {
 				myOptions.ErrorFn = nil
 
 				if expect.DropFn == nil {
-					So(myOptions.DropFn, ShouldNotBeNil)
+					So(myOptions.DropFn, ShouldNotBeNil) // default is non-nil
 				} else {
 					So(myOptions.DropFn, ShouldEqual, expect.DropFn)
 					expect.DropFn = nil
 				}
 				myOptions.DropFn = nil
+
+				if expect.ItemSizeFunc == nil {
+					So(myOptions.ItemSizeFunc, ShouldBeNil)
+				} else {
+					So(myOptions.ItemSizeFunc, ShouldEqual, expect.ItemSizeFunc)
+					expect.ItemSizeFunc = nil
+				}
+				myOptions.ItemSizeFunc = nil
 
 				So(myOptions, ShouldResemble, expect)
 			})
@@ -87,9 +104,20 @@ func TestOptionValidationGood(t *testing.T) {
 }
 
 func TestOptionValidationBad(t *testing.T) {
-	Convey(`bad QPSLimit check`, t, func() {
+	Convey(`bad option validation`, t, func() {
 		ctx := context.Background()
-		opts := Options{QPSLimit: rate.NewLimiter(100, 0)}
-		So(opts.normalize(ctx), ShouldErrLike, "QPSLimit has burst size < 1")
+
+		Convey(`QPSLimit`, func() {
+			opts := Options{QPSLimit: rate.NewLimiter(100, 0), Buffer: buffer.Defaults}
+			So(opts.normalize(ctx), ShouldErrLike, "QPSLimit has burst size < 1")
+		})
+
+		Convey(`ItemSizeFunc == nil`, func() {
+			Convey(`BatchSizeMax > 0`, func() {
+				opts := Options{Buffer: buffer.Defaults}
+				opts.Buffer.BatchSizeMax = 1000
+				So(opts.normalize(ctx), ShouldErrLike, "Buffer.BatchSizeMax > 0")
+			})
+		})
 	})
 }

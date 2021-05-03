@@ -37,8 +37,25 @@ type Options struct {
 	// available to lease.
 	//
 	// Special value -1: unlimited
-	// Requirement: Must be == -1 (i.e. cut batches based on BatchAgeMax), or > 0
+	// Requirement: Must be == -1 (i.e. cut batches on BatchAgeMax/BatchSizeMax),
+	// or > 0
 	BatchItemsMax int
+
+	// [OPTIONAL] The maximum number of "size units" to allow in a Batch before
+	// making it available to lease.
+	//
+	// The units used here are arbitrary and are only checked vs the value
+	// provided to AddNoBlock.
+	//
+	// Size is explicitly provided to AddNoBlock by the caller.
+	//
+	// Inserting an item which exceeds BatchSizeMax will result in ErrItemTooLarge.
+	// It's up to the caller to ensure that this doesn't happen.
+	//
+	// Special value -1: unlimited
+	// Requirement: Must be == -1 (i.e. cut batches on BatchAgeMax/BatchItemsMax),
+	// or > 0
+	BatchSizeMax int
 
 	// [OPTIONAL] The maximum amount of time to wait before queuing a Batch for
 	// transmission. Note that batches are only cut by time when a worker is ready
@@ -83,6 +100,7 @@ type Options struct {
 var Defaults = Options{
 	MaxLeases:     4,
 	BatchItemsMax: 20,
+	BatchSizeMax:  -1,
 	BatchAgeMax:   10 * time.Second,
 	FullBehavior: &BlockNewItems{
 		MaxItems: 1000,
@@ -111,12 +129,21 @@ func (o *Options) normalize() error {
 	}
 
 	switch {
+	case o.BatchItemsMax == -1:
 	case o.BatchItemsMax == 0:
 		o.BatchItemsMax = Defaults.BatchItemsMax
-	case o.BatchItemsMax == -1:
 	case o.BatchItemsMax > 0:
 	default:
 		return errors.Reason("BatchItemsMax must be > 0 or == -1: got %d", o.BatchItemsMax).Err()
+	}
+
+	switch {
+	case o.BatchSizeMax == -1:
+	case o.BatchSizeMax == 0:
+		o.BatchSizeMax = Defaults.BatchSizeMax
+	case o.BatchSizeMax > 0:
+	default:
+		return errors.Reason("BatchSizeMax must be > 0 or == -1: got %d", o.BatchSizeMax).Err()
 	}
 
 	switch {
@@ -147,4 +174,20 @@ func (o *Options) batchItemsGuess() int {
 		return o.BatchItemsMax
 	}
 	return 10
+}
+
+func (o *Options) checkItemSize(itemSize int) error {
+	if itemSize < 0 {
+		// We don't ever allow negative sizes.
+		return ErrItemTooSmall
+	}
+
+	switch {
+	case o.BatchSizeMax == -1:
+	case itemSize == 0:
+		return ErrItemTooSmall
+	case itemSize > o.BatchSizeMax:
+		return ErrItemTooLarge
+	}
+	return nil
 }

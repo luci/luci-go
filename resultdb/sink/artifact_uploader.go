@@ -150,7 +150,7 @@ func calculateHash(input io.Reader) (string, error) {
 // at most 500 items with capping the sum of the artifact sizes by maxSum.
 //
 // Panics if tasks an item with an artifact larger than maxSum.
-func newBatchCreateArtifactsRequest(maxSum int64, tasks []interface{}) (*pb.BatchCreateArtifactsRequest, error) {
+func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem) (*pb.BatchCreateArtifactsRequest, error) {
 	l := len(tasks)
 	if l > 500 {
 		l = 500
@@ -159,7 +159,7 @@ func newBatchCreateArtifactsRequest(maxSum int64, tasks []interface{}) (*pb.Batc
 	var sum int64
 	reqs := make([]*pb.CreateArtifactRequest, 0, l)
 	for i := 0; i < l; i++ {
-		ut := tasks[i].(*uploadTask)
+		ut := tasks[i].Item.(*uploadTask)
 
 		// artifactChannel.schedule() should have sent it to streamChannel.
 		if ut.size > maxSum {
