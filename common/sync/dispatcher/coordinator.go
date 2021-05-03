@@ -228,21 +228,37 @@ loop:
 				state.buf.Flush(now)
 				continue
 			}
+
+			var itemSize int
+			if state.opts.ItemSizeFunc != nil {
+				itemSize = state.opts.ItemSizeFunc(itm)
+			}
 			state.dbg("  GOT NEW DATA")
 			if state.canceled {
 				state.dbg("    dropped item (canceled)")
 				state.opts.DropFn(&buffer.Batch{
-					Data: []interface{}{itm},
+					Data: []buffer.BatchItem{{Item: itm, Size: itemSize}},
 				}, false)
 				continue
 			}
-			dropped, err := state.buf.AddNoBlock(now, itm)
+
+			dropped, err := state.buf.AddNoBlock(now, itm, itemSize)
 			switch err {
 			case nil:
+			case buffer.ErrItemTooLarge:
+				state.dbg("    dropped item (too large)")
+			case buffer.ErrItemTooSmall:
+				state.dbg("    dropped item (too small)")
 			default:
 				// "impossible", since the only other possible error is ErrBufferFull,
 				// which we should have protected against in getWorkChannel.
 				panic(errors.Annotate(err, "unaccounted error from AddNoBlock").Err())
+			}
+			if err != nil {
+				state.opts.ErrorFn(&buffer.Batch{
+					Data: []buffer.BatchItem{{Item: itm, Size: itemSize}},
+				}, err)
+				continue
 			}
 			if dropped != nil {
 				state.dbg("    dropped batch")
