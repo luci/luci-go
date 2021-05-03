@@ -18,7 +18,7 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { Duration } from 'luxon';
 import { computed, observable } from 'mobx';
-import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, IPromiseBasedObservable, PENDING } from 'mobx-utils';
 
 import '../../../context/artifact_provider';
 import '../../expandable_entry';
@@ -143,7 +143,10 @@ export class ResultEntryElement extends MobxLitElement {
 
     return html`
       <div id="summary-html">
-        <milo-artifact-provider .artifacts=${this.artifactsMapping}>
+        <milo-artifact-provider
+          .artifacts=${this.artifactsMapping}
+          .finalized=${this.invArtifacts$.state !== PENDING && this.resultArtifacts$.state !== PENDING}
+        >
           ${sanitizeHTML(this.testResult.summaryHtml)}
         </milo-artifact-provider>
       </div>
