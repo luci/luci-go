@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c42665b7_ba9625aa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-03T01:29:32Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-0-dot-luci-milo.appspot.com/ui/p/fuchsia/builders/try/fuchsia-x64-release/b8848466551565580720/test-results\n",
+      "revId": "e3582f9f2e1fe153168da5d6c547c90fd968e56d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
