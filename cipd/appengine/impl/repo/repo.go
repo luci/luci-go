@@ -52,6 +52,9 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/common"
+
+	// Using transactional datastore TQ tasks.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 // PrefixesViewers is a group membership in which grants read access to all

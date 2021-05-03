@@ -47,6 +47,9 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model/tasks"
+
+	// Using transactional datastore TQ tasks.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 // textContentTypes is a list of text-like content types (in addition to
