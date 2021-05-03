@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c7462960_2224ef71",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-03T17:14:13Z",
+      "side": 1,
+      "message": "Shall we update the behavior documented here?",
+      "range": {
+        "startLine": 167,
+        "startChar": 67,
+        "endLine": 168,
+        "endChar": 19
+      },
+      "revId": "b30ec55612ba885157e8df5c5eef8a3edfd45968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
