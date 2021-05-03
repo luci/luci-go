@@ -170,7 +170,12 @@ def _recipe(
         bbagent rollout. Supports the module-scoped default.
     """
     name = validate.string("name", name)
-    use_bbagent = validate.bool("use_bbagent", use_bbagent, required = False)
+    use_bbagent = validate.bool(
+        "use_bbagent",
+        use_bbagent,
+        required = False,
+        default = ctx.defaults.use_bbagent.get(),
+    )
     key = keys.executable(name)
 
     cmd = None
