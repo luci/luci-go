@@ -230,13 +230,21 @@ loop:
 			}
 			state.dbg("  GOT NEW DATA")
 			if state.canceled {
-				state.dbg("    dropped batch (canceled)")
+				state.dbg("    dropped item (canceled)")
 				state.opts.DropFn(&buffer.Batch{
 					Data: []interface{}{itm},
 				}, false)
 				continue
 			}
-			if dropped := state.buf.AddNoBlock(now, itm); dropped != nil {
+			dropped, err := state.buf.AddNoBlock(now, itm)
+			switch err {
+			case nil:
+			default:
+				// "impossible", since the only other possible error is ErrBufferFull,
+				// which we should have protected against in getWorkChannel.
+				panic(errors.Annotate(err, "unaccounted error from AddNoBlock").Err())
+			}
+			if dropped != nil {
 				state.dbg("    dropped batch")
 				state.opts.DropFn(dropped, false)
 			}
