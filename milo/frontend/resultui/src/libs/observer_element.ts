@@ -19,11 +19,11 @@
  * Example:
  * ```
  * @customElement('lazy-loading-element')
- * @enterViewObserver
- * class LazyLoadingElement extends LitElement implements OnEnterView {
+ * @observer
+ * class LazyLoadingElement extends LitElement implements ObserverElement {
  *   @property() private prerender = true;
  *
- *   onEnterView() {
+ *   notify() {
  *     this.prerender = false;
  *   }
  *
@@ -36,8 +36,8 @@
  * }
  * ```
  *
- * @enterViewObserver can be used to build components that supports lazy
- * rendering. Alternatively, you can use @lazyRendering directly.
+ * @observer can be used to build components that supports lazy rendering.
+ * Alternatively, you can use @lazyRendering directly.
  * ```
  * @customElement('lazy-loading-element')
  * @lazyRendering
@@ -52,7 +52,7 @@
  * }
  * ```
  *
- * By default, enterViewObserver uses the DEFAULT_NOTIFIER. You can use
+ * By default, enterViewObserver uses the INTERSECTION_NOTIFIER. You can use
  * @provideNotifier to provide a custom notifier.
  * ```
  * @customElement('parent-element')
@@ -60,7 +60,7 @@
  * class ParentElement extends LitElement {
  *   @property()
  *   @provideNotifier
- *   notifier = new EnterViewNotifier();
+ *   notifier = new IntersectionNotifier();
  *
  *   protected render() {
  *     return html`<lazy-loading-element></lazy-loading-element>`;
@@ -73,15 +73,22 @@ import { LitElement, property } from 'lit-element';
 
 import { consumer, createContextLink } from './context';
 
-export interface OnEnterView extends LitElement {
-  onEnterView(): void;
+export interface ObserverElement extends LitElement {
+  notify(): void;
 }
 
+export interface Notifier {
+  subscribe(ele: ObserverElement): void;
+  unsubscribe(ele: ObserverElement): void;
+}
+
+export const [provideNotifier, consumeNotifier] = createContextLink<Notifier>();
+
 /**
- * A special case of IntersectionObserver that notifies the observed elements
- * when they intersect with the root element for the first time.
+ * Notifies the elements when they intersect with the root element for the first
+ * time.
  */
-export class EnterViewNotifier {
+export class IntersectionNotifier implements Notifier {
   constructor(private readonly options?: IntersectionObserverInit) {}
 
   private readonly observer = new IntersectionObserver(
@@ -89,24 +96,21 @@ export class EnterViewNotifier {
       entries
         .filter((entry) => entry.isIntersecting)
         .forEach((entry) => {
-          (entry.target as OnEnterView).onEnterView();
-          this.unobserve(entry.target as OnEnterView);
+          (entry.target as ObserverElement).notify();
+          this.unsubscribe(entry.target as ObserverElement);
         }),
     this.options
   );
 
-  // Use composition instead of inheritance so we can force observe/unobserve to
-  // take OnEnterViewObserver instead of any element.
-  observe = (ele: OnEnterView) => this.observer.observe(ele);
-  unobserve = (ele: OnEnterView) => this.observer.unobserve(ele);
+  subscribe(ele: ObserverElement) {
+    this.observer.observe(ele);
+  }
+  unsubscribe(ele: ObserverElement) {
+    this.observer.unobserve(ele);
+  }
 }
 
-export const [provideNotifier, consumeNotifier] = createContextLink<EnterViewNotifier>();
-
-/**
- * The default enter view notifier that sets the rootMargin to 100px;
- */
-export const DEFAULT_NOTIFIER = new EnterViewNotifier({ rootMargin: '100px' });
+export const INTERSECTION_NOTIFIER: Notifier = new IntersectionNotifier();
 
 const notifierSymbol = Symbol('notifier');
 const privateNotifierSymbol = Symbol('privateNotifier');
@@ -116,7 +120,7 @@ const connectedCBCalledSymbol = Symbol('connectedCBCalled');
  * Ensures the component get notified when it intersects with the root element.
  * See @fileoverview for examples.
  */
-export function enterViewObserver<T extends OnEnterView, C extends Constructor<T>>(cls: C) {
+export function observer<T extends ObserverElement, C extends Constructor<T>>(cls: C) {
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<LitElement> to stop tsc complaining.
   @consumer
@@ -124,20 +128,20 @@ export function enterViewObserver<T extends OnEnterView, C extends Constructor<T
     [connectedCBCalledSymbol] = false;
 
     @consumeNotifier
-    set [notifierSymbol](newVal: EnterViewNotifier) {
+    set [notifierSymbol](newVal: Notifier) {
       if (this[privateNotifierSymbol] === newVal) {
         return;
       }
-      this[privateNotifierSymbol].unobserve((this as LitElement) as OnEnterView);
+      this[privateNotifierSymbol].unsubscribe((this as LitElement) as ObserverElement);
       this[privateNotifierSymbol] = newVal;
 
       // If the notifier is updated before or during this.connectedCallback(),
-      // don't call this[privateNotifierSymbol].observe because it was, or will
-      // be, called in this.connectedCallback().
+      // don't call this[privateNotifierSymbol].subscribe because it was, or
+      // will be, called in this.connectedCallback().
       // We can't use this.isConnected, because this.isConnected is true during
       // this.connectedCallback();
       if (this[connectedCBCalledSymbol]) {
-        this[privateNotifierSymbol].observe((this as LitElement) as OnEnterView);
+        this[privateNotifierSymbol].subscribe((this as LitElement) as ObserverElement);
       }
     }
 
@@ -145,10 +149,10 @@ export function enterViewObserver<T extends OnEnterView, C extends Constructor<T
       return this[privateNotifierSymbol];
     }
 
-    private [privateNotifierSymbol] = DEFAULT_NOTIFIER;
+    private [privateNotifierSymbol] = INTERSECTION_NOTIFIER;
 
     connectedCallback() {
-      this[notifierSymbol].observe((this as LitElement) as OnEnterView);
+      this[notifierSymbol].subscribe((this as LitElement) as ObserverElement);
       super.connectedCallback();
       this[connectedCBCalledSymbol] = true;
     }
@@ -156,7 +160,7 @@ export function enterViewObserver<T extends OnEnterView, C extends Constructor<T
     disconnectedCallback() {
       this[connectedCBCalledSymbol] = false;
       super.disconnectedCallback();
-      this[notifierSymbol].unobserve((this as LitElement) as OnEnterView);
+      this[notifierSymbol].unsubscribe((this as LitElement) as ObserverElement);
     }
   }
   // Recover the type information that lost in the down-casting above.
@@ -178,13 +182,13 @@ const prerenderSymbol = Symbol('prerender');
  * root element. See @fileoverview for examples.
  */
 export function lazyRendering<T extends RenderPlaceHolder, C extends Constructor<T>>(cls: C) {
-  @enterViewObserver
+  @observer
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<LitElement> to stop tsc complaining.
   class LazilyRenderedElement extends (cls as Constructor<RenderPlaceHolder>) {
     @property() [prerenderSymbol] = true;
 
-    onEnterView() {
+    notify() {
       this[prerenderSymbol] = false;
       return true;
     }
