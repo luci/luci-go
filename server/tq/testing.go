@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync/atomic"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
@@ -78,6 +79,9 @@ func (e *directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fu
 
 	// The direct executor doesn't emulate X-CloudTasks-* headers.
 	info.ExecutionCount = t.Attempts - 1
+	if index := strings.LastIndex(t.Name, "/tasks/"); index > 0 {
+		info.TaskID = t.Name[index+len("/tasks/"):]
+	}
 
 	ctx = logging.SetField(ctx, "TQ#", strconv.FormatInt(atomic.AddInt64(&e.cnt, 1), 10))
 	err := e.d.handlePush(ctx, body, info)
