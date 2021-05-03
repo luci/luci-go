@@ -43,7 +43,7 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 	jd, err := FromNewTaskRequest(
 		context.Background(), req,
 		"test_name", "swarming.example.com",
-		job.NoKitchenSupport())
+		job.NoKitchenSupport(), false)
 	So(err, ShouldBeNil)
 	So(jd, ShouldNotBeNil)
 

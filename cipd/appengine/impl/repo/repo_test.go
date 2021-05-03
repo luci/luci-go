@@ -47,8 +47,10 @@ import (
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+
+	// Using transactional datastore TQ tasks.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -209,8 +211,12 @@ func TestMetadataUpdating(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		callUpdate := func(user identity.Identity, m *api.PrefixMetadata) (*api.PrefixMetadata, error) {
-			return impl.UpdatePrefixMetadata(as(user.Email()), m)
+		callUpdate := func(user identity.Identity, m *api.PrefixMetadata) (md *api.PrefixMetadata, err error) {
+			err = datastore.RunInTransaction(as(user.Email()), func(ctx context.Context) (err error) {
+				md, err = impl.UpdatePrefixMetadata(ctx, m)
+				return
+			}, nil)
+			return
 		}
 
 		Convey("Happy path", func() {

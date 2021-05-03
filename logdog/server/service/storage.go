@@ -27,8 +27,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// StorageFlags contains the intermediate storage config.
-type StorageFlags struct {
+// storageFlags contains the intermediate storage config.
+type storageFlags struct {
 	// Project is the name of the Cloud Project containing the BigTable instance.
 	Project string
 	// Instance if the name of the BigTable instance within the project.
@@ -37,8 +37,8 @@ type StorageFlags struct {
 	LogTable string
 }
 
-// Register registers flags in the flag set.
-func (f *StorageFlags) Register(fs *flag.FlagSet) {
+// register registers flags in the flag set.
+func (f *storageFlags) register(fs *flag.FlagSet) {
 	fs.StringVar(&f.Project, "bigtable-project", f.Project,
 		"Cloud Project containing the BigTable instance.")
 	fs.StringVar(&f.Instance, "bigtable-instance", f.Instance,
@@ -47,8 +47,8 @@ func (f *StorageFlags) Register(fs *flag.FlagSet) {
 		"Name of the table with logs.")
 }
 
-// Validate returns an error if some parsed flags have invalid values.
-func (f *StorageFlags) Validate() error {
+// validate returns an error if some parsed flags have invalid values.
+func (f *storageFlags) validate() error {
 	if f.Project == "" {
 		return errors.New("-bigtable-project is required")
 	}
@@ -61,8 +61,8 @@ func (f *StorageFlags) Validate() error {
 	return nil
 }
 
-// IntermediateStorage instantiates the intermediate Storage instance.
-func IntermediateStorage(ctx context.Context, f *StorageFlags) (storage.Storage, error) {
+// intermediateStorage instantiates the intermediate Storage instance.
+func intermediateStorage(ctx context.Context, f *storageFlags) (storage.Storage, error) {
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get the token source").Err()

@@ -221,7 +221,7 @@ func (legacyStorageImpl) VisitMetadata(ctx context.Context, prefix string, cb Vi
 // It assembles prefix metadata from a bunch of packageACL entities, passes it
 // to the callback for modification, then deconstructs it back into a bunch of
 // packageACL entities, to be saved in the datastore. All done transactionally.
-func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb func(m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
+func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
@@ -254,7 +254,7 @@ func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb f
 
 		// Let the callback update the metadata. Retain the old copy for diff later.
 		before := proto.Clone(updated).(*api.PrefixMetadata)
-		if cbErr = cb(updated); cbErr != nil {
+		if cbErr = cb(ctx, updated); cbErr != nil {
 			return cbErr
 		}
 

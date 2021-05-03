@@ -40,7 +40,7 @@ type MetadataStore struct {
 // If populates Prefix and Fingerprint. Returns the added item. Panics if the
 // prefix is bad or the given metadata is empty.
 func (s *MetadataStore) Populate(prefix string, m *api.PrefixMetadata) *api.PrefixMetadata {
-	meta, err := s.UpdateMetadata(context.Background(), prefix, func(e *api.PrefixMetadata) error {
+	meta, err := s.UpdateMetadata(context.Background(), prefix, func(_ context.Context, e *api.PrefixMetadata) error {
 		proto.Reset(e)
 		proto.Merge(e, m)
 		return nil
@@ -123,7 +123,7 @@ func (s *MetadataStore) VisitMetadata(c context.Context, prefix string, cb metad
 
 // UpdateMetadata transactionally updates or creates metadata of some
 // prefix.
-func (s *MetadataStore) UpdateMetadata(c context.Context, prefix string, cb func(m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
+func (s *MetadataStore) UpdateMetadata(c context.Context, prefix string, cb func(c context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ func (s *MetadataStore) UpdateMetadata(c context.Context, prefix string, cb func
 
 	// Don't let the callback modify or retain the internal data.
 	meta := cloneMetadata(before)
-	if err := cb(meta); err != nil {
+	if err := cb(c, meta); err != nil {
 		return nil, err
 	}
 

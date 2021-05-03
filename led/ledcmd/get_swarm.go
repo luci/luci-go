@@ -51,6 +51,9 @@ type GetFromSwarmingTaskOpts struct {
 	// The "name" of the resulting job Definition.
 	Name string
 
+	// If priorityDiff is true, the original task priority will be kept.
+	PriorityDiff int
+
 	KitchenSupport job.KitchenSupport
 }
 
@@ -71,7 +74,7 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetF
 
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, taskRequestToNewTaskRequest(req), opts.Name,
-		opts.SwarmingHost, opts.KitchenSupport)
+		opts.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff)
 	if err != nil {
 		return nil, err
 	}

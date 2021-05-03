@@ -64,7 +64,7 @@ func TestLoadStream(t *testing.T) {
 				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
-					State: &logdog.LogStreamState{
+					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
 						Secret:        tls.State.Secret,
@@ -87,7 +87,7 @@ func TestLoadStream(t *testing.T) {
 				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
-					State: &logdog.LogStreamState{
+					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
 						Secret:        tls.State.Secret,
@@ -108,7 +108,7 @@ func TestLoadStream(t *testing.T) {
 				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
-					State: &logdog.LogStreamState{
+					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
 						Secret:        tls.State.Secret,
