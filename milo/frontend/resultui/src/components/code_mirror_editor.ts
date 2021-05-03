@@ -53,6 +53,7 @@ export class CodeMirrorEditorElement extends LitElement {
         display: block;
         border-radius: 4px;
         border: 1px solid var(--divider-color);
+        overflow: hidden;
       }
       .CodeMirror {
         height: auto;
