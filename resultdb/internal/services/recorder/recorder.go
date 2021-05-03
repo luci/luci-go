@@ -51,6 +51,10 @@ type Options struct {
 	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
 	// storage. Example: "projects/luci-resultdb/instances/artifacts".
 	ArtifactRBEInstance string
+
+	// SkipDeadlineCheck skips validation.
+	// Useful for making invocations overdue in testing.
+	SkipDeadlineCheck bool
 }
 
 // InitServer initializes a recorder server.

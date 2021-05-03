@@ -40,7 +40,7 @@ func TestInvocationFinalization(t *testing.T) {
 		ctx, sched := tq.TestingContext(ctx, nil)
 		go sched.Run(ctx)
 
-		app, err := startTestApp(ctx)
+		app, err := startTestApp(ctx, false)
 		So(err, ShouldBeNil)
 		defer app.Shutdown()
 		c := testClient{app: app}
@@ -59,6 +59,52 @@ func TestInvocationFinalization(t *testing.T) {
 		c.FinalizeInvocation(ctx, "invocations/u-b")
 		So(c.GetState(ctx, "invocations/u-b"), ShouldEqual, pb.Invocation_FINALIZING)
 		c.FinalizeInvocation(ctx, "invocations/u-c")
+
+		// Assert that all three invocations are finalized within 10 seconds.
+		for {
+			time.Sleep(100 * time.Millisecond)
+			if c.GetState(ctx, "invocations/u-a") != pb.Invocation_FINALIZED {
+				continue
+			}
+			if c.GetState(ctx, "invocations/u-b") != pb.Invocation_FINALIZED {
+				continue
+			}
+			if c.GetState(ctx, "invocations/u-c") != pb.Invocation_FINALIZED {
+				continue
+			}
+
+			break
+		}
+	})
+
+	SkipConvey(`ShouldExpire`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		// Cancel the test after 30 sec.
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		// Setup Cloud Tasks fake to pump messages between servers.
+		ctx, sched := tq.TestingContext(ctx, nil)
+		go sched.Run(ctx)
+
+		app, err := startTestApp(ctx, true)
+		So(err, ShouldBeNil)
+		defer app.Shutdown()
+		c := testClient{app: app}
+
+		// Create invocations A, B, C.
+		// A includes B. B includes C.
+		c.CreateInvocation(ctx, "u-a")
+		c.CreateInvocation(ctx, "u-b")
+		c.CreateInvocation(ctx, "u-c")
+		c.Include(ctx, "invocations/u-a", "invocations/u-b")
+		c.Include(ctx, "invocations/u-b", "invocations/u-c")
+
+		// Expire A, B and C.
+		c.MakeInvocationOverdue(ctx, "invocations/u-a")
+		c.MakeInvocationOverdue(ctx, "invocations/u-b")
+		c.MakeInvocationOverdue(ctx, "invocations/u-c")
 
 		// Assert that all three invocations are finalized within 10 seconds.
 		for {

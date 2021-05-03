@@ -59,8 +59,10 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 
 // UpdateInvocation implements pb.RecorderServer.
 func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
-	if err := validateUpdateInvocationRequest(in, clock.Now(ctx).UTC()); err != nil {
-		return nil, appstatus.BadRequest(err)
+	if !s.SkipDeadlineCheck {
+		if err := validateUpdateInvocationRequest(in, clock.Now(ctx).UTC()); err != nil {
+			return nil, appstatus.BadRequest(err)
+		}
 	}
 
 	invID := invocations.MustParseName(in.Invocation.Name)

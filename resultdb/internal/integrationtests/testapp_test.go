@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 
+	"go.chromium.org/luci/resultdb/internal/services/deadlineenforcer"
 	"go.chromium.org/luci/resultdb/internal/services/finalizer"
 	"go.chromium.org/luci/resultdb/internal/services/purger"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
@@ -48,12 +49,13 @@ type testApp struct {
 	servers      []*server.Server
 	shutdownOnce sync.Once
 
-	tempDir    string
-	authDBPath string
+	tempDir           string
+	authDBPath        string
+	skipDeadlineCheck bool
 }
 
-func startTestApp(ctx context.Context) (*testApp, error) {
-	app, err := newTestApp(ctx)
+func startTestApp(ctx context.Context, skipDeadlineCheck bool) (*testApp, error) {
+	app, err := newTestApp(ctx, skipDeadlineCheck)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +65,7 @@ func startTestApp(ctx context.Context) (*testApp, error) {
 	return app, nil
 }
 
-func newTestApp(ctx context.Context) (t *testApp, err error) {
+func newTestApp(ctx context.Context, skipDeadlineCheck bool) (t *testApp, err error) {
 	tempDir, err := ioutil.TempDir("", "resultdb-integration-test")
 	if err != nil {
 		return nil, err
@@ -87,11 +89,15 @@ func newTestApp(ctx context.Context) (t *testApp, err error) {
 			permissions: {
 				name: "resultdb.invocations.get"
 			}
+			permissions: {
+				name: "resultdb.invocations.include"
+			}
 			realms: {
 				name: "testproject:testrealm"
 				bindings: {
 					permissions: 0
 					permissions: 1
+					permissions: 2
 					principals: "anonymous:anonymous"
 				}
 			}
@@ -103,8 +109,9 @@ func newTestApp(ctx context.Context) (t *testApp, err error) {
 	}
 
 	t = &testApp{
-		tempDir:    tempDir,
-		authDBPath: authDBPath,
+		tempDir:           tempDir,
+		authDBPath:        authDBPath,
+		skipDeadlineCheck: skipDeadlineCheck,
 	}
 	if err := t.initServers(ctx); err != nil {
 		return nil, err
@@ -178,6 +185,7 @@ func (t *testApp) initServers(ctx context.Context) error {
 	err = recorder.InitServer(recorderServer, recorder.Options{
 		ArtifactRBEInstance:       "projects/luci-resultdb-dev/instances/artifacts",
 		ExpectedResultsExpiration: time.Hour,
+		SkipDeadlineCheck:         t.skipDeadlineCheck,
 	})
 	if err != nil {
 		return err
@@ -201,9 +209,18 @@ func (t *testApp) initServers(ctx context.Context) error {
 		ForceCronInterval: 100 * time.Millisecond,
 	})
 
+	// Init deadlineenforcer server.
+	deadlineEnforcerServer, _, err := t.serverClientPair(ctx, 8040, 8041)
+	if err != nil {
+		return err
+	}
+	deadlineenforcer.InitServer(deadlineEnforcerServer, deadlineenforcer.Options{
+		ForceCronInterval: 100 * time.Millisecond,
+	})
+
 	t.ResultDB = pb.NewResultDBPRPCClient(resultdbPRPCClient)
 	t.Recorder = pb.NewRecorderPRPCClient(recorderPRPCClient)
-	t.servers = []*server.Server{resultdbServer, recorderServer, finalizerServer, purgerServer}
+	t.servers = []*server.Server{resultdbServer, recorderServer, finalizerServer, purgerServer, deadlineEnforcerServer}
 	return nil
 }
 
@@ -228,7 +245,8 @@ func (t *testApp) Start(ctx context.Context) error {
 	}()
 
 	// Give servers 5s to start.
-	ctx, _ = context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 outer:
 	for {
