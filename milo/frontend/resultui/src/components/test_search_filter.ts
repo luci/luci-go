@@ -19,6 +19,7 @@ import { computed, observable } from 'mobx';
 import './auto_complete';
 import './hotkey';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
+import { consumer } from '../libs/context';
 import { suggestSearchQuery } from '../libs/search_query';
 import { SuggestionEntry } from './auto_complete';
 
@@ -32,9 +33,11 @@ export interface TestFilter {
  * An element that let the user search tests with DSL.
  */
 @customElement('milo-test-search-filter')
-@consumeInvocationState
+@consumer
 export class TestSearchFilterElement extends MobxLitElement {
-  @observable.ref invocationState!: InvocationState;
+  @observable.ref
+  @consumeInvocationState
+  invocationState!: InvocationState;
 
   @computed private get lastSubQuery() {
     return this.invocationState.searchText.split(' ').pop() || '';
