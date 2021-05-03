@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0f34221_8f7d91cd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T23:53:51Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "f975f20676ccf53b81f6a71dd558d2f07bba1f4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f64dc97_d6161cb9",
+        "filename": "led/ledcli/get_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T23:53:51Z",
+      "side": 1,
+      "message": "add:\n\n  Note: priority works like Unix \u0027niceness\u0027; Higher values indicate lower priority.\n\nOr something to that effect (folks get confused by swarming priority frequently)",
+      "range": {
+        "startLine": 66,
+        "startChar": 54,
+        "endLine": 66,
+        "endChar": 57
+      },
+      "revId": "f975f20676ccf53b81f6a71dd558d2f07bba1f4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
