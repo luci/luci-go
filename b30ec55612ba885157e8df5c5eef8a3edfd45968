@@ -46,6 +46,30 @@
       },
       "revId": "b30ec55612ba885157e8df5c5eef8a3edfd45968",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbe7ba26_e71d9046",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-03T18:02:15Z",
+      "side": 1,
+      "message": "oh true! lgtm",
+      "parentUuid": "9f9afbf2_4b554764",
+      "range": {
+        "startLine": 167,
+        "startChar": 67,
+        "endLine": 168,
+        "endChar": 19
+      },
+      "revId": "b30ec55612ba885157e8df5c5eef8a3edfd45968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
