@@ -21,6 +21,7 @@ import { computed, observable } from 'mobx';
 
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import { consumer } from '../../libs/context';
 import { router } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
 
@@ -29,11 +30,15 @@ function stripInvocationPrefix(invocationName: string): string {
 }
 
 @customElement('milo-invocation-details-tab')
-@consumeInvocationState
-@consumeAppState
+@consumer
 export class InvocationDetailsTabElement extends MobxLitElement {
-  @observable.ref appState!: AppState;
-  @observable.ref invocationState!: InvocationState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeInvocationState
+  invocationState!: InvocationState;
 
   @computed
   private get hasIncludedInvocations() {

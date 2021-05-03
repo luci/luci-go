@@ -26,6 +26,7 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
+import { consumer, provider } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { NOT_FOUND_URL, router } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
@@ -38,13 +39,20 @@ import commonStyle from '../../styles/common_style.css';
  * Otherwise, shows results for the invocation.
  */
 @customElement('milo-invocation-page')
-@provideInvocationState
-@consumeConfigsStore
-@consumeAppState
+@provider
+@consumer
 export class InvocationPageElement extends MiloBaseElement implements BeforeEnterObserver {
-  @observable.ref appState!: AppState;
-  @observable.ref configsStore!: UserConfigsStore;
-  @observable.ref invocationState!: InvocationState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeConfigsStore
+  configsStore!: UserConfigsStore;
+
+  @observable.ref
+  @provideInvocationState
+  invocationState!: InvocationState;
 
   private invocationId = '';
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {

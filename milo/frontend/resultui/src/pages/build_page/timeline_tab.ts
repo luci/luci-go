@@ -25,17 +25,22 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
+import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
 import { displayDuration } from '../../libs/time_utils';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-timeline-tab')
 @errorHandler(forwardWithoutMsg)
-@consumeBuildState
-@consumeAppState
+@consumer
 export class TimelineTabElement extends MiloBaseElement {
-  @observable.ref appState!: AppState;
-  @observable.ref buildState!: BuildState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeBuildState
+  buildState!: BuildState;
   @observable.ref rendered = false;
 
   connectedCallback() {

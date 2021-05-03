@@ -15,16 +15,20 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html, property } from 'lit-element';
 
-import { provideContext } from '../libs/context';
+import { createContextLink, provider } from '../libs/context';
 import { Artifact } from '../services/resultdb';
+
+export const [provideArtifacts, consumeArtifacts] = createContextLink<Map<string, Artifact>>();
 
 /**
  * Provides artifacts information.
  */
 @customElement('milo-artifact-provider')
-@provideContext<'artifacts', Map<string, Artifact>>('artifacts')
+@provider
 export class ArtifactProvider extends MobxLitElement {
-  @property() artifacts!: Map<string, Artifact>;
+  @property()
+  @provideArtifacts
+  artifacts!: Map<string, Artifact>;
 
   protected render() {
     return html` <slot></slot> `;

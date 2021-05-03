@@ -20,14 +20,14 @@ import '../../components/commit_entry';
 import '../../components/hotkey';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
+import { consumer } from '../../libs/context';
 import { router } from '../../routes';
 
 @customElement('milo-build-default-tab')
-@consumeConfigsStore
-@consumeBuildState
+@consumer
 export class BuildDefaultTabElement extends LitElement {
-  configsStore!: UserConfigsStore;
-  buildState!: BuildState;
+  @consumeConfigsStore configsStore!: UserConfigsStore;
+  @consumeBuildState buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();

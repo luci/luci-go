@@ -19,7 +19,8 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../dot_spinner';
-import { consumeContext } from '../../../libs/context';
+import { consumeArtifacts } from '../../../context/artifact_provider';
+import { consumer } from '../../../libs/context';
 import { reportRenderError } from '../../../libs/error_handler';
 import { unwrapObservable } from '../../../libs/utils';
 import { Artifact } from '../../../services/resultdb';
@@ -29,11 +30,14 @@ import commonStyle from '../../../styles/common_style.css';
  * Renders a text artifact.
  */
 @customElement('text-artifact')
-@consumeContext<'artifacts', Map<string, Artifact>>('artifacts')
+@consumer
 export class TextArtifactElement extends MobxLitElement {
+  @observable.ref
+  @consumeArtifacts
+  artifacts!: Map<string, Artifact>;
+
   @property({ attribute: 'artifact-id' }) artifactID!: string;
   @property({ attribute: 'inv-level', type: Boolean }) isInvLevelArtifact = false;
-  @observable.ref artifacts!: Map<string, Artifact>;
 
   @computed
   private get fetchUrl(): string {

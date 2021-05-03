@@ -19,15 +19,18 @@ import { computed, observable, reaction } from 'mobx';
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
-import { provideContext } from '../../libs/context';
+import { createContextLink, provider } from '../../libs/context';
 import { NOT_FOUND_URL, router } from '../../routes';
+import { ArtifactIdentifier } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
+
+export const [provideArtifactIdent, consumeArtifactIdent] = createContextLink<ArtifactIdentifier>();
 
 /**
  * Renders the header of an artifact page.
  */
 @customElement('milo-artifact-page-layout')
-@provideContext('artifactIdent')
+@provider
 export class ArtifactPageLayoutElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref private invocationId!: string;
   @observable.ref private testId?: string;
@@ -35,6 +38,7 @@ export class ArtifactPageLayoutElement extends MiloBaseElement implements Before
   @observable.ref private artifactId!: string;
 
   @computed
+  @provideArtifactIdent
   get artifactIdent() {
     return {
       invocationId: this.invocationId,

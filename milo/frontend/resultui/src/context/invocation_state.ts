@@ -15,7 +15,7 @@
 import { autorun, comparer, computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import { consumeContext, provideContext } from '../libs/context';
+import { createContextLink } from '../libs/context';
 import { parseSearchQuery } from '../libs/search_query';
 import { unwrapObservable } from '../libs/utils';
 import { TestLoader } from '../models/test_loader';
@@ -156,5 +156,4 @@ export class InvocationState {
   }
 }
 
-export const consumeInvocationState = consumeContext<'invocationState', InvocationState>('invocationState');
-export const provideInvocationState = provideContext<'invocationState', InvocationState>('invocationState');
+export const [provideInvocationState, consumeInvocationState] = createContextLink<InvocationState>();

@@ -20,12 +20,15 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import { consumer } from '../../libs/context';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-tvt-config-widget')
-@consumeInvocationState
+@consumer
 export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
-  @observable.ref invocationState!: InvocationState;
+  @observable.ref
+  @consumeInvocationState
+  invocationState!: InvocationState;
 
   // These properties are frequently updated.
   // Don't set them as observables so updating them won't have big performance

@@ -42,6 +42,7 @@ import {
   getURLPathForBuild,
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { consumer } from '../../libs/context';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
@@ -50,13 +51,19 @@ import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-overview-tab')
-@consumeBuildState
-@consumeConfigsStore
-@consumeAppState
+@consumer
 export class OverviewTabElement extends MobxLitElement {
-  @observable.ref appState!: AppState;
-  @observable.ref configsStore!: UserConfigsStore;
-  @observable.ref buildState!: BuildState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeConfigsStore
+  configsStore!: UserConfigsStore;
+
+  @observable.ref
+  @consumeBuildState
+  buildState!: BuildState;
 
   @observable.ref private showRetryDialog = false;
   @observable.ref private showCancelDialog = false;

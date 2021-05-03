@@ -26,17 +26,22 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getGitilesRepoURL } from '../../libs/build_utils';
+import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportErrorAsync, reportRenderError } from '../../libs/error_handler';
 import { GitCommit } from '../../services/milo_internal';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-blamelist-tab')
 @errorHandler(forwardWithoutMsg)
-@consumeBuildState
-@consumeAppState
+@consumer
 export class BlamelistTabElement extends MiloBaseElement {
-  @observable.ref appState!: AppState;
-  @observable.ref buildState!: BuildState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeBuildState
+  buildState!: BuildState;
 
   @observable.ref private commits: GitCommit[] = [];
   @observable.ref private endOfPage = false;

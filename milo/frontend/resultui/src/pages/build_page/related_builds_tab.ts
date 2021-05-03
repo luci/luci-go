@@ -23,6 +23,7 @@ import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
@@ -31,11 +32,15 @@ import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-related-builds-tab')
 @errorHandler(forwardWithoutMsg)
-@consumeBuildState
-@consumeAppState
+@consumer
 export class RelatedBuildsTabElement extends MobxLitElement {
-  @observable.ref appState!: AppState;
-  @observable.ref buildState!: BuildState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeBuildState
+  buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();

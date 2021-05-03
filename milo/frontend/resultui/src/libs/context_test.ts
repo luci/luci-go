@@ -16,55 +16,138 @@ import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects'
 import { assert } from 'chai';
 import { customElement, html, LitElement, property } from 'lit-element';
 
-import { consumeContext, provideContext } from './context';
+import { consumer, createContextLink, provider } from './context';
+
+class Parent {
+  prop1 = 1;
+}
+
+class Child extends Parent {
+  prop2 = 2;
+}
+
+class GrandChild extends Child {
+  prop3 = 3;
+}
+
+const [provideOuterProviderInactiveKey, consumeOuterProviderInactiveKey] = createContextLink<string>();
+const [provideOuterProviderKey, consumeOuterProviderKey] = createContextLink<string>();
+const [provideProviderKey, consumeProviderKey] = createContextLink<string>();
+const [, consumeUnprovidedKey] = createContextLink<string>();
+const [provideOuterUnobservedKey] = createContextLink<string>();
+const [provideConsumerOptionalPropKey, consumeConsumerOptionalPropKey] = createContextLink<string>();
+const [provideSubtypeKey, consumeSubtypeKey] = createContextLink<Child>();
+const [provideSelfProvidedKey, consumeSelfProvidedKey] = createContextLink<string>();
 
 @customElement('milo-outer-context-provider-test')
-@provideContext('outerProviderInactiveKey')
-@provideContext('outerProviderKey')
-@provideContext('providerKey')
-@provideContext('outerUnobservedKey')
+@provider
 class OuterContextProvider extends LitElement {
+  @provideOuterProviderInactiveKey
   outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val0';
 
   @property()
+  @provideOuterProviderKey
   outerProviderKey = 'outer_provider-outer_provider-val0';
 
+  // The same context is provided by multiple properties, the last one is used.
   @property()
+  @provideProviderKey
+  ignoredProviderKey = 'ignored_outer_provider-provider-val0';
+
+  @property()
+  @provideProviderKey
   providerKey = 'outer_provider-provider-val0';
 
   @property()
+  @provideOuterUnobservedKey
   outerUnobservedKey = 'outer_provider-outer_unobserved-val0';
 
   @property()
   unprovidedKey = 'outer_provider-unprovided-val0';
+
+  @property()
+  @provideConsumerOptionalPropKey
+  consumerOptionalPropKey = 'outer_provider-consumer_optional_pro-val0';
+
+  // // This should not compile because Parent is not assignable to Child.
+  // @provideSubtypeKey
+  // parent = new Parent();
+
+  @provideSubtypeKey
+  child = new GrandChild();
+
+  // This should compile without warning because GrandChild can be assigned to
+  // parent.
+  @provideSubtypeKey
+  grandChild = new GrandChild();
 }
 
 @customElement('milo-inner-context-provider-test')
-@provideContext('providerKey')
+// @provideProviderKey('providerKey')
+@provider
 class InnerContextProvider extends LitElement {
   @property()
+  @provideProviderKey
   providerKey = 'inner_provider-provider-val0';
 }
 
 @customElement('milo-context-consumer-test')
-@consumeContext('outerProviderInactiveKey')
-@consumeContext('outerProviderKey')
-@consumeContext('providerKey')
+@provider
+@consumer
 class ContextConsumer extends LitElement {
   @property()
+  @consumeOuterProviderInactiveKey
   outerProviderInactiveKey = 'local-outer_provider_inactive';
 
   @property()
+  @consumeOuterProviderKey
   outerProviderKey = 'local-output_provider';
 
-  @property()
+  @consumeProviderKey
   providerKey = 'local-provider';
 
+  // Multiple props can map to the same context.
+  @consumeProviderKey
+  providerKeyWithAnotherName = 'local-provider';
+
   @property()
+  @consumeUnprovidedKey
   unprovidedKey = 'local-unprovided';
 
   @property()
   outerUnobservedKey = 'local-unobserved';
+
+  // This should compile without warnings.
+  @property()
+  @consumeConsumerOptionalPropKey
+  consumerOptionalPropKey?: string;
+
+  // This should compile without warning because Child is assignable to Parent.
+  @consumeSubtypeKey
+  parent = new Parent();
+
+  // // This should not compile because Child is not assignable to GrandChild.
+  // @consumeSubtypeKey
+  // grandChild = new GrandChild();
+
+  @consumeSubtypeKey
+  child = new Child();
+
+  @property()
+  @provideSelfProvidedKey
+  selfProvided = 'local-self_provided';
+
+  @property()
+  @consumeSelfProvidedKey
+  selfProvided2 = '';
+
+  // Help testing that the property is not set too many times, particularly
+  // when the element is first rendered.
+  setterCallCount = 0;
+  @consumeProviderKey
+  set providerKeySetter(_newVal: string) {
+    this.setterCallCount++;
+  }
 }
 
 @customElement('milo-context-consumer-wrapper-test')
@@ -98,14 +181,19 @@ describe('context', () => {
       assert.strictEqual(outerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(outerConsumer.outerProviderKey, 'outer_provider-outer_provider-val0');
       assert.strictEqual(outerConsumer.providerKey, 'outer_provider-provider-val0');
+      assert.strictEqual(outerConsumer.providerKeyWithAnotherName, 'outer_provider-provider-val0');
       assert.strictEqual(outerConsumer.outerUnobservedKey, 'local-unobserved');
       assert.strictEqual(outerConsumer.unprovidedKey, 'local-unprovided');
+      assert.strictEqual(outerConsumer.selfProvided2, 'local-self_provided');
+      assert.strictEqual(outerConsumer.setterCallCount, 1);
 
       assert.strictEqual(innerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(innerConsumer.outerProviderKey, 'outer_provider-outer_provider-val0');
       assert.strictEqual(innerConsumer.providerKey, 'inner_provider-provider-val0');
+      assert.strictEqual(innerConsumer.providerKeyWithAnotherName, 'inner_provider-provider-val0');
       assert.strictEqual(innerConsumer.outerUnobservedKey, 'local-unobserved');
       assert.strictEqual(innerConsumer.unprovidedKey, 'local-unprovided');
+      assert.strictEqual(innerConsumer.setterCallCount, 1);
 
       // Update outer provider.
       outerProvider.outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val1';
@@ -119,15 +207,19 @@ describe('context', () => {
       assert.strictEqual(outerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(outerConsumer.outerProviderKey, 'outer_provider-outer_provider-val1');
       assert.strictEqual(outerConsumer.providerKey, 'outer_provider-provider-val1');
+      assert.strictEqual(outerConsumer.providerKeyWithAnotherName, 'outer_provider-provider-val1');
       assert.strictEqual(outerConsumer.outerUnobservedKey, 'local-unobserved');
       assert.strictEqual(outerConsumer.unprovidedKey, 'local-unprovided');
+      assert.strictEqual(outerConsumer.setterCallCount, 2);
 
       // innerConsumer.providerKey unchanged, other properties updated.
       assert.strictEqual(innerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(innerConsumer.outerProviderKey, 'outer_provider-outer_provider-val1');
       assert.strictEqual(innerConsumer.providerKey, 'inner_provider-provider-val0');
+      assert.strictEqual(innerConsumer.providerKeyWithAnotherName, 'inner_provider-provider-val0');
       assert.strictEqual(innerConsumer.unprovidedKey, 'local-unprovided');
       assert.strictEqual(innerConsumer.outerUnobservedKey, 'local-unobserved');
+      assert.strictEqual(innerConsumer.setterCallCount, 1);
 
       // Update inner provider.
       innerProvider.providerKey = 'inner_provider-provider-val1';
@@ -137,15 +229,19 @@ describe('context', () => {
       assert.strictEqual(outerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(outerConsumer.outerProviderKey, 'outer_provider-outer_provider-val1');
       assert.strictEqual(outerConsumer.providerKey, 'outer_provider-provider-val1');
+      assert.strictEqual(outerConsumer.providerKeyWithAnotherName, 'outer_provider-provider-val1');
       assert.strictEqual(outerConsumer.outerUnobservedKey, 'local-unobserved');
       assert.strictEqual(outerConsumer.unprovidedKey, 'local-unprovided');
+      assert.strictEqual(outerConsumer.setterCallCount, 2);
 
       // innerConsumer.providerKey updated, other properties unchanged.
       assert.strictEqual(innerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(innerConsumer.outerProviderKey, 'outer_provider-outer_provider-val1');
       assert.strictEqual(innerConsumer.providerKey, 'inner_provider-provider-val1');
+      assert.strictEqual(innerConsumer.providerKeyWithAnotherName, 'inner_provider-provider-val1');
       assert.strictEqual(innerConsumer.outerUnobservedKey, 'local-unobserved');
       assert.strictEqual(innerConsumer.unprovidedKey, 'local-unprovided');
+      assert.strictEqual(innerConsumer.setterCallCount, 2);
     });
 
     it('should provide context to context consumers in shadow DOMs', async () => {
@@ -166,6 +262,7 @@ describe('context', () => {
       assert.strictEqual(consumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(consumer.outerProviderKey, 'outer_provider-outer_provider-val0');
       assert.strictEqual(consumer.providerKey, 'inner_provider-provider-val0');
+      assert.strictEqual(consumer.providerKeyWithAnotherName, 'inner_provider-provider-val0');
       assert.strictEqual(consumer.outerUnobservedKey, 'local-unobserved');
       assert.strictEqual(consumer.unprovidedKey, 'local-unprovided');
 
@@ -181,6 +278,7 @@ describe('context', () => {
       assert.strictEqual(consumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(consumer.outerProviderKey, 'outer_provider-outer_provider-val1');
       assert.strictEqual(consumer.providerKey, 'inner_provider-provider-val0');
+      assert.strictEqual(consumer.providerKeyWithAnotherName, 'inner_provider-provider-val0');
       assert.strictEqual(consumer.unprovidedKey, 'local-unprovided');
       assert.strictEqual(consumer.outerUnobservedKey, 'local-unobserved');
 
@@ -192,6 +290,7 @@ describe('context', () => {
       assert.strictEqual(consumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(consumer.outerProviderKey, 'outer_provider-outer_provider-val1');
       assert.strictEqual(consumer.providerKey, 'inner_provider-provider-val1');
+      assert.strictEqual(consumer.providerKeyWithAnotherName, 'inner_provider-provider-val1');
       assert.strictEqual(consumer.outerUnobservedKey, 'local-unobserved');
       assert.strictEqual(consumer.unprovidedKey, 'local-unprovided');
     });

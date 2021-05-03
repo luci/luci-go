@@ -20,21 +20,26 @@ import '../../components/dot_spinner';
 import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { consumeContext } from '../../libs/context';
+import { consumer } from '../../libs/context';
 import { reportError, reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
+import { consumeArtifactIdent } from './artifact_page_layout';
 
 /**
  * Renders a raw artifact.
  */
 @customElement('milo-raw-artifact-page')
-@consumeAppState
-@consumeContext('artifactIdent')
+@consumer
 export class RawArtifactPageElement extends MiloBaseElement {
-  @observable.ref appState!: AppState;
-  @observable.ref artifactIdent!: ArtifactIdentifier;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeArtifactIdent
+  artifactIdent!: ArtifactIdentifier;
 
   @computed
   private get artifact$() {

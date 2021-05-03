@@ -16,7 +16,7 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
-import { consumeContext, provideContext } from '../libs/context';
+import { createContextLink } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { unwrapObservable } from '../libs/utils';
 import { BuildExt } from '../models/build_ext';
@@ -321,5 +321,4 @@ export class BuildState {
   }
 }
 
-export const consumeBuildState = consumeContext<'buildState', BuildState>('buildState');
-export const provideBuildState = provideContext<'buildState', BuildState>('buildState');
+export const [provideBuildState, consumeBuildState] = createContextLink<BuildState>();

@@ -28,6 +28,7 @@ import { consumeInvocationState, InvocationState } from '../../context/invocatio
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
+import { consumer } from '../../libs/context';
 import { reportErrorAsync } from '../../libs/error_handler';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
@@ -44,13 +45,11 @@ function getPropKeyLabel(key: string) {
  * Displays test variants in a table.
  */
 @customElement('milo-test-variants-table')
-@consumeInvocationState
-@consumeConfigsStore
-@consumeAppState
+@consumer
 export class TestVariantsTableElement extends MiloBaseElement {
-  @observable.ref appState!: AppState;
-  @observable.ref configsStore!: UserConfigsStore;
-  @observable.ref invocationState!: InvocationState;
+  @observable.ref @consumeAppState appState!: AppState;
+  @observable.ref @consumeConfigsStore configsStore!: UserConfigsStore;
+  @observable.ref @consumeInvocationState invocationState!: InvocationState;
 
   private sentLoadingTimeToGA = false;
 

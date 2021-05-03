@@ -36,6 +36,7 @@ import {
   getURLPathForProject,
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { consumer, provider } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { genFeedbackUrl } from '../../libs/utils';
@@ -106,15 +107,24 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
  */
 @customElement('milo-build-page')
 @errorHandler(retryWithoutComputedInvId)
-@provideInvocationState
-@provideBuildState
-@consumeConfigsStore
-@consumeAppState
+@provider
+@consumer
 export class BuildPageElement extends MiloBaseElement implements BeforeEnterObserver {
-  @observable.ref appState!: AppState;
-  @observable.ref configsStore!: UserConfigsStore;
-  @observable.ref buildState!: BuildState;
-  @observable.ref invocationState!: InvocationState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
+  @observable.ref
+  @consumeConfigsStore
+  configsStore!: UserConfigsStore;
+
+  @observable.ref
+  @provideBuildState
+  buildState!: BuildState;
+
+  @observable.ref
+  @provideInvocationState
+  invocationState!: InvocationState;
 
   // Set to true when testing.
   // Otherwise this.render() will throw due to missing initialization steps in

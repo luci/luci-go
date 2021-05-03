@@ -14,7 +14,7 @@
 
 import { computed, observable } from 'mobx';
 
-import { consumeContext, provideContext } from '../libs/context';
+import { createContextLink } from '../libs/context';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { AccessService, BuildersService, BuildsService } from '../services/buildbucket';
 import { MiloInternal } from '../services/milo_internal';
@@ -147,5 +147,4 @@ export class AppState {
   }
 }
 
-export const consumeAppState = consumeContext<'appState', AppState>('appState');
-export const provideAppState = provideContext<'appState', AppState>('appState');
+export const [provideAppState, consumeAppState] = createContextLink<AppState>();

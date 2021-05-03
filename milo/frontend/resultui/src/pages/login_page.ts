@@ -29,9 +29,11 @@ import commonStyle from '../styles/common_style.css';
  * in that order.
  */
 @customElement('milo-login-page')
-@consumeAppState
 export class LoginPageElement extends MobxLitElement implements BeforeEnterObserver {
-  @observable.ref appState!: AppState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
+
   private redirectUri = '';
 
   onBeforeEnter(location: RouterLocation) {

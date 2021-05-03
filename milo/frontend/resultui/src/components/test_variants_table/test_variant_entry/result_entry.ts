@@ -27,6 +27,7 @@ import './text_artifact';
 import './text_diff_artifact';
 import { AppState, consumeAppState } from '../../../context/app_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../../libs/constants';
+import { consumer } from '../../../libs/context';
 import { reportRenderError } from '../../../libs/error_handler';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { displayCompactDuration, parseProtoDuration } from '../../../libs/time_utils';
@@ -40,9 +41,11 @@ import commonStyle from '../../../styles/common_style.css';
  * Renders an expandable entry of the given test result.
  */
 @customElement('milo-result-entry')
-@consumeAppState
+@consumer
 export class ResultEntryElement extends MobxLitElement {
-  @observable.ref appState!: AppState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
 
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
