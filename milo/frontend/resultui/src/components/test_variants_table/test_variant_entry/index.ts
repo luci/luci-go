@@ -37,7 +37,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
  * Renders an expandable entry of the given test variant.
  */
 @customElement('milo-test-variant-entry')
-@lazyRendering()
+@lazyRendering
 export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
