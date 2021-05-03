@@ -21,23 +21,27 @@ import { fromPromise } from 'mobx-utils';
 import '../../components/dot_spinner';
 import '../../components/status_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { consumeContext } from '../../libs/context';
+import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { unwrapObservable } from '../../libs/utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
+import { consumeArtifactIdent } from './artifact_page_layout';
 
 /**
  * Renders a text diff artifact.
  */
 @customElement('milo-text-diff-artifact-page')
-@consumeAppState
-@consumeContext('artifactIdent')
+@consumer
 export class TextDiffArtifactPageElement extends MobxLitElement {
-  @observable.ref appState!: AppState;
+  @observable.ref
+  @consumeAppState
+  appState!: AppState;
 
-  @observable.ref artifactIdent!: ArtifactIdentifier;
+  @observable.ref
+  @consumeArtifactIdent
+  artifactIdent!: ArtifactIdentifier;
 
   @computed
   private get artifact$() {
