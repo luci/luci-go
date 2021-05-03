@@ -19,7 +19,7 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../dot_spinner';
-import { consumeArtifacts } from '../../../context/artifact_provider';
+import { consumeArtifacts, consumeArtifactsFinalized } from '../../../context/artifact_provider';
 import { consumer } from '../../../libs/context';
 import { reportRenderError } from '../../../libs/error_handler';
 import { unwrapObservable } from '../../../libs/utils';
@@ -35,6 +35,10 @@ export class TextArtifactElement extends MobxLitElement {
   @observable.ref
   @consumeArtifacts
   artifacts!: Map<string, Artifact>;
+
+  @observable.ref
+  @consumeArtifactsFinalized
+  finalized = false;
 
   @property({ attribute: 'artifact-id' }) artifactID!: string;
   @property({ attribute: 'inv-level', type: Boolean }) isInvLevelArtifact = false;
@@ -59,16 +63,18 @@ export class TextArtifactElement extends MobxLitElement {
   }
 
   protected render = reportRenderError.bind(this)(() => {
+    const label = this.isInvLevelArtifact ? 'Inv-level artifact' : 'Artifact';
     if (this.content === null) {
-      return html` <div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div> `;
+      return this.finalized
+        ? html`<div>${label}: <i>${this.artifactID}</i> not found.</div>`
+        : html`<div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
     }
 
     if (this.content === '') {
-      const label = this.isInvLevelArtifact ? 'Inv-level artifact' : 'Artifact';
-      return html` <div>${label}: <i>${this.artifactID}</i> is empty.</div> `;
+      return html`<div>${label}: <i>${this.artifactID}</i> is empty.</div>`;
     }
 
-    return html` <pre>${this.content}</pre> `;
+    return html`<pre>${this.content}</pre>`;
   });
 
   static styles = [
