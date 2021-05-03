@@ -25,7 +25,7 @@ import { ConnectionEvent, ConnectionObserverElement } from './connection_observe
 const LEFT_RIGHT_ARROW = '\u2194';
 
 @customElement('milo-property-viewer')
-@lazyRendering()
+@lazyRendering
 export class PropertyViewerElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref properties!: { [key: string]: unknown };
   @observable.ref propLineFoldTime!: { [key: string]: number };
