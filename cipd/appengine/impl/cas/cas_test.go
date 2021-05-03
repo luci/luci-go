@@ -44,6 +44,9 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+
+	// Using transactional datastore TQ tasks.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func TestGetReader(t *testing.T) {

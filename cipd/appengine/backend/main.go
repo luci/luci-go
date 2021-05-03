@@ -28,6 +28,9 @@ import (
 
 	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
+
+	// Using transactional datastore TQ tasks.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func main() {

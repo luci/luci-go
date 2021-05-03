@@ -32,6 +32,8 @@ import (
 
 	// Using datastore for user sessions.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
+	// Using transactional datastore TQ tasks.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func main() {
