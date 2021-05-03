@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ff1ba115_409ef319",
+        "filename": "common/sync/dispatcher/buffer/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T21:50:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95412fb7_106d9685",
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "39cf6136_ada20d86",
         "filename": "common/sync/dispatcher/buffer/batch.go",
         "patchSetId": 4
@@ -48,6 +66,24 @@
       "writtenOn": "2021-04-30T21:30:17Z",
       "side": 1,
       "message": "ah, this is s.t. nil current batch can\u0027t accept items. clever.",
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8cf1747a_bd3f1306",
+        "filename": "common/sync/dispatcher/buffer/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T21:50:29Z",
+      "side": 1,
+      "message": "yep",
+      "parentUuid": "39cf6136_ada20d86",
       "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -122,6 +158,30 @@
       "writtenOn": "2021-04-30T21:30:17Z",
       "side": 1,
       "message": "My reading of buffer.Options{} doc is that this should panic.",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 66,
+        "endChar": 63
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15fabc7d_65a05769",
+        "filename": "common/sync/dispatcher/buffer/full_behavior.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T21:50:29Z",
+      "side": 1,
+      "message": "The problem is that channel needs to know if it can add another item. Previously this was just counting number of items in the buffer (i.e. adding another item only increments the number of items by 1).\n\nWith batch sizes, if the buffer holds 999 bytes and has a MaxSize of 1000, we can either:\n  1. Prevent adding any more items unless there\u0027s BatchSizeMax space left\n  2. Allow adding another item, but don\u0027t allow a second item until the total number of bytes in the buffer is reduced below 1000.\n\nPractically speaking we can\u0027t pass the size of the \u0027future\u0027 item in here to check if it would fit; the user hasn\u0027t sent it on the dispatcher channel yet. Once they DO send it, we\u0027re effectively in case 2 anyway, except the dispatcher has to hold it this extra item until the buffer has space for it.\n\nSo, I opted to take path 2 and document the discrepancy (i.e. a buffer can potentially exceed MaxSize by BatchSizeMax-1 bytes). If users want path 1, they can just reduce MaxSize by the appropriate amount.\n\nDoes this make sense? Should I add more to the docs here?",
+      "parentUuid": "781bbc31_6badd564",
       "range": {
         "startLine": 66,
         "startChar": 4,
@@ -249,6 +309,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4ab39e8_ad221f38",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T21:50:29Z",
+      "side": 1,
+      "message": "Done (err, but same deal)",
+      "parentUuid": "25367f7f_8c6dd222",
+      "range": {
+        "startLine": 177,
+        "startChar": 1,
+        "endLine": 183,
+        "endChar": 2
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d166449d_24a4b9ef",
@@ -262,6 +346,30 @@
       "writtenOn": "2021-04-30T21:30:17Z",
       "side": 1,
       "message": "should panic if size is negative.",
+      "range": {
+        "startLine": 234,
+        "startChar": 4,
+        "endLine": 234,
+        "endChar": 44
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b84ad29_42163f51",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T21:50:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d166449d_24a4b9ef",
       "range": {
         "startLine": 234,
         "startChar": 4,
