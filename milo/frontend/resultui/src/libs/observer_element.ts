@@ -60,7 +60,7 @@
  * class ParentElement extends LitElement {
  *   @property()
  *   @provideNotifier
- *   notifier = new IntersectionNotifier();
+ *   notifier = new ProgressiveNotifier();
  *
  *   protected render() {
  *     return html`<lazy-loading-element></lazy-loading-element>`;
@@ -70,6 +70,7 @@
  */
 
 import { LitElement, property } from 'lit-element';
+import merge from 'lodash-es/merge';
 
 import { consumer, createContextLink } from './context';
 
@@ -106,6 +107,78 @@ export class IntersectionNotifier implements Notifier {
     this.observer.observe(ele);
   }
   unsubscribe(ele: ObserverElement) {
+    this.observer.unobserve(ele);
+  }
+}
+
+export interface ProgressiveNotifierOption extends IntersectionObserverInit {
+  /**
+   * How frequent the notifier should notify the remaining elements.
+   */
+  batchInterval: number;
+
+  /**
+   * How many elements should be notified in each batch.
+   */
+  batchSize: number;
+}
+
+/**
+ * Notifies the elements when they intersect with the root element for the first
+ * time. If no elements were notified in the last `batchInterval` ms, picks
+ * `batchSize` un-notified elements and notifies them.
+ */
+export class ProgressiveNotifier implements Notifier {
+  private readonly options: ProgressiveNotifierOption;
+  private readonly observer: IntersectionObserver;
+  private readonly elements = new Set<ObserverElement>();
+  private timeout = 0;
+
+  constructor(options?: Partial<ProgressiveNotifierOption>) {
+    this.options = merge(options || {}, { batchInterval: 100, batchSize: 10 });
+    this.observer = new IntersectionObserver((entries) => {
+      entries
+        .filter((entry) => entry.isIntersecting)
+        .forEach((entry) => {
+          (entry.target as ObserverElement).notify();
+          this.unsubscribe(entry.target as ObserverElement);
+        });
+      this.resetNotificationSchedule();
+    }, this.options);
+  }
+
+  private resetNotificationSchedule() {
+    window.clearTimeout(this.timeout);
+    this.timeout = 0;
+    this.scheduleNotification();
+  }
+
+  private scheduleNotification() {
+    if (this.timeout || this.elements.size === 0 || this.options.batchSize <= 0) {
+      return;
+    }
+    this.timeout = window.setTimeout(() => {
+      let count = this.options.batchSize;
+      for (const ele of this.elements) {
+        if (count === 0) {
+          break;
+        }
+        ele.notify();
+        this.unsubscribe(ele);
+        count--;
+      }
+      this.resetNotificationSchedule();
+    }, this.options.batchInterval);
+  }
+
+  subscribe(ele: ObserverElement) {
+    this.scheduleNotification();
+    this.elements.add(ele);
+    this.observer.observe(ele);
+  }
+
+  unsubscribe(ele: ObserverElement) {
+    this.elements.delete(ele);
     this.observer.unobserve(ele);
   }
 }
