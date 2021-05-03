@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11d70d97_83229727",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-03T22:22:26Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03a2b631_8fafc569",
+        "filename": "resultdb/internal/integrationtests/invocation_finalization_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-03T22:22:26Z",
+      "side": 1,
+      "message": "This will probably be flaky on CI, but it passes on my machine.",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 11
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e08aea7_7b8cc994",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-03T22:22:26Z",
+      "side": 1,
+      "message": "Not related to this CL but go plugin complains about potential context leakage.",
+      "range": {
+        "startLine": 248,
+        "startChar": 6,
+        "endLine": 248,
+        "endChar": 12
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7c44c40_44c02dcb",
+        "filename": "resultdb/internal/services/finalizer/finalizer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-03T22:22:26Z",
+      "side": 1,
+      "message": "I don\u0027t know what changed, but this started failing all of a sudden, so I made it ignore the ordering of the tasks in the queue.",
+      "range": {
+        "startLine": 139,
+        "startChar": 3,
+        "endLine": 142,
+        "endChar": 111
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
