@@ -19,20 +19,20 @@ import * as sinon from 'sinon';
 
 import { provider } from './context';
 import {
-  EnterViewNotifier,
-  enterViewObserver,
+  IntersectionNotifier,
   lazyRendering,
-  OnEnterView,
+  observer,
+  ObserverElement,
   provideNotifier,
   RenderPlaceHolder,
-} from './enter_view_observer';
+} from './observer_element';
 
 @customElement('milo-enter-view-observer-notifier-provider-test')
 @provider
 class EnterViewObserverNotifierProviderElement extends LitElement {
   @property()
   @provideNotifier
-  notifier = new EnterViewNotifier({ root: this });
+  notifier = new IntersectionNotifier({ root: this });
 
   protected render() {
     return html`<slot></slot>`;
@@ -48,11 +48,11 @@ class EnterViewObserverNotifierProviderElement extends LitElement {
 }
 
 @customElement('milo-enter-view-observer-test-entry')
-@enterViewObserver
-class EnterViewObserverTestEntryElement extends LitElement implements OnEnterView {
+@observer
+class EnterViewObserverTestEntryElement extends LitElement implements ObserverElement {
   @property() onEnterCallCount = 0;
 
-  onEnterView() {
+  notify() {
     this.onEnterCallCount++;
   }
 
@@ -114,8 +114,8 @@ describe('enterViewObserver', () => {
   });
 
   it('different instances can have different notifiers', async () => {
-    const notifier1 = new EnterViewNotifier();
-    const notifier2 = new EnterViewNotifier();
+    const notifier1 = new IntersectionNotifier();
+    const notifier2 = new IntersectionNotifier();
     const notifierStub1 = sinon.stub(notifier1);
     const notifierStub2 = sinon.stub(notifier2);
 
@@ -136,20 +136,20 @@ describe('enterViewObserver', () => {
 
     fixtureCleanup();
 
-    assert.strictEqual(notifierStub1.observe.callCount, 1);
-    assert.strictEqual(notifierStub1.observe.getCall(0).args[0], entry1);
-    assert.strictEqual(notifierStub2.observe.callCount, 1);
-    assert.strictEqual(notifierStub2.observe.getCall(0).args[0], entry2);
+    assert.strictEqual(notifierStub1.subscribe.callCount, 1);
+    assert.strictEqual(notifierStub1.subscribe.getCall(0).args[0], entry1);
+    assert.strictEqual(notifierStub2.subscribe.callCount, 1);
+    assert.strictEqual(notifierStub2.subscribe.getCall(0).args[0], entry2);
 
-    assert.strictEqual(notifierStub1.unobserve.callCount, 1);
-    assert.strictEqual(notifierStub1.unobserve.getCall(0).args[0], entry1);
-    assert.strictEqual(notifierStub2.unobserve.callCount, 1);
-    assert.strictEqual(notifierStub2.unobserve.getCall(0).args[0], entry2);
+    assert.strictEqual(notifierStub1.unsubscribe.callCount, 1);
+    assert.strictEqual(notifierStub1.unsubscribe.getCall(0).args[0], entry1);
+    assert.strictEqual(notifierStub2.unsubscribe.callCount, 1);
+    assert.strictEqual(notifierStub2.unsubscribe.getCall(0).args[0], entry2);
   });
 
   it('updating observer should works correctly', async () => {
-    const notifier1 = new EnterViewNotifier();
-    const notifier2 = new EnterViewNotifier();
+    const notifier1 = new IntersectionNotifier();
+    const notifier2 = new IntersectionNotifier();
     const notifierStub1 = sinon.stub(notifier1);
     const notifierStub2 = sinon.stub(notifier2);
 
@@ -160,20 +160,20 @@ describe('enterViewObserver', () => {
     `);
     const entry = provider.querySelector('milo-enter-view-observer-test-entry') as EnterViewObserverTestEntryElement;
 
-    assert.strictEqual(notifierStub1.observe.callCount, 1);
-    assert.strictEqual(notifierStub1.observe.getCall(0).args[0], entry);
+    assert.strictEqual(notifierStub1.subscribe.callCount, 1);
+    assert.strictEqual(notifierStub1.subscribe.getCall(0).args[0], entry);
 
     provider.notifier = notifier2;
     await aTimeout(20);
-    assert.strictEqual(notifierStub2.observe.callCount, 1);
-    assert.strictEqual(notifierStub2.observe.getCall(0).args[0], entry);
-    assert.strictEqual(notifierStub1.unobserve.callCount, 1);
-    assert.strictEqual(notifierStub1.unobserve.getCall(0).args[0], entry);
+    assert.strictEqual(notifierStub2.subscribe.callCount, 1);
+    assert.strictEqual(notifierStub2.subscribe.getCall(0).args[0], entry);
+    assert.strictEqual(notifierStub1.unsubscribe.callCount, 1);
+    assert.strictEqual(notifierStub1.unsubscribe.getCall(0).args[0], entry);
 
     fixtureCleanup();
 
-    assert.strictEqual(notifierStub2.unobserve.callCount, 1);
-    assert.strictEqual(notifierStub2.unobserve.getCall(0).args[0], entry);
+    assert.strictEqual(notifierStub2.unsubscribe.callCount, 1);
+    assert.strictEqual(notifierStub2.unsubscribe.getCall(0).args[0], entry);
   });
 });
 

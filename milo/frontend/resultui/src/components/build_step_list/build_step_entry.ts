@@ -25,7 +25,7 @@ import '../pin_toggle';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../libs/constants';
-import { lazyRendering, RenderPlaceHolder } from '../../libs/enter_view_observer';
+import { lazyRendering, RenderPlaceHolder } from '../../libs/observer_element';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { StepExt } from '../../models/step_ext';
 import { BuildStatus } from '../../services/buildbucket';

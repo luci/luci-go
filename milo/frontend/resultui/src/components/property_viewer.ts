@@ -19,7 +19,7 @@ import { computed, observable } from 'mobx';
 
 import './code_mirror_editor';
 import './connection_observer';
-import { lazyRendering, RenderPlaceHolder } from '../libs/enter_view_observer';
+import { lazyRendering, RenderPlaceHolder } from '../libs/observer_element';
 import { ConnectionEvent, ConnectionObserverElement } from './connection_observer';
 
 const LEFT_RIGHT_ARROW = '\u2194';

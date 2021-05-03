@@ -23,7 +23,7 @@ import '../../expandable_entry';
 import '../../copy_to_clipboard';
 import './result_entry';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
-import { lazyRendering, RenderPlaceHolder } from '../../../libs/enter_view_observer';
+import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { TestVariant } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
