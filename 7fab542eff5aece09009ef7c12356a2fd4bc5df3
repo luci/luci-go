@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "7fab542eff5aece09009ef7c12356a2fd4bc5df3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0bbc632a_34502a7a",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 432,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-03T23:13:01Z",
+      "side": 1,
+      "message": "nit: \\n before",
+      "revId": "7fab542eff5aece09009ef7c12356a2fd4bc5df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
