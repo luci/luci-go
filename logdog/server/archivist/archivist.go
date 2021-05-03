@@ -169,7 +169,7 @@ type Archivist struct {
 	Storage storage.Storage
 
 	// GSClientFactory obtains a Google Storage client for archive generation.
-	GSClientFactory func(ctx context.Context, project string) (gs.Client, error)
+	GSClientFactory func(ctx context.Context, luciProject string) (gs.Client, error)
 
 	// CLClientFactory obtains a Cloud Logging client for log exports.
 	// `luciProject` is the ID of the LUCI project to export logs from, and

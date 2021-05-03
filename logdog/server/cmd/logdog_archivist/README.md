@@ -23,11 +23,6 @@ archival. After archival is complete, the **Archivist** notifies the
 a scalable cluster. Deploying additional **Archivist** instances will linearly
 increase the archival throughput.
 
-**Archivist** instances load the global LogDog configuration, and are
-additionally configured via the `Archivist` configuration message in
-[config.proto](../../../api/config/svcconfig/config.proto). Configuration
-is loaded from the **Coordinator** and the **Configuration Service**.
-
 ## Staging
 
 Archival is initially written to a staging storage location. After the archival

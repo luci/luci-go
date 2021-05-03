@@ -1,0 +1,79 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package service
+
+import (
+	"context"
+	"flag"
+
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/server/config"
+)
+
+// Implementations contains some preconfigured Logdog subsystem clients.
+type Implementations struct {
+	Storage     storage.Storage       // the intermediate storage
+	Coordinator logdog.ServicesClient // the bundling coordinator client
+}
+
+// Main initializes and runs a logdog microservice process.
+func Main(init func(srv *server.Server, impl *Implementations) error) {
+	modules := []module.Module{
+		gaeemulation.NewModuleFromFlags(), // for fetching LUCI project configs
+	}
+
+	coordFlags := coordinatorFlags{}
+	coordFlags.register(flag.CommandLine)
+
+	storageFlags := storageFlags{}
+	storageFlags.register(flag.CommandLine)
+
+	server.Main(nil, modules, func(srv *server.Server) error {
+		if err := coordFlags.validate(); err != nil {
+			return err
+		}
+		if err := storageFlags.validate(); err != nil {
+			return err
+		}
+
+		// Add an in-memory config caching to avoid hitting datastore all the time.
+		srv.Context = config.WithStore(srv.Context, &config.Store{})
+
+		// Initialize our Storage.
+		st, err := intermediateStorage(srv.Context, &storageFlags)
+		if err != nil {
+			return err
+		}
+		srv.RegisterCleanup(func(context.Context) { st.Close() })
+
+		// Initialize a Coordinator client that bundles requests together.
+		coordClient, err := coordinator(srv.Context, &coordFlags)
+		if err != nil {
+			return err
+		}
+		srv.RegisterCleanup(func(context.Context) { coordClient.Flush() })
+
+		// Let the particular microservice initialize itself.
+		return init(srv, &Implementations{
+			Storage:     st,
+			Coordinator: coordClient,
+		})
+	})
+}

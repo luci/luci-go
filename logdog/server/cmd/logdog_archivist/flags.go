@@ -19,21 +19,12 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/server/service"
 )
 
 // CommandLineFlags contains archivist service configuration.
 //
 // It is exposed via CLI flags.
 type CommandLineFlags struct {
-	// Coordinator contains configuration of how to contact the coordinator.
-	Coordinator service.CoordinatorFlags
-
-	// Storage contains the intermediate storage (e.g. BigTable) flags.
-	//
-	// All fields are required.
-	Storage service.StorageFlags
-
 	// StagingBucket is the name of the Google Storage bucket to use for staging
 	// logs.
 	//
@@ -106,8 +97,6 @@ func DefaultCommandLineFlags() CommandLineFlags {
 
 // Register registers flags in the flag set.
 func (f *CommandLineFlags) Register(fs *flag.FlagSet) {
-	f.Coordinator.Register(fs)
-	f.Storage.Register(fs)
 	fs.StringVar(&f.StagingBucket, "staging-bucket", f.StagingBucket,
 		"GCE bucket name to use for staging logs.")
 	fs.IntVar(&f.MaxConcurrentTasks, "max-concurrent-tasks", f.MaxConcurrentTasks,
@@ -126,12 +115,6 @@ func (f *CommandLineFlags) Register(fs *flag.FlagSet) {
 
 // Validate returns an error if some parsed flags have invalid values.
 func (f *CommandLineFlags) Validate() error {
-	if err := f.Coordinator.Validate(); err != nil {
-		return err
-	}
-	if err := f.Storage.Validate(); err != nil {
-		return err
-	}
 	if f.StagingBucket == "" {
 		return errors.New("-staging-bucket is required")
 	}

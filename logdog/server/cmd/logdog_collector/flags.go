@@ -19,21 +19,13 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/server/service"
+	"go.chromium.org/luci/common/gcloud/pubsub"
 )
 
 // CommandLineFlags contains collector service configuration.
 //
 // It is exposed via CLI flags.
 type CommandLineFlags struct {
-	// Coordinator contains configuration of how to contact the coordinator.
-	Coordinator service.CoordinatorFlags
-
-	// Storage contains the intermediate storage (e.g. BigTable) flags.
-	//
-	// All fields are required.
-	Storage service.StorageFlags
-
 	// MaxConcurrentMessages is the maximum number of concurrent transport
 	// messages to process.
 	//
@@ -72,8 +64,6 @@ type CommandLineFlags struct {
 
 // Register registers flags in the flag set.
 func (f *CommandLineFlags) Register(fs *flag.FlagSet) {
-	f.Coordinator.Register(fs)
-	f.Storage.Register(fs)
 	fs.IntVar(&f.MaxConcurrentMessages, "max-concurrent-messages", f.MaxConcurrentMessages,
 		"Maximum number of concurrent transport messages to process.")
 	fs.IntVar(&f.StateCacheSize, "state-cache-size", f.StateCacheSize,
@@ -90,17 +80,15 @@ func (f *CommandLineFlags) Register(fs *flag.FlagSet) {
 
 // Validate returns an error if some parsed flags have invalid values.
 func (f *CommandLineFlags) Validate() error {
-	if err := f.Coordinator.Validate(); err != nil {
-		return err
-	}
-	if err := f.Storage.Validate(); err != nil {
-		return err
-	}
 	if f.PubSubProject == "" {
 		return errors.New("-pubsub-project is required")
 	}
 	if f.PubSubSubscription == "" {
 		return errors.New("-pubsub-subscription is required")
+	}
+	sub := pubsub.NewSubscription(f.PubSubProject, f.PubSubSubscription)
+	if err := sub.Validate(); err != nil {
+		return errors.Annotate(err, "invalid Pub/Sub subscription %q", sub).Err()
 	}
 	return nil
 }
