@@ -31,6 +31,7 @@ type GetBuildOpts struct {
 	BuildbucketHost string
 	BuildID         int64
 	PinBotID        bool
+	PriorityDiff    int
 	KitchenSupport  job.KitchenSupport
 }
 
@@ -66,6 +67,7 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 		TaskID:         swarmingTaskID,
 		PinBotID:       opts.PinBotID,
 		Name:           fmt.Sprintf("get-build %d", opts.BuildID),
+		PriorityDiff:   opts.PriorityDiff,
 		KitchenSupport: opts.KitchenSupport,
 	})
 }
