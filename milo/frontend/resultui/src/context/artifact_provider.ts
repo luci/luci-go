@@ -19,6 +19,7 @@ import { createContextLink, provider } from '../libs/context';
 import { Artifact } from '../services/resultdb';
 
 export const [provideArtifacts, consumeArtifacts] = createContextLink<Map<string, Artifact>>();
+export const [provideArtifactsFinalized, consumeArtifactsFinalized] = createContextLink<boolean>();
 
 /**
  * Provides artifacts information.
@@ -29,6 +30,10 @@ export class ArtifactProvider extends MobxLitElement {
   @property()
   @provideArtifacts
   artifacts!: Map<string, Artifact>;
+
+  @property()
+  @provideArtifactsFinalized
+  finalized = false;
 
   protected render() {
     return html` <slot></slot> `;
