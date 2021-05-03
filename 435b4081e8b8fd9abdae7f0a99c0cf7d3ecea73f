@@ -16,6 +16,24 @@
       "message": "Not a fan. See also https://g3doc.corp.google.com/go/g3doc/style/decisions.md?cl\u003dhead#import-blank",
       "revId": "435b4081e8b8fd9abdae7f0a99c0cf7d3ecea73f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f44deac_1e5f6948",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-03T19:51:32Z",
+      "side": 1,
+      "message": "discussed offline. Switching CIPD style of this import to comply with g3doc then.",
+      "parentUuid": "381fb56c_ad4a9084",
+      "revId": "435b4081e8b8fd9abdae7f0a99c0cf7d3ecea73f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
