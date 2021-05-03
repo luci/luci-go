@@ -403,6 +403,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "42642379_321c85f3",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T22:03:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "803878a2_8d8fcee0",
+      "range": {
+        "startLine": 247,
+        "startChar": 50,
+        "endLine": 247,
+        "endChar": 52
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a54eda21_3d7e778c",
@@ -450,6 +474,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0457e88_828209e5",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T22:03:11Z",
+      "side": 1,
+      "message": "Changed all language to \u0027size unit\u0027 instead of \u0027byte\u0027",
+      "parentUuid": "5600aa49_e7738e4e",
+      "range": {
+        "startLine": 119,
+        "startChar": 15,
+        "endLine": 119,
+        "endChar": 23
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4a255df_9135acb4",
@@ -463,6 +511,30 @@
       "writtenOn": "2021-04-30T21:30:17Z",
       "side": 1,
       "message": "don\u0027t you mean \"positive\"?",
+      "range": {
+        "startLine": 126,
+        "startChar": 18,
+        "endLine": 126,
+        "endChar": 26
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da0f2540_664b10f8",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T22:03:11Z",
+      "side": 1,
+      "message": "heh yeah...",
+      "parentUuid": "c4a255df_9135acb4",
       "range": {
         "startLine": 126,
         "startChar": 18,
