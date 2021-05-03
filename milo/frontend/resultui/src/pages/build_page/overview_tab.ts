@@ -459,7 +459,7 @@ export class OverviewTabElement extends MobxLitElement {
       @media screen and (min-width: 1300px) {
         #main {
           display: grid;
-          grid-template-columns: auto 20px auto;
+          grid-template-columns: 1fr 20px 40vw;
         }
         .second-column > h3:first-child {
           margin-block: 5px 10px;
@@ -467,12 +467,10 @@ export class OverviewTabElement extends MobxLitElement {
       }
       .first-column {
         overflow: hidden;
-        min-width: 50vw;
         grid-column: 1;
       }
       .second-column {
         overflow: hidden;
-        min-width: 30vw;
         grid-column: 3;
       }
 
