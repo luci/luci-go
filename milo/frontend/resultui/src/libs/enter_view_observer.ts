@@ -19,7 +19,7 @@
  * Example:
  * ```
  * @customElement('lazy-loading-element')
- * @enterViewObserver()
+ * @enterViewObserver
  * class LazyLoadingElement extends LitElement implements OnEnterView {
  *   @property() private prerender = true;
  *
@@ -36,11 +36,11 @@
  * }
  * ```
  *
- * @enterViewObserver() can be used to build components that supports lazy
- * rendering. Alternatively, you can use @lazyRendering() directly.
+ * @enterViewObserver can be used to build components that supports lazy
+ * rendering. Alternatively, you can use @lazyRendering directly.
  * ```
  * @customElement('lazy-loading-element')
- * @lazyRendering()
+ * @lazyRendering
  * class LazyLoadingElement extends LitElement implements RenderPlaceHolder {
  *   renderPlaceHolder() {
  *     return html`Placeholder`;
@@ -51,9 +51,27 @@
  *   }
  * }
  * ```
+ *
+ * By default, enterViewObserver uses the DEFAULT_NOTIFIER. You can use
+ * @provideNotifier to provide a custom notifier.
+ * ```
+ * @customElement('parent-element')
+ * @provider
+ * class ParentElement extends LitElement {
+ *   @property()
+ *   @provideNotifier
+ *   notifier = new EnterViewNotifier();
+ *
+ *   protected render() {
+ *     return html`<lazy-loading-element></lazy-loading-element>`;
+ *   }
+ * }
+ * ```
  */
 
 import { LitElement, property } from 'lit-element';
+
+import { consumer, createContextLink } from './context';
 
 export interface OnEnterView extends LitElement {
   onEnterView(): void;
@@ -61,7 +79,7 @@ export interface OnEnterView extends LitElement {
 
 /**
  * A special case of IntersectionObserver that notifies the observed elements
- * when they first starting to intersect with the root element.
+ * when they intersect with the root element for the first time.
  */
 export class EnterViewNotifier {
   constructor(private readonly options?: IntersectionObserverInit) {}
@@ -83,41 +101,66 @@ export class EnterViewNotifier {
   unobserve = (ele: OnEnterView) => this.observer.unobserve(ele);
 }
 
+export const [provideNotifier, consumeNotifier] = createContextLink<EnterViewNotifier>();
+
 /**
  * The default enter view notifier that sets the rootMargin to 100px;
  */
-const DEFAULT_NOTIFIER = new EnterViewNotifier({ rootMargin: '100px' });
+export const DEFAULT_NOTIFIER = new EnterViewNotifier({ rootMargin: '100px' });
+
+const notifierSymbol = Symbol('notifier');
+const privateNotifierSymbol = Symbol('privateNotifier');
+const connectedCBCalledSymbol = Symbol('connectedCBCalled');
 
 /**
- * Builds a observeEnterViewMixin, which is a mixin function that takes
- * a constructor that implements OnEnterView and ensure it get notified when it
- * intersects with the root element. See @fileoverview for examples.
+ * Ensures the component get notified when it intersects with the root element.
+ * See @fileoverview for examples.
  */
-export function enterViewObserver<T extends OnEnterView>(getNotifier = (_ele: T) => DEFAULT_NOTIFIER) {
-  return function observeEnterViewMixin<C extends Constructor<T>>(cls: C) {
-    // Create a new symbol every time we apply the mixin so applying the mixin
-    // multiple times won't override the property.
-    const notifierSymbol = Symbol('notifier');
+export function enterViewObserver<T extends OnEnterView, C extends Constructor<T>>(cls: C) {
+  // TypeScript doesn't allow type parameter in extends or implements
+  // position. Cast to Constructor<LitElement> to stop tsc complaining.
+  @consumer
+  class EnterViewObserverElement extends (cls as Constructor<LitElement>) {
+    [connectedCBCalledSymbol] = false;
 
-    // TypeScript doesn't allow type parameter in extends or implements
-    // position. Cast to Constructor<LitElement> to stop tsc complaining.
-    class EnterViewObserverElement extends (cls as Constructor<LitElement>) {
-      [notifierSymbol]: EnterViewNotifier;
-
-      connectedCallback() {
-        this[notifierSymbol] = getNotifier((this as LitElement) as T);
-        this[notifierSymbol].observe((this as LitElement) as OnEnterView);
-        super.connectedCallback();
+    @consumeNotifier
+    set [notifierSymbol](newVal: EnterViewNotifier) {
+      if (this[privateNotifierSymbol] === newVal) {
+        return;
       }
+      this[privateNotifierSymbol].unobserve((this as LitElement) as OnEnterView);
+      this[privateNotifierSymbol] = newVal;
 
-      disconnectedCallback() {
-        super.disconnectedCallback();
-        this[notifierSymbol].unobserve((this as LitElement) as OnEnterView);
+      // If the notifier is updated before or during this.connectedCallback(),
+      // don't call this[privateNotifierSymbol].observe because it was, or will
+      // be, called in this.connectedCallback().
+      // We can't use this.isConnected, because this.isConnected is true during
+      // this.connectedCallback();
+      if (this[connectedCBCalledSymbol]) {
+        this[privateNotifierSymbol].observe((this as LitElement) as OnEnterView);
       }
     }
-    // Recover the type information that lost in the down-casting above.
-    return (EnterViewObserverElement as Constructor<LitElement>) as C;
-  };
+
+    get [notifierSymbol]() {
+      return this[privateNotifierSymbol];
+    }
+
+    private [privateNotifierSymbol] = DEFAULT_NOTIFIER;
+
+    connectedCallback() {
+      this[notifierSymbol].observe((this as LitElement) as OnEnterView);
+      super.connectedCallback();
+      this[connectedCBCalledSymbol] = true;
+    }
+
+    disconnectedCallback() {
+      this[connectedCBCalledSymbol] = false;
+      super.disconnectedCallback();
+      this[notifierSymbol].unobserve((this as LitElement) as OnEnterView);
+    }
+  }
+  // Recover the type information that lost in the down-casting above.
+  return (EnterViewObserverElement as Constructor<LitElement>) as C;
 }
 
 export interface RenderPlaceHolder extends LitElement {
@@ -128,38 +171,31 @@ export interface RenderPlaceHolder extends LitElement {
   renderPlaceHolder(): unknown;
 }
 
+const prerenderSymbol = Symbol('prerender');
+
 /**
- * Builds a lazyRenderingMixin, which is a mixin function that takes a
- * constructor that implements RenderPlaceHolder and make the component only
- * renders a placeholder until it intersects with the root element. See
- * @fileoverview for examples.
+ * Makes the component only renders a placeholder until it intersects with the
+ * root element. See @fileoverview for examples.
  */
-export function lazyRendering<T extends RenderPlaceHolder>(getNotifier = (_ele: T) => DEFAULT_NOTIFIER) {
-  return function lazyRenderingMixin<C extends Constructor<T>>(cls: C) {
-    // Create a new symbol every time we apply the mixin so applying the mixin
-    // multiple times won't override the property.
-    const prerenderSymbol = Symbol('prerender');
+export function lazyRendering<T extends RenderPlaceHolder, C extends Constructor<T>>(cls: C) {
+  @enterViewObserver
+  // TypeScript doesn't allow type parameter in extends or implements
+  // position. Cast to Constructor<LitElement> to stop tsc complaining.
+  class LazilyRenderedElement extends (cls as Constructor<RenderPlaceHolder>) {
+    @property() [prerenderSymbol] = true;
 
-    // Recover the type information that lost in the down-casting below.
-    @enterViewObserver<LazilyRenderedElement>(getNotifier as (ele: RenderPlaceHolder) => EnterViewNotifier)
-    // TypeScript doesn't allow type parameter in extends or implements
-    // position. Cast to Constructor<LitElement> to stop tsc complaining.
-    class LazilyRenderedElement extends (cls as Constructor<RenderPlaceHolder>) {
-      @property() [prerenderSymbol] = true;
-
-      onEnterView() {
-        this[prerenderSymbol] = false;
-        return true;
-      }
-
-      protected render() {
-        if (this[prerenderSymbol]) {
-          return this.renderPlaceHolder();
-        }
-        return super.render();
-      }
+    onEnterView() {
+      this[prerenderSymbol] = false;
+      return true;
     }
-    // Recover the type information that lost in the down-casting above.
-    return (LazilyRenderedElement as Constructor<LitElement>) as C;
-  };
+
+    protected render() {
+      if (this[prerenderSymbol]) {
+        return this.renderPlaceHolder();
+      }
+      return super.render();
+    }
+  }
+  // Recover the type information that lost in the down-casting above.
+  return (LazilyRenderedElement as Constructor<LitElement>) as C;
 }
