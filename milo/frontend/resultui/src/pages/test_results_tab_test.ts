@@ -21,6 +21,7 @@ import './test_results_tab';
 import { AppState, provideAppState } from '../context/app_state';
 import { InvocationState, provideInvocationState } from '../context/invocation_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
+import { provider } from '../libs/context';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
@@ -65,13 +66,19 @@ const variant5 = {
 };
 
 @customElement('milo-test-context-provider')
-@provideConfigsStore
-@provideInvocationState
-@provideAppState
+@provider
 class ContextProvider extends LitElement {
-  @property() appState!: AppState;
-  @property() configsStore!: UserConfigsStore;
-  @property() invocationState!: InvocationState;
+  @property()
+  @provideAppState
+  appState!: AppState;
+
+  @property()
+  @provideConfigsStore
+  configsStore!: UserConfigsStore;
+
+  @property()
+  @provideInvocationState
+  invocationState!: InvocationState;
 }
 
 describe('Test Results Tab', () => {

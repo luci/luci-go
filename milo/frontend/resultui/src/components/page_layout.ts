@@ -23,6 +23,7 @@ import './signin';
 import './tooltip';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
+import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { genFeedbackUrl } from '../libs/utils';
 import { router } from '../routes';
@@ -56,11 +57,10 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
  */
 @customElement('milo-page-layout')
 @errorHandler(redirectToLogin)
-@provideConfigsStore
-@provideAppState
+@provider
 export class PageLayoutElement extends MobxLitElement implements BeforeEnterObserver {
-  readonly appState = new AppState();
-  readonly configsStore = new UserConfigsStore();
+  @provideAppState readonly appState = new AppState();
+  @provideConfigsStore readonly configsStore = new UserConfigsStore();
 
   constructor() {
     super();
