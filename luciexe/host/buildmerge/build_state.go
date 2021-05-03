@@ -247,7 +247,7 @@ func (t *buildStateTracker) parseAndSend(data *buffer.Batch) error {
 	oldBuild := state.build
 
 	// may set state.closed on an error
-	t.processDataUnlocked(&state, data.Data[0].([]byte))
+	t.processDataUnlocked(&state, data.Data[0].Item.([]byte))
 
 	// if we didn't update state.build, make a shallow copy.
 	if oldBuild == state.build {
