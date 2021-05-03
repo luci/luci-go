@@ -209,8 +209,12 @@ func TestMetadataUpdating(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		callUpdate := func(user identity.Identity, m *api.PrefixMetadata) (*api.PrefixMetadata, error) {
-			return impl.UpdatePrefixMetadata(as(user.Email()), m)
+		callUpdate := func(user identity.Identity, m *api.PrefixMetadata) (md *api.PrefixMetadata, err error) {
+			err = datastore.RunInTransaction(as(user.Email()), func(ctx context.Context) (err error) {
+				md, err = impl.UpdatePrefixMetadata(ctx, m)
+				return
+			}, nil)
+			return
 		}
 
 		Convey("Happy path", func() {

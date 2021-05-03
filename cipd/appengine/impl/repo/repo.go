@@ -226,7 +226,7 @@ func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetad
 	// caller no longer has OWNER role to modify the metadata inside the
 	// transaction. We ignore it. It happens when caller's permissions are revoked
 	// by someone else exactly during UpdatePrefixMetadata call.
-	return impl.meta.UpdateMetadata(c, r.Prefix, func(cur *api.PrefixMetadata) error {
+	return impl.meta.UpdateMetadata(c, r.Prefix, func(c context.Context, cur *api.PrefixMetadata) error {
 		if cur.Fingerprint != r.Fingerprint {
 			switch {
 			case cur.Fingerprint == "":
@@ -248,9 +248,10 @@ func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetad
 						"changes", r.Prefix, r.Fingerprint, cur.Fingerprint)
 			}
 		}
-		prev := *cur
-		*cur = *r
-		return model.EmitMetadataEvents(c, &prev, cur)
+		prev := proto.Clone(cur).(*api.PrefixMetadata)
+		proto.Reset(cur)
+		proto.Merge(cur, r)
+		return model.EmitMetadataEvents(c, prev, cur)
 	})
 }
 

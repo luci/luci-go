@@ -63,7 +63,7 @@ func TestMetadataStore(t *testing.T) {
 		So(metas, ShouldBeNil)
 
 		// Start creating metadata for 'a', but don't actually touch it.
-		meta, err := s.UpdateMetadata(ctx, "a/", func(m *api.PrefixMetadata) error {
+		meta, err := s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
 			return nil
 		})
 		So(err, ShouldBeNil)
@@ -75,7 +75,7 @@ func TestMetadataStore(t *testing.T) {
 		So(metas, ShouldBeNil)
 
 		// Create metadata for 'a' for real this time.
-		meta, err = s.UpdateMetadata(ctx, "a/", func(m *api.PrefixMetadata) error {
+		meta, err = s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
 			So(m.Prefix, ShouldEqual, "a")
 			So(m.Fingerprint, ShouldEqual, "")
 			m.UpdateUser = "user:a@example.com"
@@ -91,7 +91,7 @@ func TestMetadataStore(t *testing.T) {
 		So(meta, ShouldResembleProto, expected_a)
 
 		// Again, sees the updated metadata now.
-		meta, err = s.UpdateMetadata(ctx, "a/", func(m *api.PrefixMetadata) error {
+		meta, err = s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
 			So(m, ShouldResembleProto, expected_a)
 			return nil
 		})
@@ -99,7 +99,7 @@ func TestMetadataStore(t *testing.T) {
 		So(meta, ShouldResembleProto, expected_a)
 
 		// Create metadata for 'a/b/c'.
-		meta, err = s.UpdateMetadata(ctx, "a/b/c", func(m *api.PrefixMetadata) error {
+		meta, err = s.UpdateMetadata(ctx, "a/b/c", func(_ context.Context, m *api.PrefixMetadata) error {
 			m.UpdateUser = "user:abc@example.com"
 			return nil
 		})
@@ -114,7 +114,7 @@ func TestMetadataStore(t *testing.T) {
 
 		// Create metadata for 'a/b/d' (sibling), to make sure it will not appear
 		// in responses below.
-		_, err = s.UpdateMetadata(ctx, "a/b/d", func(m *api.PrefixMetadata) error {
+		_, err = s.UpdateMetadata(ctx, "a/b/d", func(_ context.Context, m *api.PrefixMetadata) error {
 			m.UpdateUser = "user:abd@example.com"
 			return nil
 		})
@@ -150,7 +150,7 @@ func TestMetadataStore(t *testing.T) {
 		s := MetadataStore{}
 
 		// Create the metadata for the root.
-		rootMeta, err := s.UpdateMetadata(ctx, "", func(m *api.PrefixMetadata) error {
+		rootMeta, err := s.UpdateMetadata(ctx, "", func(_ context.Context, m *api.PrefixMetadata) error {
 			m.UpdateUser = "user:root@example.com"
 			return nil
 		})
@@ -172,14 +172,14 @@ func TestMetadataStore(t *testing.T) {
 		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
 
 		// Make sure UpdateMetadata see the root metadata too.
-		_, err = s.UpdateMetadata(ctx, "", func(m *api.PrefixMetadata) error {
+		_, err = s.UpdateMetadata(ctx, "", func(_ context.Context, m *api.PrefixMetadata) error {
 			So(m, ShouldResembleProto, rootMeta)
 			return nil
 		})
 		So(err, ShouldBeNil)
 
 		// Create metadata for some prefix.
-		abMeta, err := s.UpdateMetadata(ctx, "a/b", func(m *api.PrefixMetadata) error {
+		abMeta, err := s.UpdateMetadata(ctx, "a/b", func(_ context.Context, m *api.PrefixMetadata) error {
 			m.UpdateUser = "user:ab@example.com"
 			return nil
 		})
