@@ -105,10 +105,13 @@ func TestEmitMetadataEvents(t *testing.T) {
 		ctx, _, _ := testutil.TestingContext()
 
 		diffACLs := func(before, after []*api.PrefixMetadata_ACL) *api.Event {
-			So(EmitMetadataEvents(ctx,
-				&api.PrefixMetadata{Prefix: "pfx", Acls: before},
-				&api.PrefixMetadata{Prefix: "pfx", Acls: after},
-			), ShouldBeNil)
+			datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				So(EmitMetadataEvents(ctx,
+					&api.PrefixMetadata{Prefix: "pfx", Acls: before},
+					&api.PrefixMetadata{Prefix: "pfx", Acls: after},
+				), ShouldBeNil)
+				return nil
+			}, nil)
 			events := GetEvents(ctx)
 			if len(events) == 0 {
 				return nil

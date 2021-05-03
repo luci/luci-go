@@ -172,7 +172,7 @@ func TestLegacyMetadata(t *testing.T) {
 		})
 
 		Convey("UpdateMetadata noop call with existing metadata", func() {
-			updated, err := impl.UpdateMetadata(ctx, "a", func(md *api.PrefixMetadata) error {
+			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *api.PrefixMetadata) error {
 				So(md, ShouldResembleProto, expected["a"])
 				return nil
 			})
@@ -181,7 +181,7 @@ func TestLegacyMetadata(t *testing.T) {
 		})
 
 		Convey("UpdateMetadata refuses to update root metadata", func() {
-			_, err := impl.UpdateMetadata(ctx, "", func(md *api.PrefixMetadata) error {
+			_, err := impl.UpdateMetadata(ctx, "", func(_ context.Context, md *api.PrefixMetadata) error {
 				panic("must not be called")
 			})
 			So(err, ShouldErrLike, "the root metadata is not modifiable")
@@ -199,7 +199,7 @@ func TestLegacyMetadata(t *testing.T) {
 				"group:another-group",
 			}
 
-			updated, err := impl.UpdateMetadata(ctx, "a", func(md *api.PrefixMetadata) error {
+			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *api.PrefixMetadata) error {
 				So(md, ShouldResembleProto, expected["a"])
 				*md = *newMD
 				return nil
@@ -256,7 +256,7 @@ func TestLegacyMetadata(t *testing.T) {
 		})
 
 		Convey("UpdateMetadata noop call with missing metadata", func() {
-			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
+			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
 				So(md, ShouldResembleProto, &api.PrefixMetadata{Prefix: "z"})
 				return nil
 			})
@@ -270,7 +270,7 @@ func TestLegacyMetadata(t *testing.T) {
 		})
 
 		Convey("UpdateMetadata creates new metadata", func() {
-			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
+			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
 				So(md, ShouldResembleProto, &api.PrefixMetadata{Prefix: "z"})
 				md.UpdateTime = timestamppb.New(ts)
 				md.UpdateUser = "user:updater@example.com"
@@ -321,7 +321,7 @@ func TestLegacyMetadata(t *testing.T) {
 
 		Convey("UpdateMetadata call with failing callback", func() {
 			cbErr := errors.New("blah")
-			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
+			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
 				md.UpdateUser = "user:must-be-ignored@example.com"
 				return cbErr
 			})

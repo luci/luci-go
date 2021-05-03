@@ -100,7 +100,7 @@ type Storage interface {
 	//
 	// If the callback returns an error, it will be returned as is. If the
 	// transaction itself fails, returns a transient error.
-	UpdateMetadata(c context.Context, prefix string, cb func(m *api.PrefixMetadata) error) (*api.PrefixMetadata, error)
+	UpdateMetadata(c context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error)
 }
 
 // GetStorage returns production implementation of the metadata storage.
