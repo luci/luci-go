@@ -16,6 +16,46 @@
       "message": "Tested it locally which worked. Can you help to review it? Thanks.",
       "revId": "c5e030832cad05b5ba906e9fb4c22502ba055f5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "edcbf65f_e7a2bfb1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T17:10:08Z",
+      "side": 1,
+      "message": "lgtm w/ suggestion",
+      "revId": "c5e030832cad05b5ba906e9fb4c22502ba055f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7b6e5295_465844ba",
+        "filename": "led/job/jobcreate/create.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-03T17:10:08Z",
+      "side": 1,
+      "message": "wdyt about having a `priorityDiff int` instead, so then the 10 (or zero) can come from higher up the stack? Then the cli flag can be `-adjust-priority` with a default value of 10, but would allow 0 or even negative values (if they want a HIGHER priority task)",
+      "range": {
+        "startLine": 53,
+        "startChar": 135,
+        "endLine": 53,
+        "endChar": 151
+      },
+      "revId": "c5e030832cad05b5ba906e9fb4c22502ba055f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
