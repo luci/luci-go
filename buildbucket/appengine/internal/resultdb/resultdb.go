@@ -79,7 +79,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 						ProducerResource: fmt.Sprintf("//%s/builds/%d", bbHost, b.Proto.Id),
 						Realm:            realm,
 						HistoryOptions: &rdbPb.HistoryOptions{
-							UseInvocationTimestamp: cfg.Resultdb.HistoryOptions.UseInvocationTimestamp,
+							UseInvocationTimestamp: cfg.Resultdb.HistoryOptions.GetUseInvocationTimestamp(),
 						},
 					},
 					RequestId: invID,
