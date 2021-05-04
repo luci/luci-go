@@ -18,6 +18,7 @@ import { css, customElement, html } from 'lit-element';
 import { observable, when } from 'mobx';
 
 import { AppState, consumeAppState } from '../context/app_state';
+import { consumer } from '../libs/context';
 import commonStyle from '../styles/common_style.css';
 
 /**
@@ -29,6 +30,7 @@ import commonStyle from '../styles/common_style.css';
  * in that order.
  */
 @customElement('milo-login-page')
+@consumer
 export class LoginPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref
   @consumeAppState
