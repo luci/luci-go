@@ -194,6 +194,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e0dbb97a_30259b7b",
+        "filename": "common/sync/dispatcher/buffer/full_behavior.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T20:55:50Z",
+      "side": 1,
+      "message": "First, all you wrote makes sense, and it made sense the first time I read this.\n\nHowever, I originally misread the above as \"item\" not \"items\",\nand I expected 1 item of size 999 to panic (now fail) because it\u0027s bigger than a batch.\n\nSorry for noise",
+      "parentUuid": "15fabc7d_65a05769",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 66,
+        "endChar": 63
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "53912d6f_dc516437",
         "filename": "common/sync/dispatcher/buffer/options.go",
         "patchSetId": 4
