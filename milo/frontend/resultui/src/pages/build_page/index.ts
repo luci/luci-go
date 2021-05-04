@@ -502,11 +502,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         <div id="build-id">
           <span id="build-id-label">Build </span>
           <a href=${getURLPathForProject(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
-          <span>/</span>
+          <span>&nbsp;/&nbsp;</span>
           <span>${this.builderIdParam!.bucket}</span>
-          <span>/</span>
+          <span>&nbsp;/&nbsp;</span>
           <a href=${getURLPathForBuilder(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
-          <span>/</span>
+          <span>&nbsp;/&nbsp;</span>
           <span>${this.buildNumOrId}</span>
         </div>
         ${this.buildState.customBugLink === null
