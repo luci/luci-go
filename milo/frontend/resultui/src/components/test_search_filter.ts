@@ -71,7 +71,12 @@ export class TestSearchFilterElement extends MobxLitElement {
             this.invocationState.searchText = this.queryPrefix + suggestion.value! + ' ';
           }}
         >
-          <mwc-icon slot="pre-icon">search</mwc-icon>
+          <mwc-icon
+            style=${styleMap({ color: this.invocationState.searchText === '' ? '' : 'var(--active-color)' })}
+            slot="pre-icon"
+          >
+            search
+          </mwc-icon>
           <mwc-icon
             id="clear-search"
             slot="post-icon"
@@ -92,6 +97,7 @@ export class TestSearchFilterElement extends MobxLitElement {
     }
 
     #clear-search {
+      color: var(--delete-color);
       cursor: pointer;
     }
   `;

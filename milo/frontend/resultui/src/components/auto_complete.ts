@@ -225,7 +225,6 @@ export class AutoCompleteElement extends MiloBaseElement {
       box-sizing: border-box;
       padding: 0.3rem 0.5rem;
       font-size: 1rem;
-      color: var(--light-text-color);
       border: none;
       text-overflow: ellipsis;
       background: transparent;

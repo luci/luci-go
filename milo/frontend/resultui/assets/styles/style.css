@@ -50,5 +50,6 @@ html {
   --divider-color: #dddddd;
   --active-color: #007bff;
   --light-active-color: #d9edfc;
+  --delete-color: var(--failure-color);
   --mdc-theme-primary: var(--active-color);
 }
