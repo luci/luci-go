@@ -98,7 +98,6 @@ router.setRoutes({
       children: [
         {
           path: '/',
-          redirect: '/p/:project/builders/:bucket/:builder/:build_num_or_id/overview',
           action: async (_ctx, cmd) => {
             await import(
               /* webpackChunkName: "build_default_tab" */
@@ -132,13 +131,25 @@ router.setRoutes({
         {
           path: '/steps',
           name: 'build-steps',
-          action: async (_ctx, cmd) => {
-            await import(
-              /* webpackChunkName: "steps_tab" */
-              './pages/build_page/steps_tab'
-            );
-            return cmd.component('milo-steps-tab');
-          },
+          children: [
+            {
+              path: '/',
+              action: async (_ctx, cmd) => {
+                await import(
+                  /* webpackChunkName: "steps_tab" */
+                  './pages/build_page/steps_tab'
+                );
+                return cmd.component('milo-steps-tab');
+              },
+            },
+            {
+              // Some old systems generate links to a step by appending suffix
+              // to /steps/ (crbug/1204954).
+              // This allows those links to continue to work.
+              path: '/:path+',
+              redirect: '/p/:project/builders/:bucket/:builder/:build_num_or_id/steps',
+            },
+          ],
         },
         {
           path: '/related-builds',
