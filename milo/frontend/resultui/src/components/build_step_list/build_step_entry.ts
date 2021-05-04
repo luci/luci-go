@@ -15,6 +15,7 @@
 import '@material/mwc-icon';
 import { css, customElement } from 'lit-element';
 import { html, render } from 'lit-html';
+import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
@@ -87,7 +88,13 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
       return html``;
     }
     return html`
-      <div id="summary" style=${styleMap({ display: this.step.summary ? '' : 'none' })}>${this.step.summary}</div>
+      <div
+        id="summary"
+        class="${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg"
+        style=${styleMap({ display: this.step.summary ? '' : 'none' })}
+      >
+        ${this.step.summary}
+      </div>
       <ul id="log-links" style=${styleMap({ display: this.step.logs?.length ? '' : 'none' })}>
         ${this.logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
@@ -224,27 +231,35 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
             ${BUILD_STATUS_ICON_MAP[this.step.status]}
           </mwc-icon>
           ${this.renderDuration()}
-          <b>${this.number}. ${this.step.selfName}</b>
-          <milo-pin-toggle
-            .pinned=${this.isPinned}
-            title="Pin/unpin the step. The configuration is shared across all builds."
-            class="hidden-icon"
-            style=${styleMap({ visibility: this.isPinned ? 'visible' : '' })}
-            @click=${(e: Event) => {
-              this.configsStore.setStepPin(this.step.name, !this.isPinned);
-              e.stopPropagation();
-            }}
+          <div
+            id="header-text"
+            class=${classMap({
+              [`${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg`]:
+                this.step.status !== BuildStatus.Success && !(this.expanded && this.step.summary),
+            })}
           >
-          </milo-pin-toggle>
-          <milo-copy-to-clipboard
-            .textToCopy=${this.step.name}
-            title="Copy the step name."
-            class="hidden-icon"
-            @click=${(e: Event) => e.stopPropagation()}
-          ></milo-copy-to-clipboard>
-          <span id="header-markdown">${this.step.header}</span>
+            <b>${this.number}. ${this.step.selfName}</b>
+            <milo-pin-toggle
+              .pinned=${this.isPinned}
+              title="Pin/unpin the step. The configuration is shared across all builds."
+              class="hidden-icon"
+              style=${styleMap({ visibility: this.isPinned ? 'visible' : '' })}
+              @click=${(e: Event) => {
+                this.configsStore.setStepPin(this.step.name, !this.isPinned);
+                e.stopPropagation();
+              }}
+            >
+            </milo-pin-toggle>
+            <milo-copy-to-clipboard
+              .textToCopy=${this.step.name}
+              title="Copy the step name."
+              class="hidden-icon"
+              @click=${(e: Event) => e.stopPropagation()}
+            ></milo-copy-to-clipboard>
+            <span id="header-markdown">${this.step.header}</span>
+          </div>
         </span>
-        <div slot="content">${this.renderContent()}</div>
+        <div id="content" slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
     `;
   }
@@ -258,7 +273,9 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
       }
 
       #header {
-        display: inline-block;
+        display: inline-grid;
+        grid-template-columns: auto auto 1fr;
+        grid-gap: 5px;
         width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -269,17 +286,34 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
       #header:hover .hidden-icon {
         visibility: visible;
       }
+      #header.success > b {
+        color: var(--default-text-color);
+      }
 
       #status-indicator {
         vertical-align: bottom;
+      }
+
+      .badge {
+        margin-top: 3px;
+        margin-bottom: 5px;
+      }
+
+      #header-text {
+        padding-left: 4px;
+        box-sizing: border-box;
+        height: 24px;
       }
 
       #header-markdown * {
         display: inline;
       }
 
+      #content {
+        margin-top: 2px;
+      }
+
       #summary {
-        background-color: var(--block-background-color);
         padding: 5px;
         clear: both;
         overflow-wrap: break-word;
