@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2b6a41d_a0bf7bc9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-04T04:43:01Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-3-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/12930/test-results?q\u003dID%3Aninja%3A%2F%2Fchrome%2Ftest%3Abrowser_tests%2FComponentCloudPolicyTest.SignOutAndBackIn",
+      "revId": "8b08432bf25df14278eb08a696a8f1d8b6c112d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
