@@ -45,9 +45,10 @@ func getBuilderCmd(opts cmdBaseOptions) *subcommands.Command {
 type cmdGetBuilder struct {
 	cmdBase
 
-	tags   stringlistflag.Flag
-	bbHost string
-	canary bool
+	tags         stringlistflag.Flag
+	bbHost       string
+	canary       bool
+	priorityDiff int
 
 	bucket  string
 	builder string
@@ -60,7 +61,8 @@ func (c *cmdGetBuilder) initFlags(opts cmdBaseOptions) {
 		"The buildbucket hostname to grab the definition from.")
 	c.Flags.BoolVar(&c.canary, "canary", false,
 		"Get a 'canary' build, rather than a 'prod' build.")
-
+	c.Flags.IntVar(&c.priorityDiff, "adjust-priority", 10,
+		"Increase or decrease the priority of the generated job. Note: priority works like Unix 'niceness'; Higher values indicate lower priority.")
 	c.cmdBase.initFlags(opts)
 }
 
@@ -95,6 +97,7 @@ func (c *cmdGetBuilder) execute(ctx context.Context, authClient *http.Client, _ 
 		Builder:         c.builder,
 		Canary:          c.canary,
 		ExtraTags:       c.tags,
+		PriorityDiff:    c.priorityDiff,
 
 		KitchenSupport: c.kitchenSupport,
 	})
