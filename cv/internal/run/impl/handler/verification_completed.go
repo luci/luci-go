@@ -65,14 +65,14 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		case err != nil:
 			return nil, err
 		case !treeOpen:
-			if err := rs.RunNotifier.PokeAfter(ctx, rid, 1*time.Minute); err != nil {
+			if err := impl.RM.PokeAfter(ctx, rid, 1*time.Minute); err != nil {
 				// Tree is closed, revisit after 1 minute.
 				return nil, err
 			}
 			return &Result{State: rs}, nil
 		}
 
-		switch waitlisted, err := acquireSubmitQueue(ctx, rs); {
+		switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
 		case err != nil:
 			return nil, err
 		case !waitlisted:

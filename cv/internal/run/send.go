@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
-// Notifier notifies RUn Manager.
+// Notifier notifies Run Manager.
 type Notifier struct {
 	// TaskRefs are used to register handlers of RM implementation to
 	// avoid circular dependency.
@@ -36,6 +36,13 @@ type Notifier struct {
 
 func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 	return &Notifier{TaskRefs: eventpb.Register(tqd)}
+}
+
+// Invoke invokes Run Manager to process events at the provided `eta`.
+//
+// If the provided `eta` is zero, invokes immediately.
+func (n *Notifier) Invoke(ctx context.Context, runID common.RunID, eta time.Time) error {
+	return n.TaskRefs.Dispatch(ctx, string(runID), eta)
 }
 
 // Start tells RunManager to start the given run.
