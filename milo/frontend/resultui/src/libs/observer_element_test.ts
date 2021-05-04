@@ -23,6 +23,7 @@ import {
   lazyRendering,
   observer,
   ObserverElement,
+  ProgressiveNotifier,
   provideNotifier,
   RenderPlaceHolder,
 } from './observer_element';
@@ -224,6 +225,109 @@ describe('lazyRendering', () => {
 
     entries.forEach((entry, i) => {
       assert.equal(entry.shadowRoot!.textContent, i <= 15 ? 'content' : 'placeholder');
+    });
+  });
+});
+
+@customElement('milo-progressive-rendering-test-entry')
+@lazyRendering
+class ProgressiveRenderingElement extends LitElement implements RenderPlaceHolder {
+  renderPlaceHolder() {
+    return html`placeholder`;
+  }
+
+  protected render() {
+    return html`content`;
+  }
+
+  static styles = css`
+    :host {
+      display: block;
+      height: 10px;
+    }
+  `;
+}
+
+@customElement('milo-progressive-rendering-notifier-provider-test')
+@provider
+class ProgressiveNotifierProviderElement extends LitElement {
+  @provideNotifier notifier = new ProgressiveNotifier({ batchInterval: 100, batchSize: 10, root: this });
+
+  protected render() {
+    return html`<slot></slot>`;
+  }
+
+  static styles = css`
+    :host {
+      display: block;
+      height: 100px;
+      overflow-y: auto;
+    }
+  `;
+}
+
+describe('progressiveNotifier', () => {
+  let listView: ProgressiveNotifierProviderElement;
+  let entries: NodeListOf<ProgressiveRenderingElement>;
+
+  beforeEach(async () => {
+    listView = await fixture<ProgressiveNotifierProviderElement>(html`
+      <milo-progressive-rendering-notifier-provider-test>
+        ${new Array(100)
+          .fill(0)
+          .map(() => html`<milo-progressive-rendering-test-entry></milo-progressive-rendering-test-entry>`)}
+      </milo-progressive-rendering-notifier-provider-test>
+    `);
+    entries = listView.querySelectorAll<ProgressiveRenderingElement>('milo-progressive-rendering-test-entry');
+  });
+  afterEach(fixtureCleanup);
+
+  it('should only render content for elements entered the view.', async () => {
+    await aTimeout(20);
+    entries.forEach((entry, i) => {
+      assert.equal(entry.shadowRoot!.textContent, i <= 10 ? 'content' : 'placeholder');
+    });
+  });
+
+  it('should work with scrolling', async () => {
+    await aTimeout(20);
+    listView.scrollBy(0, 50);
+    await aTimeout(20);
+
+    entries.forEach((entry, i) => {
+      assert.equal(entry.shadowRoot!.textContent, i <= 15 ? 'content' : 'placeholder');
+    });
+  });
+
+  it('should notify some of the remaining entries after certain interval', async () => {
+    await aTimeout(20);
+    entries.forEach((entry, i) => {
+      assert.equal(entry.shadowRoot!.textContent, i <= 10 ? 'content' : 'placeholder');
+    });
+
+    await aTimeout(150);
+    entries.forEach((entry, i) => {
+      assert.equal(entry.shadowRoot!.textContent, i <= 20 ? 'content' : 'placeholder');
+    });
+  });
+
+  it('new notification should reset interval', async () => {
+    await aTimeout(20);
+    entries.forEach((entry, i) => {
+      assert.equal(entry.shadowRoot!.textContent, i <= 10 ? 'content' : 'placeholder');
+    });
+
+    await aTimeout(60);
+    listView.scrollBy(0, 50);
+
+    await aTimeout(60);
+    entries.forEach((entry, i) => {
+      assert.equal(entry.shadowRoot!.textContent, i <= 15 ? 'content' : 'placeholder');
+    });
+
+    await aTimeout(50);
+    entries.forEach((entry, i) => {
+      assert.equal(entry.shadowRoot!.textContent, i <= 25 ? 'content' : 'placeholder');
     });
   });
 });
