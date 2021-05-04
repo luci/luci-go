@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07f82146_dddea273",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-04T04:57:03Z",
+      "side": 1,
+      "message": "ptal. I feel like it makes more sense to de dependency injection in handler instead of runState.",
+      "revId": "c9112ee3298179e371466b44cf386f9c33050d14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
