@@ -62,9 +62,6 @@ type ModuleOptions struct {
 
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
-	if o.DiscoveryURL == "" {
-		o.DiscoveryURL = openid.GoogleDiscoveryURL
-	}
 	f.StringVar(
 		&o.TinkAEADKey,
 		"encrypted-cookies-tink-aead-key",
@@ -157,12 +154,14 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		return ctx, m.initInDevMode(ctx, host)
 	}
 
+	// Fill in defaults.
+	if m.opts.DiscoveryURL == "" {
+		m.opts.DiscoveryURL = openid.GoogleDiscoveryURL
+	}
+
 	// Check required flags.
 	if m.opts.TinkAEADKey == "" {
 		return nil, errors.Reason("tink AEAD key is required").Err()
-	}
-	if m.opts.DiscoveryURL == "" {
-		return nil, errors.Reason("discovery URL is required").Err()
 	}
 	if m.opts.ClientID == "" {
 		return nil, errors.Reason("client ID is required").Err()

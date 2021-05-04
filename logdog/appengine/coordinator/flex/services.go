@@ -18,27 +18,19 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	gcst "cloud.google.com/go/storage"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
-	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
-
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-	"go.chromium.org/luci/logdog/server/config"
-
-	gcbt "cloud.google.com/go/bigtable"
-	gcst "cloud.google.com/go/storage"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -46,8 +38,7 @@ const (
 	maxSignedURLLifetime = 1 * time.Hour
 )
 
-// Services is a set of support services used by AppEngine Classic Coordinator
-// endpoints.
+// Services is a set of support services used by Coordinator endpoints.
 //
 // Each instance is valid for a single request, but can be re-used throughout
 // that request. This is advised, as the Services instance may optionally cache
@@ -64,135 +55,47 @@ type Services interface {
 // GlobalServices is an application singleton that stores cross-request service
 // structures.
 //
-// It is applied to each Flex HTTP request using its Base() middleware method.
+// It lives in the root context.
 type GlobalServices struct {
-	// Signer is the signer instance to use.
-	Signer gaesigner.Signer
-
-	// gsClient is the application-global Google Storage client.
-	btStorage *bigtable.Storage
-
-	// gsClientFactory is the application-global creator of Google Storage clients.
+	btStorage       *bigtable.Storage
 	gsClientFactory func(ctx context.Context, project string) (gs.Client, error)
-
-	// storageCache is the process-wide cache used for storing Storage data.
-	storageCache *StorageCache
+	storageCache    *StorageCache
 }
 
 // NewGlobalServices instantiates a new GlobalServices instance.
 //
-// The Context passed to GlobalServices should be a global Context not a
-// request-specific Context, with required services installed:
-// - auth
-// - luci_config
-func NewGlobalServices(c context.Context) (*GlobalServices, error) {
-	var err error
-
-	// Instantiate our services. At the moment, it doesn't have instantiated
-	// clients, so it's only partially viable. We will use it to fetch our
-	// application configuration, which we will in turn use to instantiate our
-	// clients.
-	s := GlobalServices{
-		storageCache: &StorageCache{},
-	}
-
-	// Load our service configuration.
-	cfg, err := config.Config(c)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get service configuration").Err()
-	}
-
-	// Connect our clients.
-	if err := s.connectBigTableClient(c, cfg); err != nil {
-		return nil, errors.Annotate(err, "failed to connect BigTable client").Err()
-	}
-
-	if err := s.createGoogleStorageClientFactory(c); err != nil {
-		return nil, errors.Annotate(err, "failed to connect Google Storage client").Err()
-	}
-
-	return &s, nil
-}
-
-func (gsvc *GlobalServices) connectBigTableClient(c context.Context, cfg *svcconfig.Config) error {
-	// Is BigTable configured?
-	if cfg.Storage == nil {
-		return errors.New("no storage configuration")
-	}
-	bt := cfg.Storage.GetBigtable()
-	if bt == nil {
-		return errors.New("no BigTable configuration")
-	}
-
-	// Validate the BigTable configuration.
-	log.Fields{
-		"project":      bt.Project,
-		"instance":     bt.Instance,
-		"logTableName": bt.LogTableName,
-	}.Debugf(c, "Connecting to BigTable.")
-	var merr errors.MultiError
-	if bt.Project == "" {
-		merr = append(merr, errors.New("missing project"))
-	}
-	if bt.Instance == "" {
-		merr = append(merr, errors.New("missing instance"))
-	}
-	if bt.LogTableName == "" {
-		merr = append(merr, errors.New("missing log table name"))
-	}
-	if len(merr) > 0 {
-		return merr
-	}
-
-	// Get an Authenticator bound to the token scopes that we need for BigTable.
-	creds, err := auth.GetPerRPCCredentials(c, auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
-	if err != nil {
-		return errors.Annotate(err, "failed to create BigTable credentials").Err()
-	}
-
-	opts := bigtable.DefaultClientOptions()
-	opts = append(opts, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
-	client, err := gcbt.NewClient(c, bt.Project, bt.Instance, opts...)
-	if err != nil {
-		return errors.Annotate(err, "failed to create BigTable client").Err()
-	}
-
-	gsvc.btStorage = &bigtable.Storage{
-		Client:   client,
-		LogTable: bt.LogTableName,
-		Cache:    gsvc.storageCache,
-	}
-	return nil
-}
-
-func (gsvc *GlobalServices) createGoogleStorageClientFactory(c context.Context) error {
-	gsvc.gsClientFactory = func(c context.Context, project string) (client gs.Client, e error) {
-		// TODO(vadimsh): Switch to AsProject + WithProject(project.String()) once
-		// we are ready to roll out project scoped service accounts in Logdog.
-		transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gs.ReadOnlyScopes...))
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to create Google Storage RPC transport").Err()
-		}
-		prodClient, err := gs.NewProdClient(c, transport)
-		if err != nil {
-			return nil, errors.Annotate(err, "Failed to create GS client.").Err()
-		}
-		return prodClient, nil
-	}
-	return nil
-}
-
-// Base is Middleware used by Coordinator Flex services.
+// Receives the location of the BigTable with intermediate logs.
 //
-// It installs a production Services instance into the Context.
-func (gsvc *GlobalServices) Base(c *router.Context, next router.Handler) {
-	c.Context = WithServices(c.Context, gsvc)
-	next(c)
-}
+// The Context passed to GlobalServices should be a global server Context not a
+// request-specific Context.
+func NewGlobalServices(c context.Context, bt *bigtable.Flags) (*GlobalServices, error) {
+	// LRU in-memory cache in front of BigTable.
+	storageCache := &StorageCache{}
 
-// Close closes the GlobalServices instance, releasing any retained resources.
-func (gsvc *GlobalServices) Close() error {
-	return nil
+	// Construct the storage, inject the caching implementation into it.
+	storage, err := bigtable.StorageFromFlags(c, bt)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to connect to BigTable").Err()
+	}
+	storage.Cache = storageCache
+
+	return &GlobalServices{
+		btStorage:    storage,
+		storageCache: storageCache,
+		gsClientFactory: func(c context.Context, project string) (client gs.Client, e error) {
+			// TODO(vadimsh): Switch to AsProject + WithProject(project) once
+			// we are ready to roll out project scoped service accounts in Logdog.
+			transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to create Google Storage RPC transport").Err()
+			}
+			prodClient, err := gs.NewProdClient(c, transport)
+			if err != nil {
+				return nil, errors.Annotate(err, "Failed to create GS client.").Err()
+			}
+			return prodClient, nil
+		},
+	}, nil
 }
 
 // Storage returns a Storage instance for the supplied log stream.
@@ -202,28 +105,28 @@ func (gsvc *GlobalServices) StorageForStream(c context.Context, lst *coordinator
 	coordinator.SigningStorage, error) {
 
 	if !lst.ArchivalState().Archived() {
-		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
+		logging.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
 		return noSignedURLStorage{gsvc.btStorage}, nil
 	}
 
 	// Some very old logs have malformed data where they claim to be archived but
 	// have no archive or index URLs.
 	if lst.ArchiveStreamURL == "" {
-		log.Warningf(c, "Log has no archive URL")
+		logging.Warningf(c, "Log has no archive URL")
 		return nil, errors.New("log has no archive URL", grpcutil.NotFoundTag)
 	}
 	if lst.ArchiveIndexURL == "" {
-		log.Warningf(c, "Log has no index URL")
+		logging.Warningf(c, "Log has no index URL")
 		return nil, errors.New("log has no index URL", grpcutil.NotFoundTag)
 	}
 
 	gsClient, err := gsvc.gsClientFactory(c, project)
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Google Storage client.")
+		logging.WithError(err).Errorf(c, "Failed to create Google Storage client.")
 		return nil, err
 	}
 
-	log.Fields{
+	logging.Fields{
 		"indexURL":    lst.ArchiveIndexURL,
 		"streamURL":   lst.ArchiveStreamURL,
 		"archiveTime": lst.ArchivedTime,
@@ -236,7 +139,7 @@ func (gsvc *GlobalServices) StorageForStream(c context.Context, lst *coordinator
 		Client: gsClient,
 	})
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Google Storage storage instance.")
+		logging.WithError(err).Errorf(c, "Failed to create Google Storage storage instance.")
 		return nil, err
 	}
 
@@ -286,10 +189,9 @@ func (si *googleStorage) Close() {
 	si.gs.Close()
 }
 
-func (si *googleStorage) GetSignedURLs(c context.Context, req *coordinator.URLSigningRequest) (
-	*coordinator.URLSigningResponse, error) {
-
-	info, err := si.svc.Signer.ServiceInfo(c)
+func (si *googleStorage) GetSignedURLs(c context.Context, req *coordinator.URLSigningRequest) (*coordinator.URLSigningResponse, error) {
+	signer := auth.GetSigner(c)
+	info, err := signer.ServiceInfo(c)
 	if err != nil {
 		return nil, errors.Annotate(err, "").InternalReason("failed to get service info").Err()
 	}
@@ -310,7 +212,7 @@ func (si *googleStorage) GetSignedURLs(c context.Context, req *coordinator.URLSi
 	opts := gcst.SignedURLOptions{
 		GoogleAccessID: info.ServiceAccountName,
 		SignBytes: func(b []byte) ([]byte, error) {
-			_, signedBytes, err := si.svc.Signer.SignBytes(c, b)
+			_, signedBytes, err := signer.SignBytes(c, b)
 			return signedBytes, err
 		},
 		Method:  "GET",

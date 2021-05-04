@@ -13,8 +13,33 @@
 # limitations under the License.
 
 service: logs
-runtime: go
+runtime: go1.15
 env: flex
+
+luci_gae_vars:
+  luci-logdog-dev:
+    GCP_NETWORK_NAME: logdog-vpc
+    MIN_INSTANCES: 1
+    AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+    OAUTH_CLIENT_ID: 38892607523-5uj03j33uushc57ao9155nc85rvrtfvp.apps.googleusercontent.com
+    OAUTH_CLIENT_SECRET: sm://oauth-client-secret
+    OAUTH_REDIRECT_URL: https://luci-logdog-dev.appspot.com/auth/openid/callback
+    TINK_AEAD_KEY: sm://tink-aead-primary
+    BIGTABLE_PROJECT: luci-logdog
+    BIGTABLE_INSTANCE: luci-logdog
+    BIGTABLE_LOG_TABLE: test
+
+env_variables:
+  AUTH_SERVICE_HOST: ${AUTH_SERVICE_HOST}
+  TS_MON_ACCOUNT: ${TS_MON_ACCOUNT}
+  OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+  OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+  OAUTH_REDIRECT_URL: ${OAUTH_REDIRECT_URL}
+  TINK_AEAD_KEY: ${TINK_AEAD_KEY}
+  BIGTABLE_PROJECT: ${BIGTABLE_PROJECT}
+  BIGTABLE_INSTANCE: ${BIGTABLE_INSTANCE}
+  BIGTABLE_LOG_TABLE: ${BIGTABLE_LOG_TABLE}
 
 resources:
   cpu: 2
@@ -22,23 +47,16 @@ resources:
   disk_size_gb: 10
 
 automatic_scaling:
-  min_num_instances: 4
+  min_num_instances: ${MIN_INSTANCES}
 
 inbound_services:
   - warmup
 
-handlers:
-- url: "/internal/*"
-  script: _go_app
-  secure: always
-  login: admin
-
-- url: "/.*"
-  script: _go_app
-  secure: always
+network:
+  name: ${GCP_NETWORK_NAME}
 
 liveness_check:
-  path: "/_ah/health"
+  path: "/healthz"
   check_interval_sec: 20
   timeout_sec: 10
   # Restart after 200 sec of unhealthiness.
@@ -46,7 +64,7 @@ liveness_check:
   success_threshold: 1
 
 readiness_check:
-  path: "/_ah/health"
+  path: "/healthz"
   check_interval_sec: 20
   timeout_sec: 10
   # Stop accepting requests after 80 sec of unhealthiness.
