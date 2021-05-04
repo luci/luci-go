@@ -51,7 +51,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		logging.Debugf(ctx, "received ReadyForSubmission event when Run is %s", status)
 		// Under certain race condition, this Run may still occupy the submit
 		// queue. So, check first without a transaction and then initiate a
-		// transaction to release if this Run is current.
+		// transaction to release if this Run currently occupies the submit queue.
 		switch current, err := submit.CurrentRun(ctx, rs.Run.ID.LUCIProject()); {
 		case err != nil:
 			return nil, err
@@ -70,17 +70,34 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		}
 		return &Result{State: rs}, nil
 	case status == run.Status_SUBMITTING:
-		if rs.Run.Submission.GetDeadline() == nil {
-			panic(fmt.Errorf("impossible; run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
+		return continueSubmissionIfPossible(ctx, rs)
+	case status == run.Status_RUNNING || status == run.Status_WAITING_FOR_SUBMISSION:
+		rs, err := markSubmitting(ctx, rs)
+		if err != nil {
+			return nil, err
 		}
-		if deadline := rs.Run.Submission.Deadline.AsTime(); deadline.After(clock.Now(ctx)) {
-			// Deadline hasn't expired yet. Presumably another task is still working
-			// on the submission. So poke as soon as the deadline expires.
-			if err := rs.RunNotifier.PokeAt(ctx, rs.Run.ID, deadline); err != nil {
-				return nil, err
-			}
-			return &Result{State: rs}, nil
+		s, err := constructSubmitter(ctx, rs)
+		if err != nil {
+			return nil, err
 		}
+		return &Result{
+			State:         rs,
+			PostProcessFn: s.submit,
+		}, nil
+	default:
+		panic(fmt.Errorf("impossible status %s", status))
+	}
+}
+
+func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Result, error) {
+	deadline := rs.Run.Submission.GetDeadline()
+	switch {
+	case deadline == nil:
+		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
+	}
+
+	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
+	case expired:
 		// Deadline has already expired. Try to acquire submit queue again
 		// and attempt another submission if not waitlisted. Otherwise,
 		// falls back to WAITING_FOR_SUBMISSION status.
@@ -92,66 +109,77 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
 			rs.Run.Submission.Deadline = nil
 			return &Result{State: rs}, nil
+		default:
+			rs, err := markSubmitting(ctx, rs)
+			if err != nil {
+				return nil, err
+			}
+			s, err := constructSubmitter(ctx, rs)
+			if err != nil {
+				return nil, err
+			}
+			return &Result{
+				State:         rs,
+				PostProcessFn: s.submit,
+			}, nil
 		}
-		fallthrough // re-acquired submit queue successfully, try submitting again.
-	case status == run.Status_RUNNING || status == run.Status_WAITING_FOR_SUBMISSION:
-		rs = rs.ShallowCopy()
-		markSubmitting(ctx, rs)
-		cg, err := rs.LoadConfigGroup(ctx)
-		if err != nil {
+	default:
+		// Presumably another task is working on the submission at this time. So
+		// poke as soon as the deadline expires.
+		if err := rs.RunNotifier.PokeAt(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
 			return nil, err
 		}
-		submission := rs.Run.Submission
-		s := submitter{
-			runID:       rs.Run.ID,
-			deadline:    submission.GetDeadline().AsTime(),
-			attempt:     submission.GetAttemptCount(),
-			treeURL:     cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
-			clids:       computeUnsubmittedCLs(submission.GetCls(), submission.GetSubmittedCls()),
-			runNotifier: rs.RunNotifier,
-		}
-		return &Result{
-			State:         rs,
-			PostProcessFn: s.submit,
-		}, nil
-	default:
-		panic(fmt.Errorf("impossible status %s", status))
+		return &Result{State: rs}, nil
 	}
 }
 
 const defaultSubmissionDuration = 30 * time.Second
 
-func markSubmitting(ctx context.Context, rs *state.RunState) error {
-	rs.Run.Status = run.Status_SUBMITTING
-	if rs.Run.Submission == nil {
-		rs.Run.Submission = &run.Submission{}
+func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, error) {
+	ret := rs.ShallowCopy()
+	ret.Run.Status = run.Status_SUBMITTING
+	if ret.Run.Submission == nil {
+		ret.Run.Submission = &run.Submission{}
 		var err error
-		if rs.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.Run.CLs, rs.Run.ID, rs.Run.Submission); err != nil {
-			return err
+		if ret.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, ret.Run.CLs, ret.Run.ID, ret.Run.Submission); err != nil {
+			return nil, err
 		}
 	}
 	deadline, ok := ctx.Deadline()
 	if ok {
-		rs.Run.Submission.Deadline = timestamppb.New(deadline.UTC())
+		ret.Run.Submission.Deadline = timestamppb.New(deadline.UTC())
 	} else {
-		rs.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(defaultSubmissionDuration))
+		ret.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(defaultSubmissionDuration))
 	}
-	rs.Run.Submission.AttemptCount += 1
-	return nil
+	ret.Run.Submission.AttemptCount += 1
+	return ret, nil
 }
 
-func computeUnsubmittedCLs(allCLs []int64, submittedCLs []int64) common.CLIDs {
-	ret := make(common.CLIDs, 0, len(allCLs)-len(submittedCLs))
+func constructSubmitter(ctx context.Context, rs *state.RunState) (*submitter, error) {
+	cg, err := rs.LoadConfigGroup(ctx)
+	if err != nil {
+		return nil, err
+	}
+	submission := rs.Run.Submission
+	allCLs, submittedCLs := submission.GetCls(), submission.GetSubmittedCls()
+	unsubmittedCLs := make(common.CLIDs, 0, len(allCLs)-len(submittedCLs))
 	submitted := make(map[int64]struct{}, len(submittedCLs))
 	for _, clid := range submittedCLs {
 		submitted[clid] = struct{}{}
 	}
 	for _, clid := range allCLs {
 		if _, ok := submitted[clid]; !ok {
-			ret = append(ret, common.CLID(clid))
+			unsubmittedCLs = append(unsubmittedCLs, common.CLID(clid))
 		}
 	}
-	return ret
+	return &submitter{
+		runID:       rs.Run.ID,
+		deadline:    submission.GetDeadline().AsTime(),
+		attempt:     submission.GetAttemptCount(),
+		treeURL:     cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
+		clids:       unsubmittedCLs,
+		runNotifier: rs.RunNotifier,
+	}, nil
 }
 
 // OnCLSubmitted implements Handler interface.
