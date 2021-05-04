@@ -278,9 +278,9 @@ var cloudRegionFromGAERegion = map[string]string{
 // them. If 'opts' is nil, the default options will be used. Only flags are
 // allowed in the command line (no positional arguments).
 //
-// Additionally recognizes GAE_APPLICATION env var as an indicator that the
-// server is running on GAE. This slightly tweaks its behavior to match what GAE
-// expects from servers.
+// Additionally recognizes GAE_* env vars as an indicator that the server is
+// running on GAE. This slightly tweaks its behavior to match what GAE expects
+// from servers.
 //
 // On errors, logs them and aborts the process with non-zero exit code.
 func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
@@ -502,10 +502,10 @@ func (o *Options) Register(f *flag.FlagSet) {
 		`A name of the experiment to enable. May be repeated.`)
 }
 
-// FromGAEEnv uses the GAE_APPLICATION env var (and other GAE-specific env vars)
-// to configure the server for the GAE environment.
+// FromGAEEnv uses the GAE_* env vars to configure the server for the GAE
+// environment.
 //
-// Does nothing if GAE_APPLICATION is not set.
+// Does nothing if GAE_VERSION is not set.
 //
 // Equivalent to passing the following flags:
 //   -prod
@@ -529,8 +529,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 //
 // See https://cloud.google.com/appengine/docs/standard/go/runtime.
 func (o *Options) FromGAEEnv() {
-	appID := os.Getenv("GAE_APPLICATION") // e.g. "s~something"
-	if appID == "" {
+	if os.Getenv("GAE_VERSION") == "" {
 		return
 	}
 	o.GAE = true
@@ -540,9 +539,6 @@ func (o *Options) FromGAEEnv() {
 	o.AdminAddr = "-"
 	o.ShutdownDelay = 0
 	o.CloudProject = os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if o.CloudRegion == "" {
-		o.CloudRegion = cloudRegionFromGAERegion[strings.Split(appID, "~")[0]]
-	}
 	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
 	o.TsMonServiceName = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	o.TsMonJobName = os.Getenv("GAE_SERVICE")
@@ -551,6 +547,10 @@ func (o *Options) FromGAEEnv() {
 		os.Getenv("GAE_SERVICE"),
 		os.Getenv("GAE_VERSION"),
 	)
+	// Note: GAE_APPLICATION is missing on Flex.
+	if appID := os.Getenv("GAE_APPLICATION"); appID != "" && o.CloudRegion == "" {
+		o.CloudRegion = cloudRegionFromGAERegion[strings.Split(appID, "~")[0]]
+	}
 }
 
 // uniqueGAEHostname uses GAE_* env vars to derive a unique enough string that
@@ -816,10 +816,13 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		logging.Infof(srv.Context, "Running on %s (%s)", srv.Options.Hostname, networkAddrsForLog())
 	} else {
 		logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
+		logging.Infof(srv.Context, "Instance is %q", os.Getenv("GAE_INSTANCE"))
 		if srv.Options.CloudRegion == "" {
-			logging.Warningf(srv.Context, "Could not figure out the primary Cloud region based "+
-				"on the region code in GAE_APPLICATION %q, consider passing the region name "+
-				"via -cloud-region flag explicitly", os.Getenv("GAE_APPLICATION"))
+			if appID := os.Getenv("GAE_APPLICATION"); appID != "" {
+				logging.Warningf(srv.Context, "Could not figure out the primary Cloud region based "+
+					"on the region code in GAE_APPLICATION %q, consider passing the region name "+
+					"via -cloud-region flag explicitly", appID)
+			}
 		} else {
 			logging.Infof(srv.Context, "Cloud region is %s", srv.Options.CloudRegion)
 		}
@@ -2289,7 +2292,7 @@ func isHealthCheckRequest(r *http.Request) bool {
 		switch ua := r.UserAgent(); {
 		case strings.HasPrefix(ua, "kube-probe/"): // Kubernetes
 			return true
-		case strings.HasPrefix(ua, "GoogleHC/"): // Cloud Load Balancer
+		case strings.HasPrefix(ua, "GoogleHC"): // Cloud Load Balancer
 			return true
 		}
 	}
