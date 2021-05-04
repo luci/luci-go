@@ -18,7 +18,7 @@ import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
-import { autorun, computed, observable, reaction, when } from 'mobx';
+import { computed, observable, reaction, when } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -29,12 +29,7 @@ import { BuildState, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
 import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import {
-  getGitilesRepoURL,
-  getLegacyURLPathForBuild,
-  getURLPathForBuilder,
-  getURLPathForProject,
-} from '../../libs/build_utils';
+import { getLegacyURLPathForBuild, getURLPathForBuilder, getURLPathForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
@@ -226,8 +221,8 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           this.invocationState = new InvocationState(appState);
           this.invocationState.invocationId = this.buildState.invocationId;
           this.invocationState.presentationConfig =
-            this.buildState.build?.output.properties[TEST_PRESENTATION_KEY] ||
-            this.buildState.build?.input.properties[TEST_PRESENTATION_KEY] ||
+            this.buildState.build?.output?.properties?.[TEST_PRESENTATION_KEY] ||
+            this.buildState.build?.input?.properties?.[TEST_PRESENTATION_KEY] ||
             {};
 
           // Emulate @property() update.
@@ -249,8 +244,8 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     this.addDisposer(
       reaction(
         () =>
-          this.buildState.build?.output.properties[TEST_PRESENTATION_KEY] ||
-          this.buildState.build?.input.properties[TEST_PRESENTATION_KEY] ||
+          this.buildState.build?.output?.properties?.[TEST_PRESENTATION_KEY] ||
+          this.buildState.build?.input?.properties?.[TEST_PRESENTATION_KEY] ||
           {},
         (config) => (this.invocationState.presentationConfig = config),
         { fireImmediately: true }
@@ -278,33 +273,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // Skip rendering-related reactions.
       return;
     }
-
-    this.addDisposer(
-      autorun(() => {
-        const build = this.buildState.build;
-        if (!build) {
-          return;
-        }
-
-        // If the build has only succeeded steps, show all steps in the steps tab by
-        // default (even if the user's preference is to hide succeeded steps).
-        if (build.rootSteps.every((s) => s.status === BuildStatus.Success)) {
-          this.configsStore.userConfigs.steps.showSucceededSteps = true;
-        }
-
-        // If the associated gitiles commit is in the blamelist pins, select it.
-        // Otherwise, select the first blamelist pin.
-        const buildInputCommitRepo = build.associatedGitilesCommit
-          ? getGitilesRepoURL(build.associatedGitilesCommit)
-          : null;
-        let selectedBlamelistPinIndex =
-          build.blamelistPins.findIndex((pin) => getGitilesRepoURL(pin) === buildInputCommitRepo) || 0;
-        if (selectedBlamelistPinIndex === -1) {
-          selectedBlamelistPinIndex = 0;
-        }
-        this.appState.selectedBlamelistPinIndex = selectedBlamelistPinIndex;
-      })
-    );
 
     this.addDisposer(
       reaction(

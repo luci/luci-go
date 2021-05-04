@@ -51,7 +51,7 @@ export class BlamelistTabElement extends MiloBaseElement {
   @computed
   private get queryBlamelistResIter() {
     const iterFn =
-      this.buildState.queryBlamelistResIterFns[this.appState.selectedBlamelistPinIndex] ||
+      this.buildState.queryBlamelistResIterFns[this.buildState.selectedBlamelistPinIndex] ||
       async function* () {
         yield Promise.race([]);
       };
@@ -69,7 +69,7 @@ export class BlamelistTabElement extends MiloBaseElement {
 
   @computed
   get selectedBlamelistPin() {
-    return this.buildState.build?.blamelistPins[this.appState.selectedBlamelistPinIndex];
+    return this.buildState.build?.blamelistPins[this.buildState.selectedBlamelistPinIndex];
   }
 
   @computed
@@ -158,11 +158,11 @@ export class BlamelistTabElement extends MiloBaseElement {
           <select
             id="repo-select"
             @input=${(e: InputEvent) =>
-              (this.appState.selectedBlamelistPinIndex = Number((e.target as HTMLOptionElement).value))}
+              (this.buildState.selectedBlamelistPinIndex = Number((e.target as HTMLOptionElement).value))}
           >
             ${this.buildState.build?.blamelistPins.map(
               (pin, i) => html`
-                <option value=${i} ?selected=${this.appState.selectedBlamelistPinIndex === i}>
+                <option value=${i} ?selected=${this.buildState.selectedBlamelistPinIndex === i}>
                   ${getGitilesRepoURL(pin)}
                 </option>
               `
