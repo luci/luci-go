@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4286c60_731357ef",
+        "filename": "logdog/appengine/cmd/coordinator/logs/module-logs.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-04T23:23:39Z",
+      "side": 1,
+      "message": "I assume we don\u0027t have a choice for envvars vs cmd line args here?",
+      "revId": "315acc8d298645dc92f41ef2a39b5b1434385a93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
