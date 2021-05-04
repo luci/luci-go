@@ -27,18 +27,8 @@ automatic_scaling:
 inbound_services:
   - warmup
 
-handlers:
-- url: "/internal/*"
-  script: _go_app
-  secure: always
-  login: admin
-
-- url: "/.*"
-  script: _go_app
-  secure: always
-
 liveness_check:
-  path: "/_ah/health"
+  path: "/healthz"
   check_interval_sec: 20
   timeout_sec: 10
   # Restart after 200 sec of unhealthiness.
@@ -46,7 +36,7 @@ liveness_check:
   success_threshold: 1
 
 readiness_check:
-  path: "/_ah/health"
+  path: "/healthz"
   check_interval_sec: 20
   timeout_sec: 10
   # Stop accepting requests after 80 sec of unhealthiness.
