@@ -179,6 +179,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b9cd37e5_0f22fec7",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:54:02Z",
+      "side": 1,
+      "message": "ok, then please move this to Run package. You can even send it as separate CL if you prefer.\n\nYiwei WDYT?",
+      "parentUuid": "a05295d2_12f96c68",
+      "range": {
+        "startLine": 76,
+        "startChar": 37,
+        "endLine": 77,
+        "endChar": 26
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77380202_53e5050a",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 9
@@ -396,6 +420,24 @@
         "endLine": 160,
         "endChar": 71
       },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "545bd3ed_fdd0beaf",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:54:02Z",
+      "side": 1,
+      "message": "v.Payload.Run.Attempt will panic.\nv.Payload.GetRun().GetAttempt() will return nil.",
+      "parentUuid": "ac331327_93caad81",
       "revId": "f5e43320375093268803057bfae1f37686add8aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },

@@ -1,0 +1,132 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fda9777b_4808deb0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:54:02Z",
+      "side": 1,
+      "message": "Quick feedback now -- I still need to think carefully about exact logic for status computation \u0026 mergeAttempts tomorrow.",
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e95b326_a2294889",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:54:02Z",
+      "side": 1,
+      "message": "\u003e SA1019: package github.com/golang/protobuf/ptypes is deprecated: Well-known types have specialized functionality directly injected into the generated packages for each message type. See the deprecation notice for each function for the suggested alternative. \n\nIndeed, please fix. See nearby CV code for examples -- we don\u0027t use github\u0027s (legacy) proto library in CV\u003e",
+      "parentUuid": "08d29b67_310c714c",
+      "range": {
+        "startLine": 22,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 0
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f47fb6d_257c0e95",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:54:02Z",
+      "side": 1,
+      "message": "nit: this sounds like there were 2 attempt, maybe just \"reconcile\"?",
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6dac2d02_ee8ade2e",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:54:02Z",
+      "side": 1,
+      "message": "btw, this also sends data to cv[-dev] project, not \"commit-queue\". We\u0027ll need to change that, I think, incl. setting up permissions 😞",
+      "range": {
+        "startLine": 59,
+        "startChar": 13,
+        "endLine": 59,
+        "endChar": 20
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1ac6343a_5723d683",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:54:02Z",
+      "side": 1,
+      "message": "\u003e SA1019: ptypes.TimestampProto is deprecated: Call the timestamppb.New function instead. \n\nRight, and also new version doesn\u0027t error!",
+      "parentUuid": "44a76469_79b6a582",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 84,
+        "endChar": 0
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "297362ad_e0f5d57d",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:54:02Z",
+      "side": 1,
+      "message": "we may have N\u003d~100 CLs.\nThis will run in O(N^2), which is OK-ish, but why waste CPu when O(N) is easy iff you precompute a set of submitted CLs before calling toGerritChanges?",
+      "range": {
+        "startLine": 134,
+        "startChar": 35,
+        "endLine": 134,
+        "endChar": 47
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
