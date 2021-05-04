@@ -16,6 +16,24 @@
       "message": "I assume we don\u0027t have a choice for envvars vs cmd line args here?",
       "revId": "315acc8d298645dc92f41ef2a39b5b1434385a93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6e9d13a_3f789b8f",
+        "filename": "logdog/appengine/cmd/coordinator/logs/module-logs.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-04T23:24:40Z",
+      "side": 1,
+      "message": "nvm I expanded the commit message in gerrit...",
+      "parentUuid": "e4286c60_731357ef",
+      "revId": "315acc8d298645dc92f41ef2a39b5b1434385a93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
