@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3bc6f73_363d798d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-04T21:39:42Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "3b684167befc29cbb44ec7fe7ed69bda32c0b7b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9e7c8d4_8e96f490",
+        "filename": "server/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 508,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-04T21:39:42Z",
+      "side": 1,
+      "message": "GAE_APPLICATION is not set on Flex :-/ All other GAE_ vars are present.",
+      "range": {
+        "startLine": 508,
+        "startChar": 19,
+        "endLine": 508,
+        "endChar": 30
+      },
+      "revId": "3b684167befc29cbb44ec7fe7ed69bda32c0b7b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2dca7a3_0fa0bee9",
+        "filename": "server/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2295,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-04T21:39:42Z",
+      "side": 1,
+      "message": "GCLB has User-Agent \"GoogleHC/1.0\", Flex has it \"GoogleHC 1.0\". Obviously.",
+      "range": {
+        "startLine": 2295,
+        "startChar": 30,
+        "endLine": 2295,
+        "endChar": 38
+      },
+      "revId": "3b684167befc29cbb44ec7fe7ed69bda32c0b7b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
