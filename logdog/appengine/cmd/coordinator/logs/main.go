@@ -16,96 +16,91 @@ package main
 
 import (
 	"context"
-	"net/http"
+	"fmt"
+	"os"
 
-	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/encryptedcookies"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
+
+	logspb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex/logs"
+	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/logdog/server/config"
 
-	"go.chromium.org/luci/appengine/gaeauth/server"
-	flexMW "go.chromium.org/luci/appengine/gaemiddleware/flex"
-	commonAuth "go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/grpc/discovery"
-	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/router"
+	// Store auth sessions in the datastore.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
-// Run installs and executes this site.
 func main() {
-	mathrand.SeedRandomly()
-
-	// Setup process global Context.
-	c := context.Background()
-	c = gologger.StdConfig.Use(c) // Log to STDERR.
-
-	// Cache for configs.
-	configStore := config.Store{}
-
-	// TODO(dnj): We currently instantiate global instances of several services,
-	// with the current service configuration paramers (e.g., name of BigTable
-	// table, etc.).
-	//
-	// We should monitor config and kill a Flex instance if it's been observed to
-	// change. It would respawn, reload the new config, and then be good to go
-	// until the next change.
-	//
-	// As things stand, this configuration basically never changes, so this is
-	// not terribly important. However, it's worth noting that we should do this,
-	// and that here is probably the right place to kick off such a goroutine.
-
-	// Standard HTTP endpoints using flex LogDog services singleton.
-	r := router.NewWithRootContext(c)
-	flexMW.ReadOnlyFlex.InstallHandlers(r)
-
-	// Setup the global services, such as auth, luci-config.
-	c = flexMW.WithGlobal(c)
-	c = config.WithStore(c, &configStore)
-	gsvc, err := flex.NewGlobalServices(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to setup Flex services.")
-		panic(err)
+	opts := server.Options{
+		AuthServiceHost: os.Getenv("AUTH_SERVICE_HOST"),
+		TsMonAccount:    os.Getenv("TS_MON_ACCOUNT"),
 	}
-	defer gsvc.Close()
-	baseMW := flexMW.ReadOnlyFlex.Base().Extend(
-		config.Middleware(&configStore),
-		gsvc.Base,
-	)
-
-	// Set up PRPC server.
-	svr := &prpc.Server{
-		AccessControl: accessControl,
+	modules := []module.Module{
+		encryptedcookies.NewModule(&encryptedcookies.ModuleOptions{
+			ClientID:     os.Getenv("OAUTH_CLIENT_ID"),
+			ClientSecret: os.Getenv("OAUTH_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("OAUTH_REDIRECT_URL"),
+			TinkAEADKey:  os.Getenv("TINK_AEAD_KEY"),
+		}),
+		gaeemulation.NewModule(nil),
+		secrets.NewModule(nil),
 	}
-	logsServer := logs.New()
-	logsPb.RegisterLogsServer(svr, logsServer)
-	discovery.Enable(svr)
-	svr.InstallHandlers(r, baseMW)
 
-	// Setup HTTP endpoints.
-	// We support OpenID (cookie) auth for browsers and OAuth2 for everything else.
-	httpMW := baseMW.Extend(
-		auth.Authenticate(
-			server.CookieAuth,
-			&auth.GoogleOAuth2Method{Scopes: []string{commonAuth.OAuthScopeEmail}}))
-	r.GET("/logs/*path", httpMW, logs.GetHandler)
+	server.Main(&opts, modules, func(srv *server.Server) error {
+		storageFlags := bigtable.Flags{
+			Project:  os.Getenv("BIGTABLE_PROJECT"),
+			Instance: os.Getenv("BIGTABLE_INSTANCE"),
+			LogTable: os.Getenv("BIGTABLE_LOG_TABLE"),
+		}
+		if err := storageFlags.Validate(); err != nil {
+			return err
+		}
 
-	// Run forever.
-	logging.Infof(c, "Listening on port 8080...")
-	if err := http.ListenAndServe(":8080", r); err != nil {
-		logging.WithError(err).Errorf(c, "Failed HTTP listen.")
-		panic(err)
-	}
+		// Install the in-memory cache for configs in datastore, warm it up.
+		srv.Context = config.WithStore(srv.Context, &config.Store{})
+		if _, err := config.Config(srv.Context); err != nil {
+			return errors.Annotate(err, "failed to fetch the initial service config").Err()
+		}
+
+		// Install core Logdog services.
+		gsvc, err := flex.NewGlobalServices(srv.Context, &storageFlags)
+		if err != nil {
+			return err
+		}
+		srv.Context = flex.WithServices(srv.Context, gsvc)
+
+		// Expose pRPC APIs.
+		srv.PRPC.AccessControl = accessControl
+		logspb.RegisterLogsServer(srv.PRPC, logs.New())
+
+		// Setup HTTP endpoints. We support cookie auth for browsers and OAuth2 for
+		// everything else.
+		mw := router.MiddlewareChain{
+			auth.Authenticate(
+				srv.CookieAuth,
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+			),
+		}
+		srv.Routes.GET("/logs/*path", mw, logs.GetHandler)
+
+		return nil
+	})
 }
 
-func accessControl(c context.Context, origin string) bool {
-	cfg, err := config.Config(c)
+func accessControl(ctx context.Context, origin string) bool {
+	cfg, err := config.Config(ctx)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to get config for access control check.")
-		return false
+		panic(fmt.Sprintf("failed to get config for the access control check: %s", err))
 	}
 
 	ccfg := cfg.GetCoordinator()

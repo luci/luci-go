@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main is the main entry point for the `vmuser` LogDog AppEngine
-// executable. This executable is designed to be built with and deployed on the
-// Google AppEngine Engine Managed VM infrastructure.
+// Package main is the main entry point for the `logs` LogDog AppEngine
+// executable.
+//
+// This executable is designed to be built with and deployed on the Google
+// AppEngine Flex infrastructure.
 package main
