@@ -64,10 +64,13 @@ export class TextArtifactElement extends MobxLitElement {
 
   protected render = reportRenderError.bind(this)(() => {
     const label = this.isInvLevelArtifact ? 'Inv-level artifact' : 'Artifact';
+
+    if (this.finalized && this.fetchUrl === '') {
+      return html`<div>${label}: <i>${this.artifactID}</i> not found.</div>`;
+    }
+
     if (this.content === null) {
-      return this.finalized
-        ? html`<div>${label}: <i>${this.artifactID}</i> not found.</div>`
-        : html`<div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
+      return html`<div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
     }
 
     if (this.content === '') {
