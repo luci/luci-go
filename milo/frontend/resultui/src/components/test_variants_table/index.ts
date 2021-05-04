@@ -110,8 +110,18 @@ export class TestVariantsTableElement extends MiloBaseElement {
       )}
       ${this.renderVariantGroup([['status', TestVariantStatus.EXPECTED]], testLoader?.expectedTestVariants || [])}
       <div id="variant-list-tail">
-        Showing ${testLoader?.testVariantCount || 0} /
-        ${testLoader?.unfilteredTestVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'} tests.
+        ${testLoader?.testVariantCount === testLoader?.unfilteredTestVariantCount
+          ? html`
+              Showing ${testLoader?.testVariantCount || 0} /
+              ${testLoader?.unfilteredTestVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'} tests.
+            `
+          : html`
+              Showing
+              <i>${testLoader?.testVariantCount || 0}</i>
+              test${testLoader?.testVariantCount === 1 ? '' : 's'} that
+              <i>match${testLoader?.testVariantCount === 1 ? 'es' : ''} the filter</i>, out of
+              <i>${testLoader?.unfilteredTestVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'}</i> tests.
+            `}
         <span
           class="active-text"
           style=${styleMap({ display: this.invocationState.testLoader?.loadedAllVariants ?? true ? 'none' : '' })}

@@ -173,7 +173,7 @@ export class TestResultsTabElement extends MiloBaseElement {
         padding: 5px 10px 3px 10px;
       }
       milo-test-search-filter {
-        max-width: 800px;
+        max-width: 1000px;
       }
       mwc-button {
         margin-top: 1px;

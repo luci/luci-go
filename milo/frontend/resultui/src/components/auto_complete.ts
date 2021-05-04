@@ -49,7 +49,7 @@ export class AutoCompleteElement extends MiloBaseElement {
   onSuggestionSelected = (_suggestion: SuggestionEntry) => {};
 
   focus() {
-    this.searchBox.focus();
+    this.inputBox.focus();
   }
 
   // -1 means nothing is selected.
@@ -57,8 +57,8 @@ export class AutoCompleteElement extends MiloBaseElement {
   @observable.ref private showSuggestions = false;
   @observable.ref private focused = false;
 
-  private get searchBox() {
-    return this.shadowRoot!.getElementById('search-box')!;
+  private get inputBox() {
+    return this.shadowRoot!.getElementById('input-box')!;
   }
   private get dropdownContainer() {
     return this.shadowRoot!.getElementById('dropdown-container')!;
@@ -109,7 +109,7 @@ export class AutoCompleteElement extends MiloBaseElement {
 
   private externalClickHandler = (e: MouseEvent) => {
     // If user clicks on other elements, dismiss the dropdown.
-    if (!e.composedPath().some((t) => t === this.searchBox || t === this.dropdownContainer)) {
+    if (!e.composedPath().some((t) => t === this.inputBox || t === this.dropdownContainer)) {
       this.clearSuggestion();
     }
   };
@@ -139,90 +139,106 @@ export class AutoCompleteElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <input
-        id="search-box"
-        placeholder=${this.hint}
-        .value=${this.value}
-        @input=${(e: InputEvent) => this.onValueUpdate((e.target as HTMLInputElement).value)}
-        @focus=${() => (this.focused = true)}
-        @blur=${() => (this.focused = false)}
-        @keydown=${(e: KeyboardEvent) => {
-          switch (e.code) {
-            case 'ArrowDown':
-              if (!this.showSuggestions) {
-                this.showSuggestions = true;
-              }
-              // Select the next suggestion entry.
-              for (let nextIndex = this.selectedIndex + 1; nextIndex < this.suggestions.length; ++nextIndex) {
-                if (!this.suggestions[nextIndex].isHeader) {
-                  this.selectedIndex = nextIndex;
-                  break;
+      <div>
+        <slot name="pre-icon"><span></span></slot>
+        <input
+          id="input-box"
+          placeholder=${this.hint}
+          .value=${this.value}
+          @input=${(e: InputEvent) => this.onValueUpdate((e.target as HTMLInputElement).value)}
+          @focus=${() => (this.focused = true)}
+          @blur=${() => (this.focused = false)}
+          @keydown=${(e: KeyboardEvent) => {
+            switch (e.code) {
+              case 'ArrowDown':
+                if (!this.showSuggestions) {
+                  this.showSuggestions = true;
                 }
-              }
-              break;
-            case 'ArrowUp':
-              // Select the previous suggestion entry.
-              for (let nextIndex = this.selectedIndex - 1; nextIndex >= 0; --nextIndex) {
-                if (!this.suggestions[nextIndex].isHeader) {
-                  this.selectedIndex = nextIndex;
-                  break;
+                // Select the next suggestion entry.
+                for (let nextIndex = this.selectedIndex + 1; nextIndex < this.suggestions.length; ++nextIndex) {
+                  if (!this.suggestions[nextIndex].isHeader) {
+                    this.selectedIndex = nextIndex;
+                    break;
+                  }
                 }
-              }
-              break;
-            case 'Escape':
-              this.clearSuggestion();
-              break;
-            case 'Enter':
-              if (this.selectedIndex !== -1) {
-                this.onSuggestionSelected(this.suggestions[this.selectedIndex] as SuggestionEntry);
-              } else if (this.value !== '' && !this.value.endsWith(' ')) {
-                // Complete the current sub-query if it's not already completed.
-                this.onValueUpdate(this.value + ' ');
-              }
-              this.clearSuggestion();
-              break;
-            default:
-              return;
-          }
-          e.preventDefault();
-        }}
-      />
-      <div
-        id="dropdown-container"
-        style=${styleMap({ display: this.showSuggestions && this.suggestions.length > 0 ? '' : 'none' })}
-      >
-        <table id="dropdown">
-          ${this.suggestions.map((suggestion, i) => this.renderSuggestion(suggestion, i))}
-        </table>
+                break;
+              case 'ArrowUp':
+                // Select the previous suggestion entry.
+                for (let nextIndex = this.selectedIndex - 1; nextIndex >= 0; --nextIndex) {
+                  if (!this.suggestions[nextIndex].isHeader) {
+                    this.selectedIndex = nextIndex;
+                    break;
+                  }
+                }
+                break;
+              case 'Escape':
+                this.clearSuggestion();
+                break;
+              case 'Enter':
+                if (this.selectedIndex !== -1) {
+                  this.onSuggestionSelected(this.suggestions[this.selectedIndex] as SuggestionEntry);
+                } else if (this.value !== '' && !this.value.endsWith(' ')) {
+                  // Complete the current sub-query if it's not already completed.
+                  this.onValueUpdate(this.value + ' ');
+                }
+                this.clearSuggestion();
+                break;
+              default:
+                return;
+            }
+            e.preventDefault();
+          }}
+        />
+        <slot name="post-icon"><span></span></slot>
+        <div
+          id="dropdown-container"
+          style=${styleMap({ display: this.showSuggestions && this.suggestions.length > 0 ? '' : 'none' })}
+        >
+          <table id="dropdown">
+            ${this.suggestions.map((suggestion, i) => this.renderSuggestion(suggestion, i))}
+          </table>
+        </div>
       </div>
     `;
   }
 
   static styles = css`
-    :host {
-      display: inline-block;
+    :host > div {
+      display: inline-grid;
+      grid-template-columns: auto 1fr auto;
       position: relative;
       box-sizing: border-box;
       width: 100%;
+      border: 1px solid var(--divider-color);
+      border-radius: 0.25rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
 
-    #search-box {
+    :host > div:focus-within {
+      outline: Highlight auto 1px;
+      outline: -webkit-focus-ring-color auto 1px;
+    }
+
+    #input-box {
       display: inline-block;
       width: 100%;
       box-sizing: border-box;
       padding: 0.3rem 0.5rem;
       font-size: 1rem;
       color: var(--light-text-color);
-      background-clip: padding-box;
-      border: 1px solid var(--divider-color);
-      border-radius: 0.25rem;
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      border: none;
       text-overflow: ellipsis;
+      background: transparent;
+    }
+    input:focus {
+      outline: none;
     }
 
     #dropdown-container {
       position: absolute;
+      top: 30px;
       border: 1px solid var(--divider-color);
+      border-radius: 0.25rem;
       background: white;
       color: var(--active-color);
       padding: 2px;

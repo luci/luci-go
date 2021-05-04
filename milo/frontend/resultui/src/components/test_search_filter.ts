@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
+import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import './auto_complete';
@@ -56,7 +58,7 @@ export class TestSearchFilterElement extends MobxLitElement {
         key="/"
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
-          setTimeout(() => this.shadowRoot?.getElementById('search-box')?.focus());
+          setTimeout(() => this.shadowRoot?.getElementById('search-box')!.focus());
         }}
       >
         <milo-auto-complete
@@ -69,8 +71,28 @@ export class TestSearchFilterElement extends MobxLitElement {
             this.invocationState.searchText = this.queryPrefix + suggestion.value! + ' ';
           }}
         >
+          <mwc-icon slot="pre-icon">search</mwc-icon>
+          <mwc-icon
+            id="clear-search"
+            slot="post-icon"
+            title="Clear"
+            style=${styleMap({ display: this.invocationState.searchText === '' ? 'none' : '' })}
+            @click=${() => (this.invocationState.searchText = '')}
+          >
+            close
+          </mwc-icon>
         </milo-auto-complete>
       </milo-hotkey>
     `;
   }
+
+  static styles = css`
+    mwc-icon {
+      margin: 2px;
+    }
+
+    #clear-search {
+      cursor: pointer;
+    }
+  `;
 }
