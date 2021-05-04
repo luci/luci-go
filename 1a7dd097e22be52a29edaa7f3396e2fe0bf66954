@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bdbc110_0175173c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "sorry for very long delay, I\u0027m 50% OOO myself today and was swamped.",
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "03a2b631_8fafc569",
@@ -36,6 +53,76 @@
         "startChar": 1,
         "endLine": 80,
         "endChar": 11
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3284065e_200bb539",
+        "filename": "resultdb/internal/integrationtests/invocation_finalization_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "OK, i see precedent above. 2 questions:\n1) since there is spanner emulator, shouldn\u0027t this be quite reliable now, especially if give it 60s to run?\n2) how do ResultDB folks not forget to run this test when potentially affecting it?",
+      "parentUuid": "03a2b631_8fafc569",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 11
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8151e0e_524c200e",
+        "filename": "resultdb/internal/integrationtests/invocation_finalization_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "AFAIK, the `SkipDeadlineCheck` option just to make this work. If so, I wonder, can we avoid adding another condition to the codebase and just update invocation here `now + 2s` and just wait for physical time to expire the invocations?\n\nSince these tests aren\u0027t really fast and conceivably flaky, a bit more flakiness but more realistic test + no new condition \u003d\u003e looks like a better trade off to me.\n\nThoughts?",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 0
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e7149eb_5b218f0b",
+        "filename": "resultdb/internal/integrationtests/invocation_finalization_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "what forces 10 seconds?",
+      "range": {
+        "startLine": 109,
+        "startChar": 53,
+        "endLine": 109,
+        "endChar": 71
       },
       "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -64,6 +151,139 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5aa45337_c9a68002",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "5e08aea7_7b8cc994",
+      "range": {
+        "startLine": 248,
+        "startChar": 6,
+        "endLine": 248,
+        "endChar": 12
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02138374_5ffb866e",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/resultdb/internal/invocations/misc.go;l\u003d35;drc\u003dcab3e2fc12192ab1556ed0f3ffc80a897868e2b3\ntells me this runs a query, hence i take it that max shard number may change in the future, and if it does, wouldn\u0027t you want the deadline enforcer to notice new shards?\n\nBtw, how does the rest of ResultDB code handle this?",
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5626f4f9_0b9ed2dc",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "And what happens is there are \u003e100?\n\n(is this the way it\u0027s typically done in ResultDB -- link to precedent would help)",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 11
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "daf8921b_034516ba",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "why do you need write transaction?",
+      "range": {
+        "startLine": 77,
+        "startChar": 20,
+        "endLine": 77,
+        "endChar": 25
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a4d8d95b_4a887c73",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "nit: consider\n\nfor len(sched.Tasks().Payloads()) \u003d\u003d 0 {\n  time.Sleep(...)\n}\n// Do final assertion with less indentation",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 7
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1f2374f2_37b0d73a",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "nit-nit: this means this test takes at least 100ms, even if everything is done after 1ms. Given that `len(sched.Tasks().Payloads()) !\u003d 0` check is very cheap, I\u0027d  use 1ms here.",
+      "range": {
+        "startLine": 53,
+        "startChar": 14,
+        "endLine": 53,
+        "endChar": 17
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a7c44c40_44c02dcb",
@@ -82,6 +302,76 @@
         "startChar": 3,
         "endLine": 142,
         "endChar": 111
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "248313bd_d807480c",
+        "filename": "resultdb/internal/services/finalizer/finalizer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "makes sense. Btw, for the future -- consider sending such changes in separate CL(s)  -- easy to review and you don\u0027t need to distract already-easily-distracted-reviewers like myself on really important big CLs 😊",
+      "parentUuid": "a7c44c40_44c02dcb",
+      "range": {
+        "startLine": 139,
+        "startChar": 3,
+        "endLine": 142,
+        "endChar": 111
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6740c0bc_86e5d644",
+        "filename": "resultdb/internal/services/recorder/recorder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "nit: deadline validation, right?\n\n(presumably, there can be other validation that I\u0027d not want skipped)",
+      "range": {
+        "startLine": 55,
+        "startChar": 28,
+        "endLine": 55,
+        "endChar": 39
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98329f57_7b1849bb",
+        "filename": "resultdb/internal/services/recorder/recorder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-04T23:36:56Z",
+      "side": 1,
+      "message": "Is this ever supposed to be used outside of tests?\nIf not, how about TestingSkipDeadlineCheck?\n\n(but tbh, i\u0027m not convinced *yet* this is a good option to have -- let\u0027s resolve the far above comment thread first)",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 53
       },
       "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
