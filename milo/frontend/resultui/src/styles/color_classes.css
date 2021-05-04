@@ -50,3 +50,28 @@ span.flaky {
 .canceled {
   color: var(--canceled-color);
 }
+
+.scheduled-bg {
+  border: 1px solid var(--scheduled-color);
+  background-color: var(--scheduled-bg-color);
+}
+.started-bg {
+  border: 1px solid var(--started-color);
+  background-color: var(--started-bg-color);
+}
+.success-bg {
+  border: 1px solid var(--success-color);
+  background-color: var(--success-bg-color);
+}
+.failure-bg {
+  border: 1px solid var(--failure-color);
+  background-color: var(--failure-bg-color);
+}
+.infra-failure-bg {
+  border: 1px solid var(--critical-failure-color);
+  background-color: var(--critical-failure-bg-color);
+}
+.canceled-bg {
+  border: 1px solid var(--canceled-color);
+  background-color: var(--canceled-bg-color);
+}

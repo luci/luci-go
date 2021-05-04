@@ -48,6 +48,7 @@ import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
 import { router } from '../../routes';
 import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
+import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-overview-tab')
@@ -116,7 +117,7 @@ export class OverviewTabElement extends MobxLitElement {
       return html``;
     }
     return html`
-      <div id="canary-warning" class="wide">
+      <div id="canary-warning">
         WARNING: This build ran on a canary version of LUCI. If you suspect it failed due to infra, retry the build.
         Next time it may use the non-canary version.
       </div>
@@ -142,14 +143,14 @@ export class OverviewTabElement extends MobxLitElement {
     const build = this.buildState.build!;
     if (!build.summaryMarkdown) {
       return html`
-        <div id="summary-html" class="wide ${BUILD_STATUS_CLASS_MAP[build.status]}">
+        <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}-bg">
           <div id="status">Build ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'status unknown'}</div>
         </div>
       `;
     }
 
     return html`
-      <div id="summary-html" class="wide ${BUILD_STATUS_CLASS_MAP[build.status]}">
+      <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}-bg">
         ${renderMarkdown(build.summaryMarkdown)}
       </div>
     `;
@@ -161,8 +162,8 @@ export class OverviewTabElement extends MobxLitElement {
       return html``;
     }
     return html`
-      <h3 class="wide">Builder Info</h3>
-      <div id="builder-description" class="wide">${sanitizeHTML(descriptionHtml)}</div>
+      <h3>Builder Info</h3>
+      <div id="builder-description">${sanitizeHTML(descriptionHtml)}</div>
     `;
   }
 
@@ -452,6 +453,7 @@ export class OverviewTabElement extends MobxLitElement {
 
   static styles = [
     commonStyle,
+    colorClasses,
     css`
       #main {
         margin: 10px 16px;
@@ -478,39 +480,10 @@ export class OverviewTabElement extends MobxLitElement {
         margin-block: 15px 10px;
       }
 
-      .wide {
-        grid-column-end: span 3;
-      }
-
       #summary-html {
-        background-color: var(--block-background-color);
         padding: 0 10px;
         clear: both;
         overflow-wrap: break-word;
-      }
-      #summary-html.scheduled {
-        border: 1px solid var(--scheduled-color);
-        background-color: var(--scheduled-bg-color);
-      }
-      #summary-html.started {
-        border: 1px solid var(--started-color);
-        background-color: var(--started-bg-color);
-      }
-      #summary-html.success {
-        border: 1px solid var(--success-color);
-        background-color: var(--success-bg-color);
-      }
-      #summary-html.failure {
-        border: 1px solid var(--failure-color);
-        background-color: var(--failure-bg-color);
-      }
-      #summary-html.infra-failure {
-        border: 1px solid var(--critical-failure-color);
-        background-color: var(--critical-failure-bg-color);
-      }
-      #summary-html.canceled {
-        border: 1px solid var(--canceled-color);
-        background-color: var(--canceled-bg-color);
       }
       #summary-html pre {
         white-space: pre-wrap;
