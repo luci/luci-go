@@ -22,6 +22,30 @@
       },
       "revId": "0df9737509c52c0bdfab81effa15725873d6aea7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22e556cc_0996ae86",
+        "filename": "logdog/common/storage/bigtable/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-04T23:28:56Z",
+      "side": 0,
+      "message": "I seriously doubt that they were anything other than arbitrary; go/bigtable default values probably have had someone pay attention to them recently.",
+      "parentUuid": "79425e31_2c2d33dc",
+      "range": {
+        "startLine": 71,
+        "startChar": 5,
+        "endLine": 71,
+        "endChar": 25
+      },
+      "revId": "0df9737509c52c0bdfab81effa15725873d6aea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
