@@ -38,6 +38,7 @@ import (
 // Run installs and executes this site.
 func main() {
 	mathrand.SeedRandomly()
+	server.SwitchToEncryptedCookies()
 
 	// Setup process global Context.
 	c := context.Background()
