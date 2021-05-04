@@ -27,7 +27,7 @@ import (
 )
 
 // Cancel implements Handler interface.
-func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
+func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
@@ -50,7 +50,7 @@ func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
 			if err := rs.RemoveRunFromCLs(ctx); err != nil {
 				return err
 			}
-			return rs.PmNotifier.NotifyRunFinished(ctx, rs.Run.ID)
+			return impl.PM.NotifyRunFinished(ctx, rs.Run.ID)
 		},
 	}
 	res.State.Run.Status = run.Status_CANCELLED

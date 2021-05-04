@@ -59,7 +59,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		case current == rs.Run.ID:
 			var innerErr error
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				innerErr = submit.Release(ctx, rs.RunNotifier, rs.Run.ID)
+				innerErr = submit.Release(ctx, impl.RM.NotifyReadyForSubmission, rs.Run.ID)
 				return innerErr
 			}, nil)
 			switch {
@@ -71,14 +71,14 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		}
 		return &Result{State: rs}, nil
 	case status == run.Status_SUBMITTING:
-		return continueSubmissionIfPossible(ctx, rs)
+		return continueSubmissionIfPossible(ctx, rs, impl.RM)
 	case status == run.Status_RUNNING || status == run.Status_WAITING_FOR_SUBMISSION:
 		// TODO(yiwzhang): fail if partially submitted.
 		rs, err := markSubmitting(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
-		s, err := constructSubmitter(ctx, rs)
+		s, err := constructSubmitter(ctx, rs, impl.RM)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +91,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 	}
 }
 
-func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Result, error) {
+func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM) (*Result, error) {
 	deadline := rs.Run.Submission.GetDeadline()
 	taskID := rs.Run.Submission.GetTaskId()
 	switch {
@@ -107,7 +107,7 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Res
 		// Deadline has already expired. Try to acquire submit queue again
 		// and attempt another submission if not waitlisted. Otherwise,
 		// falls back to WAITING_FOR_SUBMISSION status.
-		switch waitlist, err := acquireSubmitQueue(ctx, rs); {
+		switch waitlist, err := acquireSubmitQueue(ctx, rs, rm); {
 		case err != nil:
 			return nil, err
 		case waitlist:
@@ -121,7 +121,7 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Res
 			if err != nil {
 				return nil, err
 			}
-			s, err := constructSubmitter(ctx, rs)
+			s, err := constructSubmitter(ctx, rs, rm)
 			if err != nil {
 				return nil, err
 			}
@@ -133,7 +133,7 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Res
 	case taskID == mustTaskIDFromContext(ctx):
 		// Matching taskID indicates current task is the retry of a previous
 		// submitting task that has failed transiently. Continue the submission.
-		s, err := constructSubmitter(ctx, rs)
+		s, err := constructSubmitter(ctx, rs, rm)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +144,7 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Res
 	default:
 		// Presumably another task is working on the submission at this time. So
 		// poke as soon as the deadline expires.
-		if err := rs.RunNotifier.PokeAt(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
+		if err := rm.PokeAt(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
 			return nil, err
 		}
 		return &Result{State: rs}, nil
@@ -185,7 +185,7 @@ func mustTaskIDFromContext(ctx context.Context) string {
 	}
 }
 
-func constructSubmitter(ctx context.Context, rs *state.RunState) (*submitter, error) {
+func constructSubmitter(ctx context.Context, rs *state.RunState, rm RM) (*submitter, error) {
 	cg, err := rs.LoadConfigGroup(ctx)
 	if err != nil {
 		return nil, err
@@ -203,12 +203,12 @@ func constructSubmitter(ctx context.Context, rs *state.RunState) (*submitter, er
 		}
 	}
 	return &submitter{
-		runID:       rs.Run.ID,
-		deadline:    submission.GetDeadline().AsTime(),
-		attempt:     submission.GetAttemptCount(),
-		treeURL:     cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
-		clids:       unsubmittedCLs,
-		runNotifier: rs.RunNotifier,
+		runID:    rs.Run.ID,
+		deadline: submission.GetDeadline().AsTime(),
+		attempt:  submission.GetAttemptCount(),
+		treeURL:  cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
+		clids:    unsubmittedCLs,
+		rm:       rm,
 	}, nil
 }
 
@@ -222,7 +222,7 @@ func (*Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sr e
 	panic("implement")
 }
 
-func acquireSubmitQueue(ctx context.Context, rs *state.RunState) (waitlisted bool, err error) {
+func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlisted bool, err error) {
 	cg, err := rs.LoadConfigGroup(ctx)
 	if err != nil {
 		return false, err
@@ -231,7 +231,7 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState) (waitlisted boo
 	rid := rs.Run.ID
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		waitlisted, innerErr = submit.TryAcquire(ctx, rs.RunNotifier, rid, cg.SubmitOptions)
+		waitlisted, innerErr = submit.TryAcquire(ctx, rm.NotifyReadyForSubmission, rid, cg.SubmitOptions)
 		switch {
 		case innerErr != nil:
 			return innerErr
@@ -239,7 +239,7 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState) (waitlisted boo
 			// If not waitlisted, RM will proceed as if ReadyForSubmission event is
 			// received. Sends a ReadyForSubmission event 10 seconds later in case
 			// the event processing has failed in the middle.
-			return rs.RunNotifier.NotifyReadyForSubmission(ctx, rid, now.Add(10*time.Second))
+			return rm.NotifyReadyForSubmission(ctx, rid, now.Add(10*time.Second))
 		default:
 			return nil
 		}
@@ -309,8 +309,8 @@ type submitter struct {
 	treeURL string
 	// clids contains ids of cls to be submitted in submission order.
 	clids common.CLIDs
-
-	runNotifier *run.Notifier
+	// rm is used to interact with Run Manager.
+	rm RM
 }
 
 // ErrTransientSubmissionFailure indicates that the submission has failed
@@ -351,7 +351,7 @@ func (s submitter) submit(ctx context.Context) error {
 
 	var innerErr error
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		if innerErr = submit.Release(ctx, s.runNotifier, s.runID); innerErr != nil {
+		if innerErr = submit.Release(ctx, s.rm.NotifyReadyForSubmission, s.runID); innerErr != nil {
 			return innerErr
 		}
 		if innerErr = notifySubmissionCompleted(ctx, s.runID, sc); innerErr != nil {
@@ -367,7 +367,7 @@ func (s submitter) submit(ctx context.Context) error {
 	}
 	// TODO(yiwzhang): optimization for happy path: for successful submission,
 	// invoke the RM within the same task to reduce latency.
-	return s.runNotifier.TaskRefs.Dispatch(ctx, string(s.runID), time.Time{})
+	return s.rm.Invoke(ctx, s.runID, time.Time{})
 }
 
 var perCLRetryFactory retry.Factory = transient.Only(func() retry.Iterator {
