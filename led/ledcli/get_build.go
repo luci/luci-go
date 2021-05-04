@@ -48,8 +48,9 @@ which is useful when copying it from ci.chromium.org URL.`,
 type cmdGetBuild struct {
 	cmdBase
 
-	bbHost   string
-	pinBotID bool
+	bbHost       string
+	pinBotID     bool
+	priorityDiff int
 
 	buildID int64
 }
@@ -60,6 +61,9 @@ func (c *cmdGetBuild) initFlags(opts cmdBaseOptions) {
 
 	c.Flags.BoolVar(&c.pinBotID, "pin-bot-id", false,
 		"Pin the bot id in the generated job Definition's dimensions.")
+
+	c.Flags.IntVar(&c.priorityDiff, "adjust-priority", 10,
+		"Increase or decrease the priority of the generated job. Note: priority works like Unix 'niceness'; Higher values indicate lower priority.")
 
 	c.cmdBase.initFlags(opts)
 }
@@ -86,6 +90,7 @@ func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, _ au
 		BuildbucketHost: c.bbHost,
 		BuildID:         c.buildID,
 		PinBotID:        c.pinBotID,
+		PriorityDiff:    c.priorityDiff,
 		KitchenSupport:  c.kitchenSupport,
 	})
 }

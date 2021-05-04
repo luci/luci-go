@@ -35,6 +35,7 @@ type GetBuildersOpts struct {
 	Builder         string
 	Canary          bool
 	ExtraTags       []string
+	PriorityDiff    int
 
 	KitchenSupport job.KitchenSupport
 }
@@ -83,7 +84,7 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, newTask, fmt.Sprintf(`get-builder %s:%s`, opts.Bucket, opts.Builder),
-		answer.SwarmingHost, opts.KitchenSupport)
+		answer.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff)
 	if err != nil {
 		return nil, err
 	}

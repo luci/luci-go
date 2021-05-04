@@ -47,6 +47,7 @@ type cmdGetSwarm struct {
 	taskID       string
 	swarmingHost string
 	pinBotID     bool
+	priorityDiff int
 }
 
 func (c *cmdGetSwarm) initFlags(opts cmdBaseOptions) {
@@ -55,6 +56,9 @@ func (c *cmdGetSwarm) initFlags(opts cmdBaseOptions) {
 
 	c.Flags.BoolVar(&c.pinBotID, "pin-bot-id", false,
 		"Pin the bot id in the generated job Definition's dimensions.")
+
+	c.Flags.IntVar(&c.priorityDiff, "adjust-priority", 10,
+		"Increase or decrease the priority of the generated job. Note: priority works like Unix 'niceness'; Higher values indicate lower priority.")
 
 	c.cmdBase.initFlags(opts)
 }
@@ -73,6 +77,7 @@ func (c *cmdGetSwarm) execute(ctx context.Context, authClient *http.Client, _ au
 		PinBotID:     c.pinBotID,
 		SwarmingHost: c.swarmingHost,
 		TaskID:       c.taskID,
+		PriorityDiff: c.priorityDiff,
 
 		KitchenSupport: c.kitchenSupport,
 	})

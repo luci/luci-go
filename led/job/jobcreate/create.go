@@ -50,7 +50,7 @@ func detectMode(r *swarming.SwarmingRpcsNewTaskRequest) string {
 // If the task's first slice looks like either a bbagent or kitchen-based
 // Buildbucket task, the returned Definition will have the `buildbucket`
 // field populated, otherwise the `swarming` field will be populated.
-func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport) (ret *job.Definition, err error) {
+func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int) (ret *job.Definition, err error) {
 	if len(r.TaskSlices) == 0 {
 		return nil, errors.New("swarming tasks without task slices are not supported")
 	}
@@ -58,7 +58,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 	ret = &job.Definition{
 		UserPayload: &swarmingpb.CASTree{},
 		CasUserPayload: &swarmingpb.CASReference{
-			Digest:&swarmingpb.Digest{},
+			Digest: &swarmingpb.Digest{},
 		},
 	}
 	name = "led: " + name
@@ -95,8 +95,15 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		// set all buildbucket type tasks to experimental by default.
 		bb.BbagentArgs.Build.Input.Experimental = true
 
-		// bump priority by default
-		bb.BbagentArgs.Build.Infra.Swarming.Priority += 10
+		// the priority for buildbucket type tasks is between 20 to 255.
+		switch priority := bb.BbagentArgs.Build.Infra.Swarming.Priority + int32(priorityDiff); {
+		case priority < 20:
+			bb.BbagentArgs.Build.Infra.Swarming.Priority = 20
+		case priority > 255:
+			bb.BbagentArgs.Build.Infra.Swarming.Priority = 255
+		default:
+			bb.BbagentArgs.Build.Infra.Swarming.Priority = priority
+		}
 
 		// clear fields which don't make sense
 		bb.BbagentArgs.Build.CanceledBy = ""
