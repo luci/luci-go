@@ -73,7 +73,13 @@ export class UserConfigsStore {
 
   constructor(private readonly storage = window.localStorage) {
     const storedConfigsStr = storage.getItem(UserConfigsStore.KEY) || '{}';
-    merge(this.userConfigs, JSON.parse(storedConfigsStr));
+    try {
+      merge(this.userConfigs, JSON.parse(storedConfigsStr));
+    } catch (e) {
+      console.error(e);
+      console.warn('encountered an error when parsing stored configs, resetting it to the default value');
+      this.save();
+    }
 
     const fourWeeksAgo = Date.now() - 2419200000;
     this.deleteStaleKeys(this.userConfigs.steps.stepPinTime, fourWeeksAgo);
