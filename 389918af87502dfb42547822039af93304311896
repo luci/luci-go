@@ -16,6 +16,69 @@
       "message": "from https://cloud.google.com/appengine/docs/standard/go/how-instances-are-managed#timeout, it looks like timeout for all type of requests are 10 minute regardless of services.",
       "revId": "389918af87502dfb42547822039af93304311896",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "514600f1_21459e79",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T21:58:50Z",
+      "side": 1,
+      "message": "LGTM with nit",
+      "revId": "389918af87502dfb42547822039af93304311896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2eea48dc_b1f9bea7",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T21:58:50Z",
+      "side": 1,
+      "message": "Nit: within",
+      "range": {
+        "startLine": 144,
+        "startChar": 66,
+        "endLine": 144,
+        "endChar": 73
+      },
+      "revId": "389918af87502dfb42547822039af93304311896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "67c7bbb8_9ac91b3d",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T21:58:50Z",
+      "side": 1,
+      "message": "Maybe reuse submissionDeadline constant in tests?",
+      "range": {
+        "startLine": 206,
+        "startChar": 44,
+        "endLine": 206,
+        "endChar": 60
+      },
+      "revId": "389918af87502dfb42547822039af93304311896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
