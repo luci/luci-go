@@ -100,8 +100,8 @@ export interface Build {
   readonly endTime?: string;
   readonly status: BuildStatus;
   readonly summaryMarkdown?: string;
-  readonly input: BuildInput;
-  readonly output: BuildOutput;
+  readonly input?: BuildInput;
+  readonly output?: BuildOutput;
   readonly steps?: readonly Step[];
   readonly infra?: BuildInfra;
   readonly tags: readonly StringPair[];
@@ -146,7 +146,7 @@ export interface TestPresentationConfig {
 }
 
 export interface BuildInput {
-  readonly properties: {
+  readonly properties?: {
     [TEST_PRESENTATION_KEY]?: TestPresentationConfig;
     [key: string]: unknown;
   };
@@ -171,7 +171,7 @@ export interface GerritChange {
 }
 
 export interface BuildOutput {
-  readonly properties: {
+  readonly properties?: {
     [TEST_PRESENTATION_KEY]?: TestPresentationConfig;
     [BLAMELIST_PIN_KEY]?: GitilesCommit[];
     [key: string]: unknown;
