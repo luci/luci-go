@@ -362,6 +362,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "11708ab6_f9258b04",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6acc7960_2ad8ce8d",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 89
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "26b5c975_81eda6b1",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 5

@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9587eb14_26011969",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6426404_29ce2c85",
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ff27ffee_5e840c47",
@@ -41,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba105566_9460948d",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff27ffee_5e840c47",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 17
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d84111ed_7de14b49",
@@ -54,6 +96,30 @@
       "writtenOn": "2021-04-20T20:41:44Z",
       "side": 1,
       "message": "Even iff we have CQD attempt record, we must not send data which conflicts with the rest of the row computed from Run entity.\nAre you sure both are necessarily consistent?\n\nI guess there is no harm in Builds \u0026 CustomReq., \nbut Substatus -- not sure at all.",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 52
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49fb20b5_e5a9de03",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "So, I did a quick check to remind myself what substatus is used for, and it\u0027s basically only used to specify failure reason in the case where status \u003d failure; it\u0027s also set to \"manual cancel\" whenever status \u003d aborted.\n\nI extracted the merging out to a separate little function with a comment about this, and changed it to only overwrite substatus in the case of failure (or cancelation). Please take a quick look to see if that looks right.",
+      "parentUuid": "d84111ed_7de14b49",
       "range": {
         "startLine": 52,
         "startChar": 2,
@@ -89,6 +155,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a05295d2_12f96c68",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "There\u0027s a function I see that loads changelist.CL, but not RunCL (https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/run/impl/state/state.go;l\u003d72?q\u003dLoadCLs\u0026ss\u003dchromium);",
+      "parentUuid": "da93d383_e83304fb",
+      "range": {
+        "startLine": 76,
+        "startChar": 37,
+        "endLine": 77,
+        "endChar": 26
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77380202_53e5050a",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 9
@@ -100,6 +190,30 @@
       "writtenOn": "2021-04-20T20:41:44Z",
       "side": 1,
       "message": "*",
+      "range": {
+        "startLine": 127,
+        "startChar": 36,
+        "endLine": 127,
+        "endChar": 37
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bf0d62f_38c5bf03",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77380202_53e5050a",
       "range": {
         "startLine": 127,
         "startChar": 36,
@@ -123,6 +237,30 @@
       "writtenOn": "2021-04-20T20:41:44Z",
       "side": 1,
       "message": "general: we don\u0027t use this in CV. It\u0027s not really useful in general and logs look ugly.\n\nspecifically here it\u0027s also useless, since the dbg message after it says it all.",
+      "range": {
+        "startLine": 155,
+        "startChar": 10,
+        "endLine": 155,
+        "endChar": 25
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff91dce7_80d27c0d",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "978391f0_39786292",
       "range": {
         "startLine": 155,
         "startChar": 10,
@@ -198,6 +336,72 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ac331327_93caad81",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "I don\u0027t know if this could happen, and agree that it could be validated elsewhere. If it\u0027s not there, would referencing v.Payload.Run.Attempt below panic or just return nil?",
+      "parentUuid": "1f0ad1f2_d296836b",
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd3fedd5_2cc6ad50",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67404a5e_15440a0e",
+      "range": {
+        "startLine": 160,
+        "startChar": 74,
+        "endLine": 160,
+        "endChar": 84
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce85395b_02c0bcce",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ace1c9d7_42482536",
+      "range": {
+        "startLine": 160,
+        "startChar": 69,
+        "endLine": 160,
+        "endChar": 71
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e2cf43db_013d106c",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 9
@@ -209,6 +413,30 @@
       "writtenOn": "2021-04-20T20:41:44Z",
       "side": 1,
       "message": "for better or worse, we adopted GetXYZ in protos for accessing, hoping that it\u0027d ease transition to next-generation proto library later.\n\nreturn v.Payload.GetRun().GetAttempt(), nil\n\n(bonus -- it doesn\u0027t panic if either payload or run is nil)",
+      "range": {
+        "startLine": 162,
+        "startChar": 17,
+        "endLine": 162,
+        "endChar": 29
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "978f3754_c813e388",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2cf43db_013d106c",
       "range": {
         "startLine": 162,
         "startChar": 17,
@@ -244,6 +472,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "637534e3_4c6b3152",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Good point; I\u0027ll revise this.",
+      "parentUuid": "c98f346e_bce0ca90",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 170,
+        "endChar": 2
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ccbb14f6_6b398148",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 9
@@ -255,6 +507,30 @@
       "writtenOn": "2021-04-20T20:41:44Z",
       "side": 1,
       "message": "why? you can and should panic iff run status isn\u0027t final.",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 181,
+        "endChar": 37
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "104dfb61_52fd96b1",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ccbb14f6_6b398148",
       "range": {
         "startLine": 174,
         "startChar": 0,
@@ -278,6 +554,30 @@
       "writtenOn": "2021-04-20T20:41:44Z",
       "side": 1,
       "message": "please, move this into default block of the switch \u0026\u0026 log error before returning.",
+      "range": {
+        "startLine": 189,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 55
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64460f03_87cfec20",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-04T22:19:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7954b04_70e56aff",
       "range": {
         "startLine": 189,
         "startChar": 0,
