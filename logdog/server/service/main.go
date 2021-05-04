@@ -24,6 +24,7 @@ import (
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/logdog/server/config"
 )
 
@@ -42,14 +43,14 @@ func Main(init func(srv *server.Server, impl *Implementations) error) {
 	coordFlags := coordinatorFlags{}
 	coordFlags.register(flag.CommandLine)
 
-	storageFlags := storageFlags{}
-	storageFlags.register(flag.CommandLine)
+	storageFlags := bigtable.Flags{}
+	storageFlags.Register(flag.CommandLine)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		if err := coordFlags.validate(); err != nil {
 			return err
 		}
-		if err := storageFlags.validate(); err != nil {
+		if err := storageFlags.Validate(); err != nil {
 			return err
 		}
 
@@ -57,7 +58,7 @@ func Main(init func(srv *server.Server, impl *Implementations) error) {
 		srv.Context = config.WithStore(srv.Context, &config.Store{})
 
 		// Initialize our Storage.
-		st, err := intermediateStorage(srv.Context, &storageFlags)
+		st, err := bigtable.StorageFromFlags(srv.Context, &storageFlags)
 		if err != nil {
 			return err
 		}
