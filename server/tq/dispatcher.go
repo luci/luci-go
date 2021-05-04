@@ -430,6 +430,12 @@ type ExecutionInfo struct {
 	// failed attempt.
 	ExecutionCount int
 
+	// TaskID is the ID of the task in the underlying backend service.
+	//
+	// For Cloud Task, it is `X-CloudTasks-TaskName`.
+	// For PubSub, it is `messageID`.
+	TaskID string
+
 	taskRetryReason       string    // X-CloudTasks-TaskRetryReason
 	taskPreviousResponse  string    // X-CloudTasks-TaskPreviousResponse
 	submitterTraceContext string    // see TraceContextHeader
@@ -1335,6 +1341,7 @@ func parseHeaders(h http.Header) ExecutionInfo {
 
 	return ExecutionInfo{
 		ExecutionCount:        int(execCount),
+		TaskID:                magicHeader("TaskName"),
 		taskRetryReason:       magicHeader("TaskRetryReason"),
 		taskPreviousResponse:  magicHeader("TaskPreviousResponse"),
 		submitterTraceContext: h.Get(TraceContextHeader),

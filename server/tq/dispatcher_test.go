@@ -404,6 +404,7 @@ func TestPushHandler(t *testing.T) {
 				handlerCb = func(ctx context.Context) {
 					info := TaskExecutionInfo(ctx)
 					So(info.ExecutionCount, ShouldEqual, 500)
+					So(info.TaskID, ShouldEqual, "task-without-eta")
 					So(info.expectedETA, ShouldBeZeroValue)
 					So(info.submitterTraceContext, ShouldEqual, "zzz")
 					clock.Get(ctx).(testclock.TestClock).Add(fakeDelayMS * time.Millisecond)
@@ -411,6 +412,7 @@ func TestPushHandler(t *testing.T) {
 
 				callWithHeaders(map[string]string{
 					"X-CloudTasks-TaskExecutionCount": "500",
+					"X-CloudTasks-TaskName":           "task-without-eta",
 					TraceContextHeader:                "zzz",
 				})
 
@@ -431,12 +433,14 @@ func TestPushHandler(t *testing.T) {
 				handlerCb = func(ctx context.Context) {
 					info := TaskExecutionInfo(ctx)
 					So(info.ExecutionCount, ShouldEqual, 5)
+					So(info.TaskID, ShouldEqual, "task-with-eta")
 					So(info.expectedETA.Equal(etaValue), ShouldBeTrue)
 					clock.Get(ctx).(testclock.TestClock).Add(fakeDelayMS * time.Millisecond)
 				}
 
 				callWithHeaders(map[string]string{
 					"X-CloudTasks-TaskExecutionCount": "5",
+					"X-CloudTasks-TaskName":           "task-with-eta",
 					ExpectedETAHeader:                 "1442540050.000001",
 				})
 
