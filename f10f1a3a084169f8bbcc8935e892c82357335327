@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01675631_7c654c57",
+        "filename": "logdog/common/storage/bigtable/flags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-04T05:06:29Z",
+      "side": 0,
+      "message": "I mean, obviously. It\u0027s \"service\". I\u0027m not sure what wasn\u0027t clear about that.",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 15
+      },
+      "revId": "f10f1a3a084169f8bbcc8935e892c82357335327",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
