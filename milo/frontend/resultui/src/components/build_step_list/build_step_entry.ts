@@ -112,7 +112,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
   }
 
   private renderDuration() {
-    if (!this.step.duration) {
+    if (!this.step.startTime) {
       return html` <span class="badge" title="No duration">N/A</span> `;
     }
 
@@ -145,14 +145,14 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
   }
 
   private renderDurationTooltip() {
-    if (!this.step.duration) {
+    if (!this.step.startTime) {
       return html``;
     }
     return html`
       <table>
         <tr>
           <td>Started:</td>
-          <td>${this.step.startTime!.toFormat(NUMERIC_TIME_FORMAT)}</td>
+          <td>${this.step.startTime.toFormat(NUMERIC_TIME_FORMAT)}</td>
         </tr>
         <tr>
           <td>Ended:</td>
