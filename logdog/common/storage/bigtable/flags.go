@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package service
+package bigtable
 
 import (
 	"context"
 	"flag"
 
-	cloudBT "cloud.google.com/go/bigtable"
+	"cloud.google.com/go/bigtable"
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/common/storage"
-	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/server/auth"
 )
 
-// storageFlags contains the intermediate storage config.
-type storageFlags struct {
+// Flags contains the BigTable storage config.
+type Flags struct {
 	// Project is the name of the Cloud Project containing the BigTable instance.
 	Project string
 	// Instance if the name of the BigTable instance within the project.
@@ -37,8 +35,8 @@ type storageFlags struct {
 	LogTable string
 }
 
-// register registers flags in the flag set.
-func (f *storageFlags) register(fs *flag.FlagSet) {
+// Register registers flags in the flag set.
+func (f *Flags) Register(fs *flag.FlagSet) {
 	fs.StringVar(&f.Project, "bigtable-project", f.Project,
 		"Cloud Project containing the BigTable instance.")
 	fs.StringVar(&f.Instance, "bigtable-instance", f.Instance,
@@ -47,8 +45,8 @@ func (f *storageFlags) register(fs *flag.FlagSet) {
 		"Name of the table with logs.")
 }
 
-// validate returns an error if some parsed flags have invalid values.
-func (f *storageFlags) validate() error {
+// Validate returns an error if some parsed flags have invalid values.
+func (f *Flags) Validate() error {
 	if f.Project == "" {
 		return errors.New("-bigtable-project is required")
 	}
@@ -61,17 +59,17 @@ func (f *storageFlags) validate() error {
 	return nil
 }
 
-// intermediateStorage instantiates the intermediate Storage instance.
-func intermediateStorage(ctx context.Context, f *storageFlags) (storage.Storage, error) {
+// StorageFromFlags instantiates the *bigtable.Storage given parsed flags.
+func StorageFromFlags(ctx context.Context, f *Flags) (*Storage, error) {
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get the token source").Err()
 	}
-	client, err := cloudBT.NewClient(ctx, f.Project, f.Instance, option.WithTokenSource(ts))
+	client, err := bigtable.NewClient(ctx, f.Project, f.Instance, option.WithTokenSource(ts))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to construct BigTable client").Err()
 	}
-	return &bigtable.Storage{
+	return &Storage{
 		Client:   client,
 		LogTable: f.LogTable,
 	}, nil
