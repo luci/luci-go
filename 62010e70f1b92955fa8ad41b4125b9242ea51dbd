@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f59d6aa_56420a1a",
+        "filename": "gae/impl/cloud/context_lite.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-05T00:06:23Z",
+      "side": 0,
+      "message": "I decided to remove this. We don\u0027t use it and have no plans of using it. We use Redis, which has somewhat different API (connection-oriented, different compare-and-swap semantics). And it is always more efficient to implement algorithms using Redis semantics directly rather that try to shoehorn GAE memcache-compatible layer in between.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 20
+      },
+      "revId": "62010e70f1b92955fa8ad41b4125b9242ea51dbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
