@@ -16,6 +16,24 @@
       "message": "Code lgtm, but I\u0027m not sure I fully understand the bug from the attached bug report. IIUC this is fixing an issue where the user requests to load an artifact but sets a query parameter \u0027n\u0027 (which isn\u0027t set by default?) to a value \u003e\u003d the actual artifact size?",
       "revId": "8a25954d334dc4424ec451c567877586c6d55211",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a6c80a3_487ec181",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-05T23:26:04Z",
+      "side": 1,
+      "message": "Yes, the bug is that the server code incorrectly sets the content length when n is given. The next CL fixes the actual bug.\n\nThis CL is just to update the mockup class to support limits, fix bugs in the unit tests, and added missing tests.",
+      "parentUuid": "acd9d8aa_80307071",
+      "revId": "8a25954d334dc4424ec451c567877586c6d55211",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
