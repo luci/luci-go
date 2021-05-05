@@ -26,7 +26,6 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 type queue struct {
@@ -76,6 +75,11 @@ func loadQueue(ctx context.Context, luciProject string) (*queue, error) {
 	return q, nil
 }
 
+// NotifyFn is used to notify the run is ready for submission at `eta`
+//
+// In production, it is run.Notifier.NotifyReadyForSubmission(...)
+type NotifyFn func(ctx context.Context, runID common.RunID, eta time.Time) error
+
 // TryAcquire tries to acquire the current submission slot from the submit
 // queue.
 //
@@ -97,14 +101,14 @@ func loadQueue(ctx context.Context, luciProject string) (*queue, error) {
 // is blocked on this Run.
 //
 // MUST be called in a datastore transaction.
-func TryAcquire(ctx context.Context, n *run.Notifier, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
+func TryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("TryAcquire must be called in a datastore transaction")
 	}
-	return tryAcquire(ctx, n, runID, opts)
+	return tryAcquire(ctx, notifyFn, runID, opts)
 }
 
-func tryAcquire(ctx context.Context, n *run.Notifier, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
+func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
 	var shouldSave bool
 	q := &queue{ID: runID.LUCIProject()}
 	switch err := datastore.Get(ctx, q); {
@@ -137,7 +141,7 @@ func tryAcquire(ctx context.Context, n *run.Notifier, runID common.RunID, opts *
 			shouldSave = true
 			waitlisted = false
 		} else {
-			if err := n.NotifyReadyForSubmission(ctx, runID, eta); err != nil {
+			if err := notifyFn(ctx, runID, eta); err != nil {
 				return false, err
 			}
 			waitlisted = true
@@ -164,14 +168,14 @@ func tryAcquire(ctx context.Context, n *run.Notifier, runID common.RunID, opts *
 // If the provided Run is not present in the submit queue, no-op.
 //
 // MUST be called in a datastore transaction.
-func Release(ctx context.Context, n *run.Notifier, runID common.RunID) error {
+func Release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("Release must be called in a datastore transaction")
 	}
-	return release(ctx, n, runID)
+	return release(ctx, notifyFn, runID)
 }
 
-func release(ctx context.Context, n *run.Notifier, runID common.RunID) error {
+func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
 	q, err := loadQueue(ctx, runID.LUCIProject())
 	if err != nil {
 		return err
@@ -193,7 +197,7 @@ func release(ctx context.Context, n *run.Notifier, runID common.RunID) error {
 		return errors.Annotate(err, "failed to put SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
 	}
 	if notify != "" {
-		if err := n.NotifyReadyForSubmission(ctx, notify, q.nextSubmissionETA()); err != nil {
+		if err := notifyFn(ctx, notify, q.nextSubmissionETA()); err != nil {
 			return err
 		}
 	}

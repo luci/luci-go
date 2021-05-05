@@ -46,7 +46,10 @@ type RunManager struct {
 }
 
 func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater) *RunManager {
-	rm := &RunManager{n, pm, u, &handler.Impl{}}
+	rm := &RunManager{n, pm, u, &handler.Impl{
+		PM: pm,
+		RM: n,
+	}}
 	n.TaskRefs.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*eventpb.ManageRunTask)
@@ -112,12 +115,7 @@ func (rp *runProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get Run %q", rp.runID).Tag(transient.Tag).Err()
 	}
-	rs := &state.RunState{
-		Run:         r,
-		PmNotifier:  rp.pmNotifier,
-		RunNotifier: rp.runNotifier,
-		CLUpdater:   rp.clUpdater,
-	}
+	rs := &state.RunState{Run: r}
 	return rs, eventbox.EVersion(r.EVersion), nil
 }
 

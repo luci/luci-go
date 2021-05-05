@@ -51,7 +51,6 @@ func TestOnVerificationCompleted(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		runNotifier := run.NewNotifier(ct.TQDispatcher)
 
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		runCLs := common.CLIDs{1, 2}
@@ -93,11 +92,10 @@ func TestOnVerificationCompleted(t *testing.T) {
 				},
 			},
 		), ShouldBeNil)
-		rs := &state.RunState{
-			Run:         r,
-			RunNotifier: runNotifier,
+		rs := &state.RunState{Run: r}
+		h := &Impl{
+			RM: run.NewNotifier(ct.TQDispatcher),
 		}
-		h := &Impl{}
 
 		statuses := []run.Status{
 			run.Status_SUCCEEDED,
@@ -170,7 +168,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					// another run has taken the current slot
 					anotherRunID := common.MakeRunID("infra", now, 1, []byte("cafecafe"))
-					waitlisted, err := submit.TryAcquire(ctx, rs.RunNotifier, anotherRunID, cfg.GetSubmitOptions())
+					waitlisted, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, anotherRunID, cfg.GetSubmitOptions())
 					So(waitlisted, ShouldBeFalse)
 					So(err, ShouldBeNil)
 					return nil

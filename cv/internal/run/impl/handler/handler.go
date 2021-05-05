@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
@@ -69,7 +70,23 @@ type Handler interface {
 	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sr eventpb.SubmissionResult, attempt int32) (*Result, error)
 }
 
-// Impl is a prod implementation of Handler interface.
-type Impl struct{}
+// PM encapsulates interaction with Project Manager by the Run events handler.
+type PM interface {
+	NotifyRunFinished(ctx context.Context, runID common.RunID) error
+}
 
-var _ Handler = &Impl{}
+// RM encapsulates interaction with Run Manager by the Run events handler.
+type RM interface {
+	Invoke(ctx context.Context, runID common.RunID, eta time.Time) error
+	PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error
+	PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error
+	NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error
+}
+
+// Impl is a prod implementation of Handler interface.
+type Impl struct {
+	PM PM
+	RM RM
+}
+
+var _ Handler = (*Impl)(nil)

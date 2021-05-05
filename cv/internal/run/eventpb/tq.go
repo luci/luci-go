@@ -48,7 +48,7 @@ type TaskRefs struct {
 	tqd *tq.Dispatcher
 }
 
-// Registers tasks with the given TQ Dispatcher.
+// Register registers tasks with the given TQ Dispatcher.
 func Register(tqd *tq.Dispatcher) TaskRefs {
 	t := TaskRefs{
 		ManageRun: tqd.RegisterTaskClass(tq.TaskClass{

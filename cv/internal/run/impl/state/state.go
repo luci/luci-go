@@ -20,14 +20,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
-	gobupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -39,14 +35,6 @@ type RunState struct {
 	Run run.Run
 	// TODO(yiwzhang): add RunOwner, []RunCL, []RunTryjob.
 
-	// PMNotifier notifies itself and invokes itself via async TQ tasks.
-	//
-	// TODO(tandrii): define actually used subset as an interface.
-	PmNotifier *prjmanager.Notifier
-	// runNotifier notifies Run Manager.
-	RunNotifier *run.Notifier
-	CLUpdater   *gobupdater.Updater
-
 	cachedConfigGroup *config.ConfigGroup
 }
 
@@ -57,9 +45,6 @@ func (rs *RunState) ShallowCopy() *RunState {
 	}
 	ret := &RunState{
 		Run: rs.Run,
-
-		PmNotifier:  rs.PmNotifier,
-		RunNotifier: rs.RunNotifier,
 
 		cachedConfigGroup: rs.cachedConfigGroup,
 	}
@@ -89,37 +74,6 @@ func (rs *RunState) loadCLs(ctx context.Context) ([]*changelist.CL, error) {
 	default:
 		return nil, errors.Annotate(err, "failed to load %d CLs", len(cls)).Tag(transient.Tag).Err()
 	}
-}
-
-// RefreshCLs submits tasks for refresh all CLs involved in this Run.
-func (rs *RunState) RefreshCLs(ctx context.Context) error {
-	cls, err := rs.loadCLs(ctx)
-	if err != nil {
-		return err
-	}
-
-	poolSize := len(cls)
-	if poolSize > 20 {
-		poolSize = 20
-	}
-	err = parallel.WorkPool(poolSize, func(work chan<- func() error) {
-		for i := range cls {
-			cl := cls[i]
-			work <- func() error {
-				host, change, err := cl.ExternalID.ParseGobID()
-				if err != nil {
-					return err
-				}
-				return rs.CLUpdater.Schedule(ctx, &gobupdater.RefreshGerritCL{
-					LuciProject: rs.Run.ID.LUCIProject(),
-					Host:        host,
-					Change:      change,
-					ClidHint:    int64(cl.ID),
-				})
-			}
-		}
-	})
-	return common.MostSevereError(err)
 }
 
 // RemoveRunFromCLs removes the Run from the IncompleteRuns list of all

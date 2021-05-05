@@ -29,8 +29,6 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -44,8 +42,7 @@ func TestQueue(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		notifier := run.NewNotifier(ct.TQDispatcher)
-
+		notifier := &fakeNotifier{}
 		const lProject = "lProject"
 		run1 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("deaddead"))
 		run2 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("beefbeef"))
@@ -65,7 +62,7 @@ func TestQueue(t *testing.T) {
 				var waitlisted bool
 				var innerErr error
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, innerErr = TryAcquire(ctx, notifier, runID, opts)
+					waitlisted, innerErr = TryAcquire(ctx, notifier.notify, runID, opts)
 					return innerErr
 				}, nil)
 				So(innerErr, ShouldBeNil)
@@ -150,7 +147,7 @@ func TestQueue(t *testing.T) {
 			mustRelease := func(ctx context.Context, runID common.RunID) {
 				var innerErr error
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					innerErr = Release(ctx, notifier, runID)
+					innerErr = Release(ctx, notifier.notify, runID)
 					return innerErr
 				}, nil)
 				So(innerErr, ShouldBeNil)
@@ -169,9 +166,9 @@ func TestQueue(t *testing.T) {
 					Waitlist: common.RunIDs{run2, run3},
 					Opts:     submitOpts,
 				})
-				runtest.AssertReceivedReadyForSubmission(ctx, run2, time.Time{})
+				So(notifier.notifyETAs(ctx, run2), ShouldResemble, []time.Time{{}})
 				for _, r := range []common.RunID{run1, run3} {
-					runtest.AssertEventboxEmpty(ctx, r)
+					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
 				}
 			})
 
@@ -184,7 +181,7 @@ func TestQueue(t *testing.T) {
 					Opts:     submitOpts,
 				})
 				for _, r := range []common.RunID{run1, run2, run3} {
-					runtest.AssertEventboxEmpty(ctx, r)
+					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
 				}
 			})
 
@@ -198,7 +195,7 @@ func TestQueue(t *testing.T) {
 					Opts:     submitOpts,
 				})
 				for _, r := range []common.RunID{run1, run2, run3} {
-					runtest.AssertEventboxEmpty(ctx, r)
+					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
 				}
 			})
 		})
@@ -240,4 +237,29 @@ func shouldResembleQueue(actual interface{}, expected ...interface{}) string {
 		}
 	}
 	return strings.TrimSpace(buf.String())
+}
+
+type fakeNotifier struct {
+	notifications map[common.RunID][]time.Time
+}
+
+func (f *fakeNotifier) notify(ctx context.Context, runID common.RunID, eta time.Time) error {
+	if f.notifications == nil {
+		f.notifications = make(map[common.RunID][]time.Time, 1)
+	}
+	if _, ok := f.notifications[runID]; !ok {
+		f.notifications[runID] = make([]time.Time, 0, 1)
+	}
+	f.notifications[runID] = append(f.notifications[runID], eta)
+	return nil
+}
+
+func (f *fakeNotifier) notifyETAs(ctx context.Context, runID common.RunID) []time.Time {
+	etas, ok := f.notifications[runID]
+	if !ok {
+		return nil
+	}
+	ret := make([]time.Time, len(etas))
+	copy(ret, etas)
+	return ret
 }
