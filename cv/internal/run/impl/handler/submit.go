@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -214,7 +215,33 @@ func constructSubmitter(ctx context.Context, rs *state.RunState) (*submitter, er
 
 // OnCLSubmitted implements Handler interface.
 func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
-	panic("implement")
+	rs = rs.ShallowCopy()
+	sub := rs.Run.Submission
+	submitted := make(map[int64]struct{}, len(clids)+len(sub.GetSubmittedCls()))
+	for _, clid := range sub.GetSubmittedCls() {
+		submitted[clid] = struct{}{}
+	}
+	for _, clid := range clids {
+		submitted[int64(clid)] = struct{}{}
+	}
+	if sub.GetSubmittedCls() != nil {
+		sub.SubmittedCls = sub.SubmittedCls[:0]
+	}
+	for _, clid := range sub.GetCls() {
+		if _, ok := submitted[clid]; ok {
+			sub.SubmittedCls = append(sub.SubmittedCls, clid)
+			delete(submitted, clid)
+		}
+	}
+	if len(submitted) > 0 {
+		unexpected := make(sort.IntSlice, 0, len(submitted))
+		for clid := range submitted {
+			unexpected = append(unexpected, int(clid))
+		}
+		unexpected.Sort()
+		return nil, errors.Reason("received CLSubmitted event for cls not belonging to this Run: %v", unexpected).Err()
+	}
+	return &Result{State: rs}, nil
 }
 
 // OnSubmissionCompleted implements Handler interface.
