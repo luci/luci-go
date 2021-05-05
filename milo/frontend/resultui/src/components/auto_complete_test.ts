@@ -16,6 +16,7 @@ import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-ef
 import { assert } from 'chai';
 import sinon, { SinonSpy } from 'sinon';
 
+import './auto_complete';
 import { AutoCompleteElement, Suggestion, SuggestionEntry } from './auto_complete';
 
 function simulateKeyStroke(target: EventTarget, code: string) {
