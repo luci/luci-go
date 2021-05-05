@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "494b6f03_b897d462",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-05T19:03:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc2845da_7e8d48c7",
+      "range": {
+        "startLine": 149,
+        "startChar": 44,
+        "endLine": 149,
+        "endChar": 46
+      },
+      "revId": "9e47030643584fc61ea31fb9c2c84ed1f5041f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "058ce914_8b7999b1",
@@ -81,6 +105,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "36740aa9_3473bcc8",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-05T19:03:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "058ce914_8b7999b1",
+      "range": {
+        "startLine": 164,
+        "startChar": 32,
+        "endLine": 164,
+        "endChar": 39
+      },
+      "revId": "9e47030643584fc61ea31fb9c2c84ed1f5041f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ceed0c83_a9f6d054",
@@ -94,6 +142,30 @@
       "writtenOn": "2021-05-04T21:57:10Z",
       "side": 1,
       "message": "Nit: within",
+      "range": {
+        "startLine": 166,
+        "startChar": 66,
+        "endLine": 166,
+        "endChar": 73
+      },
+      "revId": "9e47030643584fc61ea31fb9c2c84ed1f5041f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4c1f32e_4aceb184",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-05T19:03:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ceed0c83_a9f6d054",
       "range": {
         "startLine": 166,
         "startChar": 66,
