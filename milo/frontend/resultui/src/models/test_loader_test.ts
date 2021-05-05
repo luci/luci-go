@@ -40,7 +40,7 @@ const variant3 = {
   testId: 'a',
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
-  status: TestVariantStatus.UNEXPECTED,
+  status: TestVariantStatus.UNEXPECTEDLY_SKIPPED,
 };
 
 const variant4 = {
@@ -127,15 +127,18 @@ describe('TestLoader', () => {
       assert.strictEqual(stub.callCount, 0);
 
       await testLoader.loadNextTestVariants();
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [variant1, variant2, variant3, variant4]);
       assert.deepEqual(testLoader.expectedTestVariants, []);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 1);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingFlaky);
       assert.strictEqual(stub.callCount, 1);
       assert.deepEqual(stub.getCall(0).args[0], { ...req, pageToken: '' });
 
       await testLoader.loadNextTestVariants();
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [
         variant1,
         variant2,
@@ -151,7 +154,7 @@ describe('TestLoader', () => {
       assert.deepEqual(stub.getCall(1).args[0], { ...req, pageToken: 'page2' });
 
       await testLoader.loadNextTestVariants();
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [
         variant1,
         variant2,
@@ -162,12 +165,15 @@ describe('TestLoader', () => {
         variant7,
       ]);
       assert.deepEqual(testLoader.expectedTestVariants, [variant8, variant9, variant10, variant11]);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
       assert.strictEqual(stub.callCount, 3);
       assert.deepEqual(stub.getCall(2).args[0], { ...req, pageToken: 'page3' });
 
       await testLoader.loadNextTestVariants();
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [
         variant1,
         variant2,
@@ -178,13 +184,16 @@ describe('TestLoader', () => {
         variant7,
       ]);
       assert.deepEqual(testLoader.expectedTestVariants, [variant8, variant9, variant10, variant11, variant12]);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.Done);
       assert.strictEqual(stub.callCount, 4);
       assert.deepEqual(stub.getCall(3).args[0], { ...req, pageToken: 'page4' });
 
       // Should not load when the iterator is exhausted.
       await testLoader.loadNextTestVariants();
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [
         variant1,
         variant2,
@@ -195,6 +204,9 @@ describe('TestLoader', () => {
         variant7,
       ]);
       assert.deepEqual(testLoader.expectedTestVariants, [variant8, variant9, variant10, variant11, variant12]);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.Done);
       assert.strictEqual(stub.callCount, 4);
     });
@@ -211,15 +223,18 @@ describe('TestLoader', () => {
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingUnexpected);
 
       await loadReq1;
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [variant1, variant2, variant3, variant4]);
       assert.deepEqual(testLoader.expectedTestVariants, []);
       // loadReq2 has not finished loading yet.
       assert.isTrue(testLoader.isLoading);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 1);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingFlaky);
 
       await loadReq2;
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [
         variant1,
         variant2,
@@ -232,10 +247,13 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.expectedTestVariants, []);
       // loadReq3 has not finished loading yet.
       assert.isTrue(testLoader.isLoading);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
 
       await loadReq3;
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [
         variant1,
         variant2,
@@ -248,10 +266,13 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.expectedTestVariants, [variant8, variant9, variant10, variant11]);
       // loadReq4 has not finished loading yet.
       assert.isTrue(testLoader.isLoading);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
 
       await loadReq4;
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [
         variant1,
         variant2,
@@ -264,10 +285,13 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.expectedTestVariants, [variant8, variant9, variant10, variant11, variant12]);
       // The list is exhausted, loadReq5 should not change the loading state.
       assert.isFalse(testLoader.isLoading);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.Done);
 
       await loadReq5;
-      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
+      assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(testLoader.nonExpectedTestVariants, [
         variant1,
         variant2,
@@ -279,6 +303,9 @@ describe('TestLoader', () => {
       ]);
       assert.deepEqual(testLoader.expectedTestVariants, [variant8, variant9, variant10, variant11, variant12]);
       assert.isFalse(testLoader.isLoading);
+      assert.deepEqual(testLoader.unfilteredUnexpectedVariantsCount, 2);
+      assert.deepEqual(testLoader.unfilteredUnexpectedlySkippedVariantsCount, 1);
+      assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.Done);
 
       assert.strictEqual(stub.callCount, 4);
@@ -288,10 +315,11 @@ describe('TestLoader', () => {
       assert.deepEqual(stub.getCall(3).args[0], { ...req, pageToken: 'page4' });
     });
 
-    it('should correctly set firstRequestSent', async () => {
-      assert.isFalse(testLoader.firstRequestSent);
-      testLoader.loadNextTestVariants();
-      assert.isTrue(testLoader.firstRequestSent);
+    it('loadFirstPageOfTestVariants should work correctly', async () => {
+      const firstLoadPromise = testLoader.loadNextTestVariants();
+      assert.strictEqual(firstLoadPromise, testLoader.loadFirstPageOfTestVariants());
+      const secondLoadPromise = testLoader.loadNextTestVariants();
+      assert.notStrictEqual(secondLoadPromise, testLoader.loadFirstPageOfTestVariants());
     });
 
     it('should load at least one test variant that matches the filter', async () => {
@@ -393,7 +421,8 @@ describe('TestLoader', () => {
       await testLoader.loadNextTestVariants();
 
       assert.deepEqual(testLoader.groupedNonExpectedVariants, [
-        [variant1, variant2, variant3],
+        [variant1, variant2],
+        [variant3],
         [variant4, variant5],
         [variant6, variant7],
       ]);
