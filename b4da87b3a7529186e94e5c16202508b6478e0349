@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e7ac113_860ddedb",
+        "filename": "resultdb/internal/artifactcontent/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-05T21:59:41Z",
+      "side": 0,
+      "message": "This was a bug that the size of the artifact content is different to the size in the table. Content-Length is set with either the value of Size column or ReadLimit.",
+      "range": {
+        "startLine": 129,
+        "startChar": 19,
+        "endLine": 129,
+        "endChar": 21
+      },
+      "revId": "b4da87b3a7529186e94e5c16202508b6478e0349",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
