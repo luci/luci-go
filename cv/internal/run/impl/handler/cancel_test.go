@@ -50,13 +50,14 @@ func TestCancel(t *testing.T) {
 				CreateTime: clock.Now(ctx).UTC().Add(-2 * time.Minute),
 				CLs:        common.CLIDs{clid},
 			},
-			PmNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 		So(datastore.Put(ctx, &changelist.CL{
 			ID:             clid,
 			IncompleteRuns: common.RunIDs{runID, "chromium/222-1-cafecafe"},
 		}), ShouldBeNil)
-		h := &Impl{}
+		h := &Impl{
+			PM: prjmanager.NewNotifier(ct.TQDispatcher),
+		}
 
 		latestCL := func() *changelist.CL {
 			cl := &changelist.CL{ID: clid}
