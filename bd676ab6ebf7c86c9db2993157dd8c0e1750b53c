@@ -16,6 +16,75 @@
       "message": "(Note: tests not yet complete)",
       "revId": "bd676ab6ebf7c86c9db2993157dd8c0e1750b53c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5793dce_ff1e1c07",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T20:42:40Z",
+      "side": 1,
+      "message": "1. struct{} is canonical when you want to represent a set.\n2. give it a capacity hint since you know it\u0027ll be len(SubmittedCls)",
+      "range": {
+        "startLine": 81,
+        "startChar": 29,
+        "endLine": 81,
+        "endChar": 33
+      },
+      "revId": "bd676ab6ebf7c86c9db2993157dd8c0e1750b53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fcd35fa0_a997a900",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T20:42:40Z",
+      "side": 1,
+      "message": "per comment in prior CL, please use CreateTime here for backwards compatibility.",
+      "range": {
+        "startLine": 101,
+        "startChar": 42,
+        "endLine": 101,
+        "endChar": 51
+      },
+      "revId": "bd676ab6ebf7c86c9db2993157dd8c0e1750b53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "352eed84_ca9355fd",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T20:42:40Z",
+      "side": 1,
+      "message": "^ i expect to TODO to set AttemptStatus_SUCCESS iff at least 1 CL was submitted here. Did I miss it somewhere else?",
+      "range": {
+        "startLine": 189,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 37
+      },
+      "revId": "bd676ab6ebf7c86c9db2993157dd8c0e1750b53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

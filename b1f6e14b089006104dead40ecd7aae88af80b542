@@ -309,6 +309,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c5f819cb_c0118b3b",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T20:42:40Z",
+      "side": 1,
+      "message": "So, yes, let\u0027s use Run.CreateTime as BQAttempt.StartTime.\nSorry for noise about trigger -- forgot my own code and didn\u0027t check in codesearch 😞\n\n\n\u003e And reading https://crbug.com/1105669, I thought we actually wanted to change the meaning of Attempt.StartTime, so that after the CV change StartTime would change to mean processing start time, and CreateTime would be added to mean trigger time?\n\nThis is correct, but we can\u0027t do it just yet. Also, backwards compatibility matters -- I\u0027m not convinced breaking compat is worth the benefit users get, though I didn\u0027t make up my mind here. One thing we should also consider is to creating a *new* CV schema for BQ export and populate appropriately, while also continuing populating legacy BQ table in backwards compatible way.",
+      "parentUuid": "0e1f9c47_14fcda67",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 70
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "297362ad_e0f5d57d",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 10
@@ -368,6 +392,30 @@
       "side": 1,
       "message": "Good point.\n\nI have a question: we have a stringset package, but no intset package. I guess we just use a map[int]bool? Is there a reason why we don\u0027t have an intset package?",
       "parentUuid": "297362ad_e0f5d57d",
+      "range": {
+        "startLine": 134,
+        "startChar": 35,
+        "endLine": 134,
+        "endChar": 47
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9b3f7170_10b045e0",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T20:42:40Z",
+      "side": 1,
+      "message": "nit: map[int]struct{}\n\n\u003e  Is there a reason why we don\u0027t have an intset package?\nBecause Go lack of generics sucks, so you\u0027d need int64set, int32set, intset, etc.\nAlso, in most cases map[int]struct{} is good enough.\nThat said, you can see that I have created local boilerplate to make some code more readable:\nhttps://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/prjmanager/impl/state/clidsmap.go;l\u003d21;drc\u003d016c7e6c05e063e42b7bf8d92ad0aabbbb3a18ee",
+      "parentUuid": "1ed15c70_928f9d7e",
       "range": {
         "startLine": 134,
         "startChar": 35,
