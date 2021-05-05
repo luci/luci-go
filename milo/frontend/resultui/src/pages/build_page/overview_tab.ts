@@ -288,7 +288,6 @@ export class OverviewTabElement extends MobxLitElement {
             ?checked=${this.configsStore.userConfigs.steps.showSucceededSteps}
             @change=${(e: MouseEvent) => {
               this.configsStore.userConfigs.steps.showSucceededSteps = (e.target as HTMLInputElement).checked;
-              this.configsStore.save();
             }}
           />
           <label for="succeeded" style="color: var(--success-color);">Succeeded Steps</label>
@@ -299,7 +298,6 @@ export class OverviewTabElement extends MobxLitElement {
             ?checked=${this.configsStore.userConfigs.steps.showDebugLogs}
             @change=${(e: MouseEvent) => {
               this.configsStore.userConfigs.steps.showDebugLogs = (e.target as HTMLInputElement).checked;
-              this.configsStore.save();
             }}
           />
           <label for="debug-logs">Debug Logs</label>
@@ -438,13 +436,11 @@ export class OverviewTabElement extends MobxLitElement {
           <milo-property-viewer
             .properties=${build.input?.properties || {}}
             .propLineFoldTime=${this.configsStore.userConfigs.inputPropLineFoldTime}
-            .saveFoldTime=${() => this.configsStore.save()}
           ></milo-property-viewer>
           <h3>Output Properties</h3>
           <milo-property-viewer
             .properties=${build.output?.properties || {}}
             .propLineFoldTime=${this.configsStore.userConfigs.outputPropLineFoldTime}
-            .saveFoldTime=${() => this.configsStore.save()}
           ></milo-property-viewer>
         </div>
       </div>

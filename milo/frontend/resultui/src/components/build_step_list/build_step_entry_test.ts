@@ -44,6 +44,7 @@ class NotifierProviderElement extends LitElement {
 
 describe('build_step_entry', () => {
   const configsStore = new UserConfigsStore();
+  after(() => configsStore.dispose());
 
   it('can render a step without start time', async () => {
     const step = new StepExt({

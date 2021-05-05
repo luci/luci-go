@@ -410,7 +410,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         @closed=${(event: CustomEvent<{ action: string }>) => {
           if (event.detail.action === 'save') {
             merge(this.configsStore.userConfigs, this.uncommittedConfigs);
-            this.configsStore.save();
           }
           // Reset uncommitted configs.
           merge(this.uncommittedConfigs, this.configsStore.userConfigs);
@@ -448,7 +447,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           const noFeedbackEle = this.shadowRoot!.getElementById('no-feedback-prompt')! as HTMLInputElement;
           if (noFeedbackEle.checked) {
             this.configsStore.userConfigs.askForFeedback = false;
-            this.configsStore.save();
           }
           this.showFeedbackDialog = false;
           window.open(this.legacyUrl, this.switchVerTemporarily ? '_blank' : '_self');

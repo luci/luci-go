@@ -14,7 +14,7 @@
 
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable, reaction } from 'mobx';
+import { computed, observable } from 'mobx';
 
 import '../../components/build_step_list';
 import '../../components/hotkey';
@@ -43,34 +43,6 @@ export class StepsTabElement extends MiloBaseElement {
     super.connectedCallback();
     this.appState.selectedTabId = 'steps';
     trackEvent(GA_CATEGORIES.STEPS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
-
-    // Update filters to match the querystring without saving them.
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has('succeeded')) {
-      this.stepsConfig.showSucceededSteps = searchParams.get('succeeded') === 'true';
-    }
-    if (searchParams.has('debug')) {
-      this.stepsConfig.showDebugLogs = searchParams.get('debug') === 'true';
-    }
-
-    // Update the querystring when filters are updated.
-    this.addDisposer(
-      reaction(
-        () => {
-          const newSearchParams = new URLSearchParams({
-            succeeded: String(this.stepsConfig.showSucceededSteps),
-            debug: String(this.stepsConfig.showDebugLogs),
-          });
-          return newSearchParams.toString();
-        },
-        (newQueryStr) => {
-          const newUrl =
-            `${window.location.protocol}//${window.location.host}${window.location.pathname}` + `?${newQueryStr}`;
-          window.history.replaceState({ path: newUrl }, '', newUrl);
-        },
-        { fireImmediately: true }
-      )
-    );
   }
 
   @computed private get stepsConfig() {
@@ -96,7 +68,6 @@ export class StepsTabElement extends MiloBaseElement {
               ?checked=${this.stepsConfig.showSucceededSteps}
               @change=${(e: MouseEvent) => {
                 this.stepsConfig.showSucceededSteps = (e.target as HTMLInputElement).checked;
-                this.configsStore.save();
               }}
             />
             <label for="succeeded" style="color: var(--success-color);">Succeeded</label>
@@ -116,7 +87,6 @@ export class StepsTabElement extends MiloBaseElement {
               ?checked=${this.stepsConfig.showDebugLogs}
               @change=${(e: MouseEvent) => {
                 this.stepsConfig.showDebugLogs = (e.target as HTMLInputElement).checked;
-                this.configsStore.save();
               }}
             />
             <label for="debug-logs-filter">Debug</label>

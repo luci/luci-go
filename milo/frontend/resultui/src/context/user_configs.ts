@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import merge from 'lodash-es/merge';
-import { computed, observable } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 import { createContextLink } from '../libs/context';
 
@@ -71,20 +71,43 @@ export class UserConfigsStore {
 
   @observable readonly userConfigs = merge<{}, UserConfigs>({}, DEFAULT_USER_CONFIGS);
 
+  private disposers: Array<() => void> = [];
+
   constructor(private readonly storage = window.localStorage) {
     const storedConfigsStr = storage.getItem(UserConfigsStore.KEY) || '{}';
     try {
       merge(this.userConfigs, JSON.parse(storedConfigsStr));
     } catch (e) {
       console.error(e);
-      console.warn('encountered an error when parsing stored configs, resetting it to the default value');
-      this.save();
+      console.warn('encountered an error when parsing stored configs, deleting it');
+      storage.removeItem(UserConfigsStore.KEY);
     }
+
+    this.disposers.push(
+      reaction(
+        () => JSON.stringify(this.userConfigs),
+        (configStr) => {
+          this.storage.setItem(UserConfigsStore.KEY, configStr);
+        },
+        // Add a tiny delay so updates happened in the same event cycle will
+        // only trigger one save event.
+        { delay: 1 }
+      )
+    );
 
     const fourWeeksAgo = Date.now() - 2419200000;
     this.deleteStaleKeys(this.userConfigs.steps.stepPinTime, fourWeeksAgo);
     this.deleteStaleKeys(this.userConfigs.inputPropLineFoldTime, fourWeeksAgo);
     this.deleteStaleKeys(this.userConfigs.outputPropLineFoldTime, fourWeeksAgo);
+  }
+
+  /**
+   * Perform cleanup.
+   * Must be called before the object is GCed.
+   */
+  dispose() {
+    this.disposers.reverse().forEach((disposer) => disposer());
+    this.disposers = [];
   }
 
   private deleteStaleKeys(records: { [key: string]: number }, beforeTimestamp: number) {
@@ -130,12 +153,6 @@ export class UserConfigsStore {
           delete this.userConfigs.steps.stepPinTime[stepName];
         });
     }
-    this.save();
-  }
-
-  save() {
-    // TODO(weiweilin): add rate limit.
-    this.storage.setItem(UserConfigsStore.KEY, JSON.stringify(this.userConfigs));
   }
 }
 
