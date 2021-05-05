@@ -98,7 +98,9 @@ func normalizeUnflattenedBuildbucketCfg(cfg *pb.BuildbucketCfg) {
 				b.Name = pieces[2]
 			}
 		}
-		b.Swarming.UrlFormat = ""
+		if b.Swarming != nil {
+			b.Swarming.UrlFormat = ""
+		}
 	}
 
 	// Remove the category field from builders
