@@ -132,7 +132,7 @@ export class BuildExt {
   }
 
   @computed get pendingDuration(): Duration {
-    return (this.startTime || this.renderTime.get()).diff(this.createTime);
+    return (this.startTime || this.endTime || this.renderTime.get()).diff(this.createTime);
   }
 
   @computed get executionDuration(): Duration | null {
