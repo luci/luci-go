@@ -101,6 +101,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "566d64d6_66ae4b9b",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-05T18:29:07Z",
+      "side": 1,
+      "message": "This will not load because parent key is not set. Please use run.LoadRunCLs(...). CL coming up.",
+      "range": {
+        "startLine": 73,
+        "startChar": 26,
+        "endLine": 73,
+        "endChar": 46
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1ac6343a_5723d683",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 10
@@ -169,6 +192,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "50a2340f_857bf8fc",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-05T18:29:07Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "297362ad_e0f5d57d",
+      "range": {
+        "startLine": 134,
+        "startChar": 35,
+        "endLine": 134,
+        "endChar": 47
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "d7916be7_aa9015a4",
@@ -187,6 +234,29 @@
         "startChar": 0,
         "endLine": 174,
         "endChar": 2
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "513497a9_795f5e35",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-05T18:29:07Z",
+      "side": 1,
+      "message": "nit: this can be simplified to \n\n```\ncase !run.IsEnded(r):\n  panic(...)\n```",
+      "range": {
+        "startLine": 189,
+        "startChar": 0,
+        "endLine": 197,
+        "endChar": 57
       },
       "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
