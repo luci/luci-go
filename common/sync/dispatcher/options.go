@@ -30,7 +30,7 @@ import (
 // This is also invoked with buffer.ErrItemTooLarge if your supplied
 // ItemSizeFunc returns a size larger than Buffer.BatchSizeMax (i.e. you pushed
 // an item which couldn't fit inside of a Batch). Similarly, if your
-// ItemSizeFunc returns 0, this is invoked with buffer.ErrZeroSizeItem.
+// ItemSizeFunc returns <=0, this is invoked with buffer.ErrItemTooSmall.
 // Channel ignores the `retry` return value of this function in these cases.
 //
 // It executes in the main handler loop of the dispatcher so it can make
@@ -123,7 +123,9 @@ type Options struct {
 	// [REQUIRED]
 	// Must be non-nil if Buffer.BatchSizeMax is specified.
 	//
-	// Must return a positive value less than Buffer.BatchSizeMax.
+	// Must return a positive value less than Buffer.BatchSizeMax. Failure to do
+	// so will cause `itm` to be immediately rejected from the dispatcher.Channel
+	// and routed to ErrorFn with no further processing.
 	ItemSizeFunc func(itm interface{}) int
 
 	Buffer buffer.Options
