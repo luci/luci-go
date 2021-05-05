@@ -203,7 +203,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           this.buildState?.dispose();
           this.buildState = new BuildState(this.appState);
           this.buildState.builderIdParam = this.builderIdParam;
-          this.buildState.buildNumOrId = this.buildNumOrIdParam;
+          this.buildState.buildNumOrIdParam = this.buildNumOrIdParam;
 
           // Emulate @property() update.
           this.updated(new Map([['buildState', this.buildState]]));
@@ -259,6 +259,9 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           () => this.buildState.build !== null,
           () => {
             const build = this.buildState.build!;
+            if (build.number !== undefined) {
+              this.appState.setBuildId(build.builder, build.number, build.id);
+            }
             const buildUrl = router.urlForName('build', {
               project: build.builder.project,
               bucket: build.builder.bucket,
