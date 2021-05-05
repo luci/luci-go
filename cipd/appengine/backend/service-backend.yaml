@@ -32,6 +32,7 @@ entrypoint: >
   -ds-cache ${DS_CACHE}
   -dsmapper-mapper-queue mappers
   -dsmapper-control-queue default
+  -internal-request-timeout 60m
   -cipd-storage-gs-path /${GCS_BUCKET}/store
   -cipd-temp-gs-path /${GCS_BUCKET}/temp
   -random-secrets-in-datastore
