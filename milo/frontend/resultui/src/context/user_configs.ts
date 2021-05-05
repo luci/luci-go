@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import merge from 'lodash-es/merge';
-import { computed, observable } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 import { createContextLink } from '../libs/context';
 
@@ -77,9 +77,17 @@ export class UserConfigsStore {
       merge(this.userConfigs, JSON.parse(storedConfigsStr));
     } catch (e) {
       console.error(e);
-      console.warn('encountered an error when parsing stored configs, resetting it to the default value');
-      this.save();
+      console.warn('encountered an error when parsing stored configs, deleting it');
+      storage.removeItem(UserConfigsStore.KEY);
     }
+
+    reaction(
+      () => JSON.stringify(this.userConfigs),
+      (configStr) => {
+        this.storage.setItem(UserConfigsStore.KEY, configStr);
+      },
+      { delay: 1 }
+    );
 
     const fourWeeksAgo = Date.now() - 2419200000;
     this.deleteStaleKeys(this.userConfigs.steps.stepPinTime, fourWeeksAgo);
@@ -130,12 +138,6 @@ export class UserConfigsStore {
           delete this.userConfigs.steps.stepPinTime[stepName];
         });
     }
-    this.save();
-  }
-
-  save() {
-    // TODO(weiweilin): add rate limit.
-    this.storage.setItem(UserConfigsStore.KEY, JSON.stringify(this.userConfigs));
   }
 }
 
