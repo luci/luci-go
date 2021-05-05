@@ -51,8 +51,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref @consumeConfigsStore configsStore!: UserConfigsStore;
   @observable.ref @consumeInvocationState invocationState!: InvocationState;
 
-  private sentLoadingTimeToGA = false;
-
   toggleAllVariants(expand: boolean) {
     this.shadowRoot!.querySelectorAll<TestVariantEntryElement>('milo-test-variant-entry').forEach(
       (e) => (e.expanded = expand)
@@ -61,13 +59,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   connectedCallback() {
     super.connectedCallback();
-
-    // If first page of test results has already been loaded when connected
-    // (happens when users switch tabs), we don't want to track the loading
-    // time (only a few ms in this case)
-    if (this.invocationState.testLoader?.firstPageLoaded) {
-      this.sentLoadingTimeToGA = true;
-    }
 
     // When a new test loader is received, load the first page and reset the
     // selected node.
@@ -78,9 +69,8 @@ export class TestVariantsTableElement extends MiloBaseElement {
           if (!testLoader) {
             return;
           }
-          // The previous instance of the test results tab could've triggered
-          // the loading operation already. In that case we don't want to load
-          // more test results.
+          // We don't want to load more test results if the first page has
+          // been loaded already.
           if (!testLoader.firstRequestSent) {
             this.loadMore();
           }
@@ -132,10 +122,10 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   private sendLoadingTimeToGA = () => {
-    if (this.sentLoadingTimeToGA) {
+    if (this.appState.sentTestResultsTabLoadingTimeToGA) {
       return;
     }
-    this.sentLoadingTimeToGA = true;
+    this.appState.sentTestResultsTabLoadingTimeToGA = true;
     trackEvent(
       GA_CATEGORIES.TEST_RESULTS_TAB,
       GA_ACTIONS.LOADING_TIME,
