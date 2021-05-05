@@ -26,8 +26,8 @@ type FakeCASReader struct {
 	grpc.ClientStream // implements the rest of grpc.ClientStream
 
 	Res         []*bytestream.ReadResponse
-	ResIndex    int
-	ResDataPos  int
+	ResIndex    int // the cursor, pointing to the current Res
+	ResDataPos  int // the cursor, pointing to the starting index of the data in the current Res.
 	ResErr      error
 	ResErrIndex int
 
@@ -54,8 +54,8 @@ func (r *FakeCASReader) Recv() (*bytestream.ReadResponse, error) {
 		}
 
 		data := res.Data[r.ResDataPos : r.ResDataPos+nRead]
-		r.nRead += nRead
 		r.ResDataPos += nRead
+		r.nRead += nRead
 		if r.ResDataPos == len(res.Data) {
 			r.ResDataPos = 0
 			r.ResIndex++
