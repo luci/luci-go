@@ -256,7 +256,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
               this.tableHeaderEle?.style.removeProperty('--columns');
               this.configsStore.userConfigs.testResults.columnWidths[col] = newWidth;
-              this.configsStore.save();
             }}
             .propKey=${col}
             .label=${getPropKeyLabel(col)}

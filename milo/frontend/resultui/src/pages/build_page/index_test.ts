@@ -33,14 +33,22 @@ const builder = {
 };
 
 describe('Invocation Page', () => {
+  let configsStore: UserConfigsStore;
+  let appState: AppState;
+
+  beforeEach(() => {
+    configsStore = new UserConfigsStore();
+    appState = new AppState();
+  });
+  afterEach(() => {
+    configsStore.dispose();
+    appState.dispose();
+  });
+
   it('should compute invocation ID from buildNum in URL', async () => {
     after(fixtureCleanup);
     const page = await fixture<BuildPageElement>(html`
-      <milo-build-page
-        .prerender=${true}
-        .appState=${new AppState()}
-        .configsStore=${new UserConfigsStore()}
-      ></milo-build-page>
+      <milo-build-page .prerender=${true} .appState=${new AppState()} .configsStore=${configsStore}></milo-build-page>
     `);
 
     const location = ({
@@ -106,11 +114,11 @@ describe('Invocation Page', () => {
       <milo-build-page
         .prerender=${true}
         .appState=${{
-          ...new AppState(),
+          ...appState,
           resultDb: resultDbStub,
           buildsService: buildsServiceStub,
         }}
-        .configsStore=${new UserConfigsStore()}
+        .configsStore=${configsStore}
       ></milo-build-page>
     `);
 
@@ -148,13 +156,13 @@ describe('Invocation Page', () => {
       <milo-build-page
         .prerender=${true}
         .appState=${{
-          ...new AppState(),
+          ...appState,
           buildsService: {
             ...new BuildsService(new PrpcClientExt({}, () => '')),
             getBuild: getBuildMock,
           },
         }}
-        .configsStore=${new UserConfigsStore()}
+        .configsStore=${configsStore}
       ></milo-build-page>
     `);
 
