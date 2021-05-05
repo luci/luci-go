@@ -152,7 +152,7 @@ func (n *Notifier) NotifyReadyForSubmission(ctx context.Context, runID common.Ru
 // Unlike other event-sending funcs, this function only delivers the event
 // to Run's eventbox, but does not dispatch the task. This is because it is
 // okay to process all events of this kind together to record the submission
-// result for each individual CLs after the attempt to submit completes.
+// result for each individual CLs after submission completes.
 // Waking up RM unnecessarily may increase the contention of Run entity.
 func (n *Notifier) NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error {
 	return eventpb.SendWithoutDispatch(ctx, runID, &eventpb.Event{
@@ -164,7 +164,7 @@ func (n *Notifier) NotifyCLSubmitted(ctx context.Context, runID common.RunID, cl
 	})
 }
 
-// NotifySubmissionCompleted informs RunManager that an attempt to submit the
+// NotifySubmissionCompleted informs RunManager that the submission of the
 // provided Run has completed.
 func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error {
 	evt := &eventpb.Event{

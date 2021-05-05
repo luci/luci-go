@@ -152,7 +152,6 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 					Deadline:          timestamppb.New(now.Add(20 * time.Minute)),
-					AttemptCount:      1,
 					Cls:               []int64{2, 1}, // in submission order
 					TaskId:            "task-foo",
 					TreeOpen:          true,
