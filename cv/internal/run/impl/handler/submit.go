@@ -165,7 +165,6 @@ func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, e
 		}
 	}
 	ret.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
-	ret.Run.Submission.AttemptCount += 1
 	ret.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
 	return ret, nil
 }
@@ -206,7 +205,6 @@ func constructSubmitter(ctx context.Context, rs *state.RunState, rm RM) (*submit
 	return &submitter{
 		runID:    rs.Run.ID,
 		deadline: submission.GetDeadline().AsTime(),
-		attempt:  submission.GetAttemptCount(),
 		treeURL:  cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
 		clids:    unsubmittedCLs,
 		rm:       rm,
@@ -245,7 +243,7 @@ func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common
 }
 
 // OnSubmissionCompleted implements Handler interface.
-func (*Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sr eventpb.SubmissionResult, attempt int32) (*Result, error) {
+func (*Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
 	panic("implement")
 }
 
@@ -329,8 +327,6 @@ type submitter struct {
 	runID common.RunID
 	// deadline is when this submission should be stopped.
 	deadline time.Time
-	// attempt is the current submission attempt count.
-	attempt int32
 	// treeURL is used to check if tree is closed at the beginning
 	// of submission.
 	treeURL string
@@ -349,16 +345,14 @@ var ErrTransientSubmissionFailure error = errors.New("submission failed transien
 
 func (s submitter) submit(ctx context.Context) error {
 	sc := &eventpb.SubmissionCompleted{
-		Result:  eventpb.SubmissionResult_SUCCEEDED,
-		Attempt: s.attempt,
+		Result: eventpb.SubmissionResult_SUCCEEDED,
 	}
 	switch passed, err := s.checkPrecondition(ctx); {
 	case err != nil:
 		sc = s.computeResultEvent(ctx, err, defaultFatalMsg)
 	case !passed:
 		sc = &eventpb.SubmissionCompleted{
-			Result:  eventpb.SubmissionResult_FAILED_PRECONDITION,
-			Attempt: s.attempt,
+			Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
 		}
 	default: // precondition check passed
 		if cls, err := loadRunCLs(ctx, s.clids, s.runID); err != nil {
@@ -537,21 +531,18 @@ func (s submitter) computeResultEvent(ctx context.Context, err error, fatalMsg s
 	switch {
 	case err == nil:
 		return &eventpb.SubmissionCompleted{
-			Result:  eventpb.SubmissionResult_SUCCEEDED,
-			Attempt: s.attempt,
+			Result: eventpb.SubmissionResult_SUCCEEDED,
 		}
 	case transient.Tag.In(err):
 		errors.Log(ctx, err)
 		return &eventpb.SubmissionCompleted{
-			Result:  eventpb.SubmissionResult_FAILED_TRANSIENT,
-			Attempt: s.attempt,
+			Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
 		}
 	default:
 		errors.Log(ctx, err)
 		return &eventpb.SubmissionCompleted{
 			Result:       eventpb.SubmissionResult_FAILED_PERMANENT,
 			FatalMessage: fatalMsg,
-			Attempt:      s.attempt,
 		}
 	}
 }
