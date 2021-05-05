@@ -192,15 +192,12 @@ func constructSubmitter(ctx context.Context, rs *state.RunState, rm RM) (*submit
 		return nil, err
 	}
 	submission := rs.Run.Submission
-	allCLs, submittedCLs := submission.GetCls(), submission.GetSubmittedCls()
-	unsubmittedCLs := make(common.CLIDs, 0, len(allCLs)-len(submittedCLs))
-	submitted := make(map[int64]struct{}, len(submittedCLs))
-	for _, clid := range submittedCLs {
-		submitted[clid] = struct{}{}
-	}
-	for _, clid := range allCLs {
+	unsubmittedCLs := make(common.CLIDs, 0, len(submission.GetCls())-len(submission.GetSubmittedCls()))
+	submitted := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
+	for _, cl := range submission.GetCls() {
+		clid := common.CLID(cl)
 		if _, ok := submitted[clid]; !ok {
-			unsubmittedCLs = append(unsubmittedCLs, common.CLID(clid))
+			unsubmittedCLs = append(unsubmittedCLs, clid)
 		}
 	}
 	return &submitter{
@@ -217,19 +214,17 @@ func constructSubmitter(ctx context.Context, rs *state.RunState, rm RM) (*submit
 func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	rs = rs.ShallowCopy()
 	sub := rs.Run.Submission
-	submitted := make(map[int64]struct{}, len(clids)+len(sub.GetSubmittedCls()))
+	submitted := clids.Set()
 	for _, clid := range sub.GetSubmittedCls() {
-		submitted[clid] = struct{}{}
-	}
-	for _, clid := range clids {
-		submitted[int64(clid)] = struct{}{}
+		submitted[common.CLID(clid)] = struct{}{}
 	}
 	if sub.GetSubmittedCls() != nil {
 		sub.SubmittedCls = sub.SubmittedCls[:0]
 	}
-	for _, clid := range sub.GetCls() {
+	for _, cl := range sub.GetCls() {
+		clid := common.CLID(cl)
 		if _, ok := submitted[clid]; ok {
-			sub.SubmittedCls = append(sub.SubmittedCls, clid)
+			sub.SubmittedCls = append(sub.SubmittedCls, cl)
 			delete(submitted, clid)
 		}
 	}
@@ -282,7 +277,7 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 }
 
 func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID common.RunID, sub *run.Submission) ([]int64, error) {
-	cls, err := loadRunCLs(ctx, clids, runID)
+	cls, err := run.LoadRunCLs(ctx, runID, clids)
 	if err != nil {
 		return nil, err
 	}
@@ -295,31 +290,6 @@ func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID 
 		ret[i] = int64(cl.ID)
 	}
 	return ret, nil
-}
-
-func loadRunCLs(ctx context.Context, clids common.CLIDs, runID common.RunID) ([]*run.RunCL, error) {
-	cls := make([]*run.RunCL, len(clids))
-	runKey := datastore.MakeKey(ctx, run.RunKind, string(runID))
-	for i, clID := range clids {
-		cls[i] = &run.RunCL{
-			ID:  clID,
-			Run: runKey,
-		}
-	}
-	err := datastore.Get(ctx, cls)
-	switch merr, ok := err.(errors.MultiError); {
-	case ok:
-		for i, err := range merr {
-			if err == datastore.ErrNoSuchEntity {
-				return nil, errors.Reason("RunCL %d not found in Datastore", cls[i].ID).Err()
-			}
-		}
-		count, err := merr.Summary()
-		return nil, errors.Annotate(err, "failed to load %d out of %d RunCLs", count, len(cls)).Tag(transient.Tag).Err()
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to load %d RunCLs", len(cls)).Tag(transient.Tag).Err()
-	}
-	return cls, nil
 }
 
 type submitter struct {
@@ -357,7 +327,7 @@ func (s submitter) submit(ctx context.Context) error {
 			Attempt: s.attempt,
 		}
 	default: // precondition check passed
-		if cls, err := loadRunCLs(ctx, s.clids, s.runID); err != nil {
+		if cls, err := run.LoadRunCLs(ctx, s.runID, s.clids); err != nil {
 			sc = s.computeResultEvent(ctx, err, defaultFatalMsg)
 		} else {
 			dctx, cancel := clock.WithDeadline(ctx, s.deadline)

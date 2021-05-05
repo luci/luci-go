@@ -51,38 +51,13 @@ func (rs *RunState) ShallowCopy() *RunState {
 	return ret
 }
 
-// loadCLs loads all CL entities involved in the Run.
-//
-// Return nil error iff all CLs are successfully loaded.
-func (rs *RunState) loadCLs(ctx context.Context) ([]*changelist.CL, error) {
-	cls := make([]*changelist.CL, len(rs.Run.CLs))
-	for i, clID := range rs.Run.CLs {
-		cls[i] = &changelist.CL{ID: clID}
-	}
-	err := datastore.Get(ctx, cls)
-	switch merr, ok := err.(errors.MultiError); {
-	case err == nil:
-		return cls, nil
-	case ok:
-		for i, err := range merr {
-			if err == datastore.ErrNoSuchEntity {
-				return nil, errors.Reason("CL %d not found in Datastore", cls[i].ID).Err()
-			}
-		}
-		count, err := merr.Summary()
-		return nil, errors.Annotate(err, "failed to load %d out of %d CLs", count, len(cls)).Tag(transient.Tag).Err()
-	default:
-		return nil, errors.Annotate(err, "failed to load %d CLs", len(cls)).Tag(transient.Tag).Err()
-	}
-}
-
 // RemoveRunFromCLs removes the Run from the IncompleteRuns list of all
 // CL entities associated with this Run.
 func (rs *RunState) RemoveRunFromCLs(ctx context.Context) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be called in a transaction")
 	}
-	cls, err := rs.loadCLs(ctx)
+	cls, err := changelist.LoadCLs(ctx, rs.Run.CLs)
 	if err != nil {
 		return err
 	}

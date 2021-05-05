@@ -21,6 +21,10 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/cv/internal/common"
 )
 
 // IsUpToDate returns whether stored Snapshot is at least as recent as given
@@ -115,6 +119,29 @@ func (s *Snapshot) PanicIfNotValid() {
 		panic("Gerrit is required, until CV supports more code reviews")
 	case s.GetGerrit().GetInfo() == nil:
 		panic("Gerrit.Info is required, until CV supports more code reviews")
+	}
+}
+
+// LoadCLs loads `CL` entities of the provided list of clids.
+func LoadCLs(ctx context.Context, clids common.CLIDs) ([]*CL, error) {
+	cls := make([]*CL, len(clids))
+	for i, clid := range clids {
+		cls[i] = &CL{ID: clid}
+	}
+	err := datastore.Get(ctx, cls)
+	switch merr, ok := err.(errors.MultiError); {
+	case err == nil:
+		return cls, nil
+	case ok:
+		for i, err := range merr {
+			if err == datastore.ErrNoSuchEntity {
+				return nil, errors.Reason("CL %d not found in Datastore", cls[i].ID).Err()
+			}
+		}
+		count, err := merr.Summary()
+		return nil, errors.Annotate(err, "failed to load %d out of %d CLs", count, len(cls)).Tag(transient.Tag).Err()
+	default:
+		return nil, errors.Annotate(err, "failed to load %d CLs", len(cls)).Tag(transient.Tag).Err()
 	}
 }
 

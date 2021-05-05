@@ -20,8 +20,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -50,15 +48,18 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 	}
 	clids.Dedupe()
 
-	cls := make([]*changelist.CL, len(clids))
-	runCLs := make([]*run.RunCL, len(clids))
-	runKey := datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID))
-	for i, clid := range clids {
-		cls[i] = &changelist.CL{ID: clid}
-		runCLs[i] = &run.RunCL{ID: clid, Run: runKey}
-	}
-
-	if err := loadCLsAndRunCLs(ctx, cls, runCLs); err != nil {
+	var cls []*changelist.CL
+	var runCLs []*run.RunCL
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.Go(func() (err error) {
+		cls, err = changelist.LoadCLs(ectx, clids)
+		return err
+	})
+	eg.Go(func() (err error) {
+		runCLs, err = run.LoadRunCLs(ectx, rs.Run.ID, clids)
+		return err
+	})
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -82,41 +83,4 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		}
 	}
 	return &Result{State: rs}, nil
-}
-
-func loadCLsAndRunCLs(ctx context.Context, cls []*changelist.CL, runCLs []*run.RunCL) error {
-	eg, ectx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		err := datastore.Get(ectx, cls)
-		switch merr, ok := err.(errors.MultiError); {
-		case ok:
-			for i, err := range merr {
-				if err == datastore.ErrNoSuchEntity {
-					return errors.Reason("CL(%d) doesn't exist", cls[i].ID).Err()
-				}
-			}
-			n, first := merr.Summary()
-			return errors.Annotate(first, "failed to load %d/%d CLs", n, len(cls)).Tag(transient.Tag).Err()
-		case err != nil:
-			return errors.Annotate(err, "failed to load CLs").Tag(transient.Tag).Err()
-		}
-		return nil
-	})
-	eg.Go(func() error {
-		err := datastore.Get(ectx, runCLs)
-		switch merr, ok := err.(errors.MultiError); {
-		case ok:
-			for i, err := range merr {
-				if err == datastore.ErrNoSuchEntity {
-					return errors.Reason("RunCL(%d) doesn't exist", runCLs[i].ID).Err()
-				}
-			}
-			n, first := merr.Summary()
-			return errors.Annotate(first, "failed to load %d/%d RunCLs", n, len(runCLs)).Tag(transient.Tag).Err()
-		case err != nil:
-			return errors.Annotate(err, "failed to load RunCLs").Tag(transient.Tag).Err()
-		}
-		return nil
-	})
-	return eg.Wait()
 }
