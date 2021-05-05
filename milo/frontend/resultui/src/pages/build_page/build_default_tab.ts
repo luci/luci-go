@@ -33,7 +33,7 @@ export class BuildDefaultTabElement extends LitElement {
     super.connectedCallback();
     const newUrl = router.urlForName(this.configsStore.userConfigs.defaultBuildPageTabName, {
       ...this.buildState.builderIdParam!,
-      build_num_or_id: this.buildState.buildNumOrId!,
+      build_num_or_id: this.buildState.buildNumOrIdParam!,
     });
 
     // Prevent the router from pushing the history state.

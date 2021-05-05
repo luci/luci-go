@@ -36,7 +36,7 @@ describe('BuildState', () => {
     getBuildStub.onCall(1).resolves({ number: 1, id: '2', builder: builderId } as Build);
 
     buildState = new BuildState(appState);
-    buildState.buildNumOrId = '1';
+    buildState.buildNumOrIdParam = '1';
     buildState.builderIdParam = builderId;
   });
 

@@ -38,7 +38,7 @@ import { AppState } from './app_state';
  */
 export class BuildState {
   @observable.ref builderIdParam?: BuilderID;
-  @observable.ref buildNumOrId?: string;
+  @observable.ref buildNumOrIdParam?: string;
 
   /**
    * Indicates whether a computed invocation ID should be used.
@@ -55,14 +55,19 @@ export class BuildState {
    * with 'b'.
    */
   @computed get buildNum() {
-    return this.buildNumOrId?.startsWith('b') === false ? Number(this.buildNumOrId) : null;
+    return this.buildNumOrIdParam?.startsWith('b') === false ? Number(this.buildNumOrIdParam) : null;
   }
 
   /**
-   * buildId is defined when this.buildNumOrId is defined and starts with 'b'.
+   * buildId is defined when this.buildNumOrId is defined and starts with 'b',
+   * or we have a matching cached build ID in appState.
    */
   @computed get buildId() {
-    return this.buildNumOrId?.startsWith('b') ? this.buildNumOrId.slice(1) : null;
+    const cached =
+      this.builderIdParam && this.buildNum !== null
+        ? this.appState.getBuildId(this.builderIdParam, this.buildNum)
+        : null;
+    return cached || (this.buildNumOrIdParam?.startsWith('b') ? this.buildNumOrIdParam.slice(1) : null);
   }
 
   @computed private get invocationId$(): IPromiseBasedObservable<string> {
@@ -72,10 +77,12 @@ export class BuildState {
       }
       const invIdFromBuild = this.build.infra?.resultdb?.invocation?.slice('invocations/'.length) || '';
       return fromPromise(Promise.resolve(invIdFromBuild));
+    } else if (this.buildId) {
+      // Favor ID over builder + number to ensure cache hit when the build page
+      // is redirected from a short build link to a long build link.
+      return fromPromise(Promise.resolve(getInvIdFromBuildId(this.buildId)));
     } else if (this.builderIdParam && this.buildNum) {
       return fromPromise(getInvIdFromBuildNum(this.builderIdParam, this.buildNum));
-    } else if (this.buildId) {
-      return fromPromise(Promise.resolve(getInvIdFromBuildId(this.buildId)));
     } else {
       return fromPromise(Promise.race([]));
     }
@@ -158,6 +165,8 @@ export class BuildState {
     };
     this.buildQueryTime = this.appState.timestamp;
 
+    // Favor ID over builder + number to ensure cache hit when the build page is
+    // redirected from a short build link to a long build link.
     const req: GetBuildRequest = this.buildId
       ? { id: this.buildId, fields: BUILD_FIELD_MASK }
       : { builder: this.builderIdParam, buildNumber: this.buildNum!, fields: BUILD_FIELD_MASK };

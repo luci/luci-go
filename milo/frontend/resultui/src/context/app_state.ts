@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import stableStringify from 'fast-json-stable-stringify';
 import { computed, observable } from 'mobx';
 
 import { createContextLink } from '../libs/context';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
-import { AccessService, BuildersService, BuildsService } from '../services/buildbucket';
+import { AccessService, BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
 import { MiloInternal } from '../services/milo_internal';
 import { ResultDb, UISpecificService } from '../services/resultdb';
 
@@ -67,6 +68,14 @@ export class AppState {
   // null means it's not initialized yet.
   // undefined means there's no such service worker.
   @observable.ref redirectSw: ServiceWorkerRegistration | null | undefined = null;
+
+  private cachedBuildId = new Map<string, string>();
+  setBuildId(builderId: BuilderID, buildNum: number, buildId: string) {
+    this.cachedBuildId = this.cachedBuildId.set(stableStringify([builderId, buildNum]), buildId);
+  }
+  getBuildId(builderId: BuilderID, buildNum: number) {
+    return this.cachedBuildId.get(stableStringify([builderId, buildNum]));
+  }
 
   @observable.ref private isDisposed = false;
 
