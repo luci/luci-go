@@ -291,7 +291,7 @@ func (t *Test) installDSshared(ctx context.Context, cloudProject string, client 
 			logging.Errorf(ctx, "failed to close DS client: %s", err)
 		}
 	})
-	ctx = (&cloud.Config{ProjectID: cloudProject, DS: client}).Use(ctx, nil)
+	ctx = (&cloud.ConfigLite{ProjectID: cloudProject, DS: client}).Use(ctx)
 	maybeCleanupOldDSNamespaces(ctx)
 
 	// Enter a namespace for this tests.
