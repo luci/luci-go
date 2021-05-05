@@ -61,7 +61,6 @@ export class TestResultsTabElement extends MiloBaseElement {
     super.connectedCallback();
     this.appState.selectedTabId = 'test-results';
     trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
-    // TODO(weiweilin): track test results tab loading time.
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
