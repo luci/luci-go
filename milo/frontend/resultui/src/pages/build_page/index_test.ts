@@ -181,7 +181,7 @@ describe('Invocation Page', () => {
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
-    await aTimeout(0);
+    await aTimeout(20);
     assert.isTrue(
       window.location.href.endsWith('/ui/p/project/builders/bucket/builder/123/test-results?q=a#an-element')
     );
