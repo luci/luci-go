@@ -364,7 +364,8 @@ func TestSubmitter(t *testing.T) {
 		})
 
 		// TODO(crbug/1199880): support flakiness for Gerrit fake to test submit
-		// will retry individual CL on transient error.
+		// will retry individual CL on transient error and not release queue
+		// for transient failure.
 
 		Convey("Submit fails permanently when", func() {
 			Convey("No submit privilege", func() {
