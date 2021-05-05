@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "1e12ab958062e8f6f929851056fcd66241d0e98a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a24da4c_eb4596f4",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T18:25:56Z",
+      "side": 1,
+      "message": "nit: not belonging",
+      "range": {
+        "startLine": 184,
+        "startChar": 64,
+        "endLine": 184,
+        "endChar": 77
+      },
+      "revId": "1e12ab958062e8f6f929851056fcd66241d0e98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
