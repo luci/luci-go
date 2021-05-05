@@ -236,7 +236,11 @@ func (r *contentRequest) writeContentHeaders() {
 		r.w.Header().Set("Content-Type", r.contentType.StringVal)
 	}
 	if r.size.Valid {
-		r.w.Header().Set("Content-Length", strconv.FormatInt(r.size.Int64, 10))
+		length := r.size.Int64
+		if r.limit > 0 && r.limit < length {
+			length = r.limit
+		}
+		r.w.Header().Set("Content-Length", strconv.FormatInt(length, 10))
 	}
 }
 
