@@ -20,6 +20,17 @@ import (
 	"go.chromium.org/luci/common/retry"
 )
 
+// BatchItem is just a container for the user-provided work items.
+//
+// This includes the Size of `Data` at the time the work item was added to
+// the buffer. This will not be modified by Buffer, but can be adjusted
+// by your application while handling a Batch if your handler needs to trim
+// this somehow.
+type BatchItem struct {
+	Item interface{}
+	Size int
+}
+
 // Batch represents a collection of individual work items and associated
 // metadata.
 //
@@ -37,10 +48,17 @@ import (
 // leases the Batch out; initially the Batch's length will be len(Data). If the
 // SendFn reduces the length of Data before the NACK, the accounted number of
 // work items will be accordingly reduced. The accounted length can never grow
-// (e.g. extending Data doesn't do anything).
+// (i.e. extending Data doesn't do anything).
+//
+// Similarly, if the buffer is configured with BatchSize, the accounted Size of
+// the batch is defined as the sum of the cached sizes in Data. Reducing this
+// amount (by removing items, or potentially reducing the Size in a BatchItem)
+// will reduce the effective Size of this Batch, but adding to Data cannot
+// increase the Size of the batch.
 type Batch struct {
-	// Data is the individual work items pushed into the Buffer.
-	Data []interface{}
+	// Data is the work items pushed into the Buffer, plus their Size as provided
+	// to AddNoBlock.
+	Data []BatchItem
 
 	// Meta is an object which dispatcher.Channel will treat as totally opaque;
 	// You may manipulate it in SendFn or ErrorFn as you see fit. This can be used
@@ -67,4 +85,22 @@ type Batch struct {
 	// It starts as the original value of len(Batch.Data) and can decrease if
 	// len(Batch.Data) is smaller on a NACK().
 	countedItems int
+
+	// countedSize is the number of size units of this Batch as the Buffer counts
+	// it. It starts as the sum of the Size of Data, and can decrease if
+	// BatchItems in Data have their Size reduced or if items are removed
+	// from BatchItems.
+	countedSize int
+}
+
+func (b *Batch) canAccept(o *Options, itemSize int) bool {
+	switch {
+	case b == nil:
+		return false
+	case o.BatchItemsMax > -1 && b.countedItems+1 > o.BatchItemsMax:
+		return false
+	case o.BatchSizeMax > -1 && b.countedSize+itemSize > o.BatchSizeMax:
+		return false
+	}
+	return true
 }
