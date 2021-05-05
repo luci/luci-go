@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import copy from 'copy-to-clipboard';
 import { css, customElement, html } from 'lit-element';
-import { classMap } from 'lit-html/directives/class-map';
 import { observable } from 'mobx';
 
 /**
@@ -24,30 +24,34 @@ import { observable } from 'mobx';
 @customElement('milo-copy-to-clipboard')
 export class CopyToClipboard extends MobxLitElement {
   @observable.ref copied = false;
-  textToCopy = '';
+  // Allow the parent to pass a function so we can avoid pre-generating the text
+  // when it's too costly to generate or can change frequently.
+  textToCopy: string | (() => string) = '';
 
   onclick = () => {
     if (this.copied) {
       return;
     }
-    copy(this.textToCopy);
+    copy(typeof this.textToCopy === 'function' ? this.textToCopy() : this.textToCopy);
     this.copied = true;
     setTimeout(() => (this.copied = false), 1000);
   };
 
-  /* eslint-disable max-len */
   protected render() {
+    if (this.copied) {
+      return html`
+        <slot name="done-icon">
+          <mwc-icon>done</mwc-icon>
+        </slot>
+      `;
+    }
+
     return html`
-      <svg class=${classMap({ copied: this.copied })} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path id="tick-icon" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-        <path
-          id="copy-icon"
-          d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
-        />
-      </svg>
+      <slot name="copy-icon">
+        <mwc-icon>content_copy</mwc-icon>
+      </slot>
     `;
   }
-  /* eslint-enable max-len */
 
   static styles = css`
     :host {
@@ -58,19 +62,10 @@ export class CopyToClipboard extends MobxLitElement {
       height: 16px;
       border-radius: 2px;
       padding: 2px;
+      --mdc-icon-size: 16px;
     }
     :host(:hover) {
       background-color: silver;
-    }
-
-    #tick-icon {
-      visibility: hidden;
-    }
-    .copied > #tick-icon {
-      visibility: visible;
-    }
-    .copied > #copy-icon {
-      visibility: hidden;
     }
   `;
 }

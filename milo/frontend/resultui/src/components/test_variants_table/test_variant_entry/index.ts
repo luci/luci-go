@@ -84,6 +84,13 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     return this.variant.testId;
   }
 
+  private genTestLink() {
+    const location = window.location;
+    const query = new URLSearchParams(location.search);
+    query.set('q', `ExactID:${this.variant.testId} VHash:${this.variant.variantHash}`);
+    return `${location.protocol}//${location.host}${location.pathname}?${query}`;
+  }
+
   @computed
   private get sourceUrl() {
     const testLocation = this.variant.testMetadata?.location;
@@ -211,6 +218,14 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
               @click=${(e: Event) => e.stopPropagation()}
               title="copy test name to clipboard"
             ></milo-copy-to-clipboard>
+            <milo-copy-to-clipboard
+              id="link-copy-button"
+              .textToCopy=${() => this.genTestLink()}
+              @click=${(e: Event) => e.stopPropagation()}
+              title="copy link to the test"
+            >
+              <mwc-icon slot="copy-icon">link</mwc-icon>
+            </milo-copy-to-clipboard>
           </div>
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>
@@ -304,6 +319,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
       milo-copy-to-clipboard {
         flex: 0 0 16px;
+        margin-left: 2px;
         display: none;
       }
       :hover > milo-copy-to-clipboard {
