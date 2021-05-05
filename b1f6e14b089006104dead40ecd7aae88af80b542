@@ -59,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f70f6a8_5118b635",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e95b326_a2294889",
+      "range": {
+        "startLine": 22,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 0
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6f47fb6d_257c0e95",
@@ -76,6 +100,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb6b6db1_86d63c4c",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f47fb6d_257c0e95",
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6dac2d02_ee8ade2e",
@@ -89,6 +131,30 @@
       "writtenOn": "2021-05-04T23:54:02Z",
       "side": 1,
       "message": "btw, this also sends data to cv[-dev] project, not \"commit-queue\". We\u0027ll need to change that, I think, incl. setting up permissions 😞",
+      "range": {
+        "startLine": 59,
+        "startChar": 13,
+        "endLine": 59,
+        "endChar": 20
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ac99440_1979eb4a",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "Right, I didn\u0027t think of that. Added a TODO.",
+      "parentUuid": "6dac2d02_ee8ade2e",
       "range": {
         "startLine": 59,
         "startChar": 13,
@@ -124,6 +190,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f41fbe4c_e300d668",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "Got it, I\u0027ll wait for that CL; thanks :-)",
+      "parentUuid": "566d64d6_66ae4b9b",
+      "range": {
+        "startLine": 73,
+        "startChar": 26,
+        "endLine": 73,
+        "endChar": 46
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1ac6343a_5723d683",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 10
@@ -136,6 +226,30 @@
       "side": 1,
       "message": "\u003e SA1019: ptypes.TimestampProto is deprecated: Call the timestamppb.New function instead. \n\nRight, and also new version doesn\u0027t error!",
       "parentUuid": "44a76469_79b6a582",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 84,
+        "endChar": 0
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "228266fa_b0bd3902",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ac6343a_5723d683",
       "range": {
         "startLine": 83,
         "startChar": 19,
@@ -159,6 +273,30 @@
       "writtenOn": "2021-05-05T14:07:03Z",
       "side": 1,
       "message": "yes, but Attempt.StartTime must remain as the time of triggering for backwards compatibility, \nI think you can easily get as \n  r.Trigger.GetTime().AsTime()\n\n(https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/run/storage.proto;l\u003d71;drc\u003dc7f8002e86f514734563172ed66c4236732bfd38)",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 70
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e1f9c47_14fcda67",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "Thanks for catching this. Note that Run doesn\u0027t have a trigger time, only CLs do; and taking another look, it looks like Run.CreateTime should actually correspond to Attempt.StartTime.\n\n   // For non-API triggered Run, the CreateTime is the timestamp of the last\n   // vote on a Gerrit CL that triggers this Run.\n   CreateTime time.Time `gae:\",noindex\"`\n\nFrom https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/run/model.go;l\u003d55\n\n  def attempt_start(self):\n    \"\"\"datetime.datetime of the most recently triggered candidate CL.\"\"\"\n    return self.cls[0].triggered_at\n\nFrom https://chrome-internal.googlesource.com/infra/infra_internal/+/master/infra_internal/services/cq/pending_manager/base.py#282\n\nAnd reading https://crbug.com/1105669, I thought we actually wanted to change the meaning of Attempt.StartTime, so that after the CV change StartTime would change to mean processing start time, and CreateTime would be added to mean trigger time?",
+      "parentUuid": "50df0b03_1b5a1a24",
       "range": {
         "startLine": 92,
         "startChar": 0,
@@ -216,6 +354,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "1ed15c70_928f9d7e",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "Good point.\n\nI have a question: we have a stringset package, but no intset package. I guess we just use a map[int]bool? Is there a reason why we don\u0027t have an intset package?",
+      "parentUuid": "297362ad_e0f5d57d",
+      "range": {
+        "startLine": 134,
+        "startChar": 35,
+        "endLine": 134,
+        "endChar": 47
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "d7916be7_aa9015a4",
@@ -252,6 +414,30 @@
       "writtenOn": "2021-05-05T18:29:07Z",
       "side": 1,
       "message": "nit: this can be simplified to \n\n```\ncase !run.IsEnded(r):\n  panic(...)\n```",
+      "range": {
+        "startLine": 189,
+        "startChar": 0,
+        "endLine": 197,
+        "endChar": 57
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d0cd61a_15c4713a",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "Ah, right; although this is a switch on value of r.Status rather than boolean true, so if I change this then I\u0027ll change the below items to `case r.Status \u003d\u003d ...`. Or I\u0027ll add an `if` above.",
+      "parentUuid": "513497a9_795f5e35",
       "range": {
         "startLine": 189,
         "startChar": 0,

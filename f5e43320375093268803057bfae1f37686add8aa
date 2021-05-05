@@ -584,6 +584,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "40f7326d_5beebae6",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-05T18:51:05Z",
+      "side": 1,
+      "message": "So FAILED_SUBMIT hasn\u0027t been added yet; for now I\u0027ll keep behavior same as CQD and add a TODO.",
+      "parentUuid": "637534e3_4c6b3152",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 170,
+        "endChar": 2
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ccbb14f6_6b398148",
