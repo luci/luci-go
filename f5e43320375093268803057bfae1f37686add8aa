@@ -201,6 +201,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fda9fc82_f3289f13",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T14:07:03Z",
+      "side": 1,
+      "message": "actually, it\u0027s small enough code that I don\u0027t care.",
+      "parentUuid": "b9cd37e5_0f22fec7",
+      "range": {
+        "startLine": 76,
+        "startChar": 37,
+        "endLine": 77,
+        "endChar": 26
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "77380202_53e5050a",

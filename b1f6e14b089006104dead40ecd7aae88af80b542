@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1c3dc4a_10fc3c1b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T14:07:03Z",
+      "side": 1,
+      "message": "Review complete.",
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4e95b326_a2294889",
@@ -108,6 +125,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "50df0b03_1b5a1a24",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T14:07:03Z",
+      "side": 1,
+      "message": "yes, but Attempt.StartTime must remain as the time of triggering for backwards compatibility, \nI think you can easily get as \n  r.Trigger.GetTime().AsTime()\n\n(https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/run/storage.proto;l\u003d71;drc\u003dc7f8002e86f514734563172ed66c4236732bfd38)",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 70
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "297362ad_e0f5d57d",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 10
@@ -124,6 +164,29 @@
         "startChar": 35,
         "endLine": 134,
         "endChar": 47
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7916be7_aa9015a4",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-05T14:07:03Z",
+      "side": 1,
+      "message": "this makes sense to me.",
+      "range": {
+        "startLine": 167,
+        "startChar": 0,
+        "endLine": 174,
+        "endChar": 2
       },
       "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
