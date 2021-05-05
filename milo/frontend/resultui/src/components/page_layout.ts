@@ -98,6 +98,7 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
 
   disconnectedCallback() {
     this.appState.dispose();
+    this.configsStore.dispose();
     super.disconnectedCallback();
   }
 
