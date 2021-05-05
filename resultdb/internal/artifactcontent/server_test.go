@@ -96,6 +96,7 @@ func TestServeContent(t *testing.T) {
 			},
 			RBECASInstanceName: "projects/example/instances/artifacts",
 			ReadCASBlob: func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
+				casReader.ReadLimit = int(req.ReadLimit)
 				return casReader, casReadErr
 			},
 		}
@@ -122,23 +123,23 @@ func TestServeContent(t *testing.T) {
 			return res, string(rawContents)
 		}
 
-		testutil.MustApply(ctx,
-			insert.Invocation("inv", pb.Invocation_FINALIZED, nil),
-			insert.Artifact("inv", "", "a", map[string]interface{}{
-				"ContentType": "text/plain",
-				"Size":        64,
-			}),
-			insert.Artifact("inv", "", "rbe", map[string]interface{}{
-				"ContentType": "text/plain",
-				"Size":        64,
-				"RBECASHash":  "sha256:deadbeef",
-			}),
-			insert.Artifact("inv", "tr/t/t/r", "a", map[string]interface{}{
-				"ContentType": "text/plain",
-				"Size":        64,
-				"RBECASHash":  "sha256:deadbeef",
-			}),
-		)
+		newArt := func(parentID, artID, hash string, datas ...[]byte) {
+			casReader.Res = nil
+			sum := 0
+			for _, d := range datas {
+				casReader.Res = append(casReader.Res, &bytestream.ReadResponse{Data: d})
+				sum += len(d)
+			}
+			testutil.MustApply(ctx,
+				insert.Artifact("inv", parentID, artID, map[string]interface{}{
+					"ContentType": "text/plain",
+					"Size":        sum,
+					"RBECASHash":  hash,
+				}),
+			)
+		}
+
+		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 
 		Convey(`Invalid resource name`, func() {
 			res, _ := fetch("https://results.usercontent.example.com/invocations/inv")
@@ -156,7 +157,8 @@ func TestServeContent(t *testing.T) {
 		})
 
 		Convey(`Escaped test id`, func() {
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a")
 			So(err, ShouldBeNil)
 			res, actualContents := fetch(u)
 			So(res.StatusCode, ShouldEqual, http.StatusOK)
@@ -164,29 +166,50 @@ func TestServeContent(t *testing.T) {
 		})
 
 		Convey(`limit`, func() {
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a")
 			So(err, ShouldBeNil)
 
 			Convey(`empty`, func() {
-				u += "&n="
-				res, _ := fetch(u)
+				res, body := fetch(u + "&n=")
 				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual, "contents")
+				So(res.ContentLength, ShouldEqual, len("contents"))
+			})
+
+			Convey(`0`, func() {
+				res, body := fetch(u + "&n=0")
+				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual, "contents")
+				So(res.ContentLength, ShouldEqual, len("contents"))
+			})
+
+			Convey("limit < art_size", func() {
+				res, body := fetch(u + "&n=2")
+				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual, "co")
+			})
+
+			Convey("limit > art_size", func() {
+				res, body := fetch(u + "&n=100")
+				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual, "contents")
 			})
 
 			Convey(`multiple`, func() {
-				u += "&n=10&n=50"
-				res, _ := fetch(u)
+				res, body := fetch(u + "&n=4&n=23")
 				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual, "cont")
 			})
 
-			Convey(`invalide`, func() {
-				u += "&n=limit"
-				res, _ := fetch(u)
+			Convey(`invalid`, func() {
+				res, _ := fetch(u + "&n=limit")
 				So(res.StatusCode, ShouldEqual, http.StatusBadRequest)
 			})
 		})
 
-		Convey(`RBE-CAS`, func() {
+		Convey(`E2E with RBE-CAS`, func() {
+			newArt("", "rbe", "sha256:deadbeef", []byte("first "), []byte("second"))
 			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
 			So(err, ShouldBeNil)
 
@@ -202,22 +225,12 @@ func TestServeContent(t *testing.T) {
 				So(res.StatusCode, ShouldEqual, http.StatusInternalServerError)
 			})
 
-		})
-
-		Convey(`E2E`, func() {
-			Convey(`RBE-CAS`, func() {
-				casReader.Res = []*bytestream.ReadResponse{
-					{Data: []byte("first ")},
-					{Data: []byte("second")},
-				}
-
-				u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
-				So(err, ShouldBeNil)
-				res, actualContents := fetch(u)
+			Convey("Succeeds", func() {
+				res, body := fetch(u)
 				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				So(actualContents, ShouldEqual, "first second")
+				So(body, ShouldEqual, "first second")
 				So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
-				So(res.Header.Get("Content-Length"), ShouldEqual, "64")
+				So(res.ContentLength, ShouldEqual, len("first second"))
 			})
 		})
 	})
