@@ -157,6 +157,8 @@ describe('Invocation Page', () => {
         .prerender=${true}
         .appState=${{
           ...appState,
+          setBuildId: () => {},
+          getBuildId: () => '4567',
           buildsService: {
             ...new BuildsService(new PrpcClientExt({}, () => '')),
             getBuild: getBuildMock,
