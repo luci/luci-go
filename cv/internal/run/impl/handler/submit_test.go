@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -137,14 +136,12 @@ func TestOnReadyForSubmission(t *testing.T) {
 		}
 
 		now := ct.Clock.Now().UTC()
-		ctx, cancel = clock.WithDeadline(ctx, now.Add(1*time.Minute))
-		defer cancel()
 		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 		Convey("When status is SUBMITTING", func() {
 			rs.Run.Status = run.Status_SUBMITTING
 			Convey("Continue submission if TaskID matches and within deadline", func() {
 				rs.Run.Submission = &run.Submission{
-					Deadline:     timestamppb.New(now.Add(20 * time.Second)), // within deadline
+					Deadline:     timestamppb.New(now.Add(10 * time.Minute)), // within deadline
 					AttemptCount: 1,
 					TaskId:       "task-foo", // same task ID as the current task
 				}
@@ -152,7 +149,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Deadline:     timestamppb.New(now.Add(20 * time.Second)),
+					Deadline:     timestamppb.New(now.Add(10 * time.Minute)),
 					AttemptCount: 1,
 					TaskId:       "task-foo",
 				}) // unchanged
@@ -163,7 +160,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 			Convey("Sends Poke if TaskID doesn't match and within deadline", func() {
 				rs.Run.Submission = &run.Submission{
-					Deadline:     timestamppb.New(now.Add(20 * time.Second)), // within deadline
+					Deadline:     timestamppb.New(now.Add(10 * time.Minute)), // within deadline
 					AttemptCount: 1,
 					TaskId:       "task-bar",
 				}
@@ -178,7 +175,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 			Convey("Re-acquire submit queue if deadline is exceeded", func() {
 				rs.Run.Submission = &run.Submission{
-					Deadline:     timestamppb.New(now.Add(-30 * time.Second)), // passed deadline
+					Deadline:     timestamppb.New(now.Add(-1 * time.Minute)), // expired
 					AttemptCount: 1,
 					TaskId:       "task-bar",
 				}
@@ -206,7 +203,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-						Deadline:     timestamppb.New(now.Add(1 * time.Minute)), //  set to ctx deadline
+						Deadline:     timestamppb.New(now.Add(submissionDuration)),
 						AttemptCount: 2,
 						TaskId:       "task-foo",
 					})
@@ -226,7 +223,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Deadline:     timestamppb.New(now.Add(1 * time.Minute)), // use deadline in ctx
+					Deadline:     timestamppb.New(now.Add(20 * time.Minute)),
 					AttemptCount: 1,
 					Cls:          []int64{2, 1}, // in submission order
 					TaskId:       "task-foo",
