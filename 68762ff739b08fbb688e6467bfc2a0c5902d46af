@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc1c810d_93f3cacd",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-05T01:32:54Z",
+      "side": 1,
+      "message": "Isn\u0027t this ErrItemTooSmall?",
+      "range": {
+        "startLine": 33,
+        "startChar": 55,
+        "endLine": 33,
+        "endChar": 70
+      },
+      "revId": "68762ff739b08fbb688e6467bfc2a0c5902d46af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55d97fe2_01e29b0d",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-05T01:32:54Z",
+      "side": 1,
+      "message": "I think this should be \"return 0 or a negative value\".",
+      "range": {
+        "startLine": 33,
+        "startChar": 16,
+        "endLine": 33,
+        "endChar": 25
+      },
+      "revId": "68762ff739b08fbb688e6467bfc2a0c5902d46af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15853ed0_ee814c94",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-05T01:32:54Z",
+      "side": 1,
+      "message": "Maybe, an extra explanation or a different word other than Must should be used instead. Options::normalize() returns an error, if an Option entry doesn\u0027t meet any other MUST requirement. i.e., hard-failure, as the user won\u0027t be able to create and initiate a dispatcher.\n\nHowever, not-meeting this requirement is a kinda soft failing, and it will just cause the item to be dropped and passed to ErrorFn. Not-using-MUST may mislead readers such that ItemSizeFunc() could return -1 to drop the task effectively. Thus, it may be ok to use Must to prevent the unintended usage of ItemSizeFunc, but it\u0027d be still helpful to describe the consequence of not meeting this requirement.\n\ni.e., please consider to use a different word, (like \"should not\") or add additional descriptions.",
+      "range": {
+        "startLine": 126,
+        "startChar": 4,
+        "endLine": 126,
+        "endChar": 8
+      },
+      "revId": "68762ff739b08fbb688e6467bfc2a0c5902d46af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
