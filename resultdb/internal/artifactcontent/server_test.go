@@ -188,18 +188,21 @@ func TestServeContent(t *testing.T) {
 				res, body := fetch(u + "&n=2")
 				So(res.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual, "co")
+				So(res.ContentLength, ShouldEqual, len("co"))
 			})
 
 			Convey("limit > art_size", func() {
 				res, body := fetch(u + "&n=100")
 				So(res.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual, "contents")
+				So(res.ContentLength, ShouldEqual, len("contents"))
 			})
 
 			Convey(`multiple`, func() {
 				res, body := fetch(u + "&n=4&n=23")
 				So(res.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual, "cont")
+				So(res.ContentLength, ShouldEqual, len("cont"))
 			})
 
 			Convey(`invalid`, func() {
