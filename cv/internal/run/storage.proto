@@ -105,6 +105,8 @@ message Submission {
   repeated int64 cls = 3;
   // IDs of all CLs that have been submitted successfully already.
   repeated int64 submitted_cls = 4;
+  // ID of the task that executes the current submission attempt.
+  string task_id = 5;
   // If True, Tree is currently in open state.
   bool tree_open = 10;
   // The timestamp when the Tree status was last fetched.

@@ -146,6 +146,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 			}
 			updateConfigGroupToLatest(rs)
 			now := ct.Clock.Now().UTC()
+			ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 			ctx, cancel = clock.WithDeadline(ctx, now.Add(1*time.Minute))
 			defer cancel()
 
@@ -158,6 +159,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 					Deadline:          timestamppb.New(now.Add(1 * time.Minute)), // deadline in ctx
 					AttemptCount:      1,
 					Cls:               []int64{2, 1}, // in submission order
+					TaskId:            "task-foo",
 					TreeOpen:          true,
 					LastTreeCheckTime: timestamppb.New(now),
 				})

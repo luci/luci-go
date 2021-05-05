@@ -139,13 +139,33 @@ func TestOnReadyForSubmission(t *testing.T) {
 		now := ct.Clock.Now().UTC()
 		ctx, cancel = clock.WithDeadline(ctx, now.Add(1*time.Minute))
 		defer cancel()
+		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 		Convey("When status is SUBMITTING", func() {
 			rs.Run.Status = run.Status_SUBMITTING
-
-			Convey("Sends Poke if within deadline", func() {
+			Convey("Continue submission if TaskID matches and within deadline", func() {
 				rs.Run.Submission = &run.Submission{
-					Deadline:     timestamppb.New(now.Add(30 * time.Second)), // with in deadline
+					Deadline:     timestamppb.New(now.Add(20 * time.Second)), // within deadline
 					AttemptCount: 1,
+					TaskId:       "task-foo", // same task ID as the current task
+				}
+				res, err := h.OnReadyForSubmission(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
+				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+					Deadline:     timestamppb.New(now.Add(20 * time.Second)),
+					AttemptCount: 1,
+					TaskId:       "task-foo",
+				}) // unchanged
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldNotBeNil)
+			})
+
+			Convey("Sends Poke if TaskID doesn't match and within deadline", func() {
+				rs.Run.Submission = &run.Submission{
+					Deadline:     timestamppb.New(now.Add(20 * time.Second)), // within deadline
+					AttemptCount: 1,
+					TaskId:       "task-bar",
 				}
 				res, err := h.OnReadyForSubmission(ctx, rs)
 				So(err, ShouldBeNil)
@@ -160,6 +180,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				rs.Run.Submission = &run.Submission{
 					Deadline:     timestamppb.New(now.Add(-30 * time.Second)), // passed deadline
 					AttemptCount: 1,
+					TaskId:       "task-bar",
 				}
 
 				Convey("And if waitlisted, fall back to WAITING_FOR_SUBMISSION status", func() {
@@ -172,7 +193,9 @@ func TestOnReadyForSubmission(t *testing.T) {
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-					So(res.State.Run.Submission.Deadline, ShouldBeNil)
+					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+						AttemptCount: 1,
+					})
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
@@ -182,8 +205,11 @@ func TestOnReadyForSubmission(t *testing.T) {
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
-					So(res.State.Run.Submission.Deadline, ShouldResembleProto, timestamppb.New(now.Add(1*time.Minute))) // set to ctx deadline
-					So(res.State.Run.Submission.AttemptCount, ShouldEqual, 2)
+					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+						Deadline:     timestamppb.New(now.Add(1 * time.Minute)), //  set to ctx deadline
+						AttemptCount: 2,
+						TaskId:       "task-foo",
+					})
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldNotBeNil)
@@ -203,6 +229,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					Deadline:     timestamppb.New(now.Add(1 * time.Minute)), // use deadline in ctx
 					AttemptCount: 1,
 					Cls:          []int64{2, 1}, // in submission order
+					TaskId:       "task-foo",
 				})
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
