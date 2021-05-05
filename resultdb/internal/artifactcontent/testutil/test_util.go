@@ -27,8 +27,12 @@ type FakeCASReader struct {
 
 	Res         []*bytestream.ReadResponse
 	ResIndex    int
+	ResDataPos  int
 	ResErr      error
 	ResErrIndex int
+
+	ReadLimit int
+	nRead     int
 }
 
 func (r *FakeCASReader) Recv() (*bytestream.ReadResponse, error) {
@@ -36,10 +40,27 @@ func (r *FakeCASReader) Recv() (*bytestream.ReadResponse, error) {
 		return nil, r.ResErr
 	}
 
+	limitAvail := r.ReadLimit - r.nRead
+	if r.ReadLimit > 0 && limitAvail == 0 {
+		return nil, io.EOF
+	}
+
 	if r.ResIndex < len(r.Res) {
+		// calculate how much data can be read further from the current Res.
 		res := r.Res[r.ResIndex]
-		r.ResIndex++
-		return res, nil
+		nRead := len(res.Data) - r.ResDataPos
+		if r.ReadLimit != 0 && nRead > limitAvail {
+			nRead = limitAvail
+		}
+
+		data := res.Data[r.ResDataPos : r.ResDataPos+nRead]
+		r.nRead += nRead
+		r.ResDataPos += nRead
+		if r.ResDataPos == len(res.Data) {
+			r.ResDataPos = 0
+			r.ResIndex++
+		}
+		return &bytestream.ReadResponse{Data: data}, nil
 	}
 	return nil, io.EOF
 }
