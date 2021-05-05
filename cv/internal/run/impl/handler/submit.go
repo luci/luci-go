@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -72,6 +73,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 	case status == run.Status_SUBMITTING:
 		return continueSubmissionIfPossible(ctx, rs)
 	case status == run.Status_RUNNING || status == run.Status_WAITING_FOR_SUBMISSION:
+		// TODO(yiwzhang): fail if partially submitted.
 		rs, err := markSubmitting(ctx, rs)
 		if err != nil {
 			return nil, err
@@ -91,13 +93,17 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 
 func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Result, error) {
 	deadline := rs.Run.Submission.GetDeadline()
+	taskID := rs.Run.Submission.GetTaskId()
 	switch {
 	case deadline == nil:
 		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
+	case taskID == "":
+		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.Run.ID))
 	}
 
 	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
 	case expired:
+		// TODO(yiwzhang): fail if partially submitted.
 		// Deadline has already expired. Try to acquire submit queue again
 		// and attempt another submission if not waitlisted. Otherwise,
 		// falls back to WAITING_FOR_SUBMISSION status.
@@ -108,6 +114,7 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Res
 			rs = rs.ShallowCopy()
 			rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
 			rs.Run.Submission.Deadline = nil
+			rs.Run.Submission.TaskId = ""
 			return &Result{State: rs}, nil
 		default:
 			rs, err := markSubmitting(ctx, rs)
@@ -123,6 +130,17 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Res
 				PostProcessFn: s.submit,
 			}, nil
 		}
+	case taskID == mustTaskIDFromContext(ctx):
+		// Matching taskID indicates current task is the retry of a previous
+		// submitting task that has failed transiently. Continue the submission.
+		s, err := constructSubmitter(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		return &Result{
+			State:         rs,
+			PostProcessFn: s.submit,
+		}, nil
 	default:
 		// Presumably another task is working on the submission at this time. So
 		// poke as soon as the deadline expires.
@@ -145,6 +163,7 @@ func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, e
 			return nil, err
 		}
 	}
+	// TODO(yiwzhang): make deadline 20 minutes.
 	deadline, ok := ctx.Deadline()
 	if ok {
 		ret.Run.Submission.Deadline = timestamppb.New(deadline.UTC())
@@ -152,7 +171,24 @@ func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, e
 		ret.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(defaultSubmissionDuration))
 	}
 	ret.Run.Submission.AttemptCount += 1
+	ret.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
 	return ret, nil
+}
+
+var fakeTaskIDKey = "used in handler tests only for setting the mock taskID"
+
+func mustTaskIDFromContext(ctx context.Context) string {
+	if taskID, ok := ctx.Value(&fakeTaskIDKey).(string); ok {
+		return taskID
+	}
+	switch executionInfo := tq.TaskExecutionInfo(ctx); {
+	case executionInfo == nil:
+		panic("must be called within a task handler")
+	case executionInfo.TaskID == "":
+		panic("taskID in task executionInfo is empty")
+	default:
+		return executionInfo.TaskID
+	}
 }
 
 func constructSubmitter(ctx context.Context, rs *state.RunState) (*submitter, error) {
