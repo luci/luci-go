@@ -23,17 +23,28 @@ type Stats struct {
 	// leased. This includes:
 	//    * Items buffered, but not yet cut into a Batch.
 	//    * Items in unleased Batches.
+	//
+	// UnleasedItemSize is the size in 'size units' of the same items.
 	UnleasedItemCount int
+	UnleasedItemSize  int
 
 	// LeasedItemCount is the total number of items (i.e. objects passed to
 	// AddNoBlock) which are currently owned by the Buffer and are in active
 	// leases.
+	//
+	// LeasedItemSize is the size in 'size units' of the same items.
 	LeasedItemCount int
+	LeasedItemSize  int
 
 	// DroppedLeasedItemCount is the total number of items (i.e. objects passed to
 	// AddNoBlock) which were part of leases, but where those leases have been
-	// dropped (due to FullBehavior policy).
+	// dropped (due to FullBehavior policy), but have not yet been ACK/NACK'd.
+	//
+	// Once these batches are ACK/NACK'd they'll be dropped from Stats entirely.
+	//
+	// DroppedLeasedItemSize is the size in 'size units' of the same items.
 	DroppedLeasedItemCount int
+	DroppedLeasedItemSize  int
 }
 
 // Empty returns true iff the Buffer is totally empty (has zero user-provided
@@ -47,6 +58,11 @@ func (s Stats) Total() int {
 	return s.UnleasedItemCount + s.LeasedItemCount + s.DroppedLeasedItemCount
 }
 
+// TotalSize returns the total number of items currently referenced by the Buffer.
+func (s Stats) TotalSize() int {
+	return s.UnleasedItemSize + s.LeasedItemSize + s.DroppedLeasedItemSize
+}
+
 type category int
 
 const (
@@ -55,33 +71,36 @@ const (
 	categoryDropped
 )
 
-func (s *Stats) getCategoryVars(cat category) (count *int) {
+func (s *Stats) getCategoryVars(cat category) (count, sizeUnits *int) {
 	switch cat {
 	case categoryUnleased:
-		count = &s.UnleasedItemCount
+		count, sizeUnits = &s.UnleasedItemCount, &s.UnleasedItemSize
 	case categoryLeased:
-		count = &s.LeasedItemCount
+		count, sizeUnits = &s.LeasedItemCount, &s.LeasedItemSize
 	case categoryDropped:
-		count = &s.DroppedLeasedItemCount
+		count, sizeUnits = &s.DroppedLeasedItemCount, &s.DroppedLeasedItemSize
 	default:
 		panic(fmt.Errorf("unknown category %d", cat))
 	}
 	return
 }
 
-func (s *Stats) addOneUnleased() {
-	count := s.getCategoryVars(categoryUnleased)
+func (s *Stats) addOneUnleased(siz int) {
+	count, sizeUnits := s.getCategoryVars(categoryUnleased)
 	*count++
+	*sizeUnits += siz
 }
 
 func (s *Stats) add(b *Batch, to category) {
-	count := s.getCategoryVars(to)
+	count, sizeUnits := s.getCategoryVars(to)
 	*count += b.countedItems
+	*sizeUnits += b.countedSize
 }
 
 func (s *Stats) del(b *Batch, to category) {
-	count := s.getCategoryVars(to)
+	count, sizeUnits := s.getCategoryVars(to)
 	*count -= b.countedItems
+	*sizeUnits -= b.countedSize
 }
 
 func (s *Stats) mv(b *Batch, from, to category) {

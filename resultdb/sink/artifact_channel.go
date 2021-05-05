@@ -197,7 +197,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	}
 	c.streamChannel, err = dispatcher.NewChannel(ctx, stOpts, func(b *buffer.Batch) error {
 		return errors.Annotate(
-			au.StreamUpload(ctx, b.Data[0].(*uploadTask), cfg.UpdateToken),
+			au.StreamUpload(ctx, b.Data[0].Item.(*uploadTask), cfg.UpdateToken),
 			"StreamUpload").Err()
 	})
 	if err != nil {

@@ -41,21 +41,43 @@ func TestOptionValidationGood(t *testing.T) {
 			options: Options{
 				MaxLeases:     2,
 				BatchItemsMax: 99,
+				BatchSizeMax:  10,
 				BatchAgeMax:   2 * time.Minute,
-				FullBehavior:  &DropOldestBatch{400},
+				FullBehavior:  &DropOldestBatch{MaxLiveItems: 400, MaxLiveSize: -1},
 				Retry:         retry.None,
 			},
 			expected: Options{
 				MaxLeases:     2,
 				BatchItemsMax: 99,
+				BatchSizeMax:  10,
 				BatchAgeMax:   2 * time.Minute,
-				FullBehavior:  &DropOldestBatch{400},
+				FullBehavior:  &DropOldestBatch{MaxLiveItems: 400, MaxLiveSize: -1},
 				Retry:         retry.None,
 			},
 		},
 
 		{
 			name: "BatchItemsMax == -1 OK",
+			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchItemsMax: -1,
+				BatchSizeMax:  Defaults.BatchSizeMax,
+				BatchAgeMax:   Defaults.BatchAgeMax,
+				FullBehavior:  Defaults.FullBehavior,
+				Retry:         Defaults.Retry,
+			},
+			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchItemsMax: -1,
+				BatchSizeMax:  Defaults.BatchSizeMax,
+				BatchAgeMax:   Defaults.BatchAgeMax,
+				FullBehavior:  Defaults.FullBehavior,
+				Retry:         Defaults.Retry,
+			},
+		},
+
+		{
+			name: "BatchSizeMax == 0 -> default",
 			options: Options{
 				MaxLeases:     Defaults.MaxLeases,
 				BatchItemsMax: -1,
@@ -66,6 +88,46 @@ func TestOptionValidationGood(t *testing.T) {
 			expected: Options{
 				MaxLeases:     Defaults.MaxLeases,
 				BatchItemsMax: -1,
+				BatchSizeMax:  Defaults.BatchSizeMax,
+				BatchAgeMax:   Defaults.BatchAgeMax,
+				FullBehavior:  Defaults.FullBehavior,
+				Retry:         Defaults.Retry,
+			},
+		},
+
+		{
+			name: "BatchSizeMax == 0 w/ BlockNewItems -> default",
+			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchItemsMax: Defaults.BatchItemsMax,
+				BatchAgeMax:   Defaults.BatchAgeMax,
+				FullBehavior:  &BlockNewItems{},
+				Retry:         Defaults.Retry,
+			},
+			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchItemsMax: Defaults.BatchItemsMax,
+				BatchSizeMax:  Defaults.BatchSizeMax,
+				BatchAgeMax:   Defaults.BatchAgeMax,
+				FullBehavior:  &BlockNewItems{MaxItems: 1000, MaxSize: -1},
+				Retry:         Defaults.Retry,
+			},
+		},
+
+		{
+			name: "BatchSizeMax > 0 -> default sizer func",
+			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchItemsMax: -1,
+				BatchSizeMax:  10000,
+				BatchAgeMax:   Defaults.BatchAgeMax,
+				FullBehavior:  Defaults.FullBehavior,
+				Retry:         Defaults.Retry,
+			},
+			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchItemsMax: -1,
+				BatchSizeMax:  10000,
 				BatchAgeMax:   Defaults.BatchAgeMax,
 				FullBehavior:  Defaults.FullBehavior,
 				Retry:         Defaults.Retry,
@@ -76,16 +138,18 @@ func TestOptionValidationGood(t *testing.T) {
 			name: "DropOldestBatch default",
 			options: Options{
 				MaxLeases:     Defaults.MaxLeases,
-				BatchItemsMax: -1,
+				BatchItemsMax: Defaults.BatchItemsMax,
+				BatchSizeMax:  Defaults.BatchSizeMax,
 				BatchAgeMax:   Defaults.BatchAgeMax,
 				FullBehavior:  &DropOldestBatch{},
 				Retry:         Defaults.Retry,
 			},
 			expected: Options{
 				MaxLeases:     Defaults.MaxLeases,
-				BatchItemsMax: -1,
+				BatchItemsMax: Defaults.BatchItemsMax,
+				BatchSizeMax:  Defaults.BatchSizeMax,
 				BatchAgeMax:   Defaults.BatchAgeMax,
-				FullBehavior:  &DropOldestBatch{1000},
+				FullBehavior:  &DropOldestBatch{MaxLiveItems: 1000, MaxLiveSize: -1},
 				Retry:         Defaults.Retry,
 			},
 		},
@@ -95,6 +159,7 @@ func TestOptionValidationGood(t *testing.T) {
 			options: Options{
 				MaxLeases:     Defaults.MaxLeases,
 				BatchItemsMax: 2000,
+				BatchSizeMax:  Defaults.BatchSizeMax,
 				BatchAgeMax:   Defaults.BatchAgeMax,
 				FullBehavior:  &DropOldestBatch{},
 				Retry:         Defaults.Retry,
@@ -102,8 +167,9 @@ func TestOptionValidationGood(t *testing.T) {
 			expected: Options{
 				MaxLeases:     Defaults.MaxLeases,
 				BatchItemsMax: 2000,
+				BatchSizeMax:  Defaults.BatchSizeMax,
 				BatchAgeMax:   Defaults.BatchAgeMax,
-				FullBehavior:  &DropOldestBatch{2000},
+				FullBehavior:  &DropOldestBatch{MaxLiveItems: 2000, MaxLiveSize: -1},
 				Retry:         Defaults.Retry,
 			},
 		},
@@ -112,7 +178,28 @@ func TestOptionValidationGood(t *testing.T) {
 			name: "BlockNewItems default",
 			options: Options{
 				MaxLeases:     Defaults.MaxLeases,
+				BatchItemsMax: Defaults.BatchItemsMax,
+				BatchSizeMax:  Defaults.BatchSizeMax,
+				BatchAgeMax:   Defaults.BatchAgeMax,
+				FullBehavior:  &BlockNewItems{},
+				Retry:         Defaults.Retry,
+			},
+			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchItemsMax: Defaults.BatchItemsMax,
+				BatchSizeMax:  Defaults.BatchSizeMax,
+				BatchAgeMax:   Defaults.BatchAgeMax,
+				FullBehavior:  &BlockNewItems{MaxItems: 1000, MaxSize: -1},
+				Retry:         Defaults.Retry,
+			},
+		},
+
+		{
+			name: "BlockNewItems size only",
+			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
 				BatchItemsMax: -1,
+				BatchSizeMax:  10000,
 				BatchAgeMax:   Defaults.BatchAgeMax,
 				FullBehavior:  &BlockNewItems{},
 				Retry:         Defaults.Retry,
@@ -120,8 +207,9 @@ func TestOptionValidationGood(t *testing.T) {
 			expected: Options{
 				MaxLeases:     Defaults.MaxLeases,
 				BatchItemsMax: -1,
+				BatchSizeMax:  10000,
 				BatchAgeMax:   Defaults.BatchAgeMax,
-				FullBehavior:  &BlockNewItems{1000},
+				FullBehavior:  &BlockNewItems{MaxItems: -1, MaxSize: 50000},
 				Retry:         Defaults.Retry,
 			},
 		},
@@ -131,6 +219,7 @@ func TestOptionValidationGood(t *testing.T) {
 			options: Options{
 				MaxLeases:     Defaults.MaxLeases,
 				BatchItemsMax: 2000,
+				BatchSizeMax:  Defaults.BatchSizeMax,
 				BatchAgeMax:   Defaults.BatchAgeMax,
 				FullBehavior:  &BlockNewItems{},
 				Retry:         Defaults.Retry,
@@ -138,8 +227,9 @@ func TestOptionValidationGood(t *testing.T) {
 			expected: Options{
 				MaxLeases:     Defaults.MaxLeases,
 				BatchItemsMax: 2000,
+				BatchSizeMax:  Defaults.BatchSizeMax,
 				BatchAgeMax:   Defaults.BatchAgeMax,
-				FullBehavior:  &BlockNewItems{2000},
+				FullBehavior:  &BlockNewItems{MaxItems: 2000, MaxSize: -1},
 				Retry:         Defaults.Retry,
 			},
 		},
@@ -154,7 +244,7 @@ func TestOptionValidationGood(t *testing.T) {
 				So(myOptions.normalize(), ShouldBeNil)
 
 				// ShouldResemble doesn't like function pointers, apparently, so
-				// explicitly compare Retry field.
+				// explicitly compare the Retry field.
 				So(myOptions.Retry, ShouldEqual, expect.Retry)
 				myOptions.Retry = nil
 				expect.Retry = nil
@@ -188,6 +278,14 @@ func TestOptionValidationBad(t *testing.T) {
 		},
 
 		{
+			"BatchSizeMax",
+			Options{
+				BatchSizeMax: -2,
+			},
+			"BatchSizeMax must be",
+		},
+
+		{
 			"BatchAgeMax",
 			Options{
 				BatchAgeMax: -time.Minute,
@@ -207,17 +305,65 @@ func TestOptionValidationBad(t *testing.T) {
 		{
 			"DropOldestBatch.MaxLiveItems < -1",
 			Options{
-				FullBehavior: &DropOldestBatch{-2},
+				FullBehavior: &DropOldestBatch{MaxLiveItems: -2},
 			},
 			"DropOldestBatch.MaxLiveItems must be",
 		},
 
 		{
+			"DropOldestBatch.MaxLiveSize < -1",
+			Options{
+				FullBehavior: &DropOldestBatch{MaxLiveSize: -2},
+			},
+			"DropOldestBatch.MaxLiveSize must be",
+		},
+
+		{
+			"DropOldestBatch.MaxLiveItems == DropOldestBatch.MaxLiveSize == -1",
+			Options{
+				FullBehavior: &DropOldestBatch{MaxLiveItems: -1, MaxLiveSize: -1},
+			},
+			"DropOldestBatch must have one of",
+		},
+
+		{
+			"DropOldestBatch.MaxLiveSize > 0 && BatchSizeMax == -1",
+			Options{
+				FullBehavior: &DropOldestBatch{MaxLiveSize: 100},
+			},
+			"DropOldestBatch.MaxLiveSize may only be set",
+		},
+
+		{
 			"BlockNewItems.MaxItems < -1",
 			Options{
-				FullBehavior: &BlockNewItems{-2},
+				FullBehavior: &BlockNewItems{MaxItems: -2},
 			},
 			"BlockNewItems.MaxItems must be",
+		},
+
+		{
+			"BlockNewItems.MaxSize < -1",
+			Options{
+				FullBehavior: &BlockNewItems{MaxSize: -2},
+			},
+			"BlockNewItems.MaxSize must be",
+		},
+
+		{
+			"BlockNewItems.MaxItems == BlockNewItems.MaxSize == -1",
+			Options{
+				FullBehavior: &BlockNewItems{MaxItems: -1, MaxSize: -1},
+			},
+			"BlockNewItems must have one of",
+		},
+
+		{
+			"BlockNewItems.MaxSize > 0 && BatchSizeMax == -1",
+			Options{
+				FullBehavior: &BlockNewItems{MaxSize: 100},
+			},
+			"BlockNewItems.MaxSize may only be set",
 		},
 	}
 

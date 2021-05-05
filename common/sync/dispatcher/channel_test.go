@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -116,7 +117,7 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			cvctx.So(batch.Data, ShouldHaveLength, 1)
-			str := batch.Data[0].(string)
+			str := batch.Data[0].Item.(string)
 			if enableThisError && str == "This" {
 				enableThisError = false
 				return errors.New("narp", transient.Tag)
@@ -181,7 +182,7 @@ func TestContextShutdown(t *testing.T) {
 				if flush {
 					return
 				}
-				droppedBatches = append(droppedBatches, dropped.Data[0].(string))
+				droppedBatches = append(droppedBatches, dropped.Data[0].Item.(string))
 			},
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -190,7 +191,7 @@ func TestContextShutdown(t *testing.T) {
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
-			sentBatches = append(sentBatches, batch.Data[0].(string))
+			sentBatches = append(sentBatches, batch.Data[0].Item.(string))
 			<-cctx.Done()
 			return
 		})
@@ -233,7 +234,7 @@ func TestQPSLimit(t *testing.T) {
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
-			sentBatches = append(sentBatches, batch.Data[0].(int))
+			sentBatches = append(sentBatches, batch.Data[0].Item.(int))
 			return
 		})
 		So(err, ShouldBeNil)
@@ -275,7 +276,7 @@ func TestQPSLimitParallel(t *testing.T) {
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			lock.Lock()
-			sentBatches = append(sentBatches, batch.Data[0].(int))
+			sentBatches = append(sentBatches, batch.Data[0].Item.(int))
 			lock.Unlock()
 			return
 		})
@@ -312,7 +313,7 @@ func TestExplicitDrops(t *testing.T) {
 				if flush {
 					return
 				}
-				droppedBatches = append(droppedBatches, batch.Data[0].(int))
+				droppedBatches = append(droppedBatches, batch.Data[0].Item.(int))
 			},
 			ErrorFn: func(batch *buffer.Batch, err error) (retry bool) {
 				return false
@@ -324,7 +325,7 @@ func TestExplicitDrops(t *testing.T) {
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
-			itm := batch.Data[0].(int)
+			itm := batch.Data[0].Item.(int)
 			if itm%2 == 0 {
 				err = errors.New("number is even")
 			} else {
@@ -362,7 +363,7 @@ func TestImplicitDrops(t *testing.T) {
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
-			sentBatches = append(sentBatches, batch.Data[0].(int))
+			sentBatches = append(sentBatches, batch.Data[0].Item.(int))
 			<-sendBlocker
 			return
 		})
@@ -546,7 +547,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 
 			mu.Lock()
 			for i := range batch.Data {
-				sent = append(sent, batch.Data[i].(int))
+				sent = append(sent, batch.Data[i].Item.(int))
 			}
 			mu.Unlock()
 			return nil
@@ -570,5 +571,101 @@ func TestCorrectTimerUsage(t *testing.T) {
 		for i := 1; i <= N; i++ {
 			So(sent[i-1], ShouldEqual, i)
 		}
+	})
+}
+
+func TestSizeBasedChannel(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Size based channel`, t, func(cvctx C) {
+		ctx := context.Background() // uses real time!
+		ctx, dbg := dbgIfVerbose(ctx)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		var mu sync.Mutex
+		var needUnlock bool
+		defer func() {
+			if needUnlock {
+				mu.Unlock()
+			}
+		}()
+		var out []string
+		var fails []*buffer.Batch
+		var errs []error
+
+		opts := &Options{
+			testingDbg: dbg,
+			ItemSizeFunc: func(itm interface{}) int {
+				return len(itm.(string))
+			},
+			ErrorFn: func(failedBatch *buffer.Batch, err error) (retry bool) {
+				fails = append(fails, failedBatch)
+				errs = append(errs, err)
+				return false
+			},
+			Buffer: buffer.Options{
+				MaxLeases:     1,
+				BatchItemsMax: -1,
+				BatchSizeMax:  100,
+				FullBehavior:  &buffer.BlockNewItems{},
+			},
+			QPSLimit: rate.NewLimiter(rate.Inf, 1),
+		}
+
+		ch, err := NewChannel(ctx, opts, func(batch *buffer.Batch) (err error) {
+			mu.Lock()
+			defer mu.Unlock()
+			for _, itm := range batch.Data {
+				out = append(out, itm.Item.(string))
+			}
+			return nil
+		})
+		So(err, ShouldBeNil)
+
+		bigString := strings.Repeat("something.", 5) // 50 bytes
+
+		mu.Lock()
+		needUnlock = true
+
+		for i := 0; i < 10; i++ {
+			ch.C <- bigString
+		}
+
+		select {
+		case ch.C <- "extra string":
+			So(true, ShouldBeFalse) // shouldn't be able to push more
+		case <-clock.After(ctx, 250*time.Millisecond):
+		}
+
+		mu.Unlock()
+		needUnlock = false
+
+		select {
+		case ch.C <- "extra string": // no problem now
+		case <-clock.After(ctx, 250*time.Millisecond):
+			So(true, ShouldBeFalse)
+		}
+
+		// pushing a giant object in will end up going to ErrorFn
+		ch.C <- strings.Repeat("something.", 50) // 500 bytes
+		// pushing an empty object (without having ItemSizeFunc assign it
+		// a non-zero arbitrary size) goes to ErrorFn.
+		ch.C <- ""
+
+		ch.CloseAndDrain(ctx)
+
+		So(fails, ShouldHaveLength, 2)
+		So(fails[0].Data, ShouldHaveLength, 1)
+		So(fails[0].Data[0].Item, ShouldHaveLength, 500)
+		So(fails[0].Data[0].Size, ShouldEqual, 500)
+		So(fails[1].Data, ShouldHaveLength, 1)
+		So(fails[1].Data[0].Item, ShouldHaveLength, 0)
+		So(fails[1].Data[0].Size, ShouldEqual, 0)
+		So(errs[0], ShouldErrLike, buffer.ErrItemTooLarge)
+		So(errs[1], ShouldErrLike, buffer.ErrItemTooSmall)
+
+		So(out, ShouldHaveLength, 11)
+		So(out[len(out)-1], ShouldResemble, "extra string")
 	})
 }

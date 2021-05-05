@@ -32,7 +32,9 @@ import (
 
 // These errors can be returned from AddNoBlock.
 var (
-	ErrBufferFull = errors.New("buffer is full")
+	ErrBufferFull   = errors.New("buffer is full")
+	ErrItemTooLarge = errors.New("item exceeds buffer's BatchSizeMax")
+	ErrItemTooSmall = errors.New("item has zero or negative size, and BatchSizeMax is set")
 )
 
 // Buffer batches individual data items into Batch objects.
@@ -56,8 +58,8 @@ type Buffer struct {
 	// batch.
 	//
 	// NOTE: It is possible for this to be nil; if AddNoBlock fills this Batch up
-	// to the maximum permitted size (Options.BatchItemsMax), it will be removed and
-	// pushed into `unleased`.
+	// until Batch.canAccept returns false, it will be removed and pushed into
+	// `unleased`.
 	currentBatch *Batch
 
 	// Contains all of the cut, but not currently leased, Batches.
@@ -144,14 +146,21 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 	}
 }
 
-// AddNoBlock adds the item to the Buffer.
+// AddNoBlock adds the item to the Buffer with the given size.
 //
 // Possibly drops a batch according to FullBehavior.
 //
 // Returns an error under the following conditions:
 //
 //  - ErrBufferFull - If FullBehavior.ComputeState returns okToInsert=false.
-func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch, err error) {
+//  - ErrItemTooLarge - If this buffer has a BatchSizeMax configured and
+//    `itemSize` is larger than this.
+//  - ErrItemTooSmall - If this buffer has a BatchSizeMax configured and
+//    `itemSize` is zero, or if `itemSize` is negative.
+func (buf *Buffer) AddNoBlock(now time.Time, item interface{}, itemSize int) (dropped *Batch, err error) {
+	if err = buf.opts.checkItemSize(itemSize); err != nil {
+		return
+	}
 	okToInsert, dropBatch := buf.opts.FullBehavior.ComputeState(buf.stats)
 	if !okToInsert {
 		return nil, ErrBufferFull
@@ -162,11 +171,15 @@ func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch, 
 		dropped = buf.dropOldest()
 	}
 
+	if !buf.currentBatch.canAccept(&buf.opts, itemSize) {
+		buf.Flush(now)
+	}
+
 	if buf.currentBatch == nil {
 		buf.currentBatch = &Batch{
 			// Try to minimize allocations by allocating 20% more slots in Data than
 			// the moving average for the last 10 batches' actual use.
-			Data:     make([]interface{}, 0, int(buf.batchItemsGuess.get()*1.2)),
+			Data:     make([]BatchItem, 0, int(buf.batchItemsGuess.get()*1.2)),
 			id:       buf.lastBatchID + 1,
 			retry:    buf.opts.Retry(),
 			nextSend: now.Add(buf.opts.BatchAgeMax),
@@ -174,11 +187,14 @@ func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch, 
 		buf.lastBatchID++
 	}
 
-	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
+	buf.currentBatch.Data = append(buf.currentBatch.Data, BatchItem{item, itemSize})
 	buf.currentBatch.countedItems++
-	buf.stats.addOneUnleased()
+	buf.currentBatch.countedSize += itemSize
+	buf.stats.addOneUnleased(itemSize)
 
-	if buf.opts.BatchItemsMax != -1 && buf.currentBatch.countedItems == int(buf.opts.BatchItemsMax) {
+	// If the currentBatch couldn't even accept the smallest size item, go ahead
+	// and Flush it now.
+	if !buf.currentBatch.canAccept(&buf.opts, 1) {
 		buf.Flush(now)
 	}
 	return
@@ -347,6 +363,12 @@ func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
 	}
 
 	leased.countedItems = intMin(len(leased.Data), leased.countedItems)
+	var newSize int
+	for i := range leased.Data {
+		newSize += leased.Data[i].Size
+	}
+	leased.countedSize = intMin(newSize, leased.countedSize)
+
 	buf.unleased.PushBatch(leased)
 	buf.stats.add(leased, categoryUnleased)
 
@@ -355,6 +377,13 @@ func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
 
 func intMin(a, b int) int {
 	if a < b {
+		return a
+	}
+	return b
+}
+
+func intMax(a, b int) int {
+	if a > b {
 		return a
 	}
 	return b

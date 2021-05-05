@@ -27,6 +27,12 @@ import (
 
 // ErrorFn is called to handle the error from SendFn.
 //
+// This is also invoked with buffer.ErrItemTooLarge if your supplied
+// ItemSizeFunc returns a size larger than Buffer.BatchSizeMax (i.e. you pushed
+// an item which couldn't fit inside of a Batch). Similarly, if your
+// ItemSizeFunc returns 0, this is invoked with buffer.ErrZeroSizeItem.
+// Channel ignores the `retry` return value of this function in these cases.
+//
 // It executes in the main handler loop of the dispatcher so it can make
 // synchronous decisions about the dispatcher state.
 //
@@ -107,6 +113,18 @@ type Options struct {
 	//
 	// Default: No limit.
 	QPSLimit *rate.Limiter
+
+	// [OPTIONAL]
+	// Should return the size of the given buffer item (i.e. what you push into
+	// Channel.C) in whatever units you like (see Buffer.BatchSizeMax).
+	//
+	// The function will only ever be called once per pushed item.
+	//
+	// [REQUIRED]
+	// Must be non-nil if Buffer.BatchSizeMax is specified.
+	//
+	// Must return a positive value less than Buffer.BatchSizeMax.
+	ItemSizeFunc func(itm interface{}) int
 
 	Buffer buffer.Options
 

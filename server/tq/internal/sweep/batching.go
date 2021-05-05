@@ -97,7 +97,7 @@ func (p *BatchProcessor) Enqueue(ctx context.Context, r []*reminder.Reminder) {
 func (p *BatchProcessor) processBatch(data *buffer.Batch) error {
 	batch := make([]*reminder.Reminder, len(data.Data))
 	for i, d := range data.Data {
-		batch[i] = d.(*reminder.Reminder)
+		batch[i] = d.Item.(*reminder.Reminder)
 	}
 	count, err := internal.SubmitBatch(p.Context, p.Submitter, p.DB, batch)
 	if err != nil {

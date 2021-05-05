@@ -137,7 +137,7 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 	if b.Meta == nil {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
 		for i, d := range b.Data {
-			tr := d.(*sinkpb.TestResult)
+			tr := d.Item.(*sinkpb.TestResult)
 			c.setTestTags(tr)
 			tags := append(tr.GetTags(), c.cfg.BaseTags...)
 

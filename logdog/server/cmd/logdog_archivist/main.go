@@ -139,8 +139,8 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 		} else {
 			tasks := make([]*logdog.ArchiveTask, len(batch.Data))
 			for i, datum := range batch.Data {
-				tasks[i] = datum.(*logdog.ArchiveTask)
-				batch.Data[i] = nil
+				tasks[i] = datum.Item.(*logdog.ArchiveTask)
+				batch.Data[i].Item = nil
 			}
 			req = &logdog.DeleteRequest{Tasks: tasks}
 			batch.Meta = req
@@ -162,7 +162,7 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 
 	jobChanOpts := mkJobChannelOptions(flags.MaxConcurrentTasks)
 	jobChan, err := dispatcher.NewChannel(ctx, jobChanOpts, func(data *buffer.Batch) error {
-		job := data.Data[0].(*archiveJob)
+		job := data.Data[0].Item.(*archiveJob)
 
 		nc, cancel := context.WithDeadline(ctx, job.deadline)
 		defer cancel()
