@@ -436,13 +436,13 @@ export class OverviewTabElement extends MobxLitElement {
           ${this.renderExperiments()}
           <h3>Input Properties</h3>
           <milo-property-viewer
-            .properties=${build.input.properties}
+            .properties=${build.input?.properties || {}}
             .propLineFoldTime=${this.configsStore.userConfigs.inputPropLineFoldTime}
             .saveFoldTime=${() => this.configsStore.save()}
           ></milo-property-viewer>
           <h3>Output Properties</h3>
           <milo-property-viewer
-            .properties=${build.output.properties}
+            .properties=${build.output?.properties || {}}
             .propLineFoldTime=${this.configsStore.userConfigs.outputPropLineFoldTime}
             .saveFoldTime=${() => this.configsStore.save()}
           ></milo-property-viewer>

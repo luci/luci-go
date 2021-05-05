@@ -49,8 +49,6 @@ export class AppState {
     this._selectedTabId = newTabId;
   }
 
-  @observable.ref selectedBlamelistPinIndex = 0;
-
   // Use number instead of boolean because previousPage.disconnectedCallback
   // might be called after currentPage.disconnectedCallback.
   // Number allows us to reset the setting even when the execution is out of

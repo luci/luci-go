@@ -44,8 +44,8 @@ export class BuildExt {
   readonly endTime: DateTime | null;
   readonly status: BuildStatus;
   readonly summaryMarkdown?: string | undefined;
-  readonly input: BuildInput;
-  readonly output: BuildOutput;
+  readonly input?: BuildInput;
+  readonly output?: BuildOutput;
   readonly steps: readonly StepExt[];
   readonly infra?: BuildInfra | undefined;
   readonly tags: readonly StringPair[];
@@ -94,7 +94,7 @@ export class BuildExt {
 
   @computed
   get isCanary(): boolean {
-    return Boolean(this.input.experiments?.includes('luci.buildbucket.canary_software'));
+    return Boolean(this.input?.experiments?.includes('luci.buildbucket.canary_software'));
   }
 
   @computed get buildSets(): string[] {
@@ -102,11 +102,11 @@ export class BuildExt {
   }
 
   @computed get associatedGitilesCommit() {
-    return this.output.gitilesCommit || this.input.gitilesCommit;
+    return this.output?.gitilesCommit || this.input?.gitilesCommit;
   }
 
   @computed get blamelistPins(): GitilesCommit[] {
-    const blamelistPins = this.output.properties[BLAMELIST_PIN_KEY] || [];
+    const blamelistPins = this.output?.properties?.[BLAMELIST_PIN_KEY] || [];
     if (blamelistPins.length === 0 && this.associatedGitilesCommit) {
       blamelistPins.push(this.associatedGitilesCommit);
     }
@@ -123,7 +123,7 @@ export class BuildExt {
     if (this.builder.project === 'flutter') {
       csHost = 'cs.opensource.google';
     }
-    const recipeName = this.input.properties['recipe'] as string;
+    const recipeName = this.input?.properties?.['recipe'] as string;
     return {
       label: recipeName,
       url: `https://${csHost}/search/?${new URLSearchParams([['q', `file:recipes/${recipeName}.py`]]).toString()}`,

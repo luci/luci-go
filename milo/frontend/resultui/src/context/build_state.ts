@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { computed, observable } from 'mobx';
+import { autorun, computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
@@ -85,7 +85,29 @@ export class BuildState {
     return unwrapObservable(this.invocationId$, null);
   }
 
-  constructor(private appState: AppState) {}
+  private disposers: Array<() => void> = [];
+
+  constructor(private appState: AppState) {
+    this.disposers.push(
+      autorun(() => {
+        if (!this.build) {
+          return;
+        }
+
+        // If the associated gitiles commit is in the blamelist pins, select it.
+        // Otherwise, select the first blamelist pin.
+        const buildInputCommitRepo = this.build.associatedGitilesCommit
+          ? getGitilesRepoURL(this.build.associatedGitilesCommit)
+          : null;
+        let selectedBlamelistPinIndex =
+          this.build.blamelistPins.findIndex((pin) => getGitilesRepoURL(pin) === buildInputCommitRepo) || 0;
+        if (selectedBlamelistPinIndex === -1) {
+          selectedBlamelistPinIndex = 0;
+        }
+        this.selectedBlamelistPinIndex = selectedBlamelistPinIndex;
+      })
+    );
+  }
 
   @observable.ref private isDisposed = false;
 
@@ -103,6 +125,9 @@ export class BuildState {
     this.queryBlamelistResIterFns;
     this.permittedActions$;
     this.projectCfg$;
+
+    this.disposers.reverse().forEach((disposer) => disposer());
+    this.disposers = [];
   }
 
   private buildQueryTime = this.appState.timestamp;
@@ -186,6 +211,8 @@ export class BuildState {
   get relatedBuilds(): readonly BuildExt[] | null {
     return unwrapObservable(this.relatedBuilds$, null);
   }
+
+  @observable.ref selectedBlamelistPinIndex = 0;
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
     if (!this.appState.milo || !this.build) {
