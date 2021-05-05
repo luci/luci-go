@@ -151,7 +151,7 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState) (*Res
 	}
 }
 
-const defaultSubmissionDuration = 30 * time.Second
+const submissionDuration = 20 * time.Minute
 
 func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, error) {
 	ret := rs.ShallowCopy()
@@ -163,13 +163,7 @@ func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, e
 			return nil, err
 		}
 	}
-	// TODO(yiwzhang): make deadline 20 minutes.
-	deadline, ok := ctx.Deadline()
-	if ok {
-		ret.Run.Submission.Deadline = timestamppb.New(deadline.UTC())
-	} else {
-		ret.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(defaultSubmissionDuration))
-	}
+	ret.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
 	ret.Run.Submission.AttemptCount += 1
 	ret.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
 	return ret, nil
