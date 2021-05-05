@@ -16,6 +16,24 @@
       "message": "Please update the version.",
       "revId": "9d733d737c5881f18085e55db535a2383f54516f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "caced04f_776aea4a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-05T01:56:15Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "55a54f19_3b6f355f",
+      "revId": "9d733d737c5881f18085e55db535a2383f54516f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
