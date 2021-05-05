@@ -86,4 +86,23 @@ describe('BuildExt', () => {
       },
     ] as StepExt[]);
   });
+
+  describe('should calculate pending time correctly', () => {
+    it('when build started', () => {
+      const build = new BuildExt({
+        createTime: '2020-01-01T00:00:10Z',
+        startTime: '2020-01-01T00:00:20Z',
+        endTime: '2020-01-01T00:00:30Z',
+      } as Build);
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT10S');
+    });
+
+    it('when build was canceled before it started', () => {
+      const build = new BuildExt({
+        createTime: '2020-01-01T00:00:10Z',
+        endTime: '2020-01-01T00:00:30Z',
+      } as Build);
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT20S');
+    });
+  });
 });
