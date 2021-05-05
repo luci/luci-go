@@ -262,7 +262,7 @@ export class OverviewTabElement extends MobxLitElement {
           Steps & Logs (<a
             href=${router.urlForName('build-steps', {
               ...this.buildState.builderIdParam,
-              build_num_or_id: this.buildState.buildNumOrId!,
+              build_num_or_id: this.buildState.buildNumOrIdParam!,
             })}
             >View in Steps Tab</a
           >)
