@@ -62,11 +62,6 @@ export class TestLoader {
   }
   @observable.ref private loadingReqCount = 0;
 
-  @computed get firstRequestSent() {
-    return this._firstRequestSent;
-  }
-  @observable.ref private _firstRequestSent = false;
-
   /**
    * The queryTestVariants RPC sorted the variant by status. We can use this to
    * tell the possible status of the next test variants and therefore avoid
@@ -114,6 +109,19 @@ export class TestLoader {
     return this.unfilteredExpectedVariants.filter(this.filter);
   }
 
+  @computed get unfilteredUnexpectedVariantsCount() {
+    return this.unfilteredUnexpectedVariants.length;
+  }
+
+  @observable.ref private _unfilteredUnexpectedlySkippedVariantsCount = 0;
+  get unfilteredUnexpectedlySkippedVariantsCount() {
+    return this._unfilteredUnexpectedlySkippedVariantsCount;
+  }
+  @observable.ref private _unfilteredFlakyVariantsCount = 0;
+  get unfilteredFlakyVariantsCount() {
+    return this._unfilteredFlakyVariantsCount;
+  }
+
   @observable.shallow private unfilteredNonExpectedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredUnexpectedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredExpectedVariants: TestVariant[] = [];
@@ -138,19 +146,31 @@ export class TestLoader {
   constructor(private readonly req: QueryTestVariantsRequest, private readonly uiSpecificService: UISpecificService) {}
 
   private loadPromise = Promise.resolve();
+  private firstLoadPromise?: Promise<void>;
+
+  loadFirstPageOfTestVariants() {
+    return this.firstLoadPromise || this.loadNextTestVariants();
+  }
 
   /**
    * Load at least one test variant unless the last page is reached.
    */
   loadNextTestVariants() {
-    this._firstRequestSent = true;
     if (this.stage === LoadingStage.Done) {
       return this.loadPromise;
     }
 
     this.loadingReqCount++;
-    this.loadPromise = this.loadPromise.then(() => this.loadNextTestVariantsInternal());
-    return this.loadPromise.then(() => this.loadingReqCount--);
+    this.loadPromise = this.loadPromise
+      .then(() => this.loadNextTestVariantsInternal())
+      .then(() => {
+        this.loadingReqCount--;
+      });
+    if (!this.firstLoadPromise) {
+      this.firstLoadPromise = this.loadPromise;
+    }
+
+    return this.loadPromise;
   }
 
   /**
@@ -217,10 +237,12 @@ export class TestLoader {
           break;
         case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
           this._stage = LoadingStage.LoadingUnexpectedlySkipped;
+          this._unfilteredUnexpectedlySkippedVariantsCount++;
           this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.FLAKY:
           this._stage = LoadingStage.LoadingFlaky;
+          this._unfilteredFlakyVariantsCount++;
           this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.EXONERATED:
