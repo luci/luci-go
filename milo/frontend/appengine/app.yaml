@@ -53,7 +53,7 @@ handlers:
   static_dir: resultui/immutable
   # All files have content hash in their filenames.
   # So they can be cached longer.
-  expiration: 1d
+  expiration: 7d
   http_headers:
     # Set stale-while-revalidate to 4 weeks.
     Cache-Control: stale-while-revalidate=2419200
