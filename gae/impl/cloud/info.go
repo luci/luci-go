@@ -18,10 +18,14 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	infoS "go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/gae/service/info/support"
-	"golang.org/x/oauth2"
 )
+
+// ErrNotImplemented is an error that can be returned to indicate that the
+// requested functionality is not implemented.
+var ErrNotImplemented = errors.New("not implemented")
 
 // serviceInstanceGlobalInfo is the set of base, immutable info service values.
 // These are initialized when the service instance is instantiated.
@@ -33,7 +37,6 @@ type serviceInstanceGlobalInfo struct {
 	InstanceID         string
 	RequestID          string
 	ServiceAccountName string
-	ServiceProvider    ServiceProvider
 }
 
 // infoState is the state of the "service/info" service in the current Context.
@@ -131,31 +134,12 @@ func (i *infoService) Namespace(namespace string) (context.Context, error) {
 // PublicCertificates performs no caching on the result, so multiple requests
 // will result in multiple HTTP API calls.
 func (i *infoService) PublicCertificates() (certs []infoS.Certificate, err error) {
-	if i.ServiceProvider == nil {
-		return nil, ErrNotImplemented
-	}
-	return i.ServiceProvider.PublicCertificates(i)
+	return nil, ErrNotImplemented
 }
 
 // AccessToken returns an access token for the given set of scopes.
 func (i *infoService) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
-	if i.ServiceProvider == nil {
-		err = ErrNotImplemented
-		return
-	}
-
-	var ts oauth2.TokenSource
-	if ts, err = i.ServiceProvider.TokenSource(i, scopes...); err != nil {
-		return
-	}
-
-	var tok *oauth2.Token
-	if tok, err = ts.Token(); err != nil {
-		return
-	}
-
-	token, expiry = tok.AccessToken, tok.Expiry
-	return
+	return "", time.Time{}, ErrNotImplemented
 }
 
 // SignBytes is implemented using a call to Google Cloud IAM's "signBlob"
@@ -165,11 +149,7 @@ func (i *infoService) AccessToken(scopes ...string) (token string, expiry time.T
 //
 // https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/signBlob
 func (i *infoService) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
-	if i.ServiceProvider == nil {
-		err = ErrNotImplemented
-		return
-	}
-	return i.ServiceProvider.SignBytes(i, bytes)
+	return "", nil, ErrNotImplemented
 }
 
 func (*infoService) GetTestable() infoS.Testable { return nil }

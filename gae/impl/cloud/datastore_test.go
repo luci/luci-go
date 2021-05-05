@@ -199,8 +199,8 @@ func TestDatastore(t *testing.T) {
 		testTime := ds.RoundTime(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC))
 		_ = testTime
 
-		cfg := Config{ProjectID: "luci-gae-test", DS: client}
-		c = cfg.Use(c, nil)
+		cfg := ConfigLite{ProjectID: "luci-gae-test", DS: client}
+		c = cfg.Use(c)
 
 		Convey(`Supports namespaces`, func() {
 			namespaces := []string{"foo", "bar", "baz"}

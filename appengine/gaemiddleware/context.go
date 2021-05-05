@@ -46,8 +46,7 @@ var errSimulatedMemcacheOutage = errors.New("simulated memcache outage")
 // Environment is a middleware environment. Its parameters define how the
 // middleware is applied, and which services are enlisted.
 //
-// This is low-level API. Use either 'gaemiddeware/standard' or
-// 'gaemiddeware/flex' packages to target a specific flavor of GAE environment.
+// This is low-level API. Use 'gaemiddeware/standard' instead.
 type Environment struct {
 	// MemcacheAvailable is true if the environment has working memcache.
 	//

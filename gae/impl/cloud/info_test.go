@@ -39,7 +39,6 @@ func TestInfo(t *testing.T) {
 			VersionName:        "version-name",
 			InstanceID:         "instance-id",
 			ServiceAccountName: "service-account@example.com",
-			ServiceProvider:    nil,
 			RequestID:          "trace",
 		}
 		c := useInfo(context.Background(), &gi)

@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"cloud.google.com/go/datastore"
-	"github.com/bradfitz/gomemcache/memcache"
 
 	"go.chromium.org/luci/gae/impl/dummy"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -85,11 +84,6 @@ type ConfigLite struct {
 	//
 	// If populated, the datastore service will be installed.
 	DS *datastore.Client
-
-	// MC is the memcache service client.
-	//
-	// If populated, the memcache service will be installed.
-	MC *memcache.Client
 }
 
 // Use configures the context with implementation of Cloud Services.
@@ -102,6 +96,7 @@ func (cfg *ConfigLite) Use(c context.Context) context.Context {
 	c = module.Set(c, dummy.Module())
 	c = taskqueue.SetRaw(c, dummy.TaskQueue())
 	c = user.Set(c, dummy.User())
+	c = mc.SetRaw(c, dummy.Memcache())
 
 	c = useInfo(c, &serviceInstanceGlobalInfo{
 		IsDev:              cfg.IsDev,
@@ -118,13 +113,6 @@ func (cfg *ConfigLite) Use(c context.Context) context.Context {
 		c = cds.use(c)
 	} else {
 		c = ds.SetRaw(c, dummy.Datastore())
-	}
-
-	if cfg.MC != nil {
-		mc := memcacheClient{client: cfg.MC}
-		c = mc.use(c)
-	} else {
-		c = mc.SetRaw(c, dummy.Memcache())
 	}
 
 	return c
