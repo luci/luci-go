@@ -29,7 +29,6 @@ const LEFT_RIGHT_ARROW = '\u2194';
 export class PropertyViewerElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref properties!: { [key: string]: unknown };
   @observable.ref propLineFoldTime!: { [key: string]: number };
-  saveFoldTime = () => {};
 
   @computed private get formattedValue() {
     return JSON.stringify(this.properties, undefined, 2);
@@ -77,7 +76,6 @@ export class PropertyViewerElement extends MobxLitElement implements RenderPlace
     } else {
       delete this.propLineFoldTime[line];
     }
-    this.saveFoldTime();
   }
 
   renderPlaceHolder() {

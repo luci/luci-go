@@ -94,6 +94,7 @@ describe('Test Results Tab', () => {
       },
     } as AppState;
     const configsStore = new UserConfigsStore();
+    after(() => configsStore.dispose());
 
     const invocationState = new InvocationState(appState);
     invocationState.invocationId = 'invocation-id';
@@ -160,6 +161,7 @@ describe('Test Results Tab', () => {
 
     afterEach(() => {
       invocationState.dispose();
+      configsStore.dispose();
       const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
       window.history.replaceState({ path: url }, '', url);
       fixtureCleanup();
