@@ -60,21 +60,11 @@ export class TestVariantsTableElement extends MiloBaseElement {
   connectedCallback() {
     super.connectedCallback();
 
-    // When a new test loader is received, load the first page and reset the
-    // selected node.
+    // When a new test loader is received, load the first page.
     this.addDisposer(
       reaction(
         () => this.invocationState.testLoader,
-        (testLoader) => {
-          if (!testLoader) {
-            return;
-          }
-          // We don't want to load more test results if the first page has
-          // been loaded already.
-          if (!testLoader.firstRequestSent) {
-            this.loadMore();
-          }
-        },
+        (testLoader) => reportErrorAsync.bind(this)(async () => testLoader?.loadFirstPageOfTestVariants())(),
         { fireImmediately: true }
       )
     );
