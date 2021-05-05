@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "645618d9_aaff44cb",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-05T19:27:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2eea48dc_b1f9bea7",
+      "range": {
+        "startLine": 144,
+        "startChar": 66,
+        "endLine": 144,
+        "endChar": 73
+      },
+      "revId": "389918af87502dfb42547822039af93304311896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "67c7bbb8_9ac91b3d",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-05-04T21:58:50Z",
       "side": 1,
       "message": "Maybe reuse submissionDeadline constant in tests?",
+      "range": {
+        "startLine": 206,
+        "startChar": 44,
+        "endLine": 206,
+        "endChar": 60
+      },
+      "revId": "389918af87502dfb42547822039af93304311896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bc7d11d_36fab14d",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-05T19:27:27Z",
+      "side": 1,
+      "message": "yup!",
+      "parentUuid": "67c7bbb8_9ac91b3d",
       "range": {
         "startLine": 206,
         "startChar": 44,
