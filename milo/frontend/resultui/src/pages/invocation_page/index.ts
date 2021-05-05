@@ -27,7 +27,7 @@ import { InvocationState, provideInvocationState } from '../../context/invocatio
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
-import { reportRenderError } from '../../libs/error_handler';
+import { reportError, reportRenderError } from '../../libs/error_handler';
 import { NOT_FOUND_URL, router } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
 
@@ -82,6 +82,16 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       )
     );
     this.addDisposer(() => this.invocationState.dispose());
+
+    // When a new test loader is received, load the first page and reset the
+    // selected node.
+    this.addDisposer(
+      reaction(
+        () => this.invocationState.testLoader,
+        (testLoader) => reportError.bind(this)(() => testLoader?.loadNextTestVariants())(),
+        { fireImmediately: true }
+      )
+    );
 
     document.title = `inv: ${this.invocationId}`;
   }

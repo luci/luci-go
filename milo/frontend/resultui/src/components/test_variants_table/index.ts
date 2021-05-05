@@ -14,11 +14,12 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { computed, observable } from 'mobx';
 
 import '../dot_spinner';
 import './tvt_column_header';
@@ -33,7 +34,6 @@ import { reportErrorAsync } from '../../libs/error_handler';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
-import { MiloBaseElement } from '../milo_base';
 import { TestVariantEntryElement } from './test_variant_entry';
 
 function getPropKeyLabel(key: string) {
@@ -46,47 +46,14 @@ function getPropKeyLabel(key: string) {
  */
 @customElement('milo-test-variants-table')
 @consumer
-export class TestVariantsTableElement extends MiloBaseElement {
+export class TestVariantsTableElement extends MobxLitElement {
   @observable.ref @consumeAppState appState!: AppState;
   @observable.ref @consumeConfigsStore configsStore!: UserConfigsStore;
   @observable.ref @consumeInvocationState invocationState!: InvocationState;
 
-  private sentLoadingTimeToGA = false;
-
   toggleAllVariants(expand: boolean) {
     this.shadowRoot!.querySelectorAll<TestVariantEntryElement>('milo-test-variant-entry').forEach(
       (e) => (e.expanded = expand)
-    );
-  }
-
-  connectedCallback() {
-    super.connectedCallback();
-
-    // If first page of test results has already been loaded when connected
-    // (happens when users switch tabs), we don't want to track the loading
-    // time (only a few ms in this case)
-    if (this.invocationState.testLoader?.firstPageLoaded) {
-      this.sentLoadingTimeToGA = true;
-    }
-
-    // When a new test loader is received, load the first page and reset the
-    // selected node.
-    this.addDisposer(
-      reaction(
-        () => this.invocationState.testLoader,
-        (testLoader) => {
-          if (!testLoader) {
-            return;
-          }
-          // The previous instance of the test results tab could've triggered
-          // the loading operation already. In that case we don't want to load
-          // more test results.
-          if (!testLoader.firstRequestSent) {
-            this.loadMore();
-          }
-        },
-        { fireImmediately: true }
-      )
     );
   }
 
@@ -132,10 +99,10 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   private sendLoadingTimeToGA = () => {
-    if (this.sentLoadingTimeToGA) {
+    if (this.appState.sentTestResultsTabLoadingTimeToGA) {
       return;
     }
-    this.sentLoadingTimeToGA = true;
+    this.appState.sentTestResultsTabLoadingTimeToGA = true;
     trackEvent(
       GA_CATEGORIES.TEST_RESULTS_TAB,
       GA_ACTIONS.LOADING_TIME,
