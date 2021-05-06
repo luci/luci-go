@@ -87,11 +87,15 @@ func newTestApp(ctx context.Context) (t *testApp, err error) {
 			permissions: {
 				name: "resultdb.invocations.get"
 			}
+			permissions: {
+				name: "resultdb.invocations.include"
+			}
 			realms: {
 				name: "testproject:testrealm"
 				bindings: {
 					permissions: 0
 					permissions: 1
+					permissions: 2
 					principals: "anonymous:anonymous"
 				}
 			}
@@ -228,7 +232,8 @@ func (t *testApp) Start(ctx context.Context) error {
 	}()
 
 	// Give servers 5s to start.
-	ctx, _ = context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 outer:
 	for {

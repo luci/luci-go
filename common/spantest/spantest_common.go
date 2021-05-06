@@ -25,6 +25,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -254,7 +255,7 @@ func (e *Emulator) createSpannerEmulatorConfig() (string, error) {
 			" gcloud config set auth/disable_credentials true;"+
 			" gcloud config set project chops-spanner-testing;"+
 			" gcloud config set api_endpoint_overrides/spanner http://localhost:9020/;", emulatorCfg))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("CLOUDSDK_CONFIG=%s", tdir))
+	cmd.Env = append(os.Environ(), fmt.Sprintf("CLOUDSDK_CONFIG=%s", tdir))
 	return tdir, cmd.Run()
 }
 
