@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b3c8f47_d2f4e5e5",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-06T09:13:01Z",
+      "side": 1,
+      "message": "nit-nit: I\u0027d name it like this to avoid the need additional comment\n\nTestMagicOverdueDeadlineUnixSecs",
+      "range": {
+        "startLine": 43,
+        "startChar": 38,
+        "endLine": 43,
+        "endChar": 75
+      },
+      "revId": "5bf76fa9c596eaabee9b887d551b9286810b94e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60823289_e088fe68",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-06T09:13:01Z",
+      "side": 1,
+      "message": "I think canonical is to use .Equal():\n\n  deadline.Equal(time.Unix(TestOverdueDeadline, 0))\n\nbut even faster is:\n  switch d, err :\u003d ptypes.Timestamp(deadline); {\n  ...\n  case deadline.GetSeconds() \u003d\u003d TestOverdueDeadline \u0026\u0026 deadline.GetNanos() \u003d\u003d 0 {\n    return nil\n  ...\n  }",
+      "range": {
+        "startLine": 65,
+        "startChar": 6,
+        "endLine": 65,
+        "endChar": 57
+      },
+      "revId": "5bf76fa9c596eaabee9b887d551b9286810b94e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
