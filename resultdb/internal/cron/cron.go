@@ -28,6 +28,55 @@ import (
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 )
 
+// pollReplicas periodically checks the value returned by replicasFunc, and
+// when it changes, it calls the given context cancellation function and sets
+// the pointed boolean to true.
+func pollReplicas(ctx context.Context, replicasFunc func(context.Context) int, cancel context.CancelFunc, resume *bool) {
+	replicas := replicasFunc(ctx)
+	for {
+		time.Sleep(30 * time.Second)
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			if replicasFunc(ctx) != replicas {
+				*resume = true
+				cancel()
+				return
+			}
+		}
+	}
+}
+
+// DynamicGroup wraps Group to periodically check the right number of replicas.
+func DynamicGroup(
+	ctx context.Context,
+	replicasFunc func(context.Context) int,
+	minInterval time.Duration,
+	payloadFunc func(ctx context.Context, replica int) error) {
+
+	resume := false
+	derivedCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	for {
+		// if the number of replicas changes, this will cancel the context and
+		// set the continuation flag.
+		go pollReplicas(derivedCtx, replicasFunc, cancel, &resume)
+
+		Group(derivedCtx, replicasFunc(derivedCtx), minInterval, payloadFunc)
+
+		if resume {
+			// pollReplicas detected a change in the number of replicas.
+			// Reset the context and flag and restart the pool with the new
+			// number of replicas.
+			derivedCtx, cancel = context.WithCancel(ctx)
+			resume = false
+			continue
+		}
+		break
+	}
+}
+
 // Group runs multiple cron jobs concurrently. See also Run function.
 func Group(ctx context.Context, replicas int, minInterval time.Duration, f func(ctx context.Context, replica int) error) {
 	var wg sync.WaitGroup
