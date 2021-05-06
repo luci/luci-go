@@ -21,7 +21,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
@@ -53,23 +52,10 @@ func InitServer(srv *server.Server, opts Options) {
 		if opts.ForceCronInterval > 0 {
 			minInterval = opts.ForceCronInterval
 		}
-		run(ctx, minInterval)
+		// continuously purges expired test results.
+		// It blocks until context is canceled.
+		cron.DynamicGroup(ctx, invocations.CurrentShardNumber, minInterval, purgeOneShard)
 	})
-}
-
-// run continuously purges expired test results.
-// It blocks until context is canceled.
-func run(ctx context.Context, minInterval time.Duration) {
-	maxShard, err := invocations.CurrentMaxShard(ctx)
-	switch {
-	case err == spanutil.ErrNoResults:
-		maxShard = invocations.Shards - 1
-	case err != nil:
-		panic(errors.Annotate(err, "failed to determine number of shards").Err())
-	}
-
-	// Start one cron job for each shard of the database.
-	cron.Group(ctx, maxShard+1, minInterval, purgeOneShard)
 }
 
 func purgeOneShard(ctx context.Context, shard int) error {
