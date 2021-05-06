@@ -26,11 +26,8 @@ import { InvocationPageElement } from '.';
 describe('Invocation Page', () => {
   it('should get invocation ID from URL', async () => {
     const appState = new AppState();
-
-    after(fixtureCleanup);
-    const page = await fixture<InvocationPageElement>(html`
-      <milo-invocation-page .appState=${appState}></milo-invocation-page>
-    `);
+    const page = document.createElement('milo-invocation-page') as InvocationPageElement;
+    page.appState = appState;
 
     const location = ({ params: { invocation_id: 'invocation_id' } } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
@@ -38,6 +35,7 @@ describe('Invocation Page', () => {
     page.connectedCallback();
     assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id'] as string);
     page.disconnectedCallback();
+    appState.dispose();
   });
 
   it('should redirect to the not found page when invocation_id is not provided', async () => {
@@ -53,5 +51,6 @@ describe('Invocation Page', () => {
     const cmd = ({ redirect } as Partial<Commands>) as Commands;
     await page.onBeforeEnter(location, cmd);
     assert.isTrue(redirect.calledOnceWith(NOT_FOUND_URL));
+    appState.dispose();
   });
 });
