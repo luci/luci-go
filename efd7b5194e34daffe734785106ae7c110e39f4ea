@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "efd7b5194e34daffe734785106ae7c110e39f4ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10174ae0_d47c53bf",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-06T09:59:18Z",
+      "side": 1,
+      "message": "nit: isn\u0027t this redundant?",
+      "range": {
+        "startLine": 318,
+        "startChar": 34,
+        "endLine": 318,
+        "endChar": 39
+      },
+      "revId": "efd7b5194e34daffe734785106ae7c110e39f4ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
