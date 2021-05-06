@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "82f9dfa1_83b051fc",
+        "filename": "server/encryptedcookies/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-06T23:04:45Z",
+      "side": 1,
+      "message": "Oh, right. Thank you.",
+      "parentUuid": "93a5622c_d8c12e73",
+      "range": {
+        "startLine": 53,
+        "startChar": 69,
+        "endLine": 53,
+        "endChar": 75
+      },
+      "revId": "8adc07a7ad06feb82424e768d43af8e04b5e7c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2f0d3ab6_5d374aa0",
         "filename": "server/encryptedcookies/doc.go",
         "patchSetId": 1
