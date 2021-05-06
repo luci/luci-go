@@ -34,6 +34,7 @@ describe('Build Page', () => {
       }
     );
     cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479');
-    cy.location('pathname').should('include', '/login');
+    cy.on('uncaught:exception', () => false);
+    cy.location('pathname').should('include', '/ui/login');
   });
 });
