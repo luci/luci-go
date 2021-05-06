@@ -14,7 +14,9 @@
 
 package common
 
-import "sort"
+import (
+	"sort"
+)
 
 // CLID is a unique ID of a CL used internally in CV.
 //
@@ -34,7 +36,7 @@ func CLIDsAsInt64s(ids []CLID) []int64 {
 // CLIDs is a convenience type to facilitate handling of a slice of CLID.
 type CLIDs []CLID
 
-// Dedupe removes duplicates in place.
+// Dedupe removes duplicates in place and sorts the slice.
 //
 // Note: Does not preserve original order.
 func (p *CLIDs) Dedupe() {
@@ -52,8 +54,8 @@ func (p *CLIDs) Dedupe() {
 		n++
 		if skipped {
 			clids[n] = id
-			prev = id
 		}
+		prev = id
 	}
 	*p = clids[:n+1]
 }
