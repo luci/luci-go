@@ -81,6 +81,8 @@ type RM interface {
 	PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error
 	PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error
 	NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error
+	NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error
+	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error
 }
 
 // Impl is a prod implementation of Handler interface.

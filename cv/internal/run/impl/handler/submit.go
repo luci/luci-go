@@ -313,6 +313,10 @@ type submitter struct {
 const defaultFatalMsg = "CV failed to submit your change because of " +
 	"unexpected internal error. Please contact LUCI team: https://bit.ly/3sMReYs"
 
+// ErrTransientSubmissionFailure indicates that the submission has failed
+// transiently and the same task should be retried.
+var ErrTransientSubmissionFailure = errors.New("submission failed transiently", transient.Tag)
+
 func (s submitter) submit(ctx context.Context) error {
 	sc := &eventpb.SubmissionCompleted{
 		Result:  eventpb.SubmissionResult_SUCCEEDED,
@@ -338,12 +342,19 @@ func (s submitter) submit(ctx context.Context) error {
 		}
 	}
 
+	if sc.Result == eventpb.SubmissionResult_FAILED_TRANSIENT {
+		// Do not release queue for transient failure.
+		if err := s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, true); err != nil {
+			return err
+		}
+		return ErrTransientSubmissionFailure
+	}
 	var innerErr error
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if innerErr = submit.Release(ctx, s.rm.NotifyReadyForSubmission, s.runID); innerErr != nil {
 			return innerErr
 		}
-		if innerErr = notifySubmissionCompleted(ctx, s.runID, sc); innerErr != nil {
+		if innerErr = s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, false); innerErr != nil {
 			return innerErr
 		}
 		return nil
@@ -394,7 +405,7 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) (fatalMsg st
 					return transient.Tag.Apply(err)
 				}
 			}
-			return notifyCLSubmitted(ctx, s.runID, cl.ID)
+			return s.rm.NotifyCLSubmitted(ctx, s.runID, cl.ID)
 		}, retry.LogCallback(ctx, fmt.Sprintf("submit cl [id=%d, external_id=%q]", cl.ID, cl.ExternalID)))
 		switch {
 		case err == nil:
@@ -499,15 +510,6 @@ func (s submitter) computeResultEvent(ctx context.Context, err error, fatalMsg s
 			Result:  eventpb.SubmissionResult_SUCCEEDED,
 			Attempt: s.attempt,
 		}
-	case errors.Contains(err, ctx.Err()):
-		// It is possible we get DeadlineExceeded error if we have
-		// too many CLs to submit in this submission and Gerrit is
-		// slow. Explicitly mark it as transient so that the next
-		// retry can pick up what's left.
-		return &eventpb.SubmissionCompleted{
-			Result:  eventpb.SubmissionResult_FAILED_TRANSIENT,
-			Attempt: s.attempt,
-		}
 	case transient.Tag.In(err):
 		errors.Log(ctx, err)
 		return &eventpb.SubmissionCompleted{
@@ -522,28 +524,4 @@ func (s submitter) computeResultEvent(ctx context.Context, err error, fatalMsg s
 			Attempt:      s.attempt,
 		}
 	}
-}
-
-// notifyCLSubmitted informs RunManager that the provided CL is submitted.
-func notifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error {
-	// Unlike other event-sending funcs, this function only delivers the event
-	// to Run's eventbox, but does not dispatch the task. This is because it is
-	// okay to process all events of this kind together to record the submission
-	// result for each individual CLs after the attempt to submit completes.
-	// Waking up RM unnecessarily may increase the contention of Run entity.
-	return eventpb.SendWithoutDispatch(ctx, runID, &eventpb.Event{
-		Event: &eventpb.Event_ClSubmitted{
-			ClSubmitted: &eventpb.CLSubmitted{
-				Clid: int64(clid),
-			},
-		},
-	})
-}
-
-func notifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted) error {
-	return eventpb.SendWithoutDispatch(ctx, runID, &eventpb.Event{
-		Event: &eventpb.Event_SubmissionCompleted{
-			SubmissionCompleted: sc,
-		},
-	})
 }
