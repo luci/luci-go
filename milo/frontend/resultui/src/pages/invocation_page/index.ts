@@ -17,6 +17,7 @@ import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from 
 import { css, customElement, html } from 'lit-element';
 import { computed, observable, reaction } from 'mobx';
 
+import '../../components/test_count_indicator';
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import './invocation_details_tab';
@@ -110,6 +111,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
         id: 'test-results',
         label: 'Test Results',
         href: router.urlForName('invocation-test-results', { invocation_id: this.invocationState.invocationId! }),
+        slotName: 'test-count-indicator',
       },
       {
         id: 'invocation-details',
@@ -136,7 +138,9 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
         .components=${[{ color: 'var(--active-color)', weight: 1 }]}
         .loading=${this.invocationState.invocation === null}
       ></milo-status-bar>
-      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
+      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}>
+        <milo-test-count-indicator slot="test-count-indicator"></milo-test-count-indicator>
+      </milo-tab-bar>
       <slot></slot>
     `;
   });
@@ -151,9 +155,9 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       }
 
       #test-invocation-summary {
-        background-color: var(--block-background-color));
+        background-color: var(--block-background-color);
         padding: 6px 16px;
-        font-family: "Google Sans", "Helvetica Neue", sans-serif;
+        font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
         font-size: 14px;
         display: flex;
       }
@@ -161,6 +165,10 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       milo-tab-bar {
         margin: 0 10px;
         padding-top: 10px;
+      }
+
+      milo-test-count-indicator {
+        margin-right: -15px;
       }
 
       #test-invocation-id {
