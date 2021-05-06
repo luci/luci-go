@@ -8,7 +8,6 @@ package svcconfig;
 
 option go_package = "go.chromium.org/luci/logdog/api/config/svcconfig";
 
-import "go.chromium.org/luci/logdog/api/config/svcconfig/storage.proto";
 import "go.chromium.org/luci/logdog/api/config/svcconfig/transport.proto";
 
 import "google/protobuf/duration.proto";
@@ -17,13 +16,11 @@ import "google/protobuf/duration.proto";
 message Config {
   // Configuration for the Butler's log transport.
   Transport transport = 10;
-  // Configuration for intermediate Storage.
-  Storage storage = 11;
   // Coordinator is the coordinator service configuration.
   Coordinator coordinator = 20;
 
-  reserved "collector", "archivist";
-  reserved 21, 22;
+  reserved "storage", "collector", "archivist";
+  reserved 11, 21, 22;
 }
 
 // Coordinator is the Coordinator service configuration.
