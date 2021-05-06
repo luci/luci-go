@@ -201,6 +201,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "181d67b5_961f82bf",
+        "filename": "resultdb/internal/integrationtests/invocation_finalization_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-06T23:43:02Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c5f0ca1e_8ec25cc4",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 0
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1e7149eb_5b218f0b",
@@ -348,6 +372,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3764f2d3_be823c5f",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-06T23:43:02Z",
+      "side": 1,
+      "message": "SGTM. Please look at https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2877690",
+      "parentUuid": "49de1a2d_95633e73",
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5626f4f9_0b9ed2dc",
@@ -419,6 +461,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c5ad6d4_7b4ca290",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-06T23:43:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "25dd5021_bfa85cdb",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 11
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "daf8921b_034516ba",
@@ -480,6 +546,30 @@
       "side": 1,
       "message": "oh, I must have looked up wrong code for `StartInvocationFinalization`, as I didn\u0027t see the spanner mutation there. Sorry\n\nOK, transaction makes sense. But is it a good idea to update *all* ~100 invocations in 1 one large transaction vs ~100 small transactions?\n * small transactions have higher chance of them making progress \n    e.g. if 1 out of 100 invocations gets finalized in some other way concurrently, then 99 other transactions will succeed.\n * small transactions require additional read of the invocation row\n * hence, 1 large transaction is most likely cheaper CPU-wise on Spanner\n\nGiven that this deadline enforcer isn\u0027t supposed to have much work, we have to really worry only about unusual cases where the system is under stress. The current backlog is a good example. In this case, IMO, Spanner CPU isn\u0027t a concern, but making progress is of higher importance. Thus, I lean towards small transactions (but see comment thread above).\n\nNOTE: I know little about Spanner / ResultDB. So, please tell me if I\u0027m missing something.",
       "parentUuid": "fdc5451d_343b0a1c",
+      "range": {
+        "startLine": 77,
+        "startChar": 20,
+        "endLine": 77,
+        "endChar": 25
+      },
+      "revId": "1a7dd097e22be52a29edaa7f3396e2fe0bf66954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e40fcbaf_a94cb4a0",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-06T23:43:02Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "af215e3a_0802fa19",
       "range": {
         "startLine": 77,
         "startChar": 20,
