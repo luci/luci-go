@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5fec640_08918c6a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-06T10:07:50Z",
+      "side": 1,
+      "message": "what happens after 20 minutes?\n\niiuc the code, CV will release the SQ, then re-acquire it and retry the entire submission, possibly looping like this for a long time. IIRC, attempt count was meant to prevent this.\n\nSo, are you proposing to fail the Run right after the first 20 minutes expire? I\u0027m OK with this, but I don\u0027t think I see it in code.",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 20
+      },
+      "revId": "898765ddd043f4af2e8bfffb28d6eff20948c46d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "b6c7b9ac_0c88f3b5",
@@ -14,6 +37,29 @@
       "writtenOn": "2021-05-05T23:12:25Z",
       "side": 1,
       "message": "PTAL",
+      "revId": "898765ddd043f4af2e8bfffb28d6eff20948c46d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6afb1a0e_aacf94f5",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-06T10:07:50Z",
+      "side": 1,
+      "message": "ouch, i missed that. 👍",
+      "range": {
+        "startLine": 241,
+        "startChar": 79,
+        "endLine": 241,
+        "endChar": 80
+      },
       "revId": "898765ddd043f4af2e8bfffb28d6eff20948c46d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
