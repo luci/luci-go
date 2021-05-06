@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "93a5622c_d8c12e73",
+        "filename": "server/encryptedcookies/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-06T22:47:40Z",
+      "side": 1,
+      "message": "Well, this is a regular \"maintenance\" rotation which makes a new active key, but doesn\u0027t disable the previous key (so all existing sessions can still be verified). Old keys eventually are phased out after N such cycles. Doing it in a hurry is not useful. Added this information.",
+      "parentUuid": "ac7f97e7_34174c7d",
+      "range": {
+        "startLine": 53,
+        "startChar": 69,
+        "endLine": 53,
+        "endChar": 75
+      },
+      "revId": "8adc07a7ad06feb82424e768d43af8e04b5e7c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2f0d3ab6_5d374aa0",
         "filename": "server/encryptedcookies/doc.go",
         "patchSetId": 1
