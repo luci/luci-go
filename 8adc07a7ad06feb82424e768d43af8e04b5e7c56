@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ac7f97e7_34174c7d",
+        "filename": "server/encryptedcookies/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-06T10:14:21Z",
+      "side": 1,
+      "message": "nit: i\u0027d expect some rotations to be done \"in a hurry\", so exact command here for copy-pasta is warranted (IMO)",
+      "range": {
+        "startLine": 53,
+        "startChar": 69,
+        "endLine": 53,
+        "endChar": 75
+      },
+      "revId": "8adc07a7ad06feb82424e768d43af8e04b5e7c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f0d3ab6_5d374aa0",
+        "filename": "server/encryptedcookies/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-06T10:14:21Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 110,
+        "endChar": 66
+      },
+      "revId": "8adc07a7ad06feb82424e768d43af8e04b5e7c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
