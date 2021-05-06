@@ -20,6 +20,7 @@ export interface TabDef {
   id: string;
   label: string;
   href?: string;
+  slotName?: string;
 }
 
 /**
@@ -48,8 +49,10 @@ export class TabBarElement extends LitElement {
               this.onTabClicked(this.selectedTabId);
             }}
             href=${tab.href}
-            >${tab.label}</a
           >
+            ${tab.label}
+            <slot name=${tab.slotName}></slot>
+          </a>
         `
       )}
     `;

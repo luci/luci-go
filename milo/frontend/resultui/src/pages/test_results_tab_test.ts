@@ -82,7 +82,7 @@ class ContextProvider extends LitElement {
 }
 
 describe('Test Results Tab', () => {
-  it('should get invocation ID from URL', async () => {
+  it('should load the first page of test variants when connected', async () => {
     const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
     queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
