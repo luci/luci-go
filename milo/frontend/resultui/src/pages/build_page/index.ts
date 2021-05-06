@@ -20,6 +20,7 @@ import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
 import { computed, observable, reaction, when } from 'mobx';
 
+import '../../components/test_count_indicator';
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import { MiloBaseElement } from '../../components/milo_base';
@@ -340,6 +341,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
               id: 'test-results',
               label: 'Test Results',
               href: router.urlForName('build-test-results', params),
+              slotName: 'test-count-indicator',
             },
           ]),
       {
@@ -521,7 +523,9 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         .components=${[{ color: this.statusBarColor, weight: 1 }]}
         .loading=${!this.buildState.build}
       ></milo-status-bar>
-      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
+      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}>
+        <milo-test-count-indicator slot="test-count-indicator"></milo-test-count-indicator>
+      </milo-tab-bar>
       <slot></slot>
     `;
   });
@@ -575,6 +579,10 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       milo-tab-bar {
         margin: 0 10px;
         padding-top: 10px;
+      }
+
+      milo-test-count-indicator {
+        margin-right: -15px;
       }
 
       #settings-dialog {
