@@ -228,8 +228,8 @@ func (c *triggerRun) Init(authFlags AuthFlags) {
 	c.Flags.Int64Var(&c.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
-		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[subdir:]pkgname=version`. "+
-			"Using an empty version will remove the package. The subdir is optional and defaults to '.'.")
+		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[installdir:]pkgname=version`. "+
+			"Using an empty version will remove the package. The installdir is optional and defaults to '.'.")
 	c.Flags.Var(&c.namedCache, "named-cache", "This takes a parameter of `name=cachedir`.")
 	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
 	c.Flags.Var(&c.optionalDimension, "optional-dimension", "Format: <key>=<value>:<expiration>. See -expiration for the requirement.")
