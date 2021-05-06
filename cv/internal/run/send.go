@@ -147,6 +147,37 @@ func (n *Notifier) NotifyReadyForSubmission(ctx context.Context, runID common.Ru
 	return n.TaskRefs.Send(ctx, runID, evt, eta)
 }
 
+// NotifyCLSubmitted informs RunManager that the provided CL is submitted.
+//
+// Unlike other event-sending funcs, this function only delivers the event
+// to Run's eventbox, but does not dispatch the task. This is because it is
+// okay to process all events of this kind together to record the submission
+// result for each individual CLs after the attempt to submit completes.
+// Waking up RM unnecessarily may increase the contention of Run entity.
+func (n *Notifier) NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error {
+	return eventpb.SendWithoutDispatch(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_ClSubmitted{
+			ClSubmitted: &eventpb.CLSubmitted{
+				Clid: int64(clid),
+			},
+		},
+	})
+}
+
+// NotifySubmissionCompleted informs RunManager that an attempt to submit the
+// provided Run has completed.
+func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error {
+	evt := &eventpb.Event{
+		Event: &eventpb.Event_SubmissionCompleted{
+			SubmissionCompleted: sc,
+		},
+	}
+	if invokeRM {
+		return n.TaskRefs.SendNow(ctx, runID, evt)
+	}
+	return eventpb.SendWithoutDispatch(ctx, runID, evt)
+}
+
 // NotifyCQDVerificationCompleted tells RunManager that CQDaemon has completed
 // verifying the provided Run.
 //

@@ -56,7 +56,9 @@ func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater) *RunManag
 			err := rm.manageRun(ctx, common.RunID(task.GetRunId()))
 			// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
 			// already scheduled for the next second.
-			return common.TQifyError(ctx, err)
+			return common.TQIfy{
+				KnownRetry: []error{handler.ErrTransientSubmissionFailure},
+			}.Error(ctx, err)
 		},
 	)
 	return rm
