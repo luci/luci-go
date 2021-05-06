@@ -38,6 +38,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// TestOverdueDeadline is a magic value used for tests to set an invocation's
+// deadline in the past.
+const TestOverdueDeadline = 904924800 // Random Unix timestamp in the past.
+
 // isValidCreateState returns false if invocations cannot be created in the
 // given state `s`.
 func isValidCreateState(s pb.Invocation_State) bool {
@@ -57,6 +61,9 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 	switch deadline, err := ptypes.Timestamp(deadline); {
 	case err != nil:
 		return err
+
+	case deadline == time.Unix(TestOverdueDeadline, 0).UTC():
+		return nil
 
 	case deadline.Sub(now) < 10*time.Second:
 		return errors.Reason("must be at least 10 seconds in the future").Err()
