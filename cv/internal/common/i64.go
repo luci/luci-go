@@ -34,8 +34,8 @@ func UniqueSorted(v []int64) []int64 {
 		n++
 		if skipped {
 			v[n] = id
-			prev = id
 		}
+		prev = id
 	}
 	return v[:n+1]
 }
