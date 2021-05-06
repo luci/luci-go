@@ -47,6 +47,8 @@ import (
 
 // Run sets up all the routes and runs the server.
 func Run(templatePath string) {
+	server.SwitchToEncryptedCookies()
+
 	// Register plain ol' http handlers.
 	r := router.New()
 	standard.InstallHandlers(r)
