@@ -244,7 +244,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
         <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
         </milo-tvt-column-header>
       </div>
-      <div id="test-variant-list">${this.renderAllVariants()}</div>
+      <div id="test-variant-list" tabindex="0">${this.renderAllVariants()}</div>
     `;
   }
 
