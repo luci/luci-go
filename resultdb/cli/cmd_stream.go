@@ -54,7 +54,8 @@ import (
 
 var matchInvalidInvocationIDChars = regexp.MustCompile(`[^a-z0-9_\-:.]`)
 
-func mustReturnInvURL(rdbHost, invName string) string {
+// MustReturnInvURL returns a string of the Invocation URL.
+func MustReturnInvURL(rdbHost, invName string) string {
 	invID, err := pbutil.ParseInvocationName(invName)
 	if err != nil {
 		panic(err)
@@ -204,7 +205,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		if err != nil {
 			return r.done(err)
 		}
-		fmt.Fprintf(os.Stderr, "rdb-stream: created invocation - %s\n", mustReturnInvURL(r.host, newInv.Name))
+		fmt.Fprintf(os.Stderr, "rdb-stream: created invocation - %s\n", MustReturnInvURL(r.host, newInv.Name))
 		if r.isIncluded {
 			curInv := r.resultdbCtx.CurrentInvocation
 			if err := r.includeInvocation(ctx, curInv, &newInv); err != nil {
@@ -240,7 +241,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 				logging.Errorf(ctx, "failed to finalize the invocation: %s", err)
 				ret = r.done(err)
 			}
-			fmt.Fprintf(os.Stderr, "rdb-stream: finalized invocation - %s\n", mustReturnInvURL(r.host, r.invocation.Name))
+			fmt.Fprintf(os.Stderr, "rdb-stream: finalized invocation - %s\n", MustReturnInvURL(r.host, r.invocation.Name))
 		}
 	}()
 
