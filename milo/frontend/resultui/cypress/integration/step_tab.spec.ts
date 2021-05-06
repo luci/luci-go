@@ -16,11 +16,11 @@ describe('Steps & Logs Tab', () => {
   it('should accept arbitrary path suffix', () => {
     cy.visit(
       // eslint-disable-next-line max-len
-      '/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps/an/arbitrary/path/suffix?succeeded=true&debug=false'
+      '/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps/an/arbitrary/path/suffix'
     );
     cy.location('pathname').should(
       'equal',
-      '/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps?succeeded=true&debug=false'
+      '/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps'
     );
   });
 });

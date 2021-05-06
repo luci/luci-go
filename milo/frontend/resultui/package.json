@@ -14,6 +14,7 @@
     "dev:sw": "DEBUG_SW=true npm run dev",
     "test": "karma start --single-run",
     "cypress:open": "CYPRESS_CRASH_REPORTS=0 cypress open",
+    "cypress:run": "CYPRESS_CRASH_REPORTS=0 cypress run",
     "test:watch": "karma start",
     "postinstall": "patch-package"
   },

@@ -82,7 +82,7 @@ func Run(templatePath string) {
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
 
 	// Artifacts.
-	r.GET("/artifact/:view_type/*_artifact_name", baseMW, redirect("/ui/artifact/:view_type/*_artifact_name", http.StatusFound))
+	r.GET("/artifact/*path", baseMW, redirect("/ui/artifact/*path", http.StatusFound))
 
 	// Invocations.
 	r.GET("/inv/*path", baseMW, redirect("/ui/inv/*path", http.StatusFound))
@@ -90,7 +90,6 @@ func Run(templatePath string) {
 	// Builds.
 	r.GET("/b/:id", htmlMW, handleError(redirectLUCIBuild))
 	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
-	r.GET("/b/:id/:tab", baseMW, redirect("/ui/b/:id/:tab", http.StatusFound))
 
 	buildPageMW := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
 		shouldShowNewBuildPage := getShowNewBuildPageCookie(c)
@@ -103,6 +102,11 @@ func Run(templatePath string) {
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", buildPageMW, handleError(handleLUCIBuild))
 	// TODO(crbug/1108198): remvoe this route once we turned down the old build page.
 	r.GET("/old/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
+
+	// Only the new build page can take path suffix, redirect to the new build page.
+	r.GET("/b/:id/*path", baseMW, redirect("/ui/b/:id/*path", http.StatusFound))
+	r.GET("/p/:project/builds/b:id/*path", baseMW, redirect("/ui/b/:id/*path", http.StatusFound))
+	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId/*path", baseMW, redirect("/ui/p/:project/builders/:bucket/:builder/:numberOrId/*path", http.StatusFound))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
