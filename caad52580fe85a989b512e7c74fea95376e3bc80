@@ -16,6 +16,29 @@
       "message": "follow-up from this conversation: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2852168/11..25//COMMIT_MSG#b7",
       "revId": "caad52580fe85a989b512e7c74fea95376e3bc80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb8e5946_a7b8193f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-06T21:23:26Z",
+      "side": 1,
+      "message": "public functions need doc strings. could you put a summary of what this function does?",
+      "range": {
+        "startLine": 57,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 55
+      },
+      "revId": "caad52580fe85a989b512e7c74fea95376e3bc80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
