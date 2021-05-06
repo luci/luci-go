@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "132d2239_e1b7a124",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-06T01:51:18Z",
+      "side": 1,
+      "message": "I\u0027m configuring everything now (both dev and prod).\n\nI\u0027ll then land this CL, let it roll to luci-milo-dev, verify it works there as expected and then I\u0027d like you to promote it to prod whenever you want using your current release process. Does this sound good?\n\nNote that the encrypted cookies are already used on https://chrome-infra-packages.appspot.com/ and on https://logs.chromium.org/logs/... But Milo will be the first \"high profile\" user.\n\nIt is safe to revert this CL or comment out SwitchToEncryptedCookies() call, but it will invalidate all *new* sessions (all new cookies will be ignored). In case of the revert it should start recognizing old sessions, i.e. the new code doesn\u0027t actively removed old cookies, just lets them expire.",
+      "revId": "2bf419d90d7c4c0c24a394ba04b203e89e94ad2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
