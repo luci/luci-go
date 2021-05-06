@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0c5ca23b_6ef25e64",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-06T08:43:26Z",
+      "side": 1,
+      "message": "Yes, but I haven\u0027t been able to find a way to reproduce this and the slowness happens occationally in production.\n\nSo to fix the issue, I think I currently can guess the reason and make potential fix for that.",
+      "parentUuid": "f4c29da3_3cbd1993",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 40
+      },
+      "revId": "f86c54ea6324cb783d2fd9c2e64c995dada9de59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "be366fc6_7e5e2619",
         "filename": "common/data/embeddedkvs/kvs.go",
         "patchSetId": 2
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-28T23:17:34Z",
       "side": 1,
       "message": "How much memory will be used at max?",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 22
+      },
+      "revId": "f86c54ea6324cb783d2fd9c2e64c995dada9de59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "58a5d32e_1b2785e7",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-06T08:43:26Z",
+      "side": 1,
+      "message": "I included chage of memory usage in description.",
+      "parentUuid": "be366fc6_7e5e2619",
       "range": {
         "startLine": 35,
         "startChar": 0,
