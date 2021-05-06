@@ -30,9 +30,10 @@ import (
 // Column Invocations.ShardId is a value in range [0, Shards).
 const Shards = 100
 
-// CurrentMaxShard reads the highest shard id in the Invocations table.
+// CurrentShardsNumber returns the number of shards based on the highest shard
+// id in the Invocations table.
 // This may differ from the constant above when it has changed recently.
-func CurrentMaxShard(ctx context.Context) (int, error) {
+func CurrentShardNumber(ctx context.Context) int {
 	var ret int64
 	err := spanutil.QueryFirstRow(span.Single(ctx), spanner.NewStatement(`
 		SELECT ShardId
@@ -40,7 +41,13 @@ func CurrentMaxShard(ctx context.Context) (int, error) {
 		ORDER BY ShardID DESC
 		LIMIT 1
 	`), &ret)
-	return int(ret), err
+	switch {
+	case err == spanutil.ErrNoResults:
+		return Shards - 1
+	case err != nil:
+		panic(errors.Annotate(err, "failed to determine number of shards").Err())
+	}
+	return int(ret)
 }
 
 // TokenToMap parses a page token to a map.
