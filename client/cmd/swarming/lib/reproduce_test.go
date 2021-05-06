@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -80,7 +81,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		var actualRealm string
 		c.createInvocation = func(_ context.Context, _ *http.Client, realm string, _ string) (*resultpb.Invocation, string, error) {
 			actualRealm = realm
-			return &resultpb.Invocation{Name: "TestName"}, "token", nil
+			return &resultpb.Invocation{Name: "invocations/b123"}, "token", nil
 		}
 		// Use TempDir, which creates a temp directory, to return a unique directory name
 		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir()).
@@ -88,6 +89,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		relativeCwd := "farm"
 
 		c.out = t.TempDir()
+		c.resultsHost = chromeinfra.ResultDBHost
 
 		ctx := context.Background()
 
