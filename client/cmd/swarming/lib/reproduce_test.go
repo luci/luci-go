@@ -80,7 +80,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		var actualRealm string
 		c.createInvocation = func(_ context.Context, _ *http.Client, realm string, _ string) (*resultpb.Invocation, string, error) {
 			actualRealm = realm
-			return &resultpb.Invocation{Name: "TestName"}, "token", nil
+			return &resultpb.Invocation{Name: "invocations/b123"}, "token", nil
 		}
 		// Use TempDir, which creates a temp directory, to return a unique directory name
 		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir()).

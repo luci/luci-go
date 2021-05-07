@@ -16,6 +16,7 @@ package lib
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -70,10 +71,9 @@ func (c *reproduceRun) init(authFlags AuthFlags) {
 
 	c.Flags.StringVar(&c.work, "work", "work", "Directory to map the task input files into and execute the task.")
 	c.Flags.StringVar(&c.out, "out", "out", "Directory that will hold the task results.")
+	c.Flags.StringVar(&c.resultsHost, "results-host", chromeinfra.ResultDBHost, "Hostname of the ResultDB service to usse. e.g. 'results.api.cr.dev'")
 	c.cipdDownloader = downloadCIPDPackages
 	c.createInvocation = createInvocation
-	// TODO(crbug.com/1188381): Use a flag to fill c.resultsHost.
-	c.resultsHost = chromeinfra.ResultDBHost
 	// TODO(crbug.com/1188473): support cache directory.
 }
 
@@ -167,7 +167,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 		if err != nil {
 			return nil, nil, err
 		}
-		// TODO(crbug.com/1188381): defer printing invocation URL with cli.MustReturnInvURL.
+		defer fmt.Printf("created invocation = %s\n", cli.MustReturnInvURL(c.resultsHost, invocation.Name))
 	}
 
 	execDir := c.work
