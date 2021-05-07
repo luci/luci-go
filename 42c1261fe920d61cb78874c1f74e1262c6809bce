@@ -56,6 +56,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8cff647f_1da49239",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:25:41Z",
+      "side": 1,
+      "message": "Scott,\n\n\u003e nit; wouldn\u0027t panic() generate some error logs? I\u0027d prefer to keep error logs clean, if possible.\n\n\nYes, of course it will. But we expect this to happen only when someone adjusts shards constant, so IMO, good enough.",
+      "parentUuid": "e97950ee_4cf017a8",
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "51715896_91604c16",
         "filename": "resultdb/internal/cron/cron.go",
         "patchSetId": 4
