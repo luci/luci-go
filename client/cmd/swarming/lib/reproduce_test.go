@@ -60,6 +60,7 @@ func TestReproduceParse_NoTaskID(t *testing.T) {
 		c.init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
+		So(err, ShouldBeNil)
 
 		err = c.parse([]string(nil))
 		So(err, ShouldErrLike, "must specify exactly one task id.")

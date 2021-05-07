@@ -65,6 +65,7 @@ func TestSpawnTasksParse_NoInput(t *testing.T) {
 		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
+		So(err, ShouldBeNil)
 
 		err = c.Parse([]string{})
 		So(err, ShouldErrLike, "input JSON")

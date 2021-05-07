@@ -49,6 +49,7 @@ func TestCollectParse_NoInput(t *testing.T) {
 		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
+		So(err, ShouldBeNil)
 
 		err = c.Parse(&[]string{})
 		So(err, ShouldErrLike, "must specify at least one")
@@ -61,6 +62,7 @@ func TestCollectParse_BadTaskID(t *testing.T) {
 		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
+		So(err, ShouldBeNil)
 
 		err = c.Parse(&[]string{"$$$$$"})
 		So(err, ShouldErrLike, "task ID")
@@ -76,6 +78,7 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 			"-server", "http://localhost:9050",
 			"-timeout", "-30m",
 		})
+		So(err, ShouldBeNil)
 
 		err = c.Parse(&[]string{"x81n8xn1b684n"})
 		So(err, ShouldErrLike, "negative timeout")
