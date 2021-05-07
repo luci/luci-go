@@ -22,6 +22,7 @@ import (
 	"math"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/logging"
@@ -32,6 +33,8 @@ import (
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -46,6 +49,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
+	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
 	"go.chromium.org/luci/cv/internal/run"
@@ -79,14 +83,20 @@ type Test struct {
 
 	DiagnosticServer diagnosticpb.DiagnosticServer
 	MigrationServer  migrationpb.MigrationServer
-	// TODO(tandrii): add CQD fake.
 
 	// dsFlakiness enables ds flakiness for "RunUntil".
 	dsFlakiness    float64
 	dsFlakinesRand rand.Source
 	tqSweepChannel dispatcher.Channel
+
+	cqdsMu sync.Mutex
+	// cqds are fake CQDaemons indexed by LUCI project name.
+	cqds map[string]*cqdfake.CQDFake
 }
 
+// SetUp sets up the end to end test.
+//
+// Must be called exactly once.
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	switch {
 	case t.Test == nil:
@@ -125,14 +135,22 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clUpdater)
 	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clUpdater)
 
-	t.MigrationServer = &migration.MigrationServer{}
-	t.DiagnosticServer = &diagnostic.DiagnosticServer{}
+	t.MigrationServer = &migration.MigrationServer{
+		RunNotifier: t.RunNotifier,
+	}
+	t.DiagnosticServer = &diagnostic.DiagnosticServer{
+		RunNotifier:   t.RunNotifier,
+		PMNotifier:    t.PMNotifier,
+		GerritUpdater: clUpdater,
+	}
 	return ctx, deferme
 }
 
 // RunUntil runs TQ tasks, while stopIf returns false.
 //
 // If `dsFlakinessFlag` is set, uses flaky datastore for running TQ tasks.
+//
+// Not goroutine safe.
 func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 	maxTasks := 1000.0
 	taskCtx := ctx
@@ -193,6 +211,27 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 	if err := ctx.Err(); err != nil {
 		panic(err)
 	}
+}
+
+// MustCQD returns a CQDaemon fake for the given project, starting a new one if
+// necessary, in which case it's lifetime is limited by the given context.
+func (t *Test) MustCQD(ctx context.Context, luciProject string) *cqdfake.CQDFake {
+	t.cqdsMu.Lock()
+	defer t.cqdsMu.Unlock()
+	if cqd, exists := t.cqds[luciProject]; exists {
+		return cqd
+	}
+	cqd := &cqdfake.CQDFake{
+		LUCIProject: luciProject,
+		CV:          t.MigrationServer,
+		GFake:       t.GFake,
+	}
+	cqd.Start(ctx)
+	if t.cqds == nil {
+		t.cqds = make(map[string]*cqdfake.CQDFake, 1)
+	}
+	t.cqds[luciProject] = cqd
+	return cqd
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -307,6 +346,38 @@ func (t *Test) MaxCQVote(ctx context.Context, gHost string, gChange int64) int32
 // Panics if the CL doesn't exist.
 func (t *Test) LastMessage(gHost string, gChange int64) *gerritpb.ChangeMessageInfo {
 	return gf.LastMessage(t.GFake.GetChange(gHost, int(gChange)).Info)
+}
+
+func (t *Test) MigrationFetchActiveRuns(ctx context.Context, project string) []*migrationpb.ActiveRun {
+	req := &migrationpb.FetchActiveRunsRequest{LuciProject: project}
+	res, err := t.MigrationServer.FetchActiveRuns(t.MigrationContext(ctx), req)
+	if err != nil {
+		panic(err)
+	}
+	return res.GetActiveRuns()
+}
+
+// MigrationFetchExcludedCLs returns FetchExcludedCLs from the Migration API
+// formatted as "host/number" strings.
+func (t *Test) MigrationFetchExcludedCLs(ctx context.Context, project string) []string {
+	req := &migrationpb.FetchExcludedCLsRequest{LuciProject: project}
+	res, err := t.MigrationServer.FetchExcludedCLs(t.MigrationContext(ctx), req)
+	if err != nil {
+		panic(err)
+	}
+	out := make([]string, len(res.GetCls()))
+	for i, cl := range res.GetCls() {
+		out[i] = fmt.Sprintf("%s/%d", cl.GetHost(), cl.GetChange())
+	}
+	return out
+}
+
+// MigrationContext returns context authorized to call to the Migration API.
+func (t *Test) MigrationContext(ctx context.Context) context.Context {
+	return auth.WithState(ctx, &authtest.FakeState{
+		Identity:       "user:e2e-test@example.com",
+		IdentityGroups: []string{migration.AllowGroup},
+	})
 }
 
 // LogPhase emits easy to recognize log like
