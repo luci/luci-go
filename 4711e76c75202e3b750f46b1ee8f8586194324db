@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3078d1b_1666d276",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T19:03:03Z",
+      "side": 1,
+      "message": "actually, I don\u0027t like the confusion. I\u0027ll cleanup .proto instead.",
+      "revId": "4711e76c75202e3b750f46b1ee8f8586194324db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
