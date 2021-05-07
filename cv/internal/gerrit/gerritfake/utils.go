@@ -20,6 +20,22 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
+// ResetVotes resets all non-0 votes of the given labels to 0.
+func ResetVotes(ci *gerritpb.ChangeInfo, labels ...string) {
+	for _, label := range labels {
+		info := ci.Labels[label]
+		if info == nil {
+			continue
+		}
+		for _, vote := range info.All {
+			if vote.Value != 0 {
+				vote.Value = 0
+				vote.Date = nil
+			}
+		}
+	}
+}
+
 // NonZeroVotes returns all non-zero votes for the provided label.
 //
 // Return nil slice if label doesn't exist.
