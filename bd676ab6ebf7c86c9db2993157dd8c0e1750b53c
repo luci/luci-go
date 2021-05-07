@@ -157,6 +157,30 @@
       },
       "revId": "bd676ab6ebf7c86c9db2993157dd8c0e1750b53c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77aeffae_e644bd0b",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "let\u0027s resolve this thread in favor of concrete https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2822977/12/cv/internal/run/bq/bq_test.go#115",
+      "parentUuid": "daa089e8_c32145b0",
+      "range": {
+        "startLine": 189,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 37
+      },
+      "revId": "bd676ab6ebf7c86c9db2993157dd8c0e1750b53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

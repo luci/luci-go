@@ -18,6 +18,69 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a49c0623_55a126d5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "this looks very good % bq_test.go#115",
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7957d900_27c65853",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "Why?\nIMO if we really do need this validation, then it should be installed into Run Manager producing this data.",
+      "range": {
+        "startLine": 132,
+        "startChar": 0,
+        "endLine": 132,
+        "endChar": 74
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31629634_6aac58b4",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "I think this won\u0027t be set on a dry run.",
+      "range": {
+        "startLine": 56,
+        "startChar": 5,
+        "endLine": 56,
+        "endChar": 30
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "646acfa0_fbdf69fc",
@@ -36,6 +99,139 @@
         "startChar": 0,
         "endLine": 103,
         "endChar": 62
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "820256d5_288dcae7",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "Yes, it should be Pending.",
+      "parentUuid": "646acfa0_fbdf69fc",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 103,
+        "endChar": 62
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54b7466d_ef9e133e",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "This is wrong.\n*CV* status in such a case will definitely be a FAILURE, because not all CLs were submitted.\n\nHowever, legacy BQ export must say Attempt.Status \u003d\u003d SUCCESS for backwards compatibility.",
+      "range": {
+        "startLine": 115,
+        "startChar": 23,
+        "endLine": 115,
+        "endChar": 39
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1cf2c116_0ab0cd88",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "+Yiwei\n\nIn our doc[1] we differentiate between 4 CL submission statuses:\nPENDING (not tried), \nUNKNOWN (tried, but didn\u0027t get result from Gerrit), \nFAILURE (Gerrit refused),\nSUCCESS (submitted)\n\nI\u0027m not 100% sure how valuable `UNKNOWN` is, but I see certain value in distinguishing between Gerrit refusal and never trying to submit.\n\nCan you add data to run.Submission [2] to provide for BQ data generation of at least FAILURE \u003c-\u003e PENDING?\n\n[1] https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto;l\u003d109;drc\u003d15d76ce535c523ee816722a2f90b7ea41ac6abcf\n[2] https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/run/storage.proto;l\u003d91;drc\u003d7d50ff191988822219b4ef8ee33e81e5b701450f",
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c979f12d_8a25a997",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "Does reconcile really need this? I think it operates on the 2 given protos, only.",
+      "range": {
+        "startLine": 277,
+        "startChar": 0,
+        "endLine": 279,
+        "endChar": 16
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9840efbe_a2ae1b56",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "nit: in this case, you can just call it `epoch`.",
+      "range": {
+        "startLine": 280,
+        "startChar": 2,
+        "endLine": 280,
+        "endChar": 5
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4ea37b7_8c132878",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:21:17Z",
+      "side": 1,
+      "message": "FWIW: while SUCCESS really must not happen % bug in CQDaemon.\nBut `Status: FAILED`  may actually happen.",
+      "range": {
+        "startLine": 358,
+        "startChar": 3,
+        "endLine": 360,
+        "endChar": 44
       },
       "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
