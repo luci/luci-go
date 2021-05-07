@@ -22,6 +22,30 @@
       },
       "revId": "f0699c8d1e3b23dfa3b3a359634cfd282a68d1c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69361153_a28ff382",
+        "filename": "cv/internal/migration/cqdfake/cqd.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T19:54:25Z",
+      "side": 1,
+      "message": "No. The assumption (also in actual CQDaemon) is that if anything significant changes, then attempt_key changes too. Thus, matching attempt_keys \u003d\u003e nothing to do.",
+      "parentUuid": "b18a8eb6_1b47a12c",
+      "range": {
+        "startLine": 191,
+        "startChar": 55,
+        "endLine": 191,
+        "endChar": 62
+      },
+      "revId": "f0699c8d1e3b23dfa3b3a359634cfd282a68d1c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
