@@ -30,6 +30,10 @@ type KVS struct {
 // New instantiates KVS.
 func New(ctx context.Context, path string) (*KVS, error) {
 	opt := badger.DefaultOptions(path).WithLoggingLevel(badger.WARNING)
+
+	// This is to make opt.maxBatchSize larger for fewer disk access.
+	opt.MemTableSize *= 8
+
 	db, err := badger.Open(opt)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to open database: %s", path).Err()
