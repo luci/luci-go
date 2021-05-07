@@ -60,6 +60,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2cc05986_f70f430d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T20:06:47Z",
+      "side": 1,
+      "message": "is project-scope available in most projects? Then, I can remove this param, instead of marking it as deprecated.",
+      "parentUuid": "86bbf8f3_b3d3d806",
+      "range": {
+        "startLine": 32,
+        "startChar": 41,
+        "endLine": 32,
+        "endChar": 75
+      },
+      "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ed8e8405_3ce4810b",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
         "patchSetId": 4
@@ -71,6 +95,30 @@
       "writtenOn": "2021-05-07T19:49:36Z",
       "side": 1,
       "message": "nit: two spaces",
+      "range": {
+        "startLine": 33,
+        "startChar": 6,
+        "endLine": 33,
+        "endChar": 7
+      },
+      "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50f56290_74ebe866",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T20:06:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed8e8405_3ce4810b",
       "range": {
         "startLine": 33,
         "startChar": 6,
@@ -94,6 +142,24 @@
       "writtenOn": "2021-05-07T19:58:43Z",
       "side": 1,
       "message": "should we also ensure this is False if cloud_logging_project is None?",
+      "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ecf72482_d134a62b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T20:06:47Z",
+      "side": 1,
+      "message": "I\u0027m not sure if it\u0027s necessary. Alternatively, I can add a note that this param will be ignored if cloud_logging_project is None or \"\", but I feel that it\u0027s already obvious that this option would be noop if so. WDYT?",
+      "parentUuid": "c9edf3e7_d5787fdf",
       "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
