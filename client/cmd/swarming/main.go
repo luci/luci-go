@@ -43,7 +43,6 @@ type authFlags struct {
 	flags       authcli.Flags
 	defaultOpts auth.Options
 	parsedOpts  *auth.Options
-	ctx         context.Context
 }
 
 func (af *authFlags) Register(f *flag.FlagSet) {
