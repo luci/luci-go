@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae626fdd_51d26fc7",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-07T21:52:04Z",
+      "side": 1,
+      "message": "ctx?",
+      "range": {
+        "startLine": 289,
+        "startChar": 37,
+        "endLine": 289,
+        "endChar": 57
+      },
+      "revId": "15f7de14989f0737a16cd07a47c0201c50827d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
