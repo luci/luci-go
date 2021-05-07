@@ -18,6 +18,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -61,6 +62,15 @@ func (id RunID) LUCIProject() string {
 		}
 	}
 	panic(fmt.Errorf("invalid run ID %q", id))
+}
+
+// AttemptKey returns CQDaemon attempt key.
+func (id RunID) AttemptKey() string {
+	i := strings.LastIndexByte(string(id), '-')
+	if i == -1 || i == len(id)-1 {
+		panic(fmt.Errorf("invalid run ID %q", id))
+	}
+	return string(id[i+1:])
 }
 
 // RunIDs is a convenience type to facilitate handling of run RunIDs.
