@@ -66,6 +66,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d91d10ed_946c0b7f",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T02:11:29Z",
+      "side": 1,
+      "message": "It\u0027d be safer to use a channel instead of using a shared variable. This var is not protected with mutex or atomic.*, and reordering of memory operations can possibly cause some weird issues.\n\nThere is no guarantee that *resume will be seen as true when Group() returned in the other goroutine at L66.",
+      "range": {
+        "startLine": 43,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 12
+      },
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6fcaa92a_833cfb9a",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T02:11:29Z",
+      "side": 1,
+      "message": "For the particular use case for pudger, replicasFunc() doesn\u0027t need to return an error, because CurrentShardNumber() can return ShardNum on failures. However, I don\u0027t feel it\u0027s general enough to be implemented in internal/cron/cron.go. Please consider changing replicasFunc to return an error.",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 39
+      },
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7d122409_ed30d5c2",
         "filename": "resultdb/internal/cron/cron.go",
         "patchSetId": 4
@@ -105,6 +151,29 @@
         "startChar": 1,
         "endLine": 61,
         "endChar": 6
+      },
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db7d7775_75288b77",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T02:11:29Z",
+      "side": 1,
+      "message": "I feel that syncing the sequence between Group() and pollReplicas() via resume and cancel() can be racy. As I said in an above comment, there is no guarantee that this go routine will see the up-to-date copy of resume when Group exited. It can protected with a mutex, but I think it\u0027d be safer to invoke Group() in a goroutine, and handles the exit condition in the main goroutine directly.\n\n```\nvar wg sync.WaitGroup\nreplicas :\u003d replicasFunc()\nr :\u003d replicas\n\nfor {\n    groupCtx, groupCancel :\u003d context.WithCancel(ctx)\n    wg.Add(1)\n    go func() {\n        defer wg.Done()\n        Group(....)\n    }\n\n    for ;r \u003d\u003d replicas; {\n        select {\n        case \u003c-time.After(30 * time.Second):\n           r \u003d replicasFunc()\n        case \u003c-ctx.Done():\n           wg.Wait()\n           return\n        }\n   }\n   groupCancel()\n   wg.Wait()\n   replicas \u003d r\n}\n```",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 78,
+        "endChar": 0
       },
       "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
