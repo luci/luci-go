@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
-	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func init() {
@@ -76,12 +74,6 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 			cipdSlicesByPath = slicesByPath
 			return nil
 		}
-		expectedRealm := "chromium:chicken"
-		var actualRealm string
-		c.createInvocation = func(_ context.Context, _ *http.Client, realm string, _ string) (*resultpb.Invocation, string, error) {
-			actualRealm = realm
-			return &resultpb.Invocation{Name: "invocations/b123"}, "token", nil
-		}
 		// Use TempDir, which creates a temp directory, to return a unique directory name
 		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
@@ -107,8 +99,6 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
 				return &swarming.SwarmingRpcsTaskRequest{
-					Resultdb: &swarming.SwarmingRpcsResultDBCfg{Enable: true},
-					Realm:    expectedRealm,
 					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
 						&swarming.SwarmingRpcsTaskSlice{
 							Properties: &swarming.SwarmingRpcsTaskProperties{
@@ -183,7 +173,6 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		cmd, exported, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
 		So(err, ShouldBeNil)
 		So(exported, ShouldNotBeNil)
-		So(actualRealm, ShouldEqual, expectedRealm)
 
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix",
 			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.out, "chicken-output.json")))
@@ -244,29 +233,30 @@ func TestPrepareTaskRequestEnvironment_Isolate(t *testing.T) {
 
 		var fetchedIsolateFiles bool
 
+		expectedTR := &swarming.SwarmingRpcsTaskRequest{
+			TaskSlices: []*swarming.SwarmingRpcsTaskSlice{&swarming.SwarmingRpcsTaskSlice{
+				Properties: &swarming.SwarmingRpcsTaskProperties{
+					Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+					InputsRef: &swarming.SwarmingRpcsFilesRef{
+						Isolated: "isolated",
+					},
+				},
+			},
+			},
+		}
+
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
-				return &swarming.SwarmingRpcsTaskRequest{
-					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
-						&swarming.SwarmingRpcsTaskSlice{
-							Properties: &swarming.SwarmingRpcsTaskProperties{
-								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
-								InputsRef: &swarming.SwarmingRpcsFilesRef{
-									Isolated: "isolated",
-								},
-							},
-						},
-					},
-				}, nil
+				return expectedTR, nil
 			},
 			getFilesFromIsolate: func(_ context.Context, _ string, _ *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 				fetchedIsolateFiles = true
 				return []string{}, nil
 			},
 		}
-		cmd, exported, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
+		cmd, tr, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
 		So(err, ShouldBeNil)
-		So(exported, ShouldBeNil)
+		So(tr, ShouldResemble, expectedTR)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
 		expected.Dir = c.work
 
