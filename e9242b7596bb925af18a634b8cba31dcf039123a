@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10479a47_19990fea",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-07T00:13:03Z",
+      "side": 1,
+      "message": "why do you need to use defer?",
+      "range": {
+        "startLine": 170,
+        "startChar": 2,
+        "endLine": 170,
+        "endChar": 7
+      },
+      "revId": "e9242b7596bb925af18a634b8cba31dcf039123a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
