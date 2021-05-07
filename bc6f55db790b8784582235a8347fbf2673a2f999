@@ -84,6 +84,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "31940962_28948f4c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-07T20:14:01Z",
+      "side": 1,
+      "message": "No, it is not available. I think we still need to make it as deprecated to let people know there\u0027ll be more work in the future if they use it.",
+      "parentUuid": "2cc05986_f70f430d",
+      "range": {
+        "startLine": 32,
+        "startChar": 41,
+        "endLine": 32,
+        "endChar": 75
+      },
+      "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ed8e8405_3ce4810b",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
         "patchSetId": 4
