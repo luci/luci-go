@@ -36,6 +36,7 @@ import (
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/common"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
@@ -51,7 +52,7 @@ type CQDFake struct {
 	m    sync.Mutex
 
 	// attempts are active attempts indexed by attempt key.
-	attempts map[string]*migrationpb.Run
+	attempts map[string]*migrationpb.ReportedRun
 
 	candidatesClbk atomic.Value
 	verifyClbk     atomic.Value
@@ -95,7 +96,7 @@ func (cqd *CQDFake) Close() {
 //
 // NOTE: the FetchExcludedCLs will still be applied on the output of the
 // callback.
-type CandidatesClbk func() []*migrationpb.Run
+type CandidatesClbk func() []*migrationpb.ReportedRun
 
 // SetCandidatesClbk (re)sets callback func called per CQDaemon loop if CQDaemon
 // is in charge.
@@ -110,7 +111,7 @@ func (cqd *CQDFake) SetCandidatesClbk(clbk CandidatesClbk) {
 // VerifyClbk called once per CL per CQDaemon iteration.
 //
 // May modify the CL via copy-on-write and return the new value.
-type VerifyClbk func(r *migrationpb.Run, cvInCharge bool) *migrationpb.Run
+type VerifyClbk func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun
 
 // SetVerifyClbk (re)sets callback func called per CQDaemon active attempt
 // once per loop.
@@ -203,7 +204,7 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	}
 
 	req := &migrationpb.ReportRunsRequest{
-		Runs: make([]*migrationpb.Run, 0, len(cqd.attempts)),
+		Runs: make([]*migrationpb.ReportedRun, 0, len(cqd.attempts)),
 	}
 	for _, a := range cqd.attempts {
 		req.Runs = append(req.Runs, a)
@@ -212,11 +213,28 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	return err
 }
 
-func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*migrationpb.Run, error) {
+func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*migrationpb.ReportedRun, error) {
 	if cvInCharge {
 		req := migrationpb.FetchActiveRunsRequest{LuciProject: cqd.LUCIProject}
 		resp, err := cqd.CV.FetchActiveRuns(cqd.migrationApiContext(ctx), &req)
-		return resp.GetRuns(), err
+		if err != nil {
+			return nil, err
+		}
+		out := make([]*migrationpb.ReportedRun, len(resp.GetActiveRuns()))
+		for i, a := range resp.GetActiveRuns() {
+			out[i] = &migrationpb.ReportedRun{
+				Id: a.GetId(),
+				Attempt: &cvbqpb.Attempt{
+					Key:           common.RunID(a.GetId()).AttemptKey(),
+					GerritChanges: make([]*cvbqpb.GerritChange, len(a.GetCls())),
+					Status:        cvbqpb.AttemptStatus_STARTED,
+				},
+			}
+			for j, cl := range a.GetCls() {
+				out[i].Attempt.GerritChanges[j] = cl.GetGc()
+			}
+		}
+		return out, nil
 	}
 
 	f := cqd.candidatesClbk.Load()
@@ -245,8 +263,8 @@ func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*mi
 	out := runs[:0]
 	for _, r := range runs {
 		skip := false
-		for _, cl := range r.GetCls() {
-			if exMap.Has(clKey(cl.GetGc())) {
+		for _, cl := range r.GetAttempt().GetGerritChanges() {
+			if exMap.Has(clKey(cl)) {
 				skip = true
 				break
 			}
@@ -280,9 +298,9 @@ func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
 	return nil
 }
 
-func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.Run, cvInCharge bool) error {
+func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.ReportedRun, cvInCharge bool) error {
 	if cqd.attempts == nil {
-		cqd.attempts = make(map[string]*migrationpb.Run, 1)
+		cqd.attempts = make(map[string]*migrationpb.ReportedRun, 1)
 	}
 	msg := fmt.Sprintf("Run %q | Attempt %q starting", r.Id, r.Attempt.Key)
 	if cvInCharge {
@@ -300,12 +318,12 @@ func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.Run, cvInCharg
 			})
 		}
 	}
-	cqd.attempts[r.Attempt.Key] = proto.Clone(r).(*migrationpb.Run)
+	cqd.attempts[r.Attempt.Key] = proto.Clone(r).(*migrationpb.ReportedRun)
 	logging.Debugf(ctx, "CQD: %s", msg)
 	return nil
 }
 
-func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.Run, cvInCharge bool) error {
+func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.ReportedRun, cvInCharge bool) error {
 	msg := fmt.Sprintf(
 		"Run %q | Attempt %q finished with %s %s.",
 		r.Id, r.Attempt.Key, r.Attempt.Status, r.Attempt.Substatus)
@@ -324,7 +342,7 @@ func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.Run, cvInCh
 	return nil
 }
 
-func (cqd *CQDFake) finalizeRunViaCV(ctx context.Context, r *migrationpb.Run, msg string) error {
+func (cqd *CQDFake) finalizeRunViaCV(ctx context.Context, r *migrationpb.ReportedRun, msg string) error {
 	req := &migrationpb.ReportVerifiedRunRequest{
 		FinalMessage: msg,
 		Run:          r,
@@ -343,7 +361,7 @@ func (cqd *CQDFake) finalizeRunViaCV(ctx context.Context, r *migrationpb.Run, ms
 	return err
 }
 
-func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.Run, msg string) error {
+func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.ReportedRun, msg string) error {
 	submit := false
 	switch r.Attempt.Status {
 	case cvbqpb.AttemptStatus_ABORTED:
@@ -373,7 +391,7 @@ func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.Run, msg str
 		}
 	}
 
-	req := &migrationpb.ReportFinishedRunRequest{Run: proto.Clone(r).(*migrationpb.Run)}
+	req := &migrationpb.ReportFinishedRunRequest{Run: proto.Clone(r).(*migrationpb.ReportedRun)}
 	_, err := cqd.CV.ReportFinishedRun(cqd.migrationApiContext(ctx), req)
 	// TODO(tandrii): send event to BQ.
 	return err

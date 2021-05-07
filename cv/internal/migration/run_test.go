@@ -156,9 +156,8 @@ func TestFetchActiveRuns(t *testing.T) {
 			runs, err := fetchActiveRuns(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 1)
-			So(runs[0], ShouldResembleProto, &migrationpb.Run{
-				Attempt: &cvbqpb.Attempt{LuciProject: "chromium"},
-				Id:      rid,
+			So(runs[0], ShouldResembleProto, &migrationpb.ActiveRun{
+				Id: rid,
 				Cls: []*migrationpb.RunCL{
 					{
 						Id: 1,
@@ -322,12 +321,11 @@ func TestSaveFinishedCQDRun(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		mr := &migrationpb.Run{
+		mr := &migrationpb.ReportedRun{
 			Attempt: &cvbqpb.Attempt{
 				Key: "samekeyhash",
-				// Other fields are populated in practice, but this ingores that.
+				// Other fields are populated in practice, but this test ingores that.
 			},
-			Cls: nil, // ditto
 		}
 
 		Convey("unknown CV ID", func() {

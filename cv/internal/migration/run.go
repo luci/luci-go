@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, error) {
+func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.ActiveRun, error) {
 	runs, err := fetchRunsWithStatus(ctx, project, run.Status_RUNNING)
 	switch {
 	case err != nil:
@@ -48,7 +48,7 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, e
 	if poolSize > 20 {
 		poolSize = 20
 	}
-	ret := make([]*migrationpb.Run, len(runs))
+	ret := make([]*migrationpb.ActiveRun, len(runs))
 	err = parallel.WorkPool(poolSize, func(workCh chan<- func() error) {
 		for i, r := range runs {
 			i, r := i, r
@@ -97,10 +97,7 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, e
 					}
 					mcls[i] = mcl
 				}
-				ret[i] = &migrationpb.Run{
-					Attempt: &cvbqpb.Attempt{
-						LuciProject: project,
-					},
+				ret[i] = &migrationpb.ActiveRun{
 					Id:  string(r.ID),
 					Cls: mcls,
 				}
@@ -219,10 +216,10 @@ type FinishedCQDRun struct {
 	// RecordTime is when this entity was inserted.
 	UpdateTime time.Time `gae:",noindex"`
 	// Everything that CQD has sent.
-	Payload *migrationpb.Run
+	Payload *migrationpb.ReportedRun
 }
 
-func saveFinishedCQDRun(ctx context.Context, mr *migrationpb.Run) error {
+func saveFinishedCQDRun(ctx context.Context, mr *migrationpb.ReportedRun) error {
 	key := mr.GetAttempt().GetKey()
 	try := 0
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {

@@ -62,12 +62,12 @@ func TestCQDFake(t *testing.T) {
 		var progress []string
 
 		candidatesCalls := 0
-		cqd.SetCandidatesClbk(func() []*migrationpb.Run {
-			var res []*migrationpb.Run
+		cqd.SetCandidatesClbk(func() []*migrationpb.ReportedRun {
+			var res []*migrationpb.ReportedRun
 			candidatesCalls++
 			switch candidatesCalls {
 			case 1:
-				res = []*migrationpb.Run{
+				res = []*migrationpb.ReportedRun{
 					{
 						Attempt: &bqpb.Attempt{
 							Key:           "to-abort",
@@ -77,7 +77,7 @@ func TestCQDFake(t *testing.T) {
 					},
 				}
 			case 2:
-				res = []*migrationpb.Run{
+				res = []*migrationpb.ReportedRun{
 					{
 						Attempt: &bqpb.Attempt{
 							Key:           "to-submit",
@@ -87,7 +87,7 @@ func TestCQDFake(t *testing.T) {
 					},
 				}
 			case 3:
-				res = []*migrationpb.Run{
+				res = []*migrationpb.ReportedRun{
 					{
 						Attempt: &bqpb.Attempt{
 							Key:           "to-fail",
@@ -109,10 +109,10 @@ func TestCQDFake(t *testing.T) {
 			return res
 		})
 
-		cqd.SetVerifyClbk(func(r *migrationpb.Run, _ bool) *migrationpb.Run {
+		cqd.SetVerifyClbk(func(r *migrationpb.ReportedRun, _ bool) *migrationpb.ReportedRun {
 			k := r.GetAttempt().GetKey()
 			progress = append(progress, "verify "+k)
-			r = proto.Clone(r).(*migrationpb.Run)
+			r = proto.Clone(r).(*migrationpb.ReportedRun)
 			switch k {
 			case "to-submit":
 				r.GetAttempt().Status = bqpb.AttemptStatus_SUCCESS

@@ -103,15 +103,15 @@ service Migration {
 }
 
 message ReportRunsRequest {
-  repeated Run runs = 1;
+  repeated ReportedRun runs = 1;
 }
 
 message ReportFinishedRunRequest {
-  Run run = 1;
+  ReportedRun run = 1;
 }
 
 message ReportVerifiedRunRequest {
-  Run run = 1;
+  ReportedRun run = 1;
 
   // Action that CV SHOULD do on a Run.
   //
@@ -134,6 +134,13 @@ message ReportVerifiedRunRequest {
   // This is used to test codepath calling ReportVerifiedRun in the CQDaemon
   // before the switch to CV Runs.
   bool test_mode = 21;
+}
+
+// ReportedRun as reported by the CQDaemon to CV.
+message ReportedRun {
+  // CV's run ID if known.
+  string id = 2;
+  bigquery.Attempt attempt = 1;
 }
 
 message PostGerritMessageRequest {
@@ -174,35 +181,14 @@ message FetchActiveRunsRequest {
 }
 
 message FetchActiveRunsResponse {
-  repeated Run runs = 1;
+  repeated ActiveRun active_runs = 2;
 }
 
-message FetchRunStatusRequest {
-  string luci_project = 1;
-  string cv_id = 2;
-  string attempt_key = 3;
-}
-message FetchRunStatusResponse {
-  // If event is not "", CQDaemon will call async_push's
-  // `send_patch_event(..., event, extra)`.
-  string event = 1;
-  string extra = 2;
-}
-
-message FetchExcludedCLsRequest {
-  string luci_project = 1;
-}
-message FetchExcludedCLsResponse {
-  // Each CL has only host and change number set.
-  repeated bigquery.GerritChange cls = 1;
-}
-
-message Run {
-  bigquery.Attempt attempt = 1;
-
-  // CV's run ID.
-  string id = 2;
-  repeated RunCL cls = 3;
+// ActiveRun.
+message ActiveRun {
+  // CV Run ID.
+  string id = 1;
+  repeated RunCL cls = 2;
 }
 
 message RunCL {
@@ -232,4 +218,25 @@ message RunCL {
     bool hard = 2;
   }
   repeated Dep deps = 6;
+}
+
+message FetchRunStatusRequest {
+  string luci_project = 1;
+  string cv_id = 2;
+  string attempt_key = 3;
+}
+
+message FetchRunStatusResponse {
+  // If event is not "", CQDaemon will call async_push's
+  // `send_patch_event(..., event, extra)`.
+  string event = 1;
+  string extra = 2;
+}
+
+message FetchExcludedCLsRequest {
+  string luci_project = 1;
+}
+message FetchExcludedCLsResponse {
+  // Each CL has only host and change number set.
+  repeated bigquery.GerritChange cls = 1;
 }
