@@ -212,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9571d517_35117124",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-07T19:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f41fbe4c_e300d668",
+      "range": {
+        "startLine": 73,
+        "startChar": 26,
+        "endLine": 73,
+        "endChar": 46
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1ac6343a_5723d683",
@@ -331,6 +355,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c461a98_a7517127",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-07T19:29:56Z",
+      "side": 1,
+      "message": "Got it, using Run.CreateTime (trigger time) for Attempt.StartTime, with explanation.",
+      "parentUuid": "c5f819cb_c0118b3b",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 70
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "297362ad_e0f5d57d",
@@ -416,6 +464,30 @@
       "side": 1,
       "message": "nit: map[int]struct{}\n\n\u003e  Is there a reason why we don\u0027t have an intset package?\nBecause Go lack of generics sucks, so you\u0027d need int64set, int32set, intset, etc.\nAlso, in most cases map[int]struct{} is good enough.\nThat said, you can see that I have created local boilerplate to make some code more readable:\nhttps://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/prjmanager/impl/state/clidsmap.go;l\u003d21;drc\u003d016c7e6c05e063e42b7bf8d92ad0aabbbb3a18ee",
       "parentUuid": "1ed15c70_928f9d7e",
+      "range": {
+        "startLine": 134,
+        "startChar": 35,
+        "endLine": 134,
+        "endChar": 47
+      },
+      "revId": "b1f6e14b089006104dead40ecd7aae88af80b542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c1f0d11_0018b614",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-07T19:29:56Z",
+      "side": 1,
+      "message": "Hm, alright. I guess using a map is fine and not that much more verbose.",
+      "parentUuid": "9b3f7170_10b045e0",
       "range": {
         "startLine": 134,
         "startChar": 35,

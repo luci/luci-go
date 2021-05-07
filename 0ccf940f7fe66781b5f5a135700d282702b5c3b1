@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db371ae1_27ada6ce",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-07T19:29:56Z",
+      "side": 1,
+      "message": "Added more tests.",
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "646acfa0_fbdf69fc",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-07T19:29:56Z",
+      "side": 1,
+      "message": "This is an unintended result which I discovered only after writing tests.\n\nCurrently for dry runs, submit status is always PENDING (not SUCCESS or FAILURE).\nBut as of this patchset, the submit status will be set to FAILURE for all CLs for all dry runs... I assume we want it to be pending?",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 103,
+        "endChar": 62
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

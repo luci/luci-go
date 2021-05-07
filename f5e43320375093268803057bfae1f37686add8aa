@@ -634,6 +634,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "55bfbade_353225be",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-07T19:29:56Z",
+      "side": 1,
+      "message": "Since FAILED_SUBMIT would be a substatus, I had added a TODO above the setting of Substatus in PS#11:\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2822977/11/cv/internal/run/bq/bq.go#109\n\nSo, to clarify what we want later for crbug.com/1114686#5, my interpretation is that: When a run is otherwise successful but submit fails for at least one CL, then status will be FAILURE and substatus will be FAILED_SUBMIT.",
+      "parentUuid": "da25776f_a51dbb7e",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 170,
+        "endChar": 2
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ccbb14f6_6b398148",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 9
