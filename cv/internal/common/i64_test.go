@@ -28,6 +28,11 @@ func TestI64s(t *testing.T) {
 		v1 := UniqueSorted(v)
 		So(v1, ShouldResemble, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9})
 		So(v[:len(v1)], ShouldResemble, v1) // re-uses space
+
+		v = []int64{1, 2, 2, 3, 4, 5, 5}
+		v1 = UniqueSorted(v)
+		So(v1, ShouldResemble, []int64{1, 2, 3, 4, 5})
+		So(v[:len(v1)], ShouldResemble, v1) // re-uses space
 	})
 
 	Convey("DifferenceSorted", t, func() {
