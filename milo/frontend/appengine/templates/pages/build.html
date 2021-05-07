@@ -19,6 +19,45 @@
   const blamelistLoaded = {{ if .BuildPage.BlamelistError }}false{{ else }}true{{ end }};
   const buildbucketId = '{{ .BuildPage.Id }}';
 </script>
+
+<script type="text/javascript" src="https://www.gstatic.com/feedback/js/help/prod/service/lazy.min.js"></script>
+<script>
+  const apiKey = ['luci-milo.appspot.com', 'ci.chromium.org'].includes(window.location.hostname)
+    ? 'AIzaSyDMYX77ySjK3Lib08BIjgvFn2Ur-rhAJvA'
+    : 'AIzaSyD3f5TrWDSbkvWe2ZavVHg5QaLqsFnqZHE';
+  const helpApi = window.help.service.Lazy.create(0, {apiKey, locale: 'en-US'});
+
+  if (!window.location.pathname.match(/^\/(raw|old)\//)) {
+    helpApi.requestSurvey({
+      triggerId: 'WoXSyHEYJ0py7BkUcZm0Qk4cewfw',
+      callback: (requestSurveyCallbackParam) => {
+        if (!requestSurveyCallbackParam.surveyData) {
+          return;
+        }
+
+        // Hide the feedback button temporarily.
+        document.querySelector('.__crdxFeedbackButton').style.display = 'none';
+
+        helpApi.presentSurvey({
+          surveyData: requestSurveyCallbackParam.surveyData,
+          colorScheme: 1,
+          customZIndex: 10000,
+          listener: {
+            surveyClosed: () => {
+              // Show the feedback button again.
+              document.querySelector('.__crdxFeedbackButton').style.display = '';
+            },
+            surveyPrompted: () => {
+              // Remove title so the instant tooltip won't show up.
+              document.querySelector('#google-hats-survey').title = '';
+            }
+          }
+        });
+      }
+    });
+  }
+</script>
+
 <script src="/static/common/js/build.js"></script>
 {{end}}
 
