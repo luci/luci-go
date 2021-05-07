@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5b4fb49_75403486",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T06:32:29Z",
+      "side": 1,
+      "message": "ptal",
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "664d906f_3f717235",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T06:32:29Z",
+      "side": 1,
+      "message": "The only reason this is need is for bot data. I\u0027m not sure how useful it is for CV. Maybe we can remove it and that would simplify the code a little bit here since we don\u0027t need to load extra run cls and compute list of external ids.",
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
