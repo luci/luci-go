@@ -1258,18 +1258,18 @@ identically named, but semantically different custom roles).
 ### luci.logdog {#luci.logdog}
 
 ```python
-luci.logdog(gs_bucket = None)
+luci.logdog()
 ```
 
 
 
 Defines configuration of the LogDog service for this project.
 
-Usually required for any non-trivial project.
+Usually required for any non-trivial project. It's highly recomended
+to avoid setting True on use_global_logdog_account. If it is False or
+unset, Logdog will use the project-scope credential for CloudLog export,
+and the ACL on the cloud logging project can be set tightly.
 
-#### Arguments {#luci.logdog-args}
-
-* **gs_bucket**: base Google Storage archival path, archive logs will be written to this bucket/path.
 
 
 

@@ -32,7 +32,11 @@ luci.project(
     ],
 )
 
-luci.logdog(gs_bucket = "chromium-luci-logdog")
+luci.logdog(
+    gs_bucket = "chromium-luci-logdog",
+    cloud_logging_project = "chromium-build-logs",
+    use_global_logdog_account = True,
+)
 
 luci.milo(
     logo = "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png",
@@ -936,6 +940,10 @@ lucicfg.emit(
 # === luci-logdog.cfg
 # reader_auth_groups: "all"
 # archive_gs_bucket: "chromium-luci-logdog"
+# cloud_logging_config {
+#   destination: "chromium-build-logs"
+#   use_global_logdog_account: true
+# }
 # ===
 #
 # === luci-milo.cfg
