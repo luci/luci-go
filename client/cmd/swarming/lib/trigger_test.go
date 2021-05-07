@@ -214,6 +214,7 @@ func TestTriggerParse_NoDimension(t *testing.T) {
 		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
+		So(err, ShouldBeNil)
 
 		err = c.Parse([]string(nil))
 		So(err, ShouldErrLike, "dimension")
@@ -229,6 +230,7 @@ func TestTriggerParse_NoIsolated(t *testing.T) {
 			"-server", "http://localhost:9050",
 			"-dimension", "os=Ubuntu",
 		})
+		So(err, ShouldBeNil)
 
 		err = c.Parse([]string(nil))
 		So(err, ShouldErrLike, "please specify command after '--'")
@@ -245,6 +247,7 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 			"-dimension", "os=Ubuntu",
 			"-isolated", "0123456789012345678901234567890123456789",
 		})
+		So(err, ShouldBeNil)
 
 		err = c.Parse([]string(nil))
 		So(err, ShouldErrLike, "please specify command after '--'")
@@ -261,6 +264,7 @@ func TestTriggerParse_RawArgs(t *testing.T) {
 			"-dimension", "os=Ubuntu",
 			"-isolated", "0123456789012345678901234567890123456789",
 		})
+		So(err, ShouldBeNil)
 
 		err = c.Parse([]string{"arg1", "arg2"})
 		So(err, ShouldBeNil)
@@ -339,8 +343,8 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 	Convey(`Basic`, t, func() {
 		c := triggerRun{}
 		c.Init(&testAuthFlags{})
-		c.dimensions.Set("foo=abc")
-		c.optionalDimension.Set("bar=def:60")
+		So(c.dimensions.Set("foo=abc"), ShouldBeNil)
+		So(c.optionalDimension.Set("bar=def:60"), ShouldBeNil)
 
 		optDimExp := int64(60)
 		totalExp := int64(660)
