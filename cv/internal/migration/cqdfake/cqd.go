@@ -284,11 +284,12 @@ func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.Run, cvInCharg
 		cqd.attempts = make(map[string]*migrationpb.Run, 1)
 	}
 	msg := fmt.Sprintf("Run %q | Attempt %q starting", r.Id, r.Attempt.Key)
+
 	if cvInCharge {
 		// TODO(tandrii): post Gerrit comment via CV for realistic behavior.
 	} else {
-		for _, cl := range r.Attempt.GerritChanges {
-			cqd.GFake.MutateChange(cl.Host, int(cl.Change), func(c *gf.Change) {
+		for _, cl := range r.Cls {
+			cqd.GFake.MutateChange(cl.Gc.Host, int(cl.Gc.Change), func(c *gf.Change) {
 				now := timestamppb.New(clock.Now(ctx))
 				c.Info.Messages = append(c.Info.Messages, &gerritpb.ChangeMessageInfo{
 					Message: msg,
@@ -332,7 +333,7 @@ func (cqd *CQDFake) finalizeRunViaCV(ctx context.Context, r *migrationpb.Run, ms
 	case cvbqpb.AttemptStatus_ABORTED, cvbqpb.AttemptStatus_FAILURE, cvbqpb.AttemptStatus_INFRA_FAILURE:
 		req.Action = migrationpb.ReportVerifiedRunRequest_ACTION_FAIL
 	case cvbqpb.AttemptStatus_SUCCESS:
-		if r.Attempt.GerritChanges[0].GetMode() == cvbqpb.Mode_FULL_RUN {
+		if r.Cls[0].Gc.Mode == cvbqpb.Mode_FULL_RUN {
 			req.Action = migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT
 		} else {
 			req.Action = migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK
@@ -348,15 +349,15 @@ func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.Run, msg str
 	case cvbqpb.AttemptStatus_ABORTED:
 		// don't touch Gerrit.
 	case cvbqpb.AttemptStatus_SUCCESS:
-		submit = r.Attempt.GerritChanges[0].GetMode() == cvbqpb.Mode_FULL_RUN
+		submit = r.Cls[0].Gc.GetMode() == cvbqpb.Mode_FULL_RUN
 		fallthrough
 	case cvbqpb.AttemptStatus_FAILURE, cvbqpb.AttemptStatus_INFRA_FAILURE:
-		for _, cl := range r.Attempt.GerritChanges {
-			cqd.GFake.MutateChange(cl.Host, int(cl.Change), func(c *gf.Change) {
+		for _, cl := range r.Cls {
+			cqd.GFake.MutateChange(cl.Gc.Host, int(cl.Gc.Change), func(c *gf.Change) {
 				now := timestamppb.New(clock.Now(ctx))
 				if submit {
 					c.Info.Status = gerritpb.ChangeStatus_MERGED
-					cl.SubmitStatus = cvbqpb.GerritChange_SUCCESS
+					cl.Gc.SubmitStatus = cvbqpb.GerritChange_SUCCESS
 				} else {
 					// For simplicity, remove all votes that may trigger CQ in our
 					// end-to-end tests with CQDFake.

@@ -107,6 +107,7 @@ message ReportRunsRequest {
 }
 
 message ReportFinishedRunRequest {
+  // From run.attempt fields, only `key` is set.
   Run run = 1;
 }
 
