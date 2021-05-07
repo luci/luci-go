@@ -15,6 +15,7 @@
 package migration
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -216,6 +217,99 @@ func TestFetchActiveRuns(t *testing.T) {
 			runs, err := fetchActiveRuns(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 0)
+		})
+	})
+}
+
+func TestFetchExcludedCLs(t *testing.T) {
+	t.Parallel()
+
+	Convey("FetchExcludedCLs", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const gHost = "example.com"
+		const lProject = "infra"
+
+		putCL := func(clid common.CLID) *changelist.CL {
+			cl := &changelist.CL{
+				ID: clid,
+				Snapshot: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: &gerritpb.ChangeInfo{
+								Number: 1000 + int64(clid),
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, cl), ShouldBeNil)
+			return cl
+		}
+		putRun := func(s run.Status, clids ...common.CLID) *run.Run {
+			clDigest := make([]byte, len(clids))
+			for i, clid := range clids {
+				clDigest[i] = byte(clid)
+				putCL(clid)
+			}
+			r := &run.Run{
+				ID:     common.MakeRunID(lProject, ct.Clock.Now(), 1, clDigest),
+				Status: s,
+				CLs:    clids,
+			}
+			So(datastore.Put(ctx, r), ShouldBeNil)
+			return r
+		}
+		putVerified := func(rs ...*run.Run) {
+			for _, r := range rs {
+				So(datastore.Put(ctx, &VerifiedCQDRun{ID: r.ID}), ShouldBeNil)
+			}
+		}
+		idsOf := func(cls []*cvbqpb.GerritChange) []int {
+			out := make([]int, len(cls))
+			for i, cl := range cls {
+				So(cl.GetHost(), ShouldResemble, gHost)
+				out[i] = int(cl.GetChange())
+			}
+			sort.Ints(out)
+			return out
+		}
+
+		Convey("no runs, nothing to exclude", func() {
+			cls, err := fetchExcludedCLs(ctx, lProject)
+			So(err, ShouldBeNil)
+			So(cls, ShouldHaveLength, 0)
+		})
+
+		Convey("with active Runs", func() {
+			r12 := putRun(run.Status_RUNNING, 1, 2)
+			r234 := putRun(run.Status_RUNNING, 2, 3, 4)
+			r5 := putRun(run.Status_WAITING_FOR_SUBMISSION, 5)
+			r6 := putRun(run.Status_SUBMITTING, 6)
+			r7 := putRun(run.Status_CANCELLED, 7)
+			r8 := putRun(run.Status_SUCCEEDED, 8)
+			r9 := putRun(run.Status_FAILED, 9)
+
+			Convey("no VerifiedCQDRun, so nothing to exclude", func() {
+				cls, err := fetchExcludedCLs(ctx, lProject)
+				So(err, ShouldBeNil)
+				So(cls, ShouldHaveLength, 0)
+			})
+			Convey("the expected case of some running CL having VerifiedCQDRun", func() {
+				putVerified(r12)
+				cls, err := fetchExcludedCLs(ctx, lProject)
+				So(err, ShouldBeNil)
+				So(idsOf(cls), ShouldResemble, []int{1001, 1002})
+			})
+			Convey("only non-ended Runs count", func() {
+				putVerified(r12, r234, r5, r6, r7, r8, r9)
+				cls, err := fetchExcludedCLs(ctx, lProject)
+				So(err, ShouldBeNil)
+				So(idsOf(cls), ShouldResemble, []int{1001, 1002, 1003, 1004, 1005, 1006})
+			})
 		})
 	})
 }

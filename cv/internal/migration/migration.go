@@ -83,6 +83,7 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 		return nil, err
 	}
 
+	// TODO(tandrii): handle case of empty RunID iff CQDaemon didn't know it yet.
 	rid := common.RunID(req.GetRun().GetId())
 	if rid == "" {
 		err = status.Error(codes.InvalidArgument, "empty RunID")
@@ -153,12 +154,31 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 	if err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
+	if req.GetLuciProject() == "" {
+		return nil, appstatus.Error(codes.InvalidArgument, "luci_project is required")
+	}
 
 	resp = &migrationpb.FetchActiveRunsResponse{}
 	if resp.Runs, err = fetchActiveRuns(ctx, req.GetLuciProject()); err != nil {
 		return nil, err
 	}
 	return resp, nil
+}
+
+// FetchExcludedCLs returns all CLs referenced by VerifiedCQDRun entities
+// corresponding to not yet finished Runs.
+func (m *MigrationServer) FetchExcludedCLs(ctx context.Context, req *migrationpb.FetchExcludedCLsRequest) (resp *migrationpb.FetchExcludedCLsResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return nil, err
+	}
+	if req.GetLuciProject() == "" {
+		return nil, appstatus.Error(codes.InvalidArgument, "luci_project is required")
+	}
+
+	resp = &migrationpb.FetchExcludedCLsResponse{}
+	resp.Cls, err = fetchExcludedCLs(ctx, req.GetLuciProject())
+	return resp, err
 }
 
 func (m *MigrationServer) checkAllowed(ctx context.Context) error {
