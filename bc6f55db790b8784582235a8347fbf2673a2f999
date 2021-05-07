@@ -130,6 +130,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6507ed91_a3e59f62",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T22:50:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f303716_f57ad240",
+      "range": {
+        "startLine": 32,
+        "startChar": 41,
+        "endLine": 32,
+        "endChar": 75
+      },
+      "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ed8e8405_3ce4810b",
@@ -226,6 +250,24 @@
       "side": 1,
       "message": "My _personal_ preference is to minimize the number of ways to configure the same thing; In this case:\n\n  {cloud_logging_project: \"\", use_global_logdog_account: False}\n  {cloud_logging_project: \"\", use_global_logdog_account: True}\n\nMean the same thing.\n\nAs an example of why this could be bad, someone could set use_global_logdog_account\u003dTrue, thinking that they\u0027ve made a change, but then not see anything in the generated cfg files and be confused and reach out for help. If this was an error, then they\u0027d immediately know why it\u0027s not right.",
       "parentUuid": "ecf72482_d134a62b",
+      "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "673e83b6_3bc167c5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T22:50:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "50f7b184_f5eeb3ed",
       "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

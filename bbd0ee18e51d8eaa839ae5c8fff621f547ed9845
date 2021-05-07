@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f7f0b53_40241bd8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T22:50:37Z",
+      "side": 1,
+      "message": "PTAL. thanks!",
+      "revId": "bbd0ee18e51d8eaa839ae5c8fff621f547ed9845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f6071702_38320f2c",
@@ -14,6 +31,30 @@
       "writtenOn": "2021-05-07T21:15:42Z",
       "side": 1,
       "message": "nit: wrap it in backticks so it looks nicer in Markdown",
+      "range": {
+        "startLine": 26,
+        "startChar": 29,
+        "endLine": 26,
+        "endChar": 54
+      },
+      "revId": "bbd0ee18e51d8eaa839ae5c8fff621f547ed9845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a067569c_57194220",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T22:50:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6071702_38320f2c",
       "range": {
         "startLine": 26,
         "startChar": 29,
@@ -47,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fdd601cd_7cffc463",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T22:50:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6de1c479_f239a2e9",
+      "range": {
+        "startLine": 27,
+        "startChar": 60,
+        "endLine": 27,
+        "endChar": 68
+      },
+      "revId": "bbd0ee18e51d8eaa839ae5c8fff621f547ed9845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4d89c8d8_bb4c04d0",
@@ -70,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "74fd32f4_103b8dce",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T22:50:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d89c8d8_bb4c04d0",
+      "range": {
+        "startLine": 28,
+        "startChar": 8,
+        "endLine": 28,
+        "endChar": 63
+      },
+      "revId": "bbd0ee18e51d8eaa839ae5c8fff621f547ed9845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cdb9b58c_21bdd4b1",
@@ -83,6 +172,30 @@
       "writtenOn": "2021-05-07T21:15:42Z",
       "side": 1,
       "message": "move it after \":\" somewhere\n\nIt breaks the parser that generates README.md, it expects lines to have format \"arg_name: \u003cdesc\u003e\".",
+      "range": {
+        "startLine": 35,
+        "startChar": 31,
+        "endLine": 35,
+        "endChar": 44
+      },
+      "revId": "bbd0ee18e51d8eaa839ae5c8fff621f547ed9845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8856562_0a6fda8e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T22:50:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cdb9b58c_21bdd4b1",
       "range": {
         "startLine": 35,
         "startChar": 31,
