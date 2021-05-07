@@ -177,10 +177,9 @@ type triageResult struct {
 		events eventbox.Events
 		cls    common.CLIDs
 	}
-	submissionCompletedEvents struct {
-		events  eventbox.Events
-		result  eventpb.SubmissionResult
-		attempt int32
+	submissionCompletedEvent struct {
+		event eventbox.Event
+		sc    *eventpb.SubmissionCompleted
 	}
 	cqdVerificationCompletedEvents eventbox.Events
 	nextReadyEventTime             time.Time
@@ -218,14 +217,11 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.clSubmittedEvents.events = append(tr.clSubmittedEvents.events, item)
 		tr.clSubmittedEvents.cls = append(tr.clSubmittedEvents.cls, common.CLID(e.GetClSubmitted().GetClid()))
 	case *eventpb.Event_SubmissionCompleted:
-		tr.submissionCompletedEvents.events = append(tr.submissionCompletedEvents.events, item)
-		switch sc := e.GetSubmissionCompleted(); {
-		case sc.GetAttempt() > tr.submissionCompletedEvents.attempt:
-			tr.submissionCompletedEvents.attempt = sc.GetAttempt()
-			tr.submissionCompletedEvents.result = sc.GetResult()
-		case sc.GetAttempt() == tr.submissionCompletedEvents.attempt:
-			panic(fmt.Errorf("received more than 1 SubmissionCompleted result for same submission attempt %d ", sc.GetAttempt()))
+		if tr.submissionCompletedEvent.sc != nil {
+			panic("received more than 1 SubmissionCompleted result")
 		}
+		tr.submissionCompletedEvent.event = item
+		tr.submissionCompletedEvent.sc = e.GetSubmissionCompleted()
 	case *eventpb.Event_CqdVerificationCompleted:
 		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
 	default:
@@ -242,12 +238,12 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.clSubmittedEvents.events, transitions)
 	}
-	if sc := tr.submissionCompletedEvents; len(sc.events) > 0 {
-		res, err := rp.handler.OnSubmissionCompleted(ctx, rs, sc.result, sc.attempt)
+	if sc := tr.submissionCompletedEvent.sc; sc != nil {
+		res, err := rp.handler.OnSubmissionCompleted(ctx, rs, sc)
 		if err != nil {
 			return nil, err
 		}
-		rs, transitions = applyResult(res, sc.events, transitions)
+		rs, transitions = applyResult(res, eventbox.Events{tr.submissionCompletedEvent.event}, transitions)
 	}
 	if len(tr.readyForSubmissionEvents) > 0 {
 		res, err := rp.handler.OnReadyForSubmission(ctx, rs)

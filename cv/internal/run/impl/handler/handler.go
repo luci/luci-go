@@ -65,9 +65,8 @@ type Handler interface {
 	// OnSubmissionCompleted acts on the submission result.
 	//
 	// If submission succeeds, mark run as `SUCCEEDED`. Otherwise, decides whether
-	// to retry submission or fail the run depending on the submission result and
-	// the attempt count.
-	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sr eventpb.SubmissionResult, attempt int32) (*Result, error)
+	// to retry submission or fail the run depending on the submission result.
+	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error)
 }
 
 // PM encapsulates interaction with Project Manager by the Run events handler.

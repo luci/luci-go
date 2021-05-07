@@ -108,14 +108,12 @@ message CLSubmitted {
 }
 
 message SubmissionCompleted {
-  // Result of this attempt to submit.
+  // Result of this submission.
   SubmissionResult result = 1;
-  // Attempt count.
-  int32 attempt = 2;
   // Reason for permanent failure to be sent to CV user.
   //
   // only set when result == FAILED_PERMANENT
-  string fatal_message = 3;
+  string fatal_message = 2;
 }
 
 enum SubmissionResult {
