@@ -235,6 +235,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e98cb588_22f72c88",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:38:01Z",
+      "side": 1,
+      "message": "I like this code, too. It\u0027s definitely more correct, though I can\u0027t say as trivial as panicing, so perhaps still worthy of a test.",
+      "parentUuid": "db7d7775_75288b77",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 78,
+        "endChar": 0
+      },
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "468d1e36_1c28a5eb",
         "filename": "resultdb/internal/invocations/misc.go",
         "patchSetId": 4
