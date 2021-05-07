@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "df2a724a_5f15eb5b",
+        "filename": "cv/internal/migration/cqdfake/cqd.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T21:00:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c089c888_5759b482",
+      "range": {
+        "startLine": 67,
+        "startChar": 46,
+        "endLine": 67,
+        "endChar": 54
+      },
+      "revId": "a8c68dadd2d0dd42ed352d207b5cb5412a5d2ef6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6219bd1a_a702b32e",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "71f4d1db_b9115d02",
+        "filename": "cv/internal/migration/cqdfake/cqd.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T21:00:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6219bd1a_a702b32e",
+      "range": {
+        "startLine": 85,
+        "startChar": 69,
+        "endLine": 85,
+        "endChar": 72
+      },
+      "revId": "a8c68dadd2d0dd42ed352d207b5cb5412a5d2ef6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4f00f945_046cae8c",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-05-07T20:11:46Z",
       "side": 1,
       "message": "SetCandidatesClbk",
+      "range": {
+        "startLine": 89,
+        "startChar": 3,
+        "endLine": 89,
+        "endChar": 6
+      },
+      "revId": "a8c68dadd2d0dd42ed352d207b5cb5412a5d2ef6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8aede3ef_d5452b43",
+        "filename": "cv/internal/migration/cqdfake/cqd.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T21:00:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f00f945_046cae8c",
       "range": {
         "startLine": 89,
         "startChar": 3,
