@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "144fd632_75274349",
+        "filename": "cv/internal/migration/cqdfake/cqd.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T20:26:57Z",
+      "side": 1,
+      "message": "nit: `\u003e` is probably more reliable",
+      "range": {
+        "startLine": 273,
+        "startChar": 26,
+        "endLine": 273,
+        "endChar": 28
+      },
+      "revId": "a105545f6a1fe24d427222a3c1199aaa69c06545",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
