@@ -16,13 +16,22 @@ package cqdfake
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/protobuf/proto"
 
+	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
@@ -108,6 +117,21 @@ func (cqd *CQDFake) SetVerifyClbk(clbk VerifyClbk) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// State examiners.
+
+// Returns sorted slice of attempt keys.
+func (cqd *CQDFake) ActiveAttemptKeys() []string {
+	cqd.m.Lock()
+	defer cqd.m.Unlock()
+	out := make([]string, 0, len(cqd.attempts))
+	for k := range cqd.attempts {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Implementation.
 
 func (cqd *CQDFake) serve(ctx context.Context) {
@@ -143,8 +167,85 @@ func (cqd *CQDFake) iteration(ctx context.Context) error {
 }
 
 func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
-	// TODO(tandrii): implement updating cqd.attempts based on fetchCandidates().
-	return nil
+	candidates, err := cqd.fetchCandidates(ctx, cvInCharge)
+	if err != nil {
+		return err
+	}
+
+	cqd.m.Lock()
+	defer cqd.m.Unlock()
+
+	seen := stringset.New(len(candidates))
+	for _, candidate := range candidates {
+		seen.Add(candidate.Attempt.Key)
+	}
+
+	var errs errors.MultiError
+	for k, a := range cqd.attempts {
+		if !seen.Has(k) {
+			if err := cqd.deleteLocked(ctx, a, cvInCharge); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+	for _, candidate := range candidates {
+		if _, exists := cqd.attempts[candidate.Attempt.Key]; !exists {
+			if err := cqd.addLocked(ctx, candidate, cvInCharge); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+	// TODO(tandrii): notify CV about active attempts.
+	if len(errs) == 0 {
+		return nil
+	}
+	return errs
+}
+
+func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*migrationpb.Run, error) {
+	if cvInCharge {
+		req := migrationpb.FetchActiveRunsRequest{LuciProject: cqd.LUCIProject}
+		resp, err := cqd.CV.FetchActiveRuns(cqd.migrationApiContext(ctx), &req)
+		return resp.GetRuns(), err
+	}
+
+	f := cqd.candidatesClbk.Load()
+	if f == nil {
+		logging.Warningf(ctx, "CQDaemon active, but no candaidate callback set. Forgot to call CQDFake.SetCandidatesClbk?")
+		return nil, nil
+	}
+	runs := f.(CandidatesClbk)()
+	if len(runs) == 0 {
+		return nil, nil
+	}
+
+	// Filter out all runs with CLs matching those which CV is still processing.
+	req := &migrationpb.FetchExcludedCLsRequest{LuciProject: cqd.LUCIProject}
+	exCls, err := cqd.CV.FetchExcludedCLs(cqd.migrationApiContext(ctx), req)
+	if err != nil {
+		return nil, err
+	}
+	clKey := func(cl *cvbqpb.GerritChange) string {
+		return fmt.Sprintf("%s/%d", cl.GetHost(), cl.GetChange())
+	}
+	exMap := stringset.New(len(exCls.GetCls()))
+	for _, cl := range exCls.GetCls() {
+		exMap.Add(clKey(cl))
+	}
+	out := runs[:0]
+	for _, r := range runs {
+		skip := false
+		for _, cl := range r.GetCls() {
+			if exMap.Has(clKey(cl.GetGc())) {
+				skip = true
+				break
+			}
+		}
+		if !skip {
+			out = append(out, r)
+		}
+	}
+	return out, nil
 }
 
 func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
@@ -152,8 +253,8 @@ func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
 	for k, before := range cqd.attempts {
 		after := before
 		cqd.m.Unlock()
-		if f := cqd.verifyClbk.Load().(VerifyClbk); f != nil {
-			after = f(before, cvInCharge)
+		if f := cqd.verifyClbk.Load(); f != nil {
+			after = f.(VerifyClbk)(before, cvInCharge)
 		}
 		cqd.m.Lock()
 		cqd.attempts[k] = after
@@ -161,4 +262,26 @@ func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
 	}
 	cqd.m.Unlock()
 	return nil
+}
+
+func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.Run, cvInCharge bool) error {
+	// TODO(tandrii): post Gerrit comment.
+	if cqd.attempts == nil {
+		cqd.attempts = make(map[string]*migrationpb.Run, 1)
+	}
+	cqd.attempts[r.Attempt.Key] = proto.Clone(r).(*migrationpb.Run)
+	return nil
+}
+
+func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.Run, cvInCharge bool) error {
+	delete(cqd.attempts, r.Attempt.Key)
+	// TODO(tandrii): post Gerrit comment and/or notify CV.
+	return nil
+}
+
+func (cqd *CQDFake) migrationApiContext(ctx context.Context) context.Context {
+	return auth.WithState(ctx, &authtest.FakeState{
+		Identity:             identity.Identity("project:" + cqd.LUCIProject),
+		PeerIdentityOverride: "user:cqdaemon@example.com",
+	})
 }
