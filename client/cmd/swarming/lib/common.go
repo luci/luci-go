@@ -31,7 +31,6 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -94,10 +93,9 @@ type swarmingService interface {
 }
 
 type swarmingServiceImpl struct {
-	client   *http.Client
-	service  *swarming.Service
-	worker   int
-	authOpts auth.Options
+	client  *http.Client
+	service *swarming.Service
+	worker  int
 }
 
 func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
