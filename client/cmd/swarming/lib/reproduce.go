@@ -31,7 +31,9 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	clientswarming "go.chromium.org/luci/client/swarming"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/grpc/prpc"
@@ -62,7 +64,7 @@ type reproduceRun struct {
 	// cipdDownloader is used in testing to insert a mock CIPD downloader.
 	cipdDownloader func(context.Context, string, map[string]ensure.PackageSlice) error
 	// createInvocation is used in testing to insert a mock method.
-	createInvocation func(context.Context, *http.Client, string, string) (*resultpb.Invocation, string, error)
+	createInvocation func(context.Context, *http.Client, string, string) (lucictx.Exported, func(), error)
 	resultsHost      string
 }
 
@@ -106,7 +108,7 @@ func (c *reproduceRun) Run(a subcommands.Application, args []string, env subcomm
 	return 0
 }
 
-func (c *reproduceRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
+func (c *reproduceRun) main(a subcommands.Application, args []string, env subcommands.Env) (err error) {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	defer cancel()
 	defer signals.HandleInterrupt(cancel)()
@@ -116,16 +118,25 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 		return err
 	}
 
-	cmd, exported, err := c.prepareTaskRequestEnvironment(ctx, args[0], service)
+	cmd, tr, err := c.prepareTaskRequestEnvironment(ctx, args[0], service)
 	if err != nil {
 		return errors.Annotate(err, "failed to create command from task request").Err()
 	}
 
-	if exported != nil {
+	// Enable ResultDB if necessary.
+	if tr.Resultdb != nil && tr.Resultdb.Enable {
+		authcli, err := c.authFlags.NewHTTPClient(ctx)
+		if err != nil {
+			return errors.Annotate(err, "failed to create client").Err()
+		}
+		exported, invFinalizer, err := c.createInvocation(ctx, authcli, tr.Realm, c.resultsHost)
+		if err != nil {
+			return errors.Annotate(err, "failed to create Invocation").Err()
+		}
 		exported.SetInCmd(cmd)
 		defer exported.Close()
+		defer invFinalizer()
 	}
-
 	return c.executeTaskRequestCommand(cmd)
 }
 
@@ -139,7 +150,7 @@ func (c *reproduceRun) executeTaskRequestCommand(cmd *exec.Cmd) error {
 	return nil
 }
 
-func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID string, service swarmingService) (*exec.Cmd, lucictx.Exported, error) {
+func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID string, service swarmingService) (*exec.Cmd, *swarming.SwarmingRpcsTaskRequest, error) {
 	tr, err := service.GetTaskRequest(ctx, taskID)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to get task request: %s", taskID).Err()
@@ -147,28 +158,6 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 	// In practice, later slices are less likely to assume that there is a named cache
 	// that is not available locally.
 	properties := tr.TaskSlices[len(tr.TaskSlices)-1].Properties
-
-	// Enable resultDB if necessary
-	var exported lucictx.Exported
-	if tr.Resultdb != nil && tr.Resultdb.Enable {
-		authcli, err := c.authFlags.NewHTTPClient(ctx)
-		if err != nil {
-			return nil, nil, errors.Annotate(err, "failed to create client").Err()
-		}
-		invocation, updateToken, err := c.createInvocation(ctx, authcli, tr.Realm, c.resultsHost)
-		if err != nil {
-			return nil, nil, errors.Annotate(err, "failed to create Invocation").Err()
-		}
-		exported, err = lucictx.Export(
-			lucictx.SetResultDB(ctx, &lucictx.ResultDB{
-				Hostname:          c.resultsHost,
-				CurrentInvocation: &lucictx.ResultDBInvocation{Name: invocation.Name, UpdateToken: updateToken},
-			}))
-		if err != nil {
-			return nil, nil, err
-		}
-		defer fmt.Printf("created invocation = %s\n", cli.MustReturnInvURL(c.resultsHost, invocation.Name))
-	}
 
 	execDir := c.work
 	if properties.RelativeCwd != "" {
@@ -259,7 +248,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 	cmd.Env = cmdEnvMap.Sorted()
 	cmd.Dir = execDir
 
-	return cmd, exported, nil
+	return cmd, tr, nil
 }
 
 func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[string]ensure.PackageSlice) error {
@@ -300,7 +289,7 @@ func prepareDir(dir string) error {
 	return nil
 }
 
-func createInvocation(ctx context.Context, authcli *http.Client, realm string, resultsHost string) (*resultpb.Invocation, string, error) {
+func createInvocation(ctx context.Context, authcli *http.Client, realm string, resultsHost string) (lucictx.Exported, func(), error) {
 	recorder := resultpb.NewRecorderPRPCClient(&prpc.Client{
 		C:       authcli,
 		Host:    resultsHost,
@@ -309,7 +298,7 @@ func createInvocation(ctx context.Context, authcli *http.Client, realm string, r
 
 	invID, err := cli.GenInvID(ctx)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 	md := metadata.MD{}
 	invocation, err := recorder.CreateInvocation(ctx, &resultpb.CreateInvocationRequest{
@@ -319,11 +308,28 @@ func createInvocation(ctx context.Context, authcli *http.Client, realm string, r
 		},
 	}, grpc.Header(&md))
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 	tks := md.Get("update-token")
 	if len(tks) != 1 {
-		return nil, "", errors.Reason("Missing header: update-token").Err()
+		return nil, nil, errors.Reason("Missing header: update-token").Err()
 	}
-	return invocation, tks[0], nil
+	ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
+		Hostname:          resultsHost,
+		CurrentInvocation: &lucictx.ResultDBInvocation{Name: invocation.Name, UpdateToken: tks[0]},
+	})
+	exported, err := lucictx.Export(ctx)
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "failed to export context").Err()
+	}
+
+	return exported, func() {
+		ctx = metadata.AppendToOutgoingContext(ctx, "update-token", tks[0])
+		if _, err := recorder.FinalizeInvocation(ctx, &resultpb.FinalizeInvocationRequest{
+			Name: invocation.Name,
+		}); err != nil {
+			logging.WithError(err).Warningf(ctx, "failed to finalize invocation")
+		}
+		fmt.Printf("created invocation = %s\n", cli.MustReturnInvURL(resultsHost, invocation.Name))
+	}, nil
 }
