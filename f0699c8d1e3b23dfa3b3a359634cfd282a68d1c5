@@ -70,6 +70,30 @@
       },
       "revId": "f0699c8d1e3b23dfa3b3a359634cfd282a68d1c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8090565f_2cf67865",
+        "filename": "cv/internal/migration/cqdfake/cqd.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T20:59:27Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "eeb8b691_c12afa4c",
+      "range": {
+        "startLine": 191,
+        "startChar": 55,
+        "endLine": 191,
+        "endChar": 62
+      },
+      "revId": "f0699c8d1e3b23dfa3b3a359634cfd282a68d1c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
