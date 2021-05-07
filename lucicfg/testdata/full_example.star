@@ -31,7 +31,11 @@ luci.project(
     ],
 )
 
-luci.logdog(gs_bucket = "chromium-luci-logdog")
+luci.logdog(
+    gs_bucket = "chromium-luci-logdog",
+    cloud_logging_project = "chromium-luci-logdog',
+    use_global_logdog_account = True,
+)
 
 luci.milo(
     logo = "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png",
