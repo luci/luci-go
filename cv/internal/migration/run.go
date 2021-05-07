@@ -16,7 +16,10 @@ package migration
 
 import (
 	"context"
+	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -33,21 +36,20 @@ import (
 )
 
 func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, error) {
-	runs := []run.Run{}
-	q := run.NewQueryWithLUCIProject(ctx, project).Eq("Status", run.Status_RUNNING)
-	if err := datastore.GetAll(ctx, q, &runs); err != nil {
-		return nil, errors.Annotate(err, "fetch Run entities").Tag(transient.Tag).Err()
-	}
-	numRuns := len(runs)
-	if numRuns == 0 {
+	runs, err := fetchRunsWithStatus(ctx, project, run.Status_RUNNING)
+	switch {
+	case err != nil:
+		return nil, err
+	case len(runs) == 0:
 		return nil, nil
 	}
-	poolSize := numRuns
+
+	poolSize := len(runs)
 	if poolSize > 20 {
 		poolSize = 20
 	}
-	ret := make([]*migrationpb.Run, numRuns)
-	err := parallel.WorkPool(poolSize, func(workCh chan<- func() error) {
+	ret := make([]*migrationpb.Run, len(runs))
+	err = parallel.WorkPool(poolSize, func(workCh chan<- func() error) {
 		for i, r := range runs {
 			i, r := i, r
 			workCh <- func() error {
@@ -110,6 +112,80 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, e
 		return nil, err
 	}
 	return ret, nil
+}
+
+func fetchExcludedCLs(ctx context.Context, project string) ([]*cvbqpb.GerritChange, error) {
+	// Find all Runs with active status.
+	// This requires multiple queries per each Run status, since each query must
+	// use inequality on LUCI project (part of Run ID).
+	var m sync.Mutex
+	eg, egCtx := errgroup.WithContext(ctx)
+	var activeRuns []*run.Run
+	for v := range run.Status_name {
+		status := run.Status(v)
+		if status < run.Status_RUNNING || status >= run.Status_ENDED_MASK {
+			continue
+		}
+		eg.Go(func() error {
+			switch runs, err := fetchRunsWithStatus(egCtx, project, status); {
+			case err != nil:
+				return err
+			case len(runs) > 0:
+				m.Lock()
+				activeRuns = append(activeRuns, runs...)
+				m.Unlock()
+			}
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	if len(activeRuns) == 0 {
+		return nil, nil
+	}
+
+	// Check which Runs have corresponding VerifiedCQDRun entities,
+	// and record CLID(s) of these Runs.
+	verified := make([]*datastore.Key, len(activeRuns))
+	for i, r := range activeRuns {
+		verified[i] = datastore.MakeKey(ctx, "migration.VerifiedCQDRun", string(r.ID))
+	}
+	exists, err := datastore.Exists(ctx, verified)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to check existence of VerifiedCQDRuns").Tag(transient.Tag).Err()
+	}
+	var excludedIDs common.CLIDs
+	for i, r := range activeRuns {
+		if !exists.Get(0, i) {
+			continue
+		}
+		excludedIDs = append(excludedIDs, r.CLs...)
+	}
+
+	// Convert CLIDs to Gerrit host/change for CQDaemon.
+	excludedIDs.Dedupe()
+	cls, err := changelist.LoadCLs(ctx, excludedIDs)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*cvbqpb.GerritChange, len(cls))
+	for i, cl := range cls {
+		ret[i] = &cvbqpb.GerritChange{
+			Host:   cl.Snapshot.GetGerrit().GetHost(),
+			Change: cl.Snapshot.GetGerrit().Info.GetNumber(),
+		}
+	}
+	return ret, nil
+}
+
+func fetchRunsWithStatus(ctx context.Context, project string, status run.Status) ([]*run.Run, error) {
+	var runs []*run.Run
+	q := run.NewQueryWithLUCIProject(ctx, project).Eq("Status", status)
+	if err := datastore.GetAll(ctx, q, &runs); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch Run entities").Tag(transient.Tag).Err()
+	}
+	return runs, nil
 }
 
 // VerifiedCQDRun is the Run reported by CQDaemon after verification
