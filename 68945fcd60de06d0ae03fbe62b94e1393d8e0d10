@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "59d976db_44677fc6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:33:55Z",
+      "side": 1,
+      "message": "Roberto, if you prefer, you can land this first with existing cron.Group,\nand we can debate DynamicGroup CL as a follow up.\n\nAFAIU, having this CL deployed to prod is way more important than handling changing MaxShard values.",
+      "revId": "68945fcd60de06d0ae03fbe62b94e1393d8e0d10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4c9d9048_d13b4250",
