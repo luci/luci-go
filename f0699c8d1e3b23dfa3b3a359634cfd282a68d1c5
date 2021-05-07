@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b18a8eb6_1b47a12c",
+        "filename": "cv/internal/migration/cqdfake/cqd.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T19:14:59Z",
+      "side": 1,
+      "message": "what about existing attempt. Should we override them?",
+      "range": {
+        "startLine": 191,
+        "startChar": 55,
+        "endLine": 191,
+        "endChar": 62
+      },
+      "revId": "f0699c8d1e3b23dfa3b3a359634cfd282a68d1c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
