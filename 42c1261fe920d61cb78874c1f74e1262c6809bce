@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "bda28581_d7926307",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-07T02:18:25Z",
+      "side": 1,
+      "message": "nit; wouldn\u0027t panic() generate some error logs? I\u0027d prefer to keep error logs clean, if possible.",
+      "parentUuid": "fa72ebf3_e8b53b73",
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "51715896_91604c16",
         "filename": "resultdb/internal/cron/cron.go",
         "patchSetId": 4
