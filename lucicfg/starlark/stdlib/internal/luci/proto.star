@@ -30,6 +30,7 @@ load("@proto//go.chromium.org/luci/common/proto/realms/realms_config.proto", _re
 load("@proto//go.chromium.org/luci/cv/api/config/legacy/tricium.proto", _tricium_pb = "cv.legacy.tricium")
 load("@proto//go.chromium.org/luci/cv/api/config/v2/cq.proto", _cq_pb = "cq.config")
 load("@proto//go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", _logdog_pb = "svcconfig")
+load("@proto//go.chromium.org/luci/logdog/api/config/svcconfig/cloud_logging.proto", _logdog_cloud_logging_pb = "svcconfig")
 load("@proto//go.chromium.org/luci/luci_notify/api/config/notify.proto", _notify_pb = "notify")
 load("@proto//go.chromium.org/luci/milo/api/config/project.proto", _milo_pb = "milo")
 load("@proto//go.chromium.org/luci/resultdb/proto/v1/invocation.proto", _resultdb_pb = "luci.resultdb.v1")
@@ -41,6 +42,7 @@ common_pb = _common_pb
 config_pb = _config_pb
 cq_pb = _cq_pb
 logdog_pb = _logdog_pb
+logdog_cloud_logging_pb = _logdog_cloud_logging_pb
 milo_pb = _milo_pb
 notify_pb = _notify_pb
 predicate_pb = _predicate_pb
