@@ -70,9 +70,11 @@ func TestCQDFake(t *testing.T) {
 				res = []*migrationpb.Run{
 					{
 						Attempt: &bqpb.Attempt{
-							Key:           "to-abort",
-							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 1, Mode: bqpb.Mode_DRY_RUN}},
-							Status:        bqpb.AttemptStatus_STARTED,
+							Key:    "to-abort",
+							Status: bqpb.AttemptStatus_STARTED,
+						},
+						Cls: []*migrationpb.RunCL{
+							{Gc: &cvbqpb.GerritChange{Host: gHost, Change: 1, Mode: bqpb.Mode_DRY_RUN}},
 						},
 					},
 				}
@@ -80,9 +82,11 @@ func TestCQDFake(t *testing.T) {
 				res = []*migrationpb.Run{
 					{
 						Attempt: &bqpb.Attempt{
-							Key:           "to-submit",
-							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 2, Mode: bqpb.Mode_FULL_RUN}},
-							Status:        bqpb.AttemptStatus_STARTED,
+							Key:    "to-submit",
+							Status: bqpb.AttemptStatus_STARTED,
+						},
+						Cls: []*migrationpb.RunCL{
+							{Gc: &cvbqpb.GerritChange{Host: gHost, Change: 2, Mode: bqpb.Mode_FULL_RUN}},
 						},
 					},
 				}
@@ -90,9 +94,11 @@ func TestCQDFake(t *testing.T) {
 				res = []*migrationpb.Run{
 					{
 						Attempt: &bqpb.Attempt{
-							Key:           "to-fail",
-							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 3, Mode: bqpb.Mode_QUICK_DRY_RUN}},
-							Status:        bqpb.AttemptStatus_STARTED,
+							Key:    "to-fail",
+							Status: bqpb.AttemptStatus_STARTED,
+						},
+						Cls: []*migrationpb.RunCL{
+							{Gc: &cvbqpb.GerritChange{Host: gHost, Change: 3, Mode: bqpb.Mode_QUICK_DRY_RUN}},
 						},
 					},
 				}
