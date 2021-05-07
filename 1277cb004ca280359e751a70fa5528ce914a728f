@@ -39,6 +39,30 @@
       },
       "revId": "1277cb004ca280359e751a70fa5528ce914a728f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c5847bc_faaf513c",
+        "filename": "cv/internal/cvtesting/e2e/e2e.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T23:10:39Z",
+      "side": 1,
+      "message": "Good idea. I don\u0027t have any other uses for it yet.",
+      "parentUuid": "7bce59c4_bb6d6b95",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 92,
+        "endChar": 2
+      },
+      "revId": "1277cb004ca280359e751a70fa5528ce914a728f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
