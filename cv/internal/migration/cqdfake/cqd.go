@@ -22,22 +22,24 @@ import (
 	"sync/atomic"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/protobuf/proto"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 )
-
-const ClockTag = "cqdfake"
 
 type CQDFake struct {
 	LUCIProject string
@@ -135,7 +137,7 @@ func (cqd *CQDFake) ActiveAttemptKeys() []string {
 // Implementation.
 
 func (cqd *CQDFake) serve(ctx context.Context) {
-	timer := clock.NewTimer(clock.Tag(ctx, ClockTag))
+	timer := clock.NewTimer(clock.Tag(ctx, "cqdfake"))
 	for {
 		timer.Reset(10 * time.Second)
 		select {
@@ -183,6 +185,7 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	var errs errors.MultiError
 	for k, a := range cqd.attempts {
 		if !seen.Has(k) {
+			a.Attempt.Status = cvbqpb.AttemptStatus_ABORTED
 			if err := cqd.deleteLocked(ctx, a, cvInCharge); err != nil {
 				errs = append(errs, err)
 			}
@@ -195,11 +198,18 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 			}
 		}
 	}
-	// TODO(tandrii): notify CV about active attempts.
-	if len(errs) == 0 {
-		return nil
+	if len(errs) > 0 {
+		return errs
 	}
-	return errs
+
+	req := &migrationpb.ReportRunsRequest{
+		Runs: make([]*migrationpb.Run, 0, len(cqd.attempts)),
+	}
+	for _, a := range cqd.attempts {
+		req.Runs = append(req.Runs, a)
+	}
+	_, err = cqd.CV.ReportRuns(cqd.migrationApiContext(ctx), req)
+	return err
 }
 
 func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*migrationpb.Run, error) {
@@ -250,6 +260,8 @@ func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*mi
 
 func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
 	cqd.m.Lock()
+	defer cqd.m.Unlock()
+
 	for k, before := range cqd.attempts {
 		after := before
 		cqd.m.Unlock()
@@ -258,25 +270,113 @@ func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
 		}
 		cqd.m.Lock()
 		cqd.attempts[k] = after
-		// TODO(tandrii): act upon after.Status.
+
+		if after.Attempt.Status > cvbqpb.AttemptStatus_STARTED {
+			if err := cqd.deleteLocked(ctx, after, cvInCharge); err != nil {
+				return err
+			}
+		}
 	}
-	cqd.m.Unlock()
 	return nil
 }
 
 func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.Run, cvInCharge bool) error {
-	// TODO(tandrii): post Gerrit comment.
 	if cqd.attempts == nil {
 		cqd.attempts = make(map[string]*migrationpb.Run, 1)
 	}
+	msg := fmt.Sprintf("Run %q | Attempt %q starting", r.Id, r.Attempt.Key)
+	if cvInCharge {
+		// TODO(tandrii): post Gerrit comment via CV for realistic behavior.
+	} else {
+		for _, cl := range r.Attempt.GerritChanges {
+			cqd.GFake.MutateChange(cl.Host, int(cl.Change), func(c *gf.Change) {
+				now := timestamppb.New(clock.Now(ctx))
+				c.Info.Messages = append(c.Info.Messages, &gerritpb.ChangeMessageInfo{
+					Message: msg,
+					Date:    now,
+					Author:  cqdGerritUser,
+				})
+				c.Info.Updated = now
+			})
+		}
+	}
 	cqd.attempts[r.Attempt.Key] = proto.Clone(r).(*migrationpb.Run)
+	logging.Debugf(ctx, "CQD: %s", msg)
 	return nil
 }
 
 func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.Run, cvInCharge bool) error {
+	msg := fmt.Sprintf(
+		"Run %q | Attempt %q finished with %s %s.",
+		r.Id, r.Attempt.Key, r.Attempt.Status, r.Attempt.Substatus)
+
+	var err error
+	if cvInCharge {
+		err = cqd.finalizeRunViaCV(ctx, r, msg)
+	} else {
+		err = cqd.finalizeRun(ctx, r, msg)
+	}
+	if err != nil {
+		return err
+	}
 	delete(cqd.attempts, r.Attempt.Key)
-	// TODO(tandrii): post Gerrit comment and/or notify CV.
+	logging.Debugf(ctx, "CQD: %s", msg)
 	return nil
+}
+
+func (cqd *CQDFake) finalizeRunViaCV(ctx context.Context, r *migrationpb.Run, msg string) error {
+	req := &migrationpb.ReportVerifiedRunRequest{
+		FinalMessage: msg,
+		Run:          r,
+	}
+	switch r.Attempt.Status {
+	case cvbqpb.AttemptStatus_ABORTED, cvbqpb.AttemptStatus_FAILURE, cvbqpb.AttemptStatus_INFRA_FAILURE:
+		req.Action = migrationpb.ReportVerifiedRunRequest_ACTION_FAIL
+	case cvbqpb.AttemptStatus_SUCCESS:
+		if r.Attempt.GerritChanges[0].GetMode() == cvbqpb.Mode_FULL_RUN {
+			req.Action = migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT
+		} else {
+			req.Action = migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK
+		}
+	}
+	_, err := cqd.CV.ReportVerifiedRun(cqd.migrationApiContext(ctx), req)
+	return err
+}
+
+func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.Run, msg string) error {
+	submit := false
+	switch r.Attempt.Status {
+	case cvbqpb.AttemptStatus_ABORTED:
+		// don't touch Gerrit.
+	case cvbqpb.AttemptStatus_SUCCESS:
+		submit = r.Attempt.GerritChanges[0].GetMode() == cvbqpb.Mode_FULL_RUN
+		fallthrough
+	case cvbqpb.AttemptStatus_FAILURE, cvbqpb.AttemptStatus_INFRA_FAILURE:
+		for _, cl := range r.Attempt.GerritChanges {
+			cqd.GFake.MutateChange(cl.Host, int(cl.Change), func(c *gf.Change) {
+				now := timestamppb.New(clock.Now(ctx))
+				if submit {
+					c.Info.Status = gerritpb.ChangeStatus_MERGED
+					cl.SubmitStatus = cvbqpb.GerritChange_SUCCESS
+				} else {
+					// For simplicity, remove all votes that may trigger CQ in our
+					// end-to-end tests with CQDFake.
+					gf.ResetVotes(c.Info, trigger.CQLabelName, "Quick-Dry-Run")
+					c.Info.Messages = append(c.Info.Messages, &gerritpb.ChangeMessageInfo{
+						Message: msg,
+						Date:    now,
+						Author:  cqdGerritUser,
+					})
+				}
+				c.Info.Updated = now
+			})
+		}
+	}
+
+	req := &migrationpb.ReportFinishedRunRequest{Run: proto.Clone(r).(*migrationpb.Run)}
+	_, err := cqd.CV.ReportFinishedRun(cqd.migrationApiContext(ctx), req)
+	// TODO(tandrii): send event to BQ.
+	return err
 }
 
 func (cqd *CQDFake) migrationApiContext(ctx context.Context) context.Context {
@@ -284,4 +384,9 @@ func (cqd *CQDFake) migrationApiContext(ctx context.Context) context.Context {
 		Identity:             identity.Identity("project:" + cqd.LUCIProject),
 		PeerIdentityOverride: "user:cqdaemon@example.com",
 	})
+}
+
+var cqdGerritUser = &gerritpb.AccountInfo{
+	Email:     "cqdaemon@example.com",
+	AccountId: 538183838,
 }

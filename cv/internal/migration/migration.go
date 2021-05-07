@@ -66,7 +66,6 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 
 	cls := 0
 	for _, r := range req.Runs {
-		project = r.Attempt.LuciProject
 		cls += len(r.Attempt.GerritChanges)
 	}
 	logging.Infof(ctx, "CQD[%s] is working on %d attempts %d CLs right now", project, len(req.Runs), cls)

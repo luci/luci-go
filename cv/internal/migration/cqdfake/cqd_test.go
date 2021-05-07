@@ -21,10 +21,15 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"google.golang.org/protobuf/proto"
+
 	bqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,6 +45,12 @@ func TestCQDFake(t *testing.T) {
 
 		const lProject = "test"
 		const gHost = "gerrit.example.com"
+		ct.GFake.AddFrom(gf.WithCIs(
+			gHost, gf.ACLPublic(),
+			gf.CI(1, gf.CQ(+1, ct.Clock.Now(), "user-1")),
+			gf.CI(2, gf.CQ(+2, ct.Clock.Now(), "user-2")),
+			gf.CI(3, gf.CQ(+1, ct.Clock.Now(), "user-3"), gf.Vote("Quick-Dry-Run", +1, ct.Clock.Now(), "user-3")),
+		))
 		cqd := CQDFake{
 			LUCIProject: lProject,
 			CV:          &migration.MigrationServer{},
@@ -59,8 +70,9 @@ func TestCQDFake(t *testing.T) {
 				res = []*migrationpb.Run{
 					{
 						Attempt: &bqpb.Attempt{
-							Key:           "beef01",
-							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 1}},
+							Key:           "to-abort",
+							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 1, Mode: bqpb.Mode_DRY_RUN}},
+							Status:        bqpb.AttemptStatus_STARTED,
 						},
 					},
 				}
@@ -68,18 +80,28 @@ func TestCQDFake(t *testing.T) {
 				res = []*migrationpb.Run{
 					{
 						Attempt: &bqpb.Attempt{
-							Key:           "beef02",
-							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 2}},
+							Key:           "to-submit",
+							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 2, Mode: bqpb.Mode_FULL_RUN}},
+							Status:        bqpb.AttemptStatus_STARTED,
 						},
 					},
 				}
 			case 3:
+				res = []*migrationpb.Run{
+					{
+						Attempt: &bqpb.Attempt{
+							Key:           "to-fail",
+							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 3, Mode: bqpb.Mode_QUICK_DRY_RUN}},
+							Status:        bqpb.AttemptStatus_STARTED,
+						},
+					},
+				}
 			case 4:
 				close(done4iterations)
 			default:
-				// Don't record results of >4th iterations, which may occur since there
-				// is a race between closing done4iterations channel and cqd.Close()
-				// taking effect.
+				// Don't record results of the rest of iterations, which may occur since
+				// there is a race between closing done4iterations channel and
+				// cqd.Close() taking effect.
 				return nil
 			}
 			keys := strings.Join(cqd.ActiveAttemptKeys(), " ")
@@ -88,7 +110,15 @@ func TestCQDFake(t *testing.T) {
 		})
 
 		cqd.SetVerifyClbk(func(r *migrationpb.Run, _ bool) *migrationpb.Run {
-			progress = append(progress, fmt.Sprintf("verify %s", r.GetAttempt().GetKey()))
+			k := r.GetAttempt().GetKey()
+			progress = append(progress, "verify "+k)
+			r = proto.Clone(r).(*migrationpb.Run)
+			switch k {
+			case "to-submit":
+				r.GetAttempt().Status = bqpb.AttemptStatus_SUCCESS
+			case "to-fail":
+				r.GetAttempt().Status = bqpb.AttemptStatus_FAILURE
+			}
 			return r
 		})
 
@@ -107,12 +137,26 @@ func TestCQDFake(t *testing.T) {
 		cqd.Close()
 
 		So(progress, ShouldResemble, []string{
-			`candidates #1 (prior: [])`,
-			`verify beef01`,
-			`candidates #2 (prior: [beef01])`,
-			`verify beef02`,
-			`candidates #3 (prior: [beef02])`,
-			`candidates #4 (prior: [])`,
+			"candidates #1 (prior: [])",
+			"verify to-abort", // noop, "to-abort" is left for the next loop
+
+			"candidates #2 (prior: [to-abort])",
+			"verify to-submit", // "to-abort" is gone before verification
+
+			// to-submit was gone from `attempts` before the start of this loop
+			"candidates #3 (prior: [])",
+			"verify to-fail",
+
+			// to-fail was gone from `attempts` before the start of this loop
+			"candidates #4 (prior: [])",
 		})
+
+		// Change #1 was aborted, so it should not be touched.
+		So(gf.NonZeroVotes(ct.GFake.GetChange(gHost, 1).Info, trigger.CQLabelName), ShouldNotBeEmpty)
+		// Change #2 was submitted.
+		So(ct.GFake.GetChange(gHost, 2).Info.Status, ShouldResemble, gerritpb.ChangeStatus_MERGED)
+		// Change #3 failed, so its votes must be removed.
+		So(gf.NonZeroVotes(ct.GFake.GetChange(gHost, 3).Info, trigger.CQLabelName), ShouldBeEmpty)
+		So(gf.NonZeroVotes(ct.GFake.GetChange(gHost, 3).Info, "Quick-Dry-Run"), ShouldBeEmpty)
 	})
 }
