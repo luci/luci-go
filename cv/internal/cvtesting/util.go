@@ -396,6 +396,11 @@ func (t *Test) setUpTestClock(ctx context.Context) context.Context {
 	ignoreIf := stringset.NewFromSlice(
 		// Used in clock.WithTimeout(ctx) | clock.WithDeadline(ctx).
 		clock.ContextDeadlineTag,
+		// Used by CQDFake to wait until the next loop.
+		// NOTE: can't import cqdfake package const here due to ciruclar import,
+		// and while it's possible to refactor this, we expect to delete cqdfake
+		// relatively soon.
+		"cqdfake",
 	)
 	t.Clock.SetTimerCallback(func(dur time.Duration, timer clock.Timer) {
 		tags := testclock.GetTags(timer)
