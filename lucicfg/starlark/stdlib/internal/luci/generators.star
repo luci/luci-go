@@ -25,6 +25,7 @@ load("@stdlib//internal/luci/lib/realms.star", "realms")
 load(
     "@stdlib//internal/luci/proto.star",
     "buildbucket_pb",
+    "clexport_pb",
     "common_pb",
     "config_pb",
     "cq_pb",
@@ -227,11 +228,19 @@ def gen_logdog_cfg(ctx):
         elif a.role == acl.LOGDOG_WRITER:
             writers.append(a.group)
 
+    cl_cfg = None
+    if opts.props.cloud_logging_project:
+        cl_cfg = clexport_pb.CloudLoggingConfig(
+            destination = opts.props.cloud_logging_project,
+            use_global_logdog_account = opts.props.use_global_logdog_account,
+        )
+
     logdog = get_service("logdog", "defining LogDog options")
     set_config(ctx, logdog.cfg_file, logdog_pb.ProjectConfig(
         reader_auth_groups = readers,
         writer_auth_groups = writers,
         archive_gs_bucket = opts.props.gs_bucket,
+        cloud_logging_config = cl_cfg,
     ))
 
 ################################################################################

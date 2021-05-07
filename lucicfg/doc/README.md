@@ -1256,7 +1256,7 @@ identically named, but semantically different custom roles).
 ### luci.logdog {#luci.logdog}
 
 ```python
-luci.logdog(gs_bucket = None)
+luci.logdog(gs_bucket = None, cloud_logging_project = None, use_global_logdog_account = None)
 ```
 
 
@@ -1268,6 +1268,8 @@ Usually required for any non-trivial project.
 #### Arguments {#luci.logdog-args}
 
 * **gs_bucket**: base Google Storage archival path, archive logs will be written to this bucket/path.
+* **cloud_logging_project**: the name of the Cloud project to export logs.
+* **use_global_logdog_account**: If True, the global logdog service account will be used to export logs to the Cloud Logging project. If False, the project account will be used.
 
 
 
