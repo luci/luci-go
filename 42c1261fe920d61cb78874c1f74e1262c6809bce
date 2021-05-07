@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa72ebf3_e8b53b73",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:10:52Z",
+      "side": 1,
+      "message": "the code is now more complex, ideally it should have a test for DynamicGroup.\nHowever, the functions here don\u0027t use our clock.Timer for waiting, which makes writing a *fast* test that doesn\u0027t actually wait 30s between iterations harder.\n\nSo, i see 3 alternatives:\n\n1. :fingerscrossed: and ignore testing\n\n2. make the rest of the code testable, either via use of our clock library OR in some other way\n\n3. radically simplify DynamicGroup code like, e.g. like this:\n  don\u0027t loop in DynamicGroup, but change `pollReplicas` to panic if # of replicas change.\n\nWDYT?",
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51715896_91604c16",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:10:52Z",
+      "side": 1,
+      "message": "strictly speaking, this is racy.\n\n`replicas` must be computed at the beginning of each DynamicGroup loop,\nand then passed to both poolReplicas \u0026 Group invocations.",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 30
+      },
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17cbdd2b_12e16e9e",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:10:52Z",
+      "side": 1,
+      "message": "this will block even if ctx is cancelled.\nbetter:\n\nselect {\ncase \u003c-time.After(...):\n  if replicasFunc...\ncase \u003c-ctx.Done():\n  ...\n}",
+      "range": {
+        "startLine": 37,
+        "startChar": 2,
+        "endLine": 37,
+        "endChar": 30
+      },
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d122409_ed30d5c2",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:10:52Z",
+      "side": 1,
+      "message": "nit: consider naming this type",
+      "range": {
+        "startLine": 56,
+        "startChar": 13,
+        "endLine": 56,
+        "endChar": 57
+      },
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9c535f0_5abf88ab",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:10:52Z",
+      "side": 1,
+      "message": "consider:\n\nfor {\n  derivedCtx, cancel :\u003d context.WithCancel(ctx)\n  defer cancel()\n  resume :\u003d false\n  // if the number of replicas changes, this will cancel the context and\n  // set the continuation flag.\n  go pollReplicas(derivedCtx, replicasFunc, cancel, \u0026resume)\n  Group(derivedCtx, replicasFunc(derivedCtx), minInterval, payloadFunc)\n  if !resume {break}\n}",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 6
+      },
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "468d1e36_1c28a5eb",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:10:52Z",
+      "side": 1,
+      "message": "I don\u0027t think all changes are good.\n\nBad ones:\n1. panicing at the start of the cron process was OK-ish, because a new process would be auto-deployed by k8s, effectively doing a retry.\n   OTOH, the new function can accidentally panic some cron-unrelated code, yet would look just fine at callsite, so code reviewers are unlikely to notice this.\n\n2. Cancelled context results in Shards constant?\nIt\u0027s non unusual to have several contexts in 1 go function (e.g. temp inner constant with short lifetime), whereby this func can be called with already cancelled context (prob. by mistake), yet the rest of the caller continues working with not-yet-canceled context and everything will look fine.\n\n\nGood one:\nHandling `spanutil.ErrNoResults` case specifically.\n\nSo, how about\n\n    // CurrentMaxShard returns the highest shard id in the Invocations table,\n    // or the Shards constant if table is empty.\n    CurrentMaxShard(ctx context.Context) (int, error)\n\n\nThen, the cron func can handle errors this way:\n  * on first CurrentMaxShard call, panic (as before)\n  * on refreshes, treat error as transient and retry after some time",
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
