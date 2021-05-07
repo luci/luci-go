@@ -30,6 +30,7 @@ load(
     "config_pb",
     "cq_pb",
     "logdog_pb",
+    "logdog_cloud_logging_pb",
     "milo_pb",
     "notify_pb",
     "scheduler_pb",
@@ -230,11 +231,19 @@ def gen_logdog_cfg(ctx):
         elif a.role == acl.LOGDOG_WRITER:
             writers.append(a.group)
 
+    cl_cfg = None
+    if opts.props.cloud_logging_project:
+        cl_cfg = logdog_cloud_logging_pb.CloudLoggingConfig(
+            destination = opts.props.cloud_logging_project,
+            use_global_logdog_account = opts.props.use_global_logdog_account,
+        )
+
     logdog = get_service("logdog", "defining LogDog options")
     set_config(ctx, logdog.cfg_file, logdog_pb.ProjectConfig(
         reader_auth_groups = readers,
         writer_auth_groups = writers,
         archive_gs_bucket = opts.props.gs_bucket,
+        cloud_logging_config = cl_cfg,
     ))
 
 ################################################################################
