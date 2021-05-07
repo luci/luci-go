@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e97950ee_4cf017a8",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-07T02:23:55Z",
+      "side": 1,
+      "message": "Btw, I couldn\u0027t fall asleep and thought of what I think is a more graceful DynamicGroup. That said, it more complicated than the simple-stupid-panicing solution above that is probably good enough.\n\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\nvar workers []struct{\n  cancel func()\n  done chan struct{}\n}\n\nfor{\n  sleepFor :\u003d 60 * time.Second\n  switch replicas, err :\u003d replicasFunc(ctx);\n  case ctx.Err() !\u003d nil:\n    for _, w :\u003d range workers {\n      \u003c-w.done\n    }\n    return\n  case err !\u003d nil {\n    logging.Errorf(...)\n    sleepFor \u003d 10 * time.Second // retry sooner than default\n\n  case replicas \u003c len(workers):\n    // start new workers\n    for len(workers) \u003c replicas {\n      i :\u003d len(workers)\n      done :\u003d make(chan struct{})\n      wCtx, cancel :\u003d context.WithCancel(ctx)\n      workers \u003d append(workers, {done, cancel})\n      wCtx :\u003d logging.SetField(wCtx, \"cron_replica\", i)\n      go func(){\n        defer close(done)\n        Run(wCtx, minInterval, func(ctx context.Context) error {\n          return f(ctx, i)\n        })\n      }()\n    }\n  case replicas \u003e len(workers):\n    // stop excessive workers\n    for i :\u003d replicas; i \u003c len(workers); i++ {\n      workers[i].cancel()\n    }\n    for i :\u003d replicas; i \u003c len(workers); i++ {\n      \u003c-workers[i].done\n    }\n    workers \u003d workers[:replicas]\n  }\n\n\n  select{\n  case \u003c-time.After(sleepFor):\n  case \u003c-ctx.Done():\n  }\n}\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d",
+      "parentUuid": "fa72ebf3_e8b53b73",
+      "revId": "42c1261fe920d61cb78874c1f74e1262c6809bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "51715896_91604c16",
         "filename": "resultdb/internal/cron/cron.go",
         "patchSetId": 4
