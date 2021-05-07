@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a71c26c_bb345278",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-07T23:33:05Z",
+      "side": 1,
+      "message": "PTAL\n\nI tested it by:\n1. Building `rdb` binary with go1.16 without the hack.\n2. Running it on OSX 10.11.6 machine and observing a crash.\n2. Redoing the same with the hack, confirming `rdb stream` works as expected.\n\nLUCI_GO_CHECK_HACKS exists for quickly checking the hack is linked in.",
+      "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
