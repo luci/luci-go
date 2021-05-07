@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7bc64a1_4b65eb5b",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-07T19:09:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c9d9048_d13b4250",
+      "range": {
+        "startLine": 63,
+        "startChar": 12,
+        "endLine": 63,
+        "endChar": 13
+      },
+      "revId": "68945fcd60de06d0ae03fbe62b94e1393d8e0d10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4698fc77_6ce01a7e",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-07T02:32:38Z",
       "side": 1,
       "message": "https://pkg.go.dev/cloud.google.com/go/spanner#RowIterator.Do (used by spanutil.Query) calls callback on each rows sequentially. So, you shouldn\u0027t need atomic here, just rowCount++ should work.",
+      "range": {
+        "startLine": 86,
+        "startChar": 2,
+        "endLine": 86,
+        "endChar": 37
+      },
+      "revId": "68945fcd60de06d0ae03fbe62b94e1393d8e0d10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea5ff99d_8b14b455",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-07T19:09:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4698fc77_6ce01a7e",
       "range": {
         "startLine": 86,
         "startChar": 2,
