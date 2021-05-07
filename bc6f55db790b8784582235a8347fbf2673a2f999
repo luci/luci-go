@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "970a1a11_41880237",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-07T19:58:43Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "86bbf8f3_b3d3d806",
@@ -60,6 +77,23 @@
         "endLine": 33,
         "endChar": 7
       },
+      "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9edf3e7_d5787fdf",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/logdog.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-07T19:58:43Z",
+      "side": 1,
+      "message": "should we also ensure this is False if cloud_logging_project is None?",
       "revId": "bc6f55db790b8784582235a8347fbf2673a2f999",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
