@@ -138,17 +138,15 @@ func TestOnReadyForSubmission(t *testing.T) {
 			rs.Run.Status = run.Status_SUBMITTING
 			Convey("Continue submission if TaskID matches and within deadline", func() {
 				rs.Run.Submission = &run.Submission{
-					Deadline:     timestamppb.New(now.Add(10 * time.Minute)), // within deadline
-					AttemptCount: 1,
-					TaskId:       "task-foo", // same task ID as the current task
+					Deadline: timestamppb.New(now.Add(10 * time.Minute)), // within deadline
+					TaskId:   "task-foo",                                 // same task ID as the current task
 				}
 				res, err := h.OnReadyForSubmission(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Deadline:     timestamppb.New(now.Add(10 * time.Minute)),
-					AttemptCount: 1,
-					TaskId:       "task-foo",
+					Deadline: timestamppb.New(now.Add(10 * time.Minute)),
+					TaskId:   "task-foo",
 				}) // unchanged
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
@@ -157,9 +155,8 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 			Convey("Sends Poke if TaskID doesn't match and within deadline", func() {
 				rs.Run.Submission = &run.Submission{
-					Deadline:     timestamppb.New(now.Add(10 * time.Minute)), // within deadline
-					AttemptCount: 1,
-					TaskId:       "task-bar",
+					Deadline: timestamppb.New(now.Add(10 * time.Minute)), // within deadline
+					TaskId:   "task-bar",
 				}
 				res, err := h.OnReadyForSubmission(ctx, rs)
 				So(err, ShouldBeNil)
@@ -172,9 +169,8 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 			Convey("Re-acquire submit queue if deadline is exceeded", func() {
 				rs.Run.Submission = &run.Submission{
-					Deadline:     timestamppb.New(now.Add(-1 * time.Minute)), // expired
-					AttemptCount: 1,
-					TaskId:       "task-bar",
+					Deadline: timestamppb.New(now.Add(-1 * time.Minute)), // expired
+					TaskId:   "task-bar",
 				}
 
 				Convey("And if waitlisted, fall back to WAITING_FOR_SUBMISSION status", func() {
@@ -187,9 +183,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-						AttemptCount: 1,
-					})
+					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{})
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
@@ -200,9 +194,8 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-						Deadline:     timestamppb.New(now.Add(submissionDuration)),
-						AttemptCount: 2,
-						TaskId:       "task-foo",
+						Deadline: timestamppb.New(now.Add(submissionDuration)),
+						TaskId:   "task-foo",
 					})
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
@@ -220,10 +213,9 @@ func TestOnReadyForSubmission(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Deadline:     timestamppb.New(now.Add(20 * time.Minute)),
-					AttemptCount: 1,
-					Cls:          []int64{2, 1}, // in submission order
-					TaskId:       "task-foo",
+					Deadline: timestamppb.New(now.Add(20 * time.Minute)),
+					Cls:      []int64{2, 1}, // in submission order
+					TaskId:   "task-foo",
 				})
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
@@ -254,7 +246,6 @@ func TestSubmitter(t *testing.T) {
 			runID:    common.MakeRunID(lProject, now, 1, []byte("deadbeef")),
 			deadline: now.Add(1 * time.Minute),
 			treeURL:  "https://tree.example.com",
-			attempt:  2,
 			clids:    common.CLIDs{1, 2},
 			rm:       run.NewNotifier(ct.TQDispatcher),
 		}
@@ -315,8 +306,7 @@ func TestSubmitter(t *testing.T) {
 				So(s.submit(ctx), ShouldBeNil)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
-						Result:  eventpb.SubmissionResult_FAILED_PRECONDITION,
-						Attempt: 2,
+						Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
 					},
 				)
 				So(log, memlogger.ShouldHaveLog, logging.Warning, "run no longer holds submit queue, currently held by")
@@ -327,8 +317,7 @@ func TestSubmitter(t *testing.T) {
 				verifyRunReleased(s.runID)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
-						Result:  eventpb.SubmissionResult_FAILED_PRECONDITION,
-						Attempt: 2,
+						Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
 					},
 				)
 				So(log, memlogger.ShouldHaveLog, logging.Warning, "tree \"https://tree.example.com\" is closed when submission starts")
@@ -339,8 +328,7 @@ func TestSubmitter(t *testing.T) {
 				verifyRunReleased(s.runID)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
-						Result:  eventpb.SubmissionResult_FAILED_PRECONDITION,
-						Attempt: 2,
+						Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
 					},
 				)
 				So(log, memlogger.ShouldHaveLog, logging.Warning, "submit deadline has already expired")
@@ -357,8 +345,7 @@ func TestSubmitter(t *testing.T) {
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)) // len(s.clids) SubmitRevision calls
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 				&eventpb.SubmissionCompleted{
-					Result:  eventpb.SubmissionResult_SUCCEEDED,
-					Attempt: 2,
+					Result: eventpb.SubmissionResult_SUCCEEDED,
 				},
 			)
 		})
@@ -383,7 +370,6 @@ func TestSubmitter(t *testing.T) {
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result:       eventpb.SubmissionResult_FAILED_PERMANENT,
-						Attempt:      2,
 						FatalMessage: permDeniedMsg,
 					},
 				)
@@ -402,7 +388,6 @@ func TestSubmitter(t *testing.T) {
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result:       eventpb.SubmissionResult_FAILED_PERMANENT,
-						Attempt:      2,
 						FatalMessage: fmt.Sprintf(failedPreconditionMsgFmt, fmt.Sprintf("rpc error: code = FailedPrecondition desc = revision %s is not current revision", ci2.GetCurrentRevision())),
 					},
 				)
@@ -425,8 +410,7 @@ func TestSubmitter(t *testing.T) {
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)+1) // 1 extra getChange call
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 				&eventpb.SubmissionCompleted{
-					Result:  eventpb.SubmissionResult_SUCCEEDED,
-					Attempt: 2,
+					Result: eventpb.SubmissionResult_SUCCEEDED,
 				},
 			)
 		})

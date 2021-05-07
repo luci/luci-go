@@ -95,8 +95,7 @@ func TestRunManager(t *testing.T) {
 				&eventpb.Event{
 					Event: &eventpb.Event_SubmissionCompleted{
 						SubmissionCompleted: &eventpb.SubmissionCompleted{
-							Result:  eventpb.SubmissionResult_SUCCEEDED,
-							Attempt: 2,
+							Result: eventpb.SubmissionResult_SUCCEEDED,
 						},
 					},
 				},
@@ -104,8 +103,7 @@ func TestRunManager(t *testing.T) {
 					return notifier.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_SubmissionCompleted{
 							SubmissionCompleted: &eventpb.SubmissionCompleted{
-								Result:  eventpb.SubmissionResult_SUCCEEDED,
-								Attempt: 2,
+								Result: eventpb.SubmissionResult_SUCCEEDED,
 							},
 						},
 					})
@@ -378,7 +376,7 @@ func (fh *fakeHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, cl
 	}, nil
 }
 
-func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sr eventpb.SubmissionResult, attempt int32) (*handler.Result, error) {
+func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*handler.Result, error) {
 	fh.addInvocation("OnSubmissionCompleted")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
