@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53fe4761_6619dfc0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T18:43:40Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "26d703fae84b83ffd6ac7d06d7b0b09f96dc767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9573c09b_c0a4e936",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T18:43:40Z",
+      "side": 1,
+      "message": "inequality",
+      "range": {
+        "startLine": 120,
+        "startChar": 8,
+        "endLine": 120,
+        "endChar": 17
+      },
+      "revId": "26d703fae84b83ffd6ac7d06d7b0b09f96dc767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c522a46_616fc71f",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T18:43:40Z",
+      "side": 1,
+      "message": "Now that the bug is fixed 😄",
+      "range": {
+        "startLine": 167,
+        "startChar": 1,
+        "endLine": 167,
+        "endChar": 46
+      },
+      "revId": "26d703fae84b83ffd6ac7d06d7b0b09f96dc767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
