@@ -15,13 +15,20 @@
 package e2e
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
+	bqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -113,6 +120,9 @@ func TestCreatesSingularQuickDryRun(t *testing.T) {
 		// TODO(tandrii): remove this once Run creation is not conditional on CV
 		// managing Runs for a project.
 		ct.EnableCVRunManagement(ctx, lProject)
+		// Start CQDaemon.
+		ct.MustCQD(ctx, lProject)
+
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
 			Name:            string(run.QuickDryRun),
@@ -144,46 +154,44 @@ func TestCreatesSingularQuickDryRun(t *testing.T) {
 		})
 		So(r.Mode, ShouldEqual, run.QuickDryRun)
 
-		ct.LogPhase(ctx, "CQDaemon decides that QuickDryRun has passed")
-		// TODO(tandrii): implement CQDaemon fake and simulate completion of the
-		// run.
-		// ct.Clock.Add(time.Minute)
-		// cqdCtx := auth.WithState(ctx, &authtest.FakeState{
-		// 	Identity:       "user:cqd@example.com",
-		// 	IdentityGroups: []string{"luci-cv-migration-crbug-1141880"},
-		// })
-		// idParts := strings.Split(string(r.ID), "-")
-		// _, err := ct.MigrationServer.ReportVerifiedRun(cqdCtx, &migrationpb.ReportVerifiedRunRequest{
-		// 	Action: migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK,
-		// 	Run: &migrationpb.Run{
-		// 		Id: string(r.ID),
-		// 		Attempt: &bqpb.Attempt{
-		// 			Key:                  idParts[len(idParts)-1],
-		// 			Status:               bqpb.AttemptStatus_SUCCESS,
-		// 			Substatus:            bqpb.AttemptSubstatus_NO_SUBSTATUS,
-		// 			Builds:               nil,
-		// 			StartTime:            timestamppb.New(tStart),
-		// 			EndTime:              timestamppb.New(ct.Clock.Now()),
-		// 			LuciProject:          lProject,
-		// 			ConfigGroup:          cfg.GetConfigGroups()[0].GetName(),
-		// 			ClGroupKey:           "whatever",
-		// 			EquivalentClGroupKey: "whatever-group",
-		// 			GerritChanges:        nil, // irrelevant for this test, but set in practice.
-		// 		},
-		// 		Cls: nil, // irrelevant for this test, but set in practice.
-		// 	},
-		// })
-		// So(err, ShouldBeNil)
+		ct.LogPhase(ctx, "CQDaemon decides that QuickDryRun has passed and notifies CV")
+		ct.Clock.Add(time.Minute)
+		ct.MustCQD(ctx, lProject).SetVerifyClbk(
+			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+				r = proto.Clone(r).(*migrationpb.ReportedRun)
+				r.Attempt.Status = bqpb.AttemptStatus_SUCCESS
+				r.Attempt.Substatus = bqpb.AttemptSubstatus_NO_SUBSTATUS
+				return r
+			},
+		)
+		ct.RunUntil(ctx, func() bool {
+			return nil == datastore.Get(ctx, &migration.VerifiedCQDRun{ID: r.ID})
+		})
 
+		// At this point CV must either report the `gChange` to be excluded from
+		// active attempts OR (if CV has already finalized this Run) not return this
+		// Run as active.
+		activeRuns := ct.MigrationFetchActiveRuns(ctx, lProject)
+		excludedCLs := ct.MigrationFetchExcludedCLs(ctx, lProject)
+		if len(activeRuns) > 0 {
+			So(activeRuns[0].Id, ShouldResemble, string(r.ID))
+			So(excludedCLs, ShouldResemble, []string{fmt.Sprintf("%s/%d", gHost, gChange)})
+		}
+
+		// TODO(yiwzhang): implement missing Run handlers and uncomment.
+		// ct.LogPhase(ctx, "CV finalizes the run and sends BQ event")
 		// ct.RunUntil(ctx, func() bool {
 		// 	r2 := ct.LoadRun(ctx, r.ID)
 		// 	p := ct.LoadProject(ctx, lProject)
 		// 	return r2.Status == run.Status_SUCCEEDED && len(p.State.GetComponents()) == 0
 		// })
 
-		// /////////////////////////    Verify    ////////////////////////////////
+		// Verify that votes were removed.
 		// So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		// So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
+
+		// Verify that BQ row was exported.
+		// TODO(qyearsley): implement.
 	})
 }
 

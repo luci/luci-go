@@ -39,9 +39,9 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// allowGroup is a Chrome Infra Auth group, members of which are allowed to call
+// AllowGroup is a Chrome Infra Auth group, members of which are allowed to call
 // migration API. It's hardcoded here because this code is temporary.
-const allowGroup = "luci-cv-migration-crbug-1141880"
+const AllowGroup = "luci-cv-migration-crbug-1141880"
 
 type MigrationServer struct {
 	RunNotifier *run.Notifier
@@ -189,11 +189,11 @@ func (m *MigrationServer) checkAllowed(ctx context.Context) error {
 	}
 	logging.Warningf(ctx, "Unusual caller %s", i)
 
-	switch yes, err := auth.IsMember(ctx, allowGroup); {
+	switch yes, err := auth.IsMember(ctx, AllowGroup); {
 	case err != nil:
 		return status.Errorf(codes.Internal, "failed to check ACL")
 	case !yes:
-		return status.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
+		return status.Errorf(codes.PermissionDenied, "not a member of %s", AllowGroup)
 	default:
 		return nil
 	}
