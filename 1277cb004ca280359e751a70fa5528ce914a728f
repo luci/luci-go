@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2acd163e_2f353207",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T23:04:40Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "1277cb004ca280359e751a70fa5528ce914a728f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7bce59c4_bb6d6b95",
+        "filename": "cv/internal/cvtesting/e2e/e2e.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-07T23:04:40Z",
+      "side": 1,
+      "message": "nit: I would rename it `cqdsMu` unless you plan to use it to protect other properties in this struct as well.",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 92,
+        "endChar": 2
+      },
+      "revId": "1277cb004ca280359e751a70fa5528ce914a728f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
