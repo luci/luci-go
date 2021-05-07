@@ -61,7 +61,11 @@ func CmdTrigger(authFlags AuthFlags) *subcommands.Command {
 func mapToArray(m stringmapflag.Value) []*swarming.SwarmingRpcsStringPair {
 	a := make([]*swarming.SwarmingRpcsStringPair, 0, len(m))
 	for k, v := range m {
-		a = append(a, &swarming.SwarmingRpcsStringPair{Key: k, Value: v})
+		a = append(a, &swarming.SwarmingRpcsStringPair{
+			Key:             k,
+			Value:           v,
+			ForceSendFields: []string{"Value"},
+		})
 	}
 
 	sort.Slice(a, func(i, j int) bool {
