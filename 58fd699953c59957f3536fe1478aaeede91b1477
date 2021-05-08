@@ -69,6 +69,24 @@
       "parentUuid": "dad7bc2a_51efef1e",
       "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7cfd1cd1_1e740898",
+        "filename": "hacks/osx_clock_gettime_fix/clock_gettime_amd64.s",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-08T00:27:10Z",
+      "side": 1,
+      "message": "!go1.15 will actually \"disable\" this thing.\n\nWhen compiling on go1.16, all previous build flags are also defined: go1.16, go1.15, go1.14, ...",
+      "parentUuid": "dc73ebec_cce4b610",
+      "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
