@@ -132,6 +132,9 @@ type Input struct {
 	//
 	// It will be included in `botdata.BotData` and posted to Gerrit as part of
 	// the message in "unhappy path". See doc for `Cancel()`
+	//
+	// TODO(yiwzhang): consider dropping after M1 is launched if it is not adding
+	// any value to include those IDs in the bot data.
 	RunCLExternalIDs []changelist.ExternalID
 }
 
