@@ -16,6 +16,23 @@
       "message": "PTAL\n\nI tested it by:\n1. Building `rdb` binary with go1.16 without the hack.\n2. Running it on OSX 10.11.6 machine and observing a crash.\n2. Redoing the same with the hack, confirming `rdb stream` works as expected.\n\nLUCI_GO_CHECK_HACKS exists for quickly checking the hack is linked in.",
       "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "19b10288_2c4e8077",
+        "filename": "hacks/osx_clock_gettime_fix/clock_gettime_amd64.s",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-08T00:16:15Z",
+      "side": 1,
+      "message": "IIUC this means that all of our darwin binaries will use this shim rather than the real clock_gettime function. I don\u0027t _think_ this will actually matter for any of our applications, but may be worth a comment?",
+      "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
