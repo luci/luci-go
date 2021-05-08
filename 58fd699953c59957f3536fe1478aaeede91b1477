@@ -33,6 +33,24 @@
       "message": "IIUC this means that all of our darwin binaries will use this shim rather than the real clock_gettime function. I don\u0027t _think_ this will actually matter for any of our applications, but may be worth a comment?",
       "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dad7bc2a_51efef1e",
+        "filename": "hacks/osx_clock_gettime_fix/clock_gettime_amd64.s",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-08T00:19:05Z",
+      "side": 1,
+      "message": "But this is exactly what we want to accomplish and it is already explained in doc.go...\n\nNote that it touches only amd64 OSX binaries built with \u003e\u003dgo1.16.\n\nIn particular, this doesn\u0027t affect arm64 nor will it affect any current amd64 binaries we release (since we build them with go1.15). So landing this should not affect anything. It will become affective when we switch release builders to go1.16.",
+      "parentUuid": "19b10288_2c4e8077",
+      "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
