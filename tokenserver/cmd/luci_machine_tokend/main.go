@@ -48,6 +48,9 @@ import (
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/tokenserver/client"
+
+	// Replace clock_gettime for OSX 10.11.
+	_ "go.chromium.org/luci/hacks/osx_clock_gettime_fix"
 )
 
 // Version identifies the major revision of the tokend code.
