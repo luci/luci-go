@@ -51,6 +51,24 @@
       "parentUuid": "19b10288_2c4e8077",
       "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc73ebec_cce4b610",
+        "filename": "hacks/osx_clock_gettime_fix/clock_gettime_amd64.s",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-08T00:23:16Z",
+      "side": 1,
+      "message": "Bah I only got half of my thought written out here. I was thinking that we needed to include a !go1.15 tag... but the `go1.16` tag already implies that. Never mind me.",
+      "parentUuid": "dad7bc2a_51efef1e",
+      "revId": "58fd699953c59957f3536fe1478aaeede91b1477",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
