@@ -127,13 +127,6 @@ message ReportVerifiedRunRequest {
   Action action = 11;
   // Final message to post to Gerrit in case of ACTION_FAIL.
   string final_message = 12;
-
-  // If true, CQDaemon is sending this for the sake of the test, notably before
-  // CQDaemon starts getting CV's runs. Thus, Run's CV's ID may be unset.
-  //
-  // This is used to test codepath calling ReportVerifiedRun in the CQDaemon
-  // before the switch to CV Runs.
-  bool test_mode = 21;
 }
 
 // ReportedRun as reported by the CQDaemon to CV.
@@ -164,11 +157,6 @@ message PostGerritMessageRequest {
 }
 
 message PostGerritMessageResponse {
-  // If posting succeeded, this is set to the update time of a Gerrit change.
-  //
-  // TODO(tandrii): verify if this is actually required for CQDaemon,
-  // as getting this timestamp requires 1 extra RPC.
-  google.protobuf.Timestamp gerrit_update_time = 1;
 }
 
 message ReportUsedNetrcRequest {
