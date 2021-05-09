@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22e7eec2_36851d6d",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-09T00:27:31Z",
+      "side": 1,
+      "message": "deadlineenforcer",
+      "range": {
+        "startLine": 46,
+        "startChar": 31,
+        "endLine": 46,
+        "endChar": 36
+      },
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6dc182ef_4698e1b0",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-09T00:27:31Z",
+      "side": 1,
+      "message": "nit: maybe invert the condition. Then we wouldn\u0027t need `continue`",
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76187ead_4fcdda01",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-09T00:27:31Z",
+      "side": 1,
+      "message": "nit: increase indent, since it is a part of WHERE",
+      "range": {
+        "startLine": 91,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e45e1c3_072a2a1b",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-09T00:27:31Z",
+      "side": 1,
+      "message": "nit: shorter\n\n  rowCount :\u003d int32(0)\n\nbut why not just `int`? It feels like an earlier version of this code used atomic package",
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bedf10d6_ccbb8957",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-09T00:27:31Z",
+      "side": 1,
+      "message": "maybe add a TODO to increase parallelism.\nLooks like currently concurrency is limited to the number of shards.",
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f899328f_3ec31397",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-09T00:27:31Z",
+      "side": 1,
+      "message": "by?",
+      "range": {
+        "startLine": 41,
+        "startChar": 58,
+        "endLine": 41,
+        "endChar": 61
+      },
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfe82c53_3db18ce6",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 5
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-09T00:27:31Z",
+      "side": 1,
+      "message": "oh, nice, this is better than what I have suggested in the bug",
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
