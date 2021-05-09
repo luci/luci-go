@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-describe('Steps & Logs Tab', () => {
-  it('should accept arbitrary path suffix', () => {
-    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps/an/arbitrary/path/suffix');
-    cy.location('pathname').should(
-      'equal',
-      '/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps'
-    );
-  });
-
+describe('Test Results Tab', () => {
   it('should support scrolling with space', () => {
-    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps');
+    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/test-results');
     // Ensure the page is loaded.
-    cy.get('milo-build-step-entry', { includeShadowDom: true });
+    cy.get('milo-test-variant-entry', { includeShadowDom: true });
     cy.document().trigger('keydown', { key: ' ', code: 'Space', which: 32 });
-    cy.get('milo-build-step-list', { includeShadowDom: true }).should('be.focused');
+    cy.get('#test-variant-list', { includeShadowDom: true }).should('be.focused');
   });
 });

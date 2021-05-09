@@ -107,7 +107,7 @@ export class StepsTabElement extends MiloBaseElement {
         style="display: none;"
         .handler=${() => this.shadowRoot!.getElementById('main')!.focus()}
       ></milo-hotkey>
-      <milo-build-step-list></milo-build-step-list>
+      <milo-build-step-list id="main" tabindex="0"></milo-build-step-list>
     `;
   });
 
