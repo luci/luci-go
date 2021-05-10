@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8386bf2_cc33d865",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-10T18:18:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22e7eec2_36851d6d",
+      "range": {
+        "startLine": 46,
+        "startChar": 31,
+        "endLine": 46,
+        "endChar": 36
+      },
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6dc182ef_4698e1b0",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-05-09T00:27:31Z",
       "side": 1,
       "message": "nit: maybe invert the condition. Then we wouldn\u0027t need `continue`",
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d10b9184_ae7fb538",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-10T18:18:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6dc182ef_4698e1b0",
       "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "73b066ea_5666a88e",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-10T18:18:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76187ead_4fcdda01",
+      "range": {
+        "startLine": 91,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8e45e1c3_072a2a1b",
@@ -77,6 +143,24 @@
       "writtenOn": "2021-05-09T00:27:31Z",
       "side": 1,
       "message": "nit: shorter\n\n  rowCount :\u003d int32(0)\n\nbut why not just `int`? It feels like an earlier version of this code used atomic package",
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6e77685_dfd6ba95",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-10T18:18:21Z",
+      "side": 1,
+      "message": "Yes. Missed this on the removal of atomic. Done.",
+      "parentUuid": "8e45e1c3_072a2a1b",
       "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -98,6 +182,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8e99a5e_8af43b25",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-10T18:18:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bedf10d6_ccbb8957",
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f899328f_3ec31397",
@@ -111,6 +213,30 @@
       "writtenOn": "2021-05-09T00:27:31Z",
       "side": 1,
       "message": "by?",
+      "range": {
+        "startLine": 41,
+        "startChar": 58,
+        "endLine": 41,
+        "endChar": 61
+      },
+      "revId": "72ea4f7d785f579213a8aae4fbbcf215ea4d5a0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b22b22d_5e605694",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-10T18:18:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f899328f_3ec31397",
       "range": {
         "startLine": 41,
         "startChar": 58,
