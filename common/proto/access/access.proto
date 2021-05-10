@@ -8,6 +8,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/common/proto/access";
+
 package access;
 
 import "google/protobuf/duration.proto";
