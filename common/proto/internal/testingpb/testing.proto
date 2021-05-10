@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/common/proto/internal/testingpb";
+
 package internal.testing;
 
 option go_package = "go.chromium.org/luci/common/proto/internal/testingpb;testingpb";

@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/cv/api/bigquery/v1";
+
 package bigquery;
 
 option go_package = "go.chromium.org/luci/cv/api/bigquery/v1;bigquery";

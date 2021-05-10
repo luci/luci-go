@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/milo/api/service/v1";
+
 package luci.milo.v1;
 
 import "go.chromium.org/luci/common/proto/git/commit.proto";

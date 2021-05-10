@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/cipd/client/cipd/internal/messages";
+
 package messages;
 
 option go_package = "go.chromium.org/luci/cipd/client/cipd/internal/messages";

@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/luciexe/build/internal/testpb";
+
 option go_package = "go.chromium.org/luci/luciexe/build/internal/testpb;testpb";
 
 // This file has protos for testing the build library.

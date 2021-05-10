@@ -16,6 +16,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/buildbucket/proto";
+
 package buildbucket;
 
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";

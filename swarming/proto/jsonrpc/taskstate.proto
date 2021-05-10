@@ -6,6 +6,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/swarming/proto/jsonrpc";
+
 package jsonrpc;
 option go_package = "go.chromium.org/luci/swarming/proto/jsonrpc";
 

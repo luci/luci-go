@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/grpc/prpc/talk/helloworld/proto";
+
 package helloworld;
 
 option go_package = "go.chromium.org/luci/grpc/prpc/talk/helloworld/proto;helloworld";

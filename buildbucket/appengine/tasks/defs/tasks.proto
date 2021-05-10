@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs";
+
 package taskdefs;
 
 option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs;taskdefs";

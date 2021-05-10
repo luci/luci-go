@@ -6,6 +6,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/swarming/proto/api";
+
 package swarming.v1;
 option go_package = "go.chromium.org/luci/swarming/proto/api;apipb";
 

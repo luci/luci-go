@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/swarming/proto/config";
+
 package swarming.config;
 
 import "go.chromium.org/luci/common/proto/options.proto";

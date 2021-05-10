@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/tokenserver/api/admin/v1";
+
 package tokenserver.admin;
 
 option go_package = "go.chromium.org/luci/tokenserver/api/admin/v1;admin";

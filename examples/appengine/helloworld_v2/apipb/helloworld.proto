@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/examples/appengine/helloworld_v2/apipb";
+
 package luci.examples.helloworld;
 
 option go_package = "apipb";

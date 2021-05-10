@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/cipd/client/cipd/plugin/protocol";
+
 package cipd.plugin;
 
 option go_package = "go.chromium.org/luci/cipd/client/cipd/plugin/protocol";

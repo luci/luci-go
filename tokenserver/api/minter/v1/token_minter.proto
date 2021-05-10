@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/tokenserver/api/minter/v1";
+
 package tokenserver.minter;
 
 option go_package = "go.chromium.org/luci/tokenserver/api/minter/v1;minter";

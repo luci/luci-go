@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/logdog/api/logpb";
+
 package logpb;
 
 option go_package = "go.chromium.org/luci/logdog/api/logpb";

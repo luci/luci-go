@@ -10,6 +10,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/luci_notify/api/config";
+
 package notify;
 
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
