@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ca59430_27df6a52",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-10T22:46:19Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "ce9cca8ea47659050697bf147380d78017f2054f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb821d1b_1683ceb1",
+        "filename": "vpython/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-10T22:46:19Z",
+      "side": 1,
+      "message": "hedging our bets, I see 😋",
+      "range": {
+        "startLine": 267,
+        "startChar": 72,
+        "endLine": 267,
+        "endChar": 78
+      },
+      "revId": "ce9cca8ea47659050697bf147380d78017f2054f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
