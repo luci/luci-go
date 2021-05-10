@@ -148,12 +148,6 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
   static styles = [
     commonStyle,
     css`
-      :host {
-        height: calc(100vh - var(--header-height));
-        display: grid;
-        grid-template-rows: repeat(3, auto) 1fr;
-      }
-
       #test-invocation-summary {
         background-color: var(--block-background-color);
         padding: 6px 16px;

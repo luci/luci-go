@@ -126,6 +126,11 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   static styles = [
     commonStyle,
     css`
+      :host {
+        display: block;
+        padding-left: 10px;
+      }
+
       tr:nth-child(even) {
         background-color: var(--block-background-color);
       }
@@ -164,9 +169,6 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       }
       #no-related-builds {
         padding: 10px;
-      }
-      :host {
-        padding-left: 10px;
       }
     `,
   ];

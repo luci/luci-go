@@ -206,11 +206,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <milo-hotkey
-        key="space,shift+space,up,down,pageup,pagedown"
-        style="display: none;"
-        .handler=${() => this.shadowRoot!.getElementById('test-variant-list')!.focus()}
-      ></milo-hotkey>
       <div id="table-header">
         <div><!-- Expand toggle --></div>
         <milo-tvt-column-header
@@ -252,12 +247,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
     commonStyle,
     colorClasses,
     css`
-      :host {
-        overflow: hidden;
-        display: grid;
-        grid-template-rows: auto 1fr;
-      }
-
       #table-header {
         display: grid;
         grid-template-columns: 24px 24px var(--columns) 1fr;
@@ -265,19 +254,15 @@ export class TestVariantsTableElement extends MiloBaseElement {
         line-height: 24px;
         padding: 2px 2px 2px 10px;
         font-weight: bold;
+        position: sticky;
+        top: 39px;
         border-bottom: 1px solid var(--divider-color);
         background-color: var(--block-background-color);
+        z-index: 1;
       }
 
-      #table-body {
-        overflow-y: hidden;
-      }
       #no-invocation {
         padding: 10px;
-      }
-      #test-variant-list {
-        overflow-y: auto;
-        outline: none;
       }
       #test-variant-list > * {
         padding-left: 10px;
@@ -297,17 +282,17 @@ export class TestVariantsTableElement extends MiloBaseElement {
         grid-gap: 5px;
         padding: 2px 2px 2px 10px;
         position: sticky;
+        top: 67px;
         font-size: 14px;
         background-color: var(--block-background-color);
         border-top: 1px solid var(--divider-color);
-        top: -1px;
         cursor: pointer;
         user-select: none;
         line-height: 24px;
         z-index: 1;
       }
       .group-header:first-child {
-        top: 0px;
+        top: 68px;
         border-top: none;
       }
       .group-header.expanded:not(.empty) {

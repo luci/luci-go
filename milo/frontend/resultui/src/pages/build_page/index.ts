@@ -501,12 +501,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     commonStyle,
     colorClasses,
     css`
-      :host {
-        height: calc(100vh - var(--header-height));
-        display: grid;
-        grid-template-rows: repeat(5, auto) 1fr;
-      }
-
       #build-summary {
         background-color: var(--block-background-color);
         padding: 6px 16px;

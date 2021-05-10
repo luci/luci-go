@@ -156,13 +156,9 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
   static styles = [
     commonStyle,
     css`
-      :host {
-        --header-height: 52px;
-      }
-
       #container {
         box-sizing: border-box;
-        height: var(--header-height);
+        height: 52px;
         padding: 10px 0;
         display: flex;
       }
