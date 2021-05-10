@@ -10,19 +10,29 @@
 
 package test
 
-import prpc "go.chromium.org/luci/grpc/prpc"
-
 import (
+	prpc "go.chromium.org/luci/grpc/prpc"
+
 	context "context"
-	proto "github.com/golang/protobuf/proto"
+
+	proto "google.golang.org/protobuf/proto"
+
 	empty "github.com/golang/protobuf/ptypes/empty"
+
 	sub "go.chromium.org/luci/grpc/internal/svctool/testdata/sub"
+
 	grpc "google.golang.org/grpc"
+
 	codes "google.golang.org/grpc/codes"
+
 	status "google.golang.org/grpc/status"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+
 	reflect "reflect"
+
 	sync "sync"
 )
 

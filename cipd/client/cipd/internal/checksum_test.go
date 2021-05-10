@@ -19,9 +19,10 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

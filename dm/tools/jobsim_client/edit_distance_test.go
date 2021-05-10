@@ -23,8 +23,9 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/proto"
+
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
