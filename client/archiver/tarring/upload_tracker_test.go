@@ -100,16 +100,6 @@ type fakeChecker struct {
 	ps *isolatedclient.PushState
 }
 
-type checkerAddItemArgs struct {
-	item     *Item
-	isolated bool
-}
-
-type checkerAddItemResponse struct {
-	item *Item
-	ps   *isolatedclient.PushState
-}
-
 func (checker *fakeChecker) AddItem(item *Item, isolated bool, callback CheckerCallback) {
 	callback(item, checker.ps)
 }
