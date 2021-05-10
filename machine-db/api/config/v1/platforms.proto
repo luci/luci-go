@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/machine-db/api/config/v1;config";
+
 package config;
 
 // A platform to store in the database.
