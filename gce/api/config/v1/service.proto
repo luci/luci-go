@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/gce/api/config/v1;config";
+
 package config;
 
 import "google/protobuf/empty.proto";

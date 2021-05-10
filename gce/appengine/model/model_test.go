@@ -20,11 +20,15 @@ import (
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
@@ -54,7 +58,7 @@ func TestConfig(t *testing.T) {
 
 		err = datastore.Get(c, cfg)
 		So(err, ShouldBeNil)
-		So(cfg, ShouldResemble, &Config{
+		So(cmp.Diff(cfg, &Config{
 			ID: "id",
 			Config: config.Config{
 				Attributes: &config.VM{
@@ -67,7 +71,7 @@ func TestConfig(t *testing.T) {
 				},
 				Prefix: "prefix",
 			},
-		})
+		}, cmpopts.IgnoreUnexported(*cfg), protocmp.Transform()), ShouldBeEmpty)
 	})
 }
 
@@ -98,7 +102,8 @@ func TestProject(t *testing.T) {
 
 		err = datastore.Get(c, p)
 		So(err, ShouldBeNil)
-		So(p.Config, ShouldResemble, projects.Config{
+
+		So(&p.Config, ShouldResembleProto, &projects.Config{
 			Metric: []string{
 				"metric-1",
 				"metric-2",
@@ -132,12 +137,13 @@ func TestVM(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		So(datastore.Get(c, v), ShouldBeNil)
-		So(v, ShouldResemble, &VM{
+
+		So(cmp.Diff(v, &VM{
 			ID: "id",
 			Attributes: config.VM{
 				Project: "project",
 			},
-		})
+		}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), ShouldBeEmpty)
 
 		Convey("IndexAttributes", func() {
 			v.IndexAttributes()

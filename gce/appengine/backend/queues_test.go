@@ -23,6 +23,7 @@ import (
 
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/genproto/googleapis/type/dayofweek"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
@@ -37,6 +38,8 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -157,7 +160,7 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v, ShouldResemble, &model.VM{
+					So(cmp.Diff(v, &model.VM{
 						ID: "id",
 						Attributes: config.VM{
 							Disk: []*config.Disk{
@@ -174,7 +177,7 @@ func TestQueues(t *testing.T) {
 						Hostname:   "prefix-2-fpll",
 						Index:      2,
 						Prefix:     "prefix",
-					})
+					}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), ShouldBeEmpty)
 				})
 
 				Convey("not updated", func() {
@@ -198,13 +201,13 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v, ShouldResemble, &model.VM{
+					So(cmp.Diff(v, &model.VM{
 						ID: "id",
 						Attributes: config.VM{
 							Zone: "zone",
 						},
 						Drained: true,
-					})
+					}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), ShouldBeEmpty)
 				})
 
 				Convey("sets zone", func() {
@@ -227,7 +230,7 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Attributes, ShouldResemble, config.VM{
+					So(&v.Attributes, ShouldResembleProto, &config.VM{
 						Disk: []*config.Disk{
 							{
 								Type: "zone/type",

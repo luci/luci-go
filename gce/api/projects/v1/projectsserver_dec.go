@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedProjects struct {
@@ -25,7 +25,7 @@ type DecoratedProjects struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedProjects) Delete(ctx context.Context, req *DeleteRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedProjects) Delete(ctx context.Context, req *DeleteRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "Delete", req)
