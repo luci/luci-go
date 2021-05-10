@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/strpair"
 
