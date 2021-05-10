@@ -17,8 +17,9 @@ package templateproto
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

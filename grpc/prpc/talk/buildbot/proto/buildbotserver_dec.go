@@ -5,7 +5,7 @@ package buildbot
 import (
 	context "context"
 
-	proto "github.com/golang/protobuf/proto"
+	proto "google.golang.org/protobuf/proto"
 )
 
 type DecoratedBuildbot struct {

@@ -24,10 +24,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	s "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/api/support/bundler"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 // The maximum, AppEngine request size, minus 1MB for overhead.

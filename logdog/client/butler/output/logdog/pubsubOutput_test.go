@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 
