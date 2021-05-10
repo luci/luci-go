@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCron(t *testing.T) {
@@ -194,7 +195,7 @@ func TestCron(t *testing.T) {
 				})
 				So(trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-				So(tqt.GetScheduledTasks()[0].Payload, ShouldResemble, &tasks.ManageBot{
+				So(tqt.GetScheduledTasks()[0].Payload, ShouldResembleProto, &tasks.ManageBot{
 					Id: "id",
 				})
 			})
