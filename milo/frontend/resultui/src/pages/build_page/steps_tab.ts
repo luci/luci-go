@@ -17,7 +17,6 @@ import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
 import '../../components/build_step_list';
-import '../../components/hotkey';
 import { BuildStepEntryElement } from '../../components/build_step_list/build_step_entry';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -102,11 +101,6 @@ export class StepsTabElement extends MiloBaseElement {
           </mwc-button>
         </milo-hotkey>
       </div>
-      <milo-hotkey
-        key="space,shift+space,up,down,pageup,pagedown"
-        style="display: none;"
-        .handler=${() => this.shadowRoot!.getElementById('main')!.focus()}
-      ></milo-hotkey>
       <milo-build-step-list id="main" tabindex="0"></milo-build-step-list>
     `;
   });
@@ -114,18 +108,16 @@ export class StepsTabElement extends MiloBaseElement {
   static styles = [
     commonStyle,
     css`
-      :host {
-        display: grid;
-        grid-template-rows: auto 1fr;
-        overflow-y: hidden;
-      }
-
       #header {
         display: grid;
         grid-template-columns: auto auto auto 1fr auto;
         grid-gap: 5px;
         height: 30px;
         padding: 5px 10px 3px 10px;
+        position: sticky;
+        top: 0px;
+        background: white;
+        border-bottom: 1px solid var(--divider-color);
       }
 
       mwc-button {
@@ -150,10 +142,8 @@ export class StepsTabElement extends MiloBaseElement {
       }
 
       milo-build-step-list {
-        overflow-y: auto;
         padding-top: 5px;
         padding-left: 10px;
-        border-top: 1px solid var(--divider-color);
         outline: none;
       }
     `,
