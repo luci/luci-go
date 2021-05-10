@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/mgutz/ansi"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock/testclock"
 

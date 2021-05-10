@@ -29,7 +29,7 @@ package {{.PackageName}}
 import (
 	"context"
 
-	proto "github.com/golang/protobuf/proto"
+	proto "google.golang.org/protobuf/proto"
 
 	{{range .ExtraImports}}
 	{{.Name}} "{{.Path}}"{{end}}

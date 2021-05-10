@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -86,7 +86,7 @@ func prpcBase() router.MiddlewareChain {
 func checkAPIAccess(c context.Context, methodName string, req proto.Message) (context.Context, error) {
 	// Implement authorization check here, for example:
 	//
-	// import "github.com/golang/protobuf/proto"
+	// import "google.golang.org/protobuf/proto"
 	// import "google.golang.org/grpc/codes"
 	// import "go.chromium.org/luci/grpc/grpcutil"
 	//

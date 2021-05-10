@@ -29,8 +29,8 @@ import (
 
 	"go.chromium.org/luci/server/router"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
 )
 
 type greeterService struct {

@@ -40,8 +40,8 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	srvcfg "go.chromium.org/luci/logdog/server/config"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"

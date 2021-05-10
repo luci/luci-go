@@ -21,8 +21,8 @@ import (
 	"text/template"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/api/iterator"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/server/span"
 )

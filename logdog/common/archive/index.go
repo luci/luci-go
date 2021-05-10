@@ -17,7 +17,8 @@ package archive
 import (
 	"io"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 

@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
-	protov1 "github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/proto"
+	protov1 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb" // some "random" v2 proto
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
