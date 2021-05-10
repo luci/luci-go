@@ -478,6 +478,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8b615210_0060e96f",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-10T22:10:55Z",
+      "side": 1,
+      "message": "\u003e  Then, later on when there\u0027s an easy way to check...\n\nI think it\u0027s already possible, but I\u0027d like definitive confirmation from Yiwei.\nIf it\u0027s not *yet* possible, it must be possible before we ship M1: CV must record this information.\n\nMy understanding: if a *finished* Run has non-nil .Submission record,\nthen:\n  if the Run failed, then it\u0027s due to submission problem\n  else: Run\u0027state is \"succeeded\"",
+      "parentUuid": "c04091e3_aca7466b",
+      "range": {
+        "startLine": 115,
+        "startChar": 23,
+        "endLine": 115,
+        "endChar": 39
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1cf2c116_0ab0cd88",
         "filename": "cv/internal/run/bq/bq_test.go",
         "patchSetId": 12
@@ -549,6 +573,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "712d1ebf_73683517",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-10T22:10:55Z",
+      "side": 1,
+      "message": "yes.",
+      "parentUuid": "e7fa5976_1c7dc590",
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c979f12d_8a25a997",
         "filename": "cv/internal/run/bq/bq_test.go",
         "patchSetId": 12
@@ -584,6 +626,30 @@
       "side": 1,
       "message": "Added it to get a time using ct.Clock.Now(); switched to just use time.Now() for simplicity.",
       "parentUuid": "c979f12d_8a25a997",
+      "range": {
+        "startLine": 277,
+        "startChar": 0,
+        "endLine": 279,
+        "endChar": 16
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa676fc2_d368ad61",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-10T22:10:55Z",
+      "side": 1,
+      "message": "please reconsider:\n  it\u0027s annoying when trying to repro a test, since test data will keep changing.\nfor simplicity, define your own epoch yourself as epoch :\u003d time.Date(...)\nOr just use \n testclock.TestRecentTimeUTC\n\nhttps://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/clock/testclock/context.go;l\u003d31?q\u003dTestRecentTimeUTC\u0026ss\u003dchromium%2Finfra%2Finfra",
+      "parentUuid": "0f68d897_4d46d860",
       "range": {
         "startLine": 277,
         "startChar": 0,

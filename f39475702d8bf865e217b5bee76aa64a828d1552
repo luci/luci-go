@@ -16,6 +16,121 @@
       "message": "Thanks for review again! One final pass?",
       "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f391d7a_f23d5d1f",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-10T22:10:55Z",
+      "side": 1,
+      "message": "nit:\n\n  make(..., len(runCLs)\n  for i, cl :\u003d ...\n    gerritChanges[i] \u003d toGerritChange(...)",
+      "range": {
+        "startLine": 81,
+        "startChar": 18,
+        "endLine": 81,
+        "endChar": 42
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dda6330c_b0913e20",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-10T22:10:55Z",
+      "side": 1,
+      "message": "tandrii@ learning English: this sounds hypothetical to me, while the situation is real and does happen. Why not \"will\"?",
+      "range": {
+        "startLine": 108,
+        "startChar": 5,
+        "endLine": 108,
+        "endChar": 10
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9ef5177b_2dcea85c",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-10T22:10:55Z",
+      "side": 1,
+      "message": "1. we must be able to decide this on CV state alone (see also comment thread below)\n2. In this case, when CQD sends this attempt row, it doesn\u0027t know the result of submission, only that all verifies have passed. Thus, it won\u0027t be STATUS\u003dFailed.",
+      "range": {
+        "startLine": 170,
+        "startChar": 44,
+        "endLine": 172,
+        "endChar": 32
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a485439_09cb3f07",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-10T22:10:55Z",
+      "side": 1,
+      "message": "and this is now wrong.",
+      "range": {
+        "startLine": 199,
+        "startChar": 22,
+        "endLine": 199,
+        "endChar": 43
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c32a6428_c8547ae6",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-10T22:10:55Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 273,
+        "startChar": 2,
+        "endLine": 275,
+        "endChar": 18
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
