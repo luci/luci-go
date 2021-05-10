@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package statsd_to_tsmon.config;
 
-option go_package = "config";
+option go_package = "go.chromium.org/luci/server/cmd/statsd-to-tsmon/config";
 
 
 enum Kind {
