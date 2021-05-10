@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8eaaf1fb_16b3b77b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T17:30:47Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "6ad877dd3027f4a7a85b83de2ac9d7e181d40ec3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82b2038c_83bb6a6e",
+        "filename": "cv/internal/common/run_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T17:30:47Z",
+      "side": 1,
+      "message": "Very clever, I see the reference :-)",
+      "revId": "6ad877dd3027f4a7a85b83de2ac9d7e181d40ec3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
