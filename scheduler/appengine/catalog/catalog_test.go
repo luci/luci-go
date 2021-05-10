@@ -19,7 +19,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/api/pubsub/v1"
 
@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

@@ -15,7 +15,7 @@
 package cli
 
 import (
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	luciproto "go.chromium.org/luci/common/proto"
 )

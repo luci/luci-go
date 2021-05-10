@@ -20,8 +20,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 

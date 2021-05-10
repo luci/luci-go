@@ -31,7 +31,7 @@ import (
 
 	ds "go.chromium.org/luci/gae/service/datastore"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // TestSecret returns a testing types.StreamPrefix.

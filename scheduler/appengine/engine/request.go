@@ -17,8 +17,8 @@ package engine
 import (
 	"sort"
 
-	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 

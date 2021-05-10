@@ -27,7 +27,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -35,6 +36,7 @@ import (
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

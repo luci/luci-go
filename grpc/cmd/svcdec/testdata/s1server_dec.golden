@@ -5,9 +5,10 @@ package test
 import (
 	"context"
 
-	proto "github.com/golang/protobuf/proto"
+	proto "google.golang.org/protobuf/proto"
 
 	empty "github.com/golang/protobuf/ptypes/empty"
+
 	sub "go.chromium.org/luci/grpc/internal/svctool/testdata/sub"
 )
 

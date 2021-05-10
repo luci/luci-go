@@ -18,7 +18,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/grpc/grpcutil"
 )

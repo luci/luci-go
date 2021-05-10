@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/api/pubsub/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"

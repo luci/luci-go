@@ -23,12 +23,13 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
