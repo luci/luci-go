@@ -81,6 +81,14 @@ type Run struct {
 	Submission *Submission
 	// TODO(yiwzhang): Define
 	//  * RemainingTryjobQuota: Run-level Tryjob quota.
+
+	// CQAttemptKey is what CQDaemon exports to BigQuery as Attempt's key.
+	//
+	// In CQDaemon's source, it's equivalent to GerritAttempt.attempt_key_hash.
+	//
+	// TODO(crbug/1141880): delete with CQDaemon or even earlier if CV Run ID is
+	// known at all times in CV's Migration API.
+	CQDAttemptKey string
 }
 
 // Mutate mutates the Run by executing `mut`.

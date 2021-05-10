@@ -277,12 +277,13 @@ func TestRunBuilder(t *testing.T) {
 			r, err := rb.Create(ctx, pmNotifier, runNotifier)
 			So(err, ShouldBeNil)
 			expectedRun := &run.Run{
-				ID:         expectedRunID,
-				EVersion:   1,
-				CreateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
-				UpdateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
-				CLs:        common.CLIDs{cl1.ID, cl2.ID},
-				Status:     run.Status_PENDING,
+				ID:            expectedRunID,
+				CQDAttemptKey: "afc7c13288093a6d",
+				EVersion:      1,
+				CreateTime:    datastore.RoundTime(ct.Clock.Now().UTC()),
+				UpdateTime:    datastore.RoundTime(ct.Clock.Now().UTC()),
+				CLs:           common.CLIDs{cl1.ID, cl2.ID},
+				Status:        run.Status_PENDING,
 
 				CreationOperationID: rb.run.CreationOperationID,
 				ConfigGroupID:       rb.ConfigGroupID,
