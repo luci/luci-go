@@ -82,10 +82,10 @@ func Run(templatePath string) {
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
 
 	// Artifacts.
-	r.GET("/artifact/*path", baseMW, redirect("/ui/artifact/*path", http.StatusFound))
+	r.GET("/artifact/", baseMW, redirectToResultUI)
 
 	// Invocations.
-	r.GET("/inv/*path", baseMW, redirect("/ui/inv/*path", http.StatusFound))
+	r.GET("/inv/", baseMW, redirectToResultUI)
 
 	// Builds.
 	r.GET("/b/:id", htmlMW, handleError(redirectLUCIBuild))
@@ -94,7 +94,7 @@ func Run(templatePath string) {
 	buildPageMW := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
 		shouldShowNewBuildPage := getShowNewBuildPageCookie(c)
 		if shouldShowNewBuildPage {
-			redirect("/ui/p/:project/builders/:bucket/:builder/:numberOrId", http.StatusFound)(c)
+			redirectToResultUI(c)
 		} else {
 			next(c)
 		}
@@ -104,9 +104,9 @@ func Run(templatePath string) {
 	r.GET("/old/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
 
 	// Only the new build page can take path suffix, redirect to the new build page.
-	r.GET("/b/:id/*path", baseMW, redirect("/ui/b/:id/*path", http.StatusFound))
-	r.GET("/p/:project/builds/b:id/*path", baseMW, redirect("/ui/b/:id/*path", http.StatusFound))
-	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId/*path", baseMW, redirect("/ui/p/:project/builders/:bucket/:builder/:numberOrId/*path", http.StatusFound))
+	r.GET("/b/:id/*path", baseMW, redirectToResultUI)
+	r.GET("/p/:project/builds/b:id/*path", baseMW, redirectToResultUI)
+	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId/*path", baseMW, redirectToResultUI)
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
@@ -192,6 +192,12 @@ func cronHandler(handler func(c context.Context) error) func(c *router.Context) 
 		}
 		ctx.Writer.WriteHeader(http.StatusOK)
 	}
+}
+
+// redirectToResultUI is a handler that redirects the given request to the same
+// path but with a "/ui" prefix.
+func redirectToResultUI(c *router.Context) {
+	http.Redirect(c.Writer, c.Request, "/ui"+c.Request.RequestURI, http.StatusFound)
 }
 
 // redirect returns a handler that responds with given HTTP status
