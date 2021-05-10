@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package helloworld;
 
+option go_package = "go.chromium.org/luci/examples/appengine/helloworld_standard/proto;helloworld";
+
 // The greeting service definition.
 service Greeter {
   // Sends a greeting
