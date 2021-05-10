@@ -238,7 +238,7 @@ func TestRunBuilder(t *testing.T) {
 			})
 		})
 
-		const expectedRunID = "infra/9223372036854-1-afc7c13288093a6d"
+		const expectedRunID = "infra/9042331276854-1-afc7c13288093a6d"
 
 		Convey("First test to fail: check ID assumption", func() {
 			// If this test fails due to change of runID scheme, update the constant
@@ -249,7 +249,6 @@ func TestRunBuilder(t *testing.T) {
 		})
 
 		Convey("Run already created", func() {
-
 			Convey("by someone else", func() {
 				err := datastore.Put(ctx, &run.Run{
 					ID:                  expectedRunID,
@@ -275,7 +274,6 @@ func TestRunBuilder(t *testing.T) {
 		})
 
 		Convey("New Run is created", func() {
-			ct.Clock.Add(time.Hour)
 			r, err := rb.Create(ctx, pmNotifier, runNotifier)
 			So(err, ShouldBeNil)
 			expectedRun := &run.Run{
@@ -298,7 +296,7 @@ func TestRunBuilder(t *testing.T) {
 			}
 
 			// Run is properly saved
-			saved := &run.Run{ID: expectedRunID}
+			saved := &run.Run{ID: expectedRun.ID}
 			So(datastore.Get(ctx, saved), ShouldBeNil)
 			So(saved, ShouldResemble, expectedRun)
 

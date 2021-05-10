@@ -38,9 +38,24 @@ func TestID(t *testing.T) {
 			So(earlierId, ShouldBeGreaterThan, id)
 		})
 
+		Convey("works for recent date", func() {
+			earlierId := MakeRunID("infra", time.Date(2020, 01, 01, 1, 1, 1, 2, time.UTC), 1, []byte{31, 44})
+			So(earlierId, ShouldEqual, "infra/9045130335854-1-1f2c")
+			So(earlierId, ShouldBeGreaterThan, id)
+		})
+
 		Convey("panics if computers survive after endOfTheWorld", func() {
 			So(func() {
 				MakeRunID("infra", endOfTheWorld.Add(time.Millisecond), 1, []byte{31, 44})
+			}, ShouldPanic)
+		})
+
+		Convey("panics if time machine is invented", func() {
+			// Load Hill Valley's presumed timezone.
+			la, err := time.LoadLocation("America/Los_Angeles")
+			So(err, ShouldBeNil)
+			So(func() {
+				MakeRunID("infra", time.Date(1955, time.November, 5, 6, 15, 0, 0, la), 1, []byte{31, 44})
 			}, ShouldPanic)
 		})
 	})
