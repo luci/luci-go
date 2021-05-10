@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a3b5a73_b0c3ef0c",
+        "filename": "vpython/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2021-05-10T22:41:08Z",
+      "side": 1,
+      "message": "Moved it to a separate list that warns against using.",
+      "parentUuid": "de12a037_552fe2c2",
+      "range": {
+        "startLine": 261,
+        "startChar": 5,
+        "endLine": 261,
+        "endChar": 26
+      },
+      "revId": "fbc0b2c4c3004eff743bbae97c9d2140254b9e59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b589a2ec_f6140848",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-10T22:19:05Z",
       "side": 1,
       "message": "needs to be set to the (regrettable) value:\n\n  \"manually managed python not supported by chrome operations\"",
+      "range": {
+        "startLine": 264,
+        "startChar": 25,
+        "endLine": 264,
+        "endChar": 28
+      },
+      "revId": "fbc0b2c4c3004eff743bbae97c9d2140254b9e59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "984ad1fe_1fe625ee",
+        "filename": "vpython/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2021-05-10T22:41:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b589a2ec_f6140848",
       "range": {
         "startLine": 264,
         "startChar": 25,
