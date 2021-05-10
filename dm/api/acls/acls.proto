@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package acls;
 
+option go_package = "go.chromium.org/luci/dm/api/acls";
+
 // TODO(iannucci): move these to per-project acls when implementing per-project
 // namespaces.
 message Acls {
