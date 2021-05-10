@@ -19,8 +19,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/proto"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -28,9 +29,9 @@ import (
 )
 
 type buildbucketEditor struct {
-	jd          *Definition
-	bb          *Buildbucket
-	userPayload *api.CASTree
+	jd             *Definition
+	bb             *Buildbucket
+	userPayload    *api.CASTree
 	casUserPayload *api.CASReference
 
 	err error

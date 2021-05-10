@@ -17,8 +17,8 @@ package pbutil
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )

@@ -5,7 +5,7 @@ package helloworld
 import (
 	"context"
 
-	proto "github.com/golang/protobuf/proto"
+	proto "google.golang.org/protobuf/proto"
 )
 
 type DecoratedGreeter struct {

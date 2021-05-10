@@ -22,9 +22,9 @@ import (
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/proto"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/protoutil"

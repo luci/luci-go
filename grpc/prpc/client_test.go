@@ -28,8 +28,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/klauspost/compress/gzip"
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

@@ -21,13 +21,14 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

@@ -21,8 +21,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/memcache"
