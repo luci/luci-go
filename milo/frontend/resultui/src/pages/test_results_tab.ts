@@ -157,19 +157,16 @@ export class TestResultsTabElement extends MiloBaseElement {
   static styles = [
     commonStyle,
     css`
-      :host {
-        display: grid;
-        grid-template-rows: auto 1fr;
-        overflow-y: hidden;
-      }
-
       #header {
         display: grid;
         grid-template-columns: auto auto 1fr auto;
-        border-bottom: 1px solid var(--divider-color);
         grid-gap: 5px;
         height: 30px;
         padding: 5px 10px 3px 10px;
+        position: sticky;
+        top: 0px;
+        background: white;
+        border-bottom: 1px solid var(--divider-color);
       }
       milo-test-search-filter {
         max-width: 1000px;
