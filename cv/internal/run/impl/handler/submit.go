@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -29,12 +30,15 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -54,21 +58,8 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		// Under certain race condition, this Run may still occupy the submit
 		// queue. So, check first without a transaction and then initiate a
 		// transaction to release if this Run currently occupies the submit queue.
-		switch current, err := submit.CurrentRun(ctx, rs.Run.ID.LUCIProject()); {
-		case err != nil:
+		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, impl.RM); err != nil {
 			return nil, err
-		case current == rs.Run.ID:
-			var innerErr error
-			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				innerErr = submit.Release(ctx, impl.RM.NotifyReadyForSubmission, rs.Run.ID)
-				return innerErr
-			}, nil)
-			switch {
-			case innerErr != nil:
-				return nil, innerErr
-			case err != nil:
-				return nil, errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
-			}
 		}
 		return &Result{State: rs}, nil
 	case status == run.Status_SUBMITTING:
@@ -104,33 +95,20 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM
 
 	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
 	case expired:
-		// TODO(yiwzhang): fail if partially submitted.
-		// Deadline has already expired. Try to acquire submit queue again
-		// and attempt another submission if not waitlisted. Otherwise,
-		// falls back to WAITING_FOR_SUBMISSION status.
-		switch waitlist, err := acquireSubmitQueue(ctx, rs, rm); {
-		case err != nil:
-			return nil, err
-		case waitlist:
-			rs = rs.ShallowCopy()
-			rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
-			rs.Run.Submission.Deadline = nil
-			rs.Run.Submission.TaskId = ""
-			return &Result{State: rs}, nil
-		default:
-			rs, err := markSubmitting(ctx, rs)
-			if err != nil {
+		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
+		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
+			//fully submitted
+			rs.Run.Status = run.Status_SUCCEEDED
+		default: // None submitted or partially submitted
+			rs.Run.Status = run.Status_FAILED
+			if err := cancelUnSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission); err != nil {
 				return nil, err
 			}
-			s, err := constructSubmitter(ctx, rs, rm)
-			if err != nil {
-				return nil, err
-			}
-			return &Result{
-				State:         rs,
-				PostProcessFn: s.submit,
-			}, nil
 		}
+		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, rm); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
 	case taskID == mustTaskIDFromContext(ctx):
 		// Matching taskID indicates current task is the retry of a previous
 		// submitting task that has failed transiently. Continue the submission.
@@ -274,6 +252,26 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 	}
 }
 
+func releaseSubmitQueueIfTaken(ctx context.Context, runID common.RunID, rm RM) error {
+	switch current, err := submit.CurrentRun(ctx, runID.LUCIProject()); {
+	case err != nil:
+		return err
+	case current == runID:
+		var innerErr error
+		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			innerErr = submit.Release(ctx, rm.NotifyReadyForSubmission, runID)
+			return innerErr
+		}, nil)
+		switch {
+		case innerErr != nil:
+			return innerErr
+		case err != nil:
+			return errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
+		}
+	}
+	return nil
+}
+
 func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID common.RunID, sub *run.Submission) ([]int64, error) {
 	cls, err := run.LoadRunCLs(ctx, runID, clids)
 	if err != nil {
@@ -288,6 +286,83 @@ func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID 
 		ret[i] = int64(cl.ID)
 	}
 	return ret, nil
+}
+
+func cancelUnSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission) error {
+	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
+	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
+	if err != nil {
+		return err
+	}
+	runCLExternalIDs := make([]changelist.ExternalID, len(allRunCLs))
+	var submitted map[common.CLID]struct{}
+	if len(submission.GetSubmittedCls()) > 0 {
+		submitted = common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
+	}
+	unsubmittedRunCLs := make([]*run.RunCL, 0, len(allCLIDs)-len(submitted))
+	submittedCLURLs := make([]string, 0, len(submitted))
+	unsubmittedCLURLs := make([]string, 0, len(allCLIDs)-len(submitted))
+	for i, runCL := range allRunCLs {
+		runCLExternalIDs[i] = runCL.ExternalID
+		url := runCL.ExternalID.MustURL()
+		if _, ok := submitted[runCL.ID]; ok {
+			submittedCLURLs = append(submittedCLURLs, url)
+		} else {
+			unsubmittedRunCLs = append(unsubmittedRunCLs, runCL)
+			unsubmittedCLURLs = append(unsubmittedCLURLs, url)
+		}
+	}
+
+	var msg string
+	if len(submitted) > 0 {
+		msg = fmt.Sprintf(partiallySubmittedMsgFmt,
+			strings.Join(unsubmittedCLURLs, ", "),
+			strings.Join(submittedCLURLs, ", "),
+		)
+	} else {
+		msg = fmt.Sprintf(noneSubmittedMsgFmt, strings.Join(unsubmittedCLURLs, ", "))
+	}
+	return cancelCLTriggers(ctx, runID, unsubmittedRunCLs, runCLExternalIDs, msg)
+}
+
+func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string) error {
+	clids := make(common.CLIDs, len(toCancel))
+	for i, runCL := range toCancel {
+		clids[i] = runCL.ID
+	}
+	cls, err := changelist.LoadCLs(ctx, clids)
+	if err != nil {
+		return err
+	}
+
+	luciProject := runID.LUCIProject()
+	err = parallel.WorkPool(10, func(work chan<- func() error) {
+		for i := range toCancel {
+			i := i
+			work <- func() error {
+				err := cancel.Cancel(ctx, cancel.Input{
+					CL:               cls[i],
+					Trigger:          toCancel[i].Trigger,
+					LUCIProject:      luciProject,
+					Message:          message,
+					Requester:        "Run Manager",
+					Notify:           cancel.OWNER | cancel.VOTERS,
+					LeaseDuration:    time.Minute,
+					RunCLExternalIDs: runCLExternalIDs,
+				})
+				return errors.Annotate(err, "failed to cancel triggers for cl %d", cls[i].ID).Err()
+			}
+		}
+	})
+	if err != nil {
+		switch merr, ok := err.(errors.MultiError); {
+		case !ok:
+			return err
+		default:
+			return common.MostSevereError(merr)
+		}
+	}
+	return nil
 }
 
 type submitter struct {
@@ -305,9 +380,6 @@ type submitter struct {
 	// rm is used to interact with Run Manager.
 	rm RM
 }
-
-const defaultFatalMsg = "CV failed to submit your change because of " +
-	"unexpected internal error. Please contact LUCI team: https://bit.ly/3sMReYs"
 
 // ErrTransientSubmissionFailure indicates that the submission has failed
 // transiently and the same task should be retried.
@@ -472,13 +544,26 @@ func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 // TODO(yiwzhang/tandrii): normalize message with the template function
 // used in clpurger/user_text.go.
 const (
+	defaultFatalMsg = "CV failed to submit your change because of " +
+		"unexpected internal error. Please contact LUCI team: " +
+		"https://bit.ly/3sMReYs"
 	permDeniedMsg = "CV couldn't submit your CL because CV is not " +
 		"allowed to do so in your Gerrit project config. Contact your " +
 		"project admin or Chrome Operations team https://goo.gl/f3mzjN"
 	failedPreconditionMsgFmt = "Gerrit rejected submission with error: " +
 		"%s\nHint: rebasing CL in Gerrit UI and re-submitting through CV " +
 		"usually works"
-	unexpectedMsgFmt = "CV failed to submit your change because of unexpected error from Gerrit: %s"
+	noneSubmittedMsgFmt = "CV failed to submit any CLs in the Run after " +
+		"exhausting all the allocated time.\nCLs: [%s]\nThis generally should " +
+		"not happen, please contact LUCI team https://bit.ly/3sMReYs."
+	partiallySubmittedMsgFmt = "CV timed out while trying to submit all the " +
+		"CLs of this Run.\nNot submitted: [%s]\nSubmitted: [%s]\n" +
+		"Please, use your judgement to determine if already submitted CLs have " +
+		"to be reverted, or if the remaining CLs could be manually submitted. " +
+		"If you think the partially submitted CLs may have broken the " +
+		"tip-of-tree of your project, consider notifying your infrastructure " +
+		"team/gardeners/sheriffs."
+	unexpectedMsgFmt = "CV failed to submit your CL because of unexpected error from Gerrit: %s"
 )
 
 // fatalGerritErrMsg returns non-empty message if the provided error is fatal.

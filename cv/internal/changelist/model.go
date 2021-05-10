@@ -85,6 +85,15 @@ func (e ExternalID) URL() (string, error) {
 	}
 }
 
+// MustURL is like `URL()` but panic on err.
+func (e ExternalID) MustURL() string {
+	ret, err := e.URL()
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // Notify is called with the updated CL in a transaction context after
 // CL is successfully created/updated.
 type Notify func(ctx context.Context, cl *CL) error
