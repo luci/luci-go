@@ -45,7 +45,6 @@ export interface UserConfigs {
     // the value is the last accessed time.
     [key: string]: number;
   };
-  askForFeedback: boolean;
   defaultBuildPageTabName: string;
 }
 
@@ -62,7 +61,6 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   },
   inputPropLineFoldTime: Object.freeze({}),
   outputPropLineFoldTime: Object.freeze({}),
-  askForFeedback: true,
   defaultBuildPageTabName: 'build-overview',
 });
 

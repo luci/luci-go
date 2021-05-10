@@ -35,7 +35,6 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MA
 import { consumer, provider } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
-import { genFeedbackUrl } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
@@ -128,8 +127,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   @observable.ref prerender = false;
 
   @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);
-  @observable.ref private switchVerTemporarily = false;
-  @observable.ref private showFeedbackDialog = false;
 
   // The page is visited via a short link.
   // The page will be redirected to the long link after the build is fetched.
@@ -444,31 +441,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
         </table>
       </mwc-dialog>
-      <mwc-dialog
-        id="feedback-dialog"
-        heading="Tell Us What's Missing"
-        ?open=${this.showFeedbackDialog}
-        @closed=${() => {
-          const noFeedbackEle = this.shadowRoot!.getElementById('no-feedback-prompt')! as HTMLInputElement;
-          if (noFeedbackEle.checked) {
-            this.configsStore.userConfigs.askForFeedback = false;
-          }
-          this.showFeedbackDialog = false;
-          window.open(this.legacyUrl, this.switchVerTemporarily ? '_blank' : '_self');
-        }}
-      >
-        <div>
-          We'd love to make the new build page work better for everyone.<br />
-          Please take a moment to give us feedback before switching back to the old build page.
-        </div>
-        <br />
-        <input type="checkbox" id="no-feedback-prompt" />
-        <label for="no-feedback-prompt">Don't show again</label>
-        <mwc-button slot="primaryAction" dense unelevated @click=${() => window.open(genFeedbackUrl())}>
-          Open Feedback Page
-        </mwc-button>
-        <mwc-button slot="secondaryAction" dialogAction="dismiss">Proceed to legacy page</mwc-button>
-      </mwc-dialog>
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build </span>
@@ -492,19 +464,14 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
               <div class="delimiter"></div>
               <a
                 @click=${(e: MouseEvent) => {
-                  this.switchVerTemporarily = e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
+                  const switchVerTemporarily = e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
                   trackEvent(
                     GA_CATEGORIES.LEGACY_BUILD_PAGE,
-                    this.switchVerTemporarily ? GA_ACTIONS.SWITCH_VERSION_TEMP : GA_ACTIONS.SWITCH_VERSION,
+                    switchVerTemporarily ? GA_ACTIONS.SWITCH_VERSION_TEMP : GA_ACTIONS.SWITCH_VERSION,
                     window.location.href
                   );
 
-                  if (this.configsStore.userConfigs.askForFeedback) {
-                    this.showFeedbackDialog = true;
-                    e.preventDefault();
-                  }
-
-                  if (this.switchVerTemporarily) {
+                  if (switchVerTemporarily) {
                     return;
                   }
 
