@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/machine-db/api/common/v1;common";
+
 package common;
 
 // State is an enumeration of possible states a resource may be in.
