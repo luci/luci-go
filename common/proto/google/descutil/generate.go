@@ -17,7 +17,7 @@
 package descutil
 
 import (
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = proto.Marshal

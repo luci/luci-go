@@ -20,8 +20,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
+	"google.golang.org/protobuf/proto"
+
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/types"
