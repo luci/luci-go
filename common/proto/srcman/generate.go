@@ -19,7 +19,7 @@
 package srcman
 
 import (
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 //go:generate cproto
