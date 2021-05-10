@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35068c54_56f51ea0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-10T22:19:05Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "fbc0b2c4c3004eff743bbae97c9d2140254b9e59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de12a037_552fe2c2",
+        "filename": "vpython/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-10T22:19:05Z",
+      "side": 1,
+      "message": "let\u0027s move this into a different list; no users should ever be setting this envvar, it should only be set via vpython itself.",
+      "range": {
+        "startLine": 261,
+        "startChar": 5,
+        "endLine": 261,
+        "endChar": 26
+      },
+      "revId": "fbc0b2c4c3004eff743bbae97c9d2140254b9e59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b589a2ec_f6140848",
+        "filename": "vpython/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-10T22:19:05Z",
+      "side": 1,
+      "message": "needs to be set to the (regrettable) value:\n\n  \"manually managed python not supported by chrome operations\"",
+      "range": {
+        "startLine": 264,
+        "startChar": 25,
+        "endLine": 264,
+        "endChar": 28
+      },
+      "revId": "fbc0b2c4c3004eff743bbae97c9d2140254b9e59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
