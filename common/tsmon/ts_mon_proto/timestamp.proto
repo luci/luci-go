@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 syntax = "proto2";
 
+option go_package = "go.chromium.org/luci/common/tsmon/ts_mon_proto";
+
 package ts_mon.proto;
 
 message Timestamp {

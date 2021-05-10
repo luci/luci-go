@@ -1199,6 +1199,48 @@
       },
       "type": "object"
     },
+    "SwarmingRpcsCASOperationStats": {
+      "id": "SwarmingRpcsCASOperationStats",
+      "properties": {
+        "duration": {
+          "format": "double",
+          "type": "number"
+        },
+        "initial_number_items": {
+          "format": "int64",
+          "type": "string"
+        },
+        "initial_size": {
+          "format": "int64",
+          "type": "string"
+        },
+        "items_cold": {
+          "format": "byte",
+          "type": "string"
+        },
+        "items_hot": {
+          "format": "byte",
+          "type": "string"
+        },
+        "num_items_cold": {
+          "format": "int64",
+          "type": "string"
+        },
+        "num_items_hot": {
+          "format": "int64",
+          "type": "string"
+        },
+        "total_bytes_items_cold": {
+          "format": "int64",
+          "type": "string"
+        },
+        "total_bytes_items_hot": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "SwarmingRpcsCASReference": {
       "id": "SwarmingRpcsCASReference",
       "properties": {
@@ -1516,53 +1558,37 @@
         "duration": {
           "format": "double",
           "type": "number"
-        },
-        "initial_number_items": {
-          "format": "int64",
-          "type": "string"
-        },
-        "initial_size": {
-          "format": "int64",
-          "type": "string"
-        },
-        "items_cold": {
-          "format": "byte",
-          "type": "string"
-        },
-        "items_hot": {
-          "format": "byte",
-          "type": "string"
-        },
-        "num_items_cold": {
-          "format": "int64",
-          "type": "string"
-        },
-        "num_items_hot": {
-          "format": "int64",
-          "type": "string"
-        },
-        "total_bytes_items_cold": {
-          "format": "int64",
-          "type": "string"
-        },
-        "total_bytes_items_hot": {
-          "format": "int64",
-          "type": "string"
         }
       },
       "type": "object"
     },
     "SwarmingRpcsPerformanceStats": {
+      "description": "Performance stats of task execution. See task_result.PerformanceStats for details.",
       "id": "SwarmingRpcsPerformanceStats",
       "properties": {
         "bot_overhead": {
           "format": "double",
           "type": "number"
         },
-        "isolated_download": {
+        "cache_trim": {
           "$ref": "SwarmingRpcsOperationStats"
         },
+        "cleanup": {
+          "$ref": "SwarmingRpcsOperationStats"
+        },
+        "isolated_download": {
+          "$ref": "SwarmingRpcsCASOperationStats"
+        },
         "isolated_upload": {
+          "$ref": "SwarmingRpcsCASOperationStats"
+        },
+        "named_caches_install": {
+          "$ref": "SwarmingRpcsOperationStats"
+        },
+        "named_caches_uninstall": {
+          "$ref": "SwarmingRpcsOperationStats"
+        },
+        "package_installation": {
           "$ref": "SwarmingRpcsOperationStats"
         }
       },
@@ -2046,7 +2072,8 @@
           "description": "Defines a data tree reference for Swarming task inputs or outputs. It is a reference to an isolated file on an isolate server. DEPRECATED. Isolate server is being migrated to RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS."
         },
         "performance_stats": {
-          "$ref": "SwarmingRpcsPerformanceStats"
+          "$ref": "SwarmingRpcsPerformanceStats",
+          "description": "Performance stats of task execution. See task_result.PerformanceStats for details."
         },
         "resultdb_info": {
           "$ref": "SwarmingRpcsResultDBInfo",
