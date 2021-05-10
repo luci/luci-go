@@ -103,6 +103,9 @@ CREATE TABLE Invocations (
   -- directly and indirectly.
   TestResultVariantUnionRecursive ARRAY<STRING(MAX)>,
 
+  -- The deadline, but is NULL if the invocation is not active.
+  ActiveDeadline TIMESTAMP AS (IF(State = 1, Deadline, NULL)) STORED,
+
 ) PRIMARY KEY (InvocationId);
 
 -- Used by test results history to find a history of test results ordered by
@@ -124,6 +127,11 @@ CREATE INDEX InvocationsByInvocationExpiration
 -- Used by a cron job that periodically removes expected test results.
 CREATE NULL_FILTERED INDEX InvocationsByExpectedTestResultsExpiration
   ON Invocations (ShardId DESC, ExpectedTestResultsExpirationTime, InvocationId);
+
+-- Index of active invocations by deadline.
+-- Used to query invocations overdue to be finalized.
+CREATE NULL_FILTERED INDEX InvocationsByActiveDeadline
+  ON Invocations (ShardId DESC, ActiveDeadline, InvocationId);
 
 -- Stores ids of invocations included in another invocation.
 -- Interleaved in Invocations table.

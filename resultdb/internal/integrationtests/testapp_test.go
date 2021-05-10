@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 
+	"go.chromium.org/luci/resultdb/internal/services/deadlineenforcer"
 	"go.chromium.org/luci/resultdb/internal/services/finalizer"
 	"go.chromium.org/luci/resultdb/internal/services/purger"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
@@ -205,9 +206,18 @@ func (t *testApp) initServers(ctx context.Context) error {
 		ForceCronInterval: 100 * time.Millisecond,
 	})
 
+	// Init deadlineenforcer server.
+	deadlineEnforcerServer, _, err := t.serverClientPair(ctx, 8040, 8041)
+	if err != nil {
+		return err
+	}
+	deadlineenforcer.InitServer(deadlineEnforcerServer, deadlineenforcer.Options{
+		ForceCronInterval: 100 * time.Millisecond,
+	})
+
 	t.ResultDB = pb.NewResultDBPRPCClient(resultdbPRPCClient)
 	t.Recorder = pb.NewRecorderPRPCClient(recorderPRPCClient)
-	t.servers = []*server.Server{resultdbServer, recorderServer, finalizerServer, purgerServer}
+	t.servers = []*server.Server{resultdbServer, recorderServer, finalizerServer, purgerServer, deadlineEnforcerServer}
 	return nil
 }
 

@@ -16,11 +16,14 @@ package integrationtests
 
 import (
 	"context"
+	"time"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -70,5 +73,21 @@ func (c *testClient) Include(ctx context.Context, including, included string) {
 func (c *testClient) FinalizeInvocation(ctx context.Context, name string) {
 	ctx = c.withUpdateTokenFor(ctx, name)
 	_, err := c.app.Recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: name})
+	So(err, ShouldBeNil)
+}
+
+// MakeInvocationOverdue uses a magic constant to set an invocation's deadline
+// sometime in the past.
+func (c *testClient) MakeInvocationOverdue(ctx context.Context, name string) {
+	ctx = c.withUpdateTokenFor(ctx, name)
+	_, err := c.app.Recorder.UpdateInvocation(ctx, &pb.UpdateInvocationRequest{
+		Invocation: &pb.Invocation{
+			Name:     name,
+			Deadline: pbutil.MustTimestampProto(time.Unix(recorder.TestMagicOverdueDeadlineUnixSecs, 0).UTC()),
+		},
+		UpdateMask: &field_mask.FieldMask{
+			Paths: []string{"deadline"},
+		},
+	})
 	So(err, ShouldBeNil)
 }
