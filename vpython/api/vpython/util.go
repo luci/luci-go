@@ -17,7 +17,7 @@ package vpython
 import (
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // Version is a version string. It must be updated any time the text protobufs

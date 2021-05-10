@@ -20,9 +20,9 @@ import (
 	"context"
 	"io/ioutil"
 
-	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"

@@ -17,7 +17,8 @@ package main
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/common/errors"

@@ -22,7 +22,7 @@
 package ts_mon_proto
 
 import (
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = proto.Marshal

@@ -19,7 +19,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/data/text/templateproto"
 )
 

@@ -20,7 +20,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -29,7 +30,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
-	"go.chromium.org/luci/dm/api/template"
+	dmTemplate "go.chromium.org/luci/dm/api/template"
 
 	"go.chromium.org/luci/tumble"
 

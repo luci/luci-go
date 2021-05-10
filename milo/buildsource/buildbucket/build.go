@@ -23,9 +23,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"

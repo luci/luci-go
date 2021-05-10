@@ -17,7 +17,7 @@ package target
 import (
 	"reflect"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )

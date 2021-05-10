@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/danjacques/gofslock/fslock"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"

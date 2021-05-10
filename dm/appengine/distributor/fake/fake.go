@@ -39,7 +39,7 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/tumble"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // Setup creates a new combination of testing and context objects:

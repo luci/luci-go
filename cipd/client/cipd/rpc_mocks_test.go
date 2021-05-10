@@ -17,8 +17,8 @@ package cipd
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/grpc"
 

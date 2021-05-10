@@ -18,7 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/gae/service/info"

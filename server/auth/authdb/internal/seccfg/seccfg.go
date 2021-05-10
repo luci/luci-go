@@ -19,7 +19,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth/service/protocol"
