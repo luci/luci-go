@@ -1,3 +1,5 @@
+[TOC]
+
 ## vpython - simple and easy Virtualenv Python
 
 `vpython` is a tool, written in Go, which enables the simple and easy invocation
@@ -242,3 +244,22 @@ with `vpython` in your shebang line will automatically work.
 #!/usr/bin/env vpython
 ```
 
+## Configuration
+
+There are a number of environment variables that can affect vpython's behavior.
+These are the following:
+
+*   `VPYTHON_VIRTUALENV_ROOT`: Specifies the VirtualEnv root. Default is
+    `~/.vpython-root`. Can also be specified via the "-vpython-root" cmd-line
+    flag.
+*   `VPYTHON_DEFAULT_SPEC`: Specifies path to a vpython spec file that will be
+    used if none is provided or found through probing.
+*   `VPYTHON_LOG_TRACE`: Specifies log level of vpython. Can also be specified
+    via the "-vpython-log-level" cmd-line flag.
+*   `VPYTHON_CLEAR_PYTHONPATH`: If set, vpython will clear the PYTHONPATH env
+    var prior to launching the Python interpreter.
+*   `VPYTHON_CHECK_WRAPPER`: If set, vpython will immediately exit with a
+    non-zero return code. Useful to determine if a given binary is a "vpython"
+    wrapper.
+*   `VPYTHON_BYPASS`: If set, vpython will do nothing and will instead directly
+    invoke the next `python` on PATH.
