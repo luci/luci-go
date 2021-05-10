@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f6e437d_aa816411",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T18:03:50Z",
+      "side": 1,
+      "message": "nit: I think we should make a better guess by choosing the first run where run.CreateTime \u003d attempt.start_time.",
+      "range": {
+        "startLine": 210,
+        "startChar": 4,
+        "endLine": 210,
+        "endChar": 47
+      },
+      "revId": "f5563cdd216109271cd95efcdeddcd64b905436d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
