@@ -42,10 +42,17 @@ import (
 //      won't have the same RunID.
 type RunID string
 
-// CV will be dead on 2336-10-19T17:46:40Z (10^10s after 2020-01-01T00:00:00Z).
-var endOfTheWorld = time.Date(2336, 10, 19, 17, 46, 40, 0, time.UTC)
+// CV will be dead on ~292.3 years after first LUCI design doc was created.
+//
+// Computed as https://play.golang.com/p/hDQ-EhlSLu5
+//   luci := time.Date(2014, time.May, 9, 1, 26, 0, 0, time.UTC)
+//   endOfTheWorld := luci.Add(time.Duration(1<<63 - 1))
+var endOfTheWorld = time.Date(2306, time.August, 19, 1, 13, 16, 854775807, time.UTC)
 
 func MakeRunID(luciProject string, createTime time.Time, digestVersion int, clsDigest []byte) RunID {
+	if endOfTheWorld.Sub(createTime) == 1<<63-1 {
+		panic(fmt.Errorf("overflow"))
+	}
 	ms := endOfTheWorld.Sub(createTime).Milliseconds()
 	if ms < 0 {
 		panic(fmt.Errorf("Can't create run at %s which is after endOfTheWorld %s", createTime, endOfTheWorld))
