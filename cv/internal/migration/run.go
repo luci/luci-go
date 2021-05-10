@@ -16,6 +16,7 @@ package migration
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -183,6 +184,33 @@ func fetchRunsWithStatus(ctx context.Context, project string, status run.Status)
 		return nil, errors.Annotate(err, "failed to fetch Run entities").Tag(transient.Tag).Err()
 	}
 	return runs, nil
+}
+
+// fetchAttempt loads Run from datastore given its CQD attempt key hash.
+//
+// Returns nil, nil if such Run doesn't exist.
+func fetchAttempt(ctx context.Context, key string) (*run.Run, error) {
+	q := datastore.NewQuery(run.RunKind).Eq("CQDAttemptKey", key)
+	var out []*run.Run
+	if err := datastore.GetAll(ctx, q, &out); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch Run with CQDAttemptKeyHash=%q", key).Tag(transient.Tag).Err()
+	}
+	switch l := len(out); l {
+	case 0:
+		return nil, nil
+	case 1:
+		return out[0], nil
+	default:
+		sb := strings.Builder{}
+		for _, r := range out {
+			sb.WriteRune(' ')
+			sb.WriteString(string(r.ID))
+		}
+		logging.Errorf(ctx, "BUG: found %d Runs with CQDAttemptKeyHash=%q: [%s]", l, key, sb.String())
+		// To unblock CQDaemon, choose the latest Run, which given ID generation
+		// scheme must be the first in the output.
+		return out[0], nil
+	}
 }
 
 // VerifiedCQDRun is the Run reported by CQDaemon after verification
