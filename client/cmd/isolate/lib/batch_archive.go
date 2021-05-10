@@ -247,15 +247,6 @@ func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, al *archive
 	return nil
 }
 
-// digests extracts the digests from the supplied IsolatedSummarys.
-func digests(summaries []tarring.IsolatedSummary) []string {
-	result := make([]string, len(summaries))
-	for i, summary := range summaries {
-		result[i] = string(summary.Digest)
-	}
-	return result
-}
-
 // processGenJSON validates a genJSON file and returns the contents.
 func processGenJSON(genJSONPath string) (*isolate.ArchiveOptions, error) {
 	f, err := os.Open(genJSONPath)

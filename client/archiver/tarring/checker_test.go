@@ -16,7 +16,6 @@ package tarring
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -180,30 +179,5 @@ func TestCheckerAlreadyExists(t *testing.T) {
 
 	if got, want := checker.Miss.Count(), 0; got != want {
 		t.Errorf("checker miss count: got %v ; want: %v", got, want)
-	}
-}
-
-func disabledTestCheckerErrors(t *testing.T) {
-	// Make an error channel which sends errBang on the second receive.
-	errc := make(chan error, 2)
-	errBang := errors.New("bang")
-	errc <- nil
-	errc <- errBang
-	close(errc)
-
-	fake := &fakeIsolateService{errc: errc}
-	checker := newChecker(context.Background(), fake, 8)
-
-	nop := func(item *Item, ps *isolatedclient.PushState) {}
-	for i := 0; i < 150; i++ {
-		item := &Item{
-			Path:   fmt.Sprintf("/item/%d", i),
-			Digest: isolated.HexDigest(fmt.Sprintf("digest%d", i)),
-		}
-		checker.AddItem(item, false, nop)
-	}
-
-	if err := checker.Close(); err != errBang {
-		t.Fatalf("checker.Close: got error %v; want %v", err, errBang)
 	}
 }
