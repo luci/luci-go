@@ -38,6 +38,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// TestMagicOverdueDeadlineUnixSecs is a magic value used by tests to set an
+// invocation's deadline in the past.
+const TestMagicOverdueDeadlineUnixSecs = 904924800
+
 // isValidCreateState returns false if invocations cannot be created in the
 // given state `s`.
 func isValidCreateState(s pb.Invocation_State) bool {
@@ -54,14 +58,17 @@ func isValidCreateState(s pb.Invocation_State) bool {
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
 func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 	internal.AssertUTC(now)
-	switch deadline, err := ptypes.Timestamp(deadline); {
+	switch d, err := ptypes.Timestamp(deadline); {
 	case err != nil:
 		return err
 
-	case deadline.Sub(now) < 10*time.Second:
+	case deadline.GetSeconds() == TestMagicOverdueDeadlineUnixSecs && deadline.GetNanos() == 0:
+		return nil
+
+	case d.Sub(now) < 10*time.Second:
 		return errors.Reason("must be at least 10 seconds in the future").Err()
 
-	case deadline.Sub(now) > 2*24*time.Hour:
+	case d.Sub(now) > 2*24*time.Hour:
 		return errors.Reason("must be before 48h in the future").Err()
 
 	default:
