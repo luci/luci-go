@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "db0675fc_236bee7a",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f8277e7_8baac8c8",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 19
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5b3fb475_7a99ed3f",
@@ -81,6 +105,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "61b6cc06_79cd5c32",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b3fb475_7a99ed3f",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 2
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "03bc344f_c079293a",
@@ -94,6 +142,30 @@
       "writtenOn": "2021-05-07T21:32:18Z",
       "side": 1,
       "message": "I think attempt key is part of the run ID but not equals to run ID. You can use the  util method in the CL Andrii just uploaded to extract attempt key.\n\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2880658/1/cv/internal/common/run.go#67",
+      "range": {
+        "startLine": 90,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 37
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc84cd00_98931413",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Nice, I hadn\u0027t noticed that.\n\nI had set to just run ID since the key is arbitrary as long as it\u0027s unique for each run (and run ID is also unique for each run...) but we may as well keep it consistent with CQD.",
+      "parentUuid": "03bc344f_c079293a",
       "range": {
         "startLine": 90,
         "startChar": 0,
@@ -144,6 +216,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc1f2a23_bdf1576f",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Yeah, I agree. Removed the note.\n\nI wrote this because I was thinking about what to do in the case where a CL was in the submitted CLs list but not the CLs list.",
+      "parentUuid": "7957d900_27c65853",
+      "range": {
+        "startLine": 132,
+        "startChar": 0,
+        "endLine": 132,
+        "endChar": 74
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "877feadd_eeed763b",
@@ -157,6 +253,30 @@
       "writtenOn": "2021-05-07T21:32:18Z",
       "side": 1,
       "message": "nit: we can move this check right after loading run from datastore.",
+      "range": {
+        "startLine": 182,
+        "startChar": 1,
+        "endLine": 184,
+        "endChar": 2
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b94e4b9_87b078cf",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "877feadd_eeed763b",
       "range": {
         "startLine": 182,
         "startChar": 1,
@@ -214,6 +334,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "425a1997_be74cca3",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "65568388_dae8de86",
+      "range": {
+        "startLine": 56,
+        "startChar": 5,
+        "endLine": 56,
+        "endChar": 30
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "646acfa0_fbdf69fc",
@@ -261,6 +405,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "42e0d41c_45e16343",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "820256d5_288dcae7",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 103,
+        "endChar": 62
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "54b7466d_ef9e133e",
@@ -274,6 +442,30 @@
       "writtenOn": "2021-05-07T20:21:17Z",
       "side": 1,
       "message": "This is wrong.\n*CV* status in such a case will definitely be a FAILURE, because not all CLs were submitted.\n\nHowever, legacy BQ export must say Attempt.Status \u003d\u003d SUCCESS for backwards compatibility.",
+      "range": {
+        "startLine": 115,
+        "startChar": 23,
+        "endLine": 115,
+        "endChar": 39
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c04091e3_aca7466b",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Hm, right.\n\nI think that actually in all cases right now we\u0027d like to copy status from the attempt reported from CQDaemon; in this particular case, makeAttempt could still create an attempt with FAILURE, because in this code we don\u0027t know that the run is considered failed because of failed submission, it could be something else. Then in reconcileAttempts, the \"SUCCESS\" status could be copied over from the CQD Attempt.\n\nThen, later on when there\u0027s an easy way to check that the run is considered failed only because of submit failure, then in order to maintain backward-compatibility, we\u0027ll change this to set status \u003d SUCCESS, substatus \u003d FAILED_SUBMIT?",
+      "parentUuid": "54b7466d_ef9e133e",
       "range": {
         "startLine": 115,
         "startChar": 23,
@@ -339,6 +531,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e7fa5976_1c7dc590",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "It sounds like this is a TODO/change to be added to Submission in run/storage.proto, is that right?",
+      "parentUuid": "dada5b8c_da9dd30f",
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c979f12d_8a25a997",
         "filename": "cv/internal/run/bq/bq_test.go",
         "patchSetId": 12
@@ -350,6 +560,30 @@
       "writtenOn": "2021-05-07T20:21:17Z",
       "side": 1,
       "message": "Does reconcile really need this? I think it operates on the 2 given protos, only.",
+      "range": {
+        "startLine": 277,
+        "startChar": 0,
+        "endLine": 279,
+        "endChar": 16
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f68d897_4d46d860",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Added it to get a time using ct.Clock.Now(); switched to just use time.Now() for simplicity.",
+      "parentUuid": "c979f12d_8a25a997",
       "range": {
         "startLine": 277,
         "startChar": 0,
@@ -385,6 +619,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "21e14b57_c4748dad",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9840efbe_a2ae1b56",
+      "range": {
+        "startLine": 280,
+        "startChar": 2,
+        "endLine": 280,
+        "endChar": 5
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f4ea37b7_8c132878",
         "filename": "cv/internal/run/bq/bq_test.go",
         "patchSetId": 12
@@ -396,6 +654,30 @@
       "writtenOn": "2021-05-07T20:21:17Z",
       "side": 1,
       "message": "FWIW: while SUCCESS really must not happen % bug in CQDaemon.\nBut `Status: FAILED`  may actually happen.",
+      "range": {
+        "startLine": 358,
+        "startChar": 3,
+        "endLine": 360,
+        "endChar": 44
+      },
+      "revId": "0ccf940f7fe66781b5f5a135700d282702b5c3b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "10c17188_a8231f50",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-10T21:43:06Z",
+      "side": 1,
+      "message": "Yeah, this is kind of a silly test, meant to try to cover a hypothetical case where status is success and substatus is not \"no substatus\".\n\nI think this doesn\u0027t actually happen in practice; maybe this test can be deleted?",
+      "parentUuid": "f4ea37b7_8c132878",
       "range": {
         "startLine": 358,
         "startChar": 3,
