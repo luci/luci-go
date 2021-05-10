@@ -6,6 +6,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/common/proto/config";
+
 package config;
 
 import "go.chromium.org/luci/common/proto/options.proto";

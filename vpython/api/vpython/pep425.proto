@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/vpython/api/vpython";
+
 package vpython;
 
 // Represents a Python PEP425 tag.

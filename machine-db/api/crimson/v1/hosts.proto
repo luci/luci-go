@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/machine-db/api/crimson/v1;crimson";
+
 package crimson;
 
 // A request to delete a physical or virtual host from the database.

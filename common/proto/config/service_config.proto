@@ -11,6 +11,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/common/proto/config";
+
 package config;
 
 // DEPRECATED. DO NOT USE because the Gitiles URL is ambiguous due to lack of

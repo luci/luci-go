@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/grpc/internal/svctool/testdata";
+
 package test;
 
 import "go.chromium.org/luci/grpc/internal/svctool/testdata/sub/sub.proto";

@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/tools/cmd/bqschemaupdater/testdata";
+
 package testdata;
 
 import "google/protobuf/duration.proto";

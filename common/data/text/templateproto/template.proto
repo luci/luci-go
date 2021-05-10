@@ -4,6 +4,8 @@
 
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/common/data/text/templateproto";
+
 import "google/protobuf/empty.proto";
 
 package templateproto;
