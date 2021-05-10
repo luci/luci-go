@@ -26,8 +26,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/client/flagpb"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/clock"
