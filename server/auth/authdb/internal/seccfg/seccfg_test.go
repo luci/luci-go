@@ -17,7 +17,7 @@ package seccfg
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/server/auth/service/protocol"
 

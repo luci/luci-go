@@ -18,9 +18,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	pb "go.chromium.org/luci/cv/api/config/v2"
 )
 

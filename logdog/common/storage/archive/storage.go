@@ -41,7 +41,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	cloudStorage "cloud.google.com/go/storage"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 const (

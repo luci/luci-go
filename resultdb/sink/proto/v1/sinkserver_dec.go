@@ -5,7 +5,7 @@ package sinkpb
 import (
 	"context"
 
-	proto "github.com/golang/protobuf/proto"
+	proto "google.golang.org/protobuf/proto"
 
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )

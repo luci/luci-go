@@ -22,8 +22,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/sync/parallel"
