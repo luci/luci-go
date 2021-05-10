@@ -16,6 +16,24 @@
       "message": "nit: why? i think most of our codebase keeps these \".\" imports together.",
       "revId": "ef1b3ea8b72a0880c8cac177ba481b8ce312b603",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02f78c1e_6924c677",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-10T08:53:55Z",
+      "side": 1,
+      "message": "This came from\n\n$ git diff --name-only origin/master | xargs goimports -w -local go.chromium.org",
+      "parentUuid": "fdd9b7ad_431f09f9",
+      "revId": "ef1b3ea8b72a0880c8cac177ba481b8ce312b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
