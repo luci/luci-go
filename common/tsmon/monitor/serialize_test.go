@@ -18,13 +18,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
 

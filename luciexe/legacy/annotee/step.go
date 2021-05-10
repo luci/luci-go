@@ -20,8 +20,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
