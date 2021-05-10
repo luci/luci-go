@@ -84,6 +84,9 @@ func ClientOptions(creds credentials.PerRPCCredentials) []client.Opt {
 		client.ExecutableMode(0700),
 		client.RegularMode(0600),
 		client.CompressedBytestreamThreshold(0),
+
+		// Do not set per RPC timeout.
+		client.RPCTimeouts{},
 	}
 }
 
