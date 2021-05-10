@@ -5,6 +5,8 @@
 // DummyProject is the Target schema used by tsmon to represent a dummy project.
 syntax = "proto3";
 
+option go_package = "go.chromium.org/luci/common/tsmon/examples/beep/dummy_project";
+
 message DummyProject {
   // The project id that uniquely identifies the dummy project owning the data.
   string project = 10;
