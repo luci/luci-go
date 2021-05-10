@@ -8,7 +8,7 @@ syntax = "proto3";
 
 package notify;
 
-option go_package = "config";
+option go_package = "go.chromium.org/luci/luci_notify/api/config";
 
 // Settings is the top-level configuration message.
 message Settings {
