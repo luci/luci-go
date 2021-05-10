@@ -101,7 +101,6 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
       ${this.step.children?.map(
         (child, i) => html`
           <milo-build-step-entry
-            class="list-entry"
             .number=${i + 1}
             .step=${child}
             .expanded=${this.expandSubSteps}
@@ -211,12 +210,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
   }
 
   renderPlaceHolder() {
-    // 200px is a rough estimate of the height of an expanded step entry.
-    // Setting it too high will increase the num of step entries fully rendered
-    // in the first rendering cycle.
-    // Setting it too low will cause the page to need multiple iterations
-    // to render enough step entries to fill the screen.
-    return html`<div style="height: ${this.expanded ? 200 : 24}px;"></div>`;
+    return '';
   }
 
   protected render() {
@@ -270,6 +264,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
     css`
       :host {
         display: none;
+        min-height: 24px;
       }
 
       #header {

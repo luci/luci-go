@@ -199,7 +199,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
   }
 
   renderPlaceHolder() {
-    return html`<div id="place-holder"></div>`;
+    return '';
   }
 
   protected render() {
@@ -245,10 +245,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     css`
       :host {
         display: block;
-      }
-
-      #place-holder {
-        height: 24px;
+        min-height: 24px;
       }
 
       #header {
