@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "aed9be3d_975824b2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "31deb326_9696dfd6",
+      "range": {
+        "startLine": 7,
+        "startChar": 24,
+        "endLine": 7,
+        "endChar": 33
+      },
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f5b4fb49_75403486",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -66,6 +90,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b0244929_033c93c7",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "I\u0027m having a hard time to name the function initially, but now I\u0027ve make it a separate function and merge those two cases together.",
+      "parentUuid": "88a36139_d86690aa",
+      "range": {
+        "startLine": 100,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 68
+      },
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "d5f5009d_4693b397",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 1
@@ -77,6 +125,24 @@
       "writtenOn": "2021-05-07T13:46:44Z",
       "side": 1,
       "message": "please confirm I understand this correctly:\n  iff `cancelCLTriggers` fails, this codepath would be retried again (in the next RM invocation).",
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d30f1ed_29bde589",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "Yes unless a CLSubmitted event magically arrives after the first invocation which should not happen.",
+      "parentUuid": "d5f5009d_4693b397",
       "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -94,6 +160,30 @@
       "writtenOn": "2021-05-07T13:46:44Z",
       "side": 1,
       "message": "this isn\u0027t a recoverable error -- even on retry, no progress will be made. I think it\u0027s better to panic, or least log.Errorf this s.t. we get cloud error reporting telling us that smth is wrong.",
+      "range": {
+        "startLine": 137,
+        "startChar": 5,
+        "endLine": 137,
+        "endChar": 20
+      },
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "85ae60c2_48264af2",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "panic sgtm. Made a MustURL func.",
+      "parentUuid": "54852805_13d1148d",
       "range": {
         "startLine": 137,
         "startChar": 5,
@@ -139,6 +229,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "18a7d503_e0862a97",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "added.",
+      "parentUuid": "5884c55a_4803d7ab",
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6dfb71f3_add8ae36",
@@ -152,6 +260,30 @@
       "writtenOn": "2021-05-07T13:46:44Z",
       "side": 1,
       "message": "why this double tracking?\nIMO, there is no need for a lazy mutlierror. parallel.WorkPool already returns a multierror in case of errors, so you can take most severe from it.",
+      "range": {
+        "startLine": 365,
+        "startChar": 4,
+        "endLine": 366,
+        "endChar": 14
+      },
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1907c04e_3efce91c",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "Good point.",
+      "parentUuid": "6dfb71f3_add8ae36",
       "range": {
         "startLine": 365,
         "startChar": 4,
@@ -185,6 +317,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7dbcfd4_190bca89",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 568,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06944fc8_c718256e",
+      "range": {
+        "startLine": 568,
+        "startChar": 10,
+        "endLine": 568,
+        "endChar": 12
+      },
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5aeb0cc_f1466d9c",
@@ -208,6 +364,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e24968c_b6a767b3",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 570,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5aeb0cc_f1466d9c",
+      "range": {
+        "startLine": 570,
+        "startChar": 32,
+        "endLine": 570,
+        "endChar": 57
+      },
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "894e0ef3_c0bef367",
@@ -221,6 +401,30 @@
       "writtenOn": "2021-05-07T13:46:44Z",
       "side": 1,
       "message": "That\u0027s a bad recommendation \n new Run won\u0027t include already submitted CLs, so tryjobs won\u0027t be re-used, so it\u0027ll take long time, and the tip of the tree may be already broken.\n\nIt\u0027s also annoying -- if user\u0027s retry is likely to succeed, why CV didn\u0027t do this itself? 😊\n\nHow about:\n\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+      "range": {
+        "startLine": 572,
+        "startChar": 22,
+        "endLine": 572,
+        "endChar": 56
+      },
+      "revId": "269dc08ae22c7eca3e60b316b7916b70bda60783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1316946e_20f63dd6",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 572,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-10T17:28:52Z",
+      "side": 1,
+      "message": "That\u0027s really great recommendation!",
+      "parentUuid": "894e0ef3_c0bef367",
       "range": {
         "startLine": 572,
         "startChar": 22,
