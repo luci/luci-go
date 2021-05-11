@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a554f67_007f396f",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-11T23:04:08Z",
+      "side": 1,
+      "message": "Nice! Thanks for doing that",
+      "parentUuid": "8b6f4939_dde8c1d7",
+      "revId": "a71770efcdbf9f59332d01d0d35fc625a700aca6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "39b012c0_a3cbd92e",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-05-11T17:19:14Z",
       "side": 1,
       "message": "can\u0027t we check for both truncated and original message above?",
+      "range": {
+        "startLine": 228,
+        "startChar": 4,
+        "endLine": 228,
+        "endChar": 42
+      },
+      "revId": "a71770efcdbf9f59332d01d0d35fc625a700aca6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff0754d5_c274727e",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-11T23:04:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39b012c0_a3cbd92e",
       "range": {
         "startLine": 228,
         "startChar": 4,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "87959c2d_32ea6190",
+        "filename": "cv/internal/migration/migration_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-11T23:04:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1235df8_bcacf83f",
+      "range": {
+        "startLine": 121,
+        "startChar": 33,
+        "endLine": 121,
+        "endChar": 53
+      },
+      "revId": "a71770efcdbf9f59332d01d0d35fc625a700aca6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a9c64f24_ee6e542c",
@@ -87,6 +153,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ebe5411b_f62276e6",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-11T23:04:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9c64f24_ee6e542c",
+      "range": {
+        "startLine": 298,
+        "startChar": 56,
+        "endLine": 298,
+        "endChar": 63
+      },
+      "revId": "a71770efcdbf9f59332d01d0d35fc625a700aca6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4268353_2c9f4bba",
@@ -100,6 +190,24 @@
       "writtenOn": "2021-05-11T17:19:14Z",
       "side": 1,
       "message": "There could be a rare race between a new revision upload and CQ decide to post message to current revision. Should CQ also report the revision it currently has observed and decide to post the comment to instead of using the current revision in CV.",
+      "revId": "a71770efcdbf9f59332d01d0d35fc625a700aca6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8686236_68ecbf92",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-11T23:04:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4268353_2c9f4bba",
       "revId": "a71770efcdbf9f59332d01d0d35fc625a700aca6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
