@@ -89,6 +89,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f37631de_db64c7cd",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-11T19:46:18Z",
+      "side": 1,
+      "message": "Yes. I think it\u0027s right assumption. at least it\u0027s the current behavior and I have not intent to change.",
+      "parentUuid": "1f139b80_51de0cd0",
+      "range": {
+        "startLine": 194,
+        "startChar": 53,
+        "endLine": 194,
+        "endChar": 70
+      },
+      "revId": "6e995c9c092bb07471e42205bfda025515a05884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5da94b25_088b1506",
         "filename": "cv/internal/run/bq/bq_test.go",
         "patchSetId": 14
