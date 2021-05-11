@@ -97,11 +97,18 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM
 	case expired:
 		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
 		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
-			//fully submitted
+			// fully submitted
 			rs.Run.Status = run.Status_SUCCEEDED
 		default: // None submitted or partially submitted
 			rs.Run.Status = run.Status_FAILED
-			if err := cancelUnSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission); err != nil {
+			// synthesize submission completed event for deadline expiry.
+			sc := &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+				FailureReason: &eventpb.SubmissionCompleted_Timeout{
+					Timeout: true,
+				},
+			}
+			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
 				return nil, err
 			}
 		}
@@ -288,41 +295,103 @@ func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID 
 	return ret, nil
 }
 
-func cancelUnSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission) error {
+func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.SubmissionCompleted) (submitted, pending []*run.RunCL, failed *run.RunCL) {
+	var submittedSet map[common.CLID]struct{}
+	if len(submission.GetSubmittedCls()) > 0 {
+		submittedSet = common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
+	}
+	failedCLID := common.CLID(sc.GetClFailure().GetClid())
+	if _, ok := submittedSet[failedCLID]; ok {
+		panic(fmt.Errorf("impossible; cl %d is marked both submitted and failed", failedCLID))
+	}
+	submitted = make([]*run.RunCL, 0, len(submittedSet))
+	pending = make([]*run.RunCL, 0, len(cls)-len(submittedSet))
+	for _, cl := range cls {
+		switch _, ok := submittedSet[cl.ID]; {
+		case ok:
+			submitted = append(submitted, cl)
+		case cl.ID == failedCLID:
+			failed = cl
+		default:
+			pending = append(pending, cl)
+		}
+	}
+	return submitted, pending, failed
+}
+
+func makePartialSubmissionMsgSuffix(submitted []*run.RunCL, failed *run.RunCL, notAttempted []*run.RunCL) string {
+	submittedURLs := make([]string, len(submitted))
+	for i, cl := range submitted {
+		submittedURLs[i] = cl.ExternalID.MustURL()
+	}
+	notSubmittedURLs := make([]string, 0, len(notAttempted)+1)
+	if failed != nil {
+		notSubmittedURLs = append(notSubmittedURLs, failed.ExternalID.MustURL())
+	}
+	for _, cl := range notAttempted {
+		notSubmittedURLs = append(notSubmittedURLs, cl.ExternalID.MustURL())
+	}
+	return fmt.Sprintf(partiallySubmittedMsgSuffixFmt,
+		strings.Join(notSubmittedURLs, ", "),
+		strings.Join(submittedURLs, ", "),
+	)
+}
+
+func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted) error {
 	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
 	if err != nil {
 		return err
 	}
 	runCLExternalIDs := make([]changelist.ExternalID, len(allRunCLs))
-	var submitted map[common.CLID]struct{}
-	if len(submission.GetSubmittedCls()) > 0 {
-		submitted = common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
-	}
-	unsubmittedRunCLs := make([]*run.RunCL, 0, len(allCLIDs)-len(submitted))
-	submittedCLURLs := make([]string, 0, len(submitted))
-	unsubmittedCLURLs := make([]string, 0, len(allCLIDs)-len(submitted))
 	for i, runCL := range allRunCLs {
 		runCLExternalIDs[i] = runCL.ExternalID
-		url := runCL.ExternalID.MustURL()
-		if _, ok := submitted[runCL.ID]; ok {
-			submittedCLURLs = append(submittedCLURLs, url)
-		} else {
-			unsubmittedRunCLs = append(unsubmittedRunCLs, runCL)
-			unsubmittedCLURLs = append(unsubmittedCLURLs, url)
-		}
 	}
 
-	var msg string
-	if len(submitted) > 0 {
-		msg = fmt.Sprintf(partiallySubmittedMsgFmt,
-			strings.Join(unsubmittedCLURLs, ", "),
-			strings.Join(submittedCLURLs, ", "),
-		)
-	} else {
-		msg = fmt.Sprintf(noneSubmittedMsgFmt, strings.Join(unsubmittedCLURLs, ", "))
+	if len(allRunCLs) == 1 { // single CL Run
+		var msg string
+		switch {
+		case sc.GetClFailure() != nil:
+			msg = sc.GetClFailure().GetMessage()
+		case sc.GetTimeout():
+			msg = timeoutMsg
+		default:
+			msg = defaultMsg
+		}
+		return cancelCLTriggers(ctx, runID, allRunCLs, runCLExternalIDs, msg)
 	}
-	return cancelCLTriggers(ctx, runID, unsubmittedRunCLs, runCLExternalIDs, msg)
+
+	// Multi CLs Run
+	submitted, pending, failed := splitRunCLs(allRunCLs, submission, sc)
+	var msgSuffix string
+	if len(submitted) > 0 { // partial submission
+		msgSuffix = makePartialSubmissionMsgSuffix(submitted, failed, pending)
+	} else { // none submitted
+		urls := make([]string, len(allCLIDs))
+		for i, cl := range allRunCLs {
+			urls[i] = cl.ExternalID.MustURL()
+		}
+		msgSuffix = fmt.Sprintf(noneSubmittedMsgSuffixFmt, strings.Join(urls, ", "))
+	}
+
+	switch {
+	case sc.GetClFailure() != nil:
+		msg := fmt.Sprintf("%s\n%s", sc.GetClFailure().GetMessage(), msgSuffix)
+		if err := cancelCLTriggers(ctx, runID, []*run.RunCL{failed}, runCLExternalIDs, msg); err != nil {
+			return err
+		}
+		if len(pending) > 0 {
+			notAttemptedMsg := fmt.Sprintf("CV didn't attempt to submit this CL because CV failed to submit its dependent CL: %s\n%s", failed.ExternalID.MustURL(), msgSuffix)
+			return cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, notAttemptedMsg)
+		}
+	case sc.GetTimeout():
+		msg := fmt.Sprintf("%s\n%s", timeoutMsg, msgSuffix)
+		return cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg)
+	default:
+		msg := fmt.Sprintf("%s\n%s", defaultMsg, msgSuffix)
+		return cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg)
+	}
+	return nil
 }
 
 func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string) error {
@@ -386,29 +455,32 @@ type submitter struct {
 var ErrTransientSubmissionFailure = errors.New("submission failed transiently", transient.Tag)
 
 func (s submitter) submit(ctx context.Context) error {
-	sc := &eventpb.SubmissionCompleted{
-		Result: eventpb.SubmissionResult_SUCCEEDED,
-	}
+	var sc *eventpb.SubmissionCompleted
 	switch passed, err := s.checkPrecondition(ctx); {
 	case err != nil:
-		sc = s.computeResultEvent(ctx, err, defaultFatalMsg)
+		sc = classifyErr(ctx, err)
 	case !passed:
 		sc = &eventpb.SubmissionCompleted{
 			Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
 		}
 	default: // precondition check passed
 		if cls, err := run.LoadRunCLs(ctx, s.runID, s.clids); err != nil {
-			sc = s.computeResultEvent(ctx, err, defaultFatalMsg)
+			sc = classifyErr(ctx, err)
 		} else {
 			dctx, cancel := clock.WithDeadline(ctx, s.deadline)
 			defer cancel()
-			if fatalMsg, err := s.submitCLs(dctx, cls); err != nil {
-				sc = s.computeResultEvent(ctx, err, fatalMsg)
-			}
+			sc = s.submitCLs(dctx, cls)
 		}
 	}
 
-	if sc.Result == eventpb.SubmissionResult_FAILED_TRANSIENT {
+	if sc.GetResult() != eventpb.SubmissionResult_SUCCEEDED && clock.Now(ctx).After(s.deadline) {
+		sc.Result = eventpb.SubmissionResult_FAILED_PERMANENT
+		sc.FailureReason = &eventpb.SubmissionCompleted_Timeout{
+			Timeout: true,
+		}
+	}
+
+	if sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT {
 		// Do not release queue for transient failure.
 		if err := s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, true); err != nil {
 			return err
@@ -446,25 +518,21 @@ var perCLRetryFactory retry.Factory = transient.Only(func() retry.Iterator {
 	}
 })
 
-// submitCLs sequentially submits the provided slice of CLs and retries on
-// transient failure of submitting individual CL based on `perCLRetryFactory`.
+// submitCLs sequentially submits the provided CLs.
 //
-// Returns the first fatal error encountered or the first transient error if
-// the retry quota has been exhausted. The entire submission will be retried
-// later by RM for transient failure. For fatal error, RM will fail the
-// submission and post `fatalMsg` on all not-yet-submitted CLs and notify the
-// users. Therefore, please be aware of what's included in the `fatalMsg` to
-// avoid accidental leak of information.
-func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) (fatalMsg string, err error) {
+// Retries on transient failure of submitting individual CL based on
+// `perCLRetryFactory`.
+func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.SubmissionCompleted {
 	for _, cl := range cls {
 		var submitted bool
+		var msg string
 		err := retry.Retry(ctx, perCLRetryFactory, func() error {
 			if !submitted {
 				switch err := s.submitCL(ctx, cl); {
 				case err == nil:
 					submitted = true
 				default:
-					if fatalMsg = fatalGerritErrMsg(err); fatalMsg != "" {
+					if msg = makeGerritMsg(err); msg != "" {
 						// Ensure err is not tagged with transient.
 						return transient.Tag.Off().Apply(err)
 					}
@@ -473,17 +541,23 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) (fatalMsg st
 			}
 			return s.rm.NotifyCLSubmitted(ctx, s.runID, cl.ID)
 		}, retry.LogCallback(ctx, fmt.Sprintf("submit cl [id=%d, external_id=%q]", cl.ID, cl.ExternalID)))
-		switch {
-		case err == nil:
-		case fatalMsg != "":
-			return fatalMsg, err
-		case transient.Tag.In(err):
-			return "", err
-		default:
-			return defaultFatalMsg, err
+
+		if err != nil {
+			evt := classifyErr(ctx, err)
+			if !submitted {
+				evt.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
+					ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+						Clid:    int64(cl.ID),
+						Message: msg,
+					},
+				}
+			}
+			return evt
 		}
 	}
-	return "", nil
+	return &eventpb.SubmissionCompleted{
+		Result: eventpb.SubmissionResult_SUCCEEDED,
+	}
 }
 
 func (s submitter) checkPrecondition(ctx context.Context) (passed bool, err error) {
@@ -503,11 +577,6 @@ func (s submitter) checkPrecondition(ctx context.Context) (passed bool, err erro
 			logging.Warningf(ctx, "tree %q is closed when submission starts", s.treeURL)
 			return false, nil
 		}
-	}
-
-	if clock.Now(ctx).After(s.deadline) {
-		logging.Warningf(ctx, "submit deadline has already expired at %s", s.deadline)
-		return false, nil
 	}
 	return true, nil
 }
@@ -544,7 +613,7 @@ func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 // TODO(yiwzhang/tandrii): normalize message with the template function
 // used in clpurger/user_text.go.
 const (
-	defaultFatalMsg = "CV failed to submit your change because of " +
+	defaultMsg = "CV failed to submit this CL because of " +
 		"unexpected internal error. Please contact LUCI team: " +
 		"https://bit.ly/3sMReYs"
 	permDeniedMsg = "CV couldn't submit your CL because CV is not " +
@@ -553,11 +622,20 @@ const (
 	failedPreconditionMsgFmt = "Gerrit rejected submission with error: " +
 		"%s\nHint: rebasing CL in Gerrit UI and re-submitting through CV " +
 		"usually works"
-	noneSubmittedMsgFmt = "CV failed to submit any CLs in the Run after " +
-		"exhausting all the allocated time.\nCLs: [%s]\nThis generally should " +
-		"not happen, please contact LUCI team https://bit.ly/3sMReYs."
-	partiallySubmittedMsgFmt = "CV timed out while trying to submit all the " +
-		"CLs of this Run.\nNot submitted: [%s]\nSubmitted: [%s]\n" +
+	resourceExhaustedMsg = "CV failed to submit this CL because it is " +
+		"throttled by Gerrit"
+	timeoutMsg = "CV timed out while trying to submit this CL. " +
+		// TODO(yiwzhang): Generally, time out means CV is doing something
+		// wrong and looping over internally, However, timeout could also
+		// happen when submitting large CL stack and Gerrit is slow. In that
+		// case, CV can do nothing about it. After launching m1, gather data
+		// to see under what circumstance it may happen and revise this message
+		// so that CV doesn't get blamed for timeout it isn't responsible for.
+		"Please contact LUCI team https://bit.ly/3sMReYs."
+	noneSubmittedMsgSuffixFmt = "None of the CLs in the Run has submitted " +
+		"by CV.\nCLs: [%s]\n"
+	partiallySubmittedMsgSuffixFmt = "CV only submitted part of the CLs " +
+		"in the Run.\nNot submitted: [%s]\nSubmitted: [%s]\n" +
 		"Please, use your judgement to determine if already submitted CLs have " +
 		"to be reverted, or if the remaining CLs could be manually submitted. " +
 		"If you think the partially submitted CLs may have broken the " +
@@ -566,8 +644,9 @@ const (
 	unexpectedMsgFmt = "CV failed to submit your CL because of unexpected error from Gerrit: %s"
 )
 
-// fatalGerritErrMsg returns non-empty message if the provided error is fatal.
-func fatalGerritErrMsg(err error) string {
+// makeGerritMsg returns message to be posted on the CL for the given
+// submission error.
+func makeGerritMsg(err error) string {
 	switch grpcutil.Code(err) {
 	case codes.PermissionDenied:
 		return permDeniedMsg
@@ -575,14 +654,14 @@ func fatalGerritErrMsg(err error) string {
 		// Gerrit returns 409. Either because change can't be merged, or
 		// this revision isn't the latest.
 		return fmt.Sprintf(failedPreconditionMsgFmt, err)
-	case codes.ResourceExhausted, codes.Internal:
-		return ""
+	case codes.ResourceExhausted:
+		return resourceExhaustedMsg
 	default:
 		return fmt.Sprintf(unexpectedMsgFmt, err)
 	}
 }
 
-func (s submitter) computeResultEvent(ctx context.Context, err error, fatalMsg string) *eventpb.SubmissionCompleted {
+func classifyErr(ctx context.Context, err error) *eventpb.SubmissionCompleted {
 	switch {
 	case err == nil:
 		return &eventpb.SubmissionCompleted{
@@ -596,8 +675,7 @@ func (s submitter) computeResultEvent(ctx context.Context, err error, fatalMsg s
 	default:
 		errors.Log(ctx, err)
 		return &eventpb.SubmissionCompleted{
-			Result:       eventpb.SubmissionResult_FAILED_PERMANENT,
-			FatalMessage: fatalMsg,
+			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 		}
 	}
 }
