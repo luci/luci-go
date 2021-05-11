@@ -62,6 +62,22 @@ func InstallProd(ctx context.Context, cloudProject string) (context.Context, err
 	return Install(ctx, &inserter{bq}), nil
 }
 
+// mustClient returns the `Client` implementation stored in the context.
+//
+// Panics if not found.
+func mustClient(ctx context.Context) Client {
+	c := ctx.Value(&clientCtxKey)
+	if c == nil {
+		panic("BQ Client not found in the context")
+	}
+	return c.(Client)
+}
+
+// SendRow sends a row using the client in the context.
+func SendRow(ctx context.Context, dataset, table, operationID string, msg proto.Message) error {
+	return mustClient(ctx).SendRow(ctx, dataset, table, operationID, msg)
+}
+
 // inserter implements a BigQuery client for production.
 type inserter struct {
 	bq *bigquery.Client
