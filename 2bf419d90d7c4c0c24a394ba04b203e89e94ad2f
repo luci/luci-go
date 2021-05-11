@@ -69,6 +69,24 @@
       "parentUuid": "82d87fd6_b1f33a5c",
       "revId": "2bf419d90d7c4c0c24a394ba04b203e89e94ad2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc277cc4_8fafa132",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-11T02:25:25Z",
+      "side": 1,
+      "message": "New milo version has been deployed. Feel free to land the CL now.",
+      "parentUuid": "09e4dc1c_c620a93d",
+      "revId": "2bf419d90d7c4c0c24a394ba04b203e89e94ad2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
