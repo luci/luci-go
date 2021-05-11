@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/russross/blackfriday.v2"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -47,7 +47,7 @@ const (
 
 // Funcs is functions available to email subject and body templates.
 var Funcs = map[string]interface{}{
-	"time": func(ts *timestamp.Timestamp) time.Time {
+	"time": func(ts *timestamppb.Timestamp) time.Time {
 		t, _ := ptypes.Timestamp(ts)
 		return t
 	},

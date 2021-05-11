@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
@@ -487,7 +487,7 @@ func fixCreatedBy(createdBy string) string {
 
 // mustTimestamp converts a protobuf timestamp to a time.Time and panics on failures.
 // It returns zero time for nil timestamp.
-func mustTimestamp(ts *timestamp.Timestamp) time.Time {
+func mustTimestamp(ts *timestamppb.Timestamp) time.Time {
 	if ts == nil {
 		return time.Time{}
 	}

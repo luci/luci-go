@@ -31,7 +31,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
@@ -69,7 +69,7 @@ type Build struct {
 
 	// Now is the current time, used to generate durations that may depend
 	// on the current time.
-	Now *timestamp.Timestamp `json:"now,omitempty"`
+	Now *timestamppb.Timestamp `json:"now,omitempty"`
 }
 
 // CommitLinkHTML returns an HTML link pointing to the output commit, or input commit

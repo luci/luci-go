@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -106,7 +106,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 func PopulateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
 	tr.Duration = nil
 	if micros.Valid {
-		tr.Duration = ptypes.DurationProto(time.Duration(1000 * micros.Int64))
+		tr.Duration = durationpb.New(time.Duration(1000 * micros.Int64))
 	}
 }
 

@@ -20,12 +20,13 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/gae/service/taskqueue"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
-	"github.com/golang/protobuf/ptypes"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -55,7 +56,7 @@ func TestTaskQueue(t *testing.T) {
 		Convey(`Lease a task with empty taskqueue`, func() {
 			tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
 				MaxTasks:  10,
-				LeaseTime: ptypes.DurationProto(10 * time.Minute),
+				LeaseTime: durationpb.New(10 * time.Minute),
 			})
 			So(err, ShouldBeNil)
 			So(len(tasks.Tasks), ShouldEqual, 0)
@@ -75,7 +76,7 @@ func TestTaskQueue(t *testing.T) {
 			for i := 0; i < 3; i++ {
 				tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
 					MaxTasks:  10,
-					LeaseTime: ptypes.DurationProto(10 * time.Minute),
+					LeaseTime: durationpb.New(10 * time.Minute),
 				})
 				So(err, ShouldBeNil)
 				leasedTasks = append(leasedTasks, tasks.Tasks...)
@@ -118,7 +119,7 @@ func TestTaskQueue(t *testing.T) {
 			for i := 0; i < 3; i++ {
 				tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
 					MaxTasks:  1,
-					LeaseTime: ptypes.DurationProto(10 * time.Minute),
+					LeaseTime: durationpb.New(10 * time.Minute),
 				})
 				So(err, ShouldBeNil)
 				leasedTasks = append(leasedTasks, tasks.Tasks...)

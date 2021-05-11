@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/grpc/prpc"
@@ -72,7 +73,7 @@ func (p Permissions) ToProto(validTime time.Duration) *access.PermittedActionsRe
 	}
 	return &access.PermittedActionsResponse{
 		Permitted:        perms,
-		ValidityDuration: ptypes.DurationProto(validTime),
+		ValidityDuration: durationpb.New(validTime),
 	}
 }
 

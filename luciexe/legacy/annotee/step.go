@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
@@ -224,7 +225,7 @@ func (p *stepConverter) calcLogsAndSummary(ctx context.Context, annStep *annotpb
 	return logs, strings.Join(summary, "\n\n")
 }
 
-func fixupStartAndEndTime(startTime, endTime *timestamp.Timestamp, subSteps []*pb.Step) (newStart, newEnd *timestamp.Timestamp, err error) {
+func fixupStartAndEndTime(startTime, endTime *timestamppb.Timestamp, subSteps []*pb.Step) (newStart, newEnd *timestamppb.Timestamp, err error) {
 	newStart, newEnd = startTime, endTime
 
 	// Annotee is known to produce startTime>endTime if they are very close.
@@ -252,7 +253,7 @@ func fixupStartAndEndTime(startTime, endTime *timestamp.Timestamp, subSteps []*p
 	return
 }
 
-func determineStatus(startTime, endTime *timestamp.Timestamp, annStep *annotpb.Step, subSteps []*pb.Step) (ret pb.Status, err error) {
+func determineStatus(startTime, endTime *timestamppb.Timestamp, annStep *annotpb.Step, subSteps []*pb.Step) (ret pb.Status, err error) {
 	// Determine status.
 	switch {
 	// First of all, honor start/end times.
@@ -305,7 +306,7 @@ func maybeCloneTimestamp(ts **timestamp.Timestamp) {
 	}
 }
 
-func cmpTs(a, b *timestamp.Timestamp) int {
+func cmpTs(a, b *timestamppb.Timestamp) int {
 	if a.Seconds != b.Seconds {
 		return int(a.Seconds - b.Seconds)
 	}

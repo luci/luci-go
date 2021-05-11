@@ -41,8 +41,8 @@ import (
 	"sync/atomic"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -362,7 +362,7 @@ func (a *Agent) collectingData() bool {
 }
 
 // Used for minting protobuf timestamps for buildStateTrackers
-func (a *Agent) clockNow() *timestamp.Timestamp {
+func (a *Agent) clockNow() *timestamppb.Timestamp {
 	ret, err := ptypes.TimestampProto(clock.Now(a.ctx))
 	if err != nil {
 		panic(err)

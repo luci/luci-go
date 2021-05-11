@@ -19,16 +19,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -142,21 +143,21 @@ func TestReportTestResults(t *testing.T) {
 				checkResults()
 
 				// duration == 0
-				tr.Duration, expectedTR.Duration = ptypes.DurationProto(0), ptypes.DurationProto(0)
+				tr.Duration, expectedTR.Duration = durationpb.New(0), durationpb.New(0)
 				checkResults()
 
 				// duration > 0
-				tr.Duration, expectedTR.Duration = ptypes.DurationProto(8), ptypes.DurationProto(8)
+				tr.Duration, expectedTR.Duration = durationpb.New(8), durationpb.New(8)
 				checkResults()
 
 				// duration < 0
-				tr.Duration = ptypes.DurationProto(-8)
-				expectedTR.Duration = ptypes.DurationProto(0)
+				tr.Duration = durationpb.New(-8)
+				expectedTR.Duration = durationpb.New(0)
 				checkResults()
 			})
 			Convey("without CoerceNegativeDuration", func() {
 				// duration < 0
-				tr.Duration = ptypes.DurationProto(-8)
+				tr.Duration = durationpb.New(-8)
 				sink, err := newSinkServer(ctx, cfg)
 				So(err, ShouldBeNil)
 

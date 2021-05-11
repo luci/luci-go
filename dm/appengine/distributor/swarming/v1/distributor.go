@@ -24,10 +24,11 @@ import (
 	"time"
 
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes/duration"
+
 	swarm "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -86,7 +87,7 @@ func toSwarmMap(m map[string]string) []*swarm.SwarmingRpcsStringPair {
 	return ret
 }
 
-func toIntSeconds(p *duration.Duration) int64 {
+func toIntSeconds(p *durationpb.Duration) int64 {
 	return int64(p.AsDuration().Seconds())
 }
 

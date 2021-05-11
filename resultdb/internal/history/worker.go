@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -135,7 +135,7 @@ func (q *Query) dispatchWorkItems(ctx context.Context) error {
 		TimeRange: q.Request.GetTimeRange(),
 		Predicate: predicate,
 	}
-	return invQ.ByTimestamp(ctx, func(inv invocations.ID, ts *timestamp.Timestamp) error {
+	return invQ.ByTimestamp(ctx, func(inv invocations.ID, ts *timestamppb.Timestamp) error {
 		wi := &workItem{
 			inv:       inv,
 			ip:        (*tsIndexPoint)(ts),

@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -125,7 +126,7 @@ func (ts *tsIndexPoint) initEntry(e *pb.GetTestResultHistoryResponse_Entry) {
 }
 
 func newTSIndexPoint(s string) (*tsIndexPoint, error) {
-	var ret *timestamp.Timestamp
+	var ret *timestamppb.Timestamp
 	b, err := hex.DecodeString(s)
 	if err == nil {
 		ret = &timestamp.Timestamp{}

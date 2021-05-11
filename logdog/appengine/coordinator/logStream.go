@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/errors"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -363,7 +363,7 @@ func (lsp *LogStreamQuery) OnlyPurged() {
 
 // TimeBound constrains LogStreams returned to be bound by the given lower and
 // upper creation timestamps.
-func (lsp *LogStreamQuery) TimeBound(lower, upper *timestamp.Timestamp) {
+func (lsp *LogStreamQuery) TimeBound(lower, upper *timestamppb.Timestamp) {
 	// we use a datastore filter here because lsp.q is already ordered by
 	// -Created, and so we can apply an inequality to it.
 	if lower != nil {

@@ -24,6 +24,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/prpc"
@@ -97,7 +98,7 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		Status:      pb.TestStatus_PASS,
 		SummaryHtml: "HTML summary",
 		StartTime:   st,
-		Duration:    ptypes.DurationProto(time.Minute),
+		Duration:    durationpb.New(time.Minute),
 		Tags:        pbutil.StringPairs("k1", "v1"),
 		Artifacts: map[string]*sinkpb.Artifact{
 			"art1": artf,

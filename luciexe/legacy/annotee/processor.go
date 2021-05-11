@@ -26,7 +26,6 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -427,7 +426,7 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 // processing.
 func (p *Processor) Finish() *annotation.State {
 	// Finish our step handlers.
-	var closeTime *timestamp.Timestamp
+	var closeTime *timestamppb.Timestamp
 	if !p.astate.Offline {
 		// Note: p.astate.Clock is never nil here, see astate setup in New().
 		closeTime = timestamppb.New(p.astate.Clock.Now())
@@ -472,7 +471,7 @@ func (p *Processor) getStepHandler(step *annotation.Step, create bool) (*stepHan
 	return h, nil
 }
 
-func (p *Processor) finishStepHandler(h *stepHandler, closeSteps bool, closeTime *timestamp.Timestamp) {
+func (p *Processor) finishStepHandler(h *stepHandler, closeSteps bool, closeTime *timestamppb.Timestamp) {
 	// Remove this handler from our list. This will stop us from
 	// double-finishing when we call Close() below, which calls the StepClosed
 	// callback, which calls finishStepHandler if the step is still in the map.

@@ -17,7 +17,8 @@ package jobcreate
 import (
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/led/job"
 )
@@ -36,9 +37,9 @@ func bbCommonFromTaskRequest(bb *job.Buildbucket, r *swarming.SwarmingRpcsNewTas
 	})
 	bb.EnvPrefixes = strListPairs(ts.Properties.EnvPrefixes)
 
-	bb.BbagentArgs.Build.SchedulingTimeout = ptypes.DurationProto(
+	bb.BbagentArgs.Build.SchedulingTimeout = durationpb.New(
 		time.Second * time.Duration(r.ExpirationSecs))
-	bb.BotPingTolerance = ptypes.DurationProto(
+	bb.BotPingTolerance = durationpb.New(
 		time.Second * time.Duration(r.BotPingToleranceSecs))
 
 	bb.Containment = containmentFromSwarming(ts.Properties.Containment)
