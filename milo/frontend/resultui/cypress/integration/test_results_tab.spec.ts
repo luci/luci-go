@@ -12,4 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-describe('Test Results Tab', () => {});
+describe('Test Results Tab', () => {
+  it('config table modal should not be overlapped by other elements', () => {
+    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/test-results');
+    // Ensure the page is loaded.
+    cy.get('milo-tvt-config-widget', { includeShadowDom: true }).click();
+    cy.wait(1000);
+    cy.matchImageSnapshot('config-table-modal');
+  });
+});

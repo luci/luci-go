@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @fileoverview
- * This is an empty file to prevent cypress from auto-generating example files.
- */
+import { addMatchImageSnapshotPlugin } from 'cypress-image-snapshot/plugin';
 
-const config: Cypress.PluginConfig = () => {};
+const genConfig: Cypress.PluginConfig = (on, config) => {
+  addMatchImageSnapshotPlugin(on, config);
+  return config;
+};
 
-export default config;
+export default genConfig;
