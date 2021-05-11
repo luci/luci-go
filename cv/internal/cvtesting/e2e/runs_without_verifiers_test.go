@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/migration"
+	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -153,6 +155,12 @@ func TestCreatesSingularQuickDryRun(t *testing.T) {
 			return r != nil && r.Status == run.Status_RUNNING
 		})
 		So(r.Mode, ShouldEqual, run.QuickDryRun)
+
+		ct.LogPhase(ctx, "CQDaemon posts starting message to the Gerrit CL")
+		ct.RunUntil(ctx, func() bool {
+			m := ct.LastMessage(gHost, gChange).GetMessage()
+			return strings.Contains(m, cqdfake.StartingMessage) && strings.Contains(m, string(r.ID))
+		})
 
 		ct.LogPhase(ctx, "CQDaemon decides that QuickDryRun has passed and notifies CV")
 		ct.Clock.Add(time.Minute)
