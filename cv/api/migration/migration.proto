@@ -148,6 +148,7 @@ message PostGerritMessageRequest {
   // Gerrit host.
   string host = 11;
   int64 change = 12;
+  string revision = 15;
   // String comment to post.
   string comment = 13;
   // If true, send email to:
