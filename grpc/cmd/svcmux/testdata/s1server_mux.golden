@@ -7,8 +7,8 @@ import (
 
 	svcmux "go.chromium.org/luci/server/svcmux"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
 	sub "go.chromium.org/luci/grpc/internal/svctool/testdata/sub"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type VersionedS1 struct {
@@ -54,7 +54,7 @@ func (s *VersionedS2) Set(c context.Context, req *M1) (*Void, error) {
 	return impl.Set(c, req)
 }
 
-func (s *VersionedS2) Imp(c context.Context, req *sub.Sub) (*empty.Empty, error) {
+func (s *VersionedS2) Imp(c context.Context, req *sub.Sub) (*emptypb.Empty, error) {
 	ver := svcmux.GetServiceVersion(c, s.Default)
 	impl := s.Impls[ver]
 	if impl == nil {
