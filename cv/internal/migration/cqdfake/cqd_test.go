@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/proto"
 
 	bqpb "go.chromium.org/luci/cv/api/bigquery/v1"
@@ -35,7 +36,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestCQDFake(t *testing.T) {
+func TestCQDFakeInactiveCV(t *testing.T) {
 	t.Parallel()
 
 	Convey("CQDFake processes candidates in CQDaemon active mode", t, func() {
@@ -158,5 +159,10 @@ func TestCQDFake(t *testing.T) {
 		// Change #3 failed, so its votes must be removed.
 		So(gf.NonZeroVotes(ct.GFake.GetChange(gHost, 3).Info, trigger.CQLabelName), ShouldBeEmpty)
 		So(gf.NonZeroVotes(ct.GFake.GetChange(gHost, 3).Info, "Quick-Dry-Run"), ShouldBeEmpty)
+
+		// FinishedCQDRun entity must exist for each completed attempt.
+		for _, k := range []string{"to-abort", "to-submit", "to-fail"} {
+			So(datastore.Get(ctx, &migration.FinishedCQDRun{AttemptKey: k}), ShouldBeNil)
+		}
 	})
 }
