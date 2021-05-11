@@ -186,3 +186,73 @@ func TestPostGerritMessage(t *testing.T) {
 		})
 	})
 }
+
+func TestReportFinishedRun(t *testing.T) {
+	t.Parallel()
+
+	Convey("ReportFinishedRun works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		m := MigrationServer{}
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:             identity.Identity("project:infra"),
+			PeerIdentityOverride: "user:cqdaemon@example.com",
+		})
+
+		req := &migrationpb.ReportFinishedRunRequest{Run: &migrationpb.ReportedRun{
+			Attempt: &cvbqpb.Attempt{
+				Key:    "deadbeef",
+				Status: cvbqpb.AttemptStatus_SUCCESS,
+				// In practice, the other fields are also set by CQDaemon, but not
+				// relevant in this test.
+			},
+		}}
+
+		loadFinishedCQRun := func() *FinishedCQDRun {
+			f := &FinishedCQDRun{AttemptKey: "deadbeef"}
+			switch err := datastore.Get(ctx, f); {
+			case err == datastore.ErrNoSuchEntity:
+				return nil
+			case err != nil:
+				panic(err)
+			default:
+				return f
+			}
+		}
+
+		Convey("without a Run in Datastore", func() {
+			Convey("saves anyway", func() {
+				_, err := m.ReportFinishedRun(ctx, req)
+				So(err, ShouldBeNil)
+				So(loadFinishedCQRun(), ShouldNotBeNil)
+			})
+			Convey("unless non-existing Run ID is given, which should not happen in practice", func() {
+				req.Run.Id = "not-existing/123-1-deadbeef"
+				_, err := m.ReportFinishedRun(ctx, req)
+				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+				So(loadFinishedCQRun(), ShouldBeNil)
+			})
+		})
+		Convey("with a Run, always saves", func() {
+			runID := common.RunID("existing/123-1-deadbeef")
+			So(datastore.Put(ctx, &run.Run{
+				ID:            runID,
+				CQDAttemptKey: "deadbeef",
+			}), ShouldBeNil)
+
+			Convey("with Run ID given", func() {
+				req.Run.Id = string(runID)
+				_, err := m.ReportFinishedRun(ctx, req)
+				So(err, ShouldBeNil)
+				So(loadFinishedCQRun().RunID, ShouldResemble, runID)
+			})
+			Convey("deduces the Run ID if not given", func() {
+				_, err := m.ReportFinishedRun(ctx, req)
+				So(err, ShouldBeNil)
+				So(loadFinishedCQRun().RunID, ShouldResemble, runID)
+			})
+		})
+	})
+}

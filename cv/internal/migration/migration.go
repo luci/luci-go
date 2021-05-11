@@ -117,16 +117,29 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 	if err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
-	if k := req.GetRun().GetAttempt().GetKey(); k == "" {
+	k := req.GetRun().GetAttempt().GetKey()
+	if k == "" {
 		return nil, appstatus.Error(codes.InvalidArgument, "attempt key is required")
 	}
-	logging.Debugf(ctx, "ReportFinishedRun(key %q, CV ID %q)", req.GetRun().GetAttempt().GetKey(), req.GetRun().GetId())
+
+	optionalID := common.RunID(req.GetRun().GetId())
+	logging.Debugf(ctx, "ReportFinishedRun(Run %q | Attempt %q)", optionalID, k)
+	r, err := fetchRun(ctx, optionalID, k)
+	switch {
+	case err != nil:
+		return nil, err
+	case r == nil && optionalID != "":
+		return nil, appstatus.Errorf(codes.NotFound, "Run %q does not exist", optionalID)
+	case r == nil:
+		logging.Warningf(ctx, "No matching Run, saving FinishedCQDRun(attempt key %q) anyway", k)
+	case optionalID == "":
+		// Set the missing Run ID.
+		req.GetRun().Id = string(r.ID)
+	}
+
 	if err = saveFinishedCQDRun(ctx, req.GetRun()); err != nil {
 		return nil, err
 	}
-	// TODO(tandrii,yiwzhang): actually *finalize* the counterpart CV Runs,
-	// even if CV ID isn't known, as it can be deduced from the CQD's Attempt Key
-	// (assuming CV's generated Runs are compatible).
 	return &emptypb.Empty{}, nil
 }
 
