@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
@@ -40,8 +41,9 @@ import (
 
 func main() {
 	opts := server.Options{
-		AuthServiceHost: os.Getenv("AUTH_SERVICE_HOST"),
-		TsMonAccount:    os.Getenv("TS_MON_ACCOUNT"),
+		AuthServiceHost:       os.Getenv("AUTH_SERVICE_HOST"),
+		TsMonAccount:          os.Getenv("TS_MON_ACCOUNT"),
+		DefaultRequestTimeout: 12 * time.Hour,
 	}
 	modules := []module.Module{
 		encryptedcookies.NewModule(&encryptedcookies.ModuleOptions{
