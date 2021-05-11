@@ -42,6 +42,11 @@ import (
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 )
 
+// StartingMessage is what CQDaemon fake posts when starting working on a Run.
+//
+// Yes, spelling is right -- this is what CQDaemon posted historically.
+const StartingMessage = "CQ is trying da patch"
+
 type CQDFake struct {
 	LUCIProject string
 	CV          migrationpb.MigrationServer
@@ -302,11 +307,22 @@ func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.ReportedRun, c
 	if cqd.attempts == nil {
 		cqd.attempts = make(map[string]*migrationpb.ReportedRun, 1)
 	}
-	msg := fmt.Sprintf("Run %q | Attempt %q starting", r.Id, r.Attempt.Key)
-	if cvInCharge {
-		// TODO(tandrii): post Gerrit comment via CV for realistic behavior.
-	} else {
-		for _, cl := range r.Attempt.GerritChanges {
+	msg := fmt.Sprintf("Run %q | Attempt %q: %s", r.Id, r.Attempt.Key, StartingMessage)
+	for _, cl := range r.Attempt.GerritChanges {
+		if cvInCharge {
+			req := &migrationpb.PostGerritMessageRequest{
+				Project:    cqd.LUCIProject,
+				AttemptKey: r.Attempt.Key,
+				Host:       cl.Host,
+				Change:     cl.Change,
+				Revision:   "badly-faked-revision",
+				Comment:    msg,
+				SendEmail:  true,
+			}
+			if _, err := cqd.CV.PostGerritMessage(cqd.migrationApiContext(ctx), req); err != nil {
+				return err
+			}
+		} else {
 			cqd.GFake.MutateChange(cl.Host, int(cl.Change), func(c *gf.Change) {
 				now := timestamppb.New(clock.Now(ctx))
 				c.Info.Messages = append(c.Info.Messages, &gerritpb.ChangeMessageInfo{
