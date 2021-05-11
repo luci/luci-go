@@ -33,6 +33,29 @@
       "message": "LGTM. This API was designed poorly.",
       "revId": "4b3796f621e045fb9f8387a64711d5594adf93ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30bb2c66_b3317c32",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-05-11T21:18:04Z",
+      "side": 1,
+      "message": "I find it\u0027s still hard to understand. Maybe we need to add more explanation. The order of results is newest-to-oldest. The newer build has smaller buildID. The search behavior is that:\n1) search by start_build_id with page_size N, the result is N builds beginning from newest_build_id. \n2) search by end_build_id with page_size N, the result is N builds beginning from end_build_id.\n3) search by start_build_id and end_build_id, the result is [end_build_id, start_build_id], but note, the start_build_id param in request should be the larger one and end_build_id is the smaller one.",
+      "range": {
+        "startLine": 440,
+        "startChar": 5,
+        "endLine": 440,
+        "endChar": 49
+      },
+      "revId": "4b3796f621e045fb9f8387a64711d5594adf93ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
