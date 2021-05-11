@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "63013c5f_3cef0301",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-11T19:21:14Z",
+      "side": 1,
+      "message": "Done, thanks again",
+      "parentUuid": "2f391d7a_f23d5d1f",
+      "range": {
+        "startLine": 81,
+        "startChar": 18,
+        "endLine": 81,
+        "endChar": 42
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "dda6330c_b0913e20",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 13
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-10T22:10:55Z",
       "side": 1,
       "message": "tandrii@ learning English: this sounds hypothetical to me, while the situation is real and does happen. Why not \"will\"?",
+      "range": {
+        "startLine": 108,
+        "startChar": 5,
+        "endLine": 108,
+        "endChar": 10
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41c40fb5_59746873",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-11T19:21:14Z",
+      "side": 1,
+      "message": "You\u0027re right, the situation is real; but I think I wrote \"would\" because substatus FAILED_SUBMIT doesn\u0027t exist yet. Because it\u0027s not something we can do immediately, but plan to do, both \"will\" and \"would\" sound OK to me. Changing to \"will\".",
+      "parentUuid": "dda6330c_b0913e20",
       "range": {
         "startLine": 108,
         "startChar": 5,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "27135ac6_a90ce7d8",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-11T19:21:14Z",
+      "side": 1,
+      "message": "Alright; so now SUCCESS is returned in the case of failed submission (but passed) checks, based on CV data (whether submission is set but not all CLs are submitted).",
+      "parentUuid": "9ef5177b_2dcea85c",
+      "range": {
+        "startLine": 170,
+        "startChar": 44,
+        "endLine": 172,
+        "endChar": 32
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7a485439_09cb3f07",
@@ -110,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "12c49cf4_217d81bf",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-11T19:21:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a485439_09cb3f07",
+      "range": {
+        "startLine": 199,
+        "startChar": 22,
+        "endLine": 199,
+        "endChar": 43
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c32a6428_c8547ae6",
@@ -123,6 +219,30 @@
       "writtenOn": "2021-05-10T22:10:55Z",
       "side": 1,
       "message": "del",
+      "range": {
+        "startLine": 273,
+        "startChar": 2,
+        "endLine": 275,
+        "endChar": 18
+      },
+      "revId": "f39475702d8bf865e217b5bee76aa64a828d1552",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dc16bcc_8437c6e7",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-11T19:21:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c32a6428_c8547ae6",
       "range": {
         "startLine": 273,
         "startChar": 2,
