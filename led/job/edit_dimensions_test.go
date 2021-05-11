@@ -19,12 +19,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	api "go.chromium.org/luci/swarming/proto/api"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -198,10 +199,10 @@ func TestSetDimensions(t *testing.T) {
 				} else {
 					rdims := jd.GetBuildbucket().BbagentArgs.Build.Infra.Swarming.TaskDimensions
 					So(rdims, ShouldResembleProto, []*bbpb.RequestedDimension{
-						{Key: "key", Value: "A", Expiration: ptypes.DurationProto(swSlice1Exp)},
-						{Key: "key", Value: "AA", Expiration: ptypes.DurationProto(swSlice1Exp)},
-						{Key: "key", Value: "B", Expiration: ptypes.DurationProto(swSlice2Exp)},
-						{Key: "key", Value: "C", Expiration: ptypes.DurationProto(swSlice3Exp)},
+						{Key: "key", Value: "A", Expiration: durationpb.New(swSlice1Exp)},
+						{Key: "key", Value: "AA", Expiration: durationpb.New(swSlice1Exp)},
+						{Key: "key", Value: "B", Expiration: durationpb.New(swSlice2Exp)},
+						{Key: "key", Value: "C", Expiration: durationpb.New(swSlice3Exp)},
 						{Key: "key", Value: "Z"},
 					})
 				}
@@ -357,8 +358,8 @@ func TestEditDimensions(t *testing.T) {
 				} else {
 					rdims := jd.GetBuildbucket().BbagentArgs.Build.Infra.Swarming.TaskDimensions
 					So(rdims, ShouldResembleProto, []*bbpb.RequestedDimension{
-						{Key: "key", Value: "other_value", Expiration: ptypes.DurationProto(swSlice3Exp)},
-						{Key: "key", Value: "value", Expiration: ptypes.DurationProto(swSlice1Exp)},
+						{Key: "key", Value: "other_value", Expiration: durationpb.New(swSlice3Exp)},
+						{Key: "key", Value: "value", Expiration: durationpb.New(swSlice1Exp)},
 						{Key: "reset", Value: "else"},
 						{Key: "reset", Value: "everything"},
 					})

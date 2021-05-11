@@ -18,7 +18,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
@@ -141,9 +142,9 @@ func taskPropertiesFromSwarming(ts *swarming.SwarmingRpcsTaskProperties) *swarmi
 		Env:              envFromSwarming(ts.Env),
 		EnvPaths:         envPrefixesFromSwarming(ts.EnvPrefixes),
 		Containment:      containmentFromSwarming(ts.Containment),
-		ExecutionTimeout: ptypes.DurationProto(time.Duration(ts.ExecutionTimeoutSecs) * time.Second),
-		IoTimeout:        ptypes.DurationProto(time.Duration(ts.IoTimeoutSecs) * time.Second),
-		GracePeriod:      ptypes.DurationProto(time.Duration(ts.GracePeriodSecs) * time.Second),
+		ExecutionTimeout: durationpb.New(time.Duration(ts.ExecutionTimeoutSecs) * time.Second),
+		IoTimeout:        durationpb.New(time.Duration(ts.IoTimeoutSecs) * time.Second),
+		GracePeriod:      durationpb.New(time.Duration(ts.GracePeriodSecs) * time.Second),
 		Idempotent:       ts.Idempotent,
 		Outputs:          ts.Outputs,
 	}
@@ -158,7 +159,7 @@ func jobDefinitionFromSwarming(sw *job.Swarming, r *swarming.SwarmingRpcsNewTask
 	t.TaskSlices = make([]*swarmingpb.TaskSlice, len(r.TaskSlices))
 	for i, inslice := range r.TaskSlices {
 		outslice := &swarmingpb.TaskSlice{
-			Expiration:      ptypes.DurationProto(time.Duration(inslice.ExpirationSecs) * time.Second),
+			Expiration:      durationpb.New(time.Duration(inslice.ExpirationSecs) * time.Second),
 			Properties:      taskPropertiesFromSwarming(inslice.Properties),
 			WaitForCapacity: inslice.WaitForCapacity,
 		}
@@ -176,5 +177,5 @@ func jobDefinitionFromSwarming(sw *job.Swarming, r *swarming.SwarmingRpcsNewTask
 	// ParentTaskId is unpopulated for new task requests
 	// ParentRunId is unpopulated for new task requests
 	// PubsubNotification is intentionally not propagated.
-	t.BotPingTolerance = ptypes.DurationProto(time.Duration(r.BotPingToleranceSecs) * time.Second)
+	t.BotPingTolerance = durationpb.New(time.Duration(r.BotPingToleranceSecs) * time.Second)
 }

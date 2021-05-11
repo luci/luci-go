@@ -22,7 +22,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -37,7 +39,6 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/genproto/protobuf/field_mask"
 )
 
 var (
@@ -75,7 +76,7 @@ func PubSubHandler(ctx *router.Context) {
 	ctx.Writer.WriteHeader(http.StatusOK)
 }
 
-func mustTimestamp(ts *timestamp.Timestamp) time.Time {
+func mustTimestamp(ts *timestamppb.Timestamp) time.Time {
 	if t, err := ptypes.Timestamp(ts); err == nil {
 		return t
 	}

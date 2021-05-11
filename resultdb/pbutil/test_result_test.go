@@ -22,12 +22,14 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -43,7 +45,7 @@ func validTestResult(now time.Time) *pb.TestResult {
 		Status:      pb.TestStatus_PASS,
 		SummaryHtml: "HTML summary",
 		StartTime:   st,
-		Duration:    ptypes.DurationProto(time.Minute),
+		Duration:    durationpb.New(time.Minute),
 		TestMetadata: &pb.TestMetadata{
 			Location: &pb.TestLocation{
 				Repo:     "https://git.example.com",
@@ -224,14 +226,14 @@ func TestValidateTestResult(t *testing.T) {
 			})
 
 			Convey("because duration is < 0", func() {
-				msg.Duration = ptypes.DurationProto(-1 * time.Minute)
+				msg.Duration = durationpb.New(-1 * time.Minute)
 				So(validate(msg), ShouldErrLike, "duration: is < 0")
 			})
 
 			Convey("because (start_time + duration) is in the future", func() {
 				st, _ := ptypes.TimestampProto(now.Add(-1 * time.Hour))
 				msg.StartTime = st
-				msg.Duration = ptypes.DurationProto(2 * time.Hour)
+				msg.Duration = durationpb.New(2 * time.Hour)
 				expected := fmt.Sprintf("start_time + duration: cannot be > (now + %s)", clockSkew)
 				So(validate(msg), ShouldErrLike, expected)
 			})

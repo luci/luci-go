@@ -19,8 +19,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	api "go.chromium.org/luci/swarming/proto/api"
 )
 
@@ -70,7 +71,7 @@ func testSWJob(sliceExps ...time.Duration) *Definition {
 
 		for _, exp := range sliceExps {
 			sw.Task.TaskSlices = append(sw.Task.TaskSlices, &api.TaskSlice{
-				Expiration: ptypes.DurationProto(exp),
+				Expiration: durationpb.New(exp),
 			})
 		}
 	}

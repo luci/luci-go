@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/bq/testdata"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -72,7 +73,7 @@ func TestSave(t *testing.T) {
 
 				Empty:    &empty.Empty{},
 				Empties:  []*empty.Empty{{}, {}},
-				Duration: ptypes.DurationProto(2*time.Second + 3*time.Millisecond),
+				Duration: durationpb.New(2*time.Second + 3*time.Millisecond),
 				OneOf: &testdata.TestMessage_First{First: &testdata.NestedTestMessage{
 					Name: "first",
 				}},

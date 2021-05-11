@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Interval struct {
@@ -55,7 +56,7 @@ func (in Interval) Duration() time.Duration {
 	return 0
 }
 
-func ToInterval(start, end, now *timestamp.Timestamp) (result Interval) {
+func ToInterval(start, end, now *timestamppb.Timestamp) (result Interval) {
 	if t, err := ptypes.Timestamp(start); err == nil {
 		result.Start = t
 	}
@@ -71,7 +72,7 @@ func ToInterval(start, end, now *timestamp.Timestamp) (result Interval) {
 // Duration returns duration between start and the earliest of ends.
 // Ignores nil ends.
 // Fallbacks to "N/A" on insufficient data.
-func Duration(start *timestamp.Timestamp, ends ...*timestamp.Timestamp) string {
+func Duration(start *timestamppb.Timestamp, ends ...*timestamp.Timestamp) string {
 	if start != nil {
 		startTime, _ := ptypes.Timestamp(start)
 

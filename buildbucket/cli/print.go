@@ -27,9 +27,9 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/mgutz/ansi"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text/color"
@@ -447,7 +447,7 @@ func (p *printer) Error(err error) {
 
 // readTimestamp converts ts to time.Time.
 // Returns zero if ts is invalid.
-func readTimestamp(ts *timestamp.Timestamp) time.Time {
+func readTimestamp(ts *timestamppb.Timestamp) time.Time {
 	t, err := ptypes.Timestamp(ts)
 	if err != nil {
 		return time.Time{}

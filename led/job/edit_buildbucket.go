@@ -21,6 +21,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -28,9 +30,9 @@ import (
 )
 
 type buildbucketEditor struct {
-	jd          *Definition
-	bb          *Buildbucket
-	userPayload *api.CASTree
+	jd             *Definition
+	bb             *Buildbucket
+	userPayload    *api.CASTree
 	casUserPayload *api.CASReference
 
 	err error
@@ -168,7 +170,7 @@ func (bbe *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
 					Value: value,
 				}
 				if exp > 0 {
-					toAdd.Expiration = ptypes.DurationProto(exp)
+					toAdd.Expiration = durationpb.New(exp)
 				}
 				newDims = append(newDims, toAdd)
 			}
@@ -184,7 +186,7 @@ func (bbe *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
 			}
 		}
 		if maxExp > curTimeout {
-			build.SchedulingTimeout = ptypes.DurationProto(maxExp)
+			build.SchedulingTimeout = durationpb.New(maxExp)
 		}
 		return nil
 	})
