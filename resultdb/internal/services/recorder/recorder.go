@@ -51,6 +51,10 @@ type Options struct {
 	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
 	// storage. Example: "projects/luci-resultdb/instances/artifacts".
 	ArtifactRBEInstance string
+
+	// MaxArtifactContentStreamLength is the maximum size of an artifact content
+	// to accept via streaming API.
+	MaxArtifactContentStreamLength int64
 }
 
 // InitServer initializes a recorder server.
@@ -81,6 +85,7 @@ func installArtifactCreationHandler(srv *server.Server, opt *Options, rbeConn *g
 		NewCASWriter: func(ctx context.Context) (bytestream.ByteStream_WriteClient, error) {
 			return bs.Write(ctx)
 		},
+		MaxArtifactContentStreamLength: opt.MaxArtifactContentStreamLength,
 	}
 
 	// Ideally we define more specific routes, but
