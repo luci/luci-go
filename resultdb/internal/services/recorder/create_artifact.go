@@ -357,7 +357,6 @@ func (ac *artifactCreator) verifyState(ctx context.Context) (realm string, sameA
 			return invocations.ReadColumns(ctx, ac.invID, map[string]interface{}{
 				"State": &invState, "Realm": &realm,
 			})
-			return
 		}
 
 		work <- func() error {
