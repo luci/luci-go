@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a647ae6_0f814176",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-11T06:30:08Z",
+      "side": 1,
+      "message": "rephrased",
+      "parentUuid": "8b71da4d_45e0c308",
+      "range": {
+        "startLine": 9,
+        "startChar": 26,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "1007ba98022ba5f90e67ac7430a987e40b27e5e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c1ea4ab5_22600415",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "032fec31_27aef335",
+        "filename": "resultdb/cmd/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-11T06:30:08Z",
+      "side": 1,
+      "message": "I\u0027ve renamed symbols and updated comments/descriptions. PTAL",
+      "parentUuid": "c1ea4ab5_22600415",
+      "range": {
+        "startLine": 41,
+        "startChar": 42,
+        "endLine": 41,
+        "endChar": 48
+      },
+      "revId": "1007ba98022ba5f90e67ac7430a987e40b27e5e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fc6b2e50_4f0661e9",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-05-11T05:37:16Z",
       "side": 1,
       "message": "same",
+      "range": {
+        "startLine": 55,
+        "startChar": 73,
+        "endLine": 55,
+        "endChar": 80
+      },
+      "revId": "1007ba98022ba5f90e67ac7430a987e40b27e5e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "863d3fdf_ed2e02b2",
+        "filename": "resultdb/internal/services/recorder/recorder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-11T06:30:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc6b2e50_4f0661e9",
       "range": {
         "startLine": 55,
         "startChar": 73,
