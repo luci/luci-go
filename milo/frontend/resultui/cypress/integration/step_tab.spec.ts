@@ -20,12 +20,4 @@ describe('Steps & Logs Tab', () => {
       '/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps'
     );
   });
-
-  it('should support scrolling with space', () => {
-    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps');
-    // Ensure the page is loaded.
-    cy.get('milo-build-step-entry', { includeShadowDom: true });
-    cy.document().trigger('keydown', { key: ' ', code: 'Space', which: 32 });
-    cy.get('milo-build-step-list', { includeShadowDom: true }).should('be.focused');
-  });
 });
