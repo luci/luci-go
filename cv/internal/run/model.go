@@ -78,6 +78,8 @@ type Run struct {
 	// CLs are IDs of all CLs involved in this Run.
 	CLs common.CLIDs `gae:",noindex"`
 	// Submission is the current state of Run Submission.
+	//
+	// If set, Submission is in progress or has completed.
 	Submission *Submission
 	// TODO(yiwzhang): Define
 	//  * RemainingTryjobQuota: Run-level Tryjob quota.
