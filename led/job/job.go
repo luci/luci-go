@@ -443,7 +443,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 
 	for i, dat := range expiringDims {
 		sw.Task.TaskSlices[i] = &swarmingpb.TaskSlice{
-			Expiration: ptypes.DurationProto(dat.relative),
+			Expiration: durationpb.New(dat.relative),
 			Properties: dat.createWith(baseProperties),
 		}
 	}

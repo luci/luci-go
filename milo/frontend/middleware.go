@@ -28,7 +28,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	blackfriday "gopkg.in/russross/blackfriday.v2"
 
 	"go.chromium.org/luci/gae/service/info"
@@ -116,7 +116,7 @@ func localTime(ifZero string, t time.Time) template.HTML {
 }
 
 // localTimestamp is like localTime, but accepts a Timestamp protobuf.
-func localTimestamp(ifZero string, ts *timestamp.Timestamp) template.HTML {
+func localTimestamp(ifZero string, ts *timestamppb.Timestamp) template.HTML {
 	if ts == nil {
 		return template.HTML(template.HTMLEscapeString(ifZero))
 	}
@@ -309,7 +309,7 @@ func formatCommitDesc(desc string) template.HTML {
 
 // toTime returns the time.Time format for the proto timestamp.
 // If the proto timestamp is invalid, we return a zero-ed out time.Time.
-func toTime(ts *timestamp.Timestamp) (result time.Time) {
+func toTime(ts *timestamppb.Timestamp) (result time.Time) {
 	// We want a zero-ed out time.Time, not one set to the epoch.
 	if t, err := ptypes.Timestamp(ts); err == nil {
 		result = t

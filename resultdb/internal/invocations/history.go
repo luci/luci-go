@@ -21,7 +21,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -52,7 +52,7 @@ type HistoryQuery struct {
 
 // ByTimestamp queries indexed invocations in a given time range.
 // It executes the callback once for each row, starting with the most recent.
-func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts *timestamp.Timestamp) error) error {
+func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts *timestamppb.Timestamp) error) error {
 	var err error
 	now := clock.Now(ctx)
 
@@ -100,7 +100,7 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var inv ID
-		var ts *timestamp.Timestamp
+		var ts *timestamppb.Timestamp
 		if err := b.FromSpanner(row, &inv, &ts); err != nil {
 			return err
 		}

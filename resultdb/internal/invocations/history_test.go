@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/span"
@@ -38,7 +38,7 @@ type historyAccumulator struct {
 	b    spanutil.Buffer
 }
 
-func (ia *historyAccumulator) accumulate(inv ID, ts *timestamp.Timestamp) error {
+func (ia *historyAccumulator) accumulate(inv ID, ts *timestamppb.Timestamp) error {
 	// We only need the invocationID in these tests.
 	_ = ts
 	ia.invs = append(ia.invs, inv)

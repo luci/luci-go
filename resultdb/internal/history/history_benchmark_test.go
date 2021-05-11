@@ -22,6 +22,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/span"
@@ -127,7 +128,7 @@ func BenchmarkGetTestResultsHistory(b *testing.B) {
 			Range: &pb.GetTestResultHistoryRequest_TimeRange{
 				TimeRange: &pb.TimeRange{
 					Earliest: past,
-					Latest:   ptypes.TimestampNow(),
+					Latest:   timestamppb.Now(),
 				},
 			},
 			Realm: "luci:benchmark",

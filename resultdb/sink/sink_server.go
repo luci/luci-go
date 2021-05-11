@@ -24,11 +24,11 @@ import (
 	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -42,7 +42,7 @@ import (
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
-var zeroDuration = ptypes.DurationProto(0)
+var zeroDuration = durationpb.New(0)
 
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {

@@ -17,8 +17,8 @@ package buildmerge
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -50,7 +50,7 @@ func setErrorOnBuild(build *bbpb.Build, err error) {
 //
 // If this needs to make adjustments to `build.Steps`, it will make shallow
 // copies of Steps, as well as the individual steps which need modification.
-func processFinalBuild(now *timestamp.Timestamp, build *bbpb.Build) {
+func processFinalBuild(now *timestamppb.Timestamp, build *bbpb.Build) {
 	if !protoutil.IsEnded(build.Status) {
 		setErrorOnBuild(build, errors.Reason(
 			"Expected a terminal build status, got %s.",
