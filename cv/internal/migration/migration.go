@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -46,8 +45,14 @@ import (
 // migration API. It's hardcoded here because this code is temporary.
 const AllowGroup = "luci-cv-migration-crbug-1141880"
 
+// RunNotifier abstracts out dependency of MigrationServer on run.Notifier.
+type RunNotifier interface {
+	NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error
+}
+
+// MigrationServer implements CQDaemon -> CV migration API.
 type MigrationServer struct {
-	RunNotifier *run.Notifier
+	RunNotifier RunNotifier
 
 	migrationpb.UnimplementedMigrationServer
 }
@@ -85,27 +90,31 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 		return nil, err
 	}
 
-	// TODO(tandrii): handle case of empty RunID iff CQDaemon didn't know it yet.
-	rid := common.RunID(req.GetRun().GetId())
-	if rid == "" {
-		err = status.Error(codes.InvalidArgument, "empty RunID")
-		return
-	}
-	logging.Debugf(ctx, "ReportVerifiedRun(key %q, CV ID %q)", req.GetRun().GetAttempt().GetKey(), rid)
-
-	vr := &VerifiedCQDRun{
-		ID:      rid,
-		Payload: req,
-	}
-	vr.Payload.Run.Id = "" // available as key.
-	if err = datastore.Put(ctx, vr); err != nil {
-		err = errors.Annotate(err, "failed to put VerifiedRun %q", rid).Tag(transient.Tag).Err()
-		return
-	}
-	if err = m.RunNotifier.NotifyCQDVerificationCompleted(ctx, rid); err != nil {
-		return
+	k := req.GetRun().GetAttempt().GetKey()
+	if k == "" {
+		return nil, appstatus.Error(codes.InvalidArgument, "attempt key is required")
 	}
 
+	optionalID := common.RunID(req.GetRun().GetId())
+	logging.Debugf(ctx, "ReportVerifiedRun(Run %q | Attempt %q)", optionalID, k)
+	r, err := fetchRun(ctx, optionalID, k)
+	switch {
+	case err != nil:
+		return nil, err
+	case r == nil:
+		logging.Errorf(ctx, "BUG: ReportVerifiedRun(Run %q | Attempt %q) for a Run not known to CV", optionalID, k)
+		return nil, appstatus.Errorf(codes.NotFound, "Run %q does not exist", optionalID)
+	case optionalID == "":
+		// Set the missing Run ID.
+		req.GetRun().Id = string(r.ID)
+	}
+
+	err = saveVerifiedCQDRun(ctx, req, func(ctx context.Context) error {
+		return m.RunNotifier.NotifyCQDVerificationCompleted(ctx, r.ID)
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &emptypb.Empty{}, nil
 }
 

@@ -15,6 +15,7 @@
 package migration
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -255,4 +256,87 @@ func TestReportFinishedRun(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestReportVerifiedRun(t *testing.T) {
+	t.Parallel()
+
+	Convey("ReportVerifiedRun works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		rnMock := runNotifierMock{}
+		m := MigrationServer{RunNotifier: &rnMock}
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:             identity.Identity("project:infra"),
+			PeerIdentityOverride: "user:cqdaemon@example.com",
+		})
+
+		const runID = common.RunID("infra/111-1-deadbeef")
+		req := &migrationpb.ReportVerifiedRunRequest{
+			// Id field is set in some tests below
+			Run: &migrationpb.ReportedRun{
+				Attempt: &cvbqpb.Attempt{
+					Key:    runID.AttemptKey(),
+					Status: cvbqpb.AttemptStatus_SUCCESS,
+					// In practice, the other fields are also set by CQDaemon, but not
+					// relevant in this test.
+				},
+			},
+			FinalMessage: "meh",
+			Action:       migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT,
+		}
+
+		loadVerifiedCQDRun := func() *VerifiedCQDRun {
+			v := &VerifiedCQDRun{ID: runID}
+			switch err := datastore.Get(ctx, v); {
+			case err == datastore.ErrNoSuchEntity:
+				return nil
+			case err != nil:
+				panic(err)
+			default:
+				return v
+			}
+		}
+
+		Convey("without a Run in Datastore", func() {
+			_, err := m.ReportVerifiedRun(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(loadVerifiedCQDRun(), ShouldBeNil)
+		})
+		Convey("with a Run, always saves", func() {
+			So(datastore.Put(ctx, &run.Run{
+				ID:            runID,
+				CQDAttemptKey: runID.AttemptKey(),
+			}), ShouldBeNil)
+
+			Convey("deduces the Run ID if not given and notifies Run Manager", func() {
+				_, err := m.ReportVerifiedRun(ctx, req)
+				So(err, ShouldBeNil)
+				So(loadVerifiedCQDRun().Payload.Run.Attempt.Status, ShouldEqual, cvbqpb.AttemptStatus_SUCCESS)
+				So(rnMock.verificationCompleted, ShouldContain, runID)
+
+				Convey("overwrites with newer data, notifying Run Manager yet again", func() {
+					rnMock.verificationCompleted = nil
+					req.Run.Id = string(runID)
+					req.Run.Attempt.Status = cvbqpb.AttemptStatus_INFRA_FAILURE
+					_, err := m.ReportVerifiedRun(ctx, req)
+					So(err, ShouldBeNil)
+					So(loadVerifiedCQDRun().Payload.Run.Attempt.Status, ShouldEqual, cvbqpb.AttemptStatus_INFRA_FAILURE)
+					So(rnMock.verificationCompleted, ShouldContain, runID)
+				})
+			})
+		})
+	})
+}
+
+type runNotifierMock struct {
+	verificationCompleted common.RunIDs
+}
+
+func (r *runNotifierMock) NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
+	r.verificationCompleted = append(r.verificationCompleted, runID)
+	return nil
 }

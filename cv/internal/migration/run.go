@@ -234,14 +234,46 @@ func fetchRun(ctx context.Context, id common.RunID, attemptKey string) (*run.Run
 	}
 }
 
-// VerifiedCQDRun is the Run reported by CQDaemon after verification
-// completes.
+// VerifiedCQDRun is the Run reported by CQDaemon after verification completes.
 type VerifiedCQDRun struct {
 	_kind string `gae:"$kind,migration.VerifiedCQDRun"`
 	// ID is ID of this Run in CV.
 	ID common.RunID `gae:"$id"`
 	// Payload is what CQDaemon has reported.
 	Payload *migrationpb.ReportVerifiedRunRequest
+	// RecordTime is when this entity was inserted.
+	UpdateTime time.Time `gae:",noindex"`
+}
+
+func saveVerifiedCQDRun(ctx context.Context, req *migrationpb.ReportVerifiedRunRequest, notify func(context.Context) error) error {
+	runID := common.RunID(req.GetRun().GetId())
+	req.GetRun().Id = "" // will be stored as VerifiedCQDRun.ID
+
+	try := 0
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		try++
+		v := VerifiedCQDRun{ID: runID}
+		switch err := datastore.Get(ctx, &v); {
+		case err == datastore.ErrNoSuchEntity:
+			// expected.
+		case err != nil:
+			return err
+		default:
+			logging.Warningf(ctx, "Overwriting VerifiedCQDRun %q in %d-th try", runID, try)
+			// TODO(tandrii): consider bailing if corresponding Run's status is already
+			// final or finalizing.
+		}
+		v = VerifiedCQDRun{
+			ID:         runID,
+			UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+			Payload:    req,
+		}
+		if err := datastore.Put(ctx, &v); err != nil {
+			return err
+		}
+		return notify(ctx)
+	}, nil)
+	return errors.Annotate(err, "failed to record VerifiedCQDRun %q after %d tries", runID, try).Tag(transient.Tag).Err()
 }
 
 // FinishedCQDRun contains info about a finished Run reported by the CQDaemon.
