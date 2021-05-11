@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b71da4d_45e0c308",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-05-11T05:27:21Z",
+      "side": 1,
+      "message": "I assume this means one artifact can be as big as 128MB? The wording here can also mean the total size of artifacts.",
+      "range": {
+        "startLine": 9,
+        "startChar": 26,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "1007ba98022ba5f90e67ac7430a987e40b27e5e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
