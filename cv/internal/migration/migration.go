@@ -18,10 +18,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
@@ -34,6 +36,7 @@ import (
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
@@ -53,7 +56,7 @@ type MigrationServer struct {
 //
 // Used to determine whether CV's view of the world matches that of CQDaemon.
 // Initially, this is just FYI for CV.
-func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.ReportRunsRequest) (resp *empty.Empty, err error) {
+func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.ReportRunsRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
 		return nil, err
@@ -69,14 +72,14 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 		cls += len(r.Attempt.GerritChanges)
 	}
 	logging.Infof(ctx, "CQD[%s] is working on %d attempts %d CLs right now", project, len(req.Runs), cls)
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
 // verifying.
 //
 // Only called iff run was given to CQDaemon by CV via FetchActiveRuns.
-func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationpb.ReportVerifiedRunRequest) (resp *empty.Empty, err error) {
+func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationpb.ReportVerifiedRunRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
 		return nil, err
@@ -103,13 +106,13 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 		return
 	}
 
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // ReportFinishedRun is used by CQD to report runs it handled to completion.
 //
 // It'll removed upon hitting Milestone 1.
-func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (resp *empty.Empty, err error) {
+func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
 		return nil, err
@@ -124,10 +127,10 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 	// TODO(tandrii,yiwzhang): actually *finalize* the counterpart CV Runs,
 	// even if CV ID isn't known, as it can be deduced from the CQD's Attempt Key
 	// (assuming CV's generated Runs are compatible).
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
-func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *empty.Empty, err error) {
+func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
 		return nil, err
@@ -144,7 +147,103 @@ func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.
 	if err = gerrit.SaveLegacyNetrcToken(ctx, req.GerritHost, req.AccessToken); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
+}
+
+func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationpb.PostGerritMessageRequest) (resp *migrationpb.PostGerritMessageResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return nil, err
+	}
+	logging.Debugf(ctx, "%s calls PostGerritMessage\n%s", auth.CurrentIdentity(ctx), req)
+
+	clExternalID, err := changelist.GobID(req.GetHost(), req.GetChange())
+	switch {
+	case req.GetHost() == "" || req.GetChange() <= 0:
+		return nil, appstatus.Error(codes.InvalidArgument, "host & change are required")
+	case err != nil:
+		return nil, appstatus.Errorf(codes.InvalidArgument, "host/change are invalid: %s", err)
+
+	case req.GetProject() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "project is required")
+	case req.GetAttemptKey() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "attempt_key is required")
+	case req.GetComment() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "comment is required")
+	}
+
+	// Load Run & CL in parallel.
+	// The only downside is that if both fail, there is a race between which one
+	// will be returned the user, but for an internal API this is fine.
+	var r *run.Run
+	var cl *changelist.CL
+	eg, eCtx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		var err error
+		r, err = fetchRun(eCtx, common.RunID(req.GetRunId()), req.GetAttemptKey())
+		return err
+	})
+	eg.Go(func() error {
+		var err error
+		cl, err = clExternalID.Get(ctx)
+		if err == datastore.ErrNoSuchEntity {
+			cl = nil
+			err = nil
+		}
+		return err
+	})
+	if err = eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	switch {
+	// The first two checks should trigger only rarely: when CV is behind CQD from
+	// perspective of Gerrit's data (e.g. CV uses a stale Gerrit replica).
+	// These should to resolve themselves as CV catches up.
+	case r == nil:
+		return nil, appstatus.Errorf(codes.Unavailable, "Run %q | Attempt %q doesn't exist", req.GetRunId(), req.GetAttemptKey())
+	case cl == nil:
+		return nil, appstatus.Error(codes.Unavailable, clExternalID.MustURL()+" is not yet known to CV")
+
+	// These checks are just early detection iff CQD and CV diverge.
+	case r.ID.LUCIProject() != req.GetProject():
+		return nil, appstatus.Errorf(codes.FailedPrecondition, "Run %q doesn't match expected LUCI project %q", r.ID, req.GetProject())
+	case run.IsEnded(r.Status):
+		return nil, appstatus.Errorf(codes.FailedPrecondition, "Run %q is already finished (%s)", r.ID, r.Status)
+	}
+
+	ci := cl.Snapshot.GetGerrit().GetInfo()
+	msg := strings.TrimSpace(req.GetComment())
+	truncatedMsg := gerrit.TruncateMessage(msg)
+
+	for _, m := range ci.GetMessages() {
+		switch {
+		case m.GetDate().AsTime().Before(r.CreateTime):
+			// Message posted before this Run.
+			continue
+		case strings.Contains(m.GetMessage(), msg) || strings.Contains(m.GetMessage(), truncatedMsg):
+			// Message has already been posted in the context of this Run.
+			logging.Infof(ctx, "message was already posted at %s", m.GetDate().AsTime())
+			return &migrationpb.PostGerritMessageResponse{}, nil
+		}
+	}
+	gc, err := gerrit.CurrentClient(ctx, req.GetHost(), req.GetProject())
+	if err != nil {
+		return nil, appstatus.Errorf(codes.Internal, "failed to obtain Gerrit Client: %s", err)
+	}
+
+	_, err = gc.SetReview(ctx, makeGerritSetReviewRequest(r, ci, truncatedMsg, req.GetSendEmail()))
+	switch code := grpcutil.Code(err); code {
+	case codes.OK:
+		return &migrationpb.PostGerritMessageResponse{}, nil
+	case codes.PermissionDenied, codes.NotFound, codes.FailedPrecondition:
+		// Propagate the same gRPC error code.
+		return nil, errors.Annotate(err, "failed to SetReview").Err()
+	default:
+		// Propagate the same gRPC error code, but also record this unexpected
+		// response.
+		return nil, gerrit.UnhandledError(ctx, err, "failed to SetReview")
+	}
 }
 
 // FetchActiveRuns returns all RUNNING runs for the given LUCI Project.

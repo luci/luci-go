@@ -296,6 +296,21 @@ func ACLPublic() AccessCheck {
 	}
 }
 
+// ACLReadOnly grants read-only access to the given projects.
+func ACLReadOnly(luciProjects ...string) AccessCheck {
+	ps := stringset.NewFromSlice(luciProjects...)
+	return func(op Operation, p string) *status.Status {
+		switch {
+		case !ps.Has(p):
+			return status.New(codes.NotFound, "")
+		case op == OpRead:
+			return status.New(codes.OK, "")
+		default:
+			return status.New(codes.PermissionDenied, "can read, can't modify")
+		}
+	}
+}
+
 // ACLGrant grants a permission to given projects.
 func ACLGrant(op Operation, code codes.Code, luciProjects ...string) AccessCheck {
 	ps := stringset.NewFromSlice(luciProjects...)
