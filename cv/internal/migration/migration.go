@@ -159,8 +159,8 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 
 	clExternalID, err := changelist.GobID(req.GetHost(), req.GetChange())
 	switch {
-	case req.GetHost() == "" || req.GetChange() <= 0:
-		return nil, appstatus.Error(codes.InvalidArgument, "host & change are required")
+	case req.GetHost() == "" || req.GetChange() <= 0 || req.GetRevision() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "host, change and revision are required")
 	case err != nil:
 		return nil, appstatus.Errorf(codes.InvalidArgument, "host/change are invalid: %s", err)
 
@@ -232,7 +232,7 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 		return nil, appstatus.Errorf(codes.Internal, "failed to obtain Gerrit Client: %s", err)
 	}
 
-	_, err = gc.SetReview(ctx, makeGerritSetReviewRequest(r, ci, truncatedMsg, req.GetSendEmail()))
+	_, err = gc.SetReview(ctx, makeGerritSetReviewRequest(r, ci, truncatedMsg, req.GetRevision(), req.GetSendEmail()))
 	switch code := grpcutil.Code(err); code {
 	case codes.OK:
 		return &migrationpb.PostGerritMessageResponse{}, nil

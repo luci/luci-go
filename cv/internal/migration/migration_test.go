@@ -82,6 +82,7 @@ func TestPostGerritMessage(t *testing.T) {
 
 			Change:    1,
 			Host:      "g-review.example.com",
+			Revision:  "cqd-seen-revision",
 			Comment:   "some verification failed",
 			SendEmail: true,
 		}
