@@ -16,6 +16,29 @@
       "message": "tested on -dev -- so at least syntax seems correct.",
       "revId": "1afef41bb42f992de7955c2b2a67c4acd6ccdba3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e0666bd_6455d18a",
+        "filename": "cv/appengine/queue.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-11T16:56:03Z",
+      "side": 1,
+      "message": "nit: go\n\nsurprisingly, it will be redirected to doc of legacy runtime.",
+      "range": {
+        "startLine": 2,
+        "startChar": 51,
+        "endLine": 2,
+        "endChar": 57
+      },
+      "revId": "1afef41bb42f992de7955c2b2a67c4acd6ccdba3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
