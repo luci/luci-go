@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
-	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func init() {
@@ -77,12 +75,6 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 			cipdSlicesByPath = slicesByPath
 			return nil
 		}
-		expectedRealm := "chromium:chicken"
-		var actualRealm string
-		c.createInvocation = func(_ context.Context, _ *http.Client, realm string, _ string) (*resultpb.Invocation, string, error) {
-			actualRealm = realm
-			return &resultpb.Invocation{Name: "invocations/b123"}, "token", nil
-		}
 		// Use TempDir, which creates a temp directory, to return a unique directory name
 		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
@@ -105,86 +97,70 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 
 		var fetchedCASFiles bool
 
-		service := &testService{
-			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
-				return &swarming.SwarmingRpcsTaskRequest{
-					Resultdb: &swarming.SwarmingRpcsResultDBCfg{Enable: true},
-					Realm:    expectedRealm,
-					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
-						&swarming.SwarmingRpcsTaskSlice{
-							Properties: &swarming.SwarmingRpcsTaskProperties{
-								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://cow_cow/"},
-							},
-						},
-						&swarming.SwarmingRpcsTaskSlice{
-							Properties: &swarming.SwarmingRpcsTaskProperties{
-								Command:     []string{"rbd", "stream", "-test-id-prefix", "--isolated-output=${ISOLATED_OUTDIR}/chicken-output.json"},
-								RelativeCwd: relativeCwd,
-								Env: []*swarming.SwarmingRpcsStringPair{
-									&swarming.SwarmingRpcsStringPair{
-										Key:   "key",
-										Value: "value1",
-									},
-									&swarming.SwarmingRpcsStringPair{
-										Key:   "replaceKey",
-										Value: "value2",
-									},
-									&swarming.SwarmingRpcsStringPair{
-										Key:   "removeKey",
-										Value: "",
-									},
-								},
-								EnvPrefixes: []*swarming.SwarmingRpcsStringListPair{
-									&swarming.SwarmingRpcsStringListPair{
-										Key:   "PATH",
-										Value: []string{".task_template_packages", ".task_template_packages/zoo"},
-									},
-									&swarming.SwarmingRpcsStringListPair{
-										Key:   "CHICKENS",
-										Value: []string{"egg", "rooster"},
-									},
-								},
-								InputsRef: &swarming.SwarmingRpcsFilesRef{
-									Isolatedserver: "server-url",
-									Namespace:      "chicken-files",
-								},
-								CasInputRoot: &swarming.SwarmingRpcsCASReference{
-									CasInstance: "CAS-instance",
-								},
-								CipdInput: &swarming.SwarmingRpcsCipdInput{
-									Packages: []*swarming.SwarmingRpcsCipdPackage{
-										&swarming.SwarmingRpcsCipdPackage{
-											PackageName: "infra/tools/luci-auth/${platform}",
-											Path:        ".task_template_packages",
-											Version:     "git_revision:41a7e9bcbf18718dcda83dd5c6188cfc44271e70",
-										},
-										&swarming.SwarmingRpcsCipdPackage{
-											PackageName: "infra/tools/luci/logdog/butler/${platform}",
-											Path:        ".",
-											Version:     "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
-										},
-										&swarming.SwarmingRpcsCipdPackage{
-											PackageName: "infra/tools/luci/logchicken/${platform}",
-											Path:        "",
-											Version:     "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867d",
-										},
-									},
-								},
-							},
-						},
-					},
-				}, nil
+		properties := &swarming.SwarmingRpcsTaskProperties{
+			Command:     []string{"rbd", "stream", "-test-id-prefix", "--isolated-output=${ISOLATED_OUTDIR}/chicken-output.json"},
+			RelativeCwd: relativeCwd,
+			Env: []*swarming.SwarmingRpcsStringPair{
+				&swarming.SwarmingRpcsStringPair{
+					Key:   "key",
+					Value: "value1",
+				},
+				&swarming.SwarmingRpcsStringPair{
+					Key:   "replaceKey",
+					Value: "value2",
+				},
+				&swarming.SwarmingRpcsStringPair{
+					Key:   "removeKey",
+					Value: "",
+				},
 			},
+			EnvPrefixes: []*swarming.SwarmingRpcsStringListPair{
+				&swarming.SwarmingRpcsStringListPair{
+					Key:   "PATH",
+					Value: []string{".task_template_packages", ".task_template_packages/zoo"},
+				},
+				&swarming.SwarmingRpcsStringListPair{
+					Key:   "CHICKENS",
+					Value: []string{"egg", "rooster"},
+				},
+			},
+			InputsRef: &swarming.SwarmingRpcsFilesRef{
+				Isolatedserver: "server-url",
+				Namespace:      "chicken-files",
+			},
+			CasInputRoot: &swarming.SwarmingRpcsCASReference{
+				CasInstance: "CAS-instance",
+			},
+			CipdInput: &swarming.SwarmingRpcsCipdInput{
+				Packages: []*swarming.SwarmingRpcsCipdPackage{
+					&swarming.SwarmingRpcsCipdPackage{
+						PackageName: "infra/tools/luci-auth/${platform}",
+						Path:        ".task_template_packages",
+						Version:     "git_revision:41a7e9bcbf18718dcda83dd5c6188cfc44271e70",
+					},
+					&swarming.SwarmingRpcsCipdPackage{
+						PackageName: "infra/tools/luci/logdog/butler/${platform}",
+						Path:        ".",
+						Version:     "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
+					},
+					&swarming.SwarmingRpcsCipdPackage{
+						PackageName: "infra/tools/luci/logchicken/${platform}",
+						Path:        "",
+						Version:     "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867d",
+					},
+				},
+			},
+		}
+
+		service := &testService{
 			getFilesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarming.SwarmingRpcsCASReference) ([]string, error) {
 				fetchedCASFiles = true
 				return []string{}, nil
 			},
 		}
 
-		cmd, exported, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
+		cmd, err := c.prepareTaskRequestEnvironment(ctx, properties, service)
 		So(err, ShouldBeNil)
-		So(exported, ShouldNotBeNil)
-		So(actualRealm, ShouldEqual, expectedRealm)
 
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix",
 			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.out, "chicken-output.json")))
@@ -245,29 +221,21 @@ func TestPrepareTaskRequestEnvironment_Isolate(t *testing.T) {
 
 		var fetchedIsolateFiles bool
 
-		service := &testService{
-			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
-				return &swarming.SwarmingRpcsTaskRequest{
-					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
-						&swarming.SwarmingRpcsTaskSlice{
-							Properties: &swarming.SwarmingRpcsTaskProperties{
-								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
-								InputsRef: &swarming.SwarmingRpcsFilesRef{
-									Isolated: "isolated",
-								},
-							},
-						},
-					},
-				}, nil
+		properties := &swarming.SwarmingRpcsTaskProperties{
+			Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+			InputsRef: &swarming.SwarmingRpcsFilesRef{
+				Isolated: "isolated",
 			},
+		}
+
+		service := &testService{
 			getFilesFromIsolate: func(_ context.Context, _ string, _ *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 				fetchedIsolateFiles = true
 				return []string{}, nil
 			},
 		}
-		cmd, exported, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
+		cmd, err := c.prepareTaskRequestEnvironment(ctx, properties, service)
 		So(err, ShouldBeNil)
-		So(exported, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
 		expected.Dir = c.work
 
@@ -287,26 +255,17 @@ func TestPrepareTaskRequestEnvironment_IsolateAndCAS(t *testing.T) {
 		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir())
 		c.work = t.TempDir()
 
-		service := &testService{
-			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
-				return &swarming.SwarmingRpcsTaskRequest{
-					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
-						&swarming.SwarmingRpcsTaskSlice{
-							Properties: &swarming.SwarmingRpcsTaskProperties{
-								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
-								InputsRef: &swarming.SwarmingRpcsFilesRef{
-									Isolated: "isolated",
-								},
-								CasInputRoot: &swarming.SwarmingRpcsCASReference{
-									CasInstance: "CAS-instance",
-								},
-							},
-						},
-					},
-				}, nil
+		service := &testService{}
+		properties := &swarming.SwarmingRpcsTaskProperties{
+			Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+			InputsRef: &swarming.SwarmingRpcsFilesRef{
+				Isolated: "isolated",
+			},
+			CasInputRoot: &swarming.SwarmingRpcsCASReference{
+				CasInstance: "CAS-instance",
 			},
 		}
-		_, _, err := c.prepareTaskRequestEnvironment(context.Background(), "task-123", service)
+		_, err := c.prepareTaskRequestEnvironment(context.Background(), properties, service)
 		So(err, ShouldBeError, "fetched TaskRequest has files from Isolate and RBE-CAS")
 	})
 }
@@ -327,7 +286,7 @@ func TestReproduceTaskRequestCommand(t *testing.T) {
 		var stdBuffer bytes.Buffer
 		cmd.Stdout = &stdBuffer
 		cmd.Stderr = &stdBuffer
-		err := c.executeTaskRequestCommand(cmd)
+		err := c.executeTaskRequestCommand(ctx, &swarming.SwarmingRpcsTaskRequest{}, cmd)
 		So(err, ShouldBeNil)
 		if runtime.GOOS == "windows" {
 			So(stdBuffer.String(), ShouldEqual, "chicken\r\n")
