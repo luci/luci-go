@@ -16,6 +16,24 @@
       "message": "I have no idea what the \"build order in the context\" refers to. Are there builders whose build ordering is backwards?",
       "revId": "5402949473f427e1915daea01b3717c7ad295727",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bec6acd9_d0e696f9",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 441,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-11T06:37:14Z",
+      "side": 0,
+      "message": "the idea was to support commit position order, as specified in the request message.\nIt was never implemented because in practice commit position order matches chronological order",
+      "parentUuid": "9edaa49f_020c14d6",
+      "revId": "5402949473f427e1915daea01b3717c7ad295727",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

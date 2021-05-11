@@ -16,6 +16,23 @@
       "message": "This reflects observed semantics (see bug). Whether these are intended semantics or not is another matter.",
       "revId": "4b3796f621e045fb9f8387a64711d5594adf93ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5bde9b82_4164436d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-11T06:37:14Z",
+      "side": 1,
+      "message": "LGTM. This API was designed poorly.",
+      "revId": "4b3796f621e045fb9f8387a64711d5594adf93ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
