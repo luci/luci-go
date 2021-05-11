@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9edaa49f_020c14d6",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 441,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-11T04:58:10Z",
+      "side": 0,
+      "message": "I have no idea what the \"build order in the context\" refers to. Are there builders whose build ordering is backwards?",
+      "revId": "5402949473f427e1915daea01b3717c7ad295727",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

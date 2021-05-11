@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca1341fa_b4a15dd1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-11T04:58:10Z",
+      "side": 1,
+      "message": "This reflects observed semantics (see bug). Whether these are intended semantics or not is another matter.",
+      "revId": "4b3796f621e045fb9f8387a64711d5594adf93ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
