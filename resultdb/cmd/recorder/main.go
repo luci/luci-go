@@ -34,6 +34,13 @@ func main() {
 		60,
 		"How many days to keep results for test variants with only expected results",
 	)
+	flag.Int64Var(
+		&opts.MaxArtifactContentStreamLength,
+		"max-artifact-content-stream-length",
+		64*1024*1024, // 64 MiB
+		"Maximum length of an artifact content stream to accept",
+	)
+
 	artifactcontent.RegisterRBEInstanceFlag(flag.CommandLine, &opts.ArtifactRBEInstance)
 
 	internal.Main(func(srv *server.Server) error {
