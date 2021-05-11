@@ -16,6 +16,24 @@
       "message": "I wonder if milo-hotkey can be simplified now that we\u0027ve removed a couple of usages",
       "revId": "708b2be2219ca6957af2bdedd7ce29ee07c5b7d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b454e329_4594eb68",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-11T02:35:47Z",
+      "side": 1,
+      "message": "I think it\u0027s Ok to leave milo-hotkey as is.\nIt only has a few lifecycle calls that helps binding the lifetime of a shortcut to the lifetime of an element.\nIn terms of it\u0027s interface, IMO it\u0027s pretty simple already, it behave just like any other component.\n\nDo you have any specific suggestion in mind? The only thing I can think of is that we can remove the support for updating keys. That will reduce ~10 lines of code but then we need to add comments to remind devs that the keys can\u0027t be updated.",
+      "parentUuid": "5ca3b637_fa23608a",
+      "revId": "708b2be2219ca6957af2bdedd7ce29ee07c5b7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
