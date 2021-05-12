@@ -105,8 +105,8 @@ func TestCQDFakeInactiveCV(t *testing.T) {
 				// cqd.Close() taking effect.
 				return nil
 			}
-			keys := strings.Join(cqd.ActiveAttemptKeys(), " ")
-			progress = append(progress, fmt.Sprintf("candidates #%d (prior: [%s])", candidatesCalls, keys))
+			prior := strings.Join(cqd.ActiveAttemptKeys(), " ")
+			progress = append(progress, fmt.Sprintf("candidates #%d (prior: [%s])", candidatesCalls, prior))
 			return res
 		})
 
