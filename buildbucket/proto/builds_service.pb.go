@@ -855,8 +855,6 @@ type BuildPredicate struct {
 	// See `Builder.experiments` for well-known experiments.
 	IncludeExperimental bool `protobuf:"varint,8,opt,name=include_experimental,json=includeExperimental,proto3" json:"include_experimental,omitempty"`
 	// A build must be in this build range.
-	// A pair of SearchBuildsRequest.predicate.build.start_build_id and
-	// SearchBuildsRequest.page_size=1 can be used to find the previous build.
 	Build *BuildRange `protobuf:"bytes,9,opt,name=build,proto3" json:"build,omitempty"`
 	// DEPRECATED
 	//
@@ -990,18 +988,15 @@ func (x *BuildPredicate) GetExperiments() []string {
 	return nil
 }
 
-// Half-open build range.
-// The range is defined on the build order in the context.
-// Usually the order is newest-to-oldest, so start_build_id is a newer
-// build and end_build_id is an older build.
+// Open build range.
 type BuildRange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Inclusive lower boundary. Optional.
+	// Inclusive lower (less recent build) boundary. Optional.
 	StartBuildId int64 `protobuf:"varint,1,opt,name=start_build_id,json=startBuildId,proto3" json:"start_build_id,omitempty"`
-	// Exclusive upper boundary. Optional.
+	// Inclusive upper (more recent build) boundary. Optional.
 	EndBuildId int64 `protobuf:"varint,2,opt,name=end_build_id,json=endBuildId,proto3" json:"end_build_id,omitempty"`
 }
 
