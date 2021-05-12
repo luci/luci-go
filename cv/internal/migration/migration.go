@@ -301,6 +301,32 @@ func (m *MigrationServer) FetchExcludedCLs(ctx context.Context, req *migrationpb
 	return resp, err
 }
 
+func (m *MigrationServer) FetchRunStatus(ctx context.Context, req *migrationpb.FetchRunStatusRequest) (resp *migrationpb.FetchRunStatusResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return nil, err
+	}
+	switch {
+	case req.GetAttemptKey() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "attempt_key is required")
+	case req.GetLuciProject() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "luci_project is required")
+	}
+
+	switch r, err := fetchRun(ctx, common.RunID(req.GetCvId()), req.GetAttemptKey()); {
+	case err != nil:
+		return nil, err
+	case r == nil:
+		logging.Errorf(ctx, "BUG: FetchRunStatus(Run %q | Attempt %q) for a Run not known to CV", req.GetCvId(), req.GetAttemptKey())
+		return nil, appstatus.Error(codes.NotFound, "Run does not exist")
+	case !run.IsEnded(r.Status):
+		logging.Warningf(ctx, "Run %q | Attempt %q is not ended yet (%q)", r.ID, req.GetAttemptKey())
+		return nil, appstatus.Error(codes.FailedPrecondition, "Run not yet ended")
+	default:
+		return makeCQStatusAppEvent(r), nil
+	}
+}
+
 func (m *MigrationServer) checkAllowed(ctx context.Context) error {
 	i := auth.CurrentIdentity(ctx)
 	if i.Kind() == identity.Project {
