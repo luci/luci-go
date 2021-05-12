@@ -46,6 +46,14 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Active
 	case len(runs) == 0:
 		return nil, nil
 	}
+	// Remove runs with corresponding VerifiedCQDRun entities.
+	runs, err = pruneVerifiedRuns(ctx, runs)
+	switch {
+	case err != nil:
+		return nil, err
+	case len(runs) == 0:
+		return nil, nil
+	}
 
 	poolSize := len(runs)
 	if poolSize > 20 {
@@ -259,9 +267,9 @@ func saveVerifiedCQDRun(ctx context.Context, req *migrationpb.ReportVerifiedRunR
 		case err != nil:
 			return err
 		default:
-			logging.Warningf(ctx, "Overwriting VerifiedCQDRun %q in %d-th try", runID, try)
-			// TODO(tandrii): consider bailing if corresponding Run's status is already
-			// final or finalizing.
+			// Do not overwrite existing one, since CV must be already finalizing it.
+			logging.Warningf(ctx, "VerifiedCQDRun %q in %d-th try: already exists", runID, try)
+			return nil
 		}
 		v = VerifiedCQDRun{
 			ID:         runID,
@@ -274,6 +282,28 @@ func saveVerifiedCQDRun(ctx context.Context, req *migrationpb.ReportVerifiedRunR
 		return notify(ctx)
 	}, nil)
 	return errors.Annotate(err, "failed to record VerifiedCQDRun %q after %d tries", runID, try).Tag(transient.Tag).Err()
+}
+
+// pruneVerifiedRuns removes Runs for which VerifiedCQDRun have already been
+// written.
+//
+// Modifies the Runs slice in place, but also returns it for readability.
+func pruneVerifiedRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
+	out := in[:0]
+	keys := make([]*datastore.Key, len(in))
+	for i, r := range in {
+		keys[i] = datastore.MakeKey(ctx, "migration.VerifiedCQDRun", string(r.ID))
+	}
+	exists, err := datastore.Exists(ctx, keys)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to check VerifiedCQDRun existence").Tag(transient.Tag).Err()
+	}
+	for i, r := range in {
+		if !exists.Get(0, i) {
+			out = append(out, r)
+		}
+	}
+	return out, nil
 }
 
 // FinishedCQDRun contains info about a finished Run reported by the CQDaemon.
