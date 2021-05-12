@@ -55,7 +55,6 @@ const (
 	artifactContentSizeHeaderKey = "Content-Length"
 	artifactContentTypeHeaderKey = "Content-Type"
 	updateTokenHeaderKey         = "Update-Token"
-	maxArtifactContentSize       = 64 * 1024 * 1024 // 64 MiB.
 )
 
 // artifactCreationHandler can handle artifact creation requests.
@@ -65,7 +64,7 @@ const (
 //  - The request body MUST be the artifact contents.
 //  - The request MUST include an Update-Token header with the value of
 //    invocation's update token.
-//  - The request MUST include a Content-Length header. It MUST be <= 64 MiB..
+//  - The request MUST include a Content-Length header. It must be <= MaxArtifactContentSize.
 //  - The request MUST include a Content-Hash header with value "sha256:{hash}"
 //    where {hash} is a lower-case hex-encoded SHA256 hash of the artifact
 //    contents.
@@ -73,9 +72,10 @@ const (
 type artifactCreationHandler struct {
 	// RBEInstance is the full name of the RBE instance used for artifact storage.
 	// Format: projects/{project}/instances/{instance}.
-	RBEInstance  string
-	NewCASWriter func(context.Context) (bytestream.ByteStream_WriteClient, error)
-	bufSize      int
+	RBEInstance                    string
+	NewCASWriter                   func(context.Context) (bytestream.ByteStream_WriteClient, error)
+	MaxArtifactContentStreamLength int64
+	bufSize                        int
 }
 
 // Handle implements router.Handler.
@@ -314,8 +314,8 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	switch ac.size, err = strconv.ParseInt(sizeHeader, 10, 64); {
 	case err != nil:
 		return appstatus.Errorf(codes.InvalidArgument, "%s header is malformed: %s", artifactContentSizeHeaderKey, err)
-	case ac.size < 0 || ac.size > maxArtifactContentSize:
-		return appstatus.Errorf(codes.InvalidArgument, "%s header must be a value between 0 and %d", artifactContentSizeHeaderKey, maxArtifactContentSize)
+	case ac.size < 0 || ac.size > ac.MaxArtifactContentStreamLength:
+		return appstatus.Errorf(codes.InvalidArgument, "%s header must be a value between 0 and %d", artifactContentSizeHeaderKey, ac.MaxArtifactContentStreamLength)
 	}
 
 	// Parse and validate the update token.
