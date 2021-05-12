@@ -169,7 +169,7 @@ func (fl *Flags) registerScopesFlags(f *flag.FlagSet) {
 }
 
 // registerIDTokenFlags adds flags related to ID tokens.
-func (fl *Flags) registerIDTokenFlags(f *flag.FlagSet) {
+func (fl *Flags) RegisterIDTokenFlags(f *flag.FlagSet) {
 	fl.hasIDTokenFlags = true
 	f.BoolVar(&fl.useIDToken, "use-id-token", false,
 		"When set, use ID tokens instead of OAuth2 access tokens. Some backends may require them.")
@@ -255,7 +255,7 @@ func (c *commandRunBase) registerBaseFlags(params CommandParams) {
 		c.flags.registerScopesFlags(&c.Flags)
 	}
 	if c.params.UseIDTokenFlags {
-		c.flags.registerIDTokenFlags(&c.Flags)
+		c.flags.RegisterIDTokenFlags(&c.Flags)
 	}
 }
 

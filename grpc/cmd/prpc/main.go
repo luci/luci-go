@@ -77,6 +77,7 @@ func (r *cmdRun) ModifyContext(ctx context.Context) context.Context {
 func (r *cmdRun) registerBaseFlags(defaultAuthOpts auth.Options) {
 	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
 	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, "Force HTTP instead of HTTPS")
+	r.auth.RegisterIDTokenFlags(&r.Flags)
 	r.auth.Register(&r.Flags, defaultAuthOpts)
 }
 
