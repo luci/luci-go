@@ -58,6 +58,8 @@ type CQDFake struct {
 
 	// attempts are active attempts indexed by attempt key.
 	attempts map[string]*migrationpb.ReportedRun
+	// atomic snapshot of keys after updateAttempts.
+	latestAttemptsKeys atomic.Value
 
 	candidatesClbk atomic.Value
 	verifyClbk     atomic.Value
@@ -129,14 +131,11 @@ func (cqd *CQDFake) SetVerifyClbk(clbk VerifyClbk) {
 
 // Returns sorted slice of attempt keys.
 func (cqd *CQDFake) ActiveAttemptKeys() []string {
-	cqd.m.Lock()
-	defer cqd.m.Unlock()
-	out := make([]string, 0, len(cqd.attempts))
-	for k := range cqd.attempts {
-		out = append(out, k)
+	v := cqd.latestAttemptsKeys.Load()
+	if v == nil {
+		return nil
 	}
-	sort.Strings(out)
-	return out
+	return v.([]string)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -204,6 +203,10 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 			}
 		}
 	}
+
+	// Update attempt keys while we are holding the lock.
+	cqd.setActiveAttemptKeysLocked()
+
 	if len(errs) > 0 {
 		return errs
 	}
@@ -283,7 +286,10 @@ func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*mi
 
 func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
 	cqd.m.Lock()
-	defer cqd.m.Unlock()
+	defer func() {
+		cqd.setActiveAttemptKeysLocked()
+		cqd.m.Unlock()
+	}()
 
 	for k, before := range cqd.attempts {
 		after := before
@@ -356,6 +362,15 @@ func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.ReportedRun
 	delete(cqd.attempts, r.Attempt.Key)
 	logging.Debugf(ctx, "CQD: %s", msg)
 	return nil
+}
+
+func (cqd *CQDFake) setActiveAttemptKeysLocked() {
+	keys := make([]string, 0, len(cqd.attempts))
+	for k := range cqd.attempts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	cqd.latestAttemptsKeys.Store(keys)
 }
 
 func (cqd *CQDFake) finalizeRunViaCV(ctx context.Context, r *migrationpb.ReportedRun, msg string) error {
