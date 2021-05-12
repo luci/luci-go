@@ -71,7 +71,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		if err != nil {
 			return nil, err
 		}
-		s, err := constructSubmitter(ctx, rs, impl.RM)
+		s, err := newSubmitter(ctx, rs, impl.RM)
 		if err != nil {
 			return nil, err
 		}
@@ -82,116 +82,6 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 	default:
 		panic(fmt.Errorf("impossible status %s", status))
 	}
-}
-
-func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM) (*Result, error) {
-	deadline := rs.Run.Submission.GetDeadline()
-	taskID := rs.Run.Submission.GetTaskId()
-	switch {
-	case deadline == nil:
-		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
-	case taskID == "":
-		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.Run.ID))
-	}
-
-	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
-	case expired:
-		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
-		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
-			// fully submitted
-			rs.Run.Status = run.Status_SUCCEEDED
-		default: // None submitted or partially submitted
-			rs.Run.Status = run.Status_FAILED
-			// synthesize submission completed event for timeout.
-			sc := &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-				FailureReason: &eventpb.SubmissionCompleted_Timeout{
-					Timeout: true,
-				},
-			}
-			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
-				return nil, err
-			}
-		}
-		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, rm); err != nil {
-			return nil, err
-		}
-		return &Result{State: rs}, nil
-	case taskID == mustTaskIDFromContext(ctx):
-		// Matching taskID indicates current task is the retry of a previous
-		// submitting task that has failed transiently. Continue the submission.
-		s, err := constructSubmitter(ctx, rs, rm)
-		if err != nil {
-			return nil, err
-		}
-		return &Result{
-			State:         rs,
-			PostProcessFn: s.submit,
-		}, nil
-	default:
-		// Presumably another task is working on the submission at this time. So
-		// poke as soon as the deadline expires.
-		if err := rm.PokeAt(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
-			return nil, err
-		}
-		return &Result{State: rs}, nil
-	}
-}
-
-const submissionDuration = 20 * time.Minute
-
-func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, error) {
-	ret := rs.ShallowCopy()
-	ret.Run.Status = run.Status_SUBMITTING
-	if ret.Run.Submission == nil {
-		ret.Run.Submission = &run.Submission{}
-		var err error
-		if ret.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, ret.Run.CLs, ret.Run.ID, ret.Run.Submission); err != nil {
-			return nil, err
-		}
-	}
-	ret.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
-	ret.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
-	return ret, nil
-}
-
-var fakeTaskIDKey = "used in handler tests only for setting the mock taskID"
-
-func mustTaskIDFromContext(ctx context.Context) string {
-	if taskID, ok := ctx.Value(&fakeTaskIDKey).(string); ok {
-		return taskID
-	}
-	switch executionInfo := tq.TaskExecutionInfo(ctx); {
-	case executionInfo == nil:
-		panic("must be called within a task handler")
-	case executionInfo.TaskID == "":
-		panic("taskID in task executionInfo is empty")
-	default:
-		return executionInfo.TaskID
-	}
-}
-
-func constructSubmitter(ctx context.Context, rs *state.RunState, rm RM) (*submitter, error) {
-	cg, err := rs.LoadConfigGroup(ctx)
-	if err != nil {
-		return nil, err
-	}
-	submission := rs.Run.Submission
-	notSubmittedCLs := make(common.CLIDs, 0, len(submission.GetCls())-len(submission.GetSubmittedCls()))
-	submitted := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
-	for _, cl := range submission.GetCls() {
-		clid := common.CLID(cl)
-		if _, ok := submitted[clid]; !ok {
-			notSubmittedCLs = append(notSubmittedCLs, clid)
-		}
-	}
-	return &submitter{
-		runID:    rs.Run.ID,
-		deadline: submission.GetDeadline().AsTime(),
-		treeURL:  cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
-		clids:    notSubmittedCLs,
-		rm:       rm,
-	}, nil
 }
 
 // OnCLSubmitted implements Handler interface.
@@ -280,62 +170,75 @@ func releaseSubmitQueueIfTaken(ctx context.Context, runID common.RunID, rm RM) e
 	return nil
 }
 
-func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID common.RunID, sub *run.Submission) ([]int64, error) {
-	cls, err := run.LoadRunCLs(ctx, runID, clids)
-	if err != nil {
-		return nil, err
+const submissionDuration = 20 * time.Minute
+
+func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, error) {
+	ret := rs.ShallowCopy()
+	ret.Run.Status = run.Status_SUBMITTING
+	if ret.Run.Submission == nil {
+		ret.Run.Submission = &run.Submission{}
+		var err error
+		if ret.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, ret.Run.CLs, ret.Run.ID, ret.Run.Submission); err != nil {
+			return nil, err
+		}
 	}
-	cls, err = submit.ComputeOrder(cls)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]int64, len(cls))
-	for i, cl := range cls {
-		ret[i] = int64(cl.ID)
-	}
+	ret.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
+	ret.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
 	return ret, nil
 }
 
-func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.SubmissionCompleted) (submitted, pending []*run.RunCL, failed *run.RunCL) {
-	submittedSet := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
-	failedCLID := common.CLID(sc.GetClFailure().GetClid())
-	if _, ok := submittedSet[failedCLID]; ok {
-		panic(fmt.Errorf("impossible; cl %d is marked both submitted and failed", failedCLID))
+func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM) (*Result, error) {
+	deadline := rs.Run.Submission.GetDeadline()
+	taskID := rs.Run.Submission.GetTaskId()
+	switch {
+	case deadline == nil:
+		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
+	case taskID == "":
+		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.Run.ID))
 	}
-	submitted = make([]*run.RunCL, 0, len(submittedSet))
-	pending = make([]*run.RunCL, 0, len(cls)-len(submittedSet))
-	for _, cl := range cls {
-		switch _, ok := submittedSet[cl.ID]; {
-		case ok:
-			submitted = append(submitted, cl)
-		case cl.ID == failedCLID:
-			failed = cl
-		default:
-			pending = append(pending, cl)
-		}
-	}
-	return submitted, pending, failed
-}
 
-func makeSubmissionMsgSuffix(submitted []*run.RunCL, failed *run.RunCL, pending []*run.RunCL) string {
-	submittedURLs := make([]string, len(submitted))
-	for i, cl := range submitted {
-		submittedURLs[i] = cl.ExternalID.MustURL()
+	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
+	case expired:
+		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
+		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
+			// fully submitted
+			rs.Run.Status = run.Status_SUCCEEDED
+		default: // None submitted or partially submitted
+			rs.Run.Status = run.Status_FAILED
+			// synthesize submission completed event for timeout.
+			sc := &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+				FailureReason: &eventpb.SubmissionCompleted_Timeout{
+					Timeout: true,
+				},
+			}
+			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
+				return nil, err
+			}
+		}
+		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, rm); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	case taskID == mustTaskIDFromContext(ctx):
+		// Matching taskID indicates current task is the retry of a previous
+		// submitting task that has failed transiently. Continue the submission.
+		s, err := newSubmitter(ctx, rs, rm)
+		if err != nil {
+			return nil, err
+		}
+		return &Result{
+			State:         rs,
+			PostProcessFn: s.submit,
+		}, nil
+	default:
+		// Presumably another task is working on the submission at this time. So
+		// poke as soon as the deadline expires.
+		if err := rm.PokeAt(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
 	}
-	notSubmittedURLs := make([]string, 0, len(pending)+1)
-	if failed != nil {
-		notSubmittedURLs = append(notSubmittedURLs, failed.ExternalID.MustURL())
-	}
-	for _, cl := range pending {
-		notSubmittedURLs = append(notSubmittedURLs, cl.ExternalID.MustURL())
-	}
-	if len(submittedURLs) > 0 { // partial submission
-		return fmt.Sprintf(partiallySubmittedMsgSuffixFmt,
-			strings.Join(notSubmittedURLs, ", "),
-			strings.Join(submittedURLs, ", "),
-		)
-	}
-	return fmt.Sprintf(noneSubmittedMsgSuffixFmt, strings.Join(notSubmittedURLs, ", "))
 }
 
 func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted) error {
@@ -433,6 +336,86 @@ func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.R
 	return nil
 }
 
+func makeSubmissionMsgSuffix(submitted []*run.RunCL, failed *run.RunCL, pending []*run.RunCL) string {
+	submittedURLs := make([]string, len(submitted))
+	for i, cl := range submitted {
+		submittedURLs[i] = cl.ExternalID.MustURL()
+	}
+	notSubmittedURLs := make([]string, 0, len(pending)+1)
+	if failed != nil {
+		notSubmittedURLs = append(notSubmittedURLs, failed.ExternalID.MustURL())
+	}
+	for _, cl := range pending {
+		notSubmittedURLs = append(notSubmittedURLs, cl.ExternalID.MustURL())
+	}
+	if len(submittedURLs) > 0 { // partial submission
+		return fmt.Sprintf(partiallySubmittedMsgSuffixFmt,
+			strings.Join(notSubmittedURLs, ", "),
+			strings.Join(submittedURLs, ", "),
+		)
+	}
+	return fmt.Sprintf(noneSubmittedMsgSuffixFmt, strings.Join(notSubmittedURLs, ", "))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Helper methods
+
+var fakeTaskIDKey = "used in handler tests only for setting the mock taskID"
+
+func mustTaskIDFromContext(ctx context.Context) string {
+	if taskID, ok := ctx.Value(&fakeTaskIDKey).(string); ok {
+		return taskID
+	}
+	switch executionInfo := tq.TaskExecutionInfo(ctx); {
+	case executionInfo == nil:
+		panic("must be called within a task handler")
+	case executionInfo.TaskID == "":
+		panic("taskID in task executionInfo is empty")
+	default:
+		return executionInfo.TaskID
+	}
+}
+
+func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID common.RunID, sub *run.Submission) ([]int64, error) {
+	cls, err := run.LoadRunCLs(ctx, runID, clids)
+	if err != nil {
+		return nil, err
+	}
+	cls, err = submit.ComputeOrder(cls)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]int64, len(cls))
+	for i, cl := range cls {
+		ret[i] = int64(cl.ID)
+	}
+	return ret, nil
+}
+
+func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.SubmissionCompleted) (submitted, pending []*run.RunCL, failed *run.RunCL) {
+	submittedSet := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
+	failedCLID := common.CLID(sc.GetClFailure().GetClid())
+	if _, ok := submittedSet[failedCLID]; ok {
+		panic(fmt.Errorf("impossible; cl %d is marked both submitted and failed", failedCLID))
+	}
+	submitted = make([]*run.RunCL, 0, len(submittedSet))
+	pending = make([]*run.RunCL, 0, len(cls)-len(submittedSet))
+	for _, cl := range cls {
+		switch _, ok := submittedSet[cl.ID]; {
+		case ok:
+			submitted = append(submitted, cl)
+		case cl.ID == failedCLID:
+			failed = cl
+		default:
+			pending = append(pending, cl)
+		}
+	}
+	return submitted, pending, failed
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Submitter Implementation
+
 type submitter struct {
 	// All fields are immutable.
 
@@ -447,6 +430,29 @@ type submitter struct {
 	clids common.CLIDs
 	// rm is used to interact with Run Manager.
 	rm RM
+}
+
+func newSubmitter(ctx context.Context, rs *state.RunState, rm RM) (*submitter, error) {
+	cg, err := rs.LoadConfigGroup(ctx)
+	if err != nil {
+		return nil, err
+	}
+	submission := rs.Run.Submission
+	notSubmittedCLs := make(common.CLIDs, 0, len(submission.GetCls())-len(submission.GetSubmittedCls()))
+	submitted := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
+	for _, cl := range submission.GetCls() {
+		clid := common.CLID(cl)
+		if _, ok := submitted[clid]; !ok {
+			notSubmittedCLs = append(notSubmittedCLs, clid)
+		}
+	}
+	return &submitter{
+		runID:    rs.Run.ID,
+		deadline: submission.GetDeadline().AsTime(),
+		treeURL:  cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
+		clids:    notSubmittedCLs,
+		rm:       rm,
+	}, nil
 }
 
 // ErrTransientSubmissionFailure indicates that the submission has failed
