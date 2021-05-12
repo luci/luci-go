@@ -260,13 +260,11 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
 					for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2} {
-						change := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-						So(change.Info.GetMessages(), ShouldNotBeEmpty)
-						lastMessage := change.Info.GetMessages()[len(change.Info.GetMessages())-1].Message
-						So(lastMessage, ShouldContainSubstring, "CV failed to submit any CLs in the Run after exhausting all the allocated time")
-						So(lastMessage, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
-						So(lastMessage, ShouldContainSubstring, "This generally should not happen, please contact LUCI team https://bit.ly/3sMReYs.")
-						for _, vote := range change.Info.GetLabels()[trigger.CQLabelName].GetAll() {
+						ci := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
+						So(ci, gf.ShouldLastMessageContain, timeoutMsg)
+						So(ci, gf.ShouldLastMessageContain, "None of the CLs in the Run were submitted by CV")
+						So(ci, gf.ShouldLastMessageContain, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+						for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
 							So(vote.GetValue(), ShouldEqual, 0)
 						}
 					}
@@ -282,13 +280,12 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
 					So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2) // ci2 untouched
-					change := ct.GFake.GetChange(gHost, int(ci1.GetNumber()))
-					So(change.Info.GetMessages(), ShouldNotBeEmpty)
-					lastMessage := change.Info.GetMessages()[len(change.Info.GetMessages())-1].Message
-					So(lastMessage, ShouldContainSubstring, "CV timed out while trying to submit all the CLs of this Run.")
-					So(lastMessage, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/1111]")
-					So(lastMessage, ShouldContainSubstring, "Submitted: [https://x-review.example.com/2222]")
-					for _, vote := range change.Info.GetLabels()[trigger.CQLabelName].GetAll() {
+					ci := ct.GFake.GetChange(gHost, int(ci1.GetNumber())).Info
+					So(ci, gf.ShouldLastMessageContain, timeoutMsg)
+					So(ci, gf.ShouldLastMessageContain, "CV partially submitted the CLs in the Run")
+					So(ci, gf.ShouldLastMessageContain, "Not submitted: [https://x-review.example.com/1111]")
+					So(ci, gf.ShouldLastMessageContain, "Submitted: [https://x-review.example.com/2222]")
+					for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
 						So(vote.GetValue(), ShouldEqual, 0)
 					}
 					assertSubmitQueueReleased()
@@ -426,17 +423,6 @@ func TestSubmitter(t *testing.T) {
 				)
 				So(log, memlogger.ShouldHaveLog, logging.Warning, "tree \"https://tree.example.com\" is closed when submission starts")
 			})
-			Convey("Deadline has expired", func() {
-				s.deadline = now.Add(-1 * time.Minute)
-				So(s.submit(ctx), ShouldBeNil)
-				verifyRunReleased(s.runID)
-				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
-					&eventpb.SubmissionCompleted{
-						Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
-					},
-				)
-				So(log, memlogger.ShouldHaveLog, logging.Warning, "submit deadline has already expired")
-			})
 		})
 
 		Convey("Submit successfully", func() {
@@ -457,6 +443,7 @@ func TestSubmitter(t *testing.T) {
 		// TODO(crbug/1199880): support flakiness for Gerrit fake to test submit
 		// will retry individual CL on transient error and not release queue
 		// for transient failure.
+		// Also test that submission has exhausted the allocated time.
 
 		Convey("Submit fails permanently when", func() {
 			Convey("No submit privilege", func() {
@@ -473,8 +460,13 @@ func TestSubmitter(t *testing.T) {
 				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
-						Result:       eventpb.SubmissionResult_FAILED_PERMANENT,
-						FatalMessage: permDeniedMsg,
+						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+						FailureReason: &eventpb.SubmissionCompleted_ClFailure{
+							ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+								Clid:    2,
+								Message: permDeniedMsg,
+							},
+						},
 					},
 				)
 			})
@@ -491,8 +483,13 @@ func TestSubmitter(t *testing.T) {
 				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
-						Result:       eventpb.SubmissionResult_FAILED_PERMANENT,
-						FatalMessage: fmt.Sprintf(failedPreconditionMsgFmt, fmt.Sprintf("rpc error: code = FailedPrecondition desc = revision %s is not current revision", ci2.GetCurrentRevision())),
+						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+						FailureReason: &eventpb.SubmissionCompleted_ClFailure{
+							ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+								Clid:    2,
+								Message: fmt.Sprintf(failedPreconditionMsgFmt, fmt.Sprintf("rpc error: code = FailedPrecondition desc = revision %s is not current revision", ci2.GetCurrentRevision())),
+							},
+						},
 					},
 				)
 			})
