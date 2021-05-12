@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12576/test-results?q\u003dExactID%3Aninja%3A%2F%2Fchrome%2Ftest%3Aunit_tests%2FTabModelListTest.TestGetTabModelForWebContents+VHash%3A80bbd5056a7864b8\n",
       "revId": "72e1586612b803b4eee5baf62bf2fe067cf994a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17d79236_723469e9",
+        "filename": "milo/frontend/resultui/src/components/test_search_filter.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-12T03:07:46Z",
+      "side": 1,
+      "message": "could you double or triple it? given the amount of info that appears at the same time, the short animation looks like it is a part of everything else showing up on the screen, so it is harder to notice it / distinguish it from everything else.",
+      "range": {
+        "startLine": 57,
+        "startChar": 53,
+        "endLine": 57,
+        "endChar": 55
+      },
+      "revId": "72e1586612b803b4eee5baf62bf2fe067cf994a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
