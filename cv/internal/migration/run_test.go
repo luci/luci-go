@@ -15,6 +15,7 @@
 package migration
 
 import (
+	"context"
 	"sort"
 	"testing"
 	"time"
@@ -199,6 +200,20 @@ func TestFetchActiveRuns(t *testing.T) {
 						},
 					},
 				},
+			})
+			Convey("Excludes runs with corresponding VerifiedCQDRun entities", func() {
+				err := saveVerifiedCQDRun(
+					ctx,
+					&migrationpb.ReportVerifiedRunRequest{Run: &migrationpb.ReportedRun{
+						Id:      rid,
+						Attempt: &cvbqpb.Attempt{Key: "cafecafe"},
+					}},
+					func(context.Context) error { return nil },
+				)
+				So(err, ShouldBeNil)
+				runs, err := fetchActiveRuns(ctx, "chromium")
+				So(err, ShouldBeNil)
+				So(runs, ShouldHaveLength, 0)
 			})
 		})
 		Convey("Excludes non-RUNNING runs", func() {
