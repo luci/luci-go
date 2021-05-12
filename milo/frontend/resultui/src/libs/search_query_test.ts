@@ -116,8 +116,8 @@ const variant6: TestVariant = {
 
 const variant7: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-5/sub',
-  variant: { def: { key1: 'val2', key2: 'val3' } },
-  variantHash: 'key1:val2|key2:val3',
+  variant: { def: { key1: 'val2', key2: 'val3=val' } },
+  variantHash: 'key1:val2|key2:val3=val',
   status: TestVariantStatus.EXPECTED,
   results: [
     {
@@ -194,6 +194,32 @@ describe('parseSearchQuery', () => {
       const filter = parseSearchQuery('-ExactID:invocation-a/test-suite-b/test-5');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [variant1, variant2, variant3, variant4, variant5, variant7]);
+    });
+  });
+
+  describe('V query', () => {
+    it('should filter out variants with no matching variant key-value pair', () => {
+      const filter = parseSearchQuery('v:key1=val1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1]);
+    });
+
+    it("should support variant value with '=' in it", () => {
+      const filter = parseSearchQuery('v:key2=val3=val');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant7]);
+    });
+
+    it('should support filter with only variant key', () => {
+      const filter = parseSearchQuery('v:key2');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant5, variant6, variant7]);
+    });
+
+    it('should work with negation', () => {
+      const filter = parseSearchQuery('-v:key1=val1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
     });
   });
 
@@ -565,6 +591,29 @@ describe('suggestSearchQuery', () => {
     );
     assert.notStrictEqual(
       suggestions1.find((s) => s.value === '-ExactID:'),
+      undefined
+    );
+  });
+
+  it('should suggest V query when the query prefix is V:', () => {
+    const suggestions1 = suggestSearchQuery('V:test_suite');
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'V:test_suite'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-V:test_suite'),
+      undefined
+    );
+
+    const suggestions2 = suggestSearchQuery('-V:test_suite');
+    // When user explicitly typed negative query, don't suggest positive query.
+    assert.strictEqual(
+      suggestions2.find((s) => s.value === 'V:test_suite'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-V:test_suite'),
       undefined
     );
   });
