@@ -37,6 +37,8 @@ export class InvocationState {
   // null means uninitialized.
   @observable.ref invocationId: string | null = null;
 
+  @observable.ref warning = '';
+
   @observable.ref searchText = '';
   @observable.ref searchFilter = (_v: TestVariant) => true;
 

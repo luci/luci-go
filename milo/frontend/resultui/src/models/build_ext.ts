@@ -88,6 +88,11 @@ export class BuildExt {
   }
 
   @computed
+  get buildOrStepInfraFailed() {
+    return this.status === BuildStatus.InfraFailure || this.steps.some((s) => s.status === BuildStatus.InfraFailure);
+  }
+
+  @computed
   get buildNumOrId(): string {
     return this.number?.toString() || 'b' + this.id;
   }

@@ -133,6 +133,9 @@ export class TestResultsTabElement extends MiloBaseElement {
     }
 
     return html`
+      ${this.invocationState.warning
+        ? html`<div id="test-results-tab-warning">${this.invocationState.warning}</div>`
+        : ''}
       <milo-test-variants-table
         style="--columns: ${this.invocationState.columnWidths.map((width) => width + 'px').join(' ')}"
       ></milo-test-variants-table>
@@ -184,6 +187,14 @@ export class TestResultsTabElement extends MiloBaseElement {
         border-left: 1px solid var(--divider-color);
         width: 0px;
         height: 100%;
+      }
+
+      #test-results-tab-warning {
+        background-color: var(--warning-color);
+        border-bottom: 1px solid var(--divider-color);
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
       }
     `,
   ];
