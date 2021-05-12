@@ -56,6 +56,30 @@
       },
       "revId": "4b3796f621e045fb9f8387a64711d5594adf93ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8268971_be601eb4",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-12T00:52:46Z",
+      "side": 1,
+      "message": "Whether the newer ID is smaller or not should be irrelevant, the format of the ID  could hypothetically have been made opaque to the user and understandable only by Buildbucket. So for #3, whether start build is larger or not doesn\u0027t matter, it just needs to be the \"older\" build (which is documented).\n\nThe ordering of returned builds is already documented for SearchBuildsResponse.",
+      "parentUuid": "30bb2c66_b3317c32",
+      "range": {
+        "startLine": 440,
+        "startChar": 5,
+        "endLine": 440,
+        "endChar": 49
+      },
+      "revId": "4b3796f621e045fb9f8387a64711d5594adf93ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
