@@ -21,6 +21,9 @@ const variant1: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
+  testMetadata: {
+    name: 'test-name-1',
+  },
   status: TestVariantStatus.UNEXPECTED,
   results: [
     {
@@ -45,6 +48,9 @@ const variant2: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-2',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
+  testMetadata: {
+    name: 'test-name-2',
+  },
   status: TestVariantStatus.UNEXPECTED,
   results: [
     {
@@ -232,6 +238,26 @@ describe('parseSearchQuery', () => {
 
     it('should work with negation', () => {
       const filter = parseSearchQuery('-vhash:key1:val1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
+    });
+  });
+
+  describe('Name query', () => {
+    it("should filter out variants whose test name doesn't match the search text", () => {
+      const filter = parseSearchQuery('Name:test-name');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1, variant2]);
+    });
+
+    it('should be case insensitive', () => {
+      const filter = parseSearchQuery('Name:test-NAME');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1, variant2]);
+    });
+
+    it('should work with negation', () => {
+      const filter = parseSearchQuery('-Name:test-name-1');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
     });
