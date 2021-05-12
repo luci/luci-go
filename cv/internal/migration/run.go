@@ -242,6 +242,34 @@ func fetchRun(ctx context.Context, id common.RunID, attemptKey string) (*run.Run
 	}
 }
 
+// makeCQStatusAppEvent decides what CQDaemon should send to legacy CQ status
+// app as the last update for this Run.
+//
+// The Run must be finalized.
+func makeCQStatusAppEvent(r *run.Run) *migrationpb.FetchRunStatusResponse {
+	res := &migrationpb.FetchRunStatusResponse{}
+	// This is best effort simulation of what pending_manager/base.py and
+	// async_push.py do in CQDaemon codebase.
+	switch r.Status {
+	case run.Status_SUCCEEDED:
+		if r.Mode == run.FullRun {
+			res.Event = "patch_committed"
+		} else {
+			res.Event = "patch_ready_to_commit"
+		}
+	case run.Status_FAILED:
+		res.Event = "patch_failed"
+		// TODO(tandrii,yiwzhang): get actual failure message.
+	case run.Status_CANCELLED:
+		res.Event = "patch_failed"
+		res.Extra = "CQ bit was unchecked."
+	default:
+		res.Event = "patch_unexpected_cv_status"
+		res.Extra = r.Status.String()
+	}
+	return res
+}
+
 // VerifiedCQDRun is the Run reported by CQDaemon after verification completes.
 type VerifiedCQDRun struct {
 	_kind string `gae:"$kind,migration.VerifiedCQDRun"`
