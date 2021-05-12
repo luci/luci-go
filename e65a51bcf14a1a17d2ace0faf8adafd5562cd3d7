@@ -16,6 +16,46 @@
       "message": "Please take a look.",
       "revId": "e65a51bcf14a1a17d2ace0faf8adafd5562cd3d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac752b68_a714b6dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-12T13:29:48Z",
+      "side": 1,
+      "message": "this does look really simple, but I want Vadim to review this.\n\nFWIW: I don\u0027t think we want IDTokenFlags to be enabled by default in most LUCI CLI apps,\nat least not until LUCI services themselves accept ID tokens. Therefore, approach makes sense to me.",
+      "revId": "e65a51bcf14a1a17d2ace0faf8adafd5562cd3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f80d44e_b0e38988",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-12T13:29:48Z",
+      "side": 1,
+      "message": "nit: R",
+      "range": {
+        "startLine": 171,
+        "startChar": 3,
+        "endLine": 171,
+        "endChar": 4
+      },
+      "revId": "e65a51bcf14a1a17d2ace0faf8adafd5562cd3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
