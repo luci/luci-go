@@ -52,6 +52,12 @@ export class TestSearchFilterElement extends MobxLitElement {
     return suggestSearchQuery(this.invocationState.searchText);
   }
 
+  protected firstUpdated() {
+    if (this.invocationState.searchText) {
+      this.style.setProperty('animation', 'highlight 2s');
+    }
+  }
+
   protected render() {
     return html`
       <milo-hotkey
@@ -92,6 +98,19 @@ export class TestSearchFilterElement extends MobxLitElement {
   }
 
   static styles = css`
+    :host {
+      display: inline-block;
+    }
+
+    @keyframes highlight {
+      from {
+        background-color: var(--highlight-background-color);
+      }
+      to {
+        background-color: inherit;
+      }
+    }
+
     mwc-icon {
       margin: 2px;
     }
