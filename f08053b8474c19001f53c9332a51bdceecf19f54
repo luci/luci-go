@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e5f0ffe9_0d825ad0",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-12T21:43:16Z",
+      "side": 1,
+      "message": "well, I assumed `([]whatever)(nil)...` will result in nil pointer. Apparently, it\u0027s not.",
+      "parentUuid": "dc276914_f20887d4",
+      "range": {
+        "startLine": 302,
+        "startChar": 2,
+        "endLine": 302,
+        "endChar": 72
+      },
+      "revId": "f08053b8474c19001f53c9332a51bdceecf19f54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "eb9be754_68706852",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-05-12T16:13:39Z",
       "side": 1,
       "message": "CL(s)",
+      "range": {
+        "startLine": 384,
+        "startChar": 114,
+        "endLine": 384,
+        "endChar": 116
+      },
+      "revId": "f08053b8474c19001f53c9332a51bdceecf19f54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6dbc62b8_0ed38eda",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 384,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-12T21:43:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb9be754_68706852",
       "range": {
         "startLine": 384,
         "startChar": 114,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d5c4566_aa69528e",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 628,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-12T21:43:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba574e4e_e7a84467",
+      "range": {
+        "startLine": 628,
+        "startChar": 57,
+        "endLine": 628,
+        "endChar": 60
+      },
+      "revId": "f08053b8474c19001f53c9332a51bdceecf19f54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "21d77c31_838c499e",
@@ -117,6 +189,30 @@
       "writtenOn": "2021-05-12T16:13:39Z",
       "side": 1,
       "message": "how about \"partially submitted the CLs...\"",
+      "range": {
+        "startLine": 630,
+        "startChar": 38,
+        "endLine": 630,
+        "endChar": 60
+      },
+      "revId": "f08053b8474c19001f53c9332a51bdceecf19f54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a930640_577a3f65",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 630,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-12T21:43:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "21d77c31_838c499e",
       "range": {
         "startLine": 630,
         "startChar": 38,
