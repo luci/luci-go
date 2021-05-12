@@ -20,7 +20,6 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -63,16 +62,9 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 			"Use project-wide config for all LUCI services in luci-config/projects.cfg")
 	}
 	if cfg.DrainingStartTime != "" {
-		if _, err := time.Parse(time.RFC3339, cfg.DrainingStartTime); err != nil {
-			ctx.Errorf("failed to parse draining_start_time %q as RFC3339 format: %s", cfg.DrainingStartTime, err)
-		} else {
-			// TODO(crbug/1102635): remove this check as only Python CQ code can't
-			// handle strings without "Z".
-			if !strings.HasSuffix(cfg.DrainingStartTime, "Z") {
-				ctx.Errorf("draining_start_time %q should be in UTC timezone and end with 'Z'"+
-					", for example '2020-07-06T21:00:30Z'", cfg.DrainingStartTime)
-			}
-		}
+		// TODO(crbug/1208569): re-enable or re-design this feature.
+		ctx.Errorf("draining_start_time is temporarily not allowed, see https://crbug.com/1208569." +
+			"Reach out to LUCI team oncall if you need urgent help")
 	}
 	if cfg.CqStatusHost != "" {
 		switch u, err := url.Parse("https://" + cfg.CqStatusHost); {

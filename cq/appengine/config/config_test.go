@@ -50,7 +50,6 @@ func TestValidationRules(t *testing.T) {
 }
 
 const validConfigTextPB = `
-	draining_start_time: "2017-12-23T15:47:58Z"
 	cq_status_host: "example.com"
 	submit_options {
 		max_burst: 2
@@ -119,21 +118,15 @@ func TestValidation(t *testing.T) {
 
 		Convey("Top-level config", func() {
 			Convey("Top level opts can be omitted", func() {
-				cfg.DrainingStartTime = ""
 				cfg.CqStatusHost = ""
 				cfg.SubmitOptions = nil
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
-			Convey("Bad draining time", func() {
-				cfg.DrainingStartTime = "meh"
+			Convey("draining time not allowed crbug/1208569", func() {
+				cfg.DrainingStartTime = "2017-12-23T15:47:58Z"
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, `failed to parse draining_start_time "meh" as RFC3339 format`)
-			})
-			Convey("Bad draining time for Python CQ", func() {
-				cfg.DrainingStartTime = "2020-07-06T21:00:30+01:00"
-				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, `end with 'Z'`)
+				So(vctx.Finalize(), ShouldErrLike, `https://crbug.com/1208569`)
 			})
 			Convey("Bad cq_status_host", func() {
 				cfg.CqStatusHost = "h://@test:123//not//://@adsfhost."
