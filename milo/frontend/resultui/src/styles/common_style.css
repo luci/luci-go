@@ -43,3 +43,11 @@ a {
 input[type='checkbox'] {
   transform: translateY(1px);
 }
+
+mwc-icon {
+  /* The icon font can take a while to load.
+   * Set a default size to reduce page shifting.
+   */
+  width: var(--mdc-icon-size, 24px);
+  height: var(--mdc-icon-size, 24px);
+}
