@@ -110,10 +110,18 @@ message CLSubmitted {
 message SubmissionCompleted {
   // Result of this submission.
   SubmissionResult result = 1;
-  // Reason for permanent failure to be sent to CV user.
-  //
-  // only set when result == FAILED_PERMANENT
-  string fatal_message = 2;
+
+  message CLSubmissionFailure {
+    int64 clid = 1; // Required
+    string message = 2; // Required
+  }
+
+  oneof failure_reason {
+    // This Run submission fails because of an individual CL submission
+    // failure.
+    CLSubmissionFailure cl_failure = 2;
+    bool timeout = 3;
+  }
 }
 
 enum SubmissionResult {
