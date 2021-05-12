@@ -15,9 +15,20 @@
 describe('Test Results Tab', () => {
   it('config table modal should not be overlapped by other elements', () => {
     cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/test-results');
-    // Ensure the page is loaded.
     cy.get('milo-tvt-config-widget', { includeShadowDom: true }).click();
     cy.wait(1000);
     cy.matchImageSnapshot('config-table-modal');
+  });
+
+  it('should show a warning banner when the build or one of the steps infra failed', () => {
+    cy.visit('/p/chromium/builders/ci/win-rel-swarming/11048/test-results');
+    cy.get('#test-results-tab-warning', { includeShadowDom: true }).contains(
+      'Test results displayed here are likely incomplete'
+    );
+  });
+
+  it("should not show a warning banner when there's no infra failure", () => {
+    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/test-results');
+    cy.get('#test-results-tab-warning').should('not.exist');
   });
 });

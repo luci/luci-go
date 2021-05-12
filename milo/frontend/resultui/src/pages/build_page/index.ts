@@ -18,7 +18,7 @@ import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
-import { computed, observable, reaction, when } from 'mobx';
+import { autorun, computed, observable, reaction, when } from 'mobx';
 
 import '../../components/test_count_indicator';
 import '../../components/status_bar';
@@ -217,11 +217,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         (appState) => {
           this.invocationState?.dispose();
           this.invocationState = new InvocationState(appState);
-          this.invocationState.invocationId = this.buildState.invocationId;
-          this.invocationState.presentationConfig =
-            this.buildState.build?.output?.properties?.[TEST_PRESENTATION_KEY] ||
-            this.buildState.build?.input?.properties?.[TEST_PRESENTATION_KEY] ||
-            {};
 
           // Emulate @property() update.
           this.updated(new Map([['invocationState', this.invocationState]]));
@@ -232,22 +227,16 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     this.addDisposer(() => this.invocationState.dispose());
 
     this.addDisposer(
-      reaction(
-        () => this.buildState.invocationId,
-        (invId) => (this.invocationState.invocationId = invId),
-        { fireImmediately: true }
-      )
-    );
-
-    this.addDisposer(
-      reaction(
-        () =>
+      autorun(() => {
+        this.invocationState.invocationId = this.buildState.invocationId;
+        this.invocationState.presentationConfig =
           this.buildState.build?.output?.properties?.[TEST_PRESENTATION_KEY] ||
           this.buildState.build?.input?.properties?.[TEST_PRESENTATION_KEY] ||
-          {},
-        (config) => (this.invocationState.presentationConfig = config),
-        { fireImmediately: true }
-      )
+          {};
+        this.invocationState.warning = this.buildState.build?.buildOrStepInfraFailed
+          ? 'Test results displayed here are likely incomplete because some steps have infra failed.'
+          : '';
+      })
     );
 
     if (this.isShortLink) {
