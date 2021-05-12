@@ -330,18 +330,15 @@ export class OverviewTabElement extends MobxLitElement {
         <tr>
           <td>Pending:</td>
           <td>
-            ${(build.pendingDuration && displayDuration(build.pendingDuration)) || 'N/A'}${(!build.startTime &&
-              ' (and counting)') ||
-            ''}
+            ${(build.pendingDuration && displayDuration(build.pendingDuration)) || 'N/A'}
+            ${!build.startTime && !build.endTime ? '(and counting)' : ''}
           </td>
         </tr>
         <tr>
           <td>Execution:</td>
           <td>
-            ${(build.executionDuration && displayDuration(build.executionDuration)) || 'N/A'}${(!build.endTime &&
-              build.startTime &&
-              ' (and counting)') ||
-            ''}
+            ${(build.executionDuration && displayDuration(build.executionDuration)) || 'N/A'}
+            ${build.startTime && !build.endTime ? '(and counting)' : ''}
           </td>
         </tr>
       </table>
