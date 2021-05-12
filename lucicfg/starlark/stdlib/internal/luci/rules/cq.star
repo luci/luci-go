@@ -45,10 +45,12 @@ def _cq(
         set too.
       submit_burst_delay: how long to wait between bursts of submissions of CQ
         attempts. Required if `submit_max_burst` is used.
-      draining_start_time: if present, the CQ will refrain from processing any
-        CLs, on which CQ was triggered after the specified time. This is an
-        UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z`
-        and Z is mandatory.
+      draining_start_time: **Temporarily not supported, see
+        https://crbug.com/1208569. Reach out to LUCI team oncall if you need
+        urgent help.**. If present, the CQ will refrain from processing any CLs,
+        on which CQ was triggered after the specified time. This is an UTC
+        RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z
+        is mandatory.
       status_host: hostname of the CQ status app to push updates to. Optional
         and deprecated.
     """
