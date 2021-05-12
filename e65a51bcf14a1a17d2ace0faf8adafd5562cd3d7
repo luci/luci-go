@@ -56,6 +56,30 @@
       },
       "revId": "e65a51bcf14a1a17d2ace0faf8adafd5562cd3d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8f9cdd4_30312385",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1116027
+      },
+      "writtenOn": "2021-05-12T13:44:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f80d44e_b0e38988",
+      "range": {
+        "startLine": 171,
+        "startChar": 3,
+        "endLine": 171,
+        "endChar": 4
+      },
+      "revId": "e65a51bcf14a1a17d2ace0faf8adafd5562cd3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
