@@ -30,6 +30,8 @@ import {
 import { Link } from './link';
 import { StepExt } from './step_ext';
 
+const COMPLETED_STATUS = [BuildStatus.Success, BuildStatus.Failure];
+
 /**
  * Contains all fields of the Build object with added helper methods and
  * properties.
@@ -85,6 +87,14 @@ export class BuildExt {
       }
     }
     this.rootSteps = rootSteps;
+  }
+
+  /**
+   * Whether all steps have succeeded or failed.
+   */
+  @computed
+  get allStepsWereCompleted() {
+    return COMPLETED_STATUS.includes(this.status) && this.steps.every((s) => COMPLETED_STATUS.includes(s.status));
   }
 
   @computed
