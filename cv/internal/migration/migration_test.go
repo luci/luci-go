@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestClsOf(t *testing.T) {
@@ -315,17 +316,21 @@ func TestReportVerifiedRun(t *testing.T) {
 			Convey("deduces the Run ID if not given and notifies Run Manager", func() {
 				_, err := m.ReportVerifiedRun(ctx, req)
 				So(err, ShouldBeNil)
-				So(loadVerifiedCQDRun().Payload.Run.Attempt.Status, ShouldEqual, cvbqpb.AttemptStatus_SUCCESS)
+				first := loadVerifiedCQDRun()
+				So(first.Payload.Run.Attempt.Status, ShouldEqual, cvbqpb.AttemptStatus_SUCCESS)
 				So(rnMock.verificationCompleted, ShouldContain, runID)
 
-				Convey("overwrites with newer data, notifying Run Manager yet again", func() {
+				Convey("does not overwrite existing data", func() {
 					rnMock.verificationCompleted = nil
 					req.Run.Id = string(runID)
 					req.Run.Attempt.Status = cvbqpb.AttemptStatus_INFRA_FAILURE
 					_, err := m.ReportVerifiedRun(ctx, req)
 					So(err, ShouldBeNil)
-					So(loadVerifiedCQDRun().Payload.Run.Attempt.Status, ShouldEqual, cvbqpb.AttemptStatus_INFRA_FAILURE)
-					So(rnMock.verificationCompleted, ShouldContain, runID)
+					second := loadVerifiedCQDRun()
+					So(second.UpdateTime, ShouldResemble, first.UpdateTime)
+					So(second.Payload, ShouldResembleProto, first.Payload)
+					// Run Manager doesn't need to be notified again.
+					So(rnMock.verificationCompleted, ShouldBeEmpty)
 				})
 			})
 		})

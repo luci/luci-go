@@ -96,7 +96,7 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 	}
 
 	optionalID := common.RunID(req.GetRun().GetId())
-	logging.Debugf(ctx, "ReportVerifiedRun(Run %q | Attempt %q)", optionalID, k)
+	logging.Debugf(ctx, "ReportVerifiedRun(Run %q | Attempt %q) status %s", optionalID, k, req.GetRun().GetAttempt().GetStatus())
 	r, err := fetchRun(ctx, optionalID, k)
 	switch {
 	case err != nil:
@@ -268,7 +268,7 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 	}
 }
 
-// FetchActiveRuns returns all RUNNING runs for the given LUCI Project.
+// FetchActiveRuns returns all RUNNING runs without VerifiedCQDRun records.
 func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.FetchActiveRunsRequest) (resp *migrationpb.FetchActiveRunsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
