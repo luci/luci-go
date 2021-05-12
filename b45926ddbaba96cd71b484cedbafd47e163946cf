@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dfb76508_260d4af1",
+        "filename": "client/cmd/swarming/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-12T00:49:53Z",
+      "side": 1,
+      "message": "sort?",
+      "range": {
+        "startLine": 84,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 24
+      },
+      "revId": "b45926ddbaba96cd71b484cedbafd47e163946cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
