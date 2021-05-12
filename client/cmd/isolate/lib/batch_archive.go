@@ -289,7 +289,7 @@ func (c *batchArchiveRun) Run(a subcommands.Application, args []string, _ subcom
 		return 1
 	}
 	if err := c.main(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), strings.Join(errors.RenderStack(err), "\n"))
 		return 1
 	}
 	defer c.profiler.Stop()
