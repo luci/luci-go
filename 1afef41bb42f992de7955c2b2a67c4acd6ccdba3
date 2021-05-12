@@ -39,6 +39,30 @@
       },
       "revId": "1afef41bb42f992de7955c2b2a67c4acd6ccdba3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef591200_19918a91",
+        "filename": "cv/appengine/queue.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-12T01:57:09Z",
+      "side": 1,
+      "message": "go OR python doesn\u0027t matter. Queues are language-agnostic.",
+      "parentUuid": "8e0666bd_6455d18a",
+      "range": {
+        "startLine": 2,
+        "startChar": 51,
+        "endLine": 2,
+        "endChar": 57
+      },
+      "revId": "1afef41bb42f992de7955c2b2a67c4acd6ccdba3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
