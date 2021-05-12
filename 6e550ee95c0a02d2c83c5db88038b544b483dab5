@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ce64928_3cc52ce0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-12T05:36:39Z",
+      "side": 1,
+      "message": "updated to only show the msg when the build or some steps infra-failed.",
+      "parentUuid": "ed4bdbb0_359b9b51",
+      "revId": "6e550ee95c0a02d2c83c5db88038b544b483dab5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b03b2f33_50895034",
@@ -76,6 +94,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1eac2e03_bb14fc6e",
+        "filename": "milo/frontend/resultui/src/models/build_ext.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-12T05:36:39Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "b03b2f33_50895034",
+      "range": {
+        "startLine": 33,
+        "startChar": 6,
+        "endLine": 33,
+        "endChar": 22
+      },
+      "revId": "6e550ee95c0a02d2c83c5db88038b544b483dab5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "17c7f8a5_2826659a",
@@ -89,6 +131,30 @@
       "writtenOn": "2021-05-12T03:55:41Z",
       "side": 1,
       "message": "nit: Some tests might be missing...",
+      "range": {
+        "startLine": 239,
+        "startChar": 15,
+        "endLine": 239,
+        "endChar": 49
+      },
+      "revId": "6e550ee95c0a02d2c83c5db88038b544b483dab5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52a00537_8e33b3bc",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-12T05:36:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17c7f8a5_2826659a",
       "range": {
         "startLine": 239,
         "startChar": 15,
