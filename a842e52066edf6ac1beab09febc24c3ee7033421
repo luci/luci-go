@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9a2e830_c1e41ad2",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T08:11:33Z",
+      "side": 1,
+      "message": "use smaller case.\nhttps://github.com/golang/go/wiki/CodeReviewComments#error-strings",
+      "range": {
+        "startLine": 75,
+        "startChar": 32,
+        "endLine": 75,
+        "endChar": 33
+      },
+      "revId": "a842e52066edf6ac1beab09febc24c3ee7033421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49b6276a_3e48d6b8",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T08:11:33Z",
+      "side": 1,
+      "message": "I think it is fine to return nil after printing the message.",
+      "range": {
+        "startLine": 78,
+        "startChar": 22,
+        "endLine": 78,
+        "endChar": 23
+      },
+      "revId": "a842e52066edf6ac1beab09febc24c3ee7033421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b043ad81_4e29af4b",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T08:11:33Z",
+      "side": 1,
+      "message": "use smaller case.\nhttps://github.com/golang/go/wiki/CodeReviewComments#error-strings",
+      "range": {
+        "startLine": 89,
+        "startChar": 25,
+        "endLine": 89,
+        "endChar": 26
+      },
+      "revId": "a842e52066edf6ac1beab09febc24c3ee7033421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8ca6578_b21801d7",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T08:11:33Z",
+      "side": 1,
+      "message": "use smaller case.\nhttps://github.com/golang/go/wiki/CodeReviewComments#error-strings",
+      "range": {
+        "startLine": 92,
+        "startChar": 25,
+        "endLine": 92,
+        "endChar": 26
+      },
+      "revId": "a842e52066edf6ac1beab09febc24c3ee7033421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
