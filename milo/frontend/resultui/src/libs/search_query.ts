@@ -40,13 +40,25 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
         const statuses = valueUpper.split(',');
         return (v: TestVariant) => negate !== (v.results || []).some((r) => statuses.includes(r.result.status));
       }
-      // Whether the test ID contains the query as a substring (case insensitive).
+      // Whether the test ID contains the query as a substring (case
+      // insensitive).
       case 'ID': {
         return (v: TestVariant) => negate !== v.testId.toUpperCase().includes(valueUpper);
       }
       // Whether the test ID matches the specified ID (case sensitive).
       case 'EXACTID': {
         return (v: TestVariant) => negate !== (v.testId === value);
+      }
+      // Whether the test variant has a matching variant key-value pair.
+      case 'V': {
+        // Don't use String.split here because then vValue can't contain '='.
+        const [, vKey, , vValue] = value.match(/^([^=]*)(=(.*))?$/)!;
+
+        // If the variant value is unspecified, accept any value.
+        // Otherwise, the value must match the specified value (case sensitive).
+        return vValue === undefined
+          ? (v: TestVariant) => negate !== (v.variant?.def?.[vKey] !== undefined)
+          : (v: TestVariant) => negate !== (v.variant?.def?.[vKey] === vValue);
       }
       // Whether the test variant has the specified variant hash.
       case 'VHASH': {
@@ -87,6 +99,9 @@ const QUERY_SUGGESTIONS = [
 
 // Queries with arbitrary value.
 const QUERY_TYPE_SUGGESTIONS = [
+  { type: 'V:', explanation: 'Include only tests with a matching variant key-value pair (case sensitive)' },
+  { type: '-V:', explanation: 'Exclude tests with a matching variant key-value pair (case sensitive)' },
+
   { type: 'ID:', explanation: 'Include only tests with the specified substring in their ID (case insensitive)' },
   { type: '-ID:', explanation: 'Exclude tests with the specified substring in their ID (case insensitive)' },
 
@@ -131,6 +146,14 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
       {
         isHeader: true,
         display: html`<strong>Supported Filter Types</strong>`,
+      },
+      {
+        value: 'V:variant-key=value-value',
+        explanation: 'Include only tests with a matching test variant key-value pair (case sensitive)',
+      },
+      {
+        value: 'V:variant-key',
+        explanation: 'Include only tests with the specified variant key (case sensitive)',
       },
       {
         value: 'ID:test-id-substr',
