@@ -2472,7 +2472,7 @@ For example:
 #### Declaring a Tricium analyzer
 
 `cq_tryjob_verifier` can be used to declare a [Tricium] analyzer by
-providing the builder and `mode_allowlist=[cq.MODE_ANAYLZER_RUN]`. It will
+providing the builder and `mode_allowlist=[cq.MODE_ANALYZER_RUN]`. It will
 generate Tricium config as well as CQ config which will work seamlessly
 after Tricium is merged into CV.
 
