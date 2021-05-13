@@ -70,6 +70,23 @@
       },
       "revId": "4f51aed72efd9e40e9fb07b751cfaa2939292bc4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c7ba331_f8951883",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-13T18:54:08Z",
+      "side": 1,
+      "message": "I\u0027m fine with this, as long as it\u0027s easy to integrate into editors.",
+      "revId": "4f51aed72efd9e40e9fb07b751cfaa2939292bc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
