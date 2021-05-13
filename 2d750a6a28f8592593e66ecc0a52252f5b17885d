@@ -22,6 +22,52 @@
       },
       "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "316255e5_549cec5e",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-05-13T02:47:42Z",
+      "side": 1,
+      "message": "It\u0027s better to check what botID was given.",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 14
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83320425_b864fea8",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-05-13T02:47:42Z",
+      "side": 1,
+      "message": "nit: assign it to a variable, and reuse it at L61.",
+      "range": {
+        "startLine": 51,
+        "startChar": 16,
+        "endLine": 51,
+        "endChar": 28
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
