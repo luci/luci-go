@@ -83,6 +83,7 @@ func getApplication() *subcommands.DefaultApplication {
 		Commands: []*subcommands.Command{
 			lib.CmdBots(af),
 			lib.CmdCollect(af),
+			lib.CmdDeleteBots(af),
 			lib.CmdReproduce(af),
 			lib.CmdRequestShow(af),
 			lib.CmdSpawnTasks(af),
