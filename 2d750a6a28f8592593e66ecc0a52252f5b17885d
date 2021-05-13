@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6ff27c9f_7ea859c4",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "If I make this private, flag (-f, -force) won\u0027t be defined.\n(I get \u0027flag provided but not defined: -f\u0027 when I run delete-bots with -f)",
+      "parentUuid": "b0870184_4bd700a3",
+      "range": {
+        "startLine": 47,
+        "startChar": 24,
+        "endLine": 47,
+        "endChar": 28
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2729293b_3a98aea0",
         "filename": "client/cmd/swarming/lib/delete_bots.go",
         "patchSetId": 6
@@ -37,6 +61,30 @@
       "writtenOn": "2021-05-13T02:51:54Z",
       "side": 1,
       "message": "ditto",
+      "range": {
+        "startLine": 53,
+        "startChar": 24,
+        "endLine": 53,
+        "endChar": 29
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9246f7ce_e3e0eb27",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2729293b_3a98aea0",
       "range": {
         "startLine": 53,
         "startChar": 24,
@@ -64,6 +112,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4dd42d4b_327775d3",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "19e378c0_d4f5728c",
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e55600ef_855bb6cf",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-05-13T02:44:30Z",
       "side": 1,
       "message": "Should check if the bot was deleted or not?\nhttps://source.chromium.org/chromium/infra/infra/+/main:luci/appengine/swarming/swarming_rpcs.py;l\u003d930?q\u003df:swarming_rpcs.py\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 80,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 3
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59ec26c1_ddf80aa6",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e55600ef_855bb6cf",
       "range": {
         "startLine": 80,
         "startChar": 2,
@@ -104,6 +194,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "702cc4b7_db46a07e",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a0d3f91_0443c8e6",
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "89a7e1f5_4f0be44a",
@@ -117,6 +225,30 @@
       "writtenOn": "2021-05-13T02:51:54Z",
       "side": 1,
       "message": "I prefer to use \u0027ctx\u0027 for the name of context.Context type variable.",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 2
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d69f436_0cbe2df9",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89a7e1f5_4f0be44a",
       "range": {
         "startLine": 44,
         "startChar": 1,
@@ -167,6 +299,48 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "80525d21_240f84d6",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "316255e5_549cec5e",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 14
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "554cd292_0f61ef2e",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db02183c_3c25d143",
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "83320425_b864fea8",
@@ -190,6 +364,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed66abae_5e5437dc",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83320425_b864fea8",
+      "range": {
+        "startLine": 51,
+        "startChar": 16,
+        "endLine": 51,
+        "endChar": 28
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "76fda8e9_e54a17d6",
@@ -203,6 +401,30 @@
       "writtenOn": "2021-05-13T02:51:54Z",
       "side": 1,
       "message": "sort?",
+      "range": {
+        "startLine": 85,
+        "startChar": 2,
+        "endLine": 86,
+        "endChar": 22
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f5f81a8_41672765",
+        "filename": "client/cmd/swarming/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T05:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76fda8e9_e54a17d6",
       "range": {
         "startLine": 85,
         "startChar": 2,
