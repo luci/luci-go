@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e55600ef_855bb6cf",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-05-13T02:44:30Z",
+      "side": 1,
+      "message": "Should check if the bot was deleted or not?\nhttps://source.chromium.org/chromium/infra/infra/+/main:luci/appengine/swarming/swarming_rpcs.py;l\u003d930?q\u003df:swarming_rpcs.py\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 80,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 3
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
