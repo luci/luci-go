@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -39,6 +41,8 @@ func TestExpiredInvocations(t *testing.T) {
 		defer cancel()
 
 		ctx, sched := tq.TestingContext(ctx, nil)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		store := tsmon.Store(ctx)
 
 		past := clock.Now(ctx).Add(-10 * time.Minute)
 		future := clock.Now(ctx).Add(10 * time.Minute)
@@ -63,5 +67,11 @@ func TestExpiredInvocations(t *testing.T) {
 			"State": &state,
 		})
 		So(state, ShouldEqual, resultpb.Invocation_ACTIVE)
+
+		So(store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []interface{}{""}), ShouldEqual, 1)
+		d := store.Get(ctx, timeOverdue, time.Time{}, []interface{}{""}).(*distribution.Distribution)
+		// The 10 minute (600 s) delay should fall into bucket 29 (~400k - ~630k ms).
+		// allow +/- 1 bucket for clock shenanigans.
+		So(d.Buckets()[28] == 1 || d.Buckets()[29] == 1 || d.Buckets()[30] == 1, ShouldBeTrue)
 	})
 }
