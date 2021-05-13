@@ -22,6 +22,30 @@
       },
       "revId": "caf60d2797e710bdb91b123add792932d5386954",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e7d7e56_cb7d4db9",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T08:35:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d94238a5_74824bb7",
+      "range": {
+        "startLine": 78,
+        "startChar": 7,
+        "endLine": 78,
+        "endChar": 13
+      },
+      "revId": "caf60d2797e710bdb91b123add792932d5386954",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
