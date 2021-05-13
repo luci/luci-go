@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	durpb "github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	"go.chromium.org/luci/common/clock"

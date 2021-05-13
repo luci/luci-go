@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/protobuf/proto"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
