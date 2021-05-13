@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd0fd538_10f7a869",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-13T19:05:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa63a214_ccca1d63",
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "35f03e7c_455ce1e0",
@@ -107,6 +125,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "72de82bc_82f26372",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-13T19:05:02Z",
+      "side": 1,
+      "message": "Deadline enforcer only finalizes ACTIVE invocations that have expired, and for this it relies on the finalizer to do it. If finalizer has a bug that is dropping finalization tasks, there\u0027s nothing deadline enforcer can do to fix this. Any invocation in FINALIZING state should be the domain of finalizer and not deadline enforcer, otherwise we are asking finalizer to try again something it already failed to do, or maybe is currently trying to do.\n\nAdded realm.",
+      "parentUuid": "cabd05a2_7868a7bb",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 12
+      },
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "17722fc2_1b0bc3c0",
@@ -120,6 +162,30 @@
       "writtenOn": "2021-05-13T04:14:11Z",
       "side": 1,
       "message": "Same here for metric:realm and metric:state",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 28
+      },
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a3f53c4_f8b3b74f",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-13T19:05:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17722fc2_1b0bc3c0",
       "range": {
         "startLine": 53,
         "startChar": 1,
@@ -179,6 +245,24 @@
       "side": 1,
       "message": "Thanks Scott. I agree with all you\u0027ve mentioned here.",
       "parentUuid": "73d77b9b_6666b12c",
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1dd4864c_0e15a6cd",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-13T19:05:02Z",
+      "side": 1,
+      "message": "The primary reason to have these metrics is to ensure that the load on the enforcer is low enough. For now, the enforcer is not very parallelized as it only has one thread per shard. Adding a pool of workers per shard would add complexity to the code, and it may not be justified. So these metrics are meant for assessing this.",
+      "parentUuid": "95730f0d_91f211fd",
       "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
