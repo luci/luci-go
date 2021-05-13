@@ -38,7 +38,8 @@ import { TestVariantEntryElement } from './test_variant_entry';
 
 function getPropKeyLabel(key: string) {
   // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
-  return key.split('.', 2)[1] ?? key;
+  // Don't use String.split here because value may contain '.'.
+  return key.match(/^([^.]*\.)?(.*)$/)![2];
 }
 
 /**
