@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
-// Build constructs a filesystem hierarchy given a layout.
+// Builds constructs a filesystem hierarchy given a layout.
 //
 // The layouts keys should be ToSlash-style file paths. Its values should be the
 // content that is written at those paths. Intermediate directories will be
