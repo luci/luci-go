@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "686d4f2a_46b4fc3f",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T07:02:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db47a0c0_8fbfbb74",
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b00bf325_7b7dc069",
@@ -31,6 +49,24 @@
       "writtenOn": "2021-05-13T06:38:10Z",
       "side": 1,
       "message": "have one top level convey and initialize variable used in test there.",
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed1c1d17_e63c11c9",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T07:02:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b00bf325_7b7dc069",
       "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -52,6 +88,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "32319d98_bd25c85f",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T07:02:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b79fa1f_fc84913d",
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3d17142f_e829f4df",
@@ -65,6 +119,30 @@
       "writtenOn": "2021-05-13T06:38:10Z",
       "side": 1,
       "message": "it is fine to merge this with service.deleteBots?",
+      "range": {
+        "startLine": 105,
+        "startChar": 5,
+        "endLine": 109,
+        "endChar": 6
+      },
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "314f2c77_0cd8e9c3",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T07:02:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3d17142f_e829f4df",
       "range": {
         "startLine": 105,
         "startChar": 5,
