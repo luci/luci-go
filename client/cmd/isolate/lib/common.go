@@ -336,7 +336,11 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 	fmCache := filemetadata.NewSingleFlightCache()
 
 	rootDgs := make([]digest.Digest, len(opts))
-	entriesC := make(chan []*uploadinfo.Entry)
+	type entries struct {
+		isolate string
+		entries []*uploadinfo.Entry
+	}
+	entriesC := make(chan entries)
 
 	digestEg, _ := errgroup.WithContext(ctx)
 
@@ -363,7 +367,7 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 			logger.Infof("ComputeMerkleTree returns %d entries with total size %d for %s, took %s",
 				len(entrs), stats.TotalInputBytes, o.Isolate, time.Since(start))
 			rootDgs[i] = rootDg
-			entriesC <- entrs
+			entriesC <- entries{o.Isolate, entrs}
 
 			return nil
 		})
@@ -379,9 +383,10 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 	uploadEg.Go(func() error {
 		uploaded := make(map[digest.Digest]struct{})
 		for entrs := range entriesC {
-			entryCount += len(entrs)
-			toUpload := make([]*uploadinfo.Entry, 0, len(entrs))
-			for _, e := range entrs {
+			entrs := entrs
+			entryCount += len(entrs.entries)
+			toUpload := make([]*uploadinfo.Entry, 0, len(entrs.entries))
+			for _, e := range entrs.entries {
 				entrySize += e.Digest.Size
 				if _, ok := uploaded[e.Digest]; ok {
 					continue
@@ -394,7 +399,7 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 				start := time.Now()
 				uploaded, bytes, err := cl.UploadIfMissing(uctx, toUpload...)
 				if err != nil {
-					return errors.Annotate(err, "failed to upload").Err()
+					return errors.Annotate(err, "failed to upload: %s", entrs.isolate).Err()
 				}
 
 				logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
