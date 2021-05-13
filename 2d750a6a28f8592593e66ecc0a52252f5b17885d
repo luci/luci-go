@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb9243f2_65cd940e",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T05:16:05Z",
+      "side": 1,
+      "message": "Ah, I see.",
+      "parentUuid": "6ff27c9f_7ea859c4",
+      "range": {
+        "startLine": 47,
+        "startChar": 24,
+        "endLine": 47,
+        "endChar": 28
+      },
+      "revId": "2d750a6a28f8592593e66ecc0a52252f5b17885d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2729293b_3a98aea0",
