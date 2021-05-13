@@ -41,10 +41,10 @@ import (
 	srvcfg "go.chromium.org/luci/logdog/server/config"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -69,13 +69,13 @@ func (sc *testServicesClient) LoadStream(c context.Context, req *logdog.LoadStre
 }
 
 func (sc *testServicesClient) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest, o ...grpc.CallOption) (
-	*empty.Empty, error) {
+	*emptypb.Empty, error) {
 	if cb := sc.asCallback; cb != nil {
 		if err := cb(req); err != nil {
 			return nil, err
 		}
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // testGSClient is a testing implementation of the gsClient interface.

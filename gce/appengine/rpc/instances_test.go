@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -77,7 +78,7 @@ func TestInstances(t *testing.T) {
 						So(datastore.Put(c, vm), ShouldBeNil)
 						rsp, err := srv.Delete(c, req)
 						So(err, ShouldBeNil)
-						So(rsp, ShouldResemble, &empty.Empty{})
+						So(rsp, ShouldResemble, &emptypb.Empty{})
 						So(datastore.Get(c, vm), ShouldBeNil)
 						So(vm.Drained, ShouldBeTrue)
 					})
@@ -85,7 +86,7 @@ func TestInstances(t *testing.T) {
 					Convey("deleted", func() {
 						rsp, err := srv.Delete(c, req)
 						So(err, ShouldBeNil)
-						So(rsp, ShouldResemble, &empty.Empty{})
+						So(rsp, ShouldResemble, &emptypb.Empty{})
 						So(datastore.Get(c, vm), ShouldResemble, datastore.ErrNoSuchEntity)
 					})
 				})
@@ -99,7 +100,7 @@ func TestInstances(t *testing.T) {
 						So(datastore.Put(c, vm), ShouldBeNil)
 						rsp, err := srv.Delete(c, req)
 						So(err, ShouldBeNil)
-						So(rsp, ShouldResemble, &empty.Empty{})
+						So(rsp, ShouldResemble, &emptypb.Empty{})
 						So(datastore.Get(c, vm), ShouldBeNil)
 						So(vm.Drained, ShouldBeTrue)
 					})
@@ -107,7 +108,7 @@ func TestInstances(t *testing.T) {
 					Convey("deleted", func() {
 						rsp, err := srv.Delete(c, req)
 						So(err, ShouldBeNil)
-						So(rsp, ShouldResemble, &empty.Empty{})
+						So(rsp, ShouldResemble, &emptypb.Empty{})
 						So(datastore.Get(c, vm), ShouldResemble, datastore.ErrNoSuchEntity)
 					})
 				})

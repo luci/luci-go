@@ -30,9 +30,9 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/duration"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -307,7 +307,7 @@ func getValue(value interface{}, path []string, prop *proto.Properties) (interfa
 			return nil, fmt.Errorf("could not convert enum value to string")
 		}
 		return stringer.String(), nil
-	} else if dpb, ok := value.(*duration.Duration); ok {
+	} else if dpb, ok := value.(*durationpb.Duration); ok {
 		if dpb == nil {
 			return nil, nil
 		}
@@ -317,7 +317,7 @@ func getValue(value interface{}, path []string, prop *proto.Properties) (interfa
 		}
 		// Convert to FLOAT64.
 		return value.Seconds(), nil
-	} else if tspb, ok := value.(*timestamp.Timestamp); ok {
+	} else if tspb, ok := value.(*timestamppb.Timestamp); ok {
 		if tspb == nil {
 			return nil, nil
 		}
