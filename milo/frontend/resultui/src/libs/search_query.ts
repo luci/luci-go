@@ -64,6 +64,11 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
       case 'VHASH': {
         return (v: TestVariant) => negate !== (v.variantHash.toUpperCase() === valueUpper);
       }
+      // Whether the test name contains the query as a substring (case
+      // insensitive).
+      case 'NAME': {
+        return (v: TestVariant) => negate !== (v.testMetadata?.name || '').toUpperCase().includes(valueUpper);
+      }
       default: {
         throw new Error(`invalid query type: ${type}`);
       }
@@ -104,6 +109,9 @@ const QUERY_TYPE_SUGGESTIONS = [
 
   { type: 'ID:', explanation: 'Include only tests with the specified substring in their ID (case insensitive)' },
   { type: '-ID:', explanation: 'Exclude tests with the specified substring in their ID (case insensitive)' },
+
+  { type: 'Name:', explanation: 'Include only tests with the specified substring in their Name (case insensitive)' },
+  { type: '-Name:', explanation: 'Exclude tests with the specified substring in their Name (case insensitive)' },
 
   { type: 'ExactID:', explanation: 'Include only tests with the specified ID (case sensitive)' },
   { type: '-ExactID:', explanation: 'Exclude tests with the specified ID (case sensitive)' },
@@ -170,6 +178,10 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
       {
         value: 'RStatus:Pass,Fail,Crash,Abort,Skip',
         explanation: 'Include only tests with at least one run of the specified status',
+      },
+      {
+        value: 'Name:test-name-substr',
+        explanation: 'Include only tests with the specified substring in their name (case insensitive)',
       },
       {
         value: 'ExactID:test-id',
