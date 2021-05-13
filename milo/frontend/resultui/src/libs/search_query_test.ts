@@ -113,6 +113,9 @@ const variant6: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-5',
   variant: { def: { key1: 'val2', key2: 'val3' } },
   variantHash: 'key1:val2|key2:val3',
+  testMetadata: {
+    name: 'sub',
+  },
   status: TestVariantStatus.EXPECTED,
   results: [
     {
@@ -140,6 +143,20 @@ const variant7: TestVariant = {
 const variants = [variant1, variant2, variant3, variant4, variant5, variant6, variant7];
 
 describe('parseSearchQuery', () => {
+  describe('query with no type', () => {
+    it('should match either test ID or test name', () => {
+      const filter = parseSearchQuery('sub');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant6, variant7]);
+    });
+
+    it('should be case insensitive', () => {
+      const filter = parseSearchQuery('SuB');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant6, variant7]);
+    });
+  });
+
   describe('ID query', () => {
     it("should filter out variants whose test ID doesn't match the search text", () => {
       const filter = parseSearchQuery('ID:test-suite-a');
@@ -151,12 +168,6 @@ describe('parseSearchQuery', () => {
       const filter = parseSearchQuery('id:test-suite-b');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [variant3, variant4, variant5, variant6, variant7]);
-    });
-
-    it('should interpret normal query as ID query', () => {
-      const filter = parseSearchQuery('test-5');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [variant5, variant6, variant7]);
     });
 
     it('should work with negation', () => {
