@@ -17,14 +17,15 @@ package deps
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/dm/api/service/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/mutate"
 )
 
-func (d *deps) FinishAttempt(c context.Context, req *dm.FinishAttemptReq) (_ *empty.Empty, err error) {
+func (d *deps) FinishAttempt(c context.Context, req *dm.FinishAttemptReq) (_ *emptypb.Empty, err error) {
 	logging.Fields{"execution": req.Auth.Id}.Infof(c, "finishing")
-	return &empty.Empty{}, tumbleNow(c, &mutate.FinishAttempt{
+	return &emptypb.Empty{}, tumbleNow(c, &mutate.FinishAttempt{
 		FinishAttemptReq: *req})
 }

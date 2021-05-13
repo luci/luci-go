@@ -18,8 +18,8 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -62,7 +62,7 @@ func validateUpdateIncludedInvocationsRequest(req *pb.UpdateIncludedInvocationsR
 }
 
 // UpdateIncludedInvocations implements pb.RecorderServer.
-func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.UpdateIncludedInvocationsRequest) (*empty.Empty, error) {
+func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.UpdateIncludedInvocationsRequest) (*emptypb.Empty, error) {
 	if err := validateUpdateIncludedInvocationsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
@@ -103,5 +103,5 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 		return nil
 	})
 
-	return &empty.Empty{}, err
+	return &emptypb.Empty{}, err
 }

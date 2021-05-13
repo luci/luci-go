@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
@@ -37,6 +37,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -78,8 +79,8 @@ func TestNewSearchQuery(t *testing.T) {
 					CreatedBy:     "abc@test.com",
 					Tags:          tags,
 					CreateTime: &pb.TimeRange{
-						StartTime: &timestamp.Timestamp{Seconds: 1592701200},
-						EndTime:   &timestamp.Timestamp{Seconds: 1592704800},
+						StartTime: &timestamppb.Timestamp{Seconds: 1592701200},
+						EndTime:   &timestamppb.Timestamp{Seconds: 1592704800},
 					},
 					Build: &pb.BuildRange{
 						StartBuildId: 200,
@@ -153,7 +154,7 @@ func TestNewSearchQuery(t *testing.T) {
 				Predicate: &pb.BuildPredicate{
 					CreatedBy: string(identity.AnonymousIdentity),
 					CreateTime: &pb.TimeRange{
-						StartTime: &timestamp.Timestamp{Seconds: int64(253402300801)},
+						StartTime: &timestamppb.Timestamp{Seconds: int64(253402300801)},
 					},
 				},
 			}
@@ -181,11 +182,11 @@ func TestFixPageSize(t *testing.T) {
 func TestMustTimestamp(t *testing.T) {
 	t.Parallel()
 	Convey("normal timestamp", t, func() {
-		res := mustTimestamp(&timestamp.Timestamp{Seconds: 1592701200})
+		res := mustTimestamp(&timestamppb.Timestamp{Seconds: 1592701200})
 		So(res, ShouldEqual, time.Unix(1592701200, 0).UTC())
 	})
 	Convey("invalid timestamp", t, func() {
-		So(func() { mustTimestamp(&timestamp.Timestamp{Seconds: 253402300801}) }, ShouldPanic)
+		So(func() { mustTimestamp(&timestamppb.Timestamp{Seconds: 253402300801}) }, ShouldPanic)
 	})
 	Convey("nil timestamp", t, func() {
 		res := mustTimestamp(nil)
@@ -593,8 +594,8 @@ func TestFetchOnBuild(t *testing.T) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					CreateTime: &pb.TimeRange{
-						StartTime: &timestamp.Timestamp{Seconds: 1592701200},
-						EndTime:   &timestamp.Timestamp{Seconds: 1700000000},
+						StartTime: &timestamppb.Timestamp{Seconds: 1592701200},
+						EndTime:   &timestamppb.Timestamp{Seconds: 1700000000},
 					},
 				},
 			}
