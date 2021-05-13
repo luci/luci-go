@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "46005525_d09c702c",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-05-13T01:11:21Z",
+      "side": 1,
+      "message": "Could you tell me the purpose of tracking these metrics? \n\nI feel these metrics are more for what deadline enforcer has achieved, so I\u0027m not if they are actionable.\n\nShould we instead tracking the oldest expired invocation that hasn\u0027t been finalized?",
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
