@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c798a7c_62432636",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T06:30:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9323e3fc_49d38828",
+      "range": {
+        "startLine": 28,
+        "startChar": 3,
+        "endLine": 28,
+        "endChar": 10
+      },
+      "revId": "0ed40e681d434f1795e3076111db167ca4ceab8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c510e9d6_62f4d677",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-05-13T05:16:05Z",
       "side": 1,
       "message": "use errors.New?",
+      "range": {
+        "startLine": 59,
+        "startChar": 23,
+        "endLine": 59,
+        "endChar": 66
+      },
+      "revId": "0ed40e681d434f1795e3076111db167ca4ceab8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b691a87b_2d61d123",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T06:30:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c510e9d6_62f4d677",
       "range": {
         "startLine": 59,
         "startChar": 23,
@@ -64,6 +112,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8940256e_6d859345",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T06:30:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "026b94e8_ba81fa90",
+      "revId": "0ed40e681d434f1795e3076111db167ca4ceab8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0daca245_ef4e875e",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-05-13T05:16:05Z",
       "side": 1,
       "message": "better to return different error in this case?",
+      "range": {
+        "startLine": 88,
+        "startChar": 5,
+        "endLine": 88,
+        "endChar": 16
+      },
+      "revId": "0ed40e681d434f1795e3076111db167ca4ceab8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f71d03c3_70eead34",
+        "filename": "client/cmd/swarming/lib/delete_bots.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T06:30:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0daca245_ef4e875e",
       "range": {
         "startLine": 88,
         "startChar": 5,
@@ -110,6 +200,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a787dec0_2cfb6e9a",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T06:30:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9508261_6ec5fd6c",
+      "range": {
+        "startLine": 55,
+        "startChar": 10,
+        "endLine": 55,
+        "endChar": 13
+      },
+      "revId": "0ed40e681d434f1795e3076111db167ca4ceab8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "01aebcd4_78e31af5",
@@ -123,6 +237,24 @@
       "writtenOn": "2021-05-13T05:16:05Z",
       "side": 1,
       "message": "better to have sub tests under top level Convey\ne.g. https://github.com/smartystreets/goconvey/blob/0fc5ef5371303f55e76d89a57286fb7076777e5b/examples/simple_example_test.go#L12\nalso see\nhttps://pkg.go.dev/github.com/smartystreets/goconvey@v1.6.4/convey#Convey",
+      "revId": "0ed40e681d434f1795e3076111db167ca4ceab8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c31d94b_1b6dbe10",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-13T06:30:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01aebcd4_78e31af5",
       "revId": "0ed40e681d434f1795e3076111db167ca4ceab8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
