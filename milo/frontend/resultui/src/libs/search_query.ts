@@ -25,11 +25,19 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
   const filters = searchQuery.split(' ').map((query) => {
     const match = query.match(SPECIAL_QUERY_RE);
 
-    // If the query isn't a special query, treat it as an ID query.
-    const [, neg, type, value] = match || ['', '', 'ID', query];
+    const [, neg, type, value] = match || ['', '', '', query];
     const valueUpper = value.toUpperCase();
     const negate = neg === '-';
     switch (type.toUpperCase()) {
+      // Whether the test ID or test name contains the query as a substring
+      // (case insensitive).
+      case '': {
+        return (v: TestVariant) => {
+          const matched =
+            v.testId.toUpperCase().includes(valueUpper) || v.testMetadata?.name?.toUpperCase().includes(valueUpper);
+          return negate !== Boolean(matched);
+        };
+      }
       // Whether the test variant has the specified status.
       case 'STATUS': {
         const statuses = valueUpper.split(',');
@@ -163,6 +171,10 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
         display: html`<strong>Supported Filter Types</strong>`,
       },
       {
+        value: 'test-id-substr',
+        explanation: 'Include only tests with the specified substring in their ID or name (case insensitive)',
+      },
+      {
         value: 'V:variant-key=value-value',
         explanation: 'Include only tests with a matching test variant key-value pair (case sensitive)',
       },
@@ -173,10 +185,6 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
       {
         value: 'ID:test-id-substr',
         explanation: 'Include only tests with the specified substring in their ID (case insensitive)',
-      },
-      {
-        value: 'test-id-substr',
-        explanation: 'Filters with no type are treated as ID filters',
       },
       {
         value: 'Status:UNEXPECTED,UNEXPECTEDLY_SKIPPED,FLAKY,EXONERATED,EXPECTED',
