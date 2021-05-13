@@ -38,6 +38,7 @@ type testService struct {
 	getFilesFromIsolate func(context.Context, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
 	getFilesFromCAS     func(context.Context, string, *rbeclient.Client, *swarming.SwarmingRpcsCASReference) ([]string, error)
 	listBots            func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
+	deleteBots          func(context.Context, string) (*swarming.SwarmingRpcsDeletedResponse, error)
 }
 
 func (s testService) Client() *http.Client {
@@ -82,6 +83,10 @@ func (s testService) GetFilesFromCAS(ctx context.Context, outdir string, cascli 
 
 func (s *testService) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {
 	return s.listBots(ctx, dimensions, fields)
+}
+
+func (s testService) DeleteBots(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error) {
+	return s.deleteBots(ctx, botID)
 }
 
 var _ AuthFlags = (*testAuthFlags)(nil)
