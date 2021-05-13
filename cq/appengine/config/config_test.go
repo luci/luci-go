@@ -20,12 +20,13 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/duration"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/config/validation"
 	v2 "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -240,7 +241,7 @@ func TestValidation(t *testing.T) {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "stabilization_delay is required")
 				})
-				cfg.ConfigGroups[0].CombineCls.StabilizationDelay = &duration.Duration{}
+				cfg.ConfigGroups[0].CombineCls.StabilizationDelay = &durationpb.Duration{}
 				Convey("Needs stabilization_delay > 10s", func() {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "stabilization_delay must be at least 10 seconds")

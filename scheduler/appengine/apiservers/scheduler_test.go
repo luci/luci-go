@@ -23,9 +23,9 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
@@ -349,7 +349,7 @@ func TestJobActionsApi(t *testing.T) {
 			}
 			r, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
 			So(err, ShouldBeNil)
-			So(r, ShouldResemble, &empty.Empty{})
+			So(r, ShouldResemble, &emptypb.Empty{})
 		})
 
 		Convey("NotFound", func() {
@@ -396,7 +396,7 @@ func TestAbortInvocationApi(t *testing.T) {
 				InvocationId: 12,
 			})
 			So(err, ShouldBeNil)
-			So(r, ShouldResemble, &empty.Empty{})
+			So(r, ShouldResemble, &emptypb.Empty{})
 		})
 
 		Convey("No job", func() {

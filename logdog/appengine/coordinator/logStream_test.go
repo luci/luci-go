@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	. "github.com/smartystreets/goconvey/convey"
 
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -148,7 +147,7 @@ func TestLogStream(t *testing.T) {
 		})
 
 		Convey(`Writing multiple LogStream entries`, func() {
-			times := map[string]*timestamp.Timestamp{}
+			times := map[string]*timestamppb.Timestamp{}
 			streamPaths := []string{
 				"testing/+/foo/bar",
 				"testing/+/foo/bar/baz",

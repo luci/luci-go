@@ -24,7 +24,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -274,7 +275,7 @@ func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 
 // DeleteArchiveTasks deletes archive tasks from the task queue.
 // Errors are logged but ignored.
-func (s *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest) (*empty.Empty, error) {
+func (s *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest) (*emptypb.Empty, error) {
 	// Although we only ever issue archival tasks from a single queue, this RPC
 	// doesn't stipulate that all tasks must belong to the same queue.
 	tasksPerQueue := map[int32][]*taskqueue.Task{}
@@ -288,7 +289,7 @@ func (s *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest
 		tasksPerQueue[queueNumber] = append(tasksPerQueue[queueNumber], tqTask)
 	}
 
-	return &empty.Empty{}, parallel.WorkPool(8, func(ch chan<- func() error) {
+	return &emptypb.Empty{}, parallel.WorkPool(8, func(ch chan<- func() error) {
 		for queueNumber, tasks := range tasksPerQueue {
 			queueNumber, tasks := queueNumber, tasks
 			queueName := RawArchiveQueueName(queueNumber)

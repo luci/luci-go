@@ -24,11 +24,11 @@ import (
 	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -198,7 +198,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 }
 
 // ReportInvocationLevelArtifacts implement sinkpb.SinkServer.
-func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
+func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*emptypb.Empty, error) {
 	uts := make([]*uploadTask, 0, len(in.Artifacts))
 	for id, a := range in.Artifacts {
 		updateArtifactContentType(a)
@@ -224,7 +224,7 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 	}
 	s.ac.schedule(uts...)
 
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 func updateArtifactContentType(a *sinkpb.Artifact) {

@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/gomodule/redigo/redis"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
@@ -162,8 +162,8 @@ type TestEntity struct {
 
 type greeterServer struct{}
 
-func (*greeterServer) SayHi(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
+func (*greeterServer) SayHi(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	logging.Infof(ctx, "Hi")
 	time.Sleep(100 * time.Millisecond)
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }

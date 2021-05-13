@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -30,9 +30,9 @@ func TestTimestamps(t *testing.T) {
 
 	Convey("Durations", t, func() {
 		build := &pb.Build{
-			CreateTime: &timestamp.Timestamp{Seconds: 1000},
-			StartTime:  &timestamp.Timestamp{Seconds: 1010},
-			EndTime:    &timestamp.Timestamp{Seconds: 1030},
+			CreateTime: &timestamppb.Timestamp{Seconds: 1000},
+			StartTime:  &timestamppb.Timestamp{Seconds: 1010},
+			EndTime:    &timestamppb.Timestamp{Seconds: 1030},
 		}
 		dur, ok := SchedulingDuration(build)
 		So(ok, ShouldBeTrue)

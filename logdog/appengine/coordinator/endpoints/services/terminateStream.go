@@ -28,8 +28,8 @@ import (
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var (
@@ -41,7 +41,7 @@ var (
 )
 
 // TerminateStream is an idempotent stream state terminate operation.
-func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*empty.Empty, error) {
+func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*emptypb.Empty, error) {
 	log.Fields{
 		"project":       req.Project,
 		"id":            req.Id,
@@ -116,5 +116,5 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	}
 
 	terminateStreamMetric.Add(c, 1, req.Project)
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }

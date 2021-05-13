@@ -25,9 +25,9 @@ import (
 	s "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/api/support/bundler"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // The maximum, AppEngine request size, minus 1MB for overhead.
@@ -98,7 +98,7 @@ func (c *Client) LoadStream(ctx context.Context, in *s.LoadStreamRequest, opts .
 
 // TerminateStream implements ServicesClient.
 func (c *Client) TerminateStream(ctx context.Context, in *s.TerminateStreamRequest, opts ...grpc.CallOption) (
-	*empty.Empty, error) {
+	*emptypb.Empty, error) {
 
 	_, err := c.bundleRPC(ctx, opts, &s.BatchRequest_Entry{
 		Value: &s.BatchRequest_Entry_TerminateStream{TerminateStream: in},
@@ -107,12 +107,12 @@ func (c *Client) TerminateStream(ctx context.Context, in *s.TerminateStreamReque
 		return nil, err
 	}
 
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // ArchiveStream implements ServicesClient.
 func (c *Client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, opts ...grpc.CallOption) (
-	*empty.Empty, error) {
+	*emptypb.Empty, error) {
 
 	_, err := c.bundleRPC(ctx, opts, &s.BatchRequest_Entry{
 		Value: &s.BatchRequest_Entry_ArchiveStream{ArchiveStream: in},
@@ -121,7 +121,7 @@ func (c *Client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, 
 		return nil, err
 	}
 
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // Flush flushes the Bundler. It should be called when terminating to ensure

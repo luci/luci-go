@@ -21,10 +21,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -130,31 +129,31 @@ func (s *SchedulerServer) GetInvocation(ctx context.Context, in *scheduler.Invoc
 
 //// Actions.
 
-func (s *SchedulerServer) PauseJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
+func (s *SchedulerServer) PauseJob(ctx context.Context, in *scheduler.JobRef) (*emptypb.Empty, error) {
 	return s.runAction(ctx, in, func(job *engine.Job) error {
 		return s.Engine.PauseJob(ctx, job)
 	})
 }
 
-func (s *SchedulerServer) ResumeJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
+func (s *SchedulerServer) ResumeJob(ctx context.Context, in *scheduler.JobRef) (*emptypb.Empty, error) {
 	return s.runAction(ctx, in, func(job *engine.Job) error {
 		return s.Engine.ResumeJob(ctx, job)
 	})
 }
 
-func (s *SchedulerServer) AbortJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
+func (s *SchedulerServer) AbortJob(ctx context.Context, in *scheduler.JobRef) (*emptypb.Empty, error) {
 	return s.runAction(ctx, in, func(job *engine.Job) error {
 		return s.Engine.AbortJob(ctx, job)
 	})
 }
 
-func (s *SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.InvocationRef) (*empty.Empty, error) {
+func (s *SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.InvocationRef) (*emptypb.Empty, error) {
 	return s.runAction(ctx, in.GetJobRef(), func(job *engine.Job) error {
 		return s.Engine.AbortInvocation(ctx, job, in.GetInvocationId())
 	})
 }
 
-func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTriggersRequest) (*empty.Empty, error) {
+func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTriggersRequest) (*emptypb.Empty, error) {
 	caller := auth.CurrentIdentity(ctx)
 
 	// Optionally use client-provided time if it is within reasonable margins.
@@ -225,7 +224,7 @@ func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTr
 		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
 	}
 
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 //// Private helpers.
@@ -245,14 +244,14 @@ func (s *SchedulerServer) getJob(ctx context.Context, ref *scheduler.JobRef) (*e
 	}
 }
 
-func (s *SchedulerServer) runAction(ctx context.Context, ref *scheduler.JobRef, action func(*engine.Job) error) (*empty.Empty, error) {
+func (s *SchedulerServer) runAction(ctx context.Context, ref *scheduler.JobRef, action func(*engine.Job) error) (*emptypb.Empty, error) {
 	job, err := s.getJob(ctx, ref)
 	if err != nil {
 		return nil, err
 	}
 	switch err := action(job); {
 	case err == nil:
-		return &empty.Empty{}, nil
+		return &emptypb.Empty{}, nil
 	case err == engine.ErrNoSuchJob:
 		return nil, status.Errorf(codes.NotFound, "no such job or no READ permission")
 	case err == engine.ErrNoPermission:

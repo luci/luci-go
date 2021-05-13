@@ -17,8 +17,8 @@ package cipd
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"google.golang.org/grpc"
 
@@ -160,28 +160,28 @@ func (m *mockedRepoClient) ListPrefix(ctx context.Context, in *api.ListPrefixReq
 	return out.(*api.ListPrefixResponse), nil
 }
 
-func (m *mockedRepoClient) HidePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) HidePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("HidePackage", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) UnhidePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) UnhidePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("UnhidePackage", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) DeletePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) DeletePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("DeletePackage", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
 func (m *mockedRepoClient) RegisterInstance(ctx context.Context, in *api.Instance, opts ...grpc.CallOption) (*api.RegisterInstanceResponse, error) {
@@ -208,20 +208,20 @@ func (m *mockedRepoClient) SearchInstances(ctx context.Context, in *api.SearchIn
 	return out.(*api.SearchInstancesResponse), nil
 }
 
-func (m *mockedRepoClient) CreateRef(ctx context.Context, in *api.Ref, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) CreateRef(ctx context.Context, in *api.Ref, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("CreateRef", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) DeleteRef(ctx context.Context, in *api.DeleteRefRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) DeleteRef(ctx context.Context, in *api.DeleteRefRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("DeleteRef", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
 func (m *mockedRepoClient) ListRefs(ctx context.Context, in *api.ListRefsRequest, opts ...grpc.CallOption) (*api.ListRefsResponse, error) {
@@ -232,36 +232,36 @@ func (m *mockedRepoClient) ListRefs(ctx context.Context, in *api.ListRefsRequest
 	return out.(*api.ListRefsResponse), nil
 }
 
-func (m *mockedRepoClient) AttachTags(ctx context.Context, in *api.AttachTagsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) AttachTags(ctx context.Context, in *api.AttachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("AttachTags", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) DetachTags(ctx context.Context, in *api.DetachTagsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) DetachTags(ctx context.Context, in *api.DetachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("DetachTags", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) AttachMetadata(ctx context.Context, in *api.AttachMetadataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) AttachMetadata(ctx context.Context, in *api.AttachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("AttachMetadata", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) DetachMetadata(ctx context.Context, in *api.DetachMetadataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *mockedRepoClient) DetachMetadata(ctx context.Context, in *api.DetachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("DetachMetadata", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*empty.Empty), nil
+	return out.(*emptypb.Empty), nil
 }
 
 func (m *mockedRepoClient) ListMetadata(ctx context.Context, in *api.ListMetadataRequest, opts ...grpc.CallOption) (*api.ListMetadataResponse, error) {

@@ -17,9 +17,8 @@ package access
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/proto/access"
 )
@@ -39,6 +38,6 @@ func (c *TestClient) PermittedActions(_ context.Context, req *access.PermittedAc
 }
 
 // Description implements the AccessClient interface.
-func (c *TestClient) Description(_ context.Context, _ *empty.Empty, _ ...grpc.CallOption) (*access.DescriptionResponse, error) {
+func (c *TestClient) Description(_ context.Context, _ *emptypb.Empty, _ ...grpc.CallOption) (*access.DescriptionResponse, error) {
 	return c.DescriptionResponse, c.Error
 }

@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/duration"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/access"
@@ -46,7 +46,7 @@ var permittedActionsTestData = &access.PermittedActionsResponse{
 			},
 		},
 	},
-	ValidityDuration: &duration.Duration{Seconds: 1},
+	ValidityDuration: &durationpb.Duration{Seconds: 1},
 }
 
 func TestPermissions(t *testing.T) {

@@ -31,8 +31,8 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/julienschmidt/httprouter"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -357,33 +357,33 @@ func builderPageData() []TestBundle {
 					ScheduledBuilds: []*ui.Build{
 						build(&buildbucketpb.Build{
 							Id:         1,
-							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+							CreateTime: &timestamppb.Timestamp{Seconds: 1544748000},
 						}),
 						build(&buildbucketpb.Build{
 							Id:         2,
 							Number:     1,
-							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+							CreateTime: &timestamppb.Timestamp{Seconds: 1544748000},
 						}),
 					},
 					StartedBuilds: []*ui.Build{
 						build(&buildbucketpb.Build{
 							Id:         3,
-							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
-							StartTime:  &timestamp.Timestamp{Seconds: 1544748010},
+							CreateTime: &timestamppb.Timestamp{Seconds: 1544748000},
+							StartTime:  &timestamppb.Timestamp{Seconds: 1544748010},
 						}),
 						build(&buildbucketpb.Build{
 							Id:         4,
 							Number:     1,
-							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
-							StartTime:  &timestamp.Timestamp{Seconds: 1544748010},
+							CreateTime: &timestamppb.Timestamp{Seconds: 1544748000},
+							StartTime:  &timestamppb.Timestamp{Seconds: 1544748010},
 						}),
 					},
 					EndedBuilds: []*ui.Build{
 						build(&buildbucketpb.Build{
 							Id:         5,
 							Status:     buildbucketpb.Status_SUCCESS,
-							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
-							EndTime:    &timestamp.Timestamp{Seconds: 1544748020},
+							CreateTime: &timestamppb.Timestamp{Seconds: 1544748000},
+							EndTime:    &timestamppb.Timestamp{Seconds: 1544748020},
 							Input: &buildbucketpb.Build_Input{
 								GerritChanges: []*buildbucketpb.GerritChange{
 									{
@@ -410,9 +410,9 @@ func builderPageData() []TestBundle {
 							Id:         6,
 							Status:     buildbucketpb.Status_FAILURE,
 							Number:     1,
-							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
-							StartTime:  &timestamp.Timestamp{Seconds: 1544748010},
-							EndTime:    &timestamp.Timestamp{Seconds: 1544748020},
+							CreateTime: &timestamppb.Timestamp{Seconds: 1544748000},
+							StartTime:  &timestamppb.Timestamp{Seconds: 1544748010},
+							EndTime:    &timestamppb.Timestamp{Seconds: 1544748020},
 							Input: &buildbucketpb.Build_Input{
 								GerritChanges: []*buildbucketpb.GerritChange{
 									{
@@ -437,9 +437,9 @@ func builderPageData() []TestBundle {
 							Id:         6,
 							Status:     buildbucketpb.Status_FAILURE,
 							Number:     1,
-							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
-							StartTime:  &timestamp.Timestamp{Seconds: 1544748010},
-							EndTime:    &timestamp.Timestamp{Seconds: 1544748020},
+							CreateTime: &timestamppb.Timestamp{Seconds: 1544748000},
+							StartTime:  &timestamppb.Timestamp{Seconds: 1544748010},
+							EndTime:    &timestamppb.Timestamp{Seconds: 1544748020},
 							Output: &buildbucketpb.Build_Output{
 								GitilesCommit: &buildbucketpb.GitilesCommit{
 									Host:     "chromium.googlesource.com",

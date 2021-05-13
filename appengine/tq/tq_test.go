@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/taskqueue"
@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -86,11 +87,11 @@ func TestDispatcher(t *testing.T) {
 			// Abuse some well-known proto type to simplify the test. It's doesn't
 			// matter what proto type we use here as long as it is registered in
 			// protobuf type registry.
-			d.RegisterTask(&duration.Duration{}, handler, "", nil)
+			d.RegisterTask(&durationpb.Duration{}, handler, "", nil)
 			installRoutes()
 
 			err := d.AddTask(ctx, &Task{
-				Payload:          &duration.Duration{Seconds: 123},
+				Payload:          &durationpb.Duration{Seconds: 123},
 				DeduplicationKey: "abc",
 				NamePrefix:       "prefix",
 				Title:            "abc-def",
@@ -118,7 +119,7 @@ func TestDispatcher(t *testing.T) {
 
 			// Read a task with same dedup key. Should be silently ignored.
 			err = d.AddTask(ctx, &Task{
-				Payload:          &duration.Duration{Seconds: 123},
+				Payload:          &durationpb.Duration{Seconds: 123},
 				DeduplicationKey: "abc",
 				NamePrefix:       "prefix",
 			})
@@ -132,13 +133,13 @@ func TestDispatcher(t *testing.T) {
 				// Execute the task.
 				So(runTasks(ctx), ShouldResemble, []int{200})
 				So(calls, ShouldResembleProto, []proto.Message{
-					&duration.Duration{Seconds: 123},
+					&durationpb.Duration{Seconds: 123},
 				})
 			})
 
 			Convey("Deleted", func() {
 				So(d.DeleteTask(ctx, &Task{
-					Payload:          &duration.Duration{Seconds: 123},
+					Payload:          &durationpb.Duration{Seconds: 123},
 					DeduplicationKey: "abc",
 					NamePrefix:       "prefix",
 				}), ShouldBeNil)
@@ -151,18 +152,18 @@ func TestDispatcher(t *testing.T) {
 
 		Convey("Deleting unknown task returns nil", func() {
 			handler := func(ctx context.Context, payload proto.Message) error { return nil }
-			d.RegisterTask(&duration.Duration{}, handler, "default", nil)
+			d.RegisterTask(&durationpb.Duration{}, handler, "default", nil)
 
 			So(d.DeleteTask(ctx, &Task{
-				Payload:          &duration.Duration{Seconds: 123},
+				Payload:          &durationpb.Duration{Seconds: 123},
 				DeduplicationKey: "something",
 			}), ShouldBeNil)
 		})
 
 		Convey("Many tasks", func() {
 			handler := func(ctx context.Context, payload proto.Message) error { return nil }
-			d.RegisterTask(&duration.Duration{}, handler, "default", nil)
-			d.RegisterTask(&empty.Empty{}, handler, "another-q", nil)
+			d.RegisterTask(&durationpb.Duration{}, handler, "default", nil)
+			d.RegisterTask(&emptypb.Empty{}, handler, "another-q", nil)
 			installRoutes()
 
 			t := []*Task{}
@@ -172,13 +173,13 @@ func TestDispatcher(t *testing.T) {
 				if i%2 == 0 {
 					task = &Task{
 						DeduplicationKey: fmt.Sprintf("%d", i/2),
-						Payload:          &duration.Duration{},
+						Payload:          &durationpb.Duration{},
 						Delay:            time.Duration(i) * time.Second,
 					}
 				} else {
 					task = &Task{
 						DeduplicationKey: fmt.Sprintf("%d", (i-1)/2),
-						Payload:          &empty.Empty{},
+						Payload:          &emptypb.Empty{},
 						Delay:            time.Duration(i) * time.Second,
 					}
 				}
@@ -221,7 +222,7 @@ func TestDispatcher(t *testing.T) {
 				return returnErr
 			}
 
-			d.RegisterTask(&duration.Duration{}, handler, "", nil)
+			d.RegisterTask(&durationpb.Duration{}, handler, "", nil)
 			installRoutes()
 
 			goodBody := `{"type":"google.protobuf.Duration","body":"123.000s"}`
@@ -289,21 +290,21 @@ func TestDispatcher(t *testing.T) {
 			}
 
 			Convey("empty queue name", func() {
-				d.RegisterTask(&duration.Duration{}, handler, "", nil)
+				d.RegisterTask(&durationpb.Duration{}, handler, "", nil)
 				So(d.GetQueues(), ShouldResemble, []string{"default"})
 			})
 
 			Convey("multiple queue names", func() {
-				d.RegisterTask(&duration.Duration{}, handler, "default", nil)
-				d.RegisterTask(&empty.Empty{}, handler, "another", nil)
+				d.RegisterTask(&durationpb.Duration{}, handler, "default", nil)
+				d.RegisterTask(&emptypb.Empty{}, handler, "another", nil)
 				queues := d.GetQueues()
 				sort.Strings(queues)
 				So(queues, ShouldResemble, []string{"another", "default"})
 			})
 
 			Convey("duplicated queue names", func() {
-				d.RegisterTask(&duration.Duration{}, handler, "default", nil)
-				d.RegisterTask(&empty.Empty{}, handler, "default", nil)
+				d.RegisterTask(&durationpb.Duration{}, handler, "default", nil)
+				d.RegisterTask(&emptypb.Empty{}, handler, "default", nil)
 				queues := d.GetQueues()
 				sort.Strings(queues)
 				So(queues, ShouldResemble, []string{"default"})

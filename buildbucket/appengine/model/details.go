@@ -122,7 +122,7 @@ type BuildInputProperties struct {
 	ID int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
-	// Proto is the struct.Struct representation of the properties field.
+	// Proto is the structpb.Struct representation of the properties field.
 	Proto DSStruct `gae:"properties,noindex"`
 }
 
@@ -134,7 +134,7 @@ type BuildOutputProperties struct {
 	ID int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
-	// Proto is the struct.Struct representation of the properties field.
+	// Proto is the structpb.Struct representation of the properties field.
 	Proto DSStruct `gae:"properties,noindex"`
 }
 

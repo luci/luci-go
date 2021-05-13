@@ -18,10 +18,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
@@ -33,11 +32,11 @@ import (
 )
 
 // DeleteHost handles a request to delete an existing host.
-func (*Service) DeleteHost(c context.Context, req *crimson.DeleteHostRequest) (*empty.Empty, error) {
+func (*Service) DeleteHost(c context.Context, req *crimson.DeleteHostRequest) (*emptypb.Empty, error) {
 	if err := deleteHost(c, req.Name); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // deleteHost deletes an existing host from the database.

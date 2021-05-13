@@ -20,11 +20,11 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -45,7 +45,7 @@ type Instances struct {
 var _ instances.InstancesServer = &Instances{}
 
 // deleteByID asynchronously deletes the instance matching the given ID.
-func deleteByID(c context.Context, id string) (*empty.Empty, error) {
+func deleteByID(c context.Context, id string) (*emptypb.Empty, error) {
 	vm := &model.VM{
 		ID: id,
 	}
@@ -66,12 +66,12 @@ func deleteByID(c context.Context, id string) (*empty.Empty, error) {
 	}, nil); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // deleteByHostname asynchronously deletes the instance matching the given
 // hostname.
-func deleteByHostname(c context.Context, hostname string) (*empty.Empty, error) {
+func deleteByHostname(c context.Context, hostname string) (*emptypb.Empty, error) {
 	var vms []*model.VM
 	// Hostnames are globally unique, so there should be at most one match.
 	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
@@ -79,14 +79,14 @@ func deleteByHostname(c context.Context, hostname string) (*empty.Empty, error) 
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch VM").Err()
 	case len(vms) == 0:
-		return &empty.Empty{}, nil
+		return &emptypb.Empty{}, nil
 	default:
 		return deleteByID(c, vms[0].ID)
 	}
 }
 
 // Delete handles a request to delete an instance asynchronously.
-func (*Instances) Delete(c context.Context, req *instances.DeleteRequest) (*empty.Empty, error) {
+func (*Instances) Delete(c context.Context, req *instances.DeleteRequest) (*emptypb.Empty, error) {
 	switch {
 	case req.GetId() == "" && req.GetHostname() == "":
 		return nil, status.Errorf(codes.InvalidArgument, "ID or hostname is required")
@@ -131,12 +131,12 @@ func toInstance(vm *model.VM) *instances.Instance {
 		}
 	}
 	if vm.Created > 0 {
-		inst.Created = &timestamp.Timestamp{
+		inst.Created = &timestamppb.Timestamp{
 			Seconds: vm.Created,
 		}
 	}
 	if vm.Connected > 0 {
-		inst.Connected = &timestamp.Timestamp{
+		inst.Connected = &timestamppb.Timestamp{
 			Seconds: vm.Connected,
 		}
 	}

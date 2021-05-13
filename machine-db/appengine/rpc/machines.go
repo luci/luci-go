@@ -18,11 +18,10 @@ import (
 	"context"
 	"strings"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/VividCortex/mysqlerr"
@@ -44,11 +43,11 @@ func (*Service) CreateMachine(c context.Context, req *crimson.CreateMachineReque
 }
 
 // DeleteMachine handles a request to delete an existing machine.
-func (*Service) DeleteMachine(c context.Context, req *crimson.DeleteMachineRequest) (*empty.Empty, error) {
+func (*Service) DeleteMachine(c context.Context, req *crimson.DeleteMachineRequest) (*emptypb.Empty, error) {
 	if err := deleteMachine(c, req.Name); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // ListMachines handles a request to list machines.

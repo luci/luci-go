@@ -18,10 +18,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 )
@@ -36,9 +35,9 @@ type Config struct {
 }
 
 // Delete handles a request to delete a config.
-func (srv *Config) Delete(c context.Context, req *config.DeleteRequest) (*empty.Empty, error) {
+func (srv *Config) Delete(c context.Context, req *config.DeleteRequest) (*emptypb.Empty, error) {
 	srv.cfg.Delete(req.GetId())
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // Ensure handles a request to create or update a config.

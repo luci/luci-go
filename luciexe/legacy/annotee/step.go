@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -300,9 +299,9 @@ func determineStatus(startTime, endTime *timestamppb.Timestamp, annStep *annotpb
 	return
 }
 
-func maybeCloneTimestamp(ts **timestamp.Timestamp) {
+func maybeCloneTimestamp(ts **timestamppb.Timestamp) {
 	if *ts != nil {
-		*ts = proto.Clone(*ts).(*timestamp.Timestamp)
+		*ts = proto.Clone(*ts).(*timestamppb.Timestamp)
 	}
 }
 

@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
@@ -264,7 +264,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 				Id:         fmt.Sprintf("%s-%d", cfg.Config.Prefix, i),
 				Attributes: cfg.Config.Attributes,
 				Config:     task.Id,
-				Created: &timestamp.Timestamp{
+				Created: &timestamppb.Timestamp{
 					Seconds: now.Unix(),
 				},
 				Index:    i,
