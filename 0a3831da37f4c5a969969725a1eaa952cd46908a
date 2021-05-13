@@ -73,6 +73,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b1b54beb_f5d83c06",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T07:54:38Z",
+      "side": 1,
+      "message": "sorry, I meant to declare variables under top level convey.",
+      "parentUuid": "ed1c1d17_e63c11c9",
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3b79fa1f_fc84913d",
         "filename": "client/cmd/swarming/lib/delete_bots_test.go",
         "patchSetId": 8
