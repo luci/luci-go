@@ -18,6 +18,10 @@ package bq
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
+	"sort"
+	"strconv"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -206,19 +210,43 @@ func attemptStatus(ctx context.Context, r *run.Run) cvbqpb.AttemptStatus {
 
 // clGroupKey constructs an opaque key unique to this set of CLs and patchsets.
 func clGroupKey(cls []*run.RunCL) string {
-	// TODO(crbug/1173168): Implement. In CQDaemon this is based on the sorted
-	// CL triples (host, number, patchset). But it should be changed, e.g.
-	// using sha2.
-	// TODO(crbug/1090123): This should not be equal with equivalentClGroupKey.
-	return ""
+	sort.Slice(cls, func(i, j int) bool {
+		return cls[i].ID < cls[j].ID
+	})
+	h := sha256.New()
+	separator := []byte{0}
+	for i, cl := range cls {
+		if i > 0 {
+			h.Write(separator)
+		}
+		h.Write([]byte(cl.Detail.GetGerrit().GetHost()))
+		h.Write(separator)
+		h.Write([]byte(strconv.FormatInt(cl.Detail.GetGerrit().GetInfo().GetNumber(), 10)))
+		h.Write(separator)
+		h.Write([]byte(strconv.FormatInt(int64(cl.Detail.GetMinEquivalentPatchset()), 10)))
+	}
+	return fmt.Sprintf("%x", h.Sum(nil)[:8])
 }
 
 // equivalentClGroupKey constructs an opaque key unique to a set of CLs and
 // their min equivalent patchsets.
 func equivalentClGroupKey(cls []*run.RunCL) string {
-	// TODO(crbug/1173168): Implement. In CQDaemon this is based on the sorted
-	// CL triples (hostname, number, min equivalent patchset). But it should be
-	// changed, e.g. using sha2.
-	// TODO(crbug/1090123): This should not be equal with CL group key.
-	return ""
+	h := sha256.New()
+	// CL group keys are meant to be opaque keys. We'd like to avoid people
+	// depending on CL group key and equivalent CL group key sometimes being
+	// equal. We can do this by just adding an extra constant to the hash.
+	// See crbug/1090123.
+	h.Write([]byte("equivalent_cl_group_key"))
+	separator := []byte{0}
+	for i, cl := range cls {
+		if i > 0 {
+			h.Write(separator)
+		}
+		h.Write([]byte(cl.Detail.GetGerrit().GetHost()))
+		h.Write(separator)
+		h.Write([]byte(strconv.FormatInt(cl.Detail.GetGerrit().GetInfo().GetNumber(), 10)))
+		h.Write(separator)
+		h.Write([]byte(strconv.FormatInt(int64(cl.Detail.GetMinEquivalentPatchset()), 10)))
+	}
+	return fmt.Sprintf("%x", h.Sum(nil)[:8])
 }
