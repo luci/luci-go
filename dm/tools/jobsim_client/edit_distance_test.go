@@ -23,8 +23,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )
@@ -57,11 +57,11 @@ func (r *recordingClient) EnsureGraphData(ctx context.Context, in *dm.EnsureGrap
 	return rsp, nil
 }
 
-func (r *recordingClient) ActivateExecution(ctx context.Context, in *dm.ActivateExecutionReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (r *recordingClient) ActivateExecution(ctx context.Context, in *dm.ActivateExecutionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	panic("never happens")
 }
 
-func (r *recordingClient) FinishAttempt(ctx context.Context, in *dm.FinishAttemptReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (r *recordingClient) FinishAttempt(ctx context.Context, in *dm.FinishAttemptReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	r.result = &EditResult{}
 	if err := json.Unmarshal([]byte(in.Data.Object), r.result); err != nil {
 		panic(err)

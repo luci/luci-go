@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -72,7 +71,7 @@ func ToInterval(start, end, now *timestamppb.Timestamp) (result Interval) {
 // Duration returns duration between start and the earliest of ends.
 // Ignores nil ends.
 // Fallbacks to "N/A" on insufficient data.
-func Duration(start *timestamppb.Timestamp, ends ...*timestamp.Timestamp) string {
+func Duration(start *timestamppb.Timestamp, ends ...*timestamppb.Timestamp) string {
 	if start != nil {
 		startTime, _ := ptypes.Timestamp(start)
 

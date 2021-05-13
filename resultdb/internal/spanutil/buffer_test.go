@@ -27,6 +27,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -53,7 +54,7 @@ func TestTypeConversion(t *testing.T) {
 		test(int64(42), int64(42))
 	})
 
-	Convey(`*timestamp.Timestamp`, t, func() {
+	Convey(`*timestamppb.Timestamp`, t, func() {
 		test(
 			&tspb.Timestamp{Seconds: 1000, Nanos: 1234},
 			spanner.NullTime{Valid: true, Time: time.Unix(1000, 1234).UTC()},

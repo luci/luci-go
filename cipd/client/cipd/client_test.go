@@ -27,10 +27,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -47,6 +46,7 @@ import (
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -380,7 +380,7 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 					Package:  "pkg/name",
 					Instance: objRef,
 				},
-				out: &empty.Empty{},
+				out: &emptypb.Empty{},
 			}
 		}
 
@@ -395,7 +395,7 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 						{Key: "k2", Value: "v2"},
 					},
 				},
-				out: &empty.Empty{},
+				out: &emptypb.Empty{},
 			}
 		}
 
@@ -410,7 +410,7 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 						{Key: "k2", Value: []byte("v2"), ContentType: "text/2"},
 					},
 				},
-				out: &empty.Empty{},
+				out: &emptypb.Empty{},
 			}
 		}
 

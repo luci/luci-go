@@ -17,14 +17,14 @@ package endpoints
 import (
 	"time"
 
-	"github.com/golang/protobuf/ptypes/duration"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // MinDuration selects the smallest duration that is > 0 from a set of
-// duration.Duration protobufs.
+// durationpb.Duration protobufs.
 //
 // If none of the supplied Durations are > 0, 0 will be returned.
-func MinDuration(candidates ...*duration.Duration) (exp time.Duration) {
+func MinDuration(candidates ...*durationpb.Duration) (exp time.Duration) {
 	for _, c := range candidates {
 		if cd := c.AsDuration(); cd > 0 && (exp <= 0 || cd < exp) {
 			exp = cd

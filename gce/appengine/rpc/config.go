@@ -18,10 +18,10 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -43,14 +43,14 @@ var _ config.ConfigurationServer = &Config{}
 
 // Delete handles a request to delete a config.
 // For app-internal use only.
-func (*Config) Delete(c context.Context, req *config.DeleteRequest) (*empty.Empty, error) {
+func (*Config) Delete(c context.Context, req *config.DeleteRequest) (*emptypb.Empty, error) {
 	if req.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
 	if err := datastore.Delete(c, &model.Config{ID: req.Id}); err != nil {
 		return nil, errors.Annotate(err, "failed to delete config").Err()
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // Ensure handles a request to create or update a config.

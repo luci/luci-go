@@ -18,8 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -64,7 +65,7 @@ func TestConfig(t *testing.T) {
 					Id: "id",
 				})
 				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, &empty.Empty{})
+				So(cfg, ShouldResemble, &emptypb.Empty{})
 				err = datastore.Get(c, &model.Config{
 					ID: "id",
 				})
