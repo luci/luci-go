@@ -22,6 +22,30 @@
       },
       "revId": "4f51aed72efd9e40e9fb07b751cfaa2939292bc4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53f7202e_94c8a177",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T13:13:24Z",
+      "side": 1,
+      "message": "I think there are inconsistency for import ordering between files especially for convey assertions.\n\nAnd\n* I feel it is more natural to treat convey assertion as third party like other packages.\n* I don\u0027t want to take care file local import convention in review.\n* Existing linter doesn\u0027t have enough customize flexibility to have exception for convey assertion in the bottom.\n\nI think it is fine to keep existing code as-is (or fixed eventually when modifying import), but I think having this kind of automatic check removes some review burden from us for newly created files.",
+      "parentUuid": "88b2add0_8963ec1a",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 3
+      },
+      "revId": "4f51aed72efd9e40e9fb07b751cfaa2939292bc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
