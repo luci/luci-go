@@ -114,8 +114,53 @@ func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common
 }
 
 // OnSubmissionCompleted implements Handler interface.
-func (*Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
-	panic("implement")
+func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
+	switch status := rs.Run.Status; {
+	case run.IsEnded(status):
+		logging.Warningf(ctx, "received SubmissionCompleted event when Run is %s", status)
+		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, impl.RM); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	case status != run.Status_SUBMITTING:
+		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
+	case sc.GetResult() == eventpb.SubmissionResult_SUCCEEDED:
+		rs = rs.ShallowCopy()
+		rs.EndRun(ctx, run.Status_SUCCEEDED)
+		return &Result{State: rs}, nil
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
+		return continueSubmissionIfPossible(ctx, rs, impl.RM)
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
+		rs = rs.ShallowCopy()
+		rs.EndRun(ctx, run.Status_FAILED)
+		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PRECONDITION:
+		rs = rs.ShallowCopy()
+		submission := rs.Run.Submission
+		switch deadlineExceeded := clock.Now(ctx).After(submission.GetDeadline().AsTime()); {
+		case deadlineExceeded:
+			if err := handleDeadlineExceeded(ctx, rs, impl.RM); err != nil {
+				return nil, err
+			}
+			return &Result{State: rs}, nil
+		case len(submission.GetSubmittedCls()) > 0 && len(submission.GetSubmittedCls()) < len(submission.GetCls()): // partially submitted
+			rs.EndRun(ctx, run.Status_FAILED)
+			// TODO(yiwzhang): support posting customized message for tree closure.
+			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, submission, sc); err != nil {
+				return nil, err
+			}
+			return &Result{State: rs}, nil
+		default:
+			// start over again
+			resetToWaitingForSubmission(rs)
+			return impl.tryStartSubmission(ctx, rs)
+		}
+	default:
+		panic(fmt.Errorf("impossible status %s", status))
+	}
 }
 
 func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlisted bool, err error) {
@@ -150,22 +195,29 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 	}
 }
 
+// releaseSubmitQueueIfTaken checks if submit queue is occupied by the given
+// Run before trying to release.
 func releaseSubmitQueueIfTaken(ctx context.Context, runID common.RunID, rm RM) error {
 	switch current, err := submit.CurrentRun(ctx, runID.LUCIProject()); {
 	case err != nil:
 		return err
 	case current == runID:
-		var innerErr error
-		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			innerErr = submit.Release(ctx, rm.NotifyReadyForSubmission, runID)
-			return innerErr
-		}, nil)
-		switch {
-		case innerErr != nil:
-			return innerErr
-		case err != nil:
-			return errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
-		}
+		return releaseSubmitQueue(ctx, runID, rm)
+	}
+	return nil
+}
+
+func releaseSubmitQueue(ctx context.Context, runID common.RunID, rm RM) error {
+	var innerErr error
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		innerErr = submit.Release(ctx, rm.NotifyReadyForSubmission, runID)
+		return innerErr
+	}, nil)
+	switch {
+	case innerErr != nil:
+		return innerErr
+	case err != nil:
+		return errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
 	}
 	return nil
 }
@@ -187,6 +239,36 @@ func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, e
 	return ret, nil
 }
 
+func resetToWaitingForSubmission(rs *state.RunState) {
+	rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
+	rs.Run.Submission.Deadline = nil
+	rs.Run.Submission.TaskId = ""
+}
+
+func (impl *Impl) tryStartSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
+	switch treeOpen, err := checkTreeOpen(ctx, rs); {
+	case err != nil:
+		return nil, err
+	case !treeOpen:
+		if err := impl.RM.PokeAfter(ctx, rs.Run.ID, 1*time.Minute); err != nil {
+			// Tree is closed, revisit after 1 minute.
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	}
+
+	switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
+	case err != nil:
+		return nil, err
+	case !waitlisted:
+		return impl.OnReadyForSubmission(ctx, rs)
+	default:
+		// This Run expects to be notified with a ReadyForSubmission
+		// event sent from submit queue once its turn is coming.
+		return &Result{State: rs}, nil
+	}
+}
+
 func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM) (*Result, error) {
 	deadline := rs.Run.Submission.GetDeadline()
 	taskID := rs.Run.Submission.GetTaskId()
@@ -197,27 +279,10 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM
 		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.Run.ID))
 	}
 
-	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
-	case expired:
+	switch deadlineExceeded := clock.Now(ctx).After(deadline.AsTime()); {
+	case deadlineExceeded:
 		rs = rs.ShallowCopy()
-		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
-		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
-			// fully submitted
-			rs.EndRun(ctx, run.Status_SUCCEEDED)
-		default: // None submitted or partially submitted
-			rs.EndRun(ctx, run.Status_FAILED)
-			// synthesize submission completed event for timeout.
-			sc := &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-				FailureReason: &eventpb.SubmissionCompleted_Timeout{
-					Timeout: true,
-				},
-			}
-			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
-				return nil, err
-			}
-		}
-		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, rm); err != nil {
+		if err := handleDeadlineExceeded(ctx, rs, rm); err != nil {
 			return nil, err
 		}
 		return &Result{State: rs}, nil
@@ -240,6 +305,27 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM
 		}
 		return &Result{State: rs}, nil
 	}
+}
+
+func handleDeadlineExceeded(ctx context.Context, rs *state.RunState, rm RM) error {
+	switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
+	case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
+		// fully submitted
+		rs.EndRun(ctx, run.Status_SUCCEEDED)
+	default: // None submitted or partially submitted
+		rs.EndRun(ctx, run.Status_FAILED)
+		// synthesize submission completed event for timeout.
+		sc := &eventpb.SubmissionCompleted{
+			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+			FailureReason: &eventpb.SubmissionCompleted_Timeout{
+				Timeout: true,
+			},
+		}
+		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
+			return err
+		}
+	}
+	return releaseSubmitQueue(ctx, rs.Run.ID, rm)
 }
 
 func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted) error {
@@ -412,6 +498,24 @@ func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.Submi
 		}
 	}
 	return submitted, pending, failed
+}
+
+func checkTreeOpen(ctx context.Context, rs *state.RunState) (bool, error) {
+	cg, err := rs.LoadConfigGroup(ctx)
+	if err != nil {
+		return false, err
+	}
+	treeOpen := true
+	if treeURL := cg.Content.GetVerifiers().GetTreeStatus().GetUrl(); treeURL != "" {
+		status, err := tree.FetchLatest(ctx, treeURL)
+		if err != nil {
+			return false, err
+		}
+		treeOpen = status.State == tree.Open || status.State == tree.Throttled
+	}
+	rs.Run.Submission.TreeOpen = treeOpen
+	rs.Run.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
+	return treeOpen, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

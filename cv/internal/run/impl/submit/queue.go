@@ -214,6 +214,15 @@ func CurrentRun(ctx context.Context, luciProject string) (common.RunID, error) {
 	return q.Current, nil
 }
 
+// MustCurrentRun is like `CurrentRun(...)` but panic on error.
+func MustCurrentRun(ctx context.Context, luciProject string) common.RunID {
+	cur, err := CurrentRun(ctx, luciProject)
+	if err != nil {
+		panic(err)
+	}
+	return cur
+}
+
 // LoadCurrentAndWaitlist loads the current submission slot and the waitlist.
 func LoadCurrentAndWaitlist(ctx context.Context, runID common.RunID) (current common.RunID, waitlist common.RunIDs, err error) {
 	q, err := loadQueue(ctx, runID.LUCIProject())
