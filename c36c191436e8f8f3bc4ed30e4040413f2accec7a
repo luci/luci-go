@@ -67,6 +67,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cabd05a2_7868a7bb",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-13T05:26:53Z",
+      "side": 1,
+      "message": "Disclaimer: I confess that I didn\u0027t fully read and understand the Spanner query discussed in the bug.\n\nmetric:state is to track the state of the expired invocation before the enforcement by deadlineenforcer.\n\nMy understanding is that this deadlineenforcer finalizes all the invocations with NON-finalized state, which includes\n- STATE_UNSPECIFIED\n- ACTIVE\n- FINALIZING\n\nFor example, an invocation could be set with FINALIZING and then abandoned due to a bug somewhere. Or, deadlineenforcer found an invocation with STATE_UNSPECIFIED, which shouldn\u0027t happen but maybe.\n\nI believe that the above scenarios will unlikely or shouldn\u0027t happen. However, if it\u0027s easy to report in the metric w/o extra costs, then I\u0027d like to see the info. Please correct me if I\u0027m totally wrong.",
+      "parentUuid": "2c2cf7a2_4c4130f1",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 12
+      },
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "17722fc2_1b0bc3c0",
         "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
         "patchSetId": 1
