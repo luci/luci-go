@@ -199,12 +199,13 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM
 
 	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
 	case expired:
+		rs = rs.ShallowCopy()
 		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
 		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
 			// fully submitted
-			rs.Run.Status = run.Status_SUCCEEDED
+			rs.EndRun(ctx, run.Status_SUCCEEDED)
 		default: // None submitted or partially submitted
-			rs.Run.Status = run.Status_FAILED
+			rs.EndRun(ctx, run.Status_FAILED)
 			// synthesize submission completed event for timeout.
 			sc := &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_FAILED_PERMANENT,

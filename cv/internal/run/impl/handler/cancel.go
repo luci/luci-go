@@ -17,7 +17,6 @@ package handler
 import (
 	"context"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -53,12 +52,10 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 			return impl.PM.NotifyRunFinished(ctx, rs.Run.ID)
 		},
 	}
-	res.State.Run.Status = run.Status_CANCELLED
-	now := clock.Now(ctx).UTC()
-	res.State.Run.EndTime = now
+	res.State.EndRun(ctx, run.Status_CANCELLED)
 	if res.State.Run.StartTime.IsZero() {
 		// This run has never started but already gets a cancelled event.
-		res.State.Run.StartTime = now
+		res.State.Run.StartTime = res.State.Run.EndTime
 	}
 	return res, nil
 }
