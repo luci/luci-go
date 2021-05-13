@@ -17,7 +17,9 @@ package state
 
 import (
 	"context"
+	"fmt"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -49,6 +51,15 @@ func (rs *RunState) ShallowCopy() *RunState {
 		cachedConfigGroup: rs.cachedConfigGroup,
 	}
 	return ret
+}
+
+// EndRun sets run to the provided final status and populate `EndTime`.
+func (rs *RunState) EndRun(ctx context.Context, status run.Status) {
+	if !run.IsEnded(status) {
+		panic(fmt.Errorf("can't end run with non-final status %s", status))
+	}
+	rs.Run.Status = status
+	rs.Run.EndTime = clock.Now(ctx).UTC()
 }
 
 // RemoveRunFromCLs removes the Run from the IncompleteRuns list of all
