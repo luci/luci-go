@@ -15,6 +15,8 @@
 package main
 
 import (
+	"strings"
+
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
@@ -28,21 +30,35 @@ var subcommandServe = &subcommands.Command{
 	LongDesc:  "Instantiates a stream server, accepting connections and forwarding them to output.",
 	CommandRun: func() subcommands.CommandRun {
 		cmd := &serveCommandRun{}
-
+		cmd.Flags.StringVar(&cmd.uri, "streamserver-uri", "",
+			`The stream server Unix socket to bind to "unix:<absolute path>" `+
+				`(the default is to pick a unique path).`)
 		return cmd
 	},
 }
 
 type serveCommandRun struct {
 	subcommands.CommandRunBase
+
+	uri string
 }
 
 func (cmd *serveCommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a := app.(*application)
 
-	streamServer, err := streamserver.New(a, "")
+	// HACK: -streamserver-uri is only really used on Linux, so we recognize only
+	// Unix sockets (not Windows named pipes).
+	if cmd.uri != "" {
+		if !strings.HasPrefix(cmd.uri, "unix:") {
+			log.Errorf(a, "Only unix stream server URI are supported, got %q", cmd.uri)
+			return runtimeErrorReturnCode
+		}
+		cmd.uri = strings.TrimPrefix(cmd.uri, "unix:")
+	}
+
+	streamServer, err := streamserver.New(a, cmd.uri)
 	if err != nil {
-		log.WithError(err).Errorf(a, "Failed to make to stream server.")
+		log.WithError(err).Errorf(a, "Failed to make the stream server.")
 		return runtimeErrorReturnCode
 	}
 
