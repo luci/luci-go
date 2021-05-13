@@ -27,11 +27,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -188,30 +188,30 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 	}
 }
 
-func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
 	if _, _, err := c.callRaw(ctx, "PUT", path, url.Values{}, textInputHeaders(), req.Content, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "change edit file content").Err()
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
-func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
 	var data struct{}
 	// The response cannot be JSON-deserialized.
 	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, nil, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete edit file content").Err()
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
-func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit:publish", gerritChangeIDForRouting(req.Number, req.Project))
 	if _, _, err := c.callRaw(ctx, "POST", path, url.Values{}, textInputHeaders(), []byte{}, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "change edit publish").Err()
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerRequest, opts ...grpc.CallOption) (*gerritpb.AddReviewerResult, error) {
@@ -233,12 +233,12 @@ func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerReque
 	return rr, nil
 }
 
-func (c *client) DeleteReviewer(ctx context.Context, req *gerritpb.DeleteReviewerRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *client) DeleteReviewer(ctx context.Context, req *gerritpb.DeleteReviewerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/reviewers/%s/delete", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.AccountId))
 	if _, err := c.call(ctx, "POST", path, url.Values{}, nil, nil, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete reviewer").Err()
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {

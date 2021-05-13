@@ -21,6 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"go.chromium.org/luci/gae/impl/memory"
@@ -31,9 +34,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
-	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/empty"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -62,9 +62,9 @@ func TestTestable(t *testing.T) {
 		// Abuse some well-known proto type to simplify the test. It's doesn't
 		// matter what proto type we use here as long as it is registered in
 		// protobuf type registry.
-		d.RegisterTask(&duration.Duration{}, handler, "q1", nil)
-		d.RegisterTask(&empty.Empty{}, handler, "q2", nil)
-		d.RegisterTask(&any.Any{}, handler, "q2", nil)
+		d.RegisterTask(&durationpb.Duration{}, handler, "q1", nil)
+		d.RegisterTask(&emptypb.Empty{}, handler, "q2", nil)
+		d.RegisterTask(&anypb.Any{}, handler, "q2", nil)
 
 		Convey("CreateQueues works", func() {
 			tst.CreateQueues()
@@ -85,18 +85,18 @@ func TestTestable(t *testing.T) {
 
 			// Add a bunch.
 			d.AddTask(ctx, &tq.Task{
-				Payload: &duration.Duration{Seconds: 1},
+				Payload: &durationpb.Duration{Seconds: 1},
 				Delay:   30 * time.Second,
 			})
 			d.AddTask(ctx, &tq.Task{
-				Payload: &duration.Duration{Seconds: 2},
+				Payload: &durationpb.Duration{Seconds: 2},
 				Delay:   10 * time.Second,
 			})
 			d.AddTask(ctx, &tq.Task{
-				Payload: &duration.Duration{Seconds: 3},
+				Payload: &durationpb.Duration{Seconds: 3},
 			})
 			d.AddTask(ctx, &tq.Task{
-				Payload: &duration.Duration{Seconds: 4},
+				Payload: &durationpb.Duration{Seconds: 4},
 			})
 
 			// Have them.
@@ -104,24 +104,24 @@ func TestTestable(t *testing.T) {
 			So(len(tasks), ShouldEqual, 4)
 
 			// Correct order. First to execute are in front.
-			So(tasks[0].Payload, ShouldResembleProto, &duration.Duration{Seconds: 3})
-			So(tasks[1].Payload, ShouldResembleProto, &duration.Duration{Seconds: 4})
-			So(tasks[2].Payload, ShouldResembleProto, &duration.Duration{Seconds: 2})
-			So(tasks[3].Payload, ShouldResembleProto, &duration.Duration{Seconds: 1})
+			So(tasks[0].Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 3})
+			So(tasks[1].Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 4})
+			So(tasks[2].Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 2})
+			So(tasks[3].Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 1})
 		})
 
 		Convey("ExecuteTask works", func() {
 			tst.CreateQueues()
 
-			d.AddTask(ctx, &tq.Task{Payload: &duration.Duration{Seconds: 1}})
-			d.AddTask(ctx, &tq.Task{Payload: &empty.Empty{}})
+			d.AddTask(ctx, &tq.Task{Payload: &durationpb.Duration{Seconds: 1}})
+			d.AddTask(ctx, &tq.Task{Payload: &emptypb.Empty{}})
 
 			for _, task := range tst.GetScheduledTasks() {
 				tst.ExecuteTask(ctx, task, nil)
 			}
 			So(calls, ShouldResembleProto, []proto.Message{
-				&empty.Empty{},
-				&duration.Duration{Seconds: 1},
+				&emptypb.Empty{},
+				&durationpb.Duration{Seconds: 1},
 			})
 		})
 	})

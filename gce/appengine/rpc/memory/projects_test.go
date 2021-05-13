@@ -18,11 +18,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/gce/api/projects/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -36,13 +37,13 @@ func TestProjects(t *testing.T) {
 		Convey("nil", func() {
 			cfg, err := srv.Delete(c, nil)
 			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &empty.Empty{})
+			So(cfg, ShouldResemble, &emptypb.Empty{})
 		})
 
 		Convey("empty", func() {
 			cfg, err := srv.Delete(c, &projects.DeleteRequest{})
 			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &empty.Empty{})
+			So(cfg, ShouldResemble, &emptypb.Empty{})
 		})
 
 		Convey("ID", func() {
@@ -50,7 +51,7 @@ func TestProjects(t *testing.T) {
 				Id: "id",
 			})
 			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &empty.Empty{})
+			So(cfg, ShouldResemble, &emptypb.Empty{})
 		})
 
 		Convey("deleted", func() {
@@ -59,7 +60,7 @@ func TestProjects(t *testing.T) {
 				Id: "id",
 			})
 			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &empty.Empty{})
+			So(cfg, ShouldResemble, &emptypb.Empty{})
 			_, ok := srv.cfg.Load("id")
 			So(ok, ShouldBeFalse)
 		})

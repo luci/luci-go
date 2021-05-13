@@ -19,11 +19,10 @@ import (
 	"database/sql"
 	"strings"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/VividCortex/mysqlerr"
@@ -46,11 +45,11 @@ func (*Service) CreateNIC(c context.Context, req *crimson.CreateNICRequest) (*cr
 }
 
 // DeleteNIC handles a request to delete an existing network interface.
-func (*Service) DeleteNIC(c context.Context, req *crimson.DeleteNICRequest) (*empty.Empty, error) {
+func (*Service) DeleteNIC(c context.Context, req *crimson.DeleteNICRequest) (*emptypb.Empty, error) {
 	if err := deleteNIC(c, req.Name, req.Machine); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // ListNICs handles a request to list network interfaces.

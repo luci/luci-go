@@ -17,14 +17,15 @@ package deps
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"go.chromium.org/luci/common/logging"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/mutate"
 )
 
-func (d *deps) ActivateExecution(c context.Context, req *dm.ActivateExecutionReq) (ret *empty.Empty, err error) {
-	ret = &empty.Empty{}
+func (d *deps) ActivateExecution(c context.Context, req *dm.ActivateExecutionReq) (ret *emptypb.Empty, err error) {
+	ret = &emptypb.Empty{}
 	logging.Fields{"execution": req.Auth.Id}.Infof(c, "activating")
 	err = tumbleNow(c, &mutate.ActivateExecution{
 		Auth:   req.Auth,
