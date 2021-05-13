@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/taskqueue"
 
@@ -32,9 +34,9 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/golang/protobuf/ptypes/wrappers"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -137,20 +139,20 @@ func TestRunSimulation(t *testing.T) {
 
 		addTask := func(ctx context.Context, idx int64, delay time.Duration, dedup string) {
 			d.AddTask(ctx, &tq.Task{
-				Payload:          &wrappers.Int64Value{Value: idx},
+				Payload:          &wrapperspb.Int64Value{Value: idx},
 				ETA:              clock.Now(ctx).Add(delay),
 				DeduplicationKey: dedup,
 			})
 		}
 
 		toIndex := func(t Task) int64 {
-			return t.Payload.(*wrappers.Int64Value).Value
+			return t.Payload.(*wrapperspb.Int64Value).Value
 		}
 
 		toIndexes := func(arr TaskList) (out []int64) {
 			// Hit Payloads() to generate code coverage.
 			for _, p := range arr.Payloads() {
-				out = append(out, p.(*wrappers.Int64Value).Value)
+				out = append(out, p.(*wrapperspb.Int64Value).Value)
 			}
 			return
 		}
@@ -165,7 +167,7 @@ func TestRunSimulation(t *testing.T) {
 		//                 -> 4
 		errorOnIdx := -1
 		handler := func(ctx context.Context, payload proto.Message) error {
-			switch payload.(*wrappers.Int64Value).Value {
+			switch payload.(*wrapperspb.Int64Value).Value {
 			case int64(errorOnIdx):
 				return fmt.Errorf("task failure")
 			case 1:
@@ -188,7 +190,7 @@ func TestRunSimulation(t *testing.T) {
 		// Abuse some well-known proto type to simplify the test. It's doesn't
 		// matter what proto type we use here as long as it is registered in
 		// protobuf type registry.
-		d.RegisterTask(&wrappers.Int64Value{}, handler, "", nil)
+		d.RegisterTask(&wrapperspb.Int64Value{}, handler, "", nil)
 
 		Convey("Happy path", func() {
 			addTask(ctx, 1, 0, "")
