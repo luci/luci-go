@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2c2cf7a2_4c4130f1",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-05-13T04:26:03Z",
+      "side": 1,
+      "message": "+1 to realm.\n\nBut I think all invocations will be transitioned from ACTIVE to FINALIZING here?",
+      "parentUuid": "35f03e7c_455ce1e0",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 12
+      },
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "17722fc2_1b0bc3c0",
         "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
         "patchSetId": 1
@@ -95,6 +119,24 @@
       "side": 1,
       "message": "You are right that these metrics won\u0027t directly reflect user-visible impacts. However, they can still provide useful information for tracking the occurrence of certain events.\n\nFor example, if we see that # of expired invocation kept increasing, and deadlineenforcer had to work harder, it may be a bad signal. We wouldn\u0027t setup an alert with the info, but the info could be useful when diagnosing other symptoms. Also, they could be used to verify the throughput and performance of deadlineenforcer.\n\nI think it\u0027s worth adding metrics for all of the following\n1) the oldest expired invocation, to monitor user-visible impacts\n2) stat of the finalized invocations\n\nI agree with Chan that we need (1) for sure.\n(1) will likely be used by alerts, whereas (2) will likely be used in monitoring dashboards.",
       "parentUuid": "46005525_d09c702c",
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "95730f0d_91f211fd",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-05-13T04:26:03Z",
+      "side": 1,
+      "message": "Thanks Scott. I agree with all you\u0027ve mentioned here.",
+      "parentUuid": "73d77b9b_6666b12c",
       "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
