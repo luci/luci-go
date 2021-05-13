@@ -46,6 +46,30 @@
       },
       "revId": "4f51aed72efd9e40e9fb07b751cfaa2939292bc4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c108d43_45a6d13a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-13T13:17:15Z",
+      "side": 1,
+      "message": "fair enough. Now I just need to teach my $EDITOR to do this formatting on save, so I don\u0027t have to worry about these any more.",
+      "parentUuid": "53f7202e_94c8a177",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 3
+      },
+      "revId": "4f51aed72efd9e40e9fb07b751cfaa2939292bc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
