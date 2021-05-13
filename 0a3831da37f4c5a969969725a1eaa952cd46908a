@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db47a0c0_8fbfbb74",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T06:38:10Z",
+      "side": 1,
+      "message": "use t.Parallel for this test too.",
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b00bf325_7b7dc069",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T06:38:10Z",
+      "side": 1,
+      "message": "have one top level convey and initialize variable used in test there.",
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b79fa1f_fc84913d",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T06:38:10Z",
+      "side": 1,
+      "message": "it is fine to set this in declaration.",
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d17142f_e829f4df",
+        "filename": "client/cmd/swarming/lib/delete_bots_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-13T06:38:10Z",
+      "side": 1,
+      "message": "it is fine to merge this with service.deleteBots?",
+      "range": {
+        "startLine": 105,
+        "startChar": 5,
+        "endLine": 109,
+        "endChar": 6
+      },
+      "revId": "0a3831da37f4c5a969969725a1eaa952cd46908a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
