@@ -69,6 +69,10 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
       case 'NAME': {
         return (v: TestVariant) => negate !== (v.testMetadata?.name || '').toUpperCase().includes(valueUpper);
       }
+      // Whether the test name matches the specified name (case sensitive).
+      case 'EXACTNAME': {
+        return (v: TestVariant) => negate !== (v.testMetadata?.name === value);
+      }
       default: {
         throw new Error(`invalid query type: ${type}`);
       }
@@ -115,6 +119,9 @@ const QUERY_TYPE_SUGGESTIONS = [
 
   { type: 'ExactID:', explanation: 'Include only tests with the specified ID (case sensitive)' },
   { type: '-ExactID:', explanation: 'Exclude tests with the specified ID (case sensitive)' },
+
+  { type: 'ExactName:', explanation: 'Include only tests with the specified name (case sensitive)' },
+  { type: '-ExactName:', explanation: 'Exclude tests with the specified name (case sensitive)' },
 
   { type: 'VHash:', explanation: 'Include only tests with the specified variant hash' },
   { type: '-VHash:', explanation: 'Exclude tests with the specified variant hash' },
@@ -186,6 +193,10 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
       {
         value: 'ExactID:test-id',
         explanation: 'Include only tests with the specified test ID (case sensitive)',
+      },
+      {
+        value: 'ExactName:test-name',
+        explanation: 'Include only tests with the specified name (case sensitive)',
       },
       {
         value: 'VHash:2660cde9da304c42',

@@ -70,6 +70,9 @@ const variant3: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-3',
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
+  testMetadata: {
+    name: 'test',
+  },
   status: TestVariantStatus.FLAKY,
   results: [
     {
@@ -260,6 +263,26 @@ describe('parseSearchQuery', () => {
       const filter = parseSearchQuery('-Name:test-name-1');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
+    });
+  });
+
+  describe('ExactName query', () => {
+    it('should only keep tests with the same name', () => {
+      const filter = parseSearchQuery('ExactName:test');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant3]);
+    });
+
+    it('should be case sensitive', () => {
+      const filter = parseSearchQuery('ExactName:tesT');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, []);
+    });
+
+    it('should work with negation', () => {
+      const filter = parseSearchQuery('-ExactName:test');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1, variant2, variant4, variant5, variant6, variant7]);
     });
   });
 
