@@ -17,7 +17,6 @@ package services
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -26,9 +25,10 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*empty.Empty, error) {
+func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*emptypb.Empty, error) {
 	log.Fields{
 		"project":       req.Project,
 		"id":            req.Id,
@@ -129,5 +129,5 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 		return nil, grpcutil.Internal
 	}
 
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }

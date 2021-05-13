@@ -21,7 +21,6 @@ import (
 	"strconv"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -103,14 +102,14 @@ func indexPointFromTokenField(kind, val string) (indexPoint, error) {
 	}
 }
 
-type tsIndexPoint timestamp.Timestamp
+type tsIndexPoint timestamppb.Timestamp
 
 func (ts *tsIndexPoint) kind() string {
 	return "ts"
 }
 
 func (ts *tsIndexPoint) tokenField() string {
-	b, err := proto.Marshal((*timestamp.Timestamp)(ts))
+	b, err := proto.Marshal((*timestamppb.Timestamp)(ts))
 	if err != nil {
 		panic("impossible marshaling error")
 	}
@@ -118,18 +117,18 @@ func (ts *tsIndexPoint) tokenField() string {
 }
 
 func (ts *tsIndexPoint) initPaging(in *pb.GetTestResultHistoryRequest) {
-	in.GetTimeRange().Latest = (*timestamp.Timestamp)(ts)
+	in.GetTimeRange().Latest = (*timestamppb.Timestamp)(ts)
 }
 
 func (ts *tsIndexPoint) initEntry(e *pb.GetTestResultHistoryResponse_Entry) {
-	e.InvocationTimestamp = (*timestamp.Timestamp)(ts)
+	e.InvocationTimestamp = (*timestamppb.Timestamp)(ts)
 }
 
 func newTSIndexPoint(s string) (*tsIndexPoint, error) {
 	var ret *timestamppb.Timestamp
 	b, err := hex.DecodeString(s)
 	if err == nil {
-		ret = &timestamp.Timestamp{}
+		ret = &timestamppb.Timestamp{}
 		err = proto.Unmarshal(b, ret)
 	}
 	return (*tsIndexPoint)(ret), err

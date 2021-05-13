@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/proto/git"
 
@@ -61,7 +61,7 @@ func TestUser(t *testing.T) {
 			So(uPB, ShouldResemble, &git.Commit_User{
 				Name:  "Some name",
 				Email: "some.name@example.com",
-				Time: &timestamp.Timestamp{
+				Time: &timestamppb.Timestamp{
 					Seconds: 1457495178,
 				},
 			})
@@ -108,12 +108,12 @@ func TestCommit(t *testing.T) {
 				Author: &git.Commit_User{
 					Name:  "author",
 					Email: "author@example.com",
-					Time:  &timestamp.Timestamp{Seconds: 1457495178},
+					Time:  &timestamppb.Timestamp{Seconds: 1457495178},
 				},
 				Committer: &git.Commit_User{
 					Name:  "committer",
 					Email: "committer@example.com",
-					Time:  &timestamp.Timestamp{Seconds: 1457495178},
+					Time:  &timestamppb.Timestamp{Seconds: 1457495178},
 				},
 				Message: "I am\na\nbanana",
 			})

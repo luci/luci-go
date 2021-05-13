@@ -18,10 +18,10 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -41,14 +41,14 @@ type Projects struct {
 var _ projects.ProjectsServer = &Projects{}
 
 // Delete handles a request to delete a project.
-func (*Projects) Delete(c context.Context, req *projects.DeleteRequest) (*empty.Empty, error) {
+func (*Projects) Delete(c context.Context, req *projects.DeleteRequest) (*emptypb.Empty, error) {
 	if req.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
 	if err := datastore.Delete(c, &model.Project{ID: req.Id}); err != nil {
 		return nil, errors.Annotate(err, "failed to delete project").Err()
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // Ensure handles a request to create or update a project.
