@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "94951e23_94a45297",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-13T19:21:51Z",
+      "side": 1,
+      "message": "Please remove redundant aliasing like this (I think just replacing `structpb \"google.golang.org/protobuf/types/known/structpb\"` with `\"google.golang.org/protobuf/types/known/structpb\"` across all Go files should be good enough).",
+      "range": {
+        "startLine": 22,
+        "startChar": 1,
+        "endLine": 22,
+        "endChar": 59
+      },
+      "revId": "b3b6e9465fb75d81ac752e9a0564ed8c3b061d3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
