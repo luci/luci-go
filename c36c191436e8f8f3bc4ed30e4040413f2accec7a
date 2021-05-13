@@ -1,6 +1,69 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef145483_3cd7f915",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-13T04:14:11Z",
+      "side": 1,
+      "message": "Please consider adding unit tests for metric population. It has been useful for me.\n: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/batch_create_artifacts_test.go;l\u003d137-138",
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35f03e7c_455ce1e0",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-13T04:14:11Z",
+      "side": 1,
+      "message": "I think it\u0027d be useful to have the following metric fields.\n- metric:realm\n- metric:state\n\nI assume that metric:state could be ACTIVE or FINALIZING.",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 12
+      },
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17722fc2_1b0bc3c0",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-13T04:14:11Z",
+      "side": 1,
+      "message": "Same here for metric:realm and metric:state",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 28
+      },
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "46005525_d09c702c",
@@ -14,6 +77,24 @@
       "writtenOn": "2021-05-13T01:11:21Z",
       "side": 1,
       "message": "Could you tell me the purpose of tracking these metrics? \n\nI feel these metrics are more for what deadline enforcer has achieved, so I\u0027m not if they are actionable.\n\nShould we instead tracking the oldest expired invocation that hasn\u0027t been finalized?",
+      "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "73d77b9b_6666b12c",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-13T04:14:11Z",
+      "side": 1,
+      "message": "You are right that these metrics won\u0027t directly reflect user-visible impacts. However, they can still provide useful information for tracking the occurrence of certain events.\n\nFor example, if we see that # of expired invocation kept increasing, and deadlineenforcer had to work harder, it may be a bad signal. We wouldn\u0027t setup an alert with the info, but the info could be useful when diagnosing other symptoms. Also, they could be used to verify the throughput and performance of deadlineenforcer.\n\nI think it\u0027s worth adding metrics for all of the following\n1) the oldest expired invocation, to monitor user-visible impacts\n2) stat of the finalized invocations\n\nI agree with Chan that we need (1) for sure.\n(1) will likely be used by alerts, whereas (2) will likely be used in monitoring dashboards.",
+      "parentUuid": "46005525_d09c702c",
       "revId": "c36c191436e8f8f3bc4ed30e4040413f2accec7a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
