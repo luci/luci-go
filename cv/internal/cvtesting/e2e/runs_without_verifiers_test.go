@@ -27,6 +27,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/run"
@@ -103,10 +104,10 @@ func TestCreatesSingularRun(t *testing.T) {
 	})
 }
 
-func TestCreatesSingularQuickDryRun(t *testing.T) {
+func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 1 CL Run, which gets canceled by the user", t, func() {
+	Convey("CV creates 1 CL Quick Dry Run, which succeeds", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx, cancel := ct.SetUp()
@@ -198,6 +199,76 @@ func TestCreatesSingularQuickDryRun(t *testing.T) {
 		// So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		// So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
 
+		// Verify that BQ row was exported.
+		// TODO(qyearsley): implement.
+	})
+}
+
+func TestCreatesSingularDryRunAborted(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV creates 1 CL Run, which gets canceled by the user", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "g-review"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange = 33
+
+		ct.EnableCVRunManagement(ctx, lProject)
+		// Start CQDaemon.
+		ct.MustCQD(ctx, lProject)
+
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		ct.Cfg.Create(ctx, lProject, cfg)
+
+		tStart := ct.Clock.Now()
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.CQ(+1, tStart, gf.U("user-2")),
+		)))
+
+		/////////////////////////    Run CV   ////////////////////////////////
+		ct.LogPhase(ctx, "CV notices CL and starts the Run")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		var r *run.Run
+		ct.RunUntil(ctx, func() bool {
+			r = ct.EarliestCreatedRunOf(ctx, lProject)
+			return r != nil && r.Status == run.Status_RUNNING
+		})
+		So(r.Mode, ShouldEqual, run.DryRun)
+
+		ct.LogPhase(ctx, "CQDaemon posts starting message to the Gerrit CL")
+		ct.RunUntil(ctx, func() bool {
+			m := ct.LastMessage(gHost, gChange).GetMessage()
+			return strings.Contains(m, cqdfake.StartingMessage) && strings.Contains(m, string(r.ID))
+		})
+
+		ct.LogPhase(ctx, "User aborts the run by removing a vote")
+		ct.Clock.Add(time.Minute)
+		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
+			gf.ResetVotes(c.Info, trigger.CQLabelName)
+			gf.Updated(ct.Clock.Now())(c.Info)
+		})
+
+		ct.LogPhase(ctx, "CQDaemon stops working on the Run")
+		ct.RunUntil(ctx, func() bool {
+			return len(ct.MustCQD(ctx, lProject).ActiveAttemptKeys()) == 0
+		})
+
+		ct.LogPhase(ctx, "CV finalizes the Run and sends BQ event")
+		ct.RunUntil(ctx, func() bool {
+			r = ct.LoadRun(ctx, r.ID)
+			return run.IsEnded(r.Status)
+		})
+		So(r.Status, ShouldEqual, run.Status_CANCELLED)
 		// Verify that BQ row was exported.
 		// TODO(qyearsley): implement.
 	})
