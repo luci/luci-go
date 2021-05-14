@@ -70,3 +70,24 @@ func TestBuildbucket(t *testing.T) {
 		So(proto.MarshalTextString(cfg), ShouldEqual, buildbucketOut)
 	})
 }
+
+const buildbucketNoBuildersIn = `
+buckets {
+  name: "luci.bar.baz"
+}
+`
+
+const buildbucketNoBuildersOut = `buckets: <
+  name: "baz"
+>
+`
+
+func TestBuildbucketNoBuilders(t *testing.T) {
+	t.Parallel()
+	Convey("Works", t, func() {
+		cfg := &pb.BuildbucketCfg{}
+		So(proto.UnmarshalText(buildbucketNoBuildersIn, cfg), ShouldBeNil)
+		normalizeUnflattenedBuildbucketCfg(cfg)
+		So(proto.MarshalTextString(cfg), ShouldEqual, buildbucketNoBuildersOut)
+	})
+}
