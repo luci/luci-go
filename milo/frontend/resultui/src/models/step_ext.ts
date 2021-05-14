@@ -142,6 +142,9 @@ export class StepExt {
       bodyContainer.removeChild(firstParagraph);
     }
 
+    // Show a tooltip in case the header content is cutoff.
+    headerContainer.title = headerContainer.textContent || '';
+
     // If the container is empty, return null instead.
     return [
       headerContainer.firstChild ? headerContainer : null,
