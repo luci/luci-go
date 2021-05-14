@@ -20,9 +20,9 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/ptypes"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/bq/testdata"
 	"go.chromium.org/luci/common/clock/testclock"

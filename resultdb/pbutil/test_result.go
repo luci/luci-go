@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	dpb "github.com/golang/protobuf/ptypes/duration"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	dpb "google.golang.org/protobuf/types/known/durationpb"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 

@@ -25,8 +25,8 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 var (

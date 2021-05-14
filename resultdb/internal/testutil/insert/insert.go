@@ -23,7 +23,8 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 
-	durpb "github.com/golang/protobuf/ptypes/duration"
+	durpb "google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"

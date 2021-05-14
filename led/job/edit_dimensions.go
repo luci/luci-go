@@ -22,7 +22,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	durpb "github.com/golang/protobuf/ptypes/duration"
+	durpb "google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 )

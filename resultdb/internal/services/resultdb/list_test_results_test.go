@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"cloud.google.com/go/spanner"
-	durpb "github.com/golang/protobuf/ptypes/duration"
+	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -35,6 +35,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 
 	"github.com/golang/protobuf/jsonpb"
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // ContentTypeAnnotations is a stream content type for annotation streams.

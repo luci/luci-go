@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	durpb "github.com/golang/protobuf/ptypes/duration"
+	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -30,6 +30,7 @@ import (
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
