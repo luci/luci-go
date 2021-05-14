@@ -306,6 +306,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
 
       #content {
         margin-top: 2px;
+        overflow: hidden;
       }
 
       #summary {
