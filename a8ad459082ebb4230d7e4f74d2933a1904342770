@@ -16,6 +16,23 @@
       "message": "IIUC reproduce should be using a user provided realm.\n",
       "revId": "a8ad459082ebb4230d7e4f74d2933a1904342770",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bef2591_fcb852f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-05-14T17:38:09Z",
+      "side": 1,
+      "message": "This change LGTM.\n\nAlthough I wonder if users will know which realm they should use. Asked the question at https://chat.google.com/room/AAAAKz3_Kuw/p13rsjUOSqM",
+      "revId": "a8ad459082ebb4230d7e4f74d2933a1904342770",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
