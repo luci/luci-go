@@ -116,11 +116,19 @@ message SubmissionCompleted {
     string message = 2; // Required
   }
 
+  message TreeClosure {
+    google.protobuf.Timestamp check_time = 1;
+  }
+
   oneof failure_reason {
     // This Run submission fails because of an individual CL submission
     // failure.
     CLSubmissionFailure cl_failure = 2;
     bool timeout = 3;
+    // Tree is closed during submission.
+    //
+    // In this case, `result` will be `FAILED_PRECONDITION`.
+    TreeClosure tree_closed = 4;
   }
 }
 
@@ -134,7 +142,7 @@ enum SubmissionResult {
   FAILED_TRANSIENT = 2;
   // Encountered precondition failure which is transient in nature.
   //
-  // For example, tree closure and submit queue is throttling.
+  // For example, tree closure and not holding submit queue.
   FAILED_PRECONDITION = 3;
   // Encountered permanent failure.
   //

@@ -153,7 +153,6 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 			return impl.tryStartSubmission(ctx, rs)
 		case len(submission.GetSubmittedCls()) < len(submission.GetCls()): // partially submitted
 			rs.EndRun(ctx, run.Status_FAILED)
-			// TODO(yiwzhang): support posting customized message for tree closure.
 			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, submission, sc); err != nil {
 				return nil, err
 			}
@@ -349,6 +348,10 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 			msg = sc.GetClFailure().GetMessage()
 		case sc.GetTimeout():
 			msg = timeoutMsg
+		case sc.GetTreeClosed() != nil:
+			msg = treeClosureMsg
+			submission.TreeOpen = false
+			submission.LastTreeCheckTime = sc.GetTreeClosed().GetCheckTime()
 		default:
 			msg = defaultMsg
 		}
@@ -379,6 +382,11 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 		return common.MostSevereError(errs)
 	case sc.GetTimeout():
 		msg := fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix)
+		return cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg)
+	case sc.GetTreeClosed() != nil:
+		msg := fmt.Sprintf("%s\n\n%s", treeClosureMsg, msgSuffix)
+		submission.TreeOpen = false
+		submission.LastTreeCheckTime = sc.GetTreeClosed().GetCheckTime()
 		return cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg)
 	default:
 		msg := fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
@@ -565,14 +573,15 @@ var ErrTransientSubmissionFailure = errors.New("submission failed transiently", 
 
 func (s submitter) submit(ctx context.Context) error {
 	var sc *eventpb.SubmissionCompleted
-	switch passed, err := s.checkPrecondition(ctx); {
+	switch cur, err := submit.CurrentRun(ctx, s.runID.LUCIProject()); {
 	case err != nil:
 		sc = classifyErr(ctx, err)
-	case !passed:
+	case cur != s.runID:
+		logging.Warningf(ctx, "run no longer holds submit queue, currently held by %q", cur)
 		sc = &eventpb.SubmissionCompleted{
 			Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
 		}
-	default: // precondition check passed
+	default:
 		if cls, err := run.LoadRunCLs(ctx, s.runID, s.clids); err != nil {
 			sc = classifyErr(ctx, err)
 		} else {
@@ -626,6 +635,19 @@ var perCLRetryFactory retry.Factory = transient.Only(func() retry.Iterator {
 // `perCLRetryFactory`.
 func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.SubmissionCompleted {
 	for _, cl := range cls {
+		switch treeOpen, err := isTreeOpen(ctx, s.treeURL); {
+		case err != nil:
+			return classifyErr(ctx, err)
+		case !treeOpen:
+			return &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
+				FailureReason: &eventpb.SubmissionCompleted_TreeClosed{
+					TreeClosed: &eventpb.SubmissionCompleted_TreeClosure{
+						CheckTime: timestamppb.New(clock.Now(ctx)),
+					},
+				},
+			}
+		}
 		var submitted bool
 		var msg string
 		err := retry.Retry(ctx, perCLRetryFactory, func() error {
@@ -671,27 +693,6 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.Sub
 	return &eventpb.SubmissionCompleted{
 		Result: eventpb.SubmissionResult_SUCCEEDED,
 	}
-}
-
-func (s submitter) checkPrecondition(ctx context.Context) (passed bool, err error) {
-	switch cur, err := submit.CurrentRun(ctx, s.runID.LUCIProject()); {
-	case err != nil:
-		return false, err
-	case cur != s.runID:
-		logging.Warningf(ctx, "run no longer holds submit queue, currently held by %q", cur)
-		return false, nil
-	}
-
-	if s.treeURL != "" {
-		switch status, err := tree.FetchLatest(ctx, s.treeURL); {
-		case err != nil:
-			return false, err
-		case status.State != tree.Open && status.State != tree.Throttled:
-			logging.Warningf(ctx, "tree %q is closed when submission starts", s.treeURL)
-			return false, nil
-		}
-	}
-	return true, nil
 }
 
 func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
@@ -754,6 +755,8 @@ const (
 		// to see under what circumstance it may happen and revise this message
 		// so that CV doesn't get blamed for timeout it isn't responsible for.
 		"Please contact LUCI team https://bit.ly/3sMReYs."
+	treeClosureMsg = "CV couldn't submit this CL because tree is closed " +
+		"the middle of submission."
 	unexpectedMsgFmt = "CV failed to submit your CL because of unexpected error from Gerrit: %s"
 )
 
