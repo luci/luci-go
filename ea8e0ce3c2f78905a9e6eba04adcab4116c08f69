@@ -16,6 +16,24 @@
       "message": "curious why not `go generate ./...`",
       "revId": "ea8e0ce3c2f78905a9e6eba04adcab4116c08f69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72700ebd_790db13f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-14T04:20:07Z",
+      "side": 1,
+      "message": "Not sure why, but `go generate ./...` seems ignore dir like testdata.",
+      "parentUuid": "30bb0310_b9ba922e",
+      "revId": "ea8e0ce3c2f78905a9e6eba04adcab4116c08f69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
