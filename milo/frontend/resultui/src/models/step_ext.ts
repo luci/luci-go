@@ -142,6 +142,8 @@ export class StepExt {
       bodyContainer.removeChild(firstParagraph);
     }
 
+    headerContainer.title = headerContainer.textContent || '';
+
     // If the container is empty, return null instead.
     return [
       headerContainer.firstChild ? headerContainer : null,
