@@ -22,6 +22,30 @@
       },
       "revId": "3d550ccc7f5f4ac537494550ff36d88d9e720291",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc204ad9_cb9a9e5b",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-14T20:12:45Z",
+      "side": 1,
+      "message": "that\u0027d make it uglier as I\u0027d have to repeate \"r.Status \u003d\u003d\" everywhere.",
+      "parentUuid": "24ff6ca8_6c1b75a4",
+      "range": {
+        "startLine": 331,
+        "startChar": 0,
+        "endLine": 334,
+        "endChar": 2
+      },
+      "revId": "3d550ccc7f5f4ac537494550ff36d88d9e720291",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
