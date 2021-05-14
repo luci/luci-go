@@ -121,7 +121,7 @@ export class StepExt {
       }
 
       // Found an inline element, move it from the body to the header.
-      if (['A', 'SPAN', 'I', 'B', 'STRONG'].includes(firstParagraph.firstElementChild.tagName)) {
+      if (['A', 'SPAN', 'I', 'B', 'STRONG', 'CODE'].includes(firstParagraph.firstElementChild.tagName)) {
         headerContainer.appendChild(firstParagraph.removeChild(firstParagraph.firstElementChild));
         continue;
       }
