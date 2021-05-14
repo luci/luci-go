@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24ff6ca8_6c1b75a4",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-14T18:33:50Z",
+      "side": 1,
+      "message": "nit: could be part of the switch statement above.",
+      "range": {
+        "startLine": 331,
+        "startChar": 0,
+        "endLine": 334,
+        "endChar": 2
+      },
+      "revId": "3d550ccc7f5f4ac537494550ff36d88d9e720291",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
