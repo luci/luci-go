@@ -298,6 +298,8 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
         padding-left: 4px;
         box-sizing: border-box;
         height: 24px;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       #header-markdown * {
@@ -306,6 +308,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
 
       #content {
         margin-top: 2px;
+        overflow: hidden;
       }
 
       #summary {
