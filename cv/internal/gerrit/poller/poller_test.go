@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

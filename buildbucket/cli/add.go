@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )

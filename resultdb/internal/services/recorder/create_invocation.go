@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
