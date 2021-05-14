@@ -301,6 +301,60 @@ func (m *MigrationServer) FetchExcludedCLs(ctx context.Context, req *migrationpb
 	return resp, err
 }
 
+func (m *MigrationServer) FetchRunStatus(ctx context.Context, req *migrationpb.FetchRunStatusRequest) (resp *migrationpb.FetchRunStatusResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return nil, err
+	}
+	switch {
+	case req.GetAttemptKey() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "attempt_key is required")
+	case req.GetLuciProject() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "luci_project is required")
+	}
+
+	r, err := fetchRun(ctx, common.RunID(req.GetCvId()), req.GetAttemptKey())
+	switch {
+	case err != nil:
+		return nil, err
+	case r == nil:
+		logging.Errorf(ctx, "BUG: FetchRunStatus(Run %q | Attempt %q) for a Run not known to CV", req.GetCvId(), req.GetAttemptKey())
+		return nil, appstatus.Error(codes.NotFound, "Run does not exist")
+	}
+
+	res := &migrationpb.FetchRunStatusResponse{}
+	// This is best effort simulation of what pending_manager/base.py and
+	// async_push.py do in CQDaemon codebase.
+	// CQDaemon calls this function right before removing attempt from its
+	// active attempts set. If CV hasn't finalized the Run yet, return an error
+	// s.t. CQDaemon can retry during the CQDaemon next loop.
+	if !run.IsEnded(r.Status) {
+		logging.Warningf(ctx, "FetchRunStatus(Run %q | Attempt %q): Run is not final yet (%s)", r.ID, req.AttemptKey, r.Status)
+		return nil, appstatus.Errorf(codes.FailedPrecondition, "Run %q is not final yet (%s)", r.ID, r.Status)
+	}
+	switch r.Status {
+	case run.Status_SUCCEEDED:
+		if r.Mode == run.FullRun {
+			res.Event = "patch_committed"
+		} else {
+			res.Event = "patch_ready_to_commit"
+		}
+	case run.Status_FAILED:
+		res.Event = "patch_failed"
+		// TODO(tandrii,yiwzhang): get actual failure message.
+	case run.Status_CANCELLED:
+		res.Event = "patch_failed"
+		res.Extra = "CQ bit was unchecked."
+	default:
+		// No additional final statuses are expected to be added, but just in case
+		// it happens, it's not worth panicking.
+		logging.Warningf(ctx, "Run %q | Attempt %q unknown status (%q)", r.ID, req.AttemptKey, r.Status)
+		res.Event = "patch_unexpected_cv_status"
+		res.Extra = r.Status.String()
+	}
+	return res, nil
+}
+
 func (m *MigrationServer) checkAllowed(ctx context.Context) error {
 	i := auth.CurrentIdentity(ctx)
 	if i.Kind() == identity.Project {
