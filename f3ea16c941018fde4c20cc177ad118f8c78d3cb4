@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e133152_f71fc6f3",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 650,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-14T22:50:59Z",
+      "side": 1,
+      "message": "This is worse than current HEAD, which is actually worse than current CQD.\nI\u0027m sorry I didn\u0027t catch the worsening of the behavior in prior refactoring to resume submission on transient failure.\n\nHere is the intent of close tree check: avoid landing more CLs if tip of tree is broken. Note that it\u0027s a sign, not a cop (btw, just realized we need https://crbug.com/1209331).\n\nThus, the logic is best effort *delay* of submission start until tree is re-opened.\nCorollary: if tree closes during Run submission, proceed with submission.\n\nNow, let\u0027s look at CV:\nafaiu, before this CL, tree is checked after SQ acquisition, and if tree is closed, it\u0027d fail entire Run. Right?\nafaiu, with this CL, the tree is checked once per CL, and it still results in Run failure. Right?\n\nI think what we need here is releasing SQ slot iff tree is closed, and re-doing the submission from scratch.",
+      "range": {
+        "startLine": 638,
+        "startChar": 1,
+        "endLine": 650,
+        "endChar": 3
+      },
+      "revId": "f3ea16c941018fde4c20cc177ad118f8c78d3cb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
