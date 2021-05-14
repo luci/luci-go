@@ -82,10 +82,10 @@ func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
 func getBuilders(cfg *pb.BuildbucketCfg) (builders []*pb.Builder) {
 	builders = append(builders, cfg.BuilderMixins...)
 	for _, b := range cfg.Buckets {
-		if b.Swarming.BuilderDefaults != nil {
+		if b.GetSwarming().GetBuilderDefaults() != nil {
 			builders = append(builders, b.Swarming.BuilderDefaults)
 		}
-		builders = append(builders, b.Swarming.Builders...)
+		builders = append(builders, b.GetSwarming().GetBuilders()...)
 	}
 	return builders
 }
