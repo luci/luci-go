@@ -65,6 +65,7 @@ type reproduceRun struct {
 	cipdDownloader func(context.Context, string, map[string]ensure.PackageSlice) error
 	// createInvocation is used in testing to insert a mock method.
 	createInvocation func(context.Context, *http.Client, string, string) (lucictx.Exported, func(), error)
+	realm            string
 	resultsHost      string
 }
 
@@ -73,6 +74,7 @@ func (c *reproduceRun) init(authFlags AuthFlags) {
 
 	c.Flags.StringVar(&c.work, "work", "work", "Directory to map the task input files into and execute the task.")
 	c.Flags.StringVar(&c.out, "out", "out", "Directory that will hold the task results.")
+	c.Flags.StringVar(&c.realm, "realm", "", "Realm to create invocation in if ResultDB is enabled.")
 	c.Flags.StringVar(&c.resultsHost, "results-host", chromeinfra.ResultDBHost, "Hostname of the ResultDB service to usse. e.g. 'results.api.cr.dev'")
 	c.cipdDownloader = downloadCIPDPackages
 	c.createInvocation = createInvocation
@@ -136,18 +138,20 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 func (c *reproduceRun) executeTaskRequestCommand(ctx context.Context, tr *swarming.SwarmingRpcsTaskRequest, cmd *exec.Cmd) error {
 	// Enable ResultDB if necessary.
 	if tr.Resultdb != nil && tr.Resultdb.Enable {
+		if c.realm == "" {
+			return errors.Reason("must provide -realm if task request has ResultDB enabled").Err()
+		}
 		authcli, err := c.authFlags.NewHTTPClient(ctx)
 		if err != nil {
 			return errors.Annotate(err, "failed to create client").Err()
 		}
-		exported, invFinalizer, err := c.createInvocation(ctx, authcli, tr.Realm, c.resultsHost)
+		exported, invFinalizer, err := c.createInvocation(ctx, authcli, c.realm, c.resultsHost)
 		if err != nil {
 			return errors.Annotate(err, "failed to create Invocation").Err()
 		}
 		defer invFinalizer()
 		exported.SetInCmd(cmd)
 		defer exported.Close()
-
 	}
 
 	if err := cmd.Start(); err != nil {
