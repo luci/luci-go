@@ -66,7 +66,9 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 	case status == run.Status_SUBMITTING:
 		return continueSubmissionIfPossible(ctx, rs, impl.RM)
 	case status == run.Status_RUNNING || status == run.Status_WAITING_FOR_SUBMISSION:
-		// TODO(yiwzhang): fail if partially submitted.
+		if len(rs.Run.Submission.GetSubmittedCls()) > 0 {
+			panic(fmt.Errorf("impossible; Run %q is in %s status but has submitted CLs ", rs.Run.ID, rs.Run.Status))
+		}
 		rs, err := markSubmitting(ctx, rs)
 		if err != nil {
 			return nil, err
