@@ -225,14 +225,14 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	for _, a := range cqd.attempts {
 		req.Runs = append(req.Runs, a)
 	}
-	_, err = cqd.CV.ReportRuns(cqd.migrationApiContext(ctx), req)
+	_, err = cqd.CV.ReportRuns(cqd.migrationAPIContext(ctx), req)
 	return err
 }
 
 func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*migrationpb.ReportedRun, error) {
 	if cvInCharge {
 		req := migrationpb.FetchActiveRunsRequest{LuciProject: cqd.LUCIProject}
-		resp, err := cqd.CV.FetchActiveRuns(cqd.migrationApiContext(ctx), &req)
+		resp, err := cqd.CV.FetchActiveRuns(cqd.migrationAPIContext(ctx), &req)
 		if err != nil {
 			return nil, err
 		}
@@ -265,7 +265,7 @@ func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*mi
 
 	// Filter out all runs with CLs matching those which CV is still processing.
 	req := &migrationpb.FetchExcludedCLsRequest{LuciProject: cqd.LUCIProject}
-	exCls, err := cqd.CV.FetchExcludedCLs(cqd.migrationApiContext(ctx), req)
+	exCls, err := cqd.CV.FetchExcludedCLs(cqd.migrationAPIContext(ctx), req)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.ReportedRun, c
 				Comment:    msg,
 				SendEmail:  true,
 			}
-			if _, err := cqd.CV.PostGerritMessage(cqd.migrationApiContext(ctx), req); err != nil {
+			if _, err := cqd.CV.PostGerritMessage(cqd.migrationAPIContext(ctx), req); err != nil {
 				return err
 			}
 		} else {
@@ -396,7 +396,7 @@ func (cqd *CQDFake) finalizeRunViaCV(ctx context.Context, r *migrationpb.Reporte
 			req.Action = migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK
 		}
 	}
-	_, err := cqd.CV.ReportVerifiedRun(cqd.migrationApiContext(ctx), req)
+	_, err := cqd.CV.ReportVerifiedRun(cqd.migrationAPIContext(ctx), req)
 	return err
 }
 
@@ -431,7 +431,7 @@ func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.ReportedRun,
 	}
 
 	req := &migrationpb.ReportFinishedRunRequest{Run: proto.Clone(r).(*migrationpb.ReportedRun)}
-	_, err := cqd.CV.ReportFinishedRun(cqd.migrationApiContext(ctx), req)
+	_, err := cqd.CV.ReportFinishedRun(cqd.migrationAPIContext(ctx), req)
 	// TODO(tandrii): send event to BQ.
 	return err
 }
@@ -442,7 +442,7 @@ func (cqd *CQDFake) logRunStatus(ctx context.Context, r *migrationpb.ReportedRun
 		CvId:        r.GetId(),
 		LuciProject: cqd.LUCIProject,
 	}
-	switch resp, err := cqd.CV.FetchRunStatus(cqd.migrationApiContext(ctx), req); {
+	switch resp, err := cqd.CV.FetchRunStatus(cqd.migrationAPIContext(ctx), req); {
 	case err != nil:
 		logging.Errorf(ctx, "FetchRunStatus failed: %s", err)
 		return err
@@ -452,7 +452,7 @@ func (cqd *CQDFake) logRunStatus(ctx context.Context, r *migrationpb.ReportedRun
 	}
 }
 
-func (cqd *CQDFake) migrationApiContext(ctx context.Context) context.Context {
+func (cqd *CQDFake) migrationAPIContext(ctx context.Context) context.Context {
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity:             identity.Identity("project:" + cqd.LUCIProject),
 		PeerIdentityOverride: "user:cqdaemon@example.com",
