@@ -767,18 +767,30 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 			Convey("Fail if partially submitted", func() {
 				rs.Run.Submission.SubmittedCls = []int64{2}
-				res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-				So(err, ShouldBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
-				So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.PostProcessFn, ShouldBeNil)
-				ci := ct.GFake.GetChange(gHost, int(ci1.GetNumber())).Info
-				So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, defaultMsg)
-				for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
-					So(vote.GetValue(), ShouldEqual, 0)
-				}
+				Convey("Tree closure", func() {
+					rs.Run.Submission.TreeOpen = true
+					rs.Run.Submission.LastTreeCheckTime = timestamppb.New(ct.Clock.Now().UTC().Add(-30 * time.Second))
+					checkTime := timestamppb.New(ct.Clock.Now().UTC())
+					sc.FailureReason = &eventpb.SubmissionCompleted_TreeClosed{
+						TreeClosed: &eventpb.SubmissionCompleted_TreeClosure{
+							CheckTime: checkTime,
+						},
+					}
+					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+					So(err, ShouldBeNil)
+					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+					So(res.State.Run.Submission.TreeOpen, ShouldEqual, false)
+					So(res.State.Run.Submission.LastTreeCheckTime, ShouldResembleProto, checkTime)
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					ci := ct.GFake.GetChange(gHost, int(ci1.GetNumber())).Info
+					So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, treeClosureMsg)
+					for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
+						So(vote.GetValue(), ShouldEqual, 0)
+					}
+				})
 			})
 
 			Convey("Restart Submission if no CL is submitted", func() {
@@ -892,9 +904,13 @@ func TestSubmitter(t *testing.T) {
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
+						FailureReason: &eventpb.SubmissionCompleted_TreeClosed{
+							TreeClosed: &eventpb.SubmissionCompleted_TreeClosure{
+								CheckTime: timestamppb.New(now),
+							},
+						},
 					},
 				)
-				So(log, memlogger.ShouldHaveLog, logging.Warning, "tree \"https://tree.example.com\" is closed when submission starts")
 			})
 		})
 
