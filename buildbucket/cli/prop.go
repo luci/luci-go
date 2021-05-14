@@ -21,9 +21,10 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
+
 	"go.chromium.org/luci/common/data/stringset"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type propertiesFlag struct {

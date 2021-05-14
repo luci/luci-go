@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	durpb "github.com/golang/protobuf/ptypes/duration"
+	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/span"
