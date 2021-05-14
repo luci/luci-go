@@ -37,6 +37,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c81e1f73_5e2c908a",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-14T20:21:58Z",
+      "side": 1,
+      "message": "the randomly-assigned CL ID !\u003d (host,number,patchset).\n\nAlso, over time CV\u0027s CLIDs can be re-used by different CLs. I\u0027d be unfortunate, if clGroupKey would then spuriously match.",
+      "range": {
+        "startLine": 214,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 30
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2b816c72_079630b6",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 2
@@ -53,6 +76,29 @@
         "startChar": 51,
         "endLine": 226,
         "endChar": 75
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9396e87d_40e8950d",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-14T20:21:58Z",
+      "side": 1,
+      "message": "nit: hex.EncodeToString is a tiny bit faster and more readable 😊",
+      "range": {
+        "startLine": 228,
+        "startChar": 8,
+        "endLine": 228,
+        "endChar": 26
       },
       "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
