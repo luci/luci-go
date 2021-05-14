@@ -16,6 +16,126 @@
       "message": "PTAL\n\nDifferences from CQD version:\n\n - Instead of sorting by (host, number, patchset), we sort just by CL ID for simplicity.\n - When building the hash, sha256 is used.\n - Only the first 8 bytes (16 hex digits) in initial patchset; I\u0027m not sure what length is good and CV computation of attempt key digest uses that length (https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/prjmanager/runcreator/run.go;l\u003d393?q\u003dluci%20cv%20sha256%20separator\u0026ss\u003dchromium).\n - For equivalent CL group key, an extra constant is added. I think any constant would be fine, I added \"equivalent_cl_group_key\".",
       "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ef3d4ff_942c9df6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-14T00:32:00Z",
+      "side": 1,
+      "message": "uchan0421\n",
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b816c72_079630b6",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-14T00:32:00Z",
+      "side": 1,
+      "message": "GetPatchset",
+      "range": {
+        "startLine": 226,
+        "startChar": 51,
+        "endLine": 226,
+        "endChar": 75
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b84be1d1_03c0e3d0",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-14T00:32:00Z",
+      "side": 1,
+      "message": "You didn\u0027t sort before computing the hash",
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "135a8bc1_627a7456",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-14T00:32:00Z",
+      "side": 1,
+      "message": "nit: Del. I think the bug is the exact same thing as you\u0027ve described above and doesn\u0027t add any extra information.",
+      "range": {
+        "startLine": 238,
+        "startChar": 1,
+        "endLine": 238,
+        "endChar": 22
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "175166ab_55ff714f",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-14T00:32:00Z",
+      "side": 1,
+      "message": "nit nit: How about using an helper method to reduce the code repetition? i.e. we can have a helper method e.g. `func computeCLGroupKey(cls []*run.RunCL, isEquivalent bool) string`",
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d15e1197_f631e773",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-14T00:32:00Z",
+      "side": 1,
+      "message": "populate",
+      "range": {
+        "startLine": 286,
+        "startChar": 26,
+        "endLine": 286,
+        "endChar": 28
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
