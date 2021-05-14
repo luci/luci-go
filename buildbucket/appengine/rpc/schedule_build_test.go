@@ -1569,16 +1569,14 @@ func TestScheduleBuild(t *testing.T) {
 						"key:",
 					},
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
+				b := &pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
 					},
 				}
 
-				setDimensions(nil, cfg, ent)
-				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
+				setDimensions(nil, cfg, b)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
 			})
 
 			Convey("simple", func() {
@@ -1587,16 +1585,14 @@ func TestScheduleBuild(t *testing.T) {
 						"key:value",
 					},
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
+				b := &pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
 					},
 				}
 
-				setDimensions(nil, cfg, ent)
-				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				setDimensions(nil, cfg, b)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Key:   "key",
@@ -1612,16 +1608,14 @@ func TestScheduleBuild(t *testing.T) {
 						"1:key:value",
 					},
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
+				b := &pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
 					},
 				}
 
-				setDimensions(nil, cfg, ent)
-				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				setDimensions(nil, cfg, b)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Expiration: &durationpb.Duration{
@@ -1651,16 +1645,14 @@ func TestScheduleBuild(t *testing.T) {
 						"1:key:val:ue",
 					},
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
+				b := &pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
 					},
 				}
 
-				setDimensions(nil, cfg, ent)
-				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				setDimensions(nil, cfg, b)
+				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Swarming: &pb.BuildInfra_Swarming{
 						TaskDimensions: []*pb.RequestedDimension{
 							{
@@ -1718,16 +1710,14 @@ func TestScheduleBuild(t *testing.T) {
 					AutoBuilderDimension: pb.Toggle_YES,
 					Name:                 "builder",
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
+				b := &pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
 					},
 				}
 
-				setDimensions(nil, cfg, ent)
-				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				setDimensions(nil, cfg, b)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Key:   "builder",
@@ -1745,16 +1735,14 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Name: "auto builder",
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
+				b := &pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
 					},
 				}
 
-				setDimensions(nil, cfg, ent)
-				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				setDimensions(nil, cfg, b)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Expiration: &durationpb.Duration{
@@ -1775,16 +1763,14 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Name: "auto builder",
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
+				b := &pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
 					},
 				}
 
-				setDimensions(nil, cfg, ent)
-				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
+				setDimensions(nil, cfg, b)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
 			})
 		})
 
@@ -1800,16 +1786,14 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
-			ent := &model.Build{
-				Proto: pb.Build{
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
+			b := &pb.Build{
+				Infra: &pb.BuildInfra{
+					Swarming: &pb.BuildInfra_Swarming{},
 				},
 			}
 
-			setDimensions(req, nil, ent)
-			So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+			setDimensions(req, nil, b)
+			So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 				TaskDimensions: []*pb.RequestedDimension{
 					{
 						Expiration: &durationpb.Duration{
@@ -1852,16 +1836,14 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Name: "auto builder",
 			}
-			ent := &model.Build{
-				Proto: pb.Build{
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
+			b := &pb.Build{
+				Infra: &pb.BuildInfra{
+					Swarming: &pb.BuildInfra_Swarming{},
 				},
 			}
 
-			setDimensions(req, cfg, ent)
-			So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+			setDimensions(req, cfg, b)
+			So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 				TaskDimensions: []*pb.RequestedDimension{
 					{
 						Key:   "builder",
@@ -1900,36 +1882,10 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("setExecutable", t, func() {
 		Convey("nil", func() {
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setExecutable(nil, nil, ent)
-			So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
-				Cmd: []string{"recipes"},
-			})
-		})
-
-		Convey("command", func() {
-			Convey("recipes", func() {
-				ent := &model.Build{}
-
-				setExecutable(nil, nil, ent)
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
-					Cmd: []string{"recipes"},
-				})
-			})
-
-			Convey("luciexe", func() {
-				ent := &model.Build{
-					Experiments: []string{
-						"+" + bb.ExperimentBBAgent,
-					},
-				}
-
-				setExecutable(nil, nil, ent)
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
-					Cmd: []string{"luciexe"},
-				})
-			})
+			setExecutable(nil, nil, b)
+			So(b.Exe, ShouldResembleProto, &pb.Executable{})
 		})
 
 		Convey("request only", func() {
@@ -1940,12 +1896,11 @@ func TestScheduleBuild(t *testing.T) {
 					Cmd:         []string{"command"},
 				},
 			}
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setExecutable(req, nil, ent)
-			So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+			setExecutable(req, nil, b)
+			So(b.Exe, ShouldResembleProto, &pb.Executable{
 				CipdVersion: "version",
-				Cmd:         []string{"recipes"},
 			})
 		})
 
@@ -1958,10 +1913,10 @@ func TestScheduleBuild(t *testing.T) {
 						Cmd:         []string{"command"},
 					},
 				}
-				ent := &model.Build{}
+				b := &pb.Build{}
 
-				setExecutable(nil, cfg, ent)
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				setExecutable(nil, cfg, b)
+				So(b.Exe, ShouldResembleProto, &pb.Executable{
 					CipdPackage: "package",
 					CipdVersion: "version",
 					Cmd:         []string{"command"},
@@ -1980,57 +1935,13 @@ func TestScheduleBuild(t *testing.T) {
 						CipdVersion: "version 2",
 					},
 				}
-				ent := &model.Build{}
+				b := &pb.Build{}
 
-				setExecutable(nil, cfg, ent)
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				setExecutable(nil, cfg, b)
+				So(b.Exe, ShouldResembleProto, &pb.Executable{
 					CipdPackage: "package 2",
 					CipdVersion: "version 2",
 					Cmd:         []string{"command"},
-				})
-			})
-
-			Convey("command", func() {
-				Convey("recipes", func() {
-					cfg := &pb.Builder{
-						Exe: &pb.Executable{
-							CipdPackage: "package",
-							CipdVersion: "version",
-						},
-					}
-					ent := &model.Build{
-						Experiments: []string{
-							"-" + bb.ExperimentBBAgent,
-						},
-					}
-
-					setExecutable(nil, cfg, ent)
-					So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
-						CipdPackage: "package",
-						CipdVersion: "version",
-						Cmd:         []string{"recipes"},
-					})
-				})
-
-				Convey("luciexe", func() {
-					cfg := &pb.Builder{
-						Exe: &pb.Executable{
-							CipdPackage: "package",
-							CipdVersion: "version",
-						},
-					}
-					ent := &model.Build{
-						Experiments: []string{
-							"+" + bb.ExperimentBBAgent,
-						},
-					}
-
-					setExecutable(nil, cfg, ent)
-					So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
-						CipdPackage: "package",
-						CipdVersion: "version",
-						Cmd:         []string{"luciexe"},
-					})
 				})
 			})
 		})
@@ -2050,10 +1961,10 @@ func TestScheduleBuild(t *testing.T) {
 					Cmd:         []string{"command 2"},
 				},
 			}
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setExecutable(req, cfg, ent)
-			So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+			setExecutable(req, cfg, b)
+			So(b.Exe, ShouldResembleProto, &pb.Executable{
 				CipdPackage: "package 2",
 				CipdVersion: "version 1",
 				Cmd:         []string{"command 2"},
@@ -2067,17 +1978,173 @@ func TestScheduleBuild(t *testing.T) {
 		Convey("nil", func() {
 			ent := &model.Build{
 				Proto: pb.Build{
+					Exe: &pb.Executable{},
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
+					},
 					Input: &pb.Build_Input{},
 				},
 			}
 
 			setExperiments(ctx, nil, nil, ent)
-			So(ent.Experiments, ShouldResemble, []string{
-				"-" + bb.ExperimentBBCanarySoftware,
-				"-" + bb.ExperimentBBAgent,
-				"-" + bb.ExperimentUseRealms,
+			So(ent, ShouldResemble, &model.Build{
+				Experiments: []string{
+					"-" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentBBAgent,
+					"-" + bb.ExperimentUseRealms,
+				},
+				Proto: pb.Build{
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
+					},
+					Input: &pb.Build_Input{},
+				},
 			})
-			So(ent.Proto.Input.Experiments, ShouldBeNil)
+		})
+
+		Convey("command", func() {
+			Convey("recipes", func() {
+				req := &pb.ScheduleBuildRequest{
+					Experiments: map[string]bool{
+						bb.ExperimentBBAgent: false,
+					},
+				}
+				normalizeSchedule(req)
+				ent := &model.Build{
+					Proto: pb.Build{
+						Exe: &pb.Executable{},
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, nil, ent)
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					Cmd: []string{"recipes"},
+				})
+			})
+
+			Convey("luciexe", func() {
+				req := &pb.ScheduleBuildRequest{
+					Experiments: map[string]bool{
+						bb.ExperimentBBAgent: true,
+					},
+				}
+				normalizeSchedule(req)
+				ent := &model.Build{
+					Proto: pb.Build{
+						Exe: &pb.Executable{},
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, nil, ent)
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					Cmd: []string{"luciexe"},
+				})
+			})
+
+			Convey("cmd > experiment", func() {
+				req := &pb.ScheduleBuildRequest{
+					Experiments: map[string]bool{
+						bb.ExperimentBBAgent: true,
+					},
+				}
+				normalizeSchedule(req)
+				ent := &model.Build{
+					Proto: pb.Build{
+						Exe: &pb.Executable{
+							Cmd: []string{"command"},
+						},
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, nil, ent)
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					Cmd: []string{"command"},
+				})
+			})
+		})
+
+		Convey("priority", func() {
+			Convey("config", func() {
+				req := &pb.ScheduleBuildRequest{
+					Experiments: map[string]bool{
+						bb.ExperimentBBAgent: false,
+					},
+				}
+				normalizeSchedule(req)
+				ent := &model.Build{
+					Proto: pb.Build{
+						Exe: &pb.Executable{},
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{
+								Priority: 1,
+							},
+						},
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, nil, ent)
+				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
+			})
+
+			Convey("luciexe", func() {
+				req := &pb.ScheduleBuildRequest{
+					Experiments: map[string]bool{
+						bb.ExperimentBBAgent: true,
+					},
+				}
+				normalizeSchedule(req)
+				ent := &model.Build{
+					Proto: pb.Build{
+						Exe: &pb.Executable{},
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{
+								Priority: 1,
+							},
+						},
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, nil, ent)
+				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 255)
+			})
+
+			Convey("req > experiment", func() {
+				req := &pb.ScheduleBuildRequest{
+					Priority: 1,
+				}
+				normalizeSchedule(req)
+				ent := &model.Build{
+					Proto: pb.Build{
+						Exe: &pb.Executable{},
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{
+								Priority: 1,
+							},
+						},
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, nil, ent)
+				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
+			})
 		})
 
 		Convey("request only", func() {
@@ -2089,6 +2156,10 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			ent := &model.Build{
 				Proto: pb.Build{
+					Exe: &pb.Executable{},
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
+					},
 					Input: &pb.Build_Input{},
 				},
 			}
@@ -2103,6 +2174,12 @@ func TestScheduleBuild(t *testing.T) {
 					"-" + bb.ExperimentUseRealms,
 				},
 				Proto: pb.Build{
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
+					},
 					Input: &pb.Build_Input{
 						Experiments: []string{
 							"experiment1",
@@ -2120,6 +2197,10 @@ func TestScheduleBuild(t *testing.T) {
 			normalizeSchedule(req)
 			ent := &model.Build{
 				Proto: pb.Build{
+					Exe: &pb.Executable{},
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
+					},
 					Input: &pb.Build_Input{},
 				},
 			}
@@ -2134,6 +2215,12 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Proto: pb.Build{
 					Canary: true,
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
+					},
 					Input: &pb.Build_Input{
 						Experiments: []string{
 							bb.ExperimentBBCanarySoftware,
@@ -2146,6 +2233,7 @@ func TestScheduleBuild(t *testing.T) {
 		Convey("config only", func() {
 			ent := &model.Build{
 				Proto: pb.Build{
+					Exe:   &pb.Executable{},
 					Input: &pb.Build_Input{},
 				},
 			}
@@ -2166,6 +2254,9 @@ func TestScheduleBuild(t *testing.T) {
 					"-" + bb.ExperimentUseRealms,
 				},
 				Proto: pb.Build{
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
 					Input: &pb.Build_Input{
 						Experiments: []string{
 							"experiment1",
@@ -2188,6 +2279,7 @@ func TestScheduleBuild(t *testing.T) {
 				normalizeSchedule(req)
 				ent := &model.Build{
 					Proto: pb.Build{
+						Exe:   &pb.Executable{},
 						Input: &pb.Build_Input{},
 					},
 				}
@@ -2202,6 +2294,9 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentUseRealms,
 					},
 					Proto: pb.Build{
+						Exe: &pb.Executable{
+							Cmd: []string{"recipes"},
+						},
 						Input: &pb.Build_Input{
 							Experimental: true,
 							Experiments: []string{
@@ -2226,6 +2321,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				ent := &model.Build{
 					Proto: pb.Build{
+						Exe:   &pb.Executable{},
 						Input: &pb.Build_Input{},
 					},
 				}
@@ -2240,6 +2336,9 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Proto: pb.Build{
 						Canary: true,
+						Exe: &pb.Executable{
+							Cmd: []string{"recipes"},
+						},
 						Input: &pb.Build_Input{
 							Experiments: []string{
 								bb.ExperimentBBCanarySoftware,
@@ -2265,6 +2364,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				ent := &model.Build{
 					Proto: pb.Build{
+						Exe:   &pb.Executable{},
 						Input: &pb.Build_Input{},
 					},
 				}
@@ -2279,6 +2379,9 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentUseRealms,
 					},
 					Proto: pb.Build{
+						Exe: &pb.Executable{
+							Cmd: []string{"recipes"},
+						},
 						Input: &pb.Build_Input{
 							Experiments: []string{
 								"experiment1",
@@ -2310,6 +2413,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				ent := &model.Build{
 					Proto: pb.Build{
+						Exe:   &pb.Executable{},
 						Input: &pb.Build_Input{},
 					},
 				}
@@ -2326,6 +2430,9 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentUseRealms,
 					},
 					Proto: pb.Build{
+						Exe: &pb.Executable{
+							Cmd: []string{"recipes"},
+						},
 						Input: &pb.Build_Input{
 							Experimental: true,
 							Experiments: []string{
@@ -2370,43 +2477,6 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 					Priority: 30,
-				},
-			})
-		})
-
-		Convey("experimental", func() {
-			ent := &model.Build{
-				Experiments: []string{
-					"+" + bb.ExperimentBBAgent,
-				},
-				Proto: pb.Build{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				},
-			}
-
-			setInfra("", "", "", nil, nil, ent, nil)
-			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
-				Buildbucket: &pb.BuildInfra_Buildbucket{},
-				Logdog: &pb.BuildInfra_LogDog{
-					Prefix:  "buildbucket//0",
-					Project: "project",
-				},
-				Resultdb: &pb.BuildInfra_ResultDB{},
-				Swarming: &pb.BuildInfra_Swarming{
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path: "builder",
-							WaitForWarmCache: &durationpb.Duration{
-								Seconds: 240,
-							},
-						},
-					},
-					Priority: 255,
 				},
 			})
 		})
@@ -2843,6 +2913,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 						Priority: 30,
+						TaskDimensions: []*pb.RequestedDimension{
+							{
+								Expiration: &durationpb.Duration{
+									Seconds: 1,
+								},
+								Key:   "key",
+								Value: "value",
+							},
+						},
 					},
 				})
 			})
@@ -3023,10 +3102,10 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("setInput", t, func() {
 		Convey("nil", func() {
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setInput(nil, nil, ent)
-			So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+			setInput(nil, nil, b)
+			So(b.Input, ShouldResembleProto, &pb.Build_Input{
 				Properties: &structpb.Struct{},
 			})
 		})
@@ -3035,10 +3114,10 @@ func TestScheduleBuild(t *testing.T) {
 			Convey("properties", func() {
 				Convey("empty", func() {
 					req := &pb.ScheduleBuildRequest{}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(req, nil, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(req, nil, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{},
 					})
 				})
@@ -3060,10 +3139,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(req, nil, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(req, nil, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"int": {
@@ -3088,10 +3167,10 @@ func TestScheduleBuild(t *testing.T) {
 				cfg := &pb.Builder{
 					Properties: "{\"int\": 1, \"str\": \"value\"}",
 				}
-				ent := &model.Build{}
+				b := &pb.Build{}
 
-				setInput(nil, cfg, ent)
-				So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+				setInput(nil, cfg, b)
+				So(b.Input, ShouldResembleProto, &pb.Build_Input{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"int": {
@@ -3114,10 +3193,10 @@ func TestScheduleBuild(t *testing.T) {
 					cfg := &pb.Builder{
 						Recipe: &pb.Builder_Recipe{},
 					}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(nil, cfg, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(nil, cfg, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"recipe": {
@@ -3136,10 +3215,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(nil, cfg, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(nil, cfg, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"key": {
@@ -3166,10 +3245,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(nil, cfg, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(nil, cfg, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"int": {
@@ -3196,10 +3275,10 @@ func TestScheduleBuild(t *testing.T) {
 							Name: "recipe",
 						},
 					}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(nil, cfg, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(nil, cfg, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"recipe": {
@@ -3223,10 +3302,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(nil, cfg, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(nil, cfg, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"key": {
@@ -3253,10 +3332,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(nil, cfg, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(nil, cfg, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"recipe": {
@@ -3278,10 +3357,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					ent := &model.Build{}
+					b := &pb.Build{}
 
-					setInput(nil, cfg, ent)
-					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					setInput(nil, cfg, b)
+					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"recipe": {
@@ -3316,10 +3395,10 @@ func TestScheduleBuild(t *testing.T) {
 			cfg := &pb.Builder{
 				Properties: "{\"override\": \"cfg value\", \"cfg key\": \"cfg value\"}",
 			}
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setInput(req, cfg, ent)
-			So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+			setInput(req, cfg, b)
+			So(b.Input, ShouldResembleProto, &pb.Build_Input{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"cfg key": {
@@ -3517,16 +3596,16 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("setTimeouts", t, func() {
 		Convey("nil", func() {
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTimeouts(nil, nil, ent)
-			So(ent.Proto.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+			setTimeouts(nil, nil, b)
+			So(b.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 10800,
 			})
-			So(ent.Proto.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+			So(b.GracePeriod, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 30,
 			})
-			So(ent.Proto.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+			So(b.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 21600,
 			})
 		})
@@ -3544,16 +3623,16 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			normalizeSchedule(req)
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTimeouts(req, nil, ent)
-			So(ent.Proto.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+			setTimeouts(req, nil, b)
+			So(b.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 1,
 			})
-			So(ent.Proto.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+			So(b.GracePeriod, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 2,
 			})
-			So(ent.Proto.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+			So(b.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 3,
 			})
 		})
@@ -3566,16 +3645,16 @@ func TestScheduleBuild(t *testing.T) {
 					Seconds: 2,
 				},
 			}
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTimeouts(nil, cfg, ent)
-			So(ent.Proto.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+			setTimeouts(nil, cfg, b)
+			So(b.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 1,
 			})
-			So(ent.Proto.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+			So(b.GracePeriod, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 2,
 			})
-			So(ent.Proto.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+			So(b.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 3,
 			})
 		})
@@ -3600,16 +3679,16 @@ func TestScheduleBuild(t *testing.T) {
 					Seconds: 5,
 				},
 			}
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTimeouts(req, cfg, ent)
-			So(ent.Proto.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+			setTimeouts(req, cfg, b)
+			So(b.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 1,
 			})
-			So(ent.Proto.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+			So(b.GracePeriod, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 2,
 			})
-			So(ent.Proto.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+			So(b.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
 				Seconds: 3,
 			})
 		})
