@@ -190,8 +190,16 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	var errs errors.MultiError
 	for k, a := range cqd.attempts {
 		if !seen.Has(k) {
-			a.Attempt.Status = cvbqpb.AttemptStatus_ABORTED
-			if err := cqd.deleteLocked(ctx, a, cvInCharge); err != nil {
+			err = nil
+			if !cvInCharge {
+				a.Attempt.Status = cvbqpb.AttemptStatus_ABORTED
+			} else {
+				err = cqd.logRunStatus(ctx, a)
+			}
+			if err == nil {
+				err = cqd.deleteLocked(ctx, a, cvInCharge)
+			}
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -426,6 +434,22 @@ func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.ReportedRun,
 	_, err := cqd.CV.ReportFinishedRun(cqd.migrationApiContext(ctx), req)
 	// TODO(tandrii): send event to BQ.
 	return err
+}
+
+func (cqd *CQDFake) logRunStatus(ctx context.Context, r *migrationpb.ReportedRun) error {
+	req := &migrationpb.FetchRunStatusRequest{
+		AttemptKey:  r.GetAttempt().GetKey(),
+		CvId:        r.GetId(),
+		LuciProject: cqd.LUCIProject,
+	}
+	switch resp, err := cqd.CV.FetchRunStatus(cqd.migrationApiContext(ctx), req); {
+	case err != nil:
+		logging.Errorf(ctx, "FetchRunStatus failed: %s", err)
+		return err
+	default:
+		logging.Warningf(ctx, "RunStatus from CV: %s", resp)
+		return nil
+	}
 }
 
 func (cqd *CQDFake) migrationApiContext(ctx context.Context) context.Context {
