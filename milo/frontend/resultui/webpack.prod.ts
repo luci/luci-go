@@ -19,7 +19,8 @@ import Workbox from 'workbox-webpack-plugin';
 import common from './webpack.common';
 
 export default merge(common, {
-  devtool: 'source-map',
+  // TODO(weiweilin): fix timeline sourcemap containing absolute path.
+  devtool: false,
   mode: 'production',
   plugins: [
     new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(true) }),
