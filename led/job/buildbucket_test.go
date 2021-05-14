@@ -17,8 +17,8 @@ package job
 import (
 	"testing"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 )

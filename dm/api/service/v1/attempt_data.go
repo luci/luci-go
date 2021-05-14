@@ -17,7 +17,7 @@ package dm
 import (
 	"time"
 
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // NewJsonResult creates a new JsonResult object with optional expiration time.

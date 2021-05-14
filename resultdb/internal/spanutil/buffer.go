@@ -21,7 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 
