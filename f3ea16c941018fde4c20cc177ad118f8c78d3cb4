@@ -22,6 +22,30 @@
       },
       "revId": "f3ea16c941018fde4c20cc177ad118f8c78d3cb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ca30f81_2eb89de1",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 650,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-15T00:10:49Z",
+      "side": 1,
+      "message": "\u003e afaiu, before this CL, tree is checked after SQ acquisition, and if tree is closed, it\u0027d fail entire Run. Right?\n\nNo. it won\u0027t fail the entire Run. It will keep the status as WAITING_FOR_SUBMISSION and fire a poke to re-check after 1 minutes until tree is opened.\n\nrelevant code: https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/run/impl/handler/verification_completed.go;l\u003d67-72;drc\u003d8953ff05db6edb06429545162c7883bb8a5fad38\n\nPoke is not implemented yet.\n\n\u003e afaiu, with this CL, the tree is checked once per CL, and it still results in Run failure. Right?\n\nNow with this CL\n  * If tree check fail before submitting single CL Run, nothing will change. Submitter will release the queue, notify RM and RM will bring the status back to WAITING_FOR_SUBMISSION and check every 1 minute\n  * If tree check fail during submitting multi CL Runs, there\u0027ll be two possible cases,\n    * If tree close before submitting the very first CL, meaning that nothing has submitted yet, it will be same behavior as single CL Run.\n    * If tree close while submitting a CL in the middle, meaning that CLs in this Run have been partially submitted. Then submitter will also stop the submission, release the queue and notify RM. But RM will fail this Run because CLs are partially submitted. \n\nI think my reason is that CV should stop landing more CLs if tree is closed. Are you suggesting that in this case, if submission is half way done, it should be continued?",
+      "parentUuid": "0e133152_f71fc6f3",
+      "range": {
+        "startLine": 638,
+        "startChar": 1,
+        "endLine": 650,
+        "endChar": 3
+      },
+      "revId": "f3ea16c941018fde4c20cc177ad118f8c78d3cb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
