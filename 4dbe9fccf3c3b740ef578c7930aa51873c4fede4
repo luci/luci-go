@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b21e4b47_06f961ae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-17T18:50:01Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "4dbe9fccf3c3b740ef578c7930aa51873c4fede4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b58a2e7_81090eb3",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-17T18:50:01Z",
+      "side": 1,
+      "message": "nit: usually called \"salt\" https://en.wikipedia.org/wiki/Salt_(cryptography)",
+      "range": {
+        "startLine": 239,
+        "startChar": 41,
+        "endLine": 239,
+        "endChar": 58
+      },
+      "revId": "4dbe9fccf3c3b740ef578c7930aa51873c4fede4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
