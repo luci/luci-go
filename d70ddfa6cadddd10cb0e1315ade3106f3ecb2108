@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd227c96_ef48d950",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-05-17T05:07:04Z",
+      "side": 1,
+      "message": "It\u0027s not good to depend on collectRun.\nIdeally, the internal logic should be refactored to be shared with the terminate command. But it may not be simple.\nPlease leave a comment for refactoring.",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 82,
+        "endChar": 19
+      },
+      "revId": "d70ddfa6cadddd10cb0e1315ade3106f3ecb2108",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
