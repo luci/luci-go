@@ -290,7 +290,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	}
 	if len(in.Requests) == 0 {
 		logging.Debugf(ctx, "Received a BatchCreateArtifactsRequest with 0 requests; returning")
-		return nil, nil
+		return &pb.BatchCreateArtifactsResponse{}, nil
 	}
 	invID, arts, err := parseBatchCreateArtifactsRequest(in)
 	if err != nil {
@@ -312,7 +312,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	}
 	if len(artsToCreate) == 0 {
 		logging.Debugf(ctx, "Found no artifacts to create")
-		return nil, nil
+		return &pb.BatchCreateArtifactsResponse{}, nil
 	}
 
 	if err := uploadArtifactBlobs(ctx, s.ArtifactRBEInstance, s.casClient, invID, artsToCreate); err != nil {
