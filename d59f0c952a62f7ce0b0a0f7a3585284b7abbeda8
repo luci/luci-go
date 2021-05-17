@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6e093f8_4788cee3",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-17T23:49:18Z",
+      "side": 1,
+      "message": "I\u0027m not sure how save this is. Is Proto.CreateTime always correctly populated in existing builds? It will override the indexed CreateTime entity field on each save in UpdateBuild.\n\nI guess I can just remove the part of the CL that updates TagIndexEntry.CreateTime. It appears nothing is using it?",
+      "range": {
+        "startLine": 237,
+        "startChar": 1,
+        "endLine": 237,
+        "endChar": 43
+      },
+      "revId": "d59f0c952a62f7ce0b0a0f7a3585284b7abbeda8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd037b26_e5e5dba3",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-17T23:49:18Z",
+      "side": 1,
+      "message": "this assertion started to hang mysteriously after I\u0027ve added *reading* Build.CreateTime.AsTime(). Not sure why. So I had to clear Proto completely.",
+      "range": {
+        "startLine": 76,
+        "startChar": 9,
+        "endLine": 76,
+        "endChar": 23
+      },
+      "revId": "d59f0c952a62f7ce0b0a0f7a3585284b7abbeda8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
