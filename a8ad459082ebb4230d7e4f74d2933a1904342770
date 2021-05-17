@@ -56,6 +56,30 @@
       },
       "revId": "a8ad459082ebb4230d7e4f74d2933a1904342770",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec82150a_b58600bf",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-05-17T19:23:46Z",
+      "side": 1,
+      "message": "I think `realm` would be better. Actually, the same realm should be the one this swarming task is created in?",
+      "parentUuid": "d79da7b7_ed5d2cd2",
+      "range": {
+        "startLine": 77,
+        "startChar": 30,
+        "endLine": 77,
+        "endChar": 35
+      },
+      "revId": "a8ad459082ebb4230d7e4f74d2933a1904342770",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
