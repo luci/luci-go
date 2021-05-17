@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "284cfd6e_7971d0ae",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-17T19:01:11Z",
+      "side": 1,
+      "message": "should we use min() instead?",
+      "range": {
+        "startLine": 282,
+        "startChar": 25,
+        "endLine": 282,
+        "endChar": 51
+      },
+      "revId": "8e3a3ef253ce274418852952602f2b6e3cc8fdef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45cea8bc_9f90985d",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-17T19:01:11Z",
+      "side": 1,
+      "message": "what\u0027s the rationale? I don\u0027t think users would remember the mapping {depth -\u003e bullet style}, and would have to refer to the side panel anyway",
+      "range": {
+        "startLine": 300,
+        "startChar": 14,
+        "endLine": 300,
+        "endChar": 33
+      },
+      "revId": "8e3a3ef253ce274418852952602f2b6e3cc8fdef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "117a3a05_e92f6c04",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-17T19:01:11Z",
+      "side": 1,
+      "message": "dedupe code?",
+      "range": {
+        "startLine": 302,
+        "startChar": 6,
+        "endLine": 309,
+        "endChar": 0
+      },
+      "revId": "8e3a3ef253ce274418852952602f2b6e3cc8fdef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "257b52c1_681e1b9c",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-17T19:01:11Z",
+      "side": 1,
+      "message": "i noticed that \"preprocess_for_goma\" in the body is not clickable.\nhttps://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/8851/timeline\nany idea?",
+      "revId": "8e3a3ef253ce274418852952602f2b6e3cc8fdef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
