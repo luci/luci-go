@@ -20,8 +20,10 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
+import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportError } from '../../libs/error_handler';
+import { displayCompactDuration } from '../../libs/time_utils';
 import commonStyle from '../../styles/common_style.css';
 
 const MARGIN = 10;
@@ -30,10 +32,21 @@ const BORDER_SIZE = 1;
 const HALF_BORDER_SIZE = BORDER_SIZE / 2;
 
 const ROW_HEIGHT = 30;
+const STEP_HEIGHT = 24;
+const STEP_MARGIN = (ROW_HEIGHT - STEP_HEIGHT) / 2 - HALF_BORDER_SIZE;
 const STEP_EXTRA_WIDTH = 2;
+
+const TEXT_OFFSET = ROW_HEIGHT / 2 + 4;
+const TEXT_MARGIN = 10;
 
 const SIDE_PANEL_WIDTH = 450;
 const MIN_GRAPH_WIDTH = 500 + SIDE_PANEL_WIDTH;
+const DURATION_WIDTH = 50;
+const SIDE_PANEL_LEFT_OFFSET = TEXT_MARGIN + DURATION_WIDTH + Math.max(TEXT_MARGIN, STEP_MARGIN);
+const SIDE_PANEL_RECT_WIDTH = SIDE_PANEL_WIDTH - SIDE_PANEL_LEFT_OFFSET - STEP_MARGIN - BORDER_SIZE;
+const STEP_IDENT = 15;
+
+const BULLETS = ['\u2022', '\u25E6', '\u2023', '\u29BF'];
 
 @customElement('milo-timeline-tab')
 @errorHandler(forwardWithoutMsg)
@@ -169,6 +182,52 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
+    for (const [i, step] of build.steps.entries()) {
+      const stepGroup = svg
+        .append('g')
+        .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
+        .attr('transform', `translate(0, ${i * ROW_HEIGHT})`);
+
+      stepGroup
+        .append('text')
+        .attr('x', TEXT_MARGIN)
+        .attr('y', TEXT_OFFSET)
+        .text(displayCompactDuration(step.duration));
+
+      const rect = stepGroup
+        .append('rect')
+        .attr('x', SIDE_PANEL_LEFT_OFFSET)
+        .attr('y', STEP_MARGIN)
+        .attr('width', SIDE_PANEL_RECT_WIDTH)
+        .attr('height', STEP_HEIGHT);
+
+      const BULLET_OFFSET = SIDE_PANEL_LEFT_OFFSET + TEXT_MARGIN + step.depth * STEP_IDENT;
+      const bulletText = stepGroup
+        .append('text')
+        .attr('x', BULLET_OFFSET)
+        .attr('y', TEXT_OFFSET)
+        .attr('text-anchor', 'middle')
+        .text(BULLETS[step.depth % BULLETS.length]);
+      const stepText = stepGroup
+        .append('text')
+        .attr('x', BULLET_OFFSET + TEXT_MARGIN)
+        .attr('y', TEXT_OFFSET)
+        .text(step.selfName);
+
+      const logUrl = step.logs?.[0].viewUrl;
+      if (logUrl) {
+        const onClick = (e: MouseEvent) => {
+          e.stopPropagation();
+          window.open(logUrl, '_blank');
+        };
+        rect.attr('class', 'clickable').on('click', onClick);
+
+        // Text overlaps the rect, we need to make them clickable too.
+        bulletText.attr('class', 'clickable').on('click', onClick);
+        stepText.attr('class', 'clickable hyperlink').on('click', onClick);
+      }
+    }
+
     // Left border.
     svg
       .append('line')
@@ -276,6 +335,38 @@ export class TimelineTabElement extends MiloBaseElement {
 
       .grid line {
         stroke: var(--divider-color);
+      }
+
+      .clickable {
+        cursor: pointer;
+      }
+      .hyperlink {
+        text-decoration: underline;
+      }
+
+      .scheduled > rect {
+        stroke: var(--scheduled-color);
+        fill: var(--scheduled-bg-color);
+      }
+      .started > rect {
+        stroke: var(--started-color);
+        fill: var(--started-bg-color);
+      }
+      .success > rect {
+        stroke: var(--success-color);
+        fill: var(--success-bg-color);
+      }
+      .failure > rect {
+        stroke: var(--failure-color);
+        fill: var(--failure-bg-color);
+      }
+      .infra-failure > rect {
+        stroke: var(--critical-failure-color);
+        fill: var(--critical-failure-bg-color);
+      }
+      .canceled > rect {
+        stroke: var(--canceled-color);
+        fill: var(--canceled-bg-color);
       }
     `,
   ];
