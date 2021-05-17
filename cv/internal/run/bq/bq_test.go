@@ -172,8 +172,8 @@ func TestMakeAttempt(t *testing.T) {
 				Key:                  runID.AttemptKey(),
 				LuciProject:          "lproject",
 				ConfigGroup:          r.ConfigGroupID.Name(),
-				ClGroupKey:           "47b672b6236f79dd",
-				EquivalentClGroupKey: "a6994f53a448ff5d",
+				ClGroupKey:           "cad522cbfdc9e5ca",
+				EquivalentClGroupKey: "187bf41fdbe46088",
 				StartTime:            timestamppb.New(r.CreateTime),
 				EndTime:              timestamppb.New(r.EndTime),
 				GerritChanges: []*cvbqpb.GerritChange{
