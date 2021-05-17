@@ -40,9 +40,9 @@ const (
 	// Delete Invocations row after this duration since invocation creation.
 	invocationExpirationDuration = 2 * 365 * day // 2 y
 
-	// By default, finalize the invocation 1h after creation if it is still
+	// By default, finalize the invocation 6h after creation if it is still
 	// incomplete.
-	defaultInvocationDeadlineDuration = time.Hour
+	defaultInvocationDeadlineDuration = 6 * time.Hour
 )
 
 // UpdateTokenMetadataKey is the metadata.MD key for the secret update token
