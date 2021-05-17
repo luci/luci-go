@@ -48,6 +48,32 @@ const STEP_IDENT = 15;
 
 const BULLETS = ['\u2022', '\u25E6', '\u2023', '\u29BF'];
 
+const TIME_GIRD_MAX_WIDTH = 80;
+const PREDEFINED_TIME_INTERVALS = [
+  86400000, // 24hr
+  43200000, // 12hr
+  28800000, // 8hr
+  21600000, // 6hr
+  14400000, // 4hr
+  10800000, // 3hr
+  7200000, // 2hr
+  3600000, // 1hr
+  1800000, // 30min
+  1200000, // 20min
+  600000, // 10min
+  300000, // 5min
+  180000, // 3min
+  120000, // 2min
+  60000, // 1min
+  30000, // 30s
+  20000, // 20s
+  10000, // 10s
+  5000, // 5s
+  3000, // 3s
+  2000, // 2s
+  1000, // 1s
+];
+
 @customElement('milo-timeline-tab')
 @errorHandler(forwardWithoutMsg)
 @consumer
@@ -74,6 +100,7 @@ export class TimelineTabElement extends MiloBaseElement {
   private bodyHeight!: number;
   private scaleTime!: d3.ScaleTime<number, number, never>;
   private scaleStep!: d3.ScaleLinear<number, number, never>;
+  private timeInterval!: d3.TimeInterval;
   private readonly now = Date.now();
 
   connectedCallback() {
@@ -122,6 +149,18 @@ export class TimelineTabElement extends MiloBaseElement {
       // Ensure the top and bottom borders are not rendered.
       .range([-HALF_BORDER_SIZE, this.bodyHeight + HALF_BORDER_SIZE]);
 
+    const targetInterval = (endTime - startTime + 2 * padding) / (this.bodyWidth / TIME_GIRD_MAX_WIDTH);
+    let interval = PREDEFINED_TIME_INTERVALS[0];
+    // Find the largest interval that is no smaller than the target interval.
+    // Use linear search because the array is relatively short.
+    for (const predefined of PREDEFINED_TIME_INTERVALS) {
+      interval = predefined;
+      if (targetInterval >= predefined) {
+        break;
+      }
+    }
+    this.timeInterval = d3.timeMillisecond.every(interval)!;
+
     // Render each component.
     this.renderHeader();
     this.renderFooter();
@@ -139,7 +178,7 @@ export class TimelineTabElement extends MiloBaseElement {
     const headerRootGroup = svg
       .append('g')
       .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${AXIS_HEIGHT - HALF_BORDER_SIZE})`);
-    const axisTop = d3.axisTop(this.scaleTime).ticks(d3.timeMinute.every(5));
+    const axisTop = d3.axisTop(this.scaleTime).ticks(this.timeInterval);
     headerRootGroup.call(axisTop);
 
     // Top border for the side panel.
@@ -154,7 +193,7 @@ export class TimelineTabElement extends MiloBaseElement {
       .append('svg')
       .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
     const footerRootGroup = svg.append('g').attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${HALF_BORDER_SIZE})`);
-    const axisBottom = d3.axisBottom(this.scaleTime).ticks(d3.timeMinute.every(5));
+    const axisBottom = d3.axisBottom(this.scaleTime).ticks(this.timeInterval);
     footerRootGroup.call(axisBottom);
 
     // Bottom border for the side panel.
@@ -257,7 +296,7 @@ export class TimelineTabElement extends MiloBaseElement {
     // Grid lines
     const verticalGridLines = d3
       .axisTop(this.scaleTime)
-      .ticks(d3.timeMinute.every(5))
+      .ticks(this.timeInterval)
       .tickSize(-this.bodyHeight)
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(verticalGridLines);
