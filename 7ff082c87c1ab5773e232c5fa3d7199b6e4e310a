@@ -16,6 +16,29 @@
       "message": "I defer to Scott and Chan here, but feel free to re-add me for something specific or if other reviewers are slacking off 😄",
       "revId": "7ff082c87c1ab5773e232c5fa3d7199b6e4e310a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "691c1019_51e92c1c",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-17T17:43:48Z",
+      "side": 1,
+      "message": "I \u0027d move\n- L22-L23 to L29\n- L24 to L35\n\nAlso, remove L26 maybe?",
+      "range": {
+        "startLine": 22,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 30
+      },
+      "revId": "7ff082c87c1ab5773e232c5fa3d7199b6e4e310a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
