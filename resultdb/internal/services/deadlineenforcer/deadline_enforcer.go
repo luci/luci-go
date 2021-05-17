@@ -19,20 +19,45 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/resultdb/internal/tasks"
-
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/cron"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 )
 
 const maxInvocationsPerShardToEnforceAtOnce = 100
+
+var (
+	// timeOverdue tracks the delay between invocations expiring and being
+	// picked up by deadlineenforcer.
+	timeOverdue = metric.NewCumulativeDistribution(
+		"resultdb/deadlineenforcer/delay",
+		"Delay between invocation expiration and forced finalization",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		nil,
+		field.String("realm"),
+	)
+
+	// overdueInvocationsFinalized counts invocations finalized by the
+	// deadlineenforcer service.
+	overdueInvocationsFinalized = metric.NewCounter(
+		"resultdb/deadlineenforcer/finalized_invocations",
+		"Invocations finalized by deadline enforcer",
+		&types.MetricMetadata{Units: "invocations"},
+		field.String("realm"),
+	)
+)
 
 // Options are for configuring the deadline enforcer.
 type Options struct {
@@ -85,7 +110,7 @@ func enforceOneShard(ctx context.Context, shard int) error {
 
 func enforce(ctx context.Context, shard, limit int) (int, error) {
 	st := spanner.NewStatement(`
-		SELECT InvocationId
+		SELECT InvocationId, ActiveDeadline, Realm
 		FROM Invocations@{FORCE_INDEX=InvocationsByActiveDeadline, spanner_emulator.disable_query_null_filtered_index_check=true}
 		WHERE ShardId = @shardId
 			AND ActiveDeadline <= CURRENT_TIMESTAMP()
@@ -100,7 +125,9 @@ func enforce(ctx context.Context, shard, limit int) (int, error) {
 	err := spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		rowCount++
 		var id invocations.ID
-		if err := spanutil.FromSpanner(row, &id); err != nil {
+		var ts *timestamppb.Timestamp
+		var realm string
+		if err := spanutil.FromSpanner(row, &id, &ts, &realm); err != nil {
 			return err
 		}
 		// TODO(crbug.com/1207606): Increase parallelism.
@@ -108,6 +135,10 @@ func enforce(ctx context.Context, shard, limit int) (int, error) {
 			tasks.StartInvocationFinalization(ctx, id, true)
 			return nil
 		})
+		if err == nil {
+			overdueInvocationsFinalized.Add(ctx, 1, realm)
+			timeOverdue.Add(ctx, float64(clock.Now(ctx).Sub(ts.AsTime()).Milliseconds()), realm)
+		}
 		return err
 	})
 	return rowCount, err
