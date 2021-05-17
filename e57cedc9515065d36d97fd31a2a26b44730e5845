@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0d5281a_c8567cbc",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-17T18:34:41Z",
+      "side": 1,
+      "message": "what is STEP_EXTRA_WIDTH?\nis this related to \"2\" in the end of this line? should this be just 2 here?",
+      "range": {
+        "startLine": 95,
+        "startChar": 55,
+        "endLine": 95,
+        "endChar": 71
+      },
+      "revId": "e57cedc9515065d36d97fd31a2a26b44730e5845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
