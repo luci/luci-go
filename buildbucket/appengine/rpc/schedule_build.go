@@ -830,6 +830,12 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		return nil, errors.Annotate(err, "error generating build numbers").Err()
 	}
 
+	// "Finalize" model.Build by populating the rest of their fields with data
+	// we put into the protos. These fields might be accessed by calls below.
+	for _, b := range blds {
+		b.SyncFieldsWithProto()
+	}
+
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error { return model.UpdateBuilderStat(ctx, blds, now) }
 		if rdbHost != "" {

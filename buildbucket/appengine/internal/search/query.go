@@ -150,8 +150,9 @@ func UpdateTagIndex(ctx context.Context, builds []*model.Build) error {
 	for _, b := range builds {
 		for _, t := range IndexedTags(strpair.ParseMap(b.Tags)) {
 			idx[t] = append(idx[t], model.TagIndexEntry{
-				BuildID:  b.ID,
-				BucketID: b.BucketID,
+				BuildID:     b.ID,
+				BucketID:    b.BucketID,
+				CreatedTime: b.CreateTime,
 			})
 		}
 	}

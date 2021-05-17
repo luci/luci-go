@@ -306,6 +306,11 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
+				GitilesCommit: &pb.GitilesCommit{
+					Host:    "example.com",
+					Project: "project",
+					Ref:     "refs/heads/master",
+				},
 			}
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
@@ -357,6 +362,11 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{},
+						GitilesCommit: &pb.GitilesCommit{
+							Host:    "example.com",
+							Project: "project",
+							Ref:     "refs/heads/master",
+						},
 					},
 					SchedulingTimeout: &durationpb.Duration{
 						Seconds: 21600,
@@ -380,11 +390,23 @@ func TestScheduleBuild(t *testing.T) {
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:builder",
+						"buildset:commit/gitiles/example.com/project/+/",
+						"gitiles_ref:refs/heads/master",
 					},
 					Project: "project",
 				},
 			})
 			So(sch.Tasks(), ShouldHaveLength, 1)
+
+			// Should have updated the tag index.
+			index, err := model.SearchTagIndex(ctx, "buildset", "commit/gitiles/example.com/project/+/")
+			So(err, ShouldBeNil)
+			So(index, ShouldHaveLength, 1)
+			So(index[0], ShouldResemble, &model.TagIndexEntry{
+				BuildID:     9021868963221667745,
+				BucketID:    "project/bucket",
+				CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+			})
 		})
 
 		Convey("many", func() {
