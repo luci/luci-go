@@ -46,6 +46,30 @@
       },
       "revId": "28024877d913ec666f6bd2e40ff69461840feb24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a3133b7_4aaffb90",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T22:33:01Z",
+      "side": 1,
+      "message": "Assuming this is what you meant, I uploaded https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2900931",
+      "parentUuid": "ce384463_4bfba056",
+      "range": {
+        "startLine": 226,
+        "startChar": 2,
+        "endLine": 226,
+        "endChar": 19
+      },
+      "revId": "28024877d913ec666f6bd2e40ff69461840feb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
