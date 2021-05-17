@@ -290,7 +290,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				)
 				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldBeNil)
-				So(resp, ShouldResemble, (*pb.BatchCreateArtifactsResponse)(nil))
+				So(resp, ShouldResemble, &pb.BatchCreateArtifactsResponse{})
 			})
 
 			Convey("Different artifact exists", func() {
