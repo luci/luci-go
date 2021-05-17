@@ -29,23 +29,26 @@ describe('StepExt', () => {
     });
   }
 
-  describe('should compute parent/child names correctly', () => {
+  describe('should compute parent/child names and depth correctly', () => {
     it('for root step', () => {
       const step = createStep('child');
       assert.strictEqual(step.parentName, null);
       assert.strictEqual(step.selfName, 'child');
+      assert.strictEqual(step.depth, 0);
     });
 
     it('for step with a parent', () => {
       const step = createStep('parent|child');
       assert.strictEqual(step.parentName, 'parent');
       assert.strictEqual(step.selfName, 'child');
+      assert.strictEqual(step.depth, 1);
     });
 
     it('for step with a grandparent', () => {
-      const step3 = createStep('grand-parent|parent|child');
-      assert.strictEqual(step3.parentName, 'grand-parent|parent');
-      assert.strictEqual(step3.selfName, 'child');
+      const step = createStep('grand-parent|parent|child');
+      assert.strictEqual(step.parentName, 'grand-parent|parent');
+      assert.strictEqual(step.selfName, 'child');
+      assert.strictEqual(step.depth, 2);
     });
   });
 

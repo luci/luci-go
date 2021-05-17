@@ -31,6 +31,7 @@ export class StepExt {
   readonly logs?: Log[] | undefined;
   readonly summaryMarkdown?: string | undefined;
 
+  readonly depth: number;
   readonly selfName: string;
   readonly parentName: string | null;
   readonly children: StepExt[] = [];
@@ -48,9 +49,10 @@ export class StepExt {
     this.logs = step.logs;
     this.summaryMarkdown = step.summaryMarkdown;
 
-    const lastSeparatorIndex = step.name.lastIndexOf('|');
-    this.selfName = step.name.slice(lastSeparatorIndex + 1);
-    this.parentName = lastSeparatorIndex === -1 ? null : step.name.slice(0, lastSeparatorIndex);
+    const splitName = step.name.split('|');
+    this.selfName = splitName.pop()!;
+    this.depth = splitName.length;
+    this.parentName = splitName.join('|') || null;
 
     this.renderTime = renderTime || observable.box(DateTime.local());
   }
