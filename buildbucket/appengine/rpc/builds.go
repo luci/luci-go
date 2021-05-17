@@ -81,7 +81,7 @@ func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Mes
 	if methodName != "ScheduleBuild" {
 		return err
 	}
-	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
+	logging.Debugf(ctx, "%q is returning %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 	return err
 }
 
