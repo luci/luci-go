@@ -39,6 +39,30 @@
       },
       "revId": "7ff082c87c1ab5773e232c5fa3d7199b6e4e310a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ee4daa1_1c750211",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-17T19:17:39Z",
+      "side": 1,
+      "message": "Yup, these are shenaningans by my IDE.",
+      "parentUuid": "691c1019_51e92c1c",
+      "range": {
+        "startLine": 22,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 30
+      },
+      "revId": "7ff082c87c1ab5773e232c5fa3d7199b6e4e310a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
