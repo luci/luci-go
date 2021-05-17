@@ -22,6 +22,30 @@
       },
       "revId": "740107d19aa59eb0190728eeda8c5a0ddb96c676",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79873844_de178150",
+        "filename": "grpc/cmd/prpc/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1116027
+      },
+      "writtenOn": "2021-05-17T08:22:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43fbfcd6_a446080b",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 43
+      },
+      "revId": "740107d19aa59eb0190728eeda8c5a0ddb96c676",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
