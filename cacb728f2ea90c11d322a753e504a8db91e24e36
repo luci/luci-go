@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "19241b13_f1d9cc41",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T18:17:02Z",
+      "side": 1,
+      "message": "I know that it\u0027s not the same, but I was thinking it may be sufficient and it\u0027s simpler/shorter - the key important property is that for different runs with the same sets of patchsets the key is the same; and the chance of a collision is very small.\n\nIf the chance of collision might not be small enough, I could switch to sorting by host, number, and patchset; it\u0027s more verbose. (However, by reducing some repetition with a helper function it\u0027s alright.)",
+      "parentUuid": "c81e1f73_5e2c908a",
+      "range": {
+        "startLine": 214,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 30
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b816c72_079630b6",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-05-14T00:32:00Z",
       "side": 1,
       "message": "GetPatchset",
+      "range": {
+        "startLine": 226,
+        "startChar": 51,
+        "endLine": 226,
+        "endChar": 75
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "638f5f44_d774169f",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T18:17:02Z",
+      "side": 1,
+      "message": "Thanks, done",
+      "parentUuid": "2b816c72_079630b6",
       "range": {
         "startLine": 226,
         "startChar": 51,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "821f9287_a794a7e2",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T18:17:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9396e87d_40e8950d",
+      "range": {
+        "startLine": 228,
+        "startChar": 8,
+        "endLine": 228,
+        "endChar": 26
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b84be1d1_03c0e3d0",
@@ -117,6 +189,24 @@
       "writtenOn": "2021-05-14T00:32:00Z",
       "side": 1,
       "message": "You didn\u0027t sort before computing the hash",
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05ba2732_76c16509",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T18:17:02Z",
+      "side": 1,
+      "message": "Thanks for catching, done.",
+      "parentUuid": "b84be1d1_03c0e3d0",
       "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -144,6 +234,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe5b3f12_a3b6d7a3",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T18:17:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "135a8bc1_627a7456",
+      "range": {
+        "startLine": 238,
+        "startChar": 1,
+        "endLine": 238,
+        "endChar": 22
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "175166ab_55ff714f",
@@ -161,6 +275,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a5d6de6_4faf8f12",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T18:17:02Z",
+      "side": 1,
+      "message": "Good idea, I like that better.",
+      "parentUuid": "175166ab_55ff714f",
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d15e1197_f631e773",
@@ -174,6 +306,30 @@
       "writtenOn": "2021-05-14T00:32:00Z",
       "side": 1,
       "message": "populate",
+      "range": {
+        "startLine": 286,
+        "startChar": 26,
+        "endLine": 286,
+        "endChar": 28
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f963949f_2faf1635",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T18:17:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d15e1197_f631e773",
       "range": {
         "startLine": 286,
         "startChar": 26,
