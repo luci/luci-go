@@ -70,6 +70,30 @@
       },
       "revId": "28024877d913ec666f6bd2e40ff69461840feb24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4f8b9a8_d97f725e",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-17T22:33:53Z",
+      "side": 1,
+      "message": "\u003e You mean `cls[i].ExternalID !\u003d cls[j].ExternalID` will always be true? \n\nYes.\n\n\u003e CV never keeps track of two different patchsets from the same CL?\n\nWell, CV is aware of them, and in theory could create 2 concurrent Runs for the same CL but diff patchsets.",
+      "parentUuid": "ce384463_4bfba056",
+      "range": {
+        "startLine": 226,
+        "startChar": 2,
+        "endLine": 226,
+        "endChar": 19
+      },
+      "revId": "28024877d913ec666f6bd2e40ff69461840feb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
