@@ -80,6 +80,30 @@
       },
       "revId": "a8ad459082ebb4230d7e4f74d2933a1904342770",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "154cee2e_5a305045",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-05-17T19:45:34Z",
+      "side": 1,
+      "message": "IIUC, chan is saying the same realm should be uesd for the invocation and for creating the swarming task. \nbut for this reproduce, we reproduce things locally so no new swarming task is created, so we only use `realm` for invocation. \n\nplease correct me if i\u0027m wrong.\n\nanyways, keeping as `realm`.",
+      "parentUuid": "ec82150a_b58600bf",
+      "range": {
+        "startLine": 77,
+        "startChar": 30,
+        "endLine": 77,
+        "endChar": 35
+      },
+      "revId": "a8ad459082ebb4230d7e4f74d2933a1904342770",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
