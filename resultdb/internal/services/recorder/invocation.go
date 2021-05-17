@@ -40,9 +40,11 @@ const (
 	// Delete Invocations row after this duration since invocation creation.
 	invocationExpirationDuration = 2 * 365 * day // 2 y
 
-	// By default, finalize the invocation 1h after creation if it is still
+	// By default, finalize the invocation 2d after creation if it is still
 	// incomplete.
-	defaultInvocationDeadlineDuration = time.Hour
+	// This is the same as the BUILD_TIMEOUT
+	// https://source.chromium.org/chromium/infra/infra/+/main:appengine/cr-buildbucket/model.py;l=28;drc=e6d97dc362dd4a412fc7b07da0c4df53f2940a80
+	defaultInvocationDeadlineDuration = 2 * day
 )
 
 // UpdateTokenMetadataKey is the metadata.MD key for the secret update token
