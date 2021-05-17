@@ -18,6 +18,10 @@ package bq
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"sort"
+	"strconv"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -90,8 +94,8 @@ func makeAttempt(ctx context.Context, id common.RunID) (*cvbqpb.Attempt, error) 
 		Key:                  r.ID.AttemptKey(),
 		LuciProject:          r.ID.LUCIProject(),
 		ConfigGroup:          r.ConfigGroupID.Name(),
-		ClGroupKey:           clGroupKey(runCLs),
-		EquivalentClGroupKey: equivalentClGroupKey(runCLs),
+		ClGroupKey:           computeCLGroupKey(runCLs, false),
+		EquivalentClGroupKey: computeCLGroupKey(runCLs, true),
 		// Run.CreateTime is trigger time, which corresponds to what CQD sends for
 		// StartTime.
 		StartTime:     timestamppb.New(r.CreateTime),
@@ -204,21 +208,48 @@ func attemptStatus(ctx context.Context, r *run.Run) cvbqpb.AttemptStatus {
 	}
 }
 
-// clGroupKey constructs an opaque key unique to this set of CLs and patchsets.
-func clGroupKey(cls []*run.RunCL) string {
-	// TODO(crbug/1173168): Implement. In CQDaemon this is based on the sorted
-	// CL triples (host, number, patchset). But it should be changed, e.g.
-	// using sha2.
-	// TODO(crbug/1090123): This should not be equal with equivalentClGroupKey.
-	return ""
-}
-
-// equivalentClGroupKey constructs an opaque key unique to a set of CLs and
-// their min equivalent patchsets.
-func equivalentClGroupKey(cls []*run.RunCL) string {
-	// TODO(crbug/1173168): Implement. In CQDaemon this is based on the sorted
-	// CL triples (hostname, number, min equivalent patchset). But it should be
-	// changed, e.g. using sha2.
-	// TODO(crbug/1090123): This should not be equal with CL group key.
-	return ""
+// computeCLGroupKey constructs keys for ClGroupKey and the related
+// EquivalentClGroupKey.
+//
+// These are meant to be opaque keys unique to particular set of CLs and
+// patchsets for the purpose of grouping together runs for the same sets of
+// patchsets. if isEquivalent is true, then the "min equivalent patchset" is
+// used instead of the latest patchset, so that trivial patchsets such as minor
+// rebases and CL description updates don't change the key.
+func computeCLGroupKey(cls []*run.RunCL, isEquivalent bool) string {
+	// First sort by in a deterministic way by (host, number, patchset).
+	sort.Slice(cls, func(i, j int) bool {
+		// ExternalID includes host and change number but not patchset.
+		if cls[i].ExternalID != cls[j].ExternalID {
+			return cls[i].ExternalID < cls[j].ExternalID
+		}
+		if isEquivalent {
+			return cls[i].Detail.GetMinEquivalentPatchset() < cls[j].Detail.GetMinEquivalentPatchset()
+		} else {
+			return cls[i].Detail.GetPatchset() < cls[j].Detail.GetPatchset()
+		}
+	})
+	h := sha256.New()
+	// CL group keys are meant to be opaque keys. We'd like to avoid people
+	// depending on CL group key and equivalent CL group key sometimes being
+	// equal. We can do this by adding a salt to the hash.
+	if isEquivalent {
+		h.Write([]byte("equivalent_cl_group_key"))
+	}
+	separator := []byte{0}
+	for i, cl := range cls {
+		if i > 0 {
+			h.Write(separator)
+		}
+		h.Write([]byte(cl.Detail.GetGerrit().GetHost()))
+		h.Write(separator)
+		h.Write([]byte(strconv.FormatInt(cl.Detail.GetGerrit().GetInfo().GetNumber(), 10)))
+		h.Write(separator)
+		if isEquivalent {
+			h.Write([]byte(strconv.FormatInt(int64(cl.Detail.GetMinEquivalentPatchset()), 10)))
+		} else {
+			h.Write([]byte(strconv.FormatInt(int64(cl.Detail.GetPatchset()), 10)))
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil)[:8])
 }
