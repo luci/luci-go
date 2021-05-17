@@ -271,6 +271,62 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
+    for (const [i, step] of build.steps.entries()) {
+      const start = this.scaleTime(step.startTime?.toMillis() || this.now);
+      const end = this.scaleTime(step.endTime?.toMillis() || this.now);
+      const stepGroup = svg
+        .append('g')
+        .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
+        .attr('transform', `translate(${start}, ${i * ROW_HEIGHT})`);
+
+      // Add extra width so tiny steps are visible.
+      const width = end - start + STEP_EXTRA_WIDTH;
+
+      const rect = stepGroup
+        .append('rect')
+        .attr('x', -STEP_EXTRA_WIDTH / 2)
+        .attr('y', STEP_MARGIN)
+        .attr('width', width)
+        .attr('height', STEP_HEIGHT);
+
+      const isWide = width > this.bodyWidth * 0.33;
+      const nearEnd = end > this.bodyWidth * 0.66;
+
+      const stepText = stepGroup
+        .append('text')
+        .attr('text-anchor', isWide || !nearEnd ? 'start' : 'end')
+        .attr('x', isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN)
+        .attr('y', TEXT_OFFSET)
+        .text(BULLETS[step.depth] + ' ' + step.selfName);
+
+      const logUrl = step.logs?.[0].viewUrl;
+      if (logUrl) {
+        const onClick = (e: MouseEvent) => {
+          e.stopPropagation();
+          window.open(logUrl, '_blank');
+        };
+        rect.attr('class', 'clickable').on('click', onClick);
+
+        // Wail until the next event cycle so stepText is rendered when we call
+        // this.getBBox();
+        window.setTimeout(() => {
+          stepText.each(function () {
+            const bBox = this.getBBox();
+
+            // This makes the step text easier to click.
+            stepGroup
+              .append('rect')
+              .attr('x', bBox.x)
+              .attr('y', bBox.y)
+              .attr('width', bBox.width)
+              .attr('height', bBox.height)
+              .attr('class', 'clickable invisible')
+              .on('click', onClick);
+          });
+        });
+      }
+    }
+
     // Right border.
     svg
       .append('line')
@@ -367,6 +423,10 @@ export class TimelineTabElement extends MiloBaseElement {
       .canceled > rect {
         stroke: var(--canceled-color);
         fill: var(--canceled-bg-color);
+      }
+
+      .invisible {
+        opacity: 0;
       }
     `,
   ];
