@@ -73,6 +73,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b0185249_0d9526c7",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-17T05:12:06Z",
+      "side": 1,
+      "message": "Yeah, that is better.",
+      "parentUuid": "895fda13_6b2e5591",
+      "revId": "394bc57d7c2ce7ac5ed13760f82573ef986df1ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9aea89ca_3f359036",
         "filename": "client/cmd/swarming/lib/terminate_test.go",
         "patchSetId": 8
@@ -272,6 +290,30 @@
       "side": 1,
       "message": "Ack",
       "parentUuid": "dc5db3db_4a249a5a",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 11
+      },
+      "revId": "394bc57d7c2ce7ac5ed13760f82573ef986df1ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55a07176_ddc2481f",
+        "filename": "client/cmd/swarming/lib/testcommon.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-17T05:12:06Z",
+      "side": 1,
+      "message": "unresolved while waiting CL.",
+      "parentUuid": "ab961fac_54c7815e",
       "range": {
         "startLine": 41,
         "startChar": 1,
