@@ -217,6 +217,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "60a8bbfb_3bb14261",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-05-17T05:03:46Z",
+      "side": 1,
+      "message": "It was just added.",
+      "parentUuid": "6cdafee5_d4ed2a02",
+      "revId": "394bc57d7c2ce7ac5ed13760f82573ef986df1ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc5db3db_4a249a5a",
