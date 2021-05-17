@@ -33,6 +33,29 @@
       "message": "This change LGTM.\n\nAlthough I wonder if users will know which realm they should use. Asked the question at https://chat.google.com/room/AAAAKz3_Kuw/p13rsjUOSqM",
       "revId": "a8ad459082ebb4230d7e4f74d2933a1904342770",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d79da7b7_ed5d2cd2",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-05-17T00:12:30Z",
+      "side": 1,
+      "message": "nit: resultdb-realm is more explicit?",
+      "range": {
+        "startLine": 77,
+        "startChar": 30,
+        "endLine": 77,
+        "endChar": 35
+      },
+      "revId": "a8ad459082ebb4230d7e4f74d2933a1904342770",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
