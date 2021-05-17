@@ -221,9 +221,12 @@ func OverrideGlobalBuildUpdateTimeClock(c clock.Clock) (undo func()) {
 	}
 }
 
-// Save returns the datastore.PropertyMap representation of this build. Mutates
-// this entity to reflect computed datastore fields in the returned PropertyMap.
-func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
+// SyncFieldsWithProto updates various b's fields to match corresponding
+// data in b.Proto.
+//
+// Is is called automatically when storing the entity, but can also be called
+// manually if up-to-date fields are needed earlier.
+func (b *Build) SyncFieldsWithProto() {
 	b.BucketID = protoutil.FormatBucketID(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
 	b.BuilderID = protoutil.FormatBuilderID(b.Proto.Builder)
 	b.Canary = b.Proto.Canary
@@ -231,9 +234,18 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	b.Incomplete = !protoutil.IsEnded(b.Proto.Status)
 	b.Project = b.Proto.Builder.Project
 	b.Status = b.Proto.Status
+	b.CreateTime = b.Proto.CreateTime.AsTime()
 	if c := buildUpdateTimeClock; c != nil {
 		b.Proto.UpdateTime = timestamppb.New(c.Now())
 	}
+}
+
+// Save returns the datastore.PropertyMap representation of this build. Mutates
+// this entity via SyncFieldsWithProto to reflect computed datastore fields in
+// the returned PropertyMap.
+func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
+	b.SyncFieldsWithProto()
+
 	p, err := datastore.GetPLS(b).Save(withMeta)
 	if err != nil {
 		return nil, err
