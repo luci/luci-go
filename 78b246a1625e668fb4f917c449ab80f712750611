@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28dff278_1b9d308a",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-17T22:38:14Z",
+      "side": 1,
+      "message": "why did these change? I\u0027d have expected the order to be the same.\nAh, I see -- tests don\u0027t mock ExternalIDs -- please do this.",
+      "revId": "78b246a1625e668fb4f917c449ab80f712750611",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
