@@ -106,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f086b06e_c138676d",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-17T21:51:20Z",
+      "side": 1,
+      "message": "That is helpful; ExternalID appears to include host and number but not patchset; so we can sort by ExternalID plus patchset (or min equiv patchset).",
+      "parentUuid": "124bd54d_09a0ac45",
+      "range": {
+        "startLine": 214,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 30
+      },
+      "revId": "cacb728f2ea90c11d322a753e504a8db91e24e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b816c72_079630b6",
