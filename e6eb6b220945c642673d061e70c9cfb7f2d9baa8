@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f2cf90a_994b5653",
+        "filename": "milo/frontend/resultui/src/models/build_ext.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-18T18:13:06Z",
+      "side": 1,
+      "message": "this assumes that the following isn\u0027t possible\n\n  foo\n  bar\n  foo|x\n\nwhich isn\u0027t guaranteed. Please use as hash instead:\n\n  const parent \u003d byName[splitName.join(\u0027|\u0027)];\n  ...\n  byName[step.name] \u003d stepExt;\n\nnote that there *is* a guarantee that parent comes before child",
+      "revId": "e6eb6b220945c642673d061e70c9cfb7f2d9baa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f904a4c6_dd42ee6a",
+        "filename": "milo/frontend/resultui/src/models/build_ext.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-18T18:13:06Z",
+      "side": 1,
+      "message": "nit: would be simpler to define byName[\u0027\u0027] \u003d new StepExt();\n\nand then this.rootSteps \u003d byName[\u0027\u0027].children;",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 32
+      },
+      "revId": "e6eb6b220945c642673d061e70c9cfb7f2d9baa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
