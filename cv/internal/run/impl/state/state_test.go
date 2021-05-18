@@ -19,15 +19,21 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tree"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRemoveRunFromCLs(t *testing.T) {
@@ -67,6 +73,76 @@ func TestRemoveRunFromCLs(t *testing.T) {
 				EVersion:       4,
 				UpdateTime:     now,
 			})
+		})
+	})
+}
+
+func TestCheckTree(t *testing.T) {
+	t.Parallel()
+
+	Convey("CheckTree", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		const lProject = "chromium"
+		rs := &RunState{
+			Run: run.Run{
+				ID:         common.MakeRunID(lProject, ct.Clock.Now().Add(-2*time.Minute), 1, []byte("deadbeef")),
+				Submission: &run.Submission{},
+			},
+		}
+		ct.Cfg.Create(ctx, lProject, &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					Verifiers: &cfgpb.Verifiers{
+						TreeStatus: &cfgpb.Verifiers_TreeStatus{
+							Url: "tree.example.com",
+						},
+					},
+				},
+			},
+		})
+		meta, err := config.GetLatestMeta(ctx, lProject)
+		So(err, ShouldBeNil)
+		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
+		rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
+
+		Convey("Open", func() {
+			ct.TreeFake.ModifyState(ctx, tree.Open)
+			open, err := rs.CheckTree(ctx, tree.MustClient(ctx))
+			So(err, ShouldBeNil)
+			So(open, ShouldBeTrue)
+			So(rs.Run.Submission.TreeOpen, ShouldBeTrue)
+			So(rs.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(ct.Clock.Now().UTC()))
+		})
+
+		Convey("Close", func() {
+			ct.TreeFake.ModifyState(ctx, tree.Closed)
+			open, err := rs.CheckTree(ctx, tree.MustClient(ctx))
+			So(err, ShouldBeNil)
+			So(open, ShouldBeFalse)
+			So(rs.Run.Submission.TreeOpen, ShouldBeFalse)
+			So(rs.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(ct.Clock.Now().UTC()))
+		})
+
+		Convey("Tree not defined", func() {
+			ct.TreeFake.ModifyState(ctx, tree.Closed)
+			ct.Cfg.Update(ctx, lProject, &cfgpb.Config{
+				ConfigGroups: []*cfgpb.ConfigGroup{
+					{Name: "main"},
+					// No Tree defined
+				},
+			})
+			meta, err := config.GetLatestMeta(ctx, lProject)
+			So(err, ShouldBeNil)
+			So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
+			rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
+			open, err := rs.CheckTree(ctx, tree.MustClient(ctx))
+			So(err, ShouldBeNil)
+			So(open, ShouldBeTrue)
+			So(rs.Run.Submission.TreeOpen, ShouldBeTrue)
+			So(rs.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(ct.Clock.Now().UTC()))
 		})
 	})
 }

@@ -91,10 +91,10 @@ func Install(ctx context.Context, c Client) context.Context {
 	return context.WithValue(ctx, &clientCtxKey, c)
 }
 
-// mustClient returns the `Client` implementation stored in the context.
+// MustClient returns the `Client` implementation stored in the context.
 //
 // Panics if not found.
-func mustClient(ctx context.Context) Client {
+func MustClient(ctx context.Context) Client {
 	c := ctx.Value(&clientCtxKey)
 	if c == nil {
 		panic("Tree Status Client not found in the context")
@@ -106,7 +106,7 @@ func mustClient(ctx context.Context) Client {
 //
 // This is a shortcut of `tree.mustClient(ctx).FetchLatest(ctx, endpoint)`.
 func FetchLatest(ctx context.Context, endpoint string) (Status, error) {
-	return mustClient(ctx).FetchLatest(ctx, endpoint)
+	return MustClient(ctx).FetchLatest(ctx, endpoint)
 }
 
 type httpClientImpl struct {

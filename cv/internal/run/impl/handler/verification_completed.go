@@ -16,11 +16,7 @@ package handler
 
 import (
 	"context"
-	"time"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -30,7 +26,6 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // OnCQDVerificationCompleted implements Handler interface.
@@ -56,32 +51,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	switch vr.Payload.Action {
 	case migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT:
 		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
-		rs.Run.Submission = &run.Submission{}
-		var err error
-		if rs.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.Run.CLs, rs.Run.ID, rs.Run.Submission); err != nil {
-			return nil, err
-		}
-		switch treeOpen, err := checkTreeOpen(ctx, rs); {
-		case err != nil:
-			return nil, err
-		case !treeOpen:
-			if err := impl.RM.PokeAfter(ctx, rid, 1*time.Minute); err != nil {
-				// Tree is closed, revisit after 1 minute.
-				return nil, err
-			}
-			return &Result{State: rs}, nil
-		}
-
-		switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
-		case err != nil:
-			return nil, err
-		case !waitlisted:
-			return impl.OnReadyForSubmission(ctx, rs)
-		default:
-			// This Run expects to be notified with a ReadyForSubmission
-			// event sent from submit queue once its turn is coming.
-			return &Result{State: rs}, nil
-		}
+		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
 		return nil, errors.New("not implemented")
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
@@ -89,22 +59,4 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	default:
 		return nil, errors.Reason("unknown action %s", vr.Payload.Action).Err()
 	}
-}
-
-func checkTreeOpen(ctx context.Context, rs *state.RunState) (bool, error) {
-	cg, err := rs.LoadConfigGroup(ctx)
-	if err != nil {
-		return false, err
-	}
-	treeOpen := true
-	if treeURL := cg.Content.GetVerifiers().GetTreeStatus().GetUrl(); treeURL != "" {
-		status, err := tree.FetchLatest(ctx, treeURL)
-		if err != nil {
-			return false, err
-		}
-		treeOpen = status.State == tree.Open || status.State == tree.Throttled
-	}
-	rs.Run.Submission.TreeOpen = treeOpen
-	rs.Run.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
-	return treeOpen, nil
 }

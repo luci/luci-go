@@ -19,6 +19,8 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -27,6 +29,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // RunState represents the current state of a Run.
@@ -99,4 +102,26 @@ func (rs *RunState) LoadConfigGroup(ctx context.Context) (*config.ConfigGroup, e
 		return nil, err
 	}
 	return rs.cachedConfigGroup, nil
+}
+
+// CheckTree returns whether Tree is open for this Run.
+//
+// Returns true if no Tree is defined for this Run. Updates the latest
+// result to `run.Submission`.
+func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error) {
+	cg, err := rs.LoadConfigGroup(ctx)
+	if err != nil {
+		return false, err
+	}
+	treeOpen := true
+	if treeURL := cg.Content.GetVerifiers().GetTreeStatus().GetUrl(); treeURL != "" {
+		status, err := tc.FetchLatest(ctx, treeURL)
+		if err != nil {
+			return false, err
+		}
+		treeOpen = status.State == tree.Open || status.State == tree.Throttled
+	}
+	rs.Run.Submission.TreeOpen = treeOpen
+	rs.Run.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
+	return treeOpen, nil
 }

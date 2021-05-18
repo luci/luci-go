@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
+	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // OnReadyForSubmission implements Handler interface.
@@ -64,16 +65,60 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		return &Result{State: rs}, nil
 	case status == run.Status_SUBMITTING:
 		return continueSubmissionIfPossible(ctx, rs, impl.RM)
-	case status == run.Status_RUNNING || status == run.Status_WAITING_FOR_SUBMISSION:
-		// TODO(yiwzhang): fail if partially submitted.
-		rs, err := markSubmitting(ctx, rs)
-		if err != nil {
-			return nil, err
+	case status == run.Status_RUNNING:
+		// This may happen when this Run transitioned from RUNNING status to
+		// WAITING_FOR_SUBMISSION, prepared for submission but failed to
+		// save the state transition. This Run is receiving this event because
+		// of the fail-safe task sent while acquiring the Submit Queue. CV should
+		// treat this Run as WAITING_FOR_SUBMISSION status.
+		rs = rs.ShallowCopy()
+		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
+		fallthrough
+	case status == run.Status_WAITING_FOR_SUBMISSION:
+		if len(rs.Run.Submission.GetSubmittedCls()) > 0 {
+			panic(fmt.Errorf("impossible; Run %q is in Status_WAITING_FOR_SUBMISSION status but has submitted CLs ", rs.Run.ID))
 		}
-		return &Result{
-			State:         rs,
-			PostProcessFn: newSubmitter(ctx, rs, impl.RM).submit,
-		}, nil
+		switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
+		case err != nil:
+			return nil, err
+		case waitlisted:
+			// This Run will be notified by Submit Queue once its turn comes.
+			return &Result{State: rs}, nil
+		}
+
+		rs = rs.ShallowCopy()
+		if rs.Run.Submission == nil {
+			rs.Run.Submission = &run.Submission{}
+		}
+
+		// TODO(yiwzhang): make treeClient an explicit dependency of impl.
+		switch treeOpen, err := rs.CheckTree(ctx, tree.MustClient(ctx)); {
+		case err != nil:
+			return nil, err
+		case !treeOpen:
+			err := parallel.WorkPool(2, func(work chan<- func() error) {
+				work <- func() error {
+					// Tree is closed, revisit after 1 minute.
+					return impl.RM.PokeAfter(ctx, rs.Run.ID, 1*time.Minute)
+				}
+				work <- func() error {
+					// Give up the Submit Queue while waiting for tree to open.
+					return releaseSubmitQueue(ctx, rs.Run.ID, impl.RM)
+				}
+			})
+			if err != nil {
+				return nil, common.MostSevereError(err)
+			}
+			return &Result{State: rs}, nil
+		default:
+			if err := markSubmitting(ctx, rs); err != nil {
+				return nil, err
+			}
+			return &Result{
+				State:         rs,
+				PostProcessFn: newSubmitter(ctx, rs, impl.RM).submit,
+			}, nil
+		}
 	default:
 		panic(fmt.Errorf("impossible status %s", status))
 	}
@@ -127,9 +172,10 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 		case innerErr != nil:
 			return innerErr
 		case !waitlisted:
-			// If not waitlisted, RM will proceed as if ReadyForSubmission event is
-			// received. Sends a ReadyForSubmission event 10 seconds later in case
-			// the event processing has failed in the middle.
+			// It is possible that RM fails before successfully completing the state
+			// transition. In that case, this Run will block Submit Queue infinitely.
+			// Sending a ReadyForSubmission event after 10s as a fail-safe to ensure
+			// Run keeps making progress.
 			return rm.NotifyReadyForSubmission(ctx, rid, now.Add(10*time.Second))
 		default:
 			return nil
@@ -145,41 +191,44 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 	}
 }
 
+// releaseSubmitQueueIfTaken checks if submit queue is occupied by the given
+// Run before trying to release.
 func releaseSubmitQueueIfTaken(ctx context.Context, runID common.RunID, rm RM) error {
 	switch current, err := submit.CurrentRun(ctx, runID.LUCIProject()); {
 	case err != nil:
 		return err
 	case current == runID:
-		var innerErr error
-		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			innerErr = submit.Release(ctx, rm.NotifyReadyForSubmission, runID)
-			return innerErr
-		}, nil)
-		switch {
-		case innerErr != nil:
-			return innerErr
-		case err != nil:
-			return errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
-		}
+		return releaseSubmitQueue(ctx, runID, rm)
+	}
+	return nil
+}
+
+func releaseSubmitQueue(ctx context.Context, runID common.RunID, rm RM) error {
+	var innerErr error
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		innerErr = submit.Release(ctx, rm.NotifyReadyForSubmission, runID)
+		return innerErr
+	}, nil)
+	switch {
+	case innerErr != nil:
+		return innerErr
+	case err != nil:
+		return errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
 	}
 	return nil
 }
 
 const submissionDuration = 20 * time.Minute
 
-func markSubmitting(ctx context.Context, rs *state.RunState) (*state.RunState, error) {
-	ret := rs.ShallowCopy()
-	ret.Run.Status = run.Status_SUBMITTING
-	if ret.Run.Submission == nil {
-		ret.Run.Submission = &run.Submission{}
-		var err error
-		if ret.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, ret.Run.CLs, ret.Run.ID, ret.Run.Submission); err != nil {
-			return nil, err
-		}
+func markSubmitting(ctx context.Context, rs *state.RunState) error {
+	rs.Run.Status = run.Status_SUBMITTING
+	var err error
+	if rs.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.Run.CLs, rs.Run.ID, rs.Run.Submission); err != nil {
+		return err
 	}
-	ret.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
-	ret.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
-	return ret, nil
+	rs.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
+	rs.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
+	return nil
 }
 
 func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM) (*Result, error) {
