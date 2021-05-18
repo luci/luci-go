@@ -95,7 +95,7 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 	}
 
 	if r.kvs != "" && r.cacheDir == "" {
-		return errors.New("if small-files-cache is set, cache-dir should be set")
+		return errors.New("if kvs-dir is set, cache-dir should be set")
 	}
 
 	r.dir = filepath.Clean(r.dir)
