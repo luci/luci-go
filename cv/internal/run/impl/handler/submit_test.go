@@ -179,7 +179,8 @@ func TestOnReadyForSubmission(t *testing.T) {
 		rs := &state.RunState{Run: r}
 
 		h := &Impl{
-			RM: run.NewNotifier(ct.TQDispatcher),
+			RM:         run.NewNotifier(ct.TQDispatcher),
+			TreeClient: ct.TreeFake.Client(),
 		}
 
 		statuses := []run.Status{

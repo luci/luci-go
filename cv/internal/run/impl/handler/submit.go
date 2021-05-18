@@ -44,7 +44,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
-	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // OnReadyForSubmission implements Handler interface.
@@ -91,8 +90,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			rs.Run.Submission = &run.Submission{}
 		}
 
-		// TODO(yiwzhang): make treeClient an explicit dependency of impl.
-		switch treeOpen, err := rs.CheckTree(ctx, tree.MustClient(ctx)); {
+		switch treeOpen, err := rs.CheckTree(ctx, impl.TreeClient); {
 		case err != nil:
 			return nil, err
 		case !treeOpen:
