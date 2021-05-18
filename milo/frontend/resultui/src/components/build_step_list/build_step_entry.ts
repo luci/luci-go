@@ -45,7 +45,6 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
   @consumeConfigsStore
   configsStore!: UserConfigsStore;
 
-  @observable.ref number = 0;
   @observable.ref step!: StepExt;
 
   @observable.ref private _expanded = false;
@@ -99,12 +98,8 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
         ${this.logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
       ${this.step.children?.map(
-        (child, i) => html`
-          <milo-build-step-entry
-            .number=${i + 1}
-            .step=${child}
-            .expanded=${this.expandSubSteps}
-          ></milo-build-step-entry>
+        (child) => html`
+          <milo-build-step-entry .step=${child} .expanded=${this.expandSubSteps}></milo-build-step-entry>
         `
       ) || ''}
     `;
@@ -232,7 +227,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
                 this.step.status !== BuildStatus.Success && !(this.expanded && this.step.summary),
             })}
           >
-            <b>${this.number}. ${this.step.selfName}</b>
+            <b>${this.step.index + 1}. ${this.step.selfName}</b>
             <milo-pin-toggle
               .pinned=${this.isPinned}
               title="Pin/unpin the step. The configuration is shared across all builds."
