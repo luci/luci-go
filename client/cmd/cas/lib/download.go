@@ -375,6 +375,10 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			return err
 		}
 		defer func() {
+			start := time.Now()
+			defer func() {
+				logger.Infof("closing kvs, took %s", time.Since(start))
+			}()
 			if err := kvs.Close(); err != nil {
 				logger.Errorf("failed to close kvs cache: %v", err)
 				if rerr == nil {
