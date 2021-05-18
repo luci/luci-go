@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "320766a3_3daad43e",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-18T09:22:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ced2a0ff_8a6bf5e2",
+      "range": {
+        "startLine": 51,
+        "startChar": 11,
+        "endLine": 51,
+        "endChar": 15
+      },
+      "revId": "67e310dac67b052d24034ec48790e6dbdc72b977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2bf04f93_6ea0c78d",
@@ -41,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "41f2b893_f97a36d4",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-18T09:22:04Z",
+      "side": 1,
+      "message": "renamed TIME_GRID_MAX_WIDTH to V_GRID_LINE_MAX_GAP.\nand renamed targetInterval to maxInterval.\n\nWhat we try to do here is to find the maximum interval we can use, given the maximum gap between vertical grid lines we are willing to accept.",
+      "parentUuid": "2bf04f93_6ea0c78d",
+      "revId": "67e310dac67b052d24034ec48790e6dbdc72b977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "78949ff9_b7375cb1",
@@ -54,6 +96,30 @@
       "writtenOn": "2021-05-17T19:06:27Z",
       "side": 1,
       "message": "seems like this value is unconditionally thrown away, so we don\u0027t need this",
+      "range": {
+        "startLine": 161,
+        "startChar": 17,
+        "endLine": 161,
+        "endChar": 47
+      },
+      "revId": "67e310dac67b052d24034ec48790e6dbdc72b977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a1322e6_8d599589",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-18T09:22:04Z",
+      "side": 1,
+      "message": "Technically, yes. But typescript isn\u0027t able to tell whether the loop is skipped or not, so it thinks the value could be uninitialised.\n\nAdded a comment to explain that.",
+      "parentUuid": "78949ff9_b7375cb1",
       "range": {
         "startLine": 161,
         "startChar": 17,
