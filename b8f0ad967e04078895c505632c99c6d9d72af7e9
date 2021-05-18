@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "024c5602_71b0fece",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T04:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7972e030_6491fa6e",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 22
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6c7998e4_87ee2026",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-05-18T03:53:52Z",
       "side": 1,
       "message": "use err here",
+      "range": {
+        "startLine": 80,
+        "startChar": 9,
+        "endLine": 80,
+        "endChar": 16
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "931297fd_5e2599fe",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T04:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c7998e4_87ee2026",
       "range": {
         "startLine": 80,
         "startChar": 9,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f8af7dc_c93db88c",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T04:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d443b841_4e3b355e",
+      "range": {
+        "startLine": 85,
+        "startChar": 15,
+        "endLine": 85,
+        "endChar": 22
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ab8e5905_88450d0f",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-05-18T03:51:50Z",
       "side": 1,
       "message": "I think a constant delay would be ok for simplicity. e.g. 5 sec, 10 sec.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 3
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "defa1279_1e594ea4",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T04:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab8e5905_88450d0f",
       "range": {
         "startLine": 89,
         "startChar": 0,
@@ -110,6 +206,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "790855ae_efb9f2d2",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T04:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "818e4195_14504627",
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ae8f184d_7781272d",
@@ -123,6 +237,30 @@
       "writtenOn": "2021-05-18T03:53:52Z",
       "side": 1,
       "message": "use err here",
+      "range": {
+        "startLine": 118,
+        "startChar": 11,
+        "endLine": 118,
+        "endChar": 18
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd8dbf9a_fd50b6fe",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T04:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae8f184d_7781272d",
       "range": {
         "startLine": 118,
         "startChar": 11,
@@ -156,6 +294,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "346fb770_f99976dc",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T04:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b51336d_d4ab8c4e",
+      "range": {
+        "startLine": 124,
+        "startChar": 17,
+        "endLine": 124,
+        "endChar": 20
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f29b52b9_83bb4df9",
@@ -169,6 +331,30 @@
       "writtenOn": "2021-05-18T03:53:52Z",
       "side": 1,
       "message": "I think you can use ShouldEqual for string check?",
+      "range": {
+        "startLine": 113,
+        "startChar": 18,
+        "endLine": 113,
+        "endChar": 32
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64f1fc51_ae4b0851",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T04:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f29b52b9_83bb4df9",
       "range": {
         "startLine": 113,
         "startChar": 18,
