@@ -16,6 +16,23 @@
       "message": "vadimsh: please take another look.",
       "revId": "723eb9e8ca670d5b84aabc5a847401567f2a3df0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bdefe741_41ea6215",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1116027
+      },
+      "writtenOn": "2021-05-18T09:35:34Z",
+      "side": 1,
+      "message": "Thank you. How can I get the new version of prpc tool deployed everywhere once this CL lands?",
+      "revId": "723eb9e8ca670d5b84aabc5a847401567f2a3df0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
