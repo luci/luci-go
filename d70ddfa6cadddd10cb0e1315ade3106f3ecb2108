@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c8deef0_09ecfc98",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T03:11:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6fc92ad5_05f4c9e9",
+      "range": {
+        "startLine": 29,
+        "startChar": 43,
+        "endLine": 29,
+        "endChar": 47
+      },
+      "revId": "d70ddfa6cadddd10cb0e1315ade3106f3ecb2108",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "aa61916a_156cfd0b",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-05-17T05:17:01Z",
       "side": 1,
       "message": "CmdTerminateBot?",
+      "range": {
+        "startLine": 30,
+        "startChar": 5,
+        "endLine": 30,
+        "endChar": 17
+      },
+      "revId": "d70ddfa6cadddd10cb0e1315ade3106f3ecb2108",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c64a8b9_f537ab38",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T03:11:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa61916a_156cfd0b",
       "range": {
         "startLine": 30,
         "startChar": 5,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f02f0a1_a20d68d1",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T03:11:36Z",
+      "side": 1,
+      "message": "Added function \u0027pollTask\u0027 in terminate, to not depend on collectRun as discussed in gvc.",
+      "parentUuid": "cd227c96_ef48d950",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 82,
+        "endChar": 19
+      },
+      "revId": "d70ddfa6cadddd10cb0e1315ade3106f3ecb2108",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dd5504ca_781e4b1f",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-05-17T05:17:01Z",
       "side": 1,
       "message": "Should add a regular case (only 1 bot ID) and remove this suffix from the test name.",
+      "range": {
+        "startLine": 28,
+        "startChar": 27,
+        "endLine": 28,
+        "endChar": 42
+      },
+      "revId": "d70ddfa6cadddd10cb0e1315ade3106f3ecb2108",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a3cf74e7_1e545b7f",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T03:11:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd5504ca_781e4b1f",
       "range": {
         "startLine": 28,
         "startChar": 27,
