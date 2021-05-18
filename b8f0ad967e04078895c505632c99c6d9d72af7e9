@@ -26,6 +26,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6c7998e4_87ee2026",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T03:53:52Z",
+      "side": 1,
+      "message": "use err here",
+      "range": {
+        "startLine": 80,
+        "startChar": 9,
+        "endLine": 80,
+        "endChar": 16
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d443b841_4e3b355e",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T03:53:52Z",
+      "side": 1,
+      "message": "this is nil?",
+      "range": {
+        "startLine": 85,
+        "startChar": 15,
+        "endLine": 85,
+        "endChar": 22
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ab8e5905_88450d0f",
         "filename": "client/cmd/swarming/lib/terminate.go",
         "patchSetId": 12
@@ -42,6 +88,92 @@
         "startChar": 0,
         "endLine": 94,
         "endChar": 3
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "818e4195_14504627",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T03:53:52Z",
+      "side": 1,
+      "message": "I don\u0027t think we need to have this check.",
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae8f184d_7781272d",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T03:53:52Z",
+      "side": 1,
+      "message": "use err here",
+      "range": {
+        "startLine": 118,
+        "startChar": 11,
+        "endLine": 118,
+        "endChar": 18
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b51336d_d4ab8c4e",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T03:53:52Z",
+      "side": 1,
+      "message": "include taskres.State in error",
+      "range": {
+        "startLine": 124,
+        "startChar": 17,
+        "endLine": 124,
+        "endChar": 20
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f29b52b9_83bb4df9",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T03:53:52Z",
+      "side": 1,
+      "message": "I think you can use ShouldEqual for string check?",
+      "range": {
+        "startLine": 113,
+        "startChar": 18,
+        "endLine": 113,
+        "endChar": 32
       },
       "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
