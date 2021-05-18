@@ -22,6 +22,30 @@
       },
       "revId": "b2360c9ad2a13c0a32f6338a17afbe1a1dd31577",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "caed6347_1cb4723a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-18T09:22:18Z",
+      "side": 1,
+      "message": "TLDR: the bundler will remove code that are not used.\n\nhttps://webpack.js.org/guides/tree-shaking/",
+      "parentUuid": "e0444445_7f0c2600",
+      "range": {
+        "startLine": 7,
+        "startChar": 47,
+        "endLine": 7,
+        "endChar": 59
+      },
+      "revId": "b2360c9ad2a13c0a32f6338a17afbe1a1dd31577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
