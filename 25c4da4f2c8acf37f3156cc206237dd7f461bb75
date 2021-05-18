@@ -146,6 +146,24 @@
       "parentUuid": "a0c9fba1_b859557a",
       "revId": "25c4da4f2c8acf37f3156cc206237dd7f461bb75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8516c10e_c9d0e901",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T22:11:23Z",
+      "side": 1,
+      "message": "Done(thank you for the reference!)",
+      "parentUuid": "aca03ace_49188ee8",
+      "revId": "25c4da4f2c8acf37f3156cc206237dd7f461bb75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
