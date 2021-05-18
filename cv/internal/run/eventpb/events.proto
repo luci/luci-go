@@ -132,14 +132,10 @@ enum SubmissionResult {
   //
   // RM should retry if quota allows.
   FAILED_TRANSIENT = 2;
-  // Encountered precondition failure which is transient in nature.
-  //
-  // For example, tree closure and submit queue is throttling.
-  FAILED_PRECONDITION = 3;
   // Encountered permanent failure.
   //
   // For example, lack of submit permission or experienced merge conflict.
-  FAILED_PERMANENT = 4;
+  FAILED_PERMANENT = 3;
 }
 
 message CQDVerificationCompleted {
