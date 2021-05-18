@@ -42,6 +42,11 @@ func NewFake(ctx context.Context, state tree.State) *Fake {
 	}
 }
 
+// Client returns a clientof this Fake Tree.
+func (f *Fake) Client() tree.Client {
+	return &client{f}
+}
+
 // ModifyState changes the state of this fake Tree.
 func (f *Fake) ModifyState(ctx context.Context, newState tree.State) {
 	f.mu.Lock()
@@ -50,14 +55,6 @@ func (f *Fake) ModifyState(ctx context.Context, newState tree.State) {
 		f.TreeStatus.State = newState
 		f.TreeStatus.Since = clock.Now(ctx).UTC()
 	}
-}
-
-// Install installs this fake Tree into context.
-func (f *Fake) Install(ctx context.Context) context.Context {
-	if f == nil {
-		panic("nil tree fake")
-	}
-	return tree.Install(ctx, &client{f})
 }
 
 type client struct {

@@ -75,38 +75,12 @@ func convertToTreeState(s string) State {
 	}
 }
 
-var clientCtxKey = "go.chromium.org/luci/cv/internal/tree.Client"
-
-// InstallProd puts a production `Client` implementation.
-func InstallProd(ctx context.Context) (context.Context, error) {
+func NewClient(ctx context.Context) (Client, error) {
 	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {
 		return nil, err
 	}
-	return Install(ctx, httpClientImpl{&http.Client{Transport: t}}), nil
-}
-
-// Install puts the given `Client` implementation into the context.
-func Install(ctx context.Context, c Client) context.Context {
-	return context.WithValue(ctx, &clientCtxKey, c)
-}
-
-// MustClient returns the `Client` implementation stored in the context.
-//
-// Panics if not found.
-func MustClient(ctx context.Context) Client {
-	c := ctx.Value(&clientCtxKey)
-	if c == nil {
-		panic("Tree Status Client not found in the context")
-	}
-	return c.(Client)
-}
-
-// FetchLatest fetches the latest tree status.
-//
-// This is a shortcut of `tree.mustClient(ctx).FetchLatest(ctx, endpoint)`.
-func FetchLatest(ctx context.Context, endpoint string) (Status, error) {
-	return MustClient(ctx).FetchLatest(ctx, endpoint)
+	return &httpClientImpl{&http.Client{Transport: t}}, nil
 }
 
 type httpClientImpl struct {
