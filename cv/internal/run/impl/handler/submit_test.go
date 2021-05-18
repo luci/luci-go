@@ -398,23 +398,6 @@ func TestSubmitter(t *testing.T) {
 			So(waitlist.Index(runID), ShouldBeLessThan, 0) // doesn't exist
 		}
 
-		Convey("PreCondition Failure", func() {
-			ctx = memlogger.Use(ctx)
-			log := logging.Get(ctx).(*memlogger.MemLogger)
-			Convey("Submit queue not acquired", func() {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return submit.Release(ctx, s.rm.NotifyReadyForSubmission, s.runID)
-				}, nil), ShouldBeNil)
-				So(s.submit(ctx), ShouldBeNil)
-				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
-					&eventpb.SubmissionCompleted{
-						Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
-					},
-				)
-				So(log, memlogger.ShouldHaveLog, logging.Warning, "run no longer holds submit queue, currently held by")
-			})
-		})
-
 		Convey("Submit successfully", func() {
 			So(s.submit(ctx), ShouldBeNil)
 			verifyRunReleased(s.runID)
@@ -436,6 +419,21 @@ func TestSubmitter(t *testing.T) {
 		// Also test that submission has exhausted the allocated time.
 
 		Convey("Submit fails permanently when", func() {
+			Convey("Not holding Submit Queue", func() {
+				ctx = memlogger.Use(ctx)
+				log := logging.Get(ctx).(*memlogger.MemLogger)
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return submit.Release(ctx, s.rm.NotifyReadyForSubmission, s.runID)
+				}, nil), ShouldBeNil)
+				So(s.submit(ctx), ShouldBeNil)
+				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
+					&eventpb.SubmissionCompleted{
+						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+					},
+				)
+				So(log, memlogger.ShouldHaveLog, logging.Error, "BUG: run no longer holds submit queue, currently held by")
+			})
+
 			Convey("No submit privilege", func() {
 				// Submit gHost1/1 successfully but lack of submission right to
 				// gHost2/2.
@@ -460,6 +458,7 @@ func TestSubmitter(t *testing.T) {
 					},
 				)
 			})
+
 			Convey("A new revision is uploaded ", func() {
 				// gHost2/2 gets a new PS.
 				ct.GFake.MutateChange(gHost2, 2, func(c *gf.Change) {

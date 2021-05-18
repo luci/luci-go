@@ -444,24 +444,29 @@ func newSubmitter(ctx context.Context, rs *state.RunState, rm RM) *submitter {
 var ErrTransientSubmissionFailure = errors.New("submission failed transiently", transient.Tag)
 
 func (s submitter) submit(ctx context.Context) error {
-	var sc *eventpb.SubmissionCompleted
-	switch passed, err := s.checkPrecondition(ctx); {
+	switch cur, err := submit.CurrentRun(ctx, s.runID.LUCIProject()); {
 	case err != nil:
-		sc = classifyErr(ctx, err)
-	case !passed:
-		sc = &eventpb.SubmissionCompleted{
-			Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
-		}
-	default: // precondition check passed
-		if cls, err := run.LoadRunCLs(ctx, s.runID, s.clids); err != nil {
-			sc = classifyErr(ctx, err)
-		} else {
-			dctx, cancel := clock.WithDeadline(ctx, s.deadline)
-			defer cancel()
-			sc = s.submitCLs(dctx, cls)
-		}
+		return s.endSubmission(ctx, classifyErr(ctx, err))
+	case cur != s.runID:
+		logging.Errorf(ctx, "BUG: run no longer holds submit queue, currently held by %q", cur)
+		return s.endSubmission(ctx, &eventpb.SubmissionCompleted{
+			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+		})
 	}
 
+	cls, err := run.LoadRunCLs(ctx, s.runID, s.clids)
+	if err != nil {
+		return s.endSubmission(ctx, classifyErr(ctx, err))
+	}
+	dctx, cancel := clock.WithDeadline(ctx, s.deadline)
+	defer cancel()
+	sc := s.submitCLs(dctx, cls)
+	return s.endSubmission(ctx, sc)
+}
+
+// endSubmission notifies RM about submission result and release Submit Queue
+// if necessary.
+func (s submitter) endSubmission(ctx context.Context, sc *eventpb.SubmissionCompleted) error {
 	if sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT {
 		// Do not release queue for transient failure.
 		if err := s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, true); err != nil {
@@ -551,17 +556,6 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.Sub
 	return &eventpb.SubmissionCompleted{
 		Result: eventpb.SubmissionResult_SUCCEEDED,
 	}
-}
-
-func (s submitter) checkPrecondition(ctx context.Context) (passed bool, err error) {
-	switch cur, err := submit.CurrentRun(ctx, s.runID.LUCIProject()); {
-	case err != nil:
-		return false, err
-	case cur != s.runID:
-		logging.Warningf(ctx, "run no longer holds submit queue, currently held by %q", cur)
-		return false, nil
-	}
-	return true, nil
 }
 
 func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
