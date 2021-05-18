@@ -128,6 +128,24 @@
       "parentUuid": "e55026e1_877f06cf",
       "revId": "25c4da4f2c8acf37f3156cc206237dd7f461bb75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aca03ace_49188ee8",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T08:46:06Z",
+      "side": 1,
+      "message": "Could you use testclock to avoid such duration?\nhttps://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/clock/testclock/testclock_test.go;l\u003d26;drc\u003db9c9760275c0d4dc0ced09665fa821a2964092f0",
+      "parentUuid": "a0c9fba1_b859557a",
+      "revId": "25c4da4f2c8acf37f3156cc206237dd7f461bb75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
