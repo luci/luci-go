@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b789fc0b_71cacd63",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-18T16:24:10Z",
+      "side": 1,
+      "message": "can\u0027t see in the preview",
+      "parentUuid": "bcf273e4_f5ea693b",
+      "range": {
+        "startLine": 300,
+        "startChar": 14,
+        "endLine": 300,
+        "endChar": 33
+      },
+      "revId": "8e3a3ef253ce274418852952602f2b6e3cc8fdef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "117a3a05_e92f6c04",
@@ -132,6 +156,30 @@
       "side": 1,
       "message": "I can\u0027t think of a clean way to dedupe this.\nI think an \u0027openURLInElement()\u0027 function is a bit too specific for the amount of code it can dedupe for us.\nDo you have any suggestion?",
       "parentUuid": "117a3a05_e92f6c04",
+      "range": {
+        "startLine": 302,
+        "startChar": 6,
+        "endLine": 309,
+        "endChar": 0
+      },
+      "revId": "8e3a3ef253ce274418852952602f2b6e3cc8fdef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "abdb85fe_2d87270f",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-18T16:24:10Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d39e756c_fa89f6d4",
       "range": {
         "startLine": 302,
         "startChar": 6,
