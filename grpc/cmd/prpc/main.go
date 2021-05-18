@@ -78,6 +78,7 @@ func (r *cmdRun) registerBaseFlags(defaultAuthOpts auth.Options) {
 	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
 	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, "Force HTTP instead of HTTPS")
 	r.auth.Register(&r.Flags, defaultAuthOpts)
+	r.auth.RegisterIDTokenFlags(&r.Flags)
 }
 
 func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Client, error) {
