@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8663505d_2f99804b",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T05:24:12Z",
+      "side": 1,
+      "message": "wrap error",
+      "range": {
+        "startLine": 76,
+        "startChar": 15,
+        "endLine": 76,
+        "endChar": 18
+      },
+      "revId": "0bd1977136b5017bcb5180f4dcf38de6be7e7246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04d7e2d6_520bddad",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T05:24:12Z",
+      "side": 1,
+      "message": "wrapper error.",
+      "range": {
+        "startLine": 104,
+        "startChar": 9,
+        "endLine": 104,
+        "endChar": 12
+      },
+      "revId": "0bd1977136b5017bcb5180f4dcf38de6be7e7246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4fa47994_49e1061d",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T05:24:12Z",
+      "side": 1,
+      "message": "I think this message is confusing as the task completed with shown state?",
+      "range": {
+        "startLine": 114,
+        "startChar": 35,
+        "endLine": 114,
+        "endChar": 43
+      },
+      "revId": "0bd1977136b5017bcb5180f4dcf38de6be7e7246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e66a9ffc_3198e8b4",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T05:24:12Z",
+      "side": 1,
+      "message": "Could you add test case returning alive state?",
+      "revId": "0bd1977136b5017bcb5180f4dcf38de6be7e7246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

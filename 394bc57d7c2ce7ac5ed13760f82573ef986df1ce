@@ -412,6 +412,30 @@
       },
       "revId": "394bc57d7c2ce7ac5ed13760f82573ef986df1ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be5a0375_d1e01961",
+        "filename": "client/cmd/swarming/lib/testcommon.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T05:24:12Z",
+      "side": 1,
+      "message": "ping?",
+      "parentUuid": "55a07176_ddc2481f",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 11
+      },
+      "revId": "394bc57d7c2ce7ac5ed13760f82573ef986df1ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
