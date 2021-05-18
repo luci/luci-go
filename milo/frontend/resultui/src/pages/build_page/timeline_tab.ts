@@ -12,8 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { axisBottom, axisLeft, axisTop, scaleLinear, scaleTime, select as d3Select, timeMillisecond } from 'd3';
+import {
+  axisBottom,
+  axisLeft,
+  axisTop,
+  scaleLinear,
+  scaleTime,
+  select as d3Select,
+  Selection,
+  timeMillisecond,
+} from 'd3';
 import { css, customElement, html, property } from 'lit-element';
+import { DateTime } from 'luxon';
 import { autorun, observable } from 'mobx';
 
 import '../../components/dot_spinner';
@@ -24,12 +34,13 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
-import { NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
+import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { StepExt } from '../../models/step_ext';
 import commonStyle from '../../styles/common_style.css';
 
 const MARGIN = 10;
-const AXIS_HEIGHT = 25;
+const TOP_AXIS_HEIGHT = 35;
+const BOTTOM_AXIS_HEIGHT = 25;
 const BORDER_SIZE = 1;
 const HALF_BORDER_SIZE = BORDER_SIZE / 2;
 
@@ -130,6 +141,7 @@ export class TimelineTabElement extends MiloBaseElement {
   private scaleStep!: d3.ScaleLinear<number, number, never>;
   private timeInterval!: d3.TimeInterval;
   private readonly now = Date.now();
+  private relativeTimeText!: Selection<SVGTextElement, unknown, null, undefined>;
 
   connectedCallback() {
     super.connectedCallback();
@@ -212,20 +224,28 @@ export class TimelineTabElement extends MiloBaseElement {
     const svg = d3Select(this.headerEle)
       .attr('id', 'header')
       .append('svg')
-      .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
+      .attr('viewport', `0 0 ${this.totalWidth} ${TOP_AXIS_HEIGHT}`);
 
     svg
       .append('text')
       .attr('x', TEXT_MARGIN)
-      .attr('y', AXIS_HEIGHT - TEXT_MARGIN / 2)
+      .attr('y', TOP_AXIS_HEIGHT - TEXT_MARGIN / 2)
       .attr('font-weight', '500')
       .text('Build Start Time: ' + build.startTime!.toFormat(NUMERIC_TIME_FORMAT));
 
     const headerRootGroup = svg
       .append('g')
-      .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${AXIS_HEIGHT - HALF_BORDER_SIZE})`);
+      .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`);
     const topAxis = axisTop(this.scaleTime).ticks(this.timeInterval);
     headerRootGroup.call(topAxis);
+
+    this.relativeTimeText = headerRootGroup
+      .append('text')
+      .style('opacity', 0)
+      .attr('id', 'relative-time')
+      .attr('fill', 'red')
+      .attr('y', -TEXT_HEIGHT - TEXT_MARGIN)
+      .attr('text-anchor', 'end');
 
     // Top border for the side panel.
     headerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
@@ -238,7 +258,7 @@ export class TimelineTabElement extends MiloBaseElement {
     const svg = d3Select(this.footerEle)
       .attr('id', 'footer')
       .append('svg')
-      .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
+      .attr('viewport', `0 0 ${this.totalWidth} ${BOTTOM_AXIS_HEIGHT}`);
 
     if (build.endTime) {
       svg
@@ -406,6 +426,38 @@ export class TimelineTabElement extends MiloBaseElement {
       }
     }
 
+    const yRuler = svg
+      .append('line')
+      .style('opacity', 0)
+      .attr('stroke', 'red')
+      .attr('pointer-events', 'none')
+      .attr('y1', 0)
+      .attr('y2', this.bodyHeight);
+
+    let svgBox: DOMRect | null = null;
+    svg.on('mouseover', () => {
+      this.relativeTimeText.style('opacity', 1);
+      yRuler.style('opacity', 1);
+    });
+    svg.on('mouseout', () => {
+      this.relativeTimeText.style('opacity', 0);
+      yRuler.style('opacity', 0);
+    });
+    svg.on('mousemove', (e: MouseEvent) => {
+      if (svgBox === null) {
+        svgBox = svg.node()!.getBoundingClientRect();
+      }
+      const x = e.pageX - svgBox.x;
+
+      yRuler.attr('x1', x);
+      yRuler.attr('x2', x);
+
+      const time = DateTime.fromJSDate(this.scaleTime.invert(x));
+      const duration = time.diff(build.startTime!);
+      this.relativeTimeText.attr('x', x);
+      this.relativeTimeText.text(displayDuration(duration) + ' since build start');
+    });
+
     // Right border.
     svg
       .append('line')
@@ -429,7 +481,7 @@ export class TimelineTabElement extends MiloBaseElement {
 
       #timeline {
         display: grid;
-        grid-template-rows: ${AXIS_HEIGHT}px 1fr ${AXIS_HEIGHT}px;
+        grid-template-rows: ${TOP_AXIS_HEIGHT}px 1fr ${BOTTOM_AXIS_HEIGHT}px;
         grid-template-columns: ${SIDE_PANEL_WIDTH}px 1fr;
         grid-template-areas:
           'header header'
@@ -475,6 +527,10 @@ export class TimelineTabElement extends MiloBaseElement {
 
       text {
         fill: var(--default-text-color);
+      }
+
+      #relative-time {
+        fill: red;
       }
 
       .grid line {
