@@ -16,6 +16,29 @@
       "message": "ptal",
       "revId": "4b6201849abf18ce89281aa8d8910b5343adec08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "832516ec_bb7438c3",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-18T22:44:00Z",
+      "side": 1,
+      "message": "nit: probably should have \"BUG: \" or \"FIXME: \" to get attention of whoever sees the log.",
+      "range": {
+        "startLine": 451,
+        "startChar": 22,
+        "endLine": 451,
+        "endChar": 23
+      },
+      "revId": "4b6201849abf18ce89281aa8d8910b5343adec08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
