@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7972e030_6491fa6e",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-05-18T03:51:50Z",
+      "side": 1,
+      "message": "pollTask() doesn\u0027t seem to be necessary to be a method of terminateRun.\nCan this be a function?",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 22
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ab8e5905_88450d0f",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-05-18T03:51:50Z",
+      "side": 1,
+      "message": "I think a constant delay would be ok for simplicity. e.g. 5 sec, 10 sec.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 3
+      },
+      "revId": "b8f0ad967e04078895c505632c99c6d9d72af7e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
