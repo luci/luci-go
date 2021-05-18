@@ -50,7 +50,7 @@ func TestDeleteBots(t *testing.T) {
 		givenbotID := []string{}
 
 		service := &testService{
-			deleteBots: func(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error) {
+			deleteBot: func(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error) {
 				givenbotID = append(givenbotID, botID)
 				if botID == failbotID {
 					return nil, &googleapi.Error{Code: 404}
