@@ -44,7 +44,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
-	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // OnReadyForSubmission implements Handler interface.
@@ -71,13 +70,9 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		if err != nil {
 			return nil, err
 		}
-		s, err := newSubmitter(ctx, rs, impl.RM)
-		if err != nil {
-			return nil, err
-		}
 		return &Result{
 			State:         rs,
-			PostProcessFn: s.submit,
+			PostProcessFn: newSubmitter(ctx, rs, impl.RM).submit,
 		}, nil
 	default:
 		panic(fmt.Errorf("impossible status %s", status))
@@ -224,13 +219,9 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM
 	case taskID == mustTaskIDFromContext(ctx):
 		// Matching taskID indicates current task is the retry of a previous
 		// submitting task that has failed transiently. Continue the submission.
-		s, err := newSubmitter(ctx, rs, rm)
-		if err != nil {
-			return nil, err
-		}
 		return &Result{
 			State:         rs,
-			PostProcessFn: s.submit,
+			PostProcessFn: newSubmitter(ctx, rs, rm).submit,
 		}, nil
 	default:
 		// Presumably another task is working on the submission at this time. So
@@ -424,20 +415,13 @@ type submitter struct {
 	runID common.RunID
 	// deadline is when this submission should be stopped.
 	deadline time.Time
-	// treeURL is used to check if tree is closed at the beginning
-	// of submission.
-	treeURL string
 	// clids contains ids of cls to be submitted in submission order.
 	clids common.CLIDs
 	// rm is used to interact with Run Manager.
 	rm RM
 }
 
-func newSubmitter(ctx context.Context, rs *state.RunState, rm RM) (*submitter, error) {
-	cg, err := rs.LoadConfigGroup(ctx)
-	if err != nil {
-		return nil, err
-	}
+func newSubmitter(ctx context.Context, rs *state.RunState, rm RM) *submitter {
 	submission := rs.Run.Submission
 	notSubmittedCLs := make(common.CLIDs, 0, len(submission.GetCls())-len(submission.GetSubmittedCls()))
 	submitted := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
@@ -450,10 +434,9 @@ func newSubmitter(ctx context.Context, rs *state.RunState, rm RM) (*submitter, e
 	return &submitter{
 		runID:    rs.Run.ID,
 		deadline: submission.GetDeadline().AsTime(),
-		treeURL:  cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
 		clids:    notSubmittedCLs,
 		rm:       rm,
-	}, nil
+	}
 }
 
 // ErrTransientSubmissionFailure indicates that the submission has failed
@@ -577,16 +560,6 @@ func (s submitter) checkPrecondition(ctx context.Context) (passed bool, err erro
 	case cur != s.runID:
 		logging.Warningf(ctx, "run no longer holds submit queue, currently held by %q", cur)
 		return false, nil
-	}
-
-	if s.treeURL != "" {
-		switch status, err := tree.FetchLatest(ctx, s.treeURL); {
-		case err != nil:
-			return false, err
-		case status.State != tree.Open && status.State != tree.Throttled:
-			logging.Warningf(ctx, "tree %q is closed when submission starts", s.treeURL)
-			return false, nil
-		}
 	}
 	return true, nil
 }

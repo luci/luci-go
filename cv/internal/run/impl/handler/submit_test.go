@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-	"go.chromium.org/luci/cv/internal/tree"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -349,7 +348,6 @@ func TestSubmitter(t *testing.T) {
 		s := submitter{
 			runID:    common.MakeRunID(lProject, now, 1, []byte("deadbeef")),
 			deadline: now.Add(1 * time.Minute),
-			treeURL:  "https://tree.example.com",
 			clids:    common.CLIDs{1, 2},
 			rm:       run.NewNotifier(ct.TQDispatcher),
 		}
@@ -414,17 +412,6 @@ func TestSubmitter(t *testing.T) {
 					},
 				)
 				So(log, memlogger.ShouldHaveLog, logging.Warning, "run no longer holds submit queue, currently held by")
-			})
-			Convey("Tree closed", func() {
-				ct.TreeFake.ModifyState(ctx, tree.Closed)
-				So(s.submit(ctx), ShouldBeNil)
-				verifyRunReleased(s.runID)
-				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
-					&eventpb.SubmissionCompleted{
-						Result: eventpb.SubmissionResult_FAILED_PRECONDITION,
-					},
-				)
-				So(log, memlogger.ShouldHaveLog, logging.Warning, "tree \"https://tree.example.com\" is closed when submission starts")
 			})
 		})
 
