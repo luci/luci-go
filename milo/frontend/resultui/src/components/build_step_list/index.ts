@@ -80,7 +80,7 @@ export class BuildStepListElement extends MiloBaseElement {
   protected render = reportRenderError.bind(this)(() => {
     return html`
       ${this.buildState.build?.rootSteps.map(
-        (step, i) => html`<milo-build-step-entry .number=${i + 1} .step=${step}></milo-build-step-entry>`
+        (step) => html`<milo-build-step-entry .step=${step}></milo-build-step-entry>`
       ) || ''}
       <div class="list-entry" style=${styleMap({ display: this.noStepText ? '' : 'none' })}>${this.noStepText}</div>
       <div id="load" class="list-entry" style=${styleMap({ display: this.loaded ? 'none' : '' })}>
