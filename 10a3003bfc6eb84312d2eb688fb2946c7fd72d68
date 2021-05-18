@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa56cd7f_445bc659",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T23:33:52Z",
+      "side": 1,
+      "message": "this is no-op?",
+      "range": {
+        "startLine": 89,
+        "startChar": 55,
+        "endLine": 89,
+        "endChar": 60
+      },
+      "revId": "10a3003bfc6eb84312d2eb688fb2946c7fd72d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0b6693c_bae3cad6",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T23:33:52Z",
+      "side": 1,
+      "message": "this can be moved to a specific convey test?",
+      "revId": "10a3003bfc6eb84312d2eb688fb2946c7fd72d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb6c9d55_4af447fb",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-18T23:33:52Z",
+      "side": 1,
+      "message": "do we need this if?",
+      "revId": "10a3003bfc6eb84312d2eb688fb2946c7fd72d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
