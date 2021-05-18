@@ -217,17 +217,11 @@ func attemptStatus(ctx context.Context, r *run.Run) cvbqpb.AttemptStatus {
 // used instead of the latest patchset, so that trivial patchsets such as minor
 // rebases and CL description updates don't change the key.
 func computeCLGroupKey(cls []*run.RunCL, isEquivalent bool) string {
-	// First sort by in a deterministic way by (host, number, patchset).
 	sort.Slice(cls, func(i, j int) bool {
-		// ExternalID includes host and change number but not patchset.
-		if cls[i].ExternalID != cls[j].ExternalID {
-			return cls[i].ExternalID < cls[j].ExternalID
-		}
-		if isEquivalent {
-			return cls[i].Detail.GetMinEquivalentPatchset() < cls[j].Detail.GetMinEquivalentPatchset()
-		} else {
-			return cls[i].Detail.GetPatchset() < cls[j].Detail.GetPatchset()
-		}
+		// ExternalID includes host and change number but not patchset; but
+		// different patchsets of the same CL will never be included in the
+		// same list, so sorting on only ExternalID is sufficient.
+		return cls[i].ExternalID < cls[j].ExternalID
 	})
 	h := sha256.New()
 	// CL group keys are meant to be opaque keys. We'd like to avoid people

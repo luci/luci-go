@@ -59,8 +59,9 @@ func TestMakeAttempt(t *testing.T) {
 			}
 			So(datastore.Put(ctx, r), ShouldBeNil)
 			So(datastore.Put(ctx, &run.RunCL{
-				ID:  1,
-				Run: datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				ID:         1,
+				Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				ExternalID: "gerrit/foo-review.googlesource.com/111",
 				Detail: &changelist.Snapshot{
 					LuciProject:           "lproject",
 					Patchset:              2,
@@ -126,8 +127,9 @@ func TestMakeAttempt(t *testing.T) {
 			}
 			So(datastore.Put(ctx, r), ShouldBeNil)
 			So(datastore.Put(ctx, &run.RunCL{
-				ID:  3,
-				Run: datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				ID:         3,
+				Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				ExternalID: "gerrit/foo-review.googlesource.com/333",
 				Detail: &changelist.Snapshot{
 					LuciProject:           "lproject",
 					Patchset:              12,
@@ -146,8 +148,9 @@ func TestMakeAttempt(t *testing.T) {
 				Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &run.RunCL{
-				ID:  5,
-				Run: datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				ID:         5,
+				Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				ExternalID: "gerrit/foo-review.googlesource.com/555",
 				Detail: &changelist.Snapshot{
 					LuciProject:           "lproject",
 					Patchset:              6,
@@ -172,8 +175,8 @@ func TestMakeAttempt(t *testing.T) {
 				Key:                  runID.AttemptKey(),
 				LuciProject:          "lproject",
 				ConfigGroup:          r.ConfigGroupID.Name(),
-				ClGroupKey:           "47b672b6236f79dd",
-				EquivalentClGroupKey: "a6994f53a448ff5d",
+				ClGroupKey:           "cad522cbfdc9e5ca",
+				EquivalentClGroupKey: "187bf41fdbe46088",
 				StartTime:            timestamppb.New(r.CreateTime),
 				EndTime:              timestamppb.New(r.EndTime),
 				GerritChanges: []*cvbqpb.GerritChange{
