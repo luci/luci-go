@@ -379,6 +379,423 @@ func TestOnReadyForSubmission(t *testing.T) {
 	})
 }
 
+func TestOnSubmissionCompleted(t *testing.T) {
+	t.Parallel()
+
+	Convey("OnSubmissionCompleted", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "x-review.example.com"
+		rid := common.MakeRunID(lProject, ct.Clock.Now().Add(-2*time.Minute), 1, []byte("deadbeef"))
+		runCLs := common.CLIDs{1, 2}
+		r := run.Run{
+			ID:         rid,
+			Status:     run.Status_SUBMITTING,
+			CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
+			StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
+			CLs:        runCLs,
+		}
+		So(datastore.Put(ctx, &r), ShouldBeNil)
+		cg := &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{Name: "main"},
+			},
+		}
+		ct.Cfg.Create(ctx, rid.LUCIProject(), cg)
+		meta, err := config.GetLatestMeta(ctx, rid.LUCIProject())
+		So(err, ShouldBeNil)
+		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
+		r.ConfigGroupID = meta.ConfigGroupIDs[0]
+
+		genCL := func(clid common.CLID, change int, deps ...common.CLID) (*gerritpb.ChangeInfo, *changelist.CL, *run.RunCL) {
+			ci := gf.CI(
+				change, gf.PS(2),
+				gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), gf.U("user-100")),
+				gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
+			t := trigger.Find(ci, cg.ConfigGroups[0])
+			So(t.GetGerritAccountId(), ShouldEqual, 100)
+			cl := &changelist.CL{
+				ID:         clid,
+				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
+				EVersion:   10,
+				Snapshot: &changelist.Snapshot{
+					ExternalUpdateTime:    timestamppb.New(clock.Now(ctx).Add(-1 * time.Minute)),
+					LuciProject:           lProject,
+					Patchset:              2,
+					MinEquivalentPatchset: 1,
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
+						},
+					},
+				},
+			}
+			runCL := &run.RunCL{
+				ID:         clid,
+				Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
+				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
+				Detail: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
+						},
+					},
+				},
+				Trigger: t,
+			}
+			if len(deps) > 0 {
+				cl.Snapshot.Deps = make([]*changelist.Dep, len(deps))
+				runCL.Detail.Deps = make([]*changelist.Dep, len(deps))
+				for i, dep := range deps {
+					cl.Snapshot.Deps[i] = &changelist.Dep{
+						Clid: int64(dep),
+						Kind: changelist.DepKind_HARD,
+					}
+					runCL.Detail.Deps[i] = &changelist.Dep{
+						Clid: int64(dep),
+						Kind: changelist.DepKind_HARD,
+					}
+				}
+			}
+			return ci, cl, runCL
+		}
+
+		ci1, cl1, runCL1 := genCL(1, 1111, 2)
+		ci2, cl2, runCL2 := genCL(2, 2222)
+		So(datastore.Put(ctx, cl1, cl2, runCL1, runCL2), ShouldBeNil)
+
+		ct.GFake.CreateChange(&gf.Change{
+			Host: gHost,
+			Info: proto.Clone(ci1).(*gerritpb.ChangeInfo),
+			ACLs: gf.ACLRestricted(lProject),
+		})
+		ct.GFake.CreateChange(&gf.Change{
+			Host: gHost,
+			Info: proto.Clone(ci2).(*gerritpb.ChangeInfo),
+			ACLs: gf.ACLRestricted(lProject),
+		})
+		ct.GFake.SetDependsOn(gHost, ci1, ci2)
+
+		rs := &state.RunState{Run: r}
+		h := &Impl{
+			RM: run.NewNotifier(ct.TQDispatcher),
+		}
+
+		statuses := []run.Status{
+			run.Status_SUCCEEDED,
+			run.Status_FAILED,
+			run.Status_CANCELLED,
+		}
+		for _, status := range statuses {
+			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					waitlisted, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, rs.Run.ID, nil)
+					So(waitlisted, ShouldBeFalse)
+					return err
+				}, nil), ShouldBeNil)
+				rs.Run.Status = status
+				res, err := h.OnSubmissionCompleted(ctx, rs, nil)
+				So(err, ShouldBeNil)
+				So(res.State, ShouldEqual, rs)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldBeNil)
+				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.Run.ID)
+				So(err, ShouldBeNil)
+				So(current, ShouldBeEmpty)
+				So(waitlist, ShouldBeEmpty)
+			})
+		}
+
+		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
+		Convey("Succeeded", func() {
+			sc := &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_SUCCEEDED,
+			}
+			res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+			So(err, ShouldBeNil)
+			So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
+			So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now().UTC())
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+			So(res.PostProcessFn, ShouldBeNil)
+		})
+
+		Convey("Transient failure", func() {
+			sc := &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
+			}
+			Convey("When deadline is not exceeded", func() {
+				rs.Run.Submission = &run.Submission{
+					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
+				}
+
+				Convey("Continue submission if TaskID matches", func() {
+					rs.Run.Submission.TaskId = "task-foo" // same task ID as the current task
+					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+					So(err, ShouldBeNil)
+					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
+					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+						Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
+						TaskId:   "task-foo",
+					}) // unchanged
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldNotBeNil)
+				})
+
+				Convey("Sends Poke if TaskID doesn't match", func() {
+					rs.Run.Submission.TaskId = "another-task"
+					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+					So(err, ShouldBeNil)
+					So(res.State, ShouldEqual, rs)
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					runtest.AssertReceivedPoke(ctx, rs.Run.ID, rs.Run.Submission.Deadline.AsTime())
+				})
+			})
+
+			Convey("When deadline is exceeded", func() {
+				rs.Run.Submission = &run.Submission{
+					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(-10 * time.Minute)),
+					TaskId:   "task-foo",
+				}
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					waitlisted, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, rid, nil)
+					So(waitlisted, ShouldBeFalse)
+					return err
+				}, nil), ShouldBeNil)
+
+				Convey("Single CL Run", func() {
+					rs.Run.Submission.Cls = []int64{2}
+					Convey("Not submitted", func() {
+						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+						So(err, ShouldBeNil)
+						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.SideEffectFn, ShouldBeNil)
+						So(res.PreserveEvents, ShouldBeFalse)
+						So(res.PostProcessFn, ShouldBeNil)
+						ci := ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info
+						lastMsg := gf.LastMessage(ci).GetMessage()
+						So(lastMsg, ShouldContainSubstring, timeoutMsg)
+						So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+						for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
+							So(vote.GetValue(), ShouldEqual, 0)
+						}
+						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+					})
+					Convey("Submitted", func() {
+						rs.Run.Submission.SubmittedCls = []int64{2}
+						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+						So(err, ShouldBeNil)
+						So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
+						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.SideEffectFn, ShouldBeNil)
+						So(res.PreserveEvents, ShouldBeFalse)
+						So(res.PostProcessFn, ShouldBeNil)
+						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2) // unchanged
+						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+					})
+				})
+
+				Convey("Multi CLs Run", func() {
+					rs.Run.Submission.Cls = []int64{2, 1}
+					Convey("None of the CLs are submitted", func() {
+						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+						So(err, ShouldBeNil)
+						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.SideEffectFn, ShouldBeNil)
+						So(res.PreserveEvents, ShouldBeFalse)
+						So(res.PostProcessFn, ShouldBeNil)
+						for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2} {
+							ci := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
+							So(ci, gf.ShouldLastMessageContain, timeoutMsg)
+							So(ci, gf.ShouldLastMessageContain, "None of the CLs in the Run were submitted by CV")
+							So(ci, gf.ShouldLastMessageContain, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+							for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
+								So(vote.GetValue(), ShouldEqual, 0)
+							}
+						}
+						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+					})
+
+					Convey("CLs partially submitted", func() {
+						rs.Run.Submission.SubmittedCls = []int64{2}
+						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+						So(err, ShouldBeNil)
+						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.SideEffectFn, ShouldBeNil)
+						So(res.PreserveEvents, ShouldBeFalse)
+						So(res.PostProcessFn, ShouldBeNil)
+						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2) // ci2 untouched
+						ci := ct.GFake.GetChange(gHost, int(ci1.GetNumber())).Info
+						So(ci, gf.ShouldLastMessageContain, timeoutMsg)
+						So(ci, gf.ShouldLastMessageContain, "CV partially submitted the CLs in the Run")
+						So(ci, gf.ShouldLastMessageContain, "Not submitted: [https://x-review.example.com/1111]")
+						So(ci, gf.ShouldLastMessageContain, "Submitted: [https://x-review.example.com/2222]")
+						for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
+							So(vote.GetValue(), ShouldEqual, 0)
+						}
+						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+					})
+
+					Convey("CLs fully submitted", func() {
+						rs.Run.Submission.SubmittedCls = []int64{2, 1}
+						res, err := h.OnReadyForSubmission(ctx, rs)
+						So(err, ShouldBeNil)
+						So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
+						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.SideEffectFn, ShouldBeNil)
+						So(res.PreserveEvents, ShouldBeFalse)
+						So(res.PostProcessFn, ShouldBeNil)
+						// both untouched
+						So(ct.GFake.GetChange(gHost, int(ci1.GetNumber())).Info, ShouldResembleProto, ci1)
+						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2)
+						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+					})
+				})
+			})
+		})
+
+		Convey("Permanent failure", func() {
+			sc := &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+			}
+			rs.Run.Submission = &run.Submission{
+				Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
+				TaskId:   "task-foo",
+			}
+
+			Convey("Single CL Run", func() {
+				rs.Run.Submission.Cls = []int64{2}
+				runAndVerify := func(verifyMsgFn func(lastMsg string)) {
+					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+					So(err, ShouldBeNil)
+					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					ci := ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info
+					verifyMsgFn(gf.LastMessage(ci).GetMessage())
+					for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
+						So(vote.GetValue(), ShouldEqual, 0)
+					}
+				}
+
+				Convey("CL Submission failure", func() {
+					sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
+						ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+							Clid:    2,
+							Message: "CV failed to submit this CL because of merge conflict",
+						},
+					}
+					runAndVerify(func(lastMsg string) {
+						So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
+						So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+					})
+				})
+
+				Convey("Unclassified failure", func() {
+					runAndVerify(func(lastMsg string) {
+						So(lastMsg, ShouldContainSubstring, defaultMsg)
+						So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+					})
+				})
+			})
+
+			Convey("Multi CLs Run", func() {
+				rs.Run.Submission.Cls = []int64{2, 1}
+				runAndVerify := func(verifyMsgFn func(changeNum int64, lastMsg string)) {
+					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+					So(err, ShouldBeNil)
+					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2} {
+						ci := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
+						verifyMsgFn(ci.GetNumber(), gf.LastMessage(ci).GetMessage())
+						if ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info.GetStatus() != gerritpb.ChangeStatus_MERGED {
+							for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
+								So(vote.GetValue(), ShouldEqual, 0)
+							}
+						}
+					}
+				}
+				Convey("None of the CLs are submitted", func() {
+					Convey("CL Submission failure", func() {
+						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
+							ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+								Clid:    2,
+								Message: "CV failed to submit this CL because of merge conflict",
+							},
+						}
+						runAndVerify(func(changeNum int64, lastMsg string) {
+							switch changeNum {
+							case 1111:
+								So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s): https://x-review.example.com/2222")
+							case 2222:
+								So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
+							}
+							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
+							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+						})
+					})
+
+					Convey("Unclassified failure", func() {
+						runAndVerify(func(changeNum int64, lastMsg string) {
+							So(lastMsg, ShouldContainSubstring, defaultMsg)
+							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
+							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+						})
+					})
+				})
+
+				Convey("CLs partially submitted", func() {
+					rs.Run.Submission.SubmittedCls = []int64{2}
+					ct.GFake.MutateChange(gHost, int(ci2.GetNumber()), func(c *gf.Change) {
+						gf.PS(int(ci2.GetRevisions()[ci2.GetCurrentRevision()].GetNumber()) + 1)(c.Info)
+						gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
+					})
+
+					Convey("CL Submission failure", func() {
+						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
+							ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+								Clid:    1,
+								Message: "CV failed to submit this CL because of merge conflict",
+							},
+						}
+						runAndVerify(func(changeNum int64, lastMsg string) {
+							if changeNum == ci1.GetNumber() {
+								So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
+							}
+						})
+					})
+
+					Convey("Unclassified failure", func() {
+						runAndVerify(func(changeNum int64, lastMsg string) {
+							if changeNum == ci1.GetNumber() {
+								So(lastMsg, ShouldContainSubstring, defaultMsg)
+							}
+						})
+					})
+				})
+			})
+		})
+	})
+}
+
 func TestSubmitter(t *testing.T) {
 	Convey("Submitter", t, func() {
 		ct := cvtesting.Test{}

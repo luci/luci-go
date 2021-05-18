@@ -154,8 +154,32 @@ func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common
 }
 
 // OnSubmissionCompleted implements Handler interface.
-func (*Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
-	panic("implement")
+func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
+	switch status := rs.Run.Status; {
+	case run.IsEnded(status):
+		logging.Warningf(ctx, "received SubmissionCompleted event when Run is %s", status)
+		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, impl.RM); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	case status != run.Status_SUBMITTING:
+		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
+	case sc.GetResult() == eventpb.SubmissionResult_SUCCEEDED:
+		rs = rs.ShallowCopy()
+		rs.EndRun(ctx, run.Status_SUCCEEDED)
+		return &Result{State: rs}, nil
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
+		return continueSubmissionIfPossible(ctx, rs, impl.RM)
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
+		rs = rs.ShallowCopy()
+		rs.EndRun(ctx, run.Status_FAILED)
+		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	default:
+		panic(fmt.Errorf("impossible submission result %s", sc.GetResult()))
+	}
 }
 
 func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlisted bool, err error) {
