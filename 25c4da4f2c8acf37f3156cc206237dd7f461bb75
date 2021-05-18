@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "99f56e11_fbc58496",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T08:09:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1eb4677_25cc747d",
+      "range": {
+        "startLine": 93,
+        "startChar": 1,
+        "endLine": 93,
+        "endChar": 11
+      },
+      "revId": "25c4da4f2c8acf37f3156cc206237dd7f461bb75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9ae48627_10ead690",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d713c55_97edd443",
+        "filename": "client/cmd/swarming/lib/terminate.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T08:09:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ae48627_10ead690",
+      "range": {
+        "startLine": 76,
+        "startChar": 19,
+        "endLine": 76,
+        "endChar": 25
+      },
+      "revId": "25c4da4f2c8acf37f3156cc206237dd7f461bb75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e55026e1_877f06cf",
@@ -60,6 +108,24 @@
       "writtenOn": "2021-05-18T07:55:45Z",
       "side": 1,
       "message": "does this take 5 seconds?",
+      "revId": "25c4da4f2c8acf37f3156cc206237dd7f461bb75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0c9fba1_b859557a",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1493587
+      },
+      "writtenOn": "2021-05-18T08:09:24Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "e55026e1_877f06cf",
       "revId": "25c4da4f2c8acf37f3156cc206237dd7f461bb75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
