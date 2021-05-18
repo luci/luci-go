@@ -16,6 +16,24 @@
       "message": "idk about this. If I want to quickly tell how long did the step took, I am looking at the body and judge by the width of the block. Also that\u0027s the easiest way to tell which steps are long. \n\nAnd then, if I want to now exactly how long did the step take, I have to move my sight all the way to the left, trying not to accidentally move up or down, and then move back.\n\nShould we display this somewhere in the body? maybe after the step name?\nor on mouse hover?",
       "revId": "1d55ed63fac470016fbacf4f2395a34a78cfcd60",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea403ab0_4a252370",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-18T09:20:18Z",
+      "side": 1,
+      "message": "Removed the duration column. I will display the duration in a tooltip in a later CL.",
+      "parentUuid": "f3f2d336_ca4099dd",
+      "revId": "1d55ed63fac470016fbacf4f2395a34a78cfcd60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
