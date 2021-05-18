@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "de427610_c4b139a1",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-18T07:00:30Z",
+      "side": 1,
+      "message": "Why not return an error if b.Proto.CreateTime is unset?",
+      "parentUuid": "c6e093f8_4788cee3",
+      "range": {
+        "startLine": 237,
+        "startChar": 1,
+        "endLine": 237,
+        "endChar": 43
+      },
+      "revId": "d59f0c952a62f7ce0b0a0f7a3585284b7abbeda8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "dd037b26_e5e5dba3",

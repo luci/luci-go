@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5dc3be62_74d6b5a8",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-18T07:00:30Z",
+      "side": 1,
+      "message": "I thought this was no longer necessary if using protocmp. Anyway fixing is not in scope here.",
+      "revId": "8007cb65a0ca9805abf2aaef3d5d199914538607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37c32316_34ae8ea1",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 836,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-18T07:00:30Z",
+      "side": 1,
+      "message": "Why not just have UpdateTagIndex read from the populated proto fields instead of calling the on-datastore-write hook prematurely?",
+      "revId": "8007cb65a0ca9805abf2aaef3d5d199914538607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
