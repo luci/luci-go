@@ -34,6 +34,24 @@
       "parentUuid": "f3f2d336_ca4099dd",
       "revId": "1d55ed63fac470016fbacf4f2395a34a78cfcd60",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcc9a557_efa8598b",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-18T16:22:40Z",
+      "side": 1,
+      "message": "thanks",
+      "parentUuid": "ea403ab0_4a252370",
+      "revId": "1d55ed63fac470016fbacf4f2395a34a78cfcd60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
