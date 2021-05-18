@@ -154,8 +154,32 @@ func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common
 }
 
 // OnSubmissionCompleted implements Handler interface.
-func (*Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
-	panic("implement")
+func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
+	switch status := rs.Run.Status; {
+	case run.IsEnded(status):
+		logging.Warningf(ctx, "received SubmissionCompleted event when Run is %s", status)
+		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, impl.RM); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	case status != run.Status_SUBMITTING:
+		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
+	case sc.GetResult() == eventpb.SubmissionResult_SUCCEEDED:
+		rs = rs.ShallowCopy()
+		rs.EndRun(ctx, run.Status_SUCCEEDED)
+		return &Result{State: rs}, nil
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
+		return continueSubmissionIfPossible(ctx, rs, impl.RM)
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
+		rs = rs.ShallowCopy()
+		rs.EndRun(ctx, run.Status_FAILED)
+		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	default:
+		panic(fmt.Errorf("impossible submission result %s", sc.GetResult()))
+	}
 }
 
 func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlisted bool, err error) {
@@ -241,27 +265,10 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM
 		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.Run.ID))
 	}
 
-	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
-	case expired:
+	switch deadlineExceeded := clock.Now(ctx).After(deadline.AsTime()); {
+	case deadlineExceeded:
 		rs = rs.ShallowCopy()
-		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
-		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
-			// fully submitted
-			rs.EndRun(ctx, run.Status_SUCCEEDED)
-		default: // None submitted or partially submitted
-			rs.EndRun(ctx, run.Status_FAILED)
-			// synthesize submission completed event for timeout.
-			sc := &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-				FailureReason: &eventpb.SubmissionCompleted_Timeout{
-					Timeout: true,
-				},
-			}
-			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
-				return nil, err
-			}
-		}
-		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, rm); err != nil {
+		if err := handleDeadlineExceeded(ctx, rs, rm); err != nil {
 			return nil, err
 		}
 		return &Result{State: rs}, nil
@@ -280,6 +287,27 @@ func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM
 		}
 		return &Result{State: rs}, nil
 	}
+}
+
+func handleDeadlineExceeded(ctx context.Context, rs *state.RunState, rm RM) error {
+	switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
+	case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
+		// fully submitted
+		rs.EndRun(ctx, run.Status_SUCCEEDED)
+	default: // None submitted or partially submitted
+		rs.EndRun(ctx, run.Status_FAILED)
+		// synthesize submission completed event for timeout.
+		sc := &eventpb.SubmissionCompleted{
+			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+			FailureReason: &eventpb.SubmissionCompleted_Timeout{
+				Timeout: true,
+			},
+		}
+		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
+			return err
+		}
+	}
+	return releaseSubmitQueue(ctx, rs.Run.ID, rm)
 }
 
 func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted) error {
@@ -452,6 +480,20 @@ func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.Submi
 		}
 	}
 	return submitted, pending, failed
+}
+
+func isTreeOpen(ctx context.Context, treeURL string) (bool, error) {
+	if treeURL == "" {
+		return true, nil
+	}
+	switch status, err := tree.FetchLatest(ctx, treeURL); {
+	case err != nil:
+		return false, err
+	case status.State == tree.Open || status.State == tree.Throttled:
+		return true, nil
+	default:
+		return false, nil
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
