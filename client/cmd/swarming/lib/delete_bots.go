@@ -81,7 +81,7 @@ func (b *deletebotsRun) deleteBotsInList(ctx context.Context, botIDs []string, s
 	}
 
 	for _, botID := range botIDs {
-		res, err := service.DeleteBots(ctx, botID)
+		res, err := service.DeleteBot(ctx, botID)
 		if err != nil {
 			fmt.Printf("Failed Deleting %s\n", botID)
 			return err

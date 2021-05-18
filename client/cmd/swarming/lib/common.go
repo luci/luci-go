@@ -90,7 +90,7 @@ type swarmingService interface {
 	GetFilesFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error)
 	GetFilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
-	DeleteBots(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error)
+	DeleteBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error)
 }
 
 type swarmingServiceImpl struct {
@@ -260,8 +260,8 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string,
 	return bots, nil
 }
 
-func (s *swarmingServiceImpl) DeleteBots(ctx context.Context, botID string) (res *swarming.SwarmingRpcsDeletedResponse, err error) {
-	err = retryGoogleRPC(ctx, "DeleteBots", func() (ierr error) {
+func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res *swarming.SwarmingRpcsDeletedResponse, err error) {
+	err = retryGoogleRPC(ctx, "DeleteBot", func() (ierr error) {
 		res, ierr = s.service.Bot.Delete(botID).Context(ctx).Do()
 		return
 	})
