@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/runtest"
+	"go.chromium.org/luci/cv/internal/tree"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -67,7 +68,14 @@ func TestOnReadyForSubmission(t *testing.T) {
 		}
 		cg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
-				{Name: "main"},
+				{
+					Name: "main",
+					Verifiers: &cfgpb.Verifiers{
+						TreeStatus: &cfgpb.Verifiers_TreeStatus{
+							Url: "tree.example.com",
+						},
+					},
+				},
 			},
 		}
 		ct.Cfg.Create(ctx, rid.LUCIProject(), cg)
@@ -310,19 +318,62 @@ func TestOnReadyForSubmission(t *testing.T) {
 		})
 
 		for _, status := range []run.Status{run.Status_RUNNING, run.Status_WAITING_FOR_SUBMISSION} {
-			Convey(fmt.Sprintf("Mark submitting when status is %s", status), func() {
+			Convey(fmt.Sprintf("When status is %s", status), func() {
 				rs.Run.Status = status
-				res, err := h.OnReadyForSubmission(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
-				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Deadline: timestamppb.New(now.Add(20 * time.Minute)),
-					Cls:      []int64{2, 1}, // in submission order
-					TaskId:   "task-foo",
+				Convey("Mark submitting if Submit Queue is acquired and tree is open", func() {
+					res, err := h.OnReadyForSubmission(ctx, rs)
+					So(err, ShouldBeNil)
+					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
+					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+						Deadline:          timestamppb.New(now.Add(submissionDuration)),
+						Cls:               []int64{2, 1}, // in submission order
+						TaskId:            "task-foo",
+						TreeOpen:          true,
+						LastTreeCheckTime: timestamppb.New(now),
+					})
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldNotBeNil)
+					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, rid)
+					runtest.AssertReceivedReadyForSubmission(ctx, rid, now.Add(10*time.Second))
 				})
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.PostProcessFn, ShouldNotBeNil)
+
+				Convey("Add Run to waitlist when Submit Queue is occupied", func() {
+					// another run has taken the current slot
+					anotherRunID := common.MakeRunID(lProject, now, 1, []byte("cafecafe"))
+					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						_, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, anotherRunID, nil)
+						So(err, ShouldBeNil)
+						return nil
+					}, nil), ShouldBeNil)
+					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, anotherRunID)
+					res, err := h.OnReadyForSubmission(ctx, rs)
+					So(err, ShouldBeNil)
+					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					_, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rid)
+					So(err, ShouldBeNil)
+					So(waitlist.Index(rid), ShouldEqual, 0)
+				})
+
+				Convey("Revisit after 1 mintues if tree is closed", func() {
+					ct.TreeFake.ModifyState(ctx, tree.Closed)
+					res, err := h.OnReadyForSubmission(ctx, rs)
+					So(err, ShouldBeNil)
+					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+						TreeOpen:          false,
+						LastTreeCheckTime: timestamppb.New(now),
+					})
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
+					// Must not occupy the Submit Queue
+					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rid)
+				})
 			})
 		}
 	})

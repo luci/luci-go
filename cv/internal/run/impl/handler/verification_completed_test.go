@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
@@ -34,11 +33,9 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-	"go.chromium.org/luci/cv/internal/tree"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -52,7 +49,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
+		const lProject = "infra"
+		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
 		runCLs := common.CLIDs{1, 2}
 		cgID := config.MakeConfigGroupID("cafecafe", "main")
 		r := run.Run{
@@ -145,73 +143,21 @@ func TestOnVerificationCompleted(t *testing.T) {
 			now := ct.Clock.Now().UTC()
 			ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 
-			Convey("Works (Happy Path)", func() {
+			Convey("Delegate to OnReadyForSubmission", func() {
 				res, err := h.OnCQDVerificationCompleted(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldNotBeNil)
 				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Deadline:          timestamppb.New(now.Add(20 * time.Minute)),
+					Deadline:          timestamppb.New(now.Add(submissionDuration)),
 					Cls:               []int64{2, 1}, // in submission order
 					TaskId:            "task-foo",
 					TreeOpen:          true,
 					LastTreeCheckTime: timestamppb.New(now),
 				})
-				current, _, err := submit.LoadCurrentAndWaitlist(ctx, rid)
-				So(err, ShouldBeNil)
-				So(current, ShouldEqual, rid)
+				So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, rid)
 				runtest.AssertReceivedReadyForSubmission(ctx, rid, now.Add(10*time.Second))
-			})
-
-			Convey("Add Run to waitlist when submit queue is occupied", func() {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					// another run has taken the current slot
-					anotherRunID := common.MakeRunID("infra", now, 1, []byte("cafecafe"))
-					waitlisted, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, anotherRunID, cfg.GetSubmitOptions())
-					So(waitlisted, ShouldBeFalse)
-					So(err, ShouldBeNil)
-					return nil
-				}, nil), ShouldBeNil)
-				res, err := h.OnCQDVerificationCompleted(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-				_, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rid)
-				So(err, ShouldBeNil)
-				So(waitlist.Index(rid), ShouldEqual, 0)
-			})
-
-			Convey("Revisit after 1 mintues if tree is closed", func() {
-				ct.TreeFake.ModifyState(ctx, tree.Closed)
-				res, err := h.OnCQDVerificationCompleted(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Cls:               []int64{2, 1}, // in submission order
-					TreeOpen:          false,
-					LastTreeCheckTime: timestamppb.New(now),
-				})
-				So(res.SideEffectFn, ShouldBeNil)
-				runtest.AssertInEventbox(ctx, rid, &eventpb.Event{
-					Event: &eventpb.Event_Poke{
-						Poke: &eventpb.Poke{},
-					},
-					ProcessAfter: timestamppb.New(now.Add(1 * time.Minute)),
-				})
-			})
-
-			Convey("Treat Tree url not defined as open", func() {
-				cfg := proto.Clone(cfg).(*cfgpb.Config)
-				cfg.ConfigGroups[0].Verifiers = nil
-				ct.Cfg.Update(ctx, rid.LUCIProject(), cfg)
-				updateConfigGroupToLatest(rs)
-
-				res, err := h.OnCQDVerificationCompleted(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.State.Run.Submission.TreeOpen, ShouldEqual, true)
-				So(res.State.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(now))
 			})
 		})
 	})
