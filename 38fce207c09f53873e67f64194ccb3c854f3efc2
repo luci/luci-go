@@ -16,6 +16,46 @@
       "message": "ptal",
       "revId": "38fce207c09f53873e67f64194ccb3c854f3efc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf92852f_a7fabd25",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-18T23:38:38Z",
+      "side": 1,
+      "message": "lgtm: simplicity++ \u0026 suggestion (not insissting)",
+      "revId": "38fce207c09f53873e67f64194ccb3c854f3efc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7338bc3_739c01c2",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-18T23:38:38Z",
+      "side": 1,
+      "message": "iiuc, this is specific to the RM, so you can just create it inside runimpl.New(), passing a context if necessary\n(prior art: PM creates Gerrit poller)",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 85,
+        "endChar": 3
+      },
+      "revId": "38fce207c09f53873e67f64194ccb3c854f3efc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
