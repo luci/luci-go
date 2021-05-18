@@ -33,7 +33,7 @@ func TestTreeStatesClient(t *testing.T) {
 		ctx := Install(context.Background(), httpClientImpl{
 			&http.Client{Transport: &http.Transport{}},
 		})
-		client := mustClient(ctx)
+		client := MustClient(ctx)
 		Convey("Works", func() {
 			var actualReqURL string
 			mockSrv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
