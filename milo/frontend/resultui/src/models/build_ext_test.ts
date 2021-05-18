@@ -29,10 +29,10 @@ describe('BuildExt', () => {
         { name: 'root1', startTime: time } as Step,
         { name: 'root2', startTime: time },
         { name: 'root2|parent1', startTime: time },
-        { name: 'root2|parent1|child1', startTime: time },
-        { name: 'root2|parent1|child2', startTime: time },
         { name: 'root3', startTime: time },
+        { name: 'root2|parent1|child1', startTime: time },
         { name: 'root3|parent1', startTime: time },
+        { name: 'root2|parent1|child2', startTime: time },
         { name: 'root3|parent2', startTime: time },
         { name: 'root3|parent2|child1', startTime: time },
         { name: 'root3|parent2|child2', startTime: time },
@@ -42,20 +42,35 @@ describe('BuildExt', () => {
     assert.recursiveDeepInclude(build.rootSteps, [
       {
         name: 'root1',
+        selfName: 'root1',
+        depth: 0,
+        index: 0,
         children: [] as StepExt[],
       },
       {
         name: 'root2',
+        selfName: 'root2',
+        depth: 0,
+        index: 1,
         children: [
           {
             name: 'root2|parent1',
+            selfName: 'parent1',
+            depth: 1,
+            index: 0,
             children: [
               {
                 name: 'root2|parent1|child1',
+                selfName: 'child1',
+                depth: 2,
+                index: 0,
                 children: [],
               },
               {
                 name: 'root2|parent1|child2',
+                selfName: 'child2',
+                depth: 2,
+                index: 1,
                 children: [],
               },
             ],
@@ -64,20 +79,35 @@ describe('BuildExt', () => {
       },
       {
         name: 'root3',
+        selfName: 'root3',
+        depth: 0,
+        index: 2,
         children: [
           {
             name: 'root3|parent1',
+            selfName: 'parent1',
+            depth: 1,
+            index: 0,
             children: [],
           },
           {
             name: 'root3|parent2',
+            selfName: 'parent2',
+            depth: 1,
+            index: 1,
             children: [
               {
                 name: 'root3|parent2|child1',
+                selfName: 'child1',
+                depth: 2,
+                index: 0,
                 children: [],
               },
               {
                 name: 'root3|parent2|child2',
+                selfName: 'child2',
+                depth: 2,
+                index: 1,
                 children: [],
               },
             ],
