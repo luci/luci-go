@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8cbc8d94_387f6edc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-18T00:11:19Z",
+      "side": 1,
+      "message": "lgtm; I\u0027m working on a more extensive refactor on top of this.",
+      "revId": "d59f0c952a62f7ce0b0a0f7a3585284b7abbeda8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c6e093f8_4788cee3",
