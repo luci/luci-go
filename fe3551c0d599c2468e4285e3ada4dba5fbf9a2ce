@@ -16,6 +16,24 @@
       "message": "(I assume that gcloud audience is farily stable?)",
       "revId": "fe3551c0d599c2468e4285e3ada4dba5fbf9a2ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7480498_d1bb0d9c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-19T03:41:36Z",
+      "side": 1,
+      "message": "Yes, it is part of its source code.",
+      "parentUuid": "12ddcddc_4cc311f0",
+      "revId": "fe3551c0d599c2468e4285e3ada4dba5fbf9a2ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
