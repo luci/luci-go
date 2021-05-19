@@ -51,7 +51,7 @@ func (c *checkRun) Parse(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := c.isolateFlags.Parse(cwd, RequireIsolateFile); err != nil {
+	if err := c.isolateFlags.Parse(cwd); err != nil {
 		return err
 	}
 	if len(args) != 0 {

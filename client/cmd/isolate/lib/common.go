@@ -160,18 +160,7 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 	f.BoolVar(&c.AllowMissingFileDir, "allow-missing-file-dir", false, "If this flag is true, invalid entries in the isolated file are only logged, but won't stop it from being processed.")
 }
 
-// RequiredIsolateFlags specifies which flags are required on the command line
-// being parsed.
-type RequiredIsolateFlags uint
-
-const (
-	// RequireIsolateFile means the -isolate flag is required.
-	RequireIsolateFile RequiredIsolateFlags = 1 << iota
-	// RequireIsolatedFile means the -isolated flag is required.
-	RequireIsolatedFile
-)
-
-func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
+func (c *isolateFlags) Parse(cwd string) error {
 	if !filepath.IsAbs(cwd) {
 		return errors.Reason("cwd must be absolute path").Err()
 	}
@@ -191,23 +180,15 @@ func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 	}
 
 	if c.Isolate == "" {
-		if flags&RequireIsolateFile != 0 {
-			return errors.Reason("-isolate must be specified").Err()
-		}
-	} else {
-		if !filepath.IsAbs(c.Isolate) {
-			c.Isolate = filepath.Clean(filepath.Join(cwd, c.Isolate))
-		}
+		return errors.Reason("-isolate must be specified").Err()
 	}
 
-	if c.Isolated == "" {
-		if flags&RequireIsolatedFile != 0 {
-			return errors.Reason("-isolated must be specified").Err()
-		}
-	} else {
-		if !filepath.IsAbs(c.Isolated) {
-			c.Isolated = filepath.Clean(filepath.Join(cwd, c.Isolated))
-		}
+	if !filepath.IsAbs(c.Isolate) {
+		c.Isolate = filepath.Clean(filepath.Join(cwd, c.Isolate))
+	}
+
+	if c.Isolated != "" && !filepath.IsAbs(c.Isolated) {
+		c.Isolated = filepath.Clean(filepath.Join(cwd, c.Isolated))
 	}
 	return nil
 }
