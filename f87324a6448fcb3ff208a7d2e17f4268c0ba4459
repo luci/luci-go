@@ -20,6 +20,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f075404b_b07c83ce",
+        "filename": "milo/frontend/resultui/src/libs/utils.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1367998
+      },
+      "writtenOn": "2021-05-19T17:57:05Z",
+      "side": 1,
+      "message": "nit: \u0027helps set\u0027",
+      "range": {
+        "startLine": 83,
+        "startChar": 27,
+        "endLine": 83,
+        "endChar": 39
+      },
+      "revId": "f87324a6448fcb3ff208a7d2e17f4268c0ba4459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f719b8ae_9bfd3082",
         "filename": "milo/frontend/resultui/src/libs/utils.ts",
         "patchSetId": 1
