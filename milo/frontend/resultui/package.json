@@ -30,6 +30,7 @@
     "bottleneck": "^2.19.5",
     "codemirror": "^5.61.0",
     "copy-to-clipboard": "^3.3.1",
+    "d3": "^6.7.0",
     "diff2html": "^3.4.3",
     "dompurify": "^2.2.8",
     "fast-json-stable-stringify": "^2.1.0",
@@ -42,11 +43,8 @@
     "markdown-it": "^12.0.6",
     "mobx": "^5.15.7",
     "mobx-utils": "^5.6.2",
-    "moment": "^2.29.1",
     "reflect-metadata": "^0.1.13",
     "stackdriver-errors-js": "^0.8.0",
-    "vis-data": "^7.1.2",
-    "vis-timeline": "^7.4.8",
     "workbox-window": "^6.1.5"
   },
   "devDependencies": {
@@ -56,6 +54,7 @@
     "@types/codemirror": "0.0.109",
     "@types/copy-webpack-plugin": "^8.0.0",
     "@types/cypress-image-snapshot": "^3.1.5",
+    "@types/d3": "^6.3.0",
     "@types/dompurify": "^2.2.2",
     "@types/gapi": "0.0.39",
     "@types/gapi.auth2": "0.0.54",

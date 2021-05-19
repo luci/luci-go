@@ -12,23 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html } from 'lit-element';
-import { render } from 'lit-html';
-import escape from 'lodash-es/escape';
+import * as d3 from 'd3';
+import { css, customElement, html, property } from 'lit-element';
 import { autorun, observable } from 'mobx';
-import { DataSet } from 'vis-data/peer';
-import { Timeline } from 'vis-timeline/peer';
-import timelineStyle from 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
-import { displayDuration } from '../../libs/time_utils';
+import { errorHandler, forwardWithoutMsg, reportError } from '../../libs/error_handler';
 import commonStyle from '../../styles/common_style.css';
+
+const MARGIN = 10;
+const AXIS_HEIGHT = 20;
+const BORDER_SIZE = 1;
+
+const ROW_HEIGHT = 30;
+
+const SIDE_PANEL_WIDTH = 450;
+const MIN_GRAPH_WIDTH = 500 + SIDE_PANEL_WIDTH;
 
 @customElement('milo-timeline-tab')
 @errorHandler(forwardWithoutMsg)
@@ -41,141 +44,134 @@ export class TimelineTabElement extends MiloBaseElement {
   @observable.ref
   @consumeBuildState
   buildState!: BuildState;
-  @observable.ref rendered = false;
+
+  @observable.ref private totalWidth!: number;
+  @observable.ref private bodyWidth!: number;
+
+  // Don't set them as observable. When render methods update them, we don't
+  // want autorun to trigger this.renderTimeline() again.
+  @property() private headerEle!: HTMLDivElement;
+  @property() private footerEle!: HTMLDivElement;
+  @property() private sidePanelEle!: HTMLDivElement;
+  @property() private bodyEle!: HTMLDivElement;
+
+  // Properties shared between render methods.
+  private bodyHeight!: number;
 
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'timeline';
     trackEvent(GA_CATEGORIES.TIMELINE_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
-    this.rendered = false;
+
+    const syncWidth = () => {
+      this.totalWidth = Math.max(window.innerWidth - 2 * MARGIN, MIN_GRAPH_WIDTH);
+      this.bodyWidth = this.totalWidth - SIDE_PANEL_WIDTH;
+    };
+    window.addEventListener('resize', syncWidth);
+    this.addDisposer(() => window.removeEventListener('resize', syncWidth));
+    syncWidth();
+
     this.addDisposer(autorun(() => this.renderTimeline()));
   }
 
+  protected render() {
+    return html`${this.sidePanelEle}${this.headerEle}${this.bodyEle}${this.footerEle}`;
+  }
+
   private renderTimeline = reportError.bind(this)(() => {
-    if (this.buildState.build === null || !this.rendered) {
+    const build = this.buildState.build;
+    if (!build) {
       return;
     }
 
-    const container = this.shadowRoot!.getElementById('timeline')!;
-    const options = {
-      clickToUse: false,
-      multiselect: false,
-      orientation: {
-        axis: 'both',
-        item: 'top',
-      },
-      zoomable: false,
-    };
+    this.bodyHeight = build.steps.length * ROW_HEIGHT - BORDER_SIZE;
 
-    // Create a Timeline
-    const timeline = new Timeline(
-      container,
-      new DataSet(
-        this.buildState.build.steps.map((step, i) => ({
-          className: `status ${BUILD_STATUS_CLASS_MAP[step.status]}`,
-          content: '',
-          id: i.toString(),
-          group: i.toString(),
-          start: (step.startTime || step.renderTime.get()).toMillis(),
-          end: (step.endTime || step.renderTime.get()).toMillis(),
-          type: 'range',
-        }))
-      ),
-      new DataSet(
-        this.buildState.build.steps.map((step, id) => {
-          const content = document.createElement('div');
-          content.classList.add('group-title', 'status', BUILD_STATUS_CLASS_MAP[step.status]);
-          render(
-            html`
-              <span class="title">${escape(step.name)}</span>
-              <span class="duration">( ${displayDuration(step.duration)} )</span>
-            `,
-            content
-          );
-          return { id, content };
-        })
-      ),
-      options
-    );
-
-    timeline.on('select', (props) => {
-      if (props.items.length === 0) {
-        return;
-      }
-      const step = this.buildState.build!.steps[props.items[0]];
-      const viewUrl = step.logs?.[0].viewUrl;
-      if (!viewUrl) {
-        return;
-      }
-      window.open(viewUrl, '_blank');
-    });
+    // Render each component.
+    this.renderHeader();
+    this.renderFooter();
+    this.renderSidePanel();
+    this.renderBody();
   });
 
-  protected render = reportRenderError.bind(this)(() => {
-    return html` <div id="timeline"></div> `;
-  });
+  private renderHeader() {
+    this.headerEle = document.createElement('div');
+    d3.select(this.headerEle)
+      .attr('id', 'header')
+      .append('svg')
+      .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
+  }
 
-  protected firstUpdated() {
-    this.rendered = true;
+  private renderFooter() {
+    this.footerEle = document.createElement('div');
+    d3.select(this.footerEle)
+      .attr('id', 'footer')
+      .append('svg')
+      .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
+  }
+
+  private renderSidePanel() {
+    this.sidePanelEle = document.createElement('div');
+    d3.select(this.sidePanelEle)
+      .style('width', SIDE_PANEL_WIDTH + 'px')
+      .style('height', this.bodyHeight + 'px')
+      .attr('id', 'side-panel')
+      .append('svg')
+      .attr('viewport', `0 0 ${SIDE_PANEL_WIDTH} ${this.bodyHeight}`);
+  }
+
+  private renderBody() {
+    this.bodyEle = document.createElement('div');
+    d3.select(this.bodyEle)
+      .style('width', this.bodyWidth + 'px')
+      .style('height', this.bodyHeight + 'px')
+      .attr('id', 'body')
+      .append('svg')
+      .attr('viewport', `0 0 ${this.bodyWidth} ${this.bodyHeight}`);
   }
 
   static styles = [
     commonStyle,
-    timelineStyle,
     css`
-      .vis-range {
-        cursor: pointer;
+      :host {
+        display: grid;
+        margin: ${MARGIN}px;
+        grid-template-rows: ${AXIS_HEIGHT}px 1fr ${AXIS_HEIGHT}px;
+        grid-template-columns: ${SIDE_PANEL_WIDTH}px 1fr;
+        grid-template-areas:
+          'header header'
+          'side-panel body'
+          'footer footer';
       }
 
-      .status.infra-failure {
-        color: #ffffff;
-        background-color: #c6c;
-        border-color: #aca0b3;
-      }
-      .status.started {
-        color: #000;
-        background-color: #fd3;
-        border-color: #c5c56d;
-      }
-      .status.failure {
-        color: #000;
-        background-color: #e88;
-        border-color: #a77272;
-        border-style: solid;
-      }
-      .status.canceled {
-        color: #000;
-        background-color: #8ef;
-        border-color: #00d8fc;
-        border-style: solid;
-      }
-      .status.success {
-        color: #000;
-        background-color: #8d4;
-        border-color: #4f8530;
+      #header {
+        grid-area: header;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 2;
       }
 
-      .group-title > .title {
-        display: inline-block;
-        white-space: nowrap;
-        max-width: 50em;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      #footer {
+        grid-area: footer;
+        position: sticky;
+        bottom: 0;
+        background: white;
+        z-index: 2;
       }
 
-      .group-title > .duration {
-        display: inline-block;
-        text-align: right;
-        float: right;
+      #side-panel {
+        grid-area: side-panel;
+        z-index: 1;
+        font-weight: 500;
       }
 
-      .group-title {
-        font-weight: bold;
-        padding: 5px;
+      #body {
+        grid-area: body;
       }
 
-      .vis-labelset .vis-label .vis-inner {
-        display: block;
+      svg {
+        width: 100%;
+        height: 100%;
       }
     `,
   ];
