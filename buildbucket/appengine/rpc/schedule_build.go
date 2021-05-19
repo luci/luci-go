@@ -701,9 +701,9 @@ func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 	build.Input.GerritChanges = req.GetGerritChanges()
 }
 
-// setTags computes the tags from the given request, setting them in the model.
-// Mutates the given *model.Build.
-func setTags(req *pb.ScheduleBuildRequest, build *model.Build) {
+// setTags computes the tags from the given request, setting them in the proto.
+// Mutates the given *pb.Build.
+func setTags(req *pb.ScheduleBuildRequest, build *pb.Build) {
 	tags := protoutil.StringPairMap(req.GetTags())
 	if req.GetBuilder() != nil {
 		tags.Add("builder", req.Builder.Builder)
@@ -715,7 +715,7 @@ func setTags(req *pb.ScheduleBuildRequest, build *model.Build) {
 	for _, ch := range req.GetGerritChanges() {
 		tags.Add("buildset", protoutil.GerritBuildSet(ch))
 	}
-	build.Tags = tags.Format()
+	build.Tags = protoutil.StringPairs(tags)
 }
 
 var (
@@ -785,6 +785,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 
 	setExecutable(req, cfg, b)
 	setInput(req, cfg, b)
+	setTags(req, b)
 	setTimeouts(req, cfg, b)
 	return b
 }
@@ -831,7 +832,10 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 
 		setInfra(info.AppID(ctx), logdogHost, rdbHost, reqs[i], cfg, blds[i], caches)
 		setExperiments(ctx, reqs[i], cfg, blds[i])
-		setTags(reqs[i], blds[i])
+
+		// Tags are stored in the outer struct (see model/build.go).
+		blds[i].Tags = protoutil.StringPairMap(blds[i].Proto.Tags).Format()
+		blds[i].Proto.Tags = nil
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {

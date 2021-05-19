@@ -3462,11 +3462,10 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("setTags", t, func() {
 		Convey("nil", func() {
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTags(nil, ent)
-			So(ent.Tags, ShouldBeEmpty)
-			So(ent.Proto.Tags, ShouldBeNil)
+			setTags(nil, b)
+			So(b.Tags, ShouldResemble, []*pb.StringPair{})
 		})
 
 		Convey("request", func() {
@@ -3483,14 +3482,19 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			normalizeSchedule(req)
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTags(req, ent)
-			So(ent.Tags, ShouldResemble, []string{
-				"key1:value1",
-				"key2:value2",
+			setTags(req, b)
+			So(b.Tags, ShouldResemble, []*pb.StringPair{
+				{
+					Key:   "key1",
+					Value: "value1",
+				},
+				{
+					Key:   "key2",
+					Value: "value2",
+				},
 			})
-			So(ent.Proto.Tags, ShouldBeNil)
 		})
 
 		Convey("builder", func() {
@@ -3502,13 +3506,15 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			normalizeSchedule(req)
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTags(req, ent)
-			So(ent.Tags, ShouldResemble, []string{
-				"builder:builder",
+			setTags(req, b)
+			So(b.Tags, ShouldResemble, []*pb.StringPair{
+				{
+					Key:   "builder",
+					Value: "builder",
+				},
 			})
-			So(ent.Proto.Tags, ShouldBeNil)
 		})
 
 		Convey("gitiles commit", func() {
@@ -3521,14 +3527,19 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			normalizeSchedule(req)
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTags(req, ent)
-			So(ent.Tags, ShouldResemble, []string{
-				"buildset:commit/gitiles/host/project/+/id",
-				"gitiles_ref:ref",
+			setTags(req, b)
+			So(b.Tags, ShouldResemble, []*pb.StringPair{
+				{
+					Key:   "buildset",
+					Value: "commit/gitiles/host/project/+/id",
+				},
+				{
+					Key:   "gitiles_ref",
+					Value: "ref",
+				},
 			})
-			So(ent.Proto.Tags, ShouldBeNil)
 		})
 
 		Convey("gerrit changes", func() {
@@ -3543,13 +3554,15 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				normalizeSchedule(req)
-				ent := &model.Build{}
+				b := &pb.Build{}
 
-				setTags(req, ent)
-				So(ent.Tags, ShouldResemble, []string{
-					"buildset:patch/gerrit/host/1/2",
+				setTags(req, b)
+				So(b.Tags, ShouldResemble, []*pb.StringPair{
+					{
+						Key:   "buildset",
+						Value: "patch/gerrit/host/1/2",
+					},
 				})
-				So(ent.Proto.Tags, ShouldBeNil)
 			})
 
 			Convey("many", func() {
@@ -3568,14 +3581,19 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				normalizeSchedule(req)
-				ent := &model.Build{}
+				b := &pb.Build{}
 
-				setTags(req, ent)
-				So(ent.Tags, ShouldResemble, []string{
-					"buildset:patch/gerrit/host/1/2",
-					"buildset:patch/gerrit/host/3/4",
+				setTags(req, b)
+				So(b.Tags, ShouldResemble, []*pb.StringPair{
+					{
+						Key:   "buildset",
+						Value: "patch/gerrit/host/1/2",
+					},
+					{
+						Key:   "buildset",
+						Value: "patch/gerrit/host/3/4",
+					},
 				})
-				So(ent.Proto.Tags, ShouldBeNil)
 			})
 		})
 
@@ -3616,19 +3634,39 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			normalizeSchedule(req)
-			ent := &model.Build{}
+			b := &pb.Build{}
 
-			setTags(req, ent)
-			So(ent.Tags, ShouldResemble, []string{
-				"builder:builder",
-				"buildset:commit/gitiles/host/project/+/id",
-				"buildset:patch/gerrit/host/1/2",
-				"buildset:patch/gerrit/host/3/4",
-				"gitiles_ref:ref",
-				"key1:value1",
-				"key2:value2",
+			setTags(req, b)
+			So(b.Tags, ShouldResemble, []*pb.StringPair{
+				{
+					Key:   "builder",
+					Value: "builder",
+				},
+				{
+					Key:   "buildset",
+					Value: "commit/gitiles/host/project/+/id",
+				},
+				{
+					Key:   "buildset",
+					Value: "patch/gerrit/host/1/2",
+				},
+				{
+					Key:   "buildset",
+					Value: "patch/gerrit/host/3/4",
+				},
+				{
+					Key:   "gitiles_ref",
+					Value: "ref",
+				},
+				{
+					Key:   "key1",
+					Value: "value1",
+				},
+				{
+					Key:   "key2",
+					Value: "value2",
+				},
 			})
-			So(ent.Proto.Tags, ShouldBeNil)
 		})
 	})
 
