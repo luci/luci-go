@@ -80,6 +80,30 @@
       },
       "revId": "38fce207c09f53873e67f64194ccb3c854f3efc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19990fd7_6dfcb2dd",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-19T00:32:41Z",
+      "side": 1,
+      "message": "\u003e  One is `tree.NewClient(..)` and the other one is `treetest.NewFake(..).Client()`\n\nDerp! You are exactly right.\n\n\u003e WDYT?\nTree client is soooo simple, that I don\u0027t think it\u0027s worth it. I\u0027d land as is, but as you wish.",
+      "parentUuid": "d979a087_11b9fb59",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 85,
+        "endChar": 3
+      },
+      "revId": "38fce207c09f53873e67f64194ccb3c854f3efc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
