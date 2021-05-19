@@ -56,6 +56,23 @@
       "message": "i appreciate the write up, Matthew! I defer to Vadim as the owner of CIPD, and removing the other reviewers.",
       "revId": "57ce8b92e8e3ba6e7d005fe85a9a0ed06b210c43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "352e0fec_6e9dbc9e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-19T19:24:17Z",
+      "side": 1,
+      "message": "Please bump https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cipd/client/cipd/client.go#138 to 2.5.2. LGTM otherwise.",
+      "revId": "57ce8b92e8e3ba6e7d005fe85a9a0ed06b210c43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
