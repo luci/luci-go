@@ -502,13 +502,18 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 func (r *downloadRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	logging.Get(ctx).Infof("start command")
+	logger := logging.Get(ctx)
+	logger.Infof("start command")
 	if err := r.parse(a, args); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
-	defer r.profiler.Stop()
+	defer func() {
+		start := time.Now()
+		r.profiler.Stop()
+		logger.Infof("stopped profiler, took %s", time.Since(start))
+	}()
 
 	if err := r.doDownload(ctx); err != nil {
 		errors.Log(ctx, err)
