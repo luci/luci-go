@@ -522,7 +522,7 @@ export class OverviewTabElement extends MobxLitElement {
       }
 
       mwc-button {
-        width: 150px;
+        width: 145px;
       }
     `,
   ];
