@@ -170,7 +170,6 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
         box-sizing: border-box;
         padding: 0.3rem 0.5rem;
         font-size: 1rem;
-        color: var(--light-text-color);
         background-clip: padding-box;
         border: 1px solid var(--divider-color);
         border-radius: 0.25rem;
