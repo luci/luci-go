@@ -16,6 +16,8 @@
     "cypress:open": "CYPRESS_CRASH_REPORTS=0 cypress open",
     "cypress:run": "CYPRESS_CRASH_REPORTS=0 cypress run",
     "test:watch": "karma start",
+    "bundle:gen": "webpack --config webpack.prod.ts --profile --json > stats.json",
+    "bundle:analyse": "webpack-bundle-analyzer stats.json",
     "postinstall": "patch-package"
   },
   "dependencies": {
@@ -98,6 +100,7 @@
     "typescript": "^4.2.4",
     "util": "^0.12.3",
     "webpack": "^5.36.2",
+    "webpack-bundle-analyzer": "^4.4.1",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.2",
     "webpack-merge": "^5.7.3",
