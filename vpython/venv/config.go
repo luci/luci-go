@@ -43,6 +43,17 @@ const EnvironmentVersion = "v4"
 
 const siteCustomizePy = "sitecustomize.py"
 
+type SliceFlag []string
+
+func (i *SliceFlag) String() string {
+	return fmt.Sprintf("%v", *i)
+}
+
+func (i *SliceFlag) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
 // Config is the configuration for a managed VirtualEnv.
 //
 // A VirtualEnv is specified based on its resolved vpython.Spec.
@@ -70,9 +81,10 @@ type Config struct {
 	// overriding one.
 	Package vpython.Spec_Package
 
-	// Python is the Python interpreter to use. If empty, one will be resolved
-	// based on the Spec and the current PATH.
-	Python string
+	// Python is the set of Python interpreters to use. If empty, one will be
+	// resolved based on the Spec and the current PATH. If more than one, the
+	// first interpreter matching the Spec will be used.
+	Python SliceFlag
 
 	// LookPathFunc, if not nil, will be used instead of exec.LookPath to find the
 	// underlying Python interpreter.
@@ -265,30 +277,42 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 		return errors.Annotate(err, "failed to parse Python version from: %q", s.PythonVersion).Err()
 	}
 
-	if cfg.Python == "" {
-		// No explicitly-specified Python path. Determine one based on the
-		// specification.
+	if len(cfg.Python) == 0 {
+		// No explicitly-specified Python path. Search PATH to find one
+		// matching the specification.
 		if cfg.si, err = python.Find(c, specVers, cfg.LookPathFunc); err != nil {
 			return errors.Annotate(err, "could not find Python for: %s", specVers).Err()
 		}
-		cfg.Python = cfg.si.Python
 	} else {
-		cfg.si = &python.Interpreter{
-			Python: cfg.Python,
+		// Select the interpreter out of cfg.Python that matches the
+		// specification.
+		for _, pythonPath := range cfg.Python {
+			i := python.Interpreter{Python: pythonPath}
+			if err := i.Normalize(); err != nil {
+				continue
+			}
+
+			iv, err := i.GetVersion(c)
+			if err != nil {
+				continue
+			}
+			if specVers.IsSatisfiedBy(iv) {
+				cfg.si = &i
+				break
+			}
+		}
+
+		if cfg.si == nil {
+			return errors.Reason("none of %v matched specification %s", cfg.Python, specVers).Err()
 		}
 	}
 	if err := cfg.si.Normalize(); err != nil {
 		return err
 	}
 
-	// Confirm that the version of the interpreter matches that which is
-	// expected.
 	interpreterVers, err := cfg.si.GetVersion(c)
 	if err != nil {
-		return errors.Annotate(err, "failed to determine Python version for: %s", cfg.Python).Err()
-	}
-	if !specVers.IsSatisfiedBy(interpreterVers) {
-		return errors.Reason("supplied Python version (%s) doesn't match specification (%s)", interpreterVers, specVers).Err()
+		return errors.Annotate(err, "failed to determine Python version for: %s", cfg.si.Python).Err()
 	}
 	s.PythonVersion = interpreterVers.String()
 	return nil

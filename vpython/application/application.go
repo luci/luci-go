@@ -187,8 +187,10 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 
 	fs.BoolVar(&a.toolMode, "vpython-tool", a.toolMode,
 		"Enter tooling subcommand mode (use 'help' subcommand for details).")
-	fs.StringVar(&a.opts.EnvConfig.Python, "vpython-interpreter", a.opts.EnvConfig.Python,
-		"Path to system Python interpreter to use. Default is found on PATH.")
+	fs.Var(&a.opts.EnvConfig.Python, "vpython-interpreter",
+		"Path to system Python interpreter to use. Default is found on PATH. "+
+			"May be passed more than once, in which case the first one "+
+			"matching the spec's python_version will be used.")
 	fs.StringVar(&a.opts.EnvConfig.BaseDir, "vpython-root", a.opts.EnvConfig.BaseDir,
 		"Path to virtual environment root directory. Default is the working directory. "+
 			"If explicitly set to empty string, a temporary directory will be used and cleaned up "+
