@@ -103,7 +103,7 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 	if err := base.GetFlags().Parse(args); err != nil {
 		return nil, err
 	}
-	if err := i.Parse(cwd, RequireIsolatedFile); err != nil {
+	if err := i.Parse(cwd); err != nil {
 		return nil, err
 	}
 	if base.GetFlags().NArg() > 0 {
