@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f03109e_b816d843",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-19T06:13:02Z",
+      "side": 1,
+      "message": "Thanks for catching that!",
+      "parentUuid": "44e21c03_5d862a3b",
+      "revId": "3d90dcd3516aebff0fe225236b01405270b1ba78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "de4049a9_9313ae3d",
@@ -58,6 +76,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d99d0f1f_906bbd75",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 537,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-19T06:13:02Z",
+      "side": 1,
+      "message": "build.Proto isn\u0027t a pointer type so it won\u0027t be nil.",
+      "parentUuid": "de4049a9_9313ae3d",
+      "range": {
+        "startLine": 537,
+        "startChar": 21,
+        "endLine": 537,
+        "endChar": 24
+      },
+      "revId": "3d90dcd3516aebff0fe225236b01405270b1ba78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e9949944_1759c77b",
@@ -71,6 +113,30 @@
       "writtenOn": "2021-05-18T23:40:18Z",
       "side": 1,
       "message": "note that ExperimentBBAgent is different than ExperimentNonProduction (which replaces \"experimental\"); I think this bit should be separated?",
+      "range": {
+        "startLine": 540,
+        "startChar": 15,
+        "endLine": 540,
+        "endChar": 27
+      },
+      "revId": "3d90dcd3516aebff0fe225236b01405270b1ba78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be71ab32_d006442c",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 540,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-19T06:13:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9949944_1759c77b",
       "range": {
         "startLine": 540,
         "startChar": 15,
