@@ -73,6 +73,24 @@
       "message": "Please bump https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cipd/client/cipd/client.go#138 to 2.5.2. LGTM otherwise.",
       "revId": "57ce8b92e8e3ba6e7d005fe85a9a0ed06b210c43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "914a0574_974b1300",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1355772
+      },
+      "writtenOn": "2021-05-19T20:00:03Z",
+      "side": 1,
+      "message": "Done! Thanks! (FYI I don\u0027t believe I have committer access, so would you be able to submit the change on my behalf?)",
+      "parentUuid": "352e0fec_6e9dbc9e",
+      "revId": "57ce8b92e8e3ba6e7d005fe85a9a0ed06b210c43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
