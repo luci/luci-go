@@ -365,9 +365,9 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 }
 
 // setDimensions computes the dimensions from the given request and builder
-// config, setting them in the model. Mutates the given *model.Build.
-// build.Proto.Infra.Swarming must be set (see setInfra).
-func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+// config, setting them in the proto. Mutates the given *pb.Build.
+// Build.Infra.Swarming must be set (see setInfra).
+func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 	// Requested dimensions override dimensions specified in the builder config by wiping out all
 	// same-key dimensions (regardless of expiration time) in the builder config.
 	//
@@ -449,42 +449,35 @@ func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.B
 		}
 		return taskDims[i].Key < taskDims[j].Key
 	})
-	build.Proto.Infra.Swarming.TaskDimensions = taskDims
+	build.Infra.Swarming.TaskDimensions = taskDims
 }
 
 // setExecutable computes the executable from the given request and builder
-// config, setting it in the model. Mutates the given *model.Build.
-// build.Experiments must be set (see setExperiments).
-func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
-	build.Proto.Exe = cfg.GetExe()
-	if build.Proto.Exe == nil {
-		build.Proto.Exe = &pb.Executable{}
+// config, setting it in the proto. Mutates the given *pb.Build.
+func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
+	build.Exe = cfg.GetExe()
+	if build.Exe == nil {
+		build.Exe = &pb.Executable{}
 	}
 
 	if cfg.GetRecipe() != nil {
-		build.Proto.Exe.CipdPackage = cfg.Recipe.CipdPackage
-		build.Proto.Exe.CipdVersion = cfg.Recipe.CipdVersion
-		if build.Proto.Exe.CipdVersion == "" {
-			build.Proto.Exe.CipdVersion = "refs/heads/master"
-		}
-	}
-
-	if len(build.Proto.Exe.Cmd) == 0 {
-		build.Proto.Exe.Cmd = []string{"recipes"}
-		if build.ExperimentStatus(bb.ExperimentBBAgent) == pb.Trinary_YES {
-			build.Proto.Exe.Cmd = []string{"luciexe"}
+		build.Exe.CipdPackage = cfg.Recipe.CipdPackage
+		build.Exe.CipdVersion = cfg.Recipe.CipdVersion
+		if build.Exe.CipdVersion == "" {
+			build.Exe.CipdVersion = "refs/heads/master"
 		}
 	}
 
 	// The request has highest precedence, but may only override CIPD version.
 	if req.GetExe().GetCipdVersion() != "" {
-		build.Proto.Exe.CipdVersion = req.Exe.CipdVersion
+		build.Exe.CipdVersion = req.Exe.CipdVersion
 	}
 }
 
 // setExperiments computes the experiments from the given request and builder
 // config, setting them in the model and proto. Mutates the given *model.Build.
-// build.Proto.Input must not be nil.
+// build.Proto.Infra.Swarming, build.Proto.Input and build.Proto.Exe must not be
+// nil (see setInfra, setInput and setExecutable respectively).
 func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
 	// Experiment -> enabled.
 	exps := make(map[string]bool, len(bb.WellKnownExperiments)+len(req.GetExperiments()))
@@ -537,6 +530,24 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	}
 	sort.Strings(build.Proto.Input.Experiments)
 	sort.Strings(build.Experiments)
+
+	// Set experimental values.
+	if build.ExperimentStatus(bb.ExperimentBBAgent) == pb.Trinary_YES {
+		// Proto > experimental precedence.
+		if len(build.Proto.Exe.Cmd) == 0 {
+			build.Proto.Exe.Cmd = []string{"luciexe"}
+		}
+	}
+	// Ensure some command is set. Lowest precedence.
+	if len(build.Proto.Exe.Cmd) == 0 {
+		build.Proto.Exe.Cmd = []string{"recipes"}
+	}
+	if build.ExperimentStatus(bb.ExperimentNonProduction) == pb.Trinary_YES {
+		// Request > experimental > proto precedence.
+		if req.GetPriority() == 0 {
+			build.Proto.Infra.Swarming.Priority = 255
+		}
+	}
 }
 
 // defBuilderCacheTimeout is the default value for WaitForWarmCache in the
@@ -627,28 +638,26 @@ func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, c
 	})
 	build.Proto.Infra.Swarming.Caches = taskCaches
 
-	switch {
-	case req.GetPriority() > 0:
+	if req.GetPriority() > 0 {
 		build.Proto.Infra.Swarming.Priority = req.Priority
-	case build.ExperimentStatus(bb.ExperimentBBAgent) == pb.Trinary_YES:
-		build.Proto.Infra.Swarming.Priority = 255
 	}
+	setDimensions(req, cfg, &build.Proto)
 }
 
 // setInput computes the input values from the given request and builder config,
-// setting them in the model. Mutates the given *model.Build. May panic if the
+// setting them in the proto. Mutates the given *pb.Build. May panic if the
 // builder config is invalid.
-func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
-	build.Proto.Input = &pb.Build_Input{
+func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
+	build.Input = &pb.Build_Input{
 		Properties: &structpb.Struct{},
 	}
 
 	if cfg.GetRecipe() != nil {
 		// TODO(crbug/1042991): Deduplicate property parsing logic with config validation for properties.
-		build.Proto.Input.Properties.Fields = make(map[string]*structpb.Value, len(cfg.Recipe.Properties)+len(cfg.Recipe.PropertiesJ)+1)
+		build.Input.Properties.Fields = make(map[string]*structpb.Value, len(cfg.Recipe.Properties)+len(cfg.Recipe.PropertiesJ)+1)
 		for _, prop := range cfg.Recipe.Properties {
 			k, v := strpair.Parse(prop)
-			build.Proto.Input.Properties.Fields[k] = &structpb.Value{
+			build.Input.Properties.Fields[k] = &structpb.Value{
 				Kind: &structpb.Value_StringValue{
 					StringValue: v,
 				},
@@ -667,29 +676,29 @@ func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build)
 				// Builder config should have been validated already.
 				panic(errors.Annotate(err, "error parsing %q", v).Err())
 			}
-			build.Proto.Input.Properties.Fields[k] = s.Fields[k]
+			build.Input.Properties.Fields[k] = s.Fields[k]
 		}
-		build.Proto.Input.Properties.Fields["recipe"] = &structpb.Value{
+		build.Input.Properties.Fields["recipe"] = &structpb.Value{
 			Kind: &structpb.Value_StringValue{
 				StringValue: cfg.Recipe.Name,
 			},
 		}
 	} else if cfg.GetProperties() != "" {
-		if err := jsonpb.UnmarshalString(cfg.Properties, build.Proto.Input.Properties); err != nil {
+		if err := jsonpb.UnmarshalString(cfg.Properties, build.Input.Properties); err != nil {
 			// Builder config should have been validated already.
 			panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.Name).Err())
 		}
 	}
 
-	if build.Proto.Input.Properties.Fields == nil {
-		build.Proto.Input.Properties.Fields = make(map[string]*structpb.Value, len(req.GetProperties().GetFields()))
+	if build.Input.Properties.Fields == nil {
+		build.Input.Properties.Fields = make(map[string]*structpb.Value, len(req.GetProperties().GetFields()))
 	}
 	for k, v := range req.GetProperties().GetFields() {
-		build.Proto.Input.Properties.Fields[k] = v
+		build.Input.Properties.Fields[k] = v
 	}
 
-	build.Proto.Input.GitilesCommit = req.GetGitilesCommit()
-	build.Proto.Input.GerritChanges = req.GetGerritChanges()
+	build.Input.GitilesCommit = req.GetGitilesCommit()
+	build.Input.GerritChanges = req.GetGerritChanges()
 }
 
 // setTags computes the tags from the given request, setting them in the model.
@@ -724,40 +733,60 @@ var (
 )
 
 // setTimeouts computes the timeouts from the given request and builder config,
-// setting them in the model. Mutates the given *model.Build.
-func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+// setting them in the proto. Mutates the given *pb.Build.
+func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 	// Timeouts in the request have highest precedence, followed by
 	// values in the builder config, followed by default values.
 	switch {
 	case req.GetExecutionTimeout() != nil:
-		build.Proto.ExecutionTimeout = req.ExecutionTimeout
+		build.ExecutionTimeout = req.ExecutionTimeout
 	case cfg.GetExecutionTimeoutSecs() > 0:
-		build.Proto.ExecutionTimeout = &durationpb.Duration{
+		build.ExecutionTimeout = &durationpb.Duration{
 			Seconds: int64(cfg.ExecutionTimeoutSecs),
 		}
 	default:
-		build.Proto.ExecutionTimeout = defExecutionTimeout
+		build.ExecutionTimeout = defExecutionTimeout
 	}
 
 	switch {
 	case req.GetGracePeriod() != nil:
-		build.Proto.GracePeriod = req.GracePeriod
+		build.GracePeriod = req.GracePeriod
 	case cfg.GetGracePeriod() != nil:
-		build.Proto.GracePeriod = cfg.GracePeriod
+		build.GracePeriod = cfg.GracePeriod
 	default:
-		build.Proto.GracePeriod = defGracePeriod
+		build.GracePeriod = defGracePeriod
 	}
 
 	switch {
 	case req.GetSchedulingTimeout() != nil:
-		build.Proto.SchedulingTimeout = req.SchedulingTimeout
+		build.SchedulingTimeout = req.SchedulingTimeout
 	case cfg.GetExpirationSecs() > 0:
-		build.Proto.SchedulingTimeout = &durationpb.Duration{
+		build.SchedulingTimeout = &durationpb.Duration{
 			Seconds: int64(cfg.ExpirationSecs),
 		}
 	default:
-		build.Proto.SchedulingTimeout = defSchedulingTimeout
+		build.SchedulingTimeout = defSchedulingTimeout
 	}
+}
+
+// buildFromScheduleRequest returns a build proto created from the given
+// request and builder config. Sets fields except those which can only be
+// determined at creation time.
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder) *pb.Build {
+	b := &pb.Build{
+		Builder:         req.Builder,
+		Critical:        cfg.GetCritical(),
+		WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
+	}
+
+	if req.Critical != pb.Trinary_UNSET {
+		b.Critical = req.Critical
+	}
+
+	setExecutable(req, cfg, b)
+	setInput(req, cfg, b)
+	setTimeouts(req, cfg, b)
+	return b
 }
 
 // scheduleBuilds handles requests to schedule builds. Requests must be
@@ -791,28 +820,18 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			ID:         ids[i],
 			CreatedBy:  user,
 			CreateTime: now,
-			Proto: pb.Build{
-				Builder:         reqs[i].Builder,
-				CreatedBy:       string(user),
-				CreateTime:      timestamppb.New(now),
-				Id:              ids[i],
-				Status:          pb.Status_SCHEDULED,
-				WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
-			},
+			Proto:      *buildFromScheduleRequest(ctx, reqs[i], cfg),
 		}
 
-		blds[i].Proto.Critical = cfg.GetCritical()
-		if reqs[i].Critical != pb.Trinary_UNSET {
-			blds[i].Proto.Critical = reqs[i].Critical
-		}
+		// Set proto field values which can only be determined at creation-time.
+		blds[i].Proto.CreatedBy = string(user)
+		blds[i].Proto.CreateTime = timestamppb.New(now)
+		blds[i].Proto.Id = ids[i]
+		blds[i].Proto.Status = pb.Status_SCHEDULED
 
-		setInput(reqs[i], cfg, blds[i])
-		setExperiments(ctx, reqs[i], cfg, blds[i])                                    // Requires setInput.
-		setExecutable(reqs[i], cfg, blds[i])                                          // Requires setExperiments.
-		setInfra(info.AppID(ctx), logdogHost, rdbHost, reqs[i], cfg, blds[i], caches) // Requires setExperiments.
-		setDimensions(reqs[i], cfg, blds[i])                                          // Requires setInfra.
+		setInfra(info.AppID(ctx), logdogHost, rdbHost, reqs[i], cfg, blds[i], caches)
+		setExperiments(ctx, reqs[i], cfg, blds[i])
 		setTags(reqs[i], blds[i])
-		setTimeouts(reqs[i], cfg, blds[i])
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
