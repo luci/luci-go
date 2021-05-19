@@ -60,6 +60,7 @@ export class TimelineTabElement extends MiloBaseElement {
   // Properties shared between render methods.
   private bodyHeight!: number;
   private scaleTime!: d3.ScaleTime<number, number, never>;
+  private scaleStep!: d3.ScaleLinear<number, number, never>;
   private readonly now = Date.now();
 
   connectedCallback() {
@@ -102,6 +103,11 @@ export class TimelineTabElement extends MiloBaseElement {
       // Ensure the right border is rendered within the viewport, while the left
       // border overlaps with the right border of the side-panel.
       .range([-HALF_BORDER_SIZE, this.bodyWidth - HALF_BORDER_SIZE]);
+    this.scaleStep = d3
+      .scaleLinear()
+      .domain([0, build.steps.length])
+      // Ensure the top and bottom borders are not rendered.
+      .range([-HALF_BORDER_SIZE, this.bodyHeight + HALF_BORDER_SIZE]);
 
     // Render each component.
     this.renderHeader();
@@ -122,6 +128,9 @@ export class TimelineTabElement extends MiloBaseElement {
       .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${AXIS_HEIGHT - HALF_BORDER_SIZE})`);
     const axisTop = d3.axisTop(this.scaleTime).ticks(d3.timeMinute.every(5));
     headerRootGroup.call(axisTop);
+
+    // Top border for the side panel.
+    headerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
   }
 
   private renderFooter() {
@@ -134,26 +143,82 @@ export class TimelineTabElement extends MiloBaseElement {
     const footerRootGroup = svg.append('g').attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${HALF_BORDER_SIZE})`);
     const axisBottom = d3.axisBottom(this.scaleTime).ticks(d3.timeMinute.every(5));
     footerRootGroup.call(axisBottom);
+
+    // Bottom border for the side panel.
+    footerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
   }
 
   private renderSidePanel() {
+    const build = this.buildState.build!;
+
     this.sidePanelEle = document.createElement('div');
-    d3.select(this.sidePanelEle)
+    const svg = d3
+      .select(this.sidePanelEle)
       .style('width', SIDE_PANEL_WIDTH + 'px')
       .style('height', this.bodyHeight + 'px')
       .attr('id', 'side-panel')
       .append('svg')
       .attr('viewport', `0 0 ${SIDE_PANEL_WIDTH} ${this.bodyHeight}`);
+
+    // Grid lines
+    const horizontalGridLines = d3
+      .axisLeft(this.scaleStep)
+      .ticks(build.steps.length)
+      .tickFormat(() => '')
+      .tickSize(-SIDE_PANEL_WIDTH)
+      .tickFormat(() => '');
+    svg.append('g').attr('class', 'grid').call(horizontalGridLines);
+
+    // Left border.
+    svg
+      .append('line')
+      .attr('x1', HALF_BORDER_SIZE)
+      .attr('x2', HALF_BORDER_SIZE)
+      .attr('y2', this.bodyHeight)
+      .attr('stroke', 'var(--default-text-color)');
+    // Right border.
+    svg
+      .append('line')
+      .attr('x1', SIDE_PANEL_WIDTH - HALF_BORDER_SIZE)
+      .attr('x2', SIDE_PANEL_WIDTH - HALF_BORDER_SIZE)
+      .attr('y2', this.bodyHeight)
+      .attr('stroke', 'var(--default-text-color)');
   }
 
   private renderBody() {
+    const build = this.buildState.build!;
+
     this.bodyEle = document.createElement('div');
-    d3.select(this.bodyEle)
+    const svg = d3
+      .select(this.bodyEle)
+      .attr('id', 'body')
       .style('width', this.bodyWidth + 'px')
       .style('height', this.bodyHeight + 'px')
-      .attr('id', 'body')
       .append('svg')
       .attr('viewport', `0 0 ${this.bodyWidth} ${this.bodyHeight}`);
+
+    // Grid lines
+    const verticalGridLines = d3
+      .axisTop(this.scaleTime)
+      .ticks(d3.timeMinute.every(5))
+      .tickSize(-this.bodyHeight)
+      .tickFormat(() => '');
+    svg.append('g').attr('class', 'grid').call(verticalGridLines);
+    const horizontalGridLines = d3
+      .axisLeft(this.scaleStep)
+      .ticks(build.steps.length)
+      .tickFormat(() => '')
+      .tickSize(-this.bodyWidth)
+      .tickFormat(() => '');
+    svg.append('g').attr('class', 'grid').call(horizontalGridLines);
+
+    // Right border.
+    svg
+      .append('line')
+      .attr('x1', this.bodyWidth - HALF_BORDER_SIZE)
+      .attr('x2', this.bodyWidth - HALF_BORDER_SIZE)
+      .attr('y2', this.bodyHeight)
+      .attr('stroke', 'var(--default-text-color)');
   }
 
   static styles = [
@@ -196,6 +261,10 @@ export class TimelineTabElement extends MiloBaseElement {
         grid-area: body;
       }
 
+      #body path.domain {
+        stroke: none;
+      }
+
       svg {
         width: 100%;
         height: 100%;
@@ -203,6 +272,10 @@ export class TimelineTabElement extends MiloBaseElement {
 
       text {
         fill: var(--default-text-color);
+      }
+
+      .grid line {
+        stroke: var(--divider-color);
       }
     `,
   ];
