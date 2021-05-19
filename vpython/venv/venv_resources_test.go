@@ -203,7 +203,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		MaxHashLen: 1, // Only going to be 1 environment.
 		BaseDir:    filepath.Join(outDir, ".env"),
 		SetupEnv:   environ.System(),
-		Python:     py.Python,
+		Python:     []string{py.Python},
 		Package: vpython.Spec_Package{
 			Name:    "foo/bar/virtualenv",
 			Version: "whatever",

@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/vpython/api/vpython"
@@ -92,7 +93,7 @@ func TestResolvePythonInterpreter(t *testing.T) {
 
 		c.Convey(`Can resolve interpreter version`, func() {
 			So(cfg.resolvePythonInterpreter(ctx, &s), ShouldBeNil)
-			So(cfg.Python, ShouldEqual, ri.py.Python)
+			So(cfg.si.Python, ShouldEqual, ri.py.Python)
 
 			vers, err := python.ParseVersion(s.PythonVersion)
 			So(err, ShouldBeNil)
@@ -109,9 +110,9 @@ func TestResolvePythonInterpreter(t *testing.T) {
 		})
 
 		c.Convey(fmt.Sprintf(`Fails when Python 9999 is requested, but a Python %s interpreter is forced.`, vers), func() {
-			cfg.Python = ri.py.Python
+			cfg.Python = []string{ri.py.Python}
 			s.PythonVersion = "9999"
-			So(cfg.resolvePythonInterpreter(ctx, &s), ShouldErrLike, "doesn't match specification")
+			So(cfg.resolvePythonInterpreter(ctx, &s), ShouldErrLike, "none of [", "] matched specification")
 		})
 	}
 
@@ -132,7 +133,7 @@ func TestResolvePythonInterpreter(t *testing.T) {
 				cfg := Config{}
 				s := vpython.Spec{}
 				So(cfg.resolvePythonInterpreter(ctx, &s), ShouldBeNil)
-				So(cfg.Python, ShouldEqual, pythonGeneric.py.Python)
+				So(cfg.si.Python, ShouldEqual, pythonGeneric.py.Python)
 
 				vers, err := python.ParseVersion(s.PythonVersion)
 				So(err, ShouldBeNil)
@@ -146,6 +147,72 @@ func TestResolvePythonInterpreter(t *testing.T) {
 				testPythonInterpreter(c, ctx, python3, "3")
 			})
 		}
+	})
+
+	Convey(`Resolving interpreter from multiple options`, t, func() {
+		ctx := testContext()
+
+		pythons := []*resolvedInterpreter{}
+		tryAddPython := func(majorVersion, minorVersion int) {
+			ri := resolveFromPath(python.Version{majorVersion, minorVersion, 0})
+
+			// Ignore interpreters without '.' in the filename. Such binaries
+			// are usually just symlinks to binaries named with the specific
+			// minor version (e.g. "python3.9"), and if we don't ignore them we
+			// can end up with duplicate entries.
+			if ri != nil && strings.Contains(ri.py.Python, ".") {
+				pythons = append(pythons, ri)
+			}
+		}
+
+		tryAddPython(2, 7)
+		for v := 5; v < 20; v += 1 {
+			tryAddPython(3, v)
+		}
+
+		if len(pythons) < 2 {
+			// These tests aren't meaningful if we don't have at least two
+			// Python interpreters to test with.
+			return
+		}
+
+		Convey(`First interpreter in slice is selected by default`, func() {
+			for i := 0; i < len(pythons); i += 1 {
+				cfgPythons := SliceFlag{pythons[i].py.Python}
+				for j := 0; j < len(pythons); j += 1 {
+					if i != j {
+						cfgPythons = append(cfgPythons, pythons[j].py.Python)
+					}
+				}
+
+				cfg := Config{Python: cfgPythons}
+
+				// No Python version specified in the spec, so we should default
+				// to the first interpreter from the config.
+				s := vpython.Spec{}
+				So(cfg.resolvePythonInterpreter(ctx, &s), ShouldBeNil)
+				So(cfg.si.Python, ShouldEqual, cfgPythons[0])
+			}
+		})
+
+		Convey(`Spec selects matching Python interpreter from config`, func() {
+			cfgPythons := SliceFlag{}
+			for _, ri := range pythons {
+				cfgPythons = append(cfgPythons, ri.py.Python)
+			}
+
+			for _, ri := range pythons {
+				cfg := Config{Python: cfgPythons}
+
+				// Python version specified in the spec, so we should select
+				// the matching interpreter from the config.
+				s := vpython.Spec{
+					PythonVersion: fmt.Sprintf("%d.%d", ri.version.Major, ri.version.Minor),
+				}
+				So(cfg.resolvePythonInterpreter(ctx, &s), ShouldBeNil)
+				So(cfg.si.Python, ShouldEqual, ri.py.Python)
+			}
+		})
 	})
 }
 
@@ -185,7 +252,7 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 				Name:    "foo/bar/virtualenv",
 				Version: "unresolved",
 			},
-			Python: ri.py.Python,
+			Python: []string{ri.py.Python},
 			Loader: tl,
 			Spec: &vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
