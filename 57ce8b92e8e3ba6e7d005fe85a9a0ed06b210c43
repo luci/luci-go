@@ -39,6 +39,23 @@
       "message": "Hi there! I\u0027m new to committing to the infra repo, so I apologize if I make any process mistakes. Any help and feedback is greatly appreciated. Thanks!",
       "revId": "57ce8b92e8e3ba6e7d005fe85a9a0ed06b210c43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d906e1a_fc11830c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-19T18:35:06Z",
+      "side": 1,
+      "message": "i appreciate the write up, Matthew! I defer to Vadim as the owner of CIPD, and removing the other reviewers.",
+      "revId": "57ce8b92e8e3ba6e7d005fe85a9a0ed06b210c43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
