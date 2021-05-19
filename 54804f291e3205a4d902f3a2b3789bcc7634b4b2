@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8943d939_9b371303",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-19T23:57:53Z",
+      "side": 1,
+      "message": "code below is modeled after the func ^above^",
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d630328f_6c612981",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-19T23:57:53Z",
+      "side": 1,
+      "message": "code here is similar, but not the same as `execComponentActions` which this function will replaces.",
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14bfc19e_8219e4ce",
+        "filename": "cv/internal/prjmanager/impl/state/components_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-19T23:57:53Z",
+      "side": 1,
+      "message": "The diff in tests until Run creation (also marked with my Gerrit comment) is mostly mechanic changes to setup triager function.",
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0b7ac23_ee3ef897",
+        "filename": "cv/internal/prjmanager/impl/state/components_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-19T23:57:53Z",
+      "side": 1,
+      "message": "This part is essentially new test, which are worth looking with more attention.",
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
