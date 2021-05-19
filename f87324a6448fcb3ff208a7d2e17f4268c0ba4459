@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22def97d_060993c3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-19T03:32:20Z",
+      "side": 1,
+      "message": "I can\u0027t find any documentation online about what Response.text() will do if the content is not a valid \u0027utf8\u0027.\nI think we can come back to this after we encounter issue with that.\n",
+      "revId": "f87324a6448fcb3ff208a7d2e17f4268c0ba4459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
