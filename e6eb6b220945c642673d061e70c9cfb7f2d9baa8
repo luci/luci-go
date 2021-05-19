@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "690c099a_36ec6317",
+        "filename": "milo/frontend/resultui/src/models/build_ext.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-19T00:03:07Z",
+      "side": 1,
+      "message": "Fixed. Also updated the test case to cover that.",
+      "parentUuid": "4f2cf90a_994b5653",
+      "revId": "e6eb6b220945c642673d061e70c9cfb7f2d9baa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f904a4c6_dd42ee6a",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-05-18T18:13:06Z",
       "side": 1,
       "message": "nit: would be simpler to define byName[\u0027\u0027] \u003d new StepExt();\n\nand then this.rootSteps \u003d byName[\u0027\u0027].children;",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 32
+      },
+      "revId": "e6eb6b220945c642673d061e70c9cfb7f2d9baa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd081c4f_dddc16ec",
+        "filename": "milo/frontend/resultui/src/models/build_ext.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-19T00:03:07Z",
+      "side": 1,
+      "message": "The problem is that we need a step object to create StepExt().\nWe could just pass in the first step, but that could lead to confusion without further documentation.\nI think having the if statement here makes our intention more obvious.",
+      "parentUuid": "f904a4c6_dd42ee6a",
       "range": {
         "startLine": 91,
         "startChar": 0,
