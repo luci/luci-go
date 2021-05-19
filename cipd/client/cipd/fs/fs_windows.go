@@ -18,22 +18,8 @@ package fs
 
 import (
 	"os"
-	"runtime"
 	"strings"
 	"syscall"
-	"unsafe"
-)
-
-// See https://msdn.microsoft.com/en-us/library/windows/desktop/aa365240(v=vs.85).aspx
-
-var (
-	kernel32        = syscall.NewLazyDLL("kernel32.dll")
-	procMoveFileExW = kernel32.NewProc("MoveFileExW")
-)
-
-const (
-	moveFileReplaceExisting = 1
-	moveFileWriteThrough    = 8
 )
 
 // longFileName converts a non-UNC path to a \?\\ style long path.
@@ -68,19 +54,6 @@ func openFile(path string) (*os.File, error) {
 	return os.NewFile(uintptr(handle), path), nil
 }
 
-func moveFileEx(source, target *uint16, flags uint32) error {
-	ret, _, err := procMoveFileExW.Call(uintptr(unsafe.Pointer(source)), uintptr(unsafe.Pointer(target)), uintptr(flags))
-	runtime.KeepAlive(source)
-	runtime.KeepAlive(target)
-	if ret == 0 {
-		if err != nil {
-			return err
-		}
-		return syscall.EINVAL
-	}
-	return nil
-}
-
 func mostlyAtomicRename(source, target string) error {
 	source, target = longFileName(source), longFileName(target)
 
@@ -88,22 +61,18 @@ func mostlyAtomicRename(source, target string) error {
 	if err != nil {
 		return err
 	}
-	lpSource, err := syscall.UTF16PtrFromString(source)
-	if err != nil {
-		return err
-	}
 
-	// MoveFileEx is unable to replace read-only files. Do best effort to remove
+	// os.Rename uses MoveFileEx, which is unable to replace read-only files. Do best effort to remove
 	// the read-only flag (in most cases where mostlyAtomicRename is used in CIPD
 	// it is set, since CIPD uses it to update files it itself installed and they
-	// are usually read-only). No big deal if this fails or if MoveFileEx below
+	// are usually read-only). No big deal if this fails or if os.Rename below
 	// fails. The caller will eventually delete `target` one way or another, so
 	// leaving it with read-only bit removed is fine.
 	if attrs, err := syscall.GetFileAttributes(lpTarget); err == nil && (attrs&syscall.FILE_ATTRIBUTE_READONLY) != 0 {
 		syscall.SetFileAttributes(lpTarget, attrs&^syscall.FILE_ATTRIBUTE_READONLY)
 	}
 
-	return moveFileEx(lpSource, lpTarget, moveFileReplaceExisting|moveFileWriteThrough)
+	return os.Rename(source, target)
 }
 
 // For errors codes see
