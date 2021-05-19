@@ -107,10 +107,11 @@ func TestCheckTree(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
 		rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
+		client := ct.TreeFake.Client()
 
 		Convey("Open", func() {
 			ct.TreeFake.ModifyState(ctx, tree.Open)
-			open, err := rs.CheckTree(ctx, tree.MustClient(ctx))
+			open, err := rs.CheckTree(ctx, client)
 			So(err, ShouldBeNil)
 			So(open, ShouldBeTrue)
 			So(rs.Run.Submission.TreeOpen, ShouldBeTrue)
@@ -119,7 +120,7 @@ func TestCheckTree(t *testing.T) {
 
 		Convey("Close", func() {
 			ct.TreeFake.ModifyState(ctx, tree.Closed)
-			open, err := rs.CheckTree(ctx, tree.MustClient(ctx))
+			open, err := rs.CheckTree(ctx, client)
 			So(err, ShouldBeNil)
 			So(open, ShouldBeFalse)
 			So(rs.Run.Submission.TreeOpen, ShouldBeFalse)
@@ -138,7 +139,7 @@ func TestCheckTree(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
 			rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
-			open, err := rs.CheckTree(ctx, tree.MustClient(ctx))
+			open, err := rs.CheckTree(ctx, client)
 			So(err, ShouldBeNil)
 			So(open, ShouldBeTrue)
 			So(rs.Run.Submission.TreeOpen, ShouldBeTrue)

@@ -70,9 +70,6 @@ func main() {
 		}
 
 		var err error
-		if srv.Context, err = tree.InstallProd(srv.Context); err != nil {
-			return err
-		}
 		if srv.Context, err = bq.InstallProd(srv.Context, srv.Options.CloudProject); err != nil {
 			return err
 		}
@@ -82,7 +79,11 @@ func main() {
 		runNotifier := run.NewNotifier(&tq.Default)
 		clUpdater := updater.New(&tq.Default, pmNotifier, runNotifier)
 		_ = pmimpl.New(pmNotifier, runNotifier, clUpdater)
-		_ = runimpl.New(runNotifier, pmNotifier, clUpdater)
+		tc, err := tree.NewClient(srv.Context)
+		if err != nil {
+			return err
+		}
+		_ = runimpl.New(runNotifier, pmNotifier, clUpdater, tc)
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{

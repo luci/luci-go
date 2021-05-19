@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // Result is the result of handling the events.
@@ -86,8 +87,9 @@ type RM interface {
 
 // Impl is a prod implementation of Handler interface.
 type Impl struct {
-	PM PM
-	RM RM
+	PM         PM
+	RM         RM
+	TreeClient tree.Client
 }
 
 var _ Handler = (*Impl)(nil)

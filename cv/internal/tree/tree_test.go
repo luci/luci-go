@@ -30,10 +30,10 @@ func TestTreeStatesClient(t *testing.T) {
 	t.Parallel()
 
 	Convey("FetchLatest", t, func() {
-		ctx := Install(context.Background(), httpClientImpl{
+		ctx := context.Background()
+		client := &httpClientImpl{
 			&http.Client{Transport: &http.Transport{}},
-		})
-		client := MustClient(ctx)
+		}
 		Convey("Works", func() {
 			var actualReqURL string
 			mockSrv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
