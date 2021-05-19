@@ -56,6 +56,30 @@
       },
       "revId": "38fce207c09f53873e67f64194ccb3c854f3efc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d979a087_11b9fb59",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-19T00:30:48Z",
+      "side": 1,
+      "message": "\u003e iiuc, this is specific to the RM, so you can just create it inside runimpl.New(), passing a context if necessary\n\u003e (prior art: PM creates Gerrit poller)\n\nCorrect and this is exactly how my initial implementation looks like. I think I didn\u0027t end up doing that because `tree.Client` has different implementation for prod and test. One is `tree.NewClient(..)` and the other one is `treetest.NewFake(..).Client()`. So it has to be initialized differently at top level (see here and e2e test) and pass it down to RM.\n\nI\u0027m actually thinking of using https://golang.org/pkg/net/http/httptest/#Server.Start to start a test server to fake tree so that there doesn\u0027t need to be a separate test implementation for tree.Client and all tests are really exercising the real prod code path. WDYT?",
+      "parentUuid": "b7338bc3_739c01c2",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 85,
+        "endChar": 3
+      },
+      "revId": "38fce207c09f53873e67f64194ccb3c854f3efc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
