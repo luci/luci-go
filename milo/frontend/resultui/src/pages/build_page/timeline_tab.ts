@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as d3 from 'd3';
+import { axisBottom, axisLeft, axisTop, scaleLinear, scaleTime, select as d3Select, timeMillisecond } from 'd3';
 import { css, customElement, html, property } from 'lit-element';
 import { autorun, observable } from 'mobx';
 
@@ -171,15 +171,13 @@ export class TimelineTabElement extends MiloBaseElement {
     const padding = Math.ceil(((endTime - startTime) * STEP_EXTRA_WIDTH) / this.bodyWidth) / 2;
 
     // Calc attributes shared among components.
-    this.scaleTime = d3
-      .scaleTime()
+    this.scaleTime = scaleTime()
       // Add a bit of padding to ensure everything renders in the viewport.
       .domain([startTime - padding, endTime + padding])
       // Ensure the right border is rendered within the viewport, while the left
       // border overlaps with the right border of the side-panel.
       .range([-HALF_BORDER_SIZE, this.bodyWidth - HALF_BORDER_SIZE]);
-    this.scaleStep = d3
-      .scaleLinear()
+    this.scaleStep = scaleLinear()
       .domain([0, build.steps.length])
       // Ensure the top and bottom borders are not rendered.
       .range([-HALF_BORDER_SIZE, this.bodyHeight + HALF_BORDER_SIZE]);
@@ -197,7 +195,7 @@ export class TimelineTabElement extends MiloBaseElement {
         break;
       }
     }
-    this.timeInterval = d3.timeMillisecond.every(interval)!;
+    this.timeInterval = timeMillisecond.every(interval)!;
 
     // Render each component.
     this.renderHeader();
@@ -208,16 +206,15 @@ export class TimelineTabElement extends MiloBaseElement {
 
   private renderHeader() {
     this.headerEle = document.createElement('div');
-    const svg = d3
-      .select(this.headerEle)
+    const svg = d3Select(this.headerEle)
       .attr('id', 'header')
       .append('svg')
       .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
     const headerRootGroup = svg
       .append('g')
       .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${AXIS_HEIGHT - HALF_BORDER_SIZE})`);
-    const axisTop = d3.axisTop(this.scaleTime).ticks(this.timeInterval);
-    headerRootGroup.call(axisTop);
+    const topAxis = axisTop(this.scaleTime).ticks(this.timeInterval);
+    headerRootGroup.call(topAxis);
 
     // Top border for the side panel.
     headerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
@@ -225,14 +222,13 @@ export class TimelineTabElement extends MiloBaseElement {
 
   private renderFooter() {
     this.footerEle = document.createElement('div');
-    const svg = d3
-      .select(this.footerEle)
+    const svg = d3Select(this.footerEle)
       .attr('id', 'footer')
       .append('svg')
       .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
     const footerRootGroup = svg.append('g').attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${HALF_BORDER_SIZE})`);
-    const axisBottom = d3.axisBottom(this.scaleTime).ticks(this.timeInterval);
-    footerRootGroup.call(axisBottom);
+    const bottomAxis = axisBottom(this.scaleTime).ticks(this.timeInterval);
+    footerRootGroup.call(bottomAxis);
 
     // Bottom border for the side panel.
     footerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
@@ -242,8 +238,7 @@ export class TimelineTabElement extends MiloBaseElement {
     const build = this.buildState.build!;
 
     this.sidePanelEle = document.createElement('div');
-    const svg = d3
-      .select(this.sidePanelEle)
+    const svg = d3Select(this.sidePanelEle)
       .style('width', SIDE_PANEL_WIDTH + 'px')
       .style('height', this.bodyHeight + 'px')
       .attr('id', 'side-panel')
@@ -251,8 +246,7 @@ export class TimelineTabElement extends MiloBaseElement {
       .attr('viewport', `0 0 ${SIDE_PANEL_WIDTH} ${this.bodyHeight}`);
 
     // Grid lines
-    const horizontalGridLines = d3
-      .axisLeft(this.scaleStep)
+    const horizontalGridLines = axisLeft(this.scaleStep)
       .ticks(build.steps.length)
       .tickFormat(() => '')
       .tickSize(-SIDE_PANEL_WIDTH)
@@ -312,8 +306,7 @@ export class TimelineTabElement extends MiloBaseElement {
     const build = this.buildState.build!;
 
     this.bodyEle = document.createElement('div');
-    const svg = d3
-      .select(this.bodyEle)
+    const svg = d3Select(this.bodyEle)
       .attr('id', 'body')
       .style('width', this.bodyWidth + 'px')
       .style('height', this.bodyHeight + 'px')
@@ -321,14 +314,12 @@ export class TimelineTabElement extends MiloBaseElement {
       .attr('viewport', `0 0 ${this.bodyWidth} ${this.bodyHeight}`);
 
     // Grid lines
-    const verticalGridLines = d3
-      .axisTop(this.scaleTime)
+    const verticalGridLines = axisTop(this.scaleTime)
       .ticks(this.timeInterval)
       .tickSize(-this.bodyHeight)
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(verticalGridLines);
-    const horizontalGridLines = d3
-      .axisLeft(this.scaleStep)
+    const horizontalGridLines = axisLeft(this.scaleStep)
       .ticks(build.steps.length)
       .tickFormat(() => '')
       .tickSize(-this.bodyWidth)
