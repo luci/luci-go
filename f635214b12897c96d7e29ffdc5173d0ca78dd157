@@ -16,6 +16,24 @@
       "message": "Is there no standard type to use for \"list\" flags?",
       "revId": "f635214b12897c96d7e29ffdc5173d0ca78dd157",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d01d4f5_0fd1a0ee",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2021-05-19T06:15:53Z",
+      "side": 1,
+      "message": "I don\u0027t think so, no. Suggestions I saw online were to either use a single string with a separator, or to do this.",
+      "parentUuid": "63191830_7da75e5e",
+      "revId": "f635214b12897c96d7e29ffdc5173d0ca78dd157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
