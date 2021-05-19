@@ -16,13 +16,14 @@ import * as d3 from 'd3';
 import { css, customElement, html, property } from 'lit-element';
 import { autorun, observable } from 'mobx';
 
+import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportError } from '../../libs/error_handler';
+import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
 import { StepExt } from '../../models/step_ext';
 import commonStyle from '../../styles/common_style.css';
 
@@ -145,13 +146,21 @@ export class TimelineTabElement extends MiloBaseElement {
     this.addDisposer(autorun(() => this.renderTimeline()));
   }
 
-  protected render() {
-    return html`${this.sidePanelEle}${this.headerEle}${this.bodyEle}${this.footerEle}`;
-  }
+  protected render = reportRenderError.bind(this)(() => {
+    if (!this.buildState.build) {
+      return html`<div id="load">Loading <milo-dot-spinner></milo-load-spinner></div>`;
+    }
+
+    if (this.buildState.build.steps.length === 0) {
+      return html`<div id="no-steps">No steps were run.</div>`;
+    }
+
+    return html`<div id="timeline">${this.sidePanelEle}${this.headerEle}${this.bodyEle}${this.footerEle}</div>`;
+  });
 
   private renderTimeline = reportError.bind(this)(() => {
     const build = this.buildState.build;
-    if (!build) {
+    if (!build || build.steps.length === 0) {
       return;
     }
 
@@ -396,8 +405,16 @@ export class TimelineTabElement extends MiloBaseElement {
     commonStyle,
     css`
       :host {
-        display: grid;
+        display: block;
         margin: ${MARGIN}px;
+      }
+
+      #load {
+        color: var(--active-text-color);
+      }
+
+      #timeline {
+        display: grid;
         grid-template-rows: ${AXIS_HEIGHT}px 1fr ${AXIS_HEIGHT}px;
         grid-template-columns: ${SIDE_PANEL_WIDTH}px 1fr;
         grid-template-areas:
