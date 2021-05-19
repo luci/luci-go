@@ -20,6 +20,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
+import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportError } from '../../libs/error_handler';
 import commonStyle from '../../styles/common_style.css';
@@ -30,10 +31,21 @@ const BORDER_SIZE = 1;
 const HALF_BORDER_SIZE = BORDER_SIZE / 2;
 
 const ROW_HEIGHT = 30;
+const STEP_HEIGHT = 24;
+const STEP_MARGIN = (ROW_HEIGHT - STEP_HEIGHT) / 2 - HALF_BORDER_SIZE;
 const STEP_EXTRA_WIDTH = 2;
 
-const SIDE_PANEL_WIDTH = 450;
+const TEXT_MARGIN = 10;
+
+const SIDE_PANEL_WIDTH = 400;
 const MIN_GRAPH_WIDTH = 500 + SIDE_PANEL_WIDTH;
+const SIDE_PANEL_RECT_WIDTH = SIDE_PANEL_WIDTH - STEP_MARGIN * 2 - BORDER_SIZE * 2;
+const STEP_IDENT = 15;
+
+const LIST_ITEM_WIDTH = SIDE_PANEL_RECT_WIDTH - TEXT_MARGIN * 2;
+const LIST_ITEM_HEIGHT = 16;
+const LIST_ITEM_X_OFFSET = STEP_MARGIN + TEXT_MARGIN + BORDER_SIZE;
+const LIST_ITEM_Y_OFFSET = STEP_MARGIN + (STEP_HEIGHT - LIST_ITEM_HEIGHT) / 2;
 
 @customElement('milo-timeline-tab')
 @errorHandler(forwardWithoutMsg)
@@ -169,6 +181,42 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
+    const ancestorNums: number[] = [];
+    for (const [i, step] of build.steps.entries()) {
+      ancestorNums.splice(step.depth, ancestorNums.length, step.index + 1);
+
+      const stepGroup = svg
+        .append('g')
+        .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
+        .attr('transform', `translate(0, ${i * ROW_HEIGHT})`);
+
+      const rect = stepGroup
+        .append('rect')
+        .attr('x', STEP_MARGIN + BORDER_SIZE)
+        .attr('y', STEP_MARGIN)
+        .attr('width', SIDE_PANEL_RECT_WIDTH)
+        .attr('height', STEP_HEIGHT);
+
+      const listItem = stepGroup
+        .append('foreignObject')
+        .attr('class', 'not-intractable')
+        .attr('x', LIST_ITEM_X_OFFSET + step.depth * STEP_IDENT)
+        .attr('y', LIST_ITEM_Y_OFFSET)
+        .attr('height', STEP_HEIGHT - LIST_ITEM_Y_OFFSET)
+        .attr('width', LIST_ITEM_WIDTH);
+      listItem.append('xhtml:span').text(ancestorNums.join('.') + '. ');
+      const stepText = listItem.append('xhtml:span').text(step.selfName);
+
+      const logUrl = step.logs?.[0].viewUrl;
+      if (logUrl) {
+        rect.attr('class', 'clickable').on('click', (e: MouseEvent) => {
+          e.stopPropagation();
+          window.open(logUrl, '_blank');
+        });
+        stepText.attr('class', 'hyperlink');
+      }
+    }
+
     // Left border.
     svg
       .append('line')
@@ -276,6 +324,41 @@ export class TimelineTabElement extends MiloBaseElement {
 
       .grid line {
         stroke: var(--divider-color);
+      }
+
+      .clickable {
+        cursor: pointer;
+      }
+      .not-intractable {
+        pointer-events: none;
+      }
+      .hyperlink {
+        text-decoration: underline;
+      }
+
+      .scheduled > rect {
+        stroke: var(--scheduled-color);
+        fill: var(--scheduled-bg-color);
+      }
+      .started > rect {
+        stroke: var(--started-color);
+        fill: var(--started-bg-color);
+      }
+      .success > rect {
+        stroke: var(--success-color);
+        fill: var(--success-bg-color);
+      }
+      .failure > rect {
+        stroke: var(--failure-color);
+        fill: var(--failure-bg-color);
+      }
+      .infra-failure > rect {
+        stroke: var(--critical-failure-color);
+        fill: var(--critical-failure-bg-color);
+      }
+      .canceled > rect {
+        stroke: var(--canceled-color);
+        fill: var(--canceled-bg-color);
       }
     `,
   ];
