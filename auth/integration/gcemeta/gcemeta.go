@@ -179,6 +179,18 @@ func (s *Server) accountIdentityHandler(rw http.ResponseWriter, r *http.Request)
 		http.Error(rw, "`audience` is required", 400)
 		return
 	}
+
+	// HACK(crbug.com/1210747): Refuse to serve ID tokens to gcloud (based on its
+	// audience). They are not available everywhere yet, causing tasks that use
+	// "gcloud" to fail. Note that gcloud handles HTTP 404 just fine by totally
+	// ignoring it. It appears "gcloud" requests ID tokens just because it can,
+	// not because they are really needed, at least for all current gcloud usage
+	// in LUCI.
+	if aud == "32555940559.apps.googleusercontent.com" {
+		http.Error(rw, "Go away: crbug.com/1210747", 404)
+		return
+	}
+
 	tok, err := s.Generator.GenerateIDToken(r.Context(), aud, s.MinTokenLifetime)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Failed to mint the token - %s", err), http.StatusInternalServerError)
