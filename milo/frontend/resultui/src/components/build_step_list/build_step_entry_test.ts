@@ -48,9 +48,14 @@ describe('build_step_entry', () => {
 
   it('can render a step without start time', async () => {
     const step = new StepExt({
-      name: 'stepname',
-      status: BuildStatus.Scheduled,
-      startTime: undefined,
+      step: {
+        name: 'stepname',
+        status: BuildStatus.Scheduled,
+        startTime: undefined,
+      },
+      selfName: 'stepname',
+      depth: 0,
+      index: 0,
     });
     await fixture<NotifierProviderElement>(html`
       <milo-build-step-entry-test-notifier-provider>

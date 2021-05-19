@@ -68,22 +68,33 @@ export class BuildExt {
     this.summaryMarkdown = build.summaryMarkdown;
     this.input = build.input;
     this.output = build.output;
-    this.steps = build.steps?.map((s) => new StepExt(s, this.renderTime)) || [];
     this.infra = build.infra;
     this.tags = build.tags;
     this.exe = build.exe;
 
     // Build the step-tree.
+    const steps: StepExt[] = [];
     const rootSteps: StepExt[] = [];
-    const stepMap = new Map<string, StepExt>();
-    for (const step of this.steps) {
-      stepMap.set(step.name, step);
-      if (step.parentName === null) {
-        rootSteps.push(step);
+    const stepMap = new Map<string, StepExt>(); // Map step name -> StepExt.
+    for (const step of build.steps || []) {
+      const splitName = step.name.split('|');
+      const selfName = splitName.pop()!;
+      const depth = splitName.length;
+      const parentName = splitName.join('|');
+      const parent = stepMap.get(parentName);
+
+      const index = (parent?.children || rootSteps).length;
+      const stepExt = new StepExt({ step, depth, index, selfName, renderTime: this.renderTime });
+
+      steps.push(stepExt);
+      stepMap.set(step.name, stepExt);
+      if (!parent) {
+        rootSteps.push(stepExt);
       } else {
-        stepMap.get(step.parentName)!.children.push(step);
+        parent.children.push(stepExt);
       }
     }
+    this.steps = steps;
     this.rootSteps = rootSteps;
   }
 

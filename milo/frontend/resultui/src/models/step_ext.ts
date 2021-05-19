@@ -19,6 +19,14 @@ import { computed, IObservableValue, observable } from 'mobx';
 import { renderMarkdown } from '../libs/markdown_utils';
 import { BuildStatus, Log, Step } from '../services/buildbucket';
 
+export interface StepInit {
+  step: Step;
+  depth: number;
+  index: number;
+  selfName: string;
+  renderTime?: IObservableValue<DateTime>;
+}
+
 /**
  * Contains all fields of the Step object with added helper methods and
  * properties.
@@ -32,16 +40,13 @@ export class StepExt {
   readonly summaryMarkdown?: string | undefined;
 
   readonly depth: number;
+  readonly index: number;
   readonly selfName: string;
-  readonly parentName: string | null;
   readonly children: StepExt[] = [];
   readonly renderTime: IObservableValue<DateTime>;
 
-  constructor(step: Step, renderTime?: IObservableValue<DateTime>) {
-    if (!step.name) {
-      throw new Error('Step name can not be empty');
-    }
-
+  constructor(init: StepInit) {
+    const step = init.step;
     this.name = step.name;
     this.startTime = step.startTime ? DateTime.fromISO(step.startTime) : null;
     this.endTime = step.endTime ? DateTime.fromISO(step.endTime) : null;
@@ -49,12 +54,11 @@ export class StepExt {
     this.logs = step.logs;
     this.summaryMarkdown = step.summaryMarkdown;
 
-    const splitName = step.name.split('|');
-    this.selfName = splitName.pop()!;
-    this.depth = splitName.length;
-    this.parentName = splitName.join('|') || null;
+    this.depth = init.depth;
+    this.index = init.index;
+    this.selfName = init.selfName;
 
-    this.renderTime = renderTime || observable.box(DateTime.local());
+    this.renderTime = init.renderTime || observable.box(DateTime.local());
   }
 
   /**
