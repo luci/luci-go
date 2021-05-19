@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9178be4f_65e9ff91",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-19T00:32:43Z",
+      "side": 1,
+      "message": "I think it is fine to use time.Now() here.",
+      "range": {
+        "startLine": 148,
+        "startChar": 15,
+        "endLine": 148,
+        "endChar": 19
+      },
+      "revId": "82bea2ab2faf0c8c9ff902352bc13241f73fdcb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "819bc128_25bcb271",
+        "filename": "client/cmd/swarming/lib/terminate_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-05-19T00:32:43Z",
+      "side": 1,
+      "message": "ctx?",
+      "range": {
+        "startLine": 149,
+        "startChar": 33,
+        "endLine": 149,
+        "endChar": 53
+      },
+      "revId": "82bea2ab2faf0c8c9ff902352bc13241f73fdcb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
