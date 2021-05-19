@@ -22,6 +22,30 @@
       },
       "revId": "d6d097b2267696d8a6e32aed3de3f127c83e17a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e76d45a_11a85f07",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 836,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-05-19T15:18:17Z",
+      "side": 1,
+      "message": "I\u0027ve added a note to see model/build.go.",
+      "parentUuid": "ab203c19_773c8eb6",
+      "range": {
+        "startLine": 836,
+        "startChar": 32,
+        "endLine": 836,
+        "endChar": 55
+      },
+      "revId": "d6d097b2267696d8a6e32aed3de3f127c83e17a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
