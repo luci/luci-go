@@ -39,6 +39,7 @@ type testService struct {
 	getFilesFromCAS     func(context.Context, string, *rbeclient.Client, *swarming.SwarmingRpcsCASReference) ([]string, error)
 	listBots            func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 	deleteBot           func(context.Context, string) (*swarming.SwarmingRpcsDeletedResponse, error)
+	terminateBot        func(context.Context, string) (*swarming.SwarmingRpcsTerminateResponse, error)
 }
 
 func (s testService) Client() *http.Client {
@@ -87,6 +88,10 @@ func (s *testService) ListBots(ctx context.Context, dimensions []string, fields 
 
 func (s testService) DeleteBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error) {
 	return s.deleteBot(ctx, botID)
+}
+
+func (s testService) TerminateBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsTerminateResponse, error) {
+	return s.terminateBot(ctx, botID)
 }
 
 var _ AuthFlags = (*testAuthFlags)(nil)
