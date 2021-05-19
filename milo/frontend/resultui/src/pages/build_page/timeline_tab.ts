@@ -27,8 +27,10 @@ import commonStyle from '../../styles/common_style.css';
 const MARGIN = 10;
 const AXIS_HEIGHT = 20;
 const BORDER_SIZE = 1;
+const HALF_BORDER_SIZE = BORDER_SIZE / 2;
 
 const ROW_HEIGHT = 30;
+const STEP_EXTRA_WIDTH = 2;
 
 const SIDE_PANEL_WIDTH = 450;
 const MIN_GRAPH_WIDTH = 500 + SIDE_PANEL_WIDTH;
@@ -57,6 +59,8 @@ export class TimelineTabElement extends MiloBaseElement {
 
   // Properties shared between render methods.
   private bodyHeight!: number;
+  private scaleTime!: d3.ScaleTime<number, number, never>;
+  private readonly now = Date.now();
 
   connectedCallback() {
     super.connectedCallback();
@@ -84,7 +88,20 @@ export class TimelineTabElement extends MiloBaseElement {
       return;
     }
 
+    const startTime = build.startTime?.toMillis() || this.now;
+    const endTime = build.endTime?.toMillis() || this.now;
+
     this.bodyHeight = build.steps.length * ROW_HEIGHT - BORDER_SIZE;
+    const padding = Math.ceil(((endTime - startTime) * STEP_EXTRA_WIDTH) / this.bodyWidth) / 2;
+
+    // Calc attributes shared among components.
+    this.scaleTime = d3
+      .scaleTime()
+      // Add a bit of padding to ensure everything renders in the viewport.
+      .domain([startTime - padding, endTime + padding])
+      // Ensure the right border is rendered within the viewport, while the left
+      // border overlaps with the right border of the side-panel.
+      .range([-HALF_BORDER_SIZE, this.bodyWidth - HALF_BORDER_SIZE]);
 
     // Render each component.
     this.renderHeader();
@@ -95,18 +112,28 @@ export class TimelineTabElement extends MiloBaseElement {
 
   private renderHeader() {
     this.headerEle = document.createElement('div');
-    d3.select(this.headerEle)
+    const svg = d3
+      .select(this.headerEle)
       .attr('id', 'header')
       .append('svg')
       .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
+    const headerRootGroup = svg
+      .append('g')
+      .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${AXIS_HEIGHT - HALF_BORDER_SIZE})`);
+    const axisTop = d3.axisTop(this.scaleTime).ticks(d3.timeMinute.every(5));
+    headerRootGroup.call(axisTop);
   }
 
   private renderFooter() {
     this.footerEle = document.createElement('div');
-    d3.select(this.footerEle)
+    const svg = d3
+      .select(this.footerEle)
       .attr('id', 'footer')
       .append('svg')
       .attr('viewport', `0 0 ${this.totalWidth} ${AXIS_HEIGHT}`);
+    const footerRootGroup = svg.append('g').attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${HALF_BORDER_SIZE})`);
+    const axisBottom = d3.axisBottom(this.scaleTime).ticks(d3.timeMinute.every(5));
+    footerRootGroup.call(axisBottom);
   }
 
   private renderSidePanel() {
@@ -172,6 +199,10 @@ export class TimelineTabElement extends MiloBaseElement {
       svg {
         width: 100%;
         height: 100%;
+      }
+
+      text {
+        fill: var(--default-text-color);
       }
     `,
   ];
