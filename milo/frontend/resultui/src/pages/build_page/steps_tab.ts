@@ -58,9 +58,9 @@ export class StepsTabElement extends MiloBaseElement {
   protected render = reportRenderError.bind(this)(() => {
     return html`
       <div id="header">
-        <div class="filters-container">
-          Steps:
-          <div class="filter">
+        <div class="config-section">
+          Show:
+          <div class="config">
             <input
               id="succeeded"
               type="checkbox"
@@ -69,26 +69,32 @@ export class StepsTabElement extends MiloBaseElement {
                 this.stepsConfig.showSucceededSteps = (e.target as HTMLInputElement).checked;
               }}
             />
-            <label for="succeeded" style="color: var(--success-color);">Succeeded</label>
+            <label for="succeeded" style="color: var(--success-color);">Succeeded Steps</label>
           </div>
-          <div class="filter">
-            <input id="others" type="checkbox" disabled checked />
-            <label for="others">Others</label>
-          </div>
-        </div>
-        <div class="filters-container-delimiter"></div>
-        <div class="filters-container">
-          Logs:
-          <div class="filter">
+          <div class="config">
             <input
-              id="debug-logs-filter"
+              id="debug-logs"
               type="checkbox"
               ?checked=${this.stepsConfig.showDebugLogs}
               @change=${(e: MouseEvent) => {
                 this.stepsConfig.showDebugLogs = (e.target as HTMLInputElement).checked;
               }}
             />
-            <label for="debug-logs-filter">Debug</label>
+            <label for="debug-logs">Debug Logs</label>
+          </div>
+        </div>
+        <div class="config-section-delimiter"></div>
+        <div class="config-section">
+          <div class="config">
+            <input
+              id="expand-by-default"
+              type="checkbox"
+              ?checked=${this.stepsConfig.expandByDefault}
+              @change=${(e: MouseEvent) => {
+                this.stepsConfig.expandByDefault = (e.target as HTMLInputElement).checked;
+              }}
+            />
+            <label for="expand-by-default">Expand by default</label>
           </div>
         </div>
         <span></span>
@@ -125,18 +131,18 @@ export class StepsTabElement extends MiloBaseElement {
         width: 145px;
       }
 
-      .filters-container {
+      .config-section {
         display: inline-block;
         padding: 4px 5px 0;
       }
-      .filter {
+      .config {
         display: inline-block;
         margin: 0 5px;
       }
-      .filter:last-child {
+      .config:last-child {
         margin-right: 0px;
       }
-      .filters-container-delimiter {
+      .config-section-delimiter {
         border-left: 1px solid var(--divider-color);
         width: 0px;
         height: 100%;
