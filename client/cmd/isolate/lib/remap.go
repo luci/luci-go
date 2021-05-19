@@ -57,7 +57,7 @@ func (r *remapRun) Parse(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := r.isolateFlags.Parse(cwd, RequireIsolateFile); err != nil {
+	if err := r.isolateFlags.Parse(cwd); err != nil {
 		return err
 	}
 
