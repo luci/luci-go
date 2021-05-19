@@ -23,6 +23,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportError } from '../../libs/error_handler';
+import { StepExt } from '../../models/step_ext';
 import commonStyle from '../../styles/common_style.css';
 
 const MARGIN = 10;
@@ -35,6 +36,8 @@ const STEP_HEIGHT = 24;
 const STEP_MARGIN = (ROW_HEIGHT - STEP_HEIGHT) / 2 - HALF_BORDER_SIZE;
 const STEP_EXTRA_WIDTH = 2;
 
+const TEXT_HEIGHT = 10;
+const STEP_TEXT_OFFSET = ROW_HEIGHT / 2 + TEXT_HEIGHT / 2;
 const TEXT_MARGIN = 10;
 
 const SIDE_PANEL_WIDTH = 400;
@@ -46,6 +49,22 @@ const LIST_ITEM_WIDTH = SIDE_PANEL_RECT_WIDTH - TEXT_MARGIN * 2;
 const LIST_ITEM_HEIGHT = 16;
 const LIST_ITEM_X_OFFSET = STEP_MARGIN + TEXT_MARGIN + BORDER_SIZE;
 const LIST_ITEM_Y_OFFSET = STEP_MARGIN + (STEP_HEIGHT - LIST_ITEM_HEIGHT) / 2;
+
+/**
+ * A utility function that helps assigning appropriate list numbers to steps.
+ * For example, if a step is the 1st child of the 2nd root step, the list number
+ * would be '2.1. '.
+ *
+ * @param steps a list of steps.
+ * @yields A tuple consist of the index, the list number, and the step.
+ */
+function* traverseStepList(steps: readonly StepExt[]): IterableIterator<[number, string, StepExt]> {
+  const ancestorNums: number[] = [];
+  for (const [i, step] of steps.entries()) {
+    ancestorNums.splice(step.depth, ancestorNums.length, step.index + 1);
+    yield [i, ancestorNums.join('.') + '. ', step];
+  }
+}
 
 @customElement('milo-timeline-tab')
 @errorHandler(forwardWithoutMsg)
@@ -181,10 +200,7 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
-    const ancestorNums: number[] = [];
-    for (const [i, step] of build.steps.entries()) {
-      ancestorNums.splice(step.depth, ancestorNums.length, step.index + 1);
-
+    for (const [i, listNum, step] of traverseStepList(build.steps)) {
       const stepGroup = svg
         .append('g')
         .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
@@ -204,7 +220,7 @@ export class TimelineTabElement extends MiloBaseElement {
         .attr('y', LIST_ITEM_Y_OFFSET)
         .attr('height', STEP_HEIGHT - LIST_ITEM_Y_OFFSET)
         .attr('width', LIST_ITEM_WIDTH);
-      listItem.append('xhtml:span').text(ancestorNums.join('.') + '. ');
+      listItem.append('xhtml:span').text(listNum);
       const stepText = listItem.append('xhtml:span').text(step.selfName);
 
       const logUrl = step.logs?.[0].viewUrl;
@@ -259,6 +275,63 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickSize(-this.bodyWidth)
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
+
+    for (const [i, listNum, step] of traverseStepList(build.steps)) {
+      const start = this.scaleTime(step.startTime?.toMillis() || this.now);
+      const end = this.scaleTime(step.endTime?.toMillis() || this.now);
+
+      const stepGroup = svg
+        .append('g')
+        .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
+        .attr('transform', `translate(${start}, ${i * ROW_HEIGHT})`);
+
+      // Add extra width so tiny steps are visible.
+      const width = end - start + STEP_EXTRA_WIDTH;
+
+      const rect = stepGroup
+        .append('rect')
+        .attr('x', -STEP_EXTRA_WIDTH / 2)
+        .attr('y', STEP_MARGIN)
+        .attr('width', width)
+        .attr('height', STEP_HEIGHT);
+
+      const isWide = width > this.bodyWidth * 0.33;
+      const nearEnd = end > this.bodyWidth * 0.66;
+
+      const stepText = stepGroup
+        .append('text')
+        .attr('text-anchor', isWide || !nearEnd ? 'start' : 'end')
+        .attr('x', isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN)
+        .attr('y', STEP_TEXT_OFFSET)
+        .text(listNum + step.selfName);
+
+      const logUrl = step.logs?.[0].viewUrl;
+      if (logUrl) {
+        const onClick = (e: MouseEvent) => {
+          e.stopPropagation();
+          window.open(logUrl, '_blank');
+        };
+        rect.attr('class', 'clickable').on('click', onClick);
+
+        // Wail until the next event cycle so stepText is rendered when we call
+        // this.getBBox();
+        window.setTimeout(() => {
+          stepText.each(function () {
+            const bBox = this.getBBox();
+
+            // This makes the step text easier to click.
+            stepGroup
+              .append('rect')
+              .attr('x', bBox.x)
+              .attr('y', bBox.y)
+              .attr('width', bBox.width)
+              .attr('height', bBox.height)
+              .attr('class', 'clickable invisible')
+              .on('click', onClick);
+          });
+        });
+      }
+    }
 
     // Right border.
     svg
@@ -359,6 +432,10 @@ export class TimelineTabElement extends MiloBaseElement {
       .canceled > rect {
         stroke: var(--canceled-color);
         fill: var(--canceled-bg-color);
+      }
+
+      .invisible {
+        opacity: 0;
       }
     `,
   ];
