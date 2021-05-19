@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63191830_7da75e5e",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-05-19T06:11:00Z",
+      "side": 1,
+      "message": "Is there no standard type to use for \"list\" flags?",
+      "revId": "f635214b12897c96d7e29ffdc5173d0ca78dd157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
