@@ -184,6 +184,16 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
         { fireImmediately: true }
       )
     );
+    this.addDisposer(
+      reaction(
+        () => this.configsStore.userConfigs.steps.expandByDefault,
+        (expandByDefault) => {
+          this.expanded = expandByDefault;
+          this.expandSubSteps = true;
+        },
+        { fireImmediately: true }
+      )
+    );
     this.addEventListener('click', this.onMouseClick);
   }
 
