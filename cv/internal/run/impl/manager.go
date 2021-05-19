@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // RunManager manages Runs.
@@ -45,10 +46,11 @@ type RunManager struct {
 	handler     handler.Handler
 }
 
-func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater) *RunManager {
+func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.Client) *RunManager {
 	rm := &RunManager{n, pm, u, &handler.Impl{
-		PM: pm,
-		RM: n,
+		PM:         pm,
+		RM:         n,
+		TreeClient: tc,
 	}}
 	n.TaskRefs.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {

@@ -141,7 +141,6 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	ctx = t.installDS(ctx)
 	ctx = txndefer.FilterRDS(ctx)
 	ctx = t.GFake.Install(ctx)
-	ctx = t.TreeFake.Install(ctx)
 	ctx = t.BQFake.Install(ctx)
 	return ctx, t.cleanup
 }
