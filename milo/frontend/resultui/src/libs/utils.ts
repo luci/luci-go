@@ -78,3 +78,12 @@ export function unwrapObservable<T>(observable: IPromiseBasedObservable<T>, defa
       return observable.value;
   }
 }
+
+/**
+ * A utility function that helps set additional search query params.
+ */
+export function urlSetSearchQueryParam(url: string, key: string, value: { toString(): string }) {
+  const urlObj = new URL(url);
+  urlObj.searchParams.set(key, value.toString());
+  return urlObj.toString();
+}

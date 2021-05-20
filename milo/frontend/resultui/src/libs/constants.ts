@@ -103,3 +103,5 @@ export const BUILD_STATUS_COLOR_MAP = Object.freeze({
   [BuildStatus.InfraFailure]: 'var(--critical-failure-color)',
   [BuildStatus.Canceled]: 'var(--canceled-color)',
 });
+
+export const ARTIFACT_LENGTH_LIMIT = 10000;

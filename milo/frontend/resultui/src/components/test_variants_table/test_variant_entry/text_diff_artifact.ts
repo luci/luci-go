@@ -20,9 +20,10 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../expandable_entry';
+import { ARTIFACT_LENGTH_LIMIT } from '../../../libs/constants';
 import { reportRenderError } from '../../../libs/error_handler';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
-import { unwrapObservable } from '../../../libs/utils';
+import { unwrapObservable, urlSetSearchQueryParam } from '../../../libs/utils';
 import { router } from '../../../routes';
 import { Artifact } from '../../../services/resultdb';
 import commonStyle from '../../../styles/common_style.css';
@@ -37,7 +38,9 @@ export class TextDiffArtifactElement extends MobxLitElement {
   @computed
   private get content$(): IPromiseBasedObservable<string> {
     // TODO(weiweilin): handle refresh.
-    return fromPromise(fetch(this.artifact.fetchUrl).then((res) => res.text()));
+    return fromPromise(
+      fetch(urlSetSearchQueryParam(this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => res.text())
+    );
   }
 
   @computed

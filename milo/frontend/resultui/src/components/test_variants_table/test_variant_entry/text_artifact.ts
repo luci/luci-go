@@ -20,9 +20,10 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../dot_spinner';
 import { consumeArtifacts, consumeArtifactsFinalized } from '../../../context/artifact_provider';
+import { ARTIFACT_LENGTH_LIMIT } from '../../../libs/constants';
 import { consumer } from '../../../libs/context';
 import { reportRenderError } from '../../../libs/error_handler';
-import { unwrapObservable } from '../../../libs/utils';
+import { unwrapObservable, urlSetSearchQueryParam } from '../../../libs/utils';
 import { Artifact } from '../../../services/resultdb';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -54,7 +55,9 @@ export class TextArtifactElement extends MobxLitElement {
     if (!this.fetchUrl) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(fetch(this.fetchUrl).then((res) => res.text()));
+    return fromPromise(
+      fetch(urlSetSearchQueryParam(this.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => res.text())
+    );
   }
 
   @computed
