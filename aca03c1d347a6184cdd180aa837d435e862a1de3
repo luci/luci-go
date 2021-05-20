@@ -33,6 +33,24 @@
       "message": ":) should we use css with some sort of width or margin?",
       "revId": "aca03c1d347a6184cdd180aa837d435e862a1de3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4230ec72_47e3b43a",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-20T05:14:04Z",
+      "side": 1,
+      "message": "Oops. Forgot to clean that up. Fixed.",
+      "parentUuid": "c8b7f2cd_419cddf3",
+      "revId": "aca03c1d347a6184cdd180aa837d435e862a1de3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
