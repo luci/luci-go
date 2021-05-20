@@ -19,6 +19,8 @@ package archive
 import (
 	"io"
 
+	cl "cloud.google.com/go/logging"
+
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -57,6 +59,9 @@ type Manifest struct {
 
 	// Logger, if not nil, will be used to log status during archival.
 	Logger logging.Logger
+
+	// CloudLogger, if not nil, will be used to export archived log entries to Cloud Logging.
+	CloudLogger *cl.Logger
 
 	// sizeFunc is a size method override used for testing.
 	sizeFunc func(proto.Message) int

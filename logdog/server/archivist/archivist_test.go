@@ -42,6 +42,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	cl "cloud.google.com/go/logging"
+	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -197,8 +199,9 @@ func (w *testGSWriter) Count() int64 {
 
 // testCLClient iis a testing implementation of the CLClient interface.
 type testCLClient struct {
-	closeFn func() error
-	pingFn  func(context.Context) error
+	closeFn  func() error
+	pingFn   func(context.Context) error
+	loggerFn func(string, ...cl.LoggerOption) *cl.Logger
 
 	isClosed            bool
 	clProject           string
@@ -223,6 +226,14 @@ func (c *testCLClient) Ping(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (c *testCLClient) Logger(logID string, opts ...cl.LoggerOption) *cl.Logger {
+	if c.loggerFn != nil {
+		return c.loggerFn(logID, opts...)
+	}
+	return nil
+}
+
 func TestHandleArchive(t *testing.T) {
 	t.Parallel()
 
@@ -781,13 +792,43 @@ func TestHandleArchive(t *testing.T) {
 
 		Convey("Will ping", func() {
 			ar.CLClientFactory = func(ctx context.Context, lp, cp string, s bool) (CLClient, error) {
-				cl, err := clcFactory(c, lp, cp, s)
-				cl.(*testCLClient).pingFn = func(context.Context) error {
+				clc, err := clcFactory(c, lp, cp, s)
+				clc.(*testCLClient).pingFn = func(context.Context) error {
 					return errors.New("Permission Denied")
 				}
-				return cl, err
+				return clc, err
 			}
 			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "failed to ping")
+		})
+
+		Convey(`Will construct Cloud Logger`, func() {
+			// override the loggerFn to hook the params for the logger constructor.
+			var logID string
+			var opts []cl.LoggerOption
+			ar.CLClientFactory = func(ctx context.Context, lp, cp string, s bool) (CLClient, error) {
+				clc, err := clcFactory(c, lp, cp, s)
+				clc.(*testCLClient).loggerFn = func(l string, os ...cl.LoggerOption) *cl.Logger {
+					logID, opts = l, os
+					return &cl.Logger{}
+				}
+				return clc, err
+			}
+
+			desc.Tags = map[string]string{"key1": "val1"}
+			reloadDesc()
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+
+			So(logID, ShouldEqual, "logdog")
+			So(opts[0], ShouldResemble, cl.CommonLabels(map[string]string{"key1": "val1"}))
+			So(opts[1], ShouldResembleProto, cl.CommonResource(&mrpb.MonitoredResource{
+				Type: "generic_task",
+				Labels: map[string]string{
+					"project_id": project,
+					"location":   desc.Name,
+					"namespace":  desc.Prefix,
+					"job":        "cloud-logging-export",
+				},
+			}))
 		})
 	})
 }
