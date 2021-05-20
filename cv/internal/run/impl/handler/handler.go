@@ -38,6 +38,8 @@ type Result struct {
 	// PostProcessFn is executed by the eventbox user after event processing
 	// completes.
 	PostProcessFn eventbox.PostProcessFn
+
+	SubmissionScheduled bool
 }
 
 // Handler is an interface that handles events that RunManager receives.
@@ -68,6 +70,12 @@ type Handler interface {
 	// If submission succeeds, mark run as `SUCCEEDED`. Otherwise, decides whether
 	// to retry submission or fail the run depending on the submission result.
 	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error)
+
+	// TryResumeSubmission resumes not-expired submission if the current task is
+	// a retry of the submission task.
+	//
+	// Fail the Run if the submission deadline has been exceeded.
+	TryResumeSubmission(context.Context, *state.RunState) (*Result, error)
 
 	// Poke checks current Run state and take actions to progress the Run.
 	Poke(context.Context, *state.RunState) (*Result, error)
