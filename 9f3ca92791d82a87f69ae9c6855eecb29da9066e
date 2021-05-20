@@ -16,6 +16,75 @@
       "message": "ptal",
       "revId": "9f3ca92791d82a87f69ae9c6855eecb29da9066e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4139be02_fad508de",
+        "filename": "cv/internal/run/impl/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T21:40:07Z",
+      "side": 1,
+      "message": "s 😊",
+      "range": {
+        "startLine": 72,
+        "startChar": 42,
+        "endLine": 72,
+        "endChar": 43
+      },
+      "revId": "9f3ca92791d82a87f69ae9c6855eecb29da9066e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0fff7fd_882eec86",
+        "filename": "cv/internal/run/impl/handler/poke.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T21:40:07Z",
+      "side": 1,
+      "message": "minor: I don\u0027t grasp why `rs.Run.Submission.GetLastTreeCheckTime()` check is needed.\n\nIF defensive programming, then i think it should be \"... \u003d\u003d nil || ...\" meaning \"either never checked OR \u003e\u003d1 minute old).\n\nELSE, I think `!rs.Run.Submission.GetTreeOpen()` means that tree was checked, and hence the time must be set.\n\nHave I missed something?",
+      "range": {
+        "startLine": 50,
+        "startChar": 43,
+        "endLine": 50,
+        "endChar": 52
+      },
+      "revId": "9f3ca92791d82a87f69ae9c6855eecb29da9066e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6366895f_e47f4267",
+        "filename": "cv/internal/run/impl/handler/poke_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T21:40:07Z",
+      "side": 1,
+      "message": "nit: \"recent\" is better (vs \"closed tree\" connotation)",
+      "range": {
+        "startLine": 161,
+        "startChar": 38,
+        "endLine": 161,
+        "endChar": 43
+      },
+      "revId": "9f3ca92791d82a87f69ae9c6855eecb29da9066e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
