@@ -26,7 +26,7 @@ import (
 )
 
 // triageDeps triages deps of a PCL. See triagedDeps for documentation.
-func (a *Actor) triageDeps(pcl *prjpb.PCL, cgIndex int32) *triagedDeps {
+func (a *actor) triageDeps(pcl *prjpb.PCL, cgIndex int32) *triagedDeps {
 	cg := a.s.ConfigGroup(cgIndex).Content
 	res := &triagedDeps{}
 	for _, dep := range pcl.GetDeps() {
