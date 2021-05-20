@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae207589_00eabea7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-20T02:08:39Z",
+      "side": 1,
+      "message": "ptal",
+      "revId": "e5285ac69771a88dd48be0cd445501491aa5c7a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e4187fd_09e5fcea",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-20T02:08:39Z",
+      "side": 1,
+      "message": "purely moved from continueSubmissionIfPossible",
+      "revId": "e5285ac69771a88dd48be0cd445501491aa5c7a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15cbe254_15f56267",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-20T02:08:39Z",
+      "side": 1,
+      "message": "I don\u0027t like this that much. but I also don\u0027t have better idea (trivial) to share data/state across different handlers. Putting it in RunState is the easiest way and this data is at least relevant to RunState. So I just choose this way.",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 25
+      },
+      "revId": "e5285ac69771a88dd48be0cd445501491aa5c7a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
