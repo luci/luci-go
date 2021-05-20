@@ -22,6 +22,30 @@
       },
       "revId": "dadc6c85cde80f98f3fca5431e60c432d081a89a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fb662fd1_09863e74",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-20T23:43:53Z",
+      "side": 0,
+      "message": "hmm true.. maybe we should loose this restriction to populate CreateTime and StartTime. And the implementation has the freedom set the time that best reflect what\u0027s happening.",
+      "parentUuid": "11a11625_56fa0864",
+      "range": {
+        "startLine": 119,
+        "startChar": 15,
+        "endLine": 119,
+        "endChar": 25
+      },
+      "revId": "dadc6c85cde80f98f3fca5431e60c432d081a89a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
