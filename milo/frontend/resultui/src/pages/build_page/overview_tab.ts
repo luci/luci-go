@@ -301,6 +301,16 @@ export class OverviewTabElement extends MobxLitElement {
             }}
           />
           <label for="debug-logs">Debug Logs</label>
+          <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          <input
+            id="expand-by-default"
+            type="checkbox"
+            ?checked=${this.configsStore.userConfigs.steps.expandByDefault}
+            @change=${(e: MouseEvent) => {
+              this.configsStore.userConfigs.steps.expandByDefault = (e.target as HTMLInputElement).checked;
+            }}
+          />
+          <label for="expand-by-default">Expand by default</label>
         </div>
         <milo-build-step-list></milo-build-step-list>
       </div>
