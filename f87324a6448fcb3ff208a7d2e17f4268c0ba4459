@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb2a8e44_138b249b",
+        "filename": "milo/frontend/resultui/src/libs/utils.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-20T01:47:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f075404b_b07c83ce",
+      "range": {
+        "startLine": 83,
+        "startChar": 27,
+        "endLine": 83,
+        "endChar": 39
+      },
+      "revId": "f87324a6448fcb3ff208a7d2e17f4268c0ba4459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f719b8ae_9bfd3082",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-19T04:56:30Z",
       "side": 1,
       "message": "consider making this \"any\" and call value.toString().\nThen ARTIFACT_LENGTH_LIMIT can be a number, which is more natural than a string",
+      "range": {
+        "startLine": 85,
+        "startChar": 72,
+        "endLine": 85,
+        "endChar": 78
+      },
+      "revId": "f87324a6448fcb3ff208a7d2e17f4268c0ba4459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2adcd842_c5408b6f",
+        "filename": "milo/frontend/resultui/src/libs/utils.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-20T01:47:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f719b8ae_9bfd3082",
       "range": {
         "startLine": 85,
         "startChar": 72,
