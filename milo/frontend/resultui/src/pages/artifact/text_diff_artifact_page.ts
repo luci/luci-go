@@ -21,10 +21,11 @@ import { fromPromise } from 'mobx-utils';
 import '../../components/dot_spinner';
 import '../../components/status_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
+import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { unwrapObservable } from '../../libs/utils';
+import { unwrapObservable, urlSetSearchQueryParam } from '../../libs/utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 import { consumeArtifactIdent } from './artifact_page_layout';
@@ -60,7 +61,9 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle refresh.
-    return fromPromise(fetch(this.artifact.fetchUrl).then((res) => res.text()));
+    return fromPromise(
+      fetch(urlSetSearchQueryParam(this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => res.text())
+    );
   }
   @computed private get content() {
     return unwrapObservable(this.content$, null);
