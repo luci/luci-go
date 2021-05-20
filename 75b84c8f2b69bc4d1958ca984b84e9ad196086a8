@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0771d6aa_fc81d555",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T23:29:29Z",
+      "side": 1,
+      "message": "yes; no idea about convention.\n\nBut I expect to rename `componentactor` to `triager`, hence the `i` suffix.",
+      "parentUuid": "dfcb6d84_19216935",
+      "revId": "75b84c8f2b69bc4d1958ca984b84e9ad196086a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6be870dc_6bbf63e9",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-05-20T16:44:32Z",
       "side": 1,
       "message": "Without a lot of context, this sounds vague to me --\n\nSo a component is basically a set of CLs that may go together in a Run, right?\n\nAnd the \"what\" and \"when\" here are basically: \"shall a Run be created now with CLs in the component?\"\n\nAnd the context is that after polling and deciding what CLs might go together, we \"triage\" to decide whether to start runs? Is that right? (And if not, can it be clarified?)",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 68
+      },
+      "revId": "75b84c8f2b69bc4d1958ca984b84e9ad196086a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39b7e80b_7fbf88b9",
+        "filename": "cv/internal/prjmanager/impl/state/itriager/itriager.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T23:29:29Z",
+      "side": 1,
+      "message": "exactly right. Let me try to clarify in another CL at the end of my stack, because I unfortunately already edited the doc in several CLs inside the stack, and I\u0027d rather avoid rebase diffs.",
+      "parentUuid": "6be870dc_6bbf63e9",
       "range": {
         "startLine": 28,
         "startChar": 0,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbd5cf8b_f13a1fb6",
+        "filename": "cv/internal/prjmanager/impl/state/itriager/itriager.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T23:29:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "630ed11d_4e1e3af7",
+      "range": {
+        "startLine": 34,
+        "startChar": 15,
+        "endLine": 34,
+        "endChar": 21
+      },
+      "revId": "75b84c8f2b69bc4d1958ca984b84e9ad196086a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b86b810b_c39a216a",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-05-20T16:44:32Z",
       "side": 1,
       "message": "Name nit: CLsToPurge",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 11
+      },
+      "revId": "75b84c8f2b69bc4d1958ca984b84e9ad196086a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb5341a5_127d114a",
+        "filename": "cv/internal/prjmanager/impl/state/itriager/itriager.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T23:29:29Z",
+      "side": 1,
+      "message": "yeah, already done in https://crrev.com/c/2908197/1",
+      "parentUuid": "b86b810b_c39a216a",
       "range": {
         "startLine": 66,
         "startChar": 1,
