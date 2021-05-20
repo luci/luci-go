@@ -181,6 +181,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f8247cef_8b8c3320",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T22:48:31Z",
+      "side": 1,
+      "message": "\u003e Logdog panics\n\nDon\u0027t panic.\nHard fail the cloud export only. Causes no problems. Yes, won\u0027t be noticed by us, and it\u0027s fine, customer who cares will come back and tell us, we check logs, tell back \"duh, maybe use short name\", customer changes their ways, costs us ~15 minutes for communication \u0026 searching logs.",
+      "parentUuid": "6aa4efef_203d03eb",
+      "range": {
+        "startLine": 705,
+        "startChar": 23,
+        "endLine": 705,
+        "endChar": 29
+      },
+      "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "950709ee_3d9c0e8e",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 2
