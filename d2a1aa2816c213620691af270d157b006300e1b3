@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "18e23772_c26b2d47",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-20T22:04:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "555323ad_64d93603",
+      "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8316d01a_1a84d8f3",
