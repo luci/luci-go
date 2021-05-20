@@ -15,12 +15,12 @@
 describe('Timeline Tab', () => {
   it('should render timeline correctly', () => {
     cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/timeline');
-    cy.get('#timeline', { includeShadowDom: true });
+    cy.get('#timeline');
     cy.matchImageSnapshot('timeline-tab');
   });
 
   it('can handle builds with no steps', () => {
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/14569/timeline');
-    cy.get('#no-steps', { includeShadowDom: true }).contains('No steps were run.');
+    cy.get('#no-steps').contains('No steps were run.');
   });
 });
