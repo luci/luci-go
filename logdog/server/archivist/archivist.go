@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"io"
 
+	cl "cloud.google.com/go/logging"
 	"github.com/golang/protobuf/proto"
+	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
@@ -51,6 +53,7 @@ const (
 // unit tests to stub out CloudLogging.
 type CLClient interface {
 	Close() error
+	Logger(logID string, opts ...cl.LoggerOption) *cl.Logger
 	Ping(context.Context) error
 }
 
@@ -683,6 +686,21 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		ByteRange:        sa.IndexByteRange,
 
 		Logger: log.Get(c),
+	}
+	if sa.clclient != nil {
+		m.CloudLogger = sa.clclient.Logger(
+			"logdog",
+			cl.CommonLabels(sa.desc.GetTags()),
+			cl.CommonResource(&mrpb.MonitoredResource{
+				Type: "generic_task",
+				Labels: map[string]string{
+					"project_id": sa.project,
+					"location":   sa.desc.GetName(),
+					"namespace":  sa.desc.GetPrefix(),
+					"job":        "cloud-logging-export",
+				},
+			}),
+		)
 	}
 	if err = archive.Archive(m); err != nil {
 		log.WithError(err).Errorf(c, "Failed to archive log stream.")
