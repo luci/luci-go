@@ -131,6 +131,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a77cf798_27118062",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T22:33:50Z",
+      "side": 1,
+      "message": "\u003e I don\u0027t think any one would mix and export logdog streams of multiple projects into one Cloud Project.\n\nI think that\u0027s actually quite likely to happen: e.g. Chrome + Chromium,\nor even just {chrome + chrome-m91, ...other chrome-milestone projects... }\n\nSo, I really like your prior \"logdog/\" + sa.project",
+      "parentUuid": "8f68cd2e_adf9d92d",
+      "range": {
+        "startLine": 705,
+        "startChar": 23,
+        "endLine": 705,
+        "endChar": 29
+      },
+      "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "950709ee_3d9c0e8e",
