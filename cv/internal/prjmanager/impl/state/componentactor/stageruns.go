@@ -180,7 +180,7 @@ type combo struct {
 func (c *combo) add(info *clInfo) {
 	c.all = append(c.all, info)
 	if c.clids == nil {
-		c.clids = map[int64]struct{}{info.pcl.GetClid(): struct{}{}}
+		c.clids = map[int64]struct{}{info.pcl.GetClid(): {}}
 	} else {
 		c.clids[info.pcl.GetClid()] = struct{}{}
 	}
