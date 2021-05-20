@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"io"
 
+	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
+
+	cl "cloud.google.com/go/logging"
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -51,6 +54,7 @@ const (
 // unit tests to stub out CloudLogging.
 type CLClient interface {
 	Close() error
+	Logger(logID string, opts ...cl.LoggerOption) *cl.Logger
 	Ping(context.Context) error
 }
 
@@ -687,6 +691,29 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		ByteRange:        sa.IndexByteRange,
 
 		Logger: log.Get(c),
+	}
+	if sa.clclient != nil {
+		m.CloudLogger = sa.clclient.Logger(
+			// Set LogID in logdog/$project so that users can select log names by logdog projects
+			// to narrow down the search scope in Cloud Logging.
+			//
+			// len(LogID) must be < 512. The below string format limits the maximum length to
+			// ensure the generated ID is < 512.
+			//
+			// CloudLogging allows ./_- and alphanumerics only for LogID, but they include all
+			// the valid chars of LUCI project names.
+			fmt.Sprintf("logdog/%.504s", sa.project),
+			cl.CommonLabels(sa.desc.GetTags()),
+			cl.CommonResource(&mrpb.MonitoredResource{
+				Type: "generic_task",
+				Labels: map[string]string{
+					"project_id": sa.project,
+					"location":   sa.desc.GetName(),
+					"namespace":  sa.desc.GetPrefix(),
+					"job":        "cloud-logging-export",
+				},
+			}),
+		)
 	}
 	if err = archive.Archive(m); err != nil {
 		log.WithError(err).Errorf(c, "Failed to archive log stream.")
