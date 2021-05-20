@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
-	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -81,12 +80,6 @@ type State struct {
 	//
 	// lazily created, see ensurePCLIndex().
 	pclIndex pclIndex // CLID => index.
-
-	// Test mocks. Not set in production.
-
-	testComponentActorFactory func(*prjpb.Component, componentactor.Supporter) componentActor
-	// TODO(tandrii): delete this with old kind of component actor.
-	testUseNewComponentTriager bool
 }
 
 // UpdateConfig updates PM to latest config version.
@@ -362,47 +355,21 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	}
 
 	var sideEffect SideEffect
-	if s.testUseNewComponentTriager {
-		switch actions, err := s.triageComponents(ctx); {
-		case err != nil:
-			if !mutated {
-				return nil, nil, err
-			}
-			// Don't lose progress made so far.
-			logging.Warningf(ctx, "Failed to triageComponents %s, but proceeding to save repartitioned state", err)
-		case len(actions) > 0:
-			if !mutated {
-				s = s.cloneShallow()
-				mutated = true
-			}
-			sideEffect, err = s.actOnComponents(ctx, actions)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-	} else {
-		// TODO(tandrii): delete this section.
-		actions, components, err := s.scanComponents(ctx)
-		switch {
-		case err != nil:
+	switch actions, err := s.triageComponents(ctx); {
+	case err != nil:
+		if !mutated {
 			return nil, nil, err
-		case components == nil:
-			// scanComponents also guarantees len(actions) == 0.
-			// Since no changes are required, there is no need to re-evaluate
-			// earliestDecisionTime.
-			return s, nil, nil
-		case !mutated:
-			s = s.cloneShallow()
-			fallthrough
-		default:
-			s.PB.Components = components
 		}
-
-		if len(actions) > 0 {
-			sideEffect, err = s.execComponentActions(ctx, actions, components)
-			if err != nil {
-				return nil, nil, err
-			}
+		// Don't lose progress made so far.
+		logging.Warningf(ctx, "Failed to triageComponents %s, but proceeding to save repartitioned state", err)
+	case len(actions) > 0:
+		if !mutated {
+			s = s.cloneShallow()
+			mutated = true
+		}
+		sideEffect, err = s.actOnComponents(ctx, actions)
+		if err != nil {
+			return nil, nil, err
 		}
 	}
 
