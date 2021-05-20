@@ -157,6 +157,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6aa4efef_203d03eb",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-20T22:38:29Z",
+      "side": 1,
+      "message": ":) I will add it back, but I\u0027m not sure if hard-failing in logdog is a good choice. Let\u0027s say that Logdog panics if the project name is longer than 504,\n(which is very unlikely happen, I guess).\n\nIf Logdog.archivist hard fails, then the mitigation would be to change the project name to avoid conflicts? I imagine that it\u0027d likely require CLs in many other places, which may not be super easy.\n\nWDYT of adding back the original code w/o hard-failing?",
+      "parentUuid": "a77cf798_27118062",
+      "range": {
+        "startLine": 705,
+        "startChar": 23,
+        "endLine": 705,
+        "endChar": 29
+      },
+      "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "950709ee_3d9c0e8e",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 2
