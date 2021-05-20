@@ -428,37 +428,11 @@ func (a *Archivist) makeStagedArchival(c context.Context, project string,
 		return nil, err
 	}
 
-	var clc CLClient
-	if st.CloudLoggingProjectID != "" {
-		log.Infof(c, "Log stream will be exported to %s via CloudLogging.", st.CloudLoggingProjectID)
-
-		// Validate the project ID, and ping the project to verify the auth.
-		if err = gcloud.ValidateProjectID(st.CloudLoggingProjectID); err != nil {
-			prID := st.CloudLoggingProjectID
-			if len(prID) > 64 {
-				prID = fmt.Sprintf("%.50s...(truncated)", prID)
-			}
-			return nil, errors.Annotate(err, "CloudLoggingProjectID %q", prID).Err()
-		}
-		clc, err = a.CLClientFactory(c, project, st.CloudLoggingProjectID, st.CloudLoggingWithProjectScope)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey:   err,
-				"protoVersion": ls.State.ProtoVersion,
-			}.Errorf(c, "Failed to obtain CloudLogging client.")
-			return nil, err
-		}
-		if err = clc.Ping(c); err != nil {
-			return nil, errors.Annotate(err, "failed to ping CloudProject %q for log-export", st.CloudLoggingProjectID).Err()
-		}
-	}
-
 	sa := stagedArchival{
 		Archivist: a,
 		Settings:  st,
 		project:   project,
 		gsclient:  gsClient,
-		clclient:  clc,
 
 		terminalIndex: types.MessageIndex(ls.State.TerminalIndex),
 	}
@@ -478,6 +452,29 @@ func (a *Archivist) makeStagedArchival(c context.Context, project string,
 	if err = sa.makeStagingPaths(uid); err != nil {
 		return nil, err
 	}
+
+	// Construct a CloudLogging client, if the config is set and the input stream type is TEXT.
+	if st.CloudLoggingProjectID != "" && sa.desc.StreamType == logpb.StreamType_TEXT {
+		// Validate the project ID, and ping the project to verify the auth.
+		if err = gcloud.ValidateProjectID(st.CloudLoggingProjectID); err != nil {
+			return nil, errors.Annotate(err, "CloudLoggingProjectID %q", st.CloudLoggingProjectID).Err()
+		}
+		clc, err := a.CLClientFactory(c, project, st.CloudLoggingProjectID, st.CloudLoggingWithProjectScope)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey:   err,
+				"protoVersion": ls.State.ProtoVersion,
+			}.Errorf(c, "Failed to obtain CloudLogging client.")
+			return nil, err
+		}
+		if err = clc.Ping(c); err != nil {
+			return nil, errors.Annotate(
+				err, "failed to ping CloudProject %q for Cloud Logging export",
+				st.CloudLoggingProjectID).Err()
+		}
+		sa.clclient = clc
+	}
+
 	return &sa, nil
 }
 
