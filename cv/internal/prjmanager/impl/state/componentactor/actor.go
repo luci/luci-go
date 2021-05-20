@@ -105,7 +105,7 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 	case when == now: // == is per contract of NextActionTime
 		c.DecisionTime = timestamppb.New(when)
 		res.RunsToCreate = a.runCreators
-		res.CLsTopurge = a.purgeCLtasks
+		res.CLsToPurge = a.purgeCLtasks
 	}
 	return res, nil
 }

@@ -158,8 +158,8 @@ func (s *State) triageOneComponent(ctx context.Context, oldC *prjpb.Component, s
 	if res.NewValue != nil && res.NewValue == oldC {
 		panic(fmt.Errorf("New value re-uses prior component object, must use copy-on-write instead"))
 	}
-	if len(res.CLsTopurge) > 0 {
-		s.validatePurgeCLTasks(oldC, res.CLsTopurge)
+	if len(res.CLsToPurge) > 0 {
+		s.validatePurgeCLTasks(oldC, res.CLsToPurge)
 	}
 	return
 }
@@ -205,7 +205,7 @@ func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEf
 			continue
 		}
 		runsCreated += len(action.RunsToCreate)
-		clsToPurge = append(clsToPurge, action.CLsTopurge...)
+		clsToPurge = append(clsToPurge, action.CLsToPurge...)
 		if action.NewValue != nil {
 			s.PB.Components[action.componentIndex] = action.NewValue
 			componentsUpdated++
