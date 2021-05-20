@@ -35,6 +35,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f8c177f_435a0f76",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T21:51:42Z",
+      "side": 1,
+      "message": "was",
+      "range": {
+        "startLine": 308,
+        "startChar": 63,
+        "endLine": 308,
+        "endChar": 64
+      },
+      "revId": "e5285ac69771a88dd48be0cd445501491aa5c7a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "15cbe254_15f56267",
@@ -48,6 +71,30 @@
       "writtenOn": "2021-05-20T02:08:39Z",
       "side": 1,
       "message": "I don\u0027t like this that much. but I also don\u0027t have better idea (trivial) to share data/state across different handlers. Putting it in RunState is the easiest way and this data is at least relevant to RunState. So I just choose this way.",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 25
+      },
+      "revId": "e5285ac69771a88dd48be0cd445501491aa5c7a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "129b1ed8_c0413749",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-20T21:51:42Z",
+      "side": 1,
+      "message": "I see, and yeah, smells. But I also don\u0027t have great ideas. If I come up with something while contributing to Run Manager, i\u0027ll let you know",
+      "parentUuid": "15cbe254_15f56267",
       "range": {
         "startLine": 41,
         "startChar": 0,
