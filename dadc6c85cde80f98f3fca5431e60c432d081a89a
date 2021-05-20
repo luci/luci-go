@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11a11625_56fa0864",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-20T23:04:01Z",
+      "side": 0,
+      "message": "I\u0027m wondering if some of these things should be revisited, too, since these will now be out of sync with \"Id\", etc.",
+      "range": {
+        "startLine": 119,
+        "startChar": 15,
+        "endLine": 119,
+        "endChar": 25
+      },
+      "revId": "dadc6c85cde80f98f3fca5431e60c432d081a89a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
