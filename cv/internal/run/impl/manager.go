@@ -294,9 +294,12 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		transitions = append(transitions, eventbox.Transition{Events: tr.newConfigEvents, TransitionTo: rs})
 	}
 	if len(tr.pokeEvents) > 0 {
-		// TODO(tandrii,yiwzhang): implement poke.
 		// TODO(crbug/1178658): trigger CL updater to refetch Run's CLs.
-		transitions = append(transitions, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: rs})
+		res, err := rp.handler.Poke(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		_, transitions = applyResult(res, tr.pokeEvents, transitions)
 	}
 
 	if err := rp.enqueueNextPoke(ctx, tr.nextReadyEventTime); err != nil {
