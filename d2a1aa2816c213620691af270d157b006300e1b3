@@ -253,6 +253,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1fc18676_eea52b5d",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-20T23:11:09Z",
+      "side": 1,
+      "message": "correction:\n\nIf a project was already created with the possible naming conflict, but is actively being used, it wouldn\u0027t be easy to fix the naming conflict.",
+      "parentUuid": "fcf3c587_921f13ab",
+      "range": {
+        "startLine": 705,
+        "startChar": 23,
+        "endLine": 705,
+        "endChar": 29
+      },
+      "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d676d94a_39944baf",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 2
