@@ -117,7 +117,7 @@ func TestDepsTriage(t *testing.T) {
 			proto.Merge(&backup, sup.pb)
 
 			// Actual component doesn't matter in this test.
-			a := newActor(nil, sup)
+			a := &actor{s: pmState{sup}}
 			td := a.triageDeps(pcl, cgIdx)
 			So(sup.pb, ShouldResembleProto, &backup) // must not be modified
 			return td
