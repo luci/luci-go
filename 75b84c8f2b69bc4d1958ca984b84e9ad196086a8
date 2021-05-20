@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dfcb6d84_19216935",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-20T16:44:32Z",
+      "side": 1,
+      "message": "Quick question only looking at docs.\n\nAlso, the package name is \"itriager\" because it contains a triager interface, and \"i\" stands for interface, right? Out of curiosity, is this a naming convention used in other places?",
+      "revId": "75b84c8f2b69bc4d1958ca984b84e9ad196086a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6be870dc_6bbf63e9",
+        "filename": "cv/internal/prjmanager/impl/state/itriager/itriager.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-20T16:44:32Z",
+      "side": 1,
+      "message": "Without a lot of context, this sounds vague to me --\n\nSo a component is basically a set of CLs that may go together in a Run, right?\n\nAnd the \"what\" and \"when\" here are basically: \"shall a Run be created now with CLs in the component?\"\n\nAnd the context is that after polling and deciding what CLs might go together, we \"triage\" to decide whether to start runs? Is that right? (And if not, can it be clarified?)",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 68
+      },
+      "revId": "75b84c8f2b69bc4d1958ca984b84e9ad196086a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "630ed11d_4e1e3af7",
+        "filename": "cv/internal/prjmanager/impl/state/itriager/itriager.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-20T16:44:32Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 34,
+        "startChar": 15,
+        "endLine": 34,
+        "endChar": 21
+      },
+      "revId": "75b84c8f2b69bc4d1958ca984b84e9ad196086a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b86b810b_c39a216a",
+        "filename": "cv/internal/prjmanager/impl/state/itriager/itriager.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-20T16:44:32Z",
+      "side": 1,
+      "message": "Name nit: CLsToPurge",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 11
+      },
+      "revId": "75b84c8f2b69bc4d1958ca984b84e9ad196086a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
