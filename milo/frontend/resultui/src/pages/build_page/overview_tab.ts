@@ -300,7 +300,16 @@ export class OverviewTabElement extends MobxLitElement {
               this.configsStore.userConfigs.steps.showDebugLogs = (e.target as HTMLInputElement).checked;
             }}
           />
-          <label for="debug-logs">Debug Logs</label>
+          <label id="debug-logs-label" for="debug-logs">Debug Logs</label>
+          <input
+            id="expand-by-default"
+            type="checkbox"
+            ?checked=${this.configsStore.userConfigs.steps.expandByDefault}
+            @change=${(e: MouseEvent) => {
+              this.configsStore.userConfigs.steps.expandByDefault = (e.target as HTMLInputElement).checked;
+            }}
+          />
+          <label for="expand-by-default">Expand by default</label>
         </div>
         <milo-build-step-list></milo-build-step-list>
       </div>
@@ -514,6 +523,10 @@ export class OverviewTabElement extends MobxLitElement {
 
       #step-config {
         margin-bottom: 10px;
+      }
+
+      #debug-logs-label {
+        margin-right: 50px;
       }
 
       milo-property-viewer {

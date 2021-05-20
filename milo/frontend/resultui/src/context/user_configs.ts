@@ -22,6 +22,7 @@ export interface UserConfigs {
   steps: {
     showSucceededSteps: boolean;
     showDebugLogs: boolean;
+    expandByDefault: boolean;
     stepPinTime: {
       // the key is the folded line.
       // the value is the last accessed time.
@@ -52,6 +53,7 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   steps: Object.freeze({
     showSucceededSteps: true,
     showDebugLogs: false,
+    expandByDefault: false,
     stepPinTime: Object.freeze({}),
   }),
   testResults: {
