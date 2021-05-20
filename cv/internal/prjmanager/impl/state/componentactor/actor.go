@@ -43,7 +43,8 @@ import (
 // The assumptions are in fact guaranteed by PM's State.repartion function.
 type Actor struct {
 	c *prjpb.Component
-	s supporterWrapper
+	// TODO(tandrii): rename to pm after merging multi-CL Run creation.
+	s pmState
 
 	// cls provides clid -> info for each CL of the component.
 	cls map[int64]*clInfo
@@ -63,7 +64,7 @@ type Actor struct {
 
 // newActor returns new Actor.
 func newActor(c *prjpb.Component, s itriager.PMState) *Actor {
-	return &Actor{c: c, s: supporterWrapper{s}}
+	return &Actor{c: c, s: pmState{s}}
 }
 
 // NextActionTime implements componentActor.
@@ -86,7 +87,7 @@ func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, e
 }
 
 func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriager.Result, error) {
-	a := Actor{c: c, s: supporterWrapper{s}}
+	a := Actor{c: c, s: pmState{s}}
 	res := itriager.Result{}
 	now := clock.Now(ctx)
 	// TODO(tandrii): refactor Actor into Triager and rewrite this function.
@@ -158,15 +159,15 @@ func (a *Actor) createRuns(ctx context.Context, pm runcreator.PM, rm runcreator.
 	return toAdd, nil
 }
 
-type supporterWrapper struct {
+type pmState struct {
 	itriager.PMState
 }
 
 // MustPCL panics if clid doesn't exist.
 //
 // Exists primarily for readability.
-func (s supporterWrapper) MustPCL(clid int64) *prjpb.PCL {
-	if p := s.PCL(clid); p != nil {
+func (pm pmState) MustPCL(clid int64) *prjpb.PCL {
+	if p := pm.PCL(clid); p != nil {
 		return p
 	}
 	panic(fmt.Errorf("MustPCL: clid %d not known", clid))
