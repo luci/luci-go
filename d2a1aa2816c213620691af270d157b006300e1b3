@@ -224,6 +224,30 @@
       },
       "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "48d70b03_59002274",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 715,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-20T22:20:23Z",
+      "side": 1,
+      "message": "landing; thanks for a review. Will follow up Robbie\u0027s comments, if he leaves.",
+      "parentUuid": "5406ac43_055f10f9",
+      "range": {
+        "startLine": 707,
+        "startChar": 3,
+        "endLine": 715,
+        "endChar": 6
+      },
+      "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
