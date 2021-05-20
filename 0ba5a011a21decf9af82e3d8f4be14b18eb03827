@@ -16,6 +16,24 @@
       "message": "maybe explain why. Hard to review a CL without understanding the reason behind it / what problem is it solving.",
       "revId": "0ba5a011a21decf9af82e3d8f4be14b18eb03827",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0221cf27_84c6fd04",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-20T04:32:51Z",
+      "side": 1,
+      "message": "Added explanation.",
+      "parentUuid": "579ed150_01e65469",
+      "revId": "0ba5a011a21decf9af82e3d8f4be14b18eb03827",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
