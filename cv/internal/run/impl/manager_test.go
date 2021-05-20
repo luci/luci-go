@@ -195,7 +195,7 @@ func TestRunManager(t *testing.T) {
 				func(ctx context.Context) error {
 					return notifier.PokeNow(ctx, runID)
 				},
-				"",
+				"Poke",
 			},
 		}
 		for _, et := range eventTestcases {
@@ -391,6 +391,15 @@ func (fh *fakeHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state
 		PreserveEvents: fh.preserveEvents,
 	}, nil
 }
+
+func (fh *fakeHandler) Poke(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
+	fh.addInvocation("Poke")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+	}, nil
+}
+
 func (fh *fakeHandler) addInvocation(method string) {
 	fh.invocations = append(fh.invocations, method)
 }
