@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
@@ -62,13 +63,21 @@ func earliestDecisionTime(cs []*prjpb.Component) (time.Time, *timestamppb.Timest
 // An action may involve creating one or more new Runs,
 // or removing CQ votes from CL(s) which can't form a Run for some reason.
 type cAction struct {
+	itriager.Result
 	componentIndex int
-	actor          componentActor
+
+	// runsFailed is modified during actOnComponents.
+	runsFailed int32
+
+	// TODO(tandrii): delete.
+	actor componentActor
 }
 
 const concurrentComponentProcessing = 16
 
 // scanComponents checks if any immediate actions have be taken on components.
+//
+// TODO(tandrii): use triageComponents instead.
 //
 // Doesn't modify state itself. If any components are modified or actions are to
 // be taken, then allocates a new component slice.
@@ -129,7 +138,7 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 
 				case when.Equal(now):
 					mutex.Lock()
-					actions = append(actions, cAction{i, actor})
+					actions = append(actions, cAction{componentIndex: i, actor: actor})
 					mutex.Unlock()
 
 				case when != oldWhen || oldC.GetDirty():
@@ -169,7 +178,27 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 	return actions, out, nil
 }
 
+// triageComponents triages components.
+//
+// Doesn't modify the state itself.
+//
+// Returns an action per each component that needs acting upon.
+func (s *State) triageComponents(ctx context.Context) ([]*cAction, error) {
+	// TODO(tandrii): implement.
+	return nil, nil
+	}
+
+// actOnComponents executes actions on components produced by triageComponents.
+//
+// Expects the state to be already shallow cloned.
+func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEffect, error) {
+	// TODO(tandrii): implement.
+	return nil, nil
+	}
+
 // execComponentActions executes actions on components.
+//
+// TODO(tandrii): use actOnComponents instead.
 //
 // Modifies passed component slice in place.
 // Modifies individuals components via copy-on-write.

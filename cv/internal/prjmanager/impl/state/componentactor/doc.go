@@ -14,4 +14,6 @@
 
 // Package componentactor acts on a specific component by implementing
 // state.componentActor.
+//
+// TODO(tandrii): move into ctriager package.
 package componentactor

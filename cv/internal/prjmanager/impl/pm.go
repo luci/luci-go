@@ -152,6 +152,7 @@ func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbo
 		RunNotifier: proc.runNotifier,
 		CLPurger:    proc.clPurger,
 		CLPoller:    proc.clPoller,
+		// TODO(tandrii): instantiate component triager.
 	}
 	switch p, err := prjmanager.Load(ctx, proc.luciProject); {
 	case err != nil:
