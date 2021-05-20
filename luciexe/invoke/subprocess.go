@@ -238,7 +238,6 @@ var fieldsToClear = stringset.NewFromSlice(
 	"status_details",
 	"summary_markdown",
 	"steps",
-	"tags",
 	"output",
 	"update_time",
 )

@@ -175,6 +175,7 @@ func TestSubprocess(t *testing.T) {
 				SummaryMarkdown: "hi",
 				CreateTime:      timestamppb.New(initialBuildTime),
 				StartTime:       timestamppb.New(initialBuildTime),
+				Tags:            []*bbpb.StringPair{{Key: "foo", Value: "bar"}},
 			})
 		})
 

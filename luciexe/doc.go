@@ -125,7 +125,6 @@
 //      - StatusDetails
 //      - Steps
 //      - SummaryMarkdown
-//      - Tags
 //      - UpdateTime
 //
 // The CWD is up to your application. Some contexts (like Buildbucket) will
