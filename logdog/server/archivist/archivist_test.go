@@ -727,6 +727,9 @@ func TestHandleArchive(t *testing.T) {
 		})
 
 		Convey(`Will construct CLClient if CloudLoggingProjectID is set.`, func() {
+			desc.StreamType = logpb.StreamType_TEXT
+			reloadDesc()
+
 			Convey(`w/ projectScope`, func() {
 				projectScopeEnabled = true
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
@@ -746,10 +749,24 @@ func TestHandleArchive(t *testing.T) {
 			})
 		})
 
-		Convey(`Will not construct CLClient if CloudLoggingProjectID is not set.`, func() {
-			clProject = ""
-			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-			So(clc, ShouldBeNil)
+		Convey(`Will not construct CLClient`, func() {
+			Convey(`if CloudLoggingProjectID is not set.`, func() {
+				desc.StreamType = logpb.StreamType_TEXT
+				reloadDesc()
+
+				clProject = ""
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(clc, ShouldBeNil)
+			})
+
+			Convey(`if StreamType is not TEXT.`, func() {
+				desc.StreamType = logpb.StreamType_BINARY
+				reloadDesc()
+
+				clProject = ""
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(clc, ShouldBeNil)
+			})
 		})
 
 		Convey(`Will close CLClient`, func() {
