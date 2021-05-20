@@ -86,6 +86,30 @@
       },
       "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02519846_add799cd",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 715,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-20T21:50:58Z",
+      "side": 1,
+      "message": "Here is a sample stream - http://shortn/_00VqLx2SVF\n\nI can write a separate CL to parse the prefix and add labels with the builder, bucket, realm, etc with best efforts.\n\nI\u0027d like to keep the monitored resource as it is now. It is part of the identification of Cloud Log entries, and used with TraceID to group relevant logs together.\n: https://screencast.googleplex.com/cast/NDcwNDE0MzE0MDcxNjU0NHxmODBlZWE1Yy02NA",
+      "parentUuid": "dc26e82d_884f995d",
+      "range": {
+        "startLine": 707,
+        "startChar": 3,
+        "endLine": 715,
+        "endChar": 6
+      },
+      "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
