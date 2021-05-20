@@ -39,6 +39,30 @@
       },
       "revId": "3c6eaab26e7dc77b3009572da9a7271844ac12a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "386e8f3d_e5b0b1fc",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 463,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-20T18:58:55Z",
+      "side": 1,
+      "message": "hmmmmm.....I completely have no idea, :( Removed",
+      "parentUuid": "9230e048_0d0d45a8",
+      "range": {
+        "startLine": 461,
+        "startChar": 3,
+        "endLine": 463,
+        "endChar": 4
+      },
+      "revId": "3c6eaab26e7dc77b3009572da9a7271844ac12a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
