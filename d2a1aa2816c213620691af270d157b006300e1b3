@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "950709ee_3d9c0e8e",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 715,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-20T19:07:36Z",
+      "side": 1,
+      "message": "In the design doc, I proposed the following schema.\n\n```\nresource.type \u003d \"generic_task\"\nresource.label.project \u003d \"luci-logdog\" \nresource.label.namespace \u003d \"${PROJECT}/${BUCKET}\"\nresource.job \u003d ${BUILDER}\"  \n\nlabels.step \u003d \"blink_web_tests\"\nlabels.step_log_name \u003d \"stdout\"\n```\n\nI realized that Logdog has no control on the actual tags attached to the stream, and a sampled Logdog stream didn\u0027t have tags with the bucket and builder names. As long as the stream has those tags, they will appear in LogEntry label (L706).\n\nHowever, the resource fields won\u0027t have the bucket and builder names. WDYT of these resource field values?",
+      "range": {
+        "startLine": 707,
+        "startChar": 3,
+        "endLine": 715,
+        "endChar": 6
+      },
+      "revId": "d2a1aa2816c213620691af270d157b006300e1b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
