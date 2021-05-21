@@ -15,17 +15,12 @@
 package state
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/gae/service/datastore"
-
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -35,47 +30,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-func TestRemoveRunFromCLs(t *testing.T) {
-	t.Parallel()
-
-	Convey("RemoveRunFromCLs", t, func() {
-		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
-		defer cancel()
-		s := &RunState{
-			Run: run.Run{
-				ID:  common.RunID("chromium/111-2-deadbeef"),
-				CLs: common.CLIDs{1},
-			},
-		}
-		Convey("Works", func() {
-			err := datastore.Put(ctx, &changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.MakeRunIDs("chromium/111-2-deadbeef", "infra/999-2-cafecafe"),
-				EVersion:       3,
-				UpdateTime:     clock.Now(ctx).UTC(),
-			})
-			So(err, ShouldBeNil)
-
-			ct.Clock.Add(1 * time.Hour)
-			now := clock.Now(ctx).UTC()
-			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return s.RemoveRunFromCLs(ctx)
-			}, nil)
-			So(err, ShouldBeNil)
-
-			cl := changelist.CL{ID: 1}
-			So(datastore.Get(ctx, &cl), ShouldBeNil)
-			So(cl, ShouldResemble, changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.MakeRunIDs("infra/999-2-cafecafe"),
-				EVersion:       4,
-				UpdateTime:     now,
-			})
-		})
-	})
-}
 
 func TestCheckTree(t *testing.T) {
 	t.Parallel()
