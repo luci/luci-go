@@ -44,19 +44,13 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	}
 
 	rs = rs.ShallowCopy()
-	endRun(ctx, rs, run.Status_CANCELLED)
+	se := endRun(ctx, rs, run.Status_CANCELLED, impl.PM)
 	if rs.Run.StartTime.IsZero() {
 		// This run has never started but already gets a cancelled event.
 		rs.Run.StartTime = rs.Run.EndTime
 	}
-	res := &Result{
-		State: rs,
-		SideEffectFn: func(ctx context.Context) error {
-			if err := removeRunFromCLs(ctx, rs.Run.ID, rs.Run.CLs); err != nil {
-				return err
-			}
-			return impl.PM.NotifyRunFinished(ctx, rs.Run.ID)
-		},
-	}
-	return res, nil
+	return &Result{
+		State:        rs,
+		SideEffectFn: se,
+	}, nil
 }
