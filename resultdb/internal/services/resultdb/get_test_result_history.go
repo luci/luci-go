@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/history"
@@ -72,6 +73,9 @@ func verifyGetTestResultHistoryPermission(ctx context.Context, realm string) err
 func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) error {
 	if in.GetRealm() == "" {
 		return errors.Reason("realm is required").Err()
+	}
+	if err := realms.ValidateRealmName(in.Realm, realms.GlobalScope); err != nil {
+		return errors.Annotate(err, "realm").Err()
 	}
 	// TODO(crbug.com/1107680): Add support for commit position ranges.
 	tr := in.GetTimeRange()
