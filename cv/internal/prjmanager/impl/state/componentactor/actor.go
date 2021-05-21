@@ -33,10 +33,11 @@ import (
 //
 // Meets the `itriager.Triage` requirements.
 func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriager.Result, error) {
+	pm := pmState{s}
 	res := itriager.Result{}
 
-	a := actor{c: c, s: pmState{s}}
-	a.triageCLs()
+	a := actor{c: c, s: pm}
+	a.cls = triageCLs(c, pm)
 	whenPurge := a.stagePurges(ctx, clock.Now(ctx))
 	whenNewRun, err := a.stageNewRuns(ctx)
 	if err != nil {
@@ -73,10 +74,6 @@ type actor struct {
 
 	// cls provides clid -> info for each CL of the component.
 	cls map[int64]*clInfo
-	// reverseDeps maps dep (as clid) -> which CLs depend on it.
-	//
-	// Only for CLs with clInfo.ready being true.
-	reverseDeps map[int64][]int64
 
 	// visitedCLs tracks clid of visited CLs during stageNewRuns.
 	visitedCLs map[int64]struct{}
