@@ -59,12 +59,6 @@ func TestCancel(t *testing.T) {
 			PM: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
-		latestCL := func() *changelist.CL {
-			cl := &changelist.CL{ID: clid}
-			So(datastore.Get(ctx, cl), ShouldBeNil)
-			return cl
-		}
-
 		Convey("Cancels PENDING Run", func() {
 			rs.Run.Status = run.Status_PENDING
 			res, err := h.Cancel(ctx, rs)
@@ -74,10 +68,7 @@ func TestCancel(t *testing.T) {
 			So(res.State.Run.StartTime, ShouldResemble, now)
 			So(res.State.Run.EndTime, ShouldResemble, now)
 			So(res.SideEffectFn, ShouldNotBeNil)
-			So(datastore.RunInTransaction(ctx, res.SideEffectFn, nil), ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
-			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
-			So(latestCL().IncompleteRuns.ContainsSorted(runID), ShouldBeFalse)
 		})
 
 		Convey("Cancels RUNNING Run", func() {
@@ -90,10 +81,7 @@ func TestCancel(t *testing.T) {
 			So(res.State.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
 			So(res.State.Run.EndTime, ShouldResemble, now)
 			So(res.SideEffectFn, ShouldNotBeNil)
-			So(datastore.RunInTransaction(ctx, res.SideEffectFn, nil), ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
-			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
-			So(latestCL().IncompleteRuns.ContainsSorted(runID), ShouldBeFalse)
 		})
 
 		Convey("Cancels SUBMITTING Run", func() {

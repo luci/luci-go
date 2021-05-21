@@ -375,7 +375,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
 			So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now().UTC())
-			So(res.SideEffectFn, ShouldBeNil)
+			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 			So(res.PostProcessFn, ShouldBeNil)
 		})
@@ -435,7 +435,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.SideEffectFn, ShouldBeNil)
+						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						ci := ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info
@@ -453,7 +453,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.SideEffectFn, ShouldBeNil)
+						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2) // unchanged
@@ -468,7 +468,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.SideEffectFn, ShouldBeNil)
+						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2} {
@@ -489,7 +489,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.SideEffectFn, ShouldBeNil)
+						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2) // ci2 untouched
@@ -510,7 +510,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.SideEffectFn, ShouldBeNil)
+						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						// both untouched
@@ -538,7 +538,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-					So(res.SideEffectFn, ShouldBeNil)
+					So(res.SideEffectFn, ShouldNotBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
 					ci := ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info
@@ -576,7 +576,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-					So(res.SideEffectFn, ShouldBeNil)
+					So(res.SideEffectFn, ShouldNotBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
 					for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2} {

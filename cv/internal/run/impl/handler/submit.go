@@ -170,17 +170,23 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
 	case sc.GetResult() == eventpb.SubmissionResult_SUCCEEDED:
 		rs = rs.ShallowCopy()
-		endRun(ctx, rs, run.Status_SUCCEEDED)
-		return &Result{State: rs}, nil
+		se := endRun(ctx, rs, run.Status_SUCCEEDED, impl.PM)
+		return &Result{
+			State:        rs,
+			SideEffectFn: se,
+		}, nil
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
 		return impl.TryResumeSubmission(ctx, rs)
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
 		rs = rs.ShallowCopy()
-		endRun(ctx, rs, run.Status_FAILED)
 		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
 			return nil, err
 		}
-		return &Result{State: rs}, nil
+		se := endRun(ctx, rs, run.Status_FAILED, impl.PM)
+		return &Result{
+			State:        rs,
+			SideEffectFn: se,
+		}, nil
 	default:
 		panic(fmt.Errorf("impossible submission result %s", sc.GetResult()))
 	}
@@ -204,12 +210,13 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
 	case expired:
 		rs = rs.ShallowCopy()
+		var status run.Status
 		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
 		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
 			// fully submitted
-			endRun(ctx, rs, run.Status_SUCCEEDED)
+			status = run.Status_SUCCEEDED
 		default: // None submitted or partially submitted
-			endRun(ctx, rs, run.Status_FAILED)
+			status = run.Status_FAILED
 			// synthesize submission completed event for timeout.
 			sc := &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
@@ -224,7 +231,11 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, impl.RM); err != nil {
 			return nil, err
 		}
-		return &Result{State: rs}, nil
+		se := endRun(ctx, rs, status, impl.PM)
+		return &Result{
+			State:        rs,
+			SideEffectFn: se,
+		}, nil
 	case taskID == mustTaskIDFromContext(ctx):
 		// Matching taskID indicates current task is the retry of a previous
 		// submitting task that has failed transiently. Continue the submission.
