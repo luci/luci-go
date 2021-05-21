@@ -69,7 +69,7 @@ func TestActor(t *testing.T) {
 			backup := prjpb.PState{}
 			proto.Merge(&backup, sup.pb)
 
-			a := New(c, sup)
+			a := newActor(c, sup)
 			t, err := a.NextActionTime(ctx, ct.Clock.Now().UTC())
 			So(err, ShouldBeNil)
 			So(sup.pb, ShouldResembleProto, &backup)
