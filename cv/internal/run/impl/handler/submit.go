@@ -116,9 +116,11 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			if err := markSubmitting(ctx, rs); err != nil {
 				return nil, err
 			}
+			s := newSubmitter(ctx, rs.Run.ID, rs.Run.Submission, impl.RM)
+			rs.SubmissionScheduled = true
 			return &Result{
 				State:         rs,
-				PostProcessFn: newSubmitter(ctx, rs, impl.RM).submit,
+				PostProcessFn: s.submit,
 			}, nil
 		}
 	default:
@@ -171,7 +173,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		rs.EndRun(ctx, run.Status_SUCCEEDED)
 		return &Result{State: rs}, nil
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
-		return continueSubmissionIfPossible(ctx, rs, impl.RM)
+		return impl.TryResumeSubmission(ctx, rs)
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
 		rs = rs.ShallowCopy()
 		rs.EndRun(ctx, run.Status_FAILED)
@@ -181,6 +183,65 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		return &Result{State: rs}, nil
 	default:
 		panic(fmt.Errorf("impossible submission result %s", sc.GetResult()))
+	}
+}
+
+// TryResumeSubmission implements Handler interface.
+func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
+	if rs.Run.Status != run.Status_SUBMITTING || rs.SubmissionScheduled {
+		return &Result{State: rs}, nil
+	}
+
+	deadline := rs.Run.Submission.GetDeadline()
+	taskID := rs.Run.Submission.GetTaskId()
+	switch {
+	case deadline == nil:
+		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
+	case taskID == "":
+		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.Run.ID))
+	}
+
+	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
+	case expired:
+		rs = rs.ShallowCopy()
+		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
+		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
+			// fully submitted
+			rs.EndRun(ctx, run.Status_SUCCEEDED)
+		default: // None submitted or partially submitted
+			rs.EndRun(ctx, run.Status_FAILED)
+			// synthesize submission completed event for timeout.
+			sc := &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+				FailureReason: &eventpb.SubmissionCompleted_Timeout{
+					Timeout: true,
+				},
+			}
+			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
+				return nil, err
+			}
+		}
+		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, impl.RM); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
+	case taskID == mustTaskIDFromContext(ctx):
+		// Matching taskID indicates current task is the retry of a previous
+		// submitting task that has failed transiently. Continue the submission.
+		rs = rs.ShallowCopy()
+		s := newSubmitter(ctx, rs.Run.ID, rs.Run.Submission, impl.RM)
+		rs.SubmissionScheduled = true
+		return &Result{
+			State:         rs,
+			PostProcessFn: s.submit,
+		}, nil
+	default:
+		// Presumably another task is working on the submission at this time. So
+		// poke as soon as the deadline expires.
+		if err := impl.RM.PokeAt(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
+			return nil, err
+		}
+		return &Result{State: rs}, nil
 	}
 }
 
@@ -255,57 +316,6 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 	rs.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
 	rs.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
 	return nil
-}
-
-func continueSubmissionIfPossible(ctx context.Context, rs *state.RunState, rm RM) (*Result, error) {
-	deadline := rs.Run.Submission.GetDeadline()
-	taskID := rs.Run.Submission.GetTaskId()
-	switch {
-	case deadline == nil:
-		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
-	case taskID == "":
-		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.Run.ID))
-	}
-
-	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
-	case expired:
-		rs = rs.ShallowCopy()
-		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
-		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
-			// fully submitted
-			rs.EndRun(ctx, run.Status_SUCCEEDED)
-		default: // None submitted or partially submitted
-			rs.EndRun(ctx, run.Status_FAILED)
-			// synthesize submission completed event for timeout.
-			sc := &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-				FailureReason: &eventpb.SubmissionCompleted_Timeout{
-					Timeout: true,
-				},
-			}
-			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
-				return nil, err
-			}
-		}
-		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, rm); err != nil {
-			return nil, err
-		}
-		return &Result{State: rs}, nil
-	case taskID == mustTaskIDFromContext(ctx):
-		// Matching taskID indicates current task is the retry of a previous
-		// submitting task that has failed transiently. Continue the submission.
-		return &Result{
-			State:         rs,
-			PostProcessFn: newSubmitter(ctx, rs, rm).submit,
-		}, nil
-	default:
-		// Presumably another task is working on the submission at this time. So
-		// poke as soon as the deadline expires.
-		if err := rm.PokeAt(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
-			return nil, err
-		}
-		return &Result{State: rs}, nil
-	}
 }
 
 func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted) error {
@@ -496,8 +506,7 @@ type submitter struct {
 	rm RM
 }
 
-func newSubmitter(ctx context.Context, rs *state.RunState, rm RM) *submitter {
-	submission := rs.Run.Submission
+func newSubmitter(ctx context.Context, runID common.RunID, submission *run.Submission, rm RM) *submitter {
 	notSubmittedCLs := make(common.CLIDs, 0, len(submission.GetCls())-len(submission.GetSubmittedCls()))
 	submitted := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
 	for _, cl := range submission.GetCls() {
@@ -507,7 +516,7 @@ func newSubmitter(ctx context.Context, rs *state.RunState, rm RM) *submitter {
 		}
 	}
 	return &submitter{
-		runID:    rs.Run.ID,
+		runID:    runID,
 		deadline: submission.GetDeadline().AsTime(),
 		clids:    notSubmittedCLs,
 		rm:       rm,

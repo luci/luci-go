@@ -33,14 +33,16 @@ import (
 )
 
 // RunState represents the current state of a Run.
-//
-// It consists of the Run entity and its child entities (could be partial
-// depending on the event received).
 type RunState struct {
 	Run run.Run
-	// TODO(yiwzhang): add RunOwner, []RunCL, []RunTryjob.
 
-	cachedConfigGroup *config.ConfigGroup
+	// Helper fields used during state mutations.
+
+	// SubmissionScheduled is true if a submission will be attempted after state
+	// transition completes.
+	SubmissionScheduled bool
+	// cg is the cached config group used by this Run.
+	cg *config.ConfigGroup
 }
 
 // ShallowCopy returns a shallow copy of run state
@@ -49,9 +51,10 @@ func (rs *RunState) ShallowCopy() *RunState {
 		return nil
 	}
 	ret := &RunState{
-		Run: rs.Run,
+		Run:                 rs.Run,
+		SubmissionScheduled: rs.SubmissionScheduled,
 
-		cachedConfigGroup: rs.cachedConfigGroup,
+		cg: rs.cg,
 	}
 	return ret
 }
@@ -93,15 +96,15 @@ func (rs *RunState) RemoveRunFromCLs(ctx context.Context) error {
 // Result is cached inside the state.
 func (rs *RunState) LoadConfigGroup(ctx context.Context) (*config.ConfigGroup, error) {
 	cgID := rs.Run.ConfigGroupID
-	if rs.cachedConfigGroup != nil && cgID == rs.cachedConfigGroup.ID {
-		return rs.cachedConfigGroup, nil
+	if rs.cg != nil && cgID == rs.cg.ID {
+		return rs.cg, nil
 	}
 	var err error
-	rs.cachedConfigGroup, err = config.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), cgID)
+	rs.cg, err = config.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), cgID)
 	if err != nil {
 		return nil, err
 	}
-	return rs.cachedConfigGroup, nil
+	return rs.cg, nil
 }
 
 // CheckTree returns whether Tree is open for this Run.

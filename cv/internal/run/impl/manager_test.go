@@ -206,10 +206,8 @@ func TestRunManager(t *testing.T) {
 				runtest.AssertInEventbox(ctx, runID, et.event)
 				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-				if et.invokedHandlerMethod == "" {
-					So(fh.invocations, ShouldBeEmpty)
-				} else {
-					So(fh.invocations, ShouldResemble, []string{et.invokedHandlerMethod})
+				if et.invokedHandlerMethod != "" {
+					So(fh.invocations[0], ShouldEqual, et.invokedHandlerMethod)
 					So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
 				}
 			})
@@ -236,6 +234,7 @@ func TestRunManager(t *testing.T) {
 				}
 			}
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
+			expectInvokedMethods = append(expectInvokedMethods, "TryResumeSubmission") // always invoked
 			So(fh.invocations, ShouldResemble, expectInvokedMethods)
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
 		})
@@ -246,7 +245,10 @@ func TestRunManager(t *testing.T) {
 			notifier.Start(ctx, runID)
 			notifier.Cancel(ctx, runID)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-			So(fh.invocations, ShouldResemble, []string{"Cancel"})
+			So(fh.invocations[0], ShouldEqual, "Cancel")
+			for _, inv := range fh.invocations[1:] {
+				So(inv, ShouldNotEqual, "Start")
+			}
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
 			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{
 				Event: &eventpb.Event_Cancel{
@@ -266,7 +268,6 @@ func TestRunManager(t *testing.T) {
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
 			notifier.Start(ctx, runID)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-			So(fh.invocations, ShouldResemble, []string{"Start"})
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
 			runtest.AssertInEventbox(ctx, runID,
 				&eventpb.Event{
@@ -378,6 +379,14 @@ func (fh *fakeHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, cl
 
 func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*handler.Result, error) {
 	fh.addInvocation("OnSubmissionCompleted")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+	}, nil
+}
+
+func (fh *fakeHandler) TryResumeSubmission(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
+	fh.addInvocation("TryResumeSubmission")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

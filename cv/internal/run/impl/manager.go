@@ -299,8 +299,19 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		if err != nil {
 			return nil, err
 		}
-		_, transitions = applyResult(res, tr.pokeEvents, transitions)
+		rs, transitions = applyResult(res, tr.pokeEvents, transitions)
 	}
+	// Sumbission runs as PostProcessFn after event handling/state transition
+	// is done. It is possible that submission never reports the result back
+	// to RM (e.g. app crash in the middle, task timeout and etc.). In that
+	// case, when task retries, CV should try to resume the submission or fail
+	// the submission if deadline is exceeded even though no event was received.
+	// Therefore, always run TryResumeSubmission at the end regardless.
+	res, err := rp.handler.TryResumeSubmission(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	_, transitions = applyResult(res, nil, transitions)
 
 	if err := rp.enqueueNextPoke(ctx, tr.nextReadyEventTime); err != nil {
 		return nil, err
