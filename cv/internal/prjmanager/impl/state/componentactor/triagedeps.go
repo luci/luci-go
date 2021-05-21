@@ -26,11 +26,11 @@ import (
 )
 
 // triageDeps triages deps of a PCL. See triagedDeps for documentation.
-func (a *actor) triageDeps(pcl *prjpb.PCL, cgIndex int32) *triagedDeps {
-	cg := a.s.ConfigGroup(cgIndex).Content
+func triageDeps(pcl *prjpb.PCL, cgIndex int32, pm pmState) *triagedDeps {
+	cg := pm.ConfigGroup(cgIndex).Content
 	res := &triagedDeps{}
 	for _, dep := range pcl.GetDeps() {
-		dPCL := a.s.PCL(dep.GetClid())
+		dPCL := pm.PCL(dep.GetClid())
 		res.categorize(pcl, cgIndex, cg, dPCL, dep)
 		if tPB := dPCL.GetTrigger().GetTime(); tPB != nil {
 			if t := tPB.AsTime(); res.lastTriggered.IsZero() || res.lastTriggered.Before(t) {
