@@ -37,6 +37,7 @@ import (
 
 	bb "go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 var (
@@ -342,9 +343,13 @@ func (p *printer) buildTime(b *pb.Build) {
 	p.f(" ")
 	p.dateTime(created)
 
-	if started.IsZero() && ended.IsZero() {
+	// Since the `fields` part of the request is partially controlled by the user,
+	// the nil timestamp fields in fetched build aren't trustworthy.
+	// So, check by `status` first,which is always set, and only then try to print
+	// additional information if semantically fitting.
+
+	if b.Status == pb.Status_SCHEDULED {
 		if !p.isJustNow(created) {
-			// did not start or end yet
 			p.f(", ")
 			p.keyword("waiting")
 			p.f(" for %s, ", truncateDuration(now.Sub(created)))
@@ -353,7 +358,6 @@ func (p *printer) buildTime(b *pb.Build) {
 	}
 
 	if !started.IsZero() {
-		// did not start yet
 		p.f(", ")
 		p.keyword("waited")
 		p.f(" %s, ", truncateDuration(started.Sub(created)))
@@ -362,8 +366,7 @@ func (p *printer) buildTime(b *pb.Build) {
 		p.time(started)
 	}
 
-	if ended.IsZero() {
-		// did not end yet
+	if !protoutil.IsEnded(b.Status) {
 		if !started.IsZero() {
 			// running now
 			p.f(", ")
@@ -378,11 +381,12 @@ func (p *printer) buildTime(b *pb.Build) {
 			p.keyword("ran")
 			p.f(" for %s", truncateDuration(ended.Sub(started)))
 		}
-
-		p.f(", ")
-		p.keyword("ended")
-		p.f(" ")
-		p.time(ended)
+		if !ended.IsZero() {
+			p.f(", ")
+			p.keyword("ended")
+			p.f(" ")
+			p.time(ended)
+		}
 	}
 }
 
