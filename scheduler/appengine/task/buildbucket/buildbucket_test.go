@@ -668,8 +668,8 @@ func TestExamineNotification(t *testing.T) {
 					Data: data,
 				})
 			}
-			So(call(base64.URLEncoding.EncodeToString([]byte(`{"user_data": "blah"}`))), ShouldEqual, "blah")
-			So(call(base64.URLEncoding.EncodeToString([]byte(`not json`))), ShouldEqual, "")
+			So(call(base64.StdEncoding.EncodeToString([]byte(`{"user_data": "blah"}`))), ShouldEqual, "blah")
+			So(call(base64.StdEncoding.EncodeToString([]byte(`not json`))), ShouldEqual, "")
 			So(call("not base64"), ShouldEqual, "")
 		})
 	})
