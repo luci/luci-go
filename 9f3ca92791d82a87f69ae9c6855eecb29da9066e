@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b4066cb1_6e2b009b",
+        "filename": "cv/internal/run/impl/handler/poke.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-21T07:39:22Z",
+      "side": 1,
+      "message": "\u003e rs.Run.Submission.GetTreeOpen() is false both in the case tree is closed and tree is never checked.\n\nAh, yeah, i missed that. Now makes sense.",
+      "parentUuid": "589d2fde_83ff9f30",
+      "range": {
+        "startLine": 50,
+        "startChar": 43,
+        "endLine": 50,
+        "endChar": 52
+      },
+      "revId": "9f3ca92791d82a87f69ae9c6855eecb29da9066e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6366895f_e47f4267",
