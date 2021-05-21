@@ -17,16 +17,11 @@ package state
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tree"
@@ -57,38 +52,6 @@ func (rs *RunState) ShallowCopy() *RunState {
 		cg: rs.cg,
 	}
 	return ret
-}
-
-// EndRun sets Run to the provided status and populates `EndTime`.
-//
-// Panics if the provided status is not ended status.
-func (rs *RunState) EndRun(ctx context.Context, status run.Status) {
-	if !run.IsEnded(status) {
-		panic(fmt.Errorf("can't end run with non-final status %s", status))
-	}
-	rs.Run.Status = status
-	rs.Run.EndTime = clock.Now(ctx).UTC()
-}
-
-// RemoveRunFromCLs removes the Run from the IncompleteRuns list of all
-// CL entities associated with this Run.
-func (rs *RunState) RemoveRunFromCLs(ctx context.Context) error {
-	if datastore.CurrentTransaction(ctx) == nil {
-		panic("must be called in a transaction")
-	}
-	cls, err := changelist.LoadCLs(ctx, rs.Run.CLs)
-	if err != nil {
-		return err
-	}
-	for _, cl := range cls {
-		cl.Mutate(ctx, func(cl *changelist.CL) bool {
-			return cl.IncompleteRuns.DelSorted(rs.Run.ID)
-		})
-	}
-	if err := datastore.Put(ctx, cls); err != nil {
-		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
-	}
-	return nil
 }
 
 // LoadConfigGroup loads the ConfigGroup used by this Run.
