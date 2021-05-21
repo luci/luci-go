@@ -15,56 +15,64 @@
 package handler
 
 import (
-	"context"
 	"sort"
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestRemoveRunFromCLs(t *testing.T) {
+func TestEndRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("RemoveRunFromCLs", t, func() {
+	Convey("EndRun", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		run1 := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
-		run2 := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("cafecafe"))
-		runs := common.RunIDs{run1, run2}
-		sort.Sort(runs)
-		Convey("Works", func() {
-			err := datastore.Put(ctx, &changelist.CL{
-				ID:             1,
-				IncompleteRuns: runs,
-				EVersion:       3,
-				UpdateTime:     clock.Now(ctx).UTC(),
-			})
-			So(err, ShouldBeNil)
 
-			ct.Clock.Add(1 * time.Hour)
-			now := clock.Now(ctx).UTC()
-			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return removeRunFromCLs(ctx, run1, common.CLIDs{1})
-			}, nil)
-			So(err, ShouldBeNil)
+		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:         rid,
+				Status:     run.Status_RUNNING,
+				CreateTime: ct.Clock.Now().Add(-2 * time.Minute),
+				StartTime:  ct.Clock.Now().Add(-1 * time.Minute),
+				CLs:        common.CLIDs{1},
+			},
+		}
 
-			cl := changelist.CL{ID: 1}
-			So(datastore.Get(ctx, &cl), ShouldBeNil)
-			So(cl, ShouldResemble, changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.RunIDs{run2},
-				EVersion:       4,
-				UpdateTime:     now,
-			})
+		anotherRID := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("cafecafe"))
+		cl := changelist.CL{
+			ID:             1,
+			IncompleteRuns: common.RunIDs{rid, anotherRID},
+			EVersion:       3,
+			UpdateTime:     ct.Clock.Now().UTC(),
+		}
+		sort.Sort(cl.IncompleteRuns)
+		So(datastore.Put(ctx, &cl), ShouldBeNil)
+
+		se := endRun(ctx, rs, run.Status_FAILED, prjmanager.NewNotifier(ct.TQDispatcher))
+		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
+		So(rs.Run.EndTime, ShouldEqual, ct.Clock.Now())
+		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
+		cl = changelist.CL{ID: 1}
+		So(datastore.Get(ctx, &cl), ShouldBeNil)
+		So(cl, ShouldResemble, changelist.CL{
+			ID:             1,
+			IncompleteRuns: common.RunIDs{anotherRID},
+			EVersion:       4,
+			UpdateTime:     ct.Clock.Now().UTC(),
 		})
+		pmtest.AssertReceivedRunFinished(ctx, rid)
 	})
 }
