@@ -24,7 +24,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
@@ -416,6 +418,44 @@ func TestArchive(t *testing.T) {
 					LogEntryCount:   6,
 				})
 			})
+		})
+	})
+}
+
+func TestToCloudLogEntry(t *testing.T) {
+	Convey(`toCloudLogEntry`, t, func() {
+		var b bytes.Buffer
+		desc := &logpb.LogStreamDescriptor{
+			Prefix:    "test",
+			Name:      "foo",
+			Timestamp: timestamppb.New(testclock.TestTimeUTC),
+		}
+
+		Convey(`Returns Entry`, func() {
+			le := gen(123)
+			ce := toCloudLogEntry(desc, le, &b)
+			So(ce.Payload, ShouldEqual, "123")
+			So(ce.Timestamp, ShouldResemble, testclock.TestTimeUTC.Add(le.TimeOffset.AsDuration()))
+			So(ce.InsertID, ShouldEqual, fmt.Sprintf("test/%d/%d", le.PrefixIndex, le.StreamIndex))
+			So(ce.Trace, ShouldEqual, "test/246")
+		})
+
+		Convey(`Joins lines`, func() {
+			le := gen(456)
+			le.GetText().Lines = []*logpb.Text_Line{
+				{Value: []byte("line #1"), Delimiter: "\n"},
+				{Value: []byte("line #2")},
+				{Value: []byte("line #3"), Delimiter: "\n"},
+			}
+			ce := toCloudLogEntry(desc, le, &b)
+			So(ce.Payload, ShouldEqual, "line #1\nline #2line #3")
+		})
+
+		Convey(`Sets Entry.Timestamp with the stream timestamp if TimeOffset missing`, func() {
+			le := gen(789)
+			le.TimeOffset = nil
+			ce := toCloudLogEntry(desc, le, &b)
+			So(ce.Timestamp, ShouldResemble, testclock.TestTimeUTC)
 		})
 	})
 }

@@ -17,6 +17,8 @@
 package archive
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 
 	cl "cloud.google.com/go/logging"
@@ -103,11 +105,14 @@ func Archive(m Manifest) error {
 		}
 	}
 
+	// A buffer to be used for joining lines, when a LogEntry contains multiple lines.
+	buf := &bytes.Buffer{}
+
 	return parallel.FanOutIn(func(taskC chan<- func() error) {
 		logC := make(chan *logpb.LogEntry)
 
 		taskC <- func() error {
-			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx); err != nil {
+			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx, m.CloudLogger, buf); err != nil {
 				return err
 			}
 
@@ -141,7 +146,7 @@ func Archive(m Manifest) error {
 	})
 }
 
-func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder) error {
+func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder, cloudLogger *cl.Logger, buf *bytes.Buffer) error {
 	offset := int64(0)
 	out := func(pb proto.Message) error {
 		d, err := proto.Marshal(pb)
@@ -167,6 +172,45 @@ func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.L
 			idx.addLogEntry(le, offset)
 		}
 		err = out(le)
+
+		// Export the log entry to CloudLogging, if set.
+		if cloudLogger != nil && len(le.GetText().GetLines()) > 0 {
+			cloudLogger.Log(toCloudLogEntry(d, le, buf))
+		}
 	}
 	return err
+}
+
+func toCloudLogEntry(d *logpb.LogStreamDescriptor, le *logpb.LogEntry, buf *bytes.Buffer) cl.Entry {
+	var payload string
+	switch lines := le.GetText().Lines; len(lines) {
+	case 1:
+		payload = string(lines[0].Value)
+	default:
+		buf.Reset()
+		for i, line := range lines {
+			buf.Write(line.Value)
+			if i < len(lines)-1 {
+				buf.WriteString(line.Delimiter)
+			}
+		}
+		payload = buf.String()
+	}
+
+	ts := d.Timestamp.AsTime()
+	if le.TimeOffset != nil {
+		ts = ts.Add(le.TimeOffset.AsDuration())
+	}
+
+	return cl.Entry{
+		Payload:   payload,
+		Timestamp: ts,
+
+		// InsertID uniquely identifies each LogEntry to dedup entries in CloudLogging.
+		InsertID: fmt.Sprintf("%s/%d/%d", d.Prefix, le.PrefixIndex, le.StreamIndex),
+
+		// Set the Trace field with ${prefix}/${name} so that Logs can be grouped and searched
+		// together by the stream name.
+		Trace: fmt.Sprintf("%s/%d", d.Prefix, le.PrefixIndex),
+	}
 }
