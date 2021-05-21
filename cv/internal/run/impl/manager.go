@@ -321,8 +321,9 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 
 func applyResult(res *handler.Result, events eventbox.Events, transitions []eventbox.Transition) (*state.RunState, []eventbox.Transition) {
 	t := eventbox.Transition{
-		TransitionTo: res.State,
-		SideEffectFn: res.SideEffectFn,
+		TransitionTo:  res.State,
+		SideEffectFn:  res.SideEffectFn,
+		PostProcessFn: res.PostProcessFn,
 	}
 	if !res.PreserveEvents {
 		t.Events = events
