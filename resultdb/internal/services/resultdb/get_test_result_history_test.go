@@ -70,6 +70,13 @@ func TestValidateGetTestResultHistoryRequest(t *testing.T) {
 			So(validateGetTestResultHistoryRequest(req), ShouldErrLike, "realm is required")
 		})
 
+		Convey(`invalid realm`, func() {
+			req := &pb.GetTestResultHistoryRequest{
+				Realm: "invalid/realm",
+			}
+			So(validateGetTestResultHistoryRequest(req), ShouldErrLike, "realm: bad global realm name")
+		})
+
 		Convey(`bad pageSize`, func() {
 			req := &pb.GetTestResultHistoryRequest{
 				Realm: "testproject:testrealm",
