@@ -69,6 +69,12 @@ type Handler interface {
 	// to retry submission or fail the run depending on the submission result.
 	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error)
 
+	// TryResumeSubmission resumes not-yet-expired submission if the current task
+	// is a retry of the submission task.
+	//
+	// Fail the Run if the submission deadline has been exceeded.
+	TryResumeSubmission(context.Context, *state.RunState) (*Result, error)
+
 	// Poke checks current Run state and takes actions to progress the Run.
 	Poke(context.Context, *state.RunState) (*Result, error)
 }
