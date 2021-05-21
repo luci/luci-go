@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b878f2fc_35e1d8f7",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-21T05:14:30Z",
+      "side": 1,
+      "message": "Q1. Is Prefix unique across all LUCI projects?\nQ2. IIUC of the following proto, $prefix/$prefixID uniquely identifies each stream. Therefore, $prefix/$prefixID/$streamIndex uniquely identifies each LogEntry across the entire LUCI projects. Let me know if I misunderstood.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/api/logpb/log.proto\n\nI could use $prefix/$name/$streamIndex instead, but I chose to use $prefixID because $prefixID occupies smaller byte space than $name in almost all cases.",
+      "range": {
+        "startLine": 210,
+        "startChar": 12,
+        "endLine": 210,
+        "endChar": 78
+      },
+      "revId": "a08b5cf1697034dbf3d62d78d70db471ba09ddb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
