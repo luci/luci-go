@@ -93,33 +93,3 @@ func (pm pmState) MustPCL(clid int64) *prjpb.PCL {
 	}
 	panic(fmt.Errorf("MustPCL: clid %d not known", clid))
 }
-
-// earliest returns the earliest of the non-zero time instances.
-//
-// Returns zero time.Time if no non-zero instances were given.
-func earliest(ts ...time.Time) time.Time {
-	var res time.Time
-	var remaining []time.Time
-	// Find first non-zero.
-	for i, t := range ts {
-		if !t.IsZero() {
-			res = t
-			remaining = ts[i+1:]
-			break
-		}
-	}
-	for _, t := range remaining {
-		// res is guaranteed non-zero if this loop iterates.
-		if !t.IsZero() && t.Before(res) {
-			res = t
-		}
-	}
-	return res
-}
-
-func isSameTime(t time.Time, pb *timestamppb.Timestamp) bool {
-	if pb == nil {
-		return t.IsZero()
-	}
-	return pb.AsTime().Equal(t)
-}

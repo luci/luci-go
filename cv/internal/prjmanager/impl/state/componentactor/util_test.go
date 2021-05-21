@@ -15,10 +15,17 @@
 package componentactor
 
 import (
+	"testing"
+	"time"
+
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
+// simplePMState implements itriager.PMState and is used in tests of this
+// package.
 type simplePMState struct {
 	pb  *prjpb.PState
 	cgs []*config.ConfigGroup
@@ -44,4 +51,25 @@ func (s *simplePMState) PurgingCL(clid int64) *prjpb.PurgingCL {
 
 func (s *simplePMState) ConfigGroup(index int32) *config.ConfigGroup {
 	return s.cgs[index]
+}
+
+func TestEarliest(t *testing.T) {
+	t.Parallel()
+
+	Convey("earliest of two works", t, func() {
+		zero := time.Time{}
+		epoch := time.Date(2021, time.February, 6, 15, 0, 0, 0, time.UTC)
+		after := epoch.Add(time.Hour)
+		before := epoch.Add(-time.Hour)
+
+		So(earliest(), ShouldResemble, zero)
+		So(earliest(zero), ShouldResemble, zero)
+		So(earliest(epoch), ShouldResemble, epoch)
+
+		So(earliest(zero, epoch), ShouldResemble, epoch)
+		So(earliest(epoch, zero), ShouldResemble, epoch)
+
+		So(earliest(after, zero, epoch), ShouldResemble, epoch)
+		So(earliest(epoch, before, zero, after), ShouldResemble, before)
+	})
 }
