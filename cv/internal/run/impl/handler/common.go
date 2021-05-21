@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -32,12 +33,22 @@ import (
 // endRun sets Run to the provided status and populates `EndTime`.
 //
 // Panics if the provided status is not ended status.
-func endRun(ctx context.Context, rs *state.RunState, st run.Status) {
+func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM) eventbox.SideEffectFn {
 	if !run.IsEnded(st) {
 		panic(fmt.Errorf("can't end run with non-final status %s", st))
 	}
 	rs.Run.Status = st
 	rs.Run.EndTime = clock.Now(ctx).UTC()
+	rid := rs.Run.ID
+	return eventbox.Chain(
+		func(ctx context.Context) error {
+			return removeRunFromCLs(ctx, rid, rs.Run.CLs)
+		},
+		func(ctx context.Context) error {
+			return pm.NotifyRunFinished(ctx, rid)
+		},
+		// TODO(qyearsley): Submit a task to do BQ export.
+	)
 }
 
 // removeRunFromCLs removes the Run from the IncompleteRuns list of all
