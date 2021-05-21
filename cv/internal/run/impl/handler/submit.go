@@ -236,12 +236,18 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 			PostProcessFn: s.submit,
 		}, nil
 	default:
-		// Presumably another task is working on the submission at this time. So
-		// poke as soon as the deadline expires.
-		if err := impl.RM.PokeAt(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
+		// Presumably another task is working on the submission at this time.
+		// So wake up RM as soon as the submission expires. Meanwhile, don't
+		// consume the event as the retries of submission task will process
+		// this event. It's probably a race condition that this task sees this
+		// event first.
+		if err := impl.RM.Invoke(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
 			return nil, err
 		}
-		return &Result{State: rs}, nil
+		return &Result{
+			State:          rs,
+			PreserveEvents: true,
+		}, nil
 	}
 }
 
