@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
@@ -266,7 +267,7 @@ func TestRunManager(t *testing.T) {
 		Convey("Can Preserve events", func() {
 			fh := &fakeHandler{preserveEvents: true}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			notifier.Start(ctx, runID)
+			So(notifier.Start(ctx, runID), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
 			runtest.AssertInEventbox(ctx, runID,
@@ -276,6 +277,20 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 			)
+		})
+
+		Convey("Can run PostProcessFn", func() {
+			var postProcessFnExecuted bool
+			fh := &fakeHandler{
+				postProcessFn: func(c context.Context) error {
+					postProcessFnExecuted = true
+					return nil
+				},
+			}
+			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
+			So(notifier.Start(ctx, runID), ShouldBeNil)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
+			So(postProcessFnExecuted, ShouldBeTrue)
 		})
 	})
 
@@ -332,6 +347,7 @@ func TestRunManager(t *testing.T) {
 type fakeHandler struct {
 	invocations    []string
 	preserveEvents bool
+	postProcessFn  eventbox.PostProcessFn
 }
 
 var _ handler.Handler = &fakeHandler{}
@@ -341,6 +357,7 @@ func (fh *fakeHandler) Start(ctx context.Context, rs *state.RunState) (*handler.
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
@@ -349,6 +366,7 @@ func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState) (*handler
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
@@ -357,6 +375,7 @@ func (fh *fakeHandler) OnCLUpdated(ctx context.Context, rs *state.RunState, _ co
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
@@ -365,6 +384,7 @@ func (fh *fakeHandler) OnReadyForSubmission(ctx context.Context, rs *state.RunSt
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
@@ -374,6 +394,7 @@ func (fh *fakeHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, cl
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
@@ -382,6 +403,7 @@ func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunS
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
@@ -390,6 +412,7 @@ func (fh *fakeHandler) TryResumeSubmission(ctx context.Context, rs *state.RunSta
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
@@ -398,6 +421,7 @@ func (fh *fakeHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
@@ -406,6 +430,7 @@ func (fh *fakeHandler) Poke(ctx context.Context, rs *state.RunState) (*handler.R
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
 	}, nil
 }
 
