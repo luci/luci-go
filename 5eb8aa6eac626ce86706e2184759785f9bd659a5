@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c66e2584_1143edc2",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-21T21:46:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4bee4097_57512c19",
+      "range": {
+        "startLine": 95,
+        "startChar": 11,
+        "endLine": 95,
+        "endChar": 21
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c0dfa284_051751c1",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-16T18:53:35Z",
       "side": 1,
       "message": "spelling",
+      "range": {
+        "startLine": 150,
+        "startChar": 46,
+        "endLine": 150,
+        "endChar": 51
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bae1c1d6_e80a387a",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-21T21:46:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0dfa284_051751c1",
       "range": {
         "startLine": 150,
         "startChar": 46,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fba20eca_7135b09b",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-21T21:46:32Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "a466a100_6d430aac",
+      "range": {
+        "startLine": 159,
+        "startChar": 21,
+        "endLine": 159,
+        "endChar": 32
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "852bae75_74eb2012",
@@ -83,6 +155,24 @@
       "writtenOn": "2021-02-16T18:53:35Z",
       "side": 1,
       "message": "And similarly, this is another safety check and if there are no bugs then len(cgIndexes) will always be 1, right?",
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8f77854_d566ab75",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-21T21:46:32Z",
+      "side": 1,
+      "message": "Yes, exactly.",
+      "parentUuid": "852bae75_74eb2012",
       "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -110,6 +200,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "623bd2d5_72978b39",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-21T21:46:32Z",
+      "side": 1,
+      "message": "👍 Done",
+      "parentUuid": "a0f60cd2_1b589884",
+      "range": {
+        "startLine": 215,
+        "startChar": 21,
+        "endLine": 215,
+        "endChar": 50
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5b779331_94878739",
@@ -123,6 +237,30 @@
       "writtenOn": "2021-02-16T18:53:35Z",
       "side": 1,
       "message": "In this function name and the next, \"...DueTo...\" sounds slightly better to me.",
+      "range": {
+        "startLine": 237,
+        "startChar": 24,
+        "endLine": 237,
+        "endChar": 27
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d5e96d0_d507d3c8",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-21T21:46:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b779331_94878739",
       "range": {
         "startLine": 237,
         "startChar": 24,
