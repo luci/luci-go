@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -1047,14 +1048,21 @@ func TestUpdateTagIndex(t *testing.T) {
 	t.Parallel()
 
 	Convey("UpdateTagIndex", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx, _ := testclock.UseTime(memory.Use(context.Background()), testclock.TestRecentTimeUTC)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
 		builds := []*model.Build{
 			{
-				ID:       1,
-				BucketID: "bucket",
+				ID: 1,
+				Proto: pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				},
 				Tags: []string{
 					"a:b",
 					"buildset:b1",
@@ -1062,8 +1070,15 @@ func TestUpdateTagIndex(t *testing.T) {
 				Experiments: experiments(false, false),
 			},
 			{
-				ID:       2,
-				BucketID: "bucket",
+				ID: 2,
+				Proto: pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				},
 				Tags: []string{
 					"a:b",
 					"build_address:address",
@@ -1082,12 +1097,14 @@ func TestUpdateTagIndex(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(idx, ShouldResemble, []*model.TagIndexEntry{
 			{
-				BuildID:  int64(1),
-				BucketID: "bucket",
+				BuildID:     int64(1),
+				BucketID:    "project/bucket",
+				CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 			},
 			{
-				BuildID:  int64(2),
-				BucketID: "bucket",
+				BuildID:     int64(2),
+				BucketID:    "project/bucket",
+				CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 			},
 		})
 
@@ -1095,8 +1112,9 @@ func TestUpdateTagIndex(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(idx, ShouldResemble, []*model.TagIndexEntry{
 			{
-				BuildID:  int64(2),
-				BucketID: "bucket",
+				BuildID:     int64(2),
+				BucketID:    "project/bucket",
+				CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 			},
 		})
 	})

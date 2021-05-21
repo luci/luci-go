@@ -143,15 +143,17 @@ func IndexedTags(tags strpair.Map) []string {
 	return set.ToSortedSlice()
 }
 
-// UpdateTagIndex updates the tag index for the given builds.
+// UpdateTagIndex updates the tag index for the given builds. Panics if any
+// build.Proto.Builder is unspecified.
 func UpdateTagIndex(ctx context.Context, builds []*model.Build) error {
 	// tag -> entries
 	idx := make(map[string][]model.TagIndexEntry)
 	for _, b := range builds {
 		for _, t := range IndexedTags(strpair.ParseMap(b.Tags)) {
 			idx[t] = append(idx[t], model.TagIndexEntry{
-				BuildID:  b.ID,
-				BucketID: b.BucketID,
+				BuildID:     b.ID,
+				BucketID:    protoutil.FormatBucketID(b.Proto.Builder.Project, b.Proto.Builder.Bucket),
+				CreatedTime: mustTimestamp(b.Proto.CreateTime),
 			})
 		}
 	}
