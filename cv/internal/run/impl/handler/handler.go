@@ -87,7 +87,6 @@ type PM interface {
 // RM encapsulates interaction with Run Manager by the Run events handler.
 type RM interface {
 	Invoke(ctx context.Context, runID common.RunID, eta time.Time) error
-	PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error
 	PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error
 	NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error
 	NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error

@@ -404,15 +404,16 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					So(res.PostProcessFn, ShouldNotBeNil)
 				})
 
-				Convey("Sends Poke if TaskID doesn't match", func() {
+				Convey("Invoke RM at deadline if TaskID doesn't match", func() {
+					ctx, rmDispatcher := runtest.MockDispatch(ctx)
 					rs.Run.Submission.TaskId = "another-task"
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
 					So(res.State, ShouldEqual, rs)
 					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PreserveEvents, ShouldBeTrue)
 					So(res.PostProcessFn, ShouldBeNil)
-					runtest.AssertReceivedPoke(ctx, rs.Run.ID, rs.Run.Submission.Deadline.AsTime())
+					So(rmDispatcher.LatestETAof(string(rid)), ShouldHappenOnOrAfter, rs.Run.Submission.Deadline.AsTime())
 				})
 			})
 
