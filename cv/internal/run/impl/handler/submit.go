@@ -170,13 +170,13 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
 	case sc.GetResult() == eventpb.SubmissionResult_SUCCEEDED:
 		rs = rs.ShallowCopy()
-		rs.EndRun(ctx, run.Status_SUCCEEDED)
+		endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{State: rs}, nil
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
 		return impl.TryResumeSubmission(ctx, rs)
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
 		rs = rs.ShallowCopy()
-		rs.EndRun(ctx, run.Status_FAILED)
+		endRun(ctx, rs, run.Status_FAILED)
 		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
 			return nil, err
 		}
@@ -207,9 +207,9 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
 		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
 			// fully submitted
-			rs.EndRun(ctx, run.Status_SUCCEEDED)
+			endRun(ctx, rs, run.Status_SUCCEEDED)
 		default: // None submitted or partially submitted
-			rs.EndRun(ctx, run.Status_FAILED)
+			endRun(ctx, rs, run.Status_FAILED)
 			// synthesize submission completed event for timeout.
 			sc := &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
