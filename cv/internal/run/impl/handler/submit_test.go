@@ -184,6 +184,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 						TreeOpen:          true,
 						LastTreeCheckTime: timestamppb.New(now),
 					})
+					So(res.State.SubmissionScheduled, ShouldBeTrue)
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldNotBeNil)
@@ -388,7 +389,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 				}
 
-				Convey("Continue submission if TaskID matches", func() {
+				Convey("Resume submission if TaskID matches", func() {
 					rs.Run.Submission.TaskId = "task-foo" // same task ID as the current task
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
@@ -397,6 +398,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 						TaskId:   "task-foo",
 					}) // unchanged
+					So(res.State.SubmissionScheduled, ShouldBeTrue)
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldNotBeNil)
