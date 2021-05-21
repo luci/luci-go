@@ -362,7 +362,7 @@ func (m TaskManager) ExamineNotification(c context.Context, msg *pubsub.PubsubMe
 	}
 	// Buildbucket v2 builds have the token as "user_data" in the JSON message
 	// body. The message body itself is base64-encoded.
-	blob, err := base64.URLEncoding.DecodeString(msg.Data)
+	blob, err := base64.StdEncoding.DecodeString(msg.Data)
 	if err != nil {
 		logging.Warningf(c, "PubSub message data is not base64: %s", err)
 		return ""
