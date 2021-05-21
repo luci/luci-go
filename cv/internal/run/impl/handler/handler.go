@@ -68,6 +68,9 @@ type Handler interface {
 	// If submission succeeds, mark run as `SUCCEEDED`. Otherwise, decides whether
 	// to retry submission or fail the run depending on the submission result.
 	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error)
+
+	// Poke checks current Run state and takes actions to progress the Run.
+	Poke(context.Context, *state.RunState) (*Result, error)
 }
 
 // PM encapsulates interaction with Project Manager by the Run events handler.
