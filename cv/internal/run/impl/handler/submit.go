@@ -63,7 +63,11 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		}
 		return &Result{State: rs}, nil
 	case status == run.Status_SUBMITTING:
-		return continueSubmissionIfPossible(ctx, rs, impl.RM)
+		// Discard this event if this Run is currently submitting. If submission
+		// is stopped and should be resumed (e.g. transient failure, app crashing),
+		// it should be handled in `OnSubmissionCompleted` or `TryResumeSubmission`.
+		logging.Debugf(ctx, "received ReadyForSubmission event when Run is submitting")
+		return &Result{State: rs}, nil
 	case status == run.Status_RUNNING:
 		// This may happen when this Run transitioned from RUNNING status to
 		// WAITING_FOR_SUBMISSION, prepared for submission but failed to
