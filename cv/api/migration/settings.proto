@@ -53,15 +53,11 @@ message Settings {
   }
   UseCVRuns use_cv_runs = 3;
 
-  // TODO(tandrii): move this off migration-specific settings once CQDaemon is
-  // shut down. This is located here only to avoid extra throw away code in
-  // CQDaemon to read & refresh these from a different file.
-  PSSAMigration pssa_migration = 2;
+  // TODO(1210686): delete after 2021-05-31, at which point nothing should refer
+  // to it.
+  PSSAMigration pssa_migration = 2 [deprecated = true];
 }
 
 message PSSAMigration {
-  // List of LUCI Projects which must ues legacy ~/.netrc credentials,
-  // because although they have registered project-scoped service account
-  // (PSSA), their Gerrit ACLs aren't ready yet.
-  repeated string projects_blocklist = 1;
+  repeated string projects_blocklist = 1 [deprecated = true];
 }
