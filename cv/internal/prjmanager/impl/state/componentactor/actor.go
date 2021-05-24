@@ -37,7 +37,7 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 
 	cls := triageCLs(c, pm)
 	res.CLsToPurge, nextPurge = stagePurges(ctx, cls, pm)
-	res.RunsToCreate, nextRun, err = stageNewRuns(ctx, cls, pm)
+	res.RunsToCreate, nextRun, err = stageNewRuns(ctx, c, cls, pm)
 	if err != nil {
 		return res, err
 	}
