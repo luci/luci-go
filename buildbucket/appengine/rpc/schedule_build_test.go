@@ -306,6 +306,12 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
+				Tags: []*pb.StringPair{
+					{
+						Key:   "buildset",
+						Value: "buildset",
+					},
+				},
 			}
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
@@ -380,11 +386,22 @@ func TestScheduleBuild(t *testing.T) {
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:builder",
+						"buildset:buildset",
 					},
 					Project: "project",
 				},
 			})
 			So(sch.Tasks(), ShouldHaveLength, 1)
+
+			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
+			So(err, ShouldBeNil)
+			So(ind, ShouldResemble, []*model.TagIndexEntry{
+				{
+					BuildID:     9021868963221667745,
+					BucketID:    "project/bucket",
+					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+				},
+			})
 		})
 
 		Convey("many", func() {
