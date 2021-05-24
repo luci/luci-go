@@ -80,6 +80,9 @@ export class InvocationState {
   @computed get groupers(): Array<[string, (v: TestVariant) => unknown]> {
     return this.groupingKeys.map((key) => [key, createTVPropGetter(key)]);
   }
+  @computed get defaultGroupers(): Array<[string, (v: TestVariant) => unknown]> {
+    return this.defaultGroupingKeys.map((key) => [key, createTVPropGetter(key)]);
+  }
 
   private disposers: Array<() => void> = [];
   constructor(private appState: AppState) {
