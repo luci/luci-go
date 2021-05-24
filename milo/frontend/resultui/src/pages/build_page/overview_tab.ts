@@ -27,8 +27,6 @@ import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
 import '../../components/timestamp';
-import '../../components/hotkey';
-import { BuildStepEntryElement } from '../../components/build_step_list/build_step_entry';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -74,13 +72,6 @@ export class OverviewTabElement extends MobxLitElement {
     this.appState.selectedTabId = 'overview';
     trackEvent(GA_CATEGORIES.OVERVIEW_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
-
-  private allStepsWereExpanded = false;
-  private toggleAllSteps(expand: boolean) {
-    this.allStepsWereExpanded = expand;
-    this.shadowRoot!.querySelector<BuildStepEntryElement>('milo-build-step-list')!.toggleAllSteps(expand);
-  }
-  private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
   private renderActionButtons() {
     const build = this.buildState.build!;
@@ -256,30 +247,13 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderSteps() {
+    const stepsUrl = router.urlForName('build-steps', {
+      ...this.buildState.builderIdParam,
+      build_num_or_id: this.buildState.buildNumOrIdParam!,
+    });
     return html`
       <div>
-        <h3>
-          Steps & Logs (<a
-            href=${router.urlForName('build-steps', {
-              ...this.buildState.builderIdParam,
-              build_num_or_id: this.buildState.buildNumOrIdParam!,
-            })}
-            >View in Steps Tab</a
-          >)
-          <milo-hotkey
-            id="step-buttons"
-            key="x"
-            .handler=${this.toggleAllStepsByHotkey}
-            title="press x to expand/collapse all entries"
-          >
-            <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(true)}>
-              Expand All
-            </mwc-button>
-            <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(false)}>
-              Collapse All
-            </mwc-button>
-          </milo-hotkey>
-        </h3>
+        <h3>Steps & Logs (<a href=${stepsUrl}>View in Steps Tab</a>)</h3>
         <div id="step-config">
           Show:
           <input
