@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28a3d9c1_37ca5b1a",
+        "filename": "cv/internal/gerrit/factory.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-24T23:11:23Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 98,
+        "startChar": 47,
+        "endLine": 98,
+        "endChar": 50
+      },
+      "revId": "04ebdf991881626493af134ba9dd242ce02889f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
