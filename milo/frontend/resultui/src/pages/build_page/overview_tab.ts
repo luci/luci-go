@@ -19,6 +19,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
+import { repeat } from 'lit-html/directives/repeat';
 import { observable } from 'mobx';
 
 import '../../components/build_tag_row';
@@ -26,11 +27,11 @@ import '../../components/build_step_list';
 import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
+import '../../components/test_variants_table/test_variant_entry';
 import '../../components/timestamp';
-import '../../components/hotkey';
-import { BuildStepEntryElement } from '../../components/build_step_list/build_step_entry';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import {
@@ -48,6 +49,7 @@ import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
 import { router } from '../../routes';
 import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
+import { getPropKeyLabel, TestVariant } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -66,6 +68,10 @@ export class OverviewTabElement extends MobxLitElement {
   @consumeBuildState
   buildState!: BuildState;
 
+  @observable.ref
+  @consumeInvocationState
+  invocationState!: InvocationState;
+
   @observable.ref private showRetryDialog = false;
   @observable.ref private showCancelDialog = false;
 
@@ -74,13 +80,6 @@ export class OverviewTabElement extends MobxLitElement {
     this.appState.selectedTabId = 'overview';
     trackEvent(GA_CATEGORIES.OVERVIEW_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
-
-  private allStepsWereExpanded = false;
-  private toggleAllSteps(expand: boolean) {
-    this.allStepsWereExpanded = expand;
-    this.shadowRoot!.querySelector<BuildStepEntryElement>('milo-build-step-list')!.toggleAllSteps(expand);
-  }
-  private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
   private renderActionButtons() {
     const build = this.buildState.build!;
@@ -255,31 +254,63 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderTestVariants() {
+    const testLoader = this.invocationState.testLoader;
+    const testsTabUrl = router.urlForName('build-test-results', {
+      ...this.buildState.builderIdParam!,
+      build_num_or_id: this.buildState.buildNumOrIdParam!,
+    });
+    return html`
+      <h3>Failed Tests (<a href=${testsTabUrl}>View All Test</a>)</h3>
+      ${testLoader?.firstPageLoaded
+        ? html`
+            <div style="--columns: ${this.invocationState.columnWidths.map((w) => w + 'px').join(' ')};">
+              ${(testLoader?.first10UnfilteredGroupedUnexpectedVariants || []).map((group) =>
+                this.renderVariantGroup(
+                  this.invocationState.defaultGroupers
+                    .filter(([key]) => key !== 'status')
+                    .map(([key, getter]) => [key, getter(group[0])]),
+                  group
+                )
+              )}
+            </div>
+            <div id="failed-test-count">
+              ${testLoader.first10UnfilteredUnexpectedvariantsCount === 0
+                ? 'No failed tests.'
+                : html`Showing ${testLoader.first10UnfilteredUnexpectedvariantsCount} /
+                    ${testLoader.unfilteredUnexpectedVariantsCount} failed tests.
+                    <a href=${testsTabUrl}>[view all]</a>`}
+            </div>
+          `
+        : html`<div id="loading-spinner">Loading <milo-dot-spinner></milo-dot-spinner></div>`}
+    `;
+  }
+
+  private renderVariantGroup(groupDef: [string, unknown][], variants: TestVariant[]) {
+    return html`
+      ${groupDef.length === 0 ? '' : html`<h4>${groupDef.map(([k, v]) => html`${getPropKeyLabel(k)}: ${v}`)}</h4>`}
+      ${repeat(
+        variants,
+        (v) => `${v.testId} ${v.variantHash}`,
+        (v) => html`
+          <milo-test-variant-entry
+            .variant=${v}
+            .columnGetters=${this.invocationState.displayedColumnGetters}
+            .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
+          ></milo-test-variant-entry>
+        `
+      )}
+    `;
+  }
+
   private renderSteps() {
+    const stepsUrl = router.urlForName('build-steps', {
+      ...this.buildState.builderIdParam,
+      build_num_or_id: this.buildState.buildNumOrIdParam!,
+    });
     return html`
       <div>
-        <h3>
-          Steps & Logs (<a
-            href=${router.urlForName('build-steps', {
-              ...this.buildState.builderIdParam,
-              build_num_or_id: this.buildState.buildNumOrIdParam!,
-            })}
-            >View in Steps Tab</a
-          >)
-          <milo-hotkey
-            id="step-buttons"
-            key="x"
-            .handler=${this.toggleAllStepsByHotkey}
-            title="press x to expand/collapse all entries"
-          >
-            <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(true)}>
-              Expand All
-            </mwc-button>
-            <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(false)}>
-              Collapse All
-            </mwc-button>
-          </milo-hotkey>
-        </h3>
+        <h3>Steps & Logs (<a href=${stepsUrl}>View in Steps Tab</a>)</h3>
         <div id="step-config">
           Show:
           <input
@@ -431,8 +462,7 @@ export class OverviewTabElement extends MobxLitElement {
       </mwc-dialog>
       <div id="main">
         <div class="first-column">
-          ${this.renderCanaryWarning()} ${this.renderSummary()} ${this.renderSteps()}
-          <!-- TODO(crbug/1116824): render failed tests -->
+          ${this.renderCanaryWarning()}${this.renderSummary()}${this.renderTestVariants()}${this.renderSteps()}
         </div>
         <div class="second-column">
           ${this.renderBuilderDescription()} ${this.renderInput()} ${this.renderOutput()} ${this.renderTiming()}
@@ -481,6 +511,9 @@ export class OverviewTabElement extends MobxLitElement {
       h3 {
         margin-block: 15px 10px;
       }
+      h4 {
+        margin-block: 10px 10px;
+      }
 
       #summary-html {
         padding: 0 10px;
@@ -515,6 +548,10 @@ export class OverviewTabElement extends MobxLitElement {
       td:nth-child(2) {
         clear: both;
         overflow-wrap: anywhere;
+      }
+
+      #loading-spinner {
+        color: var(--active-text-color);
       }
 
       #step-buttons {
