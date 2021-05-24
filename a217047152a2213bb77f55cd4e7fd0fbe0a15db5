@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac4c979a_3a11b073",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-24T23:25:24Z",
+      "side": 1,
+      "message": "All right, now the e2e tests pass, too.",
+      "revId": "a217047152a2213bb77f55cd4e7fd0fbe0a15db5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
