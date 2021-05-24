@@ -95,6 +95,22 @@ export class TestLoader {
     return groups.map((group) => group.sort(this.cmpFn));
   }
 
+  @computed get groupedUnfilteredUnexpectedVariants() {
+    if (this.unfilteredUnexpectedVariants.length === 0) {
+      return [];
+    }
+
+    let groups = [this.unfilteredUnexpectedVariants];
+    for (const [prop, propGetter] of this.groupers) {
+      // No point grouping by status.
+      if (prop === 'status') {
+        continue;
+      }
+      groups = groups.flatMap((group) => Object.values(groupBy(group, (v) => propGetter(v))));
+    }
+    return groups.map((group) => group.sort(this.cmpFn));
+  }
+
   /**
    * non-expected test variants include test variants of any status except
    * TestVariantStatus.Expected.
