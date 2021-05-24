@@ -16,6 +16,24 @@
       "message": "does this mean that users will be fetching static files each time",
       "revId": "6be3e1b43bd250461fad99fce8bcc30982011cce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c3ed54f_bcea9cd5",
+        "filename": "milo/frontend/appengine/app.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-24T23:39:58Z",
+      "side": 1,
+      "message": "No. The HTML is cached by the service worker.\nThis just ensures that when the service worker tries to fetch a new version of the HTML, we won\u0027t serve an old version.\nAdded comment to clarify that.",
+      "parentUuid": "97e20c87_429ffb53",
+      "revId": "6be3e1b43bd250461fad99fce8bcc30982011cce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
