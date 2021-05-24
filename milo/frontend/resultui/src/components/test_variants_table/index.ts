@@ -18,7 +18,7 @@ import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { observable, reaction } from 'mobx';
 
 import '../dot_spinner';
 import './tvt_column_header';
@@ -26,7 +26,6 @@ import './test_variant_entry';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
-import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportErrorAsync } from '../../libs/error_handler';
@@ -106,27 +105,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
     `;
   }
 
-  private sendLoadingTimeToGA = () => {
-    if (this.appState.sentTestResultsTabLoadingTimeToGA) {
-      return;
-    }
-    this.appState.sentTestResultsTabLoadingTimeToGA = true;
-    trackEvent(
-      GA_CATEGORIES.TEST_RESULTS_TAB,
-      GA_ACTIONS.LOADING_TIME,
-      generateRandomLabel(this.gaLabelPrefix),
-      Date.now() - this.appState.tabSelectionTime
-    );
-  };
-
-  @computed private get gaLabelPrefix() {
-    return 'testresults_' + this.invocationState.invocationId;
-  }
-
-  private variantExpandedCallback = () => {
-    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.EXPAND_ENTRY, `${this.gaLabelPrefix}_${VISIT_ID}`, 1);
-  };
-
   @observable private collapsedVariantGroups = new Set<string>();
   private renderVariantGroup(groupDef: [string, unknown][], variants: TestVariant[]) {
     const groupId = JSON.stringify(groupDef);
@@ -166,8 +144,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .variant=${v}
             .columnGetters=${this.invocationState.displayedColumnGetters}
             .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
-            .expandedCallback=${this.variantExpandedCallback}
-            .renderedCallback=${this.sendLoadingTimeToGA}
           ></milo-test-variant-entry>
         `
       )}
