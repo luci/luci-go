@@ -16,6 +16,7 @@ import {
   axisBottom,
   axisLeft,
   axisTop,
+  BaseType,
   scaleLinear,
   scaleTime,
   select as d3Select,
@@ -23,11 +24,13 @@ import {
   timeMillisecond,
 } from 'd3';
 import { css, customElement, html, property } from 'lit-element';
+import { render } from 'lit-html';
 import { DateTime } from 'luxon';
 import { autorun, observable } from 'mobx';
 
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
+import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../components/tooltip';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
@@ -140,7 +143,8 @@ export class TimelineTabElement extends MiloBaseElement {
   private scaleTime!: d3.ScaleTime<number, number, never>;
   private scaleStep!: d3.ScaleLinear<number, number, never>;
   private timeInterval!: d3.TimeInterval;
-  private readonly now = Date.now();
+  private readonly nowTimestamp = Date.now();
+  private readonly now = DateTime.fromMillis(this.nowTimestamp);
   private relativeTimeText!: Selection<SVGTextElement, unknown, null, undefined>;
 
   connectedCallback() {
@@ -178,7 +182,7 @@ export class TimelineTabElement extends MiloBaseElement {
     }
 
     const startTime = build.startTime.toMillis();
-    const endTime = build.endTime?.toMillis() || this.now;
+    const endTime = build.endTime?.toMillis() || this.nowTimestamp;
 
     this.bodyHeight = build.steps.length * ROW_HEIGHT - BORDER_SIZE;
     const padding = Math.ceil(((endTime - startTime) * STEP_EXTRA_WIDTH) / this.bodyWidth) / 2;
@@ -308,6 +312,7 @@ export class TimelineTabElement extends MiloBaseElement {
         .attr('y', STEP_MARGIN)
         .attr('width', SIDE_PANEL_RECT_WIDTH)
         .attr('height', STEP_HEIGHT);
+      this.installStepInteractionHandlers(rect, step);
 
       const listItem = stepGroup
         .append('foreignObject')
@@ -319,12 +324,7 @@ export class TimelineTabElement extends MiloBaseElement {
       listItem.append('xhtml:span').text(listNum);
       const stepText = listItem.append('xhtml:span').text(step.selfName);
 
-      const logUrl = step.logs?.[0].viewUrl;
-      if (logUrl) {
-        rect.attr('class', 'clickable').on('click', (e: MouseEvent) => {
-          e.stopPropagation();
-          window.open(logUrl, '_blank');
-        });
+      if (step.logs?.[0].viewUrl) {
         stepText.attr('class', 'hyperlink');
       }
     }
@@ -370,8 +370,8 @@ export class TimelineTabElement extends MiloBaseElement {
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
     for (const [i, listNum, step] of traverseStepList(build.steps)) {
-      const start = this.scaleTime(step.startTime?.toMillis() || this.now);
-      const end = this.scaleTime(step.endTime?.toMillis() || this.now);
+      const start = this.scaleTime(step.startTime?.toMillis() || this.nowTimestamp);
+      const end = this.scaleTime(step.endTime?.toMillis() || this.nowTimestamp);
 
       const stepGroup = svg
         .append('g')
@@ -381,7 +381,7 @@ export class TimelineTabElement extends MiloBaseElement {
       // Add extra width so tiny steps are visible.
       const width = end - start + STEP_EXTRA_WIDTH;
 
-      const rect = stepGroup
+      stepGroup
         .append('rect')
         .attr('x', -STEP_EXTRA_WIDTH / 2)
         .attr('y', STEP_MARGIN)
@@ -398,32 +398,29 @@ export class TimelineTabElement extends MiloBaseElement {
         .attr('y', STEP_TEXT_OFFSET)
         .text(listNum + step.selfName);
 
-      const logUrl = step.logs?.[0].viewUrl;
-      if (logUrl) {
-        const onClick = (e: MouseEvent) => {
-          e.stopPropagation();
-          window.open(logUrl, '_blank');
-        };
-        rect.attr('class', 'clickable').on('click', onClick);
+      // Wail until the next event cycle so stepText is rendered when we call
+      // this.getBBox();
+      window.setTimeout(() => {
+        // Rebind this so we can access it in the function below.
+        const timelineTab = this; // eslint-disable-line @typescript-eslint/no-this-alias
 
-        // Wail until the next event cycle so stepText is rendered when we call
-        // this.getBBox();
-        window.setTimeout(() => {
-          stepText.each(function () {
-            const bBox = this.getBBox();
+        stepText.each(function () {
+          const textBBox = this.getBBox();
+          const x1 = Math.min(textBBox.x, -STEP_EXTRA_WIDTH / 2);
+          const x2 = Math.max(textBBox.x + textBBox.width, STEP_MARGIN + width);
 
-            // This makes the step text easier to click.
-            stepGroup
-              .append('rect')
-              .attr('x', bBox.x)
-              .attr('y', bBox.y)
-              .attr('width', bBox.width)
-              .attr('height', bBox.height)
-              .attr('class', 'clickable invisible')
-              .on('click', onClick);
-          });
+          // This makes the step text easier to interact with.
+          const eventTargetRect = stepGroup
+            .append('rect')
+            .attr('x', x1)
+            .attr('y', STEP_MARGIN)
+            .attr('width', x2 - x1)
+            .attr('height', STEP_HEIGHT)
+            .attr('class', 'invisible');
+
+          timelineTab.installStepInteractionHandlers(eventTargetRect, step);
         });
-      }
+      }, 10);
     }
 
     const yRuler = svg
@@ -465,6 +462,72 @@ export class TimelineTabElement extends MiloBaseElement {
       .attr('x2', this.bodyWidth - HALF_BORDER_SIZE)
       .attr('y2', this.bodyHeight)
       .attr('stroke', 'var(--default-text-color)');
+  }
+
+  /**
+   * Installs handlers for interacting with a step object.
+   */
+  private installStepInteractionHandlers<T extends BaseType>(
+    ele: Selection<T, unknown, null, undefined>,
+    step: StepExt
+  ) {
+    const logUrl = step.logs?.[0].viewUrl;
+    if (logUrl) {
+      ele.attr('class', ele.attr('class') + ' clickable').on('click', (e: MouseEvent) => {
+        e.stopPropagation();
+        window.open(logUrl, '_blank');
+      });
+    }
+
+    ele
+      .on('mouseover', (e: MouseEvent) => {
+        const tooltip = document.createElement('div');
+        render(
+          html`
+            <table>
+              <tr>
+                <td colspan="2">${logUrl ? 'Click to open associated log.' : html`<b>No associated log.</b>`}</td>
+              </tr>
+              <tr>
+                <td>Started:</td>
+                <td>
+                  ${(step.startTime || this.now).toFormat(NUMERIC_TIME_FORMAT)}
+                  (after ${displayDuration((step.startTime || this.now).diff(this.buildState.build!.startTime!))})
+                </td>
+              </tr>
+              <tr>
+                <td>Ended:</td>
+                <td>${
+                  step.endTime
+                    ? step.endTime.toFormat(NUMERIC_TIME_FORMAT) +
+                      ` (after ${displayDuration(step.endTime.diff(this.buildState.build!.startTime!))})`
+                    : 'N/A'
+                }</td>
+              </tr>
+              <tr>
+                <td>Duration:</td>
+                <td>${displayDuration(step.duration)}</td>
+              </tr>
+            </div>
+          `,
+          tooltip
+        );
+
+        window.dispatchEvent(
+          new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+            detail: {
+              tooltip,
+              targetRect: (e.target as HTMLElement).getBoundingClientRect(),
+              gapSize: 5,
+            },
+          })
+        );
+      })
+      .on('mouseout', () => {
+        window.dispatchEvent(
+          new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 0 } })
+        );
+      });
   }
 
   static styles = [
