@@ -414,3 +414,12 @@ export function createTVCmpFn(sortingKeys: string[]): (v1: TestVariant, v2: Test
     return 0;
   };
 }
+
+/**
+ * Computes the display label for a given property key.
+ */
+export function getPropKeyLabel(key: string) {
+  // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
+  // Don't use String.split here because value may contain '.'.
+  return key.match(/^([^.]*\.)?(.*)$/)![2];
+}
