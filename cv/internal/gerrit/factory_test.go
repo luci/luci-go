@@ -32,9 +32,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	migrationpb "go.chromium.org/luci/cv/api/migration"
-	"go.chromium.org/luci/cv/internal/servicecfg"
-
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -51,25 +48,12 @@ func TestMakeClient(t *testing.T) {
 		const gHost = "first.example.com"
 
 		So(datastore.Put(ctx, &netrcToken{gHost, "legacy-1"}), ShouldBeNil)
-		err := servicecfg.SetTestMigrationConfig(ctx, &migrationpb.Settings{
-			PssaMigration: &migrationpb.PSSAMigration{
-				ProjectsBlocklist: []string{"force-legacy"},
-			},
-		})
-		So(err, ShouldBeNil)
 		f, err := newFactory(ctx)
 		So(err, ShouldBeNil)
 
 		Convey("factory.token", func() {
 
 			Convey("works", func() {
-				Convey("forced legacy", func() {
-					t, err := f.token(ctx, gHost, "force-legacy")
-					So(err, ShouldBeNil)
-					So(t.AccessToken, ShouldEqual, "bGVnYWN5LTE=") // base64 of "legacy-1"
-					So(t.TokenType, ShouldEqual, "Basic")
-				})
-
 				Convey("fallback to legacy", func() {
 					f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 						return nil, nil
@@ -93,7 +77,10 @@ func TestMakeClient(t *testing.T) {
 
 			Convey("not works", func() {
 				Convey("no legacy host", func() {
-					_, err := f.token(ctx, "second.example.com", "force-legacy")
+					f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
+						return nil, nil
+					}
+					_, err := f.token(ctx, "second.example.com", "not-migrated")
 					So(err, ShouldErrLike, "No legacy credentials")
 				})
 
@@ -122,20 +109,20 @@ func TestMakeClient(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(datastore.Put(ctx, &netrcToken{u.Host, "legacy-2"}), ShouldBeNil)
 
-			tokenCnt := 0
-			f.mockMintProjectToken = func(ctx context.Context, _ auth.ProjectTokenParams) (*auth.Token, error) {
-				So(ctx.Err(), ShouldBeNil) // must not be expired.
-				tokenCnt++
-				return &auth.Token{
-					Token:  fmt.Sprintf("modern-%d", tokenCnt),
-					Expiry: epoch.Add(2 * time.Minute),
-				}, nil
-			}
-
 			limitedCtx, limitedCancel := context.WithTimeout(ctx, time.Minute)
 			defer limitedCancel()
 
 			Convey("project-scoped account", func() {
+				tokenCnt := 0
+				f.mockMintProjectToken = func(ctx context.Context, _ auth.ProjectTokenParams) (*auth.Token, error) {
+					So(ctx.Err(), ShouldBeNil) // must not be expired.
+					tokenCnt++
+					return &auth.Token{
+						Token:  fmt.Sprintf("modern-%d", tokenCnt),
+						Expiry: epoch.Add(2 * time.Minute),
+					}, nil
+				}
+
 				c, err := f.makeClient(limitedCtx, u.Host, "modern")
 				So(err, ShouldBeNil)
 				_, err = c.ListChanges(limitedCtx, &gerrit.ListChangesRequest{})
@@ -158,7 +145,10 @@ func TestMakeClient(t *testing.T) {
 			})
 
 			Convey("legacy", func() {
-				c, err := f.makeClient(limitedCtx, u.Host, "force-legacy")
+				f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
+					return nil, nil
+				}
+				c, err := f.makeClient(limitedCtx, u.Host, "not-migrated")
 				So(err, ShouldBeNil)
 				_, err = c.ListChanges(limitedCtx, &gerrit.ListChangesRequest{})
 				So(err, ShouldBeNil)
@@ -169,7 +159,7 @@ func TestMakeClient(t *testing.T) {
 				// Ensure clients re-use works even if context expires.
 				limitedCancel()
 				So(limitedCtx.Err(), ShouldNotBeNil)
-				c2, err := f.makeClient(ctx, u.Host, "force-legacy")
+				c2, err := f.makeClient(ctx, u.Host, "not-migrated")
 				So(err, ShouldBeNil)
 				So(c2, ShouldEqual, c) // pointer comparison
 				_, err = c.ListChanges(ctx, &gerrit.ListChangesRequest{})

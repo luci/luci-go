@@ -27,25 +27,18 @@ import (
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
-
-	"go.chromium.org/luci/cv/internal/servicecfg"
 )
 
 // factory knows how to construct Gerrit Clients.
 //
 // CV must use project-scoped credentials, but not every project has configured
-// project-scoped service account (PSSA). Worse, some projects configured PSSA
-// before CQDaemon supported PSSA. Hence, when CQDaemon gained support for PSSA,
-// CQDaemon had to blocklist these projects to avoid breakage.  The alternative
-// and legacy authentication is based on per GerritHost auth tokens from
-// ~/.netrc shared by all LUCI projects. CQDaemon logic is roughly:
+// project-scoped service account (PSSA). The alternative and legacy
+// authentication is based on per GerritHost auth tokens from ~/.netrc shared by
+// all LUCI projects. CQDaemon logic is roughly:
 //
-//   if project in blocklist:
-//     return use_legacy_netrc
 //   try:
 //     token = token_server.MintToken(project)
 //   except 404: # not configured
@@ -102,7 +95,7 @@ func (f *factory) makeClient(ctx context.Context, gerritHost, luciProject string
 
 func (f *factory) transport(gerritHost, luciProject string) (http.RoundTripper, error) {
 	// Do what auth.GetRPCTransport(ctx, auth.AsProject, ...) would do,
-	// except obey pssa blocklist and default to legacy ~/.netrc creds.
+	// except default to legacy ~/.netrc creds if PSSA is not configured.
 	// See factory doc for more details.
 	return luciauth.NewModifyingTransport(f.baseTransport, func(req *http.Request) error {
 		tok, err := f.token(req.Context(), gerritHost, luciProject)
@@ -115,37 +108,23 @@ func (f *factory) transport(gerritHost, luciProject string) (http.RoundTripper, 
 }
 
 func (f *factory) token(ctx context.Context, gerritHost, luciProject string) (*oauth2.Token, error) {
-	cfg, err := servicecfg.GetMigrationConfig(ctx)
-	if err != nil {
+	req := auth.ProjectTokenParams{
+		MinTTL:      2 * time.Minute,
+		LuciProject: luciProject,
+		OAuthScopes: []string{gerrit.OAuthScope},
+	}
+	mintToken := auth.MintProjectToken
+	if f.mockMintProjectToken != nil {
+		mintToken = f.mockMintProjectToken
+	}
+	switch token, err := mintToken(ctx, req); {
+	case err != nil:
 		return nil, err
-	}
-	allowed := true
-	for _, project := range cfg.PssaMigration.ProjectsBlocklist {
-		if luciProject == project {
-			allowed = false
-			logging.Debugf(ctx, "Project %q is not allowed to use project scoped service account", luciProject)
-			break
-		}
-	}
-	if allowed {
-		req := auth.ProjectTokenParams{
-			MinTTL:      2 * time.Minute,
-			LuciProject: luciProject,
-			OAuthScopes: []string{gerrit.OAuthScope},
-		}
-		mintToken := auth.MintProjectToken
-		if f.mockMintProjectToken != nil {
-			mintToken = f.mockMintProjectToken
-		}
-		switch token, err := mintToken(ctx, req); {
-		case err != nil:
-			return nil, err
-		case token != nil:
-			return &oauth2.Token{
-				AccessToken: token.Token,
-				TokenType:   "Bearer",
-			}, nil
-		}
+	case token != nil:
+		return &oauth2.Token{
+			AccessToken: token.Token,
+			TokenType:   "Bearer",
+		}, nil
 	}
 
 	value, err := f.legacyCache.GetOrCreate(ctx, gerritHost, func() (value interface{}, ttl time.Duration, err error) {
