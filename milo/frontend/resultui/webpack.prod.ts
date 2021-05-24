@@ -24,9 +24,11 @@ export default merge(common, {
   plugins: [
     new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(true) }),
     new Workbox.GenerateSW({
-      // Without this, new release will not take effect until users close
-      // all build page tabs.
-      skipWaiting: true,
+      // Setting this to true means the old assets will be purged when a new
+      // version is detected, causing existing clients to break.
+      // However, this also means new release will not take effect until users
+      // close all build page tabs.
+      skipWaiting: false,
       navigateFallback: '/ui/index.html',
       // Workbox source map changes every build.
       // This causes noise in the auto-roller.

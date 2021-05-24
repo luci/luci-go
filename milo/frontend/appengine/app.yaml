@@ -46,6 +46,7 @@ handlers:
   secure: always
   static_files: resultui/index.html
   upload: resultui/index.html
+  expiration: 0s
 
 # Immutable ResultUI static resources.
 - url: /ui/immutable
@@ -68,6 +69,7 @@ handlers:
 - url: /ui
   secure: always
   static_dir: resultui
+  expiration: 0s
 
 # The rest is handled by Go code.
 - url: /.*
