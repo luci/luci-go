@@ -366,7 +366,7 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 
 // setDimensions computes the dimensions from the given request and builder
 // config, setting them in the proto. Mutates the given *pb.Build.
-// Build.Infra.Swarming must be set (see setInfra).
+// build.Infra.Swarming must be set (see setInfra).
 func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 	// Requested dimensions override dimensions specified in the builder config by wiping out all
 	// same-key dimensions (regardless of expiration time) in the builder config.
@@ -475,77 +475,54 @@ func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Buil
 }
 
 // setExperiments computes the experiments from the given request and builder
-// config, setting them in the model and proto. Mutates the given *model.Build.
-// build.Proto.Infra.Swarming, build.Proto.Input and build.Proto.Exe must not be
-// nil (see setInfra, setInput and setExecutable respectively).
-func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+// config, setting them in the proto. Mutates the given *pb.Build.
+// build.Infra.Swarming, build.Input and build.Exe must not be nil (see
+// setInfra, setInput and setExecutable respectively). The request must not
+// set legacy experiment values (see normalizeSchedule).
+func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 	// Experiment -> enabled.
-	exps := make(map[string]bool, len(bb.WellKnownExperiments)+len(req.GetExperiments()))
+	exps := make(map[string]bool, len(req.GetExperiments()))
 
-	// Experiment values in the experiments field of the request have highest precedence,
-	// followed by legacy fields in the request, followed by values in the builder config.
-
-	// All well-known experiments need to show up in the model.Build, so
-	// initialize them all to false.
-	for wke := range bb.WellKnownExperiments {
-		exps[wke] = false
-	}
-
-	// Override from builder config.
+	// Set experiments according to the builder config.
 	for exp, pct := range cfg.GetExperiments() {
 		exps[exp] = mathrand.Int31n(ctx, 100) < pct
 	}
 
-	// note that legacy Canary/Experimental req fields were incorporated via
-	// normalizeSchedule already.
-
-	// Finally override with explicitly requested experiments.
+	// Override with explicitly requested experiments.
 	for exp, en := range req.GetExperiments() {
 		exps[exp] = en
 	}
 
-	// The model stores all experiment values, while the proto only contains enabled experiments.
 	for exp, en := range exps {
 		if en {
-			build.Experiments = append(build.Experiments, fmt.Sprintf("+%s", exp))
-			build.Proto.Input.Experiments = append(build.Proto.Input.Experiments, exp)
-		} else {
-			// The "-luci.non_production" case is specifically exempt from the
-			// datastore index. See `model.Build.Experiments`.
-			if exp == bb.ExperimentNonProduction {
-				continue
-			}
-			build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
+			build.Input.Experiments = append(build.Input.Experiments, exp)
 		}
 	}
 
 	// For now, continue to set legacy field values from the experiments.
 	if en := exps[bb.ExperimentBBCanarySoftware]; en {
 		build.Canary = true
-		build.Proto.Canary = true
 	}
 	if en := exps[bb.ExperimentNonProduction]; en {
-		build.Experimental = true
-		build.Proto.Input.Experimental = true
+		build.Input.Experimental = true
 	}
-	sort.Strings(build.Proto.Input.Experiments)
-	sort.Strings(build.Experiments)
+	sort.Strings(build.Input.Experiments)
 
 	// Set experimental values.
-	if build.ExperimentStatus(bb.ExperimentBBAgent) == pb.Trinary_YES {
+	if exps[bb.ExperimentBBAgent] {
 		// Proto > experimental precedence.
-		if len(build.Proto.Exe.Cmd) == 0 {
-			build.Proto.Exe.Cmd = []string{"luciexe"}
+		if len(build.Exe.Cmd) == 0 {
+			build.Exe.Cmd = []string{"luciexe"}
 		}
 	}
 	// Ensure some command is set. Lowest precedence.
-	if len(build.Proto.Exe.Cmd) == 0 {
-		build.Proto.Exe.Cmd = []string{"recipes"}
+	if len(build.Exe.Cmd) == 0 {
+		build.Exe.Cmd = []string{"recipes"}
 	}
-	if build.ExperimentStatus(bb.ExperimentNonProduction) == pb.Trinary_YES {
+	if exps[bb.ExperimentNonProduction] {
 		// Request > experimental > proto precedence.
 		if req.GetPriority() == 0 {
-			build.Proto.Infra.Swarming.Priority = 255
+			build.Infra.Swarming.Priority = 255
 		}
 	}
 }
@@ -574,18 +551,18 @@ func configuredCacheToTaskCache(builderCache *pb.Builder_CacheEntry) *pb.BuildIn
 }
 
 // setInfra computes the infra values from the given request and builder config,
-// setting them in the model. Mutates the given *model.Build. build.Experiments
-// and build.Proto.Builder must be set (see setExperiments and scheduleBuilds).
-func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build, globalCaches []*pb.Builder_CacheEntry) {
-	build.Proto.Infra = &pb.BuildInfra{
+// setting them in the proto. Mutates the given *pb.Build. build.Builder must be
+// set. Does not set build.Infra.Logdog.Prefix, which can only be determined at
+// creation time.
+func setInfra(logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, globalCaches []*pb.Builder_CacheEntry) {
+	build.Infra = &pb.BuildInfra{
 		Buildbucket: &pb.BuildInfra_Buildbucket{
 			RequestedDimensions: req.GetDimensions(),
 			RequestedProperties: req.GetProperties(),
 		},
 		Logdog: &pb.BuildInfra_LogDog{
 			Hostname: logdogHost,
-			Prefix:   fmt.Sprintf("buildbucket/%s/%d", appID, build.Proto.Id),
-			Project:  build.Proto.Builder.GetProject(),
+			Project:  build.Builder.GetProject(),
 		},
 		Resultdb: &pb.BuildInfra_ResultDB{
 			Hostname: rdbHost,
@@ -597,12 +574,12 @@ func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, c
 			TaskServiceAccount: cfg.GetServiceAccount(),
 		},
 	}
-	if build.Proto.Infra.Swarming.Priority == 0 {
-		build.Proto.Infra.Swarming.Priority = 30
+	if build.Infra.Swarming.Priority == 0 {
+		build.Infra.Swarming.Priority = 30
 	}
 
 	if cfg.GetRecipe() != nil {
-		build.Proto.Infra.Recipe = &pb.BuildInfra_Recipe{
+		build.Infra.Recipe = &pb.BuildInfra_Recipe{
 			CipdPackage: cfg.Recipe.CipdPackage,
 			Name:        cfg.Recipe.Name,
 		}
@@ -627,7 +604,7 @@ func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, c
 
 	if !paths.Has("builder") {
 		taskCaches = append(taskCaches, &pb.BuildInfra_Swarming_CacheEntry{
-			Name:             fmt.Sprintf("builder_%x_v2", sha256.Sum256([]byte(protoutil.FormatBuilderID(build.Proto.Builder)))),
+			Name:             fmt.Sprintf("builder_%x_v2", sha256.Sum256([]byte(protoutil.FormatBuilderID(build.Builder)))),
 			Path:             "builder",
 			WaitForWarmCache: defBuilderCacheTimeout,
 		})
@@ -636,12 +613,12 @@ func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, c
 	sort.Slice(taskCaches, func(i, j int) bool {
 		return taskCaches[i].Path < taskCaches[j].Path
 	})
-	build.Proto.Infra.Swarming.Caches = taskCaches
+	build.Infra.Swarming.Caches = taskCaches
 
 	if req.GetPriority() > 0 {
-		build.Proto.Infra.Swarming.Priority = req.Priority
+		build.Infra.Swarming.Priority = req.Priority
 	}
-	setDimensions(req, cfg, &build.Proto)
+	setDimensions(req, cfg, build)
 }
 
 // setInput computes the input values from the given request and builder config,
@@ -772,7 +749,10 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build)
 // buildFromScheduleRequest returns a build proto created from the given
 // request and builder config. Sets fields except those which can only be
 // determined at creation time.
-func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder) *pb.Build {
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg) *pb.Build {
+	caches := globalCfg.GetSwarming().GetGlobalCaches()
+	logdogHost := globalCfg.GetLogdog().GetHostname()
+	rdbHost := globalCfg.GetResultdb().GetHostname()
 	b := &pb.Build{
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
@@ -784,10 +764,51 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	}
 
 	setExecutable(req, cfg, b)
+	setInfra(logdogHost, rdbHost, req, cfg, b, caches)
 	setInput(req, cfg, b)
 	setTags(req, b)
 	setTimeouts(req, cfg, b)
+	setExperiments(ctx, req, cfg, b) // Requires setExecutable, setInfra, setInput.
+
 	return b
+}
+
+// setExperimentsFromProto sets experiments in the model (see model/build.go).
+// build.Proto.Input.Experiments must be set (see setExperiments).
+func setExperimentsFromProto(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+	// The proto contains enabled experiments, but the model contains all experiments.
+	exps := make(map[string]bool, len(bb.WellKnownExperiments)+len(cfg.GetExperiments())+len(req.GetExperiments()))
+
+	for exp := range bb.WellKnownExperiments {
+		exps[exp] = false
+	}
+	for exp := range cfg.GetExperiments() {
+		exps[exp] = false
+	}
+	for exp := range req.GetExperiments() {
+		exps[exp] = false
+	}
+
+	for _, exp := range build.Proto.Input.Experiments {
+		exps[exp] = true
+	}
+
+	// -luci.non_production values are excluded (see model/build.go).
+	if !exps[bb.ExperimentNonProduction] {
+		delete(exps, bb.ExperimentNonProduction)
+	}
+
+	for exp, en := range exps {
+		if en {
+			build.Experiments = append(build.Experiments, fmt.Sprintf("+%s", exp))
+		} else {
+			build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
+		}
+	}
+	sort.Strings(build.Experiments)
+
+	build.Canary = build.Proto.Canary
+	build.Experimental = build.Proto.Input.Experimental
 }
 
 // scheduleBuilds handles requests to schedule builds. Requests must be
@@ -795,13 +816,11 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
 	now := clock.Now(ctx).UTC()
 	user := auth.CurrentIdentity(ctx)
-	cfg, err := config.GetSettingsCfg(ctx)
+	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "error fetching service config").Err()
 	}
-	caches := cfg.GetSwarming().GetGlobalCaches()
-	logdogHost := cfg.GetLogdog().GetHostname()
-	rdbHost := cfg.GetResultdb().GetHostname()
+	appID := info.AppID(ctx)
 
 	// Bucket -> Builder -> *pb.Builder.
 	cfgs, err := fetchBuilderConfigs(ctx, reqs)
@@ -821,18 +840,17 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			ID:         ids[i],
 			CreatedBy:  user,
 			CreateTime: now,
-			Proto:      *buildFromScheduleRequest(ctx, reqs[i], cfg),
+			Proto:      *buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg),
 		}
 
 		// Set proto field values which can only be determined at creation-time.
 		blds[i].Proto.CreatedBy = string(user)
 		blds[i].Proto.CreateTime = timestamppb.New(now)
 		blds[i].Proto.Id = ids[i]
+		blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, blds[i].Proto.Id)
 		blds[i].Proto.Status = pb.Status_SCHEDULED
 
-		setInfra(info.AppID(ctx), logdogHost, rdbHost, reqs[i], cfg, blds[i], caches)
-		setExperiments(ctx, reqs[i], cfg, blds[i])
-
+		setExperimentsFromProto(reqs[i], cfg, blds[i])
 		// Tags are stored in the outer struct (see model/build.go).
 		blds[i].Tags = protoutil.StringPairMap(blds[i].Proto.Tags).Format()
 		blds[i].Proto.Tags = nil
@@ -855,7 +873,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error { return model.UpdateBuilderStat(ctx, blds, now) }
-		if rdbHost != "" {
+		if rdbHost := globalCfg.GetResultdb().GetHostname(); rdbHost != "" {
 			work <- func() error { return resultdb.CreateInvocations(ctx, blds, cfgs, rdbHost) }
 		}
 		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
