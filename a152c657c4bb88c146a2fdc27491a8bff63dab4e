@@ -16,6 +16,23 @@
       "message": "Using dev I verified that SearchBuilds fails when searching for TagIndices created before [1] and succeeds on TagIndices created after, so ScheduleBuild should be creating TagIndices correctly now...\n\n[1] https://chromium.googlesource.com/infra/luci/luci-go/+/d034ac850724f22e1363ea2477ca86ce808d419e",
       "revId": "a152c657c4bb88c146a2fdc27491a8bff63dab4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dfeba4c0_7ec4e662",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-24T17:37:13Z",
+      "side": 1,
+      "message": "+chanli, the primary trooper.",
+      "revId": "a152c657c4bb88c146a2fdc27491a8bff63dab4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
