@@ -369,10 +369,6 @@ func TestDepsTriage(t *testing.T) {
 					td.submitted = []*changelist.Dep{d1, d2, d3} // wrong order
 					So(func() { iterate() }, ShouldPanicLike, fmt.Errorf("(wrong PCL?)"))
 				})
-				Convey("non-OK triagedDeps", func() {
-					td.incompatMode = []*changelist.Dep{d1}
-					So(func() { iterate() }, ShouldPanicLike, fmt.Errorf("non-OK triagedDeps"))
-				})
 			})
 		})
 	})
