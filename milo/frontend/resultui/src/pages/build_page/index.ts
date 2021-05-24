@@ -229,6 +229,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     this.addDisposer(
       autorun(() => {
         this.invocationState.invocationId = this.buildState.invocationId;
+        this.invocationState.isComputedInvId = this.buildState.useComputedInvId;
         this.invocationState.presentationConfig =
           this.buildState.build?.output?.properties?.[TEST_PRESENTATION_KEY] ||
           this.buildState.build?.input?.properties?.[TEST_PRESENTATION_KEY] ||
@@ -295,15 +296,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     super.disconnectedCallback();
   }
 
-  @computed get hasInvocation() {
-    if (this.buildState.useComputedInvId) {
-      // The invocation may not exist. Wait for the invocation query to confirm
-      // its existence.
-      return this.invocationState.invocation !== null;
-    }
-    return Boolean(this.invocationState.invocationId);
-  }
-
   @computed get tabDefs(): TabDef[] {
     const params = {
       project: this.builderIdParam!.project,
@@ -320,7 +312,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // TODO(crbug/1128097): display test-results tab unconditionally once
       // Foundation team is ready for ResultDB integration with other LUCI
       // projects.
-      ...(!this.hasInvocation
+      ...(!this.invocationState.hasInvocation
         ? []
         : [
             {
