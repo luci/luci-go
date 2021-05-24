@@ -46,6 +46,9 @@ handlers:
   secure: always
   static_files: resultui/index.html
   upload: resultui/index.html
+  # The resources are cached by the service worker. Don't serve the old content
+  # when the service worker tries to fetch a new version.
+  expiration: 0s
 
 # Immutable ResultUI static resources.
 - url: /ui/immutable
@@ -68,6 +71,9 @@ handlers:
 - url: /ui
   secure: always
   static_dir: resultui
+  # The resources are cached by the service worker. Don't serve the old content
+  # when the service worker tries to fetch a new version.
+  expiration: 0s
 
 # The rest is handled by Go code.
 - url: /.*
