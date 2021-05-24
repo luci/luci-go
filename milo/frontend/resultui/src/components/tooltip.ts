@@ -112,13 +112,13 @@ export class TooltipElement extends LitElement {
 
     const offsets = [
       // Bottom.
-      [this.targetRect.left, this.targetRect.bottom + this.gapSize],
+      [this.targetRect.left + window.scrollX, this.targetRect.bottom + this.gapSize + window.scrollY],
       // Top.
-      [this.targetRect.left, this.targetRect.top - selfRect.height - this.gapSize],
+      [this.targetRect.left + window.scrollX, this.targetRect.top - selfRect.height - this.gapSize + window.scrollY],
       // Right.
-      [this.targetRect.right + this.gapSize, this.targetRect.top],
+      [this.targetRect.right + this.gapSize + window.scrollX, this.targetRect.top + window.scrollY],
       // Left.
-      [this.targetRect.left - selfRect.width - this.gapSize, this.targetRect.top],
+      [this.targetRect.left - selfRect.width - this.gapSize + window.scrollX, this.targetRect.top + window.scrollY],
     ];
 
     // Show the tooltip at the bottom by default.
@@ -151,7 +151,7 @@ export class TooltipElement extends LitElement {
   static styles = css`
     :host {
       display: none;
-      position: fixed;
+      position: absolute;
       background: white;
       border-radius: 4px;
       padding: 5px;
