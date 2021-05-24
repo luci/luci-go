@@ -34,6 +34,24 @@
       "parentUuid": "b154a3a3_988da08b",
       "revId": "9842dfc24ed3b3bd2fc7e6e13282f6271b9469e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1360715e_3e81f63c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-24T23:54:33Z",
+      "side": 1,
+      "message": "Redeployed. It will take about 10m for the cache to expire.\nAlternatively, there\u0027s a prod instance.\n\nhttps://weiweilin-0-dot-luci-milo.appspot.com/ui/p/chromium/builders/ci/Mac11%20Tests/897/overview",
+      "parentUuid": "4cad50b6_eb725c4c",
+      "revId": "9842dfc24ed3b3bd2fc7e6e13282f6271b9469e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
