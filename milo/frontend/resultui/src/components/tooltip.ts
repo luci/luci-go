@@ -111,14 +111,48 @@ export class TooltipElement extends LitElement {
     const selfRect = this.getBoundingClientRect();
 
     const offsets = [
-      // Bottom.
-      [this.targetRect.left, this.targetRect.bottom + this.gapSize],
-      // Top.
-      [this.targetRect.left, this.targetRect.top - selfRect.height - this.gapSize],
-      // Right.
-      [this.targetRect.right + this.gapSize, this.targetRect.top],
-      // Left.
-      [this.targetRect.left - selfRect.width - this.gapSize, this.targetRect.top],
+      // Bottom (left-aligned).
+      [this.targetRect.left + window.scrollX, this.targetRect.bottom + this.gapSize + window.scrollY],
+      // Bottom (right-aligned).
+      [this.targetRect.right - selfRect.width + window.scrollX, this.targetRect.bottom + this.gapSize + window.scrollY],
+      // Top (left-aligned).
+      [this.targetRect.left + window.scrollX, this.targetRect.top - selfRect.height - this.gapSize + window.scrollY],
+      // Top (right-aligned).
+      [
+        this.targetRect.right - selfRect.width + window.scrollX,
+        this.targetRect.top - selfRect.height - this.gapSize + window.scrollY,
+      ],
+      // Right (top-aligned).
+      [this.targetRect.right + this.gapSize + window.scrollX, this.targetRect.top + window.scrollY],
+      // Right (bottom-aligned).
+      [
+        this.targetRect.right + this.gapSize + window.scrollX,
+        this.targetRect.bottom - selfRect.height + window.scrollY,
+      ],
+      // Left (top-aligned).
+      [this.targetRect.left - selfRect.width - this.gapSize + window.scrollX, this.targetRect.top + window.scrollY],
+      // Left (bottom-aligned).
+      [
+        this.targetRect.left - selfRect.width - this.gapSize + window.scrollX,
+        this.targetRect.bottom - selfRect.height + window.scrollY,
+      ],
+      // Bottom-right.
+      [this.targetRect.right + this.gapSize + window.scrollX, this.targetRect.bottom + this.gapSize + window.scrollY],
+      // Bottom-left.
+      [
+        this.targetRect.left - selfRect.width - this.gapSize + window.scrollX,
+        this.targetRect.bottom + this.gapSize + window.scrollY,
+      ],
+      // Top-right.
+      [
+        this.targetRect.right + this.gapSize + window.scrollX,
+        this.targetRect.top - selfRect.height - this.gapSize + window.scrollY,
+      ],
+      // Top-left.
+      [
+        this.targetRect.left - selfRect.width - this.gapSize + window.scrollX,
+        this.targetRect.top - selfRect.height - this.gapSize + window.scrollY,
+      ],
     ];
 
     // Show the tooltip at the bottom by default.
@@ -151,13 +185,13 @@ export class TooltipElement extends LitElement {
   static styles = css`
     :host {
       display: none;
-      position: fixed;
+      position: absolute;
       background: white;
       border-radius: 4px;
       padding: 5px;
       box-shadow: rgb(0 0 0 / 20%) 0px 5px 5px -3px, rgb(0 0 0 / 14%) 0px 8px 10px 1px,
         rgb(0 0 0 / 12%) 0px 3px 14px 2px;
-      z-index: 2;
+      z-index: 999;
     }
   `;
 }
