@@ -30,17 +30,11 @@ import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../.
 import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportErrorAsync } from '../../libs/error_handler';
-import { TestVariant, TestVariantStatus } from '../../services/resultdb';
+import { getPropKeyLabel, TestVariant, TestVariantStatus } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 import { MiloBaseElement } from '../milo_base';
 import { TestVariantEntryElement } from './test_variant_entry';
-
-function getPropKeyLabel(key: string) {
-  // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
-  // Don't use String.split here because value may contain '.'.
-  return key.match(/^([^.]*\.)?(.*)$/)![2];
-}
 
 /**
  * Displays test variants in a table.
