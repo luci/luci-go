@@ -96,6 +96,21 @@ export class TestLoader {
   }
 
   /**
+   * Unfiltered unexpected test variants grouped by keys from groupByPropGetters.
+   */
+  @computed get first10UnfilteredGroupedUnexpectedVariants() {
+    if (this.first10UnfilteredUnexpectedVariants.length === 0) {
+      return [];
+    }
+
+    let groups = [this.first10UnfilteredUnexpectedVariants];
+    for (const [, propGetter] of this.groupers) {
+      groups = groups.flatMap((group) => Object.values(groupBy(group, (v) => propGetter(v))));
+    }
+    return groups.map((group) => group.sort(this.cmpFn));
+  }
+
+  /**
    * non-expected test variants include test variants of any status except
    * TestVariantStatus.Expected.
    */
@@ -125,6 +140,11 @@ export class TestLoader {
   @observable.shallow private unfilteredNonExpectedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredUnexpectedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredExpectedVariants: TestVariant[] = [];
+  @observable.shallow private first10UnfilteredUnexpectedVariants: TestVariant[] = [];
+
+  @computed get first10UnfilteredUnexpectedvariantsCount() {
+    return this.first10UnfilteredUnexpectedVariants.length;
+  }
 
   @computed get loadedAllVariants() {
     return this.stage === LoadingStage.Done;
@@ -234,6 +254,9 @@ export class TestLoader {
           this._stage = LoadingStage.LoadingUnexpected;
           this.unfilteredUnexpectedVariants.push(testVariant);
           this.unfilteredNonExpectedVariants.push(testVariant);
+          if (this.first10UnfilteredUnexpectedVariants.length < 10) {
+            this.first10UnfilteredUnexpectedVariants.push(testVariant);
+          }
           break;
         case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
           this._stage = LoadingStage.LoadingUnexpectedlySkipped;
