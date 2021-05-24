@@ -2004,7 +2004,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setExperiments(ctx, nil, nil, ent)
+			setExperiments(ctx, nil, nil, &ent.Proto)
+			setExperimentsFromProto(nil, nil, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Experiments: []string{
 					"-" + bb.ExperimentBBCanarySoftware,
@@ -2041,7 +2042,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, ent)
+				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"recipes"},
 				})
@@ -2064,7 +2066,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, ent)
+				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"luciexe"},
 				})
@@ -2089,7 +2092,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, ent)
+				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"command"},
 				})
@@ -2116,7 +2120,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, ent)
+				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
 			})
 
@@ -2139,7 +2144,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, ent)
+				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 255)
 			})
 
@@ -2163,7 +2169,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, ent)
+				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
 			})
 		})
@@ -2185,7 +2192,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setExperiments(ctx, req, nil, ent)
+			setExperiments(ctx, req, nil, &ent.Proto)
+			setExperimentsFromProto(req, nil, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Experiments: []string{
 					"+experiment1",
@@ -2226,7 +2234,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setExperiments(ctx, req, nil, ent)
+			setExperiments(ctx, req, nil, &ent.Proto)
+			setExperimentsFromProto(req, nil, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Canary: true,
 				Experiments: []string{
@@ -2268,7 +2277,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setExperiments(ctx, nil, cfg, ent)
+			setExperiments(ctx, nil, cfg, &ent.Proto)
+			setExperimentsFromProto(nil, cfg, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Experiments: []string{
 					"+experiment1",
@@ -2314,7 +2324,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, ent)
+				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperimentsFromProto(req, nil, ent)
 				So(ent, ShouldResemble, &model.Build{
 					Experimental: true,
 					Experiments: []string{
@@ -2364,7 +2375,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, cfg, ent)
+				setExperiments(ctx, req, cfg, &ent.Proto)
+				setExperimentsFromProto(req, cfg, ent)
 				So(ent, ShouldResemble, &model.Build{
 					Canary: true,
 					Experiments: []string{
@@ -2413,7 +2425,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, cfg, ent)
+				setExperiments(ctx, req, cfg, &ent.Proto)
+				setExperimentsFromProto(req, cfg, ent)
 				So(ent, ShouldResemble, &model.Build{
 					Experiments: []string{
 						"+experiment1",
@@ -2468,7 +2481,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, cfg, ent)
+				setExperiments(ctx, req, cfg, &ent.Proto)
+				setExperimentsFromProto(req, cfg, ent)
 				So(ent, ShouldResemble, &model.Build{
 					Experimental: true,
 					Experiments: []string{
@@ -2503,21 +2517,18 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("setInfra", t, func() {
 		Convey("nil", func() {
-			ent := &model.Build{
-				Proto: pb.Build{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
 				},
 			}
 
-			setInfra("", "", "", nil, nil, ent, nil)
-			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+			setInfra("", "", nil, nil, b, nil)
+			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
-					Prefix:  "buildbucket//0",
 					Project: "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
@@ -2537,23 +2548,19 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("logdog", func() {
-			ent := &model.Build{
-				Proto: pb.Build{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Id: 1,
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
 				},
 			}
 
-			setInfra("app-id", "host", "", nil, nil, ent, nil)
-			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+			setInfra("host", "", nil, nil, b, nil)
+			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
 					Hostname: "host",
-					Prefix:   "buildbucket/app-id/1",
 					Project:  "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
@@ -2573,23 +2580,20 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("resultdb", func() {
-			ent := &model.Build{
-				Proto: pb.Build{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Id: 1,
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
 				},
+				Id: 1,
 			}
 
-			setInfra("", "", "host", nil, nil, ent, nil)
-			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+			setInfra("", "host", nil, nil, b, nil)
+			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
 					Hostname: "",
-					Prefix:   "buildbucket//1",
 					Project:  "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{
@@ -2618,21 +2622,18 @@ func TestScheduleBuild(t *testing.T) {
 						Name:        "name",
 					},
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
+				b := &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
 					},
 				}
 
-				setInfra("", "", "", nil, cfg, ent, nil)
-				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				setInfra("", "", nil, cfg, b, nil)
+				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix:  "buildbucket//0",
 						Project: "project",
 					},
 					Recipe: &pb.BuildInfra_Recipe{
@@ -2662,21 +2663,18 @@ func TestScheduleBuild(t *testing.T) {
 						ServiceAccount: "account",
 						SwarmingHost:   "host",
 					}
-					ent := &model.Build{
-						Proto: pb.Build{
-							Builder: &pb.BuilderID{
-								Project: "project",
-								Bucket:  "bucket",
-								Builder: "builder",
-							},
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
 						},
 					}
 
-					setInfra("", "", "", nil, cfg, ent, nil)
-					So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+					setInfra("", "", nil, cfg, b, nil)
+					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
 						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket//0",
 							Project: "project",
 						},
 						Resultdb: &pb.BuildInfra_ResultDB{},
@@ -2699,21 +2697,18 @@ func TestScheduleBuild(t *testing.T) {
 
 				Convey("caches", func() {
 					Convey("nil", func() {
-						ent := &model.Build{
-							Proto: pb.Build{
-								Builder: &pb.BuilderID{
-									Project: "project",
-									Bucket:  "bucket",
-									Builder: "builder",
-								},
+						b := &pb.Build{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
 							},
 						}
 
-						setInfra("", "", "", nil, nil, ent, nil)
-						So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+						setInfra("", "", nil, nil, b, nil)
+						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
-								Prefix:  "buildbucket//0",
 								Project: "project",
 							},
 							Resultdb: &pb.BuildInfra_ResultDB{},
@@ -2738,21 +2733,18 @@ func TestScheduleBuild(t *testing.T) {
 								Path: "cache",
 							},
 						}
-						ent := &model.Build{
-							Proto: pb.Build{
-								Builder: &pb.BuilderID{
-									Project: "project",
-									Bucket:  "bucket",
-									Builder: "builder",
-								},
+						b := &pb.Build{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
 							},
 						}
 
-						setInfra("", "", "", nil, nil, ent, set)
-						So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+						setInfra("", "", nil, nil, b, set)
+						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
-								Prefix:  "buildbucket//0",
 								Project: "project",
 							},
 							Resultdb: &pb.BuildInfra_ResultDB{},
@@ -2783,21 +2775,18 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						}
-						ent := &model.Build{
-							Proto: pb.Build{
-								Builder: &pb.BuilderID{
-									Project: "project",
-									Bucket:  "bucket",
-									Builder: "builder",
-								},
+						b := &pb.Build{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
 							},
 						}
 
-						setInfra("", "", "", nil, cfg, ent, nil)
-						So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+						setInfra("", "", nil, cfg, b, nil)
+						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
-								Prefix:  "buildbucket//0",
 								Project: "project",
 							},
 							Resultdb: &pb.BuildInfra_ResultDB{},
@@ -2859,21 +2848,18 @@ func TestScheduleBuild(t *testing.T) {
 								Path:   "path",
 							},
 						}
-						ent := &model.Build{
-							Proto: pb.Build{
-								Builder: &pb.BuilderID{
-									Project: "project",
-									Bucket:  "bucket",
-									Builder: "builder",
-								},
+						b := &pb.Build{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
 							},
 						}
 
-						setInfra("", "", "", nil, cfg, ent, set)
-						So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+						setInfra("", "", nil, cfg, b, set)
+						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
-								Prefix:  "buildbucket//0",
 								Project: "project",
 							},
 							Resultdb: &pb.BuildInfra_ResultDB{},
@@ -2929,18 +2915,16 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
+				b := &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
 					},
 				}
 
-				setInfra("", "", "", req, nil, ent, nil)
-				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				setInfra("", "", req, nil, b, nil)
+				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						RequestedDimensions: []*pb.RequestedDimension{
 							{
@@ -2953,7 +2937,6 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix:  "buildbucket//0",
 						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
@@ -2993,18 +2976,16 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
+				b := &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
 					},
 				}
 
-				setInfra("", "", "", req, nil, ent, nil)
-				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				setInfra("", "", req, nil, b, nil)
+				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						RequestedProperties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3017,7 +2998,6 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix:  "buildbucket//0",
 						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
@@ -3042,21 +3022,18 @@ func TestScheduleBuild(t *testing.T) {
 						ParentRunId: "id",
 					},
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
+				b := &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
 					},
 				}
 
-				setInfra("", "", "", req, nil, ent, nil)
-				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				setInfra("", "", req, nil, b, nil)
+				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix:  "buildbucket//0",
 						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
@@ -3080,61 +3057,18 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					Priority: 1,
 				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-					},
-				}
-
-				setInfra("", "", "", req, nil, ent, nil)
-				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
-					Logdog: &pb.BuildInfra_LogDog{
-						Prefix:  "buildbucket//0",
+				b := &pb.Build{
+					Builder: &pb.BuilderID{
 						Project: "project",
-					},
-					Resultdb: &pb.BuildInfra_ResultDB{},
-					Swarming: &pb.BuildInfra_Swarming{
-						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-							{
-								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-								Path: "builder",
-								WaitForWarmCache: &durationpb.Duration{
-									Seconds: 240,
-								},
-							},
-						},
-						Priority: 1,
-					},
-				})
-			})
-
-			Convey("priority > experimental", func() {
-				req := &pb.ScheduleBuildRequest{
-					Priority: 1,
-				}
-				ent := &model.Build{
-					Proto: pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-					},
-					Experiments: []string{
-						"+" + bb.ExperimentBBAgent,
+						Bucket:  "bucket",
+						Builder: "builder",
 					},
 				}
 
-				setInfra("", "", "", req, nil, ent, nil)
-				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				setInfra("", "", req, nil, b, nil)
+				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix:  "buildbucket//0",
 						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
