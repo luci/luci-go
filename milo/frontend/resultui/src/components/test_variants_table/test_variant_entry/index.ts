@@ -22,6 +22,8 @@ import { computed, observable } from 'mobx';
 import '../../expandable_entry';
 import '../../copy_to_clipboard';
 import './result_entry';
+import { AppState, consumeAppState } from '../../../context/app_state';
+import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
@@ -39,10 +41,10 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @customElement('milo-test-variant-entry')
 @lazyRendering
 export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
+  @observable.ref @consumeAppState appState!: AppState;
+
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
-  @observable.ref expandedCallback = () => {};
-  @observable.ref renderedCallback = () => {};
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -55,7 +57,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     this.shouldRenderContent = this.shouldRenderContent || newVal;
 
     if (newVal) {
-      this.expandedCallback();
+      trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.EXPAND_ENTRY, VISIT_ID, 1);
     }
   }
 
@@ -234,9 +236,16 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
   }
 
   protected updated() {
-    if (!this.rendered) {
-      this.renderedCallback();
+    if (!this.rendered || this.appState.sentTestResultsTabLoadingTimeToGA) {
+      return;
     }
+    this.appState.sentTestResultsTabLoadingTimeToGA = true;
+    trackEvent(
+      GA_CATEGORIES.TEST_RESULTS_TAB,
+      GA_ACTIONS.LOADING_TIME,
+      generateRandomLabel(VISIT_ID + '_'),
+      Date.now() - this.appState.tabSelectionTime
+    );
   }
 
   static styles = [
