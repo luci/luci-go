@@ -1595,12 +1595,7 @@ matched by some `path_regexps`, subject to following caveats:
     (aka empty commits) and as such this situation differs from the default
     case of not specifying any `path_regexps`.
   * As mentioned above, if a ref fast-forwards >=50 commits, only the last
-    50 commits are checked. If none of them pass path-based filtering, a
-    single triggering request is emitted for the ref's new tip. Rational:
-    it's better to emit redundant triggers than silently not emit triggers
-    for commits beyond latest 50.
-  * If a ref tip has just been created, a triggering request would be
-    emitted regardless of what files the commit touches.
+    50 commits are checked. The rest are ignored.
 
 A [luci.gitiles_poller(...)](#luci.gitiles_poller) with some particular name can be redeclared many
 times as long as all fields in all declaration are identical. This is
