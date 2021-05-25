@@ -203,12 +203,8 @@ func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep
 
 // iterateNotSubmitted calls clbk per each dep which isn't submitted.
 //
-// Must be called only if all deps are OK (submitted or notYetLoaded is fine)
-// and with the same PCL as was used to construct the triagedDeps.
+// Must be called with the same PCL as was used to construct the triagedDeps.
 func (t *triagedDeps) iterateNotSubmitted(pcl *prjpb.PCL, clbk func(dep *changelist.Dep)) {
-	if !t.OK() {
-		panic(fmt.Errorf("iterateNotSubmitted called on non-OK triagedDeps (PCL %d)", pcl.GetClid()))
-	}
 	// Because construction of triagedDeps is in order of PCL's Deps, the
 	// submitted must be a sub-sequence of Deps and we can compare just Dep
 	// pointers.
