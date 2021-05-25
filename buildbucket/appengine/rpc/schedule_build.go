@@ -855,6 +855,8 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		blds[i].Tags = protoutil.StringPairMap(blds[i].Proto.Tags).Format()
 		blds[i].Proto.Tags = nil
 
+		blds[i].IsLuci = true
+
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
 			exp[d.Expiration.GetSeconds()] = struct{}{}
