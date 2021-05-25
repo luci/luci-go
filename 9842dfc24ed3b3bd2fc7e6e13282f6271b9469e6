@@ -88,6 +88,24 @@
       "parentUuid": "1360715e_3e81f63c",
       "revId": "9842dfc24ed3b3bd2fc7e6e13282f6271b9469e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b26ece5_44e3c9ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-25T00:40:51Z",
+      "side": 1,
+      "message": "got it.\n\nsee also the comment above. not sure you saw it.",
+      "parentUuid": "7ec4dda4_39ae1848",
+      "revId": "9842dfc24ed3b3bd2fc7e6e13282f6271b9469e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
