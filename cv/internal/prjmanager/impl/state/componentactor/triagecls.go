@@ -22,32 +22,26 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-// triageCLs computes and sets .cls, .reverseDeps.
-func (a *actor) triageCLs() {
-	a.cls = make(map[int64]*clInfo, len(a.c.GetClids()))
-	for _, clid := range a.c.GetClids() {
-		a.cls[clid] = &clInfo{
-			pcl:       a.s.MustPCL(clid),
-			purgingCL: a.s.PurgingCL(clid), // may be nil
+// triageCLs decides whether individual CLs ought to be acted upon.
+func triageCLs(c *prjpb.Component, pm pmState) map[int64]*clInfo {
+	cls := make(map[int64]*clInfo, len(c.GetClids()))
+	for _, clid := range c.GetClids() {
+		cls[clid] = &clInfo{
+			pcl:       pm.MustPCL(clid),
+			purgingCL: pm.PurgingCL(clid), // may be nil
 		}
 	}
-	for index, r := range a.c.GetPruns() {
+	for index, r := range c.GetPruns() {
 		for _, clid := range r.GetClids() {
-			t := a.cls[clid]
+			t := cls[clid]
 			t.runIndexes = append(t.runIndexes, int32(index))
 		}
 	}
-
-	a.reverseDeps = map[int64][]int64{}
-	for clid, info := range a.cls {
+	a := actor{c: c, s: pm}
+	for clid, info := range cls {
 		a.triageCL(clid, info)
-		if info.ready {
-			info.deps.iterateNotSubmitted(info.pcl, func(dep *changelist.Dep) {
-				did := dep.GetClid()
-				a.reverseDeps[did] = append(a.reverseDeps[did], clid)
-			})
-		}
 	}
+	return cls
 }
 
 // clInfo represents a CL in the Actor's component.
