@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"regexp"
 
 	cl "cloud.google.com/go/logging"
 	"github.com/golang/protobuf/proto"
@@ -48,6 +49,8 @@ const (
 	tsEntriesField = "entries"
 	tsIndexField   = "index"
 )
+
+var logIDRe = regexp.MustCompile(`^[[:alnum:]._\-][[:alnum:]./_\-]{0,510}`)
 
 // CLClient is a general interface for CloudLogging client and intended to enable
 // unit tests to stub out CloudLogging.
@@ -688,9 +691,28 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		Logger: log.Get(c),
 	}
 	if sa.clclient != nil {
+		logID := "luci-logs"
+		tags := sa.desc.GetTags()
+
+		switch val, ok := tags["luci.CloudLogExportID"]; {
+		case !ok, len(val) == 0: // skip
+
+		// len(LogID) must be < 512, and allows ./_- and alphanumerics.
+		// If CloudLogExportID is too long or contains unsupported chars, fall back to
+		// the default LogID.
+		case len(val) > 511:
+			log.Errorf(c, "CloudLogExportID: too long - %d", len(val))
+
+		case !logIDRe.MatchString(val):
+			log.Errorf(c, "CloudLogExportID(%s): does not match %s", val, logIDRe)
+
+		default:
+			logID = val
+		}
+
 		m.CloudLogger = sa.clclient.Logger(
-			"logdog",
-			cl.CommonLabels(sa.desc.GetTags()),
+			logID,
+			cl.CommonLabels(tags),
 			cl.CommonResource(&mrpb.MonitoredResource{
 				Type: "generic_task",
 				Labels: map[string]string{
