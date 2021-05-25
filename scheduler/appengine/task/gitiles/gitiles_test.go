@@ -177,24 +177,6 @@ func TestTriggerBuild(t *testing.T) {
 			})
 		})
 
-		Convey("newly discovered ref ignores pathFilter", func() {
-			cfg.Refs = []string{"refs/heads/master"}
-			cfg.PathRegexps = []string{"only.this.file"}
-			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
-			expectLogWithDiff("deadbeef00", "", 1, "deadbeef00:some,files")
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, strmap{
-				"refs/heads/master": "deadbeef00",
-			})
-			So(ctl.Triggers, ShouldHaveLength, 1)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
-			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &api.GitilesTrigger{
-				Repo:     "https://a.googlesource.com/b.git",
-				Ref:      "refs/heads/master",
-				Revision: "deadbeef00",
-			})
-		})
-
 		Convey("regexp refs are matched correctly", func() {
 			cfg.Refs = []string{`regexp:refs/branch-heads/1\.\d+`}
 			So(saveState(c, jobID, cfg.Repo, strmap{
@@ -301,30 +283,16 @@ func TestTriggerBuild(t *testing.T) {
 			So(saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 
-			Convey("results in no emitted triggers if we examine each commit", func() {
-				expectLogWithDiff("deadbeef00", "deadbeef04", 50,
-					"deadbeef00:nope0",
-					"deadbeef01:nope1",
-					"deadbeef02:nope2",
-					"deadbeef03:nope3")
-				So(m.LaunchTask(c, ctl), ShouldBeNil)
-				So(loadNoError(), ShouldResemble, strmap{
-					"refs/heads/master": "deadbeef00",
-				})
-				So(ctl.Triggers, ShouldHaveLength, 0)
+			expectLogWithDiff("deadbeef00", "deadbeef04", 50,
+				"deadbeef00:nope0",
+				"deadbeef01:nope1",
+				"deadbeef02:nope2",
+				"deadbeef03:nope3")
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
+			So(loadNoError(), ShouldResemble, strmap{
+				"refs/heads/master": "deadbeef00",
 			})
-			Convey("results in last commit emitted if we don't examine all commits", func() {
-				m.maxCommitsPerRefUpdate = 2
-				expectLogWithDiff("deadbeef00", "deadbeef04", 2,
-					"deadbeef00:nope",
-					"deadbeef01:nope1") // note deadbeef02 and 03 weren't examined.
-				So(m.LaunchTask(c, ctl), ShouldBeNil)
-				So(loadNoError(), ShouldResemble, strmap{
-					"refs/heads/master": "deadbeef00",
-				})
-				So(ctl.Triggers, ShouldHaveLength, 1)
-				So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
-			})
+			So(ctl.Triggers, ShouldHaveLength, 0)
 		})
 
 		Convey("do nothing at all if there are no changes", func() {
