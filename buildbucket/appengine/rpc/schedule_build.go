@@ -685,9 +685,11 @@ func setTags(req *pb.ScheduleBuildRequest, build *pb.Build) {
 	if req.GetBuilder() != nil {
 		tags.Add("builder", req.Builder.Builder)
 	}
-	if req.GetGitilesCommit() != nil {
-		tags.Add("buildset", protoutil.GitilesBuildSet(req.GitilesCommit))
-		tags.Add("gitiles_ref", req.GitilesCommit.Ref)
+	if gc := req.GetGitilesCommit(); gc != nil {
+		if buildset := protoutil.GitilesBuildSet(gc); buildset != "" {
+			tags.Add("buildset", buildset)
+		}
+		tags.Add("gitiles_ref", gc.Ref)
 	}
 	for _, ch := range req.GetGerritChanges() {
 		tags.Add("buildset", protoutil.GerritBuildSet(ch))

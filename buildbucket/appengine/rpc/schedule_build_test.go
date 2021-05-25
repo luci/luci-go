@@ -3497,6 +3497,26 @@ func TestScheduleBuild(t *testing.T) {
 			})
 		})
 
+		Convey("partial gitiles commit", func() {
+			req := &pb.ScheduleBuildRequest{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:    "host",
+					Project: "project",
+					Ref:     "ref",
+				},
+			}
+			normalizeSchedule(req)
+			b := &pb.Build{}
+
+			setTags(req, b)
+			So(b.Tags, ShouldResemble, []*pb.StringPair{
+				{
+					Key:   "gitiles_ref",
+					Value: "ref",
+				},
+			})
+		})
+
 		Convey("gerrit changes", func() {
 			Convey("one", func() {
 				req := &pb.ScheduleBuildRequest{
