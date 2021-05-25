@@ -179,4 +179,15 @@ describe('genCacheKeyForPrpcRequest', () => {
     const key2 = await genCacheKeyForPrpcRequest('prefix2', new Request(...fetchStub.getCall(1).args));
     assert.notStrictEqual(key1, key2);
   });
+
+  it('should generate identical keys when false-ish properties are omitted', async () => {
+    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const client = new PrpcClient({ fetchImpl: fetchStub });
+    client.call('service', 'method', { prop: 1, pageToken: '', emptyArray: [] });
+    client.call('service', 'method', { prop: 1 });
+
+    const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
+    const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
+    assert.strictEqual(key1, key2);
+  });
 });
