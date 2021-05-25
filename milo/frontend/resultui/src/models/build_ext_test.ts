@@ -39,7 +39,7 @@ describe('BuildExt', () => {
       ] as readonly Step[],
     } as Build);
 
-    assert.recursiveDeepInclude(build.rootSteps, [
+    assert.deepIncludeProperties(build.rootSteps, [
       {
         name: 'root1',
         selfName: 'root1',
