@@ -30,15 +30,40 @@ export async function genCacheKeyForPrpcRequest(
   req: Request,
   additionalCriticalHeaderKeys: readonly string[] = []
 ) {
+  // We don't clone the req here so the caller can avoid cloning if they
+  // don't need to reuse the request body.
+  const reqBody = await req.json();
+
+  // Remove properties that won't have any effect when the request hit the
+  // server. e.g. `{ "pageToken": "" }` is the same as `{}`.
+  removeDefaultProp(reqBody);
+
   return (
     prefix +
     stableStringify([
       req.url,
       CRITICAL_HEADERS.map((k) => req.headers.get(k)),
       additionalCriticalHeaderKeys.map((k) => req.headers.get(k)),
-      // We don't clone the req here so the caller can avoid cloning if they
-      // don't need to reuse the request body.
-      await req.json(),
+      reqBody,
     ])
   );
+}
+
+/**
+ * Removes false-ish properties and empty arrays from the object.
+ */
+function removeDefaultProp(obj: object) {
+  if (obj instanceof Array) {
+    for (const item of obj) {
+      removeDefaultProp(item);
+    }
+  } else if (obj instanceof Object) {
+    for (const [key, item] of Object.entries(obj)) {
+      if (!item || (item instanceof Array && item.length === 0)) {
+        delete (obj as { [key: string]: unknown })[key];
+      } else {
+        removeDefaultProp(item);
+      }
+    }
+  }
 }
