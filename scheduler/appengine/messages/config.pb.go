@@ -914,14 +914,11 @@ type GitilesTask struct {
 	//     as such differs from default case of not specifying any `path_regexps`.
 	//  2. Per GitilesTask doc, if a ref fast-forwards >=50 commits, only the last
 	//     50 commits are checked. If none of them matches any path specified here,
-	//     a single trigger is emitted for the ref's new tip.
-	//     Rational: it's better to emit redundant triggers than silently not emit
-	//     triggers for commits beyond latest 50.
+	//     no trigger is emitted, even if there is an unexamined commit which
+	//     matches the path.
 	//     TODO(tandrii): it's possible to improve this by examining diff
 	//     between ref's last and new tips, but one has to worry about gitiles
 	//     taking potentially very long time to compute it.
-	//  3. If a ref tip has just been created, a trigger would be emitted
-	//     regardless of corresponding commit's diff.
 	PathRegexps        []string `protobuf:"bytes,3,rep,name=path_regexps,json=pathRegexps,proto3" json:"path_regexps,omitempty"`
 	PathRegexpsExclude []string `protobuf:"bytes,4,rep,name=path_regexps_exclude,json=pathRegexpsExclude,proto3" json:"path_regexps_exclude,omitempty"`
 }

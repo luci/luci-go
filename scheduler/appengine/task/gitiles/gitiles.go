@@ -310,35 +310,18 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 		return 0, err
 	}
 	for i, ref := range sortedRefs {
-		commits, newRef, err := refs.newCommits(c, ctl, g, ref, maxCommitsPerRefUpdate, pathFilter)
+		commits, _, err := refs.newCommits(c, ctl, g, ref, maxCommitsPerRefUpdate, pathFilter)
 		if err != nil {
 			// This ref counts as not yet examined.
 			return len(sortedRefs) - i, err
 		}
-		emitted := false
 		for i := range commits {
 			// commit[0] is latest, so emit triggers in reverse order of commits.
 			commit := commits[len(commits)-i-1]
 
-			if pathFilter.active() {
-				// Special case of path filtering if no triggers were emitted so far.
-				if !emitted &&
-					// and this is the last commit
-					i == len(commits)-1 &&
-					// and either this is a new ref or
-					// not all new commits were checked due to maxCommitsPerRefUpdate cap.
-					(newRef || len(commits) >= maxCommitsPerRefUpdate) {
-					reason := "new ref"
-					if !newRef {
-						reason = "not all commits were examined"
-					}
-					ctl.DebugLog("NOTE: emitting trigger %q on tip of %q even though didn't match path filters because %s",
-						commit.Id, ref, reason)
-					// then just ignore path filtering and emit trigger for ref's tip.
-				} else if !pathFilter.isInteresting(commit.TreeDiff) {
-					ctl.DebugLog("skipping commit %q on %q because didn't match path filters", commit.Id, ref)
-					continue
-				}
+			if pathFilter.active() && !pathFilter.isInteresting(commit.TreeDiff) {
+				ctl.DebugLog("skipping commit %q on %q because didn't match path filters", commit.Id, ref)
+				continue
 			}
 
 			ctl.EmitTrigger(c, &internal.Trigger{
@@ -351,7 +334,6 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 					Gitiles: &api.GitilesTrigger{Repo: cfg.Repo, Ref: ref, Revision: commit.Id},
 				},
 			})
-			emitted = true
 			emittedTriggers++
 		}
 		// Stop early if next iteration can't emit maxCommitsPerRefUpdate triggers.
