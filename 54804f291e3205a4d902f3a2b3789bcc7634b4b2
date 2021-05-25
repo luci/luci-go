@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "19276502_bab5a6ac",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T18:08:21Z",
+      "side": 1,
+      "message": "ack",
+      "parentUuid": "9362e8fe_d7209f23",
+      "range": {
+        "startLine": 217,
+        "startChar": 5,
+        "endLine": 217,
+        "endChar": 19
+      },
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "75f49971_e8d15a04",
