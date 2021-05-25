@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "efa430bb_46287a44",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-25T17:41:15Z",
+      "side": 1,
+      "message": "high code churn: I feel like that the code that I reviewed recently, is being changed/removed soon after. If any of that is close to truth, consider delaying sending CLs out until you are really happy with them.",
+      "revId": "b2c002ddab628a9bff11780b751b6131731a9e3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a50982f4_a53c9c17",
+        "filename": "milo/frontend/resultui/src/prefetch.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-25T17:41:15Z",
+      "side": 1,
+      "message": "are",
+      "range": {
+        "startLine": 51,
+        "startChar": 54,
+        "endLine": 51,
+        "endChar": 56
+      },
+      "revId": "b2c002ddab628a9bff11780b751b6131731a9e3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
