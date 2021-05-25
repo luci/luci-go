@@ -51,10 +51,6 @@ type adminImpl struct {
 
 // init initializes mapper controller and registers mapping tasks.
 func (impl *adminImpl) init() {
-	// TODO(crbug.com/1201436): Remove this bypass.
-	if impl.ctl == nil {
-		return
-	}
 	for _, m := range mappers { // see mappers.go
 		impl.ctl.RegisterFactory(m.mapperID(), m.newMapper)
 	}
