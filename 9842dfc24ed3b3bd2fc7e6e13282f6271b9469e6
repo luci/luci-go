@@ -52,6 +52,24 @@
       "parentUuid": "4cad50b6_eb725c4c",
       "revId": "9842dfc24ed3b3bd2fc7e6e13282f6271b9469e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67e4b00c_9366fb58",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-25T00:02:31Z",
+      "side": 1,
+      "message": "i see it now, thanks.\n\ncurrently the boundary between the test and step sections is not very obvious. The most visible indication seems to be the font size of \"Steps \u0026 Logs\".\nHow can we make the boundary more visible? first though: some gray line or something?",
+      "parentUuid": "1360715e_3e81f63c",
+      "revId": "9842dfc24ed3b3bd2fc7e6e13282f6271b9469e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
