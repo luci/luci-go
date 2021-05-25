@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67541bba_9af88a14",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T17:16:19Z",
+      "side": 1,
+      "message": "lgtm (also gross, I can\u0027t wait to clean up all this junk)",
+      "revId": "2e5438f554ead7965d4321526993cd85bf72c0d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
