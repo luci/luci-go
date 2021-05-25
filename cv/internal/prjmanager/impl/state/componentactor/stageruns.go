@@ -187,6 +187,30 @@ type combo struct {
 	maxTriggeredTime     time.Time
 }
 
+func (c combo) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("combo(CLIDs: [")
+	for _, a := range c.all {
+		fmt.Fprintf(&sb, "%d ", a.pcl.GetClid())
+	}
+	sb.WriteRune(']')
+	if len(c.notReady) > 0 {
+		sb.WriteString(" notReady=[")
+		for _, a := range c.notReady {
+			fmt.Fprintf(&sb, "%d ", a.pcl.GetClid())
+		}
+		sb.WriteRune(']')
+	}
+	if c.withNotYetLoadedDeps != nil {
+		fmt.Fprintf(&sb, " notLoadedDeps=%d", c.withNotYetLoadedDeps.pcl.GetClid())
+	}
+	if c.latestTriggered != nil {
+		fmt.Fprintf(&sb, " latestTriggered=%d at %s", c.latestTriggered.pcl.GetClid(), c.latestTriggered.pcl.GetTrigger().GetTime().AsTime())
+	}
+	sb.WriteRune(')')
+	return sb.String()
+}
+
 func (c *combo) add(info *clInfo) {
 	c.all = append(c.all, info)
 	if c.clids == nil {
