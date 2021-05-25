@@ -12,5 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package diagnostic implements diagnostic API.
-package diagnostic
+// Package adminpb contains LUCI CV admin/maintainer APIs definitions.
+//
+// It is intentionally unversioned because it can change at any time,
+// since it depends on CV implementation details.
+package adminpb
+
+//go:generate cproto -use-grpc-plugin

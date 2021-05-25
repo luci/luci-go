@@ -39,12 +39,12 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/admin"
+	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/diagnostic"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -81,8 +81,8 @@ type Test struct {
 	PMNotifier  *prjmanager.Notifier
 	RunNotifier *run.Notifier
 
-	DiagnosticServer diagnosticpb.DiagnosticServer
-	MigrationServer  migrationpb.MigrationServer
+	AdminServer     adminpb.AdminServer
+	MigrationServer migrationpb.MigrationServer
 
 	// dsFlakiness enables ds flakiness for "RunUntil".
 	dsFlakiness    float64
@@ -138,7 +138,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,
 	}
-	t.DiagnosticServer = &diagnostic.DiagnosticServer{
+	t.AdminServer = &admin.AdminServer{
 		RunNotifier:   t.RunNotifier,
 		PMNotifier:    t.PMNotifier,
 		GerritUpdater: clUpdater,

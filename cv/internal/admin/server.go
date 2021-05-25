@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package diagnostic
+package admin
 
 import (
 	"context"
@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
-	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
+	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
@@ -50,18 +50,18 @@ import (
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
-// diagnostic API. See https://crbug.com/1183616.
+// admin API. See https://crbug.com/1183616.
 const allowGroup = "service-luci-change-verifier-admins"
 
-type DiagnosticServer struct {
+type AdminServer struct {
 	GerritUpdater *updater.Updater
 	PMNotifier    *prjmanager.Notifier
 	RunNotifier   *run.Notifier
 
-	diagnosticpb.UnimplementedDiagnosticServer
+	adminpb.UnimplementedAdminServer
 }
 
-func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.GetProjectRequest) (resp *diagnosticpb.GetProjectResponse, err error) {
+func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectRequest) (resp *adminpb.GetProjectResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "GetProject"); err != nil {
 		return
@@ -78,7 +78,7 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 		return
 	})
 
-	resp = &diagnosticpb.GetProjectResponse{}
+	resp = &adminpb.GetProjectResponse{}
 	eg.Go(func() error {
 		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, prjmanager.ProjectKind, req.GetProject()))
 		if err != nil {
@@ -107,7 +107,7 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 	}
 }
 
-func (d *DiagnosticServer) GetRun(ctx context.Context, req *diagnosticpb.GetRunRequest) (resp *diagnosticpb.GetRunResponse, err error) {
+func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (resp *adminpb.GetRunResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "GetRun"); err != nil {
 		return
@@ -150,7 +150,7 @@ func (d *DiagnosticServer) GetRun(ctx context.Context, req *diagnosticpb.GetRunR
 		return nil, err
 	}
 
-	resp = &diagnosticpb.GetRunResponse{
+	resp = &adminpb.GetRunResponse{
 		Id:            req.GetRun(),
 		Eversion:      int64(r.EVersion),
 		Mode:          string(r.Mode),
@@ -169,7 +169,7 @@ func (d *DiagnosticServer) GetRun(ctx context.Context, req *diagnosticpb.GetRunR
 	return resp, nil
 }
 
-func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLRequest) (resp *diagnosticpb.GetCLResponse, err error) {
+func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (resp *adminpb.GetCLResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "GetCL"); err != nil {
 		return
@@ -207,7 +207,7 @@ func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLReq
 	for i, id := range cl.IncompleteRuns {
 		runs[i] = string(id)
 	}
-	resp = &diagnosticpb.GetCLResponse{
+	resp = &adminpb.GetCLResponse{
 		Id:               int64(cl.ID),
 		Eversion:         int64(cl.EVersion),
 		ExternalId:       string(cl.ExternalID),
@@ -219,7 +219,7 @@ func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLReq
 	return resp, nil
 }
 
-func (d *DiagnosticServer) GetPoller(ctx context.Context, req *diagnosticpb.GetPollerRequest) (resp *diagnosticpb.GetPollerResponse, err error) {
+func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerRequest) (resp *adminpb.GetPollerResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "GetPoller"); err != nil {
 		return
@@ -235,7 +235,7 @@ func (d *DiagnosticServer) GetPoller(ctx context.Context, req *diagnosticpb.GetP
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "failed to fetch poller state")
 	}
-	resp = &diagnosticpb.GetPollerResponse{
+	resp = &adminpb.GetPollerResponse{
 		Project:    s.LuciProject,
 		Eversion:   s.EVersion,
 		ConfigHash: s.ConfigHash,
@@ -254,7 +254,7 @@ type itemEntity struct {
 	Value  []byte         `gae:",noindex"`
 }
 
-func (d *DiagnosticServer) DeleteProjectEvents(ctx context.Context, req *diagnosticpb.DeleteProjectEventsRequest) (resp *diagnosticpb.DeleteProjectEventsResponse, err error) {
+func (d *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.DeleteProjectEventsRequest) (resp *adminpb.DeleteProjectEventsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "DeleteProjectEvents"); err != nil {
 		return
@@ -286,10 +286,10 @@ func (d *DiagnosticServer) DeleteProjectEvents(ctx context.Context, req *diagnos
 	if err := datastore.Delete(ctx, entities); err != nil {
 		return nil, errors.Annotate(err, "failed to delete %d events", len(entities)).Tag(transient.Tag).Err()
 	}
-	return &diagnosticpb.DeleteProjectEventsResponse{Events: stats}, nil
+	return &adminpb.DeleteProjectEventsResponse{Events: stats}, nil
 }
 
-func (d *DiagnosticServer) RefreshProjectCLs(ctx context.Context, req *diagnosticpb.RefreshProjectCLsRequest) (resp *diagnosticpb.RefreshProjectCLsResponse, err error) {
+func (d *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.RefreshProjectCLsRequest) (resp *adminpb.RefreshProjectCLsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "RefreshProjectCLs"); err != nil {
 		return
@@ -342,10 +342,10 @@ func (d *DiagnosticServer) RefreshProjectCLs(ctx context.Context, req *diagnosti
 	for _, cl := range cls {
 		clvs[int64(cl.ID)] = int64(cl.EVersion)
 	}
-	return &diagnosticpb.RefreshProjectCLsResponse{ClVersions: clvs}, nil
+	return &adminpb.RefreshProjectCLsResponse{ClVersions: clvs}, nil
 }
 
-func (d *DiagnosticServer) SendProjectEvent(ctx context.Context, req *diagnosticpb.SendProjectEventRequest) (_ *emptypb.Empty, err error) {
+func (d *AdminServer) SendProjectEvent(ctx context.Context, req *adminpb.SendProjectEventRequest) (_ *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "SendProjectEvent"); err != nil {
 		return
@@ -370,7 +370,7 @@ func (d *DiagnosticServer) SendProjectEvent(ctx context.Context, req *diagnostic
 	return &emptypb.Empty{}, nil
 }
 
-func (d *DiagnosticServer) SendRunEvent(ctx context.Context, req *diagnosticpb.SendRunEventRequest) (_ *emptypb.Empty, err error) {
+func (d *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEventRequest) (_ *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "SendRunEvent"); err != nil {
 		return
@@ -402,7 +402,7 @@ func checkAllowed(ctx context.Context, name string) error {
 	case !yes:
 		return status.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
 	default:
-		logging.Warningf(ctx, "%s is calling diagnostic.%s", auth.CurrentIdentity(ctx), name)
+		logging.Warningf(ctx, "%s is calling admin.%s", auth.CurrentIdentity(ctx), name)
 		return nil
 	}
 }
