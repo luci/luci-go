@@ -26,30 +26,11 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
-
-// Supporter provides limited access to resources of PM state for ease of
-// testing and correctness.
-type Supporter interface {
-	// PCL provides access to State.PB.Pcls w/o exposing entire state.
-	//
-	// Returns nil if clid refers to a CL not known to PM's State.
-	PCL(clid int64) *prjpb.PCL
-
-	// PurgingCL provides access to State.PB.PurgingCLs w/o exposing entire state.
-	//
-	// Returns nil if given CL isn't being purged.
-	PurgingCL(clid int64) *prjpb.PurgingCL
-
-	// ConfigGroup returns a ConfigGroup for a given index of the current LUCI
-	// project config version.
-	ConfigGroup(index int32) *config.ConfigGroup
-}
 
 // Actor implements PM state.componentActor in production.
 //
@@ -80,8 +61,8 @@ type Actor struct {
 	purgeCLtasks []*prjpb.PurgeCLTask
 }
 
-// New returns new Actor.
-func New(c *prjpb.Component, s Supporter) *Actor {
+// newActor returns new Actor.
+func newActor(c *prjpb.Component, s itriager.PMState) *Actor {
 	return &Actor{c: c, s: supporterWrapper{s}}
 }
 
@@ -178,7 +159,7 @@ func (a *Actor) createRuns(ctx context.Context, pm runcreator.PM, rm runcreator.
 }
 
 type supporterWrapper struct {
-	Supporter
+	itriager.PMState
 }
 
 // MustPCL panics if clid doesn't exist.
