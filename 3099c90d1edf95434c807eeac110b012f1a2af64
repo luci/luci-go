@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "adfe65d4_a602e95c",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T13:20:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f5768f4_c4d5f70b",
+      "range": {
+        "startLine": 119,
+        "startChar": 32,
+        "endLine": 119,
+        "endChar": 36
+      },
+      "revId": "3099c90d1edf95434c807eeac110b012f1a2af64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ec4672ad_bb28e91d",
         "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
         "patchSetId": 15
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-25T06:44:27Z",
       "side": 1,
       "message": "Is it also possible that CQ vote have been removed/changed some CLs in the Run, but Run cancellation hasn\u0027t propagated to PM?",
+      "range": {
+        "startLine": 148,
+        "startChar": 60,
+        "endLine": 150,
+        "endChar": 41
+      },
+      "revId": "3099c90d1edf95434c807eeac110b012f1a2af64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35ec2765_7c59eb1d",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T13:20:06Z",
+      "side": 1,
+      "message": "Yes. I\u0027ve updated comment here and expanded test. PTAL!",
+      "parentUuid": "ec4672ad_bb28e91d",
       "range": {
         "startLine": 148,
         "startChar": 60,
@@ -81,6 +129,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "21be6f4d_4f1e3419",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T13:20:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "19359082_3c455ed3",
+      "revId": "3099c90d1edf95434c807eeac110b012f1a2af64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3046532f_1d67a8b2",
@@ -94,6 +160,30 @@
       "writtenOn": "2021-05-25T06:44:27Z",
       "side": 1,
       "message": "ready",
+      "range": {
+        "startLine": 249,
+        "startChar": 45,
+        "endLine": 249,
+        "endChar": 49
+      },
+      "revId": "3099c90d1edf95434c807eeac110b012f1a2af64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4acace52_e5104108",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T13:20:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3046532f_1d67a8b2",
       "range": {
         "startLine": 249,
         "startChar": 45,
