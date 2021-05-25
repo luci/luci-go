@@ -22,6 +22,30 @@
       },
       "revId": "a178597c2322c934814f9027979db38d320adafc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c51aee07_b22d1fb5",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 710,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T05:33:52Z",
+      "side": 1,
+      "message": "It\u0027s not necessary. removed.",
+      "parentUuid": "05f1045f_a7cc8f3c",
+      "range": {
+        "startLine": 710,
+        "startChar": 33,
+        "endLine": 710,
+        "endChar": 34
+      },
+      "revId": "a178597c2322c934814f9027979db38d320adafc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
