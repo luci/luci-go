@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b020931_1729abe4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-25T23:43:02Z",
+      "side": 1,
+      "message": "Sorry about that.\nI thought the code was working, because SW was intercepting the network calls. But \nin performance testing, I realised that the network calls didn\u0027t hit the cache.\nThen I decided to refactor it again so the code can be unit tested.\nI\u0027ll try to avoid this in the future.",
+      "parentUuid": "efa430bb_46287a44",
+      "revId": "b2c002ddab628a9bff11780b751b6131731a9e3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a50982f4_a53c9c17",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-05-25T17:41:15Z",
       "side": 1,
       "message": "are",
+      "range": {
+        "startLine": 51,
+        "startChar": 54,
+        "endLine": 51,
+        "endChar": 56
+      },
+      "revId": "b2c002ddab628a9bff11780b751b6131731a9e3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "348b41f5_d403e1be",
+        "filename": "milo/frontend/resultui/src/prefetch.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-25T23:43:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a50982f4_a53c9c17",
       "range": {
         "startLine": 51,
         "startChar": 54,
