@@ -570,6 +570,14 @@ export class OverviewTabElement extends MobxLitElement {
       #failed-test-count {
         margin-top: 10px;
       }
+      /*
+       * Use normal text color so it's easier to tell the where does the failed
+       * tests section ends and the steps section starts (the steps section's
+       * header contains a blue link).
+       **/
+      #failed-test-count > a {
+        color: var(--default-text-color);
+      }
 
       #loading-spinner {
         color: var(--active-text-color);
