@@ -134,7 +134,7 @@ func (a *actor) triageCLInRun(clid int64, info *clInfo) {
 	}
 
 	cgIndex := pcl.GetConfigGroupIndexes()[0]
-	info.deps = a.triageDeps(pcl, cgIndex)
+	info.deps = triageDeps(pcl, cgIndex, a.s)
 	// A purging CL must not be "ready" to avoid creating new Runs with them.
 	if info.deps.OK() && info.purgingCL == nil {
 		info.ready = true
@@ -173,7 +173,7 @@ func (a *actor) triageCLInPurge(clid int64, info *clInfo) {
 	case 0:
 		panic(fmt.Errorf("PCL %d without ConfigGroup index not possible for CL not referenced by any Runs (partitioning bug?)", clid))
 	case 1:
-		info.deps = a.triageDeps(pcl, cgIndexes[0])
+		info.deps = triageDeps(pcl, cgIndexes[0], a.s)
 		// info.deps.OK() may be true, for example if user has already corrected the
 		// mistake that previously reulted in purging op. However, don't mark CL
 		// ready until purging op completes or expires.
@@ -209,7 +209,7 @@ func (a *actor) triageCLNew(clid int64, info *clInfo) {
 	case 0:
 		panic(fmt.Errorf("PCL %d without ConfigGroup index %s", clid, assumption))
 	case 1:
-		if info.deps = a.triageDeps(pcl, cgIndexes[0]); info.deps.OK() {
+		if info.deps = triageDeps(pcl, cgIndexes[0], a.s); info.deps.OK() {
 			info.ready = true
 		} else {
 			info.purgeReasons = append(info.purgeReasons, info.deps.makePurgeReason())
