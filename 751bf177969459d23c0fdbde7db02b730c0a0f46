@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c6a43a65_43cd9895",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 2470,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T20:37:11Z",
+      "side": 1,
+      "message": "my oversight on https://crrev.com/c/2893991",
+      "parentUuid": "17f0cdfe_f2dc7e16",
+      "range": {
+        "startLine": 2470,
+        "startChar": 46,
+        "endLine": 2470,
+        "endChar": 63
+      },
+      "revId": "751bf177969459d23c0fdbde7db02b730c0a0f46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dbbbbf52_fc803355",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-25T20:07:50Z",
       "side": 1,
       "message": "an unexamined?",
+      "range": {
+        "startLine": 357,
+        "startChar": 49,
+        "endLine": 357,
+        "endChar": 63
+      },
+      "revId": "751bf177969459d23c0fdbde7db02b730c0a0f46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7400e0d4_e1a97f99",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T20:37:11Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "dbbbbf52_fc803355",
       "range": {
         "startLine": 357,
         "startChar": 49,
