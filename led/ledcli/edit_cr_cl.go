@@ -154,7 +154,7 @@ func parseCrChangeListURL(clURL string, resolvePatchset patchsetResolver) (*bbpb
 
 func gerritResolver(ctx context.Context) patchsetResolver {
 	return func(host string, change int64) (int64, error) {
-		// TODO(iannucci): allow authentication for internal hosts.
+		// TODO(crbug/1211623): allow authentication for internal hosts.
 		gc, err := gerritapi.NewRESTClient(http.DefaultClient, host, false)
 		if err != nil {
 			return 0, errors.Annotate(err, "creating new gerrit client").Err()
