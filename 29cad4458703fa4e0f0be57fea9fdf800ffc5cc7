@@ -16,6 +16,24 @@
       "message": "Please check docs in *.proto and in go/lucicfg too.",
       "revId": "29cad4458703fa4e0f0be57fea9fdf800ffc5cc7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "834fd50f_938aa3e4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T20:01:42Z",
+      "side": 1,
+      "message": "yes! I at first uploaded them separately, but I think this CL is safe enough to just do it at once. PTAL the diff.",
+      "parentUuid": "c8f98263_5f18d567",
+      "revId": "29cad4458703fa4e0f0be57fea9fdf800ffc5cc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
