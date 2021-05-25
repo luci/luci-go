@@ -256,6 +256,10 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderFailedTests() {
+    if (!this.invocationState.hasInvocation) {
+      return;
+    }
+
     const testLoader = this.invocationState.testLoader;
     const testsTabUrl = router.urlForName('build-test-results', {
       ...this.buildState.builderIdParam!,
