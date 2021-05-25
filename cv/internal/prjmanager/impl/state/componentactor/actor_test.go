@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -45,9 +45,6 @@ func TestActor(t *testing.T) {
 		// Truncate start time point s.t. easy to see diff in test failures.
 		ct.RoundTestClock(10000 * time.Second)
 
-		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
-		runNotifier := run.NewNotifier(ct.TQDispatcher)
-
 		dryRun := func(t time.Time) *run.Trigger {
 			return &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}
 		}
@@ -65,28 +62,36 @@ func TestActor(t *testing.T) {
 		}
 		const singIdx, combIdx, anotherIdx = 0, 1, 2
 
-		nextActionTime := func(c *prjpb.Component) (*Actor, time.Time) {
+		triage := func(c *prjpb.Component) itriager.Result {
 			backup := prjpb.PState{}
 			proto.Merge(&backup, pm.pb)
-
-			a := newActor(c, pm)
-			t, err := a.NextActionTime(ctx, ct.Clock.Now().UTC())
-			So(err, ShouldBeNil)
+			res, err := Triage(ctx, c, pm)
+			// Regardless of result, PM's state must be not be modified.
 			So(pm.pb, ShouldResembleProto, &backup)
-			return a, t
+			So(err, ShouldBeNil)
+			return res
+		}
+
+		undirty := func(c *prjpb.Component) *prjpb.Component {
+			c = c.CloneShallow()
+			c.Dirty = false
+			return c
 		}
 
 		Convey("Noops", func() {
 			pm.pb.Pcls = []*prjpb.PCL{
 				{Clid: 33, ConfigGroupIndexes: []int32{singIdx}, Trigger: dryRun(ct.Clock.Now())},
 			}
-			_, t := nextActionTime(&prjpb.Component{
+			oldC := &prjpb.Component{
 				Clids: []int64{33},
 				// Component already has a Run, so no action required.
 				Pruns: []*prjpb.PRun{{Id: "id", Clids: []int64{33}}},
 				Dirty: true,
-			})
-			So(t, ShouldResemble, time.Time{})
+			}
+			res := triage(oldC)
+			So(res.NewValue, ShouldResembleProto, undirty(oldC))
+			So(res.RunsToCreate, ShouldBeEmpty)
+			So(res.CLsToPurge, ShouldBeEmpty)
 		})
 
 		Convey("Prunes CLs", func() {
@@ -104,34 +109,35 @@ func TestActor(t *testing.T) {
 
 			Convey("singular group -- no delay", func() {
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx}
-				a, t := nextActionTime(oldC)
-				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				newC, purgeTasks, err := a.Act(ctx, pmNotifier, runNotifier)
-				So(err, ShouldBeNil)
-				So(purgeTasks, ShouldHaveLength, 1)
-				So(newC.GetDirty(), ShouldBeFalse)
+				res := triage(oldC)
+				So(res.NewValue, ShouldResembleProto, undirty(oldC))
+				So(res.CLsToPurge, ShouldHaveLength, 1)
+				So(res.RunsToCreate, ShouldBeEmpty)
 			})
 			Convey("combinable group -- obey stabilization_delay", func() {
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{combIdx}
 
-				_, t := nextActionTime(oldC)
-				So(t, ShouldResemble, ct.Clock.Now().UTC().Add(stabilizationDelay))
+				res := triage(oldC)
+				c := undirty(oldC)
+				c.DecisionTime = timestamppb.New(ct.Clock.Now().Add(stabilizationDelay))
+				So(res.NewValue, ShouldResembleProto, c)
+				So(res.CLsToPurge, ShouldBeEmpty)
+				So(res.RunsToCreate, ShouldBeEmpty)
 
 				ct.Clock.Add(stabilizationDelay * 2)
-				a, t := nextActionTime(oldC)
-				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				_, purgeTasks, err := a.Act(ctx, pmNotifier, runNotifier)
-				So(err, ShouldBeNil)
-				So(purgeTasks, ShouldHaveLength, 1)
+				res = triage(oldC)
+				c.DecisionTime = nil
+				So(res.NewValue, ShouldResembleProto, c)
+				So(res.CLsToPurge, ShouldHaveLength, 1)
+				So(res.RunsToCreate, ShouldBeEmpty)
 			})
 			Convey("many groups -- no delay", func() {
 				pm.pb.Pcls[0].OwnerLacksEmail = false // many groups is an error itself
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
-				a, t := nextActionTime(oldC)
-				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				_, purgeTasks, err := a.Act(ctx, pmNotifier, runNotifier)
-				So(err, ShouldBeNil)
-				So(purgeTasks, ShouldHaveLength, 1)
+				res := triage(oldC)
+				So(res.NewValue, ShouldResembleProto, undirty(oldC))
+				So(res.CLsToPurge, ShouldHaveLength, 1)
+				So(res.RunsToCreate, ShouldBeEmpty)
 			})
 		})
 	})

@@ -23,7 +23,7 @@ import (
 )
 
 // triageCLs computes and sets .cls, .reverseDeps.
-func (a *Actor) triageCLs() {
+func (a *actor) triageCLs() {
 	a.cls = make(map[int64]*clInfo, len(a.c.GetClids()))
 	for _, clid := range a.c.GetClids() {
 		a.cls[clid] = &clInfo{
@@ -105,7 +105,7 @@ type triagedCL struct {
 //
 // Expects non-triagedCL part of clInfo to be arleady set.
 // panics iff component is not in a valid state.
-func (a *Actor) triageCL(clid int64, info *clInfo) {
+func (a *actor) triageCL(clid int64, info *clInfo) {
 	switch {
 	case len(info.runIndexes) > 0:
 		// Once CV supports API based triggering, a CL may be at the same time be in
@@ -119,7 +119,7 @@ func (a *Actor) triageCL(clid int64, info *clInfo) {
 	}
 }
 
-func (a *Actor) triageCLInRun(clid int64, info *clInfo) {
+func (a *actor) triageCLInRun(clid int64, info *clInfo) {
 	pcl := info.pcl
 	switch s := pcl.GetStatus(); {
 	case (false || // false is a noop for ease of reading
@@ -147,7 +147,7 @@ func (a *Actor) triageCLInRun(clid int64, info *clInfo) {
 	}
 }
 
-func (a *Actor) triageCLInPurge(clid int64, info *clInfo) {
+func (a *actor) triageCLInPurge(clid int64, info *clInfo) {
 	// The PM hasn't noticed yet the completion of the async purge.
 	// The result of purging is modified CL, which may be observed by PM earlier
 	// than completion of purge.
@@ -186,7 +186,7 @@ func (a *Actor) triageCLInPurge(clid int64, info *clInfo) {
 	}
 }
 
-func (a *Actor) triageCLNew(clid int64, info *clInfo) {
+func (a *actor) triageCLNew(clid int64, info *clInfo) {
 	pcl := info.pcl
 	assumption := "not possible for CL not referenced by any Runs (partitioning bug?)"
 	switch s := pcl.GetStatus(); s {

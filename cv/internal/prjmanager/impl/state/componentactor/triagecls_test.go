@@ -98,12 +98,12 @@ func TestCLsTriage(t *testing.T) {
 		}
 		const singIdx, combIdx, anotherIdx = 0, 1, 2
 
-		triageCLs := func(c *prjpb.Component) *Actor {
+		triageCLs := func(c *prjpb.Component) *actor {
 			sup.pb.Components = []*prjpb.Component{c} // include it in backup
 			backup := prjpb.PState{}
 			proto.Merge(&backup, sup.pb)
 
-			a := newActor(c, sup)
+			a := &actor{c: c, s: pmState{sup}}
 			a.triageCLs()
 			So(sup.pb, ShouldResembleProto, &backup) // must not be modified
 			return a

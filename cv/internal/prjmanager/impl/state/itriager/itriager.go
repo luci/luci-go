@@ -33,6 +33,12 @@ import (
 //
 // Triage must treat all given data as read-only. If it needs to modify
 // component, it should use copy-on-write approach.
+//
+// Project Manager guarantees that for each CL of the given component:
+//   * there is a PCL via Supporter interface,
+//   * and for each such CL's dependency, either:
+//      * dep is not yet loaded,
+//      * OR dep must be itself a component's CL.
 type Triage func(ctx context.Context, c *prjpb.Component, s PMState) (Result, error)
 
 // Result is the result of a component traige.

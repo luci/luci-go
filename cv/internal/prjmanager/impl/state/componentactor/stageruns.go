@@ -42,7 +42,7 @@ import (
 //
 // Guarantees that a CL can be in at most 1 Creator. This avoids conflicts
 // whereby 2+ Runs need to modify the same CL entity.
-func (a *Actor) stageNewRuns(ctx context.Context) (time.Time, error) {
+func (a *actor) stageNewRuns(ctx context.Context) (time.Time, error) {
 	a.visitedCLs = map[int64]struct{}{}
 	defer func() { a.visitedCLs = nil }() // won't be useful afterwards.
 
@@ -58,7 +58,7 @@ func (a *Actor) stageNewRuns(ctx context.Context) (time.Time, error) {
 	return t, nil
 }
 
-func (a *Actor) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) (time.Time, error) {
+func (a *actor) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) (time.Time, error) {
 	if !a.markVisited(clid) || !info.ready {
 		return time.Time{}, nil
 	}
@@ -70,7 +70,7 @@ func (a *Actor) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) 
 	return a.stageNewRunsCombo(ctx, info, cg)
 }
 
-func (a *Actor) stageNewRunsSingle(ctx context.Context, info *clInfo, cg *config.ConfigGroup) (time.Time, error) {
+func (a *actor) stageNewRunsSingle(ctx context.Context, info *clInfo, cg *config.ConfigGroup) (time.Time, error) {
 	if len(info.runIndexes) > 0 {
 		// Singular case today doesn't support concurrent runs.
 		return time.Time{}, nil
@@ -89,12 +89,12 @@ func (a *Actor) stageNewRunsSingle(ctx context.Context, info *clInfo, cg *config
 	return clock.Now(ctx), nil
 }
 
-func (a *Actor) stageNewRunsCombo(ctx context.Context, info *clInfo, cg *config.ConfigGroup) (time.Time, error) {
+func (a *actor) stageNewRunsCombo(ctx context.Context, info *clInfo, cg *config.ConfigGroup) (time.Time, error) {
 	//TODO(tandrii): implement
 	return time.Time{}, nil
 }
 
-func (a *Actor) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (time.Time, error) {
+func (a *actor) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (time.Time, error) {
 	// TODO(tandrii): for safety, this should not wait forever.
 	sb := strings.Builder{}
 	fmt.Fprintf(&sb, "combo with %v waiting on %d deps:", info, len(info.deps.notYetLoaded))
@@ -105,7 +105,7 @@ func (a *Actor) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (
 	return time.Time{}, nil
 }
 
-func (a *Actor) makeCreator(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*runcreator.Creator, error) {
+func (a *actor) makeCreator(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*runcreator.Creator, error) {
 	latestIndex := -1
 	cls := make([]*changelist.CL, len(combo.all))
 	for i, info := range combo.all {
@@ -157,7 +157,7 @@ func (a *Actor) makeCreator(ctx context.Context, combo *combo, cg *config.Config
 }
 
 // markVisited makes CL visited if not already and returns if action was taken.
-func (a *Actor) markVisited(clid int64) bool {
+func (a *actor) markVisited(clid int64) bool {
 	if _, visited := a.visitedCLs[clid]; visited {
 		return false
 	}
