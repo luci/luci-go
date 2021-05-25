@@ -32,7 +32,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
+	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
@@ -68,115 +68,9 @@ type cAction struct {
 
 	// runsFailed is modified during actOnComponents.
 	runsFailed int32
-
-	// TODO(tandrii): delete.
-	actor componentActor
 }
 
 const concurrentComponentProcessing = 16
-
-// scanComponents checks if any immediate actions have be taken on components.
-//
-// TODO(tandrii): use triageComponents instead.
-//
-// Doesn't modify state itself. If any components are modified or actions are to
-// be taken, then allocates a new component slice.
-// Otherwise, returns nil, nil, nil.
-func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Component, error) {
-	supporter, err := s.makeActorSupporter(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	out := make([]*prjpb.Component, len(s.PB.GetComponents()))
-	var modified int32
-	var paniced int32
-	var mutex sync.Mutex
-	var actions []cAction
-	now := clock.Now(ctx)
-
-	poolSize := concurrentComponentProcessing
-	if n := len(s.PB.GetComponents()); n < poolSize {
-		poolSize = n
-	}
-	errs := parallel.WorkPool(poolSize, func(work chan<- func() error) {
-		for i, oldC := range s.PB.GetComponents() {
-			out[i] = oldC
-			var oldWhen time.Time
-			canSkip := !oldC.GetDirty()
-			if t := oldC.GetDecisionTime(); t != nil {
-				oldWhen = t.AsTime()
-				if !oldWhen.After(now) {
-					canSkip = false
-				}
-			}
-			if canSkip {
-				continue
-			}
-
-			i, oldC, oldWhen := i, oldC, oldWhen
-			work <- func() (err error) {
-				defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-					atomic.AddInt32(&paniced, 1)
-					logging.Errorf(ctx, "caught panic %s:\n%s", p.Reason, p.Stack)
-					logging.Debugf(ctx, "caught panic dbg: now %s prior %s component %s", now, oldWhen, protojson.Format(oldC))
-					logging.Debugf(ctx, "caught panic dbg: PCLs\n%s", protojson.Format(s.PB))
-					err = errors.Reason("caught panic: %s", p.Reason).Err()
-				})
-
-				var actor componentActor = componentactor.New(oldC, supporter)
-				if s.testComponentActorFactory != nil {
-					actor = s.testComponentActorFactory(oldC, supporter)
-				}
-				switch when, err := actor.NextActionTime(ctx, now); {
-				case err != nil:
-					// Ensure this component is reconsidered during then next PM mutation.
-					atomic.AddInt32(&modified, 1)
-					out[i] = oldC.CloneShallow()
-					out[i].DecisionTime = timestamppb.New(now)
-					return err
-
-				case when.Equal(now):
-					mutex.Lock()
-					actions = append(actions, cAction{componentIndex: i, actor: actor})
-					mutex.Unlock()
-
-				case when != oldWhen || oldC.GetDirty():
-					atomic.AddInt32(&modified, 1)
-					out[i] = oldC.CloneShallow()
-					out[i].Dirty = false
-					if when.IsZero() {
-						out[i].DecisionTime = nil
-					} else {
-						out[i].DecisionTime = timestamppb.New(when)
-					}
-				}
-				return nil
-			}
-		}
-	})
-	if paniced > 0 {
-		// This must not happen in production, but it's very useful on -dev while
-		// experimenting with triggering algorithms.
-		return nil, nil, errors.Reason("%d panics were caught", paniced).Err()
-	}
-	if len(actions) == 0 && modified == 0 {
-		out = nil // no mutations necessary
-	}
-	if errs == nil {
-		return actions, out, nil
-	}
-	sharedMsg := fmt.Sprintf("scanComponents(%d): %d errors, %d actions now, %d modified",
-		len(s.PB.GetComponents()), len(errs.(errors.MultiError)), len(actions), modified)
-	severe := common.MostSevereError(errs)
-	if len(actions) == 0 {
-		return nil, nil, errors.Annotate(severe, sharedMsg+", keeping the most severe error").Err()
-	}
-	// Components are independent, so proceed since partial progress is better
-	// than none.
-	logging.Warningf(ctx, "%s (most severe error %s), proceeding to act", sharedMsg, severe)
-	return actions, out, nil
-}
 
 // triageComponents triages components.
 //
@@ -349,89 +243,21 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 		logging.Debugf(ctx, "caught panic: component %s", protojson.Format(c))
 		err = errors.Reason("caught panic: %s", p.Reason).Err()
 	})
+
+	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, s.PB.GetLuciProject()); {
+	case err != nil:
+		return err
+	case !yes:
+		// This a is temporary safeguard against creation of LOTS of Runs,
+		// that won't be finalized.
+		// TODO(tandrii): delete this check once RunManager cancels Runs based on
+		// user actions and finalizes based on CQD reports.
+		logging.Debugf(ctx, "would have created a Run")
+		return nil
+	}
+
 	_, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier)
 	return err
-}
-
-// execComponentActions executes actions on components.
-//
-// TODO(tandrii): use actOnComponents instead.
-//
-// Modifies passed component slice in place.
-// Modifies individuals components via copy-on-write.
-//
-// If there are any new CLs to purge, modifies PB.PurgingCLs via copy-on-write
-// and returns a SideEffect to trigger corresponding TQ tasks.
-func (s *State) execComponentActions(ctx context.Context, actions []cAction, components []*prjpb.Component) (SideEffect, error) {
-	var errModified int32
-	var okModified int32
-	var paniced int32
-
-	var newPurgeCLsTaskMutex sync.Mutex
-	var newPurgeTasks []*prjpb.PurgeCLTask
-
-	poolSize := concurrentComponentProcessing
-	if l := len(actions); l < poolSize {
-		poolSize = l
-	}
-	errs := parallel.WorkPool(poolSize, func(work chan<- func() error) {
-		for _, a := range actions {
-			a := a
-			work <- func() (err error) {
-				defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-					atomic.AddInt32(&paniced, 1)
-					logging.Errorf(ctx, "caught panic %s:\n%s", p.Reason, p.Stack)
-					logging.Debugf(ctx, "caught panic: component %s", protojson.Format(components[a.componentIndex]))
-					err = errors.Reason("caught panic: %s", p.Reason).Err()
-				})
-
-				oldC := components[a.componentIndex]
-				switch newC, purgeTasks, err := a.actor.Act(ctx, s.PMNotifier, s.RunNotifier); {
-				case err != nil:
-					// Ensure this component is reconsidered during then next PM mutation.
-					newC = components[a.componentIndex].CloneShallow()
-					newC.DecisionTime = timestamppb.New(clock.Now(ctx))
-					components[a.componentIndex] = newC
-					atomic.AddInt32(&errModified, 1)
-					return err
-				case newC != oldC:
-					components[a.componentIndex] = newC
-					atomic.AddInt32(&okModified, 1)
-					fallthrough
-				default:
-					if len(purgeTasks) > 0 {
-						s.validatePurgeCLTasks(oldC, purgeTasks)
-						newPurgeCLsTaskMutex.Lock()
-						defer newPurgeCLsTaskMutex.Unlock()
-						newPurgeTasks = append(newPurgeTasks, purgeTasks...)
-					}
-					return nil
-				}
-			}
-		}
-	})
-	sideEffect := s.addCLsToPurge(ctx, newPurgeTasks)
-	if paniced > 0 {
-		// This must not happen in production, but it's very useful on -dev while
-		// experimenting with triggering algorithms.
-		return nil, errors.Reason("%d panics were caught", paniced).Err()
-	}
-	if errs == nil {
-		return sideEffect, nil
-	}
-	severe := common.MostSevereError(errs)
-	sharedMsg := fmt.Sprintf(
-		"acted on components: succeded %d (ok-modified %d), failed %d",
-		int32(len(actions))-errModified, okModified, errModified)
-	if okModified == 0 {
-		return sideEffect, errors.Annotate(severe, sharedMsg+", keeping the most severe error").Err()
-	}
-	// Components are independent, so proceed since partial progress is better
-	// than none.
-	logging.Warningf(ctx, "%s (most severe error %s)", sharedMsg, severe)
-	// For failed components, their DecisionTime is set `now` by scanComponents,
-	// thus PM will reconsider them as soon possible.
-	return nil, nil
 }
 
 // validatePurgeCLTasks verifies correctness of tasks from componentActor.
@@ -557,43 +383,4 @@ func (a *actorSupporterImpl) PurgingCL(clid int64) *prjpb.PurgingCL {
 
 func (a *actorSupporterImpl) ConfigGroup(index int32) *config.ConfigGroup {
 	return a.configGroups[index]
-}
-
-// componentActor evaluates and acts on a single component.
-type componentActor interface {
-	// NextActionTime returns time when the component action has to be taken.
-	//
-	// If action is necessary now, must return now as passed.
-	// If action may be necessary later, must return when.
-	// Must return zero value of time.Time to indicate that no action is necessary
-	// until an incoming event.
-	//
-	// Called outside of any Datastore transaction.
-	// May perform its own Datastore operations.
-	NextActionTime(ctx context.Context, now time.Time) (time.Time, error)
-
-	// Act executes the component action.
-	//
-	// Called if and only if NextActionTime() indicated that action is necessary
-	// now.
-	//
-	// Called outside of any Datastore transaction, notably before the transaction
-	// on PM state.
-	//
-	// Must return either original component OR copy-on-write modification.
-	// If modified, the new component value is **best-effort** saved in the follow
-	// up Datastore transaction on PM state, success of which must not be relied
-	// upon.
-	//
-	// May return CLs that should be purged. Each prjpb.PurgeCLTask must have
-	// these fields set:
-	//  * .purging_cl.clid
-	//  * .reason
-	//
-	// If error is not nil, the potentially modified component is ignored.
-	//
-	// TODO(tandrii): support cancel Run actions.
-	// TODO(tandrii): return RunCreators s.t. actual Run creation is done here,
-	// just like PurgeCLTasks. This will make testing ComponentActor easier.
-	Act(ctx context.Context, pm runcreator.PM, rm runcreator.RM) (*prjpb.Component, []*prjpb.PurgeCLTask, error)
 }

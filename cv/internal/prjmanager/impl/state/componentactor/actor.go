@@ -19,12 +19,16 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
@@ -98,6 +102,31 @@ func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, e
 		when = w
 	}
 	return when, nil
+}
+
+func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriager.Result, error) {
+	a := Actor{c: c, s: supporterWrapper{s}}
+	res := itriager.Result{}
+	now := clock.Now(ctx)
+	// TODO(tandrii): refactor Actor into Triager and rewrite this function.
+	when, err := a.NextActionTime(ctx, now)
+	if err != nil {
+		return res, err
+	}
+	c = c.CloneShallow()
+	c.Dirty = false
+	res.NewValue = c
+	switch {
+	case when.IsZero():
+		c.DecisionTime = nil
+	case when.After(now):
+		c.DecisionTime = timestamppb.New(when)
+	case when == now: // == is per contract of NextActionTime
+		c.DecisionTime = timestamppb.New(when)
+		res.RunsToCreate = a.runCreators
+		res.CLsTopurge = a.purgeCLtasks
+	}
+	return res, nil
 }
 
 // Act implements state.componentActor.
