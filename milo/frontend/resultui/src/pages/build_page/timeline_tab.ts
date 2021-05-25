@@ -37,6 +37,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
+import { enumerate } from '../../libs/iter_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { StepExt } from '../../models/step_ext';
 import commonStyle from '../../styles/common_style.css';
@@ -105,14 +106,15 @@ const PREDEFINED_TIME_INTERVALS = [
  * For example, if a step is the 1st child of the 2nd root step, the list number
  * would be '2.1. '.
  *
- * @param steps a list of steps.
- * @yields A tuple consist of the index, the list number, and the step.
+ * @param rootSteps a list of root steps.
+ * @yields A tuple consist of the list number and the step.
  */
-function* traverseStepList(steps: readonly StepExt[]): IterableIterator<[number, string, StepExt]> {
-  const ancestorNums: number[] = [];
-  for (const [i, step] of steps.entries()) {
-    ancestorNums.splice(step.depth, ancestorNums.length, step.index + 1);
-    yield [i, ancestorNums.join('.') + '. ', step];
+export function* traverseStepList(rootSteps: readonly StepExt[], prefix = ''): IterableIterator<[string, StepExt]> {
+  for (const step of rootSteps.values()) {
+    const listNum = prefix + (step.index + 1) + '.';
+    yield [listNum, step];
+
+    yield* traverseStepList(step.children, listNum);
   }
 }
 
@@ -300,7 +302,7 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
-    for (const [i, listNum, step] of traverseStepList(build.steps)) {
+    for (const [i, [listNum, step]] of enumerate(traverseStepList(build.rootSteps))) {
       const stepGroup = svg
         .append('g')
         .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
@@ -321,7 +323,7 @@ export class TimelineTabElement extends MiloBaseElement {
         .attr('y', LIST_ITEM_Y_OFFSET)
         .attr('height', STEP_HEIGHT - LIST_ITEM_Y_OFFSET)
         .attr('width', LIST_ITEM_WIDTH);
-      listItem.append('xhtml:span').text(listNum);
+      listItem.append('xhtml:span').text(listNum + ' ');
       const stepText = listItem.append('xhtml:span').text(step.selfName);
 
       if (step.logs?.[0].viewUrl) {
@@ -369,7 +371,7 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
-    for (const [i, listNum, step] of traverseStepList(build.steps)) {
+    for (const [i, [listNum, step]] of enumerate(traverseStepList(build.rootSteps))) {
       const start = this.scaleTime(step.startTime?.toMillis() || this.nowTimestamp);
       const end = this.scaleTime(step.endTime?.toMillis() || this.nowTimestamp);
 
@@ -396,7 +398,7 @@ export class TimelineTabElement extends MiloBaseElement {
         .attr('text-anchor', isWide || !nearEnd ? 'start' : 'end')
         .attr('x', isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN)
         .attr('y', STEP_TEXT_OFFSET)
-        .text(listNum + step.selfName);
+        .text(listNum + ' ' + step.selfName);
 
       // Wail until the next event cycle so stepText is rendered when we call
       // this.getBBox();
