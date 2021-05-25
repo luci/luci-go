@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bdd2b0a9_3ac759eb",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T05:30:13Z",
+      "side": 1,
+      "message": "I doubt if this has ever worked as intended before. LMK if the fix is not the best choice.",
+      "range": {
+        "startLine": 73,
+        "startChar": 1,
+        "endLine": 75,
+        "endChar": 2
+      },
+      "revId": "a08b5cf1697034dbf3d62d78d70db471ba09ddb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7d67d1cc_dcc02893",
@@ -14,6 +37,30 @@
       "writtenOn": "2021-05-24T20:37:22Z",
       "side": 1,
       "message": "don\u0027t you need one buf per goroutine task? Right now you\u0027re sharing a buffer between goroutines...",
+      "range": {
+        "startLine": 115,
+        "startChar": 72,
+        "endLine": 115,
+        "endChar": 75
+      },
+      "revId": "a08b5cf1697034dbf3d62d78d70db471ba09ddb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef69f5f7_2e11f403",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T05:30:13Z",
+      "side": 1,
+      "message": "Fixed; I initially thought that the size of the channel effectively limits the maximum concurrency to 1, but I was wrong.\n\nI\u0027m surprised that go test -race didn\u0027t catch L172.\nindexBuilder.addLogEntrry() is not concurrency safe, but goroutines are sharing the index builder?\n\n(I confess that I questioned myself for the concurrency issue of sharing buffer when I wrote the code, but didn\u0027t carefully read the existing code, because the goroutines were already sharing indexBuilder w/o mutex or lock-free algorithm. 😞)",
+      "parentUuid": "7d67d1cc_dcc02893",
       "range": {
         "startLine": 115,
         "startChar": 72,
@@ -43,6 +90,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "397d9018_61c19c14",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T05:30:13Z",
+      "side": 1,
+      "message": "It was just an optimization attempt to avoid unnecessary memory allocation, but the param has been removed.\n\nNow I feel that this function takes too many params. I understand why this function was not declared as a member function of Manifest, because archiving is not the job of Manifest.\n\nWDYT of changing Archive() to be a struct? Then, this function would only need to take the channel. I can make the change in a separate CL, if sg.\n\n```\ntype struct Archive {\n   m Manifest\n   streamIDHash []byte\n   idx indexBuilder\n}\n\n\nfunc NewArchive(m Manifest) {\n   // compute the hash\n   // construct an index builder\n}\n\nfunc (a* Archive) archiveLogs(logC \u003c-chan *logpb.LogEntry) {\n    ....\n}\n```",
+      "parentUuid": "9aef550a_d27169a5",
+      "revId": "a08b5cf1697034dbf3d62d78d70db471ba09ddb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1ec47fc7_84e474cf",
         "filename": "logdog/common/archive/archive.go",
         "patchSetId": 4
@@ -54,6 +119,30 @@
       "writtenOn": "2021-05-24T20:37:22Z",
       "side": 1,
       "message": "I believe it\u0027s possible to have partial lines here; are you just going to log them all as-is as an MVP? Do we need a TODO?",
+      "range": {
+        "startLine": 191,
+        "startChar": 23,
+        "endLine": 191,
+        "endChar": 28
+      },
+      "revId": "a08b5cf1697034dbf3d62d78d70db471ba09ddb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37fab490_7df47049",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T05:30:13Z",
+      "side": 1,
+      "message": "I re-read the proto doc and rewrote this to be correct this time. 😂 PTAL.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/api/logpb/log.proto;l\u003d98-101",
+      "parentUuid": "1ec47fc7_84e474cf",
       "range": {
         "startLine": 191,
         "startChar": 23,
@@ -101,6 +190,30 @@
       "side": 1,
       "message": "\u003e Q1. Is Prefix unique across all LUCI projects?\n\nNo\n\n\u003e Q2. IIUC of the following proto, $prefix/$prefixID uniquely identifies each stream. Therefore, $prefix/$prefixID/$streamIndex uniquely identifies each LogEntry across the entire LUCI projects. Let me know if I misunderstood.\n\nPrefix/PrefixIndex should be sufficient:\n  * PrefixIndex is the index of the log entry for the whole prefix; this is shared across all streams within the prefix (so if you alternate writes to stdout/stderr, you\u0027ll get stdout{0 2 4} and stderr{1 3 5}.\n  * StreamIndex is the index of log entries within a stream; starts at 0 and each subsequent write to that stream increments it by one.\n\n\u003e https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/api/logpb/log.proto\n\u003e \n\u003e I could use $prefix/$name/$streamIndex instead, but I chose to use $prefixID because $prefixID occupies smaller byte space than $name in almost all cases.\n\nwdyt about:\n\n  ${sha(prefix, stream name)}/prefixIndex",
       "parentUuid": "b878f2fc_35e1d8f7",
+      "range": {
+        "startLine": 210,
+        "startChar": 12,
+        "endLine": 210,
+        "endChar": 78
+      },
+      "revId": "a08b5cf1697034dbf3d62d78d70db471ba09ddb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "acd5dc5a_febdf9f6",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T05:30:13Z",
+      "side": 1,
+      "message": "\u003e\u003e wdyt about: ${sha(prefix, stream name)}/prefixIndex\nThat\u0027s a good idea. I imagine that CloudLogging itself would hash the insertIDs to prevent their nodes from being hot spots, but I think it\u0027s still worth hashing the IDs by ourselves, because we don\u0027t know.\n\nI also included the LUCI project name in addition to prefix, just in case multiple luci-projects are exported to the same cloud project. PTAL",
+      "parentUuid": "7918cdcf_d5e2ecc2",
       "range": {
         "startLine": 210,
         "startChar": 12,
