@@ -18,6 +18,52 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0dff08e_a3ffab3c",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T02:13:46Z",
+      "side": 1,
+      "message": "nit: `defer mutex.Unlock()` and move it to the line above.",
+      "range": {
+        "startLine": 217,
+        "startChar": 5,
+        "endLine": 217,
+        "endChar": 19
+      },
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75f49971_e8d15a04",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T02:13:46Z",
+      "side": 1,
+      "message": "nit: I think it\u0027s worth printing the poolErr",
+      "range": {
+        "startLine": 227,
+        "startChar": 61,
+        "endLine": 227,
+        "endChar": 62
+      },
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "d630328f_6c612981",
@@ -31,6 +77,23 @@
       "writtenOn": "2021-05-19T23:57:53Z",
       "side": 1,
       "message": "code here is similar, but not the same as `execComponentActions` which this function will replaces.",
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e163181_dacc1642",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T02:13:46Z",
+      "side": 1,
+      "message": "nit: it is only used at L337, so it can be moved into the if statement below.",
       "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -52,6 +115,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0655b49_82d9c743",
+        "filename": "cv/internal/prjmanager/impl/state/components_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T02:13:46Z",
+      "side": 1,
+      "message": "nit: new line for readability",
+      "range": {
+        "startLine": 228,
+        "startChar": 28,
+        "endLine": 228,
+        "endChar": 61
+      },
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "a0b7ac23_ee3ef897",
@@ -65,6 +151,29 @@
       "writtenOn": "2021-05-19T23:57:53Z",
       "side": 1,
       "message": "This part is essentially new test, which are worth looking with more attention.",
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "145df937_5711c207",
+        "filename": "cv/internal/prjmanager/impl/state/components_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T02:13:46Z",
+      "side": 1,
+      "message": "incremental progress is 👍",
+      "range": {
+        "startLine": 437,
+        "startChar": 0,
+        "endLine": 456,
+        "endChar": 42
+      },
       "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
