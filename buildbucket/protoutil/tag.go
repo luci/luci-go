@@ -86,8 +86,11 @@ func GerritChangeURL(c *pb.GerritChange) string {
 
 // GitilesBuildSet returns a buildset representation of c.
 // e.g. "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
-func GitilesBuildSet(c *pb.GitilesCommit) string {
-	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Id)
+func GitilesBuildSet(c *pb.GitilesCommit) (val string, ok bool) {
+	if c.Host == "" || c.Project == "" || c.Id == "" {
+		return "", false
+	}
+	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Id), true
 }
 
 // GitilesRepoURL returns the URL for the gitiles repo.
