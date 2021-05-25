@@ -37,6 +37,10 @@ export class InvocationState {
   // null means uninitialized.
   @observable.ref invocationId: string | null = null;
 
+  // Whether the invocation ID is computed.
+  // A matching invocation may not exist for a computed invocation ID.
+  @observable.ref isComputedInvId = false;
+
   @observable.ref warning = '';
 
   @observable.ref searchText = '';
@@ -147,6 +151,15 @@ export class InvocationState {
   @computed
   get invocation(): Invocation | null {
     return unwrapObservable(this.invocation$, null);
+  }
+
+  @computed get hasInvocation() {
+    if (this.isComputedInvId) {
+      // The invocation may not exist. Wait for the invocation query to confirm
+      // its existence.
+      return this.invocation !== null;
+    }
+    return Boolean(this.invocationId);
   }
 
   @computed({ keepAlive: true })
