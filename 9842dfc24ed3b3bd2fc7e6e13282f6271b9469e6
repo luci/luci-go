@@ -70,6 +70,24 @@
       "parentUuid": "1360715e_3e81f63c",
       "revId": "9842dfc24ed3b3bd2fc7e6e13282f6271b9469e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ec4dda4_39ae1848",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-25T00:03:17Z",
+      "side": 1,
+      "message": "Note that due to a recent change in the service worker config.\nTo get the new version running, you need to\n1. load the page. Wait for the service worker to cache all the files.\n2. close the page.\n3. open the page again.\n\nRefresh doesn\u0027t work, because when a page is being refreshed, it will always connect to the existing service worker instance, therefore the new service worker instance isn\u0027t activated.",
+      "parentUuid": "1360715e_3e81f63c",
+      "revId": "9842dfc24ed3b3bd2fc7e6e13282f6271b9469e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
