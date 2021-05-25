@@ -22,6 +22,30 @@
       },
       "revId": "66a093d221a1a348fc033bc2da4a2cf546588a4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7316a980_c1690803",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 703,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T05:49:39Z",
+      "side": 1,
+      "message": "updated to 511\n\n```\nA log ID must be less than 512 characters long.\n```",
+      "parentUuid": "3ab4153b_31e4a1a0",
+      "range": {
+        "startLine": 703,
+        "startChar": 18,
+        "endLine": 703,
+        "endChar": 21
+      },
+      "revId": "66a093d221a1a348fc033bc2da4a2cf546588a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
