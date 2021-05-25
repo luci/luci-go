@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "23f42a5a_0abbc061",
+        "filename": "milo/frontend/resultui/src/auth_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-25T01:15:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec7adbfe_2b9eb7a1",
+      "range": {
+        "startLine": 19,
+        "startChar": 36,
+        "endLine": 19,
+        "endChar": 42
+      },
+      "revId": "19d7f51a642f2bc891cb95d03d271fcbc54f6294",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "694fa466_a159b845",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-05-25T00:43:49Z",
       "side": 1,
       "message": "what\u0027s the diff?",
+      "range": {
+        "startLine": 32,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 37
+      },
+      "revId": "19d7f51a642f2bc891cb95d03d271fcbc54f6294",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "17c90916_a7d66333",
+        "filename": "milo/frontend/resultui/src/auth_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-25T01:15:33Z",
+      "side": 1,
+      "message": "One is in-memory cache.\nThe other is IndexDB cache.\nUpdated the comments.",
+      "parentUuid": "694fa466_a159b845",
       "range": {
         "startLine": 32,
         "startChar": 3,
