@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3cfc6b32_4c6cc1dc",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T18:12:45Z",
+      "side": 1,
+      "message": "lgtm",
+      "parentUuid": "35ec2765_7c59eb1d",
+      "range": {
+        "startLine": 148,
+        "startChar": 60,
+        "endLine": 150,
+        "endChar": 41
+      },
+      "revId": "3099c90d1edf95434c807eeac110b012f1a2af64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "19359082_3c455ed3",
