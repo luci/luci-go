@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cda0244a_843621f8",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T04:59:04Z",
+      "side": 1,
+      "message": "V",
+      "range": {
+        "startLine": 222,
+        "startChar": 13,
+        "endLine": 222,
+        "endChar": 14
+      },
+      "revId": "4fb8af6797bdf30bf812d85a045fba4c14db8621",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
