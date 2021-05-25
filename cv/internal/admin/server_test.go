@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package diagnostic
+package admin
 
 import (
 	"testing"
@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
+	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -83,13 +83,13 @@ func TestGetProject(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := DiagnosticServer{}
+		d := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetProject(ctx, &diagnosticpb.GetProjectRequest{Project: lProject})
+			_, err := d.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -99,7 +99,7 @@ func TestGetProject(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.GetProject(ctx, &diagnosticpb.GetProjectRequest{Project: lProject})
+				_, err := d.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			})
 		})
@@ -115,13 +115,13 @@ func TestGetRun(t *testing.T) {
 		defer cancel()
 
 		const rid = "proj/123-deadbeef"
-		d := DiagnosticServer{}
+		d := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetRun(ctx, &diagnosticpb.GetRunRequest{Run: rid})
+			_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -131,7 +131,7 @@ func TestGetRun(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.GetRun(ctx, &diagnosticpb.GetRunRequest{Run: rid})
+				_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			})
 		})
@@ -147,13 +147,13 @@ func TestGetCL(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := DiagnosticServer{}
+		d := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetCL(ctx, &diagnosticpb.GetCLRequest{Id: 123})
+			_, err := d.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -163,7 +163,7 @@ func TestGetCL(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			So(datastore.Put(ctx, &changelist.CL{ID: 123, ExternalID: changelist.MustGobID("x-review", 44)}), ShouldBeNil)
-			resp, err := d.GetCL(ctx, &diagnosticpb.GetCLRequest{Id: 123})
+			resp, err := d.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
 			So(err, ShouldBeNil)
 			So(resp.GetExternalId(), ShouldEqual, "gerrit/x-review/44")
 		})
@@ -179,13 +179,13 @@ func TestGetPoller(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := DiagnosticServer{}
+		d := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetPoller(ctx, &diagnosticpb.GetPollerRequest{Project: lProject})
+			_, err := d.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -199,7 +199,7 @@ func TestGetPoller(t *testing.T) {
 				LuciProject: lProject,
 				UpdateTime:  now,
 			}), ShouldBeNil)
-			resp, err := d.GetPoller(ctx, &diagnosticpb.GetPollerRequest{Project: lProject})
+			resp, err := d.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
 			So(err, ShouldBeNil)
 			So(resp.GetUpdateTime().AsTime(), ShouldResemble, now)
 		})
@@ -215,13 +215,13 @@ func TestDeleteProjectEvents(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := DiagnosticServer{}
+		d := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.DeleteProjectEvents(ctx, &diagnosticpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
+			_, err := d.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -237,13 +237,13 @@ func TestDeleteProjectEvents(t *testing.T) {
 			So(pm.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 			Convey("All", func() {
-				resp, err := d.DeleteProjectEvents(ctx, &diagnosticpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
+				resp, err := d.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
 				So(err, ShouldBeNil)
 				So(resp.GetEvents(), ShouldResemble, map[string]int64{"*prjpb.Event_ClUpdated": 2, "*prjpb.Event_NewConfig": 1})
 			})
 
 			Convey("Limited", func() {
-				resp, err := d.DeleteProjectEvents(ctx, &diagnosticpb.DeleteProjectEventsRequest{Project: lProject, Limit: 2})
+				resp, err := d.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 2})
 				So(err, ShouldBeNil)
 				sum := int64(0)
 				for _, v := range resp.GetEvents() {
@@ -264,7 +264,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := DiagnosticServer{
+		d := AdminServer{
 			GerritUpdater: updater.New(ct.TQDispatcher, nil, nil),
 			PMNotifier:    prjmanager.NewNotifier(ct.TQDispatcher),
 		}
@@ -273,7 +273,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.RefreshProjectCLs(ctx, &diagnosticpb.RefreshProjectCLsRequest{Project: lProject})
+			_, err := d.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -297,7 +297,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 				ExternalID: changelist.MustGobID("x-review.example.com", 55),
 			}), ShouldBeNil)
 
-			resp, err := d.RefreshProjectCLs(ctx, &diagnosticpb.RefreshProjectCLsRequest{Project: lProject})
+			resp, err := d.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
 			So(err, ShouldBeNil)
 			So(resp.GetClVersions(), ShouldResemble, map[int64]int64{1: 4})
 			So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{55})
@@ -314,7 +314,7 @@ func TestSendProjectEvent(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := DiagnosticServer{
+		d := AdminServer{
 			PMNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
@@ -322,7 +322,7 @@ func TestSendProjectEvent(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.SendProjectEvent(ctx, &diagnosticpb.SendProjectEventRequest{Project: lProject})
+			_, err := d.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -332,7 +332,7 @@ func TestSendProjectEvent(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.SendProjectEvent(ctx, &diagnosticpb.SendProjectEventRequest{
+				_, err := d.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{
 					Project: lProject,
 					Event:   &prjpb.Event{Event: &prjpb.Event_Poke{Poke: &prjpb.Poke{}}},
 				})
@@ -351,7 +351,7 @@ func TestSendRunEvent(t *testing.T) {
 		defer cancel()
 
 		const rid = "proj/123-deadbeef"
-		d := DiagnosticServer{
+		d := AdminServer{
 			RunNotifier: run.NewNotifier(ct.TQDispatcher),
 		}
 
@@ -359,7 +359,7 @@ func TestSendRunEvent(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.SendRunEvent(ctx, &diagnosticpb.SendRunEventRequest{Run: rid})
+			_, err := d.SendRunEvent(ctx, &adminpb.SendRunEventRequest{Run: rid})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -369,7 +369,7 @@ func TestSendRunEvent(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.SendRunEvent(ctx, &diagnosticpb.SendRunEventRequest{
+				_, err := d.SendRunEvent(ctx, &adminpb.SendRunEventRequest{
 					Run:   rid,
 					Event: &eventpb.Event{Event: &eventpb.Event_Poke{Poke: &eventpb.Poke{}}},
 				})

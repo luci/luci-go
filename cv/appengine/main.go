@@ -31,12 +31,12 @@ import (
 	"go.chromium.org/luci/server/tq"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
-	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/admin"
+	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config/configcron"
-	"go.chromium.org/luci/cv/internal/diagnostic"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
@@ -89,7 +89,7 @@ func main() {
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{
 			RunNotifier: runNotifier,
 		})
-		diagnosticpb.RegisterDiagnosticServer(srv.PRPC, &diagnostic.DiagnosticServer{
+		adminpb.RegisterAdminServer(srv.PRPC, &admin.AdminServer{
 			GerritUpdater: clUpdater,
 			PMNotifier:    pmNotifier,
 			RunNotifier:   runNotifier,

@@ -12,7 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package diagnosticpb is internal to LUCI CV for use by CV maintainers.
-package diagnosticpb
-
-//go:generate cproto -use-grpc-plugin
+// Package admin implements CV admin API.
+package admin
