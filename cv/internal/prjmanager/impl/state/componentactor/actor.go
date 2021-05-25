@@ -22,26 +22,51 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
 
-// Actor implements PM state.componentActor in production.
+// Triage triages a component with 1+ CLs deciding what has to be done now and
+// when should the next re-Triage happen.
 //
-// Assumptions:
-//   for each Component's CL:
-//     * there is a PCL via Supporter interface
-//     * for each dependency:
-//        * it's not yet loaded OR must be itself a component's CL.
-//
-// The assumptions are in fact guaranteed by PM's State.repartion function.
-type Actor struct {
+// Meets the `itriager.Triage` requirements.
+func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriager.Result, error) {
+	res := itriager.Result{}
+
+	a := actor{c: c, s: pmState{s}}
+	a.triageCLs()
+	whenPurge := a.stagePurges(ctx, clock.Now(ctx))
+	whenNewRun, err := a.stageNewRuns(ctx)
+	if err != nil {
+		return res, err
+	}
+
+	if len(a.runCreators) > 0 || len(a.purgeCLtasks) > 0 {
+		res.RunsToCreate = a.runCreators
+		res.CLsToPurge = a.purgeCLtasks
+		res.NewValue = c.CloneShallow()
+		res.NewValue.Dirty = false
+		// Wait for the Run Creation or the CL Purging to finish, which will result
+		// in an event sent to the PM, which will result in a re-Triage.
+		res.NewValue.DecisionTime = nil
+		return res, nil
+	}
+
+	when := earliest(whenPurge, whenNewRun)
+	if c.GetDirty() || !isSameTime(when, c.GetDecisionTime()) {
+		res.NewValue = c.CloneShallow()
+		res.NewValue.Dirty = false
+		res.NewValue.DecisionTime = nil
+		if !when.IsZero() {
+			res.NewValue.DecisionTime = timestamppb.New(when)
+		}
+	}
+	return res, nil
+}
+
+type actor struct {
 	c *prjpb.Component
 	// TODO(tandrii): rename to pm after merging multi-CL Run creation.
 	s pmState
@@ -62,103 +87,6 @@ type Actor struct {
 	purgeCLtasks []*prjpb.PurgeCLTask
 }
 
-// newActor returns new Actor.
-func newActor(c *prjpb.Component, s itriager.PMState) *Actor {
-	return &Actor{c: c, s: pmState{s}}
-}
-
-// NextActionTime implements componentActor.
-func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, error) {
-	a.triageCLs()
-
-	when, err := a.stageNewRuns(ctx)
-	switch {
-	case err != nil:
-		return time.Time{}, err
-	case len(a.runCreators) > 0:
-		// Required by the componentActor.NextActionTime
-		when = now
-	}
-
-	if w := a.stagePurges(ctx, now); !w.IsZero() && (when.IsZero() || w.Before(when)) {
-		when = w
-	}
-	return when, nil
-}
-
-func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriager.Result, error) {
-	a := Actor{c: c, s: pmState{s}}
-	res := itriager.Result{}
-	now := clock.Now(ctx)
-	// TODO(tandrii): refactor Actor into Triager and rewrite this function.
-	when, err := a.NextActionTime(ctx, now)
-	if err != nil {
-		return res, err
-	}
-	c = c.CloneShallow()
-	c.Dirty = false
-	res.NewValue = c
-	switch {
-	case when.IsZero():
-		c.DecisionTime = nil
-	case when.After(now):
-		c.DecisionTime = timestamppb.New(when)
-	case when == now: // == is per contract of NextActionTime
-		c.DecisionTime = timestamppb.New(when)
-		res.RunsToCreate = a.runCreators
-		res.CLsToPurge = a.purgeCLtasks
-	}
-	return res, nil
-}
-
-// Act implements state.componentActor.
-func (a *Actor) Act(ctx context.Context, pm runcreator.PM, rm runcreator.RM) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
-	c := a.c.CloneShallow()
-	c.Dirty = false
-
-	switch newPruns, err := a.createRuns(ctx, pm, rm); {
-	case err != nil:
-		return nil, nil, err
-	case len(newPruns) > 0:
-		c.Pruns, _ = c.COWPRuns(nil, newPruns)
-	}
-	// TODO(tandrii): cancelations
-	return c, a.purgeCLtasks, nil
-}
-
-func (a *Actor) createRuns(ctx context.Context, pm runcreator.PM, rm runcreator.RM) ([]*prjpb.PRun, error) {
-	if len(a.runCreators) == 0 {
-		return nil, nil
-	}
-	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, a.runCreators[0].LUCIProject); {
-	case err != nil:
-		return nil, err
-	case !yes:
-		// This a is temporary safeguard against creation of LOTS of Runs,
-		// that won't be finalized.
-		// TODO(tandrii): delete this check once RunManager cancels Runs based on
-		// user actions and finalizes based on CQD reports.
-		logging.Debugf(ctx, "would have created %d Runs", len(a.runCreators))
-		return nil, nil
-	}
-
-	toAdd := make([]*prjpb.PRun, 0, len(a.runCreators))
-	var errs errors.MultiError
-	for _, rb := range a.runCreators {
-		switch r, err := rb.Create(ctx, pm, rm); {
-		case err != nil:
-			errs = append(errs, err)
-		default:
-			toAdd = append(toAdd, prjpb.MakePRun(r))
-		}
-	}
-	if len(errs) > 0 {
-		err := common.MostSevereError(errs)
-		return nil, errors.Annotate(err, "failed to create %d Runs, most severe error:", len(errs)).Err()
-	}
-	return toAdd, nil
-}
-
 type pmState struct {
 	itriager.PMState
 }
@@ -171,4 +99,34 @@ func (pm pmState) MustPCL(clid int64) *prjpb.PCL {
 		return p
 	}
 	panic(fmt.Errorf("MustPCL: clid %d not known", clid))
+}
+
+// earliest returns the earliest of the non-zero time instances.
+//
+// Returns zero time.Time if no non-zero instances were given.
+func earliest(ts ...time.Time) time.Time {
+	var res time.Time
+	var remaining []time.Time
+	// Find first non-zero.
+	for i, t := range ts {
+		if !t.IsZero() {
+			res = t
+			remaining = ts[i+1:]
+			break
+		}
+	}
+	for _, t := range remaining {
+		// res is guaranteed non-zero if this loop iterates.
+		if !t.IsZero() && t.Before(res) {
+			res = t
+		}
+	}
+	return res
+}
+
+func isSameTime(t time.Time, pb *timestamppb.Timestamp) bool {
+	if pb == nil {
+		return t.IsZero()
+	}
+	return pb.AsTime().Equal(t)
 }

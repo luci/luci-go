@@ -26,7 +26,7 @@ import (
 //
 // Otherwise, returns the time of the earliest purge or Zero time if no purges
 // should be done.
-func (a *Actor) stagePurges(ctx context.Context, now time.Time) time.Time {
+func (a *actor) stagePurges(ctx context.Context, now time.Time) time.Time {
 	earliest := time.Time{}
 	for clid, info := range a.cls {
 		switch when := a.purgeETA(info, now); {
@@ -48,7 +48,7 @@ func (a *Actor) stagePurges(ctx context.Context, now time.Time) time.Time {
 
 // purgeETA returns the earliest time a CL may be purged and Zero time if CL
 // should not be purged at all.
-func (a *Actor) purgeETA(info *clInfo, now time.Time) time.Time {
+func (a *actor) purgeETA(info *clInfo, now time.Time) time.Time {
 	if info.purgeReasons == nil {
 		return time.Time{}
 	}
