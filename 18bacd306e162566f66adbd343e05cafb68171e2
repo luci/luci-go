@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0e7580a_8e862ee7",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T04:53:33Z",
+      "side": 1,
+      "message": "Do you mean at that time we will anyway re-Triage components so that it\u0027s okay to omit next decision time here?",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 20
+      },
+      "revId": "18bacd306e162566f66adbd343e05cafb68171e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e49a5661_11ab4331",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-25T04:53:33Z",
+      "side": 1,
+      "message": "This comment needs to be updated.",
+      "range": {
+        "startLine": 84,
+        "startChar": 3,
+        "endLine": 84,
+        "endChar": 71
+      },
+      "revId": "18bacd306e162566f66adbd343e05cafb68171e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
