@@ -20,14 +20,6 @@ import { timeout } from './libs/utils';
 import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from './services/buildbucket';
 import { constructArtifactName, ResultDb } from './services/resultdb';
 
-importScripts('/configs.js');
-
-export const CACHED_PRPC_URLS = [
-  `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
-  `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
-  `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-];
-
 const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
 
 /**
@@ -45,147 +37,180 @@ const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
  */
 const CACHE_DURATION = 5000;
 
-export interface SetAuthStateEventData {
-  type: 'SET_AUTH_STATE';
-  authState: AuthState | null;
-}
-
-const cachedFetch = cached(
-  // _cacheKey and _expiresIn are not used here but is used in the expire
-  // and key functions below.
-  // they are listed here to help TSC generate the correct type definition.
-  (info: RequestInfo, init: RequestInit | undefined, _cacheKey: unknown, _expiresIn: number) => fetch(info, init),
-  {
-    key: (_info, _init, cacheKey) => cacheKey,
-    expire: ([, , , expiresIn]) => timeout(expiresIn),
-  }
-);
-
 // Cache option that can bypass the service cache but trigger the cachedFetch
 // cache.
 const CACHE_OPTION = { acceptCache: false, skipUpdate: true };
 
-const prefetchBuildsService = new BuildsService(
-  new PrpcClientExt(
+export class Prefetcher {
+  private readonly cachedPrpcUrls: readonly string[] = [
+    `https://${this.configs.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
+    `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
+  ];
+
+  private cachedFetch = cached(
+    // _cacheKey and _expiresIn are not used here but are used in the expire
+    // and key functions below.
+    // they are listed here to help TSC generate the correct type definition.
+    (info: RequestInfo, init: RequestInit | undefined, _cacheKey: unknown, _expiresIn: number) =>
+      this.fetchImpl(info, init),
     {
-      host: CONFIGS.BUILDBUCKET.HOST,
-      fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
-        const req = new Request(info, init);
-        await cachedFetch(
-          {},
-          req,
-          undefined,
-          await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
-          CACHE_DURATION  // See the documentation for CACHE_DURATION.
-        );
-
-        // Abort the function to prevent the response from being consumed.
-        throw 0;
-      },
-    },
-    () => getAuthStateSync()?.accessToken || ''
-  )
-);
-
-const prefetchResultDBService = new ResultDb(
-  new PrpcClientExt(
-    {
-      host: CONFIGS.RESULT_DB.HOST,
-      fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
-        const req = new Request(info, init);
-        await cachedFetch(
-          {},
-          req,
-          undefined,
-          await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
-          CACHE_DURATION  // See the documentation for CACHE_DURATION.
-        );
-
-        // Abort the function to prevent the response from being consumed.
-        throw 0;
-      },
-    },
-    () => getAuthStateSync()?.accessToken || ''
-  )
-);
-
-/**
- * Prefetches resources if the URL matches certain pattern.
- * Those resources are cached for a short duration and are expected to be
- * fetched by the browser momentarily.
- */
-export async function prefetchResources(reqUrl: URL) {
-  // Prefetch services relies on the in-memory cache.
-  // Call getAuthState to populate the in-memory cache.
-  const authState = await getAuthState();
-  if (!authState) {
-    return;
-  }
-  prefetchBuild(reqUrl);
-  prefetchArtifact(reqUrl);
-}
-
-/**
- * Prefetches the build if the URL matches certain pattern.
- */
-async function prefetchBuild(reqUrl: URL) {
-  let buildId: string | null = null;
-  let buildNum: number | null = null;
-  let builderId: BuilderID | null = null;
-
-  // TODO(crbug/1108198): remove the /ui prefix.
-  let match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
-  if (match) {
-    const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
-    if (buildIdOrNum.startsWith('b')) {
-      buildId = buildIdOrNum.slice(1);
-    } else {
-      buildNum = Number(buildIdOrNum);
-      builderId = { project, bucket, builder };
+      key: (_info, _init, cacheKey) => cacheKey,
+      expire: ([, , , expiresIn]) => timeout(expiresIn),
     }
-  } else {
+  );
+
+  private prefetchBuildsService = new BuildsService(
+    new PrpcClientExt(
+      {
+        host: CONFIGS.BUILDBUCKET.HOST,
+        fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
+          const req = new Request(info, init);
+          await this.cachedFetch(
+            {},
+            req,
+            undefined,
+            await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
+            CACHE_DURATION // See the documentation for CACHE_DURATION.
+          );
+
+          // Abort the function to prevent the response from being consumed.
+          throw 0;
+        },
+      },
+      () => getAuthStateSync()?.accessToken || ''
+    )
+  );
+
+  private prefetchResultDBService = new ResultDb(
+    new PrpcClientExt(
+      {
+        host: CONFIGS.RESULT_DB.HOST,
+        fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
+          const req = new Request(info, init);
+          await this.cachedFetch(
+            {},
+            req,
+            undefined,
+            await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
+            CACHE_DURATION // See the documentation for CACHE_DURATION.
+          );
+
+          // Abort the function to prevent the response from being consumed.
+          throw 0;
+        },
+      },
+      () => getAuthStateSync()?.accessToken || ''
+    )
+  );
+
+  constructor(private readonly configs: typeof CONFIGS, private readonly fetchImpl: typeof fetch) {}
+
+  /**
+   * Prefetches resources if the URL matches certain pattern.
+   * Those resources are cached for a short duration and are expected to be
+   * fetched by the browser momentarily.
+   */
+  async prefetchResources(reqUrl: URL) {
+    // Prefetch services relies on the in-memory cache.
+    // Call getAuthState to populate the in-memory cache.
+    const authState = await getAuthState();
+    if (!authState) {
+      return;
+    }
+    this.prefetchBuild(reqUrl);
+    this.prefetchArtifact(reqUrl);
+  }
+
+  /**
+   * Prefetches the build if the URL matches certain pattern.
+   */
+  private async prefetchBuild(reqUrl: URL) {
+    let buildId: string | null = null;
+    let buildNum: number | null = null;
+    let builderId: BuilderID | null = null;
+
     // TODO(crbug/1108198): remove the /ui prefix.
-    match = reqUrl.pathname.match(/^\/ui\/b\/(\d+)\/?/i);
+    let match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
     if (match) {
-      buildNum = Number(match[1]);
+      const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
+      if (buildIdOrNum.startsWith('b')) {
+        buildId = buildIdOrNum.slice(1);
+      } else {
+        buildNum = Number(buildIdOrNum);
+        builderId = { project, bucket, builder };
+      }
+    } else {
+      // TODO(crbug/1108198): remove the /ui prefix.
+      match = reqUrl.pathname.match(/^\/ui\/b\/(\d+)\/?/i);
+      if (match) {
+        buildId = match[1];
+      }
+    }
+
+    let getBuildRequest: GetBuildRequest | null = null;
+    if (buildId) {
+      getBuildRequest = { id: buildId, fields: BUILD_FIELD_MASK };
+    } else if (builderId && buildNum) {
+      getBuildRequest = { builder: builderId, buildNumber: buildNum, fields: BUILD_FIELD_MASK };
+    }
+
+    if (getBuildRequest) {
+      this.prefetchBuildsService
+        .getBuild(getBuildRequest, CACHE_OPTION)
+        // Ignore any error, let the consumer of the cache deal with it.
+        .catch((_e) => {});
     }
   }
 
-  let getBuildRequest: GetBuildRequest | null = null;
-  if (buildId) {
-    getBuildRequest = { id: buildId, fields: BUILD_FIELD_MASK };
-  } else if (builderId && buildNum) {
-    getBuildRequest = { builder: builderId, buildNumber: buildNum, fields: BUILD_FIELD_MASK };
-  }
+  /**
+   * Prefetches the artifact if the URL matches certain pattern.
+   */
+  private async prefetchArtifact(reqUrl: URL) {
+    // TODO(crbug/1108198): remove the /ui prefix.
+    const match = reqUrl.pathname.match(
+      /^\/ui\/artifact\/(?:[^/]+)\/invocations\/([^/]+)(?:\/tests\/([^/]+)\/results\/([^/]+))?\/artifacts\/([^/]+)\/?/i
+    );
+    if (!match) {
+      return;
+    }
+    const [invocationId, testId, resultId, artifactId] = match
+      .slice(1, 5)
+      .map((v) => (v === undefined ? undefined : decodeURIComponent(v)));
 
-  if (getBuildRequest) {
-    prefetchBuildsService
-      .getBuild(getBuildRequest, CACHE_OPTION)
+    this.prefetchResultDBService
+      .getArtifact(
+        { name: constructArtifactName({ invocationId: invocationId!, testId, resultId, artifactId: artifactId! }) },
+        CACHE_OPTION
+      )
       // Ignore any error, let the consumer of the cache deal with it.
       .catch((_e) => {});
   }
-}
 
-/**
- * Prefetches the artifact if the URL matches certain pattern.
- */
-async function prefetchArtifact(reqUrl: URL) {
-  // TODO(crbug/1108198): remove the /ui prefix.
-  const match = reqUrl.pathname.match(
-    /^\/ui\/artifact\/(?:[^/]+)\/invocations\/([^/]+)(?:\/tests\/([^/]+)\/results\/([^/]+))?\/artifacts\/([^/]+)\/?/i
-  );
-  if (!match) {
-    return;
+  /**
+   * Responds to the event with the cached content if the URL matches certain
+   * pattern.
+   *
+   * Returns true if the URL might be cached. Returns false otherwise.
+   */
+  respondWithPrefetched(e: FetchEvent) {
+    if (!this.cachedPrpcUrls.includes(e.request.url)) {
+      return false;
+    }
+
+    e.respondWith(
+      (async () => {
+        const res = await this.cachedFetch(
+          // The response can't be reused, don't keep it in cache.
+          { skipUpdate: true, invalidateCache: true },
+          e.request,
+          undefined,
+          await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, e.request.clone()),
+          0
+        );
+        return res;
+      })()
+    );
+
+    return true;
   }
-  const [invocationId, testId, resultId, artifactId] = match
-    .slice(1, 5)
-    .map((v) => (v === undefined ? undefined : decodeURIComponent(v)));
-
-  prefetchResultDBService
-    .getArtifact(
-      { name: constructArtifactName({ invocationId: invocationId!, testId, resultId, artifactId: artifactId! }) },
-      CACHE_OPTION
-    )
-    // Ignore any error, let the consumer of the cache deal with it.
-    .catch((_e) => {});
 }
