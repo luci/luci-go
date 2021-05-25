@@ -21,8 +21,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/clock"
-
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
@@ -35,18 +33,18 @@ import (
 func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriager.Result, error) {
 	pm := pmState{s}
 	res := itriager.Result{}
+	var nextPurge, whenNewRun time.Time
 
 	a := actor{c: c, s: pm}
 	a.cls = triageCLs(c, pm)
-	whenPurge := a.stagePurges(ctx, clock.Now(ctx))
+	res.CLsToPurge, nextPurge = stagePurges(ctx, a.cls, pm)
 	whenNewRun, err := a.stageNewRuns(ctx)
 	if err != nil {
 		return res, err
 	}
 
-	if len(a.runCreators) > 0 || len(a.purgeCLtasks) > 0 {
+	if len(a.runCreators) > 0 || len(res.CLsToPurge) > 0 {
 		res.RunsToCreate = a.runCreators
-		res.CLsToPurge = a.purgeCLtasks
 		res.NewValue = c.CloneShallow()
 		res.NewValue.Dirty = false
 		// Wait for the Run Creation or the CL Purging to finish, which will result
@@ -55,7 +53,7 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 		return res, nil
 	}
 
-	when := earliest(whenPurge, whenNewRun)
+	when := earliest(nextPurge, whenNewRun)
 	if c.GetDirty() || !isSameTime(when, c.GetDecisionTime()) {
 		res.NewValue = c.CloneShallow()
 		res.NewValue.Dirty = false
@@ -80,8 +78,6 @@ type actor struct {
 
 	// runCreators are prepared by NextActionTime() and executed in Act().
 	runCreators []*runcreator.Creator
-	// purgeCLtasks for subset of CLs in toPurge which can be purged now.
-	purgeCLtasks []*prjpb.PurgeCLTask
 }
 
 type pmState struct {
