@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "880528c7_cbacbd68",
+        "filename": "milo/frontend/resultui/src/prefetch.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-25T17:44:00Z",
+      "side": 1,
+      "message": "looks like the same code copied 3 times?",
+      "revId": "71570b8bf281c4ce8d9c3f765ad05769b283e9fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
