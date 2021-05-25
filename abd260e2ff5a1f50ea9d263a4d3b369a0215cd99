@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae37938d_732e3733",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-25T17:45:46Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 574,
+        "startChar": 54,
+        "endLine": 574,
+        "endChar": 57
+      },
+      "revId": "abd260e2ff5a1f50ea9d263a4d3b369a0215cd99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
