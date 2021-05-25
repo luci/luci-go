@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd7c7d06_4cb0b51e",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T06:53:20Z",
+      "side": 1,
+      "message": "Remove the truncation.\n\nI just tried with the full hash, and cloud logging seems happy to accept an insertID with 66 chars.\nhttps://screenshot.googleplex.com/9wPHZdNE4bjd9Ag\nascii85 sounds a good idea, but I\u0027m afraid that it can possibly cause an annoying issue in UI, if the generated hash contains a backslash character.",
+      "parentUuid": "caa48f57_c2e239e5",
+      "range": {
+        "startLine": 125,
+        "startChar": 31,
+        "endLine": 125,
+        "endChar": 33
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ccb2a17c_bc984a3a",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-05-25T05:59:03Z",
       "side": 1,
       "message": "I think you want to look to see if the LAST line is partial?",
+      "range": {
+        "startLine": 212,
+        "startChar": 0,
+        "endLine": 212,
+        "endChar": 49
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7806430d_5c894c58",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T06:53:20Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/api/logpb/log.proto;l\u003d86-89\n\nThe protocol allows an entry to contain only 0 or 1 partial lines. If len(lines) \u003e 1, it can\u0027t contain a partial line. Thus, the choice of lines[len(lines) - 1] vs lines[0] is the choice of how this handles invalid input data.\n\nThe current logic consider all the lines as complete ones, if len(lines) \u003e 0.\nI put L207 and L208 to explain the constraint, but maybe not intuitive enough?",
+      "parentUuid": "ccb2a17c_bc984a3a",
       "range": {
         "startLine": 212,
         "startChar": 0,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce9be99b_9ae266f8",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T06:53:20Z",
+      "side": 1,
+      "message": "It throws the internal memory on reset(), whereas bytes.Buffer keeps it on reset().\nhttps://golang.org/src/strings/builder.go?s\u003d1869:1894#L50",
+      "parentUuid": "09fba706_4489d126",
+      "range": {
+        "startLine": 226,
+        "startChar": 60,
+        "endLine": 226,
+        "endChar": 66
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "588589ee_d95d611d",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-05-25T05:59:03Z",
       "side": 1,
       "message": "maybe write them to cloud logging anyway?",
+      "range": {
+        "startLine": 233,
+        "startChar": 63,
+        "endLine": 233,
+        "endChar": 71
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d8d69e1_440ece75",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T06:53:20Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "588589ee_d95d611d",
       "range": {
         "startLine": 233,
         "startChar": 63,
