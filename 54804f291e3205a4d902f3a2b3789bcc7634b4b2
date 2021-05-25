@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9362e8fe_d7209f23",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T11:49:47Z",
+      "side": 1,
+      "message": "IMO defer() is strictly worse here.\n\nThe only scenario it can help is append(..., \u0026cAction{}) panicking, at which point either:\n  * panic can\u0027t even be \"recovered\" from because RAM can\u0027t be allocated to print the error, so process will just crash (by far the likeliest occurrence)\n  * (highly unlikely) memory pressure was a temporary Go Runtime/OS fluke, panic is recovered from, new mallocs proceed just fine, but mutex remains locked and another action-producing component ends up waiting on it until process is terminated, possibly hours (GAE) or days (GKE) in the future. But even so, this doesn\u0027t affect other requests handled by the server.\n\nThus, the defer() just makes worse code.\n\n\nOf course, if s/append/someFuncWhichMayPanicPossiblyOften(), then defer() is a must.",
+      "parentUuid": "e0dff08e_a3ffab3c",
+      "range": {
+        "startLine": 217,
+        "startChar": 5,
+        "endLine": 217,
+        "endChar": 19
+      },
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "75f49971_e8d15a04",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-25T02:13:46Z",
       "side": 1,
       "message": "nit: I think it\u0027s worth printing the poolErr",
+      "range": {
+        "startLine": 227,
+        "startChar": 61,
+        "endLine": 227,
+        "endChar": 62
+      },
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd6a2889_d45738c4",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T11:49:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75f49971_e8d15a04",
       "range": {
         "startLine": 227,
         "startChar": 61,
@@ -100,6 +148,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "94174a76_a5968990",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T11:49:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6e163181_dacc1642",
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "14bfc19e_8219e4ce",
         "filename": "cv/internal/prjmanager/impl/state/components_test.go",
         "patchSetId": 1
@@ -128,6 +194,30 @@
       "writtenOn": "2021-05-25T02:13:46Z",
       "side": 1,
       "message": "nit: new line for readability",
+      "range": {
+        "startLine": 228,
+        "startChar": 28,
+        "endLine": 228,
+        "endChar": 61
+      },
+      "revId": "54804f291e3205a4d902f3a2b3789bcc7634b4b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "baa7e493_ef471909",
+        "filename": "cv/internal/prjmanager/impl/state/components_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T11:49:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0655b49_82d9c743",
       "range": {
         "startLine": 228,
         "startChar": 28,
