@@ -44,6 +44,7 @@ const (
 type TaskRefs struct {
 	ManageRun  tq.TaskClassRef
 	KickManage tq.TaskClassRef
+	SendRunRow tq.TaskClassRef
 
 	tqd *tq.Dispatcher
 }
@@ -61,6 +62,13 @@ func Register(tqd *tq.Dispatcher) TaskRefs {
 			ID:        fmt.Sprintf("kick-%s", ManageRunTaskClass),
 			Prototype: &KickManageRunTask{},
 			Queue:     "kick-manage-run",
+			Kind:      tq.Transactional,
+			Quiet:     true,
+		}),
+		SendRunRow: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:        fmt.Sprintf("send-run-row", ManageRunTaskClass),
+			Prototype: &SendRunRowTask{},
+			Queue:     "send-run-row",
 			Kind:      tq.Transactional,
 			Quiet:     true,
 		}),
