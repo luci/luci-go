@@ -17,29 +17,20 @@ declare global {
   namespace Chai {
     interface Assert {
       /**
-       * Asserts that haystack includes needle. Comparing to deepInclude,
-       * uses recursiveDeepInclude instead of deepEqual when comparing
-       * elements in a (nested) property of Array type.
+       * Asserts that actual includes all the (nested) properties in expected.
        *
-       * @type T   Type of haystack.
-       * @param haystack   Object.
-       * @param needle   Potential subset of the haystack's properties.
+       * @type T   Type of actual.
+       * @param actual   Object.
+       * @param expected   Potential subset of the actual's properties.
        * @param message   Message to display on error.
        */
-      // any has to be used here to express that we don't want T to be WeakSet
-      // or Array of any type.
-      recursiveDeepInclude<T>(
-        haystack: T,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        needle: T extends WeakSet<any> | any[] ? never : Partial<T>,
-        message?: string
-      ): void;
+      deepIncludeProperties<T>(actual: T, expected: unknown, message?: string): void;
     }
   }
 }
 
-export const chaiRecursiveDeepInclude: Chai.ChaiPlugin = (chai) => {
-  chai.assert.recursiveDeepInclude = (actual, expected, msg) => {
+export const chaiDeepIncludeProperties: Chai.ChaiPlugin = (chai) => {
+  chai.assert.deepIncludeProperties = (actual, expected, msg) => {
     chai.assert.deepEqual(deepStripNotIn(actual, expected), expected, msg);
   };
 };
