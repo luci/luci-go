@@ -95,12 +95,15 @@ func (a *actor) stageNewRunsCombo(ctx context.Context, info *clInfo, cg *config.
 }
 
 func (a *actor) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (time.Time, error) {
-	// TODO(tandrii): for safety, this should not wait forever.
+	// TODO(crbug/1211576): this waiting can last forever. Component needs to
+	// record how long it has been waiting and abort with clear message to the
+	// user.
 	sb := strings.Builder{}
-	fmt.Fprintf(&sb, "combo with %v waiting on %d deps:", info, len(info.deps.notYetLoaded))
+	fmt.Fprintf(&sb, "combo with CL %d waiting on %d deps to load: [", info.pcl.GetClid(), len(info.deps.notYetLoaded))
 	for _, d := range info.deps.notYetLoaded {
 		fmt.Fprintf(&sb, " %d", d.GetClid())
 	}
+	sb.WriteRune(']')
 	logging.Warningf(ctx, sb.String())
 	return time.Time{}, nil
 }
@@ -180,7 +183,7 @@ type combo struct {
 func (c *combo) add(info *clInfo) {
 	c.all = append(c.all, info)
 	if c.clids == nil {
-		c.clids = map[int64]struct{}{info.pcl.GetClid(): struct{}{}}
+		c.clids = map[int64]struct{}{info.pcl.GetClid(): {}}
 	} else {
 		c.clids[info.pcl.GetClid()] = struct{}{}
 	}
