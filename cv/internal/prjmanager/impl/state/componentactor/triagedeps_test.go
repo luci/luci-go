@@ -112,13 +112,12 @@ func TestDepsTriage(t *testing.T) {
 		}
 		const singIdx, combIdx, anotherIdx = 0, 1, 2
 
-		triage := func(pcl *prjpb.PCL, cgIdx int32) *triagedDeps {
+		do := func(pcl *prjpb.PCL, cgIdx int32) *triagedDeps {
 			backup := prjpb.PState{}
 			proto.Merge(&backup, sup.pb)
 
 			// Actual component doesn't matter in this test.
-			a := &actor{s: pmState{sup}}
-			td := a.triageDeps(pcl, cgIdx)
+			td := triageDeps(pcl, cgIdx, pmState{sup})
 			So(sup.pb, ShouldResembleProto, &backup) // must not be modified
 			return td
 		}
@@ -130,7 +129,7 @@ func TestDepsTriage(t *testing.T) {
 						sup.pb.Pcls = []*prjpb.PCL{
 							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}},
 						}
-						td := triage(sup.pb.Pcls[0], cgIdx)
+						td := do(sup.pb.Pcls[0], cgIdx)
 						So(td, shouldResembleTriagedDeps, &triagedDeps{})
 						So(td.OK(), ShouldBeTrue)
 					})
@@ -145,7 +144,7 @@ func TestDepsTriage(t *testing.T) {
 									{Clid: 32, Kind: changelist.DepKind_HARD},
 								}},
 						}
-						td := triage(sup.PCL(33), cgIdx)
+						td := do(sup.PCL(33), cgIdx)
 						So(td, shouldResembleTriagedDeps, &triagedDeps{
 							lastTriggered: epoch.Add(3 * time.Second),
 						})
@@ -163,7 +162,7 @@ func TestDepsTriage(t *testing.T) {
 								}},
 						}
 						pcl33 := sup.PCL(33)
-						td := triage(pcl33, cgIdx)
+						td := do(pcl33, cgIdx)
 						So(td, shouldResembleTriagedDeps, &triagedDeps{notYetLoaded: pcl33.GetDeps()})
 						So(td.OK(), ShouldBeTrue)
 					})
@@ -179,7 +178,7 @@ func TestDepsTriage(t *testing.T) {
 								}},
 						}
 						pcl33 := sup.PCL(33)
-						td := triage(pcl33, cgIdx)
+						td := do(pcl33, cgIdx)
 						So(td, shouldResembleTriagedDeps, &triagedDeps{unwatched: pcl33.GetDeps()})
 						So(td.OK(), ShouldBeFalse)
 					})
@@ -191,7 +190,7 @@ func TestDepsTriage(t *testing.T) {
 								Deps: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}}},
 						}
 						pcl33 := sup.PCL(33)
-						td := triage(pcl33, cgIdx)
+						td := do(pcl33, cgIdx)
 						So(td, shouldResembleTriagedDeps, &triagedDeps{submitted: pcl33.GetDeps()})
 						So(td.OK(), ShouldBeTrue)
 					})
@@ -207,7 +206,7 @@ func TestDepsTriage(t *testing.T) {
 								}},
 						}
 						pcl33 := sup.PCL(33)
-						td := triage(pcl33, cgIdx)
+						td := do(pcl33, cgIdx)
 						So(td, shouldResembleTriagedDeps, &triagedDeps{
 							lastTriggered:    epoch.Add(3 * time.Second),
 							wrongConfigGroup: pcl33.GetDeps(),
@@ -242,7 +241,7 @@ func TestDepsTriage(t *testing.T) {
 			}
 			Convey("dry run doesn't care about deps' triggers", func() {
 				pcl33 := sup.PCL(33)
-				td := triage(pcl33, singIdx)
+				td := do(pcl33, singIdx)
 				So(td, shouldResembleTriagedDeps, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 				})
@@ -250,14 +249,14 @@ func TestDepsTriage(t *testing.T) {
 			Convey("quick dry run doesn't care about deps' triggers", func() {
 				pcl33 := sup.PCL(33)
 				pcl33.Trigger.Mode = string(run.QuickDryRun)
-				td := triage(pcl33, singIdx)
+				td := do(pcl33, singIdx)
 				So(td, shouldResembleTriagedDeps, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 				})
 			})
 			Convey("full run considers any dep incompatible", func() {
 				pcl32 := sup.PCL(32)
-				td := triage(pcl32, singIdx)
+				td := do(pcl32, singIdx)
 				So(td, shouldResembleTriagedDeps, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 					incompatMode:  pcl32.GetDeps(),
@@ -290,14 +289,14 @@ func TestDepsTriage(t *testing.T) {
 			Convey("dry run expects all deps to be dry", func() {
 				pcl32 := sup.PCL(32)
 				Convey("ok", func() {
-					td := triage(pcl32, combIdx)
+					td := do(pcl32, combIdx)
 					So(td, shouldResembleTriagedDeps, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
 				})
 
 				Convey("... not full runs", func() {
 					// TODO(tandrii): this can and should be supported.
 					sup.PCL(31).Trigger.Mode = string(run.FullRun)
-					td := triage(pcl32, combIdx)
+					td := do(pcl32, combIdx)
 					So(td, shouldResembleTriagedDeps, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 						incompatMode:  pcl32.GetDeps(),
@@ -310,12 +309,12 @@ func TestDepsTriage(t *testing.T) {
 					for _, pcl := range sup.pb.GetPcls() {
 						pcl.Trigger.Mode = string(run.FullRun)
 					}
-					td := triage(pcl33, combIdx)
+					td := do(pcl33, combIdx)
 					So(td, shouldResembleTriagedDeps, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
 				})
 				Convey("... not dry runs", func() {
 					sup.PCL(32).Trigger.Mode = string(run.FullRun)
-					td := triage(pcl33, combIdx)
+					td := do(pcl33, combIdx)
 					So(td, shouldResembleTriagedDeps, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 						incompatMode:  []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
