@@ -184,17 +184,174 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 //
 // Returns an action per each component that needs acting upon.
 func (s *State) triageComponents(ctx context.Context) ([]*cAction, error) {
-	// TODO(tandrii): implement.
-	return nil, nil
+	var sup itriager.PMState
+	sup, err := s.makeActorSupporter(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	poolSize := concurrentComponentProcessing
+	if n := len(s.PB.GetComponents()); n < poolSize {
+		poolSize = n
+	}
+	now := clock.Now(ctx)
+
+	var mutex sync.Mutex
+	var actions []*cAction
+	poolErr := parallel.WorkPool(poolSize, func(work chan<- func() error) {
+		for i, oldC := range s.PB.GetComponents() {
+			i, oldC := i, oldC
+			if !needsTriage(oldC, now) {
+				continue
+			}
+			work <- func() error {
+				switch res, err := s.triageOneComponent(ctx, oldC, sup); {
+				case err != nil:
+					// Log error here since only total errs count will be propagated up
+					// the stack.
+					logging.Errorf(ctx, "%s while processing component: %s", err, protojson.Format(oldC))
+					return err
+				default:
+					mutex.Lock()
+					actions = append(actions, &cAction{componentIndex: i, Result: res})
+					mutex.Unlock()
+					return nil
+				}
+			}
+		}
+	})
+	switch merrs, ok := poolErr.(errors.MultiError); {
+	case poolErr == nil || (ok && len(merrs) == 0):
+		return actions, nil
+	case !ok:
+		panic(fmt.Errorf("Unexpected return from parallel.WorkPool: %s", poolErr))
+	case len(actions) > 0:
+		// Components are independent, so proceed despite errors on some components
+		// since partial progress is better than none.
+		logging.Warningf(ctx, "triageComponents: %d errors, but proceeding to act on %d components", len(merrs), len(actions))
+		return actions, nil
+	default:
+		err := common.MostSevereError(merrs)
+		return nil, errors.Annotate(err, "failed to triage %d components, keeping the most severe error", len(merrs)).Err()
+	}
+}
+
+func needsTriage(c *prjpb.Component, now time.Time) bool {
+	if c.GetDirty() {
+		return true // external event arrived
+	}
+	next := c.GetDecisionTime()
+	if next == nil {
+		return false // wait for an external event
+	}
+	if next.AsTime().After(now) {
+		return false // too early
+	}
+	return true
+}
+
+func (s *State) triageOneComponent(ctx context.Context, oldC *prjpb.Component, sup itriager.PMState) (res itriager.Result, err error) {
+	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+		logging.Errorf(ctx, "caught panic %s:\n%s", p.Reason, p.Stack)
+		logging.Debugf(ctx, "caught panic on component:\n%s", protojson.Format(oldC))
+		logging.Debugf(ctx, "caught panic current state:\n%s", protojson.Format(s.PB))
+		err = errors.Reason("caught panic: %s", p.Reason).Err()
+	})
+	res, err = s.ComponentTriage(ctx, oldC, sup)
+	if err != nil {
+		return
+	}
+	if res.NewValue != nil && res.NewValue == oldC {
+		panic(fmt.Errorf("New value re-uses prior component object, must use copy-on-write instead"))
+	}
+	if len(res.CLsTopurge) > 0 {
+		s.validatePurgeCLTasks(oldC, res.CLsTopurge)
+	}
+	return
+}
 
 // actOnComponents executes actions on components produced by triageComponents.
 //
 // Expects the state to be already shallow cloned.
 func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEffect, error) {
-	// TODO(tandrii): implement.
-	return nil, nil
+	// First, create Runs in parallel.
+	poolSize := concurrentComponentProcessing
+	if l := len(actions); l < poolSize {
+		poolSize = l
 	}
+	runsErr := parallel.WorkPool(poolSize, func(work chan<- func() error) {
+		for _, action := range actions {
+			for _, rc := range action.RunsToCreate {
+				action, rc := action, rc
+				c := s.PB.GetComponents()[action.componentIndex]
+				work <- func() error {
+					err := s.createOneRun(ctx, rc, c)
+					if err != nil {
+						atomic.AddInt32(&action.runsFailed, 1)
+						// Log error here since only total errs count will be propagated up
+						// the stack.
+						logging.Errorf(ctx, "%s: %s", protojson.Format(c), err)
+					}
+					return err
+				}
+			}
+		}
+	})
+
+	// Keep runsErr for now and try to make progress on actions/components without
+	// errors.
+
+	// Shallow-copy the components slice, as one or more components are highly
+	// likely to be modified in a loop below.
+	s.PB.Components = append(([]*prjpb.Component)(nil), s.PB.GetComponents()...)
+	runsCreated, componentsUpdated := 0, 0
+	var clsToPurge []*prjpb.PurgeCLTask
+	for _, action := range actions {
+		if action.runsFailed > 0 {
+			continue
+		}
+		runsCreated += len(action.RunsToCreate)
+		clsToPurge = append(clsToPurge, action.CLsTopurge...)
+		if action.NewValue != nil {
+			s.PB.Components[action.componentIndex] = action.NewValue
+			componentsUpdated++
+		}
+	}
+	var sideEffect SideEffect
+	if len(clsToPurge) > 0 {
+		sideEffect = s.addCLsToPurge(ctx, clsToPurge)
+	}
+	proceedMsg := fmt.Sprintf("proceeding to save %d components and purge %d CLs", componentsUpdated, len(clsToPurge))
+
+	// Finally, decide the final result.
+	switch merrs, ok := runsErr.(errors.MultiError); {
+	case runsErr == nil || (ok && len(merrs) == 0):
+		logging.Infof(ctx, "actOnComponents: created %d Runs, %s", runsCreated, proceedMsg)
+		return sideEffect, nil
+	case !ok:
+		panic(fmt.Errorf("Unexpected return from parallel.WorkPool"))
+	default:
+		logging.Warningf(ctx, "actOnComponents: created %d Runs, failed to create %d Runs", runsCreated, len(merrs))
+		if componentsUpdated+len(clsToPurge) == 0 {
+			err := common.MostSevereError(merrs)
+			return nil, errors.Annotate(err, "failed to actOnComponents, most severe error").Err()
+		}
+		// All actions are independent, so proceed despite the errors since partial
+		// progress is better than none.
+		logging.Debugf(ctx, "actOnComponents: %s", proceedMsg)
+		return sideEffect, nil
+	}
+}
+
+func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prjpb.Component) (err error) {
+	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+		logging.Errorf(ctx, "caught panic while creating a Run %s:\n%s", p.Reason, p.Stack)
+		logging.Debugf(ctx, "caught panic: component %s", protojson.Format(c))
+		err = errors.Reason("caught panic: %s", p.Reason).Err()
+	})
+	_, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier)
+	return err
+}
 
 // execComponentActions executes actions on components.
 //

@@ -16,20 +16,27 @@ package state
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
@@ -114,14 +121,15 @@ func TestComponentsActions(t *testing.T) {
 				},
 				Components: []*prjpb.Component{
 					{Clids: []int64{999}}, // never sees any action.
-					{Clids: []int64{1}},
-					{Clids: []int64{2}},
+					{Clids: []int64{1}, DecisionTime: timestamppb.New(now.Add(1 * time.Minute))},
+					{Clids: []int64{2}, DecisionTime: timestamppb.New(now.Add(2 * time.Minute))},
 					{Clids: []int64{3}, DecisionTime: timestamppb.New(now.Add(3 * time.Minute))},
 				},
-				NextEvalTime: timestamppb.New(now.Add(3 * time.Minute)),
+				NextEvalTime: timestamppb.New(now.Add(1 * time.Minute)),
 			},
-			PMNotifier:  prjmanager.NewNotifier(ct.TQDispatcher),
-			RunNotifier: run.NewNotifier(ct.TQDispatcher),
+			PMNotifier:                 prjmanager.NewNotifier(ct.TQDispatcher),
+			RunNotifier:                run.NewNotifier(ct.TQDispatcher),
+			testUseNewComponentTriager: true,
 		}
 
 		pb := backupPB(state)
@@ -134,61 +142,79 @@ func TestComponentsActions(t *testing.T) {
 		}
 
 		unDirty := func(c *prjpb.Component) *prjpb.Component {
-			So(c.GetDirty(), ShouldBeTrue)
+			if !c.GetDirty() {
+				panic(fmt.Errorf("must be dirty to unDirty"))
+			}
 			o := c.CloneShallow()
 			o.Dirty = false
 			return o
 		}
 
-		Convey("noop at preevaluation", func() {
-			state.testComponentActorFactory = (&componentActorSetup{}).factory
-			as, cs, err := state.scanComponents(ctx)
+		calledOn := make(chan *prjpb.Component, len(state.PB.Components))
+		collectCalledOn := func() []int {
+			var out []int
+		loop:
+			for {
+				select {
+				case c := <-calledOn:
+					out = append(out, int(c.GetClids()[0]))
+				default:
+					break loop
+				}
+			}
+			sort.Ints(out)
+			return out
+		}
+
+		Convey("noop at triage", func() {
+			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				calledOn <- c
+				return itriager.Result{}, nil
+			}
+			actions, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
-			So(as, ShouldBeNil)
-			So(cs, ShouldBeNil)
+			So(actions, ShouldBeNil)
 			So(state.PB, ShouldResembleProto, pb)
+			So(collectCalledOn(), ShouldBeEmpty)
 
 			Convey("ExecDeferred", func() {
 				state2, sideEffect, err := state.ExecDeferred(ctx)
 				So(err, ShouldBeNil)
 				So(state2, ShouldEqual, state) // pointer comparison
 				So(sideEffect, ShouldBeNil)
-				So(pmtest.ETAsOF(ct.TQ.Tasks(), lProject), ShouldBeEmpty)
+				// Always creates new task iff there is NextEvalTime.
+				So(pmtest.ETAsOF(ct.TQ.Tasks(), lProject), ShouldNotBeEmpty)
 			})
 		})
 
-		Convey("updates future DecisionTime in scan", func() {
-			makeDirtySetup(1, 2, 3)
-			state.testComponentActorFactory = (&componentActorSetup{
-				nextAction: func(cl int64, now time.Time) (time.Time, error) {
-					switch cl {
-					case 1:
-						return time.Time{}, nil
-					case 2:
-						return now.Add(2 * time.Minute), nil
-					case 3:
-						return state.PB.Components[3].GetDecisionTime().AsTime(), nil // same
-					}
-					panic("unrechable")
-				},
-			}).factory
-			actions, components, err := state.scanComponents(ctx)
+		Convey("triage called on dirty components or when decision time is <= now", func() {
+			ct.Clock.Set(state.PB.Components[1].DecisionTime.AsTime())
+			c1next := state.PB.Components[1].DecisionTime.AsTime().Add(time.Hour)
+			makeDirtySetup(3)
+			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				calledOn <- c
+				switch c.GetClids()[0] {
+				case 1:
+					c = c.CloneShallow()
+					c.DecisionTime = timestamppb.New(c1next)
+					return itriager.Result{NewValue: c}, nil
+				case 3:
+					return itriager.Result{NewValue: unDirty(c)}, nil
+				}
+				panic("unrechable")
+			}
+			actions, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
-			So(actions, ShouldBeNil)
-			So(components, ShouldResembleProto, []*prjpb.Component{
-				pb.GetComponents()[0], // #999 unchanged
-				unDirty(pb.GetComponents()[1]),
-				{Clids: []int64{2}, DecisionTime: timestamppb.New(now.Add(2 * time.Minute))},
-				unDirty(pb.GetComponents()[3]),
-			})
-			So(state.PB, ShouldResembleProto, pb)
+			So(actions, ShouldHaveLength, 2)
+			So(collectCalledOn(), ShouldResemble, []int{1, 3})
 
 			Convey("ExecDeferred", func() {
 				state2, sideEffect, err := state.ExecDeferred(ctx)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
-				pb.Components = components
 				pb.NextEvalTime = timestamppb.New(now.Add(2 * time.Minute))
+				pb.Components[1].DecisionTime = timestamppb.New(c1next)
+				pb.Components[3].Dirty = false
 				So(state2.PB, ShouldResembleProto, pb)
 				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(2*time.Minute)), ShouldNotBeEmpty)
 			})
@@ -196,14 +222,27 @@ func TestComponentsActions(t *testing.T) {
 
 		Convey("purges CLs", func() {
 			makeDirtySetup(1, 2, 3)
-			state.testComponentActorFactory = (&componentActorSetup{
-				nextAction: func(cl int64, now time.Time) (time.Time, error) { return now, nil },
-				purgeCLs:   []int64{1, 3},
-			}).factory
-			actions, components, err := state.scanComponents(ctx)
+			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				switch clid := c.GetClids()[0]; clid {
+				case 1, 3:
+					return itriager.Result{
+						CLsTopurge: []*prjpb.PurgeCLTask{
+							{
+								PurgingCl: &prjpb.PurgingCL{Clid: clid},
+								Reasons: []*changelist.CLError{
+									{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+								},
+							},
+						},
+					}, nil
+				case 2:
+					return itriager.Result{}, nil
+				}
+				panic("unrechable")
+			}
+			actions, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
 			So(actions, ShouldHaveLength, 3)
-			So(components, ShouldResembleProto, pb.GetComponents())
 			So(state.PB, ShouldResembleProto, pb)
 
 			Convey("ExecDeferred", func() {
@@ -227,65 +266,44 @@ func TestComponentsActions(t *testing.T) {
 			})
 		})
 
-		Convey("partial failure in scan", func() {
+		Convey("partial failure in triage", func() {
 			makeDirtySetup(1, 2, 3)
-			state.testComponentActorFactory = (&componentActorSetup{
-				nextAction: func(cl int64, now time.Time) (time.Time, error) {
-					switch cl {
-					case 1:
-						return time.Time{}, errors.New("oops1")
-					case 2, 3:
-						return now, nil
-					}
-					panic("unrechable")
-				},
-			}).factory
-			actions, components, err := state.scanComponents(ctx)
+			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				switch c.GetClids()[0] {
+				case 1:
+					return itriager.Result{}, errors.New("oops1")
+				case 2, 3:
+					return itriager.Result{NewValue: unDirty(c)}, nil
+				}
+				panic("unrechable")
+			}
+			actions, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
-			So(components, ShouldResembleProto, []*prjpb.Component{
-				pb.GetComponents()[0], // #999 unchanged
-				{Clids: []int64{1}, Dirty: true, DecisionTime: timestamppb.New(now)},
-				pb.GetComponents()[2], // #2 unchanged
-				pb.GetComponents()[3], // #3 unchanged
-			})
+			So(actions, ShouldHaveLength, 2)
 			So(state.PB, ShouldResembleProto, pb)
-
-			_, err = state.execComponentActions(ctx, actions, components)
-			So(err, ShouldBeNil)
-			// Must modify passed components only.
-			So(state.PB, ShouldResembleProto, pb)
-			So(components, ShouldResembleProto, []*prjpb.Component{
-				pb.GetComponents()[0],
-				{Clids: []int64{1}, Dirty: true, DecisionTime: timestamppb.New(now)}, // errored on
-				{Clids: []int64{2}}, // acted upon
-				{Clids: []int64{3}}, // acted upon
-			})
 
 			Convey("ExecDeferred", func() {
+				// Execute slightly after #1 component decision time.
+				ct.Clock.Set(pb.Components[1].DecisionTime.AsTime().Add(time.Microsecond))
 				state2, sideEffect, err := state.ExecDeferred(ctx)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
-				pb.Components = components
-				pb.NextEvalTime = timestamppb.New(now)
+				// Must save undirtying #2 and #3.
+				pb.Components[2].Dirty = false
+				pb.Components[3].Dirty = false
 				So(state2.PB, ShouldResembleProto, pb)
 				// Self-poke task must be scheduled for earliest possible from now.
-				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(prjpb.PMTaskInterval)), ShouldNotBeEmpty)
+				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, ct.Clock.Now().Add(prjpb.PMTaskInterval)), ShouldNotBeEmpty)
 			})
 		})
 
-		Convey("100% failure in scan", func() {
+		Convey("100% failure in triage", func() {
 			makeDirtySetup(1, 2)
-			state.testComponentActorFactory = (&componentActorSetup{
-				nextAction: func(cl int64, now time.Time) (time.Time, error) {
-					switch cl {
-					case 1, 2:
-						return time.Time{}, errors.New("oops")
-					}
-					panic("unrechable")
-				},
-			}).factory
-			_, _, err := state.scanComponents(ctx)
-			So(err, ShouldErrLike, "oops")
+			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				return itriager.Result{}, errors.New("oops")
+			}
+			_, err := state.triageComponents(ctx)
+			So(err, ShouldErrLike, "failed to triage 2 components")
 			So(state.PB, ShouldResembleProto, pb)
 
 			Convey("ExecDeferred", func() {
@@ -296,54 +314,161 @@ func TestComponentsActions(t *testing.T) {
 			})
 		})
 
-		Convey("partial failure in exec", func() {
-			makeDirtySetup(1, 2, 3)
-			state.testComponentActorFactory = (&componentActorSetup{
-				nextAction:  func(cl int64, now time.Time) (time.Time, error) { return now, nil },
-				actErrOnCLs: []int64{1, 2},
-			}).factory
-			actions, components, err := state.scanComponents(ctx)
-			So(err, ShouldBeNil)
-			_, err = state.execComponentActions(ctx, actions, components)
-			So(err, ShouldBeNil)
-			// Must modify passed components only.
+		Convey("Catches panic in triage", func() {
+			makeDirtySetup(1)
+			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				panic(errors.New("oops"))
+			}
+			_, _, err := state.ExecDeferred(ctx)
+			So(err, ShouldErrLike, "caught panic: oops")
 			So(state.PB, ShouldResembleProto, pb)
-			So(components, ShouldResembleProto, []*prjpb.Component{
-				pb.GetComponents()[0], // #999 unchanged
-				{Clids: []int64{1}, Dirty: true, DecisionTime: timestamppb.New(now)}, // errored on
-				{Clids: []int64{2}, Dirty: true, DecisionTime: timestamppb.New(now)}, // errored on
-				{Clids: []int64{3}}, // acted upon
-			})
+		})
 
-			Convey("ExecDeferred", func() {
+		Convey("With Run Creation", func() {
+			// Run creation requires ProjectStateOffload entity to exist.
+			So(datastore.Put(ctx, &prjmanager.ProjectStateOffload{
+				ConfigHash: ct.Cfg.MustExist(ctx, lProject).ConfigGroupIDs[0].Hash(),
+				Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject),
+				Status:     prjpb.Status_STARTED,
+			}), ShouldBeNil)
+
+			makeRunCreator := func(clid int64, fail bool) *runcreator.Creator {
+				cfgGroups, err := ct.Cfg.MustExist(ctx, lProject).GetConfigGroups(ctx)
+				if err != nil {
+					panic(err)
+				}
+				ci := gf.CI(int(clid), gf.PS(1), gf.CQ(+1, ct.Clock.Now(), gf.U("user-1")))
+				cl := &changelist.CL{
+					ID:       common.CLID(clid),
+					EVersion: 1,
+					Snapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+						Host: "gerrit-review.example.com",
+						Info: ci,
+					}}},
+				}
+				if fail {
+					// Simulate EVersion mismatch to fail run creation.
+					cl.EVersion = 2
+				}
+				err = datastore.Put(ctx, cl)
+				if err != nil {
+					panic(err)
+				}
+				cl.EVersion = 1
+
+				return &runcreator.Creator{
+					LUCIProject:   lProject,
+					ConfigGroupID: cfgGroups[0].ID,
+					Mode:          run.DryRun,
+					OperationID:   fmt.Sprintf("op-%d-%t", clid, fail),
+					Owner:         identity.Identity("user:user-1@example.com"),
+					InputCLs: []runcreator.CL{{
+						ID:               common.CLID(clid),
+						ExpectedEVersion: 1,
+						Snapshot:         cl.Snapshot,
+						TriggerInfo:      trigger.Find(ci, cfgGroups[0].Content),
+					}},
+				}
+			}
+
+			findRunOf := func(clid int) *run.Run {
+				var runs []*run.Run
+				So(datastore.GetAll(ctx, run.NewQueryWithLUCIProject(ctx, lProject), &runs), ShouldBeNil)
+				for _, r := range runs {
+					if r.CLs[0] == common.CLID(clid) {
+						return r
+					}
+				}
+				return nil
+			}
+
+			Convey("100% success", func() {
+				makeDirtySetup(1)
+				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+					rc := makeRunCreator(1, false /* succeed */)
+					return itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
+				}
+
 				state2, sideEffect, err := state.ExecDeferred(ctx)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
-				pb.Components = components
-				pb.NextEvalTime = timestamppb.New(now)
+				pb.Components[1].Dirty = false // must be saved, since Run Creation succeeded.
 				So(state2.PB, ShouldResembleProto, pb)
-				// Self-poke task must be scheduled for earliest possible from now.
-				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(prjpb.PMTaskInterval)), ShouldNotBeEmpty)
+				So(findRunOf(1), ShouldNotBeNil)
 			})
-		})
 
-		Convey("100% failure in exec", func() {
-			makeDirtySetup(1, 2, 3)
-			state.testComponentActorFactory = (&componentActorSetup{
-				nextAction:  func(cl int64, now time.Time) (time.Time, error) { return now, nil },
-				actErrOnCLs: []int64{1, 2, 3},
-			}).factory
-			actions, components, err := state.scanComponents(ctx)
-			So(err, ShouldBeNil)
-			_, err = state.execComponentActions(ctx, actions, components)
-			So(err, ShouldErrLike, "act-oops")
-			So(state.PB, ShouldResembleProto, pb)
+			Convey("100% failure", func() {
+				makeDirtySetup(1)
+				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+					rc := makeRunCreator(1, true /* fail */)
+					return itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
+				}
 
-			Convey("ExecDeferred", func() {
-				state2, sideEffect, err := state.ExecDeferred(ctx)
-				So(err, ShouldNotBeNil)
+				_, sideEffect, err := state.ExecDeferred(ctx)
+				So(err, ShouldErrLike, "failed to actOnComponents")
 				So(sideEffect, ShouldBeNil)
-				So(state2, ShouldBeNil)
+				So(findRunOf(1), ShouldBeNil)
+			})
+
+			Convey("Partial failure", func() {
+				makeDirtySetup(1, 2, 3)
+				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+					clid := c.GetClids()[0]
+					// Set up each component trying to create a Run,
+					// and #2 and #3 additionally purging a CL,
+					// but #2 failing to create a Run.
+					failIf := clid == 2
+					rc := makeRunCreator(clid, failIf)
+					res := itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}
+					if clid != 1 {
+						// Contrived example, since in practice purging a CL concurrently
+						// with Run creation in the same component ought to happen only iff
+						// there are several CLs and presumably on different CLs.
+						res.CLsTopurge = []*prjpb.PurgeCLTask{
+							{
+								PurgingCl: &prjpb.PurgingCL{Clid: clid},
+								Reasons: []*changelist.CLError{
+									{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+								},
+							},
+						}
+					}
+					return res, nil
+				}
+
+				state2, sideEffect, err := state.ExecDeferred(ctx)
+				So(err, ShouldBeNil)
+				// Only #3 component purge must be a SideEffect.
+				So(sideEffect, ShouldHaveSameTypeAs, &TriggerPurgeCLTasks{})
+				ps := sideEffect.(*TriggerPurgeCLTasks).payloads
+				So(ps, ShouldHaveLength, 1)
+				So(ps[0].GetPurgingCl().GetClid(), ShouldEqual, 3)
+
+				So(findRunOf(1), ShouldNotBeNil)
+				pb.Components[1].Dirty = false
+				// Component #2 must remain unchanged.
+				So(findRunOf(3), ShouldNotBeNil)
+				pb.Components[3].Dirty = false
+				pb.PurgingCls = []*prjpb.PurgingCL{
+					{
+						Clid: 3, OperationId: "1580640000-3",
+						Deadline: timestamppb.New(ct.Clock.Now().Add(maxPurgingCLDuration)),
+					},
+				}
+				So(state2.PB, ShouldResembleProto, pb)
+			})
+
+			Convey("Catches panic", func() {
+				makeDirtySetup(1)
+				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+					rc := makeRunCreator(1, false)
+					rc.LUCIProject = "" // causes panic because of incorrect usage.
+					return itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
+				}
+
+				_, _, err := state.ExecDeferred(ctx)
+				So(err, ShouldErrLike, "caught panic: LUCIProject is required")
+				So(state.PB, ShouldResembleProto, pb)
 			})
 		})
 	})
