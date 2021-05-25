@@ -60,10 +60,10 @@ type Result struct {
 	// If not set, implies that component doesn't have to be changed.
 	NewValue *prjpb.Component
 
-	// CLsTopurge must contain PurgeCLTasks tasks with with these (sub)fields set:
+	// CLsToPurge must contain PurgeCLTasks tasks with with these (sub)fields set:
 	//  * .PurgingCL.Clid
 	//  * .Reasons
-	CLsTopurge []*prjpb.PurgeCLTask
+	CLsToPurge []*prjpb.PurgeCLTask
 }
 
 // PMState provides limited access to resources of Project Manager (PM) state for

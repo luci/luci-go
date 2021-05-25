@@ -223,16 +223,14 @@ func TestComponentsActions(t *testing.T) {
 			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch clid := c.GetClids()[0]; clid {
 				case 1, 3:
-					return itriager.Result{
-						CLsTopurge: []*prjpb.PurgeCLTask{
-							{
-								PurgingCl: &prjpb.PurgingCL{Clid: clid},
-								Reasons: []*changelist.CLError{
-									{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
-								},
+					return itriager.Result{CLsToPurge: []*prjpb.PurgeCLTask{
+						{
+							PurgingCl: &prjpb.PurgingCL{Clid: clid},
+							Reasons: []*changelist.CLError{
+								{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 							},
 						},
-					}, nil
+					}}, nil
 				case 2:
 					return itriager.Result{}, nil
 				}
@@ -442,7 +440,7 @@ func TestComponentsActions(t *testing.T) {
 						// Contrived example, since in practice purging a CL concurrently
 						// with Run creation in the same component ought to happen only iff
 						// there are several CLs and presumably on different CLs.
-						res.CLsTopurge = []*prjpb.PurgeCLTask{
+						res.CLsToPurge = []*prjpb.PurgeCLTask{
 							{
 								PurgingCl: &prjpb.PurgingCL{Clid: clid},
 								Reasons: []*changelist.CLError{
