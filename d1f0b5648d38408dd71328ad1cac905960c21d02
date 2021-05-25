@@ -16,6 +16,86 @@
       "message": "ptal",
       "revId": "d1f0b5648d38408dd71328ad1cac905960c21d02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "488fa1fc_b291f79e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T19:53:38Z",
+      "side": 1,
+      "message": "👍 🎉",
+      "revId": "d1f0b5648d38408dd71328ad1cac905960c21d02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3584449d_23ca84c4",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T19:53:38Z",
+      "side": 1,
+      "message": "nit: we usually use \"gerritpb\" for this one.",
+      "revId": "d1f0b5648d38408dd71328ad1cac905960c21d02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2326992b_1ed34f93",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T19:53:38Z",
+      "side": 1,
+      "message": "Full",
+      "range": {
+        "startLine": 211,
+        "startChar": 25,
+        "endLine": 211,
+        "endChar": 34
+      },
+      "revId": "d1f0b5648d38408dd71328ad1cac905960c21d02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f122772_2c1336db",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T19:53:38Z",
+      "side": 1,
+      "message": "lame that ds.Exists is semantically better but is so much more code than \n  return nil \u003d\u003d datastore.Get(ctx, \u0026migration.VerifiedCQDRun{ID: r.ID})",
+      "range": {
+        "startLine": 270,
+        "startChar": 3,
+        "endLine": 271,
+        "endChar": 33
+      },
+      "revId": "d1f0b5648d38408dd71328ad1cac905960c21d02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
