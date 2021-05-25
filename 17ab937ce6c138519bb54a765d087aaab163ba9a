@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd8e0987_810724cf",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-25T19:40:09Z",
+      "side": 1,
+      "message": "It turned out that I misinterpreted the protocol. Updated the logic to match the protocol. PTAL",
+      "parentUuid": "7806430d_5c894c58",
+      "range": {
+        "startLine": 212,
+        "startChar": 0,
+        "endLine": 212,
+        "endChar": 49
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "09fba706_4489d126",
