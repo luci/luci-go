@@ -13,14 +13,10 @@
 // limitations under the License.
 
 import { assert } from 'chai';
-import chai from 'chai';
 import sinon from 'sinon';
 
-import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
 import { createTVPropGetter, TestVariantStatus, UISpecificService } from '../services/resultdb';
 import { LoadingStage, TestLoader } from './test_loader';
-
-chai.use(chaiRecursiveDeepInclude);
 
 const variant1 = {
   testId: 'a',
