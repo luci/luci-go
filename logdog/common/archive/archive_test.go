@@ -16,15 +16,19 @@ package archive
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"strconv"
 	"testing"
 	"time"
 
+	cl "cloud.google.com/go/logging"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
@@ -93,6 +97,15 @@ func (w *errWriter) Write(d []byte) (int, error) {
 		return 0, w.err
 	}
 	return w.Writer.Write(d)
+}
+
+// testCLLogger implements CLLogger for testing and instrumentation.
+type testCLLogger struct {
+	entry []*cl.Entry
+}
+
+func (l *testCLLogger) Log(e cl.Entry) {
+	l.entry = append(l.entry, &e)
 }
 
 // indexParams umarshals an index from a byte stream and removes any entries.
@@ -232,16 +245,19 @@ func TestArchive(t *testing.T) {
 	Convey(`A Manifest connected to Buffer Writers`, t, func() {
 		var logB, indexB bytes.Buffer
 		desc := &logpb.LogStreamDescriptor{
-			Prefix: "test",
-			Name:   "foo",
+			Prefix:    "test",
+			Name:      "foo",
+			Timestamp: timestamppb.New(testclock.TestTimeUTC),
 		}
 		ic := indexChecker{}
 		ts := testSource{}
 		m := Manifest{
+			LUCIProject: "chromium",
 			Desc:        desc,
 			Source:      &ts,
 			LogWriter:   &logB,
 			IndexWriter: &indexB,
+			CloudLogger: &testCLLogger{},
 		}
 
 		Convey(`A sequence of logs will build a complete index.`, func() {
@@ -415,6 +431,117 @@ func TestArchive(t *testing.T) {
 					LastStreamIndex: 5,
 					LogEntryCount:   6,
 				})
+			})
+		})
+
+		Convey(`Exports entries to Cloud Logs`, func() {
+			clogger := m.CloudLogger.(*testCLLogger)
+			line := func(msg, del string) *logpb.Text_Line {
+				return &logpb.Text_Line{Value: []byte(msg), Delimiter: del}
+			}
+			sha := sha256.New()
+			sha.Write([]byte(m.LUCIProject))
+			sha.Write([]byte(desc.Name))
+			streamIDHash := sha.Sum(nil)[:16]
+
+			Convey(`With nil LogEntry`, func() {
+				ts.addLogEntry(nil)
+				So(Archive(m), ShouldErrLike, "nil LogEntry")
+				So(clogger.entry, ShouldHaveLength, 0)
+			})
+
+			// ----------------------------------------
+			// tests with partial lines
+			Convey(`With 0 partial line`, func() {
+				ts.add(123)
+				ts.logs[0].GetText().Lines = []*logpb.Text_Line{line("", "")}
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 0)
+			})
+
+			Convey(`With 1 partial line`, func() {
+				ts.add(123)
+				ts.logs[0].GetText().Lines = []*logpb.Text_Line{line("partial", "")}
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 0)
+			})
+
+			Convey(`With multiple partial lines`, func() {
+				// This tests the behaviour when it received an invalid date that
+				// does not conform the rules required by the protocol.
+				ts.add(123, 456, 789)
+				ts.logs[0].GetText().Lines = []*logpb.Text_Line{line("p1", "")}
+				ts.logs[1].GetText().Lines = []*logpb.Text_Line{line("p2", "")}
+				ts.logs[2].GetText().Lines = []*logpb.Text_Line{line("p3.", "")}
+
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 0) // nothing should have been exported.
+			})
+
+			// ----------------------------------------
+			// tests with complete lines
+			Convey(`With 0 complete line`, func() {
+				ts.add(123)
+				ts.logs[0].GetText().Lines = []*logpb.Text_Line{line("", "\n")}
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 0)
+			})
+
+			Convey(`With 1 complete line`, func() {
+				ts.add(123)
+				// Archive() consumes entries in ts.logs, and tt should be calculated
+				// before Archive, therefore.
+				tt := testclock.TestTimeUTC.Add(ts.logs[0].TimeOffset.AsDuration())
+
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 1)
+				So(clogger.entry[0], ShouldResemble, &cl.Entry{
+					Payload:   "123",
+					Timestamp: tt,
+					InsertID:  fmt.Sprintf("%x/%d", streamIDHash, 123),
+					Trace:     fmt.Sprintf("%x", streamIDHash),
+				})
+			})
+
+			Convey(`With multiple complete lines`, func() {
+				ts.add(123, 456, 789)
+				ts.logs[0].GetText().Lines = []*logpb.Text_Line{line("this", "\n")}
+				ts.logs[1].GetText().Lines = []*logpb.Text_Line{line("is", "\n")}
+				ts.logs[2].GetText().Lines = []*logpb.Text_Line{line("complete.", "\n")}
+
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 3)
+				So(clogger.entry[0].Payload, ShouldEqual, "this")
+				So(clogger.entry[1].Payload, ShouldEqual, "is")
+				So(clogger.entry[2].Payload, ShouldEqual, "complete.")
+
+				So(clogger.entry[0].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
+				So(clogger.entry[1].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
+				So(clogger.entry[2].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
+			})
+
+			// ----------------------------------------
+			// tests with a mix of them
+			Convey(`With a mix of partial and complete lines`, func() {
+				ts.add(123, 456, 789)
+				ts.logs[0].GetText().Lines = []*logpb.Text_Line{line("partial ", "")}
+				ts.logs[1].GetText().Lines = []*logpb.Text_Line{line("sentence ", "")}
+				ts.logs[2].GetText().Lines = []*logpb.Text_Line{line("is completed.", "\n")}
+
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 1)
+				So(clogger.entry[0].Payload, ShouldEqual, "partial sentence is completed.")
+			})
+
+			Convey(`With an invalid mix of partial and complete lines`, func() {
+				ts.add(123, 456, 789)
+				ts.logs[0].GetText().Lines = []*logpb.Text_Line{line("partial ", "")}
+				ts.logs[1].GetText().Lines = []*logpb.Text_Line{line("sentence ", "\n")}
+				ts.logs[2].GetText().Lines = []*logpb.Text_Line{line("is completed.", "")}
+
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 1)
+				So(clogger.entry[0].Payload, ShouldEqual, "partial sentence ")
 			})
 		})
 	})

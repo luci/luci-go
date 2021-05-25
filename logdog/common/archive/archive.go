@@ -17,21 +17,33 @@
 package archive
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"fmt"
 	"io"
+	"reflect"
 
 	cl "cloud.google.com/go/logging"
+	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/renderer"
-
-	"github.com/golang/protobuf/proto"
 )
+
+// CLLogger is a general interface for CloudLogging logger and intended to enable
+// unit tests and stub out CloudLogging.
+type CLLogger interface {
+	Log(cl.Entry)
+}
 
 // Manifest is a set of archival parameters.
 type Manifest struct {
+	// LUCIProject is the LUCI project for the stream.
+	LUCIProject string
+
 	// Desc is the logpb.LogStreamDescriptor for the stream.
 	Desc *logpb.LogStreamDescriptor
 	// Source is the LogEntry Source for the stream.
@@ -61,17 +73,19 @@ type Manifest struct {
 	Logger logging.Logger
 
 	// CloudLogger, if not nil, will be used to export archived log entries to Cloud Logging.
-	CloudLogger *cl.Logger
+	CloudLogger CLLogger
 
 	// sizeFunc is a size method override used for testing.
 	sizeFunc func(proto.Message) int
 }
 
 func (m *Manifest) logger() logging.Logger {
-	if m.Logger != nil {
-		return m.Logger
+	if m.Logger == nil ||
+		(reflect.ValueOf(m.Logger).Kind() == reflect.Ptr &&
+			reflect.ValueOf(m.Logger).IsNil()) {
+		return logging.Null
 	}
-	return logging.Null
+	return m.Logger
 }
 
 // Archive performs the log archival described in the supplied Manifest.
@@ -103,11 +117,17 @@ func Archive(m Manifest) error {
 		}
 	}
 
+	// Compute a hash to be used as the ID of the stream in Cloud Logging.
+	sha := sha256.New()
+	sha.Write([]byte(m.LUCIProject))
+	sha.Write([]byte(m.Desc.Name))
+	streamIDHash := sha.Sum(nil)[:16]
+
 	return parallel.FanOutIn(func(taskC chan<- func() error) {
 		logC := make(chan *logpb.LogEntry)
 
 		taskC <- func() error {
-			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx); err != nil {
+			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx, m.CloudLogger, streamIDHash, m.logger()); err != nil {
 				return err
 			}
 
@@ -141,7 +161,7 @@ func Archive(m Manifest) error {
 	})
 }
 
-func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder) error {
+func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder, cloudLogger CLLogger, streamIDHash []byte, logger logging.Logger) error {
 	offset := int64(0)
 	out := func(pb proto.Message) error {
 		d, err := proto.Marshal(pb)
@@ -154,9 +174,15 @@ func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.L
 		return err
 	}
 
+	isCLDisabled := (cloudLogger == nil ||
+		(reflect.ValueOf(cloudLogger).Kind() == reflect.Ptr &&
+			reflect.ValueOf(cloudLogger).IsNil()))
+
 	// Start with our descriptor protobuf. Defer error handling until later, as
 	// we are still responsible for draining "logC".
 	err := out(d)
+	var buf bytes.Buffer
+
 	for le := range logC {
 		if err != nil {
 			continue
@@ -167,6 +193,62 @@ func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.L
 			idx.addLogEntry(le, offset)
 		}
 		err = out(le)
+
+		if isCLDisabled {
+			continue
+		}
+
+		// Export the entry to CloudLogging.
+		lines := le.GetText().Lines
+
+		// check for a partial line.
+		//
+		// An empty Delimiter indicates that the given Line is a partial line, and
+		// the LogEntry must have 0 or 1 partial line only w/o completed lines.
+		switch {
+		case len(lines) == 0: // skip.
+			continue
+		case lines[0].Delimiter == "": // partial line?
+			buf.Write(lines[0].Value)
+			continue
+		}
+
+		for i, l := range lines {
+			buf.Write(l.Value)
+			if i < len(lines)-1 {
+				buf.WriteString(l.Delimiter)
+			}
+		}
+
+		// skip exporting the log, if it was an empty complete line.
+		if buf.Len() > 0 {
+			cloudLogger.Log(toCloudLogEntry(d, le, streamIDHash, buf.String()))
+		}
+		buf.Reset()
+	}
+
+	// Any leftover? The protocol does not allow this to happen.
+	if buf.Len() > 0 {
+		logger.Errorf("Incomplete partial lines detected (%d bytes); skipping", buf.Len())
 	}
 	return err
+}
+
+func toCloudLogEntry(d *logpb.LogStreamDescriptor, le *logpb.LogEntry, streamIDHash []byte, payload string) cl.Entry {
+	ts := d.Timestamp.AsTime()
+	if le.TimeOffset != nil {
+		ts = ts.Add(le.TimeOffset.AsDuration())
+	}
+
+	return cl.Entry{
+		Payload:   payload,
+		Timestamp: ts,
+
+		// InsertID uniquely identifies each LogEntry to dedup entries in CloudLogging.
+		InsertID: fmt.Sprintf("%x/%d", streamIDHash, le.StreamIndex),
+
+		// Set the Trace field with the streamID hash so that Log entries can be grouped together
+		// by the streamID.
+		Trace: fmt.Sprintf("%x", streamIDHash),
+	}
 }
