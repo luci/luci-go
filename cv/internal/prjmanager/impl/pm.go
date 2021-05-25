@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -148,11 +149,11 @@ type pmProcessor struct {
 // LoadState is called to load the state before a transaction.
 func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
 	s := &state.State{
-		PMNotifier:  proc.pmNotifier,
-		RunNotifier: proc.runNotifier,
-		CLPurger:    proc.clPurger,
-		CLPoller:    proc.clPoller,
-		// TODO(tandrii): instantiate component triager.
+		PMNotifier:      proc.pmNotifier,
+		RunNotifier:     proc.runNotifier,
+		CLPurger:        proc.clPurger,
+		CLPoller:        proc.clPoller,
+		ComponentTriage: componentactor.Triage,
 	}
 	switch p, err := prjmanager.Load(ctx, proc.luciProject); {
 	case err != nil:

@@ -35,7 +35,6 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -127,9 +126,8 @@ func TestComponentsActions(t *testing.T) {
 				},
 				NextEvalTime: timestamppb.New(now.Add(1 * time.Minute)),
 			},
-			PMNotifier:                 prjmanager.NewNotifier(ct.TQDispatcher),
-			RunNotifier:                run.NewNotifier(ct.TQDispatcher),
-			testUseNewComponentTriager: true,
+			PMNotifier:  prjmanager.NewNotifier(ct.TQDispatcher),
+			RunNotifier: run.NewNotifier(ct.TQDispatcher),
 		}
 
 		pb := backupPB(state)
@@ -382,6 +380,26 @@ func TestComponentsActions(t *testing.T) {
 				return nil
 			}
 
+			Convey("Silently ignores Run if CV not in charge", func() {
+				// This is temproary test to avoid accidental Run creation w/o ever
+				// finalizing them, see State.createOneRun().
+				ct.DisableCVRunManagement(ctx)
+				makeDirtySetup(1)
+				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+					rc := makeRunCreator(1, false /* succeed */)
+					return itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
+				}
+
+				state2, sideEffect, err := state.ExecDeferred(ctx)
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				pb.Components[1].Dirty = false // must be saved, since Run Creation succeeded.
+				So(state2.PB, ShouldResembleProto, pb)
+				So(findRunOf(1), ShouldBeNil)
+			})
+
+			ct.EnableCVRunManagement(ctx, lProject)
+
 			Convey("100% success", func() {
 				makeDirtySetup(1)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
@@ -472,50 +490,4 @@ func TestComponentsActions(t *testing.T) {
 			})
 		})
 	})
-}
-
-type componentActorSetup struct {
-	nextAction  func(clid int64, now time.Time) (time.Time, error)
-	actErrOnCLs []int64
-	purgeCLs    []int64
-}
-
-func (s *componentActorSetup) factory(c *prjpb.Component, _ componentactor.Supporter) componentActor {
-	return &testCActor{s, c}
-}
-
-type testCActor struct {
-	parent *componentActorSetup
-	c      *prjpb.Component
-}
-
-func (t *testCActor) NextActionTime(_ context.Context, now time.Time) (time.Time, error) {
-	return t.parent.nextAction(t.c.GetClids()[0], now)
-}
-
-func (t *testCActor) Act(context.Context, runcreator.PM, runcreator.RM) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
-	for _, clid := range t.parent.actErrOnCLs {
-		if t.c.GetClids()[0] == clid {
-			return nil, nil, errors.Reason("act-oops %v", t.c).Err()
-		}
-	}
-
-	c := t.c.CloneShallow()
-	c.Dirty = false
-	c.DecisionTime = nil
-
-	for _, clid := range t.parent.purgeCLs {
-		if t.c.GetClids()[0] == clid {
-			ps := []*prjpb.PurgeCLTask{{
-				PurgingCl: &prjpb.PurgingCL{
-					Clid: clid,
-				},
-				Reasons: []*changelist.CLError{
-					{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
-				},
-			}}
-			return c, ps, nil
-		}
-	}
-	return c, nil, nil
 }
