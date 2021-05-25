@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ab4153b_31e4a1a0",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 703,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T05:44:03Z",
+      "side": 1,
+      "message": "should this be 512?",
+      "range": {
+        "startLine": 703,
+        "startChar": 18,
+        "endLine": 703,
+        "endChar": 21
+      },
+      "revId": "66a093d221a1a348fc033bc2da4a2cf546588a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
