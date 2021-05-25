@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as chai from 'chai';
 import { assert } from 'chai';
 
-import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
+import { chaiDeepIncludeProperties } from '../libs/test_utils/chai_deep_include_properties';
 import { Build, Step } from '../services/buildbucket';
 import { BuildExt } from './build_ext';
 import { StepExt } from './step_ext';
 
-chai.use(chaiRecursiveDeepInclude);
+chai.use(chaiDeepIncludeProperties);
 
 describe('BuildExt', () => {
   it('should build step-tree correctly', async () => {
@@ -39,7 +40,7 @@ describe('BuildExt', () => {
       ] as readonly Step[],
     } as Build);
 
-    assert.recursiveDeepInclude(build.rootSteps, [
+    assert.deepIncludeProperties(build.rootSteps, [
       {
         name: 'root1',
         selfName: 'root1',
