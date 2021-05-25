@@ -18,7 +18,13 @@ import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
 import { timeout } from './libs/utils';
 import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from './services/buildbucket';
-import { constructArtifactName, ResultDb } from './services/resultdb';
+import {
+  constructArtifactName,
+  getInvIdFromBuildId,
+  getInvIdFromBuildNum,
+  ResultDb,
+  UISpecificService,
+} from './services/resultdb';
 
 importScripts('/configs.js');
 
@@ -99,6 +105,32 @@ const prefetchResultDBService = new ResultDb(
   )
 );
 
+const prefetchUISpecificService = new UISpecificService(
+  new PrpcClientExt(
+    {
+      host: CONFIGS.RESULT_DB.HOST,
+      fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
+        const req = new Request(info, init);
+        await cachedFetch(
+          {},
+          req,
+          undefined,
+          await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
+          // We could cache this until the fetchUrl expires, but that means
+          // we need to clone the response. A short expire time should work
+          // just fine as the browser should fetch and invalidate the cache
+          // momentarily.
+          5000
+        );
+
+        // Abort the function to prevent the response from being consumed.
+        throw 0;
+      },
+    },
+    () => getAuthStateSync()?.accessToken || ''
+  )
+);
+
 /**
  * Prefetches resources if the url matches certain pattern.
  */
@@ -109,14 +141,14 @@ export async function prefetchResources(reqUrl: URL) {
   if (!authState) {
     return;
   }
-  prefetchBuild(reqUrl);
+  prefetchBuildResources(reqUrl);
   prefetchArtifact(reqUrl);
 }
 
 /**
- * Prefetches the build if the url matches certain pattern.
+ * Prefetches the build page related resources if the url matches certain pattern.
  */
-async function prefetchBuild(reqUrl: URL) {
+async function prefetchBuildResources(reqUrl: URL) {
   let buildId: string | null = null;
   let buildNum: number | null = null;
   let builderId: BuilderID | null = null;
@@ -140,15 +172,29 @@ async function prefetchBuild(reqUrl: URL) {
   }
 
   let getBuildRequest: GetBuildRequest | null = null;
+  let invName: string | null = null;
   if (buildId) {
     getBuildRequest = { id: buildId, fields: BUILD_FIELD_MASK };
+    invName = 'invocations/' + getInvIdFromBuildId(buildId);
   } else if (builderId && buildNum) {
     getBuildRequest = { builder: builderId, buildNumber: buildNum, fields: BUILD_FIELD_MASK };
+    invName = 'invocations/' + (await getInvIdFromBuildNum(builderId, buildNum));
   }
 
   if (getBuildRequest) {
     prefetchBuildsService
       .getBuild(getBuildRequest, CACHE_OPTION)
+      // Ignore any error, let the consumer of the cache deal with it.
+      .catch((_e) => {});
+  }
+
+  if (invName) {
+    prefetchResultDBService
+      .getInvocation({ name: invName }, CACHE_OPTION)
+      // Ignore any error, let the consumer of the cache deal with it.
+      .catch((_e) => {});
+    prefetchUISpecificService
+      .queryTestVariants({ invocations: [invName] }, CACHE_OPTION)
       // Ignore any error, let the consumer of the cache deal with it.
       .catch((_e) => {});
   }
