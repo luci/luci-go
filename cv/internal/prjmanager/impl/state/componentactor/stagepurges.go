@@ -19,36 +19,35 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
+
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-// stagePurges sets .purgeCLtasks and returns `now` if any CLs can be purged.
-//
-// Otherwise, returns the time of the earliest purge or Zero time if no purges
-// should be done.
-func (a *actor) stagePurges(ctx context.Context, now time.Time) time.Time {
-	earliest := time.Time{}
-	for clid, info := range a.cls {
-		switch when := a.purgeETA(info, now); {
+// stagePurges returns either purgeCLtasks for immediate purging OR the earliest
+// time when a CL should be purged. Zero time means no purges to be done.
+func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prjpb.PurgeCLTask, time.Time) {
+	now := clock.Now(ctx)
+	var out []*prjpb.PurgeCLTask
+	next := time.Time{}
+	for clid, info := range cls {
+		switch when := purgeETA(info, now, pm); {
 		case when.IsZero():
 		case when.After(now):
-			if earliest.IsZero() || earliest.After(when) {
-				earliest = when
-			}
+			next = earliest(next, when)
 		default:
-			earliest = now
-			a.purgeCLtasks = append(a.purgeCLtasks, &prjpb.PurgeCLTask{
-				Reasons:   a.cls[clid].purgeReasons,
+			out = append(out, &prjpb.PurgeCLTask{
+				Reasons:   info.purgeReasons,
 				PurgingCl: &prjpb.PurgingCL{Clid: clid},
 			})
 		}
 	}
-	return earliest
+	return out, next
 }
 
 // purgeETA returns the earliest time a CL may be purged and Zero time if CL
 // should not be purged at all.
-func (a *actor) purgeETA(info *clInfo, now time.Time) time.Time {
+func purgeETA(info *clInfo, now time.Time, pm pmState) time.Time {
 	if info.purgeReasons == nil {
 		return time.Time{}
 	}
@@ -56,7 +55,7 @@ func (a *actor) purgeETA(info *clInfo, now time.Time) time.Time {
 		// In case of bad config, waiting doesn't help.
 		return now
 	}
-	cg := a.s.ConfigGroup(info.pcl.GetConfigGroupIndexes()[0])
+	cg := pm.ConfigGroup(info.pcl.GetConfigGroupIndexes()[0])
 	d := cg.Content.GetCombineCls().GetStabilizationDelay()
 	if d == nil {
 		return now
@@ -65,9 +64,5 @@ func (a *actor) purgeETA(info *clInfo, now time.Time) time.Time {
 	if t.IsZero() {
 		panic(fmt.Errorf("CL %d which is not triggered can't be purged (reasons: %s)", info.pcl.GetClid(), info.purgeReasons))
 	}
-	when := t.Add(d.AsDuration())
-	if when.After(now) {
-		return when
-	}
-	return now
+	return t.Add(d.AsDuration())
 }
