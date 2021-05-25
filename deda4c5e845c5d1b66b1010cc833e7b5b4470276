@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eacd9134_d1306529",
+        "filename": "milo/frontend/resultui/src/prefetch.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-25T00:48:40Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 41,
+        "startChar": 46,
+        "endLine": 41,
+        "endChar": 47
+      },
+      "revId": "deda4c5e845c5d1b66b1010cc833e7b5b4470276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "727b88c0_8a71d2c0",
+        "filename": "milo/frontend/resultui/src/prefetch.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-25T00:48:40Z",
+      "side": 1,
+      "message": "note that once build completes, it becomes immutable, so we can have a larger expiration time for completed builds.\n\nOften devs look at failed (\u003dcompleted) builds\n\nsame below, with finalized invocations",
+      "revId": "deda4c5e845c5d1b66b1010cc833e7b5b4470276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
