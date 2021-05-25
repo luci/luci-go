@@ -15,10 +15,7 @@
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
 import { getAuthState, setAuthState } from './auth_state';
-import { cached } from './libs/cached_fn';
-import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
-import { timeout } from './libs/utils';
-import { CACHED_PRPC_URLS, prefetchResources } from './prefetch';
+import { Prefetcher } from './prefetch';
 
 importScripts('/configs.js');
 
@@ -26,23 +23,10 @@ importScripts('/configs.js');
 // Perform manual casting to fix typing.
 const _self = (self as unknown) as ServiceWorkerGlobalScope;
 
-const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
-
 export interface SetAuthStateEventData {
   type: 'SET_AUTH_STATE';
   authState: AuthState | null;
 }
-
-const cachedFetch = cached(
-  // _cacheKey and _expiresIn are not used here but is used in the expire
-  // and key functions below.
-  // they are listed here to help TSC generates the correct type definition.
-  (info: RequestInfo, init: RequestInit | undefined, _cacheKey: unknown, _expiresIn: number) => fetch(info, init),
-  {
-    key: (_info, _init, cacheKey) => cacheKey,
-    expire: ([, , , expiresIn]) => timeout(expiresIn),
-  }
-);
 
 _self.addEventListener('message', async (e) => {
   switch (e.data.type) {
@@ -56,7 +40,13 @@ _self.addEventListener('message', async (e) => {
   }
 });
 
+const prefetcher = new Prefetcher(CONFIGS, _self.fetch.bind(_self));
+
 _self.addEventListener('fetch', async (e) => {
+  if (prefetcher.respondWithPrefetched(e)) {
+    return;
+  }
+
   const url = new URL(e.request.url);
   // Serve cached auth data.
   if (url.pathname === '/ui/cached-auth-state.js') {
@@ -77,20 +67,5 @@ _self.addEventListener('fetch', async (e) => {
     e.respondWith(res);
   }
 
-  prefetchResources(url);
-  if (CACHED_PRPC_URLS.includes(e.request.url)) {
-    e.respondWith(
-      (async () => {
-        const res = await cachedFetch(
-          // The response can't be reused, don't keep it in cache.
-          { skipUpdate: true, invalidateCache: true },
-          e.request,
-          undefined,
-          await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, e.request.clone()),
-          0
-        );
-        return res;
-      })()
-    );
-  }
+  prefetcher.prefetchResources(url);
 });
