@@ -90,3 +90,15 @@ export function teeAsync<T>(iter: AsyncIterator<T>): () => AsyncIterableIterator
     }
   };
 }
+
+/**
+ * Utility function that transforms the iterator to return the index of the item
+ * in addition to the item.
+ */
+export function* enumerate<T>(iter: Iterable<T>): IterableIterator<[number, T]> {
+  let i = 0;
+  for (const item of iter) {
+    yield [i, item];
+    i++;
+  }
+}
