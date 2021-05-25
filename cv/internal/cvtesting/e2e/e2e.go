@@ -193,9 +193,9 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 	)
 
 	// Log only here after all tasks-in-progress are completed.
-	outstanding := make([]string, len(t.TQ.Tasks().Pending()))
-	for i, task := range t.TQ.Tasks().Pending() {
-		outstanding[i] = task.Class
+	var outstanding []string
+	for _, task := range t.TQ.Tasks().Pending() {
+		outstanding = append(outstanding, task.Class)
 	}
 	logging.Debugf(ctx, "RunUntil ran %d iterations, finished %d tasks, left %d tasks", i, len(finished), len(outstanding))
 	for i, v := range finished {
