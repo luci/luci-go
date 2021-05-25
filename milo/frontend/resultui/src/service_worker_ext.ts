@@ -14,8 +14,7 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
-import { get as kvGet, set as kvSet } from 'idb-keyval';
-
+import { getAuthState, setAuthState } from './auth_state';
 import { cached } from './libs/cached_fn';
 import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
@@ -34,13 +33,7 @@ const CACHED_PRPC_URLS = [
 // Perform manual casting to fix typing.
 const _self = (self as unknown) as ServiceWorkerGlobalScope;
 
-const AUTH_STATE_KEY = 'auth-state';
 const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
-
-async function getAuthState() {
-  const cachedAuthState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
-  return cachedAuthState && cachedAuthState.expiresAt > Date.now() ? cachedAuthState : null;
-}
 
 export interface SetAuthStateEventData {
   type: 'SET_AUTH_STATE';
@@ -62,7 +55,7 @@ _self.addEventListener('message', async (e) => {
   switch (e.data.type) {
     case 'SET_AUTH_STATE': {
       const data = e.data as SetAuthStateEventData;
-      await kvSet(AUTH_STATE_KEY, data.authState);
+      setAuthState(data.authState);
       break;
     }
     default:
