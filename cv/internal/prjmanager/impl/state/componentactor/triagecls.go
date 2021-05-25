@@ -33,18 +33,17 @@ func triageCLs(c *prjpb.Component, pm pmState) map[int64]*clInfo {
 	}
 	for index, r := range c.GetPruns() {
 		for _, clid := range r.GetClids() {
-			t := cls[clid]
-			t.runIndexes = append(t.runIndexes, int32(index))
+			info := cls[clid]
+			info.runIndexes = append(info.runIndexes, int32(index))
 		}
 	}
-	a := actor{c: c, s: pm}
-	for clid, info := range cls {
-		a.triageCL(clid, info)
+	for _, info := range cls {
+		info.triage(pm)
 	}
 	return cls
 }
 
-// clInfo represents a CL in the Actor's component.
+// clInfo represents a CL in the PM component of CLs.
 type clInfo struct {
 	pcl *prjpb.PCL
 	// runIndexes are indexes of Component.PRuns which references this CL.
@@ -75,7 +74,7 @@ func (c *clInfo) lastTriggered() time.Time {
 	}
 }
 
-// triagedCL is the result of CL triage (see triageCL()).
+// triagedCL is the result of CL triage (see clInfo.triage()).
 //
 // Note: doesn't take into account `combine_cls.stabilization_delay`,
 // Thus a CL may be ready or with purgeReason but due to stabilization delay,
@@ -95,25 +94,25 @@ type triagedCL struct {
 	ready bool
 }
 
-// triageCL sets triagedCL part of clInfo.
+// triage sets triagedCL part of clInfo.
 //
 // Expects non-triagedCL part of clInfo to be arleady set.
 // panics iff component is not in a valid state.
-func (a *actor) triageCL(clid int64, info *clInfo) {
+func (info *clInfo) triage(pm pmState) {
 	switch {
 	case len(info.runIndexes) > 0:
 		// Once CV supports API based triggering, a CL may be at the same time be in
 		// purged state && have an incomplete Run. The presence in a Run is more
 		// important, so treat as such.
-		a.triageCLInRun(clid, info)
+		info.triageInRun(pm)
 	case info.purgingCL != nil:
-		a.triageCLInPurge(clid, info)
+		info.triageInPurge(pm)
 	default:
-		a.triageCLNew(clid, info)
+		info.triageNew(pm)
 	}
 }
 
-func (a *actor) triageCLInRun(clid int64, info *clInfo) {
+func (info *clInfo) triageInRun(pm pmState) {
 	pcl := info.pcl
 	switch s := pcl.GetStatus(); {
 	case (false || // false is a noop for ease of reading
@@ -134,14 +133,14 @@ func (a *actor) triageCLInRun(clid int64, info *clInfo) {
 	}
 
 	cgIndex := pcl.GetConfigGroupIndexes()[0]
-	info.deps = triageDeps(pcl, cgIndex, a.s)
+	info.deps = triageDeps(pcl, cgIndex, pm)
 	// A purging CL must not be "ready" to avoid creating new Runs with them.
 	if info.deps.OK() && info.purgingCL == nil {
 		info.ready = true
 	}
 }
 
-func (a *actor) triageCLInPurge(clid int64, info *clInfo) {
+func (info *clInfo) triageInPurge(pm pmState) {
 	// The PM hasn't noticed yet the completion of the async purge.
 	// The result of purging is modified CL, which may be observed by PM earlier
 	// than completion of purge.
@@ -171,17 +170,18 @@ func (a *actor) triageCLInPurge(clid int64, info *clInfo) {
 	cgIndexes := pcl.GetConfigGroupIndexes()
 	switch len(cgIndexes) {
 	case 0:
-		panic(fmt.Errorf("PCL %d without ConfigGroup index not possible for CL not referenced by any Runs (partitioning bug?)", clid))
+		panic(fmt.Errorf("PCL %d without ConfigGroup index not possible for CL not referenced by any Runs (partitioning bug?)", pcl.GetClid()))
 	case 1:
-		info.deps = triageDeps(pcl, cgIndexes[0], a.s)
+		info.deps = triageDeps(pcl, cgIndexes[0], pm)
 		// info.deps.OK() may be true, for example if user has already corrected the
 		// mistake that previously reulted in purging op. However, don't mark CL
 		// ready until purging op completes or expires.
 	}
 }
 
-func (a *actor) triageCLNew(clid int64, info *clInfo) {
+func (info *clInfo) triageNew(pm pmState) {
 	pcl := info.pcl
+	clid := pcl.GetClid()
 	assumption := "not possible for CL not referenced by any Runs (partitioning bug?)"
 	switch s := pcl.GetStatus(); s {
 	case prjpb.PCL_DELETED, prjpb.PCL_UNWATCHED, prjpb.PCL_UNKNOWN:
@@ -209,7 +209,7 @@ func (a *actor) triageCLNew(clid int64, info *clInfo) {
 	case 0:
 		panic(fmt.Errorf("PCL %d without ConfigGroup index %s", clid, assumption))
 	case 1:
-		if info.deps = triageDeps(pcl, cgIndexes[0], a.s); info.deps.OK() {
+		if info.deps = triageDeps(pcl, cgIndexes[0], pm); info.deps.OK() {
 			info.ready = true
 		} else {
 			info.purgeReasons = append(info.purgeReasons, info.deps.makePurgeReason())
@@ -217,7 +217,7 @@ func (a *actor) triageCLNew(clid int64, info *clInfo) {
 	default:
 		cgNames := make([]string, len(cgIndexes))
 		for i, idx := range cgIndexes {
-			cgNames[i] = a.s.ConfigGroup(idx).ID.Name()
+			cgNames[i] = pm.ConfigGroup(idx).ID.Name()
 		}
 		info.purgeReasons = append(info.purgeReasons, &changelist.CLError{
 			Kind: &changelist.CLError_WatchedByManyConfigGroups_{
