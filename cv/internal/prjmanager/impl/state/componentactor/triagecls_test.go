@@ -103,7 +103,7 @@ func TestCLsTriage(t *testing.T) {
 			backup := prjpb.PState{}
 			proto.Merge(&backup, sup.pb)
 
-			a := New(c, sup)
+			a := newActor(c, sup)
 			a.triageCLs()
 			So(sup.pb, ShouldResembleProto, &backup) // must not be modified
 			return a
