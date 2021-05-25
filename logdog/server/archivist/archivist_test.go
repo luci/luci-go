@@ -814,21 +814,58 @@ func TestHandleArchive(t *testing.T) {
 				return clc, err
 			}
 
-			desc.Tags = map[string]string{"key1": "val1"}
-			reloadDesc()
-			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+			Convey("With MonitoredResource and labels", func() {
+				desc.Tags = map[string]string{"key1": "val1"}
+				reloadDesc()
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 
-			So(logID, ShouldEqual, "logdog")
-			So(opts[0], ShouldResemble, cl.CommonLabels(map[string]string{"key1": "val1"}))
-			So(opts[1], ShouldResembleProto, cl.CommonResource(&mrpb.MonitoredResource{
-				Type: "generic_task",
-				Labels: map[string]string{
-					"project_id": project,
-					"location":   desc.Name,
-					"namespace":  desc.Prefix,
-					"job":        "cloud-logging-export",
-				},
-			}))
+				So(logID, ShouldEqual, "luci-logs")
+				So(opts[0], ShouldResemble, cl.CommonLabels(map[string]string{"key1": "val1"}))
+				So(opts[1], ShouldResembleProto, cl.CommonResource(&mrpb.MonitoredResource{
+					Type: "generic_task",
+					Labels: map[string]string{
+						"project_id": project,
+						"location":   desc.Name,
+						"namespace":  desc.Prefix,
+						"job":        "cloud-logging-export",
+					},
+				}))
+			})
+
+			Convey("With luci.CloudLogExportID", func() {
+				Convey("Valid", func() {
+					desc.Tags = map[string]string{"luci.CloudLogExportID": "try:pixel_1"}
+					reloadDesc()
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(logID, ShouldEqual, "try:pixel_1")
+				})
+
+				Convey("Empty", func() {
+					desc.Tags = map[string]string{"luci.CloudLogExportID": ""}
+					reloadDesc()
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(logID, ShouldEqual, "luci-logs")
+				})
+
+				Convey("Invalid chars", func() {
+					desc.Tags = map[string]string{"luci.CloudLogExportID": "/try:pixel_1"}
+					reloadDesc()
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(logID, ShouldEqual, "luci-logs")
+				})
+
+				Convey("Too long", func() {
+					longID := make([]rune, 512)
+					for i := 0; i < 512; i++ {
+						longID[i] = '1'
+					}
+
+					desc.Tags = map[string]string{"luci.CloudLogExportID": string(longID)}
+					reloadDesc()
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(logID, ShouldEqual, "luci-logs")
+				})
+			})
 		})
 	})
 }
