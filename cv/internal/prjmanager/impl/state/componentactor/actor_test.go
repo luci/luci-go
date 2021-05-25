@@ -53,7 +53,7 @@ func TestActor(t *testing.T) {
 		}
 
 		const stabilizationDelay = 5 * time.Minute
-		sup := &simpleSupporter{
+		pm := &simplePMState{
 			pb: &prjpb.PState{},
 			cgs: []*config.ConfigGroup{
 				{ID: "hash/singular", Content: &cfgpb.ConfigGroup{}},
@@ -67,17 +67,17 @@ func TestActor(t *testing.T) {
 
 		nextActionTime := func(c *prjpb.Component) (*Actor, time.Time) {
 			backup := prjpb.PState{}
-			proto.Merge(&backup, sup.pb)
+			proto.Merge(&backup, pm.pb)
 
-			a := newActor(c, sup)
+			a := newActor(c, pm)
 			t, err := a.NextActionTime(ctx, ct.Clock.Now().UTC())
 			So(err, ShouldBeNil)
-			So(sup.pb, ShouldResembleProto, &backup)
+			So(pm.pb, ShouldResembleProto, &backup)
 			return a, t
 		}
 
 		Convey("Noops", func() {
-			sup.pb.Pcls = []*prjpb.PCL{
+			pm.pb.Pcls = []*prjpb.PCL{
 				{Clid: 33, ConfigGroupIndexes: []int32{singIdx}, Trigger: dryRun(ct.Clock.Now())},
 			}
 			_, t := nextActionTime(&prjpb.Component{
@@ -90,7 +90,7 @@ func TestActor(t *testing.T) {
 		})
 
 		Convey("Prunes CLs", func() {
-			sup.pb.Pcls = []*prjpb.PCL{
+			pm.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid:               33,
 					ConfigGroupIndexes: nil, // modified below.
@@ -103,7 +103,7 @@ func TestActor(t *testing.T) {
 			oldC := &prjpb.Component{Clids: []int64{33}}
 
 			Convey("singular group -- no delay", func() {
-				sup.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx}
+				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx}
 				a, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC())
 				newC, purgeTasks, err := a.Act(ctx, pmNotifier, runNotifier)
@@ -112,7 +112,7 @@ func TestActor(t *testing.T) {
 				So(newC.GetDirty(), ShouldBeFalse)
 			})
 			Convey("combinable group -- obey stabilization_delay", func() {
-				sup.pb.Pcls[0].ConfigGroupIndexes = []int32{combIdx}
+				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{combIdx}
 
 				_, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC().Add(stabilizationDelay))
@@ -125,8 +125,8 @@ func TestActor(t *testing.T) {
 				So(purgeTasks, ShouldHaveLength, 1)
 			})
 			Convey("many groups -- no delay", func() {
-				sup.pb.Pcls[0].OwnerLacksEmail = false // many groups is an error itself
-				sup.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
+				pm.pb.Pcls[0].OwnerLacksEmail = false // many groups is an error itself
+				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
 				a, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC())
 				_, purgeTasks, err := a.Act(ctx, pmNotifier, runNotifier)
