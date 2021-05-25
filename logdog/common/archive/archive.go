@@ -17,21 +17,46 @@
 package archive
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"fmt"
 	"io"
+	"reflect"
 
 	cl "cloud.google.com/go/logging"
+	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/renderer"
-
-	"github.com/golang/protobuf/proto"
 )
+
+// MaxLenTextContent is the maximum byte length of the text content that can be exported to
+// CloudLogging from a single entry.
+//
+// A stream message is identified by the stream_index of the message, and a message can contain
+// any number of lines. If sum(lines) from a message exceeds this limit, the message is truncated
+// when being exported to CloudLogging.
+//
+// 512KB is large enough to contain most of a single stream message. If a message contains
+// a text with > 512KB, it likely contains a dump of a serialized data object, and such a message
+// is unlikely useful in searches. If necessary, clients should format and shorten the input text
+// reasonably to make messages searchable in a useful way.
+const MaxLenTextContent = 512 * 1024
+
+// CLLogger is a general interface for CloudLogging logger and intended to enable
+// unit tests and stub out CloudLogging.
+type CLLogger interface {
+	Log(cl.Entry)
+}
 
 // Manifest is a set of archival parameters.
 type Manifest struct {
+	// LUCIProject is the LUCI project for the stream.
+	LUCIProject string
+
 	// Desc is the logpb.LogStreamDescriptor for the stream.
 	Desc *logpb.LogStreamDescriptor
 	// Source is the LogEntry Source for the stream.
@@ -61,17 +86,19 @@ type Manifest struct {
 	Logger logging.Logger
 
 	// CloudLogger, if not nil, will be used to export archived log entries to Cloud Logging.
-	CloudLogger *cl.Logger
+	CloudLogger CLLogger
 
 	// sizeFunc is a size method override used for testing.
 	sizeFunc func(proto.Message) int
 }
 
 func (m *Manifest) logger() logging.Logger {
-	if m.Logger != nil {
-		return m.Logger
+	if m.Logger == nil ||
+		(reflect.ValueOf(m.Logger).Kind() == reflect.Ptr &&
+			reflect.ValueOf(m.Logger).IsNil()) {
+		return logging.Null
 	}
-	return logging.Null
+	return m.Logger
 }
 
 // Archive performs the log archival described in the supplied Manifest.
@@ -103,11 +130,18 @@ func Archive(m Manifest) error {
 		}
 	}
 
+	// Compute a hash to be used as the ID of the stream in Cloud Logging.
+	sha := sha256.New()
+	sha.Write([]byte(m.LUCIProject))
+	sha.Write([]byte(m.Desc.Prefix))
+	sha.Write([]byte(m.Desc.Name))
+	streamIDHash := sha.Sum(nil)
+
 	return parallel.FanOutIn(func(taskC chan<- func() error) {
 		logC := make(chan *logpb.LogEntry)
 
 		taskC <- func() error {
-			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx); err != nil {
+			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx, m.CloudLogger, streamIDHash, m.logger()); err != nil {
 				return err
 			}
 
@@ -141,7 +175,7 @@ func Archive(m Manifest) error {
 	})
 }
 
-func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder) error {
+func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder, cloudLogger CLLogger, streamIDHash []byte, logger logging.Logger) error {
 	offset := int64(0)
 	out := func(pb proto.Message) error {
 		d, err := proto.Marshal(pb)
@@ -154,10 +188,17 @@ func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.L
 		return err
 	}
 
+	isCLDisabled := (cloudLogger == nil ||
+		(reflect.ValueOf(cloudLogger).Kind() == reflect.Ptr &&
+			reflect.ValueOf(cloudLogger).IsNil()))
+
 	// Start with our descriptor protobuf. Defer error handling until later, as
 	// we are still responsible for draining "logC".
 	err := out(d)
-	for le := range logC {
+	var buf bytes.Buffer
+	var le *logpb.LogEntry
+
+	for le = range logC {
 		if err != nil {
 			continue
 		}
@@ -167,6 +208,72 @@ func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.L
 			idx.addLogEntry(le, offset)
 		}
 		err = out(le)
+
+		// Export the lines to CloudLogging, if intended.
+		lines := le.GetText().Lines
+		if isCLDisabled || len(lines) == 0 {
+			continue
+		}
+
+		for i, l := range lines {
+			writable := MaxLenTextContent - len("(truncated)") - buf.Len()
+			if writable > 0 {
+				n := min(writable, len(l.Value))
+				buf.Write(l.Value[:n])
+				writable -= n
+
+				if writable > 0 && i < len(lines)-1 {
+					n = min(writable, len(l.Delimiter))
+					buf.WriteString(l.Delimiter[:n])
+					writable -= n
+				}
+
+				if writable == 0 {
+					buf.WriteString("(truncated)")
+				}
+			}
+		}
+
+		// If the last line is not a partial line, the line is the last line of a log chunk.
+		// Export the chunk if so.
+		if lines[len(lines)-1].Delimiter != "" {
+			if buf.Len() > 0 {
+				cloudLogger.Log(toCloudLogEntry(d, le, streamIDHash, buf.String()))
+			}
+			buf.Reset()
+		}
+	}
+
+	// Any leftover?
+	if buf.Len() > 0 {
+		logger.Errorf("A partial line at the end of a stream (%d bytes)", buf.Len())
+		cloudLogger.Log(toCloudLogEntry(d, le, streamIDHash, buf.String()))
 	}
 	return err
+}
+
+func toCloudLogEntry(d *logpb.LogStreamDescriptor, le *logpb.LogEntry, streamIDHash []byte, payload string) cl.Entry {
+	ts := d.Timestamp.AsTime()
+	if le.TimeOffset != nil {
+		ts = ts.Add(le.TimeOffset.AsDuration())
+	}
+
+	return cl.Entry{
+		Payload:   payload,
+		Timestamp: ts,
+
+		// InsertID uniquely identifies each LogEntry to dedup entries in CloudLogging.
+		InsertID: fmt.Sprintf("%x/%d", streamIDHash, le.StreamIndex),
+
+		// Set the Trace field with the streamID hash so that Log entries can be grouped together
+		// by the streamID.
+		Trace: fmt.Sprintf("%x", streamIDHash),
+	}
+}
+
+func min(lhs, rhs int) int {
+	if lhs < rhs {
+		return lhs
+	}
+	return rhs
 }
