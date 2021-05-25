@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "adee2eb1_a098cdfe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T21:25:05Z",
+      "side": 1,
+      "message": "sorry was slow on this 😞",
+      "revId": "af67a6bf8387d3bced6588089d354832715c1c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "59ddc935_9aed2e90",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T21:25:05Z",
+      "side": 1,
+      "message": "I would note that this should be the maximum size of a single _line_; It should still be fine to have many lines together which exceed this.",
+      "range": {
+        "startLine": 47,
+        "startChar": 6,
+        "endLine": 47,
+        "endChar": 23
+      },
+      "revId": "af67a6bf8387d3bced6588089d354832715c1c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9f95852_f6e83e11",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T21:25:05Z",
+      "side": 1,
+      "message": "consider making this a const somewhere near MaxLenTextContent",
+      "range": {
+        "startLine": 219,
+        "startChar": 41,
+        "endLine": 219,
+        "endChar": 50
+      },
+      "revId": "af67a6bf8387d3bced6588089d354832715c1c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1a6d9640_7d45fcbd",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T21:25:05Z",
+      "side": 1,
+      "message": "how large can a cloud log entry be?",
+      "range": {
+        "startLine": 241,
+        "startChar": 20,
+        "endLine": 241,
+        "endChar": 35
+      },
+      "revId": "af67a6bf8387d3bced6588089d354832715c1c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
