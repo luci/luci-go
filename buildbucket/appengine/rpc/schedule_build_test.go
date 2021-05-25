@@ -383,6 +383,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
+					IsLuci:     true,
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:builder",
@@ -599,6 +600,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
+					IsLuci:     true,
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:builder",
@@ -617,6 +619,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
+					IsLuci:     true,
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:builder",
@@ -635,6 +638,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
+					IsLuci:     true,
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:builder",
