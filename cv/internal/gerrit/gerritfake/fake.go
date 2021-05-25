@@ -94,6 +94,17 @@ type Change struct {
 	ACLs AccessCheck
 }
 
+// Copy deep-copies a Change.
+// NOTE: ACLs, which is a reference to a func, isn't deep-copied.
+func (c *Change) Copy() *Change {
+	r := &Change{
+		Host: c.Host,
+		Info: proto.Clone(c.Info).(*gerritpb.ChangeInfo),
+		ACLs: c.ACLs,
+	}
+	return r
+}
+
 type AccessCheck func(op Operation, luciProject string) *status.Status
 
 type Operation int
@@ -565,10 +576,7 @@ func (f *Fake) Has(host string, change int) bool {
 	return ok
 }
 
-// GetChange returns a mutable Change that must exist. Panics otherwise.
-//
-// The returned Change can be modified, but such modification won't be atomic
-// from perspective of concurrent RPCs. Recommended for use in between the RPCs.
+// GetChange returns a copy of a Change that must exist. Panics otherwise.
 func (f *Fake) GetChange(host string, change int) *Change {
 	f.m.Lock()
 	defer f.m.Unlock()
@@ -576,7 +584,7 @@ func (f *Fake) GetChange(host string, change int) *Change {
 	if !ok {
 		panic(fmt.Errorf("CL %s/%d not found", host, change))
 	}
-	return c
+	return c.Copy()
 }
 
 // CreateChange adds a change that must not yet exist.
@@ -591,32 +599,34 @@ func (f *Fake) CreateChange(c *Change) {
 	if _, ok := f.cs[k]; ok {
 		panic(fmt.Errorf("CL %s already exists", k))
 	}
-	f.cs[k] = c
+	f.cs[k] = c.Copy()
 }
 
 // MutateChange modifies a change while holding a lock blocking concurrent RPCs.
 // Change must exist. Panics otherwise.
 func (f *Fake) MutateChange(host string, change int, mut func(c *Change)) {
-	f.m.Lock()
-	defer f.m.Unlock()
-	c, ok := f.cs[key(host, change)]
-	if !ok {
-		panic(fmt.Errorf("CL %s/%d not found", host, change))
-	}
-	mut(c)
-}
-
-// DeleteChange deletes a change that must exist. Panics otherwise.
-func (f *Fake) DeleteChange(host string, change int, mut func(c *Change)) {
 	k := key(host, change)
+
 	f.m.Lock()
 	defer f.m.Unlock()
 	c, ok := f.cs[k]
 	if !ok {
 		panic(fmt.Errorf("CL %s/%d not found", host, change))
 	}
-	delete(f.cs, k)
 	mut(c)
+	// Make a copy, to avoid accidental mutation at call sites.
+	f.cs[k] = c.Copy()
+}
+
+// DeleteChange deletes a change that must exist. Panics otherwise.
+func (f *Fake) DeleteChange(host string, change int) {
+	k := key(host, change)
+	f.m.Lock()
+	defer f.m.Unlock()
+	if _, ok := f.cs[k]; !ok {
+		panic(fmt.Errorf("CL %s/%d not found", host, change))
+	}
+	delete(f.cs, k)
 }
 
 // SetDependsOn establishes Git relationship between a child CL and 1 or more
