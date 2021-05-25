@@ -15,9 +15,9 @@
 
 syntax = "proto3";
 
-package diagnostic;
+package admin;
 
-option go_package = "go.chromium.org/luci/cv/api/diagnostic;diagnosticpb";
+option go_package = "go.chromium.org/luci/cv/internal/admin/api;adminpb";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
@@ -30,10 +30,10 @@ import "go.chromium.org/luci/cv/internal/run/eventpb/events.proto";
 import "go.chromium.org/luci/cv/internal/run/storage.proto";
 
 
-// Diagnostic service is CV maintainers only.
+// Admin is for CV maintainers only.
 //
 // CAN AND WILL CHANGE WITHOUT NOTICE IN BACKWARDS INCOMPATIBLE WAY.
-service Diagnostic {
+service Admin {
 
   // GetProject returns current Project state.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);

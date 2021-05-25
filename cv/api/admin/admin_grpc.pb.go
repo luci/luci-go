@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.1.0
 // - protoc             v3.17.0
-// source: go.chromium.org/luci/cv/api/diagnostic/diagnostic.proto
+// source: go.chromium.org/luci/cv/internal/admin/api/admin.proto
 
-package diagnosticpb
+package adminpb
 
 import (
 	context "context"
@@ -19,10 +19,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// DiagnosticClient is the client API for Diagnostic service.
+// AdminClient is the client API for Admin service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type DiagnosticClient interface {
+type AdminClient interface {
 	// GetProject returns current Project state.
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
 	// GetRun returns current Run state.
@@ -43,90 +43,90 @@ type DiagnosticClient interface {
 	SendRunEvent(ctx context.Context, in *SendRunEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type diagnosticClient struct {
+type adminClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewDiagnosticClient(cc grpc.ClientConnInterface) DiagnosticClient {
-	return &diagnosticClient{cc}
+func NewAdminClient(cc grpc.ClientConnInterface) AdminClient {
+	return &adminClient{cc}
 }
 
-func (c *diagnosticClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
+func (c *adminClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
 	out := new(GetProjectResponse)
-	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/GetProject", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/admin.Admin/GetProject", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *diagnosticClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*GetRunResponse, error) {
+func (c *adminClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*GetRunResponse, error) {
 	out := new(GetRunResponse)
-	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/GetRun", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/admin.Admin/GetRun", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *diagnosticClient) GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error) {
+func (c *adminClient) GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error) {
 	out := new(GetCLResponse)
-	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/GetCL", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/admin.Admin/GetCL", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *diagnosticClient) GetPoller(ctx context.Context, in *GetPollerRequest, opts ...grpc.CallOption) (*GetPollerResponse, error) {
+func (c *adminClient) GetPoller(ctx context.Context, in *GetPollerRequest, opts ...grpc.CallOption) (*GetPollerResponse, error) {
 	out := new(GetPollerResponse)
-	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/GetPoller", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/admin.Admin/GetPoller", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *diagnosticClient) DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error) {
+func (c *adminClient) DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error) {
 	out := new(DeleteProjectEventsResponse)
-	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/DeleteProjectEvents", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/admin.Admin/DeleteProjectEvents", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *diagnosticClient) RefreshProjectCLs(ctx context.Context, in *RefreshProjectCLsRequest, opts ...grpc.CallOption) (*RefreshProjectCLsResponse, error) {
+func (c *adminClient) RefreshProjectCLs(ctx context.Context, in *RefreshProjectCLsRequest, opts ...grpc.CallOption) (*RefreshProjectCLsResponse, error) {
 	out := new(RefreshProjectCLsResponse)
-	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/RefreshProjectCLs", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/admin.Admin/RefreshProjectCLs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *diagnosticClient) SendProjectEvent(ctx context.Context, in *SendProjectEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *adminClient) SendProjectEvent(ctx context.Context, in *SendProjectEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/SendProjectEvent", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/admin.Admin/SendProjectEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *diagnosticClient) SendRunEvent(ctx context.Context, in *SendRunEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *adminClient) SendRunEvent(ctx context.Context, in *SendRunEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/SendRunEvent", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/admin.Admin/SendRunEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// DiagnosticServer is the server API for Diagnostic service.
-// All implementations must embed UnimplementedDiagnosticServer
+// AdminServer is the server API for Admin service.
+// All implementations must embed UnimplementedAdminServer
 // for forward compatibility
-type DiagnosticServer interface {
+type AdminServer interface {
 	// GetProject returns current Project state.
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
 	// GetRun returns current Run state.
@@ -145,234 +145,234 @@ type DiagnosticServer interface {
 	SendProjectEvent(context.Context, *SendProjectEventRequest) (*emptypb.Empty, error)
 	// SendRunEvent sends event to a RM.
 	SendRunEvent(context.Context, *SendRunEventRequest) (*emptypb.Empty, error)
-	mustEmbedUnimplementedDiagnosticServer()
+	mustEmbedUnimplementedAdminServer()
 }
 
-// UnimplementedDiagnosticServer must be embedded to have forward compatible implementations.
-type UnimplementedDiagnosticServer struct {
+// UnimplementedAdminServer must be embedded to have forward compatible implementations.
+type UnimplementedAdminServer struct {
 }
 
-func (UnimplementedDiagnosticServer) GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error) {
+func (UnimplementedAdminServer) GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProject not implemented")
 }
-func (UnimplementedDiagnosticServer) GetRun(context.Context, *GetRunRequest) (*GetRunResponse, error) {
+func (UnimplementedAdminServer) GetRun(context.Context, *GetRunRequest) (*GetRunResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRun not implemented")
 }
-func (UnimplementedDiagnosticServer) GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error) {
+func (UnimplementedAdminServer) GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCL not implemented")
 }
-func (UnimplementedDiagnosticServer) GetPoller(context.Context, *GetPollerRequest) (*GetPollerResponse, error) {
+func (UnimplementedAdminServer) GetPoller(context.Context, *GetPollerRequest) (*GetPollerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPoller not implemented")
 }
-func (UnimplementedDiagnosticServer) DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error) {
+func (UnimplementedAdminServer) DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectEvents not implemented")
 }
-func (UnimplementedDiagnosticServer) RefreshProjectCLs(context.Context, *RefreshProjectCLsRequest) (*RefreshProjectCLsResponse, error) {
+func (UnimplementedAdminServer) RefreshProjectCLs(context.Context, *RefreshProjectCLsRequest) (*RefreshProjectCLsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshProjectCLs not implemented")
 }
-func (UnimplementedDiagnosticServer) SendProjectEvent(context.Context, *SendProjectEventRequest) (*emptypb.Empty, error) {
+func (UnimplementedAdminServer) SendProjectEvent(context.Context, *SendProjectEventRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendProjectEvent not implemented")
 }
-func (UnimplementedDiagnosticServer) SendRunEvent(context.Context, *SendRunEventRequest) (*emptypb.Empty, error) {
+func (UnimplementedAdminServer) SendRunEvent(context.Context, *SendRunEventRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendRunEvent not implemented")
 }
-func (UnimplementedDiagnosticServer) mustEmbedUnimplementedDiagnosticServer() {}
+func (UnimplementedAdminServer) mustEmbedUnimplementedAdminServer() {}
 
-// UnsafeDiagnosticServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to DiagnosticServer will
+// UnsafeAdminServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AdminServer will
 // result in compilation errors.
-type UnsafeDiagnosticServer interface {
-	mustEmbedUnimplementedDiagnosticServer()
+type UnsafeAdminServer interface {
+	mustEmbedUnimplementedAdminServer()
 }
 
-func RegisterDiagnosticServer(s grpc.ServiceRegistrar, srv DiagnosticServer) {
-	s.RegisterService(&Diagnostic_ServiceDesc, srv)
+func RegisterAdminServer(s grpc.ServiceRegistrar, srv AdminServer) {
+	s.RegisterService(&Admin_ServiceDesc, srv)
 }
 
-func _Diagnostic_GetProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_GetProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetProjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiagnosticServer).GetProject(ctx, in)
+		return srv.(AdminServer).GetProject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/diagnostic.Diagnostic/GetProject",
+		FullMethod: "/admin.Admin/GetProject",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticServer).GetProject(ctx, req.(*GetProjectRequest))
+		return srv.(AdminServer).GetProject(ctx, req.(*GetProjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Diagnostic_GetRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_GetRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRunRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiagnosticServer).GetRun(ctx, in)
+		return srv.(AdminServer).GetRun(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/diagnostic.Diagnostic/GetRun",
+		FullMethod: "/admin.Admin/GetRun",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticServer).GetRun(ctx, req.(*GetRunRequest))
+		return srv.(AdminServer).GetRun(ctx, req.(*GetRunRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Diagnostic_GetCL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_GetCL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiagnosticServer).GetCL(ctx, in)
+		return srv.(AdminServer).GetCL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/diagnostic.Diagnostic/GetCL",
+		FullMethod: "/admin.Admin/GetCL",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticServer).GetCL(ctx, req.(*GetCLRequest))
+		return srv.(AdminServer).GetCL(ctx, req.(*GetCLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Diagnostic_GetPoller_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_GetPoller_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPollerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiagnosticServer).GetPoller(ctx, in)
+		return srv.(AdminServer).GetPoller(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/diagnostic.Diagnostic/GetPoller",
+		FullMethod: "/admin.Admin/GetPoller",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticServer).GetPoller(ctx, req.(*GetPollerRequest))
+		return srv.(AdminServer).GetPoller(ctx, req.(*GetPollerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Diagnostic_DeleteProjectEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_DeleteProjectEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteProjectEventsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiagnosticServer).DeleteProjectEvents(ctx, in)
+		return srv.(AdminServer).DeleteProjectEvents(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/diagnostic.Diagnostic/DeleteProjectEvents",
+		FullMethod: "/admin.Admin/DeleteProjectEvents",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticServer).DeleteProjectEvents(ctx, req.(*DeleteProjectEventsRequest))
+		return srv.(AdminServer).DeleteProjectEvents(ctx, req.(*DeleteProjectEventsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Diagnostic_RefreshProjectCLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_RefreshProjectCLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshProjectCLsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiagnosticServer).RefreshProjectCLs(ctx, in)
+		return srv.(AdminServer).RefreshProjectCLs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/diagnostic.Diagnostic/RefreshProjectCLs",
+		FullMethod: "/admin.Admin/RefreshProjectCLs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticServer).RefreshProjectCLs(ctx, req.(*RefreshProjectCLsRequest))
+		return srv.(AdminServer).RefreshProjectCLs(ctx, req.(*RefreshProjectCLsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Diagnostic_SendProjectEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_SendProjectEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendProjectEventRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiagnosticServer).SendProjectEvent(ctx, in)
+		return srv.(AdminServer).SendProjectEvent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/diagnostic.Diagnostic/SendProjectEvent",
+		FullMethod: "/admin.Admin/SendProjectEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticServer).SendProjectEvent(ctx, req.(*SendProjectEventRequest))
+		return srv.(AdminServer).SendProjectEvent(ctx, req.(*SendProjectEventRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Diagnostic_SendRunEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_SendRunEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendRunEventRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiagnosticServer).SendRunEvent(ctx, in)
+		return srv.(AdminServer).SendRunEvent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/diagnostic.Diagnostic/SendRunEvent",
+		FullMethod: "/admin.Admin/SendRunEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticServer).SendRunEvent(ctx, req.(*SendRunEventRequest))
+		return srv.(AdminServer).SendRunEvent(ctx, req.(*SendRunEventRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Diagnostic_ServiceDesc is the grpc.ServiceDesc for Diagnostic service.
+// Admin_ServiceDesc is the grpc.ServiceDesc for Admin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Diagnostic_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "diagnostic.Diagnostic",
-	HandlerType: (*DiagnosticServer)(nil),
+var Admin_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "admin.Admin",
+	HandlerType: (*AdminServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetProject",
-			Handler:    _Diagnostic_GetProject_Handler,
+			Handler:    _Admin_GetProject_Handler,
 		},
 		{
 			MethodName: "GetRun",
-			Handler:    _Diagnostic_GetRun_Handler,
+			Handler:    _Admin_GetRun_Handler,
 		},
 		{
 			MethodName: "GetCL",
-			Handler:    _Diagnostic_GetCL_Handler,
+			Handler:    _Admin_GetCL_Handler,
 		},
 		{
 			MethodName: "GetPoller",
-			Handler:    _Diagnostic_GetPoller_Handler,
+			Handler:    _Admin_GetPoller_Handler,
 		},
 		{
 			MethodName: "DeleteProjectEvents",
-			Handler:    _Diagnostic_DeleteProjectEvents_Handler,
+			Handler:    _Admin_DeleteProjectEvents_Handler,
 		},
 		{
 			MethodName: "RefreshProjectCLs",
-			Handler:    _Diagnostic_RefreshProjectCLs_Handler,
+			Handler:    _Admin_RefreshProjectCLs_Handler,
 		},
 		{
 			MethodName: "SendProjectEvent",
-			Handler:    _Diagnostic_SendProjectEvent_Handler,
+			Handler:    _Admin_SendProjectEvent_Handler,
 		},
 		{
 			MethodName: "SendRunEvent",
-			Handler:    _Diagnostic_SendRunEvent_Handler,
+			Handler:    _Admin_SendRunEvent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "go.chromium.org/luci/cv/api/diagnostic/diagnostic.proto",
+	Metadata: "go.chromium.org/luci/cv/internal/admin/api/admin.proto",
 }
