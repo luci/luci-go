@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a261be1_69a9ec3f",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T13:22:10Z",
+      "side": 1,
+      "message": "yes. Clarified.",
+      "parentUuid": "e0e7580a_8e862ee7",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 20
+      },
+      "revId": "18bacd306e162566f66adbd343e05cafb68171e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e49a5661_11ab4331",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-05-25T04:53:33Z",
       "side": 1,
       "message": "This comment needs to be updated.",
+      "range": {
+        "startLine": 84,
+        "startChar": 3,
+        "endLine": 84,
+        "endChar": 71
+      },
+      "revId": "18bacd306e162566f66adbd343e05cafb68171e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "511c1047_6483c703",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T13:22:10Z",
+      "side": 1,
+      "message": "I\u0027ll delete this struct entirely soon: https://crrev.com/c/2912877/1",
+      "parentUuid": "e49a5661_11ab4331",
       "range": {
         "startLine": 84,
         "startChar": 3,
