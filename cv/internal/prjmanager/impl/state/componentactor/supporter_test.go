@@ -19,12 +19,12 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-type simpleSupporter struct {
+type simplePMState struct {
 	pb  *prjpb.PState
 	cgs []*config.ConfigGroup
 }
 
-func (s *simpleSupporter) PCL(clid int64) *prjpb.PCL {
+func (s *simplePMState) PCL(clid int64) *prjpb.PCL {
 	for _, pcl := range s.pb.GetPcls() {
 		if pcl.GetClid() == clid {
 			return pcl
@@ -33,7 +33,7 @@ func (s *simpleSupporter) PCL(clid int64) *prjpb.PCL {
 	return nil
 }
 
-func (s *simpleSupporter) PurgingCL(clid int64) *prjpb.PurgingCL {
+func (s *simplePMState) PurgingCL(clid int64) *prjpb.PurgingCL {
 	for _, p := range s.pb.GetPurgingCls() {
 		if p.GetClid() == clid {
 			return p
@@ -42,6 +42,6 @@ func (s *simpleSupporter) PurgingCL(clid int64) *prjpb.PurgingCL {
 	return nil
 }
 
-func (s *simpleSupporter) ConfigGroup(index int32) *config.ConfigGroup {
+func (s *simplePMState) ConfigGroup(index int32) *config.ConfigGroup {
 	return s.cgs[index]
 }

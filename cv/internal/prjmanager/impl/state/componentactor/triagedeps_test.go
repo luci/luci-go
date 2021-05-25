@@ -102,7 +102,7 @@ func TestDepsTriage(t *testing.T) {
 			return &run.Trigger{Mode: string(run.FullRun), Time: timestamppb.New(t)}
 		}
 
-		sup := &simpleSupporter{
+		sup := &simplePMState{
 			pb: &prjpb.PState{},
 			cgs: []*config.ConfigGroup{
 				{ID: "hash/singular", Content: &cfgpb.ConfigGroup{}},
