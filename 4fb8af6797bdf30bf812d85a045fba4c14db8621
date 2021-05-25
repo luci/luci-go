@@ -22,6 +22,30 @@
       },
       "revId": "4fb8af6797bdf30bf812d85a045fba4c14db8621",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f081b76_5a614c9d",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-25T12:54:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cda0244a_843621f8",
+      "range": {
+        "startLine": 222,
+        "startChar": 13,
+        "endLine": 222,
+        "endChar": 14
+      },
+      "revId": "4fb8af6797bdf30bf812d85a045fba4c14db8621",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
