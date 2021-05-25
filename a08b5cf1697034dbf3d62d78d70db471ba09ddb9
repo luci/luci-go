@@ -108,6 +108,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e1d799a9_993a01ac",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T05:59:03Z",
+      "side": 1,
+      "message": "yep, sgtm",
+      "parentUuid": "397d9018_61c19c14",
+      "revId": "a08b5cf1697034dbf3d62d78d70db471ba09ddb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1ec47fc7_84e474cf",
         "filename": "logdog/common/archive/archive.go",
         "patchSetId": 4

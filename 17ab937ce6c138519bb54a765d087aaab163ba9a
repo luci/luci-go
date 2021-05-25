@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "caa48f57_c2e239e5",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T05:59:03Z",
+      "side": 1,
+      "message": "why truncate? If you want to save space, consider using ascii85 (https://golang.org/pkg/encoding/ascii85/) with the full hash (40 ascii chars), rather than printing it in hexadecimal (your halved sha currently takes 32 ascii chars)",
+      "range": {
+        "startLine": 125,
+        "startChar": 31,
+        "endLine": 125,
+        "endChar": 33
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ccb2a17c_bc984a3a",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T05:59:03Z",
+      "side": 1,
+      "message": "I think you want to look to see if the LAST line is partial?",
+      "range": {
+        "startLine": 212,
+        "startChar": 0,
+        "endLine": 212,
+        "endChar": 49
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "09fba706_4489d126",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T05:59:03Z",
+      "side": 1,
+      "message": "I think that strings.Builder (https://golang.org/pkg/strings/#Builder) is going to be more efficient for this (no extra copy at the end here)",
+      "range": {
+        "startLine": 226,
+        "startChar": 60,
+        "endLine": 226,
+        "endChar": 66
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "588589ee_d95d611d",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-25T05:59:03Z",
+      "side": 1,
+      "message": "maybe write them to cloud logging anyway?",
+      "range": {
+        "startLine": 233,
+        "startChar": 63,
+        "endLine": 233,
+        "endChar": 71
+      },
+      "revId": "17ab937ce6c138519bb54a765d087aaab163ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
