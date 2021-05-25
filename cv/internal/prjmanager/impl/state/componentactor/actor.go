@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
 
 // Triage triages a component with 1+ CLs deciding what has to be done now and
@@ -33,18 +32,17 @@ import (
 func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriager.Result, error) {
 	pm := pmState{s}
 	res := itriager.Result{}
-	var nextPurge, whenNewRun time.Time
+	var nextPurge, nextRun time.Time
+	var err error
 
-	a := actor{c: c, s: pm}
-	a.cls = triageCLs(c, pm)
-	res.CLsToPurge, nextPurge = stagePurges(ctx, a.cls, pm)
-	whenNewRun, err := a.stageNewRuns(ctx)
+	cls := triageCLs(c, pm)
+	res.CLsToPurge, nextPurge = stagePurges(ctx, cls, pm)
+	res.RunsToCreate, nextRun, err = stageNewRuns(ctx, cls, pm)
 	if err != nil {
 		return res, err
 	}
 
-	if len(a.runCreators) > 0 || len(res.CLsToPurge) > 0 {
-		res.RunsToCreate = a.runCreators
+	if len(res.RunsToCreate) > 0 || len(res.CLsToPurge) > 0 {
 		res.NewValue = c.CloneShallow()
 		res.NewValue.Dirty = false
 		// Wait for the Run Creation or the CL Purging to finish, which will result
@@ -53,31 +51,16 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 		return res, nil
 	}
 
-	when := earliest(nextPurge, whenNewRun)
-	if c.GetDirty() || !isSameTime(when, c.GetDecisionTime()) {
+	next := earliest(nextPurge, nextRun)
+	if c.GetDirty() || !isSameTime(next, c.GetDecisionTime()) {
 		res.NewValue = c.CloneShallow()
 		res.NewValue.Dirty = false
 		res.NewValue.DecisionTime = nil
-		if !when.IsZero() {
-			res.NewValue.DecisionTime = timestamppb.New(when)
+		if !next.IsZero() {
+			res.NewValue.DecisionTime = timestamppb.New(next)
 		}
 	}
 	return res, nil
-}
-
-type actor struct {
-	c *prjpb.Component
-	// TODO(tandrii): rename to pm after merging multi-CL Run creation.
-	s pmState
-
-	// cls provides clid -> info for each CL of the component.
-	cls map[int64]*clInfo
-
-	// visitedCLs tracks clid of visited CLs during stageNewRuns.
-	visitedCLs map[int64]struct{}
-
-	// runCreators are prepared by NextActionTime() and executed in Act().
-	runCreators []*runcreator.Creator
 }
 
 type pmState struct {

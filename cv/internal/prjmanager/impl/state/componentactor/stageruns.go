@@ -20,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -34,46 +33,55 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// stageNewRuns sets .Creators if new Runs have to be created.
+// stageNewRuns returns Run Creators for immediate Run creation or the earliest
+// time for the next Run to be created.
 //
-// Otherwise, returns the time when this could be done.
-// NOTE: because this function may take considerable time, the returned time may
-// be already in the past.
-//
-// Guarantees that a CL can be in at most 1 Creator. This avoids conflicts
-// whereby 2+ Runs need to modify the same CL entity.
-func (a *actor) stageNewRuns(ctx context.Context) (time.Time, error) {
-	a.visitedCLs = map[int64]struct{}{}
-	defer func() { a.visitedCLs = nil }() // won't be useful afterwards.
+// Guarantees that returned Run Creators are disjoint, and thus can be created
+// totally independently.
+func stageNewRuns(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*runcreator.Creator, time.Time, error) {
+	var next time.Time
+	var out []*runcreator.Creator
 
-	var t time.Time
-	for clid, info := range a.cls {
-		switch nt, err := a.stageNewRunsFrom(ctx, clid, info); {
+	rs := runStage{
+		visitedCLs: make(map[int64]struct{}, len(cls)),
+		pm:         pm,
+	}
+	for clid, info := range cls {
+		switch rc, nt, err := rs.stageNewRunsFrom(ctx, clid, info); {
 		case err != nil:
-			return t, err
-		case !nt.IsZero() && (t.IsZero() || nt.Before(t)):
-			t = nt
+			return nil, time.Time{}, err
+		case rc != nil:
+			out = append(out, rc)
+		default:
+			next = earliest(next, nt)
 		}
 	}
-	return t, nil
+	return out, next, nil
 }
 
-func (a *actor) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) (time.Time, error) {
+type runStage struct {
+	visitedCLs map[int64]struct{}
+	pm         pmState
+}
+
+// TODO(tandrii): rename (a *runStage) to (rs *runStage).
+
+func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) (*runcreator.Creator, time.Time, error) {
 	if !a.markVisited(clid) || !info.ready {
-		return time.Time{}, nil
+		return nil, time.Time{}, nil
 	}
 	cgIndex := info.pcl.GetConfigGroupIndexes()[0]
-	cg := a.s.ConfigGroup(cgIndex)
+	cg := a.pm.ConfigGroup(cgIndex)
 	if cg.Content.GetCombineCls() == nil {
 		return a.stageNewRunsSingle(ctx, info, cg)
 	}
 	return a.stageNewRunsCombo(ctx, info, cg)
 }
 
-func (a *actor) stageNewRunsSingle(ctx context.Context, info *clInfo, cg *config.ConfigGroup) (time.Time, error) {
+func (a *runStage) stageNewRunsSingle(ctx context.Context, info *clInfo, cg *config.ConfigGroup) (*runcreator.Creator, time.Time, error) {
 	if len(info.runIndexes) > 0 {
 		// Singular case today doesn't support concurrent runs.
-		return time.Time{}, nil
+		return nil, time.Time{}, nil
 	}
 	if len(info.deps.notYetLoaded) > 0 {
 		return a.postponeDueNotYetLoadedDeps(ctx, info)
@@ -81,20 +89,19 @@ func (a *actor) stageNewRunsSingle(ctx context.Context, info *clInfo, cg *config
 
 	combo := combo{}
 	combo.add(info)
-	rb, err := a.makeCreator(ctx, &combo, cg)
+	rc, err := a.makeCreator(ctx, &combo, cg)
 	if err != nil {
-		return time.Time{}, err
+		return nil, time.Time{}, err
 	}
-	a.runCreators = append(a.runCreators, rb)
-	return clock.Now(ctx), nil
+	return rc, time.Time{}, nil
 }
 
-func (a *actor) stageNewRunsCombo(ctx context.Context, info *clInfo, cg *config.ConfigGroup) (time.Time, error) {
+func (a *runStage) stageNewRunsCombo(ctx context.Context, info *clInfo, cg *config.ConfigGroup) (*runcreator.Creator, time.Time, error) {
 	//TODO(tandrii): implement
-	return time.Time{}, nil
+	return nil, time.Time{}, nil
 }
 
-func (a *actor) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (time.Time, error) {
+func (a *runStage) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): this waiting can last forever. Component needs to
 	// record how long it has been waiting and abort with clear message to the
 	// user.
@@ -105,10 +112,10 @@ func (a *actor) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (
 	}
 	sb.WriteRune(']')
 	logging.Warningf(ctx, sb.String())
-	return time.Time{}, nil
+	return nil, time.Time{}, nil
 }
 
-func (a *actor) makeCreator(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*runcreator.Creator, error) {
+func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*runcreator.Creator, error) {
 	latestIndex := -1
 	cls := make([]*changelist.CL, len(combo.all))
 	for i, info := range combo.all {
@@ -160,7 +167,7 @@ func (a *actor) makeCreator(ctx context.Context, combo *combo, cg *config.Config
 }
 
 // markVisited makes CL visited if not already and returns if action was taken.
-func (a *actor) markVisited(clid int64) bool {
+func (a *runStage) markVisited(clid int64) bool {
 	if _, visited := a.visitedCLs[clid]; visited {
 		return false
 	}
