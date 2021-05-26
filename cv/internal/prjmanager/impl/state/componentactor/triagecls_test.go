@@ -300,7 +300,9 @@ func TestCLsTriage(t *testing.T) {
 						},
 						deps: &triagedDeps{
 							lastTriggered: epoch,
-							incompatMode:  sup.PCL(3).GetDeps(),
+							invalidDeps: &changelist.CLError_InvalidDeps{
+								IncompatMode: sup.PCL(3).GetDeps(),
+							},
 						},
 					},
 				})
@@ -335,7 +337,9 @@ func TestCLsTriage(t *testing.T) {
 						deps: &triagedDeps{
 							lastTriggered: epoch.UTC(),
 							submitted:     []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
-							incompatMode:  []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
+							invalidDeps: &changelist.CLError_InvalidDeps{
+								IncompatMode: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
+							},
 						},
 					},
 				})
@@ -404,7 +408,9 @@ func TestCLsTriage(t *testing.T) {
 						},
 						deps: &triagedDeps{
 							lastTriggered: epoch,
-							incompatMode:  sup.PCL(3).GetDeps(),
+							invalidDeps: &changelist.CLError_InvalidDeps{
+								IncompatMode: sup.PCL(3).GetDeps(),
+							},
 						},
 					},
 				})
@@ -420,9 +426,7 @@ func TestCLsTriage(t *testing.T) {
 					So(info.purgeReasons, ShouldResembleProto, []*changelist.CLError{
 						{
 							Kind: &changelist.CLError_InvalidDeps_{
-								InvalidDeps: &changelist.CLError_InvalidDeps{
-									WrongConfigGroup: info.triagedCL.deps.wrongConfigGroup,
-								},
+								InvalidDeps: info.triagedCL.deps.invalidDeps,
 							},
 						},
 					})
