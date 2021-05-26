@@ -190,17 +190,21 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 			So(excludedCLs, ShouldResemble, []string{fmt.Sprintf("%s/%d", gHost, gChange)})
 		}
 
-		// TODO(yiwzhang): implement missing Run handlers and uncomment.
-		// ct.LogPhase(ctx, "CV finalizes the run and sends BQ event")
-		// ct.RunUntil(ctx, func() bool {
-		// 	r2 := ct.LoadRun(ctx, r.ID)
-		// 	p := ct.LoadProject(ctx, lProject)
-		// 	return r2.Status == run.Status_SUCCEEDED && len(p.State.GetComponents()) == 0
-		// })
+		ct.LogPhase(ctx, "CV finalizes the run and sends BQ event")
+		var finalRun *run.Run
+		ct.RunUntil(ctx, func() bool {
+			finalRun = ct.LoadRun(ctx, r.ID)
+			proj := ct.LoadProject(ctx, lProject)
+			cl := ct.LoadGerritCL(ctx, gHost, gChange)
+			return run.IsEnded(finalRun.Status) &&
+				len(proj.State.GetComponents()) == 0 &&
+				!cl.IncompleteRuns.ContainsSorted(r.ID)
+		})
 
-		// Verify that votes were removed.
-		// So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
-		// So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
+		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
+		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
+		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "Quick dry run: This CL passed the CQ dry run.")
 
 		// Verify that BQ row was exported.
 		// TODO(qyearsley): implement.
