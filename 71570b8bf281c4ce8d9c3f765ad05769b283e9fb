@@ -16,6 +16,24 @@
       "message": "looks like the same code copied 3 times?",
       "revId": "71570b8bf281c4ce8d9c3f765ad05769b283e9fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0ce5eab_9c0abba5",
+        "filename": "milo/frontend/resultui/src/prefetch.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-26T00:03:08Z",
+      "side": 1,
+      "message": "deduped.",
+      "parentUuid": "880528c7_cbacbd68",
+      "revId": "71570b8bf281c4ce8d9c3f765ad05769b283e9fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
