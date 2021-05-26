@@ -46,6 +46,30 @@
       },
       "revId": "5ba2a4c3845dd90d14b5539d3fac3a9dd7e2f95f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0107c4c6_e7c24a03",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-26T03:46:46Z",
+      "side": 1,
+      "message": "looks better, thanks",
+      "parentUuid": "b1886862_15379509",
+      "range": {
+        "startLine": 574,
+        "startChar": 31,
+        "endLine": 575,
+        "endChar": 56
+      },
+      "revId": "5ba2a4c3845dd90d14b5539d3fac3a9dd7e2f95f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
