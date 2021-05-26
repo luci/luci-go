@@ -34,6 +34,24 @@
       "parentUuid": "1eaeb415_050487c3",
       "revId": "6e33ec41b479b6a5b0d9d373461065b7cf29b270",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad1ddb91_3db3e56a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-26T00:17:37Z",
+      "side": 1,
+      "message": "Refresh of any kind doesn\u0027t work anymore as a result of\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2910022\n\nYou need to\n1. Load the page.\n2. Wait a few seconds for the new version to install.\n3. Close all pages under weiweilin-0-dot-luci-milo-dev.appspot.com\n4. Load the page again.\nThis is because the new version of the service worker won\u0027t activate until the old version no longer have any connected client (browser tab), and refresh doesn\u0027t disconnect the client.\n\nAlternatively, you can go to the chrome-dev-tool -\u003e application tab -\u003e service worker -\u003e click on skip waiting -\u003e refresh the page.\n\nThis also means users need to close all existing pages or the new version will never take effect. I\u0027ll try to find solution for this.",
+      "parentUuid": "1b80091d_36d94e6f",
+      "revId": "6e33ec41b479b6a5b0d9d373461065b7cf29b270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
