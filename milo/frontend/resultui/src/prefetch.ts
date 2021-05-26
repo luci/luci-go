@@ -18,7 +18,13 @@ import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
 import { timeout } from './libs/utils';
 import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from './services/buildbucket';
-import { constructArtifactName, ResultDb } from './services/resultdb';
+import {
+  constructArtifactName,
+  getInvIdFromBuildId,
+  getInvIdFromBuildNum,
+  ResultDb,
+  UISpecificService,
+} from './services/resultdb';
 
 const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
 
@@ -45,6 +51,8 @@ export class Prefetcher {
   private readonly cachedPrpcUrls: readonly string[] = [
     `https://${this.configs.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
     `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
+    `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
+    `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants`,
   ];
 
   private cachedFetch = cached(
@@ -59,51 +67,34 @@ export class Prefetcher {
     }
   );
 
-  private prefetchBuildsService = new BuildsService(
-    new PrpcClientExt(
-      {
-        host: CONFIGS.BUILDBUCKET.HOST,
-        fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
-          const req = new Request(info, init);
-          await this.cachedFetch(
-            {},
-            req,
-            undefined,
-            await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
-            CACHE_DURATION // See the documentation for CACHE_DURATION.
-          );
-
-          // Abort the function to prevent the response from being consumed.
-          throw 0;
-        },
-      },
-      () => getAuthStateSync()?.accessToken || ''
-    )
-  );
-
-  private prefetchResultDBService = new ResultDb(
-    new PrpcClientExt(
-      {
-        host: CONFIGS.RESULT_DB.HOST,
-        fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
-          const req = new Request(info, init);
-          await this.cachedFetch(
-            {},
-            req,
-            undefined,
-            await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
-            CACHE_DURATION // See the documentation for CACHE_DURATION.
-          );
-
-          // Abort the function to prevent the response from being consumed.
-          throw 0;
-        },
-      },
-      () => getAuthStateSync()?.accessToken || ''
-    )
-  );
+  private prefetchBuildsService = new BuildsService(this.makePrpcClient(this.configs.BUILDBUCKET.HOST));
+  private prefetchResultDBService = new ResultDb(this.makePrpcClient(this.configs.RESULT_DB.HOST));
+  private prefetchUISpecificService = new UISpecificService(this.makePrpcClient(this.configs.RESULT_DB.HOST));
 
   constructor(private readonly configs: typeof CONFIGS, private readonly fetchImpl: typeof fetch) {}
+
+  private makePrpcClient(host: string) {
+    return new PrpcClientExt(
+      {
+        host,
+        fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
+          const req = new Request(info, init);
+          await this.cachedFetch(
+            {},
+            req,
+            undefined,
+            await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
+            CACHE_DURATION // See the documentation for CACHE_DURATION.
+          );
+
+          // Abort the function to prevent the response from being consumed.
+          throw 0;
+        },
+      },
+
+      () => getAuthStateSync()?.accessToken || ''
+    );
+  }
 
   /**
    * Prefetches resources if the URL matches certain pattern.
@@ -117,17 +108,18 @@ export class Prefetcher {
     if (!authState) {
       return;
     }
-    this.prefetchBuild(reqUrl);
-    this.prefetchArtifact(reqUrl);
+    this.prefetchBuildPageResources(reqUrl);
+    this.prefetchArtifactPageResources(reqUrl);
   }
 
   /**
-   * Prefetches the build if the URL matches certain pattern.
+   * Prefetches build page related resources if the URL matches certain pattern.
    */
-  private async prefetchBuild(reqUrl: URL) {
+  private async prefetchBuildPageResources(reqUrl: URL) {
     let buildId: string | null = null;
     let buildNum: number | null = null;
     let builderId: BuilderID | null = null;
+    let invName: string | null = null;
 
     // TODO(crbug/1108198): remove the /ui prefix.
     let match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
@@ -150,8 +142,10 @@ export class Prefetcher {
     let getBuildRequest: GetBuildRequest | null = null;
     if (buildId) {
       getBuildRequest = { id: buildId, fields: BUILD_FIELD_MASK };
+      invName = 'invocations/' + getInvIdFromBuildId(buildId);
     } else if (builderId && buildNum) {
       getBuildRequest = { builder: builderId, buildNumber: buildNum, fields: BUILD_FIELD_MASK };
+      invName = 'invocations/' + (await getInvIdFromBuildNum(builderId, buildNum));
     }
 
     if (getBuildRequest) {
@@ -160,12 +154,24 @@ export class Prefetcher {
         // Ignore any error, let the consumer of the cache deal with it.
         .catch((_e) => {});
     }
+
+    if (invName) {
+      this.prefetchResultDBService
+        .getInvocation({ name: invName }, CACHE_OPTION)
+        // Ignore any error, let the consumer of the cache deal with it.
+        .catch((_e) => {});
+      this.prefetchUISpecificService
+        .queryTestVariants({ invocations: [invName] }, CACHE_OPTION)
+        // Ignore any error, let the consumer of the cache deal with it.
+        .catch((_e) => {});
+    }
   }
 
   /**
-   * Prefetches the artifact if the URL matches certain pattern.
+   * Prefetches artifact page related resources if the URL matches certain
+   * pattern.
    */
-  private async prefetchArtifact(reqUrl: URL) {
+  private async prefetchArtifactPageResources(reqUrl: URL) {
     // TODO(crbug/1108198): remove the /ui prefix.
     const match = reqUrl.pathname.match(
       /^\/ui\/artifact\/(?:[^/]+)\/invocations\/([^/]+)(?:\/tests\/([^/]+)\/results\/([^/]+))?\/artifacts\/([^/]+)\/?/i
