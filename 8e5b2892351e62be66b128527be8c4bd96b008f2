@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "577cae19_20e9991e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-05-26T05:23:58Z",
+      "side": 1,
+      "message": "To see the effect, you need to load\n\nhttps://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/12005/overview\n\ngo to chrome-dev-tool -\u003e application -\u003e service worker -\u003e skip waiting -\u003e refresh page.\nthen ping me.\nI\u0027ll push a new version so you can see the snackbar.\n",
+      "revId": "8e5b2892351e62be66b128527be8c4bd96b008f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
