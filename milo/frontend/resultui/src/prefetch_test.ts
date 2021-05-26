@@ -20,7 +20,7 @@ import { setAuthState } from './auth_state';
 import { PrpcClientExt } from './libs/prpc_client_ext';
 import { Prefetcher } from './prefetch';
 import { BUILD_FIELD_MASK, BuildsService } from './services/buildbucket';
-import { ResultDb } from './services/resultdb';
+import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb, UISpecificService } from './services/resultdb';
 
 describe('prefetch', () => {
   let fetchStub: sinon.SinonStub<[RequestInfo, RequestInit | undefined], Promise<Response>>;
@@ -32,6 +32,7 @@ describe('prefetch', () => {
   let fetchInterceptor: sinon.SinonStub<[RequestInfo, RequestInit | undefined], Promise<Response>>;
   let buildsService: BuildsService;
   let resultdb: ResultDb;
+  let uiSpecifiedService: UISpecificService;
 
   beforeEach(async () => {
     await setAuthState({ accessToken: 'access-token', userId: 'user-id', expiresAt: Infinity });
@@ -47,11 +48,30 @@ describe('prefetch', () => {
     resultdb = new ResultDb(
       new PrpcClientExt({ host: CONFIGS.RESULT_DB.HOST, fetchImpl: fetchInterceptor }, () => 'access-token')
     );
+    uiSpecifiedService = new UISpecificService(
+      new PrpcClientExt({ host: CONFIGS.RESULT_DB.HOST, fetchImpl: fetchInterceptor }, () => 'access-token')
+    );
   });
 
   it('prefetches build page resources', async () => {
-    const buildResponse = new Response(JSON.stringify({ buildId: '123456789' }));
+    const buildResponse = new Response(JSON.stringify({}));
+    const invResponse = new Response(JSON.stringify({}));
+    const testVariantsResponse = new Response(JSON.stringify({}));
+
     fetchStub.onCall(0).resolves(buildResponse);
+    fetchStub.onCall(1).resolves(invResponse);
+    fetchStub.onCall(2).resolves(testVariantsResponse);
+
+    const invName =
+      'invocations/' +
+      (await getInvIdFromBuildNum(
+        {
+          project: 'chromium',
+          bucket: 'ci',
+          builder: 'Win7 Tests (1)',
+        },
+        116372
+      ));
 
     await prefetcher.prefetchResources(
       new URL('https://luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/Win7%20Tests%20(1)/116372')
@@ -60,8 +80,12 @@ describe('prefetch', () => {
     await aTimeout(100);
 
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
-    assert.strictEqual(requestedUrls.length, 1);
-    assert.includeMembers(requestedUrls, [`https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`]);
+    assert.strictEqual(requestedUrls.length, 3);
+    assert.includeMembers(requestedUrls, [
+      `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
+      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
+      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants`,
+    ]);
 
     buildsService.getBuild({
       builder: {
@@ -73,43 +97,108 @@ describe('prefetch', () => {
       fields: BUILD_FIELD_MASK,
     });
 
-    const cacheHit = prefetcher.respondWithPrefetched(({
+    // Prefetched build.
+    let cacheHit = prefetcher.respondWithPrefetched(({
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,
     } as Partial<FetchEvent>) as FetchEvent);
-    const cachedRes = await respondWithStub.getCall(0).args[0];
+    let cachedRes = await respondWithStub.getCall(0).args[0];
 
     assert.isTrue(cacheHit);
-    assert.strictEqual(fetchStub.callCount, 1);
     assert.strictEqual(cachedRes, buildResponse);
+    assert.strictEqual(fetchStub.callCount, 3);
+
+    resultdb.getInvocation({ name: invName });
+
+    // Prefetched invocation.
+    cacheHit = prefetcher.respondWithPrefetched(({
+      request: new Request(...fetchInterceptor.getCall(1).args),
+      respondWith: respondWithStub,
+    } as Partial<FetchEvent>) as FetchEvent);
+    cachedRes = await respondWithStub.getCall(1).args[0];
+
+    assert.isTrue(cacheHit);
+    assert.strictEqual(cachedRes, invResponse);
+    assert.strictEqual(fetchStub.callCount, 3);
+
+    uiSpecifiedService.queryTestVariants({ invocations: [invName] });
+
+    // Prefetched test variants.
+    cacheHit = prefetcher.respondWithPrefetched(({
+      request: new Request(...fetchInterceptor.getCall(2).args),
+      respondWith: respondWithStub,
+    } as Partial<FetchEvent>) as FetchEvent);
+    cachedRes = await respondWithStub.getCall(2).args[0];
+
+    assert.isTrue(cacheHit);
+    assert.strictEqual(cachedRes, testVariantsResponse);
+    assert.strictEqual(fetchStub.callCount, 3);
   });
 
   it('prefetches build page resources when visiting a short build page url', async () => {
-    const buildResponse = new Response(JSON.stringify({ buildId: '123456789' }));
+    const buildResponse = new Response(JSON.stringify({}));
+    const invResponse = new Response(JSON.stringify({}));
+    const testVariantsResponse = new Response(JSON.stringify({}));
+
     fetchStub.onCall(0).resolves(buildResponse);
+    fetchStub.onCall(1).resolves(invResponse);
+    fetchStub.onCall(2).resolves(testVariantsResponse);
+
+    const invName = 'invocations/' + getInvIdFromBuildId('123456789');
 
     await prefetcher.prefetchResources(new URL('https://luci-milo-dev.appspot.com/ui/b/123456789'));
 
     await aTimeout(100);
 
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
-    assert.strictEqual(requestedUrls.length, 1);
-    assert.includeMembers(requestedUrls, [`https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`]);
+    assert.strictEqual(requestedUrls.length, 3);
+    assert.includeMembers(requestedUrls, [
+      `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
+      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
+      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants`,
+    ]);
 
     buildsService.getBuild({
       id: '123456789',
       fields: BUILD_FIELD_MASK,
     });
 
-    const cacheHit = prefetcher.respondWithPrefetched(({
+    // Prefetched build.
+    let cacheHit = prefetcher.respondWithPrefetched(({
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,
     } as Partial<FetchEvent>) as FetchEvent);
-    const cachedRes = await respondWithStub.getCall(0).args[0];
+    let cachedRes = await respondWithStub.getCall(0).args[0];
 
     assert.isTrue(cacheHit);
-    assert.strictEqual(fetchStub.callCount, 1);
     assert.strictEqual(cachedRes, buildResponse);
+    assert.strictEqual(fetchStub.callCount, 3);
+
+    resultdb.getInvocation({ name: invName });
+
+    // Prefetched invocation.
+    cacheHit = prefetcher.respondWithPrefetched(({
+      request: new Request(...fetchInterceptor.getCall(1).args),
+      respondWith: respondWithStub,
+    } as Partial<FetchEvent>) as FetchEvent);
+    cachedRes = await respondWithStub.getCall(1).args[0];
+
+    assert.isTrue(cacheHit);
+    assert.strictEqual(cachedRes, invResponse);
+    assert.strictEqual(fetchStub.callCount, 3);
+
+    uiSpecifiedService.queryTestVariants({ invocations: [invName] });
+
+    // Prefetched test variants.
+    cacheHit = prefetcher.respondWithPrefetched(({
+      request: new Request(...fetchInterceptor.getCall(2).args),
+      respondWith: respondWithStub,
+    } as Partial<FetchEvent>) as FetchEvent);
+    cachedRes = await respondWithStub.getCall(2).args[0];
+
+    assert.isTrue(cacheHit);
+    assert.strictEqual(cachedRes, testVariantsResponse);
+    assert.strictEqual(fetchStub.callCount, 3);
   });
 
   it('prefetches artifact page resources', async () => {
