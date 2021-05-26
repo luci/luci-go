@@ -204,6 +204,104 @@ func TestCreatesSingularRunCQDinCharge(t *testing.T) {
 	})
 }
 
+func TestCreatesSingularRunCQDinChargeButCrashes(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV creates and finalizes a 1 CL Run while CQD is in charge even if CQD crashes", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "e2e-always-create-runs"
+		const gHost = "g-review"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange = 33
+
+		ct.DisableCVRunManagement(ctx)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		ct.Cfg.Create(ctx, lProject, cfg)
+
+		tStart := ct.Clock.Now()
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Owner("user-1"),
+			gf.Updated(tStart), gf.CQ(+1, tStart, gf.U("user-2")),
+		)))
+		const expectedAttemptKey = "0a6686c7f19a33a3"
+
+		/////////////////////////    Run CV   ////////////////////////////////
+		ct.LogPhase(ctx, "CV and CQD notice CL and start a Run")
+
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.MustCQD(ctx, lProject).SetCandidatesClbk(func() []*migrationpb.ReportedRun {
+			if ct.MaxCQVote(ctx, gHost, gChange) == 0 {
+				return nil
+			}
+			return []*migrationpb.ReportedRun{
+				{
+					Attempt: &cvbqpb.Attempt{
+						Key:           expectedAttemptKey,
+						GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: gChange, Mode: cvbqpb.Mode_DRY_RUN}},
+						Status:        cvbqpb.AttemptStatus_STARTED,
+					},
+				},
+			}
+		})
+
+		var r *run.Run
+		ct.RunUntil(ctx, func() bool {
+			r = ct.EarliestCreatedRunOf(ctx, lProject)
+			as := ct.MustCQD(ctx, lProject).ActiveAttemptKeys()
+			return r != nil && r.Status == run.Status_RUNNING && len(as) == 1 && as[0] == expectedAttemptKey
+		})
+		So(r.ID.AttemptKey(), ShouldResemble, expectedAttemptKey)
+
+		ct.LogPhase(ctx, "Dry Run passes in CQD, CQD removes CQ+1 vote and immediately crashes")
+		ct.MustCQD(ctx, lProject).SetShouldCrashClbk(func(op cqdfake.Operation, key string) bool {
+			return op == cqdfake.OpReportFinishedRun && key == expectedAttemptKey
+		})
+		ct.MustCQD(ctx, lProject).SetVerifyClbk(func(r *migrationpb.ReportedRun, _ bool) *migrationpb.ReportedRun {
+			if r.GetAttempt().GetEndTime() != nil {
+				return r // already finalized
+			}
+			return &migrationpb.ReportedRun{
+				Id: "",
+				Attempt: &cvbqpb.Attempt{
+					Key:                  expectedAttemptKey,
+					ClGroupKey:           "beef",
+					EquivalentClGroupKey: "beef",
+					GerritChanges:        []*cvbqpb.GerritChange{{Host: gHost, Change: gChange, Mode: cvbqpb.Mode_DRY_RUN}},
+					Status:               cvbqpb.AttemptStatus_SUCCESS,
+					Builds: []*cvbqpb.Build{
+						{Critical: true, Host: "bb-host", Id: 22233, Origin: cvbqpb.Build_NOT_REUSABLE},
+					},
+					ConfigGroup: cfg.GetConfigGroups()[0].GetName(),
+					LuciProject: lProject,
+					StartTime:   timestamppb.New(tStart),
+					EndTime:     timestamppb.New(ct.Clock.Now()),
+				},
+			}
+		})
+		ct.RunUntil(ctx, func() bool {
+			return ct.MaxCQVote(ctx, gHost, gChange) == 0
+		})
+
+		// TODO(tandrii): implemenet handling in Run Manager and finish the test.
+		// ct.LogPhase(ctx, "CV finalizes the Run anyway after some delay")
+		// ct.RunUntil(ctx, func() bool {
+		// 	return ct.LoadRun(ctx, r.ID).Status == run.Status_CANCELLED
+		// })
+		// So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
+		// ct.RunUntil(ctx, func() bool {
+		// 	return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		// })
+		// TODO(qyearsley): assert no BQ row was sent.
+	})
+}
+
 func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 	t.Parallel()
 
