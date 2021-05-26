@@ -236,7 +236,10 @@ message DependentMeta {
 }
 
 // CLError encapsulates all kinds of CL errors, which ultimately result in
-// purging the CL.
+// purging of the CL while communicating the reason to the relevant users.
+//
+// The primary goal of the CLError is to transport via CV guts sufficient
+// information to generate a clear user-friendly error message.
 message CLError {
   oneof kind {
     bool owner_lacks_email = 1;
@@ -253,8 +256,16 @@ message CLError {
   }
 
   message InvalidDeps {
+    // Deps not watched by the same LUCI project as the dependent.
     repeated Dep unwatched = 1;
+    // Deps watched by the same LUCI project but different config group.
     repeated Dep wrong_config_group = 2;
-    repeated Dep incompat_mode = 3;
+
+    // Not yet submitted deps of a full run in non-combinable mode.
+    repeated Dep single_full_deps = 3;
+    // Not yet CQ-ed deps of a Run in combinable mode.
+    repeated Dep combinable_untriggered = 4;
+    // CQ-ed deps of a different mode.
+    repeated Dep combinable_mismatched_mode = 5;
   }
 }

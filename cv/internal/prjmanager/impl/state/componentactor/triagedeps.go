@@ -146,10 +146,11 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 	// known here, categorization decision may or may not be final.
 	switch {
 	case dtr.GetMode() == tr.GetMode():
-		return // Happy path.
+		// Happy path.
+		return
 	case dtr == nil:
 		t.ensureInvalidDeps()
-		t.invalidDeps.IncompatMode = append(t.invalidDeps.IncompatMode, dep)
+		t.invalidDeps.CombinableUntriggered = append(t.invalidDeps.CombinableUntriggered, dep)
 		return
 	default:
 		// TODO(tandrii): support dry run on dependent and full Run on dep.
@@ -162,7 +163,7 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 		//      (base)  -
 		// D+C+B+A are can be dry-run-ed and B+A can be CQ+2ed at the same time
 		t.ensureInvalidDeps()
-		t.invalidDeps.IncompatMode = append(t.invalidDeps.IncompatMode, dep)
+		t.invalidDeps.CombinableMismatchedMode = append(t.invalidDeps.CombinableMismatchedMode, dep)
 		return
 	}
 }
@@ -176,7 +177,7 @@ func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep
 		// TODO(tandrii): find bug about better handling of stacks in single-CL Run case.
 		// TODO(tandrii): allow this if dep's mode is also FullRun.
 		t.ensureInvalidDeps()
-		t.invalidDeps.IncompatMode = append(t.invalidDeps.IncompatMode, dep)
+		t.invalidDeps.SingleFullDeps = append(t.invalidDeps.SingleFullDeps, dep)
 		return
 	default:
 		panic(fmt.Errorf("unknown dependent mode %v", tr))

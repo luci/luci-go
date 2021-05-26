@@ -293,7 +293,7 @@ func TestCLsTriage(t *testing.T) {
 							{
 								Kind: &changelist.CLError_InvalidDeps_{
 									InvalidDeps: &changelist.CLError_InvalidDeps{
-										IncompatMode: sup.PCL(3).GetDeps(),
+										SingleFullDeps: sup.PCL(3).GetDeps(),
 									},
 								},
 							},
@@ -301,7 +301,7 @@ func TestCLsTriage(t *testing.T) {
 						deps: &triagedDeps{
 							lastTriggered: epoch,
 							invalidDeps: &changelist.CLError_InvalidDeps{
-								IncompatMode: sup.PCL(3).GetDeps(),
+								SingleFullDeps: sup.PCL(3).GetDeps(),
 							},
 						},
 					},
@@ -329,7 +329,7 @@ func TestCLsTriage(t *testing.T) {
 							{
 								Kind: &changelist.CLError_InvalidDeps_{
 									InvalidDeps: &changelist.CLError_InvalidDeps{
-										IncompatMode: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
+										SingleFullDeps: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
 									},
 								},
 							},
@@ -338,7 +338,7 @@ func TestCLsTriage(t *testing.T) {
 							lastTriggered: epoch.UTC(),
 							submitted:     []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
 							invalidDeps: &changelist.CLError_InvalidDeps{
-								IncompatMode: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
+								SingleFullDeps: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
 							},
 						},
 					},
@@ -401,7 +401,7 @@ func TestCLsTriage(t *testing.T) {
 							{
 								Kind: &changelist.CLError_InvalidDeps_{
 									InvalidDeps: &changelist.CLError_InvalidDeps{
-										IncompatMode: sup.PCL(3).GetDeps(),
+										CombinableMismatchedMode: sup.PCL(3).GetDeps(),
 									},
 								},
 							},
@@ -409,7 +409,7 @@ func TestCLsTriage(t *testing.T) {
 						deps: &triagedDeps{
 							lastTriggered: epoch,
 							invalidDeps: &changelist.CLError_InvalidDeps{
-								IncompatMode: sup.PCL(3).GetDeps(),
+								CombinableMismatchedMode: sup.PCL(3).GetDeps(),
 							},
 						},
 					},

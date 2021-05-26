@@ -262,13 +262,13 @@ func TestDepsTriage(t *testing.T) {
 					lastTriggered: epoch.Add(3 * time.Second),
 				})
 			})
-			Convey("full run considers any dep incompatible", func() {
+			Convey("full run doesn't allow any dep", func() {
 				pcl32 := sup.PCL(32)
 				td := do(pcl32, singIdx)
 				So(td, shouldResembleTriagedDeps, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 					invalidDeps: &changelist.CLError_InvalidDeps{
-						IncompatMode: pcl32.GetDeps(),
+						SingleFullDeps: pcl32.GetDeps(),
 					},
 				})
 				So(td.OK(), ShouldBeFalse)
@@ -310,7 +310,7 @@ func TestDepsTriage(t *testing.T) {
 					So(td, shouldResembleTriagedDeps, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
-							IncompatMode: pcl32.GetDeps(),
+							CombinableMismatchedMode: pcl32.GetDeps(),
 						},
 					})
 				})
@@ -330,7 +330,7 @@ func TestDepsTriage(t *testing.T) {
 					So(td, shouldResembleTriagedDeps, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
-							IncompatMode: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
+							CombinableMismatchedMode: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
 						},
 					})
 					So(td.OK(), ShouldBeFalse)

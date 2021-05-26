@@ -152,8 +152,26 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 				  * https://x-review.googlesource.com/102
 			`))
 			})
-			Convey("IncompatMode", func() {
-				invalidDeps.IncompatMode = []*changelist.Dep{deps[102], deps[101]}
+			Convey("Singular Full Run with open dependencies", func() {
+				invalidDeps.SingleFullDeps = []*changelist.Dep{deps[102], deps[101]}
+				s := mustFormat()
+				So(s, ShouldContainSubstring, text.Doc(`
+				in "FULL_RUN" mode because it has not yet submitted dependencies:
+				  * https://x-review.googlesource.com/101
+				  * https://x-review.googlesource.com/102
+			`))
+			})
+			Convey("Combinable not triggered deps", func() {
+				invalidDeps.CombinableUntriggered = []*changelist.Dep{deps[102], deps[101]}
+				s := mustFormat()
+				So(s, ShouldContainSubstring, text.Doc(`
+				its dependencies weren't CQ-ed at all:
+				  * https://x-review.googlesource.com/101
+				  * https://x-review.googlesource.com/102
+			`))
+			})
+			Convey("Combinable mode mismatch", func() {
+				invalidDeps.CombinableMismatchedMode = []*changelist.Dep{deps[102], deps[101]}
 				s := mustFormat()
 				So(s, ShouldContainSubstring, text.Doc(`
 				its mode "FULL_RUN" does not match mode on its dependencies:

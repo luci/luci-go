@@ -91,8 +91,13 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *chang
 			bad, t = d.GetUnwatched(), tmplUnwatchedDeps
 		case len(d.GetWrongConfigGroup()) > 0:
 			bad, t = d.GetWrongConfigGroup(), tmplWrongDepsConfigGroup
-		case len(d.GetIncompatMode()) > 0:
-			bad, t = d.GetIncompatMode(), tmplIncompatDepsMode
+		case len(d.GetSingleFullDeps()) > 0:
+			bad, t = d.GetSingleFullDeps(), tmplSingleFullOpenDeps
+			args["mode"] = task.GetTrigger().GetMode()
+		case len(d.GetCombinableUntriggered()) > 0:
+			bad, t = d.GetCombinableUntriggered(), tmplCombinableUntriggered
+		case len(d.GetCombinableMismatchedMode()) > 0:
+			bad, t = d.GetCombinableMismatchedMode(), tmplCombinableMismatchedMode
 			args["mode"] = task.GetTrigger().GetMode()
 		default:
 			return errors.Reason("usupported InvalidDeps reason %s", d).Err()
@@ -146,7 +151,7 @@ var tmplFuncs = template.FuncMap{
 	"CONTACT_YOUR_INFRA": func() string {
 		// TODO(tandrii): ideally, CV or even LUCI would provide project-specific
 		// URL from a config.
-		return "Please, contact your EngProd or infrastructure team"
+		return "Please contact your EngProd or infrastructure team"
 	},
 }
 
@@ -198,7 +203,21 @@ var tmplWrongDepsConfigGroup = tmplMust(`
 {{end}}
 `)
 
-var tmplIncompatDepsMode = tmplMust(`
+var tmplSingleFullOpenDeps = tmplMust(`
+{{CQ_OR_CV}} can't process the CL in {{.mode | printf "%q"}} mode because it has not yet submitted dependencies:
+{{range $url := .deps}}  * {{$url}}
+{{end}}
+Please submit directly or via CQ the depenndencies first.
+`)
+
+var tmplCombinableUntriggered = tmplMust(`
+{{CQ_OR_CV}} can't process the CL because its dependencies weren't CQ-ed at all:
+{{range $url := .deps}}  * {{$url}}
+{{end}}
+Please trigger this CL and its dependencies at the same time.
+`)
+
+var tmplCombinableMismatchedMode = tmplMust(`
 {{CQ_OR_CV}} can't process the CL because its mode {{.mode | printf "%q"}} does not match mode on its dependencies:
 {{range $url := .deps}}  * {{$url}}
 {{end}}
