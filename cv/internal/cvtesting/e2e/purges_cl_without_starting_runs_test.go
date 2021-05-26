@@ -210,6 +210,56 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 	})
 }
 
+func TestPurgesSingularFullRunWithOpenDeps(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges CL in Full Run mode if it has not submitted deps", t, func() {
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject    = "infra"
+			gHost       = "chromium-review.example.com"
+			gRepo       = "luci-go"
+			gRef        = "refs/heads/main"
+			gChangeOpen = 44
+			gChangeCQed = 45
+		)
+
+		ct.LogPhase(ctx, "Set up stack of 2 CLs")
+		ct.EnableCVRunManagement(ctx, lProject)
+
+		ct.Cfg.Create(ctx, lProject, MakeCfgSingular("cg0", gHost, gRepo, gRef))
+
+		tStart := ct.Now()
+		ciOpen := gf.CI(
+			gChangeOpen, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
+		)
+		ciCQed := gf.CI(
+			gChangeCQed, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
+			gf.Owner("user-1"),
+			gf.CQ(+2, tStart, gf.U("user-1")),
+		)
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ciOpen, ciCQed))
+		ct.GFake.SetDependsOn(gHost, ciCQed, ciOpen)
+
+		ct.LogPhase(ctx, "Run CV until CQ+2 is removed")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool {
+			return ct.MaxCQVote(ctx, gHost, gChangeCQed) == 0
+		})
+		// TODO(tandrii): improve the message.
+		So(ct.LastMessage(gHost, gChangeCQed).GetMessage(), ShouldContainSubstring,
+			`CQ can't process the CL because its mode "FULL_RUN" does not match mode on its dependencies:`)
+
+		ct.LogPhase(ctx, "Ensure CL is no longer active in CV")
+		ct.RunUntil(ctx, func() bool {
+			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		})
+	})
+}
+
 func TestPurgesCLCQDependingOnItself(t *testing.T) {
 	t.Parallel()
 
