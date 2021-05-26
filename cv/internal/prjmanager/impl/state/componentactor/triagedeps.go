@@ -58,43 +58,19 @@ type triagedDeps struct {
 	// notYetLoaded means that more specific category isn't yet known.
 	notYetLoaded []*changelist.Dep
 
-	// Not OK deps, see also OK() function.
-
-	// unwatched deps are not watched by the same project as the dependent CL.
-	unwatched []*changelist.Dep
-	// wrongConfigGroup deps is watched by at least 1 different config group.
-	wrongConfigGroup []*changelist.Dep
-	// incompatMode are deps, possibly not even triggered, whose mode is not
-	// compatible with the dependent CL.
-	incompatMode []*changelist.Dep
+	invalidDeps *changelist.CLError_InvalidDeps
 }
 
 // OK is true if triagedDeps doesn't have any not-OK deps.
 func (t *triagedDeps) OK() bool {
-	switch {
-	case len(t.unwatched) > 0:
-		return false
-	case len(t.wrongConfigGroup) > 0:
-		return false
-	case len(t.incompatMode) > 0:
-		return false
-	}
-	return true
+	return t.invalidDeps == nil
 }
 
 func (t *triagedDeps) makePurgeReason() *changelist.CLError {
 	if t.OK() {
 		panic("makePurgeReason must be called only iff !OK")
 	}
-	return &changelist.CLError{
-		Kind: &changelist.CLError_InvalidDeps_{
-			InvalidDeps: &changelist.CLError_InvalidDeps{
-				Unwatched:        t.unwatched,
-				IncompatMode:     t.incompatMode,
-				WrongConfigGroup: t.wrongConfigGroup,
-			},
-		},
-	}
+	return &changelist.CLError{Kind: &changelist.CLError_InvalidDeps_{InvalidDeps: t.invalidDeps}}
 }
 
 // categorize adds dep to the applicable slice (if any).
@@ -116,7 +92,8 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 		// PCL deleted from Datastore should not happen outside of project
 		// re-enablement, so it's OK to treat the same as PCL_UNWATCHED for
 		// simplicity.
-		t.unwatched = append(t.unwatched, dep)
+		t.ensureInvalidDeps()
+		t.invalidDeps.Unwatched = append(t.invalidDeps.Unwatched, dep)
 		return
 
 	case prjpb.PCL_OK:
@@ -139,7 +116,8 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 		panic(fmt.Errorf("At least one ConfigGroup index required for watched dep PCL %d", dPCL.GetClid()))
 	case 1:
 		if cgIndexes[0] != cgIndex {
-			t.wrongConfigGroup = append(t.wrongConfigGroup, dep)
+			t.ensureInvalidDeps()
+			t.invalidDeps.WrongConfigGroup = append(t.invalidDeps.WrongConfigGroup, dep)
 			return
 		}
 		// Happy path; continue after the switch.
@@ -148,7 +126,8 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 		// other config groups. However, there is no compelling use-case for
 		// depending on a CL which matches several config groups. So, for
 		// compatibility with CQDaemon, be strict.
-		t.wrongConfigGroup = append(t.wrongConfigGroup, dep)
+		t.ensureInvalidDeps()
+		t.invalidDeps.WrongConfigGroup = append(t.invalidDeps.WrongConfigGroup, dep)
 		return
 	}
 
@@ -169,7 +148,8 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 	case dtr.GetMode() == tr.GetMode():
 		return // Happy path.
 	case dtr == nil:
-		t.incompatMode = append(t.incompatMode, dep)
+		t.ensureInvalidDeps()
+		t.invalidDeps.IncompatMode = append(t.invalidDeps.IncompatMode, dep)
 		return
 	default:
 		// TODO(tandrii): support dry run on dependent and full Run on dep.
@@ -181,7 +161,8 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 		//       A    CQ+2
 		//      (base)  -
 		// D+C+B+A are can be dry-run-ed and B+A can be CQ+2ed at the same time
-		t.incompatMode = append(t.incompatMode, dep)
+		t.ensureInvalidDeps()
+		t.invalidDeps.IncompatMode = append(t.invalidDeps.IncompatMode, dep)
 		return
 	}
 }
@@ -194,11 +175,20 @@ func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep
 	case run.FullRun:
 		// TODO(tandrii): find bug about better handling of stacks in single-CL Run case.
 		// TODO(tandrii): allow this if dep's mode is also FullRun.
-		t.incompatMode = append(t.incompatMode, dep)
+		t.ensureInvalidDeps()
+		t.invalidDeps.IncompatMode = append(t.invalidDeps.IncompatMode, dep)
 		return
 	default:
 		panic(fmt.Errorf("unknown dependent mode %v", tr))
 	}
+}
+
+// ensureInvalidDeps initializes if necessary and returns .invalidDeps.
+func (t *triagedDeps) ensureInvalidDeps() *changelist.CLError_InvalidDeps {
+	if t.invalidDeps == nil {
+		t.invalidDeps = &changelist.CLError_InvalidDeps{}
+	}
+	return t.invalidDeps
 }
 
 // iterateNotSubmitted calls clbk per each dep which isn't submitted.
