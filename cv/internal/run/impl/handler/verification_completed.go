@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -53,10 +54,32 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
-		return nil, errors.New("not implemented")
+		if err := cancelTriggers(ctx, &rs.Run, dryRunPassMsg); err != nil {
+			return nil, err
+		}
+		se := endRun(ctx, rs, run.Status_SUCCEEDED, impl.PM)
+		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
-		return nil, errors.New("not implemented")
+		if err := cancelTriggers(ctx, &rs.Run, vr.Payload.FinalMessage); err != nil {
+			return nil, err
+		}
+		se := endRun(ctx, rs, run.Status_FAILED, impl.PM)
+		return &Result{State: rs, SideEffectFn: se}, nil
 	default:
 		return nil, errors.Reason("unknown action %s", vr.Payload.Action).Err()
 	}
+}
+
+const dryRunPassMsg = "Dry run: This CL passed the CQ dry run."
+
+func cancelTriggers(ctx context.Context, r *run.Run, msg string) error {
+	runCLs, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
+	if err != nil {
+		return err
+	}
+	runCLExternalIDs := make([]changelist.ExternalID, len(runCLs))
+	for i, cl := range runCLs {
+		runCLExternalIDs[i] = cl.ExternalID
+	}
+	return cancelCLTriggers(ctx, r.ID, runCLs, runCLExternalIDs, msg)
 }
