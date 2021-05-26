@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +24,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/gae/service/datastore"
+
 	bqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
@@ -32,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -440,5 +442,168 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		// 	// CQ+2 vote removed.
 		// 	return trigger.Find(ct.GFake.GetChange(gHost, 13).Info) == nil
 		// })
+	})
+}
+
+func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV creates 3 CLs Full Run, which succeeds", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "g-review"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange1 = 11
+		const gChange2 = 22
+		const gChange3 = 33
+		const gPatchSet = 6
+
+		// TODO(tandrii): remove this once Run creation is not conditional on CV
+		// managing Runs for a project.
+		ct.EnableCVRunManagement(ctx, lProject)
+		// Start CQDaemon.
+		ct.MustCQD(ctx, lProject)
+
+		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
+		ct.Cfg.Create(ctx, lProject, cfg)
+
+		tStart := ct.Clock.Now()
+
+		// Git Relationship: <base> -> ci2 -> ci3 -> ci1
+		// and ci2 depends on ci1 using Cq-Depend git footer which forms a cycle.
+		ci1 := gf.CI(
+			gChange1, gf.Project(gRepo), gf.Ref(gRef),
+			gf.PS(gPatchSet),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.CQ(+2, tStart, gf.U("user-2")),
+			gf.Desc(fmt.Sprintf("This is the first CL\nCq-Depend: %d", gChange3)),
+		)
+		ci2 := gf.CI(
+			gChange2, gf.Project(gRepo), gf.Ref(gRef),
+			gf.PS(gPatchSet),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.CQ(+2, tStart, gf.U("user-2")),
+		)
+		ci3 := gf.CI(
+			gChange3, gf.Project(gRepo), gf.Ref(gRef),
+			gf.PS(gPatchSet),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.CQ(+2, tStart, gf.U("user-2")),
+		)
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci1, ci2, ci3))
+		ct.GFake.SetDependsOn(gHost, ci3, ci2)
+		ct.GFake.SetDependsOn(gHost, ci1, ci3)
+
+		/////////////////////////    Run CV   ////////////////////////////////
+		ct.LogPhase(ctx, "CV discovers all CLs")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		clids := make(common.CLIDs, 3)
+		ct.RunUntil(ctx, func() bool {
+			for i, change := range []int64{gChange1, gChange2, gChange3} {
+				cl := ct.LoadGerritCL(ctx, gHost, change)
+				if cl == nil {
+					return false
+				}
+				clids[i] = cl.ID
+			}
+			sort.Sort(clids)
+			return true
+		})
+
+		ct.LogPhase(ctx, "CV starts a Run with all 3 CLs")
+		var r *run.Run
+		ct.RunUntil(ctx, func() bool {
+			r = ct.EarliestCreatedRunOf(ctx, lProject)
+			return r != nil && r.Status == run.Status_RUNNING
+		})
+		So(r.Mode, ShouldEqual, run.FullRun)
+		runCLIDs := r.CLs
+		sort.Sort(runCLIDs)
+		So(r.CLs, ShouldResemble, clids)
+
+		ct.LogPhase(ctx, "CQDaemon posts starting message to each Gerrit CLs")
+		ct.RunUntil(ctx, func() bool {
+			for _, change := range []int64{gChange1, gChange2, gChange3} {
+				m := ct.LastMessage(gHost, change).GetMessage()
+				if !strings.Contains(m, cqdfake.StartingMessage) || !strings.Contains(m, string(r.ID)) {
+					return false
+				}
+			}
+			return true
+		})
+
+		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
+		ct.Clock.Add(time.Minute)
+		ct.MustCQD(ctx, lProject).SetVerifyClbk(
+			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+				r = proto.Clone(r).(*migrationpb.ReportedRun)
+				r.Attempt.Status = bqpb.AttemptStatus_SUCCESS
+				r.Attempt.Substatus = bqpb.AttemptSubstatus_NO_SUBSTATUS
+				return r
+			},
+		)
+		ct.RunUntil(ctx, func() bool {
+			res, err := datastore.Exists(ctx, &migration.VerifiedCQDRun{ID: r.ID})
+			return err == nil && res.All()
+		})
+
+		// At this point CV must either report the `gChange` to be excluded from
+		// active attempts OR (if CV has already finalized this Run) not return this
+		// Run as active.
+		activeRuns := ct.MigrationFetchActiveRuns(ctx, lProject)
+		excludedCLs := ct.MigrationFetchExcludedCLs(ctx, lProject)
+		if len(activeRuns) > 0 {
+			So(activeRuns[0].Id, ShouldResemble, string(r.ID))
+			sort.Strings(excludedCLs)
+			expected := []string{
+				fmt.Sprintf("%s/%d", gHost, gChange1),
+				fmt.Sprintf("%s/%d", gHost, gChange2),
+				fmt.Sprintf("%s/%d", gHost, gChange3),
+			}
+			sort.Strings(expected)
+			So(excludedCLs, ShouldResemble, expected)
+		}
+
+		ct.LogPhase(ctx, "CV submits the run and sends BQ event")
+		var finalRun *run.Run
+		ct.RunUntil(ctx, func() bool {
+			finalRun = ct.LoadRun(ctx, r.ID)
+			if !run.IsEnded(finalRun.Status) {
+				return false
+			}
+			if proj := ct.LoadProject(ctx, lProject); len(proj.State.GetComponents()) > 0 {
+				return false
+			}
+			for _, change := range []int64{gChange1, gChange2, gChange3} {
+				cl := ct.LoadGerritCL(ctx, gHost, change)
+				if cl.IncompleteRuns.ContainsSorted(r.ID) {
+					return false
+				}
+			}
+			return true
+		})
+
+		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
+		ci1 = ct.GFake.GetChange(gHost, gChange1).Info
+		ci2 = ct.GFake.GetChange(gHost, gChange2).Info
+		ci3 = ct.GFake.GetChange(gHost, gChange3).Info
+		for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2, ci3} {
+			So(ci.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+			So(ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), ShouldEqual, int32(gPatchSet+1))
+		}
+		// verify submission order: [ci2, ci3, ci1]
+		So(ci2.GetUpdated().AsTime(), ShouldHappenBefore, ci3.GetUpdated().AsTime())
+		So(ci3.GetUpdated().AsTime(), ShouldHappenBefore, ci1.GetUpdated().AsTime())
+
+		// Verify that BQ row was exported.
+		// TODO(qyearsley): implement.
 	})
 }
