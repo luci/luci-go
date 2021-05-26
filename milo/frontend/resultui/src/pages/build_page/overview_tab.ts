@@ -272,18 +272,21 @@ export class OverviewTabElement extends MobxLitElement {
 
     return html`
       <h3>Failed Tests (<a href=${testsTabUrl}>View All Test</a>)</h3>
-      ${testLoader?.firstPageLoaded
-        ? html`
-            <div style="--columns: ${columnWidths}">${this.renderFailedTestList()}</div>
-            <div id="failed-test-count">
-              ${testLoader.unfilteredUnexpectedVariantsCount === 0
-                ? 'No failed tests.'
-                : html`Showing ${Math.min(testLoader.unfilteredUnexpectedVariantsCount, MAX_DISPLAYED_UNEXPECTED_TESTS)}
-                    / ${testLoader.unfilteredUnexpectedVariantsCount} failed tests.
-                    <a href=${testsTabUrl}>[view all]</a>`}
-            </div>
-          `
-        : html`<div id="loading-spinner">Loading <milo-dot-spinner></milo-dot-spinner></div>`}
+      <div id="failed-tests-section-body">
+        ${testLoader?.firstPageLoaded
+          ? html`
+              <div style="--columns: ${columnWidths}">${this.renderFailedTestList()}</div>
+              <div id="failed-test-count">
+                ${testLoader.unfilteredUnexpectedVariantsCount === 0
+                  ? 'No failed tests.'
+                  : html`Showing
+                      ${Math.min(testLoader.unfilteredUnexpectedVariantsCount, MAX_DISPLAYED_UNEXPECTED_TESTS)} /
+                      ${testLoader.unfilteredUnexpectedVariantsCount} failed tests.
+                      <a href=${testsTabUrl}>[view all]</a>`}
+              </div>
+            `
+          : html`<div id="loading-spinner">Loading <milo-dot-spinner></milo-dot-spinner></div>`}
+      </div>
     `;
   }
 
@@ -565,6 +568,17 @@ export class OverviewTabElement extends MobxLitElement {
       td:nth-child(2) {
         clear: both;
         overflow-wrap: anywhere;
+      }
+
+      /*
+       * Use normal text color and add extra margin so it's easier to tell where
+       * does the failed tests section ends and the steps section starts.
+       */
+      #failed-tests-section-body {
+        margin-bottom: 25px;
+      }
+      #failed-test-count > a {
+        color: var(--default-text-color);
       }
 
       #failed-test-count {
