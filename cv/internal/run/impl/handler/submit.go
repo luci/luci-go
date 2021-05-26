@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -388,46 +387,6 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 		msg := fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
 		return cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg)
 	}
-}
-
-func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string) error {
-	clids := make(common.CLIDs, len(toCancel))
-	for i, runCL := range toCancel {
-		clids[i] = runCL.ID
-	}
-	cls, err := changelist.LoadCLs(ctx, clids)
-	if err != nil {
-		return err
-	}
-
-	luciProject := runID.LUCIProject()
-	err = parallel.WorkPool(10, func(work chan<- func() error) {
-		for i := range toCancel {
-			i := i
-			work <- func() error {
-				err := cancel.Cancel(ctx, cancel.Input{
-					CL:               cls[i],
-					Trigger:          toCancel[i].Trigger,
-					LUCIProject:      luciProject,
-					Message:          message,
-					Requester:        "Run Manager",
-					Notify:           cancel.OWNER | cancel.VOTERS,
-					LeaseDuration:    time.Minute,
-					RunCLExternalIDs: runCLExternalIDs,
-				})
-				return errors.Annotate(err, "failed to cancel triggers for cl %d", cls[i].ID).Err()
-			}
-		}
-	})
-	if err != nil {
-		switch merr, ok := err.(errors.MultiError); {
-		case !ok:
-			return err
-		default:
-			return common.MostSevereError(merr)
-		}
-	}
-	return nil
 }
 
 func makeSubmissionMsgSuffix(submitted []*run.RunCL, failed *run.RunCL, pending []*run.RunCL) string {

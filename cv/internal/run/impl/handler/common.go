@@ -17,15 +17,18 @@ package handler
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -70,6 +73,46 @@ func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLID
 	}
 	if err := datastore.Put(ctx, cls); err != nil {
 		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
+	}
+	return nil
+}
+
+func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string) error {
+	clids := make(common.CLIDs, len(toCancel))
+	for i, runCL := range toCancel {
+		clids[i] = runCL.ID
+	}
+	cls, err := changelist.LoadCLs(ctx, clids)
+	if err != nil {
+		return err
+	}
+
+	luciProject := runID.LUCIProject()
+	err = parallel.WorkPool(10, func(work chan<- func() error) {
+		for i := range toCancel {
+			i := i
+			work <- func() error {
+				err := cancel.Cancel(ctx, cancel.Input{
+					CL:               cls[i],
+					Trigger:          toCancel[i].Trigger,
+					LUCIProject:      luciProject,
+					Message:          message,
+					Requester:        "Run Manager",
+					Notify:           cancel.OWNER | cancel.VOTERS,
+					LeaseDuration:    time.Minute,
+					RunCLExternalIDs: runCLExternalIDs,
+				})
+				return errors.Annotate(err, "failed to cancel triggers for cl %d", cls[i].ID).Err()
+			}
+		}
+	})
+	if err != nil {
+		switch merr, ok := err.(errors.MultiError); {
+		case !ok:
+			return err
+		default:
+			return common.MostSevereError(merr)
+		}
 	}
 	return nil
 }

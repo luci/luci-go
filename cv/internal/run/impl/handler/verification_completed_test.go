@@ -20,8 +20,10 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -31,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -50,47 +53,84 @@ func TestOnVerificationCompleted(t *testing.T) {
 		defer cancel()
 
 		const lProject = "infra"
+		const gHost = "x-review.example.com"
+		const gChange = 123
+		const quickLabel = "quick"
 		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
-		runCLs := common.CLIDs{1, 2}
-		cgID := config.MakeConfigGroupID("cafecafe", "main")
-		r := run.Run{
-			ID:            rid,
-			Status:        run.Status_RUNNING,
-			CreateTime:    ct.Clock.Now().UTC().Add(-2 * time.Minute),
-			StartTime:     ct.Clock.Now().UTC().Add(-1 * time.Minute),
-			ConfigGroupID: cgID,
-			CLs:           runCLs,
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:         rid,
+				Status:     run.Status_RUNNING,
+				CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
+				StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
+				CLs:        common.CLIDs{1},
+			},
 		}
-		So(datastore.Put(ctx, &r,
-			&run.RunCL{
-				ID:  runCLs[0],
-				Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
-				Detail: &changelist.Snapshot{
-					Kind: &changelist.Snapshot_Gerrit{
-						Gerrit: &changelist.Gerrit{
-							Host: "example.com",
-							Info: gf.CI(1111),
+		cfg := &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					Verifiers: &cfgpb.Verifiers{
+						TreeStatus: &cfgpb.Verifiers_TreeStatus{
+							Url: "tree.example.com",
 						},
 					},
-					Deps: []*changelist.Dep{
-						{Clid: 2, Kind: changelist.DepKind_HARD},
-					},
-				},
-			},
-			&run.RunCL{
-				ID:  runCLs[1],
-				Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
-				Detail: &changelist.Snapshot{
-					Kind: &changelist.Snapshot_Gerrit{
-						Gerrit: &changelist.Gerrit{
-							Host: "example.com",
-							Info: gf.CI(2222),
+					AdditionalModes: []*cfgpb.Mode{
+						{
+							CqLabelValue:    1,
+							Name:            string(run.QuickDryRun),
+							TriggeringLabel: quickLabel,
+							TriggeringValue: 1,
 						},
 					},
 				},
 			},
-		), ShouldBeNil)
-		rs := &state.RunState{Run: r}
+		}
+		ct.Cfg.Create(ctx, lProject, cfg)
+		meta, err := config.GetLatestMeta(ctx, lProject)
+		So(err, ShouldBeNil)
+		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
+		rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
+
+		createCL := func(ci *gerritpb.ChangeInfo) {
+			ct.GFake.CreateChange(&gf.Change{
+				Host: gHost,
+				Info: ci,
+				ACLs: gf.ACLRestricted(lProject),
+			})
+
+			So(datastore.Put(ctx,
+				&run.RunCL{
+					ID:         1,
+					Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
+					ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
+					Detail: &changelist.Snapshot{
+						LuciProject: lProject,
+						Kind: &changelist.Snapshot_Gerrit{
+							Gerrit: &changelist.Gerrit{
+								Host: gHost,
+								Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
+							},
+						},
+					},
+					Trigger: trigger.Find(ci, cfg.ConfigGroups[0]),
+				},
+				&changelist.CL{
+					ID:         1,
+					ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
+					Snapshot: &changelist.Snapshot{
+						LuciProject: lProject,
+						Kind: &changelist.Snapshot_Gerrit{
+							Gerrit: &changelist.Gerrit{
+								Host: gHost,
+								Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
+							},
+						},
+					},
+				},
+			), ShouldBeNil)
+		}
+
 		h := &Impl{
 			RM:         run.NewNotifier(ct.TQDispatcher),
 			TreeClient: ct.TreeFake.Client(),
@@ -112,7 +152,13 @@ func TestOnVerificationCompleted(t *testing.T) {
 			})
 		}
 
+		now := ct.Clock.Now().UTC()
 		Convey("Submit", func() {
+			rs.Run.Mode = run.FullRun
+			createCL(gf.CI(gChange,
+				gf.Owner("user-1"),
+				gf.CQ(+2, now.Add(-1*time.Minute), gf.U("user-2")),
+				gf.Updated(now.Add(-1*time.Minute))))
 			vr := migration.VerifiedCQDRun{
 				ID: rid,
 				Payload: &migrationpb.ReportVerifiedRunRequest{
@@ -121,27 +167,6 @@ func TestOnVerificationCompleted(t *testing.T) {
 			}
 			So(datastore.Put(ctx, &vr), ShouldBeNil)
 
-			cfg := &cfgpb.Config{
-				ConfigGroups: []*cfgpb.ConfigGroup{
-					{
-						Name: "main",
-						Verifiers: &cfgpb.Verifiers{
-							TreeStatus: &cfgpb.Verifiers_TreeStatus{
-								Url: "tree.example.com",
-							},
-						},
-					},
-				},
-			}
-			ct.Cfg.Create(ctx, rid.LUCIProject(), cfg)
-			updateConfigGroupToLatest := func(rs *state.RunState) {
-				meta, err := config.GetLatestMeta(ctx, rs.Run.ID.LUCIProject())
-				So(err, ShouldBeNil)
-				So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
-				rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
-			}
-			updateConfigGroupToLatest(rs)
-			now := ct.Clock.Now().UTC()
 			ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 
 			Convey("Delegate to OnReadyForSubmission", func() {
@@ -152,13 +177,77 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 					Deadline:          timestamppb.New(now.Add(submissionDuration)),
-					Cls:               []int64{2, 1}, // in submission order
+					Cls:               []int64{1},
 					TaskId:            "task-foo",
 					TreeOpen:          true,
 					LastTreeCheckTime: timestamppb.New(now),
 				})
 				So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, rid)
 				runtest.AssertReceivedReadyForSubmission(ctx, rid, now.Add(10*time.Second))
+			})
+		})
+
+		Convey("Dry run passes verification", func() {
+			vr := migration.VerifiedCQDRun{
+				ID: rid,
+				Payload: &migrationpb.ReportVerifiedRunRequest{
+					Action: migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK,
+				},
+			}
+			So(datastore.Put(ctx, &vr), ShouldBeNil)
+			Convey("Dry run", func() {
+				rs.Run.Mode = run.DryRun
+				createCL(gf.CI(gChange,
+					gf.Owner("user-1"),
+					gf.CQ(+1, now.Add(-1*time.Minute), gf.U("user-2")),
+					gf.Updated(now.Add(-1*time.Minute))))
+				res, err := h.OnCQDVerificationCompleted(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldBeNil)
+				So(res.SideEffectFn, ShouldNotBeNil)
+				So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
+				ci := ct.GFake.GetChange(gHost, gChange).Info
+				So(gf.NonZeroVotes(ci, trigger.CQLabelName), ShouldBeEmpty)
+				So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, "Dry run: This CL passed the CQ dry run.")
+			})
+
+			Convey("Quick dry run", func() {
+				rs.Run.Mode = run.QuickDryRun
+				createCL(gf.CI(gChange,
+					gf.Owner("user-1"),
+					gf.CQ(+1, now.Add(-1*time.Minute), gf.U("user-2")),
+					gf.Vote(quickLabel, +1, now.Add(-1*time.Minute), gf.U("user-2")),
+					gf.Updated(now.Add(-1*time.Minute))))
+				_, err := h.OnCQDVerificationCompleted(ctx, rs)
+				So(err, ShouldBeNil)
+				So(gf.LastMessage(ct.GFake.GetChange(gHost, gChange).Info).GetMessage(), ShouldContainSubstring, "Quick dry run: This CL passed the CQ dry run.")
+			})
+		})
+
+		Convey("Run fails verification", func() {
+			createCL(gf.CI(gChange,
+				gf.Owner("user-1"),
+				gf.CQ(+2, now.Add(-1*time.Minute), gf.U("user-2")),
+				gf.Updated(now.Add(-1*time.Minute))))
+			vr := migration.VerifiedCQDRun{
+				ID: rid,
+				Payload: &migrationpb.ReportVerifiedRunRequest{
+					Action:       migrationpb.ReportVerifiedRunRequest_ACTION_FAIL,
+					FinalMessage: "builder abc failed",
+				},
+			}
+			So(datastore.Put(ctx, &vr), ShouldBeNil)
+			Convey("Cancel triggers and post message", func() {
+				res, err := h.OnCQDVerificationCompleted(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldBeNil)
+				So(res.SideEffectFn, ShouldNotBeNil)
+				So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+				ci := ct.GFake.GetChange(gHost, gChange).Info
+				So(gf.NonZeroVotes(ci, trigger.CQLabelName), ShouldBeEmpty)
+				So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, "builder abc failed")
 			})
 		})
 	})
