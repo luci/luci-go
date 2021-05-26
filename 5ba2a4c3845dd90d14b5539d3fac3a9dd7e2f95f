@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5270b18a_3b71e4b1",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-26T00:24:53Z",
+      "side": 1,
+      "message": "i\u0027d say this is very very subtle. Not sure it really solves the problem.",
+      "range": {
+        "startLine": 574,
+        "startChar": 31,
+        "endLine": 575,
+        "endChar": 56
+      },
+      "revId": "5ba2a4c3845dd90d14b5539d3fac3a9dd7e2f95f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
