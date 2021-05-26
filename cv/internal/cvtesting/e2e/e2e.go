@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry"
@@ -406,6 +408,31 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 							},
 						},
 					},
+				},
+			},
+		},
+	}
+}
+
+// MakeCfgCombinable return project config with a combinable ConfigGroup.
+func MakeCfgCombinable(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
+	return &cfgpb.Config{
+		ConfigGroups: []*cfgpb.ConfigGroup{
+			{
+				Name: cgName,
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
+					{
+						Url: "https://" + gHost + "/",
+						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
+							{
+								Name:      gRepo,
+								RefRegexp: []string{gRef},
+							},
+						},
+					},
+				},
+				CombineCls: &cfgpb.CombineCLs{
+					StabilizationDelay: durationpb.New(30 * time.Second),
 				},
 			},
 		},

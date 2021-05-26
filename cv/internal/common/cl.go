@@ -44,7 +44,7 @@ func (p *CLIDs) Dedupe() {
 	if len(clids) <= 1 {
 		return
 	}
-	sort.Slice(clids, func(i, j int) bool { return clids[i] < clids[j] })
+	sort.Sort(clids)
 	n, prev, skipped := 0, clids[0], false
 	for _, id := range clids[1:] {
 		if id == prev {
@@ -58,6 +58,22 @@ func (p *CLIDs) Dedupe() {
 		prev = id
 	}
 	*p = clids[:n+1]
+}
+
+// Len is the number of elements in the collection.
+func (ids CLIDs) Len() int {
+	return len(ids)
+}
+
+// Less reports whether the element with
+// index i should sort before the element with index j.
+func (ids CLIDs) Less(i int, j int) bool {
+	return ids[i] < ids[j]
+}
+
+// Swap swaps the elements with indexes i and j.
+func (ids CLIDs) Swap(i int, j int) {
+	ids[i], ids[j] = ids[j], ids[i]
 }
 
 // Set returns a new set of CLIDs.

@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -228,7 +227,7 @@ func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewReque
 	if err := client.setReviewEnforceACLs(in, ch); err != nil {
 		return nil, err
 	}
-	ch.Info.Updated = calcUpdatedTime(ctx, ch.Info.GetUpdated())
+	advanceTestClock(ctx, 200*time.Millisecond) // +200ms to simulate Gerrit latency
 	now := clock.Now(ctx).UTC()
 	if in.Message != "" {
 		ch.Info.Messages = append(ch.Info.Messages, &gerritpb.ChangeMessageInfo{
@@ -248,7 +247,7 @@ func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewReque
 			}
 		}
 	}
-
+	setUpdated(ch.Info, now)
 	return &gerritpb.ReviewResult{Labels: in.GetLabels()}, nil
 }
 
@@ -282,7 +281,8 @@ func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRev
 		// Most projects use a submit strategy which always creates a new patchset.
 		// simulate the behavior here.
 		PS(int(ch.Info.GetRevisions()[rev].GetNumber() + 1))(ch.Info)
-		ch.Info.Updated = calcUpdatedTime(ctx, ch.Info.Updated)
+		advanceTestClock(ctx, 500*time.Millisecond) // +500ms to simulate Gerrit latency
+		setUpdated(ch.Info, clock.Now(ctx))
 		return &gerritpb.SubmitInfo{Status: gerritpb.ChangeStatus_MERGED}, nil
 	case gerritpb.ChangeStatus_MERGED:
 		return nil, status.Errorf(codes.FailedPrecondition, "change is merged")
@@ -384,21 +384,19 @@ func applyChangeOpts(change *Change, opts []gerritpb.QueryOption) *gerritpb.Chan
 	return ci
 }
 
-// calcUpdatedTime always push Updated time forward.
-func calcUpdatedTime(ctx context.Context, curUpdatedTime *timestamppb.Timestamp) *timestamppb.Timestamp {
-	now := clock.Now(ctx).UTC() // UTC is for easy to read logs
-	switch u := curUpdatedTime.AsTime(); {
-	case now.Before(u):
-		panic(fmt.Errorf("clock's time [%s] is before the Updated time [%s]", now, u))
-	case u.Equal(now):
-		if tclock, ok := clock.Get(ctx).(testclock.TestClock); ok {
-			logging.Debugf(ctx, "testclock.Time += 1second to ensure increasing Updated time")
-			tclock.Add(time.Second)
-			return timestamppb.New(tclock.Now())
-		}
-		panic(fmt.Errorf("clock's time [%s] is equal to the Updated time [%s] and not running in test", now, u))
+func advanceTestClock(ctx context.Context, dur time.Duration) {
+	tclock, ok := clock.Get(ctx).(testclock.TestClock)
+	if !ok {
+		panic(fmt.Errorf("gerritfake is not called in test"))
 	}
-	return timestamppb.New(now)
+	tclock.Add(dur)
+}
+
+func setUpdated(ci *gerritpb.ChangeInfo, new time.Time) {
+	if ci.GetUpdated() != nil && !new.After(ci.GetUpdated().AsTime()) {
+		panic(fmt.Errorf("new Updated time [%s] must be larger than the existing one [%s]", new, ci.GetUpdated().AsTime()))
+	}
+	ci.Updated = timestamppb.New(new.UTC())
 }
 
 type parsedListChangesQuery struct {
