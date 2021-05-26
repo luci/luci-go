@@ -16,15 +16,27 @@ import { Workbox } from 'workbox-window';
 
 import './stackdriver_errors';
 import './routes';
+import { NEW_MILO_VERSION_EVENT_TYPE } from './libs/constants';
 
 window.SW_PROMISE = new Promise((resolve) => {
   // Don't cache resources in development mode. Otherwise we will need to
   // refresh the page manually for changes to take effect.
   if (ENABLE_UI_SW && 'serviceWorker' in navigator) {
     const wb = new Workbox('/ui/service-worker.js');
-    wb.register({ immediate: true }).then((registration) => {
+    wb.register().then((registration) => {
       // eslint-disable-next-line no-console
       console.log('UI SW registered: ', registration);
+
+      // Reload the page after a new version is activated.
+      navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+
+      if (registration?.waiting) {
+        sendUpdateNotification();
+      } else if (registration?.installing) {
+        scheduleUpdateNotification.bind(registration)();
+      }
+      registration?.addEventListener('updatefound', scheduleUpdateNotification);
+
       resolve(wb);
     });
   }
@@ -42,4 +54,21 @@ if ('serviceWorker' in navigator) {
       { once: true }
     );
   }
+}
+
+// Sends an update notification.
+function sendUpdateNotification() {
+  window.dispatchEvent(new CustomEvent(NEW_MILO_VERSION_EVENT_TYPE));
+}
+
+// Sends an update notification once the service worker is installed.
+function scheduleUpdateNotification(this: ServiceWorkerRegistration) {
+  function onStateChange(this: ServiceWorker) {
+    if (this.state === 'installed') {
+      sendUpdateNotification();
+      this.removeEventListener('statechange', onStateChange);
+    }
+  }
+
+  this.installing?.addEventListener('statechange', onStateChange);
 }

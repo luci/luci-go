@@ -13,16 +13,20 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
+import '@material/mwc-icon-button';
+import '@material/mwc-snackbar';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
+import { observable } from 'mobx';
 
 import './signin';
 import './tooltip';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
+import { NEW_MILO_VERSION_EVENT_TYPE } from '../libs/constants';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
@@ -68,6 +72,8 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
     rootMargin: '1000000px 0px 0px 0px',
   });
 
+  @observable.ref showUpdateBanner = false;
+
   constructor() {
     super();
     // Expires the token slightly (10s) earlier so an expired token won't be
@@ -100,14 +106,34 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
     }
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener(NEW_MILO_VERSION_EVENT_TYPE, this.onNewMiloVersion);
+  }
+
   disconnectedCallback() {
     this.appState.dispose();
     this.configsStore.dispose();
+    window.removeEventListener(NEW_MILO_VERSION_EVENT_TYPE, this.onNewMiloVersion);
     super.disconnectedCallback();
   }
 
+  private onNewMiloVersion = () => (this.showUpdateBanner = true);
+
   protected render() {
     return html`
+      <mwc-snackbar labelText="A New Version of Milo is Available" timeoutMs=${-1} ?open=${this.showUpdateBanner}>
+        <mwc-button
+          slot="action"
+          @click=${async () => {
+            this.showUpdateBanner = false;
+            (await window.SW_PROMISE).messageSkipWaiting();
+          }}
+        >
+          Update
+        </mwc-button>
+        <mwc-icon-button icon="close" slot="dismiss" @click=${() => (this.showUpdateBanner = false)}></mwc-icon-button>
+      </mwc-snackbar>
       <milo-tooltip></milo-tooltip>
       <div id="container">
         <div id="title-container">

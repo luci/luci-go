@@ -15,6 +15,8 @@
 import { BuildStatus } from '../services/buildbucket';
 import { InvocationState, TestStatus, TestVariantStatus } from '../services/resultdb';
 
+export const NEW_MILO_VERSION_EVENT_TYPE = 'new-milo-version';
+
 export const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Unspecified]: 'unspecified',
   [InvocationState.Active]: 'active',
