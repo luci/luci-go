@@ -299,10 +299,13 @@ func TestRunManager(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		const runID = "chromium/222-1-deadbeef"
+		tCreate := ct.Clock.Now().UTC().Add(-2 * time.Minute)
 		So(datastore.Put(ctx, &run.Run{
-			ID:       runID,
-			Status:   run.Status_RUNNING,
-			EVersion: 10,
+			ID:         runID,
+			Status:     run.Status_RUNNING,
+			CreateTime: tCreate,
+			StartTime:  tCreate.Add(1 * time.Minute),
+			EVersion:   10,
 		}), ShouldBeNil)
 
 		notifier := run.NewNotifier(ct.TQDispatcher)
@@ -323,6 +326,19 @@ func TestRunManager(t *testing.T) {
 				})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			}
+
+			Convey("Stops after Run is finalized", func() {
+				So(datastore.Put(ctx, &run.Run{
+					ID:         runID,
+					Status:     run.Status_CANCELLED,
+					CreateTime: tCreate,
+					StartTime:  tCreate.Add(1 * time.Minute),
+					EndTime:    ct.Clock.Now().UTC(),
+					EVersion:   11,
+				}), ShouldBeNil)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
+				runtest.AssertEventboxEmpty(ctx, runID)
+			})
 		})
 
 		Convey("Existing event due during the interval", func() {
