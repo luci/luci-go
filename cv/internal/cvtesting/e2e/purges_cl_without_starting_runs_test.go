@@ -249,9 +249,7 @@ func TestPurgesSingularFullRunWithOpenDeps(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChangeCQed) == 0
 		})
-		// TODO(tandrii): improve the message.
-		So(ct.LastMessage(gHost, gChangeCQed).GetMessage(), ShouldContainSubstring,
-			`CQ can't process the CL because its mode "FULL_RUN" does not match mode on its dependencies:`)
+		So(ct.LastMessage(gHost, gChangeCQed).GetMessage(), ShouldContainSubstring, `it has not yet submitted dependencies`)
 
 		ct.LogPhase(ctx, "Ensure CL is no longer active in CV")
 		ct.RunUntil(ctx, func() bool {
