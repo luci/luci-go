@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "600eef43_3058fa63",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-26T22:16:43Z",
+      "side": 1,
+      "message": "ptal",
+      "revId": "f3f72379b3f79fec23c4885481a6f711031a09fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c40ccbad_67120ae7",
+        "filename": "cv/internal/run/impl/handler/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-26T22:16:43Z",
+      "side": 1,
+      "message": "moved verbatim from submit.go",
+      "revId": "f3f72379b3f79fec23c4885481a6f711031a09fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
