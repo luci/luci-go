@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d16dbf2a_489a3425",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-26T22:56:49Z",
+      "side": 1,
+      "message": "smells but should go away soon :)",
+      "range": {
+        "startLine": 250,
+        "startChar": 13,
+        "endLine": 250,
+        "endChar": 62
+      },
+      "revId": "cd9966faac6b44b5d9b53116f8fd6dec73ceb899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
