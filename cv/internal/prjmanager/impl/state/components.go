@@ -247,7 +247,9 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, s.PB.GetLuciProject()); {
 	case err != nil:
 		return err
-	case !yes:
+	case yes || s.PB.GetLuciProject() == "e2e-always-create-runs":
+		// Proceed to creating a Run.
+	default:
 		// This a is temporary safeguard against creation of LOTS of Runs,
 		// that won't be finalized.
 		// TODO(tandrii): delete this check once RunManager cancels Runs based on
