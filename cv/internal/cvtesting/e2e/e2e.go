@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
@@ -406,6 +407,31 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 							},
 						},
 					},
+				},
+			},
+		},
+	}
+}
+
+// MakeCfgCombinable return project config with a combinable ConfigGroup.
+func MakeCfgCombinable(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
+	return &cfgpb.Config{
+		ConfigGroups: []*cfgpb.ConfigGroup{
+			{
+				Name: cgName,
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
+					{
+						Url: "https://" + gHost + "/",
+						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
+							{
+								Name:      gRepo,
+								RefRegexp: []string{gRef},
+							},
+						},
+					},
+				},
+				CombineCls: &cfgpb.CombineCLs{
+					StabilizationDelay: durationpb.New(30 * time.Second),
 				},
 			},
 		},

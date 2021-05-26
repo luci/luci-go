@@ -516,7 +516,8 @@ func TestSetReview(t *testing.T) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		user := U("user-123")
 		accountID := user.AccountId
-		ciBefore := CI(10001, CQ(1, tc.Now(), user), Updated(tc.Now()))
+		before := tc.Now().Add(-1 * time.Minute)
+		ciBefore := CI(10001, CQ(1, before, user), Updated(before))
 		f := WithCIs(
 			"example",
 			ACLGrant(OpReview, codes.PermissionDenied, "chromium").Or(ACLGrant(OpAlterVotesOfOthers, codes.PermissionDenied, "chromium")),
@@ -607,7 +608,7 @@ func TestSetReview(t *testing.T) {
 				{
 					User:  user,
 					Value: 1,
-					Date:  timestamppb.New(tc.Now().Add(-2 * time.Minute)),
+					Date:  timestamppb.New(before),
 				},
 				{
 					User:  U("chromium"),
@@ -656,7 +657,7 @@ func TestSetReview(t *testing.T) {
 					{
 						User:  user,
 						Value: 1,
-						Date:  timestamppb.New(tc.Now().Add(-2 * time.Minute)),
+						Date:  timestamppb.New(before),
 					},
 					{
 						User:  U("user-789"),
