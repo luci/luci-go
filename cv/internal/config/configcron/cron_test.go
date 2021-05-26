@@ -82,7 +82,7 @@ func TestConfigRefreshCron(t *testing.T) {
 			pm.updates = nil
 
 			Convey("randomly pokes existing projects even if there are no updates", func() {
-				// Simulate cron runs every 1 minute and expect PM to poked at least
+				// Simulate cron runs every 1 minute and expect PM to be poked at least
 				// once per pokePMInterval.
 				ctx = mathrand.Set(ctx, rand.New(rand.NewSource(1234)))
 				pokeBefore := ct.Clock.Now().Add(pokePMInterval)

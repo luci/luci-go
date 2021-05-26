@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -58,7 +59,11 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	case !existingPC.Enabled:
 		// Go through update process to ensure all configs are present.
 	case existingPC.ExternalHash == meta.ContentHash:
-		return nil // Already up-to-date.
+		// TODO(crbug/1169389): remove after all configs are upgraded.
+		// Anything imported in the last week definitely has Git Revision set.
+		if clock.Now(ctx).Sub(existingPC.UpdateTime) < time.Hour*24*7 {
+			return nil // Already up-to-date.
+		}
 	}
 
 	cfg, err := fetchCfg(ctx, meta.ContentHash)
@@ -76,19 +81,23 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		hashInfo := ConfigHashInfo{
-			GitRevision: meta.Revision,
-			Hash:        localHash,
-			Project:     datastore.MakeKey(ctx, projectConfigKind, project),
+			Hash:    localHash,
+			Project: datastore.MakeKey(ctx, projectConfigKind, project),
 		}
 		switch err := datastore.Get(ctx, &hashInfo); {
 		case err != nil && err != datastore.ErrNoSuchEntity:
 			return errors.Annotate(err, "failed to get ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
 		case err == nil && hashInfo.ProjectEVersion >= targetEVersion:
 			return nil // Do not go backwards.
+		case err == nil && hashInfo.GitRevision == "":
+			// TODO(crbug/1169389): remove after all configs are upgraded.
+			logging.Debugf(ctx, "crbug/1169389: filling in missing GitRevision in %s/%s", project, localHash)
+			fallthrough
 		default:
 			hashInfo.ProjectEVersion = targetEVersion
 			hashInfo.UpdateTime = datastore.RoundTime(clock.Now(ctx)).UTC()
 			hashInfo.ConfigGroupNames = cgNames
+			hashInfo.GitRevision = meta.Revision
 			return errors.Annotate(datastore.Put(ctx, &hashInfo), "failed to put ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
 		}
 	}, nil)
@@ -121,8 +130,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 			}
 			updated = true
 			if err := datastore.Put(ctx, &pc); err != nil {
-				return errors.Annotate(err, "failed to put ProjectConfig(project=%q)",
-					project).Tag(transient.Tag).Err()
+				return errors.Annotate(err, "failed to put ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
 			}
 			return notify(ctx)
 		}
