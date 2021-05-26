@@ -653,6 +653,9 @@ func (f *Fake) SetDependsOn(host string, child interface{}, parents ...interface
 	for _, p := range parents {
 		ch, ps = parseChangePatchset(p)
 		pkey := psKey(host, ch, ps)
+		if pkey == ckey {
+			panic(fmt.Errorf("same child %q and parent %q", ckey, pkey))
+		}
 		if _, _, _, err := f.resolvePSKeyLocked(pkey); err != nil {
 			panic(err)
 		}
