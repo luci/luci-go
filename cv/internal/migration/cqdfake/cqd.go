@@ -61,8 +61,11 @@ type CQDFake struct {
 	// atomic snapshot of keys after updateAttempts.
 	latestAttemptsKeys atomic.Value
 
-	candidatesClbk atomic.Value
-	verifyClbk     atomic.Value
+	candidatesClbk  atomic.Value
+	verifyClbk      atomic.Value
+	shouldCrashClbk atomic.Value
+
+	cancelServeCtx func()
 }
 
 // Start starts CQDFake in background until the given context is cancelled or
@@ -76,8 +79,10 @@ func (cqd *CQDFake) Start(ctx context.Context) {
 	}
 	cqd.done = make(chan struct{})
 	cqd.wg.Add(1)
+	ctx, cqd.cancelServeCtx = context.WithCancel(ctx)
 	go func() {
 		defer cqd.wg.Done()
+		defer cqd.cancelServeCtx()
 		cqd.serve(ctx)
 	}()
 	// TODO(tandrii): add submitter thread fake.
@@ -124,6 +129,22 @@ type VerifyClbk func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.R
 // once per loop.
 func (cqd *CQDFake) SetVerifyClbk(clbk VerifyClbk) {
 	cqd.verifyClbk.Store(clbk)
+}
+
+type Operation string
+
+const (
+	OpReportFinishedRun Operation = "OpReportFinishedRun"
+)
+
+// ShouldCrashClbk is consulted to decide if CQD should crash.
+//
+// key is attempt key if operation is specific to an Attempt.
+type ShouldCrashClbk func(nextOp Operation, key string) bool
+
+// SetShouldCrashClbk (re)sets callback func.
+func (cqd *CQDFake) SetShouldCrashClbk(clbk ShouldCrashClbk) {
+	cqd.shouldCrashClbk.Store(clbk)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -430,6 +451,9 @@ func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.ReportedRun,
 		}
 	}
 
+	if err := cqd.maybeCrash(ctx, OpReportFinishedRun, r.Attempt.GetKey()); err != nil {
+		return err
+	}
 	req := &migrationpb.ReportFinishedRunRequest{Run: proto.Clone(r).(*migrationpb.ReportedRun)}
 	_, err := cqd.CV.ReportFinishedRun(cqd.migrationAPIContext(ctx), req)
 	// TODO(tandrii): send event to BQ.
@@ -457,6 +481,16 @@ func (cqd *CQDFake) migrationAPIContext(ctx context.Context) context.Context {
 		Identity:             identity.Identity("project:" + cqd.LUCIProject),
 		PeerIdentityOverride: "user:cqdaemon@example.com",
 	})
+}
+
+func (cqd *CQDFake) maybeCrash(ctx context.Context, next Operation, key string) error {
+	f := cqd.shouldCrashClbk.Load()
+	if f == nil || !(f.(ShouldCrashClbk)(next, key)) {
+		return nil
+	}
+	logging.Debugf(ctx, "CQD was told to crash before %s %q", next, key)
+	cqd.cancelServeCtx()
+	return errors.New("CQD is crashing")
 }
 
 var cqdGerritUser = &gerritpb.AccountInfo{
