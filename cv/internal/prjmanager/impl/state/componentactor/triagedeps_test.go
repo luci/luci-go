@@ -62,9 +62,7 @@ func shouldResembleTriagedDeps(actual interface{}, expected ...interface{}) stri
 		ShouldResemble(a.lastTriggered, b.lastTriggered),
 		ShouldResembleProto(a.notYetLoaded, b.notYetLoaded),
 		ShouldResembleProto(a.submitted, b.submitted),
-		ShouldResembleProto(a.unwatched, b.unwatched),
-		ShouldResembleProto(a.wrongConfigGroup, b.wrongConfigGroup),
-		ShouldResembleProto(a.incompatMode, b.incompatMode),
+		ShouldResembleProto(a.invalidDeps, b.invalidDeps),
 	} {
 		if err != "" {
 			buf.WriteRune(' ')
@@ -80,11 +78,15 @@ func TestShouldResembleTriagedDeps(t *testing.T) {
 	Convey("shouldResembleTriagedDeps works", t, func() {
 		So(&triagedDeps{}, shouldResembleTriagedDeps, &triagedDeps{})
 		So(&triagedDeps{
-			wrongConfigGroup: []*changelist.Dep{{Clid: 1}},
-			submitted:        []*changelist.Dep{{Clid: 2}},
+			invalidDeps: &changelist.CLError_InvalidDeps{
+				WrongConfigGroup: []*changelist.Dep{{Clid: 1}},
+			},
+			submitted: []*changelist.Dep{{Clid: 2}},
 		}, shouldResembleTriagedDeps, &triagedDeps{
-			wrongConfigGroup: []*changelist.Dep{{Clid: 1}},
-			submitted:        []*changelist.Dep{{Clid: 2}},
+			invalidDeps: &changelist.CLError_InvalidDeps{
+				WrongConfigGroup: []*changelist.Dep{{Clid: 1}},
+			},
+			submitted: []*changelist.Dep{{Clid: 2}},
 		})
 	})
 }
@@ -179,7 +181,11 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{unwatched: pcl33.GetDeps()})
+						So(td, shouldResembleTriagedDeps, &triagedDeps{
+							invalidDeps: &changelist.CLError_InvalidDeps{
+								Unwatched: pcl33.GetDeps(),
+							},
+						})
 						So(td.OK(), ShouldBeFalse)
 					})
 
@@ -208,8 +214,10 @@ func TestDepsTriage(t *testing.T) {
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
 						So(td, shouldResembleTriagedDeps, &triagedDeps{
-							lastTriggered:    epoch.Add(3 * time.Second),
-							wrongConfigGroup: pcl33.GetDeps(),
+							lastTriggered: epoch.Add(3 * time.Second),
+							invalidDeps: &changelist.CLError_InvalidDeps{
+								WrongConfigGroup: pcl33.GetDeps(),
+							},
 						})
 						So(td.OK(), ShouldBeFalse)
 					})
@@ -259,7 +267,9 @@ func TestDepsTriage(t *testing.T) {
 				td := do(pcl32, singIdx)
 				So(td, shouldResembleTriagedDeps, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
-					incompatMode:  pcl32.GetDeps(),
+					invalidDeps: &changelist.CLError_InvalidDeps{
+						IncompatMode: pcl32.GetDeps(),
+					},
 				})
 				So(td.OK(), ShouldBeFalse)
 			})
@@ -299,7 +309,9 @@ func TestDepsTriage(t *testing.T) {
 					td := do(pcl32, combIdx)
 					So(td, shouldResembleTriagedDeps, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
-						incompatMode:  pcl32.GetDeps(),
+						invalidDeps: &changelist.CLError_InvalidDeps{
+							IncompatMode: pcl32.GetDeps(),
+						},
 					})
 				})
 			})
@@ -317,7 +329,9 @@ func TestDepsTriage(t *testing.T) {
 					td := do(pcl33, combIdx)
 					So(td, shouldResembleTriagedDeps, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
-						incompatMode:  []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
+						invalidDeps: &changelist.CLError_InvalidDeps{
+							IncompatMode: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
+						},
 					})
 					So(td.OK(), ShouldBeFalse)
 				})
