@@ -1,0 +1,250 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db472e7f_861ccdf3",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "you need to create a queue in queue.yaml.\nI think we can call it `bq-export`",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0b82f36_148dd5a7",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "Transactional",
+      "range": {
+        "startLine": 46,
+        "startChar": 16,
+        "endLine": 46,
+        "endChar": 32
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d02011e_c888dd93",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "take just runID.",
+      "range": {
+        "startLine": 64,
+        "startChar": 48,
+        "endLine": 64,
+        "endChar": 69
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d06ab04_cb7d75c1",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "yep, and you can inline it.",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 53
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24c9cda4_0146dfaf",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "should already existing in cvtesting.Test, i think.",
+      "range": {
+        "startLine": 40,
+        "startChar": 2,
+        "endLine": 40,
+        "endChar": 26
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "708929f6_6a3fe759",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "ditto.",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55063c81_ad61c640",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "see doc for  `tq.Transactional` (see also comment about tq.NonTransactional)",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd471db6_8f1c3073",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "I dunno. In PM cl purger, I had to check observing the deadline.",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8562425_f6a791cd",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "well, you already have tests cases covering this for narrow SendRunRow func, don\u0027t you? If yes, then don\u0027t cover this here.",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 41
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "afb92cee_f8bcbcc1",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "this part isn\u0027t important here -- you don\u0027t need to notify RUn Manager that you are done.\nWe assume bqclient is already idempotent when sending rows, so no need to assert that either, and operationID being specified is already asserted in SendBQRow test.",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 5
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0bd580a3_35404821",
+        "filename": "cv/internal/run/bq/tasks.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "2021",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9927c65c_0d4c5d44",
+        "filename": "cv/internal/run/bq/tasks.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T23:28:45Z",
+      "side": 1,
+      "message": "nit-nit:\nin other BB / ResultDB, i think the term is \"export\".\nAnd the \"row\" part isn\u0027t important, and in fact export several rows to several BQ tables.\nSo, maybe it should be \"SendRunToBQTask\" or \"ExportRunToBQTask\".",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 22
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
