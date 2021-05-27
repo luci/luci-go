@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da1f05d7_6892a249",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T20:24:17Z",
+      "side": 1,
+      "message": "nit: exceeding \nor \n\"To make exceeding the limit unlikely,",
+      "range": {
+        "startLine": 39,
+        "startChar": 40,
+        "endLine": 39,
+        "endChar": 49
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ab052927_86361003",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T20:24:17Z",
+      "side": 1,
+      "message": "nit: m\n\nit doesn\u0027t need to be public, does it?",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "25499ae2_a4cb0f27",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T20:24:17Z",
+      "side": 1,
+      "message": "nit: might as well make a func and use here \u0026\u0026 in logger() above",
+      "range": {
+        "startLine": 197,
+        "startChar": 16,
+        "endLine": 199,
+        "endChar": 41
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
