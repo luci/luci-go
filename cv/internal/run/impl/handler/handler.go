@@ -55,6 +55,10 @@ type Handler interface {
 	// Run reported by CQDaemon.
 	OnCQDVerificationCompleted(context.Context, *state.RunState) (*Result, error)
 
+	// OnCQDFinished finalizes the Run according to the finished Run reported by
+	// CQDaemon.
+	OnCQDFinished(context.Context, *state.RunState) (*Result, error)
+
 	// OnReadyForSubmission acquires a slot in Submit Queue and makes sure this
 	// Run is not currently being submitted by another RM task. If all succeeded,
 	// returns a PostProcessFn for submission.

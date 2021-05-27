@@ -131,6 +131,9 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 	if k == "" {
 		return nil, appstatus.Error(codes.InvalidArgument, "attempt key is required")
 	}
+	if gc := req.GetRun().GetAttempt().GetGerritChanges(); len(gc) == 0 {
+		return nil, appstatus.Error(codes.InvalidArgument, "at least 1 gerrit change is required")
+	}
 
 	optionalID := common.RunID(req.GetRun().GetId())
 	logging.Debugf(ctx, "ReportFinishedRun(Run %q | Attempt %q)", optionalID, k)

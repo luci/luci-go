@@ -208,6 +208,9 @@ func TestReportFinishedRun(t *testing.T) {
 			Attempt: &cvbqpb.Attempt{
 				Key:    "deadbeef",
 				Status: cvbqpb.AttemptStatus_SUCCESS,
+				GerritChanges: []*cvbqpb.GerritChange{
+					{Host: "g-host", Change: 1},
+				},
 				// In practice, the other fields are also set by CQDaemon, but not
 				// relevant in this test.
 			},
