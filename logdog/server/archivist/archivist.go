@@ -495,7 +495,6 @@ type stagedArchival struct {
 	stream stagingPaths
 	index  stagingPaths
 
-	finalized     bool
 	terminalIndex types.MessageIndex
 	logEntryCount int64
 
@@ -554,52 +553,6 @@ func (sa *stagedArchival) makeStagingPaths(uid string) error {
 	for name, spaths := range nameMap {
 		spaths.staged = sa.GSStagingBase.Concat(sa.project, sapath, uid, name)
 		spaths.final = sa.GSBase.Concat(sa.project, sapath, name)
-	}
-	return nil
-}
-
-// checkComplete performs a quick scan of intermediate storage to ensure that
-// all of the log stream's records are available.
-func (sa *stagedArchival) checkComplete(c context.Context) error {
-	if sa.terminalIndex < 0 {
-		log.Warningf(c, "Cannot archive complete stream with no terminal index.")
-		return statusErr(errors.New("completeness required, but stream has no terminal index"))
-	}
-
-	sreq := storage.GetRequest{
-		Project:  sa.project,
-		Path:     sa.path,
-		KeysOnly: true,
-	}
-
-	nextIndex := types.MessageIndex(0)
-	var ierr error
-	err := sa.Storage.Get(c, sreq, func(e *storage.Entry) bool {
-		idx, err := e.GetStreamIndex()
-		if err != nil {
-			ierr = errors.Annotate(err, "could not get stream index").Err()
-			return false
-		}
-
-		switch {
-		case idx != nextIndex:
-			ierr = fmt.Errorf("missing log entry index %d (next %d)", nextIndex, idx)
-			return false
-
-		case idx == sa.terminalIndex:
-			// We have hit our terminal index, so all of the log data is here!
-			return false
-
-		default:
-			nextIndex++
-			return true
-		}
-	})
-	if ierr != nil {
-		return ierr
-	}
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -847,10 +800,6 @@ var _ interface {
 	error
 	errors.Wrapped
 } = (*statusErrorWrapper)(nil)
-
-func statusErr(inner error) error {
-	return &statusErrorWrapper{inner}
-}
 
 func (e *statusErrorWrapper) Error() string {
 	if e.inner != nil {

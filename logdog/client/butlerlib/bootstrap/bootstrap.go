@@ -54,8 +54,6 @@ type Bootstrap struct {
 	Client *streamclient.Client
 }
 
-type clientFn func(path string, ns types.StreamName) (*streamclient.Client, error)
-
 // GetFromEnv loads a Bootstrap instance from the given environment.
 //
 // It will return an error if the bootstrap data is invalid, and will return

@@ -117,10 +117,6 @@ type streamImpl struct {
 	// appendErr is the error that should be returned by Append. It is set when
 	// stream content processing hits a fatal state.
 	appendErr error
-
-	// testAppendWaitCallback, if not nil, is called before Append blocks.
-	// This callback is used for testing coordination.
-	testAppendWaitCallback func()
 }
 
 func newStream(c streamConfig) *streamImpl {

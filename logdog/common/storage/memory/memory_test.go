@@ -37,15 +37,6 @@ func numRec(v types.MessageIndex) *rec {
 	}
 }
 
-// index builds an index of stream message number to array offset.
-func index(recs []*rec) map[types.MessageIndex]int {
-	index := map[types.MessageIndex]int{}
-	for i, r := range recs {
-		index[r.index] = i
-	}
-	return index
-}
-
 func mustGetIndex(e *storage.Entry) types.MessageIndex {
 	idx, err := e.GetStreamIndex()
 	if err != nil {

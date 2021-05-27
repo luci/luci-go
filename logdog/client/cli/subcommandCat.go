@@ -36,8 +36,6 @@ import (
 	"github.com/maruel/subcommands"
 )
 
-var errDatagramNotSupported = errors.New("datagram not supported")
-
 type timestampsFlag string
 
 const (

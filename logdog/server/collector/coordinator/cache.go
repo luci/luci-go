@@ -48,9 +48,6 @@ var (
 type cache struct {
 	Coordinator
 
-	// Size is the number of stream states to hold in the cache.
-	size int
-
 	// expiration is the maximum lifespan of a cache entry. If an entry is older
 	// than this, it will be discarded.
 	expiration time.Duration

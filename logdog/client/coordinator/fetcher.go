@@ -26,20 +26,13 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-const (
-	// defaultBytes is the default maximum number of bytes to request per fetch
-	// round.
-	defaultBytes = 1024 * 1024 * 1 // 1 MB
-)
-
 // coordinatorSource is a fetcher.Source implementation that uses the
 // Coordinator API.
 type coordinatorSource struct {
 	sync.Mutex
 
-	stream    *Stream
-	tidx      types.MessageIndex
-	tailFirst bool
+	stream *Stream
+	tidx   types.MessageIndex
 
 	requireCompleteStream bool
 

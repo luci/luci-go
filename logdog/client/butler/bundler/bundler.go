@@ -427,12 +427,6 @@ func (b *Bundler) signalStreamUpdateLocked() {
 	}
 }
 
-// nextPrefixIndex is a goroutine-safe method that returns the next prefix index
-// for the given Bundler.
-func (b *Bundler) nextPrefixIndex() uint64 {
-	return uint64(b.prefixCounter.next())
-}
-
 func (b *Bundler) getClock() clock.Clock {
 	c := b.c.Clock
 	if c != nil {

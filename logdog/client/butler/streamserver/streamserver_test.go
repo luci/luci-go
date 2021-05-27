@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"net"
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
@@ -79,9 +78,7 @@ func (l *testListener) connect(c *testListenerConn) {
 type testListenerConn struct {
 	bytes.Buffer
 
-	panicOnRead   bool
-	readDeadline  time.Time
-	writeDeadline time.Time
+	panicOnRead bool
 }
 
 func (c *testListenerConn) Read(d []byte) (int, error) {

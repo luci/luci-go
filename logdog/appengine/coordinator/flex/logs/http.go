@@ -54,8 +54,6 @@ const (
 	maxBackoff = time.Second * 30
 )
 
-var errRawRedirect = errors.Reason("HTML mode is not supported for binary or datagram").Err()
-
 type header struct {
 	Title       string
 	Link        string
