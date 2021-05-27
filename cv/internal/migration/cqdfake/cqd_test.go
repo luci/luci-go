@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/proto"
 
-	bqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -70,30 +69,30 @@ func TestCQDFakeInactiveCV(t *testing.T) {
 			case 1:
 				res = []*migrationpb.ReportedRun{
 					{
-						Attempt: &bqpb.Attempt{
+						Attempt: &cvbqpb.Attempt{
 							Key:           "to-abort",
-							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 1, Mode: bqpb.Mode_DRY_RUN}},
-							Status:        bqpb.AttemptStatus_STARTED,
+							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 1, Mode: cvbqpb.Mode_DRY_RUN}},
+							Status:        cvbqpb.AttemptStatus_STARTED,
 						},
 					},
 				}
 			case 2:
 				res = []*migrationpb.ReportedRun{
 					{
-						Attempt: &bqpb.Attempt{
+						Attempt: &cvbqpb.Attempt{
 							Key:           "to-submit",
-							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 2, Mode: bqpb.Mode_FULL_RUN}},
-							Status:        bqpb.AttemptStatus_STARTED,
+							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 2, Mode: cvbqpb.Mode_FULL_RUN}},
+							Status:        cvbqpb.AttemptStatus_STARTED,
 						},
 					},
 				}
 			case 3:
 				res = []*migrationpb.ReportedRun{
 					{
-						Attempt: &bqpb.Attempt{
+						Attempt: &cvbqpb.Attempt{
 							Key:           "to-fail",
-							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 3, Mode: bqpb.Mode_QUICK_DRY_RUN}},
-							Status:        bqpb.AttemptStatus_STARTED,
+							GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: 3, Mode: cvbqpb.Mode_QUICK_DRY_RUN}},
+							Status:        cvbqpb.AttemptStatus_STARTED,
 						},
 					},
 				}
@@ -116,9 +115,9 @@ func TestCQDFakeInactiveCV(t *testing.T) {
 			r = proto.Clone(r).(*migrationpb.ReportedRun)
 			switch k {
 			case "to-submit":
-				r.GetAttempt().Status = bqpb.AttemptStatus_SUCCESS
+				r.GetAttempt().Status = cvbqpb.AttemptStatus_SUCCESS
 			case "to-fail":
-				r.GetAttempt().Status = bqpb.AttemptStatus_FAILURE
+				r.GetAttempt().Status = cvbqpb.AttemptStatus_FAILURE
 			}
 			return r
 		})
