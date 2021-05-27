@@ -22,6 +22,30 @@
       },
       "revId": "9d060ca483e75699c6c55c642b6a99c71c77ae11",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b7268a5_63628e5b",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T12:10:20Z",
+      "side": 1,
+      "message": "\u003e CV notice that CQ label has been removed?\n\nYes, but if CQD is in charge, CV should wait minutes before acting on it.",
+      "parentUuid": "646c1de3_202510e2",
+      "range": {
+        "startLine": 293,
+        "startChar": 23,
+        "endLine": 293,
+        "endChar": 67
+      },
+      "revId": "9d060ca483e75699c6c55c642b6a99c71c77ae11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
