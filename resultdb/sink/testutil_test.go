@@ -21,10 +21,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/prpc"
@@ -84,7 +84,7 @@ func testArtifactWithContents(contents []byte) *sinkpb.Artifact {
 // validTestResult returns a valid sinkpb.TestResult sample message.
 func validTestResult() (*sinkpb.TestResult, func()) {
 	now := testclock.TestRecentTimeUTC
-	st, _ := ptypes.TimestampProto(now.Add(-2 * time.Minute))
+	st := timestamppb.New(now.Add(-2 * time.Minute))
 	artf := testArtifactWithFile(func(f *os.File) {
 		_, err := f.WriteString("a sample artifact")
 		So(err, ShouldBeNil)

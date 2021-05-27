@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -31,6 +31,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -38,8 +39,8 @@ func TestValidateGetTestResultHistoryRequest(t *testing.T) {
 	t.Parallel()
 
 	Convey(`ValidateGetTestResultHistoryRequest`, t, func() {
-		recently, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
-		earlier, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.Add(-24 * time.Hour))
+		recently := timestamppb.New(testclock.TestRecentTimeUTC)
+		earlier := timestamppb.New(testclock.TestRecentTimeUTC.Add(-24 * time.Hour))
 
 		Convey(`valid`, func() {
 			req := &pb.GetTestResultHistoryRequest{
@@ -119,8 +120,8 @@ func TestGetTestResultHistory(t *testing.T) {
 			})
 		srv := newTestResultDBService()
 
-		earliest, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
-		afterLatest, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.Add(3 * time.Minute))
+		earliest := timestamppb.New(testclock.TestRecentTimeUTC)
+		afterLatest := timestamppb.New(testclock.TestRecentTimeUTC.Add(3 * time.Minute))
 
 		req := &pb.GetTestResultHistoryRequest{
 			Range: &pb.GetTestResultHistoryRequest_TimeRange{
