@@ -16,6 +16,23 @@
       "message": "Hi Robbie, can you help to review it? thanks.\n\nTested the recipe bundle -\u003e bbagent flow via led. It worked. Recipes-py side cl - http://crrev.com/c/2920873",
       "revId": "0509976ccf6e53a1c342b811392e0500236ab968",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "160779b3_6968ebeb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-05-27T23:33:59Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "0509976ccf6e53a1c342b811392e0500236ab968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
