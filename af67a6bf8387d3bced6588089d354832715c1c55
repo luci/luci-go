@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "74f1911c_1a3e5ccf",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T03:10:20Z",
+      "side": 1,
+      "message": "I renamed it to MaxPayload with an explanation for the truncation. PTAL",
+      "parentUuid": "59ddc935_9aed2e90",
+      "range": {
+        "startLine": 47,
+        "startChar": 6,
+        "endLine": 47,
+        "endChar": 23
+      },
+      "revId": "af67a6bf8387d3bced6588089d354832715c1c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d9f95852_f6e83e11",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c82d700b_21ce307b",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T03:10:20Z",
+      "side": 1,
+      "message": "Removed \"(truncated)\" to remove unnecessary complexity. It may sound nice but won\u0027t be useful in practice.\n\nIf necessary, I can add a special label, like \"luci-logs-truncated\". The label will enable searching truncated logs in a performant way than a full-text search with \"(truncated)\". (If this sounds useful, I will add it in a separate CL)",
+      "parentUuid": "d9f95852_f6e83e11",
+      "range": {
+        "startLine": 219,
+        "startChar": 41,
+        "endLine": 219,
+        "endChar": 50
+      },
+      "revId": "af67a6bf8387d3bced6588089d354832715c1c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1a6d9640_7d45fcbd",
@@ -77,6 +125,30 @@
       "writtenOn": "2021-05-25T21:25:05Z",
       "side": 1,
       "message": "how large can a cloud log entry be?",
+      "range": {
+        "startLine": 241,
+        "startChar": 20,
+        "endLine": 241,
+        "endChar": 35
+      },
+      "revId": "af67a6bf8387d3bced6588089d354832715c1c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1456303_14be0aed",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T03:10:20Z",
+      "side": 1,
+      "message": "It\u0027s 256KB in the internal size.\nhttps://cloud.google.com/logging/quotas\n\nIt\u0027s not exactly the length of the wire byte representation, but http://shortn/_4HzvkeP7oQ\n\nThe size computation gets complicated when there are large label values. At the worst case, it\u0027d return an error, and Logdog should just ignore the error, as retries on the request will return the same error continuously.\n\nI added additional limits to minimize the chance of CloudLogging entries to be rejected due to the size. PTAL",
+      "parentUuid": "1a6d9640_7d45fcbd",
       "range": {
         "startLine": 241,
         "startChar": 20,

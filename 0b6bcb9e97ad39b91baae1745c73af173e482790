@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6dd25c84_d18d9f31",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T03:10:20Z",
+      "side": 1,
+      "message": "The logic of handling partial lines across multiple LogEntries is more complicated than I expected. I\u0027m sorry for many changes, but PTAL. I\u0027d love to refactor the flow to make it easier to follow.\ne.g.,\n- moving the logic of CloudLog Export from archiveLogs().",
+      "revId": "0b6bcb9e97ad39b91baae1745c73af173e482790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
