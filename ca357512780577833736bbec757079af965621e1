@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec8c5df4_6d34e5d9",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-27T21:14:30Z",
+      "side": 1,
+      "message": "Done, thanks",
+      "parentUuid": "8e182803_069a8f1c",
+      "revId": "ca357512780577833736bbec757079af965621e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b4eefda7_87fd5f84",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-05-27T21:10:29Z",
       "side": 1,
       "message": "nit nit: maybe just Client(the interface) so that you can unexport `ProdClient` to have better encapsulation.",
+      "range": {
+        "startLine": 47,
+        "startChar": 62,
+        "endLine": 47,
+        "endChar": 73
+      },
+      "revId": "ca357512780577833736bbec757079af965621e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e5b17e7e_f8bf8453",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-27T21:14:30Z",
+      "side": 1,
+      "message": "Oh, right, thanks :-)",
+      "parentUuid": "b4eefda7_87fd5f84",
       "range": {
         "startLine": 47,
         "startChar": 62,
