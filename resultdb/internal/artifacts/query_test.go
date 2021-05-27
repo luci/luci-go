@@ -210,6 +210,30 @@ func TestQuery(t *testing.T) {
 			})
 		})
 
+		Convey(`Artifacts of unexpected test results`, func() {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t0/0", "a", nil),
+				insert.Artifact("inv1", "tr/t1/0", "a", nil),
+				insert.Artifact("inv1", "tr/t1/1", "a", nil),
+				insert.Artifact("inv1", "tr/t1/1", "b", nil),
+				insert.Artifact("inv1", "tr/t2/0", "a", nil),
+			)
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insert.TestResults("inv1", "t0", nil, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults("inv1", "t2", nil, pb.TestStatus_FAIL),
+			)...)
+
+			q.TestResultPredicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS
+			actual := mustFetchNames(q)
+			So(actual, ShouldResemble, []string{
+				"invocations/inv1/artifacts/a",
+				"invocations/inv1/tests/t2/results/0/artifacts/a",
+			})
+
+		})
+
 		Convey(`Variant equals`, func() {
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "", "a", nil),
