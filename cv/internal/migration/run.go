@@ -330,7 +330,7 @@ type FinishedCQDRun struct {
 	Payload *migrationpb.ReportedRun
 }
 
-func saveFinishedCQDRun(ctx context.Context, mr *migrationpb.ReportedRun) error {
+func saveFinishedCQDRun(ctx context.Context, mr *migrationpb.ReportedRun, notify func(context.Context) error) error {
 	key := mr.GetAttempt().GetKey()
 	try := 0
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -352,7 +352,10 @@ func saveFinishedCQDRun(ctx context.Context, mr *migrationpb.ReportedRun) error 
 		if id := f.Payload.GetId(); id != "" {
 			f.RunID = common.RunID(id)
 		}
-		return datastore.Put(ctx, &f)
+		if err := datastore.Put(ctx, &f); err != nil {
+			return err
+		}
+		return notify(ctx)
 	}, nil)
 	return errors.Annotate(err, "failed to record FinishedCQDRun %q after %d tries", key, try).Tag(transient.Tag).Err()
 }

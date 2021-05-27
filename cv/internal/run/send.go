@@ -189,3 +189,15 @@ func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID com
 		},
 	})
 }
+
+// NotifyCQDFinished tells RunManager that CQDaemon has finished the provided
+// Run.
+//
+// TODO(crbug/1141880): Remove this event after migration.
+func (n *Notifier) NotifyCQDFinished(ctx context.Context, runID common.RunID) error {
+	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_CqdFinished{
+			CqdFinished: &eventpb.CQDFinished{},
+		},
+	})
+}

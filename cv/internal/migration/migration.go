@@ -48,6 +48,7 @@ const AllowGroup = "luci-cv-migration-crbug-1141880"
 // RunNotifier abstracts out dependency of MigrationServer on run.Notifier.
 type RunNotifier interface {
 	NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error
+	NotifyCQDFinished(ctx context.Context, runID common.RunID) error
 }
 
 // MigrationServer implements CQDaemon -> CV migration API.
@@ -120,7 +121,7 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 
 // ReportFinishedRun is used by CQD to report runs it handled to completion.
 //
-// It'll removed upon hitting Milestone 1.
+// It'll be removed upon hitting Milestone 1.
 func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
@@ -146,9 +147,12 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 		req.GetRun().Id = string(r.ID)
 	}
 
-	if err = saveFinishedCQDRun(ctx, req.GetRun()); err != nil {
-		return nil, err
-	}
+	err = saveFinishedCQDRun(ctx, req.GetRun(), func(ctx context.Context) error {
+		if r != nil {
+			return m.RunNotifier.NotifyCQDFinished(ctx, r.ID)
+		}
+		return nil
+	})
 	return &emptypb.Empty{}, nil
 }
 

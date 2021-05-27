@@ -197,7 +197,8 @@ func TestReportFinishedRun(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		m := MigrationServer{}
+		rnMock := runNotifierMock{}
+		m := MigrationServer{RunNotifier: &rnMock}
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:             identity.Identity("project:infra"),
 			PeerIdentityOverride: "user:cqdaemon@example.com",
@@ -229,14 +230,17 @@ func TestReportFinishedRun(t *testing.T) {
 				_, err := m.ReportFinishedRun(ctx, req)
 				So(err, ShouldBeNil)
 				So(loadFinishedCQRun(), ShouldNotBeNil)
+				So(rnMock.finished, ShouldBeEmpty)
 			})
 			Convey("unless non-existing Run ID is given, which should not happen in practice", func() {
 				req.Run.Id = "not-existing/123-1-deadbeef"
 				_, err := m.ReportFinishedRun(ctx, req)
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 				So(loadFinishedCQRun(), ShouldBeNil)
+				So(rnMock.finished, ShouldBeEmpty)
 			})
 		})
+
 		Convey("with a Run, always saves", func() {
 			runID := common.RunID("existing/123-1-deadbeef")
 			So(datastore.Put(ctx, &run.Run{
@@ -249,11 +253,13 @@ func TestReportFinishedRun(t *testing.T) {
 				_, err := m.ReportFinishedRun(ctx, req)
 				So(err, ShouldBeNil)
 				So(loadFinishedCQRun().RunID, ShouldResemble, runID)
+				So(rnMock.finished, ShouldResemble, common.RunIDs{runID})
 			})
 			Convey("deduces the Run ID if not given", func() {
 				_, err := m.ReportFinishedRun(ctx, req)
 				So(err, ShouldBeNil)
 				So(loadFinishedCQRun().RunID, ShouldResemble, runID)
+				So(rnMock.finished, ShouldResemble, common.RunIDs{runID})
 			})
 		})
 	})
@@ -339,9 +345,15 @@ func TestReportVerifiedRun(t *testing.T) {
 
 type runNotifierMock struct {
 	verificationCompleted common.RunIDs
+	finished              common.RunIDs
 }
 
 func (r *runNotifierMock) NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
 	r.verificationCompleted = append(r.verificationCompleted, runID)
+	return nil
+}
+
+func (r *runNotifierMock) NotifyCQDFinished(ctx context.Context, runID common.RunID) error {
+	r.finished = append(r.finished, runID)
 	return nil
 }

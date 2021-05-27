@@ -184,6 +184,7 @@ type triageResult struct {
 		sc    *eventpb.SubmissionCompleted
 	}
 	cqdVerificationCompletedEvents eventbox.Events
+	cqdFinished                    eventbox.Events
 	nextReadyEventTime             time.Time
 }
 
@@ -226,6 +227,8 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.submissionCompletedEvent.sc = e.GetSubmissionCompleted()
 	case *eventpb.Event_CqdVerificationCompleted:
 		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
+	case *eventpb.Event_CqdFinished:
+		tr.cqdFinished = append(tr.cqdFinished, item)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -261,6 +264,10 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 			return nil, err
 		}
 		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
+	}
+	if len(tr.cqdFinished) > 0 {
+		// TODO(tandrii): implement.
+		logging.Debugf(ctx, "Skipping processing of %d cqdFinished events", len(tr.cqdFinished))
 	}
 	switch {
 	case len(tr.cancelEvents) > 0:
