@@ -59,8 +59,6 @@ import (
 	"go.chromium.org/luci/luciexe/invoke"
 )
 
-var maxReserveDuration = 2 * time.Minute
-
 func main() {
 	go func() {
 		// serves "/debug" endpoints for pprof.
@@ -376,20 +374,6 @@ func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
 	}
 	populateSwarmingInfoFromEnv(build, environ.System())
 	return
-}
-
-// Returns min(1% of the remaining time towards current soft deadline,
-// `maxReserveDuration`). Returns 0 If soft deadline doesn't exist or
-// has already been exceeded.
-func calcDeadlineReserve(ctx context.Context) time.Duration {
-	curSoftDeadline := lucictx.GetDeadline(ctx).SoftDeadlineTime()
-	if now := clock.Now(ctx).UTC(); !curSoftDeadline.IsZero() && now.Before(curSoftDeadline) {
-		if reserve := curSoftDeadline.Sub(now) / 100; reserve < maxReserveDuration {
-			return reserve
-		}
-		return maxReserveDuration
-	}
-	return 0
 }
 
 func resolveExe(path string) (string, error) {
