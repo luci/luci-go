@@ -350,6 +350,8 @@ func TestSaveFinishedCQDRun(t *testing.T) {
 			So(datastore.Get(ctx, &f), ShouldBeNil)
 			So(f.Payload, ShouldResembleProto, mr)
 			So(f.RunID == "", ShouldBeTrue)
+			_, err := LoadFinishedCQDRun(ctx, "some/run-1-id")
+			So(err, ShouldErrLike, "no FinishedCQDRun")
 
 			Convey("with known CV ID", func() {
 				mr.Id = "known-cv-id/123123-samekeyhash"
@@ -358,6 +360,10 @@ func TestSaveFinishedCQDRun(t *testing.T) {
 				So(datastore.Get(ctx, &f), ShouldBeNil)
 				So(f.Payload, ShouldResembleProto, mr)
 				So(f.RunID, ShouldResemble, common.RunID(mr.Id))
+
+				f2, err := LoadFinishedCQDRun(ctx, f.RunID)
+				So(err, ShouldBeNil)
+				So(f2.AttemptKey, ShouldResemble, f.AttemptKey)
 			})
 		})
 	})

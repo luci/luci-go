@@ -441,6 +441,15 @@ func (fh *fakeHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state
 	}, nil
 }
 
+func (fh *fakeHandler) OnCQDFinished(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
+	fh.addInvocation("OnCQDFinished")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
+	}, nil
+}
+
 func (fh *fakeHandler) Poke(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
 	fh.addInvocation("Poke")
 	return &handler.Result{
