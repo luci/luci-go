@@ -142,14 +142,6 @@ func (p *LogPrefix) IsRetry(c context.Context, nonce []byte) bool {
 	return subtle.ConstantTimeCompare(p.OpNonce, nonce) == 1
 }
 
-// recalculateID calculates the hash ID from its Prefix field, which must be
-// populated else this function will panic.
-//
-// The value is loaded into its ID field.
-func (p *LogPrefix) recalculateID() {
-	p.ID = p.getIDFromPrefix()
-}
-
 // getIDFromPrefix calculates the log stream's hash ID from its Prefix/Name
 // fields, which must be populated else this function will panic.
 func (p *LogPrefix) getIDFromPrefix() HashID {

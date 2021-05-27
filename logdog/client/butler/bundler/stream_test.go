@@ -51,10 +51,9 @@ var errTestInduced = errors.New("test error")
 type testParser struct {
 	commands []*testParserCommand
 
-	appendedData []byte
-	truncateOn   bool
-	closedOn     bool
-	err          error
+	truncateOn bool
+	closedOn   bool
+	err        error
 
 	// nextIndex is the next stream index to assign.
 	nextIndex uint64
@@ -111,12 +110,6 @@ func (p *testParser) addData(d []byte, ts time.Time) {
 func (p *testParser) setAllowSplit(value bool) {
 	p.addCommand(&testParserCommand{
 		splitToggle: &value,
-	})
-}
-
-func (p *testParser) setClosed(value bool) {
-	p.addCommand(&testParserCommand{
-		closedToggle: &value,
 	})
 }
 

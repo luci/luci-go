@@ -26,7 +26,6 @@ import (
 
 type textTestCase struct {
 	title      string
-	delimiter  string
 	source     []string
 	limit      int
 	increment  time.Duration

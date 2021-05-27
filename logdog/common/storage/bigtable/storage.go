@@ -43,21 +43,6 @@ var (
 	}
 )
 
-const (
-	// tailRowCount is the size of the block of rows that tail read operations
-	// pull from BigTable. This is designed to be large enough for efficient
-	// buffering while staying small enough to avoid wasteful reads or
-	// excessive in-memory buffering.
-	//
-	// This is simply the maximum number of rows (limit). The actual number of
-	// rows will be further constrained by tailRowMaxSize.
-	tailRowCount = 128
-
-	// tailRowMaxSize is the maximum number of bytes of tail row data that will be
-	// buffered during Tail row reading.
-	tailRowMaxSize = 1024 * 1024 * 16
-)
-
 var (
 	// errStop is an internal sentinel error used to indicate "stop iteration"
 	// to btTable.getLogData iterator.

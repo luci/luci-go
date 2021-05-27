@@ -16,20 +16,9 @@ package coordinator
 
 import (
 	"context"
-	"net/http"
 
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 )
-
-type testHTTPError int
-
-func (e testHTTPError) Error() string {
-	return http.StatusText(int(e))
-}
-
-func httpError(s int) error {
-	return testHTTPError(s)
-}
 
 // testLogsServiceBase is an implementation of logdog.LogsServer that panics
 // for each method. It is designed to be embedded in other testing instances.
