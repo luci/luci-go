@@ -70,6 +70,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "84b88b1b_043c8512",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T21:53:55Z",
+      "side": 1,
+      "message": "you can also use strings.Buffer, seems more natural this way.",
+      "range": {
+        "startLine": 218,
+        "startChar": 9,
+        "endLine": 218,
+        "endChar": 21
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0f1734f4_005868fa",
@@ -106,6 +129,30 @@
       "writtenOn": "2021-05-27T20:42:36Z",
       "side": 1,
       "message": "i don\u0027t grasp why special handling for the first line here either.\nAFAIU, for each line you either add it to the buffer, possibly truncated, or not.\nthe buffer itself may have some leftover from before (which is the case only for the first line in a chunk, but this doesn\u0027t require special handling).",
+      "range": {
+        "startLine": 241,
+        "startChar": 0,
+        "endLine": 261,
+        "endChar": 3
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b393503_eaa53f82",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T21:53:55Z",
+      "side": 1,
+      "message": "discussed offline, I proposed https://paste.googleplex.com/5692726663184384",
+      "parentUuid": "9f975028_549f11ae",
       "range": {
         "startLine": 241,
         "startChar": 0,
