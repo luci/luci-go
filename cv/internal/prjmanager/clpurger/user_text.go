@@ -133,14 +133,6 @@ func depsURLs(ctx context.Context, deps []*changelist.Dep) ([]string, error) {
 	return urls, nil
 }
 
-func tmplExec(t *template.Template, data interface{}) (string, error) {
-	sb := strings.Builder{}
-	if err := t.Execute(&sb, data); err != nil {
-		return "", err
-	}
-	return sb.String(), nil
-}
-
 func tmplMust(text string) *template.Template {
 	text = strings.TrimSpace(text)
 	return template.Must(template.New("").Funcs(tmplFuncs).Parse(text))

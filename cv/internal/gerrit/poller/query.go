@@ -101,7 +101,6 @@ func (p *Poller) subpoll(ctx context.Context, luciProject string, sp *SubPoller)
 
 type singleQuery struct {
 	luciProject string
-	pm          PM
 	sp          *SubPoller
 	p           *Poller
 	client      gerrit.QueryClient

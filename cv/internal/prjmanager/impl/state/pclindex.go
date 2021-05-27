@@ -20,9 +20,8 @@ import (
 
 type pclIndex map[common.CLID]int
 
-func (p pclIndex) addI64(id int64, index int)      { p[common.CLID(id)] = index }
-func (p pclIndex) add(clid common.CLID, index int) { p[clid] = index }
-func (p pclIndex) hasI64(id int64) bool            { return p.has(common.CLID(id)) }
+func (p pclIndex) addI64(id int64, index int) { p[common.CLID(id)] = index }
+func (p pclIndex) hasI64(id int64) bool       { return p.has(common.CLID(id)) }
 func (p pclIndex) has(clid common.CLID) bool {
 	_, exists := p[clid]
 	return exists

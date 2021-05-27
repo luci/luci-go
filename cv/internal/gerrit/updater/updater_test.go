@@ -53,7 +53,6 @@ func TestSchedule(t *testing.T) {
 
 		const lProject = "infra"
 		const gHost = "chromium-review.example.com"
-		const gRepo = "depot_tools"
 
 		// Each Schedule() moves clock forward by 1ns.
 		// This ensures that SortByETA returns tasks in the same order as scheduled,

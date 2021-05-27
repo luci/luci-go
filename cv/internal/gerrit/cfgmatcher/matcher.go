@@ -213,19 +213,6 @@ func (g *Group) Match(ref string) bool {
 	return !regexp.MustCompile(g.GetExclude()).MatchString(ref)
 }
 
-// matchesAny returns true iff s matches any of the patterns.
-//
-// It is assumed that all patterns have been pre-validated and
-// are valid regexps.
-func matchesAny(patterns []string, s string) bool {
-	for _, pattern := range patterns {
-		if regexp.MustCompile(pattern).MatchString(s) {
-			return true
-		}
-	}
-	return false
-}
-
 func disjunctiveOfRegexps(rs []string) string {
 	sb := strings.Builder{}
 	sb.WriteString("^(")

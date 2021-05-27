@@ -1744,12 +1744,6 @@ func defaultPCL(cl *changelist.CL) *prjpb.PCL {
 	return p
 }
 
-func customPCL(cl *changelist.CL, override *prjpb.PCL) *prjpb.PCL {
-	p := defaultPCL(cl)
-	proto.Merge(p, override)
-	return p
-}
-
 func i64s(vs ...interface{}) []int64 {
 	res := make([]int64, len(vs))
 	for i, v := range vs {
