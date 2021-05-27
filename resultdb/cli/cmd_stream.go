@@ -54,6 +54,18 @@ import (
 
 var matchInvalidInvocationIDChars = regexp.MustCompile(`[^a-z0-9_\-:.]`)
 
+const (
+	// gracePeriod should match the number of seconds `rdb stream` has, from
+	// interrupt until SIGKILL.
+	// For swarming tasks it is defaulted at 30s in
+	// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/client/cmd/swarming/lib/trigger.go?q=GracePeriodSecs
+	gracePeriod = 30
+
+	// reservePeriod is how many seconds out of the above should be reserved
+	// for `rdb stream` to complete, the rest can be given to the payload.
+	reservePeriod = 10
+)
+
 // MustReturnInvURL returns a string of the Invocation URL.
 func MustReturnInvURL(rdbHost, invName string) string {
 	invID, err := pbutil.ParseInvocationName(invName)
@@ -260,12 +272,26 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	// Subprocess exiting will unblock rdb-stream and it will stop soon.
 	cmdCtx, cancelCmd := context.WithCancel(ctx)
 	defer cancelCmd()
+
+	var cmd *exec.Cmd
 	defer signals.HandleInterrupt(func() {
-		logging.Warningf(ctx, "Interrupt signal received; killing the subprocess")
-		cancelCmd()
+		defer cancelCmd()
+		var payloadGracePeriod = gracePeriod - reservePeriod
+		// Try interrupting the payload if it already started.
+		// If successful, give it up to `payloadGracePeriod` to wrap up.
+		if cmd != nil && cmd.Process != nil && cmd.Process.Signal(os.Interrupt) == nil {
+			logging.Warningf(ctx, "Interrupt signal received. Interrupted subprocess, waiting")
+			select {
+			case <-ctx.Done():
+			case <-time.After(time.Second * time.Duration(payloadGracePeriod)):
+				logging.Warningf(ctx, "Subprocess failed to finish in time, killing it")
+			}
+		} else {
+			logging.Warningf(ctx, "Interrupt signal received. Could not interrupt subprocess, killing it")
+		}
 	})()
 
-	cmd := exec.CommandContext(cmdCtx, args[0], args[1:]...)
+	cmd = exec.CommandContext(cmdCtx, args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
