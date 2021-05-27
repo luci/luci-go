@@ -344,7 +344,8 @@ func TestSaveFinishedCQDRun(t *testing.T) {
 		}
 
 		Convey("unknown CV ID", func() {
-			So(saveFinishedCQDRun(ctx, mr), ShouldBeNil)
+			noopNotify := func(context.Context) error { return nil }
+			So(saveFinishedCQDRun(ctx, mr, noopNotify), ShouldBeNil)
 			f := FinishedCQDRun{AttemptKey: "samekeyhash"}
 			So(datastore.Get(ctx, &f), ShouldBeNil)
 			So(f.Payload, ShouldResembleProto, mr)
@@ -352,7 +353,7 @@ func TestSaveFinishedCQDRun(t *testing.T) {
 
 			Convey("with known CV ID", func() {
 				mr.Id = "known-cv-id/123123-samekeyhash"
-				So(saveFinishedCQDRun(ctx, mr), ShouldBeNil)
+				So(saveFinishedCQDRun(ctx, mr, noopNotify), ShouldBeNil)
 				f := FinishedCQDRun{AttemptKey: "samekeyhash"}
 				So(datastore.Get(ctx, &f), ShouldBeNil)
 				So(f.Payload, ShouldResembleProto, mr)
