@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41278416_c89797c8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T18:14:01Z",
+      "side": 1,
+      "message": "PTAL. This is actually quite simple, 60% of the CL is test boilerplate.",
+      "revId": "50f08fe9cee385207917f16b501c99774c18d1b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
