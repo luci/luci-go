@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d64ed5d5_6f75cf9b",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T22:53:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da1f05d7_6892a249",
+      "range": {
+        "startLine": 39,
+        "startChar": 40,
+        "endLine": 39,
+        "endChar": 49
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ab052927_86361003",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "db67ccf7_a5bc4447",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T22:53:14Z",
+      "side": 1,
+      "message": "No. done",
+      "parentUuid": "ab052927_86361003",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "25499ae2_a4cb0f27",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-05-27T20:24:17Z",
       "side": 1,
       "message": "nit: might as well make a func and use here \u0026\u0026 in logger() above",
+      "range": {
+        "startLine": 197,
+        "startChar": 16,
+        "endLine": 199,
+        "endChar": 41
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1a493c5_95dd540a",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T22:53:14Z",
+      "side": 1,
+      "message": "I\u0027m afraid that it will require this to implement NullCLLogger, like logger() above does. If m.cllogger() returns nil, archiveLogs() would have to run this check with reflect again against the returned nil, IIUC?\n\nIn a previous comment, Robbie and I agreed to change Archive() to a struct to reduce # of params that have to be passed.\n\ne.g.,\n```\ntype struct Archive {\n   m Manifest\n   streamIDHash []byte\n   ...\n}\n```\n\nI\u0027d rather implement the following instead.\n\nfunc NewArchive(...) Archive {\n   a.isCloudLoggerSet \u003d reflect_check\n   a.isLoggerSet \u003d reflect_check\n}\n\nfunc (a *archiveLogs) archiveLogs(....) error {\n  if a.isLoggerSet {\n     ....\n  }\n\n  if a.isCloudLoggerSet {\n     ....\n  }\n}\n\nLet me know if you have better ideas.\n\nIf I had to implement NullCLLogger, I would remove logger() and cllogger() from common/archive. The caller is responsible to set Manifiest.{Logger,CloudLogger} with nil logger, if necessary.",
+      "parentUuid": "25499ae2_a4cb0f27",
       "range": {
         "startLine": 197,
         "startChar": 16,
@@ -116,6 +188,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "58c5a1f5_dbbf1bff",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T22:53:14Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "0f1734f4_005868fa",
+      "range": {
+        "startLine": 237,
+        "startChar": 2,
+        "endLine": 237,
+        "endChar": 17
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9f975028_549f11ae",
@@ -152,6 +248,30 @@
       "writtenOn": "2021-05-27T21:53:55Z",
       "side": 1,
       "message": "discussed offline, I proposed https://paste.googleplex.com/5692726663184384",
+      "parentUuid": "9f975028_549f11ae",
+      "range": {
+        "startLine": 241,
+        "startChar": 0,
+        "endLine": 261,
+        "endChar": 3
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1257926b_6d4b1984",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T22:53:14Z",
+      "side": 1,
+      "message": "To remove this special handling, the loop at L271 needs to track the delimiter of the last llne buffered in buf.\n\nFor example, with the following input entries,\n[1]: {Lines: [{\"partial lines\", \"\"}]}\n[2]: {Lines: [{\"is too long now\", \"\"}]}\n[3]: {Lines: [{\"this is the end of the line\", \"\\n\"}, {\"this is another complete line\", \"\\n\"}]\n\nthis logic should generate the following cl.Entry(s).\n[a]: CL.Entry{payload: \"partial lines is too lo\"}\n[b]: CL.Entry{payload: \"this is another complete line\"}\n\nIt means that it needs to skip the first complete line of [3]. There are also other conditions that complicates the logic w/o the special logic of handling the first element.\n\n1) len(buf) + len(current_line) \u003e LIMIT, buf.Delimiter(\"\") \u0026\u0026 current_line.Delimiter(\"\")\n2) len(buf) + len(current_line) \u003e LIMIT, buf.Delimiter(\"\\n\") \u0026\u0026 current_line.Delimiter(\"\")\n3) len(buf) + len(current_line) \u003e LIMIT, buf.Delimiter(\"\") \u0026\u0026 current_line.Delimiter(\"\\n\")\n4) len(buf) + len(current_line) \u003e LIMIT, buf.Delimiter(\"\\n\") \u0026\u0026 current_line.Delimiter(\"\\n\")\n\n5) same as (1) - (4) but len(buf) + len(current_line) \u003c\u003d LIMIT\n(continued)\n\nThere is also another constraint that this implements.\nComplete lines can be joined together only if they are from the same LogEntry. Each LogEntry has own timestamp, and, therefore, complete lines should not be joined unless they are from the same Logentry.\n\nIt gets more complicated when\n- a LogEntry has a number of complete lines, followed by a partial line,\n- sum(lines) a Logentry is too big to be joined and exported to a single cl.Entry, or \n- a mix of the above\n\nYes, the special logic can be removed, but it requires to keep tracking of the delimiter of the last element buffered in buf, and L271 will need additional condition statements to act differently for the above 8 different cases.\n\nThus, I found that the logic became more intuitive if I add a special logic to handle the first element, so that the loop at L271 can be simplified with the following asumption.\n: If L271 is reached, the buf always contains\n- complete lines only, or\n- a partial line that is small enough such that len(buf) + len(line) is guaranteed to be smaller than the limit\n\n\n-----------------------------\nI looked at your snippet, and I found that it uses completeLineEndsAt and timestamp to handle the cases. First of all, the logdog protocol doesn\u0027t mention that LogEntries will have the same timestamp. The delimiter should be used to determine whether LogEntries are from the same line.\n\nSecondly, I don\u0027t think it will handle the case the following Log Entries.\n\n[1]: {Lines: [{\"line1\", \"\\n\"}]}\n[2]: {Lines: [{\"line2\", \"\\n\"}]}\n[3]: {Lines: [{\"lin\", \"\"}]}\n[4]: {Lines: [{\"e3\", \"\\n\"}, {\"line4\", \"\\n\"]}\n\nThe above ones should generate\n[a]: cl.Entry{payload: \"line1\\nline2\\nline3\"}\n[b]: cl.Entry{payload: \"line4\\n\"}\n\nI think your snippet would generate\n[a]: cl.Entry{payload: \"line1\\nline2\\line3line4\"}\n\nAs I said above, I found that the code was easier to follow with the special logic of handling the first element. If it gets removed, and the main loop handles all the different 8 cases with tracking the delimiter and completeLineEndsAt, the logic could be more fraigle or less intuitive, in my opinion.",
       "parentUuid": "9f975028_549f11ae",
       "range": {
         "startLine": 241,
