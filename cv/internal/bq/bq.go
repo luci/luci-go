@@ -31,9 +31,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// clientCtxKey is the key used to install the BQ client in the context.
-var clientCtxKey = "go.chromium.org/luci/cv/internal/bq.Client"
-
 type Client interface {
 	// SendRow appends a row to a BigQuery table synchronously.
 	//
@@ -42,15 +39,12 @@ type Client interface {
 	SendRow(ctx context.Context, dataset, table, operationID string, row proto.Message) error
 }
 
-// Install puts the given `Client` implementation into the context.
-func Install(ctx context.Context, c Client) context.Context {
-	return context.WithValue(ctx, &clientCtxKey, c)
+// prodClient implements a BigQuery Client for production.
+type prodClient struct {
+	bq *bigquery.Client
 }
 
-// InstallProd puts a production `Client` implementation in the context.
-//
-// This is typically called in the app's main function.
-func InstallProd(ctx context.Context, cloudProject string) (context.Context, error) {
+func NewProdClient(ctx context.Context, cloudProject string) (Client, error) {
 	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, err
@@ -59,34 +53,12 @@ func InstallProd(ctx context.Context, cloudProject string) (context.Context, err
 	if err != nil {
 		return nil, err
 	}
-	return Install(ctx, &inserter{bq}), nil
+	return &prodClient{bq}, nil
 }
 
-// mustClient returns the `Client` implementation stored in the context.
-//
-// Panics if not found.
-func mustClient(ctx context.Context) Client {
-	c := ctx.Value(&clientCtxKey)
-	if c == nil {
-		panic("BQ Client not found in the context")
-	}
-	return c.(Client)
-}
-
-// SendRow sends a row using the client in the context.
-func SendRow(ctx context.Context, dataset, table, operationID string, msg proto.Message) error {
-	return mustClient(ctx).SendRow(ctx, dataset, table, operationID, msg)
-}
-
-// inserter implements a BigQuery client for production.
-type inserter struct {
-	bq *bigquery.Client
-}
-
-// Implements the interface, sending real rows using the bigquery.Client in the
-// inserter.
-func (ins *inserter) SendRow(ctx context.Context, dataset, table, operationID string, msg proto.Message) error {
-	tab := ins.bq.Dataset(dataset).Table(table)
+// SendRow sends a row to a real BigQuery table.
+func (c *prodClient) SendRow(ctx context.Context, dataset, table, operationID string, msg proto.Message) error {
+	tab := c.bq.Dataset(dataset).Table(table)
 	row := &lucibq.Row{
 		Message:  protov1.MessageV1(msg),
 		InsertID: operationID,
