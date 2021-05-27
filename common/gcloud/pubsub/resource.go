@@ -40,14 +40,6 @@ func resourceProjectName(v string) (p, n string, err error) {
 	return
 }
 
-func resourceName(v string) (string, error) {
-	parts := splitResource(v)
-	if len(parts) != 4 {
-		return "", errors.New("malformed resource")
-	}
-	return parts[3], nil
-}
-
 // validateResource validates that a resource is well-formed.
 //
 // A resource is in the form:
