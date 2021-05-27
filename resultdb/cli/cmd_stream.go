@@ -149,7 +149,6 @@ type streamRun struct {
 	artChannelMaxLeases    uint
 	trChannelMaxLeases     uint
 	tags                   strpair.Map
-	pbTags                 []*pb.StringPair
 	coerceNegativeDuration bool
 	locTagsFile            string
 	// TODO(ddoman): add flags

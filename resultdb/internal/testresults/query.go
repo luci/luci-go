@@ -216,11 +216,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	return
 }
 
-type testVariant struct {
-	TestID      string
-	VariantHash string
-}
-
 // Fetch returns a page of test results matching q.
 // Returned test results are ordered by parent invocation ID, test ID and result
 // ID.
