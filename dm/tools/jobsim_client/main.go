@@ -185,18 +185,6 @@ func (r *cmdRun) finish(data interface{}) int {
 	return 0
 }
 
-// argErr prints an err and usage to stderr and returns an exit code.
-func (r *cmdRun) argErr(format string, a ...interface{}) int {
-	if format != "" {
-		fmt.Fprintf(os.Stderr, format+"\n", a...)
-	}
-	fmt.Fprintln(os.Stderr, r.cmd.ShortDesc)
-	fmt.Fprintln(os.Stderr, r.cmd.UsageLine)
-	fmt.Fprintln(os.Stderr, "\nFlags:")
-	r.Flags.PrintDefaults()
-	return -1
-}
-
 var application = &cli.Application{
 	Name:  "jobsim_client",
 	Title: "Executable Job simulator client",
