@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "22c5aa64_01bc2d7b",
+        "filename": "cv/internal/run/impl/handler/cqd_finished.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T18:23:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cfdefb2_c10eac65",
+      "range": {
+        "startLine": 78,
+        "startChar": 7,
+        "endLine": 78,
+        "endChar": 13
+      },
+      "revId": "397ce1994053ad5e3f02db3ecf27085c0f9c616c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3864fe29_d9d543a7",
