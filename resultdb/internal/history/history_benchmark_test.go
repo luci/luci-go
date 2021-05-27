@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -122,7 +121,7 @@ func BenchmarkGetTestResultsHistory(b *testing.B) {
 		})
 	}
 
-	past, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+	past := timestamppb.New(testclock.TestRecentTimeUTC)
 	q := &Query{
 		Request: &pb.GetTestResultHistoryRequest{
 			Range: &pb.GetTestResultHistoryRequest_TimeRange{

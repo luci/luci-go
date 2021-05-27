@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 
@@ -35,7 +35,7 @@ import (
 
 // validTestResult returns a valid TestResult sample.
 func validTestResult(now time.Time) *pb.TestResult {
-	st, _ := ptypes.TimestampProto(now.Add(-2 * time.Minute))
+	st := timestamppb.New(now.Add(-2 * time.Minute))
 	return &pb.TestResult{
 		Name:        "invocations/a/tests/invocation_id1/results/result_id1",
 		TestId:      "this is testID",
@@ -220,7 +220,7 @@ func TestValidateTestResult(t *testing.T) {
 
 		Convey("with invalid StartTime and Duration", func() {
 			Convey("because start_time is in the future", func() {
-				future, _ := ptypes.TimestampProto(now.Add(time.Hour))
+				future := timestamppb.New(now.Add(time.Hour))
 				msg.StartTime = future
 				So(validate(msg), ShouldErrLike, fmt.Sprintf("start_time: cannot be > (now + %s)", clockSkew))
 			})
@@ -231,7 +231,7 @@ func TestValidateTestResult(t *testing.T) {
 			})
 
 			Convey("because (start_time + duration) is in the future", func() {
-				st, _ := ptypes.TimestampProto(now.Add(-1 * time.Hour))
+				st := timestamppb.New(now.Add(-1 * time.Hour))
 				msg.StartTime = st
 				msg.Duration = durationpb.New(2 * time.Hour)
 				expected := fmt.Sprintf("start_time + duration: cannot be > (now + %s)", clockSkew)

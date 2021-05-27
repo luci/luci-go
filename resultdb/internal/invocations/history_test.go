@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -93,12 +92,12 @@ func TestByTimestamp(t *testing.T) {
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
-		beforePB, _ := ptypes.TimestampProto(start.Add(-1 * time.Hour))
-		justBeforePB, _ := ptypes.TimestampProto(start.Add(-1 * time.Second))
-		startPB, _ := ptypes.TimestampProto(start)
-		middlePB, _ := ptypes.TimestampProto(middle)
-		afterPB, _ := ptypes.TimestampProto(end.Add(time.Hour))
-		muchLaterPB, _ := ptypes.TimestampProto(end.Add(24 * time.Hour))
+		beforePB := timestamppb.New(start.Add(-1 * time.Hour))
+		justBeforePB := timestamppb.New(start.Add(-1 * time.Second))
+		startPB := timestamppb.New(start)
+		middlePB := timestamppb.New(middle)
+		afterPB := timestamppb.New(end.Add(time.Hour))
+		muchLaterPB := timestamppb.New(end.Add(24 * time.Hour))
 
 		q := &HistoryQuery{
 			Realm: realm,

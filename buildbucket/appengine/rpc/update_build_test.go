@@ -44,6 +44,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -162,7 +163,7 @@ func TestValidateUpdate(t *testing.T) {
 	})
 
 	Convey("validate steps", t, func() {
-		t, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+		t := timestamppb.New(testclock.TestRecentTimeUTC)
 		bs := &model.BuildSteps{ID: 1}
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.steps"}}
@@ -176,7 +177,7 @@ func TestValidateUpdate(t *testing.T) {
 		})
 
 		Convey("fails with duplicates", func() {
-			t, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+			t := timestamppb.New(testclock.TestRecentTimeUTC)
 			req.Build.Steps = []*pb.Step{
 				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
@@ -207,7 +208,7 @@ func TestValidateStep(t *testing.T) {
 	t.Parallel()
 
 	Convey("validate", t, func() {
-		t, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+		t := timestamppb.New(testclock.TestRecentTimeUTC)
 		step := &pb.Step{Name: "step1"}
 		bStatus := pb.Status_STARTED
 
@@ -256,7 +257,7 @@ func TestValidateStep(t *testing.T) {
 
 			Convey("end_time is before start_time", func() {
 				step.EndTime = t
-				st, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
+				st := timestamppb.New(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
 				step.StartTime = st
 				So(validateStep(step, nil, bStatus), ShouldErrLike, "end_time: is before the start_time")
 			})

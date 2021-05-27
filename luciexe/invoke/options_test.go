@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -135,7 +135,7 @@ func TestOptionsNamespace(t *testing.T) {
 		ctx, o, _, closer := commonOptions()
 		defer closer()
 
-		nowP, _ := ptypes.TimestampProto(clock.Now(ctx))
+		nowP := timestamppb.New(clock.Now(ctx))
 
 		Convey(`default`, func() {
 			lo, _, err := o.rationalize(ctx)

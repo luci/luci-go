@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/span"
@@ -36,6 +36,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -44,9 +45,9 @@ func TestHistory(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = clock.Set(ctx, testclock.New(testclock.TestRecentTimeUTC.Add(time.Hour)))
 
-		earliest, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
-		latest, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.Add(2 * time.Minute))
-		afterLatest, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.Add(3 * time.Minute))
+		earliest := timestamppb.New(testclock.TestRecentTimeUTC)
+		latest := timestamppb.New(testclock.TestRecentTimeUTC.Add(2 * time.Minute))
+		afterLatest := timestamppb.New(testclock.TestRecentTimeUTC.Add(3 * time.Minute))
 
 		q := &Query{
 			Request: &pb.GetTestResultHistoryRequest{

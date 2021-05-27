@@ -22,8 +22,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -111,7 +111,7 @@ func viewsForBuilder(c context.Context, bid *buildbucketpb.BuilderID) ([]*ui.Lin
 
 // GetBuilderPage computes a builder page data.
 func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize int, pageToken string) (*ui.BuilderPage, error) {
-	nowTS, _ := ptypes.TimestampProto(clock.Now(c))
+	nowTS := timestamppb.New(clock.Now(c))
 
 	host, err := getHost(c)
 	if err != nil {

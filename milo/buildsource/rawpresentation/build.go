@@ -22,8 +22,8 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -321,7 +321,7 @@ func GetBuild(c context.Context, host string, project string, path types.StreamP
 	if as.step != nil {
 		return as.toMiloBuild(c), nil, nil
 	}
-	now, _ := ptypes.TimestampProto(clock.Now(c))
+	now := timestamppb.New(clock.Now(c))
 	return nil, &ui.BuildPage{Build: ui.Build{Build: as.build, Now: now}}, nil
 }
 

@@ -157,7 +157,7 @@ type RelatedBuildsTable struct {
 }
 
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
-	now, _ := ptypes.TimestampProto(clock.Now(c))
+	now := timestamppb.New(clock.Now(c))
 	return &BuildPage{
 		Build: Build{Build: b, Now: now},
 	}

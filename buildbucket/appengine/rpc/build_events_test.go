@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -38,7 +37,7 @@ func fv(vs ...interface{}) []interface{} {
 }
 
 func pbTS(t time.Time) *timestamppb.Timestamp {
-	pbts, _ := ptypes.TimestampProto(t)
+	pbts := timestamppb.New(t)
 	return pbts
 }
 
