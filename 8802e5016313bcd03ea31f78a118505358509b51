@@ -16,6 +16,63 @@
       "message": "PTAL",
       "revId": "8802e5016313bcd03ea31f78a118505358509b51",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "515697ae_761fa876",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-27T02:25:00Z",
+      "side": 1,
+      "message": "lgtm, thanks!",
+      "revId": "8802e5016313bcd03ea31f78a118505358509b51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "931635e8_b7b012ea",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-27T02:25:00Z",
+      "side": 1,
+      "message": "\\t",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 1
+      },
+      "revId": "8802e5016313bcd03ea31f78a118505358509b51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9ee9323_66bf1093",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-27T02:25:00Z",
+      "side": 1,
+      "message": "nit: maybe switch (q.TestResultPredicate.GetExpectancy()) ?",
+      "revId": "8802e5016313bcd03ea31f78a118505358509b51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
