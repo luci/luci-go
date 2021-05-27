@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c35532e2_8978cc7c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-27T06:20:34Z",
+      "side": 1,
+      "message": "I think the only thing that was broken was that `rdb stream` unconditionally killed its payload (e.g. result_adapter) on getting an interrupt.",
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
