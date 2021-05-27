@@ -50,11 +50,3 @@ func (f *Fake) Rows(dataset, table string) []proto.Message {
 
 // Ensure that Fake implement the Client interface.
 var _ Client = (*Fake)(nil)
-
-// Install installs this fake BQ client into context.
-func (f *Fake) Install(ctx context.Context) context.Context {
-	if f == nil {
-		panic("nil bq fake")
-	}
-	return Install(ctx, &Fake{})
-}
