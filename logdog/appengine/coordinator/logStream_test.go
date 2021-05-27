@@ -59,15 +59,6 @@ func shouldHaveLogPaths(actual interface{}, expected ...interface{}) string {
 	return ShouldResemble(names, exp)
 }
 
-// sps constructs a ds.PropertySlice from a set of interfaces.
-func sps(values ...interface{}) ds.PropertySlice {
-	ps := make(ds.PropertySlice, len(values))
-	for i, v := range values {
-		ps[i] = ds.MkProperty(v)
-	}
-	return ps
-}
-
 func updateLogStreamID(ls *LogStream) {
 	ls.ID = LogStreamID(ls.Path())
 }

@@ -68,24 +68,6 @@ func parse(desc string) (*logpb.ButlerLogBundle_Entry, []*logpb.LogEntry) {
 	return be, logs
 }
 
-// gen generates a ButlerLogBundle_Entry based on a description string.
-//
-// The string goes: "a:1:2:3", where "a" is the name of the stream and
-// "1", "2", and "3", are different LogEntry within the stream.
-//
-// Note that the generated values are not valid, as they will be missing
-// several fields. This is for bundling tests only :)
-//
-// Optionally, the string can include a size, e.g., "a:1@1024:...". This will
-// cause additional data to be generated to pad the LogEntry out to the desired
-// size. This is currently an approximation, as it doesn't take into account
-// tag/array size overhead of the additional data.
-func gen(desc string) *logpb.ButlerLogBundle_Entry {
-	be, logs := parse(desc)
-	be.Logs = logs
-	return be
-}
-
 func logEntryName(le *logpb.LogEntry) string {
 	t := le.GetText()
 	if t == nil || len(t.Lines) == 0 {

@@ -54,13 +54,3 @@ func New() logdog.LogsServer {
 		},
 	}
 }
-
-func (s *server) limit(v int, d int) int {
-	if s.resultLimit > 0 {
-		d = s.resultLimit
-	}
-	if v <= 0 || v > d {
-		return d
-	}
-	return v
-}

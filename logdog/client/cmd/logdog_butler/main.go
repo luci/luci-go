@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -81,8 +80,6 @@ type application struct {
 	noBufferLogs bool
 
 	prof profiling.Profiler
-
-	client *http.Client
 
 	// ncCtx is a context that will not be cancelled when cancelFunc is called.
 	ncCtx      context.Context

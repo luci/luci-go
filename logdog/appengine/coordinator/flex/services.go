@@ -171,8 +171,6 @@ type googleStorage struct {
 	// svc is the services instance that created this.
 	svc *GlobalServices
 
-	// ctx is the Context that was bound at the time of of creation.
-	ctx context.Context
 	// gs is the backing Google Storage client.
 	gs gs.Client
 
@@ -180,8 +178,6 @@ type googleStorage struct {
 	stream gs.Path
 	// index is the index's Google Storage URL.
 	index gs.Path
-
-	gsSigningOpts func(context.Context) (*gcst.SignedURLOptions, error)
 }
 
 func (si *googleStorage) Close() {

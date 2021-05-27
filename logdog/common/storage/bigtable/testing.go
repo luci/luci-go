@@ -84,11 +84,6 @@ func NewMemoryInstance(cache storage.Cache) Testing {
 	return &bts
 }
 
-func (bts *btTestingStorage) close() {
-	bts.s = nil
-	bts.c = nil
-}
-
 func (bts *btTestingStorage) putLogData(c context.Context, rk *rowKey, d []byte) error {
 	if bts.err != nil {
 		return bts.err

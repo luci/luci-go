@@ -62,7 +62,6 @@ type parserTestStream struct {
 	prefixIndex int64
 	streamIndex int64
 	offset      time.Duration
-	sequence    int64
 }
 
 func (s *parserTestStream) base() baseParser {
