@@ -54,7 +54,6 @@ type testByteReader struct {
 
 	readByteErr error
 	readBytes   int
-	byteBuf     [1]byte
 }
 
 func (r *testByteReader) ReadByte() (b byte, err error) {

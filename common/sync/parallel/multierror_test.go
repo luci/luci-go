@@ -21,10 +21,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type otherMEType []error
-
-func (o otherMEType) Error() string { return "FAIL" }
-
 func TestMultiError(t *testing.T) {
 	t.Parallel()
 

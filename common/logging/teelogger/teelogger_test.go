@@ -17,25 +17,12 @@ package teelogger
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 )
-
-var (
-	ansiRegexp = regexp.MustCompile(`\033\[.+?m`)
-
-	lre = regexp.MustCompile(
-		`\[P\d+ \d+:\d+:\d+\.\d+.* (.+?):\d+ ([A-Z]+) \d+\]\s+(.*)`)
-)
-
-func normalizeLog(s string) string {
-	// Strip ANSI color sequences.
-	return ansiRegexp.ReplaceAllString(s, "")
-}
 
 func TestTeeLogger(t *testing.T) {
 	Convey(`A new TeeLogger instance`, t, func() {
