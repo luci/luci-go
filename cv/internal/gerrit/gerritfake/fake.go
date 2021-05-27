@@ -715,10 +715,6 @@ func atoi64(s string) int64 {
 	return a
 }
 
-func atoi32(s string) int32 {
-	return int32(atoi64(s))
-}
-
 func atoi(s string) int {
 	return int(atoi64(s))
 }

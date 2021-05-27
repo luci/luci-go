@@ -20,10 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
-
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -37,8 +33,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-var testNow = testclock.TestTimeLocal.Round(1 * time.Millisecond)
 
 func TestConfigRefreshCron(t *testing.T) {
 	t.Parallel()
@@ -142,12 +136,6 @@ func TestConfigRefreshCron(t *testing.T) {
 			})
 		})
 	})
-}
-
-func toProtoText(msg proto.Message) string {
-	bs, err := prototext.Marshal(msg)
-	So(err, ShouldBeNil)
-	return string(bs)
 }
 
 type mockPM struct {

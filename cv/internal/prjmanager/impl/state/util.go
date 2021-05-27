@@ -17,7 +17,6 @@ package state
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -59,9 +58,4 @@ func (s *State) indexOfConfigGroup(id config.ConfigGroupID) int32 {
 		}
 	}
 	panic(fmt.Errorf("%s doesn't match any in known %s ConfigGroupNames", id, names))
-}
-
-// searchSortedI64s is sort.SearchInts but for int64.
-func searchSortedI64s(sorted []int64, x int64) int {
-	return sort.Search(len(sorted), func(i int) bool { return sorted[i] >= x })
 }

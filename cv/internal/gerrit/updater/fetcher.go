@@ -735,13 +735,6 @@ func (f *fetcher) priorSnapshot() *changelist.Snapshot {
 	return nil
 }
 
-func (f *fetcher) priorCLEversion() int {
-	if f.priorCL != nil {
-		return f.priorCL.EVersion
-	}
-	return 0
-}
-
 func (f *fetcher) mustHaveCurrentRevision() string {
 	switch ci := f.toUpdate.Snapshot.GetGerrit().GetInfo(); {
 	case ci == nil:

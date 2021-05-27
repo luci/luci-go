@@ -146,7 +146,6 @@ func TestGetCL(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		const lProject = "luci"
 		d := AdminServer{}
 
 		Convey("without access", func() {
