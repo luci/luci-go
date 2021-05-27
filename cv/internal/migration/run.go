@@ -316,13 +316,11 @@ type FinishedCQDRun struct {
 	// Once CV starts creating Runs, the CV's Run for the same Run will contain
 	// the AttemptKey as a substring.
 	AttemptKey string `gae:"$id"`
-	// RunID may be set if CQD is aware of the RunID.
+	// RunID may be set if CQD's Attempt has corresponding CV Run at the time of
+	// saving of this entity.
 	//
-	// For example, if milestone 1 migration is rolled back, some attempts may
-	// have associated RunID.
-	//
-	// Although the CV RunID, if known, is also stored in the Payload,
-	// a separate field is necessary for Datastore indexing.
+	// Although the CV RunID is also stored in the Payload, a separate field is
+	// necessary for Datastore indexing.
 	RunID common.RunID
 	// RecordTime is when this entity was inserted.
 	UpdateTime time.Time `gae:",noindex"`
@@ -358,6 +356,28 @@ func saveFinishedCQDRun(ctx context.Context, mr *migrationpb.ReportedRun, notify
 		return notify(ctx)
 	}, nil)
 	return errors.Annotate(err, "failed to record FinishedCQDRun %q after %d tries", key, try).Tag(transient.Tag).Err()
+}
+
+// LoadFinishedCQDRun loads from Datastore a FinishedCQDRun.
+//
+// Expects exactly 1 FinishedCQDRun to exist.
+func LoadFinishedCQDRun(ctx context.Context, rid common.RunID) (*FinishedCQDRun, error) {
+	var frs []*FinishedCQDRun
+	q := datastore.NewQuery("migration.FinishedCQDRun").Eq("RunID", rid).Limit(2)
+	switch err := datastore.GetAll(ctx, q, &frs); {
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch FinishedCQDRun").Tag(transient.Tag).Err()
+	case len(frs) == 1:
+		return frs[0], nil
+
+		// 2 checks below are defensive coding: neither is supposed to happen in
+		// practice unless the way Attempt key is generated differs between CV and
+		// CQDaemon.
+	case len(frs) > 1:
+		return nil, errors.Reason(">1 FinishedCQDRun for Run %s", rid).Err()
+	default:
+		return nil, errors.Reason("no FinishedCQDRun for Run %s", rid).Err()
+	}
 }
 
 // makeGerritSetReviewRequest creates request to post a message to Gerrit at

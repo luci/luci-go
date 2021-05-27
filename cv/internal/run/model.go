@@ -87,10 +87,10 @@ type Run struct {
 	// CQAttemptKey is what CQDaemon exports to BigQuery as Attempt's key.
 	//
 	// In CQDaemon's source, it's equivalent to GerritAttempt.attempt_key_hash.
-	//
-	// TODO(crbug/1141880): delete with CQDaemon or even earlier if CV Run ID is
-	// known at all times in CV's Migration API.
 	CQDAttemptKey string
+	// FinalizedByCQD is true iff the Run was finalized by CQDaemon, which
+	// includes submitting CLs and/or removing CQ votes and sending BQ row.
+	FinalizedByCQD bool `gae:",noindex"`
 }
 
 // Mutate mutates the Run by executing `mut`.

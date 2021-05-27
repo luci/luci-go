@@ -52,7 +52,7 @@ func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM) event
 		func(ctx context.Context) error {
 			return pm.NotifyRunFinished(ctx, rid)
 		},
-		// TODO(qyearsley): Submit a task to do BQ export.
+		// TODO(qyearsley): Submit a task to do BQ export if !rs.Run.FinishedCQDRun.
 	)
 }
 
