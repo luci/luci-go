@@ -60,7 +60,7 @@ func TestOnCLUpdated(t *testing.T) {
 				ConfigGroupID: ct.Cfg.MustExist(ctx, "chromium").ConfigGroupIDs[0],
 			},
 		}
-		UpdateCL := func(ci *gerritpb.ChangeInfo) changelist.CL {
+		updateCL := func(ci *gerritpb.ChangeInfo) changelist.CL {
 			cl := changelist.CL{
 				ID: 1,
 				Snapshot: &changelist.Snapshot{
@@ -77,8 +77,11 @@ func TestOnCLUpdated(t *testing.T) {
 			return cl
 		}
 
-		ci := gf.CI(1, gf.PS(5), gf.CQ(2, triggerTime, gf.U("foo")))
-		cl := UpdateCL(ci)
+		const gChange = 1
+		const gPatchSet = 5
+
+		ci := gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("foo")))
+		cl := updateCL(ci)
 		rcl := run.RunCL{
 			ID:      1,
 			Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID)),
@@ -114,19 +117,12 @@ func TestOnCLUpdated(t *testing.T) {
 					gf.Messages(&gerritpb.ChangeMessageInfo{
 						Message: "This is a message",
 					})(newCI)
-					UpdateCL(newCI)
+					updateCL(newCI)
 					ensureNoop()
 				})
 
-				Convey("regress to DryRun", func() {
-					newCI := gf.CI(1, gf.PS(5), gf.CQ(1, triggerTime, gf.U("foo")))
-					UpdateCL(newCI)
-					ensureNoop()
-				})
-
-				Convey("switch FullRun trigger to different user", func() {
-					newCI := gf.CI(2, gf.PS(5), gf.CQ(1, triggerTime, gf.U("bar")))
-					UpdateCL(newCI)
+				Convey("is triggered by different user at the exact same time", func() {
+					updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("bar"))))
 					ensureNoop()
 				})
 			})
@@ -140,25 +136,31 @@ func TestOnCLUpdated(t *testing.T) {
 			So(res.PreserveEvents, ShouldBeTrue)
 		})
 
-		Convey("Cancels Run on new Patchset", func() {
-			newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
-			gf.PS(6)(newCI)
-			UpdateCL(newCI)
+		runAndVerifyCancelled := func() {
 			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
+		}
+
+		Convey("Cancels Run on new Patchset", func() {
+			updateCL(gf.CI(gChange, gf.PS(gPatchSet+1), gf.CQ(+2, triggerTime, gf.U("foo"))))
+			runAndVerifyCancelled()
 		})
 		Convey("Cancels Run on removed trigger", func() {
-			newCI := gf.CI(2, gf.PS(5), gf.CQ(0))
-			UpdateCL(newCI)
-
-			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
-			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			newCI := gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
+			So(trigger.Find(newCI, cfg.GetConfigGroups()[0]), ShouldBeNil)
+			updateCL(newCI)
+			runAndVerifyCancelled()
+		})
+		Convey("Cancels Run on changed mode", func() {
+			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))))
+			runAndVerifyCancelled()
+		})
+		Convey("Cancels Run on change of triggering time", func() {
+			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime.Add(2*time.Minute), gf.U("foo"))))
+			runAndVerifyCancelled()
 		})
 	})
 }
