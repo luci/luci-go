@@ -17,6 +17,7 @@ import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
 import '../../components/build_step_list';
+import '../../components/hotkey';
 import { BuildStepEntryElement } from '../../components/build_step_list/build_step_entry';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
