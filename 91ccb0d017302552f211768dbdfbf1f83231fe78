@@ -68,6 +68,52 @@
       },
       "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f1734f4_005868fa",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T20:42:36Z",
+      "side": 1,
+      "message": "does GetText().GetLines() return existing list of lines, or does it compute them on the fly? If the former, move isDisabled check above GetTExt().GetLines().",
+      "range": {
+        "startLine": 237,
+        "startChar": 2,
+        "endLine": 237,
+        "endChar": 17
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f975028_549f11ae",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T20:42:36Z",
+      "side": 1,
+      "message": "i don\u0027t grasp why special handling for the first line here either.\nAFAIU, for each line you either add it to the buffer, possibly truncated, or not.\nthe buffer itself may have some leftover from before (which is the case only for the first line in a chunk, but this doesn\u0027t require special handling).",
+      "range": {
+        "startLine": 241,
+        "startChar": 0,
+        "endLine": 261,
+        "endChar": 3
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
