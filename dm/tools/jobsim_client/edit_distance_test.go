@@ -23,16 +23,10 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )
-
-type event struct {
-	name string
-	msg  proto.Message
-}
 
 type recordingClient struct {
 	deps   []*EditParams

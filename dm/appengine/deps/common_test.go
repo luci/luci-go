@@ -18,14 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
-
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor/fake"
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/dm/appengine/mutate"
-	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/dumper"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/tumble"
@@ -72,29 +68,4 @@ func (s testDepsServer) ensureQuest(c context.Context, name string, aids ...uint
 		return qid
 	}
 	panic("impossible")
-}
-
-func dumpDatastore(c context.Context) {
-	snap := ds.GetTestable(c).TakeIndexSnapshot()
-	ds.GetTestable(c).CatchupIndexes()
-	defer ds.GetTestable(c).SetIndexSnapshot(snap)
-
-	fmt.Println("dumping datastore")
-	dumper.Config{
-		PropFilters: dumper.PropFilterMap{
-			dumper.Key{"Quest", "Desc"}: func(prop ds.Property) string {
-				desc := &dm.Quest_Desc{}
-				if err := proto.Unmarshal(prop.Value().([]byte), desc); err != nil {
-					panic(err)
-				}
-				return desc.String()
-			},
-			dumper.Key{"Attempt", "State"}: func(prop ds.Property) string {
-				return dm.Attempt_State(int32(prop.Value().(int64))).String()
-			},
-			dumper.Key{"Execution", "State"}: func(prop ds.Property) string {
-				return dm.Execution_State(int32(prop.Value().(int64))).String()
-			},
-		},
-	}.Query(c, nil)
 }
