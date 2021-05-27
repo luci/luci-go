@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2277a832_135c5fca",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T17:33:57Z",
+      "side": 1,
+      "message": "you know, this actually is already  passing.\n\nSo this means we have a bug in handling of OnCLUpdated event in RunManager, which mistakenly cancels the run even if CV isn\u0027t in charge. I\u0027ll fix it as part of my work.",
+      "range": {
+        "startLine": 292,
+        "startChar": 2,
+        "endLine": 300,
+        "endChar": 7
+      },
+      "revId": "ee14387a3c2d18b700b3642f09adb75953d53a12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
