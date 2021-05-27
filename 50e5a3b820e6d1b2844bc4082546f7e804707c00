@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "50e5a3b820e6d1b2844bc4082546f7e804707c00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fd53e3ea_7492583b",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-05-27T21:13:41Z",
+      "side": 1,
+      "message": "please add a comment why we are doing this,\ni.e. TestResultVariantUnionRecursive is populated only in finalized builds.",
+      "revId": "50e5a3b820e6d1b2844bc4082546f7e804707c00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
