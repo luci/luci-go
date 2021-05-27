@@ -32,13 +32,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
-// maxTestVariantsToFilter is the maximum number of test variants to include
-// in the exclusion clause of the paritioned delete statement used to purge
-// expired test results. Invocations that have more than this number of test
-// variant combinations with unexpected results will not be purged, until
-// the whole invocation expires.
-const maxTestVariantsToFilter = 1000
-
 // Options is purger server configuration.
 type Options struct {
 	// ForceCronInterval forces minimum interval in cron jobs.
