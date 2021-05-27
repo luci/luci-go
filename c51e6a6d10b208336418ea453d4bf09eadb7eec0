@@ -16,6 +16,98 @@
       "message": "I think the only thing that was broken was that `rdb stream` unconditionally killed its payload (e.g. result_adapter) on getting an interrupt.",
       "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "46f5b385_83ae110f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T11:19:24Z",
+      "side": 1,
+      "message": "It\u0027s not always true that rdb-stream runs by a swarming task. Also, the GracePeriodSecs applies to the swarming raw_cmd, and rdb-stream may not be the beginning command in raw_cmd\n(i.e., the parent process of rdb-stream may also need a second to clean up for itself)\n\nIt\u0027s the parent process\u0027 responsibility to set the deadlines in luci-ctx to advise the child process for the appropriate deadline. If deadline is not set in the luci-ctx, rdb-stream should not enforce a deadline to its child process, either.",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 17
+      },
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "236d4e3a_ecb62c45",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T11:19:24Z",
+      "side": 1,
+      "message": "This should set the lucictx with a deadline for its child.\nThe deadline for the child process should be shorter than the deadline for rdb-stream itself to reserve a certain time period for rdb-stream to clean up.\n(perhaps, 1 sec?)",
+      "range": {
+        "startLine": 273,
+        "startChar": 1,
+        "endLine": 273,
+        "endChar": 45
+      },
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a323c3e_6155f161",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T11:19:24Z",
+      "side": 1,
+      "message": "The timeout values should be read from luci-ctx.\nhttps://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/lucictx/sections.proto;l\u003d129",
+      "range": {
+        "startLine": 279,
+        "startChar": 2,
+        "endLine": 279,
+        "endChar": 54
+      },
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9533083_20f3bc4a",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-27T11:19:24Z",
+      "side": 1,
+      "message": "cmd.Process.Signal(signals.Interrupts())  // to cover both SIGTERM and SIGINT in unix",
+      "range": {
+        "startLine": 282,
+        "startChar": 41,
+        "endLine": 282,
+        "endChar": 73
+      },
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
