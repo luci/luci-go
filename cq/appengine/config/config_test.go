@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -41,11 +42,16 @@ func TestValidationRules(t *testing.T) {
 
 		patterns, err := r.ConfigPatterns(context.Background())
 		So(err, ShouldBeNil)
-		So(len(patterns), ShouldEqual, 1)
+		So(len(patterns), ShouldEqual, 2)
 		Convey("project-scope cq.cfg", func() {
 			So(patterns[0].ConfigSet.Match("projects/xyz"), ShouldBeTrue)
 			So(patterns[0].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
 			So(patterns[0].Path.Match("commit-queue.cfg"), ShouldBeTrue)
+		})
+		Convey("service-scope migration-settings.cfg", func() {
+			So(patterns[1].ConfigSet.Match("services/commit-queue"), ShouldBeTrue)
+			So(patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
+			So(patterns[1].Path.Match("migration-settings.cfg"), ShouldBeTrue)
 		})
 	})
 }
@@ -827,6 +833,61 @@ func TestTryjobValidation(t *testing.T) {
 					}
 				`), ShouldBeNil)
 			})
+		})
+	})
+}
+
+func TestMigrationConfigValidation(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	Convey("Validate Config", t, func() {
+		vctx := &validation.Context{Context: ctx}
+		configSet := "services/commit-queue"
+		path := "migration-settings.cfg"
+
+		Convey("Loading bad proto", func() {
+			content := []byte(` bad: "config" `)
+			So(validateMigrationSettings(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+		})
+
+		const okConfig = `
+        # Realistic config.
+				api_hosts {
+				  host: "luci-change-verifier-dev.appspot.com"
+				  project_regexp: "cq-test"
+				}
+
+				api_hosts {
+				  host: "luci-change-verifier.appspot.com"
+				  project_regexp: "infra(-internal)?"
+				  project_regexp_exclude: "cq-test.+"
+				}
+
+				use_cv_runs {
+				  project_regexp: "cq-test.+"
+				  project_regexp_exclude: "cq-test-bad"
+				}
+	  `
+
+		Convey("OK", func() {
+			Convey("fully loaded", func() {
+				So(validateMigrationSettings(vctx, configSet, path, []byte(okConfig)), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+			Convey("empty", func() {
+				So(validateMigrationSettings(vctx, configSet, path, []byte{}), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+		})
+
+		Convey("Catches regexp bugs", func() {
+			badConfig := strings.Replace(okConfig, `project_regexp_exclude: "cq-test-bad"`,
+				`project_regexp_exclude: "(where is closing bracket?"`, 1)
+			So(validateMigrationSettings(vctx, configSet, path, []byte(badConfig)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "error parsing regexp")
 		})
 	})
 }

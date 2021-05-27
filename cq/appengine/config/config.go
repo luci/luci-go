@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	v2 "go.chromium.org/luci/cv/api/config/v2"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 )
 
 // Config validation rules go here.
@@ -39,6 +40,7 @@ func init() {
 
 func addRules(r *validation.RuleSet) {
 	r.Add("regex:projects/[^/]+", "${appid}.cfg", validateProject)
+	r.Add("services/${appid}", "migration-settings.cfg", validateMigrationSettings)
 }
 
 // validateProject validates a project-level CQ config.
@@ -623,4 +625,37 @@ func validateTryjobRetry(ctx *validation.Context, r *v2.Verifiers_Tryjob_RetryCo
 	if r.TimeoutWeight < 0 {
 		ctx.Errorf("negative timeout_weight not allowed (%d given)", r.TimeoutWeight)
 	}
+}
+
+// validateMigrationSettings validates a migration-settings file.
+//
+// Validation result is returned via validation ctx, while error returned
+// directly implies only a bug in this code.
+func validateMigrationSettings(ctx *validation.Context, configSet, path string, content []byte) error {
+	ctx.SetFile(path)
+	cfg := migrationpb.Settings{}
+	if err := proto.UnmarshalText(string(content), &cfg); err != nil {
+		ctx.Error(err)
+		return nil
+	}
+	if cfg.GetPssaMigration() != nil {
+		ctx.Errorf("pssa_migration not allowed")
+	}
+	for i, a := range cfg.GetApiHosts() {
+		ctx.Enter("api_hosts #%d", i+1)
+		switch h := a.GetHost(); h {
+		case "luci-change-verifier-dev.appspot.com":
+		case "luci-change-verifier.appspot.com":
+		default:
+			ctx.Errorf("invalid host (given: %q)", h)
+		}
+		validateRegexp(ctx, "project_regexp", a.GetProjectRegexp())
+		validateRegexp(ctx, "project_regexp_exclude", a.GetProjectRegexpExclude())
+		ctx.Exit()
+	}
+	if u := cfg.GetUseCvRuns(); u != nil {
+		validateRegexp(ctx, "project_regexp", u.GetProjectRegexp())
+		validateRegexp(ctx, "project_regexp_exclude", u.GetProjectRegexpExclude())
+	}
+	return nil
 }
