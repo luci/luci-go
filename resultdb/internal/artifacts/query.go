@@ -62,11 +62,24 @@ WITH VariantsWithUnexpectedResults AS (
 	FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
 	WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 ),
+VariantsWithUnexpectedResultsOnly AS (
+	SELECT TestId, VariantHash
+	FROM VariantsWithUnexpectedResults vur
+		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr
+			USING (TestId, VariantHash)
+	WHERE InvocationId IN UNNEST(@invIDs)
+	GROUP BY TestId, VariantHash
+	HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
+),
 FilteredTestResults AS (
 	SELECT InvocationId, FORMAT("tr/%s/%s", TestId, ResultId) as ParentId
 	FROM
 	{{ if .InterestingTestResults }}
 		VariantsWithUnexpectedResults vur
+		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr
+			USING (TestId, VariantHash)
+	{{ else if .OnlyUnexpectedTestResults }}
+		VariantsWithUnexpectedResultsOnly vuro
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr
 			USING (TestId, VariantHash)
 	{{ else }}
@@ -109,17 +122,22 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 	}
 
 	var input struct {
-		JoinWithTestResults    bool
-		InterestingTestResults bool
-		Q                      *Query
+		JoinWithTestResults       bool
+		InterestingTestResults    bool
+		OnlyUnexpectedTestResults bool
+		Q                         *Query
 	}
 	// If we need to filter artifacts by attributes of test results, then
 	// join with test results table.
 	if q.FollowEdges == nil || q.FollowEdges.TestResults {
 		input.JoinWithTestResults = q.TestResultPredicate.GetVariant() != nil
-		if q.TestResultPredicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
+		switch q.TestResultPredicate.GetExpectancy() {
+		case pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS:
 			input.JoinWithTestResults = true
 			input.InterestingTestResults = true
+		case pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS:
+			input.JoinWithTestResults = true
+			input.OnlyUnexpectedTestResults = true
 		}
 	}
 	input.Q = q
