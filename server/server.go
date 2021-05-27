@@ -692,12 +692,6 @@ type Server struct {
 	runningAs string // email of an account the server runs as
 }
 
-// scopedAuth holds TokenSource and Authenticator that produced it.
-type scopedAuth struct {
-	source oauth2.TokenSource
-	authen *clientauth.Authenticator
-}
-
 // moduleHostImpl implements module.Host via server.Server.
 //
 // Just a tiny wrapper to make sure modules consume only curated limited set of

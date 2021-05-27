@@ -16,11 +16,8 @@ package projectscope
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
-
-	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
@@ -62,10 +59,6 @@ func testingContext(caller identity.Identity) context.Context {
 		IdentityGroups: authorizedGroups,
 	})
 
-}
-
-func testMintAccessTokenWithError(ctx context.Context, params auth.MintAccessTokenParams) (*oauth2.Token, error) {
-	return nil, fmt.Errorf("Intended error for testing")
 }
 
 func newTestMintProjectTokenRPC() *MintProjectTokenRPC {

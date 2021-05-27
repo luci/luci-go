@@ -222,17 +222,6 @@ func apiTagToInfo(t *api.Tag) TagInfo {
 	}
 }
 
-func apiMetadataToInfo(md *api.InstanceMetadata) MetadataInfo {
-	return MetadataInfo{
-		Fingerprint: md.Fingerprint,
-		Key:         md.Key,
-		Value:       md.Value,
-		ContentType: md.ContentType,
-		AttachedBy:  md.AttachedBy,
-		AttachedTs:  UnixTime(md.AttachedTs.AsTime()),
-	}
-}
-
 func apiDescToInfo(d *api.DescribeInstanceResponse) *InstanceDescription {
 	desc := &InstanceDescription{
 		InstanceInfo: apiInstanceToInfo(d.Instance),

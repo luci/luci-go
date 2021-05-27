@@ -33,7 +33,6 @@ import (
 
 var (
 	currentNamespace = http.CanonicalHeaderKey("X-AppEngine-Current-Namespace")
-	defaultNamespace = http.CanonicalHeaderKey("X-AppEngine-Default-Namespace")
 
 	validTaskName = regexp.MustCompile("^[0-9a-zA-Z\\-\\_]{0,500}$")
 

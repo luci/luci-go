@@ -23,10 +23,6 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-type dsKeyImpl struct {
-	*datastore.Key
-}
-
 // dsR2F (DS real-to-fake) converts an SDK Key to a ds.Key
 func dsR2F(k *datastore.Key) *ds.Key {
 	if k == nil {

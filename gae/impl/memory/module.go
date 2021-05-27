@@ -20,10 +20,6 @@ import (
 	"go.chromium.org/luci/gae/service/module"
 )
 
-type modContextKeyType int
-
-var modContextKey modContextKeyType
-
 type moduleVersion struct {
 	module, version string
 }
