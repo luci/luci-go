@@ -16,7 +16,6 @@ package config
 
 import (
 	"context"
-	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -59,11 +58,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	case !existingPC.Enabled:
 		// Go through update process to ensure all configs are present.
 	case existingPC.ExternalHash == meta.ContentHash:
-		// TODO(crbug/1169389): remove after all configs are upgraded.
-		// Anything imported in the last week definitely has Git Revision set.
-		if clock.Now(ctx).Sub(existingPC.UpdateTime) < time.Hour*24*7 {
-			return nil // Already up-to-date.
-		}
+		return nil // Already up-to-date.
 	}
 
 	cfg, err := fetchCfg(ctx, meta.ContentHash)
@@ -89,10 +84,6 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 			return errors.Annotate(err, "failed to get ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
 		case err == nil && hashInfo.ProjectEVersion >= targetEVersion:
 			return nil // Do not go backwards.
-		case err == nil && hashInfo.GitRevision == "":
-			// TODO(crbug/1169389): remove after all configs are upgraded.
-			logging.Debugf(ctx, "crbug/1169389: filling in missing GitRevision in %s/%s", project, localHash)
-			fallthrough
 		default:
 			hashInfo.ProjectEVersion = targetEVersion
 			hashInfo.UpdateTime = datastore.RoundTime(clock.Now(ctx)).UTC()
