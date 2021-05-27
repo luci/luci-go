@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -281,7 +281,7 @@ func timestampToV2(ts int64) *tspb.Timestamp {
 	if ts == 0 {
 		return nil
 	}
-	ret, _ := ptypes.TimestampProto(v1.ParseTimestamp(ts))
+	ret := timestamppb.New(v1.ParseTimestamp(ts))
 	return ret
 }
 

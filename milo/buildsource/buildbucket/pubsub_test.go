@@ -26,6 +26,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -38,10 +41,8 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/ptypes"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -115,9 +116,9 @@ func TestPubSub(t *testing.T) {
 			bKey := MakeBuildKey(c, "hostname", "1234")
 			buildExp := buildBase
 			buildExp.Id = 1234
-			created, _ := ptypes.TimestampProto(RefTime.Add(2 * time.Hour))
-			started, _ := ptypes.TimestampProto(RefTime.Add(3 * time.Hour))
-			updated, _ := ptypes.TimestampProto(RefTime.Add(5 * time.Hour))
+			created := timestamppb.New(RefTime.Add(2 * time.Hour))
+			started := timestamppb.New(RefTime.Add(3 * time.Hour))
+			updated := timestamppb.New(RefTime.Add(5 * time.Hour))
 
 			propertiesMap := map[string]interface{}{
 				"$recipe_engine/milo/blamelist_pins": []interface{}{
@@ -193,10 +194,10 @@ func TestPubSub(t *testing.T) {
 			bKey := MakeBuildKey(c, "hostname", "2234")
 			buildExp := buildBase
 			buildExp.Id = 2234
-			created, _ := ptypes.TimestampProto(RefTime.Add(2 * time.Hour))
-			started, _ := ptypes.TimestampProto(RefTime.Add(3 * time.Hour))
-			updated, _ := ptypes.TimestampProto(RefTime.Add(6 * time.Hour))
-			completed, _ := ptypes.TimestampProto(RefTime.Add(6 * time.Hour))
+			created := timestamppb.New(RefTime.Add(2 * time.Hour))
+			started := timestamppb.New(RefTime.Add(3 * time.Hour))
+			updated := timestamppb.New(RefTime.Add(6 * time.Hour))
+			completed := timestamppb.New(RefTime.Add(6 * time.Hour))
 
 			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
 				Id:         2234,
@@ -294,9 +295,9 @@ func TestPubSub(t *testing.T) {
 		})
 
 		Convey("Builders in IgnoredBuilderIds should be ignored", func() {
-			created, _ := ptypes.TimestampProto(RefTime.Add(2 * time.Hour))
-			started, _ := ptypes.TimestampProto(RefTime.Add(3 * time.Hour))
-			updated, _ := ptypes.TimestampProto(RefTime.Add(5 * time.Hour))
+			created := timestamppb.New(RefTime.Add(2 * time.Hour))
+			started := timestamppb.New(RefTime.Add(3 * time.Hour))
+			updated := timestamppb.New(RefTime.Add(5 * time.Hour))
 
 			builderID := buildbucketpb.BuilderID{
 				Project: "fake",
