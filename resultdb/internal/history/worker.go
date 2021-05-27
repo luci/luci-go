@@ -85,7 +85,6 @@ type Query struct {
 	results        []*pb.GetTestResultHistoryResponse_Entry
 	resultOffset   int
 	nextPageToken  string
-	deadline       time.Time
 	ignoreDeadline bool
 }
 

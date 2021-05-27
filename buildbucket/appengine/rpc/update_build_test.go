@@ -48,12 +48,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func addTS(ts *timestamppb.Timestamp, d time.Duration) *timestamppb.Timestamp {
-	t, _ := ptypes.Timestamp(ts)
-	ts, _ = ptypes.TimestampProto(t.Add(d))
-	return ts
-}
-
 func TestValidateUpdate(t *testing.T) {
 	t.Parallel()
 

@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -34,7 +33,6 @@ import (
 // historyAccumulator has a method that can be passed as a callback to ByTimestamp.
 type historyAccumulator struct {
 	invs []ID
-	b    spanutil.Buffer
 }
 
 func (ia *historyAccumulator) accumulate(inv ID, ts *timestamppb.Timestamp) error {
