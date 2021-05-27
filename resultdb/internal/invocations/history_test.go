@@ -55,6 +55,7 @@ func TestByTimestamp(t *testing.T) {
 
 		start := testclock.TestRecentTimeUTC
 		middle := start.Add(time.Hour)
+		middle2 := middle.Add(30 * time.Minute)
 		end := middle.Add(time.Hour)
 
 		// Insert some Invocations.
@@ -80,11 +81,17 @@ func TestByTimestamp(t *testing.T) {
 				// No HistoryTime.
 				"Realm": realm,
 			}),
-			insertInvocation("third", map[string]interface{}{
+			insertInvocation("fourth", map[string]interface{}{
 				"CreateTime":                      end,
 				"HistoryTime":                     end,
 				"Realm":                           realm,
 				"TestResultVariantUnionRecursive": []string{"a:b", "k:v"},
+			}),
+			insertInvocation("third", map[string]interface{}{
+				"CreateTime":  middle2,
+				"HistoryTime": middle2,
+				"Realm":       realm,
+				"State":       pb.Invocation_ACTIVE,
 			}),
 		)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -116,9 +123,10 @@ func TestByTimestamp(t *testing.T) {
 			q.TimeRange = &pb.TimeRange{Earliest: middlePB, Latest: afterPB}
 			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
-			So(ac.invs, ShouldHaveLength, 2)
-			So(string(ac.invs[0]), ShouldEndWith, "third")
-			So(string(ac.invs[1]), ShouldEndWith, "second")
+			So(ac.invs, ShouldHaveLength, 3)
+			So(string(ac.invs[0]), ShouldEndWith, "fourth")
+			So(string(ac.invs[1]), ShouldEndWith, "third")
+			So(string(ac.invs[2]), ShouldEndWith, "second")
 		})
 
 		Convey(`all results`, func() {
@@ -126,10 +134,11 @@ func TestByTimestamp(t *testing.T) {
 			q.TimeRange = &pb.TimeRange{Earliest: startPB, Latest: afterPB}
 			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
-			So(ac.invs, ShouldHaveLength, 3)
-			So(string(ac.invs[0]), ShouldEndWith, "third")
-			So(string(ac.invs[1]), ShouldEndWith, "second")
-			So(string(ac.invs[2]), ShouldEndWith, "first")
+			So(ac.invs, ShouldHaveLength, 4)
+			So(string(ac.invs[0]), ShouldEndWith, "fourth")
+			So(string(ac.invs[1]), ShouldEndWith, "third")
+			So(string(ac.invs[2]), ShouldEndWith, "second")
+			So(string(ac.invs[3]), ShouldEndWith, "first")
 		})
 
 		Convey(`before first result`, func() {
@@ -160,8 +169,9 @@ func TestByTimestamp(t *testing.T) {
 			}
 			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
-			So(ac.invs, ShouldHaveLength, 1)
-			So(string(ac.invs[0]), ShouldEndWith, "third")
+			So(ac.invs, ShouldHaveLength, 2)
+			So(string(ac.invs[0]), ShouldEndWith, "fourth")
+			So(string(ac.invs[1]), ShouldEndWith, "third")
 		})
 	})
 }
