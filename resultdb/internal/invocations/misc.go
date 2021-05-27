@@ -80,16 +80,3 @@ func TokenToMap(token string, dest map[string]interface{}, keys ...string) error
 		return nil
 	}
 }
-
-// cloneStatement returns a shallowish copy of st: parameter values are not
-// cloned.
-func cloneStatement(st spanner.Statement) spanner.Statement {
-	clone := spanner.Statement{
-		SQL:    st.SQL,
-		Params: make(map[string]interface{}, len(st.Params)),
-	}
-	for k, v := range st.Params {
-		clone.Params[k] = v
-	}
-	return clone
-}
