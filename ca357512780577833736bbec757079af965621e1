@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e182803_069a8f1c",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-27T21:10:29Z",
+      "side": 1,
+      "message": "Del. Not necessary",
+      "revId": "ca357512780577833736bbec757079af965621e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4eefda7_87fd5f84",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-27T21:10:29Z",
+      "side": 1,
+      "message": "nit nit: maybe just Client(the interface) so that you can unexport `ProdClient` to have better encapsulation.",
+      "range": {
+        "startLine": 47,
+        "startChar": 62,
+        "endLine": 47,
+        "endChar": 73
+      },
+      "revId": "ca357512780577833736bbec757079af965621e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
