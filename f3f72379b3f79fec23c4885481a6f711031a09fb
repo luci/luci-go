@@ -179,6 +179,30 @@
       },
       "revId": "f3f72379b3f79fec23c4885481a6f711031a09fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a05dcca7_0d58bd7d",
+        "filename": "cv/internal/run/impl/handler/verification_completed_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-05-27T10:10:07Z",
+      "side": 1,
+      "message": "ACK.",
+      "parentUuid": "dd71c472_5beb39c7",
+      "range": {
+        "startLine": 170,
+        "startChar": 24,
+        "endLine": 170,
+        "endChar": 35
+      },
+      "revId": "f3f72379b3f79fec23c4885481a6f711031a09fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
