@@ -232,6 +232,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 }
 
 func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) ([]eventbox.Transition, error) {
+	statingState := rs
 	var transitions []eventbox.Transition
 	if len(tr.clSubmittedEvents.events) > 0 {
 		res, err := rp.handler.OnCLSubmitted(ctx, rs, tr.clSubmittedEvents.cls)
@@ -313,7 +314,7 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 	}
 	_, transitions = applyResult(res, nil, transitions)
 
-	if err := rp.enqueueNextPoke(ctx, tr.nextReadyEventTime); err != nil {
+	if err := rp.enqueueNextPoke(ctx, statingState.Run.Status, tr.nextReadyEventTime); err != nil {
 		return nil, err
 	}
 	return transitions, nil
@@ -331,16 +332,22 @@ func applyResult(res *handler.Result, events eventbox.Events, transitions []even
 	return res.State, append(transitions, t)
 }
 
-func (rp *runProcessor) enqueueNextPoke(ctx context.Context, nextReadyEventTime time.Time) error {
+func (rp *runProcessor) enqueueNextPoke(ctx context.Context, startingStatus run.Status, nextReadyEventTime time.Time) error {
 	switch now := clock.Now(ctx); {
+	case run.IsEnded(startingStatus):
+		// Do not enqueue the next poke if run is ended at the beginning of the
+		// state transition. Not using the end state after the state transition
+		// here because CV may fail to save the state which may require the
+		// recursive poke to unblock the Run.
+		return nil
 	case nextReadyEventTime.IsZero():
 		return rp.runNotifier.PokeAfter(ctx, rp.runID, pokeInterval)
 	case now.After(nextReadyEventTime):
 		// It is possible that by this time, next ready event is already overdue.
 		// Invoke Run Manager immediately.
-		return rp.runNotifier.TaskRefs.Dispatch(ctx, string(rp.runID), time.Time{})
+		return rp.runNotifier.Invoke(ctx, rp.runID, time.Time{})
 	case nextReadyEventTime.Before(now.Add(pokeInterval)):
-		return rp.runNotifier.TaskRefs.Dispatch(ctx, string(rp.runID), nextReadyEventTime)
+		return rp.runNotifier.Invoke(ctx, rp.runID, nextReadyEventTime)
 	default:
 		return rp.runNotifier.PokeAfter(ctx, rp.runID, pokeInterval)
 	}
