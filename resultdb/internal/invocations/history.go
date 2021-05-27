@@ -96,6 +96,7 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 	st.Params["minTime"] = minTime
 	st.Params["maxTime"] = maxTime
 	st.Params["variant"] = variant
+	st.Params["finalizedState"] = pb.Invocation_FINALIZED
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -115,7 +116,12 @@ var queryTmpl = template.Must(template.New("").Parse(`
 	FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp, spanner_emulator.disable_query_null_filtered_index_check=true} i
 	WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
 	{{if .MatchVariant}}
-		AND (SELECT LOGICAL_AND(kv IN UNNEST(TestResultVariantUnionRecursive)) FROM UNNEST(@variant) kv)
+		AND (
+			-- Unfinalized invocations don't have value in TestResultVariantUnionRecursive
+			-- yet and we still want to see their results.
+			i.State != @finalizedState OR
+			(SELECT LOGICAL_AND(kv IN UNNEST(TestResultVariantUnionRecursive)) FROM UNNEST(@variant) kv)
+		)
 	{{end}}
 	ORDER BY i.HistoryTime DESC
 `))
