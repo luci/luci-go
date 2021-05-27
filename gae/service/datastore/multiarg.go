@@ -338,22 +338,6 @@ type metaMultiArgElement struct {
 	offset int
 }
 
-// slot returns the element at the specified slot. If idx is invalid, slot will
-// panic.
-//
-// If arg is a single value, the only valid index is 0. if arg is a slice, idx
-// will be the offset within that slice.
-func (e *metaMultiArgElement) slot(idx int) reflect.Value {
-	if e.size >= 0 {
-		return e.arg.Index(idx)
-	}
-
-	if idx != 0 {
-		panic(fmt.Errorf("invalid slot index %d for single element", idx))
-	}
-	return e.arg
-}
-
 // length returns the number of elements in this metaMultiArgElement.
 //
 // If it represents a slice, the number of elements will be the length of that

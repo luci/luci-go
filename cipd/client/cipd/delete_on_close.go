@@ -17,8 +17,6 @@ package cipd
 import (
 	"context"
 	"os"
-
-	"go.chromium.org/luci/cipd/client/cipd/pkg"
 )
 
 // deleteOnClose is os.File that self-deletes once it closes.
@@ -42,11 +40,4 @@ func (d deleteOnClose) Close(ctx context.Context, corrupt bool) (err error) {
 // UnderlyingFile is only used by tests and shouldn't be used directly.
 func (d deleteOnClose) UnderlyingFile() *os.File {
 	return d.File
-}
-
-// underlyingFile is only used by tests.
-func underlyingFile(i pkg.Source) *os.File {
-	return i.(interface {
-		UnderlyingFile() *os.File
-	}).UnderlyingFile()
 }

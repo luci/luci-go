@@ -35,8 +35,6 @@ var RemoteAPIScopes = []string{
 	"https://www.googleapis.com/auth/cloud.platform",
 }
 
-type key int
-
 var (
 	prodStateKey  = "contains the current *prodState"
 	probeCacheKey = "contains the current *infoProbeCache"

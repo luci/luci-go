@@ -34,10 +34,6 @@ func (l luciPath) explode() []string {
 	return strings.Split(l.s(), "/")
 }
 
-func (l luciPath) toNative() nativePath {
-	return nativePath(filepath.FromSlash(l.s()))
-}
-
 func (l luciPath) s() string {
 	return string(l)
 }

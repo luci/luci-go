@@ -81,10 +81,6 @@ type queryTest struct {
 	equivalentQuery *Query
 }
 
-type sillyCursor string
-
-func (s sillyCursor) String() string { return string(s) }
-
 func nq(kinds ...string) *Query {
 	kind := "Foo"
 	if len(kinds) > 0 {

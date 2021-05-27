@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/gae/service/blobstore"
 )
 
-type myint int
 type mybool bool
 type mystring string
 type myfloat float32

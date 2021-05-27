@@ -791,23 +791,6 @@ func testRequestHandler(o *Options, handler func(rc *router.Context)) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func tempJSONFile(body interface{}) (out *os.File, err error) {
-	var f *os.File
-	defer func() {
-		if f != nil && err != nil {
-			os.Remove(f.Name())
-		}
-	}()
-	f, err = ioutil.TempFile("", "luci-server-test")
-	if err != nil {
-		return nil, err
-	}
-	if err := json.NewEncoder(f).Encode(body); err != nil {
-		return nil, err
-	}
-	return f, f.Close()
-}
-
 func setupListener() net.Listener {
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

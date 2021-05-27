@@ -33,7 +33,6 @@ var logMemCollectionFolder = flag.String(
 var logMemCollectionFolderTmp string
 var logMemCollectionOnce sync.Once
 var logMemCounter uint32
-var logMemNameKey = "holds a string indicating the StoreDebuggingTraceName"
 var stdoutLock sync.Mutex
 
 func wrapTracingMemStore(store memStore) memStore {

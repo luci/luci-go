@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -700,15 +699,6 @@ func (s *submitter) Submit(ctx context.Context, req *reminder.Payload) error {
 		return nil
 	}
 	return s.err(title(req))
-}
-
-func (s *submitter) titles() []string {
-	var t []string
-	for _, r := range s.reqs {
-		t = append(t, title(r))
-	}
-	sort.Strings(t)
-	return t
 }
 
 func title(req *reminder.Payload) string {

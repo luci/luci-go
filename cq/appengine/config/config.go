@@ -112,12 +112,6 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 	}
 }
 
-type refKey struct {
-	url     string
-	project string
-	refStr  string
-}
-
 var (
 	configGroupNameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	modeNameRegexp        = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
