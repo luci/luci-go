@@ -266,8 +266,11 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
 	}
 	if len(tr.cqdFinished) > 0 {
-		// TODO(tandrii): implement.
-		logging.Debugf(ctx, "Skipping processing of %d cqdFinished events", len(tr.cqdFinished))
+		res, err := rp.handler.OnCQDFinished(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
 	}
 	switch {
 	case len(tr.cancelEvents) > 0:
