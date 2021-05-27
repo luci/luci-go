@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e57b7509_7bd56595",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-27T21:33:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46f5b385_83ae110f",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 17
+      },
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "236d4e3a_ecb62c45",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-27T11:19:24Z",
       "side": 1,
       "message": "This should set the lucictx with a deadline for its child.\nThe deadline for the child process should be shorter than the deadline for rdb-stream itself to reserve a certain time period for rdb-stream to clean up.\n(perhaps, 1 sec?)",
+      "range": {
+        "startLine": 273,
+        "startChar": 1,
+        "endLine": 273,
+        "endChar": 45
+      },
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c7721dc_d25f3aad",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-27T21:33:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "236d4e3a_ecb62c45",
       "range": {
         "startLine": 273,
         "startChar": 1,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2230e12b_6ee3af6e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-27T21:33:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a323c3e_6155f161",
+      "range": {
+        "startLine": 279,
+        "startChar": 2,
+        "endLine": 279,
+        "endChar": 54
+      },
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d9533083_20f3bc4a",
@@ -100,6 +172,30 @@
       "writtenOn": "2021-05-27T11:19:24Z",
       "side": 1,
       "message": "cmd.Process.Signal(signals.Interrupts())  // to cover both SIGTERM and SIGINT in unix",
+      "range": {
+        "startLine": 282,
+        "startChar": 41,
+        "endLine": 282,
+        "endChar": 73
+      },
+      "revId": "c51e6a6d10b208336418ea453d4bf09eadb7eec0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05f22247_03adae70",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-27T21:33:48Z",
+      "side": 1,
+      "message": "Process.Signal accepts a single signal, not a slice of them. (like signals.Interrupts)\n\nAlso note, that we are not catching the interrupt here, but sending it to the payload.\n\nIn the new version, we let lucictx.TrackSoftDeadline catch the interrupt instead.",
+      "parentUuid": "d9533083_20f3bc4a",
       "range": {
         "startLine": 282,
         "startChar": 41,
