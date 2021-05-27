@@ -45,6 +45,30 @@
       },
       "revId": "397ce1994053ad5e3f02db3ecf27085c0f9c616c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0613712_ea30257d",
+        "filename": "cv/internal/run/impl/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-05-27T18:15:59Z",
+      "side": 1,
+      "message": "ah nvm, saw it in https://crrev.com/c/2922149",
+      "parentUuid": "3864fe29_d9d543a7",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 60,
+        "endChar": 14
+      },
+      "revId": "397ce1994053ad5e3f02db3ecf27085c0f9c616c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
