@@ -225,13 +225,6 @@ func (d *dataStoreData) catchupIndexes() {
 	d.snap = d.head.Snapshot()
 }
 
-func (d *dataStoreData) namespaces() []string {
-	d.rwlock.Lock()
-	defer d.rwlock.Unlock()
-
-	return namespaces(d.head)
-}
-
 func (d *dataStoreData) getConstraints() ds.Constraints {
 	d.rwlock.RLock()
 	defer d.rwlock.RUnlock()

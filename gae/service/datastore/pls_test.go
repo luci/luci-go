@@ -44,8 +44,6 @@ var (
 	mpNI = MkPropertyNI
 )
 
-const testAppID = "testApp"
-
 type (
 	myBlob   []byte
 	myByte   byte

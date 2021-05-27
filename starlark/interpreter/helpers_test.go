@@ -163,14 +163,6 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 	return
 }
 
-// runScript runs a single builtins.star script through the interpreter.
-func runScript(body string) error {
-	_, _, err := runIntr(intrParams{
-		stdlib: map[string]string{"builtins.star": body},
-	})
-	return err
-}
-
 // normalizeErr takes an error and extracts a normalized stack trace from it.
 func normalizeErr(err error) string {
 	if err == nil {

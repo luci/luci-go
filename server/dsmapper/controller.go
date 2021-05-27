@@ -115,9 +115,6 @@ type Controller struct {
 	m       sync.RWMutex
 	mappers map[ID]Factory
 	disp    *tq.Dispatcher
-
-	// Called in splitAndLaunchHandler during tests.
-	testingRecordSplit func(rng splitter.Range)
 }
 
 // Install registers task queue task handlers in the given task queue

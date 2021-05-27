@@ -47,8 +47,6 @@ func testGetMeta(c context.Context, k *ds.Key) int64 {
 	return mg.Version
 }
 
-var pls = ds.GetPLS
-
 type Foo struct {
 	ID     int64   `gae:"$id"`
 	Parent *ds.Key `gae:"$parent"`

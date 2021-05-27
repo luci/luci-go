@@ -53,10 +53,9 @@ type Vars struct {
 	// DeclaredExposeAsAliases is a set of all `exposeAs` passed to Declare.
 	DeclaredExposeAsAliases stringset.Set
 
-	next      ID            // index of the next variable to produce
-	scopes    []*scope      // stack of scopes, the "active" is last
-	bottom    scope         // fixed bottom of the stack, with preset var values (see Declare)
-	exposedAs stringset.Set // aliases of all vars exposed via 'expose_as' feature
+	next   ID       // index of the next variable to produce
+	scopes []*scope // stack of scopes, the "active" is last
+	bottom scope    // fixed bottom of the stack, with preset var values (see Declare)
 }
 
 // scope holds values that were set within the currently exec-ing module.

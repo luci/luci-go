@@ -73,15 +73,6 @@ func (i mcItem) SetAll(other mc.Item) {
 	}
 }
 
-// mcR2FErr (MC real-to-fake w/ error) converts a *memcache.Item to a mc.Item,
-// and passes along an error.
-func mcR2FErr(i *memcache.Item, err error) (mc.Item, error) {
-	if err != nil {
-		return nil, err
-	}
-	return mcItem{i}, nil
-}
-
 // mcF2R (MC fake-to-real) converts a mc.Item. i must originate from inside
 // this package for this function to work (see the panic message for why).
 //

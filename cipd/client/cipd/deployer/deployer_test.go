@@ -2254,7 +2254,6 @@ type testPackageInstance struct {
 	packageName string
 	instanceID  string
 	files       []fs.File
-	installMode pkg.InstallMode
 }
 
 // makeTestInstance returns pkg.Instance implementation with mocked guts.

@@ -52,9 +52,6 @@ var impliedRolesRev = map[api.Role]map[api.Role]struct{}{
 	api.Role_OWNER:  roleSet(api.Role_OWNER),
 }
 
-// allRoles is a set of all possible roles.
-var allRoles = roleSet(api.Role_OWNER, api.Role_WRITER, api.Role_READER)
-
 func roleSet(roles ...api.Role) map[api.Role]struct{} {
 	m := make(map[api.Role]struct{}, len(roles))
 	for _, r := range roles {
