@@ -16,6 +16,23 @@
       "message": "LGTM. But probably you should also wait for others\u0027 review.",
       "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52a7cf70_8e2c0090",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-05-27T23:24:24Z",
+      "side": 1,
+      "message": "Adjusting reviewers for OOOness.",
+      "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
