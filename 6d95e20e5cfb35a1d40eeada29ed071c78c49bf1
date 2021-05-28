@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98507a8f_dd18a0ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-28T00:03:45Z",
+      "side": 1,
+      "message": "PTAL (still writing tests, but I manually tested it for real in various edge case conditions).\n\nUsage is very simple:\n\n```\nfunc main() {\n  modules :\u003d []module.Module{\n    bqlog.NewModuleFromFlags(),\n  }\n\n  bqlog.RegisterLoggedType(bqlog.LoggedType{\n    Prototype: \u0026apipb.Logged{},\n    Table:     \"table-id\",\n  })\n\n  server.Main(nil, modules, func(srv *server.Server) error {\n    srv.Routes.GET(\"/\", nil, func(c *router.Context) {\n      bqlog.Log(c.Context, \u0026apipb.Logged{\n        TestInt: time.Now().UnixNano(),\n      })\n    })\n    return nil\n  })\n}\n\n./server -cloud-project some-project -bqlog-dataset some-dataset\n```",
+      "revId": "6d95e20e5cfb35a1d40eeada29ed071c78c49bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
