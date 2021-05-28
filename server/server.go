@@ -89,6 +89,9 @@
 // • go.chromium.org/luci/config/server/cfgmodule: provides LUCI Config client,
 // exposes config validation endpoints used by LUCI Config service.
 //
+// • go.chromium.org/luci/server/bqlog: implements best effort low-overhead
+// structured logging to BigQuery suitable for debug data like access logs.
+//
 // • go.chromium.org/luci/server/cron: allows registering Cloud Scheduler (aka
 // Appengine cron.yaml) handlers, with proper authentication and monitoring
 // metrics.
