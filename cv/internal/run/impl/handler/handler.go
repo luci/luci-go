@@ -95,6 +95,8 @@ type RM interface {
 	NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error
 	NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error
 	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error
+	// TODO(crbug/1141880): Remove this API after migration. See `run.CancelAt`.
+	CancelAt(ctx context.Context, runID common.RunID, eta time.Time) error
 }
 
 // Impl is a prod implementation of Handler interface.
