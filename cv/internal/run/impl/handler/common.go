@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -38,10 +39,16 @@ import (
 // Returns the side effect when Run is ended.
 //
 // Panics if the provided status is not ended status.
-func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM) eventbox.SideEffectFn {
+func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM, u CLUpdater) eventbox.SideEffectFn {
 	if !run.IsEnded(st) {
 		panic(fmt.Errorf("can't end run with non-final status %s", st))
 	}
+
+	if err := refreshRunCLs(ctx, &rs.Run, u); err != nil {
+		errors.Log(ctx, err)
+		logging.Warningf(ctx, "proceeding with Run finalization despite failure in CL refresh")
+	}
+
 	rs.Run.Status = st
 	rs.Run.EndTime = clock.Now(ctx).UTC()
 	rid := rs.Run.ID
@@ -115,4 +122,32 @@ func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.R
 		}
 	}
 	return nil
+}
+
+func refreshRunCLs(ctx context.Context, r *run.Run, u CLUpdater) error {
+	poolSize := 16
+	if len(r.CLs) > poolSize {
+		poolSize = len(r.CLs)
+	}
+	err := parallel.WorkPool(poolSize, func(work chan<- func() error) {
+		for _, clid := range r.CLs {
+			clid := clid
+			work <- func() error {
+				// TODO(tandrii): consider retrying several times on failures.
+				// TODO(tandrii): find a way to acquire and pass updatedHint or
+				// equivalent to avoid needless Gerrit queries.
+				return u.RefreshCL(ctx, clid, r.ID.LUCIProject())
+			}
+		}
+	})
+	switch merrs, ok := err.(errors.MultiError); {
+	case err == nil:
+		return nil
+	case !ok:
+		return err
+	default:
+		n, _ := merrs.Summary()
+		err = common.MostSevereError(merrs)
+		return errors.Annotate(err, "failed to refresh %d out of %d CLs, keeping the most severe error", n, len(r.CLs)).Err()
+	}
 }

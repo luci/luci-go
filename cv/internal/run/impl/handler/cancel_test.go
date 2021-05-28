@@ -56,7 +56,8 @@ func TestCancel(t *testing.T) {
 			IncompleteRuns: common.RunIDs{runID, "chromium/222-1-cafecafe"},
 		}), ShouldBeNil)
 		h := &Impl{
-			PM: prjmanager.NewNotifier(ct.TQDispatcher),
+			PM:        prjmanager.NewNotifier(ct.TQDispatcher),
+			CLUpdater: &clUpdaterMock{},
 		}
 
 		Convey("Cancels PENDING Run", func() {

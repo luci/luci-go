@@ -148,3 +148,29 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	}
 	return f.update(ctx, common.CLID(r.GetClidHint()))
 }
+
+// RefreshCL refreshes CL already existing in datastore.
+//
+// Prefer Schedule() instead of RefreshCL() in production.
+func (u *Updater) RefreshCL(ctx context.Context, clid common.CLID, luciProject string) error {
+	// Need to load CL to get its Host & Change.
+	// TODO(tandrii): refactor the inefficiency here, since specifying clidHint
+	// below results in loading the same datastore entity again.
+	cl := changelist.CL{ID: clid}
+	switch err := datastore.Get(ctx, &cl); {
+	case err == datastore.ErrNoSuchEntity:
+		return errors.Reason("CL %d doesn't exist", clid).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to load CL %d", clid).Tag(transient.Tag).Err()
+	}
+	host, change, err := cl.ExternalID.ParseGobID()
+	if err != nil {
+		return errors.Annotate(err, "CL %d is not a Gerrit CL", clid).Err()
+	}
+	return u.Refresh(ctx, &RefreshGerritCL{
+		LuciProject: luciProject,
+		ClidHint:    int64(clid),
+		Host:        host,
+		Change:      int64(change),
+	})
+}

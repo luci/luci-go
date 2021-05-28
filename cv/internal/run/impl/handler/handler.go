@@ -97,10 +97,16 @@ type RM interface {
 	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error
 }
 
+// CLUpdater encapsulates interaction with CL Updater by the Run events handler.
+type CLUpdater interface {
+	RefreshCL(ctx context.Context, clid common.CLID, luciProject string) error
+}
+
 // Impl is a prod implementation of Handler interface.
 type Impl struct {
 	PM         PM
 	RM         RM
+	CLUpdater  CLUpdater
 	TreeClient tree.Client
 }
 
