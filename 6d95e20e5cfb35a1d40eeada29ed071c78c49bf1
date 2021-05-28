@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ff227b2c_e01406db",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-28T00:58:00Z",
+      "side": 1,
+      "message": "The new streaming write API has no \"insert IDs\" (at least I could not find them). Instead it has something called offsets, but I don\u0027t think they work with \"_default\" stream. And using non _default stream is a lot more complicated and has various limitations.\n\nSo I don\u0027t think BQ has a way to automatically deduplicate data in case of \"submarine writes\" to \"_default\" stream (when BQ wrote the data, but we failed to receive the ACK and sent it again). Elsewhere they suggest to dedup stuff in queries using UNIQUE() :(",
+      "parentUuid": "ed7c2af6_44a770b7",
+      "range": {
+        "startLine": 12,
+        "startChar": 50,
+        "endLine": 12,
+        "endChar": 63
+      },
+      "revId": "6d95e20e5cfb35a1d40eeada29ed071c78c49bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "98507a8f_dd18a0ed",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -71,6 +95,30 @@
       "writtenOn": "2021-05-28T00:40:50Z",
       "side": 1,
       "message": "maybe \"bqlog.Sink\" since this includes the table and also buffering information? (i.e. it\u0027s more than just the type, and IIUC you could have multiple \"LoggedType\"s with the same Prototype and different tables/buffer params)\n\nedit: though it looks like Prototype is used as the primary key in bufs... maybe table would be a better key, since you can\u0027t have multiple schemas per table?",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 15
+      },
+      "revId": "6d95e20e5cfb35a1d40eeada29ed071c78c49bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad086087_67252c7f",
+        "filename": "server/bqlog/bundler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-05-28T00:58:00Z",
+      "side": 1,
+      "message": "\u003e maybe \"bqlog.Sink\" since this includes the table and also buffering information? (i.e. it\u0027s more than just the type, and IIUC you could have multiple \"LoggedType\"s with the same Prototype and different tables/buffer params)\n\u003e \n\u003e edit: though it looks like Prototype is used as the primary key in bufs... maybe table would be a better key, since you can\u0027t have multiple schemas per table?\n\nUsing the table as a key will require passing it to all Log(...) calls which I don\u0027t like. I don\u0027t think there\u0027s a practical use case of having multiple tables with the same schema. And it wouldn\u0027t be hard to refactor this code if there\u0027s such use case. The only potential issue is using proto message name in metric fields. I guess I\u0027ll replace it with full table ID (project/dataset/table) now.",
+      "parentUuid": "32df5278_9d7c1080",
       "range": {
         "startLine": 90,
         "startChar": 5,
