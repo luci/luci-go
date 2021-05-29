@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5398ea68_252f1813",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-29T22:16:46Z",
+      "side": 1,
+      "message": "LGTM\n\nDrive-by quick question: What is trigger mode? And when (what user scenario) would cause trigger time change?",
+      "revId": "30509745f56abaf462c724a25db07b1a492710cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e57b634_268582ec",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-29T22:16:46Z",
+      "side": 1,
+      "message": "Bikeshedding nit: I think it would also be fine to write this with one condition at a time.\n\n    if currTrigger \u003d\u003d nil {\n      return true // Trigger was removed.\n    }\n    if oldTrigger.GetMode() !\u003d curTrigger.GetMode() {\n      return true\n    }\n    return !oldTrigger.GetTime().AsTime().Equal(curTrigger.GetTime().AsTime())",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 69
+      },
+      "revId": "30509745f56abaf462c724a25db07b1a492710cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17d34952_447ab710",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-05-29T22:16:46Z",
+      "side": 1,
+      "message": "Nit: spelling",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 18
+      },
+      "revId": "30509745f56abaf462c724a25db07b1a492710cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
