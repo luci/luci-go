@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/clock"
@@ -203,10 +202,10 @@ func isArchived(c context.Context, task *logdog.ArchiveTask) bool {
 
 // LeaseArchiveTasks leases archive tasks to the requestor from a pull queue.
 func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) (*logdog.LeaseResponse, error) {
-	duration, err := ptypes.Duration(req.LeaseTime)
-	if err != nil {
+	if err := req.LeaseTime.CheckValid(); err != nil {
 		return nil, err
 	}
+	duration := req.LeaseTime.AsDuration()
 
 	var tasks []*taskqueue.Task
 	logging.Infof(c, "got request to lease %d tasks for %s", req.MaxTasks, req.GetLeaseTime())
@@ -214,7 +213,7 @@ func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 	queueName, queueNumber := s.getNextArchiveQueueName(c)
 	logging.Infof(c, "picked queue %q", queueName)
 
-	err = retry.Retry(c, taskqueueLeaseRetry,
+	err := retry.Retry(c, taskqueueLeaseRetry,
 		func() error {
 			var err error
 

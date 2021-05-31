@@ -19,15 +19,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
 )
 
 type swarmingEditor struct {
-	jd          *Definition
-	sw          *Swarming
-	userPayload *api.CASTree
+	jd             *Definition
+	sw             *Swarming
+	userPayload    *api.CASTree
 	casUserPayload *api.CASReference
 
 	err error
@@ -43,7 +42,7 @@ func newSwarmingEditor(jd *Definition) *swarmingEditor {
 	if sw.Task == nil {
 		sw.Task = &api.TaskRequest{}
 	}
-	return &swarmingEditor{jd, sw, jd.UserPayload,  jd.CasUserPayload, nil}
+	return &swarmingEditor{jd, sw, jd.UserPayload, jd.CasUserPayload, nil}
 }
 
 func (swe *swarmingEditor) Close() error {
@@ -127,10 +126,10 @@ func (swe *swarmingEditor) EditDimensions(dimEdits DimensionEditCommands) {
 		}, len(slices))
 
 		for i, slc := range slices {
-			sliceRelativeExpiration, err := ptypes.Duration(slc.Expiration)
-			if err != nil {
+			if err := slc.Expiration.CheckValid(); err != nil {
 				return err
 			}
+			sliceRelativeExpiration := slc.Expiration.AsDuration()
 			taskRelativeExpiration := sliceRelativeExpiration
 			if i > 0 {
 				taskRelativeExpiration += sliceByExp[i-1].TotalExpiration
