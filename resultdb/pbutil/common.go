@@ -63,10 +63,10 @@ func MustTimestampProto(t time.Time) *tspb.Timestamp {
 // MustTimestamp converts a *tspb.Timestamp to a time.Time and panics
 // on failure.
 func MustTimestamp(ts *tspb.Timestamp) time.Time {
-	t, err := ptypes.Timestamp(ts)
-	if err != nil {
+	if err := ts.CheckValid(); err != nil {
 		panic(err)
 	}
+	t := ts.AsTime()
 	return t
 }
 
