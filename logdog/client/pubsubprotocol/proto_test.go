@@ -19,8 +19,9 @@ import (
 	"io"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/api/logpb"

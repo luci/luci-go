@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // Render creates a human-readable string from spec.

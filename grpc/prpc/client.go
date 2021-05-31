@@ -32,8 +32,8 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"google.golang.org/grpc"

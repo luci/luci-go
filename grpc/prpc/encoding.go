@@ -27,7 +27,7 @@ import (
 	"strconv"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"google.golang.org/grpc/codes"

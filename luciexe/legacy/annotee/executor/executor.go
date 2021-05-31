@@ -21,7 +21,8 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/logdog/common/types"

@@ -22,7 +22,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	pb "go.chromium.org/luci/gae/service/datastore/internal/protos/datastore"
 )
 

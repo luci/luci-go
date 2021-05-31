@@ -19,7 +19,7 @@ import (
 	"encoding/base64"
 	"sort"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
