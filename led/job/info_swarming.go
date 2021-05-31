@@ -18,7 +18,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
@@ -27,7 +26,7 @@ import (
 
 type swInfo struct {
 	*Swarming
-	userPayload *swarmingpb.CASTree
+	userPayload    *swarmingpb.CASTree
 	casUserPayload *swarmingpb.CASReference
 }
 
@@ -105,10 +104,10 @@ func (s swInfo) Dimensions() (ExpiringDimensions, error) {
 	ldims := logicalDimensions{}
 	var totalExpiration time.Duration
 	for _, slc := range s.GetTask().GetTaskSlices() {
-		exp, err := ptypes.Duration(slc.Expiration)
-		if err != nil {
+		if err := slc.Expiration.CheckValid(); err != nil {
 			return nil, errors.Annotate(err, "malformed expiration").Err()
 		}
+		exp := slc.Expiration.AsDuration()
 		totalExpiration += exp
 
 		for _, dim := range slc.GetProperties().GetDimensions() {
