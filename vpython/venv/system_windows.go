@@ -15,28 +15,13 @@
 package venv
 
 import (
-	"os"
 	"path/filepath"
 	"syscall"
-
-	"go.chromium.org/luci/common/errors"
 )
 
 // venvBinDir resolves the path where VirtualEnv binaries are installed.
 func venvBinDir(root string) string {
 	return filepath.Join(root, "Scripts")
-}
-
-func checkProcessRunning(pid int) error {
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return errors.Annotate(err, "failed to find process").Err()
-	}
-
-	if err := proc.Signal(os.Signal(syscall.Signal(0))); err != nil {
-		return errors.Annotate(err, "failed to signal process").Err()
-	}
-	return nil
 }
 
 func currentUID() (string, error) {

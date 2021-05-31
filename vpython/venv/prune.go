@@ -25,10 +25,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
-// pruneReadDirSize is the number of entries to read in a directory at a time
-// when pruning.
-const pruneReadDirSize = 128
-
 // prune examines environments in cfg's BaseDir. If any are found that are older
 // than the prune threshold in "cfg", they will be safely deleted.
 //

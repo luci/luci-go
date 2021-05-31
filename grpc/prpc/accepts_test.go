@@ -123,8 +123,6 @@ func TestAccept(t *testing.T) {
 	})
 
 	Convey("qParamSplit", t, func() {
-		type params map[string]string
-
 		test := func(item, mediaType, qValue string) {
 			Convey(item, func() {
 				actualMediaType, actualQValue := qParamSplit(item)

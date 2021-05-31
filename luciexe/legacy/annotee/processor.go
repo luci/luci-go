@@ -630,7 +630,6 @@ type stepHandler struct {
 	injectedTextStreamLines []string
 	streams                 map[types.StreamName]io.WriteCloser
 	finished                bool
-	allEmitted              bool
 	textStrippedNote        bool
 }
 

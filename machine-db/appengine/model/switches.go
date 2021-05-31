@@ -248,15 +248,6 @@ func (t *SwitchesTable) update(c context.Context) error {
 	return nil
 }
 
-// ids returns a map of switch names to IDs.
-func (t *SwitchesTable) ids(c context.Context) map[string]int64 {
-	switches := make(map[string]int64, len(t.current))
-	for _, s := range t.current {
-		switches[s.Name] = s.Id
-	}
-	return switches
-}
-
 // EnsureSwitches ensures the database contains exactly the given switches.
 func EnsureSwitches(c context.Context, cfgs []*config.Datacenter, rackIds map[string]int64) error {
 	t := &SwitchesTable{}

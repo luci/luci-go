@@ -78,13 +78,6 @@ var (
 		field.String("jobID"),
 		field.String("status"), // one of final statuses of task.Status enum.
 	)
-
-	metricInvocationsOverrun = metric.NewCounter(
-		"luci/scheduler/invocations/overrun",
-		"Number of invocations that were not run due to overrun of prior one.",
-		nil,
-		field.String("jobID"),
-	)
 )
 
 // generateInvocationID is called within a transaction to pick a new Invocation
@@ -395,12 +388,6 @@ func cleanupUnreferencedInvocations(c context.Context, invs []*Invocation) {
 	if err := datastore.Delete(datastore.WithoutTransaction(c), keysToKill); err != nil {
 		logging.WithError(err).Warningf(c, "Invocation cleanup failed")
 	}
-}
-
-// reportOverrunMetrics reports overrun to monitoring.
-// Should be called after transaction to save this invocation is completed.
-func (e *Invocation) reportOverrunMetrics(c context.Context) {
-	metricInvocationsOverrun.Add(c, 1, e.JobID)
 }
 
 // reportCompletionMetrics reports invocation stats to monitoring.

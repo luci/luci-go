@@ -19,7 +19,6 @@ package engine
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/rand"
 	"sort"
 	"time"
@@ -37,10 +36,8 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -59,24 +56,6 @@ import (
 const fakeAppID = "scheduler-app-id"
 
 var epoch = time.Unix(1442270520, 0).UTC()
-
-// getSentMetric returns sent value or nil if value wasn't sent.
-func getSentMetric(c context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
-	return tsmon.GetState(c).Store().Get(c, m, time.Time{}, fieldVals)
-}
-
-// getSentDistrValue returns the value that was added to distribution after
-// ensuring there was exactly 1 value sent.
-func getSentDistrValue(c context.Context, m types.Metric, fieldVals ...interface{}) float64 {
-	switch d, ok := getSentMetric(c, m, fieldVals...).(*distribution.Distribution); {
-	case !ok:
-		panic(errors.New("not a distribution"))
-	case d.Count() != 1:
-		panic(fmt.Errorf("expected 1 value, but %d values were sent with sum of %f", d.Count(), d.Sum()))
-	default:
-		return d.Sum()
-	}
-}
 
 func allJobs(c context.Context) []Job {
 	datastore.GetTestable(c).CatchupIndexes()

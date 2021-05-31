@@ -118,14 +118,6 @@ type Config struct {
 	// "resolvePythonInterpreter".
 	si *python.Interpreter
 
-	// rt is the resolved Python runtime.
-	rt vpython.Runtime
-
-	// testPreserveInstallationCapability is a testing parameter. If true, the
-	// VirtualEnv's ability to install will be preserved after the setup. This is
-	// used by the test wheel generation bootstrap code.
-	testPreserveInstallationCapability bool
-
 	// testLeaveReadWrite, if true, instructs the VirtualEnv setup to leave the
 	// directory read/write. This makes it easier to manage, and is safe since it
 	// is not a production directory.

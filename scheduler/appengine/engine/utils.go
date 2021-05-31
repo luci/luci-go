@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/memcache"
@@ -242,19 +241,6 @@ func mutateTimersList(blob *[]byte, cb func(*[]*internal.Timer)) error {
 	cb(&list)
 	*blob = marshalTimersList(list)
 	return nil
-}
-
-// structFromMap constructs protobuf.Struct with string keys and values.
-func structFromMap(m map[string]string) *structpb.Struct {
-	out := &structpb.Struct{
-		Fields: make(map[string]*structpb.Value, len(m)),
-	}
-	for k, v := range m {
-		out.Fields[k] = &structpb.Value{
-			Kind: &structpb.Value_StringValue{StringValue: v},
-		}
-	}
-	return out
 }
 
 // marshalFinishedInvs marshals list of invocations into FinishedInvocationList.

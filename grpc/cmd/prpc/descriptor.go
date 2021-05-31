@@ -17,11 +17,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
-
-	"google.golang.org/protobuf/types/descriptorpb"
-
-	"go.chromium.org/luci/common/proto/google/descutil"
 
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
@@ -39,31 +34,4 @@ func loadDescription(c context.Context, client *prpc.Client) (*serverDescription
 	}
 
 	return &serverDescription{res}, nil
-}
-
-// resolveInputMessage resolves input message type of a method.
-func (d *serverDescription) resolveInputMessage(service, method string) (*descriptorpb.DescriptorProto, error) {
-	_, obj, _ := descutil.Resolve(d.Description, service)
-	serviceDesc, ok := obj.(*descriptorpb.ServiceDescriptorProto)
-	if !ok {
-		return nil, fmt.Errorf("service %q not found", service)
-	}
-
-	mi := descutil.FindMethodForService(serviceDesc, method)
-	if mi == -1 {
-		return nil, fmt.Errorf("method %q in service %q not found", method, service)
-	}
-
-	msgName := serviceDesc.Method[mi].GetInputType()
-	msgName = strings.TrimPrefix(msgName, ".")
-	return d.resolveMessage(msgName)
-}
-
-func (d *serverDescription) resolveMessage(name string) (*descriptorpb.DescriptorProto, error) {
-	_, obj, _ := descutil.Resolve(d.Description, name)
-	msg, ok := obj.(*descriptorpb.DescriptorProto)
-	if !ok {
-		return nil, fmt.Errorf("message %q not found", name)
-	}
-	return msg, nil
 }

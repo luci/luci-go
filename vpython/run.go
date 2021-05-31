@@ -27,12 +27,6 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 )
 
-type runCommand struct {
-	args    []string
-	env     environ.Env
-	workDir string
-}
-
 // Run sets up a Python VirtualEnv and executes the supplied Options.
 //
 // If the Python interpreter was successfully launched, Run will never return,

@@ -71,7 +71,6 @@ The input message is read from stdin (defaulting to JSONPB)`,
 type callRun struct {
 	cmdRun
 	format   formatFlag
-	message  string
 	metadata metadata.MD
 }
 

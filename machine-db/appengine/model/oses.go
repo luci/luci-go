@@ -226,15 +226,6 @@ func (t *OSesTable) update(c context.Context) error {
 	return nil
 }
 
-// ids returns a map of operating system names to IDs.
-func (t *OSesTable) ids(c context.Context) map[string]int64 {
-	oses := make(map[string]int64, len(t.current))
-	for _, os := range t.current {
-		oses[os.Name] = os.Id
-	}
-	return oses
-}
-
 // EnsureOSes ensures the database contains exactly the given operating systems.
 func EnsureOSes(c context.Context, cfgs []*config.OS) error {
 	t := &OSesTable{}

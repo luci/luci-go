@@ -33,10 +33,6 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-const (
-	userAgent = "luci-prpc"
-)
-
 var logCfg = gologger.LoggerConfig{
 	Format: `%{message}`,
 	Out:    os.Stderr,
