@@ -18,8 +18,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
 	"go.chromium.org/luci/scheduler/appengine/messages"

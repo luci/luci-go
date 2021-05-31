@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/collector/coordinator"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 const (

@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
