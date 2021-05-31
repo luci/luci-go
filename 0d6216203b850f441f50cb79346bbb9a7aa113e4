@@ -33,6 +33,69 @@
       "message": "Adjusting reviewers for OOOness.",
       "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2acc3196_bd5dada3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-31T19:57:54Z",
+      "side": 1,
+      "message": "LGTM % a couple of suggestions for logging and the grace period.",
+      "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9658893d_c78b74d8",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-31T19:57:54Z",
+      "side": 1,
+      "message": "In this program, reservePeriodSecs is # of the total seconds reserved for the rdb process and all the descendant processes to clean up. e.g., result_adapter, content_browser, gtest, etc.\n\n1 second may be too short. What about 3 sec? If the child process finishes early upon receiving a signal, then rdb process would terminate before the reserved period passed.\n\nAnother consideration is to adjust the deadline with a shorter period before the child process. Let\u0027s say that result_adapter adopted lucictx.Deadline. Shortening the deadline for the child process will minimize the chance of sigkill-ing result_adapter process. That said, I believe the change can be made separately, when result_adapter adopts lucictx.deadline.\n(it will effectively make the bottommost command be the only one that can be sig-killed)\n\nThat said, such a change can be made in a separately when result_adapter adopts lucictx.Deadline, if this sg and you are planning to update result_adapter.",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 1
+      },
+      "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3882afa5_1ad49e83",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-05-31T19:57:54Z",
+      "side": 1,
+      "message": "Maybe, you could switch{} the channel item to print more detailed log messages. This should send a signal regardless of the reason, but without those messages, we won\u0027t exactly know the reason of a given process terminating.\n\n```\nswitch event :\u003d \u003c-lucictx.SoftDeadlineDone(cmdCtx); {\ncase event \u003d\u003d lucictx.ClosureEvent:\n  log(\"The parent context was cancelled.\")\ncase event \u003d\u003d lucictx.InterrupteEvent:\n  log(\"Received an interrupt.\")\ncase event \u003d\u003d lucictx.TimeoutEvent:\n  log(\"Soft-deadline exceeded.\")\n}\n\nlog(\"Sending an interrupt to the child process; will force kill in ~%s\", ...)\n......\n```",
+      "range": {
+        "startLine": 277,
+        "startChar": 2,
+        "endLine": 278,
+        "endChar": 10
+      },
+      "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
