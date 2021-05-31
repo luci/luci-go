@@ -51,7 +51,7 @@ def _notifier_template(
     [standard ones](https://godoc.org/text/template#hdr-Functions).
 
     * `time`: converts a
-      [Timestamp](https://godoc.org/github.com/golang/protobuf/ptypes/timestamp#Timestamp)
+      [Timestamp](https://pkg.go.dev/google.golang.org/protobuf/types/known/timestamppb#Timestamp)
       to [time.Time](https://godoc.org/time).
       Example: `{{.Build.EndTime | time}}`
 
