@@ -76,19 +76,6 @@ func (b *cmdRunBase) ModifyContext(c context.Context) context.Context {
 	return context.WithValue(c, &key, srv)
 }
 
-// createService returns a new Compute Engine API service.
-func createService(c context.Context, opts auth.Options) (*compute.Service, error) {
-	http, err := auth.NewAuthenticator(c, auth.OptionalLogin, opts).Client()
-	if err != nil {
-		return nil, err
-	}
-	service, err := compute.New(http)
-	if err != nil {
-		return nil, err
-	}
-	return service, nil
-}
-
 // New returns a new snapshot application.
 func New() *cli.Application {
 	return &cli.Application{

@@ -244,15 +244,6 @@ func (t *IPsTable) update(c context.Context) error {
 	return nil
 }
 
-// ids returns a map of IP addresses to IDs.
-func (t *IPsTable) ids(c context.Context) map[common.IPv4]int64 {
-	ips := make(map[common.IPv4]int64, len(t.current))
-	for _, ip := range t.current {
-		ips[ip.IPv4] = ip.Id
-	}
-	return ips
-}
-
 // EnsureIPs ensures the database contains exactly the given IP addresses.
 func EnsureIPs(c context.Context, cfgs []*config.VLAN) error {
 	t := &IPsTable{}
