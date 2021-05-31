@@ -40,7 +40,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	srvcfg "go.chromium.org/luci/logdog/server/config"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	cl "cloud.google.com/go/logging"
 	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
