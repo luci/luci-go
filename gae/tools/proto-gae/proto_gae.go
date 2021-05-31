@@ -108,7 +108,7 @@ var tmpl = template.Must(
 package {{index . "package"}}
 
 import (
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/gae/service/datastore"
 ){{range index . "types"}}
