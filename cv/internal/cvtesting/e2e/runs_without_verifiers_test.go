@@ -108,7 +108,7 @@ func TestCreatesSingularRun(t *testing.T) {
 	})
 }
 
-func TestCreatesSingularRunCQDinCharge(t *testing.T) {
+func TestCreatesSingularRunCQDinChargeOK(t *testing.T) {
 	t.Parallel()
 
 	Convey("CV creates and finalizes a 1 CL Run while CQD is in charge", t, func() {
@@ -165,10 +165,13 @@ func TestCreatesSingularRunCQDinCharge(t *testing.T) {
 		So(r.ID.AttemptKey(), ShouldResemble, expectedAttemptKey)
 
 		ct.LogPhase(ctx, "Dry Run passes in CQD and removes CQ+1 vote")
+		var endedAt time.Time
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(func(r *migrationpb.ReportedRun, _ bool) *migrationpb.ReportedRun {
 			if r.GetAttempt().GetEndTime() != nil {
 				return r // already finalized
 			}
+			endedAt = ct.Clock.Now()
+			ct.Clock.Add(time.Second)
 			return &migrationpb.ReportedRun{
 				Id: "",
 				Attempt: &cvbqpb.Attempt{
@@ -183,7 +186,7 @@ func TestCreatesSingularRunCQDinCharge(t *testing.T) {
 					ConfigGroup: cfg.GetConfigGroups()[0].GetName(),
 					LuciProject: lProject,
 					StartTime:   timestamppb.New(tStart),
-					EndTime:     timestamppb.New(ct.Clock.Now()),
+					EndTime:     timestamppb.New(endedAt),
 				},
 			}
 		})
@@ -193,8 +196,23 @@ func TestCreatesSingularRunCQDinCharge(t *testing.T) {
 
 		ct.LogPhase(ctx, "CV finalizes the Run")
 		ct.RunUntil(ctx, func() bool {
-			return ct.LoadRun(ctx, r.ID).Status == run.Status_SUCCEEDED
+			return run.IsEnded(ct.LoadRun(ctx, r.ID).Status)
 		})
+		// There is a race between CV and CQD here. CQD is supposed to call
+		// ReportFinishedRun within O(minutes) of the removing of the Gerrit vote,
+		// otherwise failsafe on CV kicks in and finalizes such Run with CANCELED.
+		// Depending on test setup (e.g. flaky datastore), this test may exhibit
+		// either bahavior. See TestCreatesSingularRunCQDinChargeButCrashes for a
+		// test this ensures failsafe actually works.
+		r = ct.LoadRun(ctx, r.ID)
+		if r.Status == run.Status_SUCCEEDED {
+			So(r.EndTime, ShouldEqual, datastore.RoundTime(endedAt.UTC()))
+			// CV finalizes Run after CQD end time record.
+			So(r.UpdateTime, ShouldHappenAfter, r.EndTime)
+		} else {
+			So(r.Status, ShouldEqual, run.Status_CANCELLED)
+		}
+
 		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
 		ct.RunUntil(ctx, func() bool {
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
