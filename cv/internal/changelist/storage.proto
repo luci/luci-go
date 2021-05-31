@@ -55,6 +55,13 @@ message Snapshot {
   // communicated back to user.
   repeated CLError errors = 6;
 
+  // Outdated is true if the Snapshot is likely to be out of date.
+  //
+  // When setting to true, ensure this CL will be refreshed.
+  // In the meantime, Project Manager will not take any new actions on CL with
+  // outdated Snapshot.
+  bool outdated = 7;
+
   // CL-kind specific data.
   oneof kind {
     Gerrit gerrit = 11;
