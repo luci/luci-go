@@ -20,7 +20,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/proto/access"
@@ -105,9 +104,9 @@ func BucketPermissions(c context.Context, client access.AccessClient, buckets []
 	if err := perms.FromProto(resp); err != nil {
 		return nil, 0, err
 	}
-	dur, err := ptypes.Duration(resp.ValidityDuration)
-	if err != nil {
+	if err := resp.ValidityDuration.CheckValid(); err != nil {
 		return nil, 0, err
 	}
+	dur := resp.ValidityDuration.AsDuration()
 	return perms, dur, nil
 }

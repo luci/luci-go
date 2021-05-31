@@ -311,10 +311,10 @@ func getValue(value interface{}, path []string, prop *proto.Properties) (interfa
 		if dpb == nil {
 			return nil, nil
 		}
-		value, err := ptypes.Duration(dpb)
-		if err != nil {
+		if err := dpb.CheckValid(); err != nil {
 			return nil, fmt.Errorf("tried to write an invalid duration for [%+v] for field %q", dpb, strings.Join(path, "."))
 		}
+		value := dpb.AsDuration()
 		// Convert to FLOAT64.
 		return value.Seconds(), nil
 	} else if tspb, ok := value.(*timestamppb.Timestamp); ok {
