@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -494,10 +493,10 @@ func mustTimestamp(ts *timestamppb.Timestamp) time.Time {
 		return time.Time{}
 	}
 
-	t, err := ptypes.Timestamp(ts)
-	if err != nil {
+	if err := ts.CheckValid(); err != nil {
 		panic(err)
 	}
+	t := ts.AsTime()
 	return t
 }
 
