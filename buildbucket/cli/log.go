@@ -308,10 +308,10 @@ func (m *logMultiplexer) Next() (chanIndex int, log *logpb.LogEntry, err error) 
 
 		curTime := m.Chans[i].start
 		if h.TimeOffset != nil {
-			offset, err := ptypes.Duration(h.TimeOffset)
-			if err != nil {
+			if err := h.TimeOffset.CheckValid(); err != nil {
 				return 0, nil, err
 			}
+			offset := h.TimeOffset.AsDuration()
 			curTime = curTime.Add(offset)
 		}
 

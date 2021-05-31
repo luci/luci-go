@@ -25,8 +25,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
-
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
@@ -699,10 +697,12 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 					Text: string(line.GetValue()),
 				}
 				// Add in timestamp information, if available.
-				duration, perr := ptypes.Duration(log.GetTimeOffset())
-				if perr != nil {
+				var duration time.Duration
+				if perr := log.GetTimeOffset().CheckValid(); perr != nil {
 					logging.WithError(perr).Debugf(c, "Got error while converting duration")
 					duration = prevDuration
+				} else {
+					duration = log.GetTimeOffset().AsDuration()
 				}
 				tStamp := logResp.desc.Timestamp.AsTime()
 				lt.DataTimestamp = tStamp.Add(duration).UnixNano() / 1e6

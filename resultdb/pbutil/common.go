@@ -100,9 +100,9 @@ func ValidateEnum(value int32, validValues map[int32]string) error {
 // MustDuration converts a *durationpb.Duration to a time.Duration and panics
 // on failure.
 func MustDuration(du *durationpb.Duration) time.Duration {
-	d, err := ptypes.Duration(du)
-	if err != nil {
+	if err := du.CheckValid(); err != nil {
 		panic(err)
 	}
+	d := du.AsDuration()
 	return d
 }
