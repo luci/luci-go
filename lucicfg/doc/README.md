@@ -2160,7 +2160,7 @@ The following functions are available to templates in addition to the
 [standard ones](https://godoc.org/text/template#hdr-Functions).
 
 * `time`: converts a
-  [Timestamp](https://godoc.org/github.com/golang/protobuf/ptypes/timestamp#Timestamp)
+  [Timestamp](https://pkg.go.dev/google.golang.org/protobuf/types/known/timestamppb#Timestamp)
   to [time.Time](https://godoc.org/time).
   Example: `{{.Build.EndTime | time}}`
 
@@ -3815,7 +3815,3 @@ Reads a serialized proto message from a file, deserializes and returns it.
 #### Returns  {#io.read_proto-returns}
 
 Deserialized proto message constructed via `ctor`.
-
-
-
-
