@@ -29,7 +29,6 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -321,10 +320,10 @@ func getValue(value interface{}, path []string, prop *proto.Properties) (interfa
 		if tspb == nil {
 			return nil, nil
 		}
-		value, err := ptypes.Timestamp(tspb)
-		if err != nil {
+		if err := tspb.CheckValid(); err != nil {
 			return nil, fmt.Errorf("tried to write an invalid timestamp for [%+v] for field %q", tspb, strings.Join(path, "."))
 		}
+		value := tspb.AsTime()
 		return value, nil
 	} else if s, ok := value.(*structpb.Struct); ok {
 		if s == nil {

@@ -452,10 +452,10 @@ func (p *printer) Error(err error) {
 // readTimestamp converts ts to time.Time.
 // Returns zero if ts is invalid.
 func readTimestamp(ts *timestamppb.Timestamp) time.Time {
-	t, err := ptypes.Timestamp(ts)
-	if err != nil {
+	if err := ts.CheckValid(); err != nil {
 		return time.Time{}
 	}
+	t := ts.AsTime()
 	return t
 }
 
