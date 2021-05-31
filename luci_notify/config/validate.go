@@ -35,9 +35,6 @@ import (
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )
 
-// notifierNameRegexp is a regexp for notifier names.
-var notifierNameRegexp = regexp.MustCompile(`^[a-z0-9\-]+$`)
-
 // init registers validators for the project config and email template files.
 func init() {
 	validation.Rules.Add(

@@ -15,7 +15,6 @@
 package host
 
 import (
-	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -202,12 +201,4 @@ func (o *Options) initialize() (err error) {
 	}
 
 	return nil
-}
-
-func (o *Options) cleanup(ctx context.Context) {
-	if !o.LeakBaseDir {
-		if err := os.RemoveAll(o.BaseDir); err != nil {
-			logging.WithError(err).Errorf(ctx, "removing BaseDir")
-		}
-	}
 }
