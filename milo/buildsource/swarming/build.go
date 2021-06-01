@@ -27,8 +27,7 @@ import (
 
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -394,14 +393,14 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 		if err != nil {
 			return fmt.Errorf("invalid task StartedTs: %s", err)
 		}
-		step.Started, _ = ptypes.TimestampProto(ts)
+		step.Started = timestamppb.New(ts)
 	}
 	if sr.CompletedTs != "" {
 		ts, err := time.Parse(SwarmingTimeLayout, sr.CompletedTs)
 		if err != nil {
 			return fmt.Errorf("invalid task CompletedTs: %s", err)
 		}
-		step.Ended, _ = ptypes.TimestampProto(ts)
+		step.Ended = timestamppb.New(ts)
 	}
 
 	return nil
