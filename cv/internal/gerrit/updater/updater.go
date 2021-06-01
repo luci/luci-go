@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
@@ -34,6 +35,7 @@ import (
 )
 
 const TaskClass = "refresh-gerrit-cl"
+const TaskClassBatch = "batch-refresh-gerrit-cl"
 
 // blindRefreshInterval sets interval between blind refresh of a Gerrit CL.
 //
@@ -77,6 +79,19 @@ func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
 				// hourly occurrence.
 				KnownRetry: []error{errStaleData},
 			}.Error(ctx, err)
+		},
+	})
+	tqd.RegisterTaskClass(tq.TaskClass{
+		ID:        TaskClassBatch,
+		Prototype: &BatchRefreshGerritCL{},
+		Queue:     "refresh-gerrit-cl",
+		Quiet:     true,
+		Kind:      tq.Transactional,
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			// Keep this function small, as it's not unit tested.
+			t := payload.(*BatchRefreshGerritCL)
+			err := u.RefreshBatch(ctx, t)
+			return common.TQifyError(ctx, err)
 		},
 	})
 	return u
@@ -147,4 +162,62 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 		return err
 	}
 	return f.update(ctx, common.CLID(r.GetClidHint()))
+}
+
+// ScheduleBatch enqueues one TQ task transactionally to eventually refresh many
+// CLs.
+//
+// This function exist to write 1 Datastore entity during a transaction instead of
+// N entities if Schedule() was used for each CL.
+func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, forceNotifyPM bool, cls []*changelist.CL) error {
+	tasks := make([]*RefreshGerritCL, len(cls))
+	for i, cl := range cls {
+		host, change, err := cl.ExternalID.ParseGobID()
+		if err != nil {
+			return errors.Annotate(err, "CL %d %q is not a Gerrit CL", cl.ID, cl.ExternalID).Err()
+		}
+		tasks[i] = &RefreshGerritCL{
+			Host:          host,
+			Change:        change,
+			ClidHint:      int64(cl.ID),
+			LuciProject:   luciProject,
+			ForceNotifyPm: forceNotifyPM,
+		}
+	}
+	if len(tasks) == 1 {
+		// Optimization for frequent use-case of single-CL Runs.
+		return u.Schedule(ctx, tasks[0])
+	}
+	return u.tqd.AddTask(ctx, &tq.Task{
+		Payload: &BatchRefreshGerritCL{Tasks: tasks},
+		Title:   fmt.Sprintf("batch-%s-%d-cls", luciProject, len(tasks)),
+	})
+}
+
+// RefreshBatch schedules a refresh task per CL in a batch.
+func (u *Updater) RefreshBatch(ctx context.Context, batch *BatchRefreshGerritCL) error {
+	total := len(batch.GetTasks())
+	err := parallel.WorkPool(min(16, total), func(work chan<- func() error) {
+		for _, task := range batch.GetTasks() {
+			task := task
+			work <- func() error { return u.Schedule(ctx, task) }
+		}
+	})
+	switch merrs, ok := err.(errors.MultiError); {
+	case err == nil:
+		return nil
+	case !ok:
+		return err
+	default:
+		failed, _ := merrs.Summary()
+		err = common.MostSevereError(merrs)
+		return errors.Annotate(err, "failed to schedule %d out of %d CLs refresh, keeping the most severe error", failed, total).Err()
+	}
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }
