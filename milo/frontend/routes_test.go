@@ -30,7 +30,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/julienschmidt/httprouter"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -51,7 +50,7 @@ import (
 )
 
 var now = time.Date(2019, time.February, 3, 4, 5, 6, 7, time.UTC)
-var nowTS, _ = ptypes.TimestampProto(now)
+var nowTS = timestamppb.New(now)
 
 // TODO(nodir): refactor this file.
 

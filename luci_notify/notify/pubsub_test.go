@@ -24,7 +24,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -110,7 +109,7 @@ func dummyBuildWithEmails(builder string, status buildbucketpb.Status, creationT
 		},
 		EmailNotify: notifyEmails,
 	}
-	ret.Build.CreateTime, _ = ptypes.TimestampProto(creationTime)
+	ret.Build.CreateTime = timestamppb.New(creationTime)
 	return ret
 }
 
