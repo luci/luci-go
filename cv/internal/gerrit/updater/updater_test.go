@@ -16,6 +16,7 @@ package updater
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -30,6 +31,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -75,6 +77,15 @@ func TestSchedule(t *testing.T) {
 			}, nil)
 			So(err, ShouldBeNil)
 			ct.Clock.Add(scheduleTimeIncrement)
+			return ct.TQ.Tasks().SortByETA().Payloads()
+		}
+
+		doBatch := func(ForceNotifyPm bool, cls []*changelist.CL) []proto.Message {
+			err := datastore.RunInTransaction(ctx, func(tctx context.Context) error {
+				So(u.ScheduleBatch(tctx, lProject, ForceNotifyPm, cls), ShouldBeNil)
+				return nil
+			}, nil)
+			So(err, ShouldBeNil)
 			return ct.TQ.Tasks().SortByETA().Payloads()
 		}
 
@@ -166,6 +177,51 @@ func TestSchedule(t *testing.T) {
 				So(do(taskU1), ShouldResembleProto, []proto.Message{taskU0, taskU1})
 				So(do(taskU1), ShouldResembleProto, []proto.Message{taskU0, taskU1})
 				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskU0, taskU1, taskMinimal})
+			})
+		})
+
+		Convey("BatchSchedule creates just one task within a transaction", func() {
+			cls := []*changelist.CL{
+				{ID: 1, ExternalID: changelist.MustGobID(gHost, 11)},
+				{ID: 2, ExternalID: changelist.MustGobID(gHost, 12)},
+				{ID: 3, ExternalID: changelist.MustGobID(gHost, 13)},
+			}
+			clMap := map[int64]*changelist.CL{
+				11: cls[0],
+				12: cls[1],
+				13: cls[2],
+			}
+			test := func(ForceNotifyPm bool) {
+				Convey(fmt.Sprintf("forceNotifyPM=%t", ForceNotifyPm), func() {
+					So(doBatch(ForceNotifyPm, cls), ShouldHaveLength, 1)
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassBatch))
+					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, len(cls))
+					for _, p := range ct.TQ.Tasks().Payloads() {
+						t := p.(*RefreshGerritCL)
+						cl := clMap[t.GetChange()]
+						So(t, ShouldResembleProto, &RefreshGerritCL{
+							Change:        t.Change,
+							Host:          gHost,
+							ClidHint:      int64(cl.ID),
+							LuciProject:   lProject,
+							ForceNotifyPm: ForceNotifyPm,
+						})
+					}
+				})
+			}
+			test(false)
+			test(true)
+
+			Convey("single CL optimization", func() {
+				So(doBatch(false, cls[:1]), ShouldHaveLength, 1)
+				So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
+					&RefreshGerritCL{
+						Change:      11,
+						Host:        gHost,
+						ClidHint:    1,
+						LuciProject: lProject,
+					},
+				})
 			})
 		})
 	})
