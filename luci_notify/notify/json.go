@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var marshaller = jsonpb.Marshaler{}
@@ -58,7 +59,7 @@ func deserializePayload(blob []byte) (proto.Message, error) {
 	}
 
 	task := reflect.New(tp.Elem()).Interface().(proto.Message)
-	if err := jsonpb.Unmarshal(bytes.NewReader(*env.Body), task); err != nil {
+	if err := protojson.Unmarshal(*env.Body, task); err != nil {
 		return nil, err
 	}
 
