@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5ebd31f_d79f3b6a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T15:58:06Z",
+      "side": 1,
+      "message": "LGTM % fix a bug, and I hope this will fix tests 😊",
+      "revId": "0c11e26b5e52d66c5b056af057af12c440a300ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dbe4b402_0e41ab0b",
+        "filename": "cv/internal/run/impl/handler/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T15:58:06Z",
+      "side": 1,
+      "message": "hm, `yes` actually means CV is in charge, and so cancelation must proceed immediately. Hence, it should be !yes \n\nAlso, consider s/yes/cvInCharge/g",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 9
+      },
+      "revId": "0c11e26b5e52d66c5b056af057af12c440a300ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10b29d75_233ec968",
+        "filename": "cv/internal/run/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T15:58:06Z",
+      "side": 1,
+      "message": "were",
+      "range": {
+        "startLine": 100,
+        "startChar": 19,
+        "endLine": 100,
+        "endChar": 20
+      },
+      "revId": "0c11e26b5e52d66c5b056af057af12c440a300ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76f221d4_4576665a",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T15:58:06Z",
+      "side": 1,
+      "message": "At",
+      "range": {
+        "startLine": 123,
+        "startChar": 9,
+        "endLine": 123,
+        "endChar": 10
+      },
+      "revId": "0c11e26b5e52d66c5b056af057af12c440a300ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
