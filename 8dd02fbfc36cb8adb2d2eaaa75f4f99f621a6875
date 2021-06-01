@@ -104,6 +104,30 @@
       },
       "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1fa3365_841e787b",
+        "filename": "cv/internal/run/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-01T21:01:41Z",
+      "side": 1,
+      "message": "\u003e 3. Disagree about ConfigGroupID. It may change during Run lifetime.\nif the requirement is immutable, then sgtm.",
+      "parentUuid": "f2c49459_3a1587a9",
+      "range": {
+        "startLine": 82,
+        "startChar": 7,
+        "endLine": 82,
+        "endChar": 11
+      },
+      "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
