@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { EditorConfiguration, ModeSpec } from 'codemirror';
+import { EditorConfiguration } from 'codemirror';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
@@ -39,7 +39,7 @@ export class PropertyViewerElement extends MobxLitElement implements RenderPlace
   }
 
   private editorOptions: EditorConfiguration = {
-    mode: { name: 'javascript', json: true } as ModeSpec<{ json: boolean }>,
+    mode: { name: 'javascript', json: true },
     readOnly: true,
     matchBrackets: true,
     lineWrapping: true,
