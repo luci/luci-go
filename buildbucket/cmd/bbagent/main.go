@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -202,6 +203,10 @@ func mainImpl() int {
 		invokeOpts := &invoke.Options{
 			BaseDir:  hostOpts.BaseDir,
 			CacheDir: input.CacheDir,
+			Env:      environ.System(),
+		}
+		if stringset.NewFromSlice(input.Build.Input.Experiments...).Has("luci.recipes.use_python3") {
+			invokeOpts.Env.Set("RECIPES_USE_PY3", "true")
 		}
 		// Buildbucket assigns some grace period to the surrounding task which is
 		// more than what the user requested in `input.Build.GracePeriod`. We
