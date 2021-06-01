@@ -97,13 +97,22 @@ func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
 	return u
 }
 
-// Schedule enqueues a TQ task to refresh a Gerrit CL.
+// Schedule enqueues a TQ task to refresh a Gerrit CL as soon as possible.
 //
 // It should be used instead of direct tq.AddTask for consistent deduplication
 // and ease of debugging.
 func (u *Updater) Schedule(ctx context.Context, p *RefreshGerritCL) error {
+	return u.ScheduleDelayed(ctx, p, 0)
+}
+
+// Schedule enqueues a TQ task to refresh a Gerrit CL after a given delay.
+//
+// It should be used instead of direct tq.AddTask for consistent deduplication
+// and ease of debugging.
+func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay time.Duration) error {
 	task := &tq.Task{
 		Payload: p,
+		Delay:   delay,
 		Title:   fmt.Sprintf("%s/%s/%d", p.GetLuciProject(), p.GetHost(), p.GetChange()),
 	}
 	if clid := p.GetClidHint(); clid != 0 {
@@ -122,7 +131,7 @@ func (u *Updater) Schedule(ctx context.Context, p *RefreshGerritCL) error {
 	if datastore.CurrentTransaction(ctx) == nil && !p.GetForceNotifyPm() {
 		ts := updatedHint
 		if updatedHint.IsZero() {
-			ts = clock.Now(ctx).Truncate(blindRefreshInterval).Add(blindRefreshInterval)
+			ts = clock.Now(ctx).Add(delay).Truncate(blindRefreshInterval).Add(blindRefreshInterval)
 		}
 		task.DeduplicationKey = strings.Join([]string{
 			"v0",
