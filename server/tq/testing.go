@@ -18,9 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
-	"sync/atomic"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
@@ -40,14 +38,13 @@ func TestingContext(ctx context.Context, d *Dispatcher) (context.Context, *tqtes
 	if d == nil {
 		d = &Default
 	}
-	sched := &tqtesting.Scheduler{Executor: &directExecutor{d, 0}}
+	sched := &tqtesting.Scheduler{Executor: &directExecutor{d}}
 	return UseSubmitter(ctx, sched), sched
 }
 
 // directExecutor implements tqtesting.Executor via handlePush.
 type directExecutor struct {
-	d   *Dispatcher
-	cnt int64
+	d *Dispatcher
 }
 
 func (e *directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
@@ -83,7 +80,7 @@ func (e *directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fu
 		info.TaskID = t.Name[index+len("/tasks/"):]
 	}
 
-	ctx = logging.SetField(ctx, "TQ#", strconv.FormatInt(atomic.AddInt64(&e.cnt, 1), 10))
+	ctx = logging.SetField(ctx, fmt.Sprintf("TQ-%.8s", info.TaskID), info.ExecutionCount)
 	err := e.d.handlePush(ctx, body, info)
 	if err != nil {
 		logging.Errorf(ctx, "server/tq task error: %s", err)
