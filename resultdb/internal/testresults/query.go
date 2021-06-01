@@ -286,8 +286,10 @@ func PopulateVariantParams(params map[string]interface{}, variantPredicate *pb.V
 		params["variantHashEquals"] = pbutil.VariantHash(p.Equals)
 		params["variant"] = pbutil.VariantToStrings(p.Equals)
 	case *pb.VariantPredicate_Contains:
-		params["variantContains"] = pbutil.VariantToStrings(p.Contains)
-		params["variant"] = params["variantContains"]
+		if len(p.Contains.Def) > 0 {
+			params["variantContains"] = pbutil.VariantToStrings(p.Contains)
+			params["variant"] = params["variantContains"]
+		}
 	case nil:
 		// No filter.
 	default:
