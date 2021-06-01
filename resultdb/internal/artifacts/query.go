@@ -101,12 +101,14 @@ FROM Artifacts art
 LEFT JOIN FilteredTestResults tr USING (InvocationId, ParentId)
 {{ end }}
 WHERE art.InvocationId IN UNNEST(@invIDs)
+{{ if .Params.afterInvocationId }}
 	# Skip artifacts after the one specified in the page token.
 	AND (
 		(art.InvocationId > @afterInvocationId) OR
 		(art.InvocationId = @afterInvocationId AND art.ParentId > @afterParentId) OR
 		(art.InvocationId = @afterInvocationId AND art.ParentId = @afterParentId AND art.ArtifactId > @afterArtifactId)
 	)
+{{ end }}
 	AND REGEXP_CONTAINS(art.ParentId, @ParentIdRegexp)
 	{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
 	{{ if and (ne .Q.ContentTypeRegexp "") (ne .Q.ContentTypeRegexp ".*") }}
@@ -121,12 +123,32 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		panic("PageSize < 0")
 	}
 
+	// Prepare query params.
+	params := map[string]interface{}{}
+	params["invIDs"] = q.InvocationIDs
+	params["limit"] = q.PageSize
+	params["contentTypeRegexp"] = fmt.Sprintf("^%s$", q.ContentTypeRegexp)
+	err = invocations.TokenToMap(q.PageToken, params, "afterInvocationId", "afterParentId", "afterArtifactId")
+	if err != nil {
+		return
+	}
+
+	params["ParentIdRegexp"] = q.parentIDRegexp()
+
+	// TODO(cbrug.com/1090197): remove these default values by refactoring artifacts/query.go.
+	params["variantHashEquals"] = spanner.NullString{}
+	params["variantContains"] = []string(nil)
+	testresults.PopulateVariantParams(params, q.TestResultPredicate.GetVariant())
+
+	// Prepeare statement generation input.
 	var input struct {
 		JoinWithTestResults       bool
 		InterestingTestResults    bool
 		OnlyUnexpectedTestResults bool
 		Q                         *Query
+		Params                    map[string]interface{}
 	}
+	input.Params = params
 	// If we need to filter artifacts by attributes of test results, then
 	// join with test results table.
 	if q.FollowEdges == nil || q.FollowEdges.TestResults {
@@ -146,20 +168,7 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 	if err != nil {
 		return
 	}
-	st.Params["invIDs"] = q.InvocationIDs
-	st.Params["limit"] = q.PageSize
-	st.Params["contentTypeRegexp"] = fmt.Sprintf("^%s$", q.ContentTypeRegexp)
-	err = invocations.TokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterParentId", "afterArtifactId")
-	if err != nil {
-		return
-	}
-
-	st.Params["ParentIdRegexp"] = q.parentIDRegexp()
-
-	// TODO(cbrug.com/1090197): remove these default values by refactoring artifacts/query.go.
-	st.Params["variantHashEquals"] = spanner.NullString{}
-	st.Params["variantContains"] = []string(nil)
-	testresults.PopulateVariantParams(st.Params, q.TestResultPredicate.GetVariant())
+	st.Params = params
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
