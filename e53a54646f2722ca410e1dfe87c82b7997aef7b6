@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74403c52_cecb500e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T21:50:41Z",
+      "side": 1,
+      "message": "huh?",
+      "range": {
+        "startLine": 11,
+        "startChar": 5,
+        "endLine": 11,
+        "endChar": 8
+      },
+      "revId": "e53a54646f2722ca410e1dfe87c82b7997aef7b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "748678cd_08d3d9dc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T21:50:41Z",
+      "side": 1,
+      "message": "lgtm, but why? 😄",
+      "revId": "e53a54646f2722ca410e1dfe87c82b7997aef7b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
