@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb8b58bf_0dfec042",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Note: This now fails with:\n\n \"  Actual:   \u0027no task class matching type \"cv.run.bq.ExportRunToBQTask\" is registered\u0027\"\n \n Which I don\u0027t yet understand; as part of NewExporter, RegisterTaskClass should be called.",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "db472e7f_861ccdf3",
@@ -20,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6d869131_de129714",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Might we use the same queue for other BQ tables besides the table of finished runs?\n(If so, perhaps the queue name could be bq-run-export or something?)\n\nShould the task class name also change? In many cases task class name (ID in TaskClass) is the same as Queue.",
+      "parentUuid": "db472e7f_861ccdf3",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f0b82f36_148dd5a7",
         "filename": "cv/internal/run/bq/sender.go",
         "patchSetId": 5
@@ -31,6 +66,30 @@
       "writtenOn": "2021-05-27T23:28:45Z",
       "side": 1,
       "message": "Transactional",
+      "range": {
+        "startLine": 46,
+        "startChar": 16,
+        "endLine": 46,
+        "endChar": 32
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80959e9f_cb125c9b",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0b82f36_148dd5a7",
       "range": {
         "startLine": 46,
         "startChar": 16,
@@ -64,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "62b04dd2_1074c90d",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d02011e_c888dd93",
+      "range": {
+        "startLine": 64,
+        "startChar": 48,
+        "endLine": 64,
+        "endChar": 69
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7d06ab04_cb7d75c1",
@@ -77,6 +160,30 @@
       "writtenOn": "2021-05-27T23:28:45Z",
       "side": 1,
       "message": "yep, and you can inline it.",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 53
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "95a4cda2_8dc85142",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d06ab04_cb7d75c1",
       "range": {
         "startLine": 65,
         "startChar": 1,
@@ -110,6 +217,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2be425b6_22cd2d3d",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24c9cda4_0146dfaf",
+      "range": {
+        "startLine": 40,
+        "startChar": 2,
+        "endLine": 40,
+        "endChar": 26
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "708929f6_6a3fe759",
@@ -123,6 +254,24 @@
       "writtenOn": "2021-05-27T23:28:45Z",
       "side": 1,
       "message": "ditto.",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55f6ad01_ff5a8c5d",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "708929f6_6a3fe759",
       "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -146,6 +295,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "87e30c56_1c24fb64",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "So a transactional task is one that must be enqueued from inside a transaction -- but after seeing that doc I still don\u0027t understand why. Does enqueueing a task involve multiple datastore operations that should either all fail or all succeed?",
+      "parentUuid": "55063c81_ad61c640",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cd471db6_8f1c3073",
         "filename": "cv/internal/run/bq/sender_test.go",
         "patchSetId": 5
@@ -157,6 +324,24 @@
       "writtenOn": "2021-05-27T23:28:45Z",
       "side": 1,
       "message": "I dunno. In PM cl purger, I had to check observing the deadline.",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b7d7739_c14c60bf",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "cd471db6_8f1c3073",
       "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -174,6 +359,30 @@
       "writtenOn": "2021-05-27T23:28:45Z",
       "side": 1,
       "message": "well, you already have tests cases covering this for narrow SendRunRow func, don\u0027t you? If yes, then don\u0027t cover this here.",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 41
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a180c0a_3b63543a",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d8562425_f6a791cd",
       "range": {
         "startLine": 62,
         "startChar": 0,
@@ -207,6 +416,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d55f27c4_d48c0f0b",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "afb92cee_f8bcbcc1",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 5
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0bd580a3_35404821",
@@ -224,6 +457,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb93ca9f_4574bf34",
+        "filename": "cv/internal/run/bq/tasks.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0bd580a3_35404821",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9927c65c_0d4c5d44",
@@ -237,6 +488,30 @@
       "writtenOn": "2021-05-27T23:28:45Z",
       "side": 1,
       "message": "nit-nit:\nin other BB / ResultDB, i think the term is \"export\".\nAnd the \"row\" part isn\u0027t important, and in fact export several rows to several BQ tables.\nSo, maybe it should be \"SendRunToBQTask\" or \"ExportRunToBQTask\".",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 22
+      },
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19454904_d1a180e7",
+        "filename": "cv/internal/run/bq/tasks.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T21:02:47Z",
+      "side": 1,
+      "message": "That sounds good to me, and I agree being consistent with other LUCI apps is a good idea. Going with ExportRunToBQTask.",
+      "parentUuid": "9927c65c_0d4c5d44",
       "range": {
         "startLine": 25,
         "startChar": 8,
