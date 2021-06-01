@@ -73,14 +73,14 @@ func ToInterval(start, end, now *timestamppb.Timestamp) (result Interval) {
 // Fallbacks to "N/A" on insufficient data.
 func Duration(start *timestamppb.Timestamp, ends ...*timestamppb.Timestamp) string {
 	if start != nil {
-		startTime, _ := ptypes.Timestamp(start)
+		startTime := start.AsTime()
 
 		var earliestEnd time.Time
 		for _, ts := range ends {
 			if ts == nil {
 				continue
 			}
-			t, _ := ptypes.Timestamp(ts)
+			t := ts.AsTime()
 			if earliestEnd.IsZero() || t.Before(earliestEnd) {
 				earliestEnd = t
 			}

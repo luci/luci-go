@@ -24,7 +24,6 @@ import (
 	text "text/template"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/russross/blackfriday.v2"
 
@@ -48,7 +47,7 @@ const (
 // Funcs is functions available to email subject and body templates.
 var Funcs = map[string]interface{}{
 	"time": func(ts *timestamppb.Timestamp) time.Time {
-		t, _ := ptypes.Timestamp(ts)
+		t := ts.AsTime()
 		return t
 	},
 
