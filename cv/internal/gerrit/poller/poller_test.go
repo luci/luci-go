@@ -158,6 +158,65 @@ func TestPartitionConfig(t *testing.T) {
 	})
 }
 
+func TestScheduleRefreshTasks(t *testing.T) {
+	t.Parallel()
+
+	Convey("scheduleRefreshTasks works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "chromium"
+		const gHost = "chromium-review.example.com"
+		const gRepo = "infra/infra"
+
+		pm := pmMock{}
+		p := New(ct.TQDispatcher, updater.New(ct.TQDispatcher, &pm, nil), &pm)
+
+		changes := []int64{1, 2, 3, 4, 5}
+		const notYetSaved = 4
+
+		var knownIDs common.CLIDs
+		for _, i := range changes {
+			if i == notYetSaved {
+				continue
+			}
+			cl, err := changelist.MustGobID(gHost, i).GetOrInsert(ctx, func(cl *changelist.CL) {
+				// in practice, cl.Snapshot would be populated, but for this test it
+				// doesn't matter.
+			})
+			So(err, ShouldBeNil)
+			knownIDs = append(knownIDs, cl.ID)
+		}
+		sort.Sort(knownIDs)
+
+		err := p.scheduleRefreshTasks(ctx, lProject, gHost, changes)
+		So(err, ShouldBeNil)
+
+		// PM must be notified immediately on CLs already saved.
+		ids := pm.projects[lProject]
+		sort.Sort(ids)
+		So(ids, ShouldResemble, knownIDs)
+
+		// CL Updater must have scheduled tasks.
+		tasks := ct.TQ.Tasks().SortByETA()
+		So(tasks, ShouldHaveLength, len(changes))
+		// Tasks must be somewhat distributed in time.
+		mid := ct.Clock.Now().Add(fullPollInterval / 2)
+		So(tasks[1].ETA, ShouldHappenBefore, mid)
+		So(tasks[len(tasks)-2].ETA, ShouldHappenAfter, mid)
+		// For not yet saved CL, PM must be forcefully notified.
+		var forced []int64
+		for _, task := range tasks {
+			p := task.Payload.(*updater.RefreshGerritCL)
+			if p.GetForceNotifyPm() {
+				forced = append(forced, p.GetChange())
+			}
+		}
+		So(forced, ShouldResemble, []int64{notYetSaved})
+	})
+}
+
 func TestPoller(t *testing.T) {
 	t.Parallel()
 
@@ -495,6 +554,7 @@ func (p *pmMock) popNotifiedCLs(luciProject string) common.CLIDs {
 	delete(p.projects, luciProject)
 	return sortedCLIDs(res...)
 }
+
 func getCL(ctx context.Context, gHost string, change int) *changelist.CL {
 	eid, err := changelist.GobID(gHost, int64(change))
 	So(err, ShouldBeNil)
