@@ -20,6 +20,7 @@ handlers:
 - url: /static
   secure: always
   static_dir: static
+  expiration: 0s
 
 # For admin resources.
 - url: /admin/.*
