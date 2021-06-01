@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0dbacc2_ec8a544f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-01T18:26:14Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "dc999710c21c6bf18abf7c4763f0207f14f87d90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "642002b3_58856fe7",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-01T18:26:14Z",
+      "side": 1,
+      "message": "this code didn\u0027t really change",
+      "range": {
+        "startLine": 128,
+        "startChar": 0,
+        "endLine": 141,
+        "endChar": 78
+      },
+      "revId": "dc999710c21c6bf18abf7c4763f0207f14f87d90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
