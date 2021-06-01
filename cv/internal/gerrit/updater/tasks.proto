@@ -35,3 +35,10 @@ message RefreshGerritCL {
   // no updates to the CL.
   bool force_notify_pm = 6;
 }
+
+// BatchRefreshGerritCL is a batch of RefreshGerritCL tasks.
+//
+// Queue: "refresh-gerrit-cl".
+message BatchRefreshGerritCL {
+  repeated RefreshGerritCL tasks = 1;
+}
