@@ -57,6 +57,24 @@
       "parentUuid": "748678cd_08d3d9dc",
       "revId": "e53a54646f2722ca410e1dfe87c82b7997aef7b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a3aa7a2_b0659e3d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T22:04:55Z",
+      "side": 1,
+      "message": "ah, well, submitting is fine, iff `Bug:` is removed.",
+      "parentUuid": "4228f7af_b3051229",
+      "revId": "e53a54646f2722ca410e1dfe87c82b7997aef7b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
