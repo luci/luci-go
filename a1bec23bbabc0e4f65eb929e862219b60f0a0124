@@ -16,6 +16,23 @@
       "message": "The plan is to\n1. land this CL\n2. release a new version of Milo\n3. wait a few days before making any new releases to allow users pick up the update, and cache all dependencies properly\n4. when a new version is released in the future, the old service worker instance should be able to serve old files before the new version is activated.\n\nAs a result, I need to land this CL ASAP to prevent it from block future releases.",
       "revId": "a1bec23bbabc0e4f65eb929e862219b60f0a0124",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6707fba0_d5194211",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-06-01T03:46:31Z",
+      "side": 1,
+      "message": "Seems reasonable, though I wonder if there are still some edge cases. See for example the encoding logic in html-webpack-plugin: https://github.com/jantimon/html-webpack-plugin/blob/0a6568d587a82d88fd3a0617234ca98d26a1e0a6/index.js#L976\n\nIf you\u0027re not worried about query parameters here, then this is probably fine.\n",
+      "revId": "a1bec23bbabc0e4f65eb929e862219b60f0a0124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
