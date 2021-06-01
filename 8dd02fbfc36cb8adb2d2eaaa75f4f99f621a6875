@@ -56,6 +56,30 @@
       },
       "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "337d7fbe_83a5f528",
+        "filename": "cv/internal/run/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-01T20:52:56Z",
+      "side": 1,
+      "message": "\u003e I don\u0027t like this name very much:\n\u003e first, owner is also immutable and also definitely metadata.\n\u003e  stretching it further, \"create_time\" is also like this.\n\u003e \n\u003e second, this is specific metadata which somehow influences CV behavior via typically opt-outs.\n\u003e third, strictly speaking, CQ-Depend is also a metadata of sorts, but it\u0027s already stored in Deps of each CL.\n\u003e \n\u003e So, any better name?\n\u003e \n\nFrom the second characteristic of this field, I think `options` sounds like a better naming to me. Of course in that sense, `mode` and `ConfigGroupID` (maybe?) should also be part of it too. WDYT?\n\n\u003e \n\u003e From an entirely different angle, one can reasonable each Meta.* field as top level Run field. Maybe this should be done instead?\n\nmaybe, but imo, that would make Run entity look messy if we gain more such fields in the future.",
+      "parentUuid": "b33a6099_865e3c40",
+      "range": {
+        "startLine": 82,
+        "startChar": 7,
+        "endLine": 82,
+        "endChar": 11
+      },
+      "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
