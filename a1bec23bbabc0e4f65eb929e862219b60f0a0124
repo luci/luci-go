@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "56d1178a_96c6bf4d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-01T03:24:48Z",
+      "side": 1,
+      "message": "The plan is to\n1. land this CL\n2. release a new version of Milo\n3. wait a few days before making any new releases to allow users pick up the update, and cache all dependencies properly\n4. when a new version is released in the future, the old service worker instance should be able to serve old files before the new version is activated.\n\nAs a result, I need to land this CL ASAP to prevent it from block future releases.",
+      "revId": "a1bec23bbabc0e4f65eb929e862219b60f0a0124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
