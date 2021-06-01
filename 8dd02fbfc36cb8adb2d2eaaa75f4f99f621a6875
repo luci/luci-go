@@ -80,6 +80,30 @@
       },
       "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2c49459_3a1587a9",
+        "filename": "cv/internal/run/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T20:56:23Z",
+      "side": 1,
+      "message": "1. Options works for me.\n\n2. True about mode, it can belong to options.\nI don\u0027t want to touch mode yet because I expect mode to become a struct itself,\nso I\u0027d rather to refactoring once.\n\n3. Disagree about ConfigGroupID. It may change during Run lifetime.",
+      "parentUuid": "337d7fbe_83a5f528",
+      "range": {
+        "startLine": 82,
+        "startChar": 7,
+        "endLine": 82,
+        "endChar": 11
+      },
+      "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
