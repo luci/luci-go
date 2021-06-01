@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "3b331797dc0ede18591635cdbbe0bdbd8046771f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88a6c677_02935d43",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-01T19:18:51Z",
+      "side": 1,
+      "message": "nit: move this after L134?",
+      "range": {
+        "startLine": 140,
+        "startChar": 1,
+        "endLine": 140,
+        "endChar": 62
+      },
+      "revId": "3b331797dc0ede18591635cdbbe0bdbd8046771f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
