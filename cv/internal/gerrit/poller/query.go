@@ -227,7 +227,7 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 		}
 	}
 
-	errs := parallel.WorkPool(10, func(work chan<- func() error) {
+	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
 		for i, c := range changes {
 			payload := &updater.RefreshGerritCL{
 				LuciProject:   q.luciProject,
@@ -267,7 +267,7 @@ func (p *Poller) scheduleRefreshTasks(ctx context.Context, luciProject, host str
 		return err
 	}
 
-	errs := parallel.WorkPool(10, func(work chan<- func() error) {
+	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
 		for i, c := range changes {
 			payload := &updater.RefreshGerritCL{
 				LuciProject:   luciProject,
@@ -275,8 +275,11 @@ func (p *Poller) scheduleRefreshTasks(ctx context.Context, luciProject, host str
 				Change:        c,
 				ForceNotifyPm: 0 == clids[i], // notify iff CL ID isn't yet known.
 			}
+			// Distribute these tasks in time to avoid high peaks (e.g. see
+			// https://crbug.com/1211057).
+			delay := (fullPollInterval * time.Duration(i)) / time.Duration(len(clids))
 			work <- func() error {
-				return p.clUpdater.Schedule(ctx, payload)
+				return p.clUpdater.ScheduleDelayed(ctx, payload, delay)
 			}
 		}
 	})
@@ -388,4 +391,11 @@ func uniqueSortedIDsOf(changes []*gerritpb.ChangeInfo) []int64 {
 		out[i] = c.GetNumber()
 	}
 	return common.UniqueSorted(out)
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }
