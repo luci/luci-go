@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -109,6 +110,9 @@ func TryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 }
 
 func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
+	logging.Debugf(ctx, "wTF: tryAcquire start")
+	defer logging.Debugf(ctx, "wTF: tryAcquire end: %t %s", waitlisted, err)
+
 	var shouldSave bool
 	q := &queue{ID: runID.LUCIProject()}
 	switch err := datastore.Get(ctx, q); {
@@ -121,14 +125,18 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 		q.Opts = opts
 		shouldSave = true
 	}
+	logging.Debugf(ctx, "WTF: tryAcquire current %q", q.Current)
 
 	switch waitlistIdx := q.Waitlist.Index(runID); {
 	case q.Current == runID:
 		waitlisted = false
+		logging.Debugf(ctx, "WTF: tryAcquire already have it")
 	case waitlistIdx > 0 || (q.Current != "" && waitlistIdx == 0):
 		waitlisted = true
+		logging.Debugf(ctx, "WTF: tryAcquire already waitlisted @ %d", waitlistIdx)
 	case q.Current == "" && len(q.Waitlist) == 0:
 		// Queue is completely empty and waitlistIdx == -1.
+		logging.Debugf(ctx, "WTF: tryAcquire was empty, taking over")
 		q.Waitlist = common.RunIDs{runID}
 		shouldSave = true
 		fallthrough
@@ -153,6 +161,7 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 	}
 
 	if shouldSave {
+		logging.Debugf(ctx, "WTF: tryAcquire saving")
 		if err := datastore.Put(ctx, q); err != nil {
 			return false, errors.Annotate(err, "failed to put SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
 		}
