@@ -51,6 +51,7 @@ func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.C
 		PM:         pm,
 		RM:         n,
 		TreeClient: tc,
+		CLUpdater:  u,
 	}}
 	n.TaskRefs.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {

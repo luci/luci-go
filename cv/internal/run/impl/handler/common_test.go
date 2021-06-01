@@ -15,7 +15,9 @@
 package handler
 
 import (
+	"context"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -40,6 +42,7 @@ func TestEndRun(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
+		const clid = 1
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		rs := &state.RunState{
 			Run: run.Run{
@@ -53,7 +56,7 @@ func TestEndRun(t *testing.T) {
 
 		anotherRID := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("cafecafe"))
 		cl := changelist.CL{
-			ID:             1,
+			ID:             clid,
 			IncompleteRuns: common.RunIDs{rid, anotherRID},
 			EVersion:       3,
 			UpdateTime:     ct.Clock.Now().UTC(),
@@ -61,18 +64,34 @@ func TestEndRun(t *testing.T) {
 		sort.Sort(cl.IncompleteRuns)
 		So(datastore.Put(ctx, &cl), ShouldBeNil)
 
-		se := endRun(ctx, rs, run.Status_FAILED, prjmanager.NewNotifier(ct.TQDispatcher))
+		clUpdater := &clUpdaterMock{}
+		se := endRun(ctx, rs, run.Status_FAILED, prjmanager.NewNotifier(ct.TQDispatcher), clUpdater)
 		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.Run.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
-		cl = changelist.CL{ID: 1}
+		cl = changelist.CL{ID: clid}
 		So(datastore.Get(ctx, &cl), ShouldBeNil)
 		So(cl, ShouldResemble, changelist.CL{
-			ID:             1,
+			ID:             clid,
 			IncompleteRuns: common.RunIDs{anotherRID},
 			EVersion:       4,
 			UpdateTime:     ct.Clock.Now().UTC(),
 		})
 		pmtest.AssertReceivedRunFinished(ctx, rid)
+		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 	})
+}
+
+type clUpdaterMock struct {
+	m            sync.Mutex
+	refreshedCLs common.CLIDs
+}
+
+func (c *clUpdaterMock) ScheduleBatch(ctx context.Context, luciProject string, forceNotifyPM bool, cls []*changelist.CL) error {
+	c.m.Lock()
+	for _, cl := range cls {
+		c.refreshedCLs = append(c.refreshedCLs, cl.ID)
+	}
+	c.m.Unlock()
+	return nil
 }
