@@ -75,6 +75,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6d2feed_70eec5d4",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-01T18:18:58Z",
+      "side": 1,
+      "message": "It was my understanding (and what I saw in adhoc testing) that having a 1 second reserve meant that rdb-stream, upon receiving an interrupt forwards it immediately to the child (result_adapter), and (30 - 1) seconds later, it will cancel cmdCtx, and this cancellation will sigkill the child. Then, it\u0027s only rdb-stream that has to clean-up in that remaining second.\n\nThough 3 seconds seems reasonable even for this, so I am changing it as you suggest.",
+      "parentUuid": "9658893d_c78b74d8",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 1
+      },
+      "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3882afa5_1ad49e83",
@@ -88,6 +112,30 @@
       "writtenOn": "2021-05-31T19:57:54Z",
       "side": 1,
       "message": "Maybe, you could switch{} the channel item to print more detailed log messages. This should send a signal regardless of the reason, but without those messages, we won\u0027t exactly know the reason of a given process terminating.\n\n```\nswitch event :\u003d \u003c-lucictx.SoftDeadlineDone(cmdCtx); {\ncase event \u003d\u003d lucictx.ClosureEvent:\n  log(\"The parent context was cancelled.\")\ncase event \u003d\u003d lucictx.InterrupteEvent:\n  log(\"Received an interrupt.\")\ncase event \u003d\u003d lucictx.TimeoutEvent:\n  log(\"Soft-deadline exceeded.\")\n}\n\nlog(\"Sending an interrupt to the child process; will force kill in ~%s\", ...)\n......\n```",
+      "range": {
+        "startLine": 277,
+        "startChar": 2,
+        "endLine": 278,
+        "endChar": 10
+      },
+      "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "44d14fd6_116cf9f9",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-01T18:18:58Z",
+      "side": 1,
+      "message": "Done, PTAL",
+      "parentUuid": "3882afa5_1ad49e83",
       "range": {
         "startLine": 277,
         "startChar": 2,
