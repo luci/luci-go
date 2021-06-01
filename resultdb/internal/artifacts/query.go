@@ -86,11 +86,12 @@ FilteredTestResults AS (
 		TestResults tr
 	{{ end }}
 	WHERE InvocationId IN UNNEST(@invIDs)
-		AND (@variantHashEquals IS NULL OR tr.VariantHash = @variantHashEquals)
-		AND (@variantContains IS NULL
-			OR ARRAY_LENGTH(@variantContains) = 0
-			OR (SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant)) FROM UNNEST(@variantContains) kv)
-		)
+{{ if .Params.variantHashEquals }}
+		AND tr.VariantHash = @variantHashEquals
+{{ end }}
+{{ if .Params.variantContains }}
+		AND (SELECT LOGICAL_AND(kv IN UNNEST(Variant)) FROM UNNEST(@variantContains) kv)
+{{ end }}
 )
 SELECT InvocationId, ParentId, ArtifactId, ContentType, Size,
 {{ if .Q.WithRBECASHash }}
@@ -109,16 +110,19 @@ WHERE art.InvocationId IN UNNEST(@invIDs)
 		(art.InvocationId = @afterInvocationId AND art.ParentId = @afterParentId AND art.ArtifactId > @afterArtifactId)
 	)
 {{ end }}
+{{ if .Params.ParentIdRegexp }}
 	AND REGEXP_CONTAINS(art.ParentId, @ParentIdRegexp)
-	{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
-	{{ if and (ne .Q.ContentTypeRegexp "") (ne .Q.ContentTypeRegexp ".*") }}
+{{end}}
+{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
+{{ if .Params.contentTypeRegexp }}
 		AND REGEXP_CONTAINS(IFNULL(art.ContentType, ""), @contentTypeRegexp)
-	{{ end }}
+{{ end }}
 ORDER BY InvocationId, ParentId, ArtifactId
 {{ if gt .Q.PageSize 0 }} LIMIT @limit {{ end }}
 `))
 
-func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
+// genStmt generates a spanner statement and returns it without executing it.
+func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 	if q.PageSize < 0 {
 		panic("PageSize < 0")
 	}
@@ -127,17 +131,13 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 	params := map[string]interface{}{}
 	params["invIDs"] = q.InvocationIDs
 	params["limit"] = q.PageSize
-	params["contentTypeRegexp"] = fmt.Sprintf("^%s$", q.ContentTypeRegexp)
-	err = invocations.TokenToMap(q.PageToken, params, "afterInvocationId", "afterParentId", "afterArtifactId")
-	if err != nil {
-		return
+	addREParamMaybe(params, "contentTypeRegexp", q.ContentTypeRegexp)
+	addREParamMaybe(params, "ParentIdRegexp", q.parentIDRegexp())
+
+	if err := invocations.TokenToMap(q.PageToken, params, "afterInvocationId", "afterParentId", "afterArtifactId"); err != nil {
+		return spanner.Statement{}, err
 	}
 
-	params["ParentIdRegexp"] = q.parentIDRegexp()
-
-	// TODO(cbrug.com/1090197): remove these default values by refactoring artifacts/query.go.
-	params["variantHashEquals"] = spanner.NullString{}
-	params["variantContains"] = []string(nil)
 	testresults.PopulateVariantParams(params, q.TestResultPredicate.GetVariant())
 
 	// Prepeare statement generation input.
@@ -165,11 +165,15 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 	input.Q = q
 
 	st, err := spanutil.GenerateStatement(tmplQueryArtifacts, input)
-	if err != nil {
-		return
-	}
 	st.Params = params
+	return st, err
+}
 
+func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
+	st, err := q.genStmt(ctx)
+	if err != nil {
+		return err
+	}
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		a := &Artifact{
@@ -251,6 +255,7 @@ func (q *Query) FetchProtos(ctx context.Context) (arts []*pb.Artifact, nextPageT
 
 // parentIDRegexp returns a regular expression for ParentId column.
 // Uses q.FollowEdges and q.TestResultPredicate.TestIdRegexp to compute it.
+// The returned regexp is not necessarily surrounded with ^ or $.
 func (q *Query) parentIDRegexp() string {
 	// If it is explicitly specified, use it.
 	if q.ParentIDRegexp != "" {
@@ -294,5 +299,13 @@ func (q *Query) parentIDRegexp() string {
 
 	// Note: the surrounding parens are important. Without them any expression
 	// matches.
-	return fmt.Sprintf("^(%s)$", strings.Join(alts, "|"))
+	return fmt.Sprintf("(%s)", strings.Join(alts, "|"))
+}
+
+// addREParamMaybe adds a regexp parameter surrounded with ^ and $,
+// unless re matches everything.
+func addREParamMaybe(params map[string]interface{}, name, re string) {
+	if re != "" && re != ".*" {
+		params[name] = fmt.Sprintf("^%s$", re)
+	}
 }
