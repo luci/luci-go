@@ -48,7 +48,9 @@ func TestOnCLUpdated(t *testing.T) {
 			},
 		}
 		ct.Cfg.Create(ctx, "chromium", cfg)
-		h := &Impl{}
+		h := &Impl{
+			CLUpdater: &clUpdaterMock{},
+		}
 
 		// initial state
 		triggerTime := clock.Now(ctx).UTC()

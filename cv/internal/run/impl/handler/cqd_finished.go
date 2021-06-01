@@ -75,7 +75,7 @@ func (impl *Impl) OnCQDFinished(ctx context.Context, rs *state.RunState) (*Resul
 	// but it'll be possible to backfill it later if necessary based on
 	// FinishedCQDRun entities.
 	rs.Run.FinalizedByCQD = true
-	se := endRun(ctx, rs, finalStatus, impl.PM)
+	se := endRun(ctx, rs, finalStatus, impl.PM, impl.CLUpdater)
 	rs.Run.EndTime = a.GetEndTime().AsTime()
 	return &Result{State: rs, SideEffectFn: se}, nil
 }
