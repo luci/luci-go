@@ -17,7 +17,7 @@ package tq
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/service/taskqueue"

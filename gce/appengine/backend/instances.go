@@ -21,11 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
-
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/errors"

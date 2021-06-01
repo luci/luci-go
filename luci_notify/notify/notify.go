@@ -30,8 +30,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
