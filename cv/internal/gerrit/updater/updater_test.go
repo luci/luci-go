@@ -104,8 +104,8 @@ func TestSchedule(t *testing.T) {
 				Convey("but only within blindRefreshInterval", func() {
 					ct.Clock.Add(blindRefreshInterval - time.Second) // still within
 					So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal})
-					ct.Clock.Add(time.Second) // already out
-					So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal, taskMinimal})
+					So(u.ScheduleDelayed(ctx, taskMinimal, time.Hour), ShouldBeNil) // definitely outside
+					So(ct.TQ.Tasks().SortByETA().Payloads(), ShouldResembleProto, []proto.Message{taskMinimal, taskMinimal})
 				})
 			})
 
