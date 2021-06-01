@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-func SendRun(ctx context.Context, id common.RunID) error {
+func SendRun(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	a, err := makeAttempt(ctx, id)
 	if err != nil {
 		return errors.Annotate(err, "failed to make Attempt").Err()
@@ -58,7 +58,7 @@ func SendRun(ctx context.Context, id common.RunID) error {
 	// CQDaemon stops sending rows; and sent to "commit-queue" project.
 	// When we first start sending rows, we want to send to a separate table
 	// name.
-	return cvbq.SendRow(ctx, "raw", "attempts_cv", string(id), a)
+	return client.SendRow(ctx, "raw", "attempts_cv", string(id), a)
 }
 
 func makeAttempt(ctx context.Context, id common.RunID) (*cvbqpb.Attempt, error) {
