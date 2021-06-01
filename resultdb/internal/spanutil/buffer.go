@@ -20,7 +20,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -190,7 +189,7 @@ func ToSpanner(v interface{}) interface{} {
 			return spanner.NullTime{}
 		}
 		ret := spanner.NullTime{Valid: true}
-		ret.Time, _ = ptypes.Timestamp(v)
+		ret.Time = v.AsTime()
 		// ptypes.Timestamp always returns a timestamp, even
 		// if the returned err is non-nil, see its documentation.
 		// The error is returned only if the timestamp violates its

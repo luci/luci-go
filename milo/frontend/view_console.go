@@ -26,7 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
@@ -182,7 +181,7 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	// Build list of commits.
 	commits := make([]ui.Commit, len(rawCommits))
 	for row, commit := range rawCommits {
-		ct, _ := ptypes.Timestamp(commit.Committer.Time)
+		ct := commit.Committer.Time.AsTime()
 		commits[row] = ui.Commit{
 			AuthorName:  commit.Author.Name,
 			AuthorEmail: commit.Author.Email,
