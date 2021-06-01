@@ -39,6 +39,30 @@
       },
       "revId": "04e9d0ab2d4769be4289dfd19e1df8b9a68f715d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14cddba9_7f2c6dce",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T19:36:38Z",
+      "side": 1,
+      "message": "Done, btw, do you know why Tricium didn\u0027t complain?",
+      "parentUuid": "051a2849_6f3782b2",
+      "range": {
+        "startLine": 204,
+        "startChar": 28,
+        "endLine": 204,
+        "endChar": 38
+      },
+      "revId": "04e9d0ab2d4769be4289dfd19e1df8b9a68f715d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
