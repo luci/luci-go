@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11c3ac3c_dd7aaa19",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T19:33:52Z",
+      "side": 1,
+      "message": "LGTM, thanks for clear CL description",
+      "revId": "04e9d0ab2d4769be4289dfd19e1df8b9a68f715d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "051a2849_6f3782b2",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-01T19:33:52Z",
+      "side": 1,
+      "message": "Nit, spelling",
+      "range": {
+        "startLine": 204,
+        "startChar": 28,
+        "endLine": 204,
+        "endChar": 38
+      },
+      "revId": "04e9d0ab2d4769be4289dfd19e1df8b9a68f715d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
