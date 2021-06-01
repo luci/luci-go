@@ -16,6 +16,24 @@
       "message": "Will this be call only in transactional context?",
       "revId": "cbc98064b20495d9193f4bb988d859f5406067be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d96c7af1_bf59a5a3",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T18:17:28Z",
+      "side": 1,
+      "message": "Yes. Outside of a transaction, there is no advantage -- one can just call a bunch of things in parallel.",
+      "parentUuid": "8d2b7872_048aa1eb",
+      "revId": "cbc98064b20495d9193f4bb988d859f5406067be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
