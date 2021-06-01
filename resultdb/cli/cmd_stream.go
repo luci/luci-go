@@ -40,7 +40,6 @@ import (
 	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exitcode"
-	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/auth/realms"
@@ -53,6 +52,12 @@ import (
 )
 
 var matchInvalidInvocationIDChars = regexp.MustCompile(`[^a-z0-9_\-:.]`)
+
+const (
+	// reservePeriodSecs is how many seconds should be reserved for `rdb stream` to
+	// complete (out of a grace period), the rest can be given to the payload.
+	reservePeriodSecs = 3
+)
 
 // MustReturnInvURL returns a string of the Invocation URL.
 func MustReturnInvURL(rdbHost, invName string) string {
@@ -255,19 +260,34 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
-	// Kill the subprocess if rdb-stream is asked to stop.
-	// Subprocess exiting will unblock rdb-stream and it will stop soon.
-	cmdCtx, cancelCmd := context.WithCancel(ctx)
+	cmdCtx, cancelCmd := lucictx.TrackSoftDeadline(ctx, reservePeriodSecs*time.Second)
 	defer cancelCmd()
-	defer signals.HandleInterrupt(func() {
-		logging.Warningf(ctx, "Interrupt signal received; killing the subprocess")
-		cancelCmd()
-	})()
 
 	cmd := exec.CommandContext(cmdCtx, args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	// Interrupt the subprocess if rdb-stream is interrupted or the deadline
+	// approaches.
+	// If it does not finish before the grace period expires, it will be
+	// SIGKILLed by the the expiration of cmdCtx.
+	go func() {
+		evt := <-lucictx.SoftDeadlineDone(cmdCtx)
+		switch {
+		case cmd.ProcessState != nil && cmd.ProcessState.Exited():
+			logging.Debugf(ctx, "Soft deadline reached (%s), but no process is running", evt)
+			// No process is running. Do nothing.
+		default:
+			logging.Warningf(ctx, "About to run out of time (%s), attempting to interrupt the subprocess", evt.String())
+			if cmd != nil && cmd.Process != nil && cmd.Process.Signal(os.Interrupt) == nil {
+				logging.Warningf(ctx, "Sent interrupt to subprocess, will force kill in ~%s", lucictx.GetDeadline(cmdCtx).GracePeriodDuration())
+			} else {
+				logging.Warningf(ctx, "Could not interrupt subprocess, killing it now")
+				cancelCmd()
+			}
+		}
+	}()
 
 	locationTags, err := r.getLocationTags(ctx)
 	if err != nil {
