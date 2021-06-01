@@ -84,7 +84,7 @@ $(document).ready(function() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/redirect-sw.js')
         .then((registration) => {
-          console.log('SW registered: ', registration);
+          console.log('Redirect SW registered: ', registration);
           window.open(newBuildPageLink.attr('href'), newBuildPageLink.attr('target') || '_self');
         });
       return false;
@@ -236,6 +236,17 @@ Please enter a description of the problem, with repro steps if applicable.
   });
 
   setUpNewBuildPageSurvey();
+
+  // Keep the new build page version up-to-date even when the user is using the
+  // legacy build page.
+  // Otherwise the new build page version will not take effect until the user
+  // loads the new build page for the 2nd time due to service worker activation
+  // rules.
+  navigator.serviceWorker?.register('/ui/service-worker.js')
+    .then((registration) => registration.update())
+    .then((registration) => {
+      console.log('New build page SW registered: ', registration);
+    });
 });
 
 /**
