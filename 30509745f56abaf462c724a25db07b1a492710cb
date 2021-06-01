@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3441892e_08097c4d",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-01T22:39:54Z",
+      "side": 1,
+      "message": "Use switch instead",
+      "parentUuid": "8e57b634_268582ec",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 69
+      },
+      "revId": "30509745f56abaf462c724a25db07b1a492710cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "17d34952_447ab710",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-05-29T22:16:46Z",
       "side": 1,
       "message": "Nit: spelling",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 18
+      },
+      "revId": "30509745f56abaf462c724a25db07b1a492710cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c82c6739_dae15d54",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-01T22:39:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17d34952_447ab710",
       "range": {
         "startLine": 92,
         "startChar": 4,
