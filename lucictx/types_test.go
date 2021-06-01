@@ -41,8 +41,8 @@ func TestPredefinedTypes(t *testing.T) {
 
 			c = SetLocalAuth(c, localAuth)
 			data, _ := getCurrent(c).sections["local_auth"]
-			So(string(*data), ShouldEqual, `{"rpc_port":100,"secret":"Zm9v",`+
-				`"accounts":[{"id":"test","email":"some@example.com"}],"default_account_id":"test"}`)
+			So(string(*data), ShouldEqual, `{"rpc_port":100, "secret":"Zm9v", `+
+				`"accounts":[{"id":"test", "email":"some@example.com"}], "default_account_id":"test"}`)
 
 			So(GetLocalAuth(c), ShouldResembleProto, localAuth)
 		})
@@ -68,8 +68,8 @@ func TestPredefinedTypes(t *testing.T) {
 				}}
 			c = SetResultDB(c, resultdb)
 			data, _ := getCurrent(c).sections["resultdb"]
-			So(string(*data), ShouldEqual, `{"hostname":"test.results.cr.dev","current_invocation":`+
-				`{"name":"invocations/build:1","update_token":"foobarbazsecretoken"}}`)
+			So(string(*data), ShouldEqual, `{"hostname":"test.results.cr.dev", "current_invocation":`+
+				`{"name":"invocations/build:1", "update_token":"foobarbazsecretoken"}}`)
 
 			So(GetResultDB(c), ShouldResembleProto, resultdb)
 		})

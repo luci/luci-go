@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/errors"

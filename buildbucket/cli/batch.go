@@ -15,11 +15,12 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/proto"
 
@@ -75,7 +76,7 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
 	req := &pb.BatchRequest{}
-	if err := jsonpb.Unmarshal(bytes.NewReader(requestBytes), req); err != nil {
+	if err := protojson.Unmarshal(requestBytes, req); err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
 
