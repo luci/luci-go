@@ -503,6 +503,7 @@ var messages = []string{
 	"Thượng lộ bình an",
 	"Tree is open now (ง '̀͜ '́ )ง",
 	"ヽ(^o^)ノ",
+	"Another random message",
 }
 
 func randomMessage(c context.Context) string {
