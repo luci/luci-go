@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/sync/errgroup"
 
@@ -39,7 +40,7 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		// Don't consume the events so that the RM executing the submission will
 		// be able to read the CLUpdated events and take necessary actions after
 		// submission completes. For example, a new PS is uploaded for one of
-		// the unsubmitted CLs and cause the run submission to fail. RM should
+		// the not submitted CLs and cause the run submission to fail. RM should
 		// cancel this Run instead of retrying.
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
@@ -73,14 +74,32 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		case cl.Snapshot.GetPatchset() > runCL.Detail.GetPatchset():
 			// New PS discovered.
 			return impl.Cancel(ctx, rs)
-		case trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content) == nil:
-			// Trigger has been removed.
+		case hasTriggerChanged(runCL, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)):
 			return impl.Cancel(ctx, rs)
-
-		default:
-			// TODO(crbug/1202270): handle some or all cases of changing trigger,
-			// e.g. changing mode OR changing user.
 		}
 	}
 	return &Result{State: rs}, nil
+}
+
+func hasTriggerChanged(runCL *run.RunCL, curTrigger *run.Trigger) bool {
+	if runCL.Trigger == nil {
+		panic(fmt.Errorf("runCL must have a trigger"))
+	}
+	oldTrigger := runCL.Trigger
+	switch {
+	case curTrigger == nil:
+		return true // trigger removal
+	case oldTrigger.GetMode() != curTrigger.GetMode():
+		return true // mode has changed
+	case !oldTrigger.GetTime().AsTime().Equal(curTrigger.GetTime().AsTime()):
+		return true // triggering time has changed
+	default:
+		// Theoretically, if the triggering user changes, it should also be counted
+		// as changed trigger. However, checking whether triggering time has changed
+		// is ~enough because it is extremely rare that votes from different users
+		// have the exact same timestamp. And even if it really happens, CV won't
+		// be able to handle this case because CV will generate the same Run ID as
+		// user is not taken into account during ID generation.
+		return false
+	}
 }
