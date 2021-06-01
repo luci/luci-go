@@ -15,10 +15,9 @@
 package annopb
 
 import (
-	"bytes"
 	"encoding/json"
 
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -50,7 +49,7 @@ func ExtractProperties(s *Step) (*structpb.Struct, error) {
 	}
 
 	ret := &structpb.Struct{}
-	if err := jsonpb.Unmarshal(bytes.NewReader(buf), ret); err != nil {
+	if err := protojson.Unmarshal(buf, ret); err != nil {
 		return nil, err
 	}
 	return ret, nil
