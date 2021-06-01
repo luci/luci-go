@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -103,7 +104,11 @@ func (s *State) triageComponents(ctx context.Context) ([]*cAction, error) {
 				case err != nil:
 					// Log error here since only total errs count will be propagated up
 					// the stack.
-					logging.Errorf(ctx, "%s while processing component: %s", err, protojson.Format(oldC))
+					level := logging.Error
+					if transient.Tag.In(err) {
+						level = logging.Warning
+					}
+					logging.Logf(ctx, level, "%s while processing component: %s", err, protojson.Format(oldC))
 					return err
 				default:
 					mutex.Lock()
