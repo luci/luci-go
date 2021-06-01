@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "abf46dd5_e591adc9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T19:41:35Z",
+      "side": 1,
+      "message": "PTAL \u0026\u0026 bikeshed time 😊",
+      "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0cdb71b5_1ef57aaf",
+        "filename": "cv/internal/run/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T19:41:35Z",
+      "side": 1,
+      "message": "This is also immutable, and can be considered metadata.",
+      "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b33a6099_865e3c40",
+        "filename": "cv/internal/run/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-01T19:41:35Z",
+      "side": 1,
+      "message": "I don\u0027t like this name very much:\nfirst, owner is also immutable and also definitely metadata.\n stretching it further, \"create_time\" is also like this.\n\nsecond, this is specific metadata which somehow influences CV behavior via typically opt-outs.\nthird, strictly speaking, CQ-Depend is also a metadata of sorts, but it\u0027s already stored in Deps of each CL.\n\nSo, any better name?\n\n\n\nFrom an entirely different angle, one can reasonable each Meta.* field as top level Run field. Maybe this should be done instead?",
+      "range": {
+        "startLine": 82,
+        "startChar": 7,
+        "endLine": 82,
+        "endChar": 11
+      },
+      "revId": "8dd02fbfc36cb8adb2d2eaaa75f4f99f621a6875",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
