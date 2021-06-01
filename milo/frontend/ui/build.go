@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -550,7 +549,7 @@ func (bp *BuildPage) Timeline() string {
 		Data      stepData `json:"data"`
 	}
 
-	now, _ := ptypes.Timestamp(bp.Now)
+	now := bp.Now.AsTime()
 
 	groups := make([]group, len(bp.Build.Steps))
 	items := make([]item, len(bp.Build.Steps))
@@ -568,8 +567,8 @@ func (bp *BuildPage) Timeline() string {
 			StatusClassName: statusClassName,
 		}
 		groups[i] = group{groupID, data}
-		start, _ := ptypes.Timestamp(step.StartTime)
-		end, _ := ptypes.Timestamp(step.EndTime)
+		start := step.StartTime.AsTime()
+		end := step.EndTime.AsTime()
 		if end.IsZero() || end.Before(start) {
 			end = now
 		}

@@ -22,8 +22,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/ptypes"
-
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -180,7 +178,7 @@ func handleBuild(c context.Context, ct CloudTasksClient, build *Build, getChecko
 	}
 
 	keepGoing := false
-	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
+	buildCreateTime := build.CreateTime.AsTime()
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, &builder); {
 		case err == datastore.ErrNoSuchEntity:

@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/golang/protobuf/ptypes"
-
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -143,7 +141,7 @@ func buildStarted(ctx context.Context, b *model.Build) {
 	logging.Infof(ctx, "Build %d: started", b.ID)
 	buildCountStarted.Add(ctx, 1, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, b.Proto.Canary)
 	if b.Proto.GetStartTime() != nil {
-		startT, _ := ptypes.Timestamp(b.Proto.StartTime)
+		startT := b.Proto.StartTime.AsTime()
 		buildDurationScheduling.Add(
 			ctx, startT.Sub(b.CreateTime).Seconds(),
 			b.Proto.Builder.Bucket, b.Proto.Builder.Builder, "", "", "", b.Proto.Canary,
@@ -160,13 +158,13 @@ func buildCompleted(ctx context.Context, b *model.Build) {
 	logging.Infof(ctx, "Build %d: completed by %q with status %q", b.ID, auth.CurrentIdentity(ctx), r)
 	buildCountCompleted.Add(ctx, 1, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary)
 
-	endT, _ := ptypes.Timestamp(b.Proto.EndTime)
+	endT := b.Proto.EndTime.AsTime()
 	buildDurationCycle.Add(
 		ctx, endT.Sub(b.CreateTime).Seconds(),
 		b.Proto.Builder.Bucket, b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,
 	)
 	if b.Proto.StartTime != nil {
-		startT, _ := ptypes.Timestamp(b.Proto.StartTime)
+		startT := b.Proto.StartTime.AsTime()
 		buildDurationRun.Add(
 			ctx, endT.Sub(startT).Seconds(),
 			b.Proto.Builder.Bucket, b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,

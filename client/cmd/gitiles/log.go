@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/maruel/subcommands"
 
 	"github.com/golang/protobuf/jsonpb"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
@@ -117,7 +117,7 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 		for _, c := range res.Log {
 			fmt.Printf("commit %s\n", c.Id)
 			fmt.Printf("Author: %s <%s>\n", c.Author.Name, c.Author.Email)
-			t, _ := ptypes.Timestamp(c.Author.Time)
+			t := c.Author.Time.AsTime()
 			fmt.Printf("Date:   %s\n\n", t.Format(time.UnixDate))
 			for _, l := range strings.Split(c.Message, "\n") {
 				fmt.Printf("    %s\n", l)

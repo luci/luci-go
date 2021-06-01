@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -148,7 +147,7 @@ func uiCommit(commit *gitpb.Commit, repoURL string) *ui.Commit {
 			commit.Id,
 			repoURL+"/+/"+commit.Id, fmt.Sprintf("commit by %s", commit.Author.Email)),
 	}
-	res.CommitTime, _ = ptypes.Timestamp(commit.Committer.Time)
+	res.CommitTime = commit.Committer.Time.AsTime()
 	res.File = make([]string, 0, len(commit.TreeDiff))
 	for _, td := range commit.TreeDiff {
 		// If a file was moved, there is both an old and a new path, from which we

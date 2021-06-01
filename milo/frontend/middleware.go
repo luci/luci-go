@@ -120,7 +120,7 @@ func localTimestamp(ifZero string, ts *timestamppb.Timestamp) template.HTML {
 	if ts == nil {
 		return template.HTML(template.HTMLEscapeString(ifZero))
 	}
-	t, _ := ptypes.Timestamp(ts)
+	t := ts.AsTime()
 	return localTime(ifZero, t)
 }
 
