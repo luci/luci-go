@@ -368,18 +368,27 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`ContentTypes`, func() {
-			testutil.MustApply(ctx,
-				insert.Artifact("inv1", "", "a0", map[string]interface{}{"ContentType": "text/plain; encoding=utf-8"}),
-				insert.Artifact("inv1", "tr/t/r", "a0", map[string]interface{}{"ContentType": "text/plain"}),
-				insert.Artifact("inv1", "tr/t/r", "a1", nil),
-				insert.Artifact("inv1", "tr/t/r", "a3", map[string]interface{}{"ContentType": "image/jpg"}),
-			)
-			q.ContentTypeRegexp = "text/.+"
+			Convey(`Works`, func() {
+				testutil.MustApply(ctx,
+					insert.Artifact("inv1", "", "a0", map[string]interface{}{"ContentType": "text/plain; encoding=utf-8"}),
+					insert.Artifact("inv1", "tr/t/r", "a0", map[string]interface{}{"ContentType": "text/plain"}),
+					insert.Artifact("inv1", "tr/t/r", "a1", nil),
+					insert.Artifact("inv1", "tr/t/r", "a3", map[string]interface{}{"ContentType": "image/jpg"}),
+				)
+				q.ContentTypeRegexp = "text/.+"
 
-			actual := mustFetchNames(q)
-			So(actual, ShouldResemble, []string{
-				"invocations/inv1/artifacts/a0",
-				"invocations/inv1/tests/t/results/r/artifacts/a0",
+				actual := mustFetchNames(q)
+				So(actual, ShouldResemble, []string{
+					"invocations/inv1/artifacts/a0",
+					"invocations/inv1/tests/t/results/r/artifacts/a0",
+				})
+			})
+
+			Convey(`Filter generated conditionally`, func() {
+				q.ContentTypeRegexp = ""
+				st, err := q.genStmt(ctx)
+				So(err, ShouldBeNil)
+				So(st.SQL, ShouldNotContainSubstring, "@contentTypeRegexp")
 			})
 		})
 
