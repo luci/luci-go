@@ -18,7 +18,6 @@
 package tq
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -26,13 +25,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 
 	"go.chromium.org/luci/gae/service/taskqueue"
 
@@ -58,7 +59,7 @@ type Dispatcher struct {
 	BaseURL string // URL prefix for all URLs, "/internal/tasks/" by default
 
 	mu       sync.RWMutex
-	handlers map[string]handler // the key is proto message type name
+	handlers map[protoreflect.FullName]handler // the key is proto message type name
 }
 
 // Task contains task body and additional parameters that influence how it is
@@ -211,7 +212,7 @@ func (d *Dispatcher) RegisterTask(prototype proto.Message, cb Handler, queue str
 	}
 
 	if d.handlers == nil {
-		d.handlers = make(map[string]handler)
+		d.handlers = make(map[protoreflect.FullName]handler)
 	}
 
 	d.handlers[name] = handler{
@@ -402,7 +403,7 @@ func RequestHeaders(ctx context.Context) (*taskqueue.RequestHeaders, error) {
 
 type handler struct {
 	cb        Handler                 // the actual handler
-	typeName  string                  // name of the proto type it handles
+	typeName  protoreflect.FullName   // name of the proto type it handles
 	queue     string                  // name of the task queue
 	retryOpts *taskqueue.RetryOptions // default retry options
 }
@@ -421,7 +422,7 @@ func (d *Dispatcher) tqTask(task *Task) (*taskqueue.Task, string, error) {
 
 	title := h.typeName
 	if task.Title != "" {
-		title = task.Title
+		title = protoreflect.FullName(task.Title)
 	}
 
 	retryOpts := h.retryOpts
@@ -519,16 +520,16 @@ func httpReply(c *router.Context, ok bool, code int, msg string, args ...interfa
 var marshaller = jsonpb.Marshaler{}
 
 type envelope struct {
-	Type string           `json:"type"`
-	Body *json.RawMessage `json:"body"`
+	Type protoreflect.FullName `json:"type"`
+	Body *json.RawMessage      `json:"body"`
 }
 
 func serializePayload(task proto.Message) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := marshaller.Marshal(&buf, task); err != nil {
+	buf, err := protojson.Marshal(task)
+	if err != nil {
 		return nil, err
 	}
-	raw := json.RawMessage(buf.Bytes())
+	raw := json.RawMessage(buf)
 	return json.Marshal(envelope{
 		Type: proto.MessageName(task),
 		Body: &raw,
@@ -541,16 +542,16 @@ func deserializePayload(blob []byte) (proto.Message, error) {
 		return nil, err
 	}
 
-	tp := proto.MessageType(env.Type) // this is **ConcreteStruct{}
-	if tp == nil {
-		return nil, fmt.Errorf("unregistered proto message name %q", env.Type)
+	tp, err := protoregistry.GlobalTypes.FindMessageByName(env.Type) // this is **ConcreteStruct{}
+	if err != nil {
+		return nil, fmt.Errorf("unregistered proto message name %q: %w", env.Type, err)
 	}
 	if env.Body == nil {
 		return nil, fmt.Errorf("no task body given")
 	}
 
-	task := reflect.New(tp.Elem()).Interface().(proto.Message)
-	if err := jsonpb.Unmarshal(bytes.NewReader(*env.Body), task); err != nil {
+	task := tp.New().Interface()
+	if err := protojson.Unmarshal(*env.Body, task); err != nil {
 		return nil, err
 	}
 

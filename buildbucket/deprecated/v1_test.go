@@ -15,20 +15,20 @@
 package deprecated
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"reflect"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -55,7 +55,7 @@ func TestV1(t *testing.T) {
 		for i, msg := range input {
 			Convey(fmt.Sprintf("#%d", i), func() {
 				var expected pb.Build
-				err := jsonpb.Unmarshal(bytes.NewReader([]byte(expectedRawMsgs[i])), &expected)
+				err := protojson.Unmarshal([]byte(expectedRawMsgs[i]), &expected)
 				So(err, ShouldBeNil)
 
 				actual, err := BuildToV2(msg)
