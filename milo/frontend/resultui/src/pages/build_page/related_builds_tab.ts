@@ -35,11 +35,11 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeBuildState
+  @consumeBuildState()
   buildState!: BuildState;
 
   connectedCallback() {

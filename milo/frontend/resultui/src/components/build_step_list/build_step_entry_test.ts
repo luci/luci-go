@@ -26,7 +26,7 @@ import { BuildStatus } from '../../services/buildbucket';
 @provider
 class NotifierProviderElement extends LitElement {
   @property()
-  @provideNotifier
+  @provideNotifier()
   notifier = new IntersectionNotifier({ root: this });
 
   protected render() {

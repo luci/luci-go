@@ -106,19 +106,19 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
 @consumer
 export class BuildPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeConfigsStore
+  @consumeConfigsStore()
   configsStore!: UserConfigsStore;
 
   @observable.ref
-  @provideBuildState
+  @provideBuildState()
   buildState!: BuildState;
 
   @observable.ref
-  @provideInvocationState
+  @provideInvocationState()
   invocationState!: InvocationState;
 
   // Set to true when testing.

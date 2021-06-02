@@ -38,7 +38,7 @@ export class ArtifactPageLayoutElement extends MiloBaseElement implements Before
   @observable.ref private artifactId!: string;
 
   @computed
-  @provideArtifactIdent
+  @provideArtifactIdent()
   get artifactIdent() {
     return {
       invocationId: this.invocationId,

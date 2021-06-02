@@ -42,43 +42,43 @@ const [provideSelfProvidedKey, consumeSelfProvidedKey] = createContextLink<strin
 @customElement('milo-outer-context-provider-test')
 @provider
 class OuterContextProvider extends LitElement {
-  @provideOuterProviderInactiveKey
+  @provideOuterProviderInactiveKey()
   outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val0';
 
   @property()
-  @provideOuterProviderKey
+  @provideOuterProviderKey()
   outerProviderKey = 'outer_provider-outer_provider-val0';
 
   // The same context is provided by multiple properties, the last one is used.
   @property()
-  @provideProviderKey
+  @provideProviderKey()
   ignoredProviderKey = 'ignored_outer_provider-provider-val0';
 
   @property()
-  @provideProviderKey
+  @provideProviderKey()
   providerKey = 'outer_provider-provider-val0';
 
   @property()
-  @provideOuterUnobservedKey
+  @provideOuterUnobservedKey()
   outerUnobservedKey = 'outer_provider-outer_unobserved-val0';
 
   @property()
   unprovidedKey = 'outer_provider-unprovided-val0';
 
   @property()
-  @provideConsumerOptionalPropKey
+  @provideConsumerOptionalPropKey()
   consumerOptionalPropKey = 'outer_provider-consumer_optional_pro-val0';
 
   // // This should not compile because Parent is not assignable to Child.
   // @provideSubtypeKey
   // parent = new Parent();
 
-  @provideSubtypeKey
+  @provideSubtypeKey()
   child = new GrandChild();
 
   // This should compile without warning because GrandChild can be assigned to
   // parent.
-  @provideSubtypeKey
+  @provideSubtypeKey()
   grandChild = new GrandChild();
 }
 
@@ -87,7 +87,7 @@ class OuterContextProvider extends LitElement {
 @provider
 class InnerContextProvider extends LitElement {
   @property()
-  @provideProviderKey
+  @provideProviderKey()
   providerKey = 'inner_provider-provider-val0';
 }
 
@@ -96,22 +96,22 @@ class InnerContextProvider extends LitElement {
 @consumer
 class ContextConsumer extends LitElement {
   @property()
-  @consumeOuterProviderInactiveKey
+  @consumeOuterProviderInactiveKey()
   outerProviderInactiveKey = 'local-outer_provider_inactive';
 
   @property()
-  @consumeOuterProviderKey
+  @consumeOuterProviderKey()
   outerProviderKey = 'local-output_provider';
 
-  @consumeProviderKey
+  @consumeProviderKey()
   providerKey = 'local-provider';
 
   // Multiple props can map to the same context.
-  @consumeProviderKey
+  @consumeProviderKey()
   providerKeyWithAnotherName = 'local-provider';
 
   @property()
-  @consumeUnprovidedKey
+  @consumeUnprovidedKey()
   unprovidedKey = 'local-unprovided';
 
   @property()
@@ -119,32 +119,32 @@ class ContextConsumer extends LitElement {
 
   // This should compile without warnings.
   @property()
-  @consumeConsumerOptionalPropKey
+  @consumeConsumerOptionalPropKey()
   consumerOptionalPropKey?: string;
 
   // This should compile without warning because Child is assignable to Parent.
-  @consumeSubtypeKey
+  @consumeSubtypeKey()
   parent = new Parent();
 
   // // This should not compile because Child is not assignable to GrandChild.
   // @consumeSubtypeKey
   // grandChild = new GrandChild();
 
-  @consumeSubtypeKey
+  @consumeSubtypeKey()
   child = new Child();
 
   @property()
-  @provideSelfProvidedKey
+  @provideSelfProvidedKey()
   selfProvided = 'local-self_provided';
 
   @property()
-  @consumeSelfProvidedKey
+  @consumeSelfProvidedKey()
   selfProvided2 = '';
 
   // Help testing that the property is not set too many times, particularly
   // when the element is first rendered.
   setterCallCount = 0;
-  @consumeProviderKey
+  @consumeProviderKey()
   set providerKeySetter(_newVal: string) {
     this.setterCallCount++;
   }
