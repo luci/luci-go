@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
@@ -56,7 +57,7 @@ func TestFixFieldMasks(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(normalizeJSON(jsBadEmulated), ShouldEqual, normalizeJSON([]byte(jsBad)))
 
-			So(jsonpb.UnmarshalString(string(jsBadEmulated), pb), ShouldBeNil)
+			So(protojson.Unmarshal([]byte(string(jsBadEmulated)), pb), ShouldBeNil)
 		}
 		Convey("No field masks", func() {
 			testFix(
