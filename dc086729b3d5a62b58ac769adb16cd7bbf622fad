@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c32c5a2_fea4ae68",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T11:36:50Z",
+      "side": 1,
+      "message": "lgtm % i think test needs fixing due to random whitespace generation in protojson output",
+      "revId": "dc086729b3d5a62b58ac769adb16cd7bbf622fad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
