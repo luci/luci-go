@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 var protoMsgBaseType = reflect.TypeOf((*proto.Message)(nil)).Elem()
@@ -72,11 +72,13 @@ func (m messageSliceFlag) String() string {
 		return ""
 	}
 	var sb strings.Builder
-	marshaler := &jsonpb.Marshaler{Indent: "  "}
 	for i := 0; i < m.msgSliceVal.Len(); i++ {
 		msg := m.msgSliceVal.Index(i).Interface().(proto.Message)
-		if err := marshaler.Marshal(&sb, msg); err != nil {
+
+		if buf, err := protojson.Marshal(msg); err != nil {
 			panic(fmt.Errorf("failed to marshal a message: %s", err))
+		} else {
+			sb.Write(buf)
 		}
 		sb.WriteString("\n")
 	}
@@ -87,7 +89,7 @@ func (m messageSliceFlag) String() string {
 // to the slice.
 func (m *messageSliceFlag) Set(val string) error {
 	newMsg := proto.Clone(m.refMsg)
-	if err := jsonpb.UnmarshalString(val, newMsg); err != nil {
+	if err := protojson.Unmarshal([]byte(val), newMsg); err != nil {
 		return err
 	}
 	m.msgSliceVal.Set(reflect.Append(m.msgSliceVal, reflect.ValueOf(newMsg)))

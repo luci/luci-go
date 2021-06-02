@@ -16,7 +16,8 @@ package proto
 
 import (
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 )
 
 type matcherEq struct {
@@ -46,5 +47,5 @@ func (m *matcherEq) Matches(x interface{}) bool {
 
 // String returns string representation of expected message.
 func (m *matcherEq) String() string {
-	return m.expected.String()
+	return prototext.Format(m.expected)
 }
