@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
@@ -45,7 +45,7 @@ func (j *jobsimDist) jsConfig() *jobsim.Config {
 
 func (j *jobsimDist) parsePayload(payload string) (*jobsimExecution, error) {
 	ret := &jobsimExecution{}
-	err := jsonpb.UnmarshalString(payload, &ret.Calculation)
+	err := protojson.Unmarshal([]byte(payload), &ret.Calculation)
 	return ret, err
 }
 
