@@ -52,7 +52,9 @@ func TestOnCLUpdated(t *testing.T) {
 			},
 		}
 		ct.Cfg.Create(ctx, lProject, cfg)
-		h := &Impl{}
+		h := &Impl{
+			CLUpdater: &clUpdaterMock{},
+		}
 
 		// initial state
 		triggerTime := clock.Now(ctx).UTC()

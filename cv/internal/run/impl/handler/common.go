@@ -38,16 +38,17 @@ import (
 // Returns the side effect when Run is ended.
 //
 // Panics if the provided status is not ended status.
-func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM) eventbox.SideEffectFn {
+func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM, u CLUpdater) eventbox.SideEffectFn {
 	if !run.IsEnded(st) {
 		panic(fmt.Errorf("can't end run with non-final status %s", st))
 	}
+
 	rs.Run.Status = st
 	rs.Run.EndTime = clock.Now(ctx).UTC()
 	rid := rs.Run.ID
 	return eventbox.Chain(
 		func(ctx context.Context) error {
-			return removeRunFromCLs(ctx, rid, rs.Run.CLs)
+			return removeRunFromCLs(ctx, rid, rs.Run.CLs, u)
 		},
 		func(ctx context.Context) error {
 			return pm.NotifyRunFinished(ctx, rid)
@@ -56,9 +57,14 @@ func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM) event
 	)
 }
 
-// removeRunFromCLs removes the Run from the IncompleteRuns list of all
-// CLs involved in this Run.
-func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) error {
+// removeRunFromCLs atomically updates state of CL entities involved in this Run.
+//
+// For each CL:
+//   * marks its Snapshot as outdated, which prevents Project Manager from
+//     operating on potentially outdated CL Snapshots;
+//   * schedules refresh of CL snapshot;
+//   * removes Run's ID from the list of CL's IncompleteRuns.
+func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLIDs, u CLUpdater) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be called in a transaction")
 	}
@@ -68,13 +74,17 @@ func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLID
 	}
 	for _, cl := range cls {
 		cl.Mutate(ctx, func(cl *changelist.CL) bool {
-			return cl.IncompleteRuns.DelSorted(runID)
+			cl.IncompleteRuns.DelSorted(runID)
+			if cl.Snapshot != nil {
+				cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
+			}
+			return true
 		})
 	}
 	if err := datastore.Put(ctx, cls); err != nil {
 		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
 	}
-	return nil
+	return u.ScheduleBatch(ctx, runID.LUCIProject(), true /*force notify PM*/, cls)
 }
 
 func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string) error {
