@@ -22,9 +22,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
@@ -147,7 +147,7 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 	Convey(`Test Environment for extractEmailNotifyValues`, t, func() {
 		extract := func(buildJSONPB string) ([]EmailNotify, error) {
 			build := &buildbucketpb.Build{}
-			err := jsonpb.UnmarshalString(buildJSONPB, build)
+			err := protojson.Unmarshal([]byte(buildJSONPB), build)
 			So(err, ShouldBeNil)
 			return extractEmailNotifyValues(build, "")
 		}
