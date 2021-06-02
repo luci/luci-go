@@ -22,6 +22,30 @@
       },
       "revId": "fbf085364d0e2db2aa35e78f526ca0d7468201a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f1f79b1_b4c9c4a2",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T20:01:08Z",
+      "side": 0,
+      "message": "not important right now -- there are a bunch of TODOs that have to be cleaned up once we remove \"IsCVinCHrage\" mode.",
+      "parentUuid": "d136238f_1c568e3e",
+      "range": {
+        "startLine": 258,
+        "startChar": 32,
+        "endLine": 258,
+        "endChar": 54
+      },
+      "revId": "fbf085364d0e2db2aa35e78f526ca0d7468201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
