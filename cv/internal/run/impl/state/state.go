@@ -72,20 +72,22 @@ func (rs *RunState) LoadConfigGroup(ctx context.Context) (*config.ConfigGroup, e
 
 // CheckTree returns whether Tree is open for this Run.
 //
-// Returns true if no Tree is defined for this Run. Updates the latest
-// result to `run.Submission`.
+// Returns true if no Tree or Options.SkipTreeChecks is configured for this Run.
+// Updates the latest result to `run.Submission`.
 func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error) {
-	cg, err := rs.LoadConfigGroup(ctx)
-	if err != nil {
-		return false, err
-	}
 	treeOpen := true
-	if treeURL := cg.Content.GetVerifiers().GetTreeStatus().GetUrl(); treeURL != "" {
-		status, err := tc.FetchLatest(ctx, treeURL)
+	if !rs.Run.Options.GetSkipTreeChecks() {
+		cg, err := rs.LoadConfigGroup(ctx)
 		if err != nil {
 			return false, err
 		}
-		treeOpen = status.State == tree.Open || status.State == tree.Throttled
+		if treeURL := cg.Content.GetVerifiers().GetTreeStatus().GetUrl(); treeURL != "" {
+			status, err := tc.FetchLatest(ctx, treeURL)
+			if err != nil {
+				return false, err
+			}
+			treeOpen = status.State == tree.Open || status.State == tree.Throttled
+		}
 	}
 	rs.Run.Submission.TreeOpen = treeOpen
 	rs.Run.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
