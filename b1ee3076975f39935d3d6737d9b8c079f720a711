@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f0c1a4c_56d35cb1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-02T22:19:11Z",
+      "side": 1,
+      "message": "(As of latest patchset, tests still do not pass; failing with \"\u0027no task class matching type \"cv.run.bq.ExportRunToBQTask\" is registered\u0027\" upon schedule; although NewExporter looks like it should be registering a task class)",
+      "revId": "b1ee3076975f39935d3d6737d9b8c079f720a711",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

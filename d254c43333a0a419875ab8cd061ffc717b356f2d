@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1fa071fd_3a7f475c",
+        "filename": "cv/internal/run/bq/exporter.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-02T22:19:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e72ecd0d_f8fd1e49",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 10
+      },
+      "revId": "d254c43333a0a419875ab8cd061ffc717b356f2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9440e2f8_147ddb30",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f9679b29_65384344",
+        "filename": "cv/internal/run/bq/exporter.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-02T22:19:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9440e2f8_147ddb30",
+      "range": {
+        "startLine": 56,
+        "startChar": 49,
+        "endLine": 56,
+        "endChar": 69
+      },
+      "revId": "d254c43333a0a419875ab8cd061ffc717b356f2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d3093cf6_c80e2421",
@@ -77,6 +125,30 @@
       "writtenOn": "2021-06-02T00:35:17Z",
       "side": 1,
       "message": "nit: now delete 😊",
+      "range": {
+        "startLine": 46,
+        "startChar": 2,
+        "endLine": 47,
+        "endChar": 29
+      },
+      "revId": "d254c43333a0a419875ab8cd061ffc717b356f2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9c06843_9f009b4c",
+        "filename": "cv/internal/run/bq/exporter_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-02T22:19:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3093cf6_c80e2421",
       "range": {
         "startLine": 46,
         "startChar": 2,

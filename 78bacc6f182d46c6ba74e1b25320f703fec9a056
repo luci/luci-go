@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b9f3f3d_1c8c3988",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-02T22:19:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b79bc857_dcbf1311",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f0b82f36_148dd5a7",
@@ -343,6 +361,24 @@
       "side": 1,
       "message": "\u003e  Does enqueueing a task involve multiple datastore operations that should either all fail or all succeed?\n\nWell, this depends on a kind of task.\nFor BQ export case, indeed, we want BQ exported IF AND ONLYIF Run.Status is changed to final status (and in fact, 2+ other actions).\n\nthe tq.Transactional essentially guards against incorrect use tq.AddTask()\n(I think of it as an assertion or fancy https://en.wikipedia.org/wiki/Design_by_contract)",
       "parentUuid": "87e30c56_1c24fb64",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7998be35_5e50d395",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-02T22:19:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "210b3a24_388a1543",
       "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
