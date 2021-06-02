@@ -20,6 +20,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
@@ -468,20 +469,28 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID) (*adminpb.GetRunRes
 	}
 
 	return &adminpb.GetRunResponse{
-		Id:             string(rid),
-		Eversion:       int64(r.EVersion),
-		Mode:           string(r.Mode),
-		Status:         r.Status,
-		CreateTime:     timestamppb.New(r.CreateTime),
-		StartTime:      timestamppb.New(r.StartTime),
-		UpdateTime:     timestamppb.New(r.UpdateTime),
-		EndTime:        timestamppb.New(r.EndTime),
-		Owner:          string(r.Owner),
-		ConfigGroupId:  string(r.ConfigGroupID),
-		Cls:            common.CLIDsAsInt64s(r.CLs),
-		Submission:     r.Submission,
-		FinalizedByCqd: r.FinalizedByCQD,
+		Id:               string(rid),
+		Eversion:         int64(r.EVersion),
+		Mode:             string(r.Mode),
+		Status:           r.Status,
+		CreateTime:       tspbNillable(r.CreateTime),
+		StartTime:        tspbNillable(r.StartTime),
+		UpdateTime:       tspbNillable(r.UpdateTime),
+		EndTime:          tspbNillable(r.EndTime),
+		Owner:            string(r.Owner),
+		ConfigGroupId:    string(r.ConfigGroupID),
+		Cls:              common.CLIDsAsInt64s(r.CLs),
+		Submission:       r.Submission,
+		FinalizedByCqd:   r.FinalizedByCQD,
+		DelayCancelUntil: tspbNillable(r.DelayCancelUntil),
 
 		Events: events,
 	}, nil
+}
+
+func tspbNillable(t time.Time) *timestamppb.Timestamp {
+	if t.IsZero() {
+		return nil
+	}
+	return timestamppb.New(t)
 }
