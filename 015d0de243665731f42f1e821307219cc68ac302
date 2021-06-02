@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa690f89_3a9d3158",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T10:07:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bcc680f7_f9f63b99",
+      "range": {
+        "startLine": 128,
+        "startChar": 13,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "015d0de243665731f42f1e821307219cc68ac302",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1dbd107c_5f2754e7",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0d322af0_fd631fa3",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T10:07:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1dbd107c_5f2754e7",
+      "range": {
+        "startLine": 134,
+        "startChar": 49,
+        "endLine": 134,
+        "endChar": 53
+      },
+      "revId": "015d0de243665731f42f1e821307219cc68ac302",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "02d979a8_53962441",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-06-02T06:01:00Z",
       "side": 1,
       "message": "major: why should we create this run then? Or is this option just implying run tryjobs but no submit?",
+      "range": {
+        "startLine": 144,
+        "startChar": 0,
+        "endLine": 149,
+        "endChar": 29
+      },
+      "revId": "015d0de243665731f42f1e821307219cc68ac302",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c00a2fe2_b6ace5d3",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T10:07:04Z",
+      "side": 1,
+      "message": "Oh, you are right -- CV shouldn\u0027t start such a Run at all. Removed.",
+      "parentUuid": "02d979a8_53962441",
       "range": {
         "startLine": 144,
         "startChar": 0,
