@@ -22,6 +22,30 @@
       },
       "revId": "da09d1fc893b264b6215769bae18fb65e278c3d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "613382f4_74a7c09a",
+        "filename": "cv/internal/admin/api/admin.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T13:24:33Z",
+      "side": 1,
+      "message": "habit -- grouping fields by similar IDs.\nbut this is probably bad idea, since this makes ID re-use more likely and NextTag comment not useful.",
+      "parentUuid": "aaf708f6_b0b515db",
+      "range": {
+        "startLine": 182,
+        "startChar": 25,
+        "endLine": 182,
+        "endChar": 27
+      },
+      "revId": "da09d1fc893b264b6215769bae18fb65e278c3d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
