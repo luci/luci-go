@@ -101,8 +101,6 @@ func InitServer(srv *server.Server, opts Options) error {
 	pb.RegisterRecorderServer(srv.PRPC, nil)
 
 	srv.PRPC.AccessControl = prpc.AllowOriginAll
-	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-	srv.PRPC.HackFixFieldMasksForJSON = true
 	return nil
 }
 
