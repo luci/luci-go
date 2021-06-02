@@ -108,3 +108,38 @@ message Submission {
   // The timestamp when the Tree status was last fetched.
   google.protobuf.Timestamp last_tree_check_time = 11;
 }
+
+// Options are Run-specific additions on top of LUCI project config.
+message Options {
+  // If true, submitting the Run isn't blocked on open tree.
+  //
+  // If false (default), respects project configuration.
+  bool skip_tree_checks = 1;
+
+  // If true, `builders.equivalent_to{...}` sections are ignored when triggering
+  // tryjobs.
+  //
+  // If false (default), respects project configuration.
+  bool skip_equivalent_builders = 2;
+
+  // If true, no longer useful tryjobs won't be cancelled.
+  //
+  // If false (default), respects project configuration.
+  bool avoid_cancelling_tryjobs = 3;
+
+  // If true, no tryjobs will be triggered except "presubmit" regardless of
+  // project configuration.
+  //
+  // "presubmit" builders are legacy which are currently configured with
+  // "disable_reuse: true" in project config. To skip triggering them,
+  // skip_presubmit must be set to true.
+  // TODO(https://crbug.com/950074): ignore.
+  //
+  // If false (default), respects project configuration.
+  bool skip_tryjobs = 4;
+  // Deprecated per https://crbug.com/950074.
+  // See skip_tryjobs doc.
+  bool skip_presubmit = 5;
+
+  // TODO(tandrii): add CQ_INCLUDE_TRYBOTS / Cq-Include-Trybots.
+}
