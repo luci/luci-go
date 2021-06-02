@@ -16,6 +16,24 @@
       "message": "lgtm % i think test needs fixing due to random whitespace generation in protojson output",
       "revId": "dc086729b3d5a62b58ac769adb16cd7bbf622fad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4600e616_a8b50878",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-02T11:38:37Z",
+      "side": 1,
+      "message": "yeah, you are correct.",
+      "parentUuid": "9c32c5a2_fea4ae68",
+      "revId": "dc086729b3d5a62b58ac769adb16cd7bbf622fad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
