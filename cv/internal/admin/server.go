@@ -161,6 +161,7 @@ func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (res
 		Id:               int64(cl.ID),
 		Eversion:         int64(cl.EVersion),
 		ExternalId:       string(cl.ExternalID),
+		UpdateTime:       timestamppb.New(cl.UpdateTime),
 		Snapshot:         cl.Snapshot,
 		ApplicableConfig: cl.ApplicableConfig,
 		DependentMeta:    cl.DependentMeta,
