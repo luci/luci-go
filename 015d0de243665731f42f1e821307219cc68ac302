@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "bcc680f7_f9f63b99",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T06:07:02Z",
+      "side": 1,
+      "message": "nit: cancelling. Not that I prefer double l, but I think double l is what we used currently in CV (e.g. STATUS_CANCELLED)",
+      "range": {
+        "startLine": 128,
+        "startChar": 13,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "015d0de243665731f42f1e821307219cc68ac302",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1dbd107c_5f2754e7",
         "filename": "cv/internal/run/storage.proto",
         "patchSetId": 5
