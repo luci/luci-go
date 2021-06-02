@@ -115,3 +115,28 @@ func TestExtractOptions(t *testing.T) {
 		})
 	})
 }
+
+func TestMergeOptions(t *testing.T) {
+	t.Parallel()
+
+	Convey("MergeOptions works", t, func() {
+		o := &Options{}
+		So(MergeOptions(o, nil), ShouldResembleProto, o)
+
+		a := &Options{
+			SkipTreeChecks:        true,
+			AvoidCancelingTryjobs: true,
+		}
+		So(MergeOptions(a, o), ShouldResembleProto, a)
+
+		b := &Options{
+			SkipTreeChecks: true,
+			DisableFullRun: true,
+		}
+		So(MergeOptions(a, b), ShouldResembleProto, &Options{
+			SkipTreeChecks:        true,
+			AvoidCancelingTryjobs: true,
+			DisableFullRun:        true,
+		})
+	})
+}
