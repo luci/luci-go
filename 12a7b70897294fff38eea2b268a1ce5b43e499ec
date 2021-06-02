@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "53186f52_985d38c3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T10:01:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96cfdf2a_d66b9df6",
+      "range": {
+        "startLine": 12,
+        "startChar": 16,
+        "endLine": 12,
+        "endChar": 21
+      },
+      "revId": "12a7b70897294fff38eea2b268a1ce5b43e499ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "15813afa_15ddf955",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 10
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eae8ad1f_feaa744b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T10:01:49Z",
+      "side": 1,
+      "message": "OK, thanks for reviewing.",
+      "parentUuid": "34ddb90e_805b814f",
+      "revId": "12a7b70897294fff38eea2b268a1ce5b43e499ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8701bc62_55482eb9",
@@ -71,6 +113,24 @@
       "writtenOn": "2021-06-02T05:53:25Z",
       "side": 1,
       "message": "Del",
+      "revId": "12a7b70897294fff38eea2b268a1ce5b43e499ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "787449bc_67ad075f",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T10:01:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8701bc62_55482eb9",
       "revId": "12a7b70897294fff38eea2b268a1ce5b43e499ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
