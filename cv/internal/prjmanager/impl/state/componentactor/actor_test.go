@@ -294,8 +294,8 @@ func TestTriage(t *testing.T) {
 				Convey("OK after obeying stabilization delay", func() {
 					// Simulate a CL stack <base> -> 31 -> 32 -> 33, which user wants
 					// to land at the same time by making 31 depend on 33.
-					_, pcl31 := putPCL(31, combIdx, run.FullRun, ct.Clock.Now(), 33)
-					_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now(), 31)
+					_, pcl31 := putPCL(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Minute), 33)
+					_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second), 31)
 					_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32, 31)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, Dirty: true}
@@ -314,6 +314,7 @@ func TestTriage(t *testing.T) {
 					rc := res.RunsToCreate[0]
 					So(rc.ConfigGroupID.Name(), ShouldResemble, "combinable")
 					So(rc.Mode, ShouldResemble, run.FullRun)
+					So(rc.CreateTime, ShouldEqual, pcl33.GetTrigger().GetTime().AsTime())
 					So(rc.InputCLs, ShouldHaveLength, 3)
 				})
 
