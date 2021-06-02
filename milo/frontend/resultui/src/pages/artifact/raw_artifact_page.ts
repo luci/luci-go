@@ -34,11 +34,11 @@ import { consumeArtifactIdent } from './artifact_page_layout';
 @consumer
 export class RawArtifactPageElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeArtifactIdent
+  @consumeArtifactIdent()
   artifactIdent!: ArtifactIdentifier;
 
   @computed

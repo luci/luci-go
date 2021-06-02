@@ -32,7 +32,7 @@ import {
 @provider
 class EnterViewObserverNotifierProviderElement extends LitElement {
   @property()
-  @provideNotifier
+  @provideNotifier()
   notifier = new IntersectionNotifier({ root: this });
 
   protected render() {
@@ -251,7 +251,7 @@ class ProgressiveRenderingElement extends LitElement implements RenderPlaceHolde
 @customElement('milo-progressive-rendering-notifier-provider-test')
 @provider
 class ProgressiveNotifierProviderElement extends LitElement {
-  @provideNotifier notifier = new ProgressiveNotifier({ batchInterval: 100, batchSize: 10, root: this });
+  @provideNotifier() notifier = new ProgressiveNotifier({ batchInterval: 100, batchSize: 10, root: this });
 
   protected render() {
     return html`<slot></slot>`;

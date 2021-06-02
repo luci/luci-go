@@ -33,7 +33,7 @@ import commonStyle from '../styles/common_style.css';
 @consumer
 export class LoginPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   private redirectUri = '';

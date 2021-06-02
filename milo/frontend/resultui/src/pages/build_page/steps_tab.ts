@@ -32,11 +32,11 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class StepsTabElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeConfigsStore
+  @consumeConfigsStore()
   configsStore!: UserConfigsStore;
 
   connectedCallback() {
