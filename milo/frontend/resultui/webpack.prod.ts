@@ -28,7 +28,10 @@ export default merge(common, {
       // version is detected, causing existing clients to break.
       // However, this also means new release will not take effect until users
       // close all build page tabs.
-      skipWaiting: false,
+      // TODO(crbug/1213832): set to true temporarily so users can fix the blank
+      // page issue by refreshing the page. Convert it back to false once we no
+      // longer receive bug reports for the blank page issue.
+      skipWaiting: true,
       navigateFallback: '/ui/index.html',
       // Workbox source map changes every build.
       // This causes noise in the auto-roller.
