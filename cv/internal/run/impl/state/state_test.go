@@ -72,12 +72,22 @@ func TestCheckTree(t *testing.T) {
 			So(rs.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(ct.Clock.Now().UTC()))
 		})
 
-		Convey("Close", func() {
+		Convey("Closed", func() {
 			ct.TreeFake.ModifyState(ctx, tree.Closed)
 			open, err := rs.CheckTree(ctx, client)
 			So(err, ShouldBeNil)
 			So(open, ShouldBeFalse)
 			So(rs.Run.Submission.TreeOpen, ShouldBeFalse)
+			So(rs.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(ct.Clock.Now().UTC()))
+		})
+
+		Convey("Closed but ignored", func() {
+			ct.TreeFake.ModifyState(ctx, tree.Closed)
+			rs.Run.Options = &run.Options{SkipTreeChecks: true}
+			open, err := rs.CheckTree(ctx, client)
+			So(err, ShouldBeNil)
+			So(open, ShouldBeTrue)
+			So(rs.Run.Submission.TreeOpen, ShouldBeTrue)
 			So(rs.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(ct.Clock.Now().UTC()))
 		})
 
