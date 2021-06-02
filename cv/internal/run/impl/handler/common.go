@@ -21,8 +21,10 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -51,6 +53,9 @@ func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM, u CLU
 			return removeRunFromCLs(ctx, rid, rs.Run.CLs, u)
 		},
 		func(ctx context.Context) error {
+			txndefer.Defer(ctx, func(postTransCtx context.Context) {
+				logging.Infof(postTransCtx, "finalized Run with status %s", st)
+			})
 			return pm.NotifyRunFinished(ctx, rid)
 		},
 		// TODO(qyearsley): Submit a task to do BQ export if !rs.Run.FinishedCQDRun.
