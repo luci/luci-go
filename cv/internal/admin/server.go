@@ -115,10 +115,13 @@ func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (r
 	if req.GetRun() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "run ID is required")
 	}
+	return loadRunAndEvents(ctx, common.RunID(req.GetRun()))
+}
 
+func loadRunAndEvents(ctx context.Context, rid common.RunID) (*adminpb.GetRunResponse, error) {
 	eg, ctx := errgroup.WithContext(ctx)
 
-	r := &run.Run{ID: common.RunID(req.GetRun())}
+	r := &run.Run{ID: rid}
 	eg.Go(func() error {
 		switch err := datastore.Get(ctx, r); {
 		case err == datastore.ErrNoSuchEntity:
@@ -132,7 +135,7 @@ func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (r
 
 	var events []*eventpb.Event
 	eg.Go(func() error {
-		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, run.RunKind, req.GetRun()))
+		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, run.RunKind, string(rid)))
 		if err != nil {
 			return err
 		}
@@ -146,12 +149,12 @@ func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (r
 		return nil
 	})
 
-	if err = eg.Wait(); err != nil {
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
-	resp = &adminpb.GetRunResponse{
-		Id:            req.GetRun(),
+	return &adminpb.GetRunResponse{
+		Id:            string(rid),
 		Eversion:      int64(r.EVersion),
 		Mode:          string(r.Mode),
 		Status:        r.Status,
@@ -165,8 +168,7 @@ func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (r
 		Submission:    r.Submission,
 
 		Events: events,
-	}
-	return resp, nil
+	}, nil
 }
 
 func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (resp *adminpb.GetCLResponse, err error) {
@@ -243,6 +245,41 @@ func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerReque
 		Subpollers: s.SubPollers,
 	}
 	return resp, nil
+}
+
+func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsRequest) (resp *adminpb.RunsResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = checkAllowed(ctx, "SearchRuns"); err != nil {
+		return
+	}
+	if req.GetProject() == "" {
+		return nil, status.Errorf(codes.Unimplemented, "search across projects is not implemented")
+	}
+	if req.GetPageToken() != "" {
+		return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	}
+	if req.GetLimit() <= 0 {
+		req.Limit = 16
+	}
+
+	var keys []*datastore.Key
+	q := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetLimit()).KeysOnly(true)
+	if err := datastore.GetAll(ctx, q, &keys); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch Runs")
+	}
+	resp = &adminpb.RunsResponse{
+		Runs: make([]*adminpb.GetRunResponse, len(keys)),
+	}
+	errs := parallel.WorkPool(16, func(work chan<- func() error) {
+		for i, key := range keys {
+			i, key := i, key
+			work <- func() (err error) {
+				resp.Runs[i], err = loadRunAndEvents(ctx, common.RunID(key.StringID()))
+				return
+			}
+		}
+	})
+	return resp, common.MostSevereError(errs)
 }
 
 // Copy from dsset.

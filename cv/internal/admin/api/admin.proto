@@ -47,6 +47,9 @@ service Admin {
   // GetPoller returns current Poller state.
   rpc GetPoller(GetPollerRequest) returns (GetPollerResponse);
 
+  // SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
+  rpc SearchRuns(SearchRunsRequest) returns (RunsResponse);
+
   // DeleteProjectEvents deletes all outstanding project events.
   // Must be called with stopped TQs.
   // TODO(tandrii): delete this Temporary API.
@@ -164,4 +167,17 @@ message SendProjectEventRequest {
 message SendRunEventRequest {
   string run = 1;
   cv.run.eventpb.Event event = 2;
+}
+
+message SearchRunsRequest {
+  int32 limit = 1;
+  string page_token = 2;
+
+  // Optional. If omitted, scans across all active projects.
+  string project = 11;
+}
+
+message RunsResponse {
+  repeated GetRunResponse runs = 1;
+  string next_page_token = 2;
 }

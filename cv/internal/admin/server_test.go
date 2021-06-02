@@ -205,6 +205,49 @@ func TestGetPoller(t *testing.T) {
 	})
 }
 
+func TestSearchRuns(t *testing.T) {
+	t.Parallel()
+
+	Convey("SearchRuns works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "proj"
+		const earlierID = lProject + "/124-earlier-has-higher-number"
+		const laterID = lProject + "/123-later-has-lower-number"
+		d := AdminServer{}
+
+		Convey("without access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+			})
+			_, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("with access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+			Convey("no runs exist", func() {
+				resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
+				So(err, ShouldBeNil)
+				So(resp.GetRuns(), ShouldHaveLength, 0)
+			})
+			Convey("one run", func() {
+				So(datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}), ShouldBeNil)
+				resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
+				So(err, ShouldBeNil)
+				So(resp.GetRuns(), ShouldHaveLength, 2)
+				So(resp.GetRuns()[0].GetId(), ShouldResemble, laterID)
+				So(resp.GetRuns()[1].GetId(), ShouldResemble, earlierID)
+			})
+		})
+	})
+}
+
 func TestDeleteProjectEvents(t *testing.T) {
 	t.Parallel()
 

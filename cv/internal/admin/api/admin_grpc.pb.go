@@ -31,6 +31,8 @@ type AdminClient interface {
 	GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error)
 	// GetPoller returns current Poller state.
 	GetPoller(ctx context.Context, in *GetPollerRequest, opts ...grpc.CallOption) (*GetPollerResponse, error)
+	// SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
+	SearchRuns(ctx context.Context, in *SearchRunsRequest, opts ...grpc.CallOption) (*RunsResponse, error)
 	// DeleteProjectEvents deletes all outstanding project events.
 	// Must be called with stopped TQs.
 	// TODO(tandrii): delete this Temporary API.
@@ -87,6 +89,15 @@ func (c *adminClient) GetPoller(ctx context.Context, in *GetPollerRequest, opts 
 	return out, nil
 }
 
+func (c *adminClient) SearchRuns(ctx context.Context, in *SearchRunsRequest, opts ...grpc.CallOption) (*RunsResponse, error) {
+	out := new(RunsResponse)
+	err := c.cc.Invoke(ctx, "/admin.Admin/SearchRuns", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminClient) DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error) {
 	out := new(DeleteProjectEventsResponse)
 	err := c.cc.Invoke(ctx, "/admin.Admin/DeleteProjectEvents", in, out, opts...)
@@ -135,6 +146,8 @@ type AdminServer interface {
 	GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error)
 	// GetPoller returns current Poller state.
 	GetPoller(context.Context, *GetPollerRequest) (*GetPollerResponse, error)
+	// SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
+	SearchRuns(context.Context, *SearchRunsRequest) (*RunsResponse, error)
 	// DeleteProjectEvents deletes all outstanding project events.
 	// Must be called with stopped TQs.
 	// TODO(tandrii): delete this Temporary API.
@@ -163,6 +176,9 @@ func (UnimplementedAdminServer) GetCL(context.Context, *GetCLRequest) (*GetCLRes
 }
 func (UnimplementedAdminServer) GetPoller(context.Context, *GetPollerRequest) (*GetPollerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPoller not implemented")
+}
+func (UnimplementedAdminServer) SearchRuns(context.Context, *SearchRunsRequest) (*RunsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchRuns not implemented")
 }
 func (UnimplementedAdminServer) DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectEvents not implemented")
@@ -261,6 +277,24 @@ func _Admin_GetPoller_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Admin_SearchRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchRunsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).SearchRuns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/admin.Admin/SearchRuns",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).SearchRuns(ctx, req.(*SearchRunsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Admin_DeleteProjectEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteProjectEventsRequest)
 	if err := dec(in); err != nil {
@@ -355,6 +389,10 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPoller",
 			Handler:    _Admin_GetPoller_Handler,
+		},
+		{
+			MethodName: "SearchRuns",
+			Handler:    _Admin_SearchRuns_Handler,
 		},
 		{
 			MethodName: "DeleteProjectEvents",
