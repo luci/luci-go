@@ -17,7 +17,6 @@ package isolate
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -35,6 +34,7 @@ import (
 	"go/token"
 
 	"github.com/yosuke-furukawa/json5/encoding/json5"
+	"go.chromium.org/luci/common/errors"
 )
 
 var osPathSeparator = string(os.PathSeparator)
@@ -134,8 +134,7 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 	}
 	if len(missingVars) > 0 {
 		sort.Strings(missingVars)
-		err = fmt.Errorf("these configuration variables were missing from the command line: %v", missingVars)
-		return nil, "", err
+		return nil, "", errors.Reason("these configuration variables were missing from the command line: %v", missingVars).Err()
 	}
 	// A configuration is to be created with all the combinations of free variables.
 	config, err := isolate.GetConfig(cn)
