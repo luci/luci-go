@@ -100,6 +100,7 @@ message GetRunResponse {
   repeated int64 cls = 11;
   cv.run.Submission submission = 12;
   bool finalized_by_cqd = 13;
+  google.protobuf.Timestamp delay_cancel_until = 14;
 
   // Events.
   repeated cv.run.eventpb.Event events = 61;

@@ -306,15 +306,14 @@ func TestCreatesSingularRunCQDinChargeButCrashes(t *testing.T) {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
 
-		// TODO(tandrii): implemenet handling in Run Manager and finish the test.
-		// ct.LogPhase(ctx, "CV finalizes the Run anyway after some delay")
-		// ct.RunUntil(ctx, func() bool {
-		// 	return ct.LoadRun(ctx, r.ID).Status == run.Status_CANCELLED
-		// })
-		// So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
-		// ct.RunUntil(ctx, func() bool {
-		// 	return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
-		// })
+		ct.LogPhase(ctx, "CV finalizes the Run anyway after some delay")
+		ct.RunUntil(ctx, func() bool {
+			return ct.LoadRun(ctx, r.ID).Status == run.Status_CANCELLED
+		})
+		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
+		ct.RunUntil(ctx, func() bool {
+			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		})
 		// TODO(qyearsley): assert no BQ row was sent.
 	})
 }
