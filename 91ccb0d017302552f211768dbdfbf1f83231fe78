@@ -329,6 +329,30 @@
       },
       "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "faeff93b_5c25af01",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-02T08:13:05Z",
+      "side": 1,
+      "message": "Encapsulated the logic to EntryBuffer{}, but the algorithms are mostly the same. PTAL.",
+      "parentUuid": "00ac268b_1d720456",
+      "range": {
+        "startLine": 241,
+        "startChar": 0,
+        "endLine": 261,
+        "endChar": 3
+      },
+      "revId": "91ccb0d017302552f211768dbdfbf1f83231fe78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
