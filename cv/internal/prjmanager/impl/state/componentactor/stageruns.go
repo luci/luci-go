@@ -277,11 +277,16 @@ func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *config.Con
 		// such CL(s) should be removed from PM state soon.
 		return nil, errors.Annotate(err, "failed to load CLs").Tag(transient.Tag).Err()
 	}
+
+	var opts *run.Options
 	for i, cl := range cls {
 		exp, act := combo.all[i].pcl.GetEversion(), int64(cl.EVersion)
 		if exp != act {
 			return nil, errors.Reason("CL %d EVersion changed %d => %d", cl.ID, exp, act).Tag(transient.Tag).Err()
 		}
+		ci := cl.Snapshot.GetGerrit().GetInfo()
+		msg := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
+		opts = run.MergeOptions(opts, run.ExtractOptions(msg))
 	}
 
 	// Run's owner is whoever owns the latest triggered CL.
@@ -308,6 +313,7 @@ func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *config.Con
 		LUCIProject:              cg.ProjectString(),
 		Mode:                     run.Mode(combo.latestTriggered.pcl.GetTrigger().GetMode()),
 		Owner:                    owner,
+		Options:                  opts,
 		ExpectedIncompleteRunIDs: nil, // no Run is expected
 		OperationID:              fmt.Sprintf("PM-%d", mathrand.Int63(ctx)),
 		InputCLs:                 bcls,

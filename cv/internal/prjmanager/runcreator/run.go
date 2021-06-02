@@ -62,6 +62,8 @@ type Creator struct {
 	Mode run.Mode
 	// Owner is the Run Owner. Required.
 	Owner identity.Identity
+	// Options is metadata of the Run. Required.
+	Options *run.Options
 	// ExpectedIncompleteRunIDs are a sorted slice of Run IDs which may be associated with
 	// CLs.
 	//
@@ -172,6 +174,8 @@ func (rb *Creator) prepare(ctx context.Context) error {
 		panic("Mode is required")
 	case rb.Owner == "":
 		panic("Owner is required")
+	case rb.Options == nil:
+		panic("Options is required")
 	case rb.OperationID == "":
 		panic("OperationID is required")
 	}
@@ -339,6 +343,7 @@ func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
 		Mode:          rb.Mode,
 		Status:        run.Status_PENDING,
 		Owner:         rb.Owner,
+		Options:       rb.Options,
 	}
 	rb.dsBatcher.register(rb.run, func(err error) error {
 		return errors.Annotate(err, "failed to save Run").Tag(transient.Tag).Err()

@@ -76,3 +76,22 @@ func ExtractOptions(clDescription string) *Options {
 	// TODO(tandrii): parse CQ-IncludeTrybots.
 	return o
 }
+
+// MergeOptions merges two Run Options.
+//
+// Does not modify the passed object, but may return either of them.
+func MergeOptions(a, b *Options) *Options {
+	switch {
+	case a == nil:
+		return b
+	case b == nil:
+		return a
+	}
+	return &Options{
+		AvoidCancellingTryjobs: a.AvoidCancellingTryjobs || b.AvoidCancellingTryjobs,
+		SkipTryjobs:            a.SkipTryjobs || b.SkipTryjobs,
+		SkipPresubmit:          a.SkipPresubmit || b.SkipPresubmit,
+		SkipEquivalentBuilders: a.SkipEquivalentBuilders || b.SkipEquivalentBuilders,
+		SkipTreeChecks:         a.SkipTreeChecks || b.SkipTreeChecks,
+	}
+}

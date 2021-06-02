@@ -358,6 +358,7 @@ func TestComponentsActions(t *testing.T) {
 					Mode:          run.DryRun,
 					OperationID:   fmt.Sprintf("op-%d-%t", clid, fail),
 					Owner:         identity.Identity("user:user-1@example.com"),
+					Options:       &run.Options{},
 					InputCLs: []runcreator.CL{{
 						ID:               common.CLID(clid),
 						ExpectedEVersion: 1,

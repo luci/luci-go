@@ -161,6 +161,7 @@ func TestRunBuilder(t *testing.T) {
 			OperationID:              "this-operation-id",
 			Mode:                     run.DryRun,
 			Owner:                    owner,
+			Options:                  &run.Options{},
 			ExpectedIncompleteRunIDs: common.MakeRunIDs("expected/000-run"),
 			InputCLs: []CL{
 				{
@@ -268,14 +269,15 @@ func TestRunBuilder(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				r, err := rb.Create(ctx, pmNotifier, runNotifier)
-				So(r, ShouldNotBeNil)
 				So(err, ShouldBeNil)
+				So(r, ShouldNotBeNil)
 			})
 		})
 
 		Convey("New Run is created", func() {
 			r, err := rb.Create(ctx, pmNotifier, runNotifier)
 			So(err, ShouldBeNil)
+
 			expectedRun := &run.Run{
 				ID:            expectedRunID,
 				CQDAttemptKey: "afc7c13288093a6d",
@@ -289,8 +291,10 @@ func TestRunBuilder(t *testing.T) {
 				ConfigGroupID:       rb.ConfigGroupID,
 				Mode:                rb.Mode,
 				Owner:               rb.Owner,
+				Options:             &run.Options{},
 			}
-			So(r, ShouldResemble, expectedRun)
+			So(r, runtest.ShouldResembleRun, expectedRun)
+
 			for i, cl := range rb.cls {
 				So(cl.EVersion, ShouldEqual, rb.InputCLs[i].ExpectedEVersion+1)
 				So(cl.UpdateTime, ShouldResemble, r.CreateTime)
@@ -299,7 +303,7 @@ func TestRunBuilder(t *testing.T) {
 			// Run is properly saved
 			saved := &run.Run{ID: expectedRun.ID}
 			So(datastore.Get(ctx, saved), ShouldBeNil)
-			So(saved, ShouldResemble, expectedRun)
+			So(saved, runtest.ShouldResembleRun, expectedRun)
 
 			for i := range rb.InputCLs {
 				i := i
