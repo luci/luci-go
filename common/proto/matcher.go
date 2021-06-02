@@ -16,7 +16,7 @@ package proto
 
 import (
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type matcherEq struct {

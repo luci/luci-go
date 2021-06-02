@@ -21,15 +21,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/mgutz/ansi"
-
-	"go.chromium.org/luci/common/clock/testclock"
+	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock/testclock"
 )
 
 var buildJSON = `
@@ -211,7 +209,7 @@ func TestPrint(t *testing.T) {
 
 		Convey("Build", func() {
 			build := &pb.Build{}
-			So(jsonpb.UnmarshalString(buildJSON, build), ShouldBeNil)
+			So(protojson.Unmarshal([]byte(buildJSON), build), ShouldBeNil)
 
 			expectedBuildPrinted := ansifyTemplate(expectedBuildPrintedTemplate)
 			p.Build(build)

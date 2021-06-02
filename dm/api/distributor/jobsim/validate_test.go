@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -57,7 +58,7 @@ func TestNormalization(t *testing.T) {
 		for _, t := range positive {
 			Convey(fmt.Sprintf("good: %s", t.Name), func() {
 				p := Phrase{Name: "basic"}
-				So(jsonpb.UnmarshalString(t.Phrase, &p), ShouldBeNil)
+				So(protojson.Unmarshal([]byte(t.Phrase), &p), ShouldBeNil)
 				So(p.Normalize(), ShouldBeNil)
 				if t.Parsed != nil {
 					So(t.Parsed, ShouldResemble, t.Parsed)
@@ -68,7 +69,7 @@ func TestNormalization(t *testing.T) {
 		for _, t := range bad {
 			Convey(fmt.Sprintf("bad: %s", t.Name), func() {
 				p := Phrase{Name: "basic"}
-				So(jsonpb.UnmarshalString(t.Phrase, &p), ShouldErrLike, t.ParseErr)
+				So(protojson.Unmarshal([]byte(t.Phrase), &p), ShouldErrLike, t.ParseErr)
 				So(p.Normalize(), ShouldErrLike, t.NormErr)
 			})
 		}
