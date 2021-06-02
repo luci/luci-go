@@ -22,12 +22,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -341,7 +340,7 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 			return grpcutil.Errf(codes.Internal, "input message is nil")
 		}
 		// Do not collapse it to one line. There is implicit err type conversion.
-		if perr := readMessage(c.Request, in.(proto.Message), s.HackFixFieldMasksForJSON); perr != nil {
+		if perr := readMessage(c.Request, in.(proto.Message)); perr != nil {
 			return perr
 		}
 		return nil

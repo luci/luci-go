@@ -111,7 +111,7 @@ func TestEncoding(t *testing.T) {
 
 		test(FormatBinary, msgBytes, mtPRPCBinary)
 		test(FormatJSONPB, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
-		test(FormatText, []byte("message: \"Hi\"\n"), mtPRPCText)
+		test(FormatText, []byte("message:\"Hi\""), mtPRPCText)
 
 		Convey("compression", func() {
 			rec := httptest.NewRecorder()
@@ -188,15 +188,15 @@ func TestEncoding(t *testing.T) {
 
 			Convey("json", func() {
 				testStatusDetails(FormatJSONPB, []string{
-					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5CYWRSZXF1ZXN0IiwiZmllbGRWaW9sYXRpb25zIjpbeyJmaWVsZCI6ImEifV19",
-					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5IZWxwIiwibGlua3MiOlt7InVybCI6Imh0dHBzOi8vZXhhbXBsZS5jb20ifV19",
+					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5CYWRSZXF1ZXN0IiwgImZpZWxkVmlvbGF0aW9ucyI6W3siZmllbGQiOiJhIn1dfQ==",
+					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5IZWxwIiwgImxpbmtzIjpbeyJ1cmwiOiJodHRwczovL2V4YW1wbGUuY29tIn1dfQ==",
 				})
 			})
 
 			Convey("text", func() {
 				testStatusDetails(FormatText, []string{
-					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdCIKdmFsdWU6ICJcblwwMDNcblwwMDFhIgo=",
-					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscCIKdmFsdWU6ICJcblwwMjVcMDIyXDAyM2h0dHBzOi8vZXhhbXBsZS5jb20iCg==",
+					"W3R5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5CYWRSZXF1ZXN0XTp7ZmllbGRfdmlvbGF0aW9uczp7ZmllbGQ6ImEifX0=",
+					"W3R5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5IZWxwXTp7bGlua3M6e3VybDoiaHR0cHM6Ly9leGFtcGxlLmNvbSJ9fQ==",
 				})
 			})
 		})
