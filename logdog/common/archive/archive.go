@@ -17,21 +17,51 @@
 package archive
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"io"
+	"reflect"
 
 	cl "cloud.google.com/go/logging"
+	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/renderer"
-
-	"github.com/golang/protobuf/proto"
 )
+
+// CloudLogging entry has a limit of 256KB in the internal byte representation.
+// If an entry is larger, CloudLogging will reject the entry with an error.
+//
+// To minimize the chance of a LogEntry exceeding the limit, Archive applies the following
+// limits to the entry before exporting logpb.LogEntry to CloudLogging.
+const (
+	// maxPayload is the maximum size for the payload of a CloudLogging entry.
+	//
+	// If a single line exceeds the limit in size, the line likely contains a dump of a serialized
+	// object, which wouldn't be useful in searches, and the line will get truncated when being
+	// exported to CloudLogging.
+	maxPayload = 128 * 1024
+
+	// maxTagSum is the maximum size sum of tag keys and values that can be attached to
+	// a CloudLogging Entry. If the sum exceeds the limit, the stream won't be exported
+	// to CloudLogging.
+	maxTagSum = 96 * 1024
+)
+
+// CLLogger is a general interface for CloudLogging logger and intended to enable
+// unit tests and stub out CloudLogging.
+type CLLogger interface {
+	Log(cl.Entry)
+}
 
 // Manifest is a set of archival parameters.
 type Manifest struct {
+	// LUCIProject is the LUCI project for the stream.
+	LUCIProject string
+
 	// Desc is the logpb.LogStreamDescriptor for the stream.
 	Desc *logpb.LogStreamDescriptor
 	// Source is the LogEntry Source for the stream.
@@ -61,17 +91,19 @@ type Manifest struct {
 	Logger logging.Logger
 
 	// CloudLogger, if not nil, will be used to export archived log entries to Cloud Logging.
-	CloudLogger *cl.Logger
+	CloudLogger CLLogger
 
 	// sizeFunc is a size method override used for testing.
 	sizeFunc func(proto.Message) int
 }
 
 func (m *Manifest) logger() logging.Logger {
-	if m.Logger != nil {
-		return m.Logger
+	if m.Logger == nil ||
+		(reflect.ValueOf(m.Logger).Kind() == reflect.Ptr &&
+			reflect.ValueOf(m.Logger).IsNil()) {
+		return logging.Null
 	}
-	return logging.Null
+	return m.Logger
 }
 
 // Archive performs the log archival described in the supplied Manifest.
@@ -103,11 +135,18 @@ func Archive(m Manifest) error {
 		}
 	}
 
+	// Compute a hash to be used as the ID of the stream in Cloud Logging.
+	sha := sha256.New()
+	sha.Write([]byte(m.LUCIProject))
+	sha.Write([]byte(m.Desc.Prefix))
+	sha.Write([]byte(m.Desc.Name))
+	streamIDHash := sha.Sum(nil)
+
 	return parallel.FanOutIn(func(taskC chan<- func() error) {
 		logC := make(chan *logpb.LogEntry)
 
 		taskC <- func() error {
-			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx); err != nil {
+			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx, m.CloudLogger, streamIDHash, m.logger()); err != nil {
 				return err
 			}
 
@@ -141,7 +180,7 @@ func Archive(m Manifest) error {
 	})
 }
 
-func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder) error {
+func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder, cloudLogger CLLogger, streamIDHash []byte, logger logging.Logger) error {
 	offset := int64(0)
 	out := func(pb proto.Message) error {
 		d, err := proto.Marshal(pb)
@@ -154,10 +193,30 @@ func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.L
 		return err
 	}
 
+	isCLDisabled := (cloudLogger == nil ||
+		(reflect.ValueOf(cloudLogger).Kind() == reflect.Ptr &&
+			reflect.ValueOf(cloudLogger).IsNil()))
+
+	if !isCLDisabled {
+		tsum := 0
+		for k, v := range d.GetTags() {
+			tsum += len(k)
+			tsum += len(v)
+
+			if tsum > maxTagSum {
+				logger.Errorf("sum(tags) > %d; skipping the stream for CloudLogging export", maxTagSum)
+				isCLDisabled = true
+				break
+			}
+		}
+	}
 	// Start with our descriptor protobuf. Defer error handling until later, as
 	// we are still responsible for draining "logC".
 	err := out(d)
-	for le := range logC {
+
+	eb := NewEntryBuffer(maxPayload, fmt.Sprintf("%x", streamIDHash), d)
+	var le *logpb.LogEntry
+	for le = range logC {
 		if err != nil {
 			continue
 		}
@@ -167,6 +226,25 @@ func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.L
 			idx.addLogEntry(le, offset)
 		}
 		err = out(le)
+
+		// Skip CloudLogging export, if disabled.
+		if isCLDisabled {
+			continue
+		}
+		for _, entry := range eb.Append(le) {
+			cloudLogger.Log(*entry)
+		}
+	}
+
+	// Flush out the last entry.
+	//
+	// If there was an error, the buffer line can possibly contain a partial line, which was
+	// going to be completed in the next LogEntry. If such a line is flushed out, then it will
+	// cause the complete version of the line to be deduped when the archive task is retried.
+	if err == nil && le != nil {
+		if entry := eb.Flush(le.TimeOffset); entry != nil {
+			cloudLogger.Log(*entry)
+		}
 	}
 	return err
 }
