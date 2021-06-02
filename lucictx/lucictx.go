@@ -26,6 +26,7 @@
 package lucictx
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -35,8 +36,8 @@ import (
 	"reflect"
 	"sync"
 
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -140,7 +141,7 @@ func Lookup(ctx context.Context, section string, out proto.Message) (bool, error
 	if data == nil {
 		return false, nil
 	}
-	return true, protojson.Unmarshal(*data, out)
+	return true, jsonpb.Unmarshal(bytes.NewReader(*data), out)
 }
 
 // Set writes the json serialization of `in` as the given section into the
@@ -153,11 +154,11 @@ func Lookup(ctx context.Context, section string, out proto.Message) (bool, error
 func Set(ctx context.Context, section string, in proto.Message) context.Context {
 	var data json.RawMessage
 	if in != nil && !reflect.ValueOf(in).IsNil() {
-		buf, err := protojson.Marshal(in)
-		if err != nil {
+		buf := bytes.NewBuffer(nil)
+		if err := (&jsonpb.Marshaler{}).Marshal(buf, in); err != nil {
 			panic(err) // Only errors could be from writing to buf.
 		}
-		data = buf
+		data = buf.Bytes()
 	}
 	cur := getCurrent(ctx)
 	if _, alreadyHas := cur.sections[section]; data == nil && !alreadyHas {
