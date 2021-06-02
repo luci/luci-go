@@ -99,6 +99,7 @@ message GetRunResponse {
   string config_group_id = 10;
   repeated int64 cls = 11;
   cv.run.Submission submission = 12;
+  bool finalized_by_cqd = 13;
 
   // Events.
   repeated cv.run.eventpb.Event events = 61;

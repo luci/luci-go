@@ -118,59 +118,6 @@ func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (r
 	return loadRunAndEvents(ctx, common.RunID(req.GetRun()))
 }
 
-func loadRunAndEvents(ctx context.Context, rid common.RunID) (*adminpb.GetRunResponse, error) {
-	eg, ctx := errgroup.WithContext(ctx)
-
-	r := &run.Run{ID: rid}
-	eg.Go(func() error {
-		switch err := datastore.Get(ctx, r); {
-		case err == datastore.ErrNoSuchEntity:
-			return status.Errorf(codes.NotFound, "run not found")
-		case err != nil:
-			return status.Errorf(codes.Internal, "failed to fetch Run")
-		default:
-			return nil
-		}
-	})
-
-	var events []*eventpb.Event
-	eg.Go(func() error {
-		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, run.RunKind, string(rid)))
-		if err != nil {
-			return err
-		}
-		events = make([]*eventpb.Event, len(list))
-		for i, item := range list {
-			events[i] = &eventpb.Event{}
-			if err = proto.Unmarshal(item.Value, events[i]); err != nil {
-				return errors.Annotate(err, "failed to unmarshal Event %q", item.ID).Err()
-			}
-		}
-		return nil
-	})
-
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-
-	return &adminpb.GetRunResponse{
-		Id:            string(rid),
-		Eversion:      int64(r.EVersion),
-		Mode:          string(r.Mode),
-		Status:        r.Status,
-		CreateTime:    timestamppb.New(r.CreateTime),
-		StartTime:     timestamppb.New(r.StartTime),
-		UpdateTime:    timestamppb.New(r.UpdateTime),
-		EndTime:       timestamppb.New(r.EndTime),
-		Owner:         string(r.Owner),
-		ConfigGroupId: string(r.ConfigGroupID),
-		Cls:           common.CLIDsAsInt64s(r.CLs),
-		Submission:    r.Submission,
-
-		Events: events,
-	}, nil
-}
-
 func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (resp *adminpb.GetCLResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "GetCL"); err != nil {
@@ -483,4 +430,58 @@ func parseGerritURL(s string) (changelist.ExternalID, error) {
 		}
 	}
 	return changelist.GobID(host, change)
+}
+
+func loadRunAndEvents(ctx context.Context, rid common.RunID) (*adminpb.GetRunResponse, error) {
+	eg, ctx := errgroup.WithContext(ctx)
+
+	r := &run.Run{ID: rid}
+	eg.Go(func() error {
+		switch err := datastore.Get(ctx, r); {
+		case err == datastore.ErrNoSuchEntity:
+			return status.Errorf(codes.NotFound, "run not found")
+		case err != nil:
+			return status.Errorf(codes.Internal, "failed to fetch Run")
+		default:
+			return nil
+		}
+	})
+
+	var events []*eventpb.Event
+	eg.Go(func() error {
+		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, run.RunKind, string(rid)))
+		if err != nil {
+			return err
+		}
+		events = make([]*eventpb.Event, len(list))
+		for i, item := range list {
+			events[i] = &eventpb.Event{}
+			if err = proto.Unmarshal(item.Value, events[i]); err != nil {
+				return errors.Annotate(err, "failed to unmarshal Event %q", item.ID).Err()
+			}
+		}
+		return nil
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	return &adminpb.GetRunResponse{
+		Id:             string(rid),
+		Eversion:       int64(r.EVersion),
+		Mode:           string(r.Mode),
+		Status:         r.Status,
+		CreateTime:     timestamppb.New(r.CreateTime),
+		StartTime:      timestamppb.New(r.StartTime),
+		UpdateTime:     timestamppb.New(r.UpdateTime),
+		EndTime:        timestamppb.New(r.EndTime),
+		Owner:          string(r.Owner),
+		ConfigGroupId:  string(r.ConfigGroupID),
+		Cls:            common.CLIDsAsInt64s(r.CLs),
+		Submission:     r.Submission,
+		FinalizedByCqd: r.FinalizedByCQD,
+
+		Events: events,
+	}, nil
 }
