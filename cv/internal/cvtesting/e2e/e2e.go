@@ -59,8 +59,10 @@ import (
 )
 
 const dsFlakinessFlagName = "cv.dsflakiness"
+const tqConcurrentFlagName = "cv.tqparallel"
 
 var dsFlakinessFlag = flag.Float64(dsFlakinessFlagName, 0, "DS flakiness probability between 0(default) and 1.0 (always fails)")
+var tqParallelFlag = flag.Bool(tqConcurrentFlagName, false, "Runs TQ tasks in parallel")
 
 // Test encapsulates e2e setup for a CV test.
 //
@@ -151,6 +153,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 // RunUntil runs TQ tasks, while stopIf returns false.
 //
 // If `dsFlakinessFlag` is set, uses flaky datastore for running TQ tasks.
+// If `tqParallelFlag` is set, runs TQ tasks concurrently.
 //
 // Not goroutine safe.
 func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
@@ -165,8 +168,7 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 
 	t.enqueueTQSweep(ctx)
 	var finished []string
-	t.TQ.Run(
-		taskCtx,
+	tqOpts := []tqtesting.RunOption{
 		// StopAfter must be first and also always return false s.t. we correctly
 		// record all finished tasks.
 		tqtesting.StopAfter(func(task *tqtesting.Task) bool {
@@ -192,7 +194,11 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 				return false
 			}
 		}),
-	)
+	}
+	if *tqParallelFlag {
+		tqOpts = append(tqOpts, tqtesting.ParallelExecute())
+	}
+	t.TQ.Run(taskCtx, tqOpts...)
 
 	// Log only here after all tasks-in-progress are completed.
 	var outstanding []string
@@ -432,7 +438,7 @@ func MakeCfgCombinable(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 					},
 				},
 				CombineCls: &cfgpb.CombineCLs{
-					StabilizationDelay: durationpb.New(30 * time.Second),
+					StabilizationDelay: durationpb.New(5 * time.Minute),
 				},
 			},
 		},
