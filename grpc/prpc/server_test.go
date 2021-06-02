@@ -109,7 +109,7 @@ func TestServer(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusOK)
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 				So(res.Header().Get("X-Content-Type-Options"), ShouldEqual, "nosniff")
-				So(res.Body.String(), ShouldEqual, "message: \"Hello Lucy\"\n")
+				So(res.Body.String(), ShouldEqual, "message:\"Hello Lucy\"")
 			})
 
 			Convey("Header Metadata", func() {

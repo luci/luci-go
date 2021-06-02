@@ -127,8 +127,6 @@ func main() {
 		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
 		pb.RegisterBuildsServer(srv.PRPC, rpc.NewBuilds())
 		pb.RegisterBuildersServer(srv.PRPC, rpc.NewBuilders())
-		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-		srv.PRPC.HackFixFieldMasksForJSON = true
 
 		// makeOverride(prod % -> Go, dev % -> Go).
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(10, 100))

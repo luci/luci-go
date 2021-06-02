@@ -26,8 +26,9 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"google.golang.org/grpc/codes"
@@ -94,21 +95,19 @@ func marshalMessage(msg proto.Message, format Format, wrap bool) ([]byte, error)
 		if wrap {
 			buf.WriteString(JSONPBPrefix)
 		}
-		m := jsonpb.Marshaler{}
-		if err := m.Marshal(&buf, msg); err != nil {
+
+		b, err := protojson.Marshal(msg)
+		if err != nil {
 			return nil, err
 		}
+		buf.Write(b)
 		if wrap {
 			buf.WriteRune('\n')
 		}
 		return buf.Bytes(), nil
 
 	case FormatText:
-		if err := proto.MarshalText(&buf, msg); err != nil {
-			return nil, err
-		}
-		return buf.Bytes(), nil
-
+		return prototext.Marshal(msg)
 	default:
 		panic(fmt.Errorf("impossible: invalid format %d", format))
 	}
