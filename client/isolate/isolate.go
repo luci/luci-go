@@ -17,7 +17,6 @@ package isolate
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -27,6 +26,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/client/archiver/pipeline"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -212,7 +212,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated, error) {
 	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", nil, errors.Annotate(err, "failed to read file: %s", opts.Isolate).Err()
 	}
 	deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {

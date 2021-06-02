@@ -233,7 +233,7 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 		item := Archive(a, opts)
 		item.WaitForHashed()
 		err := item.Error()
-		So(strings.HasPrefix(err.Error(), "open /this-file-does-not-exist: "), ShouldBeTrue)
+		So(err.Error(), ShouldContainSubstring, "open /this-file-does-not-exist: ")
 		// The archiver itself hasn't failed, it's Archive() that did.
 		So(a.Close(), ShouldBeNil)
 	})
