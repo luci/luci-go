@@ -31,6 +31,7 @@ import (
 
 // Cancel implements Handler interface.
 func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
+	// TODO(crbug/1215612): record the cause of cancelation inside Run.
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()

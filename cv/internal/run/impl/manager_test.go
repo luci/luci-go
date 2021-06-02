@@ -459,6 +459,15 @@ func (fh *fakeHandler) Poke(ctx context.Context, rs *state.RunState) (*handler.R
 	}, nil
 }
 
+func (fh *fakeHandler) UpdateConfig(ctx context.Context, rs *state.RunState, hash string) (*handler.Result, error) {
+	fh.addInvocation("UpdateConfig")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
+	}, nil
+}
+
 func (fh *fakeHandler) addInvocation(method string) {
 	fh.invocations = append(fh.invocations, method)
 }

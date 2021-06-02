@@ -74,6 +74,9 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		case cl.Snapshot.GetPatchset() > runCL.Detail.GetPatchset():
 			// New PS discovered.
 			return impl.Cancel(ctx, rs)
+		case cl.Snapshot.GetGerrit().GetInfo().GetRef() != runCL.Detail.GetGerrit().GetInfo().GetRef():
+			// Ref has changed (e.g. master -> main migration).
+			return impl.Cancel(ctx, rs)
 		case hasTriggerChanged(runCL, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)):
 			return impl.Cancel(ctx, rs)
 		}
