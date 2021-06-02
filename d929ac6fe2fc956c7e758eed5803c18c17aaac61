@@ -16,6 +16,98 @@
       "message": "OK, this is ready for review -- but tests are yet to be written.",
       "revId": "d929ac6fe2fc956c7e758eed5803c18c17aaac61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80b24759_2903a1c4",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T20:17:32Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 30
+      },
+      "revId": "d929ac6fe2fc956c7e758eed5803c18c17aaac61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4b7c998a_b520d222",
+        "filename": "cv/internal/run/impl/handler/update_config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T20:17:32Z",
+      "side": 1,
+      "message": "new block",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 50
+      },
+      "revId": "d929ac6fe2fc956c7e758eed5803c18c17aaac61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5563351c_ae8034c6",
+        "filename": "cv/internal/run/impl/handler/update_config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T20:17:32Z",
+      "side": 1,
+      "message": "I think this behavior is out of date now (both here and when handlingCLUpdated event). Once run enters Submitting status, it will transition to final status for sure after submission completes no matter success or failure.\n\nSo I think we should just disregard this event because there\u0027s no action will be taken by RM once the submission completes as run will be ended by then.\n\n\nfwiw, technically setting preserveEvent\u003dTrue will result in the same behavior. It will just enter the next case block once submission is completed.",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 54
+      },
+      "revId": "d929ac6fe2fc956c7e758eed5803c18c17aaac61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e59ab2f_30c0a038",
+        "filename": "cv/internal/run/impl/handler/update_config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T20:17:32Z",
+      "side": 1,
+      "message": "now",
+      "range": {
+        "startLine": 156,
+        "startChar": 28,
+        "endLine": 156,
+        "endChar": 30
+      },
+      "revId": "d929ac6fe2fc956c7e758eed5803c18c17aaac61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
