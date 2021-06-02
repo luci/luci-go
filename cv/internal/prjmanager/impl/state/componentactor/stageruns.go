@@ -312,6 +312,7 @@ func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *config.Con
 		ConfigGroupID:            cg.ID,
 		LUCIProject:              cg.ProjectString(),
 		Mode:                     run.Mode(combo.latestTriggered.pcl.GetTrigger().GetMode()),
+		CreateTime:               combo.latestTriggered.pcl.GetTrigger().GetTime().AsTime(),
 		Owner:                    owner,
 		Options:                  opts,
 		ExpectedIncompleteRunIDs: nil, // no Run is expected
