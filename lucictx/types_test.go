@@ -16,6 +16,7 @@ package lucictx
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,9 +41,18 @@ func TestPredefinedTypes(t *testing.T) {
 			}
 
 			c = SetLocalAuth(c, localAuth)
-			data, _ := getCurrent(c).sections["local_auth"]
-			So(string(*data), ShouldEqual, `{"rpc_port":100,"secret":"Zm9v",`+
-				`"accounts":[{"id":"test","email":"some@example.com"}],"default_account_id":"test"}`)
+			data := getCurrent(c).sections["local_auth"]
+			var v interface{}
+			So(json.Unmarshal(*data, &v), ShouldBeNil)
+			So(v, ShouldResemble, map[string]interface{}{
+				"accounts": []interface{}{map[string]interface{}{
+					"email": "some@example.com",
+					"id":    "test",
+				}},
+				"default_account_id": "test",
+				"secret":             "Zm9v",
+				"rpc_port":           100.0,
+			})
 
 			So(GetLocalAuth(c), ShouldResembleProto, localAuth)
 		})
@@ -67,9 +77,16 @@ func TestPredefinedTypes(t *testing.T) {
 					UpdateToken: "foobarbazsecretoken",
 				}}
 			c = SetResultDB(c, resultdb)
-			data, _ := getCurrent(c).sections["resultdb"]
-			So(string(*data), ShouldEqual, `{"hostname":"test.results.cr.dev","current_invocation":`+
-				`{"name":"invocations/build:1","update_token":"foobarbazsecretoken"}}`)
+			data := getCurrent(c).sections["resultdb"]
+			var v interface{}
+			So(json.Unmarshal(*data, &v), ShouldBeNil)
+			So(v, ShouldResemble, map[string]interface{}{
+				"current_invocation": map[string]interface{}{
+					"name":         "invocations/build:1",
+					"update_token": "foobarbazsecretoken",
+				},
+				"hostname": "test.results.cr.dev",
+			})
 
 			So(GetResultDB(c), ShouldResembleProto, resultdb)
 		})
