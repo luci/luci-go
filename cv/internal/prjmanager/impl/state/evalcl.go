@@ -208,6 +208,10 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		return pcl
 	case cl.Snapshot == nil:
 		// Need more time to fetch this.
+		logging.Debugf(ctx, "CL %d %s lacks Snapshot", cl.ID, cl.ExternalID)
+		return pcl
+	case cl.Snapshot.GetOutdated() != nil:
+		logging.Debugf(ctx, "CL %d %s Snapshot is outdated", cl.ID, cl.ExternalID)
 		return pcl
 	case cl.Snapshot.GetGerrit() == nil:
 		panic("only Gerrit CLs supported for now")

@@ -67,13 +67,13 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		if err := cancelTriggers(ctx, &rs.Run, msg); err != nil {
 			return nil, err
 		}
-		se := endRun(ctx, rs, run.Status_SUCCEEDED, impl.PM)
+		se := endRun(ctx, rs, run.Status_SUCCEEDED, impl.PM, impl.CLUpdater)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
 		if err := cancelTriggers(ctx, &rs.Run, vr.Payload.FinalMessage); err != nil {
 			return nil, err
 		}
-		se := endRun(ctx, rs, run.Status_FAILED, impl.PM)
+		se := endRun(ctx, rs, run.Status_FAILED, impl.PM, impl.CLUpdater)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	default:
 		return nil, errors.Reason("unknown action %s", vr.Payload.Action).Err()

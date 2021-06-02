@@ -293,6 +293,7 @@ type UpdateFields struct {
 	// Snapshot overwrites existing CL snapshot if newer according to its
 	// .ExternalUpdateTime.
 	Snapshot *Snapshot
+
 	// ApplicableConfig overwrites existing CL ApplicableConfig if semantically
 	// different from existing one.
 	ApplicableConfig *ApplicableConfig

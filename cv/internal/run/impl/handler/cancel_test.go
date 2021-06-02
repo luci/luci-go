@@ -63,8 +63,9 @@ func TestCancel(t *testing.T) {
 			},
 		}), ShouldBeNil)
 		h := &Impl{
-			PM: prjmanager.NewNotifier(ct.TQDispatcher),
-			RM: run.NewNotifier(ct.TQDispatcher),
+			PM:        prjmanager.NewNotifier(ct.TQDispatcher),
+			RM:        run.NewNotifier(ct.TQDispatcher),
+			CLUpdater: &clUpdaterMock{},
 		}
 
 		Convey("When CV is in charge", func() {

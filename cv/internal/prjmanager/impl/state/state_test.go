@@ -445,6 +445,15 @@ func TestUpdateConfig(t *testing.T) {
 				})
 			})
 
+			Convey("outdated snapshot requires waiting", func() {
+				cl101.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
+				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
+					Clid:     int64(cl101.ID),
+					Eversion: int64(cl101.EVersion),
+					Status:   prjpb.PCL_UNKNOWN,
+				})
+			})
+
 			Convey("snapshot from diff project requires waiting", func() {
 				cl101.Snapshot.LuciProject = "another"
 				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{

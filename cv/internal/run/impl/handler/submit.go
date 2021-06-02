@@ -169,7 +169,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
 	case sc.GetResult() == eventpb.SubmissionResult_SUCCEEDED:
 		rs = rs.ShallowCopy()
-		se := endRun(ctx, rs, run.Status_SUCCEEDED, impl.PM)
+		se := endRun(ctx, rs, run.Status_SUCCEEDED, impl.PM, impl.CLUpdater)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,
@@ -181,7 +181,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc); err != nil {
 			return nil, err
 		}
-		se := endRun(ctx, rs, run.Status_FAILED, impl.PM)
+		se := endRun(ctx, rs, run.Status_FAILED, impl.PM, impl.CLUpdater)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,
@@ -230,7 +230,7 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, impl.RM); err != nil {
 			return nil, err
 		}
-		se := endRun(ctx, rs, status, impl.PM)
+		se := endRun(ctx, rs, status, impl.PM, impl.CLUpdater)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,

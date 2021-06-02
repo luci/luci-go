@@ -113,7 +113,8 @@ func TestOnCQDFinished(t *testing.T) {
 		}
 
 		h := &Impl{
-			RM: run.NewNotifier(ct.TQDispatcher),
+			RM:        run.NewNotifier(ct.TQDispatcher),
+			CLUpdater: &clUpdaterMock{},
 		}
 
 		statuses := []run.Status{
