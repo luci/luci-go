@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d136238f_1c568e3e",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T20:00:04Z",
+      "side": 0,
+      "message": "nit: maybe we should also change the project name we hardcode in e2e test.",
+      "range": {
+        "startLine": 258,
+        "startChar": 32,
+        "endLine": 258,
+        "endChar": 54
+      },
+      "revId": "fbf085364d0e2db2aa35e78f526ca0d7468201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
