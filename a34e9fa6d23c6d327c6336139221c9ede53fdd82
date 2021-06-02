@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2495ba29_e3b5c01c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-02T06:51:23Z",
+      "side": 1,
+      "message": "On a build with 5k+ steps, this reduces scripting time by ~40% (from 2400ms to 1400ms).\n\nDemo: https://weiweilin-0-dot-luci-milo.appspot.com/ui/p/fuchsia/builders/global.ci/firebase-docs/b8848528361333806512/overview\n",
+      "revId": "a34e9fa6d23c6d327c6336139221c9ede53fdd82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
