@@ -39,11 +39,11 @@ import { consumeArtifactIdent } from './artifact_page_layout';
 @consumer
 export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeArtifactIdent
+  @consumeArtifactIdent()
   artifactIdent!: ArtifactIdentifier;
 
   @computed private get diffArtifactName() {

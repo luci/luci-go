@@ -42,7 +42,7 @@ import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../tooltip';
 @lazyRendering
 export class BuildStepEntryElement extends MiloBaseElement implements RenderPlaceHolder {
   @observable.ref
-  @consumeConfigsStore
+  @consumeConfigsStore()
   configsStore!: UserConfigsStore;
 
   @observable.ref step!: StepExt;

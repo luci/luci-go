@@ -52,5 +52,6 @@ describe('Invocation Page', () => {
     await page.onBeforeEnter(location, cmd);
     assert.isTrue(redirect.calledOnceWith(NOT_FOUND_URL));
     appState.dispose();
+    page.disconnectedCallback();
   });
 });
