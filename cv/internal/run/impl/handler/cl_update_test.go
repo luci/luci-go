@@ -42,22 +42,26 @@ func TestOnCLUpdated(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
+		const lProject = "chromium"
+		// TODO(yiwzhang): remove this once Run finalization fully conducted by CV.
+		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
 				{Name: "main"},
 			},
 		}
-		ct.Cfg.Create(ctx, "chromium", cfg)
+		ct.Cfg.Create(ctx, lProject, cfg)
 		h := &Impl{}
 
 		// initial state
 		triggerTime := clock.Now(ctx).UTC()
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:            common.RunID("chromium/111-2-deadbeef"),
+				ID:            common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef")),
 				StartTime:     triggerTime.Add(1 * time.Minute),
 				Status:        run.Status_RUNNING,
-				ConfigGroupID: ct.Cfg.MustExist(ctx, "chromium").ConfigGroupIDs[0],
+				ConfigGroupID: ct.Cfg.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			},
 		}
 		updateCL := func(ci *gerritpb.ChangeInfo) changelist.CL {

@@ -16,11 +16,15 @@ package handler
 
 import (
 	"context"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -44,11 +48,27 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	}
 
 	rs = rs.ShallowCopy()
-	se := endRun(ctx, rs, run.Status_CANCELLED, impl.PM)
-	if rs.Run.StartTime.IsZero() {
-		// This run has never started but already gets a cancelled event.
-		rs.Run.StartTime = rs.Run.EndTime
+	var se eventbox.SideEffectFn
+	// TODO(yiwzhang): remove this once Run finalization fully conducted by CV.
+	switch cvInCharge, err := migrationcfg.IsCQDUsingMyRuns(ctx, rs.Run.ID.LUCIProject()); {
+	case err != nil:
+		return nil, err
+	case !cvInCharge && rs.Run.DelayCancelUntil.IsZero():
+		rs.Run.DelayCancelUntil = clock.Now(ctx).Add(20 * time.Minute)
+		se = func(ctx context.Context) error {
+			return impl.RM.CancelAt(ctx, rs.Run.ID, rs.Run.DelayCancelUntil)
+		}
+	case !cvInCharge && clock.Now(ctx).Before(rs.Run.DelayCancelUntil):
+		// Do nothing if rs.Run.DelayCancelUntil is not empty, there must be
+		// a Cancel event to be processed at that time.
+	default:
+		se = endRun(ctx, rs, run.Status_CANCELLED, impl.PM)
+		if rs.Run.StartTime.IsZero() {
+			// This run has never started but already gets a cancelled event.
+			rs.Run.StartTime = rs.Run.EndTime
+		}
 	}
+
 	return &Result{
 		State:        rs,
 		SideEffectFn: se,
