@@ -23,6 +23,7 @@ import '../copy_to_clipboard';
 import '../expandable_entry';
 import '../log';
 import '../pin_toggle';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../libs/constants';
@@ -44,6 +45,10 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
   @observable.ref
   @consumeConfigsStore()
   configsStore!: UserConfigsStore;
+
+  @observable.ref
+  @consumeInvocationState()
+  invState!: InvocationState;
 
   @observable.ref step!: StepExt;
 
@@ -169,7 +174,9 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
     const target = e.composedPath()[0] as Element;
     if (target.tagName === 'A') {
       const href = target.getAttribute('href') || '';
-      trackEvent(GA_CATEGORIES.STEP_LINKS, GA_ACTIONS.CLICK, href);
+      if (this.invState.testLoader?.nonExpectedTestVariants.length) {
+        trackEvent(GA_CATEGORIES.STEP_LINKS_OF_BUILD_WITH_NON_EXPECTED_TESTS, GA_ACTIONS.CLICK, href);
+      }
     }
   }
 
