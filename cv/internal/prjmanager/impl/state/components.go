@@ -33,7 +33,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
@@ -248,26 +247,6 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 		logging.Debugf(ctx, "caught panic: component %s", protojson.Format(c))
 		err = errors.Reason("caught panic: %s", p.Reason).Err()
 	})
-
-	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, s.PB.GetLuciProject()); {
-	case err != nil:
-		return err
-
-		// Proceed to creating a Run.
-	case yes:
-	case s.PB.GetLuciProject() == "e2e-always-create-runs":
-	case s.PB.GetLuciProject() == "cq-test":
-	case s.PB.GetLuciProject() == "infra-internal":
-	case s.PB.GetLuciProject() == "infra":
-
-	default:
-		// This a is temporary safeguard against creation of LOTS of Runs,
-		// that won't be finalized.
-		// TODO(tandrii): delete this check once RunManager cancels Runs based on
-		// user actions and finalizes based on CQD reports.
-		logging.Debugf(ctx, "would have created a Run")
-		return nil
-	}
 
 	switch _, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier); {
 	case err == nil:
