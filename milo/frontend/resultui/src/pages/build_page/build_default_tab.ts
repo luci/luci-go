@@ -26,8 +26,8 @@ import { router } from '../../routes';
 @customElement('milo-build-default-tab')
 @consumer
 export class BuildDefaultTabElement extends LitElement {
-  @consumeConfigsStore configsStore!: UserConfigsStore;
-  @consumeBuildState buildState!: BuildState;
+  @consumeConfigsStore() configsStore!: UserConfigsStore;
+  @consumeBuildState() buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();

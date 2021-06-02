@@ -41,7 +41,7 @@ function formatNum(num: number, hasMore: boolean, cap?: number) {
 @errorHandler(forwardWithoutMsg, () => html``)
 @consumer
 export class TestCountIndicatorElement extends MiloBaseElement {
-  @consumeInvocationState invState!: InvocationState;
+  @consumeInvocationState() invState!: InvocationState;
 
   connectedCallback() {
     super.connectedCallback();

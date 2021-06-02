@@ -36,11 +36,11 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class BlamelistTabElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeBuildState
+  @consumeBuildState()
   buildState!: BuildState;
 
   @observable.ref private commits: GitCommit[] = [];

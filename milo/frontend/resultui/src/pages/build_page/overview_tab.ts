@@ -58,19 +58,19 @@ const MAX_DISPLAYED_UNEXPECTED_TESTS = 10;
 @consumer
 export class OverviewTabElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeConfigsStore
+  @consumeConfigsStore()
   configsStore!: UserConfigsStore;
 
   @observable.ref
-  @consumeBuildState
+  @consumeBuildState()
   buildState!: BuildState;
 
   @observable.ref
-  @consumeInvocationState
+  @consumeInvocationState()
   invocationState!: InvocationState;
 
   @observable.ref private showRetryDialog = false;

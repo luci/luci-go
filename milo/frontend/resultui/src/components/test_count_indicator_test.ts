@@ -68,7 +68,7 @@ const variant5 = {
 @provider
 class ContextProvider extends LitElement {
   @property()
-  @provideInvocationState
+  @provideInvocationState()
   invocationState!: InvocationState;
 }
 

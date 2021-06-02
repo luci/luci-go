@@ -33,11 +33,11 @@ function stripInvocationPrefix(invocationName: string): string {
 @consumer
 export class InvocationDetailsTabElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeInvocationState
+  @consumeInvocationState()
   invocationState!: InvocationState;
 
   @computed

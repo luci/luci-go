@@ -28,11 +28,11 @@ export const [provideArtifactsFinalized, consumeArtifactsFinalized] = createCont
 @provider
 export class ArtifactProvider extends MobxLitElement {
   @property()
-  @provideArtifacts
+  @provideArtifacts()
   artifacts!: Map<string, Artifact>;
 
   @property()
-  @provideArtifactsFinalized
+  @provideArtifactsFinalized()
   finalized = false;
 
   protected render() {

@@ -53,13 +53,13 @@
  * ```
  *
  * By default, enterViewObserver uses the INTERSECTION_NOTIFIER. You can use
- * @provideNotifier to provide a custom notifier.
+ * @provideNotifier() to provide a custom notifier.
  * ```
  * @customElement('parent-element')
  * @provider
  * class ParentElement extends LitElement {
  *   @property()
- *   @provideNotifier
+ *   @provideNotifier()
  *   notifier = new ProgressiveNotifier();
  *
  *   protected render() {
@@ -200,7 +200,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
   class EnterViewObserverElement extends (cls as Constructor<LitElement>) {
     [connectedCBCalledSymbol] = false;
 
-    @consumeNotifier
+    @consumeNotifier()
     set [notifierSymbol](newVal: Notifier) {
       if (this[privateNotifierSymbol] === newVal) {
         return;

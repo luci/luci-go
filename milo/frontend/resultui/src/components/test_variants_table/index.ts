@@ -41,9 +41,9 @@ import { TestVariantEntryElement } from './test_variant_entry';
 @customElement('milo-test-variants-table')
 @consumer
 export class TestVariantsTableElement extends MiloBaseElement {
-  @observable.ref @consumeAppState appState!: AppState;
-  @observable.ref @consumeConfigsStore configsStore!: UserConfigsStore;
-  @observable.ref @consumeInvocationState invocationState!: InvocationState;
+  @observable.ref @consumeAppState() appState!: AppState;
+  @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
+  @observable.ref @consumeInvocationState() invocationState!: InvocationState;
 
   toggleAllVariants(expand: boolean) {
     this.shadowRoot!.querySelectorAll<TestVariantEntryElement>('milo-test-variant-entry').forEach(

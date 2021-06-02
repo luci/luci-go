@@ -32,18 +32,18 @@
  *   // Context bind properties in a context provider HAVE TO be decorated with
  *   // @property(). Otherwise changes won't be propagated.
  *   @property()
- *   @provideString
+ *   @provideString()
  *   stringKey = 'value';
  *
  *   @property()
  *   // When there are multiple properties providing the same context, the last
  *   // on is used.
- *   @provideNumber
+ *   @provideNumber()
  *   ignoredNumberKey = 1;
  *
  *   @property()
  *   // provideNumber type checks that the property is a number.
- *   @provideNumber
+ *   @provideNumber()
  *   numberKey = 1;
  *
  *   protected render() {
@@ -58,14 +58,14 @@
  * @consumer
  * class ContextConsumer extends LitElement {
  *   @property()
- *   @consumeString
+ *   @consumeString()
  *   // The property key don't have to be the same as the property key used in
  *   // the context provider
  *   aDifferentStringKey = '';
  *
  *   // Context bind properties in a context consumer DOES NOT have to be
  *   // decorated with @property().
- *   @consumeNumber
+ *   @consumeNumber()
  *   // Context bind properties in a context consumer can be optional.
  *   numberKey?: number;
  *
@@ -282,28 +282,32 @@ export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
 export function createContextLink<Ctx>() {
   const eventType = 'milo-subscribe-context-' + Math.random();
 
-  function provideContext<
-    K extends string | number | symbol,
-    // Ctx must be assignable to T[K].
-    T extends LitElement & Record<K, Ctx>
-  >(target: T, propKey: K) {
-    if (!Reflect.hasMetadata(providerMetaSymbol, target)) {
-      Reflect.defineMetadata(providerMetaSymbol, new Map(), target);
-    }
-    const meta = Reflect.getMetadata(providerMetaSymbol, target) as ProviderContextMeta;
-    meta.set(eventType, propKey);
+  function provideContext() {
+    return function <
+      K extends string | number | symbol,
+      // Ctx must be assignable to T[K].
+      T extends LitElement & Record<K, Ctx>
+    >(target: T, propKey: K) {
+      if (!Reflect.hasMetadata(providerMetaSymbol, target)) {
+        Reflect.defineMetadata(providerMetaSymbol, new Map(), target);
+      }
+      const meta = Reflect.getMetadata(providerMetaSymbol, target) as ProviderContextMeta;
+      meta.set(eventType, propKey);
+    };
   }
 
-  function consumeContext<K extends string | number | symbol, V, T extends LitElement & Partial<Record<K, V>>>(
-    // T[K] must be assignable to Ctx.
-    target: Ctx extends T[K] ? T : never,
-    propKey: K
-  ) {
-    if (!Reflect.hasMetadata(consumerMetaSymbol, target)) {
-      Reflect.defineMetadata(consumerMetaSymbol, [], target);
-    }
-    const meta = Reflect.getMetadata(consumerMetaSymbol, target) as ConsumerContextMeta;
-    meta.push([eventType, propKey]);
+  function consumeContext() {
+    return function <K extends string | number | symbol, V, T extends LitElement & Partial<Record<K, V>>>(
+      // T[K] must be assignable to Ctx.
+      target: Ctx extends T[K] ? T : never,
+      propKey: K
+    ) {
+      if (!Reflect.hasMetadata(consumerMetaSymbol, target)) {
+        Reflect.defineMetadata(consumerMetaSymbol, [], target);
+      }
+      const meta = Reflect.getMetadata(consumerMetaSymbol, target) as ConsumerContextMeta;
+      meta.push([eventType, propKey]);
+    };
   }
 
   return [provideContext, consumeContext] as [typeof provideContext, typeof consumeContext];

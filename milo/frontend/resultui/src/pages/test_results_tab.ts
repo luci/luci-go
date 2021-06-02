@@ -39,15 +39,15 @@ import commonStyle from '../styles/common_style.css';
 @consumer
 export class TestResultsTabElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeConfigsStore
+  @consumeConfigsStore()
   configsStore!: UserConfigsStore;
 
   @observable.ref
-  @consumeInvocationState
+  @consumeInvocationState()
   invocationState!: InvocationState;
 
   private allVariantsWereExpanded = false;

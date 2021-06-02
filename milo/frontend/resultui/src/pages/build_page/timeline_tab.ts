@@ -123,11 +123,11 @@ export function* traverseStepList(rootSteps: readonly StepExt[], prefix = ''): I
 @consumer
 export class TimelineTabElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeBuildState
+  @consumeBuildState()
   buildState!: BuildState;
 
   @observable.ref private totalWidth!: number;

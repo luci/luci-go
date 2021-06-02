@@ -28,7 +28,7 @@ import { DragEvent } from '../drag_tracker';
 @consumer
 export class TestVariantsTableColumnHeader extends MobxLitElement {
   @observable.ref
-  @consumeInvocationState
+  @consumeInvocationState()
   invocationState!: InvocationState;
 
   // Setting the colIndex also makes the column resizable.

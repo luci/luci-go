@@ -37,11 +37,11 @@ import { consumeArtifactIdent } from './artifact_page_layout';
 @consumer
 export class TextDiffArtifactPageElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeArtifactIdent
+  @consumeArtifactIdent()
   artifactIdent!: ArtifactIdentifier;
 
   @computed

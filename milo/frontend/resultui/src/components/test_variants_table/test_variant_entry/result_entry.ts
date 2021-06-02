@@ -44,7 +44,7 @@ import commonStyle from '../../../styles/common_style.css';
 @consumer
 export class ResultEntryElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref id = '';

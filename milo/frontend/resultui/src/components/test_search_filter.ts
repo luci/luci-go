@@ -38,7 +38,7 @@ export interface TestFilter {
 @consumer
 export class TestSearchFilterElement extends MobxLitElement {
   @observable.ref
-  @consumeInvocationState
+  @consumeInvocationState()
   invocationState!: InvocationState;
 
   @computed private get lastSubQuery() {

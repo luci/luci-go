@@ -44,15 +44,15 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class InvocationPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref
-  @consumeAppState
+  @consumeAppState()
   appState!: AppState;
 
   @observable.ref
-  @consumeConfigsStore
+  @consumeConfigsStore()
   configsStore!: UserConfigsStore;
 
   @observable.ref
-  @provideInvocationState
+  @provideInvocationState()
   invocationState!: InvocationState;
 
   private invocationId = '';
