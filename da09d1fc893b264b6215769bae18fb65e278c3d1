@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aaf708f6_b0b515db",
+        "filename": "cv/internal/admin/api/admin.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-02T13:19:39Z",
+      "side": 1,
+      "message": "why id in this message is sparse?",
+      "range": {
+        "startLine": 182,
+        "startChar": 25,
+        "endLine": 182,
+        "endChar": 27
+      },
+      "revId": "da09d1fc893b264b6215769bae18fb65e278c3d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
