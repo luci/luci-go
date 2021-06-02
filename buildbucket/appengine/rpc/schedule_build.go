@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -649,7 +649,7 @@ func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 			k, v := strpair.Parse(prop)
 			s := &structpb.Struct{}
 			v = fmt.Sprintf("{\"%s\": %s}", k, v)
-			if err := jsonpb.UnmarshalString(v, s); err != nil {
+			if err := protojson.Unmarshal([]byte(v), s); err != nil {
 				// Builder config should have been validated already.
 				panic(errors.Annotate(err, "error parsing %q", v).Err())
 			}
@@ -661,7 +661,7 @@ func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 			},
 		}
 	} else if cfg.GetProperties() != "" {
-		if err := jsonpb.UnmarshalString(cfg.Properties, build.Input.Properties); err != nil {
+		if err := protojson.Unmarshal([]byte(cfg.Properties), build.Input.Properties); err != nil {
 			// Builder config should have been validated already.
 			panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.Name).Err())
 		}

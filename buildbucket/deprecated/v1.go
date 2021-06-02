@@ -19,13 +19,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
@@ -290,7 +289,7 @@ func propertiesToV2(v1 json.RawMessage) (*structpb.Struct, error) {
 		return nil, nil
 	}
 	ret := &structpb.Struct{}
-	return ret, jsonpb.UnmarshalString(string(v1), ret)
+	return ret, protojson.Unmarshal([]byte(string(v1)), ret)
 }
 
 func toStringPair(s string) *pb.StringPair {
