@@ -34,11 +34,11 @@ import commonStyle from '../../../styles/common_style.css';
 @consumer
 export class TextArtifactElement extends MobxLitElement {
   @observable.ref
-  @consumeArtifacts
+  @consumeArtifacts()
   artifacts!: Map<string, Artifact>;
 
   @observable.ref
-  @consumeArtifactsFinalized
+  @consumeArtifactsFinalized()
   finalized = false;
 
   @property({ attribute: 'artifact-id' }) artifactID!: string;

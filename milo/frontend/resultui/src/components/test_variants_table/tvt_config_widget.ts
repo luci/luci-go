@@ -27,7 +27,7 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
   @observable.ref
-  @consumeInvocationState
+  @consumeInvocationState()
   invocationState!: InvocationState;
 
   // These properties are frequently updated.

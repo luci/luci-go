@@ -33,11 +33,11 @@ import { BuildStepEntryElement } from './build_step_entry';
 @consumer
 export class BuildStepListElement extends MiloBaseElement {
   @observable.ref
-  @consumeConfigsStore
+  @consumeConfigsStore()
   configsStore!: UserConfigsStore;
 
   @observable.ref
-  @consumeBuildState
+  @consumeBuildState()
   buildState!: BuildState;
 
   @computed private get stepsConfig() {
