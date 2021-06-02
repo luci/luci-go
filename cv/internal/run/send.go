@@ -120,6 +120,24 @@ func (n *Notifier) Cancel(ctx context.Context, runID common.RunID) error {
 	})
 }
 
+// CancelAt tells RunManager to cancel the given Run at `eta`.
+//
+// TODO(crbug/1141880): Remove this API after migration. This is only needed
+// because CV need to delay the cancellation of a Run when waiting for CQD
+// report finished Run when CQD is in charge.
+func (n *Notifier) CancelAt(ctx context.Context, runID common.RunID, eta time.Time) error {
+	evt := &eventpb.Event{
+		Event: &eventpb.Event_Cancel{
+			Cancel: &eventpb.Cancel{},
+		},
+	}
+	if eta.After(clock.Now(ctx)) {
+		evt.ProcessAfter = timestamppb.New(eta)
+		return n.TaskRefs.Send(ctx, runID, evt, eta)
+	}
+	return n.TaskRefs.SendNow(ctx, runID, evt)
+}
+
 // NotifyCLUpdated informs RunManager that given CL has a new version available.
 func (n *Notifier) NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
 	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
