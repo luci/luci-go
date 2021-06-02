@@ -55,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b79bc857_dcbf1311",
+        "filename": "cv/internal/run/bq/sender.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T00:35:17Z",
+      "side": 1,
+      "message": "\u003e Might we use the same queue for other BQ tables besides the table of finished runs?\n\nMaybe, some day. \n\n\u003e Should the task class name also change? In many cases task class name (ID in TaskClass) is the same as Queue.\n\nI don\u0027t particularly care. This is quite easy to change in the future and I don\u0027t yet see any big downsides in choosing either way.",
+      "parentUuid": "6d869131_de129714",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f0b82f36_148dd5a7",
         "filename": "cv/internal/run/bq/sender.go",
         "patchSetId": 5
@@ -307,6 +325,24 @@
       "side": 1,
       "message": "So a transactional task is one that must be enqueued from inside a transaction -- but after seeing that doc I still don\u0027t understand why. Does enqueueing a task involve multiple datastore operations that should either all fail or all succeed?",
       "parentUuid": "55063c81_ad61c640",
+      "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "210b3a24_388a1543",
+        "filename": "cv/internal/run/bq/sender_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T00:35:17Z",
+      "side": 1,
+      "message": "\u003e  Does enqueueing a task involve multiple datastore operations that should either all fail or all succeed?\n\nWell, this depends on a kind of task.\nFor BQ export case, indeed, we want BQ exported IF AND ONLYIF Run.Status is changed to final status (and in fact, 2+ other actions).\n\nthe tq.Transactional essentially guards against incorrect use tq.AddTask()\n(I think of it as an assertion or fancy https://en.wikipedia.org/wiki/Design_by_contract)",
+      "parentUuid": "87e30c56_1c24fb64",
       "revId": "78bacc6f182d46c6ba74e1b25320f703fec9a056",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },

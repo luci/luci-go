@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c53ef8e_4789cfcf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T00:35:17Z",
+      "side": 1,
+      "message": "This looks very good to me.",
+      "revId": "d254c43333a0a419875ab8cd061ffc717b356f2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e72ecd0d_f8fd1e49",
+        "filename": "cv/internal/run/bq/exporter.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T00:35:17Z",
+      "side": 1,
+      "message": "nit: please add godoc here or in separate doc.go file.",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 10
+      },
+      "revId": "d254c43333a0a419875ab8cd061ffc717b356f2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9440e2f8_147ddb30",
+        "filename": "cv/internal/run/bq/exporter.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T00:35:17Z",
+      "side": 1,
+      "message": "please, take jsut runID -- it\u0027s much more natural API.\nIf this ends up having 2+ arguments, then accepting a struct is fine (this is what gerrit/updater resorts to because it has 8 args)",
+      "range": {
+        "startLine": 56,
+        "startChar": 49,
+        "endLine": 56,
+        "endChar": 69
+      },
+      "revId": "d254c43333a0a419875ab8cd061ffc717b356f2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3093cf6_c80e2421",
+        "filename": "cv/internal/run/bq/exporter_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T00:35:17Z",
+      "side": 1,
+      "message": "nit: now delete 😊",
+      "range": {
+        "startLine": 46,
+        "startChar": 2,
+        "endLine": 47,
+        "endChar": 29
+      },
+      "revId": "d254c43333a0a419875ab8cd061ffc717b356f2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
