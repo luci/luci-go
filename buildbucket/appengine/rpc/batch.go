@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
@@ -233,6 +234,9 @@ func (b *Builds) newPyBBClient(ctx context.Context) (pb.BuildsClient, error) {
 		C:          &http.Client{Transport: t},
 		Host:       pyHost,
 		PathPrefix: "/python/prpc",
+		Options: &prpc.Options{
+			Retry: retry.None,
+		},
 	}
 	return pb.NewBuildsPRPCClient(pClient), nil
 }
