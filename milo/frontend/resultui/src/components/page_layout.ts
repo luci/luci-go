@@ -64,9 +64,9 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
 @errorHandler(redirectToLogin)
 @provider
 export class PageLayoutElement extends MobxLitElement implements BeforeEnterObserver {
-  @provideAppState readonly appState = new AppState();
-  @provideConfigsStore readonly configsStore = new UserConfigsStore();
-  @provideNotifier readonly notifier = new ProgressiveNotifier({
+  @provideAppState() readonly appState = new AppState();
+  @provideConfigsStore() readonly configsStore = new UserConfigsStore();
+  @provideNotifier() readonly notifier = new ProgressiveNotifier({
     // Ensures that everything above the current scroll view is rendered.
     // This reduces page shifting due to incorrect height estimate.
     rootMargin: '1000000px 0px 0px 0px',
