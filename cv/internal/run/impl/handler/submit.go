@@ -289,8 +289,12 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 		return false, innerErr
 	case err != nil:
 		return false, errors.Annotate(err, "failed to run the transaction to acquire submit queue").Tag(transient.Tag).Err()
+	case waitlisted:
+		logging.Debugf(ctx, "Waitlisted in Submit Queue")
+		return true, nil
 	default:
-		return waitlisted, nil
+		logging.Debugf(ctx, "Acquired Submit Queue")
+		return false, nil
 	}
 }
 
@@ -318,6 +322,7 @@ func releaseSubmitQueue(ctx context.Context, runID common.RunID, rm RM) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
 	}
+	logging.Debugf(ctx, "Released Submit Queue")
 	return nil
 }
 
