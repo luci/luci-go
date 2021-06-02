@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2bdb92b_6f711612",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T06:15:29Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 21
+      },
+      "revId": "f60bf87f3478aa4c7e7d982d0dd9f6e16266423d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c74f5d74_8cd59499",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T06:15:29Z",
+      "side": 1,
+      "message": "plz update the comment",
+      "range": {
+        "startLine": 75,
+        "startChar": 50,
+        "endLine": 75,
+        "endChar": 51
+      },
+      "revId": "f60bf87f3478aa4c7e7d982d0dd9f6e16266423d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
