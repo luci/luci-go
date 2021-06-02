@@ -123,9 +123,11 @@ message GetCLRequest{
 // and each event comes from its own entity and depends on yet another tombstone
 // entity.
 message GetCLResponse {
+  // State. Next tag: 9.
   int64 id = 1;
   int64 eversion = 2;
   string external_id = 3;
+  google.protobuf.Timestamp update_time = 8;
   cv.changelist.Snapshot snapshot = 4;
   cv.changelist.ApplicableConfig applicable_config = 5;
   cv.changelist.DependentMeta dependent_meta = 6;
