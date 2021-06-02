@@ -178,6 +178,8 @@ message SearchRunsRequest {
 
   // Optional. If omitted, scans across all active projects.
   string project = 11;
+  // Optional. Returns Runs with the given status, only.
+  cv.run.Status status = 12;
 }
 
 message RunsResponse {
