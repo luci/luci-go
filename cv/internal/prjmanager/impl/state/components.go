@@ -253,6 +253,7 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 	case s.PB.GetLuciProject() == "e2e-always-create-runs":
 	case s.PB.GetLuciProject() == "cq-test":
 	case s.PB.GetLuciProject() == "infra-internal":
+	case s.PB.GetLuciProject() == "infra":
 
 	default:
 		// This a is temporary safeguard against creation of LOTS of Runs,
