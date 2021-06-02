@@ -98,9 +98,27 @@ interface ContextEventDetail {
 }
 type ContextEvent = CustomEvent<ContextEventDetail>;
 
+export interface CtxProviderOption {
+  /**
+   * This flag enables the provider to provide the context to all consumers
+   * rather than only to the provider's descendants. It can also improve
+   * performance because context consumers no longer need to dispatch events in
+   * a DoM tree.
+   *
+   * Caveats:
+   *  1. There can be at most one provider for this context.
+   *  2. The provider should be connected before any consumer is connected.
+   *  3. The provider should not be disconnected unless all consumers are
+   * either disconnected or about to be disconnected.
+   *
+   * Defaults to false.
+   */
+  readonly global: boolean;
+}
+
 // Use a Map to so there can be only one property mapped to the context in a
 // provider.
-type ProviderContextMeta = Map<string, string | number | symbol>;
+type ProviderContextMeta = Map<string, [string | number | symbol, CtxProviderOption]>;
 
 // Use an array so there can be multiple properties mapped to the same context
 // in a consumer.
@@ -108,6 +126,8 @@ type ConsumerContextMeta = Array<[eventType: string, propKey: string | number | 
 
 const providerMetaSymbol = Symbol('provider');
 const consumerMetaSymbol = Symbol('consumer');
+
+const globalContextProviders = new Map<string, EventListener>();
 
 /**
  * Marks a component as a context provider.
@@ -156,7 +176,7 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
         return;
       }
 
-      for (const [eventType, propKey] of meta) {
+      for (const [eventType, [propKey]] of meta) {
         if (!changedProperties.has(propKey)) {
           continue;
         }
@@ -170,14 +190,15 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
     }
 
     connectedCallback() {
-      for (const [eventType, propKey] of meta) {
+      for (const [eventType, [propKey, opt]] of meta) {
+        const onCtxUpdateSet = this[onCtxUpdatesSymbol].get(eventType)!;
+
         /**
          * Adds the context consumer to the observer list and updates the
          * consumer with the current context immediately.
          */
         const eventCB = ((event: ContextEvent) => {
           const onCtxUpdate = event.detail.onCtxUpdate;
-          const onCtxUpdateSet = this[onCtxUpdatesSymbol].get(eventType)!;
           onCtxUpdateSet.add(onCtxUpdate);
           event.detail.addDisconnectedEventCB(() => onCtxUpdateSet.delete(onCtxUpdate));
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -187,6 +208,19 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
 
         this.addEventListener(eventType, eventCB);
         this[disconnectedCBsSymbol].push(() => this.removeEventListener(eventType, eventCB));
+
+        if (opt.global) {
+          if (globalContextProviders.has(eventType)) {
+            console.warn('Overriding a global context provider.');
+          }
+
+          globalContextProviders.set(eventType, eventCB);
+          this[disconnectedCBsSymbol].push(() => {
+            if (globalContextProviders.get(eventType) === eventCB) {
+              globalContextProviders.delete(eventType);
+            }
+          });
+        }
       }
       super.connectedCallback();
     }
@@ -234,24 +268,27 @@ export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
 
     connectedCallback() {
       for (const [eventType, propKey] of meta) {
-        this.dispatchEvent(
-          new CustomEvent<ContextEventDetail>(eventType, {
-            detail: {
-              onCtxUpdate: (newCtx) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (this as any)[propKey] = newCtx;
-              },
-              // We need to register callback via subscribe event because
-              // dispatching events in disconnectedCallback is no-op.
-              addDisconnectedEventCB: (cb: () => void) => {
-                this[disconnectedCBsSymbol].push(cb);
-              },
+        const subscribeEvent = new CustomEvent<ContextEventDetail>(eventType, {
+          detail: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onCtxUpdate: (newCtx: unknown) => ((this as any)[propKey] = newCtx),
+            // We need to register callback via subscribe event because
+            // dispatching events in disconnectedCallback is no-op.
+            addDisconnectedEventCB: (cb: () => void) => {
+              this[disconnectedCBsSymbol].push(cb);
             },
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-          })
-        );
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        });
+
+        const globalHandler = globalContextProviders.get(eventType);
+        if (globalHandler) {
+          globalHandler(subscribeEvent);
+        } else {
+          this.dispatchEvent(subscribeEvent);
+        }
       }
       super.connectedCallback();
     }
@@ -269,6 +306,10 @@ export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
   return (Consumer as Constructor<LitElement>) as Cls;
 }
 
+const DEFAULT_PROVIDER_OPT: CtxProviderOption = Object.freeze({
+  global: false,
+});
+
 /**
  * Builds 2 property decorators.
  * The first one can be used mark properties that should be used to set the
@@ -282,7 +323,7 @@ export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
 export function createContextLink<Ctx>() {
   const eventType = 'milo-subscribe-context-' + Math.random();
 
-  function provideContext() {
+  function provideContext(opt = DEFAULT_PROVIDER_OPT) {
     return function <
       K extends string | number | symbol,
       // Ctx must be assignable to T[K].
@@ -292,7 +333,7 @@ export function createContextLink<Ctx>() {
         Reflect.defineMetadata(providerMetaSymbol, new Map(), target);
       }
       const meta = Reflect.getMetadata(providerMetaSymbol, target) as ProviderContextMeta;
-      meta.set(eventType, propKey);
+      meta.set(eventType, [propKey, opt]);
     };
   }
 

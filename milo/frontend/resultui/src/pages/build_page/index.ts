@@ -114,11 +114,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   configsStore!: UserConfigsStore;
 
   @observable.ref
-  @provideBuildState()
+  @provideBuildState({ global: true })
   buildState!: BuildState;
 
   @observable.ref
-  @provideInvocationState()
+  @provideInvocationState({ global: true })
   invocationState!: InvocationState;
 
   // Set to true when testing.

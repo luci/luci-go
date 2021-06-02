@@ -52,7 +52,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
   configsStore!: UserConfigsStore;
 
   @observable.ref
-  @provideInvocationState()
+  @provideInvocationState({ global: true })
   invocationState!: InvocationState;
 
   private invocationId = '';

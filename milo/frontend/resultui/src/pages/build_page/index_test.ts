@@ -32,24 +32,28 @@ const builder = {
   builder: 'builder',
 };
 
-describe('Invocation Page', () => {
+describe('Build Page', () => {
   let configsStore: UserConfigsStore;
   let appState: AppState;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     configsStore = new UserConfigsStore();
     appState = new AppState();
   });
-  afterEach(() => {
-    configsStore.dispose();
+
+  afterEach(async () => {
     appState.dispose();
+    fixtureCleanup();
   });
 
   it('should compute invocation ID from buildNum in URL', async () => {
-    after(fixtureCleanup);
-    const page = await fixture<BuildPageElement>(html`
-      <milo-build-page .prerender=${true} .appState=${new AppState()} .configsStore=${configsStore}></milo-build-page>
+    const pageContainer = await fixture(html`
+      <div>
+        <milo-build-page .prerender=${true} .appState=${new AppState()} .configsStore=${configsStore}></milo-build-page>
+      </div>
     `);
+    const page = pageContainer.querySelector<BuildPageElement>('milo-build-page')!;
+    pageContainer.removeChild(page);
 
     const location = ({
       params: {
@@ -60,21 +64,19 @@ describe('Invocation Page', () => {
     const cmd = ({} as Partial<Commands>) as Commands;
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);
-    page.connectedCallback();
+    pageContainer.appendChild(page);
     await aTimeout(0);
     assert.strictEqual(page.buildState.invocationId, await getInvIdFromBuildNum(builder, 1234));
-    page.disconnectedCallback();
   });
 
   it('should compute invocation ID from build ID in URL', async () => {
-    after(fixtureCleanup);
-    const page = await fixture<BuildPageElement>(html`
-      <milo-build-page
-        .prerender=${true}
-        .appState=${new AppState()}
-        .configsStore=${new UserConfigsStore()}
-      ></milo-build-page>
+    const pageContainer = await fixture(html`
+      <div>
+        <milo-build-page .prerender=${true} .appState=${new AppState()} .configsStore=${configsStore}></milo-build-page>
+      </div>
     `);
+    const page = pageContainer.querySelector<BuildPageElement>('milo-build-page')!;
+    pageContainer.removeChild(page);
 
     const location = ({
       params: {
@@ -85,10 +87,9 @@ describe('Invocation Page', () => {
     const cmd = ({} as Partial<Commands>) as Commands;
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);
-    page.connectedCallback();
+    pageContainer.appendChild(page);
     await aTimeout(0);
     assert.strictEqual(page.buildState.invocationId, getInvIdFromBuildId('1234'));
-    page.disconnectedCallback();
   });
 
   it('should fallback to invocation ID from buildbucket when invocation is not found', async () => {
@@ -109,18 +110,21 @@ describe('Invocation Page', () => {
       },
     } as Build);
 
-    after(fixtureCleanup);
-    const page = await fixture<BuildPageElement>(html`
-      <milo-build-page
-        .prerender=${true}
-        .appState=${{
-          ...appState,
-          resultDb: resultDbStub,
-          buildsService: buildsServiceStub,
-        }}
-        .configsStore=${configsStore}
-      ></milo-build-page>
+    const pageContainer = await fixture<BuildPageElement>(html`
+      <div>
+        <milo-build-page
+          .prerender=${true}
+          .appState=${{
+            ...appState,
+            resultDb: resultDbStub,
+            buildsService: buildsServiceStub,
+          }}
+          .configsStore=${configsStore}
+        ></milo-build-page>
+      </div>
     `);
+    const page = pageContainer.querySelector<BuildPageElement>('milo-build-page')!;
+    pageContainer.removeChild(page);
 
     const location = ({
       params: {
@@ -132,10 +136,9 @@ describe('Invocation Page', () => {
 
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);
-    page.connectedCallback();
+    pageContainer.appendChild(page);
     await aTimeout(0);
     assert.strictEqual(page.buildState.invocationId, 'invocation-id');
-    page.disconnectedCallback();
   });
 
   it('should redirect to a long link when visited via a short link', async () => {
@@ -151,22 +154,25 @@ describe('Invocation Page', () => {
       output: { properties: {} },
     } as Build);
 
-    after(fixtureCleanup);
-    const page = await fixture<BuildPageElement>(html`
-      <milo-build-page
-        .prerender=${true}
-        .appState=${{
-          ...appState,
-          setBuildId: () => {},
-          getBuildId: () => '4567',
-          buildsService: {
-            ...new BuildsService(new PrpcClientExt({}, () => '')),
-            getBuild: getBuildMock,
-          },
-        }}
-        .configsStore=${configsStore}
-      ></milo-build-page>
+    const pageContainer = await fixture<BuildPageElement>(html`
+      <div>
+        <milo-build-page
+          .prerender=${true}
+          .appState=${{
+            ...appState,
+            setBuildId: () => {},
+            getBuildId: () => '4567',
+            buildsService: {
+              ...new BuildsService(new PrpcClientExt({}, () => '')),
+              getBuild: getBuildMock,
+            },
+          }}
+          .configsStore=${configsStore}
+        ></milo-build-page>
+      </div>
     `);
+    const page = pageContainer.querySelector<BuildPageElement>('milo-build-page')!;
+    pageContainer.removeChild(page);
 
     const location = ({
       params: {
@@ -180,11 +186,10 @@ describe('Invocation Page', () => {
 
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);
-    page.connectedCallback();
+    pageContainer.appendChild(page);
     await aTimeout(20);
     assert.isTrue(
       window.location.href.endsWith('/ui/p/project/builders/bucket/builder/123/test-results?q=a#an-element')
     );
-    page.disconnectedCallback();
   });
 });

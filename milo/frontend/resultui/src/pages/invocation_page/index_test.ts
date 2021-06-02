@@ -24,33 +24,40 @@ import { NOT_FOUND_URL } from '../../routes';
 import { InvocationPageElement } from '.';
 
 describe('Invocation Page', () => {
-  it('should get invocation ID from URL', async () => {
-    const appState = new AppState();
-    const page = document.createElement('milo-invocation-page') as InvocationPageElement;
-    page.appState = appState;
+  let appState: AppState;
+  let pageContainer: HTMLDivElement;
+  let page: InvocationPageElement;
 
+  beforeEach(async () => {
+    appState = new AppState();
+    pageContainer = await fixture(html`
+      <div>
+        <milo-invocation-page .appState=${appState}></milo-invocation-page>
+      </div>
+    `);
+    page = pageContainer.querySelector<InvocationPageElement>('milo-invocation-page')!;
+    pageContainer.removeChild(page);
+  });
+
+  afterEach(async () => {
+    appState.dispose();
+    fixtureCleanup();
+  });
+
+  it('should get invocation ID from URL', async () => {
     const location = ({ params: { invocation_id: 'invocation_id' } } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
     await page.onBeforeEnter(location, cmd);
-    page.connectedCallback();
+    pageContainer.appendChild(page);
     assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id'] as string);
-    page.disconnectedCallback();
-    appState.dispose();
   });
 
   it('should redirect to the not found page when invocation_id is not provided', async () => {
-    const appState = new AppState();
-
-    after(fixtureCleanup);
-    const page = await fixture<InvocationPageElement>(html`
-      <milo-invocation-page .appState=${appState}></milo-invocation-page>
-    `);
-
     const location = ({ params: {} } as Partial<RouterLocation>) as RouterLocation;
     const redirect = sinon.spy();
     const cmd = ({ redirect } as Partial<Commands>) as Commands;
     await page.onBeforeEnter(location, cmd);
+    pageContainer.appendChild(page);
     assert.isTrue(redirect.calledOnceWith(NOT_FOUND_URL));
-    appState.dispose();
   });
 });
