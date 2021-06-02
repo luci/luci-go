@@ -244,6 +244,19 @@ func TestSearchRuns(t *testing.T) {
 				So(resp.GetRuns()[0].GetId(), ShouldResemble, laterID)
 				So(resp.GetRuns()[1].GetId(), ShouldResemble, earlierID)
 			})
+			Convey("filtering", func() {
+				So(datastore.Put(ctx,
+					&run.Run{ID: earlierID, Status: run.Status_CANCELLED},
+					&run.Run{ID: laterID, Status: run.Status_RUNNING},
+				), ShouldBeNil)
+				resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+					Project: lProject,
+					Status:  run.Status_CANCELLED,
+				})
+				So(err, ShouldBeNil)
+				So(resp.GetRuns(), ShouldHaveLength, 1)
+				So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+			})
 		})
 	})
 }

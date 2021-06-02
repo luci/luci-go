@@ -209,9 +209,12 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	if req.GetLimit() <= 0 {
 		req.Limit = 16
 	}
+	q := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetLimit()).KeysOnly(true)
+	if req.GetStatus() != run.Status_STATUS_UNSPECIFIED {
+		q = q.Eq("Status", req.GetStatus())
+	}
 
 	var keys []*datastore.Key
-	q := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetLimit()).KeysOnly(true)
 	if err := datastore.GetAll(ctx, q, &keys); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch Runs")
 	}

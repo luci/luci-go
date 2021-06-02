@@ -177,7 +177,9 @@ message SearchRunsRequest {
   string page_token = 2;
 
   // Optional. If omitted, scans across all active projects.
-  string project = 11;
+  string project = 3;
+  // Optional. Returns Runs with the given status, only.
+  cv.run.Status status = 4;
 }
 
 message RunsResponse {
