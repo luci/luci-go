@@ -134,6 +134,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 		h := &Impl{
 			RM:         run.NewNotifier(ct.TQDispatcher),
 			TreeClient: ct.TreeFake.Client(),
+			CLUpdater:  &clUpdaterMock{},
 		}
 
 		statuses := []run.Status{
