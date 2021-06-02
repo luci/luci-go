@@ -16,7 +16,6 @@
 package dump
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha512"
 	"fmt"
@@ -24,7 +23,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
@@ -164,7 +163,7 @@ func (f *Fetcher) fetchLatestRev(ctx context.Context, client *http.Client) (rev 
 		return 0, false, transient.Tag.Apply(err)
 	case code == http.StatusOK:
 		rev := protocol.AuthDBRevision{}
-		if err := jsonpb.Unmarshal(bytes.NewReader(resp), &rev); err != nil {
+		if err := protojson.Unmarshal(resp, &rev); err != nil {
 			return 0, false, errors.Annotate(err, "failed to unmarshal AuthDBRevision").Err()
 		}
 		return rev.AuthDbRev, false, nil

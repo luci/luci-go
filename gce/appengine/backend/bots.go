@@ -20,9 +20,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"

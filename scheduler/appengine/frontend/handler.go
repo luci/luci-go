@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/appengine"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/gae/service/info"
 

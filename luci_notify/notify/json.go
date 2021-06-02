@@ -15,28 +15,26 @@
 package notify
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"reflect"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-var marshaller = jsonpb.Marshaler{}
-
 type envelope struct {
-	Type string           `json:"type"`
-	Body *json.RawMessage `json:"body"`
+	Type protoreflect.FullName `json:"type"`
+	Body *json.RawMessage      `json:"body"`
 }
 
 func serializePayload(task proto.Message) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := marshaller.Marshal(&buf, task); err != nil {
+	buf, err := protojson.Marshal(task)
+	if err != nil {
 		return nil, err
 	}
-	raw := json.RawMessage(buf.Bytes())
+	raw := json.RawMessage(buf)
 	return json.Marshal(envelope{
 		Type: proto.MessageName(task),
 		Body: &raw,
@@ -49,16 +47,16 @@ func deserializePayload(blob []byte) (proto.Message, error) {
 		return nil, err
 	}
 
-	tp := proto.MessageType(env.Type) // this is **ConcreteStruct{}
-	if tp == nil {
-		return nil, fmt.Errorf("unregistered proto message name %q", env.Type)
+	tp, err := protoregistry.GlobalTypes.FindMessageByName(env.Type) // this is **ConcreteStruct{}
+	if err != nil {
+		return nil, fmt.Errorf("unregistered proto message name %q: %w", env.Type, err)
 	}
 	if env.Body == nil {
 		return nil, fmt.Errorf("no task body given")
 	}
 
-	task := reflect.New(tp.Elem()).Interface().(proto.Message)
-	if err := jsonpb.Unmarshal(bytes.NewReader(*env.Body), task); err != nil {
+	task := tp.New().Interface()
+	if err := protojson.Unmarshal(*env.Body, task); err != nil {
 		return nil, err
 	}
 
