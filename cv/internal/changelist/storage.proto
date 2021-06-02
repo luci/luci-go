@@ -55,6 +55,19 @@ message Snapshot {
   // communicated back to user.
   repeated CLError errors = 6;
 
+  // Outdated establishes conditions for refreshing Snapshot after CV mutations.
+  message Outdated {
+    // TODO(tandrii): support gating refresh on having refresher start no
+    // earlier than some point in time, e.g. EVersion of this CL entity.
+    // TODO(tandrii): support gating refresh on having minimum
+    // external_update_time or equivalent.
+  }
+  // Outdated if set means Snapshot must be considered likely outdated due to
+  // recent CV mutations.
+  //
+  // In particular, Project Manager does not act on the CLs with .Outdated set.
+  Outdated outdated = 7;
+
   // CL-kind specific data.
   oneof kind {
     Gerrit gerrit = 11;
