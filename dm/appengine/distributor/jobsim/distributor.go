@@ -22,16 +22,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-
-	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/taskqueue"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/dm/api/distributor/jobsim"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/taskqueue"
 )
 
 type jobsimDist struct {
@@ -45,7 +44,7 @@ func (j *jobsimDist) jsConfig() *jobsim.Config {
 
 func (j *jobsimDist) parsePayload(payload string) (*jobsimExecution, error) {
 	ret := &jobsimExecution{}
-	err := jsonpb.UnmarshalString(payload, &ret.Calculation)
+	err := protojson.Unmarshal([]byte(payload), &ret.Calculation)
 	return ret, err
 }
 

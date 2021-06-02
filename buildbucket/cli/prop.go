@@ -21,10 +21,10 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/data/stringset"
-
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type propertiesFlag struct {
@@ -118,7 +118,7 @@ func (f *propertiesFlag) Set(s string) error {
 	if f.props.Fields == nil {
 		f.props.Fields = map[string]*structpb.Value{}
 	}
-	if err := jsonpb.UnmarshalString(wrappedJSON, buf); err == nil {
+	if err := protojson.Unmarshal([]byte(wrappedJSON), buf); err == nil {
 		f.props.Fields[name] = buf.Fields["a"]
 	} else {
 		// Treat as string.

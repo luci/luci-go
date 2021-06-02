@@ -23,11 +23,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/golang/protobuf/jsonpb"
 
 	swarm "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
@@ -119,7 +119,7 @@ func newSwarmClient(c context.Context, cfg *sv1.Config) *swarm.Service {
 
 func parseParams(desc *dm.Quest_Desc) (ret *sv1.Parameters, err error) {
 	ret = &sv1.Parameters{}
-	if err = jsonpb.UnmarshalString(desc.DistributorParameters, ret); err != nil {
+	if err = protojson.Unmarshal([]byte(desc.DistributorParameters), ret); err != nil {
 		err = errors.Annotate(err, "unmarshalling DistributorParameters").
 			InternalReason("These paramaeters were already validated?").
 			Err()
@@ -145,7 +145,7 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 	prevParsed := (*sv1.Result)(nil)
 	if prev != nil {
 		prevParsed = &sv1.Result{}
-		if err = jsonpb.UnmarshalString(prev.Object, prevParsed); err != nil {
+		if err = protojson.Unmarshal([]byte(prev.Object), prevParsed); err != nil {
 			err = errors.Annotate(err, "parsing previous result").Err()
 			return
 		}
@@ -374,7 +374,7 @@ func (*swarmingDist) HandleTaskQueueTask(r *http.Request) ([]*distributor.Notifi
 
 func (*swarmingDist) Validate(payload string) error {
 	msg := &sv1.Parameters{}
-	if err := jsonpb.UnmarshalString(payload, msg); err != nil {
+	if err := protojson.Unmarshal([]byte(payload), msg); err != nil {
 		return errors.Annotate(err, "unmarshal").InternalReason("payload(%v)", payload).Err()
 	}
 	return errors.Annotate(msg.Normalize(), "normalize").InternalReason("payload(%v)", payload).Err()
