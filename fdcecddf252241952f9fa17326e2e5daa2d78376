@@ -16,6 +16,23 @@
       "message": "Takuto, will you be comfortable reviewing this CL?\nYiwei already reviewed it (see PS#5, or https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2928872/5..6)\nand Yiwei has LGTMed all the \"meaty\" CLs stacked on top, but not this one due to DisableFullRun option which I got rid of entirely in the latest patchset.\n",
       "revId": "fdcecddf252241952f9fa17326e2e5daa2d78376",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff692b71_d7c4337b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-02T10:41:16Z",
+      "side": 1,
+      "message": "thank you, Takuto",
+      "revId": "fdcecddf252241952f9fa17326e2e5daa2d78376",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
