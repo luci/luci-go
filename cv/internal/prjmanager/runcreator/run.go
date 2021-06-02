@@ -118,7 +118,7 @@ type RM interface {
 
 // StateChangedTag is an error tag used to indicate that state read from
 // Datastore differs from the expected state.
-var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped")}
+var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("Run Creator: state changed")}
 
 // Create atomically creates a new Run.
 //
@@ -155,6 +155,7 @@ func (rb *Creator) Create(ctx context.Context, pm PM, rm RM) (ret *run.Run, err 
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to create run").Tag(transient.Tag).Err()
 	default:
+		logging.Debugf(ctx, "Created Run %q with %d CLs", ret.ID, len(ret.CLs))
 		return ret, nil
 	}
 }

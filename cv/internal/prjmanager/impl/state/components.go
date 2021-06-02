@@ -269,8 +269,16 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 		return nil
 	}
 
-	_, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier)
-	return err
+	switch _, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier); {
+	case err == nil:
+		return nil
+	case runcreator.StateChangedTag.In(err):
+		// This is transient error at component action level: on retry, the Triage()
+		// function will re-evaulate the state.
+		return transient.Tag.Apply(err)
+	default:
+		return err
+	}
 }
 
 // validatePurgeCLTasks verifies correctness of tasks from componentActor.
