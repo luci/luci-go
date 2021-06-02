@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -264,8 +265,16 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 		return nil
 	}
 
-	_, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier)
-	return err
+	switch _, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier); {
+	case err == nil:
+		return nil
+	case runcreator.StateChangedTag.In(err):
+		// This is transient error at component action level: on retry, the Triage()
+		// function will re-evaulate the state.
+		return transient.Tag.Apply(err)
+	default:
+		return err
+	}
 }
 
 // validatePurgeCLTasks verifies correctness of tasks from componentActor.
