@@ -79,7 +79,7 @@ func executionResult(success bool, value int64, exp time.Time) *dm.JsonResult {
 
 func executionResultFromJSON(data *dm.JsonResult) (ret *jobsim.Result, err error) {
 	ret = &jobsim.Result{}
-	err = jsonpb.UnmarshalString(data.Object, ret)
+	err = protojson.Unmarshal([]byte(data.Object), ret)
 	return
 }
 

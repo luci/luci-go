@@ -58,7 +58,7 @@ func ProtoText(msg proto.Message) Destination {
 // message.
 func ProtoJSON(msg proto.Message) Destination {
 	return func(body string) error {
-		return jsonpb.UnmarshalString(body, msg)
+		return protojson.Unmarshal([]byte(body), msg)
 	}
 }
 

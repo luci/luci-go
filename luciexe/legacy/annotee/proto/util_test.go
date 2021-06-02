@@ -17,11 +17,10 @@ package annopb
 import (
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -59,12 +58,12 @@ func TestExtractProperties(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		expected := &structpb.Struct{}
-		err = jsonpb.UnmarshalString(`
+		err = protojson.Unmarshal([]byte(`
 			{
 				"a": 2,
 				"b": "str",
 				"c": [1]
-			}`, expected)
+			}`), expected)
 		So(err, ShouldBeNil)
 
 		actual, err := ExtractProperties(root)
