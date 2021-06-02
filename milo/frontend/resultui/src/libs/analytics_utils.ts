@@ -20,7 +20,7 @@ export enum GA_CATEGORIES {
   RELATED_BUILD_TAB = 'Related Builds Tab',
   TIMELINE_TAB = 'Timeline Tab',
   BLAMELIST_TAB = 'Blamelist Tab',
-  STEP_LINKS = 'Step Links',
+  STEP_LINKS_OF_BUILD_WITH_NON_EXPECTED_TESTS = 'Step Links of Build with Non-expected Tests',
   LEGACY_BUILD_PAGE = 'Legacy Build Page',
 }
 
