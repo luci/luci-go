@@ -379,26 +379,6 @@ func TestComponentsActions(t *testing.T) {
 				return nil
 			}
 
-			Convey("Silently ignores Run if CV not in charge", func() {
-				// This is temproary test to avoid accidental Run creation w/o ever
-				// finalizing them, see State.createOneRun().
-				ct.DisableCVRunManagement(ctx)
-				makeDirtySetup(1)
-				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
-					rc := makeRunCreator(1, false /* succeed */)
-					return itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
-				}
-
-				state2, sideEffect, err := state.ExecDeferred(ctx)
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				pb.Components[1].Dirty = false // must be saved, since Run Creation succeeded.
-				So(state2.PB, ShouldResembleProto, pb)
-				So(findRunOf(1), ShouldBeNil)
-			})
-
-			ct.EnableCVRunManagement(ctx, lProject)
-
 			Convey("100% success", func() {
 				makeDirtySetup(1)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
