@@ -27,6 +27,8 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
+
 	"go.chromium.org/luci/client/archiver/pipeline"
 	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	"go.chromium.org/luci/common/data/text/units"
@@ -34,8 +36,7 @@ import (
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 	"go.chromium.org/luci/common/system/filesystem"
-
-	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func init() {
@@ -233,7 +234,7 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 		item := Archive(a, opts)
 		item.WaitForHashed()
 		err := item.Error()
-		So(strings.HasPrefix(err.Error(), "open /this-file-does-not-exist: "), ShouldBeTrue)
+		So(err, ShouldErrLike, "open /this-file-does-not-exist: ")
 		// The archiver itself hasn't failed, it's Archive() that did.
 		So(a.Close(), ShouldBeNil)
 	})

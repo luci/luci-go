@@ -16,7 +16,6 @@ package isolate
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,6 +26,8 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConditionJson(t *testing.T) {
@@ -138,7 +139,7 @@ func TestConditionEvaluate(t *testing.T) {
 				return variableValue{}
 			})
 			if e.exp == E {
-				So(err, ShouldResemble, errors.New("required variable is unbound"))
+				So(err, ShouldUnwrapTo, errUnbound)
 			} else {
 				So(err, ShouldBeNil)
 				So(e.exp == T, ShouldResemble, isTrue)
@@ -271,11 +272,10 @@ func TestPythonToGoString(t *testing.T) {
 func TestPythonToGoStringError(t *testing.T) {
 	t.Parallel()
 	Convey(`Isolate should handle errors in transforming from Python to Go.`, t, func() {
-		expErr := errors.New("failed to parse Condition string")
 		for _, e := range []string{`'"`, `"'`, `'\'`, `"\"`, `'""`, `"''`} {
 			goChunk, left, err := pythonToGoString([]rune(e))
 			t.Logf("in: `%s`, g: `%s`, l: `%s`, err: %s", e, goChunk, string(left), err)
-			So(err, ShouldResemble, expErr)
+			So(err, ShouldUnwrapTo, errParseCondition)
 		}
 	})
 }

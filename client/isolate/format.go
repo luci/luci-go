@@ -17,7 +17,6 @@ package isolate
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -35,6 +34,7 @@ import (
 	"go/token"
 
 	"github.com/yosuke-furukawa/json5/encoding/json5"
+	"go.chromium.org/luci/common/errors"
 )
 
 var osPathSeparator = string(os.PathSeparator)
@@ -134,8 +134,7 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 	}
 	if len(missingVars) > 0 {
 		sort.Strings(missingVars)
-		err = fmt.Errorf("these configuration variables were missing from the command line: %v", missingVars)
-		return nil, "", err
+		return nil, "", errors.Reason("these configuration variables were missing from the command line: %v", missingVars).Err()
 	}
 	// A configuration is to be created with all the combinations of free variables.
 	config, err := isolate.GetConfig(cn)
@@ -775,11 +774,13 @@ func (c *processedCondition) matchConfigs(configVariablesIndex map[string]int, a
 
 type funcGetVariableValue func(varName string) variableValue
 
+var errUnbound = errors.New("required variable is unbound")
+
 func (c *processedCondition) evaluate(getValue funcGetVariableValue) (bool, error) {
 	ce := conditionEvaluator{cond: c, getVarValue: getValue, stop: false}
 	isTrue := ce.eval(c.expr)
 	if ce.stop {
-		return false, errors.New("required variable is unbound")
+		return false, errUnbound
 	}
 	return isTrue, nil
 }
@@ -897,6 +898,8 @@ func pythonToGoNonString(left []rune) (string, []rune) {
 	return out, left[end:]
 }
 
+var errParseCondition = errors.New("failed to parse Condition string")
+
 func pythonToGoString(left []rune) (string, []rune, error) {
 	quoteRune := left[0]
 	if quoteRune != '"' && quoteRune != '\'' {
@@ -925,7 +928,7 @@ func pythonToGoString(left []rune) (string, []rune, error) {
 			escaped = false
 		}
 	}
-	return string(goRunes), left, errors.New("failed to parse Condition string")
+	return string(goRunes), left, errParseCondition
 }
 
 func (v *variables) isEmpty() bool {
