@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d544ffde_afe8d62f",
+        "filename": "cv/internal/run/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-02T06:08:03Z",
+      "side": 1,
+      "message": "Options",
+      "range": {
+        "startLine": 24,
+        "startChar": 35,
+        "endLine": 24,
+        "endChar": 39
+      },
+      "revId": "342c7a8a8c8e3b6c6693c97773a78d55ddb599e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
