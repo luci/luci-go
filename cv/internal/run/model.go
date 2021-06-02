@@ -68,7 +68,7 @@ type Run struct {
 	//
 	// Currently, it is the same as owner of the CL. If `combine_cls` is
 	// enabled for the ConfigGroup used by this Run, the owner is the CL which
-	// has latest triggering timestamp.
+	// has the latest triggering timestamp.
 	Owner identity.Identity `gae:",noindex"`
 	// ConfigGroupID is ID of the ConfigGroup that is used by this Run.
 	//
@@ -77,10 +77,13 @@ type Run struct {
 	ConfigGroupID config.ConfigGroupID `gae:",noindex"`
 	// CLs are IDs of all CLs involved in this Run.
 	CLs common.CLIDs `gae:",noindex"`
+	// Options are Run-specific additions on top of LUCI project config.
+	Options *Options
 	// Submission is the current state of Run Submission.
 	//
 	// If set, Submission is in progress or has completed.
 	Submission *Submission
+
 	// TODO(yiwzhang): Define
 	//  * RemainingTryjobQuota: Run-level Tryjob quota.
 
