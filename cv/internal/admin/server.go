@@ -437,13 +437,23 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID) (*adminpb.GetRunRes
 	eg, ctx := errgroup.WithContext(ctx)
 
 	r := &run.Run{ID: rid}
+	var externalIDs []string
 	eg.Go(func() error {
 		switch err := datastore.Get(ctx, r); {
 		case err == datastore.ErrNoSuchEntity:
 			return status.Errorf(codes.NotFound, "run not found")
 		case err != nil:
 			return status.Errorf(codes.Internal, "failed to fetch Run")
+		}
+
+		switch rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs); {
+		case err != nil:
+			return status.Errorf(codes.Internal, "failed to fetch RunCLs")
 		default:
+			externalIDs = make([]string, len(rcls))
+			for i, rcl := range rcls {
+				externalIDs[i] = string(rcl.ExternalID)
+			}
 			return nil
 		}
 	})
@@ -480,6 +490,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID) (*adminpb.GetRunRes
 		Owner:            string(r.Owner),
 		ConfigGroupId:    string(r.ConfigGroupID),
 		Cls:              common.CLIDsAsInt64s(r.CLs),
+		ExternalCls:      externalIDs,
 		Submission:       r.Submission,
 		FinalizedByCqd:   r.FinalizedByCQD,
 		DelayCancelUntil: tspbNillable(r.DelayCancelUntil),
