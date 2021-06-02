@@ -45,8 +45,6 @@ import (
 // transaction, the creation is aborted with error tagged with StateChangedTag.
 // See Creator.Create doc.
 type Creator struct {
-	// All public fields are required.
-
 	// LUCIProject. Required.
 	LUCIProject string
 	// ConfigGroupID for the Run. Required.
@@ -73,11 +71,13 @@ type Creator struct {
 	// Nil by default, which doesn't permit any incomplete Run.
 	ExpectedIncompleteRunIDs common.RunIDs
 	// OperationID is an arbitrary string uniquely identifying this creation
-	// attempt.
+	// attempt. Required.
 	//
 	// TODO(tandrii): for CV API, record this ID in a separate entity index by
 	// this ID for full idempotency of CV API.
 	OperationID string
+	// CreateTime is used if given as Run.CreateTime. Optional.
+	CreateTime time.Time
 
 	// Internal state: pre-computed once before transaction starts.
 
@@ -325,6 +325,10 @@ func (rb *Creator) save(ctx context.Context, pm PM, rm RM) error {
 }
 
 func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
+	createTime := now // default
+	if !rb.CreateTime.IsZero() {
+		createTime = rb.CreateTime
+	}
 	ids := make(common.CLIDs, len(rb.InputCLs))
 	for i, cl := range rb.InputCLs {
 		ids[i] = cl.ID
@@ -334,7 +338,7 @@ func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
 		CQDAttemptKey:       rb.run.ID.AttemptKey(),
 		EVersion:            1,
 		CreationOperationID: rb.OperationID,
-		CreateTime:          now,
+		CreateTime:          createTime,
 		UpdateTime:          now,
 		// EndTime & StartTime intentionally left unset.
 
