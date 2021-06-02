@@ -16,8 +16,10 @@ package grpcmon
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	gcode "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/clock"
@@ -32,16 +34,18 @@ var (
 		"grpc/client/count",
 		"Total number of RPCs.",
 		nil,
-		field.String("method"), // full name of the grpc method
-		field.Int("code"))      // grpc.Code of the result
+		field.String("method"),         // full name of the grpc method
+		field.Int("code"),              // grpc.Code of the result
+		field.String("canonical_code")) // String representation of the code above
 
 	grpcClientDuration = metric.NewCumulativeDistribution(
 		"grpc/client/duration",
 		"Distribution of client-side RPC duration (in milliseconds).",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
-		field.String("method"), // full name of the grpc method
-		field.Int("code"))      // grpc.Code of the result
+		field.String("method"),         // full name of the grpc method
+		field.Int("code"),              // grpc.Code of the result
+		field.String("canonical_code")) // String representation of the code above
 )
 
 // NewUnaryClientInterceptor returns an interceptor that gathers RPC call
@@ -75,6 +79,10 @@ func reportClientRPCMetrics(ctx context.Context, method string, err error, dur t
 	if err != nil {
 		code = int(grpc.Code(err))
 	}
-	grpcClientCount.Add(ctx, 1, method, code)
-	grpcClientDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, code)
+	canon, ok := gcode.Code_name[int32(code)]
+	if !ok {
+		canon = fmt.Sprintf("Code(%d)", int(code))
+	}
+	grpcClientCount.Add(ctx, 1, method, code, canon)
+	grpcClientDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, code, canon)
 }
