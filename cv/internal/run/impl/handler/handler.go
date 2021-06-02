@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -99,10 +100,16 @@ type RM interface {
 	CancelAt(ctx context.Context, runID common.RunID, eta time.Time) error
 }
 
+// CLUpdater encapsulates interaction with CL Updater by the Run events handler.
+type CLUpdater interface {
+	ScheduleBatch(ctx context.Context, luciProject string, forceNotifyPM bool, cls []*changelist.CL) error
+}
+
 // Impl is a prod implementation of Handler interface.
 type Impl struct {
 	PM         PM
 	RM         RM
+	CLUpdater  CLUpdater
 	TreeClient tree.Client
 }
 

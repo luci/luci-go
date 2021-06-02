@@ -412,6 +412,8 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 				!cl.IncompleteRuns.ContainsSorted(r.ID)
 		})
 
+		// Fail quickly iff PM created a new Run on stale CL data.
+		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 1)
 		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
 		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)

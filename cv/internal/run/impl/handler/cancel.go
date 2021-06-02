@@ -62,7 +62,7 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 		// Do nothing if rs.Run.DelayCancelUntil is not empty, there must be
 		// a Cancel event to be processed at that time.
 	default:
-		se = endRun(ctx, rs, run.Status_CANCELLED, impl.PM)
+		se = endRun(ctx, rs, run.Status_CANCELLED, impl.PM, impl.CLUpdater)
 		if rs.Run.StartTime.IsZero() {
 			// This run has never started but already gets a cancelled event.
 			rs.Run.StartTime = rs.Run.EndTime
