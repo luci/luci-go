@@ -24,25 +24,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/data/strpair"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/auth"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
@@ -55,6 +42,18 @@ import (
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 )
 
 // validateExpirationDuration validates the given expiration duration.
@@ -649,7 +648,7 @@ func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 			k, v := strpair.Parse(prop)
 			s := &structpb.Struct{}
 			v = fmt.Sprintf("{\"%s\": %s}", k, v)
-			if err := jsonpb.UnmarshalString(v, s); err != nil {
+			if err := protojson.Unmarshal([]byte(v), s); err != nil {
 				// Builder config should have been validated already.
 				panic(errors.Annotate(err, "error parsing %q", v).Err())
 			}
@@ -661,7 +660,7 @@ func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 			},
 		}
 	} else if cfg.GetProperties() != "" {
-		if err := jsonpb.UnmarshalString(cfg.Properties, build.Input.Properties); err != nil {
+		if err := protojson.Unmarshal([]byte(cfg.Properties), build.Input.Properties); err != nil {
 			// Builder config should have been validated already.
 			panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.Name).Err())
 		}

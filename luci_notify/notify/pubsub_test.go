@@ -22,31 +22,27 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	. "github.com/smartystreets/goconvey/convey"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gitpb "go.chromium.org/luci/common/proto/git"
-
-	"go.chromium.org/luci/common/errors"
+	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	apicfg "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type MockCloudTasksClient struct {
@@ -147,7 +143,7 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 	Convey(`Test Environment for extractEmailNotifyValues`, t, func() {
 		extract := func(buildJSONPB string) ([]EmailNotify, error) {
 			build := &buildbucketpb.Build{}
-			err := jsonpb.UnmarshalString(buildJSONPB, build)
+			err := protojson.Unmarshal([]byte(buildJSONPB), build)
 			So(err, ShouldBeNil)
 			return extractEmailNotifyValues(build, "")
 		}

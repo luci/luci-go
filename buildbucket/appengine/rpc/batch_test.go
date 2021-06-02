@@ -20,14 +20,18 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/jsonpb"
+	. "github.com/smartystreets/goconvey/convey"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
+	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/mock"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -35,12 +39,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
-
-	"go.chromium.org/luci/buildbucket/appengine/model"
-	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBatch(t *testing.T) {
@@ -256,11 +254,11 @@ func TestBatch(t *testing.T) {
 		Convey("schedule req py", func() {
 			ctx = WithTrafficSplit(ctx, 0)
 			req := &pb.BatchRequest{}
-			err := jsonpb.UnmarshalString(`{
+			err := protojson.Unmarshal([]byte(`{
 				"requests": [
 					{"scheduleBuild": {}}
 				]
-			}`, req)
+			}`), req)
 			So(err, ShouldBeNil)
 			mockRes := &pb.BatchResponse{
 				Responses: []*pb.BatchResponse_Response{
@@ -336,19 +334,19 @@ func TestBatch(t *testing.T) {
 
 		Convey("get, schedule, search and cancel in req", func() {
 			req := &pb.BatchRequest{}
-			err := jsonpb.UnmarshalString(`{
+			err := protojson.Unmarshal([]byte(`{
 				"requests": [
 					{"getBuild": {"id": "1"}},
 					{"scheduleBuild": {}},
 					{"searchBuilds": {}},
 					{"cancelBuild": {}}
-				]}`, req)
+				]}`), req)
 			So(err, ShouldBeNil)
 			expectedPyReq := &pb.BatchRequest{}
-			err = jsonpb.UnmarshalString(`{
+			err = protojson.Unmarshal([]byte(`{
 				"requests": [
 					{"scheduleBuild": {}}
-				]}`, expectedPyReq)
+				]}`), expectedPyReq)
 			So(err, ShouldBeNil)
 			mockRes := &pb.BatchResponse{
 				Responses: []*pb.BatchResponse_Response{
@@ -402,11 +400,11 @@ func TestBatch(t *testing.T) {
 
 		Convey("py service error", func() {
 			req := &pb.BatchRequest{}
-			err := jsonpb.UnmarshalString(`{
+			err := protojson.Unmarshal([]byte(`{
 				"requests": [
 					{"scheduleBuild": {}}
 				]
-			}`, req)
+			}`), req)
 			So(err, ShouldBeNil)
 			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.Unavailable, "unavailable"))
 			actualRes, err := srv.Batch(ctx, req)
@@ -416,11 +414,11 @@ func TestBatch(t *testing.T) {
 
 		Convey("py timeout error", func() {
 			req := &pb.BatchRequest{}
-			err := jsonpb.UnmarshalString(`{
+			err := protojson.Unmarshal([]byte(`{
 				"requests": [
 					{"scheduleBuild": {}}
 				]
-			}`, req)
+			}`), req)
 			So(err, ShouldBeNil)
 			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.DeadlineExceeded, "timeout"))
 			actualRes, err := srv.Batch(ctx, req)
@@ -433,11 +431,11 @@ func TestBatch(t *testing.T) {
 			ctx = context.WithValue(ctx, &testFakeTransportError, grpcStatus.Error(codes.Internal, "failed to get Py BB RPC transport"))
 			srv := &Builds{}
 			req := &pb.BatchRequest{}
-			err := jsonpb.UnmarshalString(`{
+			err := protojson.Unmarshal([]byte(`{
 				"requests": [
 					{"scheduleBuild": {}}
 				]
-			}`, req)
+			}`), req)
 			So(err, ShouldBeNil)
 			actualRes, err := srv.Batch(ctx, req)
 			So(actualRes, ShouldBeNil)
