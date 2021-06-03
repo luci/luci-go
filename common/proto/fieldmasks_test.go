@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
@@ -45,16 +46,13 @@ func TestFixFieldMasks(t *testing.T) {
 		testFix := func(pb proto.Message, expected string) {
 			typ := reflect.TypeOf(pb).Elem()
 
-			jsBad, err := (&jsonpb.Marshaler{}).MarshalToString(pb)
+			actual, err := protojson.Marshal(proto.MessageV2(pb))
 			So(err, ShouldBeNil)
 
-			actual, err := FixFieldMasksAfterMarshal([]byte(jsBad), typ)
-			So(err, ShouldBeNil)
 			So(normalizeJSON(actual), ShouldEqual, normalizeJSON([]byte(expected)))
 
 			jsBadEmulated, err := FixFieldMasksBeforeUnmarshal([]byte(actual), typ)
 			So(err, ShouldBeNil)
-			So(normalizeJSON(jsBadEmulated), ShouldEqual, normalizeJSON([]byte(jsBad)))
 
 			So(jsonpb.UnmarshalString(string(jsBadEmulated), pb), ShouldBeNil)
 		}
@@ -126,8 +124,6 @@ func TestFixFieldMasks(t *testing.T) {
 			}`
 			_, err := FixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
 			So(err, ShouldErrLike, `unexpected field path "a"`)
-			_, err = FixFieldMasksAfterMarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
-			So(err, ShouldErrLike, `unexpected field path "a"`)
 		})
 
 		Convey("invalid field nested", func() {
@@ -135,8 +131,6 @@ func TestFixFieldMasks(t *testing.T) {
 				"some": {"a": 1}
 			}`
 			_, err := FixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
-			So(err, ShouldErrLike, `unexpected field path "some.a"`)
-			_, err = FixFieldMasksAfterMarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
 			So(err, ShouldErrLike, `unexpected field path "some.a"`)
 		})
 
