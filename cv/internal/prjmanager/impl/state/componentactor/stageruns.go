@@ -259,7 +259,7 @@ func (a *runStage) postponeDueToExistingRunDiffScope(ctx context.Context, combo 
 
 func (a *runStage) postponeExpandingExistingRunScope(ctx context.Context, combo *combo, r *prjpb.PRun) (*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): for safety, this should not wait forever.
-	logging.Warningf(ctx, "%s is waiting for smaller scoped run %q to finish", len(combo.all), r.GetId())
+	logging.Warningf(ctx, "%s is waiting for smaller scoped run %q to finish", combo, r.GetId())
 	return nil, time.Time{}, nil
 }
 

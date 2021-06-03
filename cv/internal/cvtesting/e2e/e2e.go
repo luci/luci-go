@@ -297,6 +297,32 @@ func (t *Test) EarliestCreatedRunOf(ctx context.Context, lProject string) *run.R
 	return earliest
 }
 
+// LatestRunWithCL returns the latest created Run containing given CL.
+//
+// If there are several, returns the one with latest .StartTime.
+// Returns nil if there is such Runs, including if Gerrit CL isn't yet in DS.
+func (t *Test) LatestRunWithGerritCL(ctx context.Context, lProject, gHost string, gChange int64) *run.Run {
+	cl := t.LoadGerritCL(ctx, gHost, gChange)
+	if cl == nil {
+		return nil
+	}
+	var ret *run.Run
+	for _, r := range t.LoadRunsOf(ctx, lProject) {
+		for _, clid := range r.CLs {
+			switch {
+			case clid != cl.ID:
+			case ret == nil:
+				ret = r
+			case ret.CreateTime.After(r.CreateTime):
+				ret = r
+			case ret.CreateTime.Equal(r.CreateTime) && ret.StartTime.Before(r.StartTime):
+				ret = r
+			}
+		}
+	}
+	return ret
+}
+
 // LoadCL returns CL entity or nil if not exists.
 func (t *Test) LoadCL(ctx context.Context, id common.CLID) *changelist.CL {
 	cl := &changelist.CL{ID: id}
@@ -443,6 +469,26 @@ func MakeCfgCombinable(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 			},
 		},
 	}
+}
+
+// AreRunning is true if all runs are non-nil and Running.
+func AreRunning(runs ...*run.Run) bool {
+	for _, r := range runs {
+		if r == nil || r.Status != run.Status_RUNNING {
+			return false
+		}
+	}
+	return true
+}
+
+// AreEnded is true if all runs are not nil and have ended.
+func AreEnded(runs ...*run.Run) bool {
+	for _, r := range runs {
+		if r == nil || !run.IsEnded(r.Status) {
+			return false
+		}
+	}
+	return true
 }
 
 ///////////////////////////////////////////////////////////////////////////////
