@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad97ee10_1774215b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 22
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T22:48:16Z",
+      "side": 1,
+      "message": "lgtm. I still think easier code is possible, but it\u0027s not worth delaying you.",
+      "revId": "4403574bc882c5e99882465057727a2461b73e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
