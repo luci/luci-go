@@ -142,16 +142,18 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 		}
 		var newState State
 		eventsConsumed := 0
+		var fns []PostProcessFn
 		for _, t := range transitions {
 			if err := t.apply(ctx, popOp); err != nil {
 				return err
 			}
 			newState = t.TransitionTo
 			if t.PostProcessFn != nil {
-				postProcessFns = append(postProcessFns, t.PostProcessFn)
+				fns = append(fns, t.PostProcessFn)
 			}
 			eventsConsumed += len(t.Events)
 		}
+		postProcessFns = fns
 
 		logging.Debugf(ctx, "%d transitions, %d events", len(transitions), eventsConsumed)
 		if newState != state {
