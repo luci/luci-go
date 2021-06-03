@@ -15,19 +15,17 @@
 package flagpb
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/proto/google/descutil"
-
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 )
 
 // UnmarshalMessage unmarshals the proto message from flags.
@@ -40,7 +38,7 @@ func UnmarshalMessage(flags []string, resolver Resolver, msg proto.Message) erro
 	// code that may depend on implementation details of proto's generated Go
 	// code, which is why this wasn't done initially.
 	name := proto.MessageName(msg)
-	dproto, ok := resolver.Resolve(name).(*descriptorpb.DescriptorProto)
+	dproto, ok := resolver.Resolve(string(name)).(*descriptorpb.DescriptorProto)
 	if !ok {
 		return fmt.Errorf("could not resolve message %q", name)
 	}
@@ -55,7 +53,7 @@ func UnmarshalMessage(flags []string, resolver Resolver, msg proto.Message) erro
 		return err
 	}
 
-	return jsonpb.Unmarshal(bytes.NewReader(jtext), msg)
+	return protojson.Unmarshal(jtext, msg)
 }
 
 // UnmarshalUntyped unmarshals a key-value map from flags

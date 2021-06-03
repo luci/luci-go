@@ -17,7 +17,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -26,6 +25,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
@@ -88,7 +88,7 @@ func (r *cmdRun) start(a subcommands.Application, cr subcommands.CommandRun, env
 	if s == nil || s.SecretBytes == nil {
 		panic("LUCI_CONTEXT['swarming']['secret_bytes'] is missing")
 	}
-	if err := jsonpb.Unmarshal(bytes.NewReader(s.SecretBytes), r.exAuth); err != nil {
+	if err := protojson.Unmarshal(s.SecretBytes, r.exAuth); err != nil {
 		panic(fmt.Errorf("while decoding execution auth: %s", err))
 	}
 

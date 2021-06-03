@@ -25,7 +25,7 @@ import (
 type bbInfo struct {
 	*Buildbucket
 
-	userPayload *swarmingpb.CASTree
+	userPayload    *swarmingpb.CASTree
 	casUserPayload *swarmingpb.CASReference
 }
 
