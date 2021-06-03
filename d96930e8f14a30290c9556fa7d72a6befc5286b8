@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3b255a5_34dee515",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-03T17:38:01Z",
+      "side": 1,
+      "message": "ptal. this doesn\u0027t cause https://crbug.com/1215793 but makes log hard to read.",
+      "revId": "d96930e8f14a30290c9556fa7d72a6befc5286b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
