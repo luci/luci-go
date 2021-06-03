@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3a455a0_4dee37aa",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-03T21:42:08Z",
+      "side": 1,
+      "message": "this code doesn\u0027t need to be conditional\n\t\nhttps://github.com/grpc/grpc-go/blob/v1.38.0/status/status.go#L104",
+      "revId": "c90eb283fc78481f2544f6c62aa586c206c6cc09",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bfeaa36d_f770f073",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-03T21:42:08Z",
+      "side": 1,
+      "message": "https://github.com/googleapis/go-genproto/blob/0befbe3492e2/googleapis/rpc/code/code.pb.go#L222\n\n?",
+      "revId": "c90eb283fc78481f2544f6c62aa586c206c6cc09",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e865a4dd_2b50633c",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-03T21:42:08Z",
+      "side": 1,
+      "message": "we are doing integer division here, lose fractional part and then convert to float.\nWouldn\u0027t it be better to do float64(dur.Nanoseconds())/1e6 ?",
+      "range": {
+        "startLine": 91,
+        "startChar": 54,
+        "endLine": 91,
+        "endChar": 55
+      },
+      "revId": "c90eb283fc78481f2544f6c62aa586c206c6cc09",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
