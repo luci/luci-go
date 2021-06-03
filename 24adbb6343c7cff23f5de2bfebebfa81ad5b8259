@@ -190,6 +190,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b37d6afe_368487c9",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T11:35:16Z",
+      "side": 1,
+      "message": "That\u0027s creative and I can definitely relate to this desire, but Append/Flush is inconsistent with other code: it looks Append and Flush are implementing an interface. Usage-wise, one has to read the doc anyway.",
+      "parentUuid": "64880720_f06f4789",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 6
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bedec530_f0d684a8",
         "filename": "logdog/common/archive/entry_buffer.go",
         "patchSetId": 19
@@ -554,6 +578,30 @@
       "side": 1,
       "message": "For better UX.\n\nHere are\n- a sampled LogStream - https://paste.googleplex.com/5577932438241280\n- Cloud Logs generated from the sampled stream - https://screenshot.googleplex.com/8fAWcFEcf7MCqpV\n\nAs you can see, it unnecessarily added an ending empty line to each of the LogEntries. I am worried that a majority of logpb.LogEntries have a single complete line. If then, this will virtually add \\n to the end of each Entry.\n\nWDYT?",
       "parentUuid": "312cd70e_5012ab43",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 97,
+        "endChar": 52
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d718a38a_d4834950",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T11:35:16Z",
+      "side": 1,
+      "message": "👍 please say why in the comment, maybe:\n//  Trim out the delimiter from the last element because Cloud Logging adds an empty line unconditionally anyway.",
+      "parentUuid": "b1617580_08cb61c2",
       "range": {
         "startLine": 97,
         "startChar": 4,

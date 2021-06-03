@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "44e00719_bb421e69",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T11:35:16Z",
+      "side": 1,
+      "message": "i like the newest patchset very much except this bit -- safeAdd() would have more consistent.\n\nbut now since I finally grasp why you are doing this, how about this:\n\n 1. Flush automatically trims the \"\\r\" and \"\\n\" from the end of the line. Yes, it\u0027s not as precise as LogDog\u0027s potentially arbitrary delimitters, but for UX only this bit matters.\n \n 2. safeAdd() can always write Line and its delimitter (so long as buffer has space). So, I believe L111-L112 wouldn\u0027t be necessary.\n \n 3. I believe this will allow Append() func to become simpler.",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 37
+      },
+      "revId": "08cf41fe34ad0ee240175649824afaf7fa77410e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
