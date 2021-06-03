@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9f838f1_7249a884",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T00:30:06Z",
+      "side": 1,
+      "message": "If evt \u003d\u003d ClosureEvent and cmd.ProcessState.Exited(), it implies that the child process terminated and the context was canlled by L264. It implies that the child process terminated before the soft deadline was reached.",
+      "range": {
+        "startLine": 279,
+        "startChar": 17,
+        "endLine": 279,
+        "endChar": 83
+      },
+      "revId": "4e5f38161e5f468e117beea816a9aca961309b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47fd9570_86850c11",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T00:30:06Z",
+      "side": 1,
+      "message": "If evt \u003d\u003d lucictx.InterrupteEvent, this statement wouldn\u0027t be accurate.",
+      "range": {
+        "startLine": 282,
+        "startChar": 3,
+        "endLine": 282,
+        "endChar": 111
+      },
+      "revId": "4e5f38161e5f468e117beea816a9aca961309b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
