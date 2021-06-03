@@ -31,19 +31,17 @@ import (
 
 // Cancel implements Handler interface.
 func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
+	// TODO(crbug/1215612): record the cause of cancelation inside Run.
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
 	case status == run.Status_SUBMITTING:
-		logging.Debugf(ctx, "Run cancellation can't be fulfilled at this time as Run is currently submitting.")
-		// Don't consume the events so that the RM executing the submission will
-		// be able to read the Cancel events and attempt to cancel if the Run
-		// failed to submit.
+		// Can't cancel while submitting.
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
-		logging.Debugf(ctx, "skip cancellation because Run has already ended.")
+		logging.Debugf(ctx, "skipping cancellation because Run is %s", status)
 		return &Result{State: rs}, nil
 	}
 

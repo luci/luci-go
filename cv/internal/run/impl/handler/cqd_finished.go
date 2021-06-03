@@ -31,7 +31,7 @@ import (
 func (impl *Impl) OnCQDFinished(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case run.IsEnded(status):
-		logging.Warningf(ctx, "Received OnCQDFinished event after Run is ended")
+		logging.Warningf(ctx, "Ignoring OnCQDFinished event because Run is %s", status)
 		return &Result{State: rs}, nil
 	case status != run.Status_RUNNING:
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
