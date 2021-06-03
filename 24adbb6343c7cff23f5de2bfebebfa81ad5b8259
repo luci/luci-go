@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e39e38f1_31010783",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 19
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Thanks for the review.\n\nMy argument was that it\u0027d have to cover the same number of different cases with introducing additional vars to find answers for the following questions.\n1) are the buffered lines from the previous or current entry?\n2) are the buffered lines partial or complete lines?\n\nIn the snippet, add() takes `ts` to answer (1), but multiple LogEntries could have the same TimeOffset. (or, all of them could omit TimeOffset)\n\nI\u0027m sure the snippet can be updated to implement all the business requirements, but IMO, it will end up with having the same complexity as this does. In this latest patchset, I polished the code as you suggested and it looks better, I think.",
+      "parentUuid": "b224f563_850e8633",
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "29de99c1_e42a8325",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0162b6fc_4ce1a0e8",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29de99c1_e42a8325",
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a3286672_384b421f",
@@ -48,6 +84,30 @@
       "writtenOn": "2021-06-03T00:31:36Z",
       "side": 1,
       "message": "https://golang.org/pkg/encoding/hex/#EncodeToString doesn\u0027t require parsing \u0027%x\u0027",
+      "range": {
+        "startLine": 217,
+        "startChar": 34,
+        "endLine": 217,
+        "endChar": 65
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a73c81cc_134354b2",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3286672_384b421f",
       "range": {
         "startLine": 217,
         "startChar": 34,
@@ -104,6 +164,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "64880720_f06f4789",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "I made them public and private to indicate what functions are supposed to be used and what are not, even within the same package. For example, entryBuffer.addLine() shouldn\u0027t have to be used by the user of entryBuffer{}.\n\nI renamed NewEntryBuffer() to be private.",
+      "parentUuid": "7658c05b_726ab56a",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 6
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bedec530_f0d684a8",
@@ -117,6 +201,30 @@
       "writtenOn": "2021-06-03T00:31:36Z",
       "side": 1,
       "message": "how about \"CloudLogging Entries ready for sending\"",
+      "range": {
+        "startLine": 48,
+        "startChar": 61,
+        "endLine": 49,
+        "endChar": 52
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1c44606_0daa1f23",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bedec530_f0d684a8",
       "range": {
         "startLine": 48,
         "startChar": 61,
@@ -150,6 +258,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9dd0ad64_e4dca887",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Re n1, done\nRe n2, renamed it to ret.",
+      "parentUuid": "6864b05c_c3bb0c54",
+      "range": {
+        "startLine": 50,
+        "startChar": 50,
+        "endLine": 50,
+        "endChar": 57
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7c88ca09_c10374ce",
@@ -163,6 +295,30 @@
       "writtenOn": "2021-06-03T00:31:36Z",
       "side": 1,
       "message": "nit: e.TimeOffset used in place of `offset`, which is never modified, would be more readable",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 7
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "718a0d4e_a516edd5",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Removed offset to use e.TimeOffset directly.",
+      "parentUuid": "7c88ca09_c10374ce",
       "range": {
         "startLine": 51,
         "startChar": 1,
@@ -196,6 +352,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d35c1aef_5374bddf",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Yes, it\u0027s the logdog protocol. A partial line can only be placed at the end of the Lines slice.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/api/logpb/log.proto;l\u003d85-89\n\nIf a client sent an invalid stream, it should have been rejected at the collector stage. Even if the collector collected the invalid stream, this would simply ignore the lines after the partial line.",
+      "parentUuid": "22dac045_879becfc",
+      "range": {
+        "startLine": 58,
+        "startChar": 4,
+        "endLine": 58,
+        "endChar": 10
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "de29e2a7_4e9f1904",
@@ -209,6 +389,30 @@
       "writtenOn": "2021-06-03T00:31:36Z",
       "side": 1,
       "message": "1. addDelimiter\u003dTrue is confusing given L59.\n2. It\u0027s actually a noop anyway",
+      "range": {
+        "startLine": 60,
+        "startChar": 23,
+        "endLine": 60,
+        "endChar": 27
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7ce5c6d_9dd7ecee",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "changed to false.",
+      "parentUuid": "de29e2a7_4e9f1904",
       "range": {
         "startLine": 60,
         "startChar": 23,
@@ -242,6 +446,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbdab4ee_11ee4771",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "095664b3_268f33b1",
+      "range": {
+        "startLine": 68,
+        "startChar": 16,
+        "endLine": 68,
+        "endChar": 17
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ba03505d_9de5f7f6",
@@ -255,6 +483,30 @@
       "writtenOn": "2021-06-03T00:31:36Z",
       "side": 1,
       "message": "don\u0027t you mean \"when the resulting complete line is larger than maxPayload\"?",
+      "range": {
+        "startLine": 69,
+        "startChar": 39,
+        "endLine": 70,
+        "endChar": 21
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e224f319_9f504804",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "+1. thanks.",
+      "parentUuid": "ba03505d_9de5f7f6",
       "range": {
         "startLine": 69,
         "startChar": 39,
@@ -290,6 +542,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b1617580_08cb61c2",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "For better UX.\n\nHere are\n- a sampled LogStream - https://paste.googleplex.com/5577932438241280\n- Cloud Logs generated from the sampled stream - https://screenshot.googleplex.com/8fAWcFEcf7MCqpV\n\nAs you can see, it unnecessarily added an ending empty line to each of the LogEntries. I am worried that a majority of logpb.LogEntries have a single complete line. If then, this will virtually add \\n to the end of each Entry.\n\nWDYT?",
+      "parentUuid": "312cd70e_5012ab43",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 97,
+        "endChar": 52
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2ddb5477_6c64c194",
         "filename": "logdog/common/archive/entry_buffer.go",
         "patchSetId": 19
@@ -301,6 +577,30 @@
       "writtenOn": "2021-06-03T00:31:36Z",
       "side": 1,
       "message": "what\u0027s the harm in always adding anyway? if it\u0027s empty, it won\u0027t hurt.",
+      "range": {
+        "startLine": 105,
+        "startChar": 3,
+        "endLine": 106,
+        "endChar": 27
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96daae47_5e12d5f7",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "It was just a micro optimization to avoid unnecessary invocation, but it\u0027s not worth, probably. Removed the check.",
+      "parentUuid": "2ddb5477_6c64c194",
       "range": {
         "startLine": 105,
         "startChar": 3,
@@ -334,6 +634,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee9d587a_48860563",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Because this line will be the last line of a CloudLogging entry at L110.",
+      "parentUuid": "ad36f12a_f8fb2737",
+      "range": {
+        "startLine": 107,
+        "startChar": 21,
+        "endLine": 107,
+        "endChar": 26
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "11535b6d_9cb1ac02",
@@ -347,6 +671,30 @@
       "writtenOn": "2021-06-03T00:31:36Z",
       "side": 1,
       "message": "iiuc, pl is guaranteed to not have delimitter by L88 above.",
+      "range": {
+        "startLine": 117,
+        "startChar": 17,
+        "endLine": 117,
+        "endChar": 21
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4eacf71_49055e68",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11535b6d_9cb1ac02",
       "range": {
         "startLine": 117,
         "startChar": 17,
@@ -380,6 +728,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9757e768_3701ca7e",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "You are right. It was unnecessary, and I removed it. PTAL",
+      "parentUuid": "6c342e97_602f9969",
+      "range": {
+        "startLine": 122,
+        "startChar": 54,
+        "endLine": 122,
+        "endChar": 71
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "613c7a4a_6ccd5177",
@@ -403,6 +775,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8bc8c3b_e29cfe14",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Good idea. Done",
+      "parentUuid": "613c7a4a_6ccd5177",
+      "range": {
+        "startLine": 145,
+        "startChar": 29,
+        "endLine": 145,
+        "endChar": 57
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cfc640d8_2076fc86",
@@ -416,6 +812,30 @@
       "writtenOn": "2021-06-03T00:31:36Z",
       "side": 1,
       "message": "Why defer? I think it\u0027s shorter and clearer without:\n\nres :\u003d \u0026cl.Entry{...}\neb.buf.Reset()\neb.seq +\u003d 1\nreturn res",
+      "range": {
+        "startLine": 154,
+        "startChar": 1,
+        "endLine": 157,
+        "endChar": 4
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2d02c30_25f06be5",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T02:56:52Z",
+      "side": 1,
+      "message": "Done with `ret`.",
+      "parentUuid": "cfc640d8_2076fc86",
       "range": {
         "startLine": 154,
         "startChar": 1,
