@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58d86e06_75e67050",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T14:55:04Z",
+      "side": 1,
+      "message": "PTAL again -- now with tests, which take 50% of the CL 😄",
+      "revId": "5b0f8c4a82b61391f55ba1a1fa4d061d252979bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

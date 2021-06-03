@@ -64,6 +64,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e5d2e2f3_7553778d",
+        "filename": "cv/internal/run/impl/handler/update_config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T14:55:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b7c998a_b520d222",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 50
+      },
+      "revId": "d929ac6fe2fc956c7e758eed5803c18c17aaac61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5563351c_ae8034c6",
@@ -89,6 +113,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "96809b98_86633bed",
+        "filename": "cv/internal/run/impl/handler/update_config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T14:55:04Z",
+      "side": 1,
+      "message": "Switched to preserve everywhere, but w/o a comment. This way it\u0027s easy to change behavior later while as you say right now the end result is the same.",
+      "parentUuid": "5563351c_ae8034c6",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 54
+      },
+      "revId": "d929ac6fe2fc956c7e758eed5803c18c17aaac61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3e59ab2f_30c0a038",
         "filename": "cv/internal/run/impl/handler/update_config.go",
         "patchSetId": 3
@@ -100,6 +148,30 @@
       "writtenOn": "2021-06-02T20:17:32Z",
       "side": 1,
       "message": "now",
+      "range": {
+        "startLine": 156,
+        "startChar": 28,
+        "endLine": 156,
+        "endChar": 30
+      },
+      "revId": "d929ac6fe2fc956c7e758eed5803c18c17aaac61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "649e2977_22a30185",
+        "filename": "cv/internal/run/impl/handler/update_config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T14:55:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e59ab2f_30c0a038",
       "range": {
         "startLine": 156,
         "startChar": 28,
