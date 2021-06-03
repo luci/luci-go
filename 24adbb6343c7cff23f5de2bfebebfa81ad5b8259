@@ -212,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d43c187_b80fa890",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T21:32:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b37d6afe_368487c9",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 6
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bedec530_f0d684a8",
@@ -602,6 +626,30 @@
       "side": 1,
       "message": "👍 please say why in the comment, maybe:\n//  Trim out the delimiter from the last element because Cloud Logging adds an empty line unconditionally anyway.",
       "parentUuid": "b1617580_08cb61c2",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 97,
+        "endChar": 52
+      },
+      "revId": "24adbb6343c7cff23f5de2bfebebfa81ad5b8259",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d7f4279_04260036",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T21:32:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d718a38a_d4834950",
       "range": {
         "startLine": 97,
         "startChar": 4,
