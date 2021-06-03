@@ -129,6 +129,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 	var postProcessFns []PostProcessFn
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
+		postProcessFns = nil //  reset, since this func can be retried
 
 		switch latestEV, err := p.FetchEVersion(ctx); {
 		case err != nil:
