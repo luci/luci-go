@@ -34,7 +34,7 @@ import (
 func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case run.IsEnded(status):
-		logging.Debugf(ctx, "Received CQDVerificationCompleted event after Run is ended")
+		logging.Debugf(ctx, "Ignoring CQDVerificationCompleted event because Run is %s", status)
 		return &Result{State: rs}, nil
 	case status != run.Status_RUNNING:
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()

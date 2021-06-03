@@ -170,7 +170,11 @@ type triageResult struct {
 	startEvents     eventbox.Events
 	cancelEvents    eventbox.Events
 	pokeEvents      eventbox.Events
-	newConfigEvents eventbox.Events
+	newConfigEvents struct {
+		events   eventbox.Events
+		hash     string
+		eversion int64
+	}
 	clUpdatedEvents struct {
 		events eventbox.Events
 		cls    common.CLIDs
@@ -211,7 +215,12 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *eventpb.Event_Poke:
 		tr.pokeEvents = append(tr.pokeEvents, item)
 	case *eventpb.Event_NewConfig:
-		tr.newConfigEvents = append(tr.newConfigEvents, item)
+		// Record all events but only the latest config hash.
+		tr.newConfigEvents.events = append(tr.newConfigEvents.events, item)
+		if ev := e.GetNewConfig().GetEversion(); ev > tr.newConfigEvents.eversion {
+			tr.newConfigEvents.eversion = ev
+			tr.newConfigEvents.hash = e.GetNewConfig().GetHash()
+		}
 	case *eventpb.Event_ClUpdated:
 		tr.clUpdatedEvents.events = append(tr.clUpdatedEvents.events, item)
 		tr.clUpdatedEvents.cls = append(tr.clUpdatedEvents.cls, common.CLID(e.GetClUpdated().GetClid()))
@@ -301,9 +310,13 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.clUpdatedEvents.events, transitions)
 	}
-	if len(tr.newConfigEvents) > 0 {
+	if len(tr.newConfigEvents.events) > 0 {
 		// TODO(tandrii,yiwzhang): update config.
-		transitions = append(transitions, eventbox.Transition{Events: tr.newConfigEvents, TransitionTo: rs})
+		res, err := rp.handler.UpdateConfig(ctx, rs, tr.newConfigEvents.hash)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.newConfigEvents.events, transitions)
 	}
 	if len(tr.pokeEvents) > 0 {
 		// TODO(crbug/1178658): trigger CL updater to refetch Run's CLs.

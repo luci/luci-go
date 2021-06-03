@@ -52,6 +52,10 @@ type Handler interface {
 	// OnCLUpdated decides whether to cancel a Run based on changes to the CLs.
 	OnCLUpdated(context.Context, *state.RunState, common.CLIDs) (*Result, error)
 
+	// UpdateConfig updates Run's config if possible.
+	// If Run is no longer viable, cancels the Run.
+	UpdateConfig(context.Context, *state.RunState, string) (*Result, error)
+
 	// OnCQDVerificationCompleted finalizes the Run according to the verified
 	// Run reported by CQDaemon.
 	OnCQDVerificationCompleted(context.Context, *state.RunState) (*Result, error)

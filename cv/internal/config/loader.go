@@ -113,33 +113,53 @@ func GetLatestMeta(ctx context.Context, project string) (Meta, error) {
 // Doesn't check whether a project currently exists.
 // Returns error if specific (project, hash) combo doesn't exist in Datastore.
 func GetHashMeta(ctx context.Context, project, hash string) (Meta, error) {
-	h := ConfigHashInfo{
-		Project: datastore.MakeKey(ctx, projectConfigKind, project),
-		Hash:    hash,
+	switch metas, err := GetHashMetas(ctx, project, hash); {
+	case err != nil:
+		return Meta{}, err
+	default:
+		return metas[0], nil
 	}
-	if err := datastore.Get(ctx, &h); err != nil {
-		if err != datastore.ErrNoSuchEntity {
+}
+
+// GetHashMetas returns a metadata for each given config hash.
+//
+// Doesn't check whether a project currently exists.
+// Returns error if any (project, hash) combo doesn't exist in Datastore.
+func GetHashMetas(ctx context.Context, project string, hashes ...string) ([]Meta, error) {
+	infos := make([]ConfigHashInfo, len(hashes))
+	projKey := datastore.MakeKey(ctx, projectConfigKind, project)
+	for i, hash := range hashes {
+		infos[i] = ConfigHashInfo{
+			Project: projKey,
+			Hash:    hash,
+		}
+	}
+	if err := datastore.Get(ctx, infos); err != nil {
+		if !datastore.IsErrNoSuchEntity(err) {
 			err = transient.Tag.Apply(err)
 		}
-		return Meta{}, errors.Annotate(err, "failed to get ConfigHashInfo(project=%q @ %q)", project, hash).Err()
+		return nil, errors.Annotate(err, "failed to load ConfigHashInfo(project=%q @ %s)", project, hashes).Err()
 	}
-	m := Meta{
-		Project:          project,
-		EVersion:         h.ProjectEVersion,
-		Status:           StatusEnabled,
-		ConfigGroupNames: h.ConfigGroupNames,
-		ConfigGroupIDs:   make([]ConfigGroupID, len(h.ConfigGroupNames)),
-		hashLen:          len(hash),
+	metas := make([]Meta, len(infos))
+	for i, info := range infos {
+		metas[i] = Meta{
+			Project:          project,
+			EVersion:         info.ProjectEVersion,
+			Status:           StatusEnabled,
+			ConfigGroupNames: info.ConfigGroupNames,
+			ConfigGroupIDs:   make([]ConfigGroupID, len(info.ConfigGroupNames)),
+			hashLen:          len(info.Hash),
+		}
+		for j, name := range info.ConfigGroupNames {
+			metas[i].ConfigGroupIDs[j] = MakeConfigGroupID(info.Hash, name)
+		}
 	}
-	for i, name := range h.ConfigGroupNames {
-		m.ConfigGroupIDs[i] = MakeConfigGroupID(hash, name)
-	}
-	return m, nil
+	return metas, nil
 }
 
 // GetConfigGroups loads all ConfigGroups from datastore for this meta.
 //
-// Meta must correspond to existing project.
+// Meta must correspond to an existing project.
 func (m Meta) GetConfigGroups(ctx context.Context) ([]*ConfigGroup, error) {
 	if !m.Exists() {
 		panic(fmt.Errorf("project %q config doesn't exist", m.Project))
