@@ -22,6 +22,30 @@
       },
       "revId": "08cf41fe34ad0ee240175649824afaf7fa77410e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3cec2007_31694bb5",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T21:21:23Z",
+      "side": 1,
+      "message": "I don\u0027t grasp for the consistency on safeAdd(). Why would it be more consistent if it adds the delimiter?\n\nSecondly, I guess that a vast majority of LogEntries have a single text line, just like the sampled LogStream shows. If then, this logic will add and trim the delimiter on virtually ever line, if safeAdd() adds the delimiter.\n\nHowever, if not, the trimming at L97 would occur only if all the following conditions are met, the chance will be quite low.\n- a single LogEntry has at least 2 lines, and\n- they have to be grouped into more than one Payload.\n\nThe logic will have a handful number of conditional statements additionally to avoid or deal with truncated delimiter. We don\u0027t want a line to have \"\\r\" only, right?",
+      "parentUuid": "44e00719_bb421e69",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 37
+      },
+      "revId": "08cf41fe34ad0ee240175649824afaf7fa77410e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
