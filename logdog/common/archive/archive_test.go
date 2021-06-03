@@ -16,15 +16,19 @@ package archive
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"strconv"
 	"testing"
 	"time"
 
+	cl "cloud.google.com/go/logging"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
@@ -93,6 +97,15 @@ func (w *errWriter) Write(d []byte) (int, error) {
 		return 0, w.err
 	}
 	return w.Writer.Write(d)
+}
+
+// testCLLogger implements CLLogger for testing and instrumentation.
+type testCLLogger struct {
+	entry []*cl.Entry
+}
+
+func (l *testCLLogger) Log(e cl.Entry) {
+	l.entry = append(l.entry, &e)
 }
 
 // indexParams umarshals an index from a byte stream and removes any entries.
@@ -232,16 +245,19 @@ func TestArchive(t *testing.T) {
 	Convey(`A Manifest connected to Buffer Writers`, t, func() {
 		var logB, indexB bytes.Buffer
 		desc := &logpb.LogStreamDescriptor{
-			Prefix: "test",
-			Name:   "foo",
+			Prefix:    "test",
+			Name:      "foo",
+			Timestamp: timestamppb.New(testclock.TestTimeUTC),
 		}
 		ic := indexChecker{}
 		ts := testSource{}
 		m := Manifest{
+			LUCIProject: "chromium",
 			Desc:        desc,
 			Source:      &ts,
 			LogWriter:   &logB,
 			IndexWriter: &indexB,
+			CloudLogger: &testCLLogger{},
 		}
 
 		Convey(`A sequence of logs will build a complete index.`, func() {
@@ -415,6 +431,59 @@ func TestArchive(t *testing.T) {
 					LastStreamIndex: 5,
 					LogEntryCount:   6,
 				})
+			})
+		})
+
+		Convey(`Exports entries to Cloud Logs`, func() {
+			clogger := m.CloudLogger.(*testCLLogger)
+			line := func(msg, del string) *logpb.Text_Line {
+				return &logpb.Text_Line{Value: []byte(msg), Delimiter: del}
+			}
+			sha := sha256.New()
+			sha.Write([]byte(m.LUCIProject))
+			sha.Write([]byte(desc.Prefix))
+			sha.Write([]byte(desc.Name))
+			streamIDHash := sha.Sum(nil)
+
+			Convey(`With nil LogEntry`, func() {
+				ts.addLogEntry(nil)
+				So(Archive(m), ShouldErrLike, "nil LogEntry")
+				So(clogger.entry, ShouldHaveLength, 0)
+			})
+
+			Convey(`With multiple LogEntry(s)`, func() {
+				ts.add(123, 456, 789)
+				ts.logs[0].GetText().Lines = []*logpb.Text_Line{
+					line("this", "\n"),
+					line("is", "\n"),
+				}
+				ts.logs[1].GetText().Lines = []*logpb.Text_Line{line("a complete", "\n")}
+				ts.logs[2].GetText().Lines = []*logpb.Text_Line{
+					line("line.", "\n"),
+				}
+
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 3)
+				So(clogger.entry[0].Payload, ShouldEqual, "this\nis")
+				So(clogger.entry[1].Payload, ShouldEqual, "a complete")
+				So(clogger.entry[2].Payload, ShouldEqual, "line.")
+
+				So(clogger.entry[0].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
+				So(clogger.entry[1].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
+				So(clogger.entry[2].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
+			})
+
+			Convey("Skip, if sum(tags) is too big", func() {
+				ts.add(123)
+				str := make([]byte, maxTagSum/2+100)
+				for i := 0; i < len(str); i++ {
+					str[i] = "1234567890"[i%10]
+				}
+				desc.Tags = map[string]string{
+					string(str): string(str),
+				}
+				So(Archive(m), ShouldBeNil)
+				So(clogger.entry, ShouldHaveLength, 0)
 			})
 		})
 	})

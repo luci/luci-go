@@ -633,6 +633,7 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	}
 
 	m := archive.Manifest{
+		LUCIProject:      sa.project,
 		Desc:             &sa.desc,
 		Source:           &ss,
 		LogWriter:        streamWriter,
