@@ -42,7 +42,7 @@ func Emit(ctx context.Context, value []byte, to *datastore.Key) error {
 	return nil
 }
 
-const tombstonesDelay = 5 * time.Minute
+const tombstonesDelay = 10 * time.Minute
 
 // List returns unprocessed events. For use in tests only.
 func List(ctx context.Context, recipient *datastore.Key) (Events, error) {

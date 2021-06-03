@@ -17,6 +17,7 @@ package impl
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
@@ -134,6 +136,37 @@ func (rp *runProcessor) Mutate(ctx context.Context, events eventbox.Events, s ev
 	for _, e := range events {
 		tr.triage(ctx, e)
 	}
+	var sb strings.Builder
+	if l := len(tr.startEvents); l > 0 {
+		sb.WriteString(fmt.Sprintf(" %d start event", l))
+	}
+	if l := len(tr.cancelEvents); l > 0 {
+		sb.WriteString(fmt.Sprintf(" %d cancel event", l))
+	}
+	if l := len(tr.pokeEvents); l > 0 {
+		sb.WriteString(fmt.Sprintf(" %d poke event", l))
+	}
+	if l := len(tr.clUpdatedEvents.events); l > 0 {
+		sb.WriteString(fmt.Sprintf(" %d cl_updated event", l))
+	}
+	if l := len(tr.readyForSubmissionEvents); l > 0 {
+		sb.WriteString(fmt.Sprintf(" %d ready for submission event", l))
+	}
+	if l := len(tr.clSubmittedEvents.events); l > 0 {
+		sb.WriteString(fmt.Sprintf(" %d cl submitted event", l))
+	}
+	if l := len(tr.cqdVerificationCompletedEvents); l > 0 {
+		sb.WriteString(fmt.Sprintf(" %d cqd verification completed event", l))
+	}
+
+	executionInfo := tq.TaskExecutionInfo(ctx)
+	switch {
+	case executionInfo == nil:
+		panic("must be called within a task handler")
+	case executionInfo.TaskID == "":
+		panic("taskID in task executionInfo is empty")
+	}
+	logging.Debugf(ctx, "At %s, [TQ-%.8s-%d] RM processing%s", clock.Now(ctx), executionInfo.TaskID, executionInfo.ExecutionCount, sb.String())
 	ts, err := rp.processTriageResults(ctx, tr, s.(*state.RunState))
 	return ts, nil, err
 }

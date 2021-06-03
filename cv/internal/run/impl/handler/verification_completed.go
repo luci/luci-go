@@ -36,6 +36,8 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "Received CQDVerificationCompleted event after Run is ended")
 		return &Result{State: rs}, nil
+	case status == run.Status_WAITING_FOR_SUBMISSION || status == run.Status_SUBMITTING:
+		return &Result{State: rs}, nil
 	case status != run.Status_RUNNING:
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
 	}
