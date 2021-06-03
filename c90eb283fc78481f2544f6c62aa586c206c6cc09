@@ -56,6 +56,30 @@
       },
       "revId": "c90eb283fc78481f2544f6c62aa586c206c6cc09",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b69289c_8fd17e0d",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-03T22:13:41Z",
+      "side": 1,
+      "message": "I don\u0027t know why it wasn\u0027t written as `float64(dur.Milliseconds())` in the first place.\n\ndur.Milliseconds() would also drop the fractional part, but I guess we wouldn\u0027t need the precision below Millisecond? I prefer to avoid numbers with fractional part, when it has to send and share the numbers with other apps, as it can cause rounding errors in some languages.\n\nIn other words, my pick would be\n- drop the fractional part, if we use Millisecond.\n- change the unit to nanosecond, if we have to keep the fractional part.\n\nWDYT?",
+      "parentUuid": "e865a4dd_2b50633c",
+      "range": {
+        "startLine": 91,
+        "startChar": 54,
+        "endLine": 91,
+        "endChar": 55
+      },
+      "revId": "c90eb283fc78481f2544f6c62aa586c206c6cc09",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
