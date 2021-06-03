@@ -37,7 +37,9 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	protoV1 "github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -141,7 +143,7 @@ func Lookup(ctx context.Context, section string, out proto.Message) (bool, error
 	if data == nil {
 		return false, nil
 	}
-	if err := jsonpb.Unmarshal(bytes.NewReader(*data), out); err != nil {
+	if err := jsonpb.Unmarshal(bytes.NewReader(*data), protoV1.MessageV1(out)); err != nil {
 		return true, errors.Annotate(err, "failed to unmarshal json: %s", string(*data)).Err()
 	}
 	return true, nil
@@ -157,11 +159,11 @@ func Lookup(ctx context.Context, section string, out proto.Message) (bool, error
 func Set(ctx context.Context, section string, in proto.Message) context.Context {
 	var data json.RawMessage
 	if in != nil && !reflect.ValueOf(in).IsNil() {
-		buf := bytes.NewBuffer(nil)
-		if err := (&jsonpb.Marshaler{}).Marshal(buf, in); err != nil {
+		buf, err := protojson.Marshal(in)
+		if err != nil {
 			panic(err) // Only errors could be from writing to buf.
 		}
-		data = buf.Bytes()
+		data = buf
 	}
 	cur := getCurrent(ctx)
 	if _, alreadyHas := cur.sections[section]; data == nil && !alreadyHas {
