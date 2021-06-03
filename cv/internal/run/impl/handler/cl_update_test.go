@@ -154,6 +154,10 @@ func TestOnCLUpdated(t *testing.T) {
 			updateCL(gf.CI(gChange, gf.PS(gPatchSet+1), gf.CQ(+2, triggerTime, gf.U("foo"))))
 			runAndVerifyCancelled()
 		})
+		Convey("Cancels Run on moved Ref", func() {
+			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Ref("refs/heads/new")))
+			runAndVerifyCancelled()
+		})
 		Convey("Cancels Run on removed trigger", func() {
 			newCI := gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
 			So(trigger.Find(newCI, cfg.GetConfigGroups()[0]), ShouldBeNil)

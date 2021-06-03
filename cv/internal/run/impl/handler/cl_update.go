@@ -21,6 +21,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -37,14 +38,9 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		common.LogError(ctx, err)
 		panic(err)
 	case status == run.Status_SUBMITTING:
-		// Don't consume the events so that the RM executing the submission will
-		// be able to read the CLUpdated events and take necessary actions after
-		// submission completes. For example, a new PS is uploaded for one of
-		// the not submitted CLs and cause the run submission to fail. RM should
-		// cancel this Run instead of retrying.
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
-		// Run is ended, update on CL shouldn't change the Run state.
+		logging.Debugf(ctx, "skipping OnCLUpdated because Run is %s", status)
 		return &Result{State: rs}, nil
 	}
 	clids.Dedupe()
@@ -73,6 +69,9 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		switch cl, runCL := cls[i], runCLs[i]; {
 		case cl.Snapshot.GetPatchset() > runCL.Detail.GetPatchset():
 			// New PS discovered.
+			return impl.Cancel(ctx, rs)
+		case cl.Snapshot.GetGerrit().GetInfo().GetRef() != runCL.Detail.GetGerrit().GetInfo().GetRef():
+			// Ref has changed (e.g. master -> main migration).
 			return impl.Cancel(ctx, rs)
 		case hasTriggerChanged(runCL, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)):
 			return impl.Cancel(ctx, rs)
