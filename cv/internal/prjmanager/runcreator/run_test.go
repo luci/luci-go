@@ -330,7 +330,10 @@ func TestRunBuilder(t *testing.T) {
 			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
 				RunId: string(r.ID),
 			}}})
-			So(pmDispatcher.PopProjects(), ShouldBeEmpty)
+			// TODO(crbug/1215792): fix this and don't actually dispatch PM.
+			So(pmDispatcher.PopProjects(), ShouldResemble, []string{lProject})
+			pmtest.AssertReceivedCLsNotified(ctx, lProject, rb.cls)
+
 			// RM must be sent an event and dispatched.
 			runtest.AssertInEventbox(ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
 			So(rmDispatcher.PopRuns(), ShouldResemble, common.RunIDs{r.ID})

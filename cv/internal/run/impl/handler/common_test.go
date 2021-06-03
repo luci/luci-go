@@ -78,6 +78,7 @@ func TestEndRun(t *testing.T) {
 			UpdateTime:     ct.Clock.Now().UTC(),
 		})
 		pmtest.AssertReceivedRunFinished(ctx, rid)
+		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
 		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 	})
 }
