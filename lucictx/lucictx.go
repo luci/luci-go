@@ -141,7 +141,10 @@ func Lookup(ctx context.Context, section string, out proto.Message) (bool, error
 	if data == nil {
 		return false, nil
 	}
-	return true, jsonpb.Unmarshal(bytes.NewReader(*data), out)
+	if err := jsonpb.Unmarshal(bytes.NewReader(*data), out); err != nil {
+		return true, errors.Annotate(err, "failed to unmarshal json: %s", string(*data)).Err()
+	}
+	return true, nil
 }
 
 // Set writes the json serialization of `in` as the given section into the
