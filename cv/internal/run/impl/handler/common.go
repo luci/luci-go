@@ -40,7 +40,7 @@ import (
 // Returns the side effect when Run is ended.
 //
 // Panics if the provided status is not ended status.
-func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM, u CLUpdater) eventbox.SideEffectFn {
+func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status) eventbox.SideEffectFn {
 	if !run.IsEnded(st) {
 		panic(fmt.Errorf("can't end run with non-final status %s", st))
 	}
@@ -50,16 +50,19 @@ func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM, u CLU
 	rid := rs.Run.ID
 	return eventbox.Chain(
 		func(ctx context.Context) error {
-			return removeRunFromCLs(ctx, rid, rs.Run.CLs, u, pm)
+			return removeRunFromCLs(ctx, rid, rs.Run.CLs, impl.CLUpdater, impl.PM)
 		},
 		func(ctx context.Context) error {
 			txndefer.Defer(ctx, func(postTransCtx context.Context) {
 				logging.Infof(postTransCtx, "finalized Run with status %s", st)
 			})
-			return pm.NotifyRunFinished(ctx, rid)
+			return impl.PM.NotifyRunFinished(ctx, rid)
 		},
-		// TODO(qyearsley): Submit a task to do BQ export if !rs.Run.FinishedCQDRun.
 	)
+	// TODO(qyearsley): Send rows to BQ.
+	// TODO(qyearsley): Send to a different project/table depending on:
+	//   1. Whether CQDaemond sends rows (see rs.Run.FinishedCQDRun)
+	//   2. Whether the project is dev or prod
 }
 
 // removeRunFromCLs atomically updates state of CL entities involved in this Run.
