@@ -111,6 +111,7 @@ type CL struct {
 // PM encapsulates interaction with Project Manager.
 type PM interface {
 	NotifyRunCreated(ctx context.Context, runID common.RunID) error
+	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
 }
 
 // RM encapsulates interaction with Run Manager.
@@ -314,6 +315,10 @@ func (rb *Creator) save(ctx context.Context, pm PM, rm RM) error {
 	//    Datastore server at transaction's Commit().
 	// Therefore, there is no advantage in parallelizing 3 calls below.
 	if err := rb.dsBatcher.put(ctx); err != nil {
+		return err
+	}
+	// TODO(cbrug/1215792): notify all relevant PM & RM from each modified CL has updated.
+	if err := pm.NotifyCLsUpdated(ctx, rb.LUCIProject, rb.cls); err != nil {
 		return err
 	}
 	// In the future once Runs can be created via API requests, the PM has to be

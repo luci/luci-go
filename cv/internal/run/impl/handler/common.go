@@ -50,7 +50,7 @@ func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM, u CLU
 	rid := rs.Run.ID
 	return eventbox.Chain(
 		func(ctx context.Context) error {
-			return removeRunFromCLs(ctx, rid, rs.Run.CLs, u)
+			return removeRunFromCLs(ctx, rid, rs.Run.CLs, u, pm)
 		},
 		func(ctx context.Context) error {
 			txndefer.Defer(ctx, func(postTransCtx context.Context) {
@@ -69,7 +69,7 @@ func endRun(ctx context.Context, rs *state.RunState, st run.Status, pm PM, u CLU
 //     operating on potentially outdated CL Snapshots;
 //   * schedules refresh of CL snapshot;
 //   * removes Run's ID from the list of CL's IncompleteRuns.
-func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLIDs, u CLUpdater) error {
+func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLIDs, u CLUpdater, pm PM) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be called in a transaction")
 	}
@@ -88,6 +88,11 @@ func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLID
 	}
 	if err := datastore.Put(ctx, cls); err != nil {
 		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
+	}
+	// TODO(crbug/1215792): refactor this to work well even when CLs belong to multiple
+	// projects and reference other Runs.
+	if err := pm.NotifyCLsUpdated(ctx, runID.LUCIProject(), cls); err != nil {
+		return err
 	}
 	return u.ScheduleBatch(ctx, runID.LUCIProject(), true /*force notify PM*/, cls)
 }

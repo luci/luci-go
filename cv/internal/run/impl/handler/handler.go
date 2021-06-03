@@ -87,6 +87,7 @@ type Handler interface {
 // PM encapsulates interaction with Project Manager by the Run events handler.
 type PM interface {
 	NotifyRunFinished(ctx context.Context, runID common.RunID) error
+	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
 }
 
 // RM encapsulates interaction with Run Manager by the Run events handler.
