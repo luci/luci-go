@@ -141,6 +141,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 			run.Status_SUCCEEDED,
 			run.Status_FAILED,
 			run.Status_CANCELLED,
+			run.Status_WAITING_FOR_SUBMISSION,
+			run.Status_SUBMITTING,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
