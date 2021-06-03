@@ -524,6 +524,18 @@ func TestUpdateCLWorks(t *testing.T) {
 				})
 			})
 
+			Convey("Updates snapshots explicitely marked outdated", func() {
+				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
+				cl.Mutate(ctx, func(cl *changelist.CL) (updated bool) {
+					cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
+					return true
+				})
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+				So(u.Refresh(ctx, task), ShouldBeNil)
+				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion+1)
+				So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
+			})
+
 			Convey("Don't update iff fetched less recent than updatedHint ", func() {
 				// Set expectation that Gerrit serves change with >=+1m timestamp.
 				task.UpdatedHint = timestamppb.New(

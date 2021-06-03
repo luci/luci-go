@@ -96,7 +96,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		// dependency of another CL.
 		err = f.fetchNew(ctx)
 
-	case f.updatedHint.IsZero():
+	case f.updatedHint.IsZero() || f.priorCL.Snapshot.GetOutdated() != nil:
 		logging.Debugf(ctx, "force updating %s", f)
 		fallthrough
 	case f.updatedHint.After(f.priorCL.Snapshot.GetExternalUpdateTime().AsTime()):
