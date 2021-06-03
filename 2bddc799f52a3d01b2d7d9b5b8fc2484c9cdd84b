@@ -16,6 +16,23 @@
       "message": "ptal",
       "revId": "2bddc799f52a3d01b2d7d9b5b8fc2484c9cdd84b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c5779f6_47f9d1bb",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-03T17:54:27Z",
+      "side": 1,
+      "message": "i think simpler to just add here:\npostProcessFns \u003d nil // reset, since this func can be retried",
+      "revId": "2bddc799f52a3d01b2d7d9b5b8fc2484c9cdd84b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
