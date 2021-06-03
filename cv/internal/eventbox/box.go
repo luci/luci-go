@@ -142,6 +142,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 		}
 		var newState State
 		eventsConsumed := 0
+		postProcessFns = nil // reset in case of retry
 		for _, t := range transitions {
 			if err := t.apply(ctx, popOp); err != nil {
 				return err
