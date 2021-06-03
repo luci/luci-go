@@ -33,6 +33,8 @@ func (s *Snapshot) IsUpToDate(luciProject string, t time.Time) bool {
 	switch {
 	case s == nil:
 		return false
+	case s.GetOutdated() != nil:
+		return false
 	case t.After(s.GetExternalUpdateTime().AsTime()):
 		return false
 	case s.GetLuciProject() != luciProject:
