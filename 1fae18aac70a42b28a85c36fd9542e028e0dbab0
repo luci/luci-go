@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "336460b3_590d21e6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-03T19:20:36Z",
+      "side": 1,
+      "message": "Is rdb-stream following the deadline protocol? If yes, then syscall.SIGTERM should be sent here: https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/lucictx/sections.proto;l\u003d138;drc\u003db5888c457a4863424e49c1f1907dc6dbb42aba45",
+      "range": {
+        "startLine": 10,
+        "startChar": 18,
+        "endLine": 10,
+        "endChar": 30
+      },
+      "revId": "1fae18aac70a42b28a85c36fd9542e028e0dbab0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "3e1ca6e0_27d3d62d",
