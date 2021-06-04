@@ -16,6 +16,24 @@
       "message": "I think this will introduce some kind of race when the dep CL has introduced a new PS after Run is created. But I don\u0027t know if this is important to CQ.",
       "revId": "3f337220651cedb23b9d7045e51aaef1689b6220",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "efd685be_5c1b2324",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-04T17:27:00Z",
+      "side": 1,
+      "message": "👍 good thinking.\nIt won\u0027t matter, CQ just cares whether dep is submitted / watched (iirc, of course 😄)",
+      "parentUuid": "3b60526c_29d7945f",
+      "revId": "3f337220651cedb23b9d7045e51aaef1689b6220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
