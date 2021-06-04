@@ -16,6 +16,24 @@
       "message": "Notes:\n\nTests fail like:\n\ngo.chromium.org/luci/cv/internal/run/impl/handler/common_test.go                  \nLine 75: - runtime error: invalid memory address or nil pointer dereference.",
       "revId": "23106bd9d3621cb0688ff8022018f42bf9959655",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9000b80c_4b94ca7a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-04T20:56:04Z",
+      "side": 1,
+      "message": "(Note, I think I need to add other tests, which will probably help with debugging. Maybe BQExporter.Schedule is returning an error.)",
+      "parentUuid": "4b1c2d81_765033e1",
+      "revId": "23106bd9d3621cb0688ff8022018f42bf9959655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
