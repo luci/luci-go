@@ -62,7 +62,7 @@ type Result struct {
 
 	// NewValue specifies the new value of a component if non-nil.
 	//
-	// Must be set if the input component is .Dirty.
+	// Must be set if the input component is .TriageRequired.
 	// If not set, implies that component doesn't have to be changed.
 	NewValue *prjpb.Component
 

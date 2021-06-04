@@ -36,7 +36,7 @@ import (
 
 // reevalPCLs re-evaluates PCLs after a project config change.
 //
-// If components have to be re-evaluated, only marks PB.DirtyComponents.
+// If components have to be re-evaluated, only marks PB.RepartitionRequired.
 func (s *State) reevalPCLs(ctx context.Context) error {
 	cls, errs, err := s.loadCLsForPCLs(ctx)
 	if err != nil {

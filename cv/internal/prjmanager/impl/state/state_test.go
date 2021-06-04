@@ -176,13 +176,13 @@ func TestUpdateConfig(t *testing.T) {
 				RunIDs:   nil,
 			})
 			So(s1.PB, ShouldResembleProto, &prjpb.PState{
-				LuciProject:      ct.lProject,
-				Status:           prjpb.Status_STARTED,
-				ConfigHash:       meta.Hash(),
-				ConfigGroupNames: []string{"g0", "g1"},
-				Components:       nil,
-				Pcls:             nil,
-				RepartitionRequired:  false,
+				LuciProject:         ct.lProject,
+				Status:              prjpb.Status_STARTED,
+				ConfigHash:          meta.Hash(),
+				ConfigGroupNames:    []string{"g0", "g1"},
+				Components:          nil,
+				Pcls:                nil,
+				RepartitionRequired: false,
 			})
 		})
 
@@ -311,12 +311,12 @@ func TestUpdateConfig(t *testing.T) {
 						pb1.Pcls[1], // #202 didn't change.
 						pb1.Pcls[2], // #203 didn't change.
 					},
-					Components:      pb1.Components, // no changes here.
+					Components:          pb1.Components, // no changes here.
 					RepartitionRequired: true,           // set to re-eval components
 				})
 			})
 
-			Convey("If PCLs stay same, DirtyComponents must be false", func() {
+			Convey("If PCLs stay same, RepartitionRequired must be false", func() {
 				meta2 := updateConfigRenameG1toG11(ctx, &ct)
 				s2, sideEffect, err := s1.UpdateConfig(ctx)
 				So(err, ShouldBeNil)
@@ -327,13 +327,13 @@ func TestUpdateConfig(t *testing.T) {
 					RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
 				})
 				So(s2.PB, ShouldResembleProto, &prjpb.PState{
-					LuciProject:      ct.lProject,
-					Status:           prjpb.Status_STARTED,
-					ConfigHash:       meta2.Hash(),
-					ConfigGroupNames: []string{"g0", "g11"}, // g1 -> g11.
-					Pcls:             pb1.GetPcls(),
-					Components:       pb1.Components, // no changes here.
-					RepartitionRequired:  false,          // no need to re-eval.
+					LuciProject:         ct.lProject,
+					Status:              prjpb.Status_STARTED,
+					ConfigHash:          meta2.Hash(),
+					ConfigGroupNames:    []string{"g0", "g11"}, // g1 -> g11.
+					Pcls:                pb1.GetPcls(),
+					Components:          pb1.Components, // no changes here.
+					RepartitionRequired: false,          // no need to re-eval.
 				})
 			})
 		})
@@ -369,7 +369,7 @@ func TestUpdateConfig(t *testing.T) {
 					pb1.Pcls[1], // #202 didn't change.
 					pb1.Pcls[2], // #203 didn't change.
 				},
-				Components:      pb1.Components, // no changes here.
+				Components:          pb1.Components, // no changes here.
 				RepartitionRequired: true,           // set to re-eval components
 			})
 		})
@@ -869,13 +869,13 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					ConfigGroupNames: []string{"g0", "g1"},
 					Components: []*prjpb.Component{
 						{
-							Clids: []int64{101},
-							Pruns: nil,  // removed
-							TriageRequired: true, // marked dirty
+							Clids:          []int64{101},
+							Pruns:          nil, // removed
+							TriageRequired: true,
 						},
 						s1.PB.GetComponents()[1], // unchanged
 					},
-					CreatedPruns:    s1.PB.GetCreatedPruns(), // unchanged
+					CreatedPruns:        s1.PB.GetCreatedPruns(), // unchanged
 					RepartitionRequired: true,
 				})
 			})
@@ -913,7 +913,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						{Clids: []int64{101}, TriageRequired: true},
 						s1.PB.GetComponents()[1], // unchanged.
 					},
-					CreatedPruns:    nil, // removed
+					CreatedPruns:        nil, // removed
 					RepartitionRequired: true,
 				})
 			})
@@ -992,7 +992,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 				pb.Components = []*prjpb.Component{
 					pb.Components[0],
 					{Clids: []int64{1}, TriageRequired: true},
-					pb.Components[2], // it was dirty already
+					pb.Components[2], // it was waiting for triage already
 					{Clids: []int64{3}, TriageRequired: true},
 				}
 				So(s2.PB, ShouldResembleProto, pb)
@@ -1129,11 +1129,11 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		So(datastore.Put(ctx, run4, run56, run789), ShouldBeNil)
 
 		state := &State{PB: &prjpb.PState{
-			LuciProject:      ct.lProject,
-			Status:           prjpb.Status_STARTED,
-			ConfigHash:       meta.Hash(),
-			ConfigGroupNames: []string{"g0", "g1"},
-			RepartitionRequired:  true,
+			LuciProject:         ct.lProject,
+			Status:              prjpb.Status_STARTED,
+			ConfigHash:          meta.Hash(),
+			ConfigGroupNames:    []string{"g0", "g1"},
+			RepartitionRequired: true,
 		}}
 
 		Convey("just categorization", func() {
@@ -1432,7 +1432,7 @@ func TestRepartition(t *testing.T) {
 			So(actual, ShouldResemble, state.pclIndex)
 		}()
 
-		Convey("nothing to do, except resetting DirtyComponents", func() {
+		Convey("nothing to do, except resetting RepartitionRequired", func() {
 			Convey("totally empty", func() {
 				state.repartition(cat)
 				So(state.PB, ShouldResembleProto, &prjpb.PState{})
@@ -1447,11 +1447,11 @@ func TestRepartition(t *testing.T) {
 				pb.RepartitionRequired = false
 				So(state.PB, ShouldResembleProto, pb)
 			})
-			Convey("1 active CL in 1 dirty component with 1 Run", func() {
+			Convey("1 active CL in 1 component needing triage with 1 Run", func() {
 				cat.active.resetI64(1)
 				state.PB.Components = []*prjpb.Component{{
-					Clids: []int64{1},
-					Pruns: []*prjpb.PRun{{Clids: []int64{1}, Id: "id"}},
+					Clids:          []int64{1},
+					Pruns:          []*prjpb.PRun{{Clids: []int64{1}, Id: "id"}},
 					TriageRequired: true,
 				}}
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
@@ -1480,7 +1480,7 @@ func TestRepartition(t *testing.T) {
 						{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
 					},
 					Components: []*prjpb.Component{{
-						Clids: []int64{1, 3},
+						Clids:          []int64{1, 3},
 						TriageRequired: true,
 					}},
 				})
@@ -1518,7 +1518,7 @@ func TestRepartition(t *testing.T) {
 						{Clid: 1},
 					},
 					Components: []*prjpb.Component{{
-						Clids: []int64{1},
+						Clids:          []int64{1},
 						TriageRequired: true,
 					}},
 				})
@@ -1526,7 +1526,7 @@ func TestRepartition(t *testing.T) {
 		})
 
 		Convey("Creates new components", func() {
-			Convey("1 active CL converted into 1 new dirty component", func() {
+			Convey("1 active CL converted into 1 new component needing triage", func() {
 				cat.active.resetI64(1)
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 
@@ -1534,7 +1534,7 @@ func TestRepartition(t *testing.T) {
 				So(state.PB, ShouldResembleProto, &prjpb.PState{
 					Pcls: []*prjpb.PCL{{Clid: 1}},
 					Components: []*prjpb.Component{{
-						Clids: []int64{1},
+						Clids:          []int64{1},
 						TriageRequired: true,
 					}},
 				})
@@ -1554,11 +1554,11 @@ func TestRepartition(t *testing.T) {
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
 						{
-							Clids: []int64{1, 3},
+							Clids:          []int64{1, 3},
 							TriageRequired: true,
 						},
 						{
-							Clids: []int64{2},
+							Clids:          []int64{2},
 							TriageRequired: true,
 						},
 					},
@@ -1631,8 +1631,8 @@ func TestRepartition(t *testing.T) {
 					Pcls:         orig.Pcls,
 					Components: []*prjpb.Component{
 						{
-							Clids: []int64{1, 2},
-							Pruns: []*prjpb.PRun{{Clids: []int64{1, 2}, Id: "id"}},
+							Clids:          []int64{1, 2},
+							Pruns:          []*prjpb.PRun{{Clids: []int64{1, 2}, Id: "id"}},
 							TriageRequired: true,
 						},
 					},
