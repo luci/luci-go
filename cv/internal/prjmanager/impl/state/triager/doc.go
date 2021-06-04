@@ -12,8 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package componentactor acts on a specific component by implementing
-// state.componentActor.
-//
-// TODO(tandrii): move into ctriager package.
-package componentactor
+// Package triager proposes concrete actions on a group of related CLs.
+package triager

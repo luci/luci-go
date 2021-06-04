@@ -79,7 +79,7 @@ const concurrentComponentProcessing = 16
 // Returns an action per each component that needs acting upon.
 func (s *State) triageComponents(ctx context.Context) ([]*cAction, error) {
 	var sup itriager.PMState
-	sup, err := s.makeActorSupporter(ctx)
+	sup, err := s.makeTriageSupporter(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 	}
 }
 
-// validatePurgeCLTasks verifies correctness of tasks from componentActor.
+// validatePurgeCLTasks verifies correctness of tasks from Triage.
 //
 // Modifies given tasks in place.
 // Panics in case of problems.
@@ -323,7 +323,7 @@ func (s *State) addCLsToPurge(ctx context.Context, ts []*prjpb.PurgeCLTask) Side
 const maxPurgingCLDuration = 10 * time.Minute
 
 // populatePurgeCLTasks populates all remaining fields in PurgeCLsTasks created
-// by componentActor.
+// by Triage.
 //
 // Modifies given tasks in place.
 func (s *State) populatePurgeCLTasks(ctx context.Context, ts []*prjpb.PurgeCLTask) {
@@ -339,7 +339,7 @@ func (s *State) populatePurgeCLTasks(ctx context.Context, ts []*prjpb.PurgeCLTas
 	}
 }
 
-func (s *State) makeActorSupporter(ctx context.Context) (*actorSupporterImpl, error) {
+func (s *State) makeTriageSupporter(ctx context.Context) (*triageSupporter, error) {
 	if s.configGroups == nil {
 		meta, err := config.GetHashMeta(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash())
 		if err != nil {
@@ -354,7 +354,7 @@ func (s *State) makeActorSupporter(ctx context.Context) (*actorSupporterImpl, er
 	for _, p := range s.PB.GetPurgingCls() {
 		purging[p.GetClid()] = p
 	}
-	return &actorSupporterImpl{
+	return &triageSupporter{
 		pcls:         s.PB.GetPcls(),
 		pclIndex:     s.pclIndex,
 		purging:      purging,
@@ -362,14 +362,19 @@ func (s *State) makeActorSupporter(ctx context.Context) (*actorSupporterImpl, er
 	}, nil
 }
 
-type actorSupporterImpl struct {
+// triageSupporter provides limited access to resources of PM state.
+//
+// Implements itriager.PMState.
+type triageSupporter struct {
 	pcls         []*prjpb.PCL
 	pclIndex     map[common.CLID]int
 	purging      map[int64]*prjpb.PurgingCL
 	configGroups []*config.ConfigGroup
 }
 
-func (a *actorSupporterImpl) PCL(clid int64) *prjpb.PCL {
+var _ itriager.PMState = (*triageSupporter)(nil)
+
+func (a *triageSupporter) PCL(clid int64) *prjpb.PCL {
 	i, ok := a.pclIndex[common.CLID(clid)]
 	if !ok {
 		return nil
@@ -377,10 +382,10 @@ func (a *actorSupporterImpl) PCL(clid int64) *prjpb.PCL {
 	return a.pcls[i]
 }
 
-func (a *actorSupporterImpl) PurgingCL(clid int64) *prjpb.PurgingCL {
+func (a *triageSupporter) PurgingCL(clid int64) *prjpb.PurgingCL {
 	return a.purging[clid]
 }
 
-func (a *actorSupporterImpl) ConfigGroup(index int32) *config.ConfigGroup {
+func (a *triageSupporter) ConfigGroup(index int32) *config.ConfigGroup {
 	return a.configGroups[index]
 }
