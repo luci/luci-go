@@ -135,7 +135,7 @@ func (s *State) triageComponents(ctx context.Context) ([]*cAction, error) {
 }
 
 func needsTriage(c *prjpb.Component, now time.Time) bool {
-	if c.GetDirty() {
+	if c.GetTriageRequired() {
 		return true // external event arrived
 	}
 	next := c.GetDecisionTime()

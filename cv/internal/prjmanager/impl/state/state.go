@@ -314,13 +314,13 @@ func (s *State) OnPurgesCompleted(ctx context.Context, events []*prjpb.PurgeComp
 		return s, nil, nil
 	}
 	cs, mutatedComponents := s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
-		if c.GetDirty() {
+		if c.GetTriageRequired() {
 			return c
 		}
 		for _, id := range c.GetClids() {
 			if _, yes := deleted[id]; yes {
 				c = c.CloneShallow()
-				c.Dirty = true
+				c.TriageRequired = true
 				return c
 			}
 		}

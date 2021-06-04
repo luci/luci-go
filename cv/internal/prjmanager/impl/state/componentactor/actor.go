@@ -44,7 +44,7 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 
 	if len(res.RunsToCreate) > 0 || len(res.CLsToPurge) > 0 {
 		res.NewValue = c.CloneShallow()
-		res.NewValue.Dirty = false
+		res.NewValue.TriageRequired = false
 		// Wait for the Run Creation or the CL Purging to finish, which will result
 		// in an event sent to the PM, which will result in a re-Triage.
 		res.NewValue.DecisionTime = nil
@@ -52,9 +52,9 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 	}
 
 	next := earliest(nextPurge, nextRun)
-	if c.GetDirty() || !isSameTime(next, c.GetDecisionTime()) {
+	if c.GetTriageRequired() || !isSameTime(next, c.GetDecisionTime()) {
 		res.NewValue = c.CloneShallow()
-		res.NewValue.Dirty = false
+		res.NewValue.TriageRequired = false
 		res.NewValue.DecisionTime = nil
 		if !next.IsZero() {
 			res.NewValue.DecisionTime = timestamppb.New(next)

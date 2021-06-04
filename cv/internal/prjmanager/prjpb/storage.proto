@@ -209,8 +209,8 @@ message Component {
   // Sorted by Run's ID.
   repeated PRun pruns = 3;
 
-  // If true, this component must be re-evaluated as soon as possible.
-  bool dirty = 11;
+  // If true, this component must be triaged as soon as possible.
+  bool triage_required = 11;
 }
 
 // PurgingCL represents purging of a CL due to some problem.

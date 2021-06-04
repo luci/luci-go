@@ -97,7 +97,7 @@ func TestTriage(t *testing.T) {
 
 		undirty := func(c *prjpb.Component) *prjpb.Component {
 			c = c.CloneShallow()
-			c.Dirty = false
+			c.TriageRequired = false
 			return c
 		}
 
@@ -109,7 +109,7 @@ func TestTriage(t *testing.T) {
 				Clids: []int64{33},
 				// Component already has a Run, so no action required.
 				Pruns: []*prjpb.PRun{{Id: "id", Clids: []int64{33}}},
-				Dirty: true,
+				TriageRequired: true,
 			}
 			res := mustTriage(oldC)
 			So(res.NewValue, ShouldResembleProto, undirty(oldC))
@@ -208,7 +208,7 @@ func TestTriage(t *testing.T) {
 				Convey("OK", func() {
 					_, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
-					oldC := &prjpb.Component{Clids: []int64{33}, Dirty: true}
+					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
 					So(res.NewValue, ShouldResembleProto, undirty(oldC))
 					So(res.CLsToPurge, ShouldBeEmpty)
@@ -223,7 +223,7 @@ func TestTriage(t *testing.T) {
 				Convey("Noop when Run already exists", func() {
 					_, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
-					oldC := &prjpb.Component{Clids: []int64{33}, Dirty: true, Pruns: makePruns("run-id", 33)}
+					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true, Pruns: makePruns("run-id", 33)}
 					res := mustTriage(oldC)
 					So(res.NewValue, ShouldResembleProto, undirty(oldC))
 					So(res.CLsToPurge, ShouldBeEmpty)
@@ -235,7 +235,7 @@ func TestTriage(t *testing.T) {
 					cl.EVersion = 2
 					So(datastore.Put(ctx, cl), ShouldBeNil)
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
-					err := failTriage(&prjpb.Component{Clids: []int64{33}, Dirty: true})
+					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
 					So(transient.Tag.In(err), ShouldBeTrue)
 					So(err, ShouldErrLike, "EVersion changed 1 => 2")
 				})
@@ -244,7 +244,7 @@ func TestTriage(t *testing.T) {
 					_, pcl32 := putPCL(32, singIdx, run.FullRun, ct.Clock.Now())
 					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
-					oldC := &prjpb.Component{Clids: []int64{32, 33}, Dirty: true}
+					oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
 					So(res.NewValue, ShouldResembleProto, undirty(oldC))
 					So(res.CLsToPurge, ShouldBeEmpty)
@@ -264,7 +264,7 @@ func TestTriage(t *testing.T) {
 					oldC := &prjpb.Component{
 						Clids: []int64{31, 32, 33},
 						Pruns: makePruns("first", 31, "third", 33),
-						Dirty: true,
+						TriageRequired: true,
 					}
 					res := mustTriage(oldC)
 					So(res.NewValue, ShouldResembleProto, undirty(oldC))
@@ -278,7 +278,7 @@ func TestTriage(t *testing.T) {
 					pcl32 := &prjpb.PCL{Clid: 32, Eversion: 1, Status: prjpb.PCL_UNKNOWN}
 					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
-					oldC := &prjpb.Component{Clids: []int64{33}, Dirty: true}
+					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
 					So(res.NewValue, ShouldResembleProto, undirty(oldC))
 					// TODO(crbug/1211576): this waiting can last forever. Component needs
@@ -298,9 +298,9 @@ func TestTriage(t *testing.T) {
 					_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second), 31)
 					_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32, 31)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
-					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, Dirty: true}
+					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetDirty(), ShouldBeFalse)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(stabilizationDelay).UTC())
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldBeEmpty)
@@ -309,7 +309,7 @@ func TestTriage(t *testing.T) {
 
 					oldC = res.NewValue
 					res = mustTriage(oldC)
-					So(res.NewValue.GetDirty(), ShouldBeFalse)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
 					rc := res.RunsToCreate[0]
 					So(rc.ConfigGroupID.Name(), ShouldResemble, "combinable")
@@ -321,9 +321,9 @@ func TestTriage(t *testing.T) {
 				Convey("Even a single CL should wait for stabilization delay", func() {
 					_, pcl := putPCL(33, combIdx, run.FullRun, ct.Clock.Now())
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
-					oldC := &prjpb.Component{Clids: []int64{33}, Dirty: true}
+					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetDirty(), ShouldBeFalse)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(stabilizationDelay).UTC())
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldBeEmpty)
@@ -332,7 +332,7 @@ func TestTriage(t *testing.T) {
 
 					oldC = res.NewValue
 					res = mustTriage(oldC)
-					So(res.NewValue.GetDirty(), ShouldBeFalse)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
 					rc := res.RunsToCreate[0]
 					So(rc.ConfigGroupID.Name(), ShouldResemble, "combinable")
@@ -345,7 +345,7 @@ func TestTriage(t *testing.T) {
 					pcl32 := &prjpb.PCL{Clid: 32, Eversion: 1, Status: prjpb.PCL_UNKNOWN}
 					_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
-					oldC := &prjpb.Component{Clids: []int64{33}, Dirty: true}
+					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
 					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(stabilizationDelay).UTC())
 					So(res.RunsToCreate, ShouldBeEmpty)
@@ -366,16 +366,16 @@ func TestTriage(t *testing.T) {
 					_, pcl31 := putPCL(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 32)
 					_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 31)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32}
-					oldC := &prjpb.Component{Clids: []int64{31, 32}, Dirty: true, Pruns: makePruns("runID", 31, 32)}
+					oldC := &prjpb.Component{Clids: []int64{31, 32}, TriageRequired: true, Pruns: makePruns("runID", 31, 32)}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetDirty(), ShouldBeFalse)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldBeEmpty)
 
 					Convey("even if some CLs are no longer triggered", func() {
 						// Happens during Run abort due to, say, tryjob failure.
 						pcl31.Trigger = nil
-						So(res.NewValue.GetDirty(), ShouldBeFalse)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 						So(res.CLsToPurge, ShouldBeEmpty)
 						So(res.RunsToCreate, ShouldBeEmpty)
 					})
@@ -384,7 +384,7 @@ func TestTriage(t *testing.T) {
 						// Happens during Run submission.
 						pcl32.Trigger = nil
 						pcl32.Submitted = true
-						So(res.NewValue.GetDirty(), ShouldBeFalse)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 						So(res.CLsToPurge, ShouldBeEmpty)
 						So(res.RunsToCreate, ShouldBeEmpty)
 					})
@@ -403,9 +403,9 @@ func TestTriage(t *testing.T) {
 					_, pcl51 := putPCL(51, combIdx, run.FullRun, ct.Clock.Now(), 31)
 					ct.Clock.Add(2 * stabilizationDelay)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl41, pcl51}
-					oldC := &prjpb.Component{Clids: []int64{31, 41, 51}, Dirty: true, Pruns: makePruns("41-31", 31, 41)}
+					oldC := &prjpb.Component{Clids: []int64{31, 41, 51}, TriageRequired: true, Pruns: makePruns("41-31", 31, 41)}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetDirty(), ShouldBeFalse)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldBeEmpty)
@@ -418,12 +418,12 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl41, pcl51}
 					oldC := &prjpb.Component{
 						Clids: []int64{31, 41, 51},
-						Dirty: true,
+						TriageRequired: true,
 						Pruns: makePruns("sub/mitting", 31, 41, 51),
 					}
 					mustWaitForRM := func() {
 						res := mustTriage(oldC)
-						So(res.NewValue.GetDirty(), ShouldBeFalse)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 						So(res.NewValue.GetDecisionTime(), ShouldBeNil)
 						So(res.CLsToPurge, ShouldBeEmpty)
 						So(res.RunsToCreate, ShouldBeEmpty)
@@ -464,9 +464,9 @@ func TestTriage(t *testing.T) {
 					pm.pb.PurgingCls = []*prjpb.PurgingCL{
 						{Clid: 31, OperationId: "purge-op-31", Deadline: timestamppb.New(ct.Clock.Now().Add(time.Minute))},
 					}
-					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, Dirty: true}
+					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetDirty(), ShouldBeFalse)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldBeEmpty)

@@ -93,7 +93,7 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 				Clids:        c.GetClids(),
 				DecisionTime: c.GetDecisionTime(),
 				Pruns:        pruns,
-				Dirty:        true,
+				TriageRequired:        true,
 			}
 		}
 		return c
@@ -134,7 +134,7 @@ func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
 				Pruns:        pruns,
 				Clids:        c.GetClids(),
 				DecisionTime: c.GetDecisionTime(),
-				Dirty:        true,
+				TriageRequired:        true,
 			}
 		}
 		return c
