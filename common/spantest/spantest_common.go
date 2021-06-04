@@ -227,6 +227,8 @@ type Emulator struct {
 	cancel func()
 	// cfgDir is the path to the temporary dircetory holding the gcloud config for emulator.
 	cfgDir string
+	// containerName is used to explicitly stop the docker container.
+	containerName string
 }
 
 func (e *Emulator) opts() []option.ClientOption {
