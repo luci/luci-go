@@ -250,41 +250,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) ([]eventbox.Transition, error) {
 	statingState := rs
 	var transitions []eventbox.Transition
-	if len(tr.clSubmittedEvents.events) > 0 {
-		res, err := rp.handler.OnCLSubmitted(ctx, rs, tr.clSubmittedEvents.cls)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, tr.clSubmittedEvents.events, transitions)
-	}
-	if sc := tr.submissionCompletedEvent.sc; sc != nil {
-		res, err := rp.handler.OnSubmissionCompleted(ctx, rs, sc)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, eventbox.Events{tr.submissionCompletedEvent.event}, transitions)
-	}
-	if len(tr.readyForSubmissionEvents) > 0 {
-		res, err := rp.handler.OnReadyForSubmission(ctx, rs)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, tr.readyForSubmissionEvents, transitions)
-	}
-	if len(tr.cqdVerificationCompletedEvents) > 0 {
-		res, err := rp.handler.OnCQDVerificationCompleted(ctx, rs)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
-	}
-	if len(tr.cqdFinished) > 0 {
-		res, err := rp.handler.OnCQDFinished(ctx, rs)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, tr.cqdFinished, transitions)
-	}
+
 	switch {
 	case len(tr.cancelEvents) > 0:
 		res, err := rp.handler.Cancel(ctx, rs)
@@ -306,13 +272,7 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.startEvents, transitions)
 	}
-	if len(tr.clUpdatedEvents.events) > 0 {
-		res, err := rp.handler.OnCLUpdated(ctx, rs, tr.clUpdatedEvents.cls)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, tr.clUpdatedEvents.events, transitions)
-	}
+
 	if len(tr.newConfigEvents.events) > 0 {
 		// TODO(tandrii,yiwzhang): update config.
 		res, err := rp.handler.UpdateConfig(ctx, rs, tr.newConfigEvents.hash)
@@ -321,6 +281,51 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.newConfigEvents.events, transitions)
 	}
+	if len(tr.clUpdatedEvents.events) > 0 {
+		res, err := rp.handler.OnCLUpdated(ctx, rs, tr.clUpdatedEvents.cls)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.clUpdatedEvents.events, transitions)
+	}
+
+	if len(tr.cqdVerificationCompletedEvents) > 0 {
+		res, err := rp.handler.OnCQDVerificationCompleted(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
+	}
+	if len(tr.cqdFinished) > 0 {
+		res, err := rp.handler.OnCQDFinished(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.cqdFinished, transitions)
+	}
+
+	if len(tr.clSubmittedEvents.events) > 0 {
+		res, err := rp.handler.OnCLSubmitted(ctx, rs, tr.clSubmittedEvents.cls)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.clSubmittedEvents.events, transitions)
+	}
+	if sc := tr.submissionCompletedEvent.sc; sc != nil {
+		res, err := rp.handler.OnSubmissionCompleted(ctx, rs, sc)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, eventbox.Events{tr.submissionCompletedEvent.event}, transitions)
+	}
+	if len(tr.readyForSubmissionEvents) > 0 {
+		res, err := rp.handler.OnReadyForSubmission(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.readyForSubmissionEvents, transitions)
+	}
+
 	if len(tr.pokeEvents) > 0 {
 		// TODO(crbug/1178658): trigger CL updater to refetch Run's CLs.
 		res, err := rp.handler.Poke(ctx, rs)
