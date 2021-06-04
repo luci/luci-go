@@ -14,31 +14,12 @@
 
 package state
 
-import (
-	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"google.golang.org/protobuf/proto"
-)
-
 func (s *State) needUpgrade() bool {
-	for _, pcl := range s.PB.GetPcls() {
-		if pcl.GetOwnerLacksEmail() {
-			return true
-		}
-	}
+	// Add condition when an upgrade is required,
+	// and then add code to actual upgrade in upgrade().
 	return false
 }
 
 // upgrade upgrades in place via copy-on-write.
 func (s *State) upgrade() {
-	s.PB.Pcls, _ = s.PB.COWPCLs(func(pcl *prjpb.PCL) *prjpb.PCL {
-		if pcl.GetOwnerLacksEmail() {
-			pcl = proto.Clone(pcl).(*prjpb.PCL)
-			pcl.OwnerLacksEmail = false
-			pcl.Errors = append(pcl.Errors, &changelist.CLError{
-				Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
-			})
-		}
-		return pcl
-	}, nil)
 }

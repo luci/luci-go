@@ -197,8 +197,6 @@ func (info *clInfo) triageNew(pm pmState) {
 		panic(fmt.Errorf("PCL %d submitted %s", clid, assumption))
 	case pcl.GetTrigger() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
-	case pcl.GetOwnerLacksEmail():
-		panic(fmt.Errorf("deprecated PCL.OwnerLacksEmail"))
 	case len(pcl.GetErrors()) > 0:
 		info.purgeReasons = pcl.GetErrors()
 		return
