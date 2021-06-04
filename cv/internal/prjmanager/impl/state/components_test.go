@@ -132,16 +132,16 @@ func TestComponentsActions(t *testing.T) {
 
 		pb := backupPB(state)
 
-		makeDirtySetup := func(indexes ...int) {
+		markForTriage := func(indexes ...int) {
 			for _, i := range indexes {
 				state.PB.GetComponents()[i].TriageRequired = true
 			}
 			pb = backupPB(state)
 		}
 
-		unDirty := func(c *prjpb.Component) *prjpb.Component {
+		markTriaged := func(c *prjpb.Component) *prjpb.Component {
 			if !c.GetTriageRequired() {
-				panic(fmt.Errorf("must be dirty to unDirty"))
+				panic(fmt.Errorf("must required triage"))
 			}
 			o := c.CloneShallow()
 			o.TriageRequired = false
@@ -185,10 +185,10 @@ func TestComponentsActions(t *testing.T) {
 			})
 		})
 
-		Convey("triage called on dirty components or when decision time is <= now", func() {
+		Convey("triage called on TriageRequired components or when decision time is <= now", func() {
 			ct.Clock.Set(state.PB.Components[1].DecisionTime.AsTime())
 			c1next := state.PB.Components[1].DecisionTime.AsTime().Add(time.Hour)
-			makeDirtySetup(3)
+			markForTriage(3)
 			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				calledOn <- c
 				switch c.GetClids()[0] {
@@ -197,7 +197,7 @@ func TestComponentsActions(t *testing.T) {
 					c.DecisionTime = timestamppb.New(c1next)
 					return itriager.Result{NewValue: c}, nil
 				case 3:
-					return itriager.Result{NewValue: unDirty(c)}, nil
+					return itriager.Result{NewValue: markTriaged(c)}, nil
 				}
 				panic("unrechable")
 			}
@@ -219,7 +219,7 @@ func TestComponentsActions(t *testing.T) {
 		})
 
 		Convey("purges CLs", func() {
-			makeDirtySetup(1, 2, 3)
+			markForTriage(1, 2, 3)
 			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch clid := c.GetClids()[0]; clid {
 				case 1, 3:
@@ -263,13 +263,13 @@ func TestComponentsActions(t *testing.T) {
 		})
 
 		Convey("partial failure in triage", func() {
-			makeDirtySetup(1, 2, 3)
+			markForTriage(1, 2, 3)
 			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch c.GetClids()[0] {
 				case 1:
 					return itriager.Result{}, errors.New("oops1")
 				case 2, 3:
-					return itriager.Result{NewValue: unDirty(c)}, nil
+					return itriager.Result{NewValue: markTriaged(c)}, nil
 				}
 				panic("unrechable")
 			}
@@ -284,7 +284,6 @@ func TestComponentsActions(t *testing.T) {
 				state2, sideEffect, err := state.ExecDeferred(ctx)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
-				// Must save undirtying #2 and #3.
 				pb.Components[2].TriageRequired = false
 				pb.Components[3].TriageRequired = false
 				So(state2.PB, ShouldResembleProto, pb)
@@ -294,7 +293,7 @@ func TestComponentsActions(t *testing.T) {
 		})
 
 		Convey("100% failure in triage", func() {
-			makeDirtySetup(1, 2)
+			markForTriage(1, 2)
 			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				return itriager.Result{}, errors.New("oops")
 			}
@@ -311,7 +310,7 @@ func TestComponentsActions(t *testing.T) {
 		})
 
 		Convey("Catches panic in triage", func() {
-			makeDirtySetup(1)
+			markForTriage(1)
 			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				panic(errors.New("oops"))
 			}
@@ -380,10 +379,10 @@ func TestComponentsActions(t *testing.T) {
 			}
 
 			Convey("100% success", func() {
-				makeDirtySetup(1)
+				markForTriage(1)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, false /* succeed */)
-					return itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
+					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
 				}
 
 				state2, sideEffect, err := state.ExecDeferred(ctx)
@@ -395,10 +394,10 @@ func TestComponentsActions(t *testing.T) {
 			})
 
 			Convey("100% failure", func() {
-				makeDirtySetup(1)
+				markForTriage(1)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, true /* fail */)
-					return itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
+					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
 				}
 
 				_, sideEffect, err := state.ExecDeferred(ctx)
@@ -408,7 +407,7 @@ func TestComponentsActions(t *testing.T) {
 			})
 
 			Convey("Partial failure", func() {
-				makeDirtySetup(1, 2, 3)
+				markForTriage(1, 2, 3)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					clid := c.GetClids()[0]
 					// Set up each component trying to create a Run,
@@ -416,7 +415,7 @@ func TestComponentsActions(t *testing.T) {
 					// but #2 failing to create a Run.
 					failIf := clid == 2
 					rc := makeRunCreator(clid, failIf)
-					res := itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}
+					res := itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}
 					if clid != 1 {
 						// Contrived example, since in practice purging a CL concurrently
 						// with Run creation in the same component ought to happen only iff
@@ -456,11 +455,11 @@ func TestComponentsActions(t *testing.T) {
 			})
 
 			Convey("Catches panic", func() {
-				makeDirtySetup(1)
+				markForTriage(1)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, false)
 					rc.LUCIProject = "" // causes panic because of incorrect usage.
-					return itriager.Result{NewValue: unDirty(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
+					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
 				}
 
 				_, _, err := state.ExecDeferred(ctx)
