@@ -36,6 +36,11 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "Ignoring CQDVerificationCompleted event because Run is %s", status)
 		return &Result{State: rs}, nil
+	case status == run.Status_WAITING_FOR_SUBMISSION || status == run.Status_SUBMITTING:
+		// Run probably enters submission phase due to previously received
+		// CQDVerificationCompleted event. Delay processing this event
+		// until submission completes.
+		return &Result{State: rs, PreserveEvents: true}, nil
 	case status != run.Status_RUNNING:
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
 	}

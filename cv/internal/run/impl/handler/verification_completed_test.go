@@ -141,6 +141,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 			run.Status_SUCCEEDED,
 			run.Status_FAILED,
 			run.Status_CANCELLED,
+			run.Status_WAITING_FOR_SUBMISSION,
+			run.Status_SUBMITTING,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
@@ -149,7 +151,12 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.State, ShouldEqual, rs)
 				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				switch {
+				case run.IsEnded(status):
+					So(res.PreserveEvents, ShouldBeFalse)
+				default:
+					So(res.PreserveEvents, ShouldBeTrue)
+				}
 			})
 		}
 
