@@ -178,6 +178,9 @@ message ActiveRun {
   // CV Run ID.
   string id = 1;
   repeated RunCL cls = 2;
+  // Deps of Run CLs which aren't part of the Run themself.
+  // Unlike `cls` above, their .trigger and .deps aren't set.
+  repeated RunCL fyi_deps = 3;
 }
 
 message RunCL {
