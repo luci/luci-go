@@ -654,11 +654,9 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 			gf.CQ(+2, ct.Clock.Now(), "user-1")(c.Info)
 			gf.Updated(ct.Clock.Now())(c.Info)
 		})
-		// TODO(crbug/1188763): fix Run Manager to cancel since trigger has changed.
-		// ct.RunUntil(ctx, func() bool {
-		// 	// CQ+2 vote removed.
-		// 	return trigger.Find(ct.GFake.GetChange(gHost, 13).Info) == nil
-		// })
+		ct.RunUntil(ctx, func() bool {
+			return ct.MaxCQVote(ctx, gHost, 13) == 0
+		})
 	})
 }
 
