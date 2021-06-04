@@ -117,7 +117,7 @@ func TestComponentsActions(t *testing.T) {
 
 		pb := backupPB(state)
 
-		markForTriage := func(indexes ...int) {
+		markComponentsForTriage := func(indexes ...int) {
 			for _, i := range indexes {
 				state.PB.GetComponents()[i].TriageRequired = true
 			}
@@ -173,7 +173,7 @@ func TestComponentsActions(t *testing.T) {
 		Convey("triage called on TriageRequired components or when decision time is <= now", func() {
 			ct.Clock.Set(state.PB.Components[1].DecisionTime.AsTime())
 			c1next := state.PB.Components[1].DecisionTime.AsTime().Add(time.Hour)
-			markForTriage(3)
+			markComponentsForTriage(3)
 			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				calledOn <- c
 				switch c.GetClids()[0] {
@@ -204,7 +204,7 @@ func TestComponentsActions(t *testing.T) {
 		})
 
 		Convey("purges CLs", func() {
-			markForTriage(1, 2, 3)
+			markComponentsForTriage(1, 2, 3)
 			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch clid := c.GetClids()[0]; clid {
 				case 1, 3:
@@ -248,7 +248,7 @@ func TestComponentsActions(t *testing.T) {
 		})
 
 		Convey("partial failure in triage", func() {
-			markForTriage(1, 2, 3)
+			markComponentsForTriage(1, 2, 3)
 			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch c.GetClids()[0] {
 				case 1:
@@ -278,7 +278,7 @@ func TestComponentsActions(t *testing.T) {
 		})
 
 		Convey("100% failure in triage", func() {
-			markForTriage(1, 2)
+			markComponentsForTriage(1, 2)
 			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				return itriager.Result{}, errors.New("oops")
 			}
@@ -295,7 +295,7 @@ func TestComponentsActions(t *testing.T) {
 		})
 
 		Convey("Catches panic in triage", func() {
-			markForTriage(1)
+			markComponentsForTriage(1)
 			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				panic(errors.New("oops"))
 			}
@@ -364,7 +364,7 @@ func TestComponentsActions(t *testing.T) {
 			}
 
 			Convey("100% success", func() {
-				markForTriage(1)
+				markComponentsForTriage(1)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, false /* succeed */)
 					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
@@ -379,7 +379,7 @@ func TestComponentsActions(t *testing.T) {
 			})
 
 			Convey("100% failure", func() {
-				markForTriage(1)
+				markComponentsForTriage(1)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, true /* fail */)
 					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
@@ -392,7 +392,7 @@ func TestComponentsActions(t *testing.T) {
 			})
 
 			Convey("Partial failure", func() {
-				markForTriage(1, 2, 3)
+				markComponentsForTriage(1, 2, 3)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					clid := c.GetClids()[0]
 					// Set up each component trying to create a Run,
@@ -440,7 +440,7 @@ func TestComponentsActions(t *testing.T) {
 			})
 
 			Convey("Catches panic", func() {
-				markForTriage(1)
+				markComponentsForTriage(1)
 				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, false)
 					rc.LUCIProject = "" // causes panic because of incorrect usage.
