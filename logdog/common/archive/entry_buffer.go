@@ -32,9 +32,10 @@ type entryBuffer struct {
 	seq        int
 	maxPayload int
 
-	streamStart    time.Time
-	streamID       string
-	lastTimeOffset *durationpb.Duration // TimeOffset of the latest LogEntry passed to Append.
+	streamStart     time.Time
+	streamID        string
+	lastTimeOffset  *durationpb.Duration // TimeOffset of the latest LogEntry passed to Append.
+	hasCompleteLine bool
 }
 
 // newEntryBuffer constructs and returns entryBuffer.
@@ -48,99 +49,33 @@ func newEntryBuffer(maxPayload int, streamID string, desc *logpb.LogStreamDescri
 
 // append appends a new LogEntry into the buffer and returns CloudLogging entries ready for sending.
 func (eb *entryBuffer) append(e *logpb.LogEntry) []*cl.Entry {
-	lines := e.GetText().GetLines()
-	if len(lines) == 0 {
-		return nil
-	}
-
-	// If the first line is a partial line, add it to the buffer as much as possible, and
-	// return. The buffer should be flushed out when the first complete line is encountered.
-	if lines[0].Delimiter == "" {
-		eb.safeAdd(lines[0].Value)
-		return nil
-	}
-
-	eb.lastTimeOffset = e.TimeOffset
-
-	// There are 2 types of complete lines.
-	// a) a complete line that ends the buffered partial lines from the previous entries.
-	// b) self-contained complete line.
-	//
-	// Both are semantically complete lines, but (a) is actually a partial line.
-	// They are handled differently, when the resulting complete line is larger than maxPayload.
-	//
-	// If the current line is (a), buffer(a) as much as possible, and then flush().
-	// : truncation always occurs on (a).
-	// If the current line is (b), flush() and then buffer(b) as much as possible.
-	// : truncation does not occur on (b), unless (b) alone is larger than maxPayload.
-	//
-	// This handles (a), so that the below loop only needs to handle (b).
 	var ret []*cl.Entry
-	if eb.buf.Len() > 0 && eb.isExceeding(lines[0]) {
-		eb.safeAdd(lines[0].Value)
-		ret = append(ret, eb.flush())
-		lines = lines[1:]
-	}
-
-	// Keep the last line in case it is a partial line. It should be carried over to the next
-	// LogEntry.
-	var pl *logpb.Text_Line
-	if len(lines) > 0 {
-		if last := lines[len(lines)-1]; last.Delimiter == "" {
-			pl = last
-			lines = lines[:len(lines)-1]
+	flushIf := func(cond bool) {
+		if !cond {
+			return
+		}
+		if e := eb.flush(); e != nil {
+			ret = append(ret, e)
 		}
 	}
-	for i, line := range lines {
-		if eb.buf.Len() > 0 && eb.isExceeding(line) {
-			entry := eb.flush()
-			if i > 0 {
-				// Trim out the delimiter from the last element.
-				p := entry.Payload.(string)
-				entry.Payload = p[:len(p)-len(lines[i-1].Delimiter)]
-			}
-			ret = append(ret, entry)
-		}
-
-		eb.safeAdd(line.Value)
-
-		// If the line itself is too long or the last line in the entry, flush it out.
-		//
-		// It's important to skip the delimiter of the last line. Otherwise,
-		// all the CloudLogging entries will have an ending delimiter, such as \n,
-		// rendered in the CloudLogging UI.
-		//
-		// e.g.,
-		// Entry1: "line1
-		// "
-		// Entry2: "line2
-		// "
-		// Entry3: "line3
-		// "
-		if eb.isExceeding(line) || i == len(lines)-1 {
-			if eb.buf.Len() > 0 {
-				ret = append(ret, eb.flush())
-			}
-		} else {
-			// Add the delimiter so that lines can be distinguished when they got
-			// joined into a single Payload.
-			eb.buf.WriteString(line.Delimiter)
-		}
+	eb.lastTimeOffset = e.TimeOffset
+	lines := e.GetText().GetLines()
+	for i, l := range lines {
+		lastLineAndIncomplete := i == len(lines)-1 && l.Delimiter == ""
+		flushIf(eb.hasCompleteLine && (eb.isExceeding(l) || lastLineAndIncomplete))
+		eb.safeAdd(l)
 	}
-	if pl != nil {
-		eb.safeAdd(pl.Value)
-	}
+	flushIf(eb.hasCompleteLine)
 	return ret
 }
 
-func (eb *entryBuffer) safeAdd(line []byte) {
-	writable := eb.maxPayload - eb.buf.Len()
-	toWrite := len(line)
-	if writable < toWrite {
-		toWrite = writable
-	}
-	if writable > 0 {
-		eb.buf.Write(line[:toWrite])
+func (eb *entryBuffer) safeAdd(line *logpb.Text_Line) {
+	remaining := eb.maxPayload - eb.buf.Len()
+	n, _ := eb.buf.Write(line.Value[:min(remaining, len(line.Value))])
+	if d := line.Delimiter; d != "" {
+		remaining -= n
+		eb.buf.WriteString(d[:min(remaining, len(d))])
+		eb.hasCompleteLine = true
 	}
 }
 
@@ -161,8 +96,19 @@ func (eb *entryBuffer) flush() *cl.Entry {
 	if eb.lastTimeOffset != nil {
 		ts = eb.streamStart.Add(eb.lastTimeOffset.AsDuration())
 	}
+
+	if eb.hasCompleteLine {
+		eb.hasCompleteLine = false
+	}
+	// Trim line end delimiters because it Cloud Logging UI renders it as an extra
+	// empty line at the end of the log message.
+	payload := strings.TrimRight(eb.buf.String(), "\n\r")
+	if payload == "" {
+		return nil
+	}
+
 	ret := &cl.Entry{
-		Payload:   eb.buf.String(),
+		Payload:   payload,
 		Timestamp: ts,
 
 		// InsertID uniquely identifies each LogEntry to dedup entries in CloudLogging.
@@ -175,4 +121,11 @@ func (eb *entryBuffer) flush() *cl.Entry {
 	eb.buf.Reset()
 	eb.seq += 1
 	return ret
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }

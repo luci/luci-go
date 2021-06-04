@@ -15,6 +15,7 @@
 package archive
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -87,10 +88,11 @@ func TestEntryBuffer(t *testing.T) {
 		}
 
 		checkPayloads := func(ces []*cl.Entry, payloads ...string) {
-			So(ces, ShouldHaveLength, len(payloads))
-			for i, e := range ces {
-				So(e.Payload, ShouldEqual, payloads[i])
+			var actual []string
+			for _, e := range ces {
+				actual = append(actual, e.Payload.(string))
 			}
+			So(actual, ShouldResemble, payloads)
 		}
 
 		Convey("Sets the entry timestamp based on the stream timestamp", func() {
@@ -112,9 +114,9 @@ func TestEntryBuffer(t *testing.T) {
 				genEntry("line-123\n"),
 				genEntry("line-456\n"),
 			)
-			So(ces, ShouldHaveLength, 2)
-			So(ces[0].Trace, ShouldEqual, eb.streamID)
-			So(ces[1].Trace, ShouldEqual, eb.streamID)
+			for _, e := range ces {
+				So(e.Trace, ShouldResemble, eb.streamID)
+			}
 		})
 
 		Convey("Sets entries with unique InsertIDs", func() {
@@ -122,10 +124,9 @@ func TestEntryBuffer(t *testing.T) {
 				genEntry("line-1\n", "line-2\n", "line-3\n"),
 				genEntry("line-4\n"),
 			)
-			So(ces, ShouldHaveLength, 3)
-			So(ces[0].InsertID, ShouldEqual, eb.streamID+"/0") // line-1\nline-2
-			So(ces[1].InsertID, ShouldEqual, eb.streamID+"/1") // line-3
-			So(ces[2].InsertID, ShouldEqual, eb.streamID+"/2") // line-4
+			for i, e := range ces {
+				So(e.InsertID, ShouldResemble, fmt.Sprintf("%s/%d", eb.streamID, i))
+			}
 		})
 
 		Convey("Handles empty lines", func() {
@@ -140,13 +141,13 @@ func TestEntryBuffer(t *testing.T) {
 				genEntry("\n", "\n"),
 				genEntry(""),
 			)
-			checkPayloads(ces, "\n")
+			checkPayloads(ces) // len(ces) should be 0.
 
 			ces = toCLEs(
 				genEntry("line\n", "\n", ""),
 				genEntry("\n"),
 			)
-			checkPayloads(ces, "line\n")
+			checkPayloads(ces, "line")
 		})
 
 		Convey("Merges lines without a trailing delimiter", func() {
