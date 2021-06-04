@@ -21,13 +21,14 @@
 package prjpb
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	changelist "go.chromium.org/luci/cv/internal/changelist"
 	run "go.chromium.org/luci/cv/internal/run"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -551,7 +552,7 @@ type Component struct {
 	// Sorted by Run's ID.
 	Pruns []*PRun `protobuf:"bytes,3,rep,name=pruns,proto3" json:"pruns,omitempty"`
 	// If true, this component must be re-evaluated as soon as possible.
-	Dirty bool `protobuf:"varint,11,opt,name=dirty,proto3" json:"dirty,omitempty"`
+	ReevalRequired bool `protobuf:"varint,11,opt,name=dirty,proto3" json:"dirty,omitempty"`
 }
 
 func (x *Component) Reset() {
@@ -607,9 +608,9 @@ func (x *Component) GetPruns() []*PRun {
 	return nil
 }
 
-func (x *Component) GetDirty() bool {
+func (x *Component) GetReevalRequired() bool {
 	if x != nil {
-		return x.Dirty
+		return x.ReevalRequired
 	}
 	return false
 }
