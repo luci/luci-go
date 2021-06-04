@@ -267,8 +267,17 @@ func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*mi
 					Status:        cvbqpb.AttemptStatus_STARTED,
 				},
 			}
+			avail := availableClids(a)
 			for j, cl := range a.GetCls() {
 				out[i].Attempt.GerritChanges[j] = cl.GetGc()
+				// Verify that each referenced deps is either a Run CL itself OR is in
+				// FyiDeps.
+				for _, d := range cl.GetDeps() {
+					if _, yes := avail[d.GetId()]; !yes {
+						panic(fmt.Errorf("ActiveRun %q: CL %d: references dep %d which isn't in given list %v",
+							a.GetId(), cl.GetId(), d.GetId(), avail))
+					}
+				}
 			}
 		}
 		return out, nil
@@ -496,4 +505,15 @@ func (cqd *CQDFake) maybeCrash(ctx context.Context, next Operation, key string) 
 var cqdGerritUser = &gerritpb.AccountInfo{
 	Email:     "cqdaemon@example.com",
 	AccountId: 538183838,
+}
+
+func availableClids(a *migrationpb.ActiveRun) map[int64]struct{} {
+	m := make(map[int64]struct{}, len(a.GetCls())+len(a.GetFyiDeps()))
+	for _, cl := range a.GetCls() {
+		m[cl.GetId()] = struct{}{}
+	}
+	for _, d := range a.GetFyiDeps() {
+		m[d.GetId()] = struct{}{}
+	}
+	return m
 }

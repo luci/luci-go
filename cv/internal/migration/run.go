@@ -55,71 +55,112 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Active
 		return nil, nil
 	}
 
-	poolSize := len(runs)
-	if poolSize > 20 {
-		poolSize = 20
-	}
+	// Load all RunCLs and populate ActiveRuns concurrently, but leave FyiDeps
+	// computation for later, since these can't be filled from RunCLs anyway.
 	ret := make([]*migrationpb.ActiveRun, len(runs))
-	err = parallel.WorkPool(poolSize, func(workCh chan<- func() error) {
+	err = parallel.WorkPool(min(len(runs), 32), func(workCh chan<- func() error) {
 		for i, r := range runs {
 			i, r := i, r
 			workCh <- func() error {
-				runKey := datastore.MakeKey(ctx, run.RunKind, string(r.ID))
-				runCLs := make([]run.RunCL, len(r.CLs))
-				for i, cl := range r.CLs {
-					runCLs[i] = run.RunCL{
-						ID:  cl,
-						Run: runKey,
-					}
-				}
-				if err := datastore.Get(ctx, runCLs); err != nil {
-					return errors.Annotate(err, "fetch CLs for run %q", r.ID).Tag(transient.Tag).Err()
-				}
-				mcls := make([]*migrationpb.RunCL, len(runCLs))
-				mode := r.Mode.BQAttemptMode()
-				for i, cl := range runCLs {
-					trigger := &migrationpb.RunCL_Trigger{
-						Email:     cl.Trigger.GetEmail(),
-						Time:      cl.Trigger.GetTime(),
-						AccountId: cl.Trigger.GetGerritAccountId(),
-					}
-					mcl := &migrationpb.RunCL{
-						Id: int64(cl.ID),
-						Gc: &cvbqpb.GerritChange{
-							Host:                       cl.Detail.GetGerrit().GetHost(),
-							Project:                    cl.Detail.GetGerrit().GetInfo().GetProject(),
-							Change:                     cl.Detail.GetGerrit().GetInfo().GetNumber(),
-							Patchset:                   int64(cl.Detail.GetPatchset()),
-							EarliestEquivalentPatchset: int64(cl.Detail.GetMinEquivalentPatchset()),
-							Mode:                       mode,
-						},
-						Files:   cl.Detail.GetGerrit().GetFiles(),
-						Info:    cl.Detail.GetGerrit().GetInfo(),
-						Trigger: trigger,
-						Deps:    make([]*migrationpb.RunCL_Dep, len(cl.Detail.GetDeps())),
-					}
-					for i, dep := range cl.Detail.GetDeps() {
-						mcl.Deps[i] = &migrationpb.RunCL_Dep{
-							Id: dep.GetClid(),
-						}
-						if dep.GetKind() == changelist.DepKind_HARD {
-							mcl.Deps[i].Hard = true
-						}
-					}
-					mcls[i] = mcl
-				}
-				ret[i] = &migrationpb.ActiveRun{
-					Id:  string(r.ID),
-					Cls: mcls,
-				}
-				return nil
+				var err error
+				ret[i], err = makeActiveRun(ctx, r)
+				return err
 			}
 		}
 	})
 	if err != nil {
+		return nil, common.MostSevereError(err)
+	}
+
+	// Finally, process all FyiDeps at once.
+	cls := map[common.CLID]*changelist.CL{}
+	for _, r := range ret {
+		for _, d := range r.GetFyiDeps() {
+			clid := common.CLID(d.GetId())
+			if _, exists := cls[clid]; !exists {
+				cls[clid] = &changelist.CL{ID: clid}
+			}
+		}
+	}
+	if len(cls) == 0 {
+		return ret, nil
+	}
+	if _, err := changelist.LoadCLsMap(ctx, cls); err != nil {
 		return nil, err
 	}
+	for _, r := range ret {
+		for _, d := range r.GetFyiDeps() {
+			cl := cls[common.CLID(d.GetId())]
+			d.Gc = &cvbqpb.GerritChange{
+				Host:                       cl.Snapshot.GetGerrit().GetHost(),
+				Project:                    cl.Snapshot.GetGerrit().GetInfo().GetProject(),
+				Change:                     cl.Snapshot.GetGerrit().GetInfo().GetNumber(),
+				Patchset:                   int64(cl.Snapshot.GetPatchset()),
+				EarliestEquivalentPatchset: int64(cl.Snapshot.GetMinEquivalentPatchset()),
+			}
+			d.Files = cl.Snapshot.GetGerrit().GetFiles()
+			d.Info = cl.Snapshot.GetGerrit().GetInfo()
+		}
+	}
 	return ret, nil
+}
+
+// makeActiveRun makes ActiveRun except for filling FYI deps with details,
+// which is done later for all Runs in order to de-dupe common FYI deps.
+// This is especially helpful for large CL stacks in single-CL Run mode.
+func makeActiveRun(ctx context.Context, r *run.Run) (*migrationpb.ActiveRun, error) {
+	runCLs, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
+	if err != nil {
+		return nil, err
+	}
+	known := make(map[common.CLID]struct{}, len(r.CLs))
+	allDeps := map[common.CLID]struct{}{}
+	mcls := make([]*migrationpb.RunCL, len(runCLs))
+	for i, cl := range runCLs {
+		known[cl.ID] = struct{}{}
+		trigger := &migrationpb.RunCL_Trigger{
+			Email:     cl.Trigger.GetEmail(),
+			Time:      cl.Trigger.GetTime(),
+			AccountId: cl.Trigger.GetGerritAccountId(),
+		}
+		mcl := &migrationpb.RunCL{
+			Id: int64(cl.ID),
+			Gc: &cvbqpb.GerritChange{
+				Host:                       cl.Detail.GetGerrit().GetHost(),
+				Project:                    cl.Detail.GetGerrit().GetInfo().GetProject(),
+				Change:                     cl.Detail.GetGerrit().GetInfo().GetNumber(),
+				Patchset:                   int64(cl.Detail.GetPatchset()),
+				EarliestEquivalentPatchset: int64(cl.Detail.GetMinEquivalentPatchset()),
+				Mode:                       r.Mode.BQAttemptMode(),
+			},
+			Files:   cl.Detail.GetGerrit().GetFiles(),
+			Info:    cl.Detail.GetGerrit().GetInfo(),
+			Trigger: trigger,
+			Deps:    make([]*migrationpb.RunCL_Dep, len(cl.Detail.GetDeps())),
+		}
+		for i, dep := range cl.Detail.GetDeps() {
+			allDeps[common.CLID(dep.GetClid())] = struct{}{}
+			mcl.Deps[i] = &migrationpb.RunCL_Dep{
+				Id: dep.GetClid(),
+			}
+			if dep.GetKind() == changelist.DepKind_HARD {
+				mcl.Deps[i].Hard = true
+			}
+		}
+		mcls[i] = mcl
+	}
+	var fyiDeps []*migrationpb.RunCL
+	for clid := range allDeps {
+		if _, yes := known[clid]; yes {
+			continue
+		}
+		fyiDeps = append(fyiDeps, &migrationpb.RunCL{Id: int64(clid)})
+	}
+	return &migrationpb.ActiveRun{
+		Id:      string(r.ID),
+		Cls:     mcls,
+		FyiDeps: fyiDeps,
+	}, nil
 }
 
 func fetchExcludedCLs(ctx context.Context, project string) ([]*cvbqpb.GerritChange, error) {
@@ -419,4 +460,11 @@ func makeGerritSetReviewRequest(r *run.Run, ci *gerritpb.ChangeInfo, msg, curRev
 		}
 	}
 	return req
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }
