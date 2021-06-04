@@ -139,6 +139,17 @@ func TestRunManager(t *testing.T) {
 			},
 			{
 				&eventpb.Event{
+					Event: &eventpb.Event_CqdFinished{
+						CqdFinished: &eventpb.CQDFinished{},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.NotifyCQDFinished(ctx, runID)
+				},
+				"OnCQDFinished",
+			},
+			{
+				&eventpb.Event{
 					Event: &eventpb.Event_Cancel{
 						Cancel: &eventpb.Cancel{},
 					},
@@ -185,7 +196,7 @@ func TestRunManager(t *testing.T) {
 				func(ctx context.Context) error {
 					return notifier.UpdateConfig(ctx, runID, "deadbeef", 2)
 				},
-				"",
+				"UpdateConfig",
 			},
 			{
 				&eventpb.Event{
@@ -207,10 +218,9 @@ func TestRunManager(t *testing.T) {
 				runtest.AssertInEventbox(ctx, runID, et.event)
 				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-				if et.invokedHandlerMethod != "" {
-					So(fh.invocations[0], ShouldEqual, et.invokedHandlerMethod)
-					So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
-				}
+				So(fh.invocations[0], ShouldEqual, et.invokedHandlerMethod)
+				So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
+				runtest.AssertNotInEventbox(ctx, runID, et.event) // consumed
 			})
 		}
 
@@ -222,7 +232,7 @@ func TestRunManager(t *testing.T) {
 			for _, et := range eventTestcases {
 				// skipping Cancel because when Start and Cancel are both present.
 				// only Cancel will execute. See next test
-				if et.event.GetCancel() == nil && et.invokedHandlerMethod != "" {
+				if et.event.GetCancel() == nil {
 					expectInvokedMethods = append(expectInvokedMethods, et.invokedHandlerMethod)
 				}
 			}
@@ -230,7 +240,7 @@ func TestRunManager(t *testing.T) {
 				eventTestcases[i], eventTestcases[j] = eventTestcases[j], eventTestcases[i]
 			})
 			for _, etc := range eventTestcases {
-				if etc.event.GetCancel() == nil && etc.invokedHandlerMethod != "" {
+				if etc.event.GetCancel() == nil {
 					So(etc.sendFn(ctx), ShouldBeNil)
 				}
 			}
