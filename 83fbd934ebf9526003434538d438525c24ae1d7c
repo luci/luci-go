@@ -16,6 +16,23 @@
       "message": "Thanks very much for review Yiwei :-)\n\nBQ Tables are now created; and tests for this CL pass locally.",
       "revId": "83fbd934ebf9526003434538d438525c24ae1d7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ac8ecd6_1f62f217",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-04T22:24:55Z",
+      "side": 1,
+      "message": "lgtm % passing bqClient not runExporter.\nshould make main() simpler.",
+      "revId": "83fbd934ebf9526003434538d438525c24ae1d7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
