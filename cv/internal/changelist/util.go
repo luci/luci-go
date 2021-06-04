@@ -124,12 +124,27 @@ func (s *Snapshot) PanicIfNotValid() {
 	}
 }
 
+// LoadCLsMap loads `CL` entities which are values in the provided map.
+//
+// Updates `CL` entities *in place*, but also returns them as a slice.
+func LoadCLsMap(ctx context.Context, m map[common.CLID]*CL) ([]*CL, error) {
+	cls := make([]*CL, 0, len(m))
+	for _, cl := range m {
+		cls = append(cls, cl)
+	}
+	return loadCLs(ctx, cls)
+}
+
 // LoadCLs loads `CL` entities of the provided list of clids.
 func LoadCLs(ctx context.Context, clids common.CLIDs) ([]*CL, error) {
 	cls := make([]*CL, len(clids))
 	for i, clid := range clids {
 		cls[i] = &CL{ID: clid}
 	}
+	return loadCLs(ctx, cls)
+}
+
+func loadCLs(ctx context.Context, cls []*CL) ([]*CL, error) {
 	err := datastore.Get(ctx, cls)
 	switch merr, ok := err.(errors.MultiError); {
 	case err == nil:
