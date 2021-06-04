@@ -151,7 +151,7 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 			size := d.SizeOf(root)
 			c = &prjpb.Component{
 				Clids: make([]int64, 0, size),
-				Dirty: true, // new components always dirty.
+				ReevalRequired: true, // new components always dirty.
 			}
 			created[root] = c
 		}
