@@ -29,7 +29,7 @@ import (
 //     However, some deps of those CLs may be missing.
 //   * .Pcls doesn't contain any CLs not in components.
 //   * .CreatedRuns is nil,
-//   * .DirtyComponents is false.
+//   * .RepartitionRequired is false.
 //   * pclIndex is up-to-date.
 func (s *State) repartition(cat *categorizedCLs) {
 	s.ensurePCLIndex()
@@ -150,8 +150,8 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 		if !exists {
 			size := d.SizeOf(root)
 			c = &prjpb.Component{
-				Clids: make([]int64, 0, size),
-				TriageRequired: true, // new components always dirty.
+				Clids:          make([]int64, 0, size),
+				TriageRequired: true,
 			}
 			created[root] = c
 		}
