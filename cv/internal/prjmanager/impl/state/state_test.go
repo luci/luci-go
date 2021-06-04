@@ -841,7 +841,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 							{Id: string(run23.ID), Clids: []int64{202, 203}},
 							{Id: string(run234.ID), Clids: []int64{202, 203, 204}},
 						},
-						Dirty: true,
+						TriageRequired: true,
 					},
 				},
 				RepartitionRequired: true,
@@ -871,7 +871,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						{
 							Clids: []int64{101},
 							Pruns: nil,  // removed
-							Dirty: true, // marked dirty
+							TriageRequired: true, // marked dirty
 						},
 						s1.PB.GetComponents()[1], // unchanged
 					},
@@ -910,7 +910,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					ConfigGroupNames: []string{"g0", "g1"},
 					Pcls:             s1.PB.GetPcls(),
 					Components: []*prjpb.Component{
-						{Clids: []int64{101}, Dirty: true},
+						{Clids: []int64{101}, TriageRequired: true},
 						s1.PB.GetComponents()[1], // unchanged.
 					},
 					CreatedPruns:    nil, // removed
@@ -953,7 +953,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 				Components: []*prjpb.Component{
 					{Clids: []int64{9}}, // for unconfusing indexes below.
 					{Clids: []int64{1}},
-					{Clids: []int64{2}, Dirty: true},
+					{Clids: []int64{2}, TriageRequired: true},
 					{Clids: []int64{3}},
 				},
 			}}
@@ -970,9 +970,9 @@ func TestOnPurgesCompleted(t *testing.T) {
 				}
 				pb.Components = []*prjpb.Component{
 					pb.Components[0],
-					{Clids: []int64{1}, Dirty: true},
+					{Clids: []int64{1}, TriageRequired: true},
 					pb.Components[2],
-					{Clids: []int64{3}, Dirty: true},
+					{Clids: []int64{3}, TriageRequired: true},
 				}
 				So(s2.PB, ShouldResembleProto, pb)
 			})
@@ -991,9 +991,9 @@ func TestOnPurgesCompleted(t *testing.T) {
 				pb.PurgingCls = nil
 				pb.Components = []*prjpb.Component{
 					pb.Components[0],
-					{Clids: []int64{1}, Dirty: true},
+					{Clids: []int64{1}, TriageRequired: true},
 					pb.Components[2], // it was dirty already
-					{Clids: []int64{3}, Dirty: true},
+					{Clids: []int64{3}, TriageRequired: true},
 				}
 				So(s2.PB, ShouldResembleProto, pb)
 			})
@@ -1452,7 +1452,7 @@ func TestRepartition(t *testing.T) {
 				state.PB.Components = []*prjpb.Component{{
 					Clids: []int64{1},
 					Pruns: []*prjpb.PRun{{Clids: []int64{1}, Id: "id"}},
-					Dirty: true,
+					TriageRequired: true,
 				}}
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 				pb := backupPB(state)
@@ -1481,7 +1481,7 @@ func TestRepartition(t *testing.T) {
 					},
 					Components: []*prjpb.Component{{
 						Clids: []int64{1, 3},
-						Dirty: true,
+						TriageRequired: true,
 					}},
 				})
 			})
@@ -1519,7 +1519,7 @@ func TestRepartition(t *testing.T) {
 					},
 					Components: []*prjpb.Component{{
 						Clids: []int64{1},
-						Dirty: true,
+						TriageRequired: true,
 					}},
 				})
 			})
@@ -1535,7 +1535,7 @@ func TestRepartition(t *testing.T) {
 					Pcls: []*prjpb.PCL{{Clid: 1}},
 					Components: []*prjpb.Component{{
 						Clids: []int64{1},
-						Dirty: true,
+						TriageRequired: true,
 					}},
 				})
 			})
@@ -1555,11 +1555,11 @@ func TestRepartition(t *testing.T) {
 					Components: []*prjpb.Component{
 						{
 							Clids: []int64{1, 3},
-							Dirty: true,
+							TriageRequired: true,
 						},
 						{
 							Clids: []int64{2},
-							Dirty: true,
+							TriageRequired: true,
 						},
 					},
 				})
@@ -1586,8 +1586,8 @@ func TestRepartition(t *testing.T) {
 				So(state.PB, ShouldResembleProto, &prjpb.PState{
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
-						{Clids: []int64{1, 3}, Dirty: true},
-						{Clids: []int64{2, 4}, Dirty: true},
+						{Clids: []int64{1, 3}, TriageRequired: true},
+						{Clids: []int64{2, 4}, TriageRequired: true},
 					},
 				})
 			})
@@ -1608,8 +1608,8 @@ func TestRepartition(t *testing.T) {
 				So(state.PB, ShouldResembleProto, &prjpb.PState{
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
-						{Clids: []int64{1, 3}, Dirty: true},
-						{Clids: []int64{2}, Dirty: true},
+						{Clids: []int64{1, 3}, TriageRequired: true},
+						{Clids: []int64{2}, TriageRequired: true},
 					},
 				})
 			})
@@ -1633,7 +1633,7 @@ func TestRepartition(t *testing.T) {
 						{
 							Clids: []int64{1, 2},
 							Pruns: []*prjpb.PRun{{Clids: []int64{1, 2}, Id: "id"}},
-							Dirty: true,
+							TriageRequired: true,
 						},
 					},
 				})
@@ -1664,7 +1664,7 @@ func TestRepartition(t *testing.T) {
 								{Clids: []int64{1, 2}, Id: "12"},
 								{Clids: []int64{2}, Id: "2"},
 							},
-							Dirty: true,
+							TriageRequired: true,
 						},
 					},
 				})
@@ -1709,13 +1709,13 @@ func TestRepartition(t *testing.T) {
 					{Clid: 6, Deps: []*changelist.Dep{{Clid: 7}}},
 				},
 				Components: []*prjpb.Component{
-					{Clids: []int64{1, 2}, Dirty: true, Pruns: []*prjpb.PRun{{Clids: []int64{1}, Id: "1"}}},
-					{Clids: []int64{4, 5}, Dirty: true, Pruns: []*prjpb.PRun{
+					{Clids: []int64{1, 2}, TriageRequired: true, Pruns: []*prjpb.PRun{{Clids: []int64{1}, Id: "1"}}},
+					{Clids: []int64{4, 5}, TriageRequired: true, Pruns: []*prjpb.PRun{
 						{Clids: []int64{4}, Id: "4"},
 						{Clids: []int64{4, 5}, Id: "45"},
 						{Clids: []int64{5}, Id: "5"},
 					}},
-					{Clids: []int64{6}, Dirty: true, Pruns: []*prjpb.PRun{{Clids: []int64{6}, Id: "6"}}},
+					{Clids: []int64{6}, TriageRequired: true, Pruns: []*prjpb.PRun{{Clids: []int64{6}, Id: "6"}}},
 				},
 			})
 		})

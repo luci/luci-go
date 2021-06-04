@@ -24,7 +24,7 @@ func (c *Component) CloneShallow() *Component {
 		Clids:        c.GetClids(),
 		Pruns:        c.GetPruns(),
 		DecisionTime: c.GetDecisionTime(),
-		Dirty:        c.GetDirty(),
+		TriageRequired:        c.GetTriageRequired(),
 	}
 }
 

@@ -134,17 +134,17 @@ func TestComponentsActions(t *testing.T) {
 
 		makeDirtySetup := func(indexes ...int) {
 			for _, i := range indexes {
-				state.PB.GetComponents()[i].Dirty = true
+				state.PB.GetComponents()[i].TriageRequired = true
 			}
 			pb = backupPB(state)
 		}
 
 		unDirty := func(c *prjpb.Component) *prjpb.Component {
-			if !c.GetDirty() {
+			if !c.GetTriageRequired() {
 				panic(fmt.Errorf("must be dirty to unDirty"))
 			}
 			o := c.CloneShallow()
-			o.Dirty = false
+			o.TriageRequired = false
 			return o
 		}
 
@@ -212,7 +212,7 @@ func TestComponentsActions(t *testing.T) {
 				So(sideEffect, ShouldBeNil)
 				pb.NextEvalTime = timestamppb.New(now.Add(2 * time.Minute))
 				pb.Components[1].DecisionTime = timestamppb.New(c1next)
-				pb.Components[3].Dirty = false
+				pb.Components[3].TriageRequired = false
 				So(state2.PB, ShouldResembleProto, pb)
 				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(2*time.Minute)), ShouldNotBeEmpty)
 			})
@@ -285,8 +285,8 @@ func TestComponentsActions(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// Must save undirtying #2 and #3.
-				pb.Components[2].Dirty = false
-				pb.Components[3].Dirty = false
+				pb.Components[2].TriageRequired = false
+				pb.Components[3].TriageRequired = false
 				So(state2.PB, ShouldResembleProto, pb)
 				// Self-poke task must be scheduled for earliest possible from now.
 				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, ct.Clock.Now().Add(prjpb.PMTaskInterval)), ShouldNotBeEmpty)
@@ -389,7 +389,7 @@ func TestComponentsActions(t *testing.T) {
 				state2, sideEffect, err := state.ExecDeferred(ctx)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
-				pb.Components[1].Dirty = false // must be saved, since Run Creation succeeded.
+				pb.Components[1].TriageRequired = false // must be saved, since Run Creation succeeded.
 				So(state2.PB, ShouldResembleProto, pb)
 				So(findRunOf(1), ShouldNotBeNil)
 			})
@@ -442,10 +442,10 @@ func TestComponentsActions(t *testing.T) {
 				So(ps[0].GetPurgingCl().GetClid(), ShouldEqual, 3)
 
 				So(findRunOf(1), ShouldNotBeNil)
-				pb.Components[1].Dirty = false
+				pb.Components[1].TriageRequired = false
 				// Component #2 must remain unchanged.
 				So(findRunOf(3), ShouldNotBeNil)
-				pb.Components[3].Dirty = false
+				pb.Components[3].TriageRequired = false
 				pb.PurgingCls = []*prjpb.PurgingCL{
 					{
 						Clid: 3, OperationId: "1580640000-3",
