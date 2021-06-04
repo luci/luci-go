@@ -75,6 +75,56 @@ func TestRunManager(t *testing.T) {
 		}{
 			{
 				&eventpb.Event{
+					Event: &eventpb.Event_Start{
+						Start: &eventpb.Start{},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.Start(ctx, runID)
+				},
+				"Start",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_NewConfig{
+						NewConfig: &eventpb.NewConfig{
+							Hash:     "deadbeef",
+							Eversion: 2,
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.UpdateConfig(ctx, runID, "deadbeef", 2)
+				},
+				"UpdateConfig",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_ClUpdated{
+						ClUpdated: &eventpb.CLUpdated{
+							Clid:     int64(1),
+							EVersion: int64(2),
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.NotifyCLUpdated(ctx, runID, 1, 2)
+				},
+				"OnCLUpdated",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_CqdVerificationCompleted{
+						CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.NotifyCQDVerificationCompleted(ctx, runID)
+				},
+				"OnCQDVerificationCompleted",
+			},
+			{
+				&eventpb.Event{
 					Event: &eventpb.Event_ClSubmitted{
 						ClSubmitted: &eventpb.CLSubmitted{
 							Clid: 1,
@@ -125,67 +175,6 @@ func TestRunManager(t *testing.T) {
 					})
 				},
 				"OnReadyForSubmission",
-			},
-			{
-				&eventpb.Event{
-					Event: &eventpb.Event_CqdVerificationCompleted{
-						CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.NotifyCQDVerificationCompleted(ctx, runID)
-				},
-				"OnCQDVerificationCompleted",
-			},
-			{
-				&eventpb.Event{
-					Event: &eventpb.Event_Cancel{
-						Cancel: &eventpb.Cancel{},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.Cancel(ctx, runID)
-				},
-				"Cancel",
-			},
-			{
-				&eventpb.Event{
-					Event: &eventpb.Event_Start{
-						Start: &eventpb.Start{},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.Start(ctx, runID)
-				},
-				"Start",
-			},
-			{
-				&eventpb.Event{
-					Event: &eventpb.Event_ClUpdated{
-						ClUpdated: &eventpb.CLUpdated{
-							Clid:     int64(1),
-							EVersion: int64(2),
-						},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.NotifyCLUpdated(ctx, runID, 1, 2)
-				},
-				"OnCLUpdated",
-			},
-			{
-				&eventpb.Event{
-					Event: &eventpb.Event_NewConfig{
-						NewConfig: &eventpb.NewConfig{
-							Hash:     "deadbeef",
-							Eversion: 2,
-						},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.UpdateConfig(ctx, runID, "deadbeef", 2)
-				},
-				"",
 			},
 			{
 				&eventpb.Event{
