@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
-	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/triager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -153,7 +153,7 @@ func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbo
 		RunNotifier:     proc.runNotifier,
 		CLPurger:        proc.clPurger,
 		CLPoller:        proc.clPoller,
-		ComponentTriage: componentactor.Triage,
+		ComponentTriage: triager.Triage,
 	}
 	switch p, err := prjmanager.Load(ctx, proc.luciProject); {
 	case err != nil:
