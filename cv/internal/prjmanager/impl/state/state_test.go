@@ -311,8 +311,8 @@ func TestUpdateConfig(t *testing.T) {
 						pb1.Pcls[1], // #202 didn't change.
 						pb1.Pcls[2], // #203 didn't change.
 					},
-					Components:          pb1.Components, // no changes here.
-					RepartitionRequired: true,           // set to re-eval components
+					Components:          markForTriage(pb1.Components),
+					RepartitionRequired: true,
 				})
 			})
 
@@ -332,8 +332,8 @@ func TestUpdateConfig(t *testing.T) {
 					ConfigHash:          meta2.Hash(),
 					ConfigGroupNames:    []string{"g0", "g11"}, // g1 -> g11.
 					Pcls:                pb1.GetPcls(),
-					Components:          pb1.Components, // no changes here.
-					RepartitionRequired: false,          // no need to re-eval.
+					Components:          markForTriage(pb1.Components),
+					RepartitionRequired: false,
 				})
 			})
 		})
@@ -369,8 +369,8 @@ func TestUpdateConfig(t *testing.T) {
 					pb1.Pcls[1], // #202 didn't change.
 					pb1.Pcls[2], // #203 didn't change.
 				},
-				Components:          pb1.Components, // no changes here.
-				RepartitionRequired: true,           // set to re-eval components
+				Components:          markForTriage(pb1.Components),
+				RepartitionRequired: true,
 			})
 		})
 

@@ -389,3 +389,15 @@ func (a *triageSupporter) PurgingCL(clid int64) *prjpb.PurgingCL {
 func (a *triageSupporter) ConfigGroup(index int32) *config.ConfigGroup {
 	return a.configGroups[index]
 }
+
+func markForTriage(in []*prjpb.Component) []*prjpb.Component {
+	out := make([]*prjpb.Component, len(in))
+	for i, c := range in {
+		if !c.GetTriageRequired() {
+			c = c.CloneShallow()
+			c.TriageRequired = true
+		}
+		out[i] = c
+	}
+	return out
+}

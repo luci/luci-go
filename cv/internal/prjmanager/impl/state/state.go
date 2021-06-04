@@ -116,6 +116,9 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 		if err = s.reevalPCLs(ctx); err != nil {
 			return nil, nil, err
 		}
+		// New config may mean new conditions for Run creation. Re-triaging all
+		// components is required.
+		s.PB.Components = markForTriage(s.PB.GetComponents())
 
 		// We may have been in STOPPING phase, in which case incomplete runs may
 		// still be finalizing themselves after receiving Cancel event from us.
