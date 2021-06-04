@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -65,7 +66,8 @@ func TestRunManager(t *testing.T) {
 
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
-		_ = New(notifier, pm, updater.New(ct.TQDispatcher, pm, notifier), ct.TreeFake.Client())
+		bqExporter := bq.NewExporter(ct.TQDispatcher, ct.BQFake)
+		_ = New(notifier, pm, updater.New(ct.TQDispatcher, pm, notifier), ct.TreeFake.Client(), bqExporter)
 
 		// sorted by the order of execution.
 		eventTestcases := []struct {
@@ -320,7 +322,8 @@ func TestRunManager(t *testing.T) {
 
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
-		_ = New(notifier, pm, updater.New(ct.TQDispatcher, pm, notifier), ct.TreeFake.Client())
+		bqExporter := bq.NewExporter(ct.TQDispatcher, ct.BQFake)
+		_ = New(notifier, pm, updater.New(ct.TQDispatcher, pm, notifier), ct.TreeFake.Client(), bqExporter)
 
 		Convey("Recursive", func() {
 			So(notifier.PokeNow(ctx, runID), ShouldBeNil)

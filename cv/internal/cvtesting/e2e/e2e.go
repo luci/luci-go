@@ -56,6 +56,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/bq"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
@@ -145,8 +146,9 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	t.PMNotifier = prjmanager.NewNotifier(t.TQDispatcher)
 	t.RunNotifier = run.NewNotifier(t.TQDispatcher)
 	clUpdater := updater.New(t.TQDispatcher, t.PMNotifier, t.RunNotifier)
+	bqExporter := bq.NewExporter(t.TQDispatcher, t.BQFake)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clUpdater, t.TreeFake.Client())
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clUpdater, t.TreeFake.Client(), bqExporter)
 
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,

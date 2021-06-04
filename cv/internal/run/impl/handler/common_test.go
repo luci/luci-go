@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -66,8 +67,9 @@ func TestEndRun(t *testing.T) {
 
 		clUpdater := &clUpdaterMock{}
 		h := &Impl{
-			PM:        prjmanager.NewNotifier(ct.TQDispatcher),
-			CLUpdater: clUpdater,
+			PM:         prjmanager.NewNotifier(ct.TQDispatcher),
+			CLUpdater:  clUpdater,
+			BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake),
 		}
 		se := h.endRun(ctx, rs, run.Status_FAILED)
 		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
