@@ -16,6 +16,23 @@
       "message": "heh, lgtm",
       "revId": "671917fb41673b146a13a13fe082bb2f8693621b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5360c375_345953f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-04T19:45:29Z",
+      "side": 1,
+      "message": "Could you also update https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/resultdb/README.md?",
+      "revId": "671917fb41673b146a13a13fe082bb2f8693621b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
