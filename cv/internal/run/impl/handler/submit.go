@@ -270,7 +270,7 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 	rid := rs.Run.ID
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		waitlisted, innerErr = submit.TryAcquire(ctx, rm.NotifyReadyForSubmission, rid, cg.SubmitOptions)
+		waitlisted, innerErr = submit.TryAcquire(ctx, rid, mustTaskIDFromContext(ctx), cg.SubmitOptions, rm.NotifyReadyForSubmission)
 		switch {
 		case innerErr != nil:
 			return innerErr
@@ -509,6 +509,7 @@ func newSubmitter(ctx context.Context, runID common.RunID, submission *run.Submi
 var ErrTransientSubmissionFailure = errors.New("submission failed transiently", transient.Tag)
 
 func (s submitter) submit(ctx context.Context) error {
+	logging.Errorf(ctx, "submission deadline is %s and current time is %s", s.deadline, clock.Now(ctx).UTC())
 	switch cur, err := submit.CurrentRun(ctx, s.runID.LUCIProject()); {
 	case err != nil:
 		return s.endSubmission(ctx, classifyErr(ctx, err))

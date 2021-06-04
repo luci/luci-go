@@ -37,6 +37,8 @@ type queue struct {
 	ID string `gae:"$id"`
 	// Current is the Run that is currently being submitted.
 	Current common.RunID `gae:",noindex"`
+	// AcquiredBy is todo
+	AcquiredBy string `gae:",noindex"`
 	// Waitlist is a FIFO queue containing all Runs that are waiting to be
 	// submitted.
 	Waitlist common.RunIDs `gae:",noindex"`
@@ -101,14 +103,14 @@ type NotifyFn func(ctx context.Context, runID common.RunID, eta time.Time) error
 // is blocked on this Run.
 //
 // MUST be called in a datastore transaction.
-func TryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
+func TryAcquire(ctx context.Context, runID common.RunID, requestor string, opts *cfgpb.SubmitOptions, notifyFn NotifyFn) (waitlisted bool, err error) {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("TryAcquire must be called in a datastore transaction")
 	}
-	return tryAcquire(ctx, notifyFn, runID, opts)
+	return tryAcquire(ctx, runID, requestor, opts, notifyFn)
 }
 
-func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
+func tryAcquire(ctx context.Context, runID common.RunID, requestor string, opts *cfgpb.SubmitOptions, notifyFn NotifyFn) (waitlisted bool, err error) {
 	var shouldSave bool
 	q := &queue{ID: runID.LUCIProject()}
 	switch err := datastore.Get(ctx, q); {
@@ -123,6 +125,8 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 	}
 
 	switch waitlistIdx := q.Waitlist.Index(runID); {
+	case q.Current == runID && q.AcquiredBy != requestor:
+		return false, errors.Reason("queue is taken by %q but by a different requestor: %s", runID, q.AcquiredBy).Err()
 	case q.Current == runID:
 		waitlisted = false
 	case waitlistIdx > 0 || (q.Current != "" && waitlistIdx == 0):
@@ -138,6 +142,7 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 		// waitlist and promote it to Current. Otherwise, keep it in the waitlist.
 		if eta := q.nextSubmissionETA(); eta.IsZero() {
 			q.Current, q.Waitlist = q.Waitlist[0], q.Waitlist[1:]
+			q.AcquiredBy = requestor
 			shouldSave = true
 			waitlisted = false
 		} else {
