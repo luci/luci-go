@@ -60,7 +60,10 @@ func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.C
 			// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
 			// already scheduled for the next second.
 			return common.TQIfy{
-				KnownRetry: []error{handler.ErrTransientSubmissionFailure},
+				KnownRetry: []error{
+					handler.ErrTransientSubmissionFailure,
+					eventbox.ErrConcurretMutation,
+				},
 			}.Error(ctx, err)
 		},
 	)

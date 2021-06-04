@@ -68,7 +68,10 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.ManageProjectTask)
 			err := pm.manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
-			return common.TQIfy{KnownFatal: []error{errTaskArrivedTooLate}}.Error(ctx, err)
+			return common.TQIfy{
+				KnownRetry: []error{eventbox.ErrConcurretMutation},
+				KnownFatal: []error{errTaskArrivedTooLate},
+			}.Error(ctx, err)
 		},
 	)
 

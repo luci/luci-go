@@ -56,6 +56,7 @@ func Register(tqd *tq.Dispatcher) TaskRefs {
 			Prototype: &ManageRunTask{},
 			Queue:     "manage-run",
 			Kind:      tq.NonTransactional,
+			Quiet:     true,
 		}),
 		KickManage: tqd.RegisterTaskClass(tq.TaskClass{
 			ID:        fmt.Sprintf("kick-%s", ManageRunTaskClass),
