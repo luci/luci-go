@@ -68,6 +68,7 @@ func TestExpiredInvocations(t *testing.T) {
 		})
 		So(state, ShouldEqual, resultpb.Invocation_ACTIVE)
 
+		So(tsmon.Flush(ctx), ShouldBeNil)
 		So(store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []interface{}{""}), ShouldEqual, 1)
 		d := store.Get(ctx, timeOverdue, time.Time{}, []interface{}{""}).(*distribution.Distribution)
 		// The 10 minute (600 s) delay should fall into bucket 29 (~400k - ~630k ms).
