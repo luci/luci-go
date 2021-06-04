@@ -17,9 +17,6 @@ import Token from 'markdown-it/lib/token';
 
 import { specialLine } from './special_line';
 
-const dividerToken = new Token('reviewer_line', '', 0);
-dividerToken.hidden = true;
-
 /**
  * Support reviewer line (e.g. 'R=user@google.com',
  * 'r=user2@google.com,user2@google.com').
