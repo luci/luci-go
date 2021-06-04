@@ -99,6 +99,30 @@
       },
       "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "039a2cb9_f92ab1bd",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-04T22:44:37Z",
+      "side": 1,
+      "message": "ah, I forgot to say: you need to stress out your CPU -- that\u0027s what happens on our CI/TY bots, but rarely on our workstations.\n\nI run 2 commads at the same time:\n$ stress -cpu $MY_CORES+1\n$ go test -race ......",
+      "parentUuid": "2155c60a_3d66e073",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 35
+      },
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
