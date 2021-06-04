@@ -188,6 +188,9 @@ func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 	if err := s.pokeRuns(ctx); err != nil {
 		return nil, nil, err
 	}
+	// Force re-triage of all components.
+	s = s.cloneShallow()
+	s.PB.Components = markForTriage(s.PB.GetComponents())
 	return s, nil, nil
 }
 
