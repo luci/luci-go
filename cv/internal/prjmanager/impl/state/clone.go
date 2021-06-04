@@ -27,7 +27,7 @@ func (s *State) cloneShallow() *State {
 		ConfigGroupNames: s.PB.GetConfigGroupNames(),
 		Pcls:             s.PB.GetPcls(),
 		Components:       s.PB.GetComponents(),
-		DirtyComponents:  s.PB.GetDirtyComponents(),
+		RepartitionRequired:  s.PB.GetRepartitionRequired(),
 		CreatedPruns:     s.PB.GetCreatedPruns(),
 		NextEvalTime:     s.PB.GetNextEvalTime(),
 		PurgingCls:       s.PB.GetPurgingCls(),

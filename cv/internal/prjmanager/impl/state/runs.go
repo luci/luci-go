@@ -99,7 +99,7 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 		return c
 	}, nil)
 	if modified {
-		s.PB.DirtyComponents = true
+		s.PB.RepartitionRequired = true
 	}
 
 	// Add remaining Runs are of type (2) to CreatedPruns for later processing.
@@ -150,7 +150,7 @@ func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
 	}, nil)
 	if modified {
 		// Removing usually changes components and/or pruning of PCLs.
-		s.PB.DirtyComponents = true
+		s.PB.RepartitionRequired = true
 	}
 	return stillTrackedRuns
 }

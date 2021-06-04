@@ -60,7 +60,7 @@ func (s *State) reevalPCLs(ctx context.Context) error {
 	}
 	if mutated {
 		s.PB.Pcls = newPCLs
-		s.PB.DirtyComponents = true
+		s.PB.RepartitionRequired = true
 		s.pclIndex = nil
 	}
 	return nil
@@ -144,7 +144,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 		oldPCLs = oldPCLs[1:]
 	}
 	s.PB.Pcls = newPCLs
-	s.PB.DirtyComponents = true
+	s.PB.RepartitionRequired = true
 	s.pclIndex = nil
 	return nil
 }

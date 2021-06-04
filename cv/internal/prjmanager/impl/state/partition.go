@@ -50,7 +50,7 @@ func (s *State) repartition(cat *categorizedCLs) {
 	}
 	s.PB.Pcls = pcls
 	s.PB.CreatedPruns = nil
-	s.PB.DirtyComponents = false
+	s.PB.RepartitionRequired = false
 }
 
 // planPartition returns a DisjointSet representing a partition of PCLs.

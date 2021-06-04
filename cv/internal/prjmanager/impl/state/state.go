@@ -310,7 +310,7 @@ func (s *State) OnPurgesCompleted(ctx context.Context, events []*prjpb.PurgeComp
 	s.PB.PurgingCls = out
 
 	// Must mark affected components for re-evaluation.
-	if s.PB.GetDirtyComponents() {
+	if s.PB.GetRepartitionRequired() {
 		return s, nil, nil
 	}
 	cs, mutatedComponents := s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
@@ -344,7 +344,7 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	}
 
 	mutated := false
-	if s.PB.GetDirtyComponents() || len(s.PB.GetCreatedPruns()) > 0 {
+	if s.PB.GetRepartitionRequired() || len(s.PB.GetCreatedPruns()) > 0 {
 		s = s.cloneShallow()
 		mutated = true
 		cat := s.categorizeCLs(ctx)
