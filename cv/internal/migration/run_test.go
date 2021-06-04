@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -231,6 +232,65 @@ func TestFetchActiveRuns(t *testing.T) {
 			runs, err := fetchActiveRuns(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 0)
+		})
+
+		Convey("Handles FYI deps", func() {
+			const rid = "chromium/1111111111111-cafecafe"
+			const gHost = "x-review.example.com"
+
+			putCL := func(gChange int64, depCLID common.CLID, runCL bool) common.CLID {
+				triggeredAt := ct.Clock.Now().Add(-time.Minute)
+				ci := gf.CI(int(gChange), gf.CQ(+1, triggeredAt, gf.U("user-1")), gf.Updated(triggeredAt))
+				cl, err := changelist.MustGobID(gHost, gChange).GetOrInsert(ctx, func(cl *changelist.CL) {
+					cl.Snapshot = &changelist.Snapshot{
+						Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+							Host:  gHost,
+							Info:  ci,
+							Files: []string{"some/file"},
+						}},
+						Patchset:              1,
+						MinEquivalentPatchset: 1,
+						ExternalUpdateTime:    timestamppb.New(triggeredAt),
+						LuciProject:           "chromium",
+					}
+					if depCLID > 0 {
+						cl.Snapshot.Deps = []*changelist.Dep{{Clid: int64(depCLID), Kind: changelist.DepKind_HARD}}
+					}
+				})
+				So(err, ShouldBeNil)
+				if runCL {
+					err := datastore.Put(ctx, &run.RunCL{
+						ID:     cl.ID,
+						Run:    datastore.MakeKey(ctx, run.RunKind, rid),
+						Detail: cl.Snapshot,
+						Trigger: &run.Trigger{
+							Time:            timestamppb.New(triggeredAt),
+							Mode:            string(run.DryRun),
+							Email:           "user-1@example.com",
+							GerritAccountId: 1,
+						},
+					})
+					So(err, ShouldBeNil)
+				}
+				return cl.ID
+			}
+			depCLID := putCL(1, -1, false)
+			runCLID := putCL(2, depCLID, true)
+			So(datastore.Put(ctx, &run.Run{
+				ID:     rid,
+				Status: run.Status_RUNNING,
+				Mode:   run.DryRun,
+				CLs:    common.CLIDs{runCLID},
+			}), ShouldBeNil)
+			runs, err := fetchActiveRuns(ctx, "chromium")
+			So(err, ShouldBeNil)
+			So(runs, ShouldHaveLength, 1)
+			So(runs[0].Cls, ShouldHaveLength, 1)
+			So(runs[0].Cls[0].Id, ShouldResemble, int64(runCLID))
+			So(runs[0].FyiDeps, ShouldHaveLength, 1)
+			So(runs[0].FyiDeps[0].Id, ShouldResemble, int64(depCLID))
+			So(runs[0].FyiDeps[0].Trigger, ShouldBeNil)
+			So(runs[0].FyiDeps[0].Deps, ShouldBeNil)
 		})
 	})
 }
