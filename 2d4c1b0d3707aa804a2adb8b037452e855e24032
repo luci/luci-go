@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce47864d_a431223c",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-04T00:27:52Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 38,
+        "endChar": 21
+      },
+      "revId": "2d4c1b0d3707aa804a2adb8b037452e855e24032",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b94005cf_3646a2f3",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-04T00:27:52Z",
+      "side": 1,
+      "message": "Add an incline comment to explain why we need this?",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 54
+      },
+      "revId": "2d4c1b0d3707aa804a2adb8b037452e855e24032",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "232e7f75_aa385df4",
+        "filename": "logdog/common/archive/entry_buffer_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-04T00:27:52Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 95,
+        "startChar": 3,
+        "endLine": 95,
+        "endChar": 39
+      },
+      "revId": "2d4c1b0d3707aa804a2adb8b037452e855e24032",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
