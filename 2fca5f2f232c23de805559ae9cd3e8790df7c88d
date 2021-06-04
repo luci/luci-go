@@ -140,6 +140,24 @@
       "parentUuid": "7f0ac25e_f97bf394",
       "revId": "2fca5f2f232c23de805559ae9cd3e8790df7c88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6ee7a86_d7e5f066",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-04T22:23:45Z",
+      "side": 1,
+      "message": "please pass just the bq client -- there is 0 use of runbq exporter outside of run.\n\nbut i ack that the tq.Dispather isn\u0027t obvious here: it\u0027s `n.TaskRefs.Tqd`",
+      "parentUuid": "ac4bb9e7_390d7700",
+      "revId": "2fca5f2f232c23de805559ae9cd3e8790df7c88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
