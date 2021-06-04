@@ -283,7 +283,7 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		if err != nil {
 			return nil, err
 		}
-		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
+		rs, transitions = applyResult(res, tr.cqdFinished, transitions)
 	}
 	switch {
 	case len(tr.cancelEvents) > 0:
