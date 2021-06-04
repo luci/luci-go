@@ -69,6 +69,30 @@
       },
       "revId": "1fae18aac70a42b28a85c36fd9542e028e0dbab0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2f7e27b_5478ed1e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-04T01:19:49Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "3e1ca6e0_27d3d62d",
+      "range": {
+        "startLine": 163,
+        "startChar": 12,
+        "endLine": 163,
+        "endChar": 39
+      },
+      "revId": "1fae18aac70a42b28a85c36fd9542e028e0dbab0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
