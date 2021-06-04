@@ -90,23 +90,8 @@ func TestComponentsActions(t *testing.T) {
 
 		const lProject = "luci-project"
 
-		// scanComponents needs config to exist, but this test doesn't actually care
-		// about what's inside due to mock componentActor.
-		ct.Cfg.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{
-			{
-				Name: "main",
-				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
-					{
-						Url: "https://example.com",
-						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
-							{Name: "re/po"},
-						},
-					},
-				},
-			},
-		}})
+		ct.Cfg.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "main"}}})
 		meta := ct.Cfg.MustExist(ctx, lProject)
-
 		state := &State{
 			PB: &prjpb.PState{
 				LuciProject: lProject,
