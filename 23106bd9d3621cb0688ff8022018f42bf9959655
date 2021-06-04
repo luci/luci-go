@@ -34,6 +34,24 @@
       "parentUuid": "4b1c2d81_765033e1",
       "revId": "23106bd9d3621cb0688ff8022018f42bf9959655",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ad77075_85cffc0c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-04T21:13:48Z",
+      "side": 1,
+      "message": "you will need to provide your test bq.Exporter instance here: https://chromium.googlesource.com/infra/luci/luci-go/+/2fca5f2f232c23de805559ae9cd3e8790df7c88d/cv/internal/run/impl/handler/common_test.go#68",
+      "parentUuid": "9000b80c_4b94ca7a",
+      "revId": "23106bd9d3621cb0688ff8022018f42bf9959655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

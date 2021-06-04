@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed0670e3_cd60732b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-04T21:13:48Z",
+      "side": 1,
+      "message": "I think breakglass will work",
+      "parentUuid": "2d0d9c55_793af412",
+      "revId": "2fca5f2f232c23de805559ae9cd3e8790df7c88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e27a2c90_c7d8a6dc",
@@ -37,6 +55,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "8f8af382_bfc2ed38",
+        "filename": "cv/internal/run/impl/handler/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-04T21:13:48Z",
+      "side": 1,
+      "message": "Yes",
+      "parentUuid": "e27a2c90_c7d8a6dc",
+      "revId": "2fca5f2f232c23de805559ae9cd3e8790df7c88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "61718d17_07ff31b8",
         "filename": "cv/internal/run/impl/manager.go",
         "patchSetId": 3
@@ -48,6 +84,24 @@
       "writtenOn": "2021-06-04T20:56:04Z",
       "side": 1,
       "message": "I didn\u0027t see an advantage of storing just a client as opposed to a bq.Exporter, but let me know if passing just a BQ client to run.New is better",
+      "revId": "2fca5f2f232c23de805559ae9cd3e8790df7c88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f0ac25e_f97bf394",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-04T21:13:48Z",
+      "side": 1,
+      "message": "bq.Exporter sounds okay here, if you pass the raw client. you would also need to pass a tq.Dispatcher to construct the Exporter here. I\u0027d rather construct it at the top level.",
+      "parentUuid": "61718d17_07ff31b8",
       "revId": "2fca5f2f232c23de805559ae9cd3e8790df7c88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
