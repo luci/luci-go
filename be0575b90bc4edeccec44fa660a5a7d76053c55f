@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c1ff2a7_e4692c5f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-04T22:42:06Z",
+      "side": 1,
+      "message": "This is the latest one I could find: https://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8845740045244923136/+/u/go_test_-race/stdout",
+      "parentUuid": "ce9ed386_a7e5cc06",
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "655698f3_0f37b221",
@@ -49,6 +67,30 @@
       "writtenOn": "2021-06-04T19:24:42Z",
       "side": 1,
       "message": "iiuc, this is a noop in test mode. in any case, in no other tests have I ever seen the need for flush().\n\nCan you repro this test flakiness with `go test -race $PATH -run $TEST -test.failfast -test.count\u003d10000` ?",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 35
+      },
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2155c60a_3d66e073",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-04T22:42:06Z",
+      "side": 1,
+      "message": "Actually I couldn\u0027t reproduce the problem on my mac with test.count\u003d5000 (higher than that I couldn\u0027t test because it hit a 10 minute limit.\n\nMy linux workstation also could not reproduce it.",
+      "parentUuid": "655698f3_0f37b221",
       "range": {
         "startLine": 71,
         "startChar": 2,
