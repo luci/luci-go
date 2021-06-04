@@ -46,8 +46,9 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Active
 	case len(runs) == 0:
 		return nil, nil
 	}
-	// Remove runs with corresponding VerifiedCQDRun entities.
-	runs, err = pruneVerifiedRuns(ctx, runs)
+	// Remove runs with corresponding VerifiedCQDRun entities or those being
+	// cancelled.
+	runs, err = pruneInactiveRuns(ctx, runs)
 	switch {
 	case err != nil:
 		return nil, err
@@ -325,11 +326,11 @@ func saveVerifiedCQDRun(ctx context.Context, req *migrationpb.ReportVerifiedRunR
 	return errors.Annotate(err, "failed to record VerifiedCQDRun %q after %d tries", runID, try).Tag(transient.Tag).Err()
 }
 
-// pruneVerifiedRuns removes Runs for which VerifiedCQDRun have already been
-// written.
+// pruneInactiveRuns removes Runs for which VerifiedCQDRun have already been
+// written or iff the run is about to be cancelled.
 //
 // Modifies the Runs slice in place, but also returns it for readability.
-func pruneVerifiedRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
+func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
 	out := in[:0]
 	keys := make([]*datastore.Key, len(in))
 	for i, r := range in {
@@ -340,7 +341,7 @@ func pruneVerifiedRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
 		return nil, errors.Annotate(err, "failed to check VerifiedCQDRun existence").Tag(transient.Tag).Err()
 	}
 	for i, r := range in {
-		if !exists.Get(0, i) {
+		if !exists.Get(0, i) && r.DelayCancelUntil.IsZero() {
 			out = append(out, r)
 		}
 	}
