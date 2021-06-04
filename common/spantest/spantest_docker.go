@@ -46,7 +46,11 @@ func StartEmulator(ctx context.Context) (*Emulator, error) {
 
 	ctx, e.cancel = context.WithCancel(ctx)
 	e.cmd = exec.CommandContext(ctx, "docker", "run", "-p", fmt.Sprintf("127.0.0.1:%d:9010", p), "gcr.io/cloud-spanner-emulator/emulator")
-	e.cmd.Env = append(e.cmd.Env, fmt.Sprintf("SPANNER_EMULATOR_HOST=%s", e.hostport), fmt.Sprintf("CLOUDSDK_CONFIG=%s", e.cfgDir))
+	e.cmd.Env = append(e.cmd.Env,
+		fmt.Sprintf("SPANNER_EMULATOR_HOST=%s", e.hostport),
+		fmt.Sprintf("CLOUDSDK_CONFIG=%s", e.cfgDir),
+		fmt.Sprintf("PATH=%s", os.Getenv("PATH")))
+
 	e.cmd.Stdout = os.Stdout
 	e.cmd.Stderr = os.Stderr
 
