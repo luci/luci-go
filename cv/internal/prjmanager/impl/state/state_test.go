@@ -182,7 +182,7 @@ func TestUpdateConfig(t *testing.T) {
 				ConfigGroupNames: []string{"g0", "g1"},
 				Components:       nil,
 				Pcls:             nil,
-				DirtyComponents:  false,
+				RepartitionRequired:  false,
 			})
 		})
 
@@ -312,7 +312,7 @@ func TestUpdateConfig(t *testing.T) {
 						pb1.Pcls[2], // #203 didn't change.
 					},
 					Components:      pb1.Components, // no changes here.
-					DirtyComponents: true,           // set to re-eval components
+					RepartitionRequired: true,           // set to re-eval components
 				})
 			})
 
@@ -333,7 +333,7 @@ func TestUpdateConfig(t *testing.T) {
 					ConfigGroupNames: []string{"g0", "g11"}, // g1 -> g11.
 					Pcls:             pb1.GetPcls(),
 					Components:       pb1.Components, // no changes here.
-					DirtyComponents:  false,          // no need to re-eval.
+					RepartitionRequired:  false,          // no need to re-eval.
 				})
 			})
 		})
@@ -370,7 +370,7 @@ func TestUpdateConfig(t *testing.T) {
 					pb1.Pcls[2], // #203 didn't change.
 				},
 				Components:      pb1.Components, // no changes here.
-				DirtyComponents: true,           // set to re-eval components
+				RepartitionRequired: true,           // set to re-eval components
 			})
 		})
 
@@ -565,7 +565,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						},
 					},
 				},
-				DirtyComponents: true,
+				RepartitionRequired: true,
 			})
 			Convey("Noop based on EVersion", func() {
 				s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
@@ -604,7 +604,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				},
-				DirtyComponents: true,
+				RepartitionRequired: true,
 			})
 		})
 
@@ -692,7 +692,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				}),
-				DirtyComponents: true,
+				RepartitionRequired: true,
 			})
 		})
 
@@ -721,7 +721,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				ConfigGroupIndexes: []int32{},
 				Status:             prjpb.PCL_UNWATCHED,
 			})
-			pb1.DirtyComponents = true
+			pb1.RepartitionRequired = true
 			So(s1.PB, ShouldResembleProto, pb1)
 		})
 
@@ -844,7 +844,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						Dirty: true,
 					},
 				},
-				DirtyComponents: true,
+				RepartitionRequired: true,
 				CreatedPruns: []*prjpb.PRun{
 					{Id: string(runX.ID), Clids: []int64{101, 202, 203, 204, 404}},
 					{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}}, // unchanged
@@ -876,7 +876,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						s1.PB.GetComponents()[1], // unchanged
 					},
 					CreatedPruns:    s1.PB.GetCreatedPruns(), // unchanged
-					DirtyComponents: true,
+					RepartitionRequired: true,
 				})
 			})
 
@@ -914,7 +914,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						s1.PB.GetComponents()[1], // unchanged.
 					},
 					CreatedPruns:    nil, // removed
-					DirtyComponents: true,
+					RepartitionRequired: true,
 				})
 			})
 		})
@@ -999,7 +999,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 			})
 
 			Convey("Doesn't modify components if they are due re-repartition anyway", func() {
-				s1.PB.DirtyComponents = true
+				s1.PB.RepartitionRequired = true
 				pb := backupPB(s1)
 				s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{
 					{OperationId: "1"},
@@ -1133,7 +1133,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
-			DirtyComponents:  true,
+			RepartitionRequired:  true,
 		}}
 
 		Convey("just categorization", func() {
@@ -1413,7 +1413,7 @@ func TestRepartition(t *testing.T) {
 
 	Convey("repartition works", t, func() {
 		state := &State{PB: &prjpb.PState{
-			DirtyComponents: true,
+			RepartitionRequired: true,
 		}}
 		cat := &categorizedCLs{
 			active:   clidsSet{},
@@ -1424,7 +1424,7 @@ func TestRepartition(t *testing.T) {
 
 		defer func() {
 			// Assert guarantees of repartition()
-			So(state.PB.GetDirtyComponents(), ShouldBeFalse)
+			So(state.PB.GetRepartitionRequired(), ShouldBeFalse)
 			So(state.PB.GetCreatedPruns(), ShouldBeNil)
 			actual := state.pclIndex
 			state.pclIndex = nil
@@ -1444,7 +1444,7 @@ func TestRepartition(t *testing.T) {
 				pb := backupPB(state)
 
 				state.repartition(cat)
-				pb.DirtyComponents = false
+				pb.RepartitionRequired = false
 				So(state.PB, ShouldResembleProto, pb)
 			})
 			Convey("1 active CL in 1 dirty component with 1 Run", func() {
@@ -1458,7 +1458,7 @@ func TestRepartition(t *testing.T) {
 				pb := backupPB(state)
 
 				state.repartition(cat)
-				pb.DirtyComponents = false
+				pb.RepartitionRequired = false
 				So(state.PB, ShouldResembleProto, pb)
 			})
 		})

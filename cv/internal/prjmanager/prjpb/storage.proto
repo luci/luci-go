@@ -84,7 +84,7 @@ message PState {
   repeated PurgingCL purging_cls = 13;
 
   // If true, components partition must be redone as soon as possible.
-  bool dirty_components = 21;
+  bool repartition_required = 21;
   // PRuns which can't yet be added to any component but should be. Sorted by
   // Run ID.
   //
