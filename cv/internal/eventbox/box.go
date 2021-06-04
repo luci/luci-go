@@ -42,13 +42,15 @@ func Emit(ctx context.Context, value []byte, to *datastore.Key) error {
 	return nil
 }
 
-const tombstonesDelay = 5 * time.Minute
+// TombstonesDelay is exposed to mitigate frequent errors in CV e2e tests when
+// tasks are run in parallel with fake clock.
+var TombstonesDelay = 5 * time.Minute
 
 // List returns unprocessed events. For use in tests only.
 func List(ctx context.Context, recipient *datastore.Key) (Events, error) {
 	d := dsset.Set{
 		Parent:          recipient,
-		TombstonesDelay: tombstonesDelay,
+		TombstonesDelay: TombstonesDelay,
 	}
 	switch l, err := d.List(ctx); {
 	case err != nil:
@@ -99,7 +101,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 	})
 	d := dsset.Set{
 		Parent:          recipient,
-		TombstonesDelay: tombstonesDelay,
+		TombstonesDelay: TombstonesDelay,
 	}
 	var listing *dsset.Listing
 	eg.Go(func() (err error) {

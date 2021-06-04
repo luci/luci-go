@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/eventbox"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -63,6 +64,14 @@ const tqConcurrentFlagName = "cv.tqparallel"
 
 var dsFlakinessFlag = flag.Float64(dsFlakinessFlagName, 0, "DS flakiness probability between 0(default) and 1.0 (always fails)")
 var tqParallelFlag = flag.Bool(tqConcurrentFlagName, false, "Runs TQ tasks in parallel")
+
+func init() {
+	// HACK: bump up greately eventbox tombstone delay, especially useful in case
+	// of tqParallelFlag: the fake test clock is ran at much much
+	// higher speed than real clock, which results in spurious stale eventbox
+	// listing errors.
+	eventbox.TombstonesDelay = time.Hour
+}
 
 // Test encapsulates e2e setup for a CV test.
 //
