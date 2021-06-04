@@ -73,6 +73,30 @@
       },
       "revId": "fe7aa76baf1f2d8bc08889d05f7c9856736ea390",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "00c68580_7b4d3119",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-04T14:53:42Z",
+      "side": 1,
+      "message": "Kind of. In the previous version if cmd.ProcessState was nil after the soft deadline triggered (which seems unlikely to happen in practice), it would have logged unrelated messages and cancelled cmd\u0027s context (preventing cmd.Start() from working). I think it\u0027s better to let it run even if only for 27 seconds after which it will be forcibly killed if it hasn\u0027t finished (since we hit the soft deadline before it even started).",
+      "parentUuid": "cade1b9f_9184ce5c",
+      "range": {
+        "startLine": 278,
+        "startChar": 2,
+        "endLine": 278,
+        "endChar": 57
+      },
+      "revId": "fe7aa76baf1f2d8bc08889d05f7c9856736ea390",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
