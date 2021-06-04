@@ -49,6 +49,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "29641bd8_85260dba",
+        "filename": "logdog/common/archive/entry_buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-04T02:14:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b94005cf_3646a2f3",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 54
+      },
+      "revId": "2d4c1b0d3707aa804a2adb8b037452e855e24032",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "232e7f75_aa385df4",
         "filename": "logdog/common/archive/entry_buffer_test.go",
         "patchSetId": 1
