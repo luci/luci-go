@@ -155,7 +155,7 @@ func TestTriage(t *testing.T) {
 				So(res.RunsToCreate, ShouldBeEmpty)
 			})
 			Convey("many groups -- no delay", func() {
-				pm.pb.Pcls[0].OwnerLacksEmail = false // many groups is an error itself
+				// many groups is an error itself
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
 				res := mustTriage(oldC)
 				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
