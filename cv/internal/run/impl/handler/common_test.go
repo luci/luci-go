@@ -65,7 +65,11 @@ func TestEndRun(t *testing.T) {
 		So(datastore.Put(ctx, &cl), ShouldBeNil)
 
 		clUpdater := &clUpdaterMock{}
-		se := endRun(ctx, rs, run.Status_FAILED, prjmanager.NewNotifier(ct.TQDispatcher), clUpdater)
+		h := &Impl{
+			PM:        prjmanager.NewNotifier(ct.TQDispatcher),
+			CLUpdater: clUpdater,
+		}
+		se := h.endRun(ctx, rs, run.Status_FAILED)
 		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.Run.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
