@@ -34,6 +34,9 @@ func (f *Fake) SendRow(ctx context.Context, dataset, table, operationID string, 
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	key := dataset + "." + table
+	if f.sent == nil {
+		f.sent = make(map[string][]proto.Message)
+	}
 	f.sent[key] = append(f.sent[key], row)
 	return nil
 }

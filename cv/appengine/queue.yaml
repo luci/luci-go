@@ -1,6 +1,8 @@
 # Documentation:
 # https://cloud.google.com/appengine/docs/standard/go111/config/queueref
 queue:
+- name: bq-export
+  rate: 30/s
 - name: kick-manage-project
   rate: 500/s
 - name: manage-project
