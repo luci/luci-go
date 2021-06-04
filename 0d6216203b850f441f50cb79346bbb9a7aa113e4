@@ -168,6 +168,30 @@
       },
       "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb08b234_8c708bdc",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-04T01:12:29Z",
+      "side": 1,
+      "message": "PTAL crrev.com/c/2931178",
+      "parentUuid": "8b21a552_25510cfc",
+      "range": {
+        "startLine": 277,
+        "startChar": 2,
+        "endLine": 278,
+        "endChar": 10
+      },
+      "revId": "0d6216203b850f441f50cb79346bbb9a7aa113e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
