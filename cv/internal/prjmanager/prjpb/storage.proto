@@ -110,6 +110,8 @@ enum Status {
 
 // PCL is a tracked CL.
 message PCL {
+  reserved 14;
+
   int64 clid = 1;
   int64 eversion = 2;
 
@@ -163,9 +165,6 @@ message PCL {
   // Run will probably finish soon).
   bool submitted = 13;
 
-  // If true, CL's owner has no known email.
-  // TODO(tandrii): deprecate in favor of `errors`.
-  bool owner_lacks_email = 14;
   // If set, describes one or more problems with CL.
   repeated cv.changelist.CLError errors = 15;
 }
