@@ -160,7 +160,7 @@ type streamRun struct {
 	// - invocation-tag
 	// - log-file
 
-	invocation lucictx.ResultDBInvocation
+	invocation *lucictx.ResultDBInvocation
 }
 
 func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
@@ -222,10 +222,10 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		}
 
 		// Update lucictx with the new invocation.
-		r.invocation = newInv
+		r.invocation = &newInv
 		ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
 			Hostname:          r.host,
-			CurrentInvocation: &r.invocation,
+			CurrentInvocation: r.invocation,
 		})
 	case r.isIncluded:
 		return r.done(errors.Reason("-new is required for -include").Err())
@@ -235,7 +235,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
 		}
-		r.invocation = *r.resultdbCtx.CurrentInvocation
+		r.invocation = r.resultdbCtx.CurrentInvocation
 	}
 
 	defer func() {
@@ -267,6 +267,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	setSysProcAttr(cmd)
 
 	// Interrupt the subprocess if rdb-stream is interrupted or the deadline
 	// approaches.
@@ -274,19 +275,28 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	// SIGKILLed by the the expiration of cmdCtx.
 	go func() {
 		evt := <-lucictx.SoftDeadlineDone(cmdCtx)
-		switch {
-		case cmd.ProcessState != nil && cmd.ProcessState.Exited():
-			logging.Debugf(ctx, "Soft deadline reached (%s), but no process is running", evt)
+		if cmd.ProcessState == nil || cmd.ProcessState.Exited() {
 			// No process is running. Do nothing.
-		default:
-			logging.Warningf(ctx, "About to run out of time (%s), attempting to interrupt the subprocess", evt.String())
-			if cmd != nil && cmd.Process != nil && cmd.Process.Signal(os.Interrupt) == nil {
-				logging.Warningf(ctx, "Sent interrupt to subprocess, will force kill in ~%s", lucictx.GetDeadline(cmdCtx).GracePeriodDuration())
-			} else {
-				logging.Warningf(ctx, "Could not interrupt subprocess, killing it now")
-				cancelCmd()
-			}
+			return
 		}
+		switch evt {
+		case lucictx.ClosureEvent:
+			// This should almost never happen, if cmdCtx is already done
+			// (as implied by this event), then the process would have been
+			// killed, and we would have exited above.
+			// It is possible that the process is currently being killed,
+			// so do nothing.
+			return
+		default:
+			logging.Infof(ctx, "Caught %s", evt.String())
+		}
+
+		if err := terminate(ctx, cmd); err != nil {
+			logging.Warningf(ctx, "Could not terminate subprocess (%s), cancelling its context", err)
+			cancelCmd()
+			return
+		}
+		logging.Infof(ctx, "Sent termination signal to subprocess, it has ~%s to terminate", lucictx.GetDeadline(cmdCtx).GracePeriodDuration())
 	}()
 
 	locationTags, err := r.getLocationTags(ctx)
