@@ -95,7 +95,7 @@ func TestTriage(t *testing.T) {
 			return err
 		}
 
-		undirty := func(c *prjpb.Component) *prjpb.Component {
+		markTriaged := func(c *prjpb.Component) *prjpb.Component {
 			c = c.CloneShallow()
 			c.TriageRequired = false
 			return c
@@ -108,11 +108,11 @@ func TestTriage(t *testing.T) {
 			oldC := &prjpb.Component{
 				Clids: []int64{33},
 				// Component already has a Run, so no action required.
-				Pruns: []*prjpb.PRun{{Id: "id", Clids: []int64{33}}},
+				Pruns:          []*prjpb.PRun{{Id: "id", Clids: []int64{33}}},
 				TriageRequired: true,
 			}
 			res := mustTriage(oldC)
-			So(res.NewValue, ShouldResembleProto, undirty(oldC))
+			So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 			So(res.RunsToCreate, ShouldBeEmpty)
 			So(res.CLsToPurge, ShouldBeEmpty)
 		})
@@ -133,7 +133,7 @@ func TestTriage(t *testing.T) {
 			Convey("singular group -- no delay", func() {
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, undirty(oldC))
+				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 				So(res.CLsToPurge, ShouldHaveLength, 1)
 				So(res.RunsToCreate, ShouldBeEmpty)
 			})
@@ -141,7 +141,7 @@ func TestTriage(t *testing.T) {
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{combIdx}
 
 				res := mustTriage(oldC)
-				c := undirty(oldC)
+				c := markTriaged(oldC)
 				c.DecisionTime = timestamppb.New(ct.Clock.Now().Add(stabilizationDelay))
 				So(res.NewValue, ShouldResembleProto, c)
 				So(res.CLsToPurge, ShouldBeEmpty)
@@ -158,7 +158,7 @@ func TestTriage(t *testing.T) {
 				pm.pb.Pcls[0].OwnerLacksEmail = false // many groups is an error itself
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, undirty(oldC))
+				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 				So(res.CLsToPurge, ShouldHaveLength, 1)
 				So(res.RunsToCreate, ShouldBeEmpty)
 			})
@@ -210,7 +210,7 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, undirty(oldC))
+					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldHaveLength, 1)
 					rc := res.RunsToCreate[0]
@@ -225,7 +225,7 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true, Pruns: makePruns("run-id", 33)}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, undirty(oldC))
+					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldBeEmpty)
 				})
@@ -246,7 +246,7 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, undirty(oldC))
+					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldHaveLength, 2)
 					sortRunsToCreateByFirstCL(&res)
@@ -262,12 +262,12 @@ func TestTriage(t *testing.T) {
 					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 					oldC := &prjpb.Component{
-						Clids: []int64{31, 32, 33},
-						Pruns: makePruns("first", 31, "third", 33),
+						Clids:          []int64{31, 32, 33},
+						Pruns:          makePruns("first", 31, "third", 33),
 						TriageRequired: true,
 					}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, undirty(oldC))
+					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 					So(res.CLsToPurge, ShouldBeEmpty)
 					So(res.RunsToCreate, ShouldHaveLength, 1)
 					So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, 32)
@@ -280,7 +280,7 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, undirty(oldC))
+					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 					// TODO(crbug/1211576): this waiting can last forever. Component needs
 					// to record how long it has been waiting and abort with clear message
 					// to the user.
@@ -417,9 +417,9 @@ func TestTriage(t *testing.T) {
 					_, pcl51 := putPCL(51, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31, 41)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl41, pcl51}
 					oldC := &prjpb.Component{
-						Clids: []int64{31, 41, 51},
+						Clids:          []int64{31, 41, 51},
 						TriageRequired: true,
-						Pruns: makePruns("sub/mitting", 31, 41, 51),
+						Pruns:          makePruns("sub/mitting", 31, 41, 51),
 					}
 					mustWaitForRM := func() {
 						res := mustTriage(oldC)
