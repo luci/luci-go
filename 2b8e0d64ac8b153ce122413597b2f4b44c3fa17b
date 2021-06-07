@@ -16,6 +16,24 @@
       "message": "nice doc!",
       "revId": "2b8e0d64ac8b153ce122413597b2f4b44c3fa17b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0c651e8_6d607d7c",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-07T21:55:16Z",
+      "side": 1,
+      "message": "Thanks. I think that it may really need to be partially copied into go/luci/cv",
+      "parentUuid": "1f94829d_df4c5f70",
+      "revId": "2b8e0d64ac8b153ce122413597b2f4b44c3fa17b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
