@@ -588,10 +588,7 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 		resolved = append(resolved, &changelist.Dep{Clid: int64(depCL.ID), Kind: kind})
 		lock.Unlock()
 
-		switch yes, err := depCL.NeedsFetching(ctx, f.luciProject); {
-		case err != nil:
-			return err
-		case yes:
+		if depNeedsFetching(depCL, f.luciProject) {
 			depHost, depChange, err := eid.ParseGobID()
 			if err != nil {
 				panic("impossible: by construction, all deps are Gerrit, too")
@@ -754,4 +751,20 @@ func (f *fetcher) String() string {
 		return fmt.Sprintf("CL(%s/%d)", f.host, f.change)
 	}
 	return fmt.Sprintf("CL(%s/%d [%d])", f.host, f.change, f.priorCL.ID)
+}
+
+func depNeedsFetching(dep *changelist.CL, luciProject string) bool {
+	switch {
+	case dep == nil:
+		panic("dep must be not nil")
+	case dep.Snapshot == nil:
+		return true
+	case dep.Snapshot.GetOutdated() != nil:
+		return true
+	case dep.Snapshot.GetLuciProject() != luciProject:
+		return true
+	default:
+		// TODO(tandrii): add mechanism to refresh purely due to passage of time.
+		return false
+	}
 }

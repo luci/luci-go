@@ -16,7 +16,6 @@ package changelist
 
 import (
 	"context"
-	"time"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
@@ -26,23 +25,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 )
-
-// IsUpToDate returns whether stored Snapshot is at least as recent as given
-// time and was done for a matching LUCI project.
-func (s *Snapshot) IsUpToDate(luciProject string, t time.Time) bool {
-	switch {
-	case s == nil:
-		return false
-	case s.GetOutdated() != nil:
-		return false
-	case t.After(s.GetExternalUpdateTime().AsTime()):
-		return false
-	case s.GetLuciProject() != luciProject:
-		return false
-	default:
-		return true
-	}
-}
 
 // HasOnlyProject returns true iff ApplicableConfig contains only the given
 // project, regardless of the number of applicable config groups it may contain.
@@ -85,23 +67,6 @@ func (a *ApplicableConfig) SemanticallyEqual(b *ApplicableConfig) bool {
 		}
 	}
 	return true
-}
-
-// NeedsFetching returns true if the CL is likely out of date and would benefit
-// from fetching in the context of a given project.
-func (cl *CL) NeedsFetching(ctx context.Context, luciProject string) (bool, error) {
-	switch {
-	case cl == nil:
-		panic("CL must be not nil")
-	case cl.Snapshot == nil:
-		return true, nil
-	case cl.Snapshot.GetLuciProject() != luciProject:
-		// TODO(tandrii): verify here which luciProject is allowed to watch the repo.
-		return true, nil
-	default:
-		// TODO(tandrii): add mechanism to refresh purely due to passage of time.
-		return false, nil
-	}
 }
 
 // PanicIfNotValid checks that Snapshot stored has required fields set.
