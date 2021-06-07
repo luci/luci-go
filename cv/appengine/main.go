@@ -34,6 +34,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/admin"
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
+	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config/configcron"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -77,7 +78,11 @@ func main() {
 		if err != nil {
 			return err
 		}
-		_ = runimpl.New(runNotifier, pmNotifier, clUpdater, tc)
+		bqc, err := bq.NewProdClient(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return err
+		}
+		_ = runimpl.New(runNotifier, pmNotifier, clUpdater, tc, bqc)
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{
