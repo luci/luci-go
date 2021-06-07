@@ -52,9 +52,10 @@ func TestExpiredInvocations(t *testing.T) {
 			insert.Invocation("unexpired", resultpb.Invocation_ACTIVE, map[string]interface{}{"Deadline": future}),
 		)
 
-		go run(ctx, 100*time.Millisecond)
-		for len(sched.Tasks().Payloads()) == 0 {
-			time.Sleep(1 * time.Millisecond)
+		s, err := invocations.CurrentMaxShard(ctx)
+		So(err, ShouldBeNil)
+		for i := 0; i < s+1; i++ {
+			So(enforceOneShard(ctx, i), ShouldBeNil)
 		}
 
 		So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.TryFinalizeInvocation{InvocationId: "expired"})
