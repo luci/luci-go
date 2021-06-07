@@ -127,6 +127,8 @@ type CL struct {
 	Snapshot *Snapshot
 
 	// ApplicableConfig keeps track of configs applicable to the CL.
+	//
+	// TODO(tandrii): merge into .Access.
 	ApplicableConfig *ApplicableConfig
 
 	// Access records per-LUCI project visibility of a CL.

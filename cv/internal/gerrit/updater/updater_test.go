@@ -371,25 +371,26 @@ func TestUpdateCLWorks(t *testing.T) {
 		rm := rmMock{}
 		u := New(ct.TQDispatcher, &pm, &rm)
 
-		Convey("No access or permission denied", func() {
-			assertDependentMetaOnly := func(change int) {
-				cl := getCL(ctx, gHost, change)
-				So(cl.Snapshot, ShouldBeNil)
-				So(cl.ApplicableConfig, ShouldBeNil)
-				So(cl.Access.GetByProject()[lProject], ShouldResembleProto, &changelist.Access_Project{
-					NoAccess:     true,
-					NoAccessTime: timestamppb.New(ct.Clock.Now()),
-					UpdateTime:   timestamppb.New(ct.Clock.Now()),
-				})
-			}
+		assertAccessDenied := func(change int) {
+			cl := getCL(ctx, gHost, change)
+			So(cl.Snapshot, ShouldBeNil)
+			So(cl.ApplicableConfig, ShouldBeNil)
+			So(cl.Access.GetByProject()[lProject], ShouldResembleProto, &changelist.Access_Project{
+				NoAccess:     true,
+				NoAccessTime: timestamppb.New(ct.Clock.Now()),
+				UpdateTime:   timestamppb.New(ct.Clock.Now()),
+			})
+			So(cl.AccessKind(lProject), ShouldEqual, changelist.AccessDenied)
+		}
 
+		Convey("No access or permission denied", func() {
 			Convey("after getting error from Gerrit", func() {
 				task.Change = 404
 				So(u.Refresh(ctx, task), ShouldBeNil)
-				assertDependentMetaOnly(404)
+				assertAccessDenied(404)
 				task.Change = 403
 				So(u.Refresh(ctx, task), ShouldBeNil)
-				assertDependentMetaOnly(403)
+				assertAccessDenied(403)
 			})
 
 			Convey("because Gerrit host isn't even watched by the LUCI project", func() {
@@ -406,7 +407,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				gobmap.Update(ctx, lProject)
 				task.Change = 1
 				So(u.Refresh(ctx, task), ShouldBeNil)
-				assertDependentMetaOnly(1)
+				assertAccessDenied(1)
 			})
 		})
 
@@ -447,7 +448,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			task.Change = 123
 			So(u.Refresh(ctx, task), ShouldBeNil)
 			cl := getCL(ctx, gHost, 123)
-			So(cl.ApplicableConfig.HasOnlyProject(lProject), ShouldBeTrue)
+			So(cl.AccessKind(lProject), ShouldEqual, changelist.AccessGranted)
 			So(cl.Snapshot.GetGerrit().GetHost(), ShouldEqual, gHost)
 			So(cl.Snapshot.GetGerrit().Info.GetProject(), ShouldEqual, gRepo)
 			So(cl.Snapshot.GetGerrit().Info.GetRef(), ShouldEqual, "refs/heads/main")
@@ -465,10 +466,16 @@ func TestUpdateCLWorks(t *testing.T) {
 				})
 
 			// Each of the dep should have an existing CL + a task schedule.
-			expectedDeps := []*changelist.Dep{
-				{Clid: int64(getCL(ctx, gHost, 122).ID), Kind: changelist.DepKind_HARD},
-				{Clid: int64(getCL(ctx, gHost, 121).ID), Kind: changelist.DepKind_SOFT},
-				{Clid: int64(getCL(ctx, gHost, 101).ID), Kind: changelist.DepKind_SOFT},
+			expectedDeps := make([]*changelist.Dep, 0, 3)
+			for _, gChange := range []int{122, 121, 101} {
+				dep := getCL(ctx, gHost, gChange)
+				So(dep, ShouldNotBeNil)
+				So(dep.AccessKind(lProject), ShouldEqual, changelist.AccessUnknown)
+				depKind := changelist.DepKind_SOFT
+				if gChange == 122 {
+					depKind = changelist.DepKind_HARD
+				}
+				expectedDeps = append(expectedDeps, &changelist.Dep{Clid: int64(dep.ID), Kind: depKind})
 			}
 			sort.Slice(expectedDeps, func(i, j int) bool {
 				return expectedDeps[i].GetClid() < expectedDeps[j].GetClid()
@@ -614,9 +621,9 @@ func TestUpdateCLWorks(t *testing.T) {
 				gobmap.Update(ctx, lProject)
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
-				So(cl2.ApplicableConfig, ShouldResembleProto, &changelist.ApplicableConfig{})
+				So(cl2.AccessKind(lProject), ShouldEqual, changelist.AccessDenied)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
-				// Snapshot is preserved (handy, if this is temporal misconfiguration).
+				// Snapshot is preserved in case this is temporal misconfiguration.
 				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
 				// PM is still notified.
 				So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
@@ -639,9 +646,9 @@ func TestUpdateCLWorks(t *testing.T) {
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					So(cl2.Snapshot.GetLuciProject(), ShouldEqual, lProject2)
-					So(cl2.Snapshot.GetExternalUpdateTime(), ShouldResemble,
-						ct.GFake.GetChange(gHost, 123).Info.GetUpdated())
-					So(cl2.ApplicableConfig.HasOnlyProject(lProject2), ShouldBeTrue)
+					So(cl2.Snapshot.GetExternalUpdateTime(), ShouldResemble, ct.GFake.GetChange(gHost, 123).Info.GetUpdated())
+					So(cl2.AccessKind(lProject), ShouldEqual, changelist.AccessDenied)
+					So(cl2.AccessKind(lProject2), ShouldEqual, changelist.AccessGranted)
 					// A different PM is notified.
 					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
 				})
@@ -655,15 +662,15 @@ func TestUpdateCLWorks(t *testing.T) {
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					// Snapshot is kept as is, including its ExternalUpdateTime.
 					So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
-					So(cl2.ApplicableConfig.HasOnlyProject(lProject2), ShouldBeTrue)
-					So(cl2.Access.GetByProject()[lProject2], ShouldNotBeNil)
+					// TODO(tandrii): s/AccessDenied/AccessDeniedProbably.
+					So(cl2.AccessKind(lProject2), ShouldEqual, changelist.AccessDenied)
 					// A different PM is notified anyway.
 					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
 				})
 			})
 		})
 
-		Convey("Fetch dep after bare CL was crated", func() {
+		Convey("Fetch dep after bare CL was created", func() {
 			eid, err := changelist.GobID(gHost, 101)
 			So(err, ShouldBeNil)
 			cl, err := eid.GetOrInsert(ctx, func(cl *changelist.CL) {})
