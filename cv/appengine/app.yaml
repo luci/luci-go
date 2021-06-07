@@ -3,7 +3,6 @@ runtime: go114
 
 instance_class: F4
 
-
 automatic_scaling:
   max_concurrent_requests: 80
   # Temporary fail-safe.
@@ -23,6 +22,10 @@ luci_gae_vars:
 
 vpc_access_connector:
   name: ${VPC_CONNECTOR}
+
+- url: /.*
+  script: auto
+  secure: always
 
 entrypoint: >
   main
