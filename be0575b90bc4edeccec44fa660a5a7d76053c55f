@@ -125,6 +125,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d05b6dd_cb04769d",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-07T20:00:32Z",
+      "side": 1,
+      "message": "+1 LGTM",
+      "parentUuid": "55886c01_d57624ca",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 58,
+        "endChar": 3
+      },
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "655698f3_0f37b221",
