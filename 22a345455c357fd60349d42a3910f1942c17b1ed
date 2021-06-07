@@ -16,6 +16,24 @@
       "message": "I\u0027d like to submit this because I\u0027d like to see what the rows will look like --\n\nBut I\u0027d like to hear if you have any thoughts about using tqd in notifier.TaskRefs being public versus passing in another TQDispatcher in runimpl.New (I assume you\u0027d also lean towards tqd being public?)",
       "revId": "22a345455c357fd60349d42a3910f1942c17b1ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b80a60a5_d65ae322",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-07T13:40:26Z",
+      "side": 1,
+      "message": "+1 for landing as is\n+1 for making it public (just like for project manager)",
+      "parentUuid": "419b3980_e0602148",
+      "revId": "22a345455c357fd60349d42a3910f1942c17b1ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
