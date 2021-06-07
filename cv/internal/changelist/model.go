@@ -307,20 +307,36 @@ func (u UpdateFields) IsEmpty() bool {
 		len(u.AddDependentMeta.GetByProject()) == 0)
 }
 
+func (u UpdateFields) shouldUpdateSnapshot(cl *CL) bool {
+	switch {
+	case u.Snapshot == nil:
+		return false
+	case cl.Snapshot == nil:
+		return true
+	case cl.Snapshot.GetOutdated() != nil:
+		return true
+	case u.Snapshot.GetExternalUpdateTime().AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()):
+		return true
+	case cl.Snapshot.GetLuciProject() != u.Snapshot.GetLuciProject():
+		return true
+	default:
+		return false
+	}
+}
+
 func (u UpdateFields) apply(cl *CL) (changed bool) {
 	if u.ApplicableConfig != nil && !cl.ApplicableConfig.SemanticallyEqual(u.ApplicableConfig) {
 		cl.ApplicableConfig = u.ApplicableConfig
 		changed = true
 	}
 
-	if s := u.Snapshot; s != nil && !cl.Snapshot.IsUpToDate(
-		s.GetLuciProject(), s.GetExternalUpdateTime().AsTime()) {
-		cl.Snapshot = s
+	if u.shouldUpdateSnapshot(cl) {
+		cl.Snapshot = u.Snapshot
 		changed = true
 		// Wipe out corresponding Access project entry if any.
 		if m := cl.Access.GetByProject(); m != nil {
-			if _, exists := m[s.GetLuciProject()]; exists {
-				delete(m, s.GetLuciProject())
+			if _, exists := m[u.Snapshot.GetLuciProject()]; exists {
+				delete(m, u.Snapshot.GetLuciProject())
 				if len(m) == 0 {
 					cl.Access = nil
 				}
