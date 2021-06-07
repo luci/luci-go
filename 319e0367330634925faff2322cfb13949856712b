@@ -56,6 +56,30 @@
       },
       "revId": "319e0367330634925faff2322cfb13949856712b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92df7720_30c2e53c",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-07T21:56:37Z",
+      "side": 1,
+      "message": "ah, I missed that. thanks. PTAL",
+      "parentUuid": "66275000_dfbcc945",
+      "range": {
+        "startLine": 268,
+        "startChar": 0,
+        "endLine": 268,
+        "endChar": 89
+      },
+      "revId": "319e0367330634925faff2322cfb13949856712b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
