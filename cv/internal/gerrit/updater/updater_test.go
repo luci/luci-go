@@ -376,8 +376,11 @@ func TestUpdateCLWorks(t *testing.T) {
 				cl := getCL(ctx, gHost, change)
 				So(cl.Snapshot, ShouldBeNil)
 				So(cl.ApplicableConfig, ShouldBeNil)
-				So(cl.DependentMeta.GetByProject()[lProject].GetUpdateTime().AsTime(),
-					ShouldResemble, ct.Clock.Now().UTC())
+				So(cl.Access.GetByProject()[lProject], ShouldResembleProto, &changelist.Access_Project{
+					NoAccess:     true,
+					NoAccessTime: timestamppb.New(ct.Clock.Now()),
+					UpdateTime:   timestamppb.New(ct.Clock.Now()),
+				})
 			}
 
 			Convey("after getting error from Gerrit", func() {
@@ -653,7 +656,7 @@ func TestUpdateCLWorks(t *testing.T) {
 					// Snapshot is kept as is, including its ExternalUpdateTime.
 					So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
 					So(cl2.ApplicableConfig.HasOnlyProject(lProject2), ShouldBeTrue)
-					So(cl2.DependentMeta.GetByProject()[lProject2].GetNoAccess(), ShouldBeTrue)
+					So(cl2.Access.GetByProject()[lProject2], ShouldNotBeNil)
 					// A different PM is notified anyway.
 					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
 				})

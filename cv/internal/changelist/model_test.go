@@ -173,7 +173,10 @@ func TestUpdate(t *testing.T) {
 	t.Parallel()
 
 	Convey("Update works", t, func() {
-		epoch := testclock.TestRecentTimeUTC
+		// Truncate to seconds to reduce noise in diffs of proto timestamps.
+		// use Seconds with lots of 0s at the end for easy grasp of assertion
+		// failures since they are done on protos.
+		epoch := (&timestamppb.Timestamp{Seconds: 14500000000}).AsTime()
 		ctx := memory.Use(context.Background())
 		eid, err := GobID("x-review.example.com", 12)
 		So(err, ShouldBeNil)
@@ -196,7 +199,7 @@ func TestUpdate(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cl.Snapshot, ShouldResembleProto, snap)
 			So(cl.ApplicableConfig, ShouldResembleProto, acfg)
-			So(cl.DependentMeta, ShouldResembleProto, asdep)
+			So(cl.Access, ShouldResembleProto, asdep)
 			So(cl.EVersion, ShouldEqual, 1)
 		})
 
@@ -205,7 +208,7 @@ func TestUpdate(t *testing.T) {
 			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
 				// no snapshot attached yet
 				cl.ApplicableConfig = acfg
-				cl.DependentMeta = makeDependentMeta(epoch, luciProject, "another-project")
+				cl.Access = makeDependentMeta(epoch, luciProject, "another-project")
 			})
 			So(err, ShouldBeNil)
 
@@ -226,7 +229,7 @@ func TestUpdate(t *testing.T) {
 			So(cl2.ApplicableConfig, ShouldResembleProto, makeApplicableConfig())
 			// 1 entry should have been removed due to matching snapshot's project.
 			asdep := makeDependentMeta(epoch, "another-project")
-			So(cl2.DependentMeta, ShouldResembleProto, asdep)
+			So(cl2.Access, ShouldResembleProto, asdep)
 
 			Convey("with known CLID", func() {
 				snap2 := makeSnapshot(epoch.Add(time.Minute))
@@ -245,7 +248,7 @@ func TestUpdate(t *testing.T) {
 				So(cl3.EVersion, ShouldEqual, 3)
 				So(cl3.Snapshot, ShouldResembleProto, snap2)
 				So(cl3.ApplicableConfig, ShouldResembleProto, makeApplicableConfig())
-				So(cl3.DependentMeta, ShouldResembleProto, asdep)
+				So(cl3.Access, ShouldResembleProto, asdep)
 			})
 
 			Convey("skip update if same", func() {
@@ -264,7 +267,7 @@ func TestUpdate(t *testing.T) {
 				So(cl3.EVersion, ShouldEqual, 2)
 				So(cl3.Snapshot, ShouldResembleProto, snap)
 				So(cl3.ApplicableConfig, ShouldResembleProto, acfg)
-				So(cl3.DependentMeta, ShouldResembleProto, asdep)
+				So(cl3.Access, ShouldResembleProto, asdep)
 			})
 
 			Convey("adds/updates DependentMeta", func() {
@@ -273,7 +276,7 @@ func TestUpdate(t *testing.T) {
 				So(err, ShouldBeNil)
 				cl3, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
-				So(cl3.DependentMeta, ShouldResembleProto, asdep3)
+				So(cl3.Access, ShouldResembleProto, asdep3)
 
 				err = Update(ctx, "", cl.ID, UpdateFields{
 					AddDependentMeta: makeDependentMeta(epoch.Add(time.Hour), "2nd", "3rd"),
@@ -281,19 +284,22 @@ func TestUpdate(t *testing.T) {
 				So(err, ShouldBeNil)
 				cl4, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
-				So(cl4.DependentMeta, ShouldResembleProto, &DependentMeta{
-					ByProject: map[string]*DependentMeta_Meta{
+				So(cl4.Access, ShouldResembleProto, &Access{
+					ByProject: map[string]*Access_Project{
 						"another-project": {
-							UpdateTime: timestamppb.New(epoch.Add(time.Minute)),
-							NoAccess:   true,
+							NoAccess:     true,
+							NoAccessTime: timestamppb.New(epoch),
+							UpdateTime:   timestamppb.New(epoch.Add(time.Minute)),
 						},
 						"2nd": {
-							UpdateTime: timestamppb.New(epoch.Add(time.Hour)),
-							NoAccess:   true,
+							NoAccess:     true,
+							NoAccessTime: timestamppb.New(epoch.Add(time.Minute)),
+							UpdateTime:   timestamppb.New(epoch.Add(time.Hour)),
 						},
 						"3rd": {
-							UpdateTime: timestamppb.New(epoch.Add(time.Hour)),
-							NoAccess:   true,
+							NoAccess:     true,
+							NoAccessTime: timestamppb.New(epoch.Add(time.Hour)),
+							UpdateTime:   timestamppb.New(epoch.Add(time.Hour)),
 						},
 					},
 				})
@@ -377,7 +383,9 @@ func TestConcurrentUpdate(t *testing.T) {
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)
 		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(latestTS))
-		So(cl.DependentMeta, ShouldResembleProto, makeDependentMeta(latestTS, "another-project"))
+		// DependentMeta's .CreateTime may be earlier than that of the latestTS,
+		// but .UpdateTime must be exactly latestTS.
+		So(cl.Access.GetByProject()["another-project"].GetUpdateTime().AsTime(), ShouldResemble, latestTS)
 		// Furthermore, there must have been at most N non-noop UpdateSnapshot
 		// calls (one per worker, iff they did exactly in the increasing order of
 		// the ExternalUpdateTime).
@@ -416,15 +424,16 @@ func makeApplicableConfig() *ApplicableConfig {
 	}
 }
 
-func makeDependentMeta(updatedTime time.Time, projects ...string) *DependentMeta {
+func makeDependentMeta(updatedTime time.Time, projects ...string) *Access {
 	if len(projects) == 0 {
 		projects = []string{luciProject}
 	}
-	a := &DependentMeta{ByProject: make(map[string]*DependentMeta_Meta, len(projects))}
+	a := &Access{ByProject: make(map[string]*Access_Project, len(projects))}
 	for _, p := range projects {
-		a.ByProject[p] = &DependentMeta_Meta{
-			NoAccess:   true,
-			UpdateTime: timestamppb.New(updatedTime),
+		a.ByProject[p] = &Access_Project{
+			NoAccess:     true,
+			NoAccessTime: timestamppb.New(updatedTime),
+			UpdateTime:   timestamppb.New(updatedTime),
 		}
 	}
 	return a

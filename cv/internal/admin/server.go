@@ -164,7 +164,7 @@ func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (res
 		UpdateTime:       timestamppb.New(cl.UpdateTime),
 		Snapshot:         cl.Snapshot,
 		ApplicableConfig: cl.ApplicableConfig,
-		DependentMeta:    cl.DependentMeta,
+		Access:           cl.Access,
 		IncompleteRuns:   runs,
 	}
 	return resp, nil

@@ -707,7 +707,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			cl404 := ct.runCLUpdater(ctx, 404)
 			So(cl404.Snapshot, ShouldBeNil)
 			So(cl404.ApplicableConfig, ShouldBeNil)
-			So(cl404.DependentMeta.GetByProject(), ShouldContainKey, ct.lProject)
+			So(cl404.Access.GetByProject(), ShouldContainKey, ct.lProject)
 			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
 				int64(cl404.ID): 1,
 			})
