@@ -45,7 +45,7 @@ type TaskRefs struct {
 	ManageRun  tq.TaskClassRef
 	KickManage tq.TaskClassRef
 
-	tqd *tq.Dispatcher
+	Tqd *tq.Dispatcher
 }
 
 // Register registers tasks with the given TQ Dispatcher.
@@ -65,7 +65,7 @@ func Register(tqd *tq.Dispatcher) TaskRefs {
 			Kind:      tq.Transactional,
 			Quiet:     true,
 		}),
-		tqd: tqd,
+		Tqd: tqd,
 	}
 	t.KickManage.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*KickManageRunTask)
@@ -99,7 +99,7 @@ func (tr TaskRefs) Dispatch(ctx context.Context, runID string, eta time.Time) er
 			mock(runID, eta)
 			return nil
 		}
-		return tr.tqd.AddTask(ctx, &tq.Task{
+		return tr.Tqd.AddTask(ctx, &tq.Task{
 			DeduplicationKey: "", // not allowed in a transaction
 			Payload:          payload,
 		})
@@ -124,7 +124,7 @@ func (tr TaskRefs) Dispatch(ctx context.Context, runID string, eta time.Time) er
 		mock(runID, eta)
 		return nil
 	}
-	return tr.tqd.AddTask(ctx, &tq.Task{
+	return tr.Tqd.AddTask(ctx, &tq.Task{
 		Title:            runID,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", runID, eta.UnixNano()),
 		ETA:              eta,

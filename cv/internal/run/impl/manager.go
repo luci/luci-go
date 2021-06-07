@@ -27,11 +27,13 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
+	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -46,11 +48,12 @@ type RunManager struct {
 	handler     handler.Handler
 }
 
-func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.Client) *RunManager {
+func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.Client, bqc bq.Client) *RunManager {
 	rm := &RunManager{n, pm, u, &handler.Impl{
 		PM:         pm,
 		RM:         n,
 		TreeClient: tc,
+		BQExporter: runbq.NewExporter(n.TaskRefs.Tqd, bqc),
 		CLUpdater:  u,
 	}}
 	n.TaskRefs.ManageRun.AttachHandler(
