@@ -123,14 +123,18 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			// since timestamp is almost guaranteed to be newer.
 			f.toUpdate.ApplicableConfig = acfg
 		}
-		if acfg.HasOnlyProject(f.luciProject) && f.priorCL.Snapshot.GetLuciProject() != f.luciProject {
+		switch {
+		case acfg.HasOnlyProject(f.luciProject) && f.priorCL.Snapshot.GetLuciProject() != f.luciProject:
 			// Snapshot considered up-to-date, but fetched in the context of a wrong
 			// project. Must re-fetch. It's OK to re-use prior snapshot so long as
 			// read access to Gerrit is verified.
 			logging.Warningf(ctx, "%s switches from %q to %q LUCI project", f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
 			err = f.fetchExisting(ctx)
-		} else {
-			// Can indeed skip the update.
+		case f.priorCL.Access.GetByProject()[f.luciProject] != nil:
+			logging.Warningf(ctx, "%s had access restriction before for %s", f, f.priorCL.Access.GetByProject()[f.luciProject])
+			err = f.fetchExisting(ctx)
+		default:
+			logging.Debugf(ctx, "%s skipping fetching Snapshot from Gerrit", f)
 		}
 	}
 
@@ -205,6 +209,7 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 			},
 		},
 	}
+	f.toUpdate.DelAccess = []string{f.luciProject}
 	return f.fetchPostChangeInfo(ctx, ci)
 }
 
