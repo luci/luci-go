@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ccbec70_c6691e33",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-07T21:48:20Z",
+      "side": 1,
+      "message": "Thanks for heads up, Vadim, and for hte fix, Yiwei!",
+      "revId": "ea4b401be73c967f9bf18767f533edfcde45b39d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf972ea3_b68fac5d",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-07T21:48:20Z",
+      "side": 1,
+      "message": "derp. So much for copying.",
+      "revId": "ea4b401be73c967f9bf18767f533edfcde45b39d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
