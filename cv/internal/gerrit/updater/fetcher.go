@@ -53,9 +53,9 @@ import (
 //
 // The prior Snapshot, if given, can reduce RPCs made to Gerrit.
 type fetcher struct {
-	pm                 PM
-	rm                 RM
-	scheduleDepRefresh func(ctx context.Context, p *RefreshGerritCL) error
+	pm              PM
+	rm              RM
+	scheduleRefresh func(ctx context.Context, p *RefreshGerritCL, delay time.Duration) error
 
 	luciProject   string
 	host          string
@@ -265,6 +265,14 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 	return nil
 }
 
+const (
+	// noAccessGraceDuration works around eventually consistent Gerrit,
+	// whereby Gerrit can temporarily return 404 for a CL that actually exists.
+	noAccessGraceDuration = 10 * time.Minute
+	// noAccessGraceRetryDelay determines when to schedule next retry task.
+	noAccessGraceRetryDelay = 1 * time.Minute
+)
+
 // fetchChangeInfo fetches newest ChangeInfo from Gerrit.
 //
 // * handles permission errors
@@ -273,17 +281,32 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 //
 // Returns nil ChangeInfo if no further fetching should proceed.
 func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOption) (*gerritpb.ChangeInfo, error) {
-	setNoAccess := func() {
-		now := timestamppb.New(clock.Now(ctx))
+	setNoAccess := func(temporary bool) error {
+		now := clock.Now(ctx)
+		noAccessAt := now
+		if temporary {
+			noAccessAt = now.Add(noAccessGraceDuration)
+			err := f.scheduleRefresh(ctx, &RefreshGerritCL{
+				LuciProject: f.luciProject,
+				Host:        f.host,
+				Change:      f.change,
+				ClidHint:    int64(f.clidIfKnown()),
+				UpdatedHint: timestamppb.New(f.updatedHint),
+			}, noAccessGraceRetryDelay)
+			if err != nil {
+				return err
+			}
+		}
 		f.toUpdate.AddDependentMeta = &changelist.Access{
 			ByProject: map[string]*changelist.Access_Project{
 				f.luciProject: {
+					UpdateTime:   timestamppb.New(now),
+					NoAccessTime: timestamppb.New(noAccessAt),
 					NoAccess:     true,
-					NoAccessTime: now,
-					UpdateTime:   now,
 				},
 			},
 		}
+		return nil
 	}
 
 	// Avoid querying Gerrit iff the current project doesn't watch the given host,
@@ -293,8 +316,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		return nil, err
 	case !watched:
 		logging.Warningf(ctx, "Gerrit host %q is not watched by project %q [%s]", f.host, f.luciProject, f)
-		setNoAccess()
-		return nil, nil
+		return nil, setNoAccess(false /* permanent*/)
 	}
 
 	if err := f.ensureGerritClient(ctx); err != nil {
@@ -311,9 +333,8 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 			return nil, err
 		}
 	case codes.NotFound, codes.PermissionDenied:
-		// Either no access OR CL was deleted.
-		setNoAccess()
-		return nil, nil
+		// Either no access OR CL was deleted OR eventual consistency.
+		return nil, setNoAccess(true /* temporary */)
 	default:
 		return nil, gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 	}
@@ -598,12 +619,12 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 			if err != nil {
 				panic("impossible: by construction, all deps are Gerrit, too")
 			}
-			return f.scheduleDepRefresh(ctx, &RefreshGerritCL{
+			return f.scheduleRefresh(ctx, &RefreshGerritCL{
 				LuciProject: f.luciProject,
 				Host:        depHost,
 				Change:      depChange,
 				ClidHint:    int64(depCL.ID),
-			})
+			}, 0 /*no delay*/)
 		}
 		return nil
 	}
