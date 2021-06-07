@@ -103,6 +103,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "55886c01_d57624ca",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-07T19:58:18Z",
+      "side": 1,
+      "message": "I like the explicitly calls to enforceOneShard.",
+      "parentUuid": "182d5fd8_4a24f891",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 58,
+        "endChar": 3
+      },
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "655698f3_0f37b221",
         "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
         "patchSetId": 2
