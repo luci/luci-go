@@ -22,10 +22,12 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/pmezard/go-difflib/difflib"
 
+	bqpb "go.chromium.org/luci/common/bq/pb"
 	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
@@ -71,6 +73,15 @@ func (c *SchemaConverter) field(file *descriptorpb.FileDescriptorProto, field *d
 		Description: c.description(file, field),
 		Repeated:    descutil.Repeated(field),
 		Required:    descutil.Required(field),
+	}
+
+	// If have bqschema.options field option, just grab the type from there.
+	if field.Options != nil && proto.HasExtension(field.Options, bqpb.E_Options) {
+		meta := proto.GetExtension(field.Options, bqpb.E_Options).(*bqpb.FieldOptions)
+		if typ := meta.GetBqType(); typ != "" {
+			schema.Type = bigquery.FieldType(typ)
+			return schema, nil
+		}
 	}
 
 	typeName := strings.TrimPrefix(field.GetTypeName(), ".")

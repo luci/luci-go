@@ -1,0 +1,40 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Defining extensions is supported in proto2 syntax only.
+syntax = "proto2";
+
+package bqschema;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "go.chromium.org/luci/common/bq/pb";
+
+message FieldOptions {
+  // BigQuery field type to use for this field instead of the "guessed" one.
+  optional string bq_type = 1;
+}
+
+// Definition of field-level options understood by bqschemaupdater.
+//
+// Usage:
+//
+//    import "go.chromium.org/luci/common/bq/pb/options.proto";
+//
+//    message {
+//       int64 timestamp = 1 [(bqschema.options).bq_type = "TIMESTAMP"];
+//    }
+extend google.protobuf.FieldOptions {
+  optional FieldOptions options = 74700;
+}

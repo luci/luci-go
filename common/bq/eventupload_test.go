@@ -81,6 +81,7 @@ func TestSave(t *testing.T) {
 					"map_key_1": "map_value_1",
 					"map_key_2": "map_value_2",
 				},
+				BqTypeOverride: 1234,
 			},
 			InsertID: "testid",
 		}
@@ -104,6 +105,7 @@ func TestSave(t *testing.T) {
 				map[string]bigquery.Value{"key": "map_key_1", "value": "map_value_1"},
 				map[string]bigquery.Value{"key": "map_key_2", "value": "map_value_2"},
 			},
+			"bq_type_override": int64(1234),
 		})
 	})
 
@@ -119,8 +121,9 @@ func TestSave(t *testing.T) {
 			// only scalar proto fields
 			// because for them, proto3 does not distinguish empty and unset
 			// values.
-			"foo":  "X", // enums are always set
-			"name": "",  // in proto3, empty string and unset are indistinguishable
+			"bq_type_override": int64(0),
+			"foo":              "X", // enums are always set
+			"name":             "",  // in proto3, empty string and unset are indistinguishable
 		})
 	})
 }

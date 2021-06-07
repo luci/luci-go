@@ -13,6 +13,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/common/bq/pb/options.proto";
 
 message Property {
     string name = 1;
@@ -48,6 +49,7 @@ message BuildEvent {
     google.protobuf.Empty empty = 8; // will be ignored
     EmptyContainer empty_container = 9; // will be ignored
     google.protobuf.Duration duration = 10;
+    int64 bq_type_override = 11 [(bqschema.options).bq_type = "TIMESTAMP"];
 }
 
 enum Status {
