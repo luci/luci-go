@@ -116,10 +116,10 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 
 	// Compute resulting state before transaction.
 	transitions, garbage, err := p.Mutate(ctx, toEvents(listing.Items), state)
-	if err != nil {
-		return nil, err
+	if gErr := deleteSemanticGarbage(ctx, &d, garbage); gErr != nil {
+		return nil, gErr
 	}
-	if err := deleteSemanticGarbage(ctx, &d, garbage); err != nil {
+	if err != nil {
 		return nil, err
 	}
 	transitions = withoutNoops(transitions, state)
@@ -189,7 +189,8 @@ type Processor interface {
 	// Garbage events will be deleted non-transactionally before executing
 	// transactional transitions. These events may still be processed by a
 	// concurrent invocation of a Processor. The garbage events slice may re-use
-	// the given events slice.
+	// the given events slice. The garbage will be deleted even if Mutate returns
+	// non-nil error.
 	//
 	// For correctness, two concurrent invocation of a Processor must choose the
 	// same events to be deleted as garbage. Consider scenario of 2 events A and B
