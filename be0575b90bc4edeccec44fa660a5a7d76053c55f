@@ -123,6 +123,30 @@
       },
       "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "184a121a_2a0c07eb",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-07T18:05:22Z",
+      "side": 1,
+      "message": "I did this, was unable to reproduce.\nI have bumped up the number of hogs to (cores + 1) * 2, and trying one more time.",
+      "parentUuid": "039a2cb9_f92ab1bd",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 35
+      },
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
