@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38af83b2_4ae0b4cb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-07T20:21:59Z",
+      "side": 1,
+      "message": "PTAL.\n\n- Invocation with the \"-exonerate-unexpected-pass\" flag: https://luci-milo.appspot.com/ui/inv/u-chanli-2021-06-07-20-16-00-7b27645a2d993694/test-results\n- Invocation without the flag: https://luci-milo.appspot.com/ui/inv/u-chanli-2021-06-07-20-17-00-8aa9924b5bc6b2d2/test-results",
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
