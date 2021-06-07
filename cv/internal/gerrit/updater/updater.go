@@ -153,9 +153,9 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 // Prefer Schedule() instead of Refresh() in production.
 func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	f := fetcher{
-		pm:                 u.pm,
-		rm:                 u.rm,
-		scheduleDepRefresh: u.Schedule,
+		pm:              u.pm,
+		rm:              u.rm,
+		scheduleRefresh: u.ScheduleDelayed,
 
 		luciProject:   r.GetLuciProject(),
 		host:          r.GetHost(),
