@@ -213,7 +213,10 @@ func TestUpdate(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			snap := makeSnapshot(epoch)
-			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{Snapshot: snap},
+			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{
+				Snapshot:  snap,
+				DelAccess: []string{luciProject},
+			},
 				func(ctx context.Context, cl *CL) error {
 					So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
 					So(cl.EVersion, ShouldEqual, 2)
@@ -227,7 +230,6 @@ func TestUpdate(t *testing.T) {
 			So(cl2.EVersion, ShouldEqual, 2)
 			So(cl2.Snapshot, ShouldResembleProto, snap)
 			So(cl2.ApplicableConfig, ShouldResembleProto, makeApplicableConfig())
-			// 1 entry should have been removed due to matching snapshot's project.
 			asdep := makeDependentMeta(epoch, "another-project")
 			So(cl2.Access, ShouldResembleProto, asdep)
 
@@ -362,7 +364,7 @@ func TestConcurrentUpdate(t *testing.T) {
 				asdep := makeDependentMeta(asdepTS, "another-project")
 				var err error
 				for i := 0; i < R; i++ {
-					if err = Update(ctx, eid, 0, UpdateFields{snap, nil, asdep}, nil); err == nil {
+					if err = Update(ctx, eid, 0, UpdateFields{snap, nil, asdep, nil}, nil); err == nil {
 						t.Logf("succeeded after %d tries", i)
 						return
 					}
