@@ -51,6 +51,24 @@
       "message": "Del",
       "revId": "ad17174d8a260c0822f977125278497196c7e186",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f03c8af9_1235bb65",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-07T22:49:09Z",
+      "side": 1,
+      "message": "Done.\n\nMoral of the story for myself: always use \u0027WTF\u0027 😄",
+      "parentUuid": "7037815a_573b51b1",
+      "revId": "ad17174d8a260c0822f977125278497196c7e186",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
