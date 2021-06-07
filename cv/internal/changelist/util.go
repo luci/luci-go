@@ -26,49 +26,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 )
 
-// HasOnlyProject returns true iff ApplicableConfig contains only the given
-// project, regardless of the number of applicable config groups it may contain.
-func (a *ApplicableConfig) HasOnlyProject(luciProject string) bool {
-	projects := a.GetProjects()
-	if len(projects) != 1 {
-		return false
-	}
-	return projects[0].GetName() == luciProject
-}
-
-// HasProject returns true whether ApplicableConfig contains the given
-// project, possibly among other projects.
-func (a *ApplicableConfig) HasProject(luciProject string) bool {
-	for _, p := range a.GetProjects() {
-		if p.Name == luciProject {
-			return true
-		}
-	}
-	return false
-}
-
-// SemanticallyEqual checks if ApplicableConfig configs are the same.
-func (a *ApplicableConfig) SemanticallyEqual(b *ApplicableConfig) bool {
-	if len(a.GetProjects()) != len(b.GetProjects()) {
-		return false
-	}
-	for i, pa := range a.GetProjects() {
-		switch pb := b.GetProjects()[i]; {
-		case pa.GetName() != pb.GetName():
-			return false
-		case len(pa.GetConfigGroupIds()) != len(pb.GetConfigGroupIds()):
-			return false
-		default:
-			for j, sa := range pa.GetConfigGroupIds() {
-				if sa != pb.GetConfigGroupIds()[j] {
-					return false
-				}
-			}
-		}
-	}
-	return true
-}
-
 // PanicIfNotValid checks that Snapshot stored has required fields set.
 func (s *Snapshot) PanicIfNotValid() {
 	switch {

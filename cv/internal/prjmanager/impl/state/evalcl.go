@@ -16,6 +16,7 @@ package state
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -201,55 +202,33 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		Status:   prjpb.PCL_UNKNOWN,
 	}
 
-	switch d, ok := cl.Access.GetByProject()[s.PB.GetLuciProject()]; {
-	case ok:
-		// TODO(crbug/1216630): take time since lost access into account.
-		logging.Warningf(ctx, "This project has no access to CL(%d %s) as of %s", cl.ID, cl.ExternalID, d.GetUpdateTime().AsTime())
-		pcl.Status = prjpb.PCL_UNWATCHED
-		return pcl
-	case cl.Snapshot == nil:
+	switch kind, reason := cl.AccessKindWithReason(s.PB.GetLuciProject()); kind {
+	case changelist.AccessUnknown:
 		// Need more time to fetch this.
-		logging.Debugf(ctx, "CL %d %s lacks Snapshot", cl.ID, cl.ExternalID)
+		logging.Debugf(ctx, "CL %d %s %s", cl.ID, cl.ExternalID, reason)
 		return pcl
-	case cl.Snapshot.GetOutdated() != nil:
-		logging.Debugf(ctx, "CL %d %s Snapshot is outdated", cl.ID, cl.ExternalID)
+	case changelist.AccessDenied:
+		// TODO(crbug/1216630): support changelist.AccessDeniedProbably.
+		logging.Warningf(ctx, "This project has no access to CL(%d %s): %s", cl.ID, cl.ExternalID, reason)
+		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl
-	case cl.Snapshot.GetGerrit() == nil:
-		panic("only Gerrit CLs supported for now")
-	}
-
-	// Check ApplicableConfig as recorded by CL updater. This may be stale if one
-	// LUCI project has recently transferred responsibility for a CL to another
-	// LUCI project, but eventually it'll catch up.
-	var ap *changelist.ApplicableConfig_Project
-	for _, proj := range cl.ApplicableConfig.GetProjects() {
-		if proj.GetName() == s.PB.GetLuciProject() {
-			ap = proj
-			break
+	case changelist.AccessGranted:
+		switch {
+		case cl.Snapshot.GetOutdated() != nil:
+			// Need more time to fetch this.
+			logging.Debugf(ctx, "CL %d %s Snapshot is outdated", cl.ID, cl.ExternalID)
+			return pcl
+		case cl.Snapshot.GetGerrit() == nil:
+			panic(fmt.Errorf("only Gerrit CLs supported for now"))
 		}
-	}
-	switch {
-	case ap == nil:
-		logging.Warningf(ctx, "CL(%d) is not watched by us (CL update %s)", cl.ID, cl.UpdateTime)
-		pcl.Status = prjpb.PCL_UNWATCHED
-		return pcl
-	case len(cl.ApplicableConfig.GetProjects()) > 1:
-		logging.Warningf(ctx, "CL(%d) is watched by more than 1 project (CL update %s)", cl.ID, cl.UpdateTime)
-		pcl.Status = prjpb.PCL_UNWATCHED
-		return pcl
+	default:
+		panic(fmt.Errorf("Unknown access kind %d", kind))
 	}
 
-	if proj := cl.Snapshot.GetLuciProject(); proj != s.PB.GetLuciProject() {
-		// Typically, this shouldn't happen: CL are known to Project Manager (PM)
-		// based on notifications of CLUpdater, which normally notifies PM only
-		// after taking snapshot in the context of the applicable project.
-		// So, wait for snapshot to be re-taken in the context of this project.
-		logging.Warningf(ctx, "CL(%d) is snapshotted by %q, not %q", cl.ID, proj, s.PB.GetLuciProject())
-		return pcl
-	}
-
-	pcl.Status = prjpb.PCL_OK
+	// AccessGranted means only this project is watching the config.
+	ap := cl.ApplicableConfig.GetProjects()[0]
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
+	pcl.Status = prjpb.PCL_OK
 
 	pcl.Errors = append(pcl.Errors, cl.Snapshot.GetErrors()...)
 
