@@ -265,7 +265,8 @@ func googleStorageClient(ctx context.Context, luciProject string) (gs.Client, er
 
 // cloudLoggingClient returns an authenticated Cloud Logging client instance.
 func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, useProjectScope bool) (archivist.CLClient, error) {
-	kind, rpcOpts := auth.AsSelf, []auth.RPCOption{auth.WithScopes(auth.CloudOAuthScopes...)}
+	scopes := append([]string{"https://www.googleapis.com/auth/logging.write"}, auth.CloudOAuthScopes...)
+	kind, rpcOpts := auth.AsSelf, []auth.RPCOption{auth.WithScopes(scopes...)}
 	if useProjectScope {
 		kind = auth.AsProject
 		rpcOpts = append(rpcOpts, auth.WithProject(luciProject))
