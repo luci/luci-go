@@ -202,13 +202,16 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		Status:   prjpb.PCL_UNKNOWN,
 	}
 
-	switch kind, reason := cl.AccessKindWithReason(s.PB.GetLuciProject()); kind {
+	switch kind, reason := cl.AccessKindWithReason(ctx, s.PB.GetLuciProject()); kind {
 	case changelist.AccessUnknown:
 		// Need more time to fetch this.
 		logging.Debugf(ctx, "CL %d %s %s", cl.ID, cl.ExternalID, reason)
 		return pcl
+	case changelist.AccessDeniedProbably:
+		// PM should not create a new Run in such cases, but PM won't terminate
+		// existing Run when Run Manager can and should do it on its own.
+		fallthrough
 	case changelist.AccessDenied:
-		// TODO(crbug/1216630): support changelist.AccessDeniedProbably.
 		logging.Warningf(ctx, "This project has no access to CL(%d %s): %s", cl.ID, cl.ExternalID, reason)
 		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl

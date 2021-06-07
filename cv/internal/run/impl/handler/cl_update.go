@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -66,31 +67,56 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 	}
 
 	for i := range clids {
-		switch cl, runCL := cls[i], runCLs[i]; {
-		case cl.Snapshot.GetPatchset() > runCL.Detail.GetPatchset():
-			// New PS discovered.
-			return impl.Cancel(ctx, rs)
-		case cl.Snapshot.GetGerrit().GetInfo().GetRef() != runCL.Detail.GetGerrit().GetInfo().GetRef():
-			// Ref has changed (e.g. master -> main migration).
-			return impl.Cancel(ctx, rs)
-		case hasTriggerChanged(runCL, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)):
+		if shouldCancel(ctx, cls[i], runCLs[i], cg) {
 			return impl.Cancel(ctx, rs)
 		}
 	}
 	return &Result{State: rs}, nil
 }
 
-func hasTriggerChanged(runCL *run.RunCL, curTrigger *run.Trigger) bool {
-	if runCL.Trigger == nil {
-		panic(fmt.Errorf("runCL must have a trigger"))
+func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *config.ConfigGroup) bool {
+	clString := fmt.Sprintf("CL %d %s", cl.ID, cl.ExternalID)
+	switch kind, reason := cl.AccessKindWithReason(ctx, cg.ProjectString()); kind {
+	case changelist.AccessDenied:
+		logging.Warningf(ctx, "No longer have access to %s: %s", clString, reason)
+		return true
+	case changelist.AccessDeniedProbably:
+		logging.Warningf(ctx, "Probably no longer have access to %s (%s), not canceling yet", clString, reason)
+		// Keep the run Running for now. The access should become either
+		// AccessGranted or AccessDenied, eventually.
+		return false
+	case changelist.AccessUnknown:
+		logging.Errorf(ctx, "Unknown access to %s (%s), not canceling yet", clString, reason)
+		// Keep the run Running for now, it should become clear eventually.
+		return false
+	case changelist.AccessGranted:
+		// The expected and most likely case.
+	default:
+		panic(fmt.Errorf("unknown AccessKind %d in %s", kind, clString))
 	}
-	oldTrigger := runCL.Trigger
+
+	if o, c := rcl.Detail.GetPatchset(), cl.Snapshot.GetPatchset(); o != c {
+		logging.Infof(ctx, "%s has new patchset %d => %d", clString, o, c)
+		return true
+	}
+	if o, c := rcl.Detail.GetGerrit().GetInfo().GetRef(), cl.Snapshot.GetGerrit().GetInfo().GetRef(); o != c {
+		logging.Warningf(ctx, "%s has new ref %q => %q", clString, o, c)
+		return true
+	}
+	if o, c := rcl.Trigger, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content); hasTriggerChanged(o, c) {
+		logging.Infof(ctx, "%s has new trigger %s (old: %s)", clString, o, c)
+		return true
+	}
+	return false
+}
+
+func hasTriggerChanged(old, cur *run.Trigger) bool {
 	switch {
-	case curTrigger == nil:
+	case cur == nil:
 		return true // trigger removal
-	case oldTrigger.GetMode() != curTrigger.GetMode():
+	case old.GetMode() != cur.GetMode():
 		return true // mode has changed
-	case !oldTrigger.GetTime().AsTime().Equal(curTrigger.GetTime().AsTime()):
+	case !old.GetTime().AsTime().Equal(cur.GetTime().AsTime()):
 		return true // triggering time has changed
 	default:
 		// Theoretically, if the triggering user changes, it should also be counted
