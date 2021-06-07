@@ -146,7 +146,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	t.RunNotifier = run.NewNotifier(t.TQDispatcher)
 	clUpdater := updater.New(t.TQDispatcher, t.PMNotifier, t.RunNotifier)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clUpdater, t.TreeFake.Client())
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clUpdater, t.TreeFake.Client(), t.BQFake)
 
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,

@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/tree"
@@ -112,10 +113,10 @@ type CLUpdater interface {
 
 // Impl is a prod implementation of Handler interface.
 type Impl struct {
-	PM        PM
-	RM        RM
-	CLUpdater CLUpdater
-	// TODO(qyearsley): Add a bq.Exporter member here.
+	PM         PM
+	RM         RM
+	CLUpdater  CLUpdater
+	BQExporter *bq.Exporter
 	TreeClient tree.Client
 }
 

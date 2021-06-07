@@ -48,6 +48,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 	rs.Run.Status = st
 	rs.Run.EndTime = clock.Now(ctx).UTC()
 	rid := rs.Run.ID
+
 	return eventbox.Chain(
 		func(ctx context.Context) error {
 			return removeRunFromCLs(ctx, rid, rs.Run.CLs, impl.CLUpdater, impl.PM)
@@ -58,11 +59,13 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 			})
 			return impl.PM.NotifyRunFinished(ctx, rid)
 		},
+		func(ctx context.Context) error {
+			// TODO(qyearsley): Send to a different project/table depending on:
+			//   1. Whether CQDaemond sends rows (see rs.Run.FinishedCQDRun)
+			//   2. Whether the project is dev or prod
+			return impl.BQExporter.Schedule(ctx, rid)
+		},
 	)
-	// TODO(qyearsley): Send rows to BQ.
-	// TODO(qyearsley): Send to a different project/table depending on:
-	//   1. Whether CQDaemond sends rows (see rs.Run.FinishedCQDRun)
-	//   2. Whether the project is dev or prod
 }
 
 // removeRunFromCLs atomically updates state of CL entities involved in this Run.
