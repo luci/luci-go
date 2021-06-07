@@ -158,6 +158,24 @@
       "parentUuid": "ac4bb9e7_390d7700",
       "revId": "2fca5f2f232c23de805559ae9cd3e8790df7c88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2581b2ee_3c76cdca",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-07T13:36:40Z",
+      "side": 1,
+      "message": "Currently tqd in run.Notifier.TaskRefs is private (tqd rather than Tqd).\n\nWe could either make it public, or we could pass in an additional TQ task dispatcher argument to RunManager.New.\n\nMaking Tqd public is a smaller change, but then it seems un-obvious and run.Notifier.TaskRefs is now concerned with just the tasks in run/eventpb. \n\nPassing an additional argument is a bigger change, and makes runimpl have more arguments, and it also seems funny if TQDispatcher is already used in constructing most arguments to impl.New here in addition to being another argument.\n\n\nSince making Tqd public is a smaller change, I\u0027ve done that in the latest patchset for now, but we could reconsider this.",
+      "parentUuid": "e6ee7a86_d7e5f066",
+      "revId": "2fca5f2f232c23de805559ae9cd3e8790df7c88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
