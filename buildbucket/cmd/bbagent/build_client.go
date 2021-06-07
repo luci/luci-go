@@ -62,6 +62,8 @@ type liveBBClient struct {
 }
 
 func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	ctx, cancel := clock.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, bb.tok))
 	return bb.c.UpdateBuild(ctx, in, opts...)
 }
@@ -175,7 +177,7 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 
 		// This RPC is currently served by an AppEngine frontend instance which
 		// is capped at a 60s request time.
-		tctx, cancel := clock.WithTimeout(ctx, 60*time.Second+500*time.Millisecond)
+		tctx, cancel := clock.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
 		_, err := client.UpdateBuild(tctx, req)
