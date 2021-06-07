@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "55230a3f_8c17c2f5",
+        "filename": "cv/internal/changelist/access.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-07T20:25:40Z",
+      "side": 1,
+      "message": "saw change in https://crrev.com/c/2944832 . This makes sense to me now!",
+      "parentUuid": "e0ff2a6c_37c25f5e",
+      "revId": "ad17174d8a260c0822f977125278497196c7e186",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7037815a_573b51b1",
