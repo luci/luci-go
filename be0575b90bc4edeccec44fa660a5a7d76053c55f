@@ -56,6 +56,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8da9b3ce_62c39497",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-07T19:43:09Z",
+      "side": 1,
+      "message": "IIUC, I see the problem from here.\nlen(sched.Tasks().Payloads()) will decrease as soon as the transaction at the following location is completed, which does not necessarily indicates the completion of enforce()\nhttps://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/resultdb/internal/services/deadlineenforcer/deadline_enforcer.go;l\u003d125\n\nI still feel that the change in patchset #4 should not be made. It will cause the metric to be updated even if the commit failed due to outages in TQ, network, or other unusual errors.\n\nCould this for-loop be replaced by something else?\nFor example, cron could support the maximum number of iteration count. Then, this test could just set the number of expected iteration count on it w/ context timeout. Then, this busy-waiting loop could also be removed.",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 58,
+        "endChar": 3
+      },
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "655698f3_0f37b221",
         "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
         "patchSetId": 2
