@@ -133,12 +133,10 @@ func enforce(ctx context.Context, shard, limit int) (int, error) {
 		// TODO(crbug.com/1207606): Increase parallelism.
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			tasks.StartInvocationFinalization(ctx, id, true)
-			return nil
-		})
-		if err == nil {
 			overdueInvocationsFinalized.Add(ctx, 1, realm)
 			timeOverdue.Add(ctx, float64(clock.Now(ctx).Sub(ts.AsTime()).Milliseconds()), realm)
-		}
+			return nil
+		})
 		return err
 	})
 	return rowCount, err
