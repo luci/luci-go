@@ -129,15 +129,12 @@ type CL struct {
 	// ApplicableConfig keeps track of configs applicable to the CL.
 	ApplicableConfig *ApplicableConfig
 
-	// DependentMeta stores metadata per LUCI project about this CL being a
-	// dependency of another CL in the context of the specific LUCI project.
-	//
-	// It's set only in exceptional circumstances; if a Snapshot is fetched in a
-	// context of a specific LUCI project, then this project doesn't have
-	// DependentMeta entry.
+	// Access records per-LUCI project visibility of a CL.
 	//
 	// See description in protobuf type with the same name.
-	DependentMeta *DependentMeta
+	//
+	// TODO(tandrii): rename GAE field to `Access`.
+	Access *Access `gae:"DependentMeta"`
 
 	// IncompleteRuns tracks not yet finalized Runs working on this CL. Sorted.
 	//
@@ -300,7 +297,7 @@ type UpdateFields struct {
 
 	// AddDependentMeta adds or overwrites metadata per LUCI project in CL AsDepMeta.
 	// Doesn't affect metadata stored for projects not referenced here.
-	AddDependentMeta *DependentMeta
+	AddDependentMeta *Access
 }
 
 // IsEmpty returns true if no updates are necessary.
@@ -320,12 +317,12 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 		s.GetLuciProject(), s.GetExternalUpdateTime().AsTime()) {
 		cl.Snapshot = s
 		changed = true
-		// Wipe out corresponding AsDepMeta entry if any.
-		if m := cl.DependentMeta.GetByProject(); m != nil {
+		// Wipe out corresponding Access project entry if any.
+		if m := cl.Access.GetByProject(); m != nil {
 			if _, exists := m[s.GetLuciProject()]; exists {
 				delete(m, s.GetLuciProject())
 				if len(m) == 0 {
-					cl.DependentMeta = nil
+					cl.Access = nil
 				}
 			}
 		}
@@ -333,15 +330,21 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 
 	switch {
 	case u.AddDependentMeta == nil:
-	case cl.DependentMeta == nil || cl.DependentMeta.GetByProject() == nil:
-		cl.DependentMeta = u.AddDependentMeta
+	case cl.Access == nil || cl.Access.GetByProject() == nil:
+		cl.Access = u.AddDependentMeta
 		changed = true
 	default:
-		e := cl.DependentMeta.GetByProject()
-		for lProject, ameta := range u.AddDependentMeta.GetByProject() {
-			emeta, exists := e[lProject]
-			if !exists || emeta.GetUpdateTime().AsTime().Before(ameta.GetUpdateTime().AsTime()) {
-				e[lProject] = ameta
+		e := cl.Access.GetByProject()
+		for lProject, v := range u.AddDependentMeta.GetByProject() {
+			if v.GetNoAccessTime() == nil {
+				panic("NoAccessTime must be set")
+			}
+			old, exists := e[lProject]
+			if !exists || old.GetUpdateTime().AsTime().Before(v.GetUpdateTime().AsTime()) {
+				if old.GetNoAccessTime() != nil && old.GetNoAccessTime().AsTime().Before(v.GetNoAccessTime().AsTime()) {
+					v.NoAccessTime = old.NoAccessTime
+				}
+				e[lProject] = v
 				changed = true
 			}
 		}
@@ -379,7 +382,7 @@ func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID, fields U
 				cl, err := insert(ctx, eid, func(cl *CL) {
 					cl.Snapshot = fields.Snapshot
 					cl.ApplicableConfig = fields.ApplicableConfig
-					cl.DependentMeta = fields.AddDependentMeta
+					cl.Access = fields.AddDependentMeta
 				})
 				if err == nil && notify != nil {
 					err = errors.Annotate(notify(ctx, cl), "notifyCallback failed on %s", eid).Err()

@@ -93,7 +93,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 
 	case f.priorCL.Snapshot == nil:
 		// CL exists, but without snapshot, usually because it was created as
-		// dependency of another CL.
+		// a dependency of another CL.
 		err = f.fetchNew(ctx)
 
 	case f.updatedHint.IsZero() || f.priorCL.Snapshot.GetOutdated() != nil:
@@ -124,9 +124,9 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			f.toUpdate.ApplicableConfig = acfg
 		}
 		if acfg.HasOnlyProject(f.luciProject) && f.priorCL.Snapshot.GetLuciProject() != f.luciProject {
-			// Snapshot considered up-to-date, but fetched in the context of a wrong project.
-			// Must re-fetch. It's OK to re-use prior snapshot so long as read access
-			// to Gerrit is verified.
+			// Snapshot considered up-to-date, but fetched in the context of a wrong
+			// project. Must re-fetch. It's OK to re-use prior snapshot so long as
+			// read access to Gerrit is verified.
 			logging.Warningf(ctx, "%s switches from %q to %q LUCI project", f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
 			err = f.fetchExisting(ctx)
 		} else {
@@ -139,7 +139,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		return err
 	case f.toUpdate.IsEmpty():
 		if f.priorCL == nil {
-			panic("update can be skipped iff priorCL is set")
+			panic("update can't be skipped iff priorCL is not set")
 		}
 		if f.forceNotifyPM {
 			return f.pm.NotifyCLUpdated(ctx, f.luciProject, f.priorCL.ID, f.priorCL.EVersion)
@@ -269,17 +269,19 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 // Returns nil ChangeInfo if no further fetching should proceed.
 func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOption) (*gerritpb.ChangeInfo, error) {
 	setNoAccess := func() {
-		f.toUpdate.AddDependentMeta = &changelist.DependentMeta{
-			ByProject: map[string]*changelist.DependentMeta_Meta{
+		now := timestamppb.New(clock.Now(ctx))
+		f.toUpdate.AddDependentMeta = &changelist.Access{
+			ByProject: map[string]*changelist.Access_Project{
 				f.luciProject: {
-					NoAccess:   true,
-					UpdateTime: timestamppb.New(clock.Now(ctx)),
+					NoAccess:     true,
+					NoAccessTime: now,
+					UpdateTime:   now,
 				},
 			},
 		}
 	}
 
-	// Avoid querying Gerrit iff current project doesn't watch the given host,
+	// Avoid querying Gerrit iff the current project doesn't watch the given host,
 	// which should be treated as PermissionDenied.
 	switch watched, err := f.isHostWatched(ctx); {
 	case err != nil:

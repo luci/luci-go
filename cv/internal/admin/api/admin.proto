@@ -130,7 +130,7 @@ message GetCLResponse {
   google.protobuf.Timestamp update_time = 8;
   cv.changelist.Snapshot snapshot = 4;
   cv.changelist.ApplicableConfig applicable_config = 5;
-  cv.changelist.DependentMeta dependent_meta = 6;
+  cv.changelist.Access access = 6;
   repeated string incomplete_runs = 7;
 }
 

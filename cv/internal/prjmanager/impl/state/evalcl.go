@@ -201,8 +201,9 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		Status:   prjpb.PCL_UNKNOWN,
 	}
 
-	switch d, ok := cl.DependentMeta.GetByProject()[s.PB.GetLuciProject()]; {
-	case ok && d.GetNoAccess():
+	switch d, ok := cl.Access.GetByProject()[s.PB.GetLuciProject()]; {
+	case ok:
+		// TODO(crbug/1216630): take time since lost access into account.
 		logging.Warningf(ctx, "This project has no access to CL(%d %s) as of %s", cl.ID, cl.ExternalID, d.GetUpdateTime().AsTime())
 		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl

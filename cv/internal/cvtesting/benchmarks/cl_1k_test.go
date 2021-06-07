@@ -182,11 +182,12 @@ func makeCL(ci *gerritpb.ChangeInfo) *changelist.CL {
 				{Name: "test", ConfigGroupIds: []string{"main"}},
 			},
 		},
-		DependentMeta: &changelist.DependentMeta{
-			ByProject: map[string]*changelist.DependentMeta_Meta{
+		Access: &changelist.Access{
+			ByProject: map[string]*changelist.Access_Project{
 				"test-2": {
-					NoAccess:   true,
-					UpdateTime: timestamppb.New(now),
+					NoAccess:     true,
+					NoAccessTime: timestamppb.New(now),
+					UpdateTime:   timestamppb.New(now),
 				},
 			},
 		},

@@ -211,41 +211,99 @@ message ApplicableConfig {
   repeated Project projects = 2;
 }
 
-// DependentMeta stores metadata per LUCI project about this CL being a
-// dependency of another one in the context of the specific LUCI project.
+// Access records which LUCI project can or can't see a CL.
 //
-// This is necessary because soft dependencies (e.g. via CQ-Depend)
-// can be arbitrary CL references (e.g. any GoBID), which aren't alone
-// sufficient to determine ApplicableConfig. Thus, code review has to be
-// queried first for CL details.
+// If a LUCI project has Access, it means both:
+//  (1) the project can read details of the CL (via Git/Gerrit ACLs);
+//  (2) the project is the only LUCI project watching this CL in CV
+//      (via the CV config).
+//      Note: there can still be several applicable ConfigGroups of the same
+//      project (see ApplicableConfig).
 //
-// In ideal case, code review responds with CL details, CV can verify that CL
-// is watched by the current project, and then save Snapshot and
-// ApplicableConfig.
+// In practice, .Access is set in 4 cases:
 //
-// However, codereview may respond with an 403/404 error, s.t. CV can't
-// determine an ApplicableConfig, but CV needs to persist the 403/404 error
-// fact somehow s.t. it differs from yet-to-be-fetched CL.
+// (a) `CQ-Depend: host:number` Gerrit CL footers allow users to specify
+//     arbitrary dependencies, which typically happens due to typos,
+//     but malicious actors can try to get CL details of restricted projects.
+//     Either way, CV must not be a confused deputy here and must keep track
+//     which project can see what.
 //
-// To illustrate, consider dependency of CL 200000 specified via
-//    CQ-Depend: chrome-internal:184849
-// in the context of `infra-internal` project. CV first needs to fetch 184849
-// details from Gerrit authenticating as `infra-internal`. This CL doesn't
-// belong to any infra repo, and as such `infra-internal` project-scoped
-// account doesn't have READ access to it, so Gerrit responds with 404.
-// This fact is stored in .DependentMeta["infra-internal"] = 404. Later,
-// ProjectManager will read this fact, and respond on CL 200000 that CQ-Depend
-// footer is wrong.
-message DependentMeta {
-  message Meta {
-    // If true, means this CL doesn't exist or it isn't accessible to the
-    // specific LUCI project.
+// (b) due to recent re-configuration of one or more LUCI projects, either
+//     in CV config and/or in Gerrit ACLs, the previously watched & readable CL
+//     becomes unwatched and/or unreadable.
+//
+// (c) a previously existing CL was deleted (e.g. by its owner or Gerrit
+//     administrators).
+//
+// (d) eventual consistency of Gerrit masquerading as HTTP 404 on stale replica,
+//     while quorum of replicas think CL actually exists and specific LUCI
+//     project having access to it.
+//
+// Unfortunately, (d) isn't easy to distinguish from (b) and (c), so CV resorts
+// to tracking time since CL became invisible -- the longer, the more likely it
+// is (b) or (c).
+//
+// Furthermore, in case of (a), iff CV knows nothing about specific Gerrit CL
+// identified as `CQ-Depend: host:change`, CV in general can't determine which
+// LUCI project is allowed to watch this CL *before* fetching Gerrit project
+// (repo) and target ref.
+//
+//
+// NOTE on CV as confused deputy.
+//
+// CV works with multiple LUCI projects. As of this writing (June 2021),
+// unfortunately, CV doesn't verify that Gerrit repos watched by a LUCI project
+// are in fact owned by that LUCI project. Thus, nothing prevents one LUCI
+// project from starting to watch repos de-facto owned by another LUCI project.
+// This in turn brings 2 problems:
+//
+// (1) Denial of service: unsolved.
+//     Mitigation: CV will refuse to work with CLs which are watched by more
+//     than 1 project. Since CV will communicate by posting message to affected
+//     CL, this should be noticed and fixed quickly.
+//
+// (2) Information leaks: solved.
+//     Each LUCI project MUST use project-scoped service account (PSSA)
+//     (migration is under way, see https://crbug.com/824492).
+//     CV uses this account for all interaction with Gerrit on behalf a specific
+//     LUCI project. Corresponding Gerrit repos:
+//       * SHOULD limit read access to its own PSSA + developers,
+//       * MUST limit Submit rights to its own PSSA and possibly developers.
+//
+// For example,
+//   * `infra` project has all its Gerrit CLs public and doesn't care about
+//      infromation leaks. All other LUCI projects can read its CLs, as well
+//      as the whole Internet.
+//   * `infra-internal` project protects its Gerrit CLs, making them visible
+//     to `infra-internal-scoped@...` account only.
+//     When CV queries Gerrit on `infra-internal` behalf, CV uses
+//     `infra-internal-scoped` account and can fetch the data.
+//   * Suppose malicious actor compromised `infra` repo, and placed a new CV
+//     config there to start watching CLs of the `infra-internal` project
+//     as well as super/secret/repo, which wasn't watched by any CV before.
+//       * Unfortunately, CV can't currently object to the new config.
+//       * However, when querying Gerrit on `infra` behalf, CV uses
+//         `infra-scoped@...` account, which presumably won't be configured with
+//         read access to neither infra-internal nor super/secret/repo.
+//       * So, corresponding CLs will have .Access entry recording that
+//         `infra` has no access to them.
+//       * NOTE: CLs of infra-internal will also have .ApplicableConfig with two
+//         projects there, which will prevent normal operation of
+//         `infra-internal` CV but will not cause any leaks.
+message Access {
+  message Project {
+    // Deprecated. Use no_access_time instead.
     bool no_access = 1;
-    // The timestamp when this was computed.
+    // The time when this was last re-confirmed.
     google.protobuf.Timestamp update_time = 2;
+    // The time after which CV should consider lack of access stable.
+    //
+    // TODO(crbug/1216630): may be unset until backfil is done,
+    // in which case use `no_access` field.
+    google.protobuf.Timestamp no_access_time = 3;
   }
-  // Maps LUCI Project to metadata.
-  map<string, Meta> by_project = 1;
+  map<string, Project> by_project = 1;
+  // TODO(tandrii): per-project ApplicableConfig here.
 }
 
 // CLError encapsulates all kinds of CL errors, which ultimately result in
