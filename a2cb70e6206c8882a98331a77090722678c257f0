@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3498af56_7fcc1826",
+        "filename": "cv/internal/changelist/access.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-07T18:52:59Z",
+      "side": 1,
+      "message": "c",
+      "range": {
+        "startLine": 22,
+        "startChar": 18,
+        "endLine": 22,
+        "endChar": 19
+      },
+      "revId": "a2cb70e6206c8882a98331a77090722678c257f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
