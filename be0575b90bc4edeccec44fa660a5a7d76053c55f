@@ -147,6 +147,30 @@
       },
       "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e94a8317_d1fdfcbb",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-07T18:27:19Z",
+      "side": 1,
+      "message": "I think I found a better explanation for the issue: the worker thread getting preempted (or whatever the correct term is) after committing the db transaction and increasing the metrics.\n\nIt seems so obvious now, but I was pulling my hair looking everywhere else for the problem.\n\nPTAL at the latest patch",
+      "parentUuid": "184a121a_2a0c07eb",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 35
+      },
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
