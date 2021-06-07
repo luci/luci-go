@@ -483,6 +483,19 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			So(l, ShouldHaveLength, 1)
 			So(l[0].Value, ShouldResemble, []byte("msg"))
 		})
+		Convey("Garbage is cleaned up even if Mutate also returns error", func() {
+			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
+			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
+			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+				return nil, es[:1], errors.New("boom")
+			}
+			_, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldErrLike, "boom")
+			l, err := List(ctx, recipient)
+			So(err, ShouldBeNil)
+			So(l, ShouldHaveLength, 1)
+			So(l[0].Value, ShouldResemble, []byte("msg"))
+		})
 		Convey("Mutate returns empty slice of transitions", func() {
 			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{}, nil, nil
