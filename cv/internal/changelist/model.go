@@ -300,13 +300,17 @@ type UpdateFields struct {
 	// AddDependentMeta adds or overwrites metadata per LUCI project in CL AsDepMeta.
 	// Doesn't affect metadata stored for projects not referenced here.
 	AddDependentMeta *Access
+
+	// DelAccess deletes Access records for the given projects.
+	DelAccess []string
 }
 
 // IsEmpty returns true if no updates are necessary.
 func (u UpdateFields) IsEmpty() bool {
 	return (u.Snapshot == nil &&
 		u.ApplicableConfig == nil &&
-		len(u.AddDependentMeta.GetByProject()) == 0)
+		len(u.AddDependentMeta.GetByProject()) == 0 &&
+		len(u.DelAccess) == 0)
 }
 
 func (u UpdateFields) shouldUpdateSnapshot(cl *CL) bool {
@@ -335,15 +339,6 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 	if u.shouldUpdateSnapshot(cl) {
 		cl.Snapshot = u.Snapshot
 		changed = true
-		// Wipe out corresponding Access project entry if any.
-		if m := cl.Access.GetByProject(); m != nil {
-			if _, exists := m[u.Snapshot.GetLuciProject()]; exists {
-				delete(m, u.Snapshot.GetLuciProject())
-				if len(m) == 0 {
-					cl.Access = nil
-				}
-			}
-		}
 	}
 
 	switch {
@@ -367,6 +362,20 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 			}
 		}
 	}
+
+	if len(u.DelAccess) > 0 && len(cl.Access.GetByProject()) > 0 {
+		for _, p := range u.DelAccess {
+			if _, exists := cl.Access.GetByProject()[p]; exists {
+				changed = true
+				delete(cl.Access.ByProject, p)
+				if len(cl.Access.GetByProject()) == 0 {
+					cl.Access = nil
+					break
+				}
+			}
+		}
+	}
+
 	return
 }
 
