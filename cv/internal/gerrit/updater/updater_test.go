@@ -380,7 +380,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				NoAccessTime: timestamppb.New(ct.Clock.Now()),
 				UpdateTime:   timestamppb.New(ct.Clock.Now()),
 			})
-			So(cl.AccessKind(lProject), ShouldEqual, changelist.AccessDenied)
+			So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
 		}
 
 		Convey("No access or permission denied", func() {
@@ -448,7 +448,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			task.Change = 123
 			So(u.Refresh(ctx, task), ShouldBeNil)
 			cl := getCL(ctx, gHost, 123)
-			So(cl.AccessKind(lProject), ShouldEqual, changelist.AccessGranted)
+			So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessGranted)
 			So(cl.Snapshot.GetGerrit().GetHost(), ShouldEqual, gHost)
 			So(cl.Snapshot.GetGerrit().Info.GetProject(), ShouldEqual, gRepo)
 			So(cl.Snapshot.GetGerrit().Info.GetRef(), ShouldEqual, "refs/heads/main")
@@ -470,7 +470,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			for _, gChange := range []int{122, 121, 101} {
 				dep := getCL(ctx, gHost, gChange)
 				So(dep, ShouldNotBeNil)
-				So(dep.AccessKind(lProject), ShouldEqual, changelist.AccessUnknown)
+				So(dep.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessUnknown)
 				depKind := changelist.DepKind_SOFT
 				if gChange == 122 {
 					depKind = changelist.DepKind_HARD
@@ -621,7 +621,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				gobmap.Update(ctx, lProject)
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
-				So(cl2.AccessKind(lProject), ShouldEqual, changelist.AccessDenied)
+				So(cl2.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				// Snapshot is preserved in case this is temporal misconfiguration.
 				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
@@ -647,8 +647,8 @@ func TestUpdateCLWorks(t *testing.T) {
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					So(cl2.Snapshot.GetLuciProject(), ShouldEqual, lProject2)
 					So(cl2.Snapshot.GetExternalUpdateTime(), ShouldResemble, ct.GFake.GetChange(gHost, 123).Info.GetUpdated())
-					So(cl2.AccessKind(lProject), ShouldEqual, changelist.AccessDenied)
-					So(cl2.AccessKind(lProject2), ShouldEqual, changelist.AccessGranted)
+					So(cl2.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
+					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessGranted)
 					// A different PM is notified.
 					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
 				})
@@ -663,7 +663,7 @@ func TestUpdateCLWorks(t *testing.T) {
 					// Snapshot is kept as is, including its ExternalUpdateTime.
 					So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
 					// TODO(tandrii): s/AccessDenied/AccessDeniedProbably.
-					So(cl2.AccessKind(lProject2), ShouldEqual, changelist.AccessDenied)
+					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessDenied)
 					// A different PM is notified anyway.
 					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
 				})

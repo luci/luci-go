@@ -14,6 +14,13 @@
 
 package changelist
 
+import (
+	"context"
+	"fmt"
+
+	"go.chromium.org/luci/common/clock"
+)
+
 // AccessKind is the level of access a LUCI project has to a CL.
 type AccessKind int
 
@@ -32,7 +39,6 @@ const (
 	//
 	// This is a mitigation to Gerrit eventual consistency, which may result in
 	// HTTP 404 returned for a CL that has just been created.
-	// TODO(tandrii): document and start using.
 	AccessDeniedProbably
 	// AccessDenied means the LUCI project has no access to this CL.
 	//
@@ -42,13 +48,13 @@ const (
 )
 
 // AccessKind returns AccessKind of a CL.
-func (cl *CL) AccessKind(luciProject string) AccessKind {
-	kind, _ := cl.AccessKindWithReason(luciProject)
+func (cl *CL) AccessKind(ctx context.Context, luciProject string) AccessKind {
+	kind, _ := cl.AccessKindWithReason(ctx, luciProject)
 	return kind
 }
 
 // AccessKindWithReason returns AccessKind of a CL and a reason for it.
-func (cl *CL) AccessKindWithReason(luciProject string) (AccessKind, string) {
+func (cl *CL) AccessKindWithReason(ctx context.Context, luciProject string) (AccessKind, string) {
 	switch projects := cl.ApplicableConfig.GetProjects(); {
 	case cl.ApplicableConfig == nil:
 		// ApplicableConfig may not be always computable w/o first fetching CL from
@@ -64,8 +70,18 @@ func (cl *CL) AccessKindWithReason(luciProject string) (AccessKind, string) {
 	}
 
 	if pa := cl.Access.GetByProject()[luciProject]; pa != nil {
-		// TODO(tandrii): support AccessDeniedProbably.
-		return AccessDenied, "code review site denied access"
+		now := clock.Now(ctx)
+		switch ct := pa.GetNoAccessTime(); {
+		case ct == nil && pa.GetNoAccess():
+			// Legacy not yet upgraded entity.
+			return AccessDenied, "code review site denied access [legacy CL]"
+		case ct == nil:
+			panic(fmt.Errorf("Access.Project %q without NoAccess fields: %s", luciProject, pa))
+		case now.Before(ct.AsTime()):
+			return AccessDeniedProbably, "code review site denied access recently"
+		default:
+			return AccessDenied, "code review site denied access"
+		}
 	}
 
 	if cl.ApplicableConfig == nil || cl.Snapshot == nil {
