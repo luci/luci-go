@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0ff2a6c_37c25f5e",
+        "filename": "cv/internal/changelist/access.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-07T19:37:02Z",
+      "side": 1,
+      "message": "I don\u0027t follow this, why would `now` be earlier than `ct.AsTime()`?",
+      "revId": "ad17174d8a260c0822f977125278497196c7e186",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7037815a_573b51b1",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-07T19:37:02Z",
+      "side": 1,
+      "message": "Del",
+      "revId": "ad17174d8a260c0822f977125278497196c7e186",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
