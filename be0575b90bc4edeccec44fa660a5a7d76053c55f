@@ -171,6 +171,30 @@
       },
       "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "341b4a98_9620bc2f",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-07T19:05:10Z",
+      "side": 1,
+      "message": "I meant after committing the transaction and _before_ incrementing the metrics.",
+      "parentUuid": "e94a8317_d1fdfcbb",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 35
+      },
+      "revId": "be0575b90bc4edeccec44fa660a5a7d76053c55f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

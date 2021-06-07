@@ -22,6 +22,30 @@
       },
       "revId": "8966395da828a4742362a9b9133de74669912a47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c35e7cc4_f9d7a3b6",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-07T19:05:10Z",
+      "side": 1,
+      "message": "I meant that the goroutine was interrupted after the commit of the transaction but before incrementing the metrics.\n\nThe situation is that the test waits for the task to be enqueued and the database to reflect the status change (both of which happen at the transaction) and then it checks that the metrics were incremented.\n\nWhat seems to be happening in the failed builds with -race, is that the CUD does the transaction, but gets interrupted immediately before incrementing the metrics, and the test proceeds to check the metrics.",
+      "parentUuid": "2057a4f1_76d473c4",
+      "range": {
+        "startLine": 137,
+        "startChar": 3,
+        "endLine": 138,
+        "endChar": 13
+      },
+      "revId": "8966395da828a4742362a9b9133de74669912a47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
