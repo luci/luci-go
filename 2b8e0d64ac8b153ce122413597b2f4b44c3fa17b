@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f94829d_df4c5f70",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-07T18:31:47Z",
+      "side": 1,
+      "message": "nice doc!",
+      "revId": "2b8e0d64ac8b153ce122413597b2f4b44c3fa17b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
