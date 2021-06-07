@@ -33,6 +33,109 @@
       "message": "LGTM, but could you add unit tests? Maybe, sink_server_test.go would be a good place.",
       "revId": "01d05a993909b3a724c76468469f87b20897afe1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66759a09_651bc445",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-07T22:36:45Z",
+      "side": 1,
+      "message": "code above uses tr.Foo, not tr.GetFoo().\nconsider for consistency",
+      "range": {
+        "startLine": 198,
+        "startChar": 49,
+        "endLine": 198,
+        "endChar": 63
+      },
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0dcbee9d_d964eb86",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-07T22:36:45Z",
+      "side": 1,
+      "message": "!tr.Expected",
+      "range": {
+        "startLine": 198,
+        "startChar": 19,
+        "endLine": 198,
+        "endChar": 45
+      },
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "087c459f_9eceef7a",
+        "filename": "resultdb/sink/test_exoneration_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-07T22:36:45Z",
+      "side": 1,
+      "message": "I am confused about the level of abstraction of this type. The name implies it is generic, and most of its code is indeed generic, but then L102 is specific to unexpected passes. Consider renaming/documenting that this specific to unexpected psases.",
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc329f34_c5783ccb",
+        "filename": "resultdb/sink/test_exoneration_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-07T22:36:45Z",
+      "side": 1,
+      "message": "we potentially create multiple exonerations for the test variant.\nwe probably need a set of test variants that we\u0027ve seen before",
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40635836_1e91421d",
+        "filename": "resultdb/sink/test_exoneration_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-07T22:36:45Z",
+      "side": 1,
+      "message": "at this level of abstraction, we don\u0027t know what \"build\" is, so perhaps we should not mention it.\n\nmaybe \"are exonerated\".",
+      "range": {
+        "startLine": 102,
+        "startChar": 41,
+        "endLine": 102,
+        "endChar": 69
+      },
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
