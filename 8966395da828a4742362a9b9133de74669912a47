@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2057a4f1_76d473c4",
+        "filename": "resultdb/internal/services/deadlineenforcer/deadline_enforcer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-07T18:50:23Z",
+      "side": 1,
+      "message": "That the func returns nil doesn\u0027t guarantee that the commit will be succeeded? IIUC your comment, the goroutine was preempted and, therefore, the commit was failed?\n\nThen, timeOverdue should not be updated, as the transaction was failed. Would you be able to find why the goroutine is preempted in unit tests? Maybe, it\u0027d be helpful for me to understand the problem if you can provide logs or something that you concluded the cause with.",
+      "range": {
+        "startLine": 137,
+        "startChar": 3,
+        "endLine": 138,
+        "endChar": 13
+      },
+      "revId": "8966395da828a4742362a9b9133de74669912a47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
