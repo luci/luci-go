@@ -371,26 +371,32 @@ func TestUpdateCLWorks(t *testing.T) {
 		rm := rmMock{}
 		u := New(ct.TQDispatcher, &pm, &rm)
 
-		assertAccessDenied := func(change int) {
-			cl := getCL(ctx, gHost, change)
-			So(cl.Snapshot, ShouldBeNil)
-			So(cl.ApplicableConfig, ShouldBeNil)
-			So(cl.Access.GetByProject()[lProject], ShouldResembleProto, &changelist.Access_Project{
-				NoAccess:     true,
-				NoAccessTime: timestamppb.New(ct.Clock.Now()),
-				UpdateTime:   timestamppb.New(ct.Clock.Now()),
-			})
-			So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
-		}
-
 		Convey("No access or permission denied", func() {
 			Convey("after getting error from Gerrit", func() {
-				task.Change = 404
-				So(u.Refresh(ctx, task), ShouldBeNil)
-				assertAccessDenied(404)
-				task.Change = 403
-				So(u.Refresh(ctx, task), ShouldBeNil)
-				assertAccessDenied(403)
+				assertAccessDeniedTemporary := func(change int) {
+					cl := getCL(ctx, gHost, change)
+					So(cl.Snapshot, ShouldBeNil)
+					So(cl.ApplicableConfig, ShouldBeNil)
+					So(cl.Access.GetByProject()[lProject], ShouldResembleProto, &changelist.Access_Project{
+						NoAccess:     true,
+						NoAccessTime: timestamppb.New(ct.Clock.Now().Add(noAccessGraceDuration)),
+						UpdateTime:   timestamppb.New(ct.Clock.Now()),
+					})
+					So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDeniedProbably)
+					tasks := ct.TQ.Tasks().Pending().Payloads()
+					So(tasks, ShouldHaveLength, 1)
+					So(tasks[0].(*RefreshGerritCL).GetChange(), ShouldEqual, change)
+				}
+				Convey("HTTP 404", func() {
+					task.Change = 404
+					So(u.Refresh(ctx, task), ShouldBeNil)
+					assertAccessDeniedTemporary(404)
+				})
+				Convey("HTTP 403", func() {
+					task.Change = 403
+					So(u.Refresh(ctx, task), ShouldBeNil)
+					assertAccessDeniedTemporary(403)
+				})
 			})
 
 			Convey("because Gerrit host isn't even watched by the LUCI project", func() {
@@ -407,7 +413,15 @@ func TestUpdateCLWorks(t *testing.T) {
 				gobmap.Update(ctx, lProject)
 				task.Change = 1
 				So(u.Refresh(ctx, task), ShouldBeNil)
-				assertAccessDenied(1)
+				cl := getCL(ctx, gHost, 1)
+				So(cl.Snapshot, ShouldBeNil)
+				So(cl.ApplicableConfig, ShouldBeNil)
+				So(cl.Access.GetByProject()[lProject], ShouldResembleProto, &changelist.Access_Project{
+					NoAccess:     true,
+					NoAccessTime: timestamppb.New(ct.Clock.Now()),
+					UpdateTime:   timestamppb.New(ct.Clock.Now()),
+				})
+				So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
 			})
 		})
 
@@ -662,8 +676,7 @@ func TestUpdateCLWorks(t *testing.T) {
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					// Snapshot is kept as is, including its ExternalUpdateTime.
 					So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
-					// TODO(tandrii): s/AccessDenied/AccessDeniedProbably.
-					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessDenied)
+					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessDeniedProbably)
 					// A different PM is notified anyway.
 					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
 				})
