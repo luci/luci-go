@@ -19,8 +19,10 @@ package spantest
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -30,6 +32,8 @@ import (
 
 // StartEmulator starts a Cloud Spanner Emulator instance.
 func StartEmulator(ctx context.Context) (*Emulator, error) {
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	p, err := port.PickUnusedPort()
 	if err != nil {
 		return nil, errors.Annotate(err, "picking port").Err()
@@ -37,7 +41,8 @@ func StartEmulator(ctx context.Context) (*Emulator, error) {
 
 	hostport := fmt.Sprintf("localhost:%d", p)
 	e := &Emulator{
-		hostport: hostport,
+		hostport:      hostport,
+		containerName: fmt.Sprintf("%d", rand.Int63()),
 	}
 
 	if e.cfgDir, err = e.createSpannerEmulatorConfig(); err != nil {
@@ -45,8 +50,13 @@ func StartEmulator(ctx context.Context) (*Emulator, error) {
 	}
 
 	ctx, e.cancel = context.WithCancel(ctx)
-	e.cmd = exec.CommandContext(ctx, "docker", "run", "-p", fmt.Sprintf("127.0.0.1:%d:9010", p), "gcr.io/cloud-spanner-emulator/emulator")
-	e.cmd.Env = append(e.cmd.Env, fmt.Sprintf("SPANNER_EMULATOR_HOST=%s", e.hostport), fmt.Sprintf("CLOUDSDK_CONFIG=%s", e.cfgDir))
+	e.cmd = exec.CommandContext(
+		ctx, "docker", "run", "-p", fmt.Sprintf("127.0.0.1:%d:9010", p), "--name", e.containerName, "gcr.io/cloud-spanner-emulator/emulator")
+	e.cmd.Env = append(e.cmd.Env,
+		fmt.Sprintf("SPANNER_EMULATOR_HOST=%s", e.hostport),
+		fmt.Sprintf("CLOUDSDK_CONFIG=%s", e.cfgDir),
+		fmt.Sprintf("PATH=%s", os.Getenv("PATH")))
+
 	e.cmd.Stdout = os.Stdout
 	e.cmd.Stderr = os.Stderr
 
@@ -65,6 +75,12 @@ func (e *Emulator) Stop() error {
 		// }
 		e.cancel()
 		e.cmd = nil
+
+		// Try to explicitly stop the container, because killing `docker run`
+		// via context cancellation may not do it.
+		stopCmd := exec.Command("docker", "stop", e.containerName)
+		stopCmd.Start()
+		return stopCmd.Wait()
 	}
 
 	if e.cfgDir != "" {

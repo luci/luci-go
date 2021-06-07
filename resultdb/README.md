@@ -15,14 +15,10 @@ gcloud components list # should see cloud-spanner-emulator is installed
 ```
 
 #### Mac
-   
+
 * [Install Docker Desktop on Mac](https://docs.docker.com/docker-for-mac/install/)
 
 > If you are a Google employee, follow [go/docker-for-mac](go/docker-for-mac) first.
-
-* After installing Docker Desktop, go to Preferences > Experimental Features and toggle off "Enable cloud experience" to avoid the error `exec: “com.docker.cli”: executable file not found in $PATH`.
-
-> Note: As of Mar 3, 2021, the newest version of Docker Desktop (3.2.0) is having issues toggling off "Enable cloud experience", please download 3.1.0 [here](https://docs.docker.com/docker-for-mac/release-notes/#docker-desktop-310).
 
 
 ### Run tests
