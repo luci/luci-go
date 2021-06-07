@@ -16,6 +16,23 @@
       "message": "LGTM",
       "revId": "db896c963af579cfb6e5114187457285f920aac3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37abeee9_797ae2ec",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-07T18:55:51Z",
+      "side": 1,
+      "message": "It broke the deployment: https://ci.chromium.org/ui/p/infra-internal/builders/prod/infra-gae-tarballs-continuous/10112/overview",
+      "revId": "db896c963af579cfb6e5114187457285f920aac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
