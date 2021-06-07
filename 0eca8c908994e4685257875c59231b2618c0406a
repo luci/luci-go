@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed43bc07_d3be83cf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-07T20:40:46Z",
+      "side": 1,
+      "message": "This is a speculative fix for the auth error on archivsit.\nCloud Logging is a Google Cloud service, and the scopes seem necessary.\nI\u0027m not sure why it isn\u0027t necessary with AsSelf.\n",
+      "revId": "0eca8c908994e4685257875c59231b2618c0406a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
