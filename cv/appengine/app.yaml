@@ -23,6 +23,7 @@ luci_gae_vars:
 vpc_access_connector:
   name: ${VPC_CONNECTOR}
 
+handlers:
 - url: /.*
   script: auto
   secure: always
