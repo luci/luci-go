@@ -63,7 +63,7 @@ func TestGerritCLDeleted(t *testing.T) {
 		ct.GFake.DeleteChange(gHost, gChange)
 		// This will have to wait for the next full poll.
 		ct.RunUntil(ctx, func() bool {
-			return ct.LoadCL(ctx, r.CLs[0]).AccessKind(ctx, lProject) == changelist.AccessDenied
+			return ct.LoadCL(ctx, r.CLs[0]).AccessKind(ctx, lProject) == changelist.AccessDeniedProbably
 		})
 
 		ct.LogPhase(ctx, "CL re-appears")
@@ -73,9 +73,6 @@ func TestGerritCLDeleted(t *testing.T) {
 		})
 
 		r = ct.LoadRun(ctx, r.ID)
-		So(r.Status, ShouldEqual, run.Status_CANCELLED)
-		// TODO(tandrii): gerrit CL updater to provide grace time before declaring
-		// lost access to a CL.
-		// So(r.Status, ShouldEqual, run.Status_RUNNING)
+		So(r.Status, ShouldEqual, run.Status_RUNNING)
 	})
 }
