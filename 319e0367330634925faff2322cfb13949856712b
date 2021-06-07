@@ -16,6 +16,46 @@
       "message": "Here is another speculative fix. I hope that this fixes it.",
       "revId": "319e0367330634925faff2322cfb13949856712b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09a7f4c6_d138cfd4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-07T21:47:40Z",
+      "side": 1,
+      "message": "CloudAuthScopes includes https://www.googleapis.com/auth/cloud-platform which covers https://www.googleapis.com/auth/logging.write already. So this CL will not change anything.",
+      "revId": "319e0367330634925faff2322cfb13949856712b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66275000_dfbcc945",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-07T21:47:40Z",
+      "side": 1,
+      "message": "Note that this is generally unsafe since it *modifies* array backing the auth.CloudAuthScopes slice (which is a global variable). Under certain conditions it can result in weird shit (like \"logging.write\" scope appearing in a list of options of totally unrelated call).",
+      "range": {
+        "startLine": 268,
+        "startChar": 0,
+        "endLine": 268,
+        "endChar": 89
+      },
+      "revId": "319e0367330634925faff2322cfb13949856712b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
