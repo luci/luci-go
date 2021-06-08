@@ -116,8 +116,9 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 
 type mockRecorder struct {
 	pb.RecorderClient
-	batchCreateTestResults func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error)
-	batchCreateArtifacts   func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error)
+	batchCreateTestResults      func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error)
+	batchCreateArtifacts        func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error)
+	batchCreateTestExonerations func(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (*pb.BatchCreateTestExonerationsResponse, error)
 }
 
 func (m *mockRecorder) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*pb.BatchCreateTestResultsResponse, error) {
@@ -130,6 +131,13 @@ func (m *mockRecorder) BatchCreateTestResults(ctx context.Context, in *pb.BatchC
 func (m *mockRecorder) BatchCreateArtifacts(ctx context.Context, in *pb.BatchCreateArtifactsRequest, opts ...grpc.CallOption) (*pb.BatchCreateArtifactsResponse, error) {
 	if m.batchCreateArtifacts != nil {
 		return m.batchCreateArtifacts(ctx, in)
+	}
+	return nil, nil
+}
+
+func (m *mockRecorder) BatchCreateTestExonerations(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest, opts ...grpc.CallOption) (*pb.BatchCreateTestExonerationsResponse, error) {
+	if m.batchCreateTestExonerations != nil {
+		return m.batchCreateTestExonerations(ctx, in)
 	}
 	return nil, nil
 }
