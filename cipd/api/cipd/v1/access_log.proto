@@ -1,0 +1,53 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cipd;
+
+option go_package = "go.chromium.org/luci/cipd/api/cipd/v1;api";
+
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+
+// AccessLogEntry defines a schema for `access` BigQuery table with access logs.
+//
+// This is a best effort log populated using in-memory buffers. Some entries may
+// be dropped if a process crashes before it flushes the buffer.
+//
+// Field types must be compatible with BigQuery Storage Write API, see
+// https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+message AccessLogEntry {
+  string method = 1;   // the RPC method, e.g. "/cipd.Repository/ListPrefix"
+  int64 timestamp = 2 [(bqschema.options).bq_type = "TIMESTAMP"]; // microseconds since epoch
+  string package = 3;  // CIPD package or package prefix (if known)
+  string instance = 4; // CIPD instance ID (if known)
+  string version = 5;  // CIPD package version (if known)
+
+  repeated string tags = 6;     // the requested tags (if known)
+  repeated string metadata = 7; // the requested metadata keys (if known)
+  repeated string flags = 8;    // encoding of boolean flags in the request
+
+  string call_identity = 9;    // identity used to authorize the call
+  string peer_identity = 10;   // identity of a service that made the RPC
+  string peer_ip = 11;         // IP address of the caller
+  string user_agent = 12;      // value of "User-Agent" header
+  string service_version = 13; // GAE app and version that handled the request
+  string process_id = 14;      // identifier of the concrete backend process
+  string request_id = 15;      // Cloud Trace ID of the request
+  int64 auth_db_rev = 16;      // AuthDB revision used to authorize the call
+
+  string response_code = 17;     // canonical gRPC response code (e.g. "OK")
+  string response_err = 18;      // the response error message if any
+  int64 response_time_usec = 19; // time spent handling the request in microseconds
+}
