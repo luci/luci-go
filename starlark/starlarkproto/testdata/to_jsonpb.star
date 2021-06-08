@@ -30,6 +30,19 @@ m.i64 = 0
 m.b = False
 assert.eq(proto.to_jsonpb(m), '{}')
 
+# Obeys the use_proto_names argument.
+m.str_rep = ["hello"]
+assert.eq(proto.to_jsonpb(m), """{
+	"strRep": [
+		"hello"
+	]
+}""")
+assert.eq(proto.to_jsonpb(m, use_proto_names = True), """{
+	"str_rep": [
+		"hello"
+	]
+}""")
+
 # to_jsonpb expects an argument.
 def to_jsonpb_no_args():
   proto.to_jsonpb()
@@ -37,8 +50,8 @@ assert.fails(to_jsonpb_no_args, 'missing argument for msg')
 
 # Too many arguments.
 def to_jsonpb_too_many_args():
-  proto.to_jsonpb(m, m)
-assert.fails(to_jsonpb_too_many_args, 'to_jsonpb: got 2 arguments, want at most 1')
+  proto.to_jsonpb(m, False, False)
+assert.fails(to_jsonpb_too_many_args, 'to_jsonpb: got 3 arguments, want at most 2')
 
 # None argument.
 def to_jsonpb_with_none():
