@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f9dca982_799a695e",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T18:24:12Z",
+      "side": 1,
+      "message": "Nit: test-result?",
+      "range": {
+        "startLine": 122,
+        "startChar": 20,
+        "endLine": 122,
+        "endChar": 24
+      },
+      "revId": "e16280b8e4a209550f118bb78abeb79c008df6f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6ac6203_64f82370",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T18:24:12Z",
+      "side": 1,
+      "message": "Why do we need different protos for different queues?",
+      "range": {
+        "startLine": 123,
+        "startChar": 25,
+        "endLine": 123,
+        "endChar": 56
+      },
+      "revId": "e16280b8e4a209550f118bb78abeb79c008df6f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b6d1073f_7da07c2a",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T18:24:12Z",
+      "side": 1,
+      "message": "exports",
+      "range": {
+        "startLine": 125,
+        "startChar": 29,
+        "endLine": 125,
+        "endChar": 36
+      },
+      "revId": "e16280b8e4a209550f118bb78abeb79c008df6f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
