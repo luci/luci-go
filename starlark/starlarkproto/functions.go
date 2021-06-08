@@ -49,19 +49,31 @@ func ToTextPB(msg *Message) ([]byte, error) {
 	})
 }
 
-// ToJSONPB serializes a protobuf message to JSONPB string.
-func ToJSONPB(msg *Message) ([]byte, error) {
-	opts := protojson.MarshalOptions{
-		AllowPartial: true,
-		Resolver:     msg.typ.loader.types, // used for google.protobuf.Any fields
+// toJSONPB serializes a protobuf message to JSONPB string.
+func toJSONPB(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var msg *Message
+	var useProtoNames starlark.Bool
+	if err := starlark.UnpackArgs("to_jsonpb", args, kwargs, "msg", &msg, "use_proto_names?", &useProtoNames); err != nil {
+		return nil, err
 	}
-	blob, err := opts.Marshal(msg.ToProto())
+
+	opts := protojson.MarshalOptions{
+		AllowPartial:  true,
+		Resolver:      msg.typ.loader.types, // used for google.protobuf.Any fields
+		UseProtoNames: bool(useProtoNames),
+	}
+	unformattedBlob, err := opts.Marshal(msg.ToProto())
 	if err != nil {
 		return nil, err
 	}
+
 	// protojson randomly injects spaces into the generate output. Pass it through
 	// a formatter to get rid of them.
-	return formatJSON(blob)
+	blob, err := formatJSON(unformattedBlob)
+	if err != nil {
+		return nil, err
+	}
+	return starlark.String(blob), nil
 }
 
 // ToWirePB serializes a protobuf message to binary wire format.
@@ -150,11 +162,13 @@ func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 //        A str representing msg in text format.
 //      """
 //
-//    def to_jsonpb(msg):
+//    def to_jsonpb(msg, use_proto_names = False):
 //      """Serializes a protobuf message to JSONPB string.
 //
 //      Args:
 //        msg: a *Message to serialize.
+//        use_proto_names: boolean, whether to use snake_case in field names
+//          instead of camelCase.
 //
 //      Returns:
 //        A str representing msg in JSONPB format.
@@ -247,7 +261,7 @@ func ProtoLib() starlark.StringDict {
 			"default_loader":     starlark.NewBuiltin("default_loader", defaultLoader),
 			"message_type":       starlark.NewBuiltin("message_type", messageType),
 			"to_textpb":          marshallerBuiltin("to_textpb", ToTextPB),
-			"to_jsonpb":          marshallerBuiltin("to_jsonpb", ToJSONPB),
+			"to_jsonpb":          starlark.NewBuiltin("to_jsonpb", toJSONPB),
 			"to_wirepb":          marshallerBuiltin("to_wirepb", ToWirePB),
 			"from_textpb":        unmarshallerBuiltin("from_textpb", FromTextPB),
 			"from_jsonpb":        unmarshallerBuiltin("from_jsonpb", FromJSONPB),
