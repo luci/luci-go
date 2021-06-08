@@ -16,6 +16,23 @@
       "message": "The giant switch sucks, but at least it is relatively easy to add stuff. Before you ask to convert protos into interfaces: I\u0027m strongly against adding methods to protoc-generated code.",
       "revId": "417706a713b0149381110bd941b78c0bfb01ec07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f14f7b9e_70c4c411",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-08T01:20:20Z",
+      "side": 1,
+      "message": "Oh, also it doesn\u0027t log requests done through the web UI or non-pRPC endpoints. I\u0027ll either ignore them or will need to write some additional code in a separate CL.",
+      "revId": "417706a713b0149381110bd941b78c0bfb01ec07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
