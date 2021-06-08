@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "085ac67c_288b1c6e",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-08T21:20:19Z",
+      "side": 0,
+      "message": "Please keep this as a publicly exported function (with extra `useProtoNames bool` arg) and then separately wrap it in a Starlark adapter.",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 45
+      },
+      "revId": "98ee1ad64b89f4deb51fd0e8e5c517f845ed5c87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

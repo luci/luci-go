@@ -39,6 +39,30 @@
       },
       "revId": "2f4084be0f3d25e57d2778f4aef09278ebb90650",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2287d3eb_2b7a1d41",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 3595,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-08T21:20:19Z",
+      "side": 1,
+      "message": "No. It is complicated... The convention is to document defaults in the doc string instead \"The default is False\". \n\nMost of lucicfg code favors Nones instead of putting explicit default values in function definitions because it allows to do stuff like:\n\n  def inner(*, a, b, c\u003dNone):\n    # `c` defaults to \"some_weird_value\" if c is None\n    \n  def outer(*, a, b, c\u003dNone, d\u003dNone):\n    inner(a\u003da, b\u003db, c\u003dc)\n    # no need to copy \"some_weird_value\" into the `outer` definition\n    \n\nIt makes most sense for giant functions like luci.builder(...) and the documentation parser is primarily targeting such functions so it just puts Nones everywhere...",
+      "parentUuid": "c47db15e_be6ed232",
+      "range": {
+        "startLine": 3595,
+        "startChar": 39,
+        "endLine": 3595,
+        "endChar": 43
+      },
+      "revId": "2f4084be0f3d25e57d2778f4aef09278ebb90650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
