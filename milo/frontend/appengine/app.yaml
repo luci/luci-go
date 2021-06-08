@@ -57,9 +57,6 @@ handlers:
   # All files have content hash in their filenames.
   # So they can be cached longer.
   expiration: 7d
-  http_headers:
-    # Set stale-while-revalidate to 4 weeks.
-    Cache-Control: stale-while-revalidate=2419200
 
 # Host redirect-sw.js at root so it can have root scope.
 - url: /(redirect-sw.js(.map)?)$
