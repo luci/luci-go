@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f1f4825_e3a0a3c9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T02:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dbf52133_6dc4c2dd",
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66759a09_651bc445",
@@ -81,6 +99,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7895f1e2_8f9fe7d5",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T02:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0dcbee9d_d964eb86",
+      "range": {
+        "startLine": 198,
+        "startChar": 19,
+        "endLine": 198,
+        "endChar": 45
+      },
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aed3a49c_b8f9e1f4",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T02:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66759a09_651bc445",
+      "range": {
+        "startLine": 198,
+        "startChar": 49,
+        "endLine": 198,
+        "endChar": 63
+      },
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "087c459f_9eceef7a",
@@ -94,6 +160,24 @@
       "writtenOn": "2021-06-07T22:36:45Z",
       "side": 1,
       "message": "I am confused about the level of abstraction of this type. The name implies it is generic, and most of its code is indeed generic, but then L102 is specific to unexpected passes. Consider renaming/documenting that this specific to unexpected psases.",
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea8192cb_6dee4c2a",
+        "filename": "resultdb/sink/test_exoneration_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T02:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "087c459f_9eceef7a",
       "revId": "01d05a993909b3a724c76468469f87b20897afe1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -117,6 +201,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "96e74231_8f02e5f5",
+        "filename": "resultdb/sink/test_exoneration_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T02:56:54Z",
+      "side": 1,
+      "message": "Since this is for exonerating unexpected passes, and iirc if a test passes it will not be retried, so I think we don\u0027t need to do that.",
+      "parentUuid": "cc329f34_c5783ccb",
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "40635836_1e91421d",
         "filename": "resultdb/sink/test_exoneration_channel.go",
         "patchSetId": 1
@@ -128,6 +230,30 @@
       "writtenOn": "2021-06-07T22:36:45Z",
       "side": 1,
       "message": "at this level of abstraction, we don\u0027t know what \"build\" is, so perhaps we should not mention it.\n\nmaybe \"are exonerated\".",
+      "range": {
+        "startLine": 102,
+        "startChar": 41,
+        "endLine": 102,
+        "endChar": 69
+      },
+      "revId": "01d05a993909b3a724c76468469f87b20897afe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae7ceae4_abf7982f",
+        "filename": "resultdb/sink/test_exoneration_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T02:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40635836_1e91421d",
       "range": {
         "startLine": 102,
         "startChar": 41,
