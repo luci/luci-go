@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b5a94ac_d1fc03df",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2021-06-08T21:07:12Z",
+      "side": 1,
+      "message": "I went ahead and implemented this since it seemed pretty straightforward. Happy to take another approach if you prefer.",
+      "revId": "2f4084be0f3d25e57d2778f4aef09278ebb90650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c47db15e_be6ed232",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 3595,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2021-06-08T21:07:12Z",
+      "side": 1,
+      "message": "Is there any way to make this show up as False instead of None?",
+      "range": {
+        "startLine": 3595,
+        "startChar": 39,
+        "endLine": 3595,
+        "endChar": 43
+      },
+      "revId": "2f4084be0f3d25e57d2778f4aef09278ebb90650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
