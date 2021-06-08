@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -31,20 +33,32 @@ import (
 func TestUnaryClientInterceptor(t *testing.T) {
 	Convey("Captures count and duration", t, func() {
 		c, memStore := testContext()
-
-		// Fake call that runs for 500 ms.
-		invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
-			clock.Get(ctx).(testclock.TestClock).Add(500 * time.Millisecond)
-			return nil
+		run := func(err error, dur time.Duration) {
+			method := "/service/method"
+			invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+				clock.Get(ctx).(testclock.TestClock).Add(dur)
+				return err
+			}
+			_ = NewUnaryClientInterceptor(nil)(c, method, nil, nil, nil, invoker)
+		}
+		count := func(code string) int64 {
+			return memStore.Get(c, grpcClientCount, time.Time{}, []interface{}{"/service/method", code}).(int64)
+		}
+		duration := func(code string) float64 {
+			val := memStore.Get(c, grpcClientDuration, time.Time{}, []interface{}{"/service/method", code})
+			return val.(*distribution.Distribution).Sum()
 		}
 
-		// Run the call with the interceptor.
-		NewUnaryClientInterceptor(nil)(c, "/service/method", nil, nil, nil, invoker)
+		run(nil, time.Millisecond)
+		So(count("OK"), ShouldEqual, 1)
+		So(duration("OK"), ShouldEqual, 1)
 
-		count := memStore.Get(c, grpcClientCount, time.Time{}, []interface{}{"/service/method", 0})
-		So(count, ShouldEqual, 1)
+		run(status.Error(codes.PermissionDenied, "no permission"), time.Second)
+		So(count("PERMISSION_DENIED"), ShouldEqual, 1)
+		So(duration("PERMISSION_DENIED"), ShouldEqual, 1000)
 
-		duration := memStore.Get(c, grpcClientDuration, time.Time{}, []interface{}{"/service/method", 0})
-		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
+		run(status.Error(codes.Unauthenticated, "no auth"), time.Minute)
+		So(count("UNAUTHENTICATED"), ShouldEqual, 1)
+		So(duration("UNAUTHENTICATED"), ShouldEqual, 60000)
 	})
 }
