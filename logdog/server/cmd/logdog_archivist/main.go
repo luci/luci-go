@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 
@@ -274,7 +275,11 @@ func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, u
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()
 	}
-	return cloudlogging.NewClient(ctx, cloudProject, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)))
+	return cloudlogging.NewClient(
+		ctx, cloudProject,
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(grpcmon.NewUnaryClientInterceptor(nil))),
+	)
 }
 
 // Entry point.
