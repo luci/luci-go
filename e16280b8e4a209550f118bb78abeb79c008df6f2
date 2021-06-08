@@ -49,6 +49,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ad4ee4b0_930daaa4",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-08T18:50:22Z",
+      "side": 1,
+      "message": "I believe so. tq uses the type of the task to determine the registered class (which in turn determines the queue to use)\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/2767ad376fc6/server/tq/dispatcher.go#1199",
+      "parentUuid": "e6ac6203_64f82370",
+      "range": {
+        "startLine": 123,
+        "startChar": 25,
+        "endLine": 123,
+        "endChar": 56
+      },
+      "revId": "e16280b8e4a209550f118bb78abeb79c008df6f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b6d1073f_7da07c2a",
         "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
         "patchSetId": 3
@@ -60,6 +84,30 @@
       "writtenOn": "2021-06-08T18:24:12Z",
       "side": 1,
       "message": "exports",
+      "range": {
+        "startLine": 125,
+        "startChar": 29,
+        "endLine": 125,
+        "endChar": 36
+      },
+      "revId": "e16280b8e4a209550f118bb78abeb79c008df6f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da316162_28bddeeb",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-08T18:50:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6d1073f_7da07c2a",
       "range": {
         "startLine": 125,
         "startChar": 29,
