@@ -22,6 +22,30 @@
       },
       "revId": "d9901aa7ad1eeb3991edabd55494133712351736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae2e2b52_9c86a133",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 858,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-08T22:56:07Z",
+      "side": 0,
+      "message": "They were previously set to nil, meaning it was hidden from RPC callers and stored in the model only. By removing this line it will be visible to users of the RPC.\n\nSee the examples in the test, the returned protos include tags now.",
+      "parentUuid": "93f83893_8d4c6442",
+      "range": {
+        "startLine": 858,
+        "startChar": 2,
+        "endLine": 858,
+        "endChar": 26
+      },
+      "revId": "d9901aa7ad1eeb3991edabd55494133712351736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
