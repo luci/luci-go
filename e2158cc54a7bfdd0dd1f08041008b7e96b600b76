@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82b64561_9d02a056",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-08T20:01:54Z",
+      "side": 1,
+      "message": "PTAL. I\u0027m not sure if cloud logging client uses the stream API, but I am planning to add StreamInterceptor to grpcmon for spanner client monitoring, and will install the stream interceptor in archivist once it\u0027s ready.\n\nThat said, this CL alone will be good enough to catch Cloud Logging errors from bad ACL/config changes.",
+      "revId": "e2158cc54a7bfdd0dd1f08041008b7e96b600b76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
