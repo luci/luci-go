@@ -39,6 +39,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
@@ -49,6 +50,7 @@ type sinkServer struct {
 	cfg           ServerConfig
 	ac            *artifactChannel
 	tc            *testResultChannel
+	ec            *unexpectedPassChannel
 	resultIDBase  string
 	resultCounter uint32
 
@@ -77,6 +79,10 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 		invocationArtifactIDs: stringset.New(0),
 	}
 
+	if cfg.ExonerateUnexpectedPass {
+		ss.ec = newTestExonerationChannel(ctx, &cfg)
+	}
+
 	return &sinkpb.DecoratedSink{
 		Service: ss,
 		Prelude: authTokenPrelude(cfg.AuthToken),
@@ -95,6 +101,12 @@ func closeSinkServer(ctx context.Context, s sinkpb.SinkServer) {
 	logging.Infof(ctx, "SinkServer: draining Artifact channel started")
 	ss.ac.closeAndDrain(ctx)
 	logging.Infof(ctx, "SinkServer: draining Artifact channel ended")
+
+	if ss.ec != nil {
+		logging.Infof(ctx, "SinkServer: draining TestExoneration channel started")
+		ss.ec.closeAndDrain(ctx)
+		logging.Infof(ctx, "SinkServer: draining TestExoneration channel ended")
+	}
 }
 
 // authTokenValue returns the value of the Authorization HTTP header that all requests must
@@ -133,6 +145,8 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 
 	// create a slice with a rough estimate.
 	uts := make([]*uploadTask, 0, len(in.TestResults)*4)
+	// Unexpected passed test results that need to be exonerated.
+	trsForExo := make([]*sinkpb.TestResult, 0, len(in.TestResults))
 	for _, tr := range in.TestResults {
 		tr.TestId = s.cfg.TestIDPrefix + tr.GetTestId()
 
@@ -180,6 +194,10 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			}
 			uts = append(uts, t)
 		}
+
+		if s.ec != nil && !tr.Expected && tr.Status == pb.TestStatus_PASS {
+			trsForExo = append(trsForExo, tr)
+		}
 	}
 
 	parallel.FanOutIn(func(work chan<- func() error) {
@@ -190,6 +208,12 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		work <- func() error {
 			s.tc.schedule(in.TestResults...)
 			return nil
+		}
+		if s.ec != nil {
+			work <- func() error {
+				s.ec.schedule(trsForExo...)
+				return nil
+			}
 		}
 	})
 
