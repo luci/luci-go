@@ -46,6 +46,30 @@
       },
       "revId": "d9901aa7ad1eeb3991edabd55494133712351736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1be90ec2_65964d65",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 858,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-08T23:09:12Z",
+      "side": 0,
+      "message": "ah, I read the patch in the reverse way. 😄",
+      "parentUuid": "ae2e2b52_9c86a133",
+      "range": {
+        "startLine": 858,
+        "startChar": 2,
+        "endLine": 858,
+        "endChar": 26
+      },
+      "revId": "d9901aa7ad1eeb3991edabd55494133712351736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
