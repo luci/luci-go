@@ -105,7 +105,7 @@ func TestCancel(t *testing.T) {
 				res, err := h.Cancel(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
-				So(res.State.Run.DelayCancelUntil, ShouldEqual, now.Add(20*time.Minute))
+				So(res.State.Run.DelayCancelUntil, ShouldEqual, now.Add(3*time.Minute))
 				So(res.SideEffectFn, ShouldNotBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.SideEffectFn(ctx), ShouldBeNil)
@@ -113,7 +113,7 @@ func TestCancel(t *testing.T) {
 					Event: &eventpb.Event_Cancel{
 						Cancel: &eventpb.Cancel{},
 					},
-					ProcessAfter: timestamppb.New(now.Add(20 * time.Minute)),
+					ProcessAfter: timestamppb.New(now.Add(3 * time.Minute)),
 				})
 			})
 
