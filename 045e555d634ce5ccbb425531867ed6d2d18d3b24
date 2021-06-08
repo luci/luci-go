@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8d5c423_5334ee95",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T18:41:23Z",
+      "side": 1,
+      "message": "No, empty line removed.",
+      "parentUuid": "0cc8c1e7_09b79143",
+      "revId": "045e555d634ce5ccbb425531867ed6d2d18d3b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7452da1a_ed0e9bb8",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-06-08T18:08:31Z",
       "side": 1,
       "message": "Could you add one more unit test to ensure that it won\u0027t exonerate unexpected failure?\n\ne.g.,\n\nConvey(\"With ExonerateUnexpectedPass\", func() {\n  cfg.ExonerateUnexpectedPass \u003d true\n  ...\n  \n  Convey(\"Exonerate unexpected pass\", func() {\n     tr.Expected \u003d false\n     tr.Status \u003d sinkpb.TestStatus_PASS\n     So(....)\n  })\n  \n  Convey(\"Doesn\u0027t exonerate unexpected failure\", func() {\n     tr.Expected \u003d false\n     tr.Status \u003d sinkpb.TestStatus_FAIL\n     So(....)\n  })\n}",
+      "range": {
+        "startLine": 263,
+        "startChar": 2,
+        "endLine": 280,
+        "endChar": 4
+      },
+      "revId": "045e555d634ce5ccbb425531867ed6d2d18d3b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e5641f1_3fee4b41",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T18:41:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7452da1a_ed0e9bb8",
       "range": {
         "startLine": 263,
         "startChar": 2,
