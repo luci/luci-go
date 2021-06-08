@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7963663_cc3a8eb5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-08T03:50:20Z",
+      "side": 1,
+      "message": "from code, I think it\u0027s 10",
+      "range": {
+        "startLine": 7,
+        "startChar": 36,
+        "endLine": 7,
+        "endChar": 37
+      },
+      "revId": "f15d89ef2a69bf3bdcd8627059d9f6ed5bed40db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a36eead_34d0e06e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-08T03:50:20Z",
+      "side": 1,
+      "message": "I choose 20 solely to accommodate giant CrOs CLs. But 10 should be good enough in most cases. ",
+      "revId": "f15d89ef2a69bf3bdcd8627059d9f6ed5bed40db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
