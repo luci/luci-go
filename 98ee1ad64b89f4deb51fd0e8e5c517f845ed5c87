@@ -22,6 +22,30 @@
       },
       "revId": "98ee1ad64b89f4deb51fd0e8e5c517f845ed5c87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df9dda17_cb7f64ad",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2021-06-08T21:36:59Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "085ac67c_288b1c6e",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 45
+      },
+      "revId": "98ee1ad64b89f4deb51fd0e8e5c517f845ed5c87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

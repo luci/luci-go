@@ -63,6 +63,30 @@
       },
       "revId": "2f4084be0f3d25e57d2778f4aef09278ebb90650",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb922b0c_594ebfad",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 3595,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2021-06-08T21:36:59Z",
+      "side": 1,
+      "message": "Ah got it, thanks for the explanation.",
+      "parentUuid": "2287d3eb_2b7a1d41",
+      "range": {
+        "startLine": 3595,
+        "startChar": 39,
+        "endLine": 3595,
+        "endChar": 43
+      },
+      "revId": "2f4084be0f3d25e57d2778f4aef09278ebb90650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
