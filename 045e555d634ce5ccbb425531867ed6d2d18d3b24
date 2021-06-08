@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0cc8c1e7_09b79143",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-08T17:06:16Z",
+      "side": 1,
+      "message": "intentional?",
+      "revId": "045e555d634ce5ccbb425531867ed6d2d18d3b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
