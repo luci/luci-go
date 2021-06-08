@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "482b9f9f_894e9425",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-08T20:48:37Z",
+      "side": 1,
+      "message": "you may object that 19 isn\u0027t \"huge\". True. So, look at the PS#1 and its tryjobs have passed.",
+      "range": {
+        "startLine": 7,
+        "startChar": 24,
+        "endLine": 7,
+        "endChar": 28
+      },
+      "revId": "7c4b2e4525c164752172ad37c32328a23a641abc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
