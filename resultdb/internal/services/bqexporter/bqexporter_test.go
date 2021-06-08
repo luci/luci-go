@@ -289,8 +289,8 @@ func TestBqTableCache(t *testing.T) {
 func TestSchedule(t *testing.T) {
 	Convey(`TestSchedule`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		bqx1 := &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table"}
-		bqx2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2"}
+		bqx1 := &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table", ResultType: &pb.BigQueryExport_TestResults_{}}
+		bqx2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2", ResultType: &pb.BigQueryExport_TextArtifacts_{}}
 		bqx1Bytes, _ := proto.Marshal(bqx1)
 		bqx2Bytes, _ := proto.Marshal(bqx2)
 		exports := [][]byte{bqx1Bytes, bqx2Bytes}
@@ -307,10 +307,8 @@ func TestSchedule(t *testing.T) {
 			return nil
 		})
 		So(err, ShouldBeNil)
-		So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.ExportInvocationToBQ{
-			{InvocationId: "one-bqx", BqExport: bqx1},
-			{InvocationId: "two-bqx", BqExport: bqx2},
-			{InvocationId: "two-bqx", BqExport: bqx1},
-		})
+		So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.ExportInvocationTestResultsToBQ{InvocationId: "one-bqx", BqExport: bqx1})
+		So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.ExportInvocationArtifactsToBQ{InvocationId: "two-bqx", BqExport: bqx2})
+		So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.ExportInvocationTestResultsToBQ{InvocationId: "two-bqx", BqExport: bqx1})
 	})
 }
