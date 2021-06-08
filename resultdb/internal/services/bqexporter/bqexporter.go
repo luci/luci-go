@@ -117,12 +117,21 @@ type bqExporter struct {
 	maxTokenSize int
 }
 
-// Tasks describes how to route bq export tasks.
-var Tasks = tq.RegisterTaskClass(tq.TaskClass{
-	ID:            "bq-export",
-	Prototype:     &taskspb.ExportInvocationToBQ{},
+// TestTasks describes how to route bq test export tasks.
+var TestTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "bq-test-export",
+	Prototype:     &taskspb.ExportInvocationTestResultsToBQ{},
 	Kind:          tq.Transactional,
-	Queue:         "bqexporter",                 // use a dedicated queue
+	Queue:         "bqtestexports",              // use a dedicated queue
+	RoutingPrefix: "/internal/tasks/bqexporter", // for routing to "bqexporter" service
+})
+
+// ArtifactTasks describes how to route bq artifact export tasks.
+var ArtifactTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "bq-artifact-export",
+	Prototype:     &taskspb.ExportInvocationArtifactsToBQ{},
+	Kind:          tq.Transactional,
+	Queue:         "bqartifactexports",          // use a dedicated queue
 	RoutingPrefix: "/internal/tasks/bqexporter", // for routing to "bqexporter" service
 })
 
@@ -143,8 +152,12 @@ func InitServer(srv *server.Server, opts Options) error {
 		rbecasClient: bytestream.NewByteStreamClient(conn),
 		maxTokenSize: bufio.MaxScanTokenSize,
 	}
-	Tasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
-		task := msg.(*taskspb.ExportInvocationToBQ)
+	TestTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		task := msg.(*taskspb.ExportInvocationTestResultsToBQ)
+		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
+	})
+	ArtifactTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		task := msg.(*taskspb.ExportInvocationArtifactsToBQ)
 		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
 	})
 	return nil
@@ -447,13 +460,27 @@ func Schedule(ctx context.Context, invID invocations.ID) error {
 		if err := proto.Unmarshal(buf, bqx); err != nil {
 			return err
 		}
-		tq.MustAddTask(ctx, &tq.Task{
-			Payload: &taskspb.ExportInvocationToBQ{
-				BqExport:     bqx,
-				InvocationId: string(invID),
-			},
-			Title: fmt.Sprintf("%s:%d", invID, i),
-		})
+		switch bqx.ResultType.(type) {
+		case *pb.BigQueryExport_TestResults_:
+			tq.MustAddTask(ctx, &tq.Task{
+				Payload: &taskspb.ExportInvocationTestResultsToBQ{
+					BqExport:     bqx,
+					InvocationId: string(invID),
+				},
+				Title: fmt.Sprintf("%s:%d", invID, i),
+			})
+		case *pb.BigQueryExport_TextArtifacts_:
+			tq.MustAddTask(ctx, &tq.Task{
+				Payload: &taskspb.ExportInvocationArtifactsToBQ{
+					BqExport:     bqx,
+					InvocationId: string(invID),
+				},
+				Title: fmt.Sprintf("%s:%d", invID, i),
+			})
+		default:
+			return errors.Reason("bqexport.ResultType is required").Err()
+		}
+
 	}
 	return nil
 }
