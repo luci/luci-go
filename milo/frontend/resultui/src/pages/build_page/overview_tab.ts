@@ -485,8 +485,8 @@ export class OverviewTabElement extends MobxLitElement {
           ${this.renderCanaryWarning()}${this.renderSummary()}${this.renderFailedTests()}${this.renderSteps()}
         </div>
         <div class="second-column">
-          ${this.renderBuilderDescription()} ${this.renderInput()} ${this.renderOutput()} ${this.renderTiming()}
-          ${this.renderInfra()} ${this.renderBuildLogs()} ${this.renderActionButtons()} ${this.renderTags()}
+          ${this.renderBuilderDescription()} ${this.renderInput()} ${this.renderOutput()} ${this.renderInfra()}
+          ${this.renderTiming()} ${this.renderBuildLogs()} ${this.renderActionButtons()} ${this.renderTags()}
           ${this.renderExperiments()}
           <h3>Input Properties</h3>
           <milo-property-viewer
