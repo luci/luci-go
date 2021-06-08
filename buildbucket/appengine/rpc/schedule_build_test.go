@@ -368,6 +368,16 @@ func TestScheduleBuild(t *testing.T) {
 						Seconds: 21600,
 					},
 					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+						{
+							Key:   "buildset",
+							Value: "buildset",
+						},
+					},
 				},
 			})
 			So(blds, ShouldResemble, []*model.Build{
@@ -487,6 +497,12 @@ func TestScheduleBuild(t *testing.T) {
 						Seconds: 21600,
 					},
 					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+					},
 				},
 				{
 					Builder: &pb.BuilderID{
@@ -536,6 +552,12 @@ func TestScheduleBuild(t *testing.T) {
 						Seconds: 21600,
 					},
 					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+					},
 				},
 				{
 					Builder: &pb.BuilderID{
@@ -585,6 +607,12 @@ func TestScheduleBuild(t *testing.T) {
 						Seconds: 21600,
 					},
 					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+					},
 				},
 			})
 			So(blds, ShouldResemble, []*model.Build{
