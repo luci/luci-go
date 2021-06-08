@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1cd1375_b95614f1",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-08T20:00:07Z",
+      "side": 1,
+      "message": "Yeah I think [1] prohibits us reusing the same proto.\n\n[1] https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/server/tq/dispatcher.go;l\u003d525",
+      "parentUuid": "ad4ee4b0_930daaa4",
+      "range": {
+        "startLine": 123,
+        "startChar": 25,
+        "endLine": 123,
+        "endChar": 56
+      },
+      "revId": "e16280b8e4a209550f118bb78abeb79c008df6f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b6d1073f_7da07c2a",
