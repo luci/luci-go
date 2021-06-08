@@ -81,7 +81,7 @@ func TestMakeAttempt(t *testing.T) {
 			}), ShouldBeNil)
 			So(nil, ShouldBeNil)
 
-			a, err := makeAttempt(ctx, common.RunID(runID))
+			a, err := makeAttempt(ctx, r)
 			So(err, ShouldBeNil)
 			So(a, ShouldResembleProto, &cvbqpb.Attempt{
 				Key:                  runID.AttemptKey(),
@@ -92,7 +92,7 @@ func TestMakeAttempt(t *testing.T) {
 				StartTime:            timestamppb.New(epoch),
 				EndTime:              timestamppb.New(epoch.Add(25 * time.Minute)),
 				GerritChanges: []*cvbqpb.GerritChange{
-					&cvbqpb.GerritChange{
+					{
 						Host:                       "foo-review.googlesource.com",
 						Project:                    "gproject",
 						Change:                     111,
@@ -169,7 +169,7 @@ func TestMakeAttempt(t *testing.T) {
 				Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
 			}), ShouldBeNil)
 
-			a, err := makeAttempt(ctx, common.RunID(runID))
+			a, err := makeAttempt(ctx, r)
 			So(err, ShouldBeNil)
 			So(a, ShouldResembleProto, &cvbqpb.Attempt{
 				Key:                  runID.AttemptKey(),
@@ -180,7 +180,7 @@ func TestMakeAttempt(t *testing.T) {
 				StartTime:            timestamppb.New(r.CreateTime),
 				EndTime:              timestamppb.New(r.EndTime),
 				GerritChanges: []*cvbqpb.GerritChange{
-					&cvbqpb.GerritChange{
+					{
 						Host:                       "foo-review.googlesource.com",
 						Project:                    "gproject",
 						Change:                     333,
@@ -190,7 +190,7 @@ func TestMakeAttempt(t *testing.T) {
 						Mode:                       cvbqpb.Mode_FULL_RUN,
 						SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
 					},
-					&cvbqpb.GerritChange{
+					{
 						Host:                       "foo-review.googlesource.com",
 						Project:                    "gproject",
 						Change:                     555,
@@ -219,6 +219,17 @@ func TestUsingAttemptInfoFromCQDaemon(t *testing.T) {
 		epoch := ct.Clock.Now().UTC()
 
 		runID := common.MakeRunID("chromium", epoch, 1, []byte("cafecafe"))
+		r := &run.Run{
+			ID:            common.RunID(runID),
+			Status:        run.Status_SUCCEEDED,
+			ConfigGroupID: "sha256:deadbeefdeadbeef/cgroup",
+			CreateTime:    epoch,
+			StartTime:     epoch.Add(time.Minute * 2),
+			EndTime:       epoch.Add(time.Minute * 25),
+			CLs:           common.CLIDs{1},
+			Mode:          run.DryRun,
+		}
+		So(datastore.Put(ctx, r), ShouldBeNil)
 
 		attempt := &cvbqpb.Attempt{
 			Key:                  "f001234",
@@ -252,28 +263,54 @@ func TestUsingAttemptInfoFromCQDaemon(t *testing.T) {
 			HasCustomRequirement: false,
 		}
 
-		vr := &migration.VerifiedCQDRun{
-			ID: runID,
-			Payload: &migrationpb.ReportVerifiedRunRequest{
-				Run: &migrationpb.ReportedRun{
-					Attempt: attempt,
-					Id:      string(runID),
-				},
-			},
-		}
-		So(datastore.Put(ctx, vr), ShouldBeNil)
+		Convey("finalized by CV", func() {
+			Convey("returns nil when not in datastore", func() {
+				a, err := fetchCQDAttempt(ctx, r)
+				So(err, ShouldBeNil)
+				So(a, ShouldBeNil)
+			})
 
-		Convey("returns Attempt from datastore", func() {
-			a, err := fetchCQDAttempt(ctx, runID)
-			So(err, ShouldBeNil)
-			So(a, ShouldResembleProto, attempt)
+			vr := &migration.VerifiedCQDRun{
+				ID: runID,
+				Payload: &migrationpb.ReportVerifiedRunRequest{
+					Run: &migrationpb.ReportedRun{
+						Attempt: attempt,
+						Id:      string(runID),
+					},
+				},
+			}
+			So(datastore.Put(ctx, vr), ShouldBeNil)
+
+			Convey("returns Attempt from datastore", func() {
+				a, err := fetchCQDAttempt(ctx, r)
+				So(err, ShouldBeNil)
+				So(a, ShouldResembleProto, attempt)
+			})
+
 		})
 
-		Convey("returns nil when not in datastore", func() {
-			runID := common.MakeRunID("x", epoch, 1, []byte("aaa"))
-			a, err := fetchCQDAttempt(ctx, runID)
-			So(err, ShouldBeNil)
-			So(a, ShouldBeNil)
+		Convey("finalized by CQDaemon", func() {
+			r.FinalizedByCQD = true
+			Convey("error if no finished run found in datastore", func() {
+				_, err := fetchCQDAttempt(ctx, r)
+				So(err, ShouldErrLike, "no FinishedCQDRun for Run")
+			})
+
+			fr := &migration.FinishedCQDRun{
+				AttemptKey: r.CQDAttemptKey,
+				RunID:      runID,
+				Payload: &migrationpb.ReportedRun{
+					Id:      string(runID),
+					Attempt: attempt,
+				},
+			}
+			So(datastore.Put(ctx, fr), ShouldBeNil)
+
+			Convey("returns Attempt from datastore", func() {
+				a, err := fetchCQDAttempt(ctx, r)
+				So(err, ShouldBeNil)
+				So(a, ShouldResembleProto, attempt)
+			})
 		})
 	})
 

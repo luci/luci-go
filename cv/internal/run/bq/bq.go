@@ -41,7 +41,17 @@ const (
 )
 
 func SendRun(ctx context.Context, client cvbq.Client, id common.RunID) error {
-	a, err := makeAttempt(ctx, id)
+	r := run.Run{ID: id}
+	switch err := datastore.Get(ctx, &r); {
+	case err == datastore.ErrNoSuchEntity:
+		return errors.Reason("Run not found").Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+	case !run.IsEnded(r.Status):
+		panic("Run status must be final before sending to BQ.")
+	}
+
+	a, err := makeAttempt(ctx, &r)
 	if err != nil {
 		return errors.Annotate(err, "failed to make Attempt").Err()
 	}
@@ -50,7 +60,7 @@ func SendRun(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	// builds, CV can't populate all of the fields of Attempt without the
 	// information from CQDaemon; so for finished Attempts reported by
 	// CQDaemon, we can fill in the remaining fields.
-	switch cqda, err := fetchCQDAttempt(ctx, id); {
+	switch cqda, err := fetchCQDAttempt(ctx, &r); {
 	case err != nil:
 		return err
 	case cqda != nil:
@@ -64,20 +74,9 @@ func SendRun(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	return client.SendRow(ctx, destDataset, destTable, string(id), a)
 }
 
-func makeAttempt(ctx context.Context, id common.RunID) (*cvbqpb.Attempt, error) {
-	r := run.Run{ID: id}
-	switch err := datastore.Get(ctx, &r); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Reason("Run not found").Err()
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
-	}
-	if !run.IsEnded(r.Status) {
-		panic("Run status must be final before sending to BQ.")
-	}
-
+func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
 	// Load CLs and convert them to GerritChanges including submit status.
-	runCLs, err := run.LoadRunCLs(ctx, id, r.CLs)
+	runCLs, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +107,7 @@ func makeAttempt(ctx context.Context, id common.RunID) (*cvbqpb.Attempt, error) 
 		// during the migration state, so they should be filled in with Attempt
 		// from CQD if possible.
 		Builds: nil,
-		Status: attemptStatus(ctx, &r),
+		Status: attemptStatus(ctx, r),
 		// TODO(crbug/1114686): Add a new FAILED_SUBMIT substatus, which
 		// should be used in the case that some CLs failed to submit after
 		// passing checks. (In this case, for backwards compatibility, we
@@ -151,12 +150,19 @@ func toGerritChange(cl *run.RunCL, submitted map[int64]struct{}, mode run.Mode) 
 // fetchCQDAttempt fetches an Attempt from CQDaemon if available.
 //
 // Returns nil if no Attempt is available.
-func fetchCQDAttempt(ctx context.Context, id common.RunID) (*cvbqpb.Attempt, error) {
-	v := migration.VerifiedCQDRun{ID: id}
+func fetchCQDAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
+	if r.FinalizedByCQD {
+		f, err := migration.LoadFinishedCQDRun(ctx, r.ID)
+		if err != nil {
+			return nil, err
+		}
+		return f.Payload.GetAttempt(), nil
+	}
+	v := migration.VerifiedCQDRun{ID: r.ID}
 	switch err := datastore.Get(ctx, &v); {
 	case err == datastore.ErrNoSuchEntity:
 		// A Run may end without a VerifiedCQDRun stored if the Run is canceled.
-		logging.Debugf(ctx, "no VerifiedCQDRun found for Run %q", id)
+		logging.Debugf(ctx, "no VerifiedCQDRun found for Run %q", r.ID)
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch VerifiedCQDRun").Tag(transient.Tag).Err()
 	}
