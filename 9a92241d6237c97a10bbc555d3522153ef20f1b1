@@ -63,6 +63,30 @@
       },
       "revId": "9a92241d6237c97a10bbc555d3522153ef20f1b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "56b486aa_777c9e61",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-08T21:00:42Z",
+      "side": 1,
+      "message": "Thanks, that clarifies it",
+      "parentUuid": "cc139956_659a3296",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 40
+      },
+      "revId": "9a92241d6237c97a10bbc555d3522153ef20f1b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
