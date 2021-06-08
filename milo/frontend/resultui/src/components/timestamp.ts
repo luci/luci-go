@@ -50,8 +50,7 @@ export class TimestampElement extends LitElement {
     return html`
       <table>
         <tr>
-          <td>Duration:</td>
-          <td>${displayDuration(now.diff(this.datetime))} ago</td>
+          <td colspan="2">${displayDuration(now.diff(this.datetime))} ago</td>
         </tr>
         ${this.extraZones.map(
           (tz) => html`
@@ -81,9 +80,7 @@ export class TimestampElement extends LitElement {
   };
 
   onmouseout = () => {
-    window.dispatchEvent(
-      new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } })
-    );
+    window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
   };
 
   protected render() {
