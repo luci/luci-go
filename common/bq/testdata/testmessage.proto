@@ -13,6 +13,8 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+
 message TestMessage {
   string name = 1;
   google.protobuf.Timestamp timestamp = 2;
@@ -41,6 +43,8 @@ message TestMessage {
   }
 
   map<string, string> string_map = 13;
+
+  int64 bq_type_override = 14 [(bqschema.options).bq_type = "TIMESTAMP"];
 }
 
 message NestedTestMessage {

@@ -127,6 +127,10 @@ func TestBQSchemaUpdater(t *testing.T) {
 				Name: "duration",
 				Type: bigquery.FloatFieldType,
 			},
+			{
+				Name: "bq_type_override",
+				Type: bigquery.TimestampFieldType,
+			},
 		})
 	})
 }
