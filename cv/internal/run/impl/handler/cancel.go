@@ -52,7 +52,12 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	case err != nil:
 		return nil, err
 	case !cvInCharge && rs.Run.DelayCancelUntil.IsZero():
-		rs.Run.DelayCancelUntil = clock.Now(ctx).Add(20 * time.Minute).UTC()
+		// All but CrOS projects have short CQ loop duraiton.
+		delay := 3 * time.Minute
+		if rs.Run.ID.LUCIProject() == "chromeos" {
+			delay = 10 * time.Minute
+		}
+		rs.Run.DelayCancelUntil = clock.Now(ctx).Add(delay).UTC()
 		se = func(ctx context.Context) error {
 			return impl.RM.CancelAt(ctx, rs.Run.ID, rs.Run.DelayCancelUntil)
 		}
