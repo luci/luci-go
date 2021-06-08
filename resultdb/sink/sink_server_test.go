@@ -59,6 +59,11 @@ func TestReportTestResults(t *testing.T) {
 			sentArtReq = in
 			return nil, nil
 		}
+		var sentExoReq *pb.BatchCreateTestExonerationsRequest
+		cfg.Recorder.(*mockRecorder).batchCreateTestExonerations = func(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (*pb.BatchCreateTestExonerationsResponse, error) {
+			sentExoReq = in
+			return nil, nil
+		}
 
 		expectedTR := &pb.TestResult{
 			TestId:       tr.TestId,
@@ -252,6 +257,53 @@ func TestReportTestResults(t *testing.T) {
 						SizeBytes:   int64(len("a sample artifact")),
 					})
 				})
+			})
+		})
+
+		Convey("report exoneration", func() {
+			cfg.ExonerateUnexpectedPass = true
+			sink, err := newSinkServer(ctx, cfg)
+			So(err, ShouldBeNil)
+			defer closeSinkServer(ctx, sink)
+
+			Convey("exonerate unexpected pass", func() {
+				tr.Expected = false
+
+				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+				So(err, ShouldBeRPCOK)
+				closeSinkServer(ctx, sink)
+				So(sentExoReq, ShouldNotBeNil)
+				So(sentExoReq.Requests, ShouldHaveLength, 1)
+				So(sentExoReq.Requests[0].TestExoneration, ShouldResembleProto, &pb.TestExoneration{
+					TestId:          tr.TestId,
+					ExplanationHtml: "Unexpected passes are exonerated",
+				})
+			})
+
+			Convey("not exonerate unexpected failure", func() {
+				tr.Expected = false
+				tr.Status = pb.TestStatus_FAIL
+
+				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+				So(err, ShouldBeRPCOK)
+				closeSinkServer(ctx, sink)
+				So(sentExoReq, ShouldBeNil)
+			})
+
+			Convey("not exonerate expected pass", func() {
+				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+				So(err, ShouldBeRPCOK)
+				closeSinkServer(ctx, sink)
+				So(sentExoReq, ShouldBeNil)
+			})
+
+			Convey("not exonerate expected failure", func() {
+				tr.Status = pb.TestStatus_FAIL
+
+				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+				So(err, ShouldBeRPCOK)
+				closeSinkServer(ctx, sink)
+				So(sentExoReq, ShouldBeNil)
 			})
 		})
 	})
