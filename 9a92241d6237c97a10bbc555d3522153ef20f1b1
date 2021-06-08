@@ -16,6 +16,29 @@
       "message": "LGTM",
       "revId": "9a92241d6237c97a10bbc555d3522153ef20f1b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5f945e0_5ec5ca90",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-08T19:53:59Z",
+      "side": 1,
+      "message": "A Quick clarification:\n\nSo this uses FinishedCQDRun if r.FinalizedByCQD, but otherwise, tries to use VerifiedCQDRun if available. Is that right?\n\nWhat exactly is the difference between FinishedCQDRun and VerifeidCQDRun? (I\u0027m still not sure after looking at https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/migration/run.go again)",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 40
+      },
+      "revId": "9a92241d6237c97a10bbc555d3522153ef20f1b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
