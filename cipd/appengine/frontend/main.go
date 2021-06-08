@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
@@ -28,6 +29,7 @@ import (
 	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
 	pubapi "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl"
+	"go.chromium.org/luci/cipd/appengine/impl/accesslog"
 	"go.chromium.org/luci/cipd/appengine/ui"
 
 	// Using datastore for user sessions.
@@ -40,6 +42,7 @@ func main() {
 	// Extra modules used by the frontend server only.
 	extra := []module.Module{
 		encryptedcookies.NewModuleFromFlags(),
+		bqlog.NewModuleFromFlags(),
 	}
 
 	impl.Main(extra, func(srv *server.Server, svc *impl.Services) error {
@@ -62,6 +65,9 @@ func main() {
 		adminapi.RegisterAdminServer(srv.PRPC, svc.AdminAPI)
 		pubapi.RegisterStorageServer(srv.PRPC, svc.PublicCAS)
 		pubapi.RegisterRepositoryServer(srv.PRPC, svc.PublicRepo)
+
+		// Log RPC requests to BigQuery.
+		srv.PRPC.UnaryServerInterceptor = accesslog.NewUnaryServerInterceptor(&srv.Options)
 
 		return nil
 	})

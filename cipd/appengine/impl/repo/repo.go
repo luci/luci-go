@@ -1329,10 +1329,6 @@ func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanc
 		return nil, err
 	}
 
-	logging.Infof(c, "Caller:   %s", auth.CurrentIdentity(c))
-	logging.Infof(c, "Package:  %s", r.Package)
-	logging.Infof(c, "Instance: %s", common.ObjectRefToInstanceID(r.Instance))
-
 	// Make sure this instance exists and fetch basic details about it.
 	inst := (&model.Instance{}).FromProto(c, &api.Instance{
 		Package:  r.Package,

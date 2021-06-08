@@ -11,6 +11,14 @@ bqschemaupdater \
   -message "cipd.Event" \
   -partitioning-field "when"
 
+bqschemaupdater \
+  -table "$PROJECT_ID.cipd.access" \
+  -friendly-name "CIPD access log." \
+  -message-dir "$THIS_DIR/../api/cipd/v1" \
+  -message "cipd.AccessLogEntry" \
+  -partitioning-field "timestamp" \
+  -partitioning-expiration "8760h"  # 1y
+
 # Note: this table is used as a template table to create 'exported_tags_<jobid>'
 # tables that contain tags exported by a single specific mapper job. Each such
 # individual table is an approximate "snapshot" of the state of tags at the time
