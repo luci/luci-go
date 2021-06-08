@@ -33,6 +33,41 @@
       "message": "Oh, also it doesn\u0027t log requests done through the web UI or non-pRPC endpoints. I\u0027ll either ignore them or will need to write some additional code in a separate CL.",
       "revId": "417706a713b0149381110bd941b78c0bfb01ec07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f9ca6d67_58842be3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-08T01:52:44Z",
+      "side": 1,
+      "message": "This is because the web UI doesn\u0027t use the pRPC endpoints?",
+      "parentUuid": "f14f7b9e_70c4c411",
+      "revId": "417706a713b0149381110bd941b78c0bfb01ec07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6e59523_a12db8cd",
+        "filename": "cipd/appengine/impl/accesslog/interceptor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-08T01:52:44Z",
+      "side": 1,
+      "message": "could we not switch `req` for small interfaces like `GetObject`, `GetInstance`, `GetMetadata`, etc?",
+      "revId": "417706a713b0149381110bd941b78c0bfb01ec07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
