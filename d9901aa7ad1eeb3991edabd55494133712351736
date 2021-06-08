@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "93f83893_8d4c6442",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 858,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-08T22:12:51Z",
+      "side": 0,
+      "message": "The title is \"Return tags to ScheduleBuild callers\", but I don\u0027t grasp how setting nil in Proto.Tags results in them to be returned to callers.\n\nCould you explain a bit?",
+      "range": {
+        "startLine": 858,
+        "startChar": 2,
+        "endLine": 858,
+        "endChar": 26
+      },
+      "revId": "d9901aa7ad1eeb3991edabd55494133712351736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
