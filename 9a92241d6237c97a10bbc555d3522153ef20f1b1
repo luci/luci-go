@@ -39,6 +39,30 @@
       },
       "revId": "9a92241d6237c97a10bbc555d3522153ef20f1b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc139956_659a3296",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-08T20:57:30Z",
+      "side": 1,
+      "message": "FinishedCQDRun is the run reported by CQD when CQ is in charge of the Run (i.e. from discovery to creation to validation to finalization). VerifiedCQDRun is the run reported by CQD when CV is in charge and CQD is only doing the validation part of the Run. Therefore, r.FinalizedByCQD implies this Run is finalized by CQD so there must be a FinishedCQDRun entity for this Run.",
+      "parentUuid": "d5f945e0_5ec5ca90",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 40
+      },
+      "revId": "9a92241d6237c97a10bbc555d3522153ef20f1b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
