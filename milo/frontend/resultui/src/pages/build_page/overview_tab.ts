@@ -314,7 +314,6 @@ export class OverviewTabElement extends MobxLitElement {
           <milo-test-variant-entry
             .variant=${testVariant}
             .columnGetters=${this.invocationState.displayedColumnGetters}
-            .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
           ></milo-test-variant-entry>
         `);
       }
