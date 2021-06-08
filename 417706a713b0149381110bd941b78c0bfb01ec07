@@ -70,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b35e7ccb_7e82bf56",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-08T03:26:44Z",
+      "side": 1,
+      "message": "UI hits pRPC service implementation methods directly, as Go methods, bypassing gRPC/pRPC layer (i.e. bypassing interceptors).",
+      "parentUuid": "f9ca6d67_58842be3",
+      "revId": "417706a713b0149381110bd941b78c0bfb01ec07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e6e59523_a12db8cd",
@@ -83,6 +101,24 @@
       "writtenOn": "2021-06-08T01:52:44Z",
       "side": 1,
       "message": "could we not switch `req` for small interfaces like `GetObject`, `GetInstance`, `GetMetadata`, etc?",
+      "revId": "417706a713b0149381110bd941b78c0bfb01ec07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1952c6bb_890cab2d",
+        "filename": "cipd/appengine/impl/accesslog/interceptor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-08T03:26:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6e59523_a12db8cd",
       "revId": "417706a713b0149381110bd941b78c0bfb01ec07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
