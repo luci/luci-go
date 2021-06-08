@@ -139,6 +139,10 @@ type ServerConfig struct {
 	// greater artifacts will be uploaded in a stream manner.
 	// Must be < 10MiB, and NewServer panics, otherwise.
 	MaxBatchableArtifactSize int64
+
+	// ExonerateUnexpectedPass is a flag to control if an unexpected pass should
+	// be exonerated.
+	ExonerateUnexpectedPass bool
 }
 
 // Validate validates all the config fields.

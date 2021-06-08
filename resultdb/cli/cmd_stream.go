@@ -136,6 +136,10 @@ func cmdStream(p Params) *subcommands.Command {
 				Path to the file that contains test location tags in JSON format. See
 				https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/sink/proto/v1/location_tag.proto.
 			`))
+			r.Flags.BoolVar(&r.exonerateUnexpectedPass, "exonerate-unexpected-pass",
+				false, text.Doc(`
+				If true, any unexpected pass result will be exonerated.
+			`))
 			return r
 		},
 	}
@@ -145,17 +149,18 @@ type streamRun struct {
 	baseCommandRun
 
 	// flags
-	isNew                  bool
-	isIncluded             bool
-	realm                  string
-	testIDPrefix           string
-	testTestLocationBase   string
-	vars                   map[string]string
-	artChannelMaxLeases    uint
-	trChannelMaxLeases     uint
-	tags                   strpair.Map
-	coerceNegativeDuration bool
-	locTagsFile            string
+	isNew                   bool
+	isIncluded              bool
+	realm                   string
+	testIDPrefix            string
+	testTestLocationBase    string
+	vars                    map[string]string
+	artChannelMaxLeases     uint
+	trChannelMaxLeases      uint
+	tags                    strpair.Map
+	coerceNegativeDuration  bool
+	locTagsFile             string
+	exonerateUnexpectedPass bool
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -315,12 +320,13 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		Invocation:  r.invocation.Name,
 		UpdateToken: r.invocation.UpdateToken,
 
-		BaseTags:               pbutil.FromStrpairMap(r.tags),
-		BaseVariant:            &pb.Variant{Def: r.vars},
-		CoerceNegativeDuration: r.coerceNegativeDuration,
-		LocationTags:           locationTags,
-		TestLocationBase:       r.testTestLocationBase,
-		TestIDPrefix:           r.testIDPrefix,
+		BaseTags:                pbutil.FromStrpairMap(r.tags),
+		BaseVariant:             &pb.Variant{Def: r.vars},
+		CoerceNegativeDuration:  r.coerceNegativeDuration,
+		LocationTags:            locationTags,
+		TestLocationBase:        r.testTestLocationBase,
+		TestIDPrefix:            r.testIDPrefix,
+		ExonerateUnexpectedPass: r.exonerateUnexpectedPass,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
