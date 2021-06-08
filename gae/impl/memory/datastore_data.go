@@ -575,7 +575,7 @@ type txnDataStoreData struct {
 
 var _ memContextObj = (*txnDataStoreData)(nil)
 
-const xgEGLimit = 25
+const xgEGLimit = 210
 
 func (td *txnDataStoreData) endTxn() {
 	if err := td.txn.close(); err != nil {
