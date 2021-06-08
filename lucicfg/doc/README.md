@@ -3592,7 +3592,7 @@ Serializes a protobuf message to a string using ASCII proto serialization.
 ### proto.to_jsonpb {#proto.to_jsonpb}
 
 ```python
-proto.to_jsonpb(msg)
+proto.to_jsonpb(msg, use_proto_names = None)
 ```
 
 
@@ -3602,6 +3602,7 @@ Serializes a protobuf message to a string using JSONPB serialization.
 #### Arguments {#proto.to_jsonpb-args}
 
 * **msg**: a proto message to serialize. Required.
+* **use_proto_names**: boolean, whether to use snake_case in field names instead of camelCase. The default is False.
 
 
 

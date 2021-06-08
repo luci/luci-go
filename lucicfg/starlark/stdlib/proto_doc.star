@@ -26,11 +26,13 @@ def _to_textpb(msg):
       msg: a proto message to serialize. Required.
     """
 
-def _to_jsonpb(msg):
+def _to_jsonpb(msg, use_proto_names = None):
     """Serializes a protobuf message to a string using JSONPB serialization.
 
     Args:
       msg: a proto message to serialize. Required.
+      use_proto_names: boolean, whether to use snake_case in field names
+        instead of camelCase. The default is False.
     """
 
 def _to_wirepb(msg):

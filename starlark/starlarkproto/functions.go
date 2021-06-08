@@ -50,10 +50,11 @@ func ToTextPB(msg *Message) ([]byte, error) {
 }
 
 // ToJSONPB serializes a protobuf message to JSONPB string.
-func ToJSONPB(msg *Message) ([]byte, error) {
+func ToJSONPB(msg *Message, useProtoNames bool) ([]byte, error) {
 	opts := protojson.MarshalOptions{
-		AllowPartial: true,
-		Resolver:     msg.typ.loader.types, // used for google.protobuf.Any fields
+		AllowPartial:  true,
+		Resolver:      msg.typ.loader.types, // used for google.protobuf.Any fields
+		UseProtoNames: useProtoNames,
 	}
 	blob, err := opts.Marshal(msg.ToProto())
 	if err != nil {
@@ -150,11 +151,13 @@ func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 //        A str representing msg in text format.
 //      """
 //
-//    def to_jsonpb(msg):
+//    def to_jsonpb(msg, use_proto_names = None):
 //      """Serializes a protobuf message to JSONPB string.
 //
 //      Args:
 //        msg: a *Message to serialize.
+//        use_proto_names: boolean, whether to use snake_case in field names
+//          instead of camelCase. The default is False.
 //
 //      Returns:
 //        A str representing msg in JSONPB format.
@@ -247,7 +250,7 @@ func ProtoLib() starlark.StringDict {
 			"default_loader":     starlark.NewBuiltin("default_loader", defaultLoader),
 			"message_type":       starlark.NewBuiltin("message_type", messageType),
 			"to_textpb":          marshallerBuiltin("to_textpb", ToTextPB),
-			"to_jsonpb":          marshallerBuiltin("to_jsonpb", ToJSONPB),
+			"to_jsonpb":          toJSONPBBuiltin("to_jsonpb"),
 			"to_wirepb":          marshallerBuiltin("to_wirepb", ToWirePB),
 			"from_textpb":        unmarshallerBuiltin("from_textpb", FromTextPB),
 			"from_jsonpb":        unmarshallerBuiltin("from_jsonpb", FromJSONPB),
@@ -364,6 +367,22 @@ func marshallerBuiltin(name string, impl func(*Message) ([]byte, error)) *starla
 			return nil, err
 		}
 		blob, err := impl(msg)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %s", name, err)
+		}
+		return starlark.String(blob), nil
+	})
+}
+
+// toJSONPBBuiltin implements Starlark shim for the ToJSONPB function.
+func toJSONPBBuiltin(name string) *starlark.Builtin {
+	return starlark.NewBuiltin(name, func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		var msg *Message
+		var useProtoNames starlark.Bool
+		if err := starlark.UnpackArgs(name, args, kwargs, "msg", &msg, "use_proto_names?", &useProtoNames); err != nil {
+			return nil, err
+		}
+		blob, err := ToJSONPB(msg, bool(useProtoNames))
 		if err != nil {
 			return nil, fmt.Errorf("%s: %s", name, err)
 		}
