@@ -245,10 +245,29 @@ func TestSearchRuns(t *testing.T) {
 				So(resp.GetRuns()[1].GetId(), ShouldResemble, earlierID)
 			})
 			Convey("filtering", func() {
+				const gHost = "r-review.example.com"
+				cl1, err := changelist.MustGobID(gHost, 1).GetOrInsert(ctx, func(*changelist.CL) {})
+				So(err, ShouldBeNil)
+				cl2, err := changelist.MustGobID(gHost, 2).GetOrInsert(ctx, func(*changelist.CL) {})
+				So(err, ShouldBeNil)
+
 				So(datastore.Put(ctx,
-					&run.Run{ID: earlierID, Status: run.Status_CANCELLED},
-					&run.Run{ID: laterID, Status: run.Status_RUNNING},
+					&run.Run{
+						ID:     earlierID,
+						Status: run.Status_CANCELLED,
+						CLs:    common.MakeCLIDs(1, 2),
+					},
+					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, earlierID), ID: cl1.ID, IndexedID: cl1.ID},
+					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, earlierID), ID: cl2.ID, IndexedID: cl2.ID},
+
+					&run.Run{
+						ID:     laterID,
+						Status: run.Status_RUNNING,
+						CLs:    common.MakeCLIDs(1),
+					},
+					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, laterID), ID: cl1.ID, IndexedID: cl1.ID},
 				), ShouldBeNil)
+
 				Convey("exact", func() {
 					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
@@ -258,10 +277,30 @@ func TestSearchRuns(t *testing.T) {
 					So(resp.GetRuns(), ShouldHaveLength, 1)
 					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
 				})
+
 				Convey("ended", func() {
 					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
 						Status:  run.Status_ENDED_MASK,
+					})
+					So(err, ShouldBeNil)
+					So(resp.GetRuns(), ShouldHaveLength, 1)
+					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+				})
+
+				Convey("with CL", func() {
+					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+						Cl: &adminpb.GetCLRequest{ExternalId: string(cl2.ExternalID)},
+					})
+					So(err, ShouldBeNil)
+					So(resp.GetRuns(), ShouldHaveLength, 1)
+					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+				})
+
+				Convey("with CL and run status", func() {
+					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+						Cl:     &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
+						Status: run.Status_ENDED_MASK,
 					})
 					So(err, ShouldBeNil)
 					So(resp.GetRuns(), ShouldHaveLength, 1)
