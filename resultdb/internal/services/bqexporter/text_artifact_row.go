@@ -233,7 +233,13 @@ func (b *bqExporter) artifactRowInputToBatch(ctx context.Context, rowC chan rowI
 }
 
 // exportTextArtifactsToBigQuery queries text artifacts in Spanner then exports them to BigQuery.
-func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
+func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, invID invocations.ID, bqExport *pb.BigQueryExport) error {
+	ins, insCancel, err := b.initInserter(ctx, invID, bqExport, textArtifactRowSchema)
+	if err != nil {
+		return err
+	}
+	defer insCancel()
+
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 

@@ -202,7 +202,13 @@ func (b *bqExporter) queryTestResults(
 }
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
-func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
+func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, invID invocations.ID, bqExport *pb.BigQueryExport) error {
+	ins, insCancel, err := b.initInserter(ctx, invID, bqExport, testResultRowSchema)
+	if err != nil {
+		return err
+	}
+	defer insCancel()
+
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
