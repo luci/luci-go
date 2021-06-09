@@ -145,14 +145,16 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Enqueues more bq_export tasks`, func() {
 			bq1, _ := proto.Marshal(&pb.BigQueryExport{
-				Dataset: "dataset",
-				Project: "project",
-				Table:   "table",
+				Dataset:    "dataset",
+				Project:    "project",
+				Table:      "table",
+				ResultType: &pb.BigQueryExport_TestResults_{},
 			})
 			bq2, _ := proto.Marshal(&pb.BigQueryExport{
-				Dataset: "dataset",
-				Project: "project2",
-				Table:   "table1",
+				Dataset:    "dataset",
+				Project:    "project2",
+				Table:      "table1",
+				ResultType: &pb.BigQueryExport_TextArtifacts_{},
 			})
 			testutil.MustApply(ctx,
 				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
@@ -163,10 +165,26 @@ func TestFinalizeInvocation(t *testing.T) {
 			err := finalizeInvocation(ctx, "x")
 			So(err, ShouldBeNil)
 			// Enqueued TQ tasks.
-			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.ExportInvocationToBQ{
-				{InvocationId: "x", BqExport: &pb.BigQueryExport{Dataset: "dataset", Project: "project2", Table: "table1"}},
-				{InvocationId: "x", BqExport: &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table"}},
-			})
+			So(sched.Tasks().Payloads()[0], ShouldResembleProto,
+				&taskspb.ExportInvocationArtifactsToBQ{
+					InvocationId: "x",
+					BqExport: &pb.BigQueryExport{
+						Dataset:    "dataset",
+						Project:    "project2",
+						Table:      "table1",
+						ResultType: &pb.BigQueryExport_TextArtifacts_{},
+					},
+				})
+			So(sched.Tasks().Payloads()[1], ShouldResembleProto,
+				&taskspb.ExportInvocationTestResultsToBQ{
+					InvocationId: "x",
+					BqExport: &pb.BigQueryExport{
+						Dataset:    "dataset",
+						Project:    "project",
+						Table:      "table",
+						ResultType: &pb.BigQueryExport_TestResults_{},
+					},
+				})
 		})
 
 		Convey(`CommonTestIDPrefix and TestResultVariantUnion updated`, func() {
