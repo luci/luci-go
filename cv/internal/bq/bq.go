@@ -31,39 +31,61 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
+// Row encapsulates destination and actual row to send.
+//
+// Exists to avoid confusion over multiple string arguments to SendRow.
+type Row struct {
+	// CloudProject allows sending rows to other projects.
+	//
+	// Optional. Defaults to the one in the scope of which this process is running
+	// (e.g. "luci-change-verifier-dev").
+	CloudProject string
+	Dataset      string
+	Table        string
+	// OperationID is used for de-duplication, but over just 1 minute window :(
+	OperationID string
+	Payload     proto.Message
+}
+
 type Client interface {
 	// SendRow appends a row to a BigQuery table synchronously.
-	//
-	// Dataset and table specify the destination table; operationID can be used
-	// to avoid sending duplicate rows.
-	SendRow(ctx context.Context, dataset, table, operationID string, row proto.Message) error
+	SendRow(ctx context.Context, row Row) error
 }
 
-// prodClient implements a BigQuery Client for production.
-type prodClient struct {
-	bq *bigquery.Client
-}
-
-func NewProdClient(ctx context.Context, cloudProject string) (Client, error) {
+// NewProdClient creates new production client.
+//
+// The specified cloud project should be the one, in the scope of which this
+// code is running, e.g. "luci-change-verifier-dev".
+func NewProdClient(ctx context.Context, cloudProject string) (*prodClient, error) {
 	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, err
 	}
-	bq, err := bigquery.NewClient(ctx, cloudProject, option.WithHTTPClient(&http.Client{Transport: t}))
+	b, err := bigquery.NewClient(ctx, cloudProject, option.WithHTTPClient(&http.Client{Transport: t}))
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to create BQ client").Err()
 	}
-	return &prodClient{bq}, nil
+	return &prodClient{b}, nil
+}
+
+// prodClient implements a BigQuery Client for production.
+type prodClient struct {
+	b *bigquery.Client
 }
 
 // SendRow sends a row to a real BigQuery table.
-func (c *prodClient) SendRow(ctx context.Context, dataset, table, operationID string, msg proto.Message) error {
-	tab := c.bq.Dataset(dataset).Table(table)
-	row := &lucibq.Row{
-		Message:  protov1.MessageV1(msg),
-		InsertID: operationID,
+func (c *prodClient) SendRow(ctx context.Context, row Row) error {
+	var table *bigquery.Table
+	if row.CloudProject == "" {
+		table = c.b.Dataset(row.Dataset).Table(row.Table)
+	} else {
+		table = c.b.DatasetInProject(row.CloudProject, row.Dataset).Table(row.Table)
 	}
-	if err := tab.Inserter().Put(ctx, row); err != nil {
+	r := &lucibq.Row{
+		Message:  protov1.MessageV1(row.Payload),
+		InsertID: row.OperationID,
+	}
+	if err := table.Inserter().Put(ctx, r); err != nil {
 		if pme, _ := err.(bigquery.PutMultiError); len(pme) != 0 {
 			return errors.Annotate(err, "bad row").Err()
 		}

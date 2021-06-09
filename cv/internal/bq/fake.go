@@ -25,27 +25,30 @@ import (
 type Fake struct {
 	// mu protects access/mutation to this Fake.
 	mu sync.RWMutex
-	// sent is a map of "dataset.table" keys to slices of sent rows.
+	// sent is a map of "project.dataset.table" keys to slices of sent rows.
 	sent map[string][]proto.Message
 }
 
 // SendRow provides a mock SendRow implementation for tests.
-func (f *Fake) SendRow(ctx context.Context, dataset, table, operationID string, row proto.Message) error {
+func (f *Fake) SendRow(ctx context.Context, row Row) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	key := dataset + "." + table
+	key := row.CloudProject + "." + row.Dataset + "." + row.Table
 	if f.sent == nil {
 		f.sent = make(map[string][]proto.Message)
 	}
-	f.sent[key] = append(f.sent[key], row)
+	f.sent[key] = append(f.sent[key], row.Payload)
 	return nil
 }
 
 // Rows returns the stored rows for a given dataset and table.
-func (f *Fake) Rows(dataset, table string) []proto.Message {
+//
+// cloudProject can be empty, implying the same cloud project as the running
+// code.
+func (f *Fake) Rows(cloudProject, dataset, table string) []proto.Message {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	rows := f.sent[dataset+"."+table]
+	rows := f.sent[cloudProject+"."+dataset+"."+table]
 	ret := make([]proto.Message, len(rows))
 	copy(ret, rows)
 	return ret
