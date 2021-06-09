@@ -196,8 +196,17 @@ func (o *Options) initialize() (err error) {
 		o.ExeAuth = DefaultExeAuth("luciexe", nil)
 	}
 
-	if o.ViewerURL != "" {
-		o.logdogTags = streamproto.TagMap{"logdog.viewer_url": o.ViewerURL}
+	// BaseBuild is nil in testing scenarios only.
+	if builder := o.BaseBuild.GetBuilder(); builder != nil {
+		o.logdogTags = streamproto.TagMap{
+			"buildbucket.bucket":  builder.Bucket,
+			"buildbucket.builder": builder.Builder,
+			"buildbucket.project": builder.Project,
+		}
+
+		if o.ViewerURL != "" {
+			o.logdogTags["logdog.viewer_url"] = o.ViewerURL
+		}
 	}
 
 	return nil
