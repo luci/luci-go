@@ -291,6 +291,31 @@ func (t *Test) LoadRunsOf(ctx context.Context, lProject string) []*run.Run {
 	return res
 }
 
+// LoadGerritRuns loads all Runs from Datastore which include a Gerrit CL.
+func (t *Test) LoadGerritRuns(ctx context.Context, gHost string, gChange int64, lProject string) []*run.Run {
+	// TODO(tandrii): use query based on CL ID and don't require lProject
+	// argument.
+	cl := t.LoadGerritCL(ctx, gHost, gChange)
+	if cl == nil {
+		return nil
+	}
+	var runs []*run.Run
+	err := datastore.GetAll(ctx, run.NewQueryWithLUCIProject(ctx, lProject), &runs)
+	if err != nil {
+		panic(err)
+	}
+	res := runs[:0]
+	for _, r := range runs {
+		for _, clid := range r.CLs {
+			if clid == cl.ID {
+				res = append(res, r)
+				break
+			}
+		}
+	}
+	return res
+}
+
 // EarliestCreatedRun returns the earliest created Run in a project.
 //
 // If there are several such runs, may return any one of them.
