@@ -344,7 +344,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 	case err != nil:
 		return nil, err
 	case !f.toUpdate.ApplicableConfig.HasProject(f.luciProject):
-		logging.Warningf(ctx, "%s is not watched by the %q project", f, f.luciProject)
+		logging.Debugf(ctx, "%s is not watched by the %q project", f, f.luciProject)
 		return nil, nil
 	}
 
@@ -698,9 +698,9 @@ func (f *fetcher) ensureNotStale(ctx context.Context, externalUpdateTime *timest
 
 	switch {
 	case !f.updatedHint.IsZero() && f.updatedHint.After(t):
-		logging.Warningf(ctx, "Fetched last Gerrit update of %s, but %s expected", t, f.updatedHint)
+		logging.Warningf(ctx, "Fetched last Gerrit update of %s, but %s expected (%s)", t, f.updatedHint, f)
 	case storedTS != nil && storedTS.AsTime().After(t):
-		logging.Warningf(ctx, "Fetched last Gerrit update of %s, but %s was already seen & stored", t, storedTS.AsTime())
+		logging.Warningf(ctx, "Fetched last Gerrit update of %s, but %s was already seen & stored (%s)", t, storedTS.AsTime(), f)
 	default:
 		return nil
 	}

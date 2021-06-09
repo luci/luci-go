@@ -212,7 +212,7 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		// existing Run when Run Manager can and should do it on its own.
 		fallthrough
 	case changelist.AccessDenied:
-		logging.Warningf(ctx, "This project has no access to CL(%d %s): %s", cl.ID, cl.ExternalID, reason)
+		logging.Infof(ctx, "This project has no access to CL(%d %s): %s", cl.ID, cl.ExternalID, reason)
 		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl
 	case changelist.AccessGranted:
