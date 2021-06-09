@@ -249,13 +249,24 @@ func TestSearchRuns(t *testing.T) {
 					&run.Run{ID: earlierID, Status: run.Status_CANCELLED},
 					&run.Run{ID: laterID, Status: run.Status_RUNNING},
 				), ShouldBeNil)
-				resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
-					Project: lProject,
-					Status:  run.Status_CANCELLED,
+				Convey("exact", func() {
+					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+						Project: lProject,
+						Status:  run.Status_CANCELLED,
+					})
+					So(err, ShouldBeNil)
+					So(resp.GetRuns(), ShouldHaveLength, 1)
+					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
 				})
-				So(err, ShouldBeNil)
-				So(resp.GetRuns(), ShouldHaveLength, 1)
-				So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+				Convey("ended", func() {
+					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+						Project: lProject,
+						Status:  run.Status_ENDED_MASK,
+					})
+					So(err, ShouldBeNil)
+					So(resp.GetRuns(), ShouldHaveLength, 1)
+					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+				})
 			})
 		})
 	})
