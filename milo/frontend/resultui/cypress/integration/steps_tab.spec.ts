@@ -13,18 +13,15 @@
 // limitations under the License.
 
 describe('Steps & Logs Tab', () => {
-  before(() => {
-    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps/an/arbitrary/path/suffix');
-  });
-
   it('should accept arbitrary path suffix', () => {
-    cy.location('pathname').should(
-      'equal',
-      '/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/steps'
-    );
+    cy.stubPrpcServices();
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/steps/an/arbitrary/path/suffix');
+    cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15252/steps');
   });
 
   it('support expanding all steps by default', () => {
+    cy.stubPrpcServices();
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/steps');
     cy.get('#expand-by-default').click();
     cy.get('milo-expandable-entry milo-build-step-entry');
     cy.reload();
