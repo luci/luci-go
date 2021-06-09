@@ -27,6 +27,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry"
@@ -61,9 +62,11 @@ import (
 
 const dsFlakinessFlagName = "cv.dsflakiness"
 const tqConcurrentFlagName = "cv.tqparallel"
+const extraVerboseFlagName = "cv.verbose"
 
 var dsFlakinessFlag = flag.Float64(dsFlakinessFlagName, 0, "DS flakiness probability between 0(default) and 1.0 (always fails)")
 var tqParallelFlag = flag.Bool(tqConcurrentFlagName, false, "Runs TQ tasks in parallel")
+var extraVerbosityFlag = flag.Bool(extraVerboseFlagName, false, "Extra verbose mode. Use in combination with -v")
 
 func init() {
 	// HACK: bump up greately eventbox tombstone delay, especially useful in case
@@ -210,18 +213,16 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 	t.TQ.Run(taskCtx, tqOpts...)
 
 	// Log only here after all tasks-in-progress are completed.
-	var outstanding []string
+	outstanding := stringset.New(len(t.TQ.Tasks().Pending()))
 	for _, task := range t.TQ.Tasks().Pending() {
-		outstanding = append(outstanding, task.Class)
+		outstanding.Add(task.Class)
 	}
-	logging.Debugf(ctx, "RunUntil ran %d iterations, finished %d tasks, left %d tasks", i, len(finished), len(outstanding))
-	for i, v := range finished {
-		logging.Debugf(ctx, "    finished #%d task: %s", i, v)
+	logging.Debugf(ctx, "RunUntil ran %d iterations, finished %d tasks, left %d tasks: %s", i, len(finished), len(outstanding), outstanding.ToSortedSlice())
+	if *extraVerbosityFlag {
+		for i, v := range finished {
+			logging.Debugf(ctx, "    finished #%d task: %s", i, v)
+		}
 	}
-	if len(outstanding) > 0 {
-		logging.Debugf(ctx, "  outstanding: %s", outstanding)
-	}
-
 	if tooLong {
 		panic(errors.New("RunUntil ran for too long!"))
 	}
