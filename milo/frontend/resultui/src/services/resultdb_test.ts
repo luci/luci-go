@@ -38,60 +38,60 @@ describe('resultdb', () => {
 describe('createTVPropGetter', () => {
   it('can create a status getter', async () => {
     const getter = createTVPropGetter('status');
-    const prop = getter(({ status: TestVariantStatus.EXONERATED } as Partial<TestVariant>) as TestVariant);
+    const prop = getter({ status: TestVariantStatus.EXONERATED } as Partial<TestVariant> as TestVariant);
     assert.strictEqual(prop, TestVariantStatus.EXONERATED);
   });
 
   it('can create a name getter', async () => {
     const getter = createTVPropGetter('Name');
 
-    const prop1 = getter(({
+    const prop1 = getter({
       testId: 'test-id',
       testMetadata: { name: 'test-name' },
-    } as Partial<TestVariant>) as TestVariant);
+    } as Partial<TestVariant> as TestVariant);
     assert.strictEqual(prop1, 'test-name');
 
     // Fallback to test id.
-    const prop2 = getter(({ testId: 'test-id' } as Partial<TestVariant>) as TestVariant);
+    const prop2 = getter({ testId: 'test-id' } as Partial<TestVariant> as TestVariant);
     assert.strictEqual(prop2, 'test-id');
   });
 
   it('can create a variant value getter', async () => {
     const getter = createTVPropGetter('v.variant_key');
 
-    const prop1 = getter(({
+    const prop1 = getter({
       variant: { def: { variant_key: 'variant_value' } },
-    } as Partial<TestVariant>) as TestVariant);
+    } as Partial<TestVariant> as TestVariant);
     assert.strictEqual(prop1, 'variant_value');
 
     // Fallback to empty string.
-    const prop2 = getter(({} as Partial<TestVariant>) as TestVariant);
+    const prop2 = getter({} as Partial<TestVariant> as TestVariant);
     assert.strictEqual(prop2, '');
   });
 });
 
 describe('createTVCmpFn', () => {
-  const variant1 = ({
+  const variant1 = {
     status: TestVariantStatus.UNEXPECTED,
     testMetadata: {
       name: 'a',
     },
     variant: { def: { key1: 'val1' } },
-  } as Partial<TestVariant>) as TestVariant;
-  const variant2 = ({
+  } as Partial<TestVariant> as TestVariant;
+  const variant2 = {
     status: TestVariantStatus.EXONERATED,
     testMetadata: {
       name: 'b',
     },
     variant: { def: { key1: 'val2' } },
-  } as Partial<TestVariant>) as TestVariant;
-  const variant3 = ({
+  } as Partial<TestVariant> as TestVariant;
+  const variant3 = {
     status: TestVariantStatus.EXONERATED,
     testMetadata: {
       name: 'b',
     },
     variant: { def: { key1: 'val1' } },
-  } as Partial<TestVariant>) as TestVariant;
+  } as Partial<TestVariant> as TestVariant;
 
   it('can create a sort fn', async () => {
     const cmpFn = createTVCmpFn(['name']);

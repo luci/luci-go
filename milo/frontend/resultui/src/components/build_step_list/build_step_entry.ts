@@ -133,9 +133,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
           );
         }}
         @mouseout=${() => {
-          window.dispatchEvent(
-            new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } })
-          );
+          window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
         }}
       >
         ${displayCompactDuration(this.step.duration)}

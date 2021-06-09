@@ -45,17 +45,17 @@ describe('Invocation Page', () => {
   });
 
   it('should get invocation ID from URL', async () => {
-    const location = ({ params: { invocation_id: 'invocation_id' } } as Partial<RouterLocation>) as RouterLocation;
-    const cmd = ({} as Partial<Commands>) as Commands;
+    const location = { params: { invocation_id: 'invocation_id' } } as Partial<RouterLocation> as RouterLocation;
+    const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
     pageContainer.appendChild(page);
     assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id'] as string);
   });
 
   it('should redirect to the not found page when invocation_id is not provided', async () => {
-    const location = ({ params: {} } as Partial<RouterLocation>) as RouterLocation;
+    const location = { params: {} } as Partial<RouterLocation> as RouterLocation;
     const redirect = sinon.spy();
-    const cmd = ({ redirect } as Partial<Commands>) as Commands;
+    const cmd = { redirect } as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
     pageContainer.appendChild(page);
     assert.isTrue(redirect.calledOnceWith(NOT_FOUND_URL));

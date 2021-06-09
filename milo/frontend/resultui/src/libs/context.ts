@@ -235,7 +235,7 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
   }
 
   // Recover the type information that was lost in the down-casting above.
-  return (Provider as Constructor<LitElement>) as Cls;
+  return Provider as Constructor<LitElement> as Cls;
 }
 
 /**
@@ -303,7 +303,7 @@ export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
   }
 
   // Recover the type information that was lost in the down-casting above.
-  return (Consumer as Constructor<LitElement>) as Cls;
+  return Consumer as Constructor<LitElement> as Cls;
 }
 
 const DEFAULT_PROVIDER_OPT: CtxProviderOption = Object.freeze({

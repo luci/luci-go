@@ -98,10 +98,10 @@ describe('prefetch', () => {
     });
 
     // Prefetched build.
-    let cacheHit = prefetcher.respondWithPrefetched(({
+    let cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,
-    } as Partial<FetchEvent>) as FetchEvent);
+    } as Partial<FetchEvent> as FetchEvent);
     let cachedRes = await respondWithStub.getCall(0).args[0];
 
     assert.isTrue(cacheHit);
@@ -111,10 +111,10 @@ describe('prefetch', () => {
     resultdb.getInvocation({ name: invName });
 
     // Prefetched invocation.
-    cacheHit = prefetcher.respondWithPrefetched(({
+    cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(1).args),
       respondWith: respondWithStub,
-    } as Partial<FetchEvent>) as FetchEvent);
+    } as Partial<FetchEvent> as FetchEvent);
     cachedRes = await respondWithStub.getCall(1).args[0];
 
     assert.isTrue(cacheHit);
@@ -124,10 +124,10 @@ describe('prefetch', () => {
     uiSpecifiedService.queryTestVariants({ invocations: [invName] });
 
     // Prefetched test variants.
-    cacheHit = prefetcher.respondWithPrefetched(({
+    cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(2).args),
       respondWith: respondWithStub,
-    } as Partial<FetchEvent>) as FetchEvent);
+    } as Partial<FetchEvent> as FetchEvent);
     cachedRes = await respondWithStub.getCall(2).args[0];
 
     assert.isTrue(cacheHit);
@@ -164,10 +164,10 @@ describe('prefetch', () => {
     });
 
     // Prefetched build.
-    let cacheHit = prefetcher.respondWithPrefetched(({
+    let cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,
-    } as Partial<FetchEvent>) as FetchEvent);
+    } as Partial<FetchEvent> as FetchEvent);
     let cachedRes = await respondWithStub.getCall(0).args[0];
 
     assert.isTrue(cacheHit);
@@ -177,10 +177,10 @@ describe('prefetch', () => {
     resultdb.getInvocation({ name: invName });
 
     // Prefetched invocation.
-    cacheHit = prefetcher.respondWithPrefetched(({
+    cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(1).args),
       respondWith: respondWithStub,
-    } as Partial<FetchEvent>) as FetchEvent);
+    } as Partial<FetchEvent> as FetchEvent);
     cachedRes = await respondWithStub.getCall(1).args[0];
 
     assert.isTrue(cacheHit);
@@ -190,10 +190,10 @@ describe('prefetch', () => {
     uiSpecifiedService.queryTestVariants({ invocations: [invName] });
 
     // Prefetched test variants.
-    cacheHit = prefetcher.respondWithPrefetched(({
+    cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(2).args),
       respondWith: respondWithStub,
-    } as Partial<FetchEvent>) as FetchEvent);
+    } as Partial<FetchEvent> as FetchEvent);
     cachedRes = await respondWithStub.getCall(2).args[0];
 
     assert.isTrue(cacheHit);
@@ -229,10 +229,10 @@ describe('prefetch', () => {
       name: 'invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id',
     });
 
-    const cacheHit = prefetcher.respondWithPrefetched(({
+    const cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,
-    } as Partial<FetchEvent>) as FetchEvent);
+    } as Partial<FetchEvent> as FetchEvent);
     const cachedRes = await respondWithStub.getCall(0).args[0];
 
     assert.isTrue(cacheHit);

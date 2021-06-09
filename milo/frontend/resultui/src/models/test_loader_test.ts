@@ -113,9 +113,9 @@ describe('TestLoader', () => {
       stub.onCall(1).resolves({ testVariants: [variant5, variant6, variant7], nextPageToken: 'page3' });
       stub.onCall(2).resolves({ testVariants: [variant8, variant9, variant10, variant11], nextPageToken: 'page4' });
       stub.onCall(3).resolves({ testVariants: [variant12], nextPageToken: undefined });
-      testLoader = new TestLoader(req, ({
+      testLoader = new TestLoader(req, {
         queryTestVariants: stub,
-      } as Partial<UISpecificService>) as UISpecificService);
+      } as Partial<UISpecificService> as UISpecificService);
     });
 
     it('should preserve loading progress', async () => {
@@ -377,9 +377,9 @@ describe('TestLoader', () => {
       stub.onCall(0).resolves({ nextPageToken: 'page2' });
       stub.onCall(1).resolves({ testVariants: [variant8], nextPageToken: 'page3' });
       stub.onCall(2).resolves({ testVariants: [variant9], nextPageToken: undefined });
-      testLoader = new TestLoader(req, ({
+      testLoader = new TestLoader(req, {
         queryTestVariants: stub,
-      } as Partial<UISpecificService>) as UISpecificService);
+      } as Partial<UISpecificService> as UISpecificService);
     });
 
     it('should correctly handle a response with 0 variants', async () => {
@@ -401,9 +401,9 @@ describe('TestLoader', () => {
         nextPageToken: 'page1',
       });
       stub.onCall(1).resolves({ testVariants: [variant8, variant9, variant10, variant11, variant12] });
-      testLoader = new TestLoader(req, ({
+      testLoader = new TestLoader(req, {
         queryTestVariants: stub,
-      } as Partial<UISpecificService>) as UISpecificService);
+      } as Partial<UISpecificService> as UISpecificService);
     });
 
     it('should not return empty groups', async () => {

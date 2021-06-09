@@ -55,13 +55,13 @@ describe('Build Page', () => {
     const page = pageContainer.querySelector<BuildPageElement>('milo-build-page')!;
     pageContainer.removeChild(page);
 
-    const location = ({
+    const location = {
       params: {
         ...builder,
         build_num_or_id: '1234',
       },
-    } as Partial<RouterLocation>) as RouterLocation;
-    const cmd = ({} as Partial<Commands>) as Commands;
+    } as Partial<RouterLocation> as RouterLocation;
+    const cmd = {} as Partial<Commands> as Commands;
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     pageContainer.appendChild(page);
@@ -78,13 +78,13 @@ describe('Build Page', () => {
     const page = pageContainer.querySelector<BuildPageElement>('milo-build-page')!;
     pageContainer.removeChild(page);
 
-    const location = ({
+    const location = {
       params: {
         ...builder,
         build_num_or_id: 'b1234',
       },
-    } as Partial<RouterLocation>) as RouterLocation;
-    const cmd = ({} as Partial<Commands>) as Commands;
+    } as Partial<RouterLocation> as RouterLocation;
+    const cmd = {} as Partial<Commands> as Commands;
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     pageContainer.appendChild(page);
@@ -126,13 +126,13 @@ describe('Build Page', () => {
     const page = pageContainer.querySelector<BuildPageElement>('milo-build-page')!;
     pageContainer.removeChild(page);
 
-    const location = ({
+    const location = {
       params: {
         ...builder,
         build_num_or_id: 'b1234',
       },
-    } as Partial<RouterLocation>) as RouterLocation;
-    const cmd = ({} as Partial<Commands>) as Commands;
+    } as Partial<RouterLocation> as RouterLocation;
+    const cmd = {} as Partial<Commands> as Commands;
 
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);
@@ -174,15 +174,15 @@ describe('Build Page', () => {
     const page = pageContainer.querySelector<BuildPageElement>('milo-build-page')!;
     pageContainer.removeChild(page);
 
-    const location = ({
+    const location = {
       params: {
         build_id: '4567',
         path: ['test-results'],
       },
       search: '?q=a',
       hash: '#an-element',
-    } as Partial<RouterLocation>) as RouterLocation;
-    const cmd = ({} as Partial<Commands>) as Commands;
+    } as Partial<RouterLocation> as RouterLocation;
+    const cmd = {} as Partial<Commands> as Commands;
 
     page.prerender = false;
     await page.onBeforeEnter(location, cmd);

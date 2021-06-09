@@ -526,9 +526,7 @@ export class TimelineTabElement extends MiloBaseElement {
         );
       })
       .on('mouseout', () => {
-        window.dispatchEvent(
-          new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 0 } })
-        );
+        window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 0 } }));
       });
   }
 
