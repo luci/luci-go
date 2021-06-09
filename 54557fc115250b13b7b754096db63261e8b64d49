@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68a60063_199b2b41",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-09T20:44:09Z",
+      "side": 1,
+      "message": "lgtm. I also can\u0027t think of any better and cheaper way.",
+      "revId": "54557fc115250b13b7b754096db63261e8b64d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7516140_530a17a1",
+        "filename": "cv/internal/admin/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-09T20:44:09Z",
+      "side": 1,
+      "message": "is this necessary?",
+      "range": {
+        "startLine": 196,
+        "startChar": 41,
+        "endLine": 196,
+        "endChar": 60
+      },
+      "revId": "54557fc115250b13b7b754096db63261e8b64d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
