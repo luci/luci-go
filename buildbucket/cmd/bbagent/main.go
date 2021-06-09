@@ -108,8 +108,10 @@ func mainImpl() int {
 
 	// We send a single status=STARTED here, and will send the final build status
 	// after the user executable completes.
+	tctx, tcancel := clock.WithTimeout(ctx, 10*time.Second)
+	defer tcancel()
 	_, err = bbclient.UpdateBuild(
-		ctx,
+		tctx,
 		&bbpb.UpdateBuildRequest{
 			Build: &bbpb.Build{
 				Id:     input.Build.Id,
@@ -291,8 +293,11 @@ func mainImpl() int {
 		retcode = 1
 	}
 	bbclientRetriesEnabled = true
+	// Final UpdateBuild call, set timeout to be 60s.
+	tctx, cancel := clock.WithTimeout(cctx, 60*time.Second)
+	defer cancel()
 	_, bbErr := bbclient.UpdateBuild(
-		cctx,
+		tctx,
 		&bbpb.UpdateBuildRequest{
 			Build:      finalBuild,
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: updateMask},
