@@ -85,6 +85,16 @@ func (ids CLIDs) Set() map[CLID]struct{} {
 	return ret
 }
 
+// Contains returns true if CLID is inside these CLIDs.
+func (ids CLIDs) Contains(id CLID) bool {
+	for _, x := range ids {
+		if x == id {
+			return true
+		}
+	}
+	return false
+}
+
 // MakeCLIDs returns CLIDs from list of clids in int64.
 func MakeCLIDs(ids ...int64) CLIDs {
 	ret := make(CLIDs, len(ids))

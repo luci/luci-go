@@ -116,7 +116,7 @@ func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (r
 	if req.GetRun() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "run ID is required")
 	}
-	return loadRunAndEvents(ctx, common.RunID(req.GetRun()))
+	return loadRunAndEvents(ctx, common.RunID(req.GetRun()), nil)
 }
 
 func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (resp *adminpb.GetCLResponse, err error) {
@@ -125,34 +125,7 @@ func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (res
 		return
 	}
 
-	var cl *changelist.CL
-	var eid changelist.ExternalID
-	switch {
-	case req.GetId() != 0:
-		cl = &changelist.CL{ID: common.CLID(req.GetId())}
-		err = datastore.Get(ctx, cl)
-	case req.GetExternalId() != "":
-		eid = changelist.ExternalID(req.GetExternalId())
-		cl, err = eid.Get(ctx)
-	case req.GetGerritUrl() != "":
-		eid, err = parseGerritURL(req.GetExternalId())
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
-		}
-		cl, err = eid.Get(ctx)
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "id or external_id or gerrit_url is required")
-	}
-
-	switch {
-	case err == datastore.ErrNoSuchEntity:
-		if req.GetId() == 0 {
-			return nil, status.Errorf(codes.NotFound, "CL %d not found", req.GetId())
-		}
-		return nil, status.Errorf(codes.NotFound, "CL %s not found", eid)
-	case err != nil:
-		return nil, err
-	}
+	cl, err := loadCL(ctx, req)
 	runs := make([]string, len(cl.IncompleteRuns))
 	for i, id := range cl.IncompleteRuns {
 		runs[i] = string(id)
@@ -202,54 +175,104 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		return
 	}
 	switch {
-	case req.GetProject() == "":
-		return nil, status.Errorf(codes.Unimplemented, "search across projects is not implemented")
 	case req.GetPageToken() != "":
 		return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 	case req.GetPageSize() < 0:
 		return nil, status.Errorf(codes.InvalidArgument, "negative page size not allowed")
 	}
-
 	if req.GetPageSize() == 0 {
 		req.PageSize = 16
 	}
-	baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
-	var queries []*datastore.Query
-	switch s := req.GetStatus(); s {
-	case run.Status_STATUS_UNSPECIFIED:
-		queries = append(queries, baseQ)
-	case run.Status_ENDED_MASK:
-		for _, s := range []run.Status{run.Status_SUCCEEDED, run.Status_CANCELLED, run.Status_FAILED} {
+
+	// Compute potentially interesting run keys using the most efficient query.
+	var runKeys []*datastore.Key
+	var cl *changelist.CL
+	if req.GetCl() != nil {
+		cl, err = loadCL(ctx, req.GetCl())
+		if err != nil {
+			return nil, err
+		}
+		var runCLKeys []*datastore.Key
+		q := datastore.NewQuery(run.RunCLKind).Eq("IndexedID", cl.ID).Limit(req.GetPageSize()).KeysOnly(true)
+		if err := datastore.GetAll(ctx, q, &runCLKeys); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to fetch Runs: %s", err)
+		}
+		runKeys = make([]*datastore.Key, len(runCLKeys))
+		for i, k := range runCLKeys {
+			runKeys[i] = k.Parent()
+		}
+	} else { // Without CL.
+		if req.GetProject() == "" {
+			return nil, status.Errorf(codes.Unimplemented, "search across projects is not implemented")
+		}
+		baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
+		var queries []*datastore.Query
+		switch s := req.GetStatus(); s {
+		case run.Status_STATUS_UNSPECIFIED:
+			queries = append(queries, baseQ)
+		case run.Status_ENDED_MASK:
+			for _, s := range []run.Status{run.Status_SUCCEEDED, run.Status_CANCELLED, run.Status_FAILED} {
+				queries = append(queries, baseQ.Eq("Status", s))
+			}
+		default:
 			queries = append(queries, baseQ.Eq("Status", s))
 		}
-	default:
-		queries = append(queries, baseQ.Eq("Status", s))
+
+		err = datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+			runKeys = append(runKeys, k)
+			if len(runKeys) == int(req.GetPageSize()) {
+				return datastore.Stop
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to fetch Runs: %s", err)
+		}
 	}
 
-	var keys []*datastore.Key
-	err = datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
-		keys = append(keys, k)
-		if len(keys) == int(req.GetPageSize()) {
-			return datastore.Stop
+	// Fetch individual runs in parallel and apply final filtering.
+	shouldSkip := func(r *run.Run) bool {
+		if req.GetProject() != "" && req.GetProject() != r.ID.LUCIProject() {
+			return true
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to fetch Runs")
+		if req.GetCl() != nil && !r.CLs.Contains(cl.ID) {
+			return true
+		}
+		switch s := req.GetStatus(); s {
+		case run.Status_STATUS_UNSPECIFIED:
+		case run.Status_ENDED_MASK:
+			if !run.IsEnded(r.Status) {
+				return true
+			}
+		default:
+			if s != r.Status {
+				return true
+			}
+		}
+		return false
 	}
-	resp = &adminpb.RunsResponse{
-		Runs: make([]*adminpb.GetRunResponse, len(keys)),
-	}
+	runs := make([]*adminpb.GetRunResponse, len(runKeys))
 	errs := parallel.WorkPool(16, func(work chan<- func() error) {
-		for i, key := range keys {
+		for i, key := range runKeys {
 			i, key := i, key
 			work <- func() (err error) {
-				resp.Runs[i], err = loadRunAndEvents(ctx, common.RunID(key.StringID()))
+				runs[i], err = loadRunAndEvents(ctx, common.RunID(key.StringID()), shouldSkip)
 				return
 			}
 		}
 	})
-	return resp, common.MostSevereError(errs)
+	if errs != nil {
+		return nil, common.MostSevereError(errs)
+	}
+
+	// Remove nil runs, which were skipped above.
+	resp = &adminpb.RunsResponse{Runs: runs[:0]}
+	for _, r := range runs {
+		if r != nil {
+			resp.Runs = append(resp.Runs, r)
+		}
+	}
+	return resp, nil
 }
 
 // Copy from dsset.
@@ -455,22 +478,23 @@ func parseGerritURL(s string) (changelist.ExternalID, error) {
 	return changelist.GobID(host, change)
 }
 
-func loadRunAndEvents(ctx context.Context, rid common.RunID) (*adminpb.GetRunResponse, error) {
-	eg, ctx := errgroup.WithContext(ctx)
-
+func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *run.Run) bool) (*adminpb.GetRunResponse, error) {
 	r := &run.Run{ID: rid}
+	switch err := datastore.Get(ctx, r); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.NotFound, "run not found")
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to fetch Run: %s", err)
+	case shouldSkip != nil && shouldSkip(r):
+		return nil, nil
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
 	var externalIDs []string
 	eg.Go(func() error {
-		switch err := datastore.Get(ctx, r); {
-		case err == datastore.ErrNoSuchEntity:
-			return status.Errorf(codes.NotFound, "run not found")
-		case err != nil:
-			return status.Errorf(codes.Internal, "failed to fetch Run")
-		}
-
 		switch rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs); {
 		case err != nil:
-			return status.Errorf(codes.Internal, "failed to fetch RunCLs")
+			return status.Errorf(codes.Internal, "failed to fetch RunCLs: %s", err)
 		default:
 			externalIDs = make([]string, len(rcls))
 			for i, rcl := range rcls {
@@ -519,6 +543,39 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID) (*adminpb.GetRunRes
 
 		Events: events,
 	}, nil
+}
+
+func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, error) {
+	var err error
+	var cl *changelist.CL
+	var eid changelist.ExternalID
+	switch {
+	case req.GetId() != 0:
+		cl = &changelist.CL{ID: common.CLID(req.GetId())}
+		err = datastore.Get(ctx, cl)
+	case req.GetExternalId() != "":
+		eid = changelist.ExternalID(req.GetExternalId())
+		cl, err = eid.Get(ctx)
+	case req.GetGerritUrl() != "":
+		eid, err = parseGerritURL(req.GetExternalId())
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
+		}
+		cl, err = eid.Get(ctx)
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "id or external_id or gerrit_url is required")
+	}
+
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		if req.GetId() == 0 {
+			return nil, status.Errorf(codes.NotFound, "CL %d not found", req.GetId())
+		}
+		return nil, status.Errorf(codes.NotFound, "CL %s not found", eid)
+	case err != nil:
+		return nil, err
+	}
+	return cl, nil
 }
 
 func tspbNillable(t time.Time) *timestamppb.Timestamp {
