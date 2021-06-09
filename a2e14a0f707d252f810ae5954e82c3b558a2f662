@@ -60,6 +60,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "58da2344_4e0a9662",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-09T17:30:30Z",
+      "side": 1,
+      "message": "yeah, I thought of that, but where do I stick OperationID? separate arg looked ugly, esp. if we have to make it optional some day.",
+      "parentUuid": "3278e38c_3c1cbc91",
+      "revId": "a2e14a0f707d252f810ae5954e82c3b558a2f662",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "d4587257_a31903be",
         "filename": "cv/internal/bq/fake.go",
         "patchSetId": 2
