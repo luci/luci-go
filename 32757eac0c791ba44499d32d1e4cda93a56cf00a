@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "164ef38b_484ba2e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-09T21:43:46Z",
+      "side": 1,
+      "message": "lgtm but i don\u0027t get what\u0027s the point of 90%. It\u0027s unlikely that something will retry 10 times.",
+      "revId": "32757eac0c791ba44499d32d1e4cda93a56cf00a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
