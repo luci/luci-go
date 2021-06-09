@@ -38,8 +38,8 @@ import (
 
 const (
 	// CV's own dataset/table.
-	cvDataset = "raw"
-	cvTable   = "attempts_cv"
+	CVDataset = "raw"
+	CVTable   = "attempts_cv"
 
 	// Legacy CQ dataset.
 	legacyProject    = "commit-queue"
@@ -79,8 +79,8 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	// *Always* export to local CV dataset.
 	eg.Go(func() error {
 		return client.SendRow(ctx, cvbq.Row{
-			Dataset:     cvDataset,
-			Table:       cvTable,
+			Dataset:     CVDataset,
+			Table:       CVTable,
 			OperationID: "run-" + string(id),
 			Payload:     a,
 		})

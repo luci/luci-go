@@ -182,6 +182,6 @@ func TestConcurentRunsSingular(t *testing.T) {
 		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, len(actions))
 
 		ct.LogPhase(ctx, "Wait for all BQ exports to complete")
-		ct.RunUntil(ctx, func() bool { return ct.BQFake.TotalSent() == 2*len(actions) })
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == len(actions) })
 	})
 }
