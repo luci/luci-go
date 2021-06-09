@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5b3232c_56d1fc9f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-09T17:20:48Z",
+      "side": 1,
+      "message": "Good idea",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 5
+      },
+      "revId": "a2e14a0f707d252f810ae5954e82c3b558a2f662",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1fff5dd7_d58985ac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-09T17:20:48Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "a2e14a0f707d252f810ae5954e82c3b558a2f662",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3278e38c_3c1cbc91",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-09T17:20:48Z",
+      "side": 1,
+      "message": "Possible idea for future refactoring: Since this is actually destination plus row, just where Payload is the actual Row, we could potentially either think of another name that captures this; or perhaps make a struct for \"Destination\" (CloudProject, Dataset, Table) and pass Row separately.",
+      "revId": "a2e14a0f707d252f810ae5954e82c3b558a2f662",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4587257_a31903be",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-09T17:20:48Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "a2e14a0f707d252f810ae5954e82c3b558a2f662",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
