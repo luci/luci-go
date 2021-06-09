@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c12105a_66a7fb53",
+        "filename": "cv/internal/admin/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-09T17:31:33Z",
+      "side": 1,
+      "message": "well, you + Nodir educated me 😊\nbtw, BB stores separate Build field just to make such searches easy, smth like \"is_completed bool\"",
+      "parentUuid": "e7a6955b_df7b875c",
+      "range": {
+        "startLine": 218,
+        "startChar": 1,
+        "endLine": 218,
+        "endChar": 28
+      },
+      "revId": "0e20d39134df66ab6ba5f20eb69142779564a0bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3240f881_eb465979",
