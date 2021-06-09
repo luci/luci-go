@@ -117,6 +117,30 @@
       },
       "revId": "dde80f8e9c11504a62a18ff6562810f4f6a61950",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da2875fa_7756512f",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-09T18:59:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "233c7311_f6a86198",
+      "range": {
+        "startLine": 157,
+        "startChar": 11,
+        "endLine": 157,
+        "endChar": 34
+      },
+      "revId": "dde80f8e9c11504a62a18ff6562810f4f6a61950",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
