@@ -173,7 +173,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 		info, err := os.Stat(dep)
 		if err != nil {
 			if !opts.AllowMissingFileDir {
-				return nil, "", err
+				return nil, "", errors.Annotate(err, "faled to call Stat for %s", dep).Err()
 			}
 			log.Printf("Ignore missing dep: %s, err: %v", dep, err)
 			continue
@@ -189,7 +189,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 		for {
 			rel, err := filepath.Rel(rootDir, base)
 			if err != nil {
-				return nil, "", err
+				return nil, "", errors.Annotate(err, "failed to call filepath.Rel(%s, %s)", rootDir, base).Err()
 			}
 			if !strings.HasPrefix(rel, "..") {
 				break
@@ -238,7 +238,7 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Annotate(err, "failed to call ReadFile: %s", opts.Isolate).Err()
 	}
 	deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
@@ -253,7 +253,7 @@ func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 	for i, dep := range deps {
 		rel, err := filepath.Rel(rootDir, dep)
 		if err != nil {
-			return nil, "", err
+			return nil, "", errors.Annotate(err, "failed to call filepath.Rel(%s, %s)", rootDir, dep).Err()
 		}
 		if strings.HasSuffix(dep, osPathSeparator) && !strings.HasSuffix(rel, osPathSeparator) {
 			// Make it consistent with the isolated format such that directory paths must end with osPathSeparator.
@@ -261,7 +261,7 @@ func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 		}
 		relDeps[i] = rel
 	}
-	return relDeps, rootDir, err
+	return relDeps, rootDir, nil
 }
 
 func archive(arch *pipeline.Archiver, opts *ArchiveOptions, displayName string) (*pipeline.PendingItem, error) {
