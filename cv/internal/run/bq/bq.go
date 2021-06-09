@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strconv"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -36,11 +37,18 @@ import (
 )
 
 const (
-	destDataset = "raw"
-	destTable   = "attempts_cv"
+	// CV's own dataset/table.
+	cvDataset = "raw"
+	cvTable   = "attempts_cv"
+
+	// Legacy CQ dataset.
+	legacyProject    = "commit-queue"
+	legacyProjectDev = "commit-queue-dev"
+	legacyDataset    = "raw"
+	legacyTable      = "attempts"
 )
 
-func SendRun(ctx context.Context, client cvbq.Client, id common.RunID) error {
+func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	r := run.Run{ID: id}
 	switch err := datastore.Get(ctx, &r); {
 	case err == datastore.ErrNoSuchEntity:
@@ -67,16 +75,36 @@ func SendRun(ctx context.Context, client cvbq.Client, id common.RunID) error {
 		a = reconcileAttempts(a, cqda)
 	}
 
-	// TODO(crbug/1173168): Change the destination table name after
-	// CQDaemon stops sending rows; and sent to "commit-queue" project.
-	// When we first start sending rows, we want to send to a separate table
-	// name.
-	return client.SendRow(ctx, cvbq.Row{
-		Dataset:     destDataset,
-		Table:       destTable,
-		OperationID: "run-" + string(id),
-		Payload:     a,
+	eg, ctx := errgroup.WithContext(ctx)
+	// *Always* export to local CV dataset.
+	eg.Go(func() error {
+		return client.SendRow(ctx, cvbq.Row{
+			Dataset:     cvDataset,
+			Table:       cvTable,
+			OperationID: "run-" + string(id),
+			Payload:     a,
+		})
 	})
+
+	if !r.FinalizedByCQD {
+		// Only export to legacy CQ dataset iff CQDaemon didn't finalize the Run
+		// itself, which involes sending BQ row.
+		eg.Go(func() error {
+			project := legacyProject
+			if common.IsDev(ctx) {
+				project = legacyProjectDev
+			}
+			return client.SendRow(ctx, cvbq.Row{
+				CloudProject: project,
+				Dataset:      legacyDataset,
+				Table:        legacyTable,
+				OperationID:  "run-" + string(id),
+				Payload:      a,
+			})
+		})
+	}
+	return eg.Wait()
+
 }
 
 func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {

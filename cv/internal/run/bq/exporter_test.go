@@ -26,9 +26,11 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -48,8 +50,8 @@ func TestExportRunToBQ(t *testing.T) {
 		// Set up datastore by putting a sample Run + RunCLs.
 		epoch := ct.Clock.Now().UTC()
 		runID := common.MakeRunID("lproject", epoch, 1, []byte("aaa"))
-		r := &run.Run{
-			ID:            common.RunID(runID),
+		r := run.Run{
+			ID:            runID,
 			Status:        run.Status_SUCCEEDED,
 			ConfigGroupID: "sha256:deadbeefdeadbeef/cgroup",
 			CreateTime:    epoch,
@@ -59,7 +61,7 @@ func TestExportRunToBQ(t *testing.T) {
 			Submission:    nil,
 			Mode:          run.DryRun,
 		}
-		So(datastore.Put(ctx, r), ShouldBeNil)
+		So(datastore.Put(ctx, &r), ShouldBeNil)
 		So(datastore.Put(ctx, &run.RunCL{
 			ID:         1,
 			Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
@@ -91,32 +93,71 @@ func TestExportRunToBQ(t *testing.T) {
 		}
 
 		Convey("A row is sent", func() {
-			So(schedule(), ShouldBeNil)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
-			rows := ct.BQFake.Rows("", destDataset, destTable)
-			So(len(rows), ShouldEqual, 1)
-			So(rows[0], ShouldResembleProto, &cvbqpb.Attempt{
-				Key:                  "616161",
-				LuciProject:          "lproject",
-				ConfigGroup:          "cgroup",
-				ClGroupKey:           "331ea2a6a5d5f3b3",
-				EquivalentClGroupKey: "47337d4707144297",
-				StartTime:            timestamppb.New(epoch),
-				EndTime:              timestamppb.New(epoch.Add(25 * time.Minute)),
-				GerritChanges: []*cvbqpb.GerritChange{
-					{
-						Host:                       "foo-review.googlesource.com",
-						Project:                    "gproject",
-						Change:                     111,
-						Patchset:                   2,
-						EarliestEquivalentPatchset: 2,
-						TriggerTime:                timestamppb.New(epoch),
-						Mode:                       cvbqpb.Mode_DRY_RUN,
-						SubmitStatus:               cvbqpb.GerritChange_PENDING,
+			Convey("in prod", func() {
+				So(schedule(), ShouldBeNil)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
+				rows := ct.BQFake.Rows("", cvDataset, cvTable)
+				So(rows, ShouldResembleProto, []*cvbqpb.Attempt{{
+					Key:                  "616161",
+					LuciProject:          "lproject",
+					ConfigGroup:          "cgroup",
+					ClGroupKey:           "331ea2a6a5d5f3b3",
+					EquivalentClGroupKey: "47337d4707144297",
+					StartTime:            timestamppb.New(epoch),
+					EndTime:              timestamppb.New(epoch.Add(25 * time.Minute)),
+					GerritChanges: []*cvbqpb.GerritChange{
+						{
+							Host:                       "foo-review.googlesource.com",
+							Project:                    "gproject",
+							Change:                     111,
+							Patchset:                   2,
+							EarliestEquivalentPatchset: 2,
+							TriggerTime:                timestamppb.New(epoch),
+							Mode:                       cvbqpb.Mode_DRY_RUN,
+							SubmitStatus:               cvbqpb.GerritChange_PENDING,
+						},
 					},
-				},
-				Status:    cvbqpb.AttemptStatus_SUCCESS,
-				Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
+					Status:    cvbqpb.AttemptStatus_SUCCESS,
+					Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
+				}})
+
+				// The same rows must be sent to legacy CQ table.
+				cqRows := ct.BQFake.Rows(legacyProject, legacyDataset, legacyTable)
+				So(cqRows, ShouldResembleProto, rows)
+				// And only these 2 rows have been sent.
+				So(ct.BQFake.TotalSent(), ShouldEqual, 2)
+			})
+
+			Convey("in dev", func() {
+				So(schedule(), ShouldBeNil)
+				ctx = common.SetDev(ctx)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
+				So(ct.BQFake.Rows("", cvDataset, cvTable), ShouldHaveLength, 1)
+				// Must not send to production legacy.
+				So(ct.BQFake.Rows(legacyProject, legacyDataset, legacyTable), ShouldHaveLength, 0)
+				So(ct.BQFake.Rows(legacyProjectDev, legacyDataset, legacyTable), ShouldHaveLength, 1)
+			})
+
+			Convey("while CQDaemon is in charge", func() {
+				So(datastore.Put(ctx, &migration.FinishedCQDRun{
+					AttemptKey: r.ID.AttemptKey(),
+					RunID:      r.ID,
+					Payload: &migrationpb.ReportedRun{
+						Attempt: &cvbqpb.Attempt{
+							// ... a bunch of fields ommitted...
+							Status:    cvbqpb.AttemptStatus_SUCCESS,
+							Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
+						},
+					},
+				}), ShouldBeNil)
+				r.FinalizedByCQD = true
+				So(datastore.Put(ctx, &r), ShouldBeNil)
+
+				So(schedule(), ShouldBeNil)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
+				So(ct.BQFake.Rows("", cvDataset, cvTable), ShouldHaveLength, 1)
+				// And only 1 row has been sent.
+				So(ct.BQFake.TotalSent(), ShouldEqual, 1)
 			})
 		})
 	})

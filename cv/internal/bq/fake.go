@@ -54,5 +54,16 @@ func (f *Fake) Rows(cloudProject, dataset, table string) []proto.Message {
 	return ret
 }
 
+// TotalSent returns total number of all rows sent across all destinations.
+func (f *Fake) TotalSent() int {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	cnt := 0
+	for _, rows := range f.sent {
+		cnt += len(rows)
+	}
+	return cnt
+}
+
 // Ensure that Fake implement the Client interface.
 var _ Client = (*Fake)(nil)

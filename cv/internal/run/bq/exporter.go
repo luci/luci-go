@@ -47,7 +47,7 @@ func NewExporter(tqd *tq.Dispatcher, bqc cvbq.Client) *Exporter {
 		Kind: tq.Transactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*ExportRunToBQTask)
-			err := SendRun(ctx, bqc, common.RunID(task.RunId))
+			err := send(ctx, bqc, common.RunID(task.RunId))
 			return common.TQifyError(ctx, err)
 		},
 	})
