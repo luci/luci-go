@@ -364,6 +364,7 @@ func (rb *Creator) registerSaveRunCL(ctx context.Context, index int) {
 	entity := &run.RunCL{
 		Run:        datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
 		ID:         inputCL.ID,
+		IndexedID:  inputCL.ID,
 		ExternalID: rb.cls[index].ExternalID,
 		Trigger:    inputCL.TriggerInfo,
 		Detail:     rb.cls[index].Snapshot,

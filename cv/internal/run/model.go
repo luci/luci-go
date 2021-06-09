@@ -30,6 +30,9 @@ import (
 // RunKind is the Datastore entity kind for Run.
 const RunKind = "Run"
 
+// RunKind is the Datastore entity kind for RunCL.
+const RunCLKind = "RunCL"
+
 // Run is an entity that contains high-level information about a CV Run.
 //
 // Detailed information about CLs and Tryjobs are stored in its child entities.
@@ -136,20 +139,20 @@ type RunOwner struct {
 	PendingRuns common.RunIDs `gae:",noindex"`
 }
 
-// RunCL is the snapshot of a CL involved in this Run.
-//
-// TODO(yiwzhang): Figure out if RunCL needs to be updated in the middle
-// of the Run, because CV might need this for removing votes (new votes
-// may come in between) and for avoiding posting duplicated comments.
-// Alternatively, CV could always re-query Gerrit right before those
-// operations so that there's no need for updating the snapshot.
+// RunCL is an immutable snapshot of a CL at the time of the Run start.
 type RunCL struct {
 	_kind string `gae:"$kind,RunCL"`
 
-	// ID is the CL internal ID.
 	ID         common.CLID           `gae:"$id"`
-	ExternalID changelist.ExternalID `gae:",noindex"`
 	Run        *datastore.Key        `gae:"$parent"`
+	ExternalID changelist.ExternalID `gae:",noindex"`
 	Detail     *changelist.Snapshot
 	Trigger    *Trigger
+
+	// IndexedID is a copy of ID to get an index on just the CLID,
+	// as the primary automatic index is on (Run(parent), ID).
+	IndexedID common.CLID
+
+	// TODO(tandrii): add field of (ExternalID + "/" + patchset) to support for
+	// direct searches for gerrit/host/change/patchset.
 }

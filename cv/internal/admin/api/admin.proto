@@ -182,6 +182,8 @@ message SearchRunsRequest {
   string project = 3;
   // Optional. Returns Runs with the given status, only.
   cv.run.Status status = 4;
+  // Optional. Limits Runs referencing the given CL.
+  GetCLRequest cl = 5;
 }
 
 message RunsResponse {
