@@ -16,6 +16,24 @@
       "message": "sad that we can only assert the number of BQ rows exported instead of making assertion on the actual attempt key. But should be good enough at this moment.",
       "revId": "8ba0b49d0739be9d9607929d037aaaf77d7e1d37",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "44f466f9_275e68bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-09T08:35:55Z",
+      "side": 1,
+      "message": "yep.",
+      "parentUuid": "c6211444_02811381",
+      "revId": "8ba0b49d0739be9d9607929d037aaaf77d7e1d37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
