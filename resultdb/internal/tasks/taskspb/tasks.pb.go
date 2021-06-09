@@ -82,6 +82,7 @@ func (x *TryFinalizeInvocation) GetInvocationId() string {
 	return ""
 }
 
+// Deprecated, do not use. Use one of the two below.
 type ExportInvocationToBQ struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -137,6 +138,116 @@ func (x *ExportInvocationToBQ) GetBqExport() *v1.BigQueryExport {
 	return nil
 }
 
+type ExportInvocationTestResultsToBQ struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	InvocationId string             `protobuf:"bytes,1,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
+	BqExport     *v1.BigQueryExport `protobuf:"bytes,2,opt,name=bq_export,json=bqExport,proto3" json:"bq_export,omitempty"`
+}
+
+func (x *ExportInvocationTestResultsToBQ) Reset() {
+	*x = ExportInvocationTestResultsToBQ{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExportInvocationTestResultsToBQ) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportInvocationTestResultsToBQ) ProtoMessage() {}
+
+func (x *ExportInvocationTestResultsToBQ) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportInvocationTestResultsToBQ.ProtoReflect.Descriptor instead.
+func (*ExportInvocationTestResultsToBQ) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ExportInvocationTestResultsToBQ) GetInvocationId() string {
+	if x != nil {
+		return x.InvocationId
+	}
+	return ""
+}
+
+func (x *ExportInvocationTestResultsToBQ) GetBqExport() *v1.BigQueryExport {
+	if x != nil {
+		return x.BqExport
+	}
+	return nil
+}
+
+type ExportInvocationArtifactsToBQ struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	InvocationId string             `protobuf:"bytes,1,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
+	BqExport     *v1.BigQueryExport `protobuf:"bytes,2,opt,name=bq_export,json=bqExport,proto3" json:"bq_export,omitempty"`
+}
+
+func (x *ExportInvocationArtifactsToBQ) Reset() {
+	*x = ExportInvocationArtifactsToBQ{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExportInvocationArtifactsToBQ) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportInvocationArtifactsToBQ) ProtoMessage() {}
+
+func (x *ExportInvocationArtifactsToBQ) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportInvocationArtifactsToBQ.ProtoReflect.Descriptor instead.
+func (*ExportInvocationArtifactsToBQ) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ExportInvocationArtifactsToBQ) GetInvocationId() string {
+	if x != nil {
+		return x.InvocationId
+	}
+	return ""
+}
+
+func (x *ExportInvocationArtifactsToBQ) GetBqExport() *v1.BigQueryExport {
+	if x != nil {
+		return x.BqExport
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDesc = []byte{
@@ -161,11 +272,28 @@ var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDes
 	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72,
 	0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x69, 0x67, 0x51, 0x75,
 	0x65, 0x72, 0x79, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x08, 0x62, 0x71, 0x45, 0x78, 0x70,
-	0x6f, 0x72, 0x74, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69,
-	0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75,
-	0x6c, 0x74, 0x64, 0x62, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x61,
-	0x73, 0x6b, 0x73, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x6f, 0x72, 0x74, 0x22, 0x85, 0x01, 0x0a, 0x1f, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e,
+	0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x73, 0x54, 0x6f, 0x42, 0x51, 0x12, 0x23, 0x0a, 0x0d, 0x69, 0x6e, 0x76, 0x6f, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c,
+	0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x3d, 0x0a, 0x09,
+	0x62, 0x71, 0x5f, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x20, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e,
+	0x76, 0x31, 0x2e, 0x42, 0x69, 0x67, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x70, 0x6f, 0x72,
+	0x74, 0x52, 0x08, 0x62, 0x71, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x22, 0x83, 0x01, 0x0a, 0x1d,
+	0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73, 0x54, 0x6f, 0x42, 0x51, 0x12, 0x23, 0x0a,
+	0x0d, 0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x49, 0x64, 0x12, 0x3d, 0x0a, 0x09, 0x62, 0x71, 0x5f, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x69, 0x67, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x08, 0x62, 0x71, 0x45, 0x78, 0x70, 0x6f, 0x72,
+	0x74, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d,
+	0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x64, 0x62, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x61, 0x73, 0x6b,
+	0x73, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -180,19 +308,23 @@ func file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDe
 	return file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_goTypes = []interface{}{
-	(*TryFinalizeInvocation)(nil), // 0: luci.resultdb.internal.tasks.TryFinalizeInvocation
-	(*ExportInvocationToBQ)(nil),  // 1: luci.resultdb.internal.tasks.ExportInvocationToBQ
-	(*v1.BigQueryExport)(nil),     // 2: luci.resultdb.v1.BigQueryExport
+	(*TryFinalizeInvocation)(nil),           // 0: luci.resultdb.internal.tasks.TryFinalizeInvocation
+	(*ExportInvocationToBQ)(nil),            // 1: luci.resultdb.internal.tasks.ExportInvocationToBQ
+	(*ExportInvocationTestResultsToBQ)(nil), // 2: luci.resultdb.internal.tasks.ExportInvocationTestResultsToBQ
+	(*ExportInvocationArtifactsToBQ)(nil),   // 3: luci.resultdb.internal.tasks.ExportInvocationArtifactsToBQ
+	(*v1.BigQueryExport)(nil),               // 4: luci.resultdb.v1.BigQueryExport
 }
 var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_depIdxs = []int32{
-	2, // 0: luci.resultdb.internal.tasks.ExportInvocationToBQ.bq_export:type_name -> luci.resultdb.v1.BigQueryExport
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 0: luci.resultdb.internal.tasks.ExportInvocationToBQ.bq_export:type_name -> luci.resultdb.v1.BigQueryExport
+	4, // 1: luci.resultdb.internal.tasks.ExportInvocationTestResultsToBQ.bq_export:type_name -> luci.resultdb.v1.BigQueryExport
+	4, // 2: luci.resultdb.internal.tasks.ExportInvocationArtifactsToBQ.bq_export:type_name -> luci.resultdb.v1.BigQueryExport
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_init() }
@@ -225,6 +357,30 @@ func file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_init(
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExportInvocationTestResultsToBQ); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExportInvocationArtifactsToBQ); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -232,7 +388,7 @@ func file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_init(
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
