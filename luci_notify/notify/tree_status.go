@@ -504,6 +504,7 @@ var messages = []string{
 	"Tree is open now (ง '̀͜ '́ )ง",
 	"ヽ(^o^)ノ",
 	"Ahoy all is good!",
+	"All's right with the world!",
 }
 
 func randomMessage(c context.Context) string {
