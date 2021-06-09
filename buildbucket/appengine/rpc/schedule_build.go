@@ -855,7 +855,6 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		setExperimentsFromProto(reqs[i], cfg, blds[i])
 		// Tags are stored in the outer struct (see model/build.go).
 		blds[i].Tags = protoutil.StringPairMap(blds[i].Proto.Tags).Format()
-		blds[i].Proto.Tags = nil
 
 		blds[i].IsLuci = true
 
