@@ -54,6 +54,16 @@ func (f *Fake) Rows(cloudProject, dataset, table string) []proto.Message {
 	return ret
 }
 
+// RowsCount returns the number of stored rows for a given dataset and table.
+//
+// cloudProject can be empty, implying the same cloud project as the running
+// code.
+func (f *Fake) RowsCount(cloudProject, dataset, table string) int {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return len(f.sent[cloudProject+"."+dataset+"."+table])
+}
+
 // TotalSent returns total number of all rows sent across all destinations.
 func (f *Fake) TotalSent() int {
 	f.mu.RLock()

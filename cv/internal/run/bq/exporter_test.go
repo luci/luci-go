@@ -96,7 +96,7 @@ func TestExportRunToBQ(t *testing.T) {
 			Convey("in prod", func() {
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
-				rows := ct.BQFake.Rows("", cvDataset, cvTable)
+				rows := ct.BQFake.Rows("", CVDataset, CVTable)
 				So(rows, ShouldResembleProto, []*cvbqpb.Attempt{{
 					Key:                  "616161",
 					LuciProject:          "lproject",
@@ -132,7 +132,7 @@ func TestExportRunToBQ(t *testing.T) {
 				So(schedule(), ShouldBeNil)
 				ctx = common.SetDev(ctx)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
-				So(ct.BQFake.Rows("", cvDataset, cvTable), ShouldHaveLength, 1)
+				So(ct.BQFake.Rows("", CVDataset, CVTable), ShouldHaveLength, 1)
 				// Must not send to production legacy.
 				So(ct.BQFake.Rows(legacyProject, legacyDataset, legacyTable), ShouldHaveLength, 0)
 				So(ct.BQFake.Rows(legacyProjectDev, legacyDataset, legacyTable), ShouldHaveLength, 1)
@@ -155,7 +155,7 @@ func TestExportRunToBQ(t *testing.T) {
 
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
-				So(ct.BQFake.Rows("", cvDataset, cvTable), ShouldHaveLength, 1)
+				So(ct.BQFake.Rows("", CVDataset, CVTable), ShouldHaveLength, 1)
 				// And only 1 row has been sent.
 				So(ct.BQFake.TotalSent(), ShouldEqual, 1)
 			})

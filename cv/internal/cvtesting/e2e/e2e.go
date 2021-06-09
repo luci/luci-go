@@ -57,6 +57,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
 	"go.chromium.org/luci/cv/internal/run"
+	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
@@ -389,6 +390,11 @@ func (t *Test) MaxCQVote(ctx context.Context, gHost string, gChange int64) int32
 // Panics if the CL doesn't exist.
 func (t *Test) LastMessage(gHost string, gChange int64) *gerritpb.ChangeMessageInfo {
 	return gf.LastMessage(t.GFake.GetChange(gHost, int(gChange)).Info)
+}
+
+// ExportedBQAttemptsCount returns number of exported CQ Attempts.
+func (t *Test) ExportedBQAttemptsCount() int {
+	return t.BQFake.RowsCount("", runbq.CVDataset, runbq.CVTable)
 }
 
 func (t *Test) MigrationFetchActiveRuns(ctx context.Context, project string) []*migrationpb.ActiveRun {
