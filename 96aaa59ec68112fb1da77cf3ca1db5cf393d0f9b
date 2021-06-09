@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6439705_a89e4273",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-09T14:30:20Z",
+      "side": 1,
+      "message": "🎉 🚀 🔥 this is the first CL landed by CV (fishfood) 🔥 🚀 🎉 ",
+      "revId": "96aaa59ec68112fb1da77cf3ca1db5cf393d0f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
