@@ -93,6 +93,30 @@
       },
       "revId": "dde80f8e9c11504a62a18ff6562810f4f6a61950",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "233c7311_f6a86198",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-09T17:52:56Z",
+      "side": 1,
+      "message": "Sorry probably we should keep exportResultsToBigQuery as it is for now? It looks like the split couldn\u0027t bring us benefits.",
+      "parentUuid": "a382bd4c_aa44f1ec",
+      "range": {
+        "startLine": 157,
+        "startChar": 11,
+        "endLine": 157,
+        "endChar": 34
+      },
+      "revId": "dde80f8e9c11504a62a18ff6562810f4f6a61950",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
