@@ -201,16 +201,19 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	if err = checkAllowed(ctx, "SearchRuns"); err != nil {
 		return
 	}
-	if req.GetProject() == "" {
+	switch {
+	case req.GetProject() == "":
 		return nil, status.Errorf(codes.Unimplemented, "search across projects is not implemented")
-	}
-	if req.GetPageToken() != "" {
+	case req.GetPageToken() != "":
 		return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	case req.GetPageSize() < 0:
+		return nil, status.Errorf(codes.InvalidArgument, "negative page size not allowed")
 	}
-	if req.GetLimit() <= 0 {
-		req.Limit = 16
+
+	if req.GetPageSize() == 0 {
+		req.PageSize = 16
 	}
-	baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetLimit()).KeysOnly(true)
+	baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
 	var queries []*datastore.Query
 	switch s := req.GetStatus(); s {
 	case run.Status_STATUS_UNSPECIFIED:
@@ -226,7 +229,7 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	var keys []*datastore.Key
 	err = datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
 		keys = append(keys, k)
-		if len(keys) == int(req.GetLimit()) {
+		if len(keys) == int(req.GetPageSize()) {
 			return datastore.Stop
 		}
 		return nil

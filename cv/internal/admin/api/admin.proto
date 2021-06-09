@@ -175,7 +175,7 @@ message SendRunEventRequest {
 }
 
 message SearchRunsRequest {
-  int32 limit = 1;
+  int32 page_size = 1;
   string page_token = 2;
 
   // Optional. If omitted, scans across all active projects.
