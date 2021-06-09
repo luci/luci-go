@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "82a3afb1_a206b0f7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-09T19:43:53Z",
+      "side": 1,
+      "message": "lgtm % Robbie\u0027s comment",
+      "revId": "f3c35d31230620de7de602b1bc01f6ffa008d47e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "64f602aa_e94851f6",
