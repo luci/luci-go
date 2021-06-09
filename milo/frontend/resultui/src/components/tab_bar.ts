@@ -49,10 +49,8 @@ export class TabBarElement extends LitElement {
               this.onTabClicked(this.selectedTabId);
             }}
             href=${tab.href}
+            >${tab.label}${tab.slotName ? html` <slot name=${tab.slotName}></slot>` : ''}</a
           >
-            ${tab.label}
-            <slot name=${tab.slotName}></slot>
-          </a>
         `
       )}
     `;
