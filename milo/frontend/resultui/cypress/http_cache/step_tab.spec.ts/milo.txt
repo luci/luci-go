@@ -1,0 +1,41 @@
+[
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/GetProjectCfg",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0",
+        "accept": "application/json",
+        "accept-language": "en-US,en;q=0.5",
+        "accept-encoding": "gzip, deflate, br",
+        "content-type": "application/json",
+        "content-length": "22",
+        "origin": "https://localhost:8080",
+        "referer": "https://localhost:8080/ui/p/chromium/builders/ci/mac-rel-swarming/12236/steps",
+        "connection": "keep-alive"
+      },
+      "body": "{\"project\":\"chromium\"}"
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-appengine-log-flush-count": "1",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "4a0186ad818b1ae231af32049be76dc2;o=1",
+        "date": "Wed, 09 Jun 2021 04:56:30 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-T051=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": ")]}'\n{\"logoUrl\":\"https://storage.googleapis.com/chrome-infra-public/logo/chromium.svg\",\"buildBugTemplate\":{}}\n"
+    }
+  }
+]

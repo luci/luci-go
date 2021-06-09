@@ -1,0 +1,78 @@
+[
+  {
+    "req": {
+      "url": "https://staging.results.api.cr.dev/prpc/luci.resultdb.v1.ResultDB/GetInvocation",
+      "method": "POST",
+      "headers": {
+        "host": "staging.results.api.cr.dev",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0",
+        "accept": "application/json",
+        "accept-language": "en-US,en;q=0.5",
+        "accept-encoding": "gzip, deflate, br",
+        "content-type": "application/json",
+        "content-length": "99",
+        "origin": "https://localhost:8080",
+        "referer": "https://localhost:8080/",
+        "connection": "keep-alive"
+      },
+      "body": "{\"name\":\"invocations/build-17fb706820cf1f76707d38cee9caabfec28731f9226ec3d813c9bd1d622d7ac3-12236\"}"
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-origin": "https://localhost:8080",
+        "access-control-expose-headers": "X-Prpc-Grpc-Code",
+        "content-type": "application/json",
+        "vary": "Origin",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-length": "455",
+        "x-envoy-upstream-service-time": "32",
+        "date": "Wed, 09 Jun 2021 04:56:30 GMT",
+        "via": "1.1 google",
+        "alt-svc": "clear",
+        "content-encoding": ""
+      },
+      "body": ")]}'\n{\"name\":\"invocations/build-17fb706820cf1f76707d38cee9caabfec28731f9226ec3d813c9bd1d622d7ac3-12236\",\"state\":\"FINALIZED\",\"createTime\":\"2021-06-08T21:16:04.559630Z\",\"finalizeTime\":\"2021-06-08T22:41:12.919745Z\",\"deadline\":\"2021-06-10T21:16:04.527726590Z\",\"includedInvocations\":[\"invocations/build-8844958821650328337\"],\"createdBy\":\"project:chromium\",\"producerResource\":\"//cr-buildbucket-dev.appspot.com/builds/8844958821650328337\",\"realm\":\"chromium:ci\"}\n"
+    }
+  },
+  {
+    "req": {
+      "url": "https://staging.results.api.cr.dev/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants",
+      "method": "POST",
+      "headers": {
+        "host": "staging.results.api.cr.dev",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0",
+        "accept": "application/json",
+        "accept-language": "en-US,en;q=0.5",
+        "accept-encoding": "gzip, deflate, br",
+        "content-type": "application/json",
+        "content-length": "123",
+        "origin": "https://localhost:8080",
+        "referer": "https://localhost:8080/",
+        "connection": "keep-alive"
+      },
+      "body": "{\"invocations\":[\"invocations/build-17fb706820cf1f76707d38cee9caabfec28731f9226ec3d813c9bd1d622d7ac3-12236\"],\"pageToken\":\"\"}"
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-origin": "https://localhost:8080",
+        "access-control-expose-headers": "X-Prpc-Grpc-Code",
+        "content-encoding": "",
+        "content-type": "application/json",
+        "vary": "Origin",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "x-envoy-upstream-service-time": "112",
+        "date": "Wed, 09 Jun 2021 04:56:29 GMT",
+        "via": "1.1 google",
+        "alt-svc": "clear",
+        "transfer-encoding": "chunked"
+      },
+      "body": ")]}'\n{\"testVariants\":[{\"testId\":\"ninja://chrome/test:unit_tests/FrameworkUnitTest.AssertTrueOk\",\"variant\":{\"def\":{\"builder\":\"mac-rel-swarming\",\"os\":\"Mac-10.15\",\"test_suite\":\"unit_tests\"}},\"variantHash\":\"ec524fe577ca165c\",\"status\":\"FLAKY\",\"results\":[{\"result\":{\"name\":\"invocations/task-chromium-swarm-dev.appspot.com-54065de85d72a111/tests/ninja:%2F%2Fchrome%2Ftest:unit_tests%2FFrameworkUnitTest.AssertTrueOk/results/4737b85a-05668\",\"resultId\":\"4737b85a-05668\",\"status\":\"CRASH\",\"summaryHtml\":\"\\u003cp\\u003e\\u003ctext-artifact artifact-id=\\\"snippet\\\" /\\u003e\\u003c/p\\u003e\",\"tags\":[{\"key\":\"gtest_global_tag\",\"value\":\"CPU_64_BITS\"},{\"key\":\"gtest_global_tag\",\"value\":\"MODE_RELEASE\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_APPLE\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_MAC\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_POSIX\"},{\"key\":\"gtest_status\",\"value\":\"CRASH\"},{\"key\":\"lossless_snippet\",\"value\":\"true\"},{\"key\":\"monorail_component\",\"value\":\"Test\"},{\"key\":\"orig_format\",\"value\":\"chromium_gtest\"},{\"key\":\"step_name\",\"value\":\"unit_tests on Mac-10.15\"},{\"key\":\"team_email\",\"value\":\"chromium-reviews@chromium.org\"},{\"key\":\"test_name\",\"value\":\"FrameworkUnitTest.AssertTrueOk\"}]}},{\"result\":{\"name\":\"invocations/task-chromium-swarm-dev.appspot.com-54065de85d72a111/tests/ninja:%2F%2Fchrome%2Ftest:unit_tests%2FFrameworkUnitTest.AssertTrueOk/results/4737b85a-05669\",\"resultId\":\"4737b85a-05669\",\"expected\":true,\"status\":\"PASS\",\"summaryHtml\":\"\\u003cp\\u003e\\u003ctext-artifact artifact-id=\\\"snippet\\\" /\\u003e\\u003c/p\\u003e\",\"duration\":\"0.015s\",\"tags\":[{\"key\":\"gtest_global_tag\",\"value\":\"CPU_64_BITS\"},{\"key\":\"gtest_global_tag\",\"value\":\"MODE_RELEASE\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_APPLE\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_MAC\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_POSIX\"},{\"key\":\"gtest_status\",\"value\":\"SUCCESS\"},{\"key\":\"lossless_snippet\",\"value\":\"true\"},{\"key\":\"monorail_component\",\"value\":\"Test\"},{\"key\":\"orig_format\",\"value\":\"chromium_gtest\"},{\"key\":\"step_name\",\"value\":\"unit_tests on Mac-10.15\"},{\"key\":\"team_email\",\"value\":\"chromium-reviews@chromium.org\"},{\"key\":\"test_name\",\"value\":\"FrameworkUnitTest.AssertTrueOk\"}]}}],\"testMetadata\":{\"name\":\"FrameworkUnitTest.AssertTrueOk\",\"location\":{\"repo\":\"https://chromium.googlesource.com/chromium/src\",\"fileName\":\"//chrome/test/data/unit/framework_unittest.gtestjs\",\"line\":20}}},{\"testId\":\"ninja://content/test:content_unittests/HostVarTrackerTest.ReuseVar\",\"variant\":{\"def\":{\"builder\":\"mac-rel-swarming\",\"os\":\"Mac-10.15\",\"test_suite\":\"content_unittests\"}},\"variantHash\":\"72ad2d31cc14323b\",\"status\":\"FLAKY\",\"results\":[{\"result\":{\"name\":\"invocations/task-chromium-swarm-dev.appspot.com-54065de0330c1211/tests/ninja:%2F%2Fcontent%2Ftest:content_unittests%2FHostVarTrackerTest.ReuseVar/results/65801485-02593\",\"resultId\":\"65801485-02593\",\"status\":\"CRASH\",\"summaryHtml\":\"\\u003cp\\u003e\\u003ctext-artifact artifact-id=\\\"snippet\\\" /\\u003e\\u003c/p\\u003e\",\"tags\":[{\"key\":\"gtest_global_tag\",\"value\":\"CPU_64_BITS\"},{\"key\":\"gtest_global_tag\",\"value\":\"MODE_RELEASE\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_APPLE\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_MAC\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_POSIX\"},{\"key\":\"gtest_status\",\"value\":\"CRASH\"},{\"key\":\"lossless_snippet\",\"value\":\"true\"},{\"key\":\"monorail_component\",\"value\":\"Internals\\u003ePlugins\\u003ePepper\"},{\"key\":\"orig_format\",\"value\":\"chromium_gtest\"},{\"key\":\"step_name\",\"value\":\"content_unittests on Mac-10.15\"},{\"key\":\"team_email\",\"value\":\"pepper-dev@chromium.org\"},{\"key\":\"test_name\",\"value\":\"HostVarTrackerTest.ReuseVar\"}]}},{\"result\":{\"name\":\"invocations/task-chromium-swarm-dev.appspot.com-54065de0330c1211/tests/ninja:%2F%2Fcontent%2Ftest:content_unittests%2FHostVarTrackerTest.ReuseVar/results/65801485-02594\",\"resultId\":\"65801485-02594\",\"expected\":true,\"status\":\"PASS\",\"summaryHtml\":\"\\u003cp\\u003e\\u003ctext-artifact artifact-id=\\\"snippet\\\" /\\u003e\\u003c/p\\u003e\",\"duration\":\"0.004s\",\"tags\":[{\"key\":\"gtest_global_tag\",\"value\":\"CPU_64_BITS\"},{\"key\":\"gtest_global_tag\",\"value\":\"MODE_RELEASE\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_APPLE\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_MAC\"},{\"key\":\"gtest_global_tag\",\"value\":\"OS_POSIX\"},{\"key\":\"gtest_status\",\"value\":\"SUCCESS\"},{\"key\":\"lossless_snippet\",\"value\":\"true\"},{\"key\":\"monorail_component\",\"value\":\"Internals\\u003ePlugins\\u003ePepper\"},{\"key\":\"orig_format\",\"value\":\"chromium_gtest\"},{\"key\":\"step_name\",\"value\":\"content_unittests on Mac-10.15\"},{\"key\":\"team_email\",\"value\":\"pepper-dev@chromium.org\"},{\"key\":\"test_name\",\"value\":\"HostVarTrackerTest.ReuseVar\"}]}}],\"testMetadata\":{\"name\":\"HostVarTrackerTest.ReuseVar\",\"location\":{\"repo\":\"https://chromium.googlesource.com/chromium/src\",\"fileName\":\"//content/renderer/pepper/host_var_tracker_unittest.cc\",\"line\":111}}}],\"nextPageToken\":\"CghFWFBFQ1RFRAoACgA=\"}\n"
+    }
+  }
+]
