@@ -39,6 +39,30 @@
       },
       "revId": "54557fc115250b13b7b754096db63261e8b64d49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27c04401_061595ad",
+        "filename": "cv/internal/admin/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-09T20:52:37Z",
+      "side": 1,
+      "message": "I dunno. Let\u0027s try without first.",
+      "parentUuid": "e7516140_530a17a1",
+      "range": {
+        "startLine": 196,
+        "startChar": 41,
+        "endLine": 196,
+        "endChar": 60
+      },
+      "revId": "54557fc115250b13b7b754096db63261e8b64d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
