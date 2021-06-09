@@ -210,14 +210,14 @@ export function errorHandler<T extends LitElement>(
         // protected render = reportRenderError.bind(this)(() => {...});
         const superRender = this.render;
         this.render = function () {
-          return error === null ? superRender.bind(this)() : renderError(error, (this as LitElement) as T);
+          return error === null ? superRender.bind(this)() : renderError(error, this as LitElement as T);
         };
       }
 
       connectedCallback() {
         super.connectedCallback();
         errorListener = (e) => {
-          if (onError(e, (this as LitElement) as T)) {
+          if (onError(e, this as LitElement as T)) {
             error = e;
 
             // Requesting update immediately may cause the request to be
@@ -237,6 +237,6 @@ export function errorHandler<T extends LitElement>(
       }
     }
     // Recover the type information that was lost in the down-casting above.
-    return (ErrorHandler as Constructor<LitElement>) as C;
+    return ErrorHandler as Constructor<LitElement> as C;
   };
 }

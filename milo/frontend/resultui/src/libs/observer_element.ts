@@ -205,7 +205,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
       if (this[privateNotifierSymbol] === newVal) {
         return;
       }
-      this[privateNotifierSymbol].unsubscribe((this as LitElement) as ObserverElement);
+      this[privateNotifierSymbol].unsubscribe(this as LitElement as ObserverElement);
       this[privateNotifierSymbol] = newVal;
 
       // If the notifier is updated before or during this.connectedCallback(),
@@ -214,7 +214,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
       // We can't use this.isConnected, because this.isConnected is true during
       // this.connectedCallback();
       if (this[connectedCBCalledSymbol]) {
-        this[privateNotifierSymbol].subscribe((this as LitElement) as ObserverElement);
+        this[privateNotifierSymbol].subscribe(this as LitElement as ObserverElement);
       }
     }
 
@@ -225,7 +225,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
     private [privateNotifierSymbol] = INTERSECTION_NOTIFIER;
 
     connectedCallback() {
-      this[notifierSymbol].subscribe((this as LitElement) as ObserverElement);
+      this[notifierSymbol].subscribe(this as LitElement as ObserverElement);
       super.connectedCallback();
       this[connectedCBCalledSymbol] = true;
     }
@@ -233,11 +233,11 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
     disconnectedCallback() {
       this[connectedCBCalledSymbol] = false;
       super.disconnectedCallback();
-      this[notifierSymbol].unsubscribe((this as LitElement) as ObserverElement);
+      this[notifierSymbol].unsubscribe(this as LitElement as ObserverElement);
     }
   }
   // Recover the type information that lost in the down-casting above.
-  return (EnterViewObserverElement as Constructor<LitElement>) as C;
+  return EnterViewObserverElement as Constructor<LitElement> as C;
 }
 
 export interface RenderPlaceHolder extends LitElement {
@@ -274,5 +274,5 @@ export function lazyRendering<T extends RenderPlaceHolder, C extends Constructor
     }
   }
   // Recover the type information that lost in the down-casting above.
-  return (LazilyRenderedElement as Constructor<LitElement>) as C;
+  return LazilyRenderedElement as Constructor<LitElement> as C;
 }

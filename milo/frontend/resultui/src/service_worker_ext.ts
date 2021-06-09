@@ -21,7 +21,7 @@ importScripts('/configs.js');
 
 // TSC isn't able to determine the scope properly.
 // Perform manual casting to fix typing.
-const _self = (self as unknown) as ServiceWorkerGlobalScope;
+const _self = self as unknown as ServiceWorkerGlobalScope;
 
 export interface SetAuthStateEventData {
   type: 'SET_AUTH_STATE';

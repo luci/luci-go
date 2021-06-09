@@ -24,7 +24,7 @@ const ONE_HOUR = 360000;
 describe('UserConfigs', () => {
   it('should delete stale records', async () => {
     let savedConfigs!: UserConfigs;
-    const store = new UserConfigsStore(({
+    const store = new UserConfigsStore({
       getItem: () =>
         JSON.stringify({
           steps: {
@@ -43,7 +43,7 @@ describe('UserConfigs', () => {
           },
         }),
       setItem: (_key, value) => (savedConfigs = JSON.parse(value)),
-    } as Partial<Storage>) as Storage);
+    } as Partial<Storage> as Storage);
     after(() => store.dispose());
     await aTimeout(20);
 
@@ -64,7 +64,7 @@ describe('UserConfigs', () => {
 
   describe('step pin', () => {
     it('should return the correct step pin status', () => {
-      const store = new UserConfigsStore(({
+      const store = new UserConfigsStore({
         getItem: () =>
           JSON.stringify({
             steps: {
@@ -75,7 +75,7 @@ describe('UserConfigs', () => {
             },
           }),
         setItem: () => {},
-      } as Partial<Storage>) as Storage);
+      } as Partial<Storage> as Storage);
       after(() => store.dispose());
 
       assert.isTrue(store.stepIsPinned('new-step'));
@@ -84,10 +84,10 @@ describe('UserConfigs', () => {
 
     it('should set pins recursively', async () => {
       const saveConfigSpy = sinon.spy();
-      const store = new UserConfigsStore(({
+      const store = new UserConfigsStore({
         getItem: () => JSON.stringify({}),
         setItem: saveConfigSpy,
-      } as Partial<Storage>) as Storage);
+      } as Partial<Storage> as Storage);
       after(() => store.dispose());
 
       // When pinned is true, set pins for all ancestors.

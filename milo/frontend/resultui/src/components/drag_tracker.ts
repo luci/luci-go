@@ -37,9 +37,7 @@ export class DragTrackerElement extends LitElement {
     const dispatchEvent = (e: MouseEvent, type: string) => {
       const dx = e.pageX - x;
       const dy = e.pageY - y;
-      this.dispatchEvent(
-        new CustomEvent<DragEventDetails>(type, { detail: { dx, dy } })
-      );
+      this.dispatchEvent(new CustomEvent<DragEventDetails>(type, { detail: { dx, dy } }));
     };
 
     const onMouseMove = (dragEvent: MouseEvent) => {
