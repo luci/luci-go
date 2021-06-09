@@ -79,5 +79,6 @@ func reportClientRPCMetrics(ctx context.Context, method string, err error, dur t
 		canon = code.String() // Code(%d)
 	}
 	grpcClientCount.Add(ctx, 1, method, canon)
-	grpcClientDuration.Add(ctx, float64(dur.Milliseconds()), method, canon)
+	// TODO(tandrii): use dur.Milliseconds() once all GAE apps are >go1.11.
+	grpcClientDuration.Add(ctx, dur.Seconds()*1e3, method, canon)
 }
