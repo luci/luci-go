@@ -16,6 +16,24 @@
       "message": "Could this become a presubmit test now that everything is formatted?\n",
       "revId": "d6a47495019132374fbda324ba51fd8067cac1bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6238edc8_035e8bfc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-09T05:35:11Z",
+      "side": 1,
+      "message": "Not yet. Presubmit are triggered automatically by some builders.\nBut we can\u0027t run those commands in those builders because we don\u0027t have a way to install npm dependencies on those builders yet.\nIn the future, this will become a presubmit test.",
+      "parentUuid": "321b2ed7_66dd2675",
+      "revId": "d6a47495019132374fbda324ba51fd8067cac1bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
