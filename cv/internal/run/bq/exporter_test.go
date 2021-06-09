@@ -93,7 +93,7 @@ func TestExportRunToBQ(t *testing.T) {
 		Convey("A row is sent", func() {
 			So(schedule(), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
-			rows := ct.BQFake.Rows(destDataset, destTable)
+			rows := ct.BQFake.Rows("", destDataset, destTable)
 			So(len(rows), ShouldEqual, 1)
 			So(rows[0], ShouldResembleProto, &cvbqpb.Attempt{
 				Key:                  "616161",

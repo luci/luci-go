@@ -71,7 +71,12 @@ func SendRun(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	// CQDaemon stops sending rows; and sent to "commit-queue" project.
 	// When we first start sending rows, we want to send to a separate table
 	// name.
-	return client.SendRow(ctx, destDataset, destTable, string(id), a)
+	return client.SendRow(ctx, cvbq.Row{
+		Dataset:     destDataset,
+		Table:       destTable,
+		OperationID: "run-" + string(id),
+		Payload:     a,
+	})
 }
 
 func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
