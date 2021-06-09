@@ -217,7 +217,9 @@ func TestCreatesSingularRunCQDinChargeOK(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
 		})
-		// TODO(qyearsley): assert no BQ row was sent.
+
+		ct.LogPhase(ctx, "BQ export must complete")
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
 	})
 }
 
@@ -314,7 +316,9 @@ func TestCreatesSingularRunCQDinChargeButCrashes(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
 		})
-		// TODO(qyearsley): assert no BQ row was sent.
+
+		ct.LogPhase(ctx, "BQ export must complete")
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
 	})
 }
 
@@ -419,8 +423,8 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
 		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "Quick dry run: This CL passed the CQ dry run.")
 
-		// Verify that BQ row was exported.
-		// TODO(qyearsley): implement.
+		ct.LogPhase(ctx, "BQ export must complete")
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
 	})
 }
 
@@ -516,8 +520,8 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		So(ci.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 		So(ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), ShouldEqual, int32(gPatchSet+1))
 
-		// Verify that BQ row was exported.
-		// TODO(qyearsley): implement.
+		ct.LogPhase(ctx, "BQ export must complete")
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
 	})
 }
 
@@ -586,8 +590,9 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 			return run.IsEnded(r.Status)
 		})
 		So(r.Status, ShouldEqual, run.Status_CANCELLED)
-		// Verify that BQ row was exported.
-		// TODO(qyearsley): implement.
+
+		ct.LogPhase(ctx, "BQ export must complete")
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
 	})
 }
 
@@ -818,7 +823,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		So(ci2.GetUpdated().AsTime(), ShouldHappenBefore, ci3.GetUpdated().AsTime())
 		So(ci3.GetUpdated().AsTime(), ShouldHappenBefore, ci1.GetUpdated().AsTime())
 
-		// Verify that BQ row was exported.
-		// TODO(qyearsley): implement.
+		ct.LogPhase(ctx, "BQ export must complete")
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
 	})
 }
