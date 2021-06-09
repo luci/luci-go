@@ -524,7 +524,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       }
 
       milo-test-count-indicator {
-        margin-right: -15px;
+        margin-right: -13px;
       }
 
       #settings-dialog {
