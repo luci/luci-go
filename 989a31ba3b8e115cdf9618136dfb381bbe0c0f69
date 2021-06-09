@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f635aa92_eea2a219",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-09T19:34:05Z",
+      "side": 1,
+      "message": "Done. Added to the comment of the const.",
+      "parentUuid": "fe8c229f_8deb46e8",
+      "revId": "989a31ba3b8e115cdf9618136dfb381bbe0c0f69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9264c44_6a1b90b6",
@@ -52,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e587359_29f7da14",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-09T19:34:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9264c44_6a1b90b6",
+      "revId": "989a31ba3b8e115cdf9618136dfb381bbe0c0f69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "62363d29_faa74bcd",
@@ -65,6 +101,30 @@
       "writtenOn": "2021-06-09T18:46:44Z",
       "side": 1,
       "message": "and comment that 60s is picked as the appengine frontend maximum serve time.",
+      "range": {
+        "startLine": 296,
+        "startChar": 46,
+        "endLine": 296,
+        "endChar": 49
+      },
+      "revId": "989a31ba3b8e115cdf9618136dfb381bbe0c0f69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ccf68874_ba94371a",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-09T19:34:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62363d29_faa74bcd",
       "range": {
         "startLine": 296,
         "startChar": 46,
