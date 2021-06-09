@@ -210,13 +210,28 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	if req.GetLimit() <= 0 {
 		req.Limit = 16
 	}
-	q := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetLimit()).KeysOnly(true)
-	if req.GetStatus() != run.Status_STATUS_UNSPECIFIED {
-		q = q.Eq("Status", req.GetStatus())
+	baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetLimit()).KeysOnly(true)
+	var queries []*datastore.Query
+	switch s := req.GetStatus(); s {
+	case run.Status_STATUS_UNSPECIFIED:
+		queries = append(queries, baseQ)
+	case run.Status_ENDED_MASK:
+		for _, s := range []run.Status{run.Status_SUCCEEDED, run.Status_CANCELLED, run.Status_FAILED} {
+			queries = append(queries, baseQ.Eq("Status", s))
+		}
+	default:
+		queries = append(queries, baseQ.Eq("Status", s))
 	}
 
 	var keys []*datastore.Key
-	if err := datastore.GetAll(ctx, q, &keys); err != nil {
+	err = datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+		keys = append(keys, k)
+		if len(keys) == int(req.GetLimit()) {
+			return datastore.Stop
+		}
+		return nil
+	})
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch Runs")
 	}
 	resp = &adminpb.RunsResponse{
