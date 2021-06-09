@@ -258,7 +258,7 @@ func fetchAttempt(ctx context.Context, key string) (*run.Run, error) {
 			sb.WriteRune(' ')
 			sb.WriteString(string(r.ID))
 		}
-		logging.Errorf(ctx, "BUG: found %d Runs with CQDAttemptKeyHash=%q: [%s]", l, key, sb.String())
+		logging.Errorf(ctx, "Found %d Runs with CQDAttemptKeyHash=%q: [%s]", l, key, sb.String())
 		// To unblock CQDaemon, choose the latest Run, which given ID generation
 		// scheme must be the first in the output.
 		return out[0], nil
