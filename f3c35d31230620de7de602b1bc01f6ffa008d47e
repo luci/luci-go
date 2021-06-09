@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "51f40b29_3b9db30a",
+        "filename": "luciexe/host/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-09T19:52:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64f602aa_e94851f6",
+      "revId": "f3c35d31230620de7de602b1bc01f6ffa008d47e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9baaab98_6f3c71e6",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-06-09T19:38:54Z",
       "side": 1,
       "message": "this shouldn\u0027t be conditional on GetBuilder !\u003d nil",
+      "revId": "f3c35d31230620de7de602b1bc01f6ffa008d47e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b82f108b_b942ff41",
+        "filename": "luciexe/host/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-09T19:52:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9baaab98_6f3c71e6",
       "revId": "f3c35d31230620de7de602b1bc01f6ffa008d47e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
