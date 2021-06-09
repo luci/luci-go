@@ -45,6 +45,30 @@
       },
       "revId": "0e20d39134df66ab6ba5f20eb69142779564a0bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa91bfdc_d9c2bbb1",
+        "filename": "cv/internal/admin/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-09T17:29:08Z",
+      "side": 1,
+      "message": "that\u0027s not how I read the doc, quote:\n\n\u003e So a query with `.Eq(\"thing\", 1, 2)` will only return entities where the field\n\u003e \"thing\" is multiply defined and contains both a value of 1 and a value of 2.\n\nRun.Status isn\u0027t an []Stauts, but a scalar.",
+      "parentUuid": "3240f881_eb465979",
+      "range": {
+        "startLine": 220,
+        "startChar": 28,
+        "endLine": 220,
+        "endChar": 50
+      },
+      "revId": "0e20d39134df66ab6ba5f20eb69142779564a0bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
