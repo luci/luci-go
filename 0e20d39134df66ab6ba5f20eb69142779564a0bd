@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7a6955b_df7b875c",
+        "filename": "cv/internal/admin/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-09T17:16:23Z",
+      "side": 1,
+      "message": "smart",
+      "range": {
+        "startLine": 218,
+        "startChar": 1,
+        "endLine": 218,
+        "endChar": 28
+      },
+      "revId": "0e20d39134df66ab6ba5f20eb69142779564a0bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3240f881_eb465979",
+        "filename": "cv/internal/admin/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-09T17:16:23Z",
+      "side": 1,
+      "message": "nit: Eq accepts multiple values[1] and requires at least one of them matches. So I think this can just be `baseQ.Eq(\"Status\", run.Status_SUCCEEDED, run.Status_CANCELLED, run.Status_FAILED)`. Or is the current implementation more efficient because we have index on status?\n\n[1]: https://pkg.go.dev/go.chromium.org/luci/gae/service/datastore#Query.Eq",
+      "range": {
+        "startLine": 220,
+        "startChar": 28,
+        "endLine": 220,
+        "endChar": 50
+      },
+      "revId": "0e20d39134df66ab6ba5f20eb69142779564a0bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
