@@ -131,7 +131,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			logging.Warningf(ctx, "%s switches from %q to %q LUCI project", f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
 			err = f.fetchExisting(ctx)
 		case f.priorCL.Access.GetByProject()[f.luciProject] != nil:
-			logging.Warningf(ctx, "%s had access restriction before for %s", f, f.priorCL.Access.GetByProject()[f.luciProject])
+			logging.Debugf(ctx, "%s had access restriction before for %s", f, f.priorCL.Access.GetByProject()[f.luciProject])
 			err = f.fetchExisting(ctx)
 		default:
 			logging.Debugf(ctx, "%s skipping fetching Snapshot from Gerrit", f)
