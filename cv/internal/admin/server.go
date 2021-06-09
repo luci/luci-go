@@ -207,10 +207,10 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	if req.GetPageToken() != "" {
 		return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 	}
-	if req.GetLimit() <= 0 {
-		req.Limit = 16
+	if req.GetPageSize() <= 0 {
+		req.PageSize = 16
 	}
-	baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetLimit()).KeysOnly(true)
+	baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
 	var queries []*datastore.Query
 	switch s := req.GetStatus(); s {
 	case run.Status_STATUS_UNSPECIFIED:
@@ -226,7 +226,7 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	var keys []*datastore.Key
 	err = datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
 		keys = append(keys, k)
-		if len(keys) == int(req.GetLimit()) {
+		if len(keys) == int(req.GetPageSize()) {
 			return datastore.Stop
 		}
 		return nil
