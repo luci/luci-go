@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d4b17cd_fef91bd4",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-09T13:59:51Z",
+      "side": 1,
+      "message": "better to write like `dur.Seconds()*1e3`?",
+      "range": {
+        "startLine": 83,
+        "startChar": 29,
+        "endLine": 83,
+        "endChar": 52
+      },
+      "revId": "c53299d787b2e7b6c5e03240b8b026993d66c1bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
