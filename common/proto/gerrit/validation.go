@@ -27,3 +27,30 @@ func (r *GetChangeRequest) Validate() error {
 		return nil
 	}
 }
+
+// Validate returns an error if r is invalid.
+func (r *SetReviewRequest) Validate() error {
+	if r.Number <= 0 {
+		return errors.New("number must be positive")
+	}
+	if err := r.GetNotifyDetails().Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (n *NotifyDetails) Validate() error {
+	for _, r := range n.GetRecipients() {
+		if err := r.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (n *NotifyDetails_Recipient) Validate() error {
+	if n.GetRecipientType() == NotifyDetails_RECIPIENT_TYPE_UNSPECIFIED {
+		return errors.New("must specify recipient type")
+	}
+	return nil
+}
