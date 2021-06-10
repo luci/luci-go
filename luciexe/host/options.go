@@ -79,6 +79,9 @@ type Options struct {
 
 	// The base Build message to use as the template for all merged Build
 	// messages.
+	//
+	// This will add logdog tags based on Build.Builder to all log streams.
+	// e.g., "buildbucket.bucket"
 	BaseBuild *bbpb.Build
 
 	// If LeakBaseDir is true, Run will not try to remove BaseDir at the end if
@@ -198,6 +201,16 @@ func (o *Options) initialize() (err error) {
 
 	if o.ViewerURL != "" {
 		o.logdogTags = streamproto.TagMap{"logdog.viewer_url": o.ViewerURL}
+	}
+
+	// BaseBuild is nil in testing scenarios only.
+	if builder := o.BaseBuild.GetBuilder(); builder != nil {
+		if o.logdogTags == nil {
+			o.logdogTags = streamproto.TagMap{}
+		}
+		o.logdogTags["buildbucket.bucket"] = builder.Bucket
+		o.logdogTags["buildbucket.builder"] = builder.Builder
+		o.logdogTags["buildbucket.project"] = builder.Project
 	}
 
 	return nil
