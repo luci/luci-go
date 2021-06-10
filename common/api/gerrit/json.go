@@ -15,7 +15,9 @@
 package gerrit
 
 import (
+	"fmt"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -448,16 +450,63 @@ func enumToString(v int32, m map[int32]string) string {
 }
 
 type reviewInput struct {
-	Message       string                 `json:"message,omitempty"`
-	Labels        map[string]int32       `json:"labels,omitempty"`
-	Tag           string                 `json:"tag,omitempty"`
-	Notify        string                 `json:"notify,omitempty"`
-	NotifyDetails map[string]*notifyInfo `json:"notify_details,omitempty"`
-	OnBehalfOf    int64                  `json:"on_behalf_of,omitempty"`
+	Message                          string              `json:"message,omitempty"`
+	Labels                           map[string]int32    `json:"labels,omitempty"`
+	Tag                              string              `json:"tag,omitempty"`
+	Notify                           string              `json:"notify,omitempty"`
+	NotifyDetails                    notifyDetails       `json:"notify_details,omitempty"`
+	OnBehalfOf                       int64               `json:"on_behalf_of,omitempty"`
 }
 
 type notifyInfo struct {
 	Accounts []int64 `json:"accounts,omitempty"`
+}
+
+type notifyDetails map[string]*notifyInfo
+
+func toNotifyDetails(in *gerritpb.NotifyDetails) notifyDetails {
+	recipients := in.GetRecipients()
+	if len(recipients) == 0 {
+		return nil
+	}
+	res := make(map[string]*notifyInfo, len(recipients))
+	for _, recipient := range recipients {
+		if len(recipient.Info.GetAccounts()) == 0 {
+			continue
+		}
+		rt := recipient.RecipientType
+		if rt == gerritpb.NotifyDetails_RECIPIENT_TYPE_UNSPECIFIED {
+			// Must have been caught in validation.
+			panic(fmt.Errorf("must specify recipient type"))
+		}
+		rts := enumToString(int32(rt.Number()), gerritpb.NotifyDetails_RecipientType_name)
+		if ni, ok := res[rts]; !ok {
+			ni = &notifyInfo{
+				Accounts: make([]int64, len(recipient.Info.GetAccounts())),
+			}
+			for i, aid := range recipient.Info.GetAccounts() {
+				ni.Accounts[i] = aid
+			}
+			res[rts] = ni
+		} else {
+			ni.Accounts = append(ni.Accounts, recipient.Info.GetAccounts()...)
+		}
+	}
+
+	for _, ni := range res {
+		// Sort & dedup accounts in each notification bucket.
+		sort.Slice(ni.Accounts, func(i, j int) bool { return ni.Accounts[i] < ni.Accounts[j] })
+		n := 0
+		for i := 1; i < len(ni.Accounts); i++ {
+			if ni.Accounts[n] == ni.Accounts[i] {
+				continue
+			}
+			n++
+			ni.Accounts[n] = ni.Accounts[i]
+		}
+		ni.Accounts = ni.Accounts[:n+1]
+	}
+	return res
 }
 
 type attentionSetRequest struct {
