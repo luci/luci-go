@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b8369355_fc007228",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 664,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-10T23:32:52Z",
+      "side": 1,
+      "message": "maybe, I should declare and export this as a constant in bbagent?",
+      "range": {
+        "startLine": 664,
+        "startChar": 15,
+        "endLine": 664,
+        "endChar": 34
+      },
+      "revId": "b95259ab273908f38e6ce7ca352f6e3eade7a0a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
