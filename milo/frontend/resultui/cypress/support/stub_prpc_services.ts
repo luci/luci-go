@@ -26,7 +26,7 @@ declare global {
   }
 }
 
-const STUB_REQUEST_OPTIONS = {
+export const STUB_REQUEST_OPTIONS = {
   matchHeaders: ['host', 'accept', 'content-type', 'origin', 'authorization'],
 };
 
