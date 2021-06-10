@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d35f907_a30fc9d0",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 992,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-10T17:24:10Z",
+      "side": 1,
+      "message": "just curious, does CV need these two fields?",
+      "range": {
+        "startLine": 987,
+        "startChar": 0,
+        "endLine": 992,
+        "endChar": 29
+      },
+      "revId": "269ed8ad4493aabe80c67bacbaaf69232c7de92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e456c2a_1b6f43ff",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 1054,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-10T17:24:10Z",
+      "side": 1,
+      "message": "The doc says it\u0027s optional and can be empty in removal usecase. But I believe we should always supply this field when using it in SetReview.",
+      "range": {
+        "startLine": 1054,
+        "startChar": 0,
+        "endLine": 1054,
+        "endChar": 91
+      },
+      "revId": "269ed8ad4493aabe80c67bacbaaf69232c7de92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "feae015b_32c372a1",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 1067,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-10T17:24:10Z",
+      "side": 1,
+      "message": "iiuc, CV will not using these fields because it is using the notify and notify_details in the SetReviewInput. Is that correct?",
+      "range": {
+        "startLine": 1059,
+        "startChar": 0,
+        "endLine": 1067,
+        "endChar": 35
+      },
+      "revId": "269ed8ad4493aabe80c67bacbaaf69232c7de92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
