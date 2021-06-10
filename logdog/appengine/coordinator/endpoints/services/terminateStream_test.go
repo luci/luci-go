@@ -64,6 +64,7 @@ func TestTerminateStream(t *testing.T) {
 
 			Convey(`A non-terminal registered stream, "testing/+/foo/bar"`, func() {
 				So(tls.Put(c), ShouldBeNil)
+
 				ds.GetTestable(c).CatchupIndexes()
 
 				Convey(`Can be marked terminal and schedules an archival mutation.`, func() {
@@ -145,9 +146,9 @@ func TestTerminateStream(t *testing.T) {
 				So(err, ShouldBeRPCInvalidArgument, "Invalid ID")
 			})
 
-			Convey(`Will fail if the stream is not registered.`, func() {
+			Convey(`Will fail if the stream does not exist.`, func() {
 				_, err := svr.TerminateStream(c, &req)
-				So(err, ShouldBeRPCNotFound, "is not registered")
+				So(err, ShouldBeRPCNotFound, "log stream doesn't exist")
 			})
 		})
 	})
