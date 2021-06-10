@@ -983,6 +983,25 @@ message SetReviewRequest {
   // To use this option the caller must have been granted labelAs-NAME
   // permission for all keys of labels.
   int64 on_behalf_of = 9;
+
+  // If true, and if the change is work in progress, then start review. It is an
+  // error for both ready and work_in_progress to be true.
+  bool ready = 10;
+  // If true, mark the change as work in progress. It is an error for both ready
+  // and work_in_progress to be true.
+  bool work_in_progress = 11;
+
+  // list of AttentionSetInput entities to add to the attention set. Users that
+  // are not reviewers, ccs, owner, or uploader are silently ignored.
+  repeated AttentionSetInput add_to_attention_set = 12;
+  // list of AttentionSetInput entities to remove from the attention set.
+  repeated AttentionSetInput remove_from_attention_set = 13;
+  // If true, ignore all automatic attention set rules described in the
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#attention-set
+  //
+  // Updates in add_to_attention_set and remove_from_attention_set are not
+  // ignored.
+  bool ignore_automatic_attention_set_rules = 14;
 }
 
 // Information returned by a SetReview RPC.
@@ -1008,6 +1027,9 @@ message AttentionSetRequest {
   // Optional, but recommended for better routing and faster RPC execution.
   string project = 2;
 
+  // TODO(tandrii): use AttentionSetInput instead and remove these fields.
+  AttentionSetInput input = 6;
+
   // A unique identifier for an account.
   //
   // Source of truth:
@@ -1019,7 +1041,30 @@ message AttentionSetRequest {
 
   // Defines who should be notified after change is created, defaults to OWNER.
   Notify notify = 5;
+}
 
+// Information to add/remove a user from the attention set.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#attention-set-input
+message AttentionSetInput {
+  // A unique identifier for an account.
+  //
+  // Source of truth:
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
+  string user = 1;
+
+  // The justification for adding/removing the user.
+  string reason = 2;
+
+  // Defines who should be notified after change is created, defaults to OWNER.
+  Notify notify = 3;
+
+  // NotifyDetails contains additional information about whom to notify.
+  //
+  // These notifications are sent out even if `notify` options disables normal
+  // notifications.
+  NotifyDetails notify_details = 4;
 }
 
 enum MergeableStrategy {

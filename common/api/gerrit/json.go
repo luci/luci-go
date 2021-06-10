@@ -450,12 +450,17 @@ func enumToString(v int32, m map[int32]string) string {
 }
 
 type reviewInput struct {
-	Message                          string              `json:"message,omitempty"`
-	Labels                           map[string]int32    `json:"labels,omitempty"`
-	Tag                              string              `json:"tag,omitempty"`
-	Notify                           string              `json:"notify,omitempty"`
-	NotifyDetails                    notifyDetails       `json:"notify_details,omitempty"`
-	OnBehalfOf                       int64               `json:"on_behalf_of,omitempty"`
+	Message                          string               `json:"message,omitempty"`
+	Labels                           map[string]int32     `json:"labels,omitempty"`
+	Tag                              string               `json:"tag,omitempty"`
+	Notify                           string               `json:"notify,omitempty"`
+	NotifyDetails                    notifyDetails        `json:"notify_details,omitempty"`
+	OnBehalfOf                       int64                `json:"on_behalf_of,omitempty"`
+	Ready                            bool                 `json:"ready,omitempty"`
+	WorkInProgress                   bool                 `json:"work_in_progress,omitempty"`
+	AddToAttentionSet                []*attentionSetInput `json:"add_to_attention_set,omitempty"`
+	RemoveFromAttentionSet           []*attentionSetInput `json:"remove_from_attention_set,omitempty"`
+	IgnoreAutomaticAttentionSetRules bool                 `json:"ignore_automatic_attention_set_rules,omitempty"`
 }
 
 type notifyInfo struct {
@@ -509,10 +514,31 @@ func toNotifyDetails(in *gerritpb.NotifyDetails) notifyDetails {
 	return res
 }
 
-type attentionSetRequest struct {
-	User   string `json:"user"`
-	Reason string `json:"reason"`
-	Notify string `json:"string,omitempty"`
+type attentionSetInput struct {
+	User          string        `json:"user"`
+	Reason        string        `json:"reason"`
+	Notify        string        `json:"string,omitempty"`
+	NotifyDetails notifyDetails `json:"notify_details,omitempty"`
+}
+
+func toAttentionSetInput(in *gerritpb.AttentionSetInput) *attentionSetInput {
+	return &attentionSetInput{
+		User:          in.User,
+		Reason:        in.Reason,
+		Notify:        enumToString(int32(in.Notify.Number()), gerritpb.Notify_name),
+		NotifyDetails: toNotifyDetails(in.NotifyDetails),
+	}
+}
+
+func toAttentionSetInputs(in []*gerritpb.AttentionSetInput) []*attentionSetInput {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]*attentionSetInput, len(in))
+	for i, x := range in {
+		out[i] = toAttentionSetInput(x)
+	}
+	return out
 }
 
 type projectInfo struct {

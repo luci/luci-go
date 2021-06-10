@@ -607,7 +607,7 @@ func TestIsPureRevert(t *testing.T) {
 	})
 }
 
-func TestSetReview(t *testing.T) {
+func TestDirectSetReview(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
