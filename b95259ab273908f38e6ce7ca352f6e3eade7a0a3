@@ -22,6 +22,30 @@
       },
       "revId": "b95259ab273908f38e6ce7ca352f6e3eade7a0a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "04b78ec3_f9e6ed97",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 664,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-10T23:34:43Z",
+      "side": 1,
+      "message": "found https://source.chromium.org/chromium/infra/infra/+/main:go/src/infra/tools/kitchen/cook.go;l\u003d67\n\nI will make it public.",
+      "parentUuid": "b8369355_fc007228",
+      "range": {
+        "startLine": 664,
+        "startChar": 15,
+        "endLine": 664,
+        "endChar": 34
+      },
+      "revId": "b95259ab273908f38e6ce7ca352f6e3eade7a0a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
