@@ -14,7 +14,6 @@
 
 describe('Test Results Tab', () => {
   it('config table modal should not be overlapped by other elements', () => {
-    cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/test-results');
     cy.get('milo-tvt-config-widget').click();
     cy.wait(1000);
@@ -22,13 +21,11 @@ describe('Test Results Tab', () => {
   });
 
   it('should show a warning banner when the build or one of the steps infra failed', () => {
-    cy.stubPrpcServices();
     cy.visit('p/chromium/builders/ci/win-rel-swarming/11864/test-results');
     cy.get('#test-results-tab-warning').contains('Test results displayed here are likely incomplete');
   });
 
   it("should not show a warning banner when there's no infra failure", () => {
-    cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/test-results');
     cy.get('#test-results-tab-warning').should('not.exist');
   });

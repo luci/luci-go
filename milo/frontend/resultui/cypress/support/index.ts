@@ -20,3 +20,11 @@ import { addStubRequestsCommand } from './stub_requests';
 addMatchImageSnapshotCommand();
 addStubRequestsCommand();
 addStubPrpcServicesCommand();
+
+beforeEach(() => {
+  cy.stubPrpcServices();
+
+  // Cypress cancels all the pending network requests when a test case
+  // finished running. Ignore errors due to network requests being canceled.
+  cy.on('uncaught:exception', (e) => !e.message.includes('> NetworkError when attempting to fetch resource.'));
+});
