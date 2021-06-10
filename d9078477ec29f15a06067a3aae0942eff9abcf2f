@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8959b37_7e6f79cd",
+        "filename": "luciexe/host/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-10T23:50:03Z",
+      "side": 1,
+      "message": "This constant could be added in options.go, but I added it to luciexe/tags.go just because I preferred luciexe.LogDogViewerURLTag over host.LogDogViewerURLTag.",
+      "range": {
+        "startLine": 205,
+        "startChar": 36,
+        "endLine": 205,
+        "endChar": 62
+      },
+      "revId": "d9078477ec29f15a06067a3aae0942eff9abcf2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
