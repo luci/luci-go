@@ -14,7 +14,8 @@
 
 describe('Tooltip', () => {
   it('should render tooltip at the correct position', () => {
-    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479/overview');
+    cy.stubPrpcServices();
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/overview');
     cy.get('.badge').first().trigger('mouseover');
 
     cy.scrollTo(0, '100px');
