@@ -72,9 +72,6 @@ export interface QueryBlamelistResponse {
   readonly precedingCommit?: GitCommit;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface GetCurrentUserRequest {}
-
 export interface GetProjectCfgRequest {
   readonly project: string;
 }
@@ -89,6 +86,17 @@ export interface BugTemplate {
   readonly description?: string;
   readonly monorailProject?: string;
   readonly components?: readonly string[];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface GetAuthStateRequest {}
+
+export interface GetAuthStateResponse {
+  readonly identity: string;
+  readonly email?: string;
+  readonly picture?: string;
+  readonly accessToken?: string;
+  readonly accessTokenExpiry?: string;
 }
 
 export class MiloInternal {
@@ -110,5 +118,13 @@ export class MiloInternal {
 
   async getProjectCfg(req: GetProjectCfgRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetProjectCfg', req)) as Project;
+  }
+
+  async getAuthState(req: GetAuthStateRequest) {
+    return (await this.cachedCallFn(
+      { acceptCache: false, skipUpdate: true },
+      'GetAuthState',
+      req
+    )) as GetAuthStateResponse;
   }
 }
