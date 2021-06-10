@@ -16,6 +16,23 @@
       "message": "PTAL. This still needs a stamp from the OWNERS (Robbie)",
       "revId": "22ed39b55c92e8813b1b20aea349f911a6102dd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3315bfc_3cdcad55",
+        "filename": "luciexe/host/options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-10T21:03:53Z",
+      "side": 1,
+      "message": "this is still conditional on GetBuilder() !\u003d nil",
+      "revId": "22ed39b55c92e8813b1b20aea349f911a6102dd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
