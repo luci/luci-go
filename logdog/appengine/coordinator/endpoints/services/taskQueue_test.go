@@ -61,10 +61,10 @@ func TestTaskQueue(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(tasks.Tasks), ShouldEqual, 0)
 		})
-		task1 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef1"}
-		task2 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef2"}
-		task3 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef3"}
-		task4 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef4"}
+		task1 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef1", Realm: "foo:bar"}
+		task2 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef2", Realm: "foo:bar"}
+		task3 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef3", Realm: "foo:bar"}
+		task4 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef4", Realm: "foo:bar"}
 
 		Convey(`Two tasks`, func() {
 			mustAddTask(task1)

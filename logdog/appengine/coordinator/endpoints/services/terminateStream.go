@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -59,6 +60,24 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 
 	// Initialize our log stream state.
 	lst := coordinator.NewLogStreamState(c, id)
+
+	// Load the Stream and Prefix.
+	ls := &coordinator.LogStream{ID: lst.ID()}
+	if err := ds.Get(c, ls); err != nil {
+		log.WithError(err).Errorf(c, "Failed to load log stream.")
+		if err == ds.ErrNoSuchEntity {
+			return nil, grpcutil.Errf(codes.NotFound, "log stream doesn't exist")
+		}
+		return nil, grpcutil.Internal
+	}
+	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(types.StreamName(ls.Prefix))}
+	if err := ds.Get(c, pfx); err != nil {
+		log.WithError(err).Errorf(c, "Failed to load log stream prefix.")
+		if err == ds.ErrNoSuchEntity {
+			return nil, grpcutil.Errf(codes.Internal, "prefix is not registered")
+		}
+		return nil, grpcutil.Internal
+	}
 
 	// Transactionally validate and update the terminal index.
 	err := ds.RunInTransaction(c, func(c context.Context) error {
@@ -106,7 +125,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 			}
 		}
 
-		return s.taskArchival(c, lst, optimisticArchivalDelay)
+		return s.taskArchival(c, lst, pfx.Realm, optimisticArchivalDelay)
 	}, nil)
 	if err != nil {
 		log.Fields{

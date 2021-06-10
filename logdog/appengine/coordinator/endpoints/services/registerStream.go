@@ -232,7 +232,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			if preTerminated {
 				delay = optimisticArchivalDelay
 			}
-			return s.taskArchival(c, lst, delay)
+			return s.taskArchival(c, lst, pfx.Realm, delay)
 		}, nil)
 		if err != nil {
 			log.Fields{
