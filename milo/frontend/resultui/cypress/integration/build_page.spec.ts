@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { STUB_REQUEST_OPTIONS } from '../support/stub_prpc_services';
+
 describe('Build Page', () => {
+  beforeEach(() => {
+    // Cypress cancels all the pending network requests when a test case
+    // finished running. Ignore errors due to network requests being canceled.
+    cy.on('uncaught:exception', (e) => !e.message.includes('> NetworkError when attempting to fetch resource.'));
+  });
+
   it('should navigate to the default tab', () => {
     cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252');
@@ -24,5 +32,46 @@ describe('Build Page', () => {
     cy.visit('/p/not-bound-project/builders/not-bound-bucket/not-found-builder/12479');
     cy.on('uncaught:exception', () => false);
     cy.location('pathname').should('include', '/ui/login');
+  });
+
+  it('should compute invocation ID from buildNum in URL', () => {
+    cy.stubPrpcServices();
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252');
+    cy.get('milo-build-page')
+      .invoke('prop', 'buildState')
+      .its('invocationId')
+      .should('eq', 'build-70535a5a746775ce83281f4e4e318b2b7b239d1e7eb7c8f790bf570a14cf61fe-15252');
+  });
+
+  it('should compute invocation ID from build ID in URL', () => {
+    cy.stubPrpcServices();
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/b8845866669318458401');
+    cy.get('milo-build-page')
+      .invoke('prop', 'buildState')
+      .its('invocationId')
+      .should('eq', 'build-8845866669318458401');
+  });
+
+  it('should fallback to invocation ID from buildbucket when invocation is not found', () => {
+    cy.stubPrpcServices();
+    // modified-resultdb is manually modified to respond 404 to queries with
+    // computed invocation IDs.
+    cy.stubRequests(
+      { url: 'https://staging.results.api.cr.dev/prpc/**', method: 'POST' },
+      'modified-resultdb',
+      STUB_REQUEST_OPTIONS
+    );
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252');
+    cy.on('uncaught:exception', () => false);
+    cy.get('milo-build-page')
+      .invoke('prop', 'buildState')
+      .its('invocationId')
+      .should('eq', 'build-8845866669318458401');
+  });
+
+  it('should redirect to a long link when visited via a short link', () => {
+    cy.stubPrpcServices();
+    cy.visit('/b/8845866669318458401');
+    cy.url().should('include', '/p/chromium/builders/ci/linux-rel-swarming/15252/overview');
   });
 });
