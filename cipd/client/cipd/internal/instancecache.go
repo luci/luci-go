@@ -67,6 +67,7 @@ const (
 // Does not validate instance hashes; it is caller's responsibility.
 type InstanceCache struct {
 	fs        fs.FileSystem
+	tmp       bool
 	stateLock sync.Mutex // synchronizes access to the state file.
 
 	// Defaults to instanceCacheMaxSize, mocked in tests.
@@ -77,10 +78,13 @@ type InstanceCache struct {
 
 // NewInstanceCache initializes InstanceCache.
 //
-// fs will be the root of the cache.
-func NewInstanceCache(fs fs.FileSystem) *InstanceCache {
+// `fs` will be the root of the cache. If `tmp` is true, this is a temporary
+// instance cache: a cache of downloaded, but not yet installed packages. It has
+// a property that cached files self-destruct after being closed.
+func NewInstanceCache(fs fs.FileSystem, tmp bool) *InstanceCache {
 	return &InstanceCache{
 		fs:      fs,
+		tmp:     tmp,
 		maxSize: instanceCacheMaxSize,
 		maxAge:  instanceCacheMaxAge,
 	}
@@ -88,13 +92,16 @@ func NewInstanceCache(fs fs.FileSystem) *InstanceCache {
 
 type cacheFile struct {
 	*os.File
-	fs fs.FileSystem
+
+	cache *InstanceCache
+	pin   common.Pin
 }
 
-// Close removes this file from the cache if corrupt is true.
+// Close removes this file from the cache if `corrupt` is true or it is a
+// temporary cache.
 //
-// This will be true if the cached file is determined to be broken at a higher
-// level.
+// `corrupt` will be true if the cached file is determined to be broken at
+// a higher level.
 //
 // This implements pkg.Source.
 func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
@@ -104,26 +111,33 @@ func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
 		if corrupt {
 			corruptText = " corrupt"
 		}
-		logging.WithError(err).Warningf(ctx, "failed to close%s cache file", corruptText)
+		logging.Warningf(ctx, "cipd: failed to close%s cache file: %s", corruptText, err)
 	} else {
 		err = nil
 	}
 	if corrupt {
 		var err2 error
-		if err2 = f.fs.EnsureFileGone(ctx, f.Name()); err2 != nil {
-			logging.WithError(err2).Warningf(ctx, "failed to delete corrupt cache file")
+		if err2 = f.cache.fs.EnsureFileGone(ctx, f.Name()); err2 != nil {
+			logging.Warningf(ctx, "cipd: failed to delete corrupt cache file: %s", err2)
 		}
 		// only return err2 if err was already nil
 		if err == nil {
 			err = err2
 		}
 	}
+
+	if f.cache.tmp {
+		if rmErr := f.cache.Delete(ctx, f.pin, clock.Now(ctx)); rmErr != nil {
+			logging.Warningf(ctx, "cipd: failed to delete the instance from the cache: %s", rmErr)
+		}
+	}
+
 	return err
 }
 
-// UnderlyingFile is only used by tests and shouldn't be used directly.
-func (f *cacheFile) UnderlyingFile() *os.File {
-	return f.File
+// Root returns an absolute path to the cache root directory.
+func (c *InstanceCache) Root() string {
+	return c.fs.Root()
 }
 
 // Get searches for the instance in the cache and opens it for reading.
@@ -144,11 +158,12 @@ func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) 
 		return nil, err
 	}
 
-	c.withState(ctx, now, func(s *messages.InstanceCache) {
+	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		touch(s, pin.InstanceID, now)
+		return true
 	})
 
-	return &cacheFile{f, c.fs}, nil
+	return &cacheFile{f, c, pin}, nil
 }
 
 // Put caches an instance.
@@ -168,17 +183,44 @@ func (c *InstanceCache) Put(ctx context.Context, pin common.Pin, now time.Time, 
 		return err
 	}
 
-	c.withState(ctx, now, func(s *messages.InstanceCache) {
+	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		touch(s, pin.InstanceID, now)
 		c.gc(ctx, s, now)
+		return true
 	})
+	return nil
+}
+
+// Delete deletes an instance from the cache if it was there.
+func (c *InstanceCache) Delete(ctx context.Context, pin common.Pin, now time.Time) error {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
+		return err
+	}
+	path, err := c.fs.RootRelToAbs(pin.InstanceID)
+	if err != nil {
+		return fmt.Errorf("invalid instance ID %q", pin.InstanceID)
+	}
+
+	if err := c.fs.EnsureFileGone(ctx, path); err != nil {
+		return err
+	}
+
+	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
+		if s.Entries[pin.InstanceID] == nil {
+			return false
+		}
+		delete(s.Entries, pin.InstanceID)
+		return true
+	})
+
 	return nil
 }
 
 // GC opportunistically purges entries that haven't been touched for too long.
 func (c *InstanceCache) GC(ctx context.Context, now time.Time) {
-	c.withState(ctx, now, func(s *messages.InstanceCache) {
+	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		c.gc(ctx, s, now)
+		return true
 	})
 }
 
@@ -369,7 +411,7 @@ func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceC
 
 // withState loads cache state from the state file, calls f and saves it back.
 // See also readState.
-func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache)) {
+func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache) (save bool)) {
 	state := &messages.InstanceCache{}
 
 	start := clock.Now(ctx)
@@ -386,20 +428,22 @@ func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*me
 	defer c.stateLock.Unlock()
 
 	c.readState(ctx, state, now)
-	f(state)
-	if err := c.saveState(ctx, state); err != nil {
-		logging.Warningf(ctx, "cipd: could not save instance cache - %s", err)
+	if f(state) {
+		if err := c.saveState(ctx, state); err != nil {
+			logging.Warningf(ctx, "cipd: could not save instance cache - %s", err)
+		}
 	}
 }
 
 // getAccessTime returns last access time of an instance.
 // Used for testing.
 func (c *InstanceCache) getAccessTime(ctx context.Context, now time.Time, pin common.Pin) (lastAccess time.Time, ok bool) {
-	c.withState(ctx, now, func(s *messages.InstanceCache) {
+	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		var entry *messages.InstanceCache_Entry
 		if entry, ok = s.Entries[pin.InstanceID]; ok {
 			lastAccess = entry.LastAccess.AsTime()
 		}
+		return false
 	})
 	return
 }
