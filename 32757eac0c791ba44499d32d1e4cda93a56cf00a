@@ -16,6 +16,24 @@
       "message": "lgtm but i don\u0027t get what\u0027s the point of 90%. It\u0027s unlikely that something will retry 10 times.",
       "revId": "32757eac0c791ba44499d32d1e4cda93a56cf00a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed0a2e51_e54988db",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-10T01:53:12Z",
+      "side": 1,
+      "message": "Idk. There\u0027s more crap to do once it\u0027s 100% (removing the splitter). I don\u0027t have a good reason.",
+      "parentUuid": "164ef38b_484ba2e5",
+      "revId": "32757eac0c791ba44499d32d1e4cda93a56cf00a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
