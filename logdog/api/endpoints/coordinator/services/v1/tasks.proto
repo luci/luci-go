@@ -18,6 +18,9 @@ message ArchiveTask {
   // The TaskQueue Name of this task, used in the taskqueue pipeline.
   // This is required for ACKing.
   string task_name = 7;
+  // The realm name (within the project) that the prefix of the stream is
+  // associated with.
+  string realm = 8;
 
   // TODO(hinoka): Remove this after crbug.com/923557
   // The archival key of the log stream. If this key doesn't match the key in
