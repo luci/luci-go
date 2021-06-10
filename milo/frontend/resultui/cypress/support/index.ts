@@ -14,4 +14,9 @@
 
 import { addMatchImageSnapshotCommand } from 'cypress-image-snapshot/command';
 
+import { addStubPrpcServicesCommand } from './stub_prpc_services';
+import { addStubRequestsCommand } from './stub_requests';
+
 addMatchImageSnapshotCommand();
+addStubRequestsCommand();
+addStubPrpcServicesCommand();

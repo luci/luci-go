@@ -14,26 +14,14 @@
 
 describe('Build Page', () => {
   it('should navigate to the default tab', () => {
-    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479');
+    cy.stubPrpcServices();
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252');
     cy.url().should('include', '/overview');
   });
 
   it('should initiate the signin flow if the page is 404 and the user is not logged in', () => {
-    cy.intercept(
-      {
-        method: 'POST',
-        url: 'https://cr-buildbucket-dev.appspot.com/prpc/buildbucket.v2.Builds/GetBuild',
-      },
-      {
-        statusCode: 404,
-        headers: {
-          'access-control-expose-headers': 'x-prpc-grpc-code',
-          'x-prpc-grpc-code': '5',
-        },
-        body: 'requested resource not found or "anonymous:anonymous" does not have permission to view it',
-      }
-    );
-    cy.visit('/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/12479');
+    cy.stubPrpcServices();
+    cy.visit('/p/not-bound-project/builders/not-bound-bucket/not-found-builder/12479');
     cy.on('uncaught:exception', () => false);
     cy.location('pathname').should('include', '/ui/login');
   });
