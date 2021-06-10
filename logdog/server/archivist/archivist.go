@@ -656,6 +656,13 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 			tags["realm"] = sa.realm
 		}
 
+		// bbagent includes tag "logdog.viewer_url" in log streams for
+		// "back to build" link, rendered in UI.
+		//
+		// This isn't useful in Cloud Logging UI, as resource.labels already provide
+		// the buildID. Thus, remove it.
+		delete(tags, "logdog.viewer_url")
+
 		switch val, ok := tags["luci.CloudLogExportID"]; {
 		case !ok, len(val) == 0: // skip
 
