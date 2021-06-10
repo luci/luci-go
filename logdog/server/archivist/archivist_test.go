@@ -17,6 +17,7 @@ package archivist
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -323,6 +324,7 @@ func TestHandleArchive(t *testing.T) {
 		task := &logdog.ArchiveTask{
 			Project: project,
 			Id:      "coordinator-stream-id",
+			Realm:   "foo:bar",
 		}
 		expired++ // This represents a time PAST CompletePeriod.
 
@@ -758,6 +760,45 @@ func TestHandleArchive(t *testing.T) {
 				So(clc.luciProject, ShouldEqual, project)
 				So(clc.projectScopeEnabled, ShouldBeFalse)
 			})
+
+			Convey(`w/ CommonLabels`, func() {
+				var opts []cl.LoggerOption
+				ar.CLClientFactory = func(ctx context.Context, lp, cp string, s bool) (CLClient, error) {
+					clc, err := clcFactory(c, lp, cp, s)
+					clc.(*testCLClient).loggerFn = func(n string, los ...cl.LoggerOption) *cl.Logger {
+						opts = los
+						return &cl.Logger{}
+					}
+					return clc, err
+				}
+
+				// CommonLabels returns a private type, commonLabels.
+				findCommonLabels := func(opts []cl.LoggerOption) cl.LoggerOption {
+					labelsType := reflect.TypeOf(cl.CommonLabels(nil))
+					for _, opt := range opts {
+						if reflect.TypeOf(opt) == labelsType {
+							return opt
+						}
+					}
+					return nil
+				}
+
+				Convey(`w/ realm`, func() {
+					task.Realm = "project:bucket"
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(clc, ShouldNotBeNil)
+					So(findCommonLabels(opts), ShouldResemble, cl.CommonLabels(
+						map[string]string{"realm": "project:bucket"}))
+				})
+
+				Convey(`w/o realm`, func() {
+					task.Realm = ""
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(clc, ShouldNotBeNil)
+					So(findCommonLabels(opts), ShouldResemble, cl.CommonLabels(
+						map[string]string{}))
+				})
+			})
 		})
 
 		Convey(`Will not construct CLClient`, func() {
@@ -820,7 +861,9 @@ func TestHandleArchive(t *testing.T) {
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 
 				So(logID, ShouldEqual, "luci-logs")
-				So(opts[0], ShouldResemble, cl.CommonLabels(map[string]string{"key1": "val1"}))
+				So(opts[0], ShouldResemble, cl.CommonLabels(
+					map[string]string{"key1": "val1", "realm": "foo:bar"},
+				))
 				So(opts[1], ShouldResembleProto, cl.CommonResource(&mrpb.MonitoredResource{
 					Type: "generic_task",
 					Labels: map[string]string{

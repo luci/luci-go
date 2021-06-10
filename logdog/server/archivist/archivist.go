@@ -287,7 +287,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 
 	// Build our staged archival plan. This doesn't actually do any archiving.
 	uid := fmt.Sprintf("%d", mathrand.Int63(c))
-	staged, err := a.makeStagedArchival(c, task.Project, settings, ls, uid)
+	staged, err := a.makeStagedArchival(c, task.Project, task.Realm, settings, ls, uid)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
 		return err
@@ -422,7 +422,7 @@ func (a *Archivist) loadSettings(c context.Context, project string) (*Settings, 
 	}
 }
 
-func (a *Archivist) makeStagedArchival(c context.Context, project string,
+func (a *Archivist) makeStagedArchival(c context.Context, project string, realm string,
 	st *Settings, ls *logdog.LoadStreamResponse, uid string) (*stagedArchival, error) {
 
 	gsClient, err := a.GSClientFactory(c, project)
@@ -438,6 +438,7 @@ func (a *Archivist) makeStagedArchival(c context.Context, project string,
 		Archivist: a,
 		Settings:  st,
 		project:   project,
+		realm:     realm,
 		gsclient:  gsClient,
 
 		terminalIndex: types.MessageIndex(ls.State.TerminalIndex),
@@ -489,6 +490,7 @@ type stagedArchival struct {
 	*Settings
 
 	project string
+	realm   string
 	path    types.StreamPath
 	desc    logpb.LogStreamDescriptor
 
@@ -647,6 +649,12 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	if sa.clclient != nil {
 		logID := "luci-logs"
 		tags := sa.desc.GetTags()
+		if tags == nil {
+			tags = map[string]string{}
+		}
+		if sa.realm != "" {
+			tags["realm"] = sa.realm
+		}
 
 		switch val, ok := tags["luci.CloudLogExportID"]; {
 		case !ok, len(val) == 0: // skip
