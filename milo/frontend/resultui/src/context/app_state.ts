@@ -27,6 +27,8 @@ import { ResultDb, UISpecificService } from '../services/resultdb';
 export class AppState {
   @observable.ref timestamp = Date.now();
 
+  miloInternal = new MiloInternal();
+
   // Don't make this an observable so services won't be refreshed after updating
   // the access token.
   accessToken = '';
@@ -99,14 +101,6 @@ export class AppState {
   }
 
   @computed({ keepAlive: true })
-  get milo(): MiloInternal | null {
-    if (this.isDisposed || this.userId === null) {
-      return null;
-    }
-    return new MiloInternal(this.makeClient(''));
-  }
-
-  @computed({ keepAlive: true })
   get buildsService(): BuildsService | null {
     if (this.isDisposed || this.userId === null) {
       return null;
@@ -141,7 +135,6 @@ export class AppState {
     // is set to true so they no longer subscribes to any external observable.
     this.resultDb;
     this.uiSpecificService;
-    this.milo;
     this.buildsService;
     this.buildersService;
     this.accessService;

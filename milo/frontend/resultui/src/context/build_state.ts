@@ -224,7 +224,7 @@ export class BuildState {
   @observable.ref selectedBlamelistPinIndex = 0;
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
-    if (!this.appState.milo || !this.build) {
+    if (!this.build) {
       // eslint-disable-next-line require-yield
       return async function* () {
         await Promise.race([]);
@@ -235,11 +235,11 @@ export class BuildState {
       builder: this.build.builder,
       multiProjectSupport,
     };
-    const milo = this.appState.milo;
+    const miloInternal = this.appState.miloInternal;
     async function* streamBlamelist() {
       let res: QueryBlamelistResponse;
       do {
-        res = await milo.queryBlamelist(req);
+        res = await miloInternal.queryBlamelist(req);
         req = { ...req, pageToken: res.nextPageToken };
         yield res;
       } while (res.nextPageToken);
@@ -320,7 +320,7 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   private get projectCfg$() {
-    if (this.isDisposed || !this.appState.milo || !this.builderId?.project) {
+    if (this.isDisposed || !this.builderId?.project) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -330,7 +330,7 @@ export class BuildState {
     this.appState.timestamp;
 
     return fromPromise(
-      this.appState.milo.getProjectCfg({
+      this.appState.miloInternal.getProjectCfg({
         project: this.builderId.project,
       })
     );
