@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29655977_8dde01bb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-10T20:36:47Z",
+      "side": 1,
+      "message": "lgtm; I am assuming that we can deploy the coordinator/archivist in any order?\n\n  * coordinator -\u003e archivist (old archivist will ignore new field)\n  * archivist -\u003e coordinator (new archivist will skip empty realm)\n  \nRight?",
+      "revId": "5b48e2e58c98cafde0f5858a9f9afddbf29b39a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

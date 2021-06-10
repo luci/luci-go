@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "54ba007c_63919cea",
+        "filename": "logdog/appengine/coordinator/endpoints/services/terminateStream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-10T20:36:47Z",
+      "side": 1,
+      "message": "this is the only way that\u0027s obvious to me",
+      "parentUuid": "a971f162_3fd91002",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 2
+      },
+      "revId": "47573f5234e1da3877c42b287bf30e6b32d406f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8f38576d_26362836",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-06-10T03:51:35Z",
       "side": 1,
       "message": "I chose codes.Internal, because the prefix is from the loaded LogStream. Let me know if there is a better code to return.",
+      "range": {
+        "startLine": 82,
+        "startChar": 29,
+        "endLine": 82,
+        "endChar": 43
+      },
+      "revId": "47573f5234e1da3877c42b287bf30e6b32d406f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b02b636_f215a37f",
+        "filename": "logdog/appengine/coordinator/endpoints/services/terminateStream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-10T20:36:47Z",
+      "side": 1,
+      "message": "that sounds right to me.",
+      "parentUuid": "8f38576d_26362836",
       "range": {
         "startLine": 82,
         "startChar": 29,
