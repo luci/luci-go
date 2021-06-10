@@ -145,9 +145,9 @@ func TestTerminateStream(t *testing.T) {
 				So(err, ShouldBeRPCInvalidArgument, "Invalid ID")
 			})
 
-			Convey(`Will fail if the stream is not registered.`, func() {
+			Convey(`Will fail if the stream does not exist.`, func() {
 				_, err := svr.TerminateStream(c, &req)
-				So(err, ShouldBeRPCNotFound, "is not registered")
+				So(err, ShouldBeRPCNotFound, "log stream doesn't exist")
 			})
 		})
 	})
