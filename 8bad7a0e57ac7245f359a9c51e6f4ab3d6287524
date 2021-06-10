@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "58d03d47_4e4d8711",
+        "filename": "common/proto/gerrit/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-10T18:46:37Z",
+      "side": 1,
+      "message": "ack",
+      "parentUuid": "22b3c537_bdb30146",
+      "revId": "8bad7a0e57ac7245f359a9c51e6f4ab3d6287524",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "26357cb0_b53c0cd8",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-06-10T17:14:26Z",
       "side": 1,
       "message": "nit: empty line below",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 1
+      },
+      "revId": "8bad7a0e57ac7245f359a9c51e6f4ab3d6287524",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe790f35_e3f61654",
+        "filename": "common/proto/gerrit/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-10T18:46:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26357cb0_b53c0cd8",
       "range": {
         "startLine": 49,
         "startChar": 0,
