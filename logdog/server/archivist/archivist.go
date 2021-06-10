@@ -38,6 +38,8 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	tsmon_types "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/luciexe"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/archive"
@@ -655,6 +657,13 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		if sa.realm != "" {
 			tags["realm"] = sa.realm
 		}
+
+		// bbagent adds luciexe.LogDogViewerURLTag to log streams for
+		// "back to build" link, rendered in UI.
+		//
+		// This isn't useful in Cloud Logging UI, as resource.labels already provide
+		// the buildID. Thus, remove it.
+		delete(tags, luciexe.LogDogViewerURLTag)
 
 		switch val, ok := tags["luci.CloudLogExportID"]; {
 		case !ok, len(val) == 0: // skip
