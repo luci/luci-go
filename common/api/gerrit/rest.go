@@ -245,11 +245,16 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 	}
 	path := fmt.Sprintf("/changes/%s/revisions/%s/review", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
 	data := reviewInput{
-		Message:       in.Message,
-		Tag:           in.Tag,
-		Notify:        enumToString(int32(in.Notify.Number()), gerritpb.Notify_name),
-		NotifyDetails: toNotifyDetails(in.GetNotifyDetails()),
-		OnBehalfOf:    in.OnBehalfOf,
+		Message:                          in.Message,
+		Tag:                              in.Tag,
+		Notify:                           enumToString(int32(in.Notify.Number()), gerritpb.Notify_name),
+		NotifyDetails:                    toNotifyDetails(in.GetNotifyDetails()),
+		OnBehalfOf:                       in.OnBehalfOf,
+		Ready:                            in.Ready,
+		WorkInProgress:                   in.WorkInProgress,
+		AddToAttentionSet:                toAttentionSetInputs(in.GetAddToAttentionSet()),
+		RemoveFromAttentionSet:           toAttentionSetInputs(in.GetRemoveFromAttentionSet()),
+		IgnoreAutomaticAttentionSetRules: in.IgnoreAutomaticAttentionSetRules,
 	}
 	if in.Labels != nil {
 		data.Labels = make(map[string]int32)
@@ -266,13 +271,19 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 
 func (c *client) AddToAttentionSet(ctx context.Context, req *gerritpb.AttentionSetRequest, opts ...grpc.CallOption) (*gerritpb.AccountInfo, error) {
 	path := fmt.Sprintf("/changes/%s/attention", gerritChangeIDForRouting(req.Number, req.Project))
-	data := attentionSetRequest{
-		User:   req.User,
-		Reason: req.Reason,
-		Notify: enumToString(int32(req.Notify.Number()), gerritpb.Notify_name),
+	var data *attentionSetInput
+	if i := req.GetInput(); i != nil {
+		data = toAttentionSetInput(i)
+	} else {
+		// TODO(tandrii): migrate current users and remove.
+		data = &attentionSetInput{
+			User:   req.User,
+			Reason: req.Reason,
+			Notify: enumToString(int32(req.Notify.Number()), gerritpb.Notify_name),
+		}
 	}
 	var resp accountInfo
-	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp); err != nil {
 		return nil, errors.Annotate(err, "add to attention set").Err()
 	}
 	return resp.ToProto(), nil
