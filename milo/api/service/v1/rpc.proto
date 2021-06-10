@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.milo.v1;
 
+import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/common/proto/git/commit.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
@@ -42,7 +43,7 @@ service MiloInternal {
   //
   // Return the current user if user is logged in. Otherwise, return an
   // anonymous user.
-  rpc GetCurrentUser(GetCurrentUserRequest) returns (User) {};
+  rpc GetAuthState(GetAuthStateRequest) returns (GetAuthStateResponse) {};
 
   // Gets the project config.
   //
@@ -50,11 +51,11 @@ service MiloInternal {
   rpc GetProjectCfg(GetProjectCfgRequest) returns (.milo.Project) {};
 }
 
-// A request message for `GetCurrentUser` RPC.
-message GetCurrentUserRequest {}
+// A request message for `GetAuthState` RPC.
+message GetAuthStateRequest {}
 
 // A message that represents identity and profile of a user.
-message User {
+message GetAuthStateResponse {
   // Identity string of the user (anonymous:anonymous if the user is not logged
   // in).
   string identity = 1;
@@ -64,6 +65,14 @@ message User {
 
 	// The URL of the user avatar. Optional, default "".
   string picture = 3;
+
+	// The token that authorizes and authenticates the requests.
+  string access_token = 4;
+
+  // Expiration time of the access token.
+  //
+  // If zero, the access token does not expire.
+  google.protobuf.Timestamp access_token_expiry = 5;
 }
 
 // A request message for `QueryBlamelist` RPC.
