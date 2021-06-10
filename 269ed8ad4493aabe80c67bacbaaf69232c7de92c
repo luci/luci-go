@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "dbbac1f8_3ce6a818",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 992,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-10T18:44:34Z",
+      "side": 1,
+      "message": "i expect it to us `ready` some day (e.g. dry run succeeded? -\u003e publish)\n\nthe `work_in_progress` is for completeness.",
+      "parentUuid": "1d35f907_a30fc9d0",
+      "range": {
+        "startLine": 987,
+        "startChar": 0,
+        "endLine": 992,
+        "endChar": 29
+      },
+      "revId": "269ed8ad4493aabe80c67bacbaaf69232c7de92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "9e456c2a_1b6f43ff",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 1
@@ -49,6 +73,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "db19c4f5_d2f2aa46",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 1054,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-10T18:44:34Z",
+      "side": 1,
+      "message": "I didn\u0027t read the doc, but thanks to you I did now. And I was confused by this:\n\n\u003e For removals, this field should be empty or the same as the field in the request header.\n\nBut now I see that empty can only be omitted when calling https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#remove-from-attention-set",
+      "parentUuid": "9e456c2a_1b6f43ff",
+      "range": {
+        "startLine": 1054,
+        "startChar": 0,
+        "endLine": 1054,
+        "endChar": 91
+      },
+      "revId": "269ed8ad4493aabe80c67bacbaaf69232c7de92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "feae015b_32c372a1",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 1
@@ -60,6 +108,30 @@
       "writtenOn": "2021-06-10T17:24:10Z",
       "side": 1,
       "message": "iiuc, CV will not using these fields because it is using the notify and notify_details in the SetReviewInput. Is that correct?",
+      "range": {
+        "startLine": 1059,
+        "startChar": 0,
+        "endLine": 1067,
+        "endChar": 35
+      },
+      "revId": "269ed8ad4493aabe80c67bacbaaf69232c7de92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d3c974f_ef517f1b",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 1067,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-10T18:44:34Z",
+      "side": 1,
+      "message": "Yes, I don\u0027t think we\u0027ll use them. TBH, I doubt they are even supported in SetReview case, but I added them for completeness.",
+      "parentUuid": "feae015b_32c372a1",
       "range": {
         "startLine": 1059,
         "startChar": 0,
