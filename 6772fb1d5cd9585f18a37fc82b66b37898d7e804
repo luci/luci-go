@@ -33,6 +33,24 @@
       "message": "would you mind doing the no-op protoc change in a separate CL?",
       "revId": "6772fb1d5cd9585f18a37fc82b66b37898d7e804",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e372a827_ebe17aaf",
+        "filename": "logdog/api/config/svcconfig/archival.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-10T21:03:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea86a449_d06b6809",
+      "revId": "6772fb1d5cd9585f18a37fc82b66b37898d7e804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
