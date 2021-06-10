@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b9260f7_4063f5c5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-10T20:47:29Z",
+      "side": 1,
+      "message": "lgtm % comment",
+      "revId": "6772fb1d5cd9585f18a37fc82b66b37898d7e804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea86a449_d06b6809",
+        "filename": "logdog/api/config/svcconfig/archival.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-10T20:47:29Z",
+      "side": 1,
+      "message": "would you mind doing the no-op protoc change in a separate CL?",
+      "revId": "6772fb1d5cd9585f18a37fc82b66b37898d7e804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
