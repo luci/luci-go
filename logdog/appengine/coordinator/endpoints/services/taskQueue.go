@@ -91,7 +91,7 @@ var (
 )
 
 // taskArchival tasks an archival of a stream with the given delay.
-func (s *server) taskArchival(c context.Context, state *coordinator.LogStreamState, delay time.Duration) error {
+func (s *server) taskArchival(c context.Context, state *coordinator.LogStreamState, realm string, delay time.Duration) error {
 	// Now task the archival.
 	state.Updated = clock.Now(c).UTC()
 	state.ArchivalKey = []byte{'1'} // Use a fake key just to signal that we've tasked the archival.
@@ -104,7 +104,7 @@ func (s *server) taskArchival(c context.Context, state *coordinator.LogStreamSta
 
 	project := string(coordinator.ProjectFromNamespace(state.Parent.Namespace()))
 	id := string(state.ID())
-	t, err := tqTask(&logdog.ArchiveTask{Project: project, Id: id})
+	t, err := tqTask(&logdog.ArchiveTask{Project: project, Id: id, Realm: realm})
 	if err != nil {
 		log.WithError(err).Errorf(c, "could not create archival task")
 		return grpcutil.Internal
