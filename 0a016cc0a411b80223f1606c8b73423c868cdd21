@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a877b01e_e30420a2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-11T00:14:47Z",
+      "side": 1,
+      "message": "PTAL\n\nI\u0027m trying to parallelize CIPD package downloads (see the bug). My rough plan is to teach EnsurePackages to start prefetching packages into the cache directory ASAP while it is doing other stuff (like unzipping already available files). So it is simpler if we always have a cache available, even when CIPD_CACHE_DIR is unset.\n\nMy two primary concerns:\n1. Logging will suck, need to make some \"creative\" changes there, probably using some console UI library that allows to \"overwrite\" the terminal screen. Have no idea how it will all mesh with CIPD being called by depot_tools and when running on bots.\n2. I\u0027m worried that parallel fetching to the cache may interact badly with various edge cases related to almost full cache (eviction and stuff).",
+      "revId": "0a016cc0a411b80223f1606c8b73423c868cdd21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9ea0160_76bb70d8",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1517,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-11T00:14:47Z",
+      "side": 1,
+      "message": "no real changes here, Gerrit is confused",
+      "range": {
+        "startLine": 1490,
+        "startChar": 0,
+        "endLine": 1517,
+        "endChar": 0
+      },
+      "revId": "0a016cc0a411b80223f1606c8b73423c868cdd21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
