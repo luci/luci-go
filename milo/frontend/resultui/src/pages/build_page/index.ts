@@ -121,11 +121,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   @provideInvocationState({ global: true })
   invocationState!: InvocationState;
 
-  // Set to true when testing.
-  // Otherwise this.render() will throw due to missing initialization steps in
-  // this.onBeforeEnter.
-  @observable.ref prerender = false;
-
   @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);
 
   // The page is visited via a short link.
@@ -381,7 +376,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   protected render = reportRenderError.bind(this)(() => {
-    if (this.prerender || this.isShortLink) {
+    if (this.isShortLink) {
       return html``;
     }
 
