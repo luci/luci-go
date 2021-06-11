@@ -70,6 +70,24 @@
       "parentUuid": "a29cecf5_b9b0f8a0",
       "revId": "7988b1677a9b63b0c0498de60a2b2aaaf02e6da1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ca3ef40_05e0fae8",
+        "filename": "luciexe/tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-11T22:19:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4a73579_7359767c",
+      "revId": "7988b1677a9b63b0c0498de60a2b2aaaf02e6da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

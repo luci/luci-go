@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f7b7795_b00ab502",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-11T22:19:16Z",
+      "side": 1,
+      "message": "Robbie, bbagents sets it always. Can we remove this TODO?\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/cmd/bbagent/main.go;l\u003d173-174",
+      "range": {
+        "startLine": 311,
+        "startChar": 1,
+        "endLine": 311,
+        "endChar": 80
+      },
+      "revId": "94184358c57cd990cf47c931c9aa5b98c7e9c49d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
