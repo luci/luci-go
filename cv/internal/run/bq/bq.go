@@ -33,6 +33,7 @@ import (
 	cvbq "go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/migration"
+	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -76,6 +77,36 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+
+	if !r.FinalizedByCQD {
+		// Only export to legacy CQ dataset iff CQDaemon didn't finalize the Run
+		// itself, which would have included exporting BQ row.
+
+		// TODO(crbug/1218658): find a proper fix.
+		switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, r.ID.LUCIProject()); {
+		case err != nil:
+			return err
+		case !yes:
+			logging.Warningf(ctx, "CV is not in charge, but it finalized a Run. Exporting to CV's BQ table only")
+		default:
+			logging.Debugf(ctx, "CV exporting Run to CQ BQ table")
+			eg.Go(func() error {
+				project := legacyProject
+				if common.IsDev(ctx) {
+					project = legacyProjectDev
+				}
+				return client.SendRow(ctx, cvbq.Row{
+					CloudProject: project,
+					Dataset:      legacyDataset,
+					Table:        legacyTable,
+					OperationID:  "run-" + string(id),
+					Payload:      a,
+				})
+			})
+		}
+	}
+
 	// *Always* export to local CV dataset.
 	eg.Go(func() error {
 		return client.SendRow(ctx, cvbq.Row{
@@ -86,23 +117,6 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 		})
 	})
 
-	if !r.FinalizedByCQD {
-		// Only export to legacy CQ dataset iff CQDaemon didn't finalize the Run
-		// itself, which involes sending BQ row.
-		eg.Go(func() error {
-			project := legacyProject
-			if common.IsDev(ctx) {
-				project = legacyProjectDev
-			}
-			return client.SendRow(ctx, cvbq.Row{
-				CloudProject: project,
-				Dataset:      legacyDataset,
-				Table:        legacyTable,
-				OperationID:  "run-" + string(id),
-				Payload:      a,
-			})
-		})
-	}
 	return eg.Wait()
 
 }

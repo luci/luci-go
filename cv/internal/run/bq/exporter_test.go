@@ -95,6 +95,8 @@ func TestExportRunToBQ(t *testing.T) {
 		Convey("A row is sent", func() {
 			Convey("in prod", func() {
 				So(schedule(), ShouldBeNil)
+				// TODO(crbug/1218658): remove this once fix is found.
+				ct.EnableCVRunManagement(ctx, runID.LUCIProject())
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				rows := ct.BQFake.Rows("", CVDataset, CVTable)
 				So(rows, ShouldResembleProto, []*cvbqpb.Attempt{{
@@ -129,6 +131,8 @@ func TestExportRunToBQ(t *testing.T) {
 			})
 
 			Convey("in dev", func() {
+				// TODO(crbug/1218658): remove this once fix is found.
+				ct.EnableCVRunManagement(ctx, runID.LUCIProject())
 				So(schedule(), ShouldBeNil)
 				ctx = common.SetDev(ctx)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
