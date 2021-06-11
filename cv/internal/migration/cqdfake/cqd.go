@@ -181,7 +181,7 @@ func (cqd *CQDFake) serve(ctx context.Context) {
 
 // iteration simulates one iteration of the CQDaemon loop.
 func (cqd *CQDFake) iteration(ctx context.Context) error {
-	cvInCharge, err := migrationcfg.IsCQDUsingMyRuns(ctx, cqd.LUCIProject)
+	cvInCharge, err := migrationcfg.IsCVInCharge(ctx, cqd.LUCIProject)
 	if err != nil {
 		return err
 	}

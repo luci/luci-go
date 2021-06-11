@@ -74,7 +74,7 @@ func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	ctx = logging.SetField(ctx, "cl", task.GetPurgingCl().GetClid())
 	now := clock.Now(ctx)
 
-	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, task.GetLuciProject()); {
+	switch yes, err := migrationcfg.IsCVInCharge(ctx, task.GetLuciProject()); {
 	case err != nil:
 		return err
 	case !yes:
