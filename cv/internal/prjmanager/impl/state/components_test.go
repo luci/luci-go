@@ -49,8 +49,14 @@ func TestEarliestDecisionTime(t *testing.T) {
 	t.Parallel()
 
 	Convey("earliestDecisionTime works", t, func() {
+		now := testclock.TestRecentTimeUTC
+		t0 := now.Add(time.Hour)
+
 		earliest := func(cs []*prjpb.Component) time.Time {
-			t, tPB := earliestDecisionTime(cs)
+			t, tPB, asap := earliestDecisionTime(cs)
+			if asap {
+				return now
+			}
 			if t.IsZero() {
 				So(tPB, ShouldBeNil)
 			} else {
@@ -59,7 +65,6 @@ func TestEarliestDecisionTime(t *testing.T) {
 			return t
 		}
 
-		t0 := testclock.TestRecentTimeUTC
 		cs := []*prjpb.Component{
 			{DecisionTime: nil},
 		}
@@ -76,6 +81,13 @@ func TestEarliestDecisionTime(t *testing.T) {
 
 		cs = append(cs, &prjpb.Component{DecisionTime: timestamppb.New(t0)})
 		So(earliest(cs), ShouldResemble, t0)
+
+		cs = append(cs, &prjpb.Component{
+			TriageRequired: true,
+			// DecisionTime in this case doesn't matter.
+			DecisionTime: timestamppb.New(t0.Add(10 * time.Hour)),
+		})
+		So(earliest(cs), ShouldResemble, now)
 	})
 }
 
@@ -271,6 +283,7 @@ func TestComponentsActions(t *testing.T) {
 				So(sideEffect, ShouldBeNil)
 				pb.Components[2].TriageRequired = false
 				pb.Components[3].TriageRequired = false
+				pb.NextEvalTime = timestamppb.New(ct.Clock.Now()) // re-triage ASAP.
 				So(state2.PB, ShouldResembleProto, pb)
 				// Self-poke task must be scheduled for earliest possible from now.
 				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, ct.Clock.Now().Add(prjpb.PMTaskInterval)), ShouldNotBeEmpty)
@@ -436,6 +449,7 @@ func TestComponentsActions(t *testing.T) {
 						Deadline: timestamppb.New(ct.Clock.Now().Add(maxPurgingCLDuration)),
 					},
 				}
+				pb.NextEvalTime = timestamppb.New(ct.Clock.Now()) // re-triage ASAP.
 				So(state2.PB, ShouldResembleProto, pb)
 			})
 

@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
@@ -379,7 +380,13 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 		}
 	}
 
-	if t, tPB := earliestDecisionTime(s.PB.GetComponents()); tPB != nil {
+	switch t, tPB, asap := earliestDecisionTime(s.PB.GetComponents()); {
+	case asap:
+		logging.Warningf(ctx, "earliestDecisionTime is ASAP")
+		t = clock.Now(ctx)
+		tPB = timestamppb.New(t)
+		fallthrough
+	case tPB != nil:
 		s.PB.NextEvalTime = tPB
 		if err := s.PMNotifier.TaskRefs.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
 			return nil, nil, err
