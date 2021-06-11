@@ -40,14 +40,18 @@ import (
 
 // earliestDecisionTime returns the earliest decision time of all components.
 //
-// Returns the same time as time.Time and proto.
+// Returns the same time as time.Time and as proto, and boolean indicating that
+// earliestDecisionTime is as soon as possible.
 //
 // Re-uses DecisionTime of one of the components, assuming that components are
 // modified copy-on-write.
-func earliestDecisionTime(cs []*prjpb.Component) (time.Time, *timestamppb.Timestamp) {
+func earliestDecisionTime(cs []*prjpb.Component) (time.Time, *timestamppb.Timestamp, bool) {
 	var ret time.Time
 	var retPB *timestamppb.Timestamp
 	for _, c := range cs {
+		if c.GetTriageRequired() {
+			return time.Time{}, nil, true
+		}
 		if dt := c.GetDecisionTime(); dt != nil {
 			if t := dt.AsTime(); ret.IsZero() || ret.After(t) {
 				ret = t
@@ -55,7 +59,7 @@ func earliestDecisionTime(cs []*prjpb.Component) (time.Time, *timestamppb.Timest
 			}
 		}
 	}
-	return ret, retPB
+	return ret, retPB, false
 }
 
 // cAction is a component action to be taken during current PM mutation.
