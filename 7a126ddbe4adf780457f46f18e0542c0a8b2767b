@@ -130,6 +130,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "93cf3115_2d347502",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-11T18:43:36Z",
+      "side": 1,
+      "message": "https://crrev.com/c/2957008",
+      "parentUuid": "a2dc64b6_1aacb235",
+      "range": {
+        "startLine": 87,
+        "startChar": 34,
+        "endLine": 87,
+        "endChar": 50
+      },
+      "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9456490c_4dd0fb62",
@@ -143,6 +167,24 @@
       "writtenOn": "2021-06-11T18:32:48Z",
       "side": 1,
       "message": "I would consider it a bug if https://crrev.com/c/2953387 is landed.",
+      "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f595b7ae_815b2da9",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-11T18:43:36Z",
+      "side": 1,
+      "message": "https://crrev.com/c/2957009",
+      "parentUuid": "9456490c_4dd0fb62",
       "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
