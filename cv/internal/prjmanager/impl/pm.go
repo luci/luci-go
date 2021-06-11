@@ -67,9 +67,10 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 	n.TaskRefs.ManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.ManageProjectTask)
+			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			err := pm.manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{
-				KnownRetry: []error{eventbox.ErrConcurretMutation},
+				KnownRetry: []error{eventbox.ErrContention},
 				KnownFatal: []error{errTaskArrivedTooLate},
 			}.Error(ctx, err)
 		},
@@ -92,7 +93,6 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
 
 func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string, taskETA time.Time) error {
-	ctx = logging.SetField(ctx, "project", luciProject)
 	if delay := clock.Now(ctx).Sub(taskETA); delay > prjpb.MaxAcceptableDelay {
 		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)
 		// Scheduling new task reduces probability of concurrent tasks in extreme
@@ -120,9 +120,9 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 			}
 		}
 		return nil
-	case eventbox.IsErrConcurretMutation(err):
+	case eventbox.IsErrContention(err):
 		// Instead of retrying this task at a later time, which has already
-		// overlapped with another task, and risking another overlap for busy
+		// overlapped with another task, and risking another overlap for a busy
 		// project, schedule a new one in the future which will get a chance of
 		// deduplication.
 		if err2 := pm.pmNotifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {

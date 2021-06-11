@@ -369,7 +369,7 @@ func TestEventboxFails(t *testing.T) {
 				return 1, nil
 			}
 			ppfns, err = ProcessBatch(ctx, recipient, p)
-			So(IsErrConcurretMutation(err), ShouldBeTrue)
+			So(IsErrContention(err), ShouldBeTrue)
 			So(ppfns, ShouldBeEmpty)
 			So(firstSideEffectCalled, ShouldBeFalse)
 		})

@@ -16,6 +16,10 @@ package common
 
 import (
 	"context"
+	"strings"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -163,4 +167,22 @@ func matchesErrors(err error, knownErrors ...error) bool {
 		return true // continue iterating
 	})
 	return omit
+}
+
+// IsDatastoreContention is best-effort detection of transactions aborted due to
+// pessimistic concurrency control of Datastore backed by Firestore.
+//
+// This is fragile, because it relies on undocumented but likely rarely changed
+// English description of an error.
+func IsDatastoreContention(err error) bool {
+	ret := false
+	errors.WalkLeaves(err, func(leaf error) bool {
+		s, ok := status.FromError(err)
+		if ok && s.Code() == codes.Aborted && !strings.HasPrefix(s.Message(), "Aborted due to cross-transaction contention") {
+			ret = true
+			return false //stop
+		}
+		return true //continue
+	})
+	return ret
 }

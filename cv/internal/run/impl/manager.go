@@ -59,13 +59,14 @@ func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.C
 	n.TaskRefs.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*eventpb.ManageRunTask)
+			ctx = logging.SetField(ctx, "run", task.GetRunId())
 			err := rm.manageRun(ctx, common.RunID(task.GetRunId()))
 			// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
 			// already scheduled for the next second.
 			return common.TQIfy{
 				KnownRetry: []error{
 					handler.ErrTransientSubmissionFailure,
-					eventbox.ErrConcurretMutation,
+					eventbox.ErrContention,
 				},
 			}.Error(ctx, err)
 		},
@@ -78,7 +79,6 @@ var pokeInterval = 5 * time.Minute
 var fakeHandlerKey = "Fake Run Events Handler"
 
 func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
-	ctx = logging.SetField(ctx, "run", runID)
 	recipient := datastore.MakeKey(ctx, run.RunKind, string(runID))
 	proc := &runProcessor{
 		runID:       runID,
