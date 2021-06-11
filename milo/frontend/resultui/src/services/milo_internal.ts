@@ -72,9 +72,6 @@ export interface QueryBlamelistResponse {
   readonly precedingCommit?: GitCommit;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface GetCurrentUserRequest {}
-
 export interface GetProjectCfgRequest {
   readonly project: string;
 }
