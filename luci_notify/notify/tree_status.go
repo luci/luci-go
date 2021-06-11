@@ -499,6 +499,7 @@ var messages = []string{
 	"అంతా శుభం కలగాలి! ",
 	":')",
 	":'D",
+	"`,;)",
 	"Tree is open (^O^)",
 	"Thượng lộ bình an",
 	"Tree is open now (ง '̀͜ '́ )ง",
