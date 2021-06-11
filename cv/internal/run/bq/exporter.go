@@ -56,5 +56,8 @@ func NewExporter(tqd *tq.Dispatcher, bqc cvbq.Client) *Exporter {
 
 // Schedule enqueues a task to send a row to BQ for a Run.
 func (s *Exporter) Schedule(ctx context.Context, runID common.RunID) error {
-	return s.tqd.AddTask(ctx, &tq.Task{Payload: &ExportRunToBQTask{RunId: string(runID)}})
+	return s.tqd.AddTask(ctx, &tq.Task{
+		Title:   string(runID),
+		Payload: &ExportRunToBQTask{RunId: string(runID)},
+	})
 }
