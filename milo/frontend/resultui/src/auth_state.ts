@@ -34,7 +34,7 @@ export function setAuthState(authState: AuthState | null): Promise<void> {
  * 3. the auth state has expired.
  */
 export function getAuthStateSync() {
-  return cachedAuthState && cachedAuthState.expiresAt > Date.now() ? cachedAuthState : null;
+  return cachedAuthState && cachedAuthState.accessTokenExpiry > Date.now() ? cachedAuthState : null;
 }
 
 /**

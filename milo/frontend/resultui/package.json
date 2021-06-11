@@ -59,8 +59,6 @@
     "@types/cypress-image-snapshot": "^3.1.5",
     "@types/d3": "^6.7.0",
     "@types/dompurify": "^2.2.2",
-    "@types/gapi": "0.0.39",
-    "@types/gapi.auth2": "0.0.54",
     "@types/google.analytics": "0.0.41",
     "@types/karma": "^6.3.0",
     "@types/karma-webpack": "^2.0.9",

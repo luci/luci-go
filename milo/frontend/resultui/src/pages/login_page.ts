@@ -18,6 +18,7 @@ import { css, customElement, html } from 'lit-element';
 import { observable, when } from 'mobx';
 
 import { AppState, consumeAppState } from '../context/app_state';
+import { ANONYMOUS_IDENTITY } from '../libs/constants';
 import { consumer } from '../libs/context';
 import commonStyle from '../styles/common_style.css';
 
@@ -46,27 +47,15 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
   connectedCallback() {
     super.connectedCallback();
     when(
-      () => !!this.appState.userId,
+      () => ![null, ANONYMOUS_IDENTITY].includes(this.appState.userIdentity),
       () => Router.go(this.redirectUri)
     );
   }
 
   protected render() {
-    if (!this.appState.gAuth) {
-      return html`
-        <div id="sign-in-message">
-          You must sign in to see anything useful, but Google signin failed to initialize.<br />
-          Please ensure that cookies from <i>[*.]accounts.google.com</i> are not blocked.
-          <div></div>
-        </div>
-      `;
-    }
     return html`
       <div id="sign-in-message">
-        You must
-        <span id="sign-in-link" @click=${() => this.appState.gAuth?.signIn()}>sign in</span>
-        to see anything useful.
-        <div></div>
+        You must <a target="_blank" href="/auth/openid/login">sign in</a> to see anything useful.
       </div>
     `;
   }
@@ -76,11 +65,6 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
     css`
       #sign-in-message {
         margin: 8px 16px;
-      }
-
-      #sign-in-link {
-        cursor: pointer;
-        text-decoration: underline;
       }
     `,
   ];

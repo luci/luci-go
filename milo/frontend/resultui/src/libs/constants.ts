@@ -107,3 +107,11 @@ export const BUILD_STATUS_COLOR_MAP = Object.freeze({
 });
 
 export const ARTIFACT_LENGTH_LIMIT = 50000;
+
+/**
+ * Expires the access token 1 min earlier to prevent the token from expiring
+ * before the new token is returned.
+ */
+export const ACCESS_TOKEN_EXPIRY_BUFFER = 60 * 1000;
+
+export const ANONYMOUS_IDENTITY = 'anonymous:anonymous';

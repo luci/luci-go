@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import stableStringify from 'fast-json-stable-stringify';
+import { DateTime } from 'luxon';
 
 import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
@@ -108,4 +109,27 @@ export class MiloInternal {
   async getProjectCfg(req: GetProjectCfgRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetProjectCfg', req)) as Project;
   }
+}
+
+interface GetAuthStateResponse {
+  identity: string;
+  email?: string;
+  picture?: string;
+  accessToken?: string;
+  accessTokenExpiry?: string;
+}
+
+export async function queryAuthState(): Promise<AuthState> {
+  const res = await fetch('/auth-state');
+  if (!res.ok) {
+    throw new Error('failed to get auth-state:\n' + (await res.text()));
+  }
+  const state = (await res.json()) as GetAuthStateResponse;
+  // Convert accessTokenExpiry to js timestamp so it's easier to deal with in
+  // JS.
+  const expiry = state.accessTokenExpiry ? DateTime.fromISO(state.accessTokenExpiry).toMillis() : Infinity;
+  return {
+    ...state,
+    accessTokenExpiry: expiry,
+  };
 }

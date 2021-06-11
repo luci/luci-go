@@ -54,9 +54,11 @@ declare const VISIT_ID: string;
 declare var SW_PROMISE: Promise<import('workbox-window').Workbox>;
 
 interface AuthState {
-  accessToken: string;
-  userId: string;
-  expiresAt: number;
+  identity: string;
+  email?: string;
+  picture?: string;
+  accessToken?: string;
+  accessTokenExpiry: number;
 }
 
 /**
