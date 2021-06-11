@@ -244,8 +244,7 @@ func TestRunBuilder(t *testing.T) {
 		Convey("First test to fail: check ID assumption", func() {
 			// If this test fails due to change of runID scheme, update the constant
 			// above.
-			rb.computeCLsDigest()
-			rb.computeRunID(ctx)
+			rb.prepare(ctx)
 			So(rb.runID, ShouldEqual, expectedRunID)
 		})
 
