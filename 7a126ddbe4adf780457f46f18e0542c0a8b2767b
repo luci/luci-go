@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45fb9cb5_853cd528",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-11T18:03:28Z",
+      "side": 1,
+      "message": "LGTM with question",
+      "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02ab7831_356849d0",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-11T18:03:28Z",
+      "side": 1,
+      "message": "So, is it expected that in some cases r.FinalizedByCQD is false, but IsCQDUsingMyRuns is true? Is this a state that may only be possible during migration to milestone-1?",
+      "range": {
+        "startLine": 87,
+        "startChar": 34,
+        "endLine": 87,
+        "endChar": 50
+      },
+      "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
