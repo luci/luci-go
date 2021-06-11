@@ -48,7 +48,7 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	rs = rs.ShallowCopy()
 	var se eventbox.SideEffectFn
 	// TODO(yiwzhang): remove this once Run finalization fully conducted by CV.
-	switch cvInCharge, err := migrationcfg.IsCQDUsingMyRuns(ctx, rs.Run.ID.LUCIProject()); {
+	switch cvInCharge, err := migrationcfg.IsCVInCharge(ctx, rs.Run.ID.LUCIProject()); {
 	case err != nil:
 		return nil, err
 	case !cvInCharge && rs.Run.DelayCancelUntil.IsZero():

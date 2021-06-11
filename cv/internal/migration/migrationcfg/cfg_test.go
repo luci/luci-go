@@ -25,10 +25,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestIsCQDUsingMyRuns(t *testing.T) {
+func TestIsCVInCharge(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsCQDUsingMyRuns works", t, func() {
+	Convey("IsCVInCharge works", t, func() {
 		run := func(project string, settings *migrationpb.Settings, appID string) bool {
 			ct := cvtesting.Test{AppID: appID}
 			ctx, cancel := ct.SetUp()
@@ -36,7 +36,7 @@ func TestIsCQDUsingMyRuns(t *testing.T) {
 
 			So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-			res, err := IsCQDUsingMyRuns(ctx, project)
+			res, err := IsCVInCharge(ctx, project)
 			So(err, ShouldBeNil)
 			return res
 		}

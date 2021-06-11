@@ -84,7 +84,7 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 		// itself, which would have included exporting BQ row.
 
 		// TODO(crbug/1218658): find a proper fix.
-		switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, r.ID.LUCIProject()); {
+		switch yes, err := migrationcfg.IsCVInCharge(ctx, r.ID.LUCIProject()); {
 		case err != nil:
 			return err
 		case !yes:

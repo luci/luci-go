@@ -30,8 +30,8 @@ import (
 	"go.chromium.org/luci/cv/internal/servicecfg"
 )
 
-// IsCQDUsingMyRuns returns true if CQDaemon is using *this* CV's runs.
-func IsCQDUsingMyRuns(ctx context.Context, luciProject string) (bool, error) {
+// IsCVInCharge returns true if CQDaemon is using *this* CV's runs.
+func IsCVInCharge(ctx context.Context, luciProject string) (bool, error) {
 	cfg, err := servicecfg.GetMigrationConfig(ctx)
 	if err != nil {
 		return false, err
