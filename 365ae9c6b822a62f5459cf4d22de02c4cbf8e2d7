@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8da6526a_26254810",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1364448
+      },
+      "writtenOn": "2021-06-11T18:23:40Z",
+      "side": 1,
+      "message": "nit: new line here.",
+      "revId": "365ae9c6b822a62f5459cf4d22de02c4cbf8e2d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
