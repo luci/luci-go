@@ -34,6 +34,24 @@
       "parentUuid": "f775ed0a_304f66ca",
       "revId": "7988b1677a9b63b0c0498de60a2b2aaaf02e6da1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a29cecf5_b9b0f8a0",
+        "filename": "luciexe/tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-11T19:48:01Z",
+      "side": 1,
+      "message": "ah I see. I feel like this package https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/logdog/common/viewer/ might be the most relevant place to hold this constant.",
+      "parentUuid": "333080d8_8d3be6c1",
+      "revId": "7988b1677a9b63b0c0498de60a2b2aaaf02e6da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
