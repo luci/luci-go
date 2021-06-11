@@ -84,10 +84,7 @@ func (s *State) triageComponents(ctx context.Context) ([]*cAction, error) {
 		return nil, err
 	}
 
-	poolSize := concurrentComponentProcessing
-	if n := len(s.PB.GetComponents()); n < poolSize {
-		poolSize = n
-	}
+	poolSize := min(concurrentComponentProcessing, len(s.PB.GetComponents()))
 	now := clock.Now(ctx)
 
 	var mutex sync.Mutex
@@ -173,17 +170,18 @@ func (s *State) triageOneComponent(ctx context.Context, oldC *prjpb.Component, s
 // Expects the state to be already shallow cloned.
 func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEffect, error) {
 	// First, create Runs in parallel.
-	poolSize := concurrentComponentProcessing
-	if l := len(actions); l < poolSize {
-		poolSize = l
-	}
+	// As Run creation may take considerable time, use an earlier deadline to have
+	// enough time to save state for other components.
+	ctxRunCreation, cancel := earlierDeadline(ctx, 5*time.Second)
+	defer cancel()
+	poolSize := min(concurrentComponentProcessing, len(actions))
 	runsErr := parallel.WorkPool(poolSize, func(work chan<- func() error) {
 		for _, action := range actions {
 			for _, rc := range action.RunsToCreate {
 				action, rc := action, rc
 				c := s.PB.GetComponents()[action.componentIndex]
 				work <- func() error {
-					err := s.createOneRun(ctx, rc, c)
+					err := s.createOneRun(ctxRunCreation, rc, c)
 					if err != nil {
 						atomic.AddInt32(&action.runsFailed, 1)
 						// Log error here since only total errs count will be propagated up
@@ -400,4 +398,19 @@ func markForTriage(in []*prjpb.Component) []*prjpb.Component {
 		out[i] = c
 	}
 	return out
+}
+
+func earlierDeadline(ctx context.Context, reserve time.Duration) (context.Context, context.CancelFunc) {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return ctx, func() {} // no deadline
+	}
+	return clock.WithDeadline(ctx, deadline.Add(-reserve))
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }
