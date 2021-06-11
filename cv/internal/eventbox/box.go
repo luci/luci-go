@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox/dsset"
 )
 
@@ -60,14 +61,15 @@ func List(ctx context.Context, recipient *datastore.Key) (Events, error) {
 	}
 }
 
-// ErrConcurretMutation indicates concurrent mutation.
-var ErrConcurretMutation = errors.New("Concurrent mutation")
+// ErrContention indicates Datastore contention, usually on the mailbox
+// recipient entity itself.
+var ErrContention = errors.New("Contention")
 
-// IsErrConcurretMutation checks if error is due to concurrent mutation.
-func IsErrConcurretMutation(err error) bool {
+// IsErrContention checks if error, possibly wrapped, is ErrContention.
+func IsErrContention(err error) bool {
 	ret := false
 	errors.WalkLeaves(err, func(e error) bool {
-		ret = (e == ErrConcurretMutation)
+		ret = (e == ErrContention)
 		return !ret // return false means stop traversing.
 	})
 	return ret
@@ -80,8 +82,9 @@ func IsErrConcurretMutation(err error) bool {
 //  - a slice of non-nil post process functions which SHOULD be executed
 //    immediately after calling this function. Those are generally extra work
 //    that needs to be done as the result of state modification.
-//  - error while processing events. Returns wrapped ErrConcurretMutation
-//    if entity's EVersion has changed.
+//  - error while processing events. Returns wrapped ErrContention
+//    if entity's EVersion has changed or there is contention on Datastore
+//    entities involved in a transaction.
 func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([]PostProcessFn, error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch")
 	var err error
@@ -137,7 +140,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 		case err != nil:
 			return err
 		case latestEV != expectedEV:
-			return errors.Annotate(ErrConcurretMutation, "EVersion read %d, but expected %d", latestEV, expectedEV).Tag(transient.Tag).Err()
+			return errors.Annotate(ErrContention, "EVersion read %d, but expected %d", latestEV, expectedEV).Tag(transient.Tag).Err()
 		}
 		popOp, err := d.BeginPop(ctx, listing)
 		if err != nil {
@@ -169,6 +172,8 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 	switch {
 	case innerErr != nil:
 		return nil, innerErr
+	case common.IsDatastoreContention(err):
+		return nil, errors.Annotate(ErrContention, "failed to commit mutation: %s", err).Tag(transient.Tag).Err()
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to commit mutation").Tag(transient.Tag).Err()
 	default:
