@@ -308,7 +308,7 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 		return ks.GenerateCommand(ctx, bb)
 	}
 
-	// TODO(iannucci): have bbagent set 'logdog.viewer_url' to the milo build
+	// TODO(iannucci): have bbagent set logdog.viewer.LogDogViewerURLTag to the milo build
 	// view URL if there's no buildbucket build associated with it.
 	ret := []string{"bbagent${EXECUTABLE_SUFFIX}"}
 	if bb.FinalBuildProtoPath != "" {
