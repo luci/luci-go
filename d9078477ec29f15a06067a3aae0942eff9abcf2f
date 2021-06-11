@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "f672b9b9_534508b2",
+        "filename": "led/job/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-11T03:04:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20377b68_2a01382d",
+      "range": {
+        "startLine": 311,
+        "startChar": 37,
+        "endLine": 311,
+        "endChar": 44
+      },
+      "revId": "d9078477ec29f15a06067a3aae0942eff9abcf2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c8959b37_7e6f79cd",
         "filename": "luciexe/host/options.go",
         "patchSetId": 1
@@ -60,6 +84,30 @@
       "writtenOn": "2021-06-11T02:07:23Z",
       "side": 1,
       "message": "luciexe, same at L53",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 12
+      },
+      "revId": "d9078477ec29f15a06067a3aae0942eff9abcf2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aba69276_cd220382",
+        "filename": "luciexe/host/options_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-11T03:04:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8acd350_ac174c7d",
       "range": {
         "startLine": 46,
         "startChar": 5,
