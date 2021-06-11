@@ -45,6 +45,29 @@
       },
       "revId": "4ae51de82131b6f0b92054971a7611d90da66554",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f618353a_5a9b4c4f",
+        "filename": "cv/internal/prjmanager/runcreator/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-11T18:16:22Z",
+      "side": 1,
+      "message": "nit: I think we should round regardless because there\u0027s no guarantee that input is rounded (well, for gerrit, I think it never has ms precision?). i.e.\n```\nif rb.CreateTime.IsZero() {\n  rb.CreatTime \u003d clock.Now(ctx).UTC()\n}\nrb.CreatTime \u003d datastore.RoundTime(rb.CreateTime)\n```",
+      "range": {
+        "startLine": 191,
+        "startChar": 0,
+        "endLine": 193,
+        "endChar": 2
+      },
+      "revId": "4ae51de82131b6f0b92054971a7611d90da66554",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
