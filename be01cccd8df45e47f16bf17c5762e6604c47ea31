@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "355002fb_377fe999",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-11T22:36:46Z",
+      "side": 1,
+      "message": "saving?",
+      "range": {
+        "startLine": 171,
+        "startChar": 15,
+        "endLine": 171,
+        "endChar": 22
+      },
+      "revId": "be01cccd8df45e47f16bf17c5762e6604c47ea31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
