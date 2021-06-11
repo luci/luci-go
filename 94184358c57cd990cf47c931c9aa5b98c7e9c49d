@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "110e8ae3_42f6fe86",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-11T23:46:07Z",
+      "side": 1,
+      "message": "removed this TODO, and added TODO(crbug.com/1219086) in bbagent",
+      "parentUuid": "93fc4660_13b2e51b",
+      "range": {
+        "startLine": 311,
+        "startChar": 1,
+        "endLine": 311,
+        "endChar": 80
+      },
+      "revId": "94184358c57cd990cf47c931c9aa5b98c7e9c49d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1bdcde19_326ddf05",
@@ -78,6 +102,30 @@
       "writtenOn": "2021-06-11T23:13:44Z",
       "side": 1,
       "message": "... link back to the source of the log stream (usually a build page).",
+      "range": {
+        "startLine": 27,
+        "startChar": 20,
+        "endLine": 27,
+        "endChar": 50
+      },
+      "revId": "94184358c57cd990cf47c931c9aa5b98c7e9c49d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2820a08d_941befc7",
+        "filename": "logdog/common/viewer/url.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-11T23:46:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1bdcde19_326ddf05",
       "range": {
         "startLine": 27,
         "startChar": 20,
