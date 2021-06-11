@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87a85d62_67a215fd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1364448
+      },
+      "writtenOn": "2021-06-11T18:06:55Z",
+      "side": 1,
+      "message": "bug number goes here, the description of what the cl does should be put above. See https://crrev.com/c/2908652 for an example of the format.",
+      "range": {
+        "startLine": 9,
+        "startChar": 5,
+        "endLine": 9,
+        "endChar": 45
+      },
+      "revId": "7afe4c87b0ebdd68bd2fad180d497877260c07eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
