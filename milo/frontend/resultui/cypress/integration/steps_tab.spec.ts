@@ -14,13 +14,11 @@
 
 describe('Steps & Logs Tab', () => {
   it('should accept arbitrary path suffix', () => {
-    cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/steps/an/arbitrary/path/suffix');
     cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15252/steps');
   });
 
   it('support expanding all steps by default', () => {
-    cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/steps');
     cy.get('#expand-by-default').click();
     cy.get('milo-expandable-entry milo-build-step-entry');

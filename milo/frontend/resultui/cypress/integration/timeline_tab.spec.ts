@@ -14,14 +14,12 @@
 
 describe('Timeline Tab', () => {
   it('should render timeline correctly', () => {
-    cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/timeline');
     cy.get('#timeline');
     cy.matchImageSnapshot('timeline-tab');
   });
 
   it('can handle builds with no steps', () => {
-    cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15467/timeline');
     cy.get('#no-steps').contains('No steps were run.');
   });

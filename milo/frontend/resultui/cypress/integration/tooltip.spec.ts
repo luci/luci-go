@@ -14,7 +14,6 @@
 
 describe('Tooltip', () => {
   it('should render tooltip at the correct position', () => {
-    cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/overview');
     cy.get('.badge').first().trigger('mouseover');
 

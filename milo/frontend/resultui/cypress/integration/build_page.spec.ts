@@ -14,13 +14,11 @@
 
 describe('Build Page', () => {
   it('should navigate to the default tab', () => {
-    cy.stubPrpcServices();
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252');
     cy.url().should('include', '/overview');
   });
 
   it('should initiate the signin flow if the page is 404 and the user is not logged in', () => {
-    cy.stubPrpcServices();
     cy.visit('/p/not-bound-project/builders/not-bound-bucket/not-found-builder/12479');
     cy.on('uncaught:exception', () => false);
     cy.location('pathname').should('include', '/ui/login');
