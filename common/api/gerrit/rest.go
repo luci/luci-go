@@ -518,7 +518,7 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 
 	switch res.StatusCode {
 	case http.StatusTooManyRequests:
-		logging.Errorf(ctx, "Gerrit quota error.\nResponse headers: %v\nResponse body: %s",
+		logging.Warningf(ctx, "Gerrit quota error.\nResponse headers: %v\nResponse body: %s",
 			res.Header, body)
 		return res.StatusCode, body, status.Errorf(codes.ResourceExhausted, "insufficient Gerrit quota")
 

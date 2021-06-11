@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -73,6 +74,7 @@ func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
+			ctx = logging.SetField(ctx, "project", t.GetLuciProject())
 			err := u.Refresh(ctx, t)
 			return common.TQIfy{
 				// Don't log the entire stack trace of stale data, which is sadly an

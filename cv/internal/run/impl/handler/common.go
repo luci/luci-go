@@ -114,7 +114,7 @@ func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.R
 	}
 
 	luciProject := runID.LUCIProject()
-	err = parallel.WorkPool(10, func(work chan<- func() error) {
+	err = parallel.WorkPool(min(len(toCancel), 10), func(work chan<- func() error) {
 		for i := range toCancel {
 			i := i
 			work <- func() error {
@@ -141,4 +141,11 @@ func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.R
 		}
 	}
 	return nil
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }
