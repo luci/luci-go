@@ -76,7 +76,10 @@ type Creator struct {
 	// TODO(tandrii): for CV API, record this ID in a separate entity index by
 	// this ID for full idempotency of CV API.
 	OperationID string
-	// CreateTime is used if given as Run.CreateTime. Optional.
+	// CreateTime is rounded by datastore.RoundTime and used as Run.CreateTime as
+	// well as RunID generation.
+	//
+	// Optional. By default, it's the current time.
 	CreateTime time.Time
 
 	// Internal state: pre-computed once before transaction starts.
@@ -185,12 +188,16 @@ func (rb *Creator) prepare(ctx context.Context) error {
 			panic("Each CL field is required")
 		}
 	}
+	if rb.CreateTime.IsZero() {
+		rb.CreateTime = clock.Now(ctx)
+	}
+	rb.CreateTime = datastore.RoundTime(rb.CreateTime).UTC()
 	rb.computeCLsDigest()
+	rb.computeRunID()
 	return nil
 }
 
 func (rb *Creator) createTransactionally(ctx context.Context, pm PM, rm RM) (*run.Run, error) {
-	rb.computeRunID(ctx)
 	switch err := rb.load(ctx); {
 	case err == errAlreadyCreated:
 		return rb.run, nil
@@ -298,9 +305,10 @@ func (rb *Creator) checkCLsUnchanged(ctx context.Context) {
 func (rb *Creator) save(ctx context.Context, pm PM, rm RM) error {
 	rb.dsBatcher.reset()
 	// Keep .CreateTime and .UpdateTime entities the same across all saved
-	// entities. Do pre-emptive rounding before Datastore layer does it, such
-	// that rb.run entity has the exact same fields' values as if entity was read
-	// from the Datastore.
+	// entities (except possibly Run, whose createTime can be overridden). Do
+	// pre-emptive rounding before Datastore layer does it, such that rb.run
+	// entity has the exact same fields' values as if entity was read from the
+	// Datastore.
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	rb.registerSaveRun(ctx, now)
 	for i := range rb.InputCLs {
@@ -330,10 +338,6 @@ func (rb *Creator) save(ctx context.Context, pm PM, rm RM) error {
 }
 
 func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
-	createTime := now // default
-	if !rb.CreateTime.IsZero() {
-		createTime = rb.CreateTime
-	}
 	ids := make(common.CLIDs, len(rb.InputCLs))
 	for i, cl := range rb.InputCLs {
 		ids[i] = cl.ID
@@ -343,7 +347,7 @@ func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
 		CQDAttemptKey:       rb.run.ID.AttemptKey(),
 		EVersion:            1,
 		CreationOperationID: rb.OperationID,
-		CreateTime:          createTime,
+		CreateTime:          rb.CreateTime,
 		UpdateTime:          now,
 		// EndTime & StartTime intentionally left unset.
 
@@ -433,9 +437,9 @@ func (rb *Creator) computeCLsDigest() {
 }
 
 // computeRunID generates and saves new Run ID in `.runID`.
-func (rb *Creator) computeRunID(ctx context.Context) {
+func (rb *Creator) computeRunID() {
 	b := &rb.runIDBuilder
-	rb.runID = common.MakeRunID(rb.LUCIProject, clock.Now(ctx), b.version, b.digest)
+	rb.runID = common.MakeRunID(rb.LUCIProject, rb.CreateTime, b.version, b.digest)
 }
 
 // dsBatcher facilitates processing of many different kind of entities in a
