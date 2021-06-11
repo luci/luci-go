@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a63cbecf_e0e0fac2",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-11T22:51:09Z",
+      "side": 1,
+      "message": "I\u0027ll rephrase this",
+      "parentUuid": "355002fb_377fe999",
+      "range": {
+        "startLine": 171,
+        "startChar": 15,
+        "endLine": 171,
+        "endChar": 22
+      },
+      "revId": "be01cccd8df45e47f16bf17c5762e6604c47ea31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0e557cf2_8cd0be69",
         "filename": "buildbucket/cmd/bbagent/main.go",
         "patchSetId": 1
@@ -61,6 +85,30 @@
       "side": 1,
       "message": "😱",
       "parentUuid": "0e557cf2_8cd0be69",
+      "range": {
+        "startLine": 189,
+        "startChar": 18,
+        "endLine": 189,
+        "endChar": 29
+      },
+      "revId": "be01cccd8df45e47f16bf17c5762e6604c47ea31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "71a8197d_566edc03",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-11T22:51:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb7f25e0_e77cad75",
       "range": {
         "startLine": 189,
         "startChar": 18,
