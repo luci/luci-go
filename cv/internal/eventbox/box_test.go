@@ -62,7 +62,7 @@ func (p *processor) SaveState(ctx context.Context, s State, e EVersion) error {
 	return transient.Tag.Apply(datastore.Put(ctx, &c))
 }
 
-func (p *processor) Mutate(ctx context.Context, events Events, s State) (ts []Transition, _ Events, err error) {
+func (p *processor) PrepareMutation(ctx context.Context, events Events, s State) (ts []Transition, _ Events, err error) {
 	ctx = logging.SetField(ctx, "index", p.index)
 	// Simulate variation of game of life.
 	population := s.(*int)
@@ -274,7 +274,7 @@ func TestEventboxPostProcessFn(t *testing.T) {
 		}
 		Convey("Returns PostProcessFns for successful state transitions", func() {
 			var calledForStates []int
-			p.mutate = func(ctx context.Context, es Events, s State) ([]Transition, Events, error) {
+			p.prepareMutation = func(ctx context.Context, es Events, s State) ([]Transition, Events, error) {
 				gotState := *(s.(*int))
 				return []Transition{
 					{
@@ -328,7 +328,7 @@ func TestEventboxFails(t *testing.T) {
 			// panic (see mockProc implementation below).
 		}
 		Convey("Mutate() failure aborts", func() {
-			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, nil, errors.New("oops")
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p)
@@ -340,7 +340,7 @@ func TestEventboxFails(t *testing.T) {
 		const firstIndex = 88
 		secondState := initState + 1
 		var second SideEffectFn
-		p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+		p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 			return []Transition{
 				{
 					SideEffectFn: func(ctx context.Context) error {
@@ -462,7 +462,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 		}
 
 		Convey("Mutate returns no transitions", func() {
-			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p)
@@ -472,7 +472,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 		Convey("Mutate returns no transitions, but some semantic garbage is still cleaned up", func() {
 			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
 			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
-			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p)
@@ -486,7 +486,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 		Convey("Garbage is cleaned up even if Mutate also returns error", func() {
 			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
 			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
-			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], errors.New("boom")
 			}
 			_, err := ProcessBatch(ctx, recipient, p)
@@ -497,7 +497,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			So(l[0].Value, ShouldResemble, []byte("msg"))
 		})
 		Convey("Mutate returns empty slice of transitions", func() {
-			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{}, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p)
@@ -505,7 +505,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			So(ppfns, ShouldBeEmpty)
 		})
 		Convey("Mutate returns noop transitions only", func() {
-			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{
 					{TransitionTo: s},
 				}, nil, nil
@@ -516,7 +516,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 		})
 
 		Convey("Test's own sanity check that fetchEVersion is called and panics", func() {
-			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
+			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{
 					{TransitionTo: new(int)},
 				}, nil, nil
@@ -527,17 +527,17 @@ func TestEventboxNoopTransitions(t *testing.T) {
 }
 
 type mockProc struct {
-	loadState     func(_ context.Context) (State, EVersion, error)
-	mutate        func(_ context.Context, _ Events, _ State) ([]Transition, Events, error)
-	fetchEVersion func(_ context.Context) (EVersion, error)
-	saveState     func(_ context.Context, _ State, _ EVersion) error
+	loadState       func(_ context.Context) (State, EVersion, error)
+	prepareMutation func(_ context.Context, _ Events, _ State) ([]Transition, Events, error)
+	fetchEVersion   func(_ context.Context) (EVersion, error)
+	saveState       func(_ context.Context, _ State, _ EVersion) error
 }
 
 func (m *mockProc) LoadState(ctx context.Context) (State, EVersion, error) {
 	return m.loadState(ctx)
 }
-func (m *mockProc) Mutate(ctx context.Context, e Events, s State) ([]Transition, Events, error) {
-	return m.mutate(ctx, e, s)
+func (m *mockProc) PrepareMutation(ctx context.Context, e Events, s State) ([]Transition, Events, error) {
+	return m.prepareMutation(ctx, e, s)
 }
 func (m *mockProc) FetchEVersion(ctx context.Context) (EVersion, error) {
 	return m.fetchEVersion(ctx)
@@ -546,7 +546,7 @@ func (m *mockProc) SaveState(ctx context.Context, s State, e EVersion) error {
 	return m.saveState(ctx, s, e)
 }
 
-func TestChain(t *testing.T) {
+func PrepareMutation(t *testing.T) {
 	t.Parallel()
 
 	Convey("Chain of SideEffectFn works", t, func() {

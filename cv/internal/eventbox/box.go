@@ -118,7 +118,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 	}
 
 	// Compute resulting state before transaction.
-	transitions, garbage, err := p.Mutate(ctx, toEvents(listing.Items), state)
+	transitions, garbage, err := p.PrepareMutation(ctx, toEvents(listing.Items), state)
 	if gErr := deleteSemanticGarbage(ctx, &d, garbage); gErr != nil {
 		return nil, gErr
 	}
@@ -185,8 +185,8 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 type Processor interface {
 	// LoadState is called to load the state before a transaction.
 	LoadState(context.Context) (State, EVersion, error)
-	// Mutate is called before a transaction to compute transitions based on a
-	// batch of events.
+	// PrepareMutation is called before a transaction to compute transitions based
+	// on a batch of events.
 	//
 	// All actions that must be done atomically with updating state must be
 	// encapsulated inside Transition.SideEffectFn callback.
@@ -194,7 +194,7 @@ type Processor interface {
 	// Garbage events will be deleted non-transactionally before executing
 	// transactional transitions. These events may still be processed by a
 	// concurrent invocation of a Processor. The garbage events slice may re-use
-	// the given events slice. The garbage will be deleted even if Mutate returns
+	// the given events slice. The garbage will be deleted even if PrepareMutation returns
 	// non-nil error.
 	//
 	// For correctness, two concurrent invocation of a Processor must choose the
@@ -204,7 +204,7 @@ type Processor interface {
 	//   P2:  ............ B and ............................... A.
 	// Then, it's a real possibility that A and B are both deleted AND no neither
 	// P1 nor P2 commits a transaction, thus forever forgetting about A and B.
-	Mutate(context.Context, Events, State) (transitions []Transition, garbage Events, err error)
+	PrepareMutation(context.Context, Events, State) (transitions []Transition, garbage Events, err error)
 	// FetchEVersion is called at the beginning of a transaction.
 	//
 	// The returned EVersion is compared against the one associated with a state

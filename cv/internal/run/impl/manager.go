@@ -130,12 +130,12 @@ func (rp *runProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox
 	return rs, eventbox.EVersion(r.EVersion), nil
 }
 
-// Mutate is called before a transaction to compute transitions based on a
+// PrepareMutation is called before a transaction to compute transitions based on a
 // batch of events.
 //
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
-func (rp *runProcessor) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, eventbox.Events, error) {
+func (rp *runProcessor) PrepareMutation(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, eventbox.Events, error) {
 	tr := &triageResult{}
 	for _, e := range events {
 		tr.triage(ctx, e)
