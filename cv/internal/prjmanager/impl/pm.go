@@ -172,11 +172,11 @@ func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbo
 	}
 }
 
-// Mutate is called before a transaction to compute transitions.
+// PrepareMutation is called before a transaction to compute transitions.
 //
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
-func (proc *pmProcessor) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) (ts []eventbox.Transition, noops eventbox.Events, err error) {
+func (proc *pmProcessor) PrepareMutation(ctx context.Context, events eventbox.Events, s eventbox.State) (ts []eventbox.Transition, noops eventbox.Events, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/Mutate")
 	defer func() { span.End(err) }()
 
