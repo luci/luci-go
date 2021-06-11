@@ -16,6 +16,7 @@
 
 import { getAuthState, setAuthState } from './auth_state';
 import { Prefetcher } from './prefetch';
+import { AuthState } from './services/milo_internal';
 
 importScripts('/configs.js');
 

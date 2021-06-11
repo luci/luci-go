@@ -19,6 +19,7 @@ import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
 import { Build, GetBuildRequest } from '../services/buildbucket';
+import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { AppState } from './app_state';
 import { BuildState } from './build_state';
 
@@ -30,7 +31,7 @@ describe('BuildState', () => {
   beforeEach(() => {
     const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
     appState = new AppState();
-    appState.userId = '';
+    appState.authState = { identity: ANONYMOUS_IDENTITY };
     getBuildStub = sinon.stub(appState.buildsService!, 'getBuild');
     getBuildStub.onCall(0).resolves({ number: 1, id: '2', builder: builderId } as Build);
     getBuildStub.onCall(1).resolves({ number: 1, id: '2', builder: builderId } as Build);
