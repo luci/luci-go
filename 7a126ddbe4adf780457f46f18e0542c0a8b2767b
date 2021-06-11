@@ -108,6 +108,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a2dc64b6_1aacb235",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-11T18:36:02Z",
+      "side": 1,
+      "message": "OK, i agree with all of above.\n\nI want to land this sooner, so we can fix prod BQ data sooner. Your points I\u0027ll address in a follow up CL.",
+      "parentUuid": "e9b90613_6ed450fc",
+      "range": {
+        "startLine": 87,
+        "startChar": 34,
+        "endLine": 87,
+        "endChar": 50
+      },
+      "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9456490c_4dd0fb62",
         "filename": "cv/internal/run/bq/bq.go",
         "patchSetId": 1
