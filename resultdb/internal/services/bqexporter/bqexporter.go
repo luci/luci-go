@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -175,16 +174,7 @@ type bqInserter struct {
 // Put implements inserter.
 func (i *bqInserter) Put(ctx context.Context, src interface{}) error {
 	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		err := i.inserter.Put(ctx, src)
-
-		// ins.Put has retries for most errors, but it does not retry
-		// "http2: stream closed" error. Retry only on that.
-		// TODO(nodir): remove this code when https://github.com/googleapis/google-api-go-client/issues/450
-		// is fixed.
-		if err != nil && strings.Contains(err.Error(), "http2: stream closed") {
-			err = transient.Tag.Apply(err)
-		}
-		return err
+		return i.inserter.Put(ctx, src)
 	}, retry.LogCallback(ctx, "bigquery_put"))
 }
 
