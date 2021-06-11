@@ -88,7 +88,7 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 		case err != nil:
 			return err
 		case !yes:
-			logging.Warningf(ctx, "CV is not in charge, but it finalized a Run. Exporting to CV's BQ table only")
+			logging.Errorf(ctx, "CV is not in charge, but it finalized a Run. Exporting to CV's BQ table only")
 		default:
 			logging.Debugf(ctx, "CV exporting Run to CQ BQ table")
 			eg.Go(func() error {
