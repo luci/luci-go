@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f775ed0a_304f66ca",
+        "filename": "luciexe/tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-11T17:49:21Z",
+      "side": 1,
+      "message": "Sorry, I didn\u0027t think super carefully yesterday when reviewing it. Now that I read through everything, I think it makes more sense to put this tag in `logdog` package because it a logdog specific concept (i.e. bbagent/kitchen populate this only because it is needed in logdog). You can remove the Logdog prefix so this variable become `logdog.ViewerURLTag`. WDYT?",
+      "revId": "7988b1677a9b63b0c0498de60a2b2aaaf02e6da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
