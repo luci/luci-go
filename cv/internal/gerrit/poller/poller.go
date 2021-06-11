@@ -63,6 +63,7 @@ func New(tqd *tq.Dispatcher, clUpdater *updater.Updater, pm PM) *Poller {
 		Kind:      tq.NonTransactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*task.PollGerritTask)
+			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			err := p.poll(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{
 				KnownRetry: []error{errConcurrentStateUpdate},
@@ -184,7 +185,6 @@ func (p *Poller) schedule(ctx context.Context, luciProject string, after time.Ti
 	if err := p.tqd.AddTask(ctx, task); err != nil {
 		return err
 	}
-	logging.Debugf(ctx, "scheduled next poll for %q at %s", luciProject, eta)
 	return nil
 }
 
@@ -314,12 +314,11 @@ func save(ctx context.Context, s *State) error {
 
 	switch {
 	case innerErr != nil:
-		err = innerErr
+		return innerErr
 	case err != nil:
-		err = errors.Annotate(err, "failed to save poller state").Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to save poller state").Tag(transient.Tag).Err()
 	default:
 		*s = copied
 		return nil
 	}
-	return errors.Annotate(err, "project %q", s.LuciProject).Err()
 }
