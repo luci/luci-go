@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ebe8ecd_636332c7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-11T17:07:23Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "0d554e3e3486383d0860f7a079bfe1f176050bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "117b9577_640dc871",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-11T17:07:23Z",
+      "side": 1,
+      "message": "Nit: Since this is a duration that is subtracted, you could call it something else (like just `dur`, or `durationToSubtract` or something) since delay makes it sound like it should be later.\n\nOr the function could be `adjustedDeadline`, but in that case line 408 could be `...deadline.Add(delay)`.",
+      "range": {
+        "startLine": 403,
+        "startChar": 42,
+        "endLine": 403,
+        "endChar": 47
+      },
+      "revId": "0d554e3e3486383d0860f7a079bfe1f176050bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
