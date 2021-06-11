@@ -80,6 +80,47 @@
       },
       "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9b90613_6ed450fc",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-11T18:32:48Z",
+      "side": 1,
+      "message": "First of all, I think we should really rename IsCQDUsingMyRuns to IsCVInCharge to add more clarity because I keep treat IsCQDUsingMyRuns \u003d true as CQD is in charge. \n\nI guess Quinten think the same way here, so I assume this question as is it possible that run is not finalized by CQDaemon, but we get CV is *NOT* in charge here and we end up never emit BQ.\n\nI feel like the answer is unfortunately yes but under race condition and it should be rare.\n\nt0: Run A is running and CQD is in charge\nt1: Run A is switch to CV in charge but the config change only populates to CQD atm\nt2: Run A finishes verification. Since CV is in charge, CQD reports verified Run to CV.\nt3: CV finalizes the Run but doesn\u0027t do BQ export because it think CQD is still in charge of Run A\nt4: CV finally realize it\u0027s in charge of Run A and it\u0027s too late :(",
+      "parentUuid": "02ab7831_356849d0",
+      "range": {
+        "startLine": 87,
+        "startChar": 34,
+        "endLine": 87,
+        "endChar": 50
+      },
+      "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9456490c_4dd0fb62",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-11T18:32:48Z",
+      "side": 1,
+      "message": "I would consider it a bug if https://crrev.com/c/2953387 is landed.",
+      "revId": "7a126ddbe4adf780457f46f18e0542c0a8b2767b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
