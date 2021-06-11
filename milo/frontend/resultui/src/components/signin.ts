@@ -14,7 +14,7 @@
 
 import { css, customElement, html, LitElement, property } from 'lit-element';
 
-export type UserUpdateEvent = CustomEvent<gapi.auth2.GoogleUser>;
+import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 
 /**
  * `milo-signin` is a web component that manages signing into services using
@@ -28,37 +28,17 @@ export type UserUpdateEvent = CustomEvent<gapi.auth2.GoogleUser>;
  */
 @customElement('milo-signin')
 export class SignInElement extends LitElement {
-  gAuth!: gapi.auth2.GoogleAuth;
-  @property() private profile: gapi.auth2.BasicProfile | null = null;
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.onUserUpdate(this.gAuth.currentUser.get());
-  }
-
-  firstUpdated() {
-    this.gAuth.currentUser.listen(this.onUserUpdate);
-  }
-
-  private onUserUpdate = (user: gapi.auth2.GoogleUser) => {
-    this.profile = user.isSignedIn() ? user.getBasicProfile()! : null;
-    this.dispatchEvent(
-      new CustomEvent<gapi.auth2.GoogleUser>('user-update', {
-        detail: user,
-        composed: true,
-      })
-    );
-  };
+  @property() private identity?: string;
+  @property() private email?: string;
+  @property() private picture?: string;
 
   protected render() {
-    if (this.profile === null) {
-      return html`<div class="link" @click=${() => this.gAuth.signIn()}>Login</div>`;
+    if (!this.identity || this.identity === ANONYMOUS_IDENTITY) {
+      return html`<a target="_blank" href="/auth/openid/login">Login</a>`;
     }
     return html`
-      <img src=${this.profile.getImageUrl()} />
-      <div>${this.profile.getEmail()}</div>
-      <div>|</div>
-      <div class="link" @click=${() => this.gAuth.signOut()}>Logout</div>
+      ${this.picture ? html`<img src=${this.picture} />` : ''}
+      <div>${this.email} | <a target="_blank" href="/auth/openid/logout">Logout</a></div>
     `;
   }
 
@@ -66,6 +46,10 @@ export class SignInElement extends LitElement {
     :host {
       display: inline-block;
       height: 32px;
+      line-height: 32px;
+    }
+    a {
+      color: var(--default-text-color);
     }
     img {
       margin: 2px 3px;
@@ -74,14 +58,9 @@ export class SignInElement extends LitElement {
       border-radius: 6px;
       overflow: hidden;
     }
-    .link {
-      cursor: pointer;
-      text-decoration: underline;
-    }
     div {
       display: inline-block;
       height: 32px;
-      line-height: 32px;
       vertical-align: top;
     }
   `;
