@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getAuthState, getAuthStateSync } from './auth_state';
+import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from './auth_state_cache';
 import { cached } from './libs/cached_fn';
 import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
 import { timeout } from './libs/utils';
 import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from './services/buildbucket';
+import { queryAuthState } from './services/milo_internal';
 import {
   constructArtifactName,
   getInvIdFromBuildId,
@@ -26,7 +27,12 @@ import {
   UISpecificService,
 } from './services/resultdb';
 
+// TSC isn't able to determine the scope properly.
+// Perform manual casting to fix typing.
+const _self = self as unknown as ServiceWorkerGlobalScope;
+
 const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
+const AUTH_STATE_CACHE_KEY = Math.random().toString();
 
 /**
  * Set the cache duration to 5s.
@@ -53,6 +59,7 @@ export class Prefetcher {
     `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
     `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
     `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants`,
+    `https://${_self.location.host}/prpc/luci.milo.v1.MiloInternal/GetAuthState`,
   ];
 
   private cachedFetch = cached(
@@ -92,7 +99,7 @@ export class Prefetcher {
         },
       },
 
-      () => getAuthStateSync()?.accessToken || ''
+      () => getAuthStateCacheSync()?.accessToken || ''
     );
   }
 
@@ -104,10 +111,15 @@ export class Prefetcher {
   async prefetchResources(reqUrl: URL) {
     // Prefetch services relies on the in-memory cache.
     // Call getAuthState to populate the in-memory cache.
-    const authState = await getAuthState();
+    const authState = await getAuthStateCache();
+
+    const queryAuthStatePromise = queryAuthState((info, init) =>
+      this.cachedFetch({}, info, init, AUTH_STATE_CACHE_KEY, CACHE_DURATION).then((res) => res.clone())
+    ).then(setAuthStateCache);
     if (!authState) {
-      return;
+      await queryAuthStatePromise;
     }
+
     this.prefetchBuildPageResources(reqUrl);
     this.prefetchArtifactPageResources(reqUrl);
   }
