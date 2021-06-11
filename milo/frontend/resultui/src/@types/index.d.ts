@@ -53,17 +53,6 @@ declare const VISIT_ID: string;
 // eslint-disable-next-line no-var
 declare var SW_PROMISE: Promise<import('workbox-window').Workbox>;
 
-interface AuthState {
-  accessToken: string;
-  userId: string;
-  expiresAt: number;
-}
-
-/**
- * A cached access token loaded from the service worker.
- */
-declare const CACHED_AUTH_STATE: AuthState | null;
-
 /**
  * A cached user ID loaded from the service worker.
  */
