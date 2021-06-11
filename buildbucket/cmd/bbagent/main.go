@@ -167,6 +167,24 @@ func mainImpl() int {
 	cctx = setResultDBContext(cctx, input.Build, secrets)
 	prepareInputBuild(cctx, input.Build)
 
+	// TODO(crbug.com/1211789) - When ScheduleBuild was ported to Go,
+	// it started sending `tags` in the scheduled Build message. This
+	// behavior means that setting host.Options.BaseBuild = input.Build
+	// would cause bbagent to regurgitate input tags back to Buildbucket.
+	//
+	// Normally this would be fine (Buildbucket would deduplicate them),
+	// except in the case of some special tags (like "buildset").
+	//
+	// We strip the input tags here just for host.Options.BaseBuild to
+	// avoid this scenario; however it has the side effect that led tasks
+	// which are scheduled directly on Swarming will not show the tags on
+	// the Milo UI. When led jobs eventually become "real" buildbucket jobs
+	// this discrepancy would go away (and it may also make sense to remove
+	// BaseBuild from host.Options, since it really only needs to carry the
+	// user-code-generated-delta at that point).
+	hostOptionsBaseBuild := proto.Clone(input.Build).(*bbpb.Build)
+	hostOptionsBaseBuild.Tags = nil
+
 	opts := &host.Options{
 		BaseBuild:      input.Build,
 		ButlerLogLevel: logging.Warning,
