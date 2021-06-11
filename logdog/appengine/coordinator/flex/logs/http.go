@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/logdog/common/viewer"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
@@ -138,7 +139,7 @@ type logData struct {
 
 func (ld *logData) viewerURL() string {
 	// logDesc can be nil if the log doesn't exist
-	return ld.logDesc.GetTags()["logdog.viewer_url"]
+	return ld.logDesc.GetTags()[viewer.LogDogViewerURLTag]
 }
 
 // nopFlusher is an http.Flusher that does nothing.  It's used as a standin
