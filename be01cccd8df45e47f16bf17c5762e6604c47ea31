@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "07c8416a_e38f86ee",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-11T22:53:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a63cbecf_e0e0fac2",
+      "range": {
+        "startLine": 171,
+        "startChar": 15,
+        "endLine": 171,
+        "endChar": 22
+      },
+      "revId": "be01cccd8df45e47f16bf17c5762e6604c47ea31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0e557cf2_8cd0be69",
