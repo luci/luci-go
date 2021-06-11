@@ -16,7 +16,7 @@ import { aTimeout } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 
-import { setAuthState } from './auth_state';
+import { setAuthStateCache } from './auth_state_cache';
 import { PrpcClientExt } from './libs/prpc_client_ext';
 import { Prefetcher } from './prefetch';
 import { BUILD_FIELD_MASK, BuildsService } from './services/buildbucket';
@@ -35,7 +35,7 @@ describe('prefetch', () => {
   let uiSpecifiedService: UISpecificService;
 
   beforeEach(async () => {
-    await setAuthState({ accessToken: 'access-token', identity: 'user:user-id' });
+    await setAuthStateCache({ accessToken: 'access-token', identity: 'user:user-id' });
 
     fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
     respondWithStub = sinon.stub<[Response | Promise<Response>], void>();
