@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2451a8b7_acf4446b",
+        "filename": "cv/internal/prjmanager/runcreator/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-11T18:23:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5c711598_7d8e1c56",
+      "range": {
+        "startLine": 79,
+        "startChar": 26,
+        "endLine": 79,
+        "endChar": 28
+      },
+      "revId": "4ae51de82131b6f0b92054971a7611d90da66554",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ecf470dd_ab34bb8f",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d85d3451_531b8dec",
+        "filename": "cv/internal/prjmanager/runcreator/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-11T18:23:58Z",
+      "side": 1,
+      "message": "Yes, but this can easily change and shouldn\u0027t affect whoever reads this code.",
+      "parentUuid": "ecf470dd_ab34bb8f",
+      "range": {
+        "startLine": 82,
+        "startChar": 35,
+        "endLine": 82,
+        "endChar": 47
+      },
+      "revId": "4ae51de82131b6f0b92054971a7611d90da66554",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f618353a_5a9b4c4f",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-06-11T18:16:22Z",
       "side": 1,
       "message": "nit: I think we should round regardless because there\u0027s no guarantee that input is rounded (well, for gerrit, I think it never has ms precision?). i.e.\n```\nif rb.CreateTime.IsZero() {\n  rb.CreatTime \u003d clock.Now(ctx).UTC()\n}\nrb.CreatTime \u003d datastore.RoundTime(rb.CreateTime)\n```",
+      "range": {
+        "startLine": 191,
+        "startChar": 0,
+        "endLine": 193,
+        "endChar": 2
+      },
+      "revId": "4ae51de82131b6f0b92054971a7611d90da66554",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a369b8d_10c1d976",
+        "filename": "cv/internal/prjmanager/runcreator/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-11T18:23:58Z",
+      "side": 1,
+      "message": "Yes, and I definitely meant to do this...Done.",
+      "parentUuid": "f618353a_5a9b4c4f",
       "range": {
         "startLine": 191,
         "startChar": 0,
