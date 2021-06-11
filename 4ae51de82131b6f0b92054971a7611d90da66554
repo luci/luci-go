@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c711598_7d8e1c56",
+        "filename": "cv/internal/prjmanager/runcreator/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-11T18:13:49Z",
+      "side": 1,
+      "message": "Nit: \"by\"?",
+      "range": {
+        "startLine": 79,
+        "startChar": 26,
+        "endLine": 79,
+        "endChar": 28
+      },
+      "revId": "4ae51de82131b6f0b92054971a7611d90da66554",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ecf470dd_ab34bb8f",
+        "filename": "cv/internal/prjmanager/runcreator/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-11T18:13:49Z",
+      "side": 1,
+      "message": "Or more specifically, it\u0027s the current time at the time that `prepare` is called for this Creator.",
+      "range": {
+        "startLine": 82,
+        "startChar": 35,
+        "endLine": 82,
+        "endChar": 47
+      },
+      "revId": "4ae51de82131b6f0b92054971a7611d90da66554",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
