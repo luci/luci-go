@@ -44,7 +44,7 @@ func TestInstanceCache(t *testing.T) {
 		now := time.Date(2016, 1, 2, 3, 4, 5, 6, time.UTC)
 
 		fs := fs.NewFileSystem(tempDir, "")
-		cache := NewInstanceCache(fs)
+		cache := NewInstanceCache(fs, false)
 		cache.maxSize = testInstanceCacheMaxSize
 
 		put := func(cache *InstanceCache, pin common.Pin, data string) {
@@ -66,7 +66,7 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		Convey("Works", func() {
-			cache2 := NewInstanceCache(fs)
+			cache2 := NewInstanceCache(fs, false)
 			cache2.maxSize = testInstanceCacheMaxSize
 
 			pin := common.Pin{"pkg", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
