@@ -45,6 +45,30 @@
       },
       "revId": "be01cccd8df45e47f16bf17c5762e6604c47ea31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb7f25e0_e77cad75",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-11T22:48:58Z",
+      "side": 1,
+      "message": "😱",
+      "parentUuid": "0e557cf2_8cd0be69",
+      "range": {
+        "startLine": 189,
+        "startChar": 18,
+        "endLine": 189,
+        "endChar": 29
+      },
+      "revId": "be01cccd8df45e47f16bf17c5762e6604c47ea31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
