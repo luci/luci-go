@@ -93,8 +93,14 @@ func NewInstanceCache(fs fs.FileSystem, tmp bool) *InstanceCache {
 type cacheFile struct {
 	*os.File
 
+	size  int64
 	cache *InstanceCache
 	pin   common.Pin
+}
+
+// Size returns the package file size.
+func (f *cacheFile) Size() int64 {
+	return f.size
 }
 
 // Close removes this file from the cache if `corrupt` is true or it is a
@@ -157,13 +163,23 @@ func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) 
 	if err != nil {
 		return nil, err
 	}
+	stat, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
 
 	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		touch(s, pin.InstanceID, now)
 		return true
 	})
 
-	return &cacheFile{f, c, pin}, nil
+	return &cacheFile{
+		File:  f,
+		size:  stat.Size(),
+		cache: c,
+		pin:   pin,
+	}, nil
 }
 
 // Put caches an instance.
