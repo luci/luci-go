@@ -29,6 +29,7 @@ import (
 	ldOutput "go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/output/null"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/viewer"
 )
 
 // Options is an optional struct which allows you to control how Run operates.
@@ -91,7 +92,7 @@ type Options struct {
 	LeakBaseDir bool
 
 	// The viewer URL for this hosted execution (if any). This will be used to
-	// apply the "logdog.viewer_url" tag to all logdog streams (the tag which is
+	// apply viewer.LogdogViewerURLTag to all logdog streams (the tag which is
 	// used to implement the "Back to build" link in Milo).
 	ViewerURL string
 
@@ -200,7 +201,7 @@ func (o *Options) initialize() (err error) {
 	}
 
 	if o.ViewerURL != "" {
-		o.logdogTags = streamproto.TagMap{"logdog.viewer_url": o.ViewerURL}
+		o.logdogTags = streamproto.TagMap{viewer.LogDogViewerURLTag: o.ViewerURL}
 	}
 
 	// BaseBuild is nil in testing scenarios only.

@@ -23,6 +23,10 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 )
 
+// LogDogViewerURLTag is a special LogDog tag that is recognized by the LogDog
+// viewer as a link back to the source of the log stream (usually a build page).
+const LogDogViewerURLTag = "logdog.viewer_url"
+
 // GetURL generates a LogDog app viewer URL for the specified streams.
 // Uses the plain-text endpoint for single stream paths, and the client-side endpoint for multi-stream paths.
 func GetURL(host string, project string, paths ...types.StreamPath) string {

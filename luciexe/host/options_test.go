@@ -19,6 +19,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/viewer"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -33,24 +34,24 @@ func TestOptions(t *testing.T) {
 				Project: "proj-c",
 			}
 
-			Convey(`logdog.viewer_url`, func() {
+			Convey(`logdog viewer URL`, func() {
 				opts.ViewerURL = "https://example.org"
 
 				// w/ BaseBuild
 				opts.BaseBuild = &bbpb.Build{Builder: builder}
 				So(opts.initialize(), ShouldBeNil)
 				So(opts.logdogTags, ShouldResemble, streamproto.TagMap{
-					"buildbucket.builder": "builder-a",
-					"buildbucket.bucket":  "bucket-b",
-					"buildbucket.project": "proj-c",
-					"logdog.viewer_url":   "https://example.org",
+					"buildbucket.builder":     "builder-a",
+					"buildbucket.bucket":      "bucket-b",
+					"buildbucket.project":     "proj-c",
+					viewer.LogDogViewerURLTag: "https://example.org",
 				})
 
 				// w/o BaseBuild
 				opts.BaseBuild = nil
 				So(opts.initialize(), ShouldBeNil)
 				So(opts.logdogTags, ShouldResemble, streamproto.TagMap{
-					"logdog.viewer_url": "https://example.org",
+					viewer.LogDogViewerURLTag: "https://example.org",
 				})
 			})
 

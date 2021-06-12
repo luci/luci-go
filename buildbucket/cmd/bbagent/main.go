@@ -189,6 +189,7 @@ func mainImpl() int {
 	opts := &host.Options{
 		BaseBuild:      hostOptionsBaseBuild,
 		ButlerLogLevel: logging.Warning,
+		// TODO(crbug.com/1219086) - generate a correct URL for LED tasks.
 		ViewerURL: fmt.Sprintf("https://%s/build/%d",
 			input.Build.Infra.Buildbucket.Hostname, input.Build.Id),
 		LogdogOutput: logdogOutput,
