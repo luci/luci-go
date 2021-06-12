@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "51231bf9_1d0b3021",
+        "filename": "cipd/client/cipd/pkg/source.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-12T01:13:17Z",
+      "side": 1,
+      "message": "This is mostly for google3, to avoid changing the API exposed there (there\u0027s also no benefit from ReaderAt, since google3 code only uses RegisterInstance call essentially).",
+      "range": {
+        "startLine": 82,
+        "startChar": 3,
+        "endLine": 82,
+        "endChar": 19
+      },
+      "revId": "ceadafd22e0f8657fc5ccf5ab2a6b53366553f5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
