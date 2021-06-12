@@ -2278,7 +2278,7 @@ func makeTestInstance(name string, files []fs.File, installMode pkg.InstallMode)
 
 func (f *testPackageInstance) Pin() Pin                          { return Pin{f.packageName, f.instanceID} }
 func (f *testPackageInstance) Files() []fs.File                  { return f.files }
-func (f *testPackageInstance) Source() io.ReadSeeker             { panic("Not implemented") }
+func (f *testPackageInstance) Source() pkg.Source                { panic("Not implemented") }
 func (f *testPackageInstance) Close(context.Context, bool) error { return nil }
 
 ////////////////////////////////////////////////////////////////////////////////
