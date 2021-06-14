@@ -109,24 +109,18 @@ func OpenInstance(ctx context.Context, r pkg.Source, opts OpenInstanceOpts) (pkg
 	return out, nil
 }
 
-type fileSource struct {
-	*os.File
-}
-
-func (d fileSource) Close(context.Context, bool) error { return d.File.Close() }
-
 // OpenInstanceFile opens a package instance by reading it from a file on disk.
 //
 // The caller is responsible for closing the instance when done with it. This
 // will close the underlying file too.
 func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (pkg.Instance, error) {
-	file, err := os.Open(path)
+	file, err := pkg.NewFileSource(path)
 	if err != nil {
 		return nil, err
 	}
-	inst, err := OpenInstance(ctx, fileSource{file}, opts)
+	inst, err := OpenInstance(ctx, file, opts)
 	if err != nil {
-		file.Close()
+		file.Close(ctx, false)
 		return nil, err
 	}
 	return inst, nil
@@ -472,16 +466,13 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 		}
 	}
 
-	var dataSize int64
-	var err error
-
 	switch opts.VerificationMode {
 	case CalculateHash:
-		var h hash.Hash
-		if h, err = common.NewHash(opts.HashAlgo); err != nil {
+		h, err := common.NewHash(opts.HashAlgo)
+		if err != nil {
 			return err
 		}
-		if dataSize, err = getHashAndSize(inst.data, h); err != nil {
+		if err := calculateHash(inst.data, h); err != nil {
 			return err
 		}
 		inst.instanceID = common.ObjectRefToInstanceID(&api.ObjectRef{
@@ -492,7 +483,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 	case VerifyHash:
 		obj := common.InstanceIDToObjectRef(opts.InstanceID)
 		h := common.MustNewHash(obj.HashAlgo)
-		if dataSize, err = getHashAndSize(inst.data, h); err != nil {
+		if err := calculateHash(inst.data, h); err != nil {
 			return err
 		}
 		if common.HexDigest(h) != obj.HexDigest {
@@ -501,23 +492,12 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 		inst.instanceID = opts.InstanceID // validated to match the data!
 
 	case SkipHashVerification:
-		if dataSize, err = inst.data.Seek(0, os.SEEK_END); err != nil {
-			return err
-		}
 		inst.instanceID = opts.InstanceID // just trust
 	}
 
-	// Zip reader needs an io.ReaderAt. Try to sniff it from our io.ReadSeeker
-	// before falling back to a generic (potentially slower) implementation. This
-	// works if inst.data is actually an os.File (which happens quite often).
-	reader, ok := inst.data.(io.ReaderAt)
-	if !ok {
-		reader = &readerAt{r: inst.data}
-	}
-
 	// List files and package manifest.
-	inst.zip, err = zip.NewReader(reader, dataSize)
-	if err != nil {
+	var err error
+	if inst.zip, err = zip.NewReader(inst.data, inst.data.Size()); err != nil {
 		return err
 	}
 	inst.files = make([]fs.File, len(inst.zip.File))
@@ -580,8 +560,8 @@ func (inst *packageInstance) Pin() common.Pin {
 	}
 }
 
-func (inst *packageInstance) Files() []fs.File      { return inst.files }
-func (inst *packageInstance) Source() io.ReadSeeker { return inst.data }
+func (inst *packageInstance) Files() []fs.File   { return inst.files }
+func (inst *packageInstance) Source() pkg.Source { return inst.data }
 func (inst *packageInstance) Close(ctx context.Context, corrupt bool) error {
 	return inst.data.Close(ctx, corrupt)
 }
@@ -602,17 +582,10 @@ func IsCorruptionError(err error) bool {
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities.
 
-// getHashAndSize rereads the entire file, passing it through the digester.
-//
-// Returns file length.
-func getHashAndSize(r io.ReadSeeker, h hash.Hash) (int64, error) {
-	if _, err := r.Seek(0, os.SEEK_SET); err != nil {
-		return 0, err
-	}
-	if _, err := io.Copy(h, r); err != nil {
-		return 0, err
-	}
-	return r.Seek(0, os.SEEK_CUR)
+// calculateHash reads the entire file, passing it through the digester.
+func calculateHash(r pkg.Source, h hash.Hash) error {
+	_, err := io.Copy(h, io.NewSectionReader(r, 0, r.Size()))
+	return err
 }
 
 // readManifestFile decodes manifest file zipped inside the package.
@@ -736,23 +709,4 @@ func (f *fileInZip) Open() (io.ReadCloser, error) {
 		return ioutil.NopCloser(bytes.NewReader(f.body)), nil
 	}
 	return f.z.Open()
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// ReaderAt thread-safe implementation via ReadSeeker.
-
-type readerAt struct {
-	sync.Mutex
-
-	r io.ReadSeeker
-}
-
-func (r *readerAt) ReadAt(data []byte, off int64) (int, error) {
-	r.Lock()
-	defer r.Unlock()
-	_, err := r.r.Seek(off, os.SEEK_SET)
-	if err != nil {
-		return 0, err
-	}
-	return r.r.Read(data)
 }

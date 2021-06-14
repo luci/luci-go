@@ -135,7 +135,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.2"
+	UserAgent = "cipd 2.5.3"
 )
 
 func init() {
@@ -219,7 +219,7 @@ type Client interface {
 	// 'timeout' specifies for how long to wait until the instance hash is
 	// verified by the storage backend. If 0, default CASFinalizationTimeout will
 	// be used.
-	RegisterInstance(ctx context.Context, pin common.Pin, body io.ReadSeeker, timeout time.Duration) error
+	RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) error
 
 	// DescribeInstance returns information about a package instance.
 	//
@@ -1011,7 +1011,7 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	return pin, nil
 }
 
-func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, body io.ReadSeeker, timeout time.Duration) error {
+func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) error {
 	if timeout == 0 {
 		timeout = CASFinalizationTimeout
 	}
@@ -1053,7 +1053,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 	}
 
 	// The backend asked us to upload the data to CAS. Do it.
-	if err := client.storage.upload(ctx, uploadOp.UploadUrl, body); err != nil {
+	if err := client.storage.upload(ctx, uploadOp.UploadUrl, io.NewSectionReader(src, 0, src.Size())); err != nil {
 		return err
 	}
 	if err := client.finalizeUpload(ctx, uploadOp.OperationId, timeout); err != nil {
@@ -1409,7 +1409,7 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 	}()
 
 	logging.Infof(ctx, "cipd: copying the instance into the final destination...")
-	_, err = io.Copy(output, input)
+	_, err = io.Copy(output, io.NewSectionReader(input, 0, input.Size()))
 	return err
 }
 
@@ -1420,7 +1420,7 @@ func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.P
 	if err != nil {
 		return nil, err
 	}
-	tmp := deleteOnClose{f}
+	tmp := &deleteOnClose{File: f}
 
 	// Make sure to remove the garbage on errors or panics.
 	ok := false
@@ -1435,6 +1435,12 @@ func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.P
 	if err := client.remoteFetchInstance(ctx, pin, tmp); err != nil {
 		return nil, err
 	}
+
+	stat, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	tmp.size = stat.Size()
 
 	if _, err := tmp.Seek(0, os.SEEK_SET); err != nil {
 		return nil, err
