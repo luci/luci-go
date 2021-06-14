@@ -121,7 +121,7 @@ func TestPackageReading(t *testing.T) {
 		So(len(inst.Files()), ShouldEqual, 1)
 
 		// CalculatePin also agrees with the value of the pin.
-		calcedPin, err := CalculatePin(ctx, bytes.NewReader(out.Bytes()), api.HashAlgo_SHA256)
+		calcedPin, err := CalculatePin(ctx, pkg.NewBytesSource(out.Bytes()), api.HashAlgo_SHA256)
 		So(err, ShouldBeNil)
 		So(calcedPin, ShouldResemble, pin)
 

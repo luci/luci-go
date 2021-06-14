@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -59,7 +60,7 @@ func TestInstanceCache(t *testing.T) {
 		testHas := func(cache *InstanceCache, pin common.Pin, data string) {
 			r, err := cache.Get(ctx, pin, now)
 			So(err, ShouldBeNil)
-			buf, err := ioutil.ReadAll(r)
+			buf, err := ioutil.ReadAll(io.NewSectionReader(r, 0, r.Size()))
 			So(err, ShouldBeNil)
 			So(string(buf), ShouldEqual, data)
 			So(r.Close(ctx, false), ShouldBeNil)

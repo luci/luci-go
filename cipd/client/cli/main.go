@@ -2821,11 +2821,11 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 		return common.Pin{}, err
 	}
 
-	src, err := os.Open(instanceFile)
+	src, err := pkg.NewFileSource(instanceFile)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer src.Close()
+	defer src.Close(ctx, false)
 
 	// Calculate the pin if not yet known.
 	var pin common.Pin

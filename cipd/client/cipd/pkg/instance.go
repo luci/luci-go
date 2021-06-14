@@ -16,7 +16,6 @@ package pkg
 
 import (
 	"context"
-	"io"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
@@ -36,7 +35,7 @@ type Instance interface {
 	Files() []fs.File
 
 	// Source returns a reader that reads raw package data.
-	Source() io.ReadSeeker
+	Source() Source
 
 	// Close can be used to indicate to the storage (filesystem and/or cache)
 	// layer that this instance is actually bad. The storage layer can then

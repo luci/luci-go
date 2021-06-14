@@ -24,10 +24,16 @@ import (
 // Implements pkg.Source interface. Used by fetchInstanceNoCache.
 type deleteOnClose struct {
 	*os.File
+	size int64
+}
+
+// Size returns the file size.
+func (d *deleteOnClose) Size() int64 {
+	return d.size
 }
 
 // Close closes the underlying file and then deletes it.
-func (d deleteOnClose) Close(ctx context.Context, corrupt bool) (err error) {
+func (d *deleteOnClose) Close(ctx context.Context, corrupt bool) (err error) {
 	name := d.File.Name()
 	defer func() {
 		if rmErr := os.Remove(name); err == nil && rmErr != nil && !os.IsNotExist(rmErr) {
@@ -38,6 +44,6 @@ func (d deleteOnClose) Close(ctx context.Context, corrupt bool) (err error) {
 }
 
 // UnderlyingFile is only used by tests and shouldn't be used directly.
-func (d deleteOnClose) UnderlyingFile() *os.File {
+func (d *deleteOnClose) UnderlyingFile() *os.File {
 	return d.File
 }
