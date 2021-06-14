@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3e21c5b_9595c239",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-14T18:15:46Z",
+      "side": 1,
+      "message": "LGTM, but please get Vadim\u0027s LGTM too",
+      "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b75109c_9e04a0e8",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-14T18:15:46Z",
+      "side": 1,
+      "message": "\"Only handle errors once\" from https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully\n\nif the direct/indrect callsite logs the error, then it will be logged twice.\nbetter to add this additional info (failed to JSON encode...) to the error and return it; without logging",
+      "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74ca3436_17e5a0dd",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-14T18:15:46Z",
+      "side": 1,
+      "message": "by this time, the body of the response is already written, so doing anything with the header is noop.\n\nthis should happen before we write the body",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 71,
+        "endChar": 36
+      },
+      "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b665ffb8_d28162bf",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-14T18:15:46Z",
+      "side": 1,
+      "message": "isn\u0027t this the default? why is it configured only for /auth-state ?",
+      "range": {
+        "startLine": 161,
+        "startChar": 36,
+        "endLine": 161,
+        "endChar": 78
+      },
+      "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
