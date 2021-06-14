@@ -16,6 +16,40 @@
       "message": "Verified that the code, linked in cloud.google.com/go/bigquery has the change.\nhttps://github.com/googleapis/google-cloud-go/blob/bigquery/v1.18.0/bigquery/bigquery.go#L177",
       "revId": "b327e2f3b07d1cddfcd6f414fe88e5524ae691fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a61d625_4fd9ad01",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-14T18:25:39Z",
+      "side": 1,
+      "message": "yay",
+      "revId": "b327e2f3b07d1cddfcd6f414fe88e5524ae691fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f74c5196_2fab61f8",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-14T18:25:39Z",
+      "side": 1,
+      "message": "we no longer need this. i.inserter.Put doesn\u0027t return errors annotated wit luci-specific transient package",
+      "revId": "b327e2f3b07d1cddfcd6f414fe88e5524ae691fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
