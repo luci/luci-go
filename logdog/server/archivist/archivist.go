@@ -38,11 +38,13 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	tsmon_types "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/config"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/archive"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/logdog/common/viewer"
 )
 
 const (
@@ -655,6 +657,13 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		if sa.realm != "" {
 			tags["realm"] = sa.realm
 		}
+
+		// bbagent adds viewer.LogDogViewerURLTag to log streams for
+		// "back to build" link in UI
+		//
+		// This URL isn't useful in Cloud Logging UI, and doesn't add any value
+		// to search capabilities. So, remove it.
+		delete(tags, viewer.LogDogViewerURLTag)
 
 		switch val, ok := tags["luci.CloudLogExportID"]; {
 		case !ok, len(val) == 0: // skip
