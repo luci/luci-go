@@ -16,6 +16,52 @@
       "message": "🎉",
       "revId": "a84c78c95339e4446231367dfaf00da6e7e5b374",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35e7329d_78a1cac0",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-06-14T21:26:30Z",
+      "side": 1,
+      "message": "nit: scheduleBuild",
+      "range": {
+        "startLine": 58,
+        "startChar": 70,
+        "endLine": 58,
+        "endChar": 75
+      },
+      "revId": "a84c78c95339e4446231367dfaf00da6e7e5b374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88c3eb63_cec74f30",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-06-14T21:26:30Z",
+      "side": 1,
+      "message": "nit: get/search/cancel",
+      "range": {
+        "startLine": 61,
+        "startChar": 70,
+        "endLine": 61,
+        "endChar": 74
+      },
+      "revId": "a84c78c95339e4446231367dfaf00da6e7e5b374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
