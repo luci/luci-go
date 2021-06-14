@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -176,29 +175,6 @@ type table interface {
 	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
 	Create(ctx context.Context, md *bigquery.TableMetadata) error
 	Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string) (*bigquery.TableMetadata, error)
-}
-
-// bqInserter is an implementation of inserter.
-// It's a wrapper around bigquery.Inserter to retry transient errors that are
-// not currently retried by bigquery.Inserter.
-type bqInserter struct {
-	inserter *bigquery.Inserter
-}
-
-// Put implements inserter.
-func (i *bqInserter) Put(ctx context.Context, src interface{}) error {
-	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		err := i.inserter.Put(ctx, src)
-
-		// ins.Put has retries for most errors, but it does not retry
-		// "http2: stream closed" error. Retry only on that.
-		// TODO(nodir): remove this code when https://github.com/googleapis/google-api-go-client/issues/450
-		// is fixed.
-		if err != nil && strings.Contains(err.Error(), "http2: stream closed") {
-			err = transient.Tag.Apply(err)
-		}
-		return err
-	}, retry.LogCallback(ctx, "bigquery_put"))
 }
 
 func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
@@ -427,9 +403,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 	defer client.Close()
 
 	table := client.Dataset(bqExport.Dataset).Table(bqExport.Table)
-	ins := &bqInserter{
-		inserter: table.Inserter(),
-	}
+	ins := table.Inserter()
 
 	switch bqExport.ResultType.(type) {
 	case *pb.BigQueryExport_TestResults_:
