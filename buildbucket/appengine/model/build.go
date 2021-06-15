@@ -54,7 +54,7 @@ func isHiddenTag(key string) bool {
 type PubSubCallback struct {
 	AuthToken string `gae:"auth_token,noindex"`
 	Topic     string `gae:"topic,noindex"`
-	UserData  string `gae:"user_data,noindex"`
+	UserData  []byte `gae:"user_data,noindex"`
 }
 
 // Build is a representation of a build in the datastore.
