@@ -70,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "46fbf8a2_f1b893fe",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-15T23:20:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "909a8194_7336346e",
+      "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "27cb3a42_81a48ae4",
@@ -83,6 +101,24 @@
       "writtenOn": "2021-06-15T22:34:21Z",
       "side": 1,
       "message": "does it consume a build number? i.e. does the RPC make side effects?",
+      "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1e73646_7ab6b2bc",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-15T23:20:51Z",
+      "side": 1,
+      "message": "No, added generic comment (I\u0027m not sure I want to list everything it does and doesn\u0027t do specifically).",
+      "parentUuid": "27cb3a42_81a48ae4",
       "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
