@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import stableStringify from 'fast-json-stable-stringify';
-import { computed, observable } from 'mobx';
+import { computed, observable, untracked } from 'mobx';
 
 import { createContextLink } from '../libs/context';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { AccessService, BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
-import { MiloInternal } from '../services/milo_internal';
+import { AuthState, MiloInternal, queryAuthState } from '../services/milo_internal';
 import { ResultDb, UISpecificService } from '../services/resultdb';
 
 /**
@@ -26,14 +26,6 @@ import { ResultDb, UISpecificService } from '../services/resultdb';
  */
 export class AppState {
   @observable.ref timestamp = Date.now();
-
-  // Don't make this an observable so services won't be refreshed after updating
-  // the access token.
-  accessToken = '';
-  // null means the userId is uninitialized (i.e. we don't know whether
-  // the user is logged in or not).
-  // '' means the user is not logged in.
-  @observable.ref userId: string | null = null;
 
   // The timestamp when the user selected the current tab.
   tabSelectionTime = TIME_ORIGIN;
@@ -63,8 +55,6 @@ export class AppState {
   @observable.ref hasSettingsDialog = 0;
   @observable.ref showSettingsDialog = false;
 
-  @observable.ref gAuth: gapi.auth2.GoogleAuth | null = null;
-
   // null means it's not initialized yet.
   // undefined means there's no such service worker.
   @observable.ref redirectSw: ServiceWorkerRegistration | null | undefined = null;
@@ -82,9 +72,38 @@ export class AppState {
 
   @observable.ref private isDisposed = false;
 
+  @observable.ref authState: AuthState | null = null;
+
+  // null means the userIdentity is uninitialized (i.e. we don't know whether
+  // the user is logged in or not).
+  @computed get userIdentity() {
+    return this.authState?.identity || null;
+  }
+
+  constructor() {
+    const updateAuthState = async () => {
+      if (this.isDisposed) {
+        return;
+      }
+
+      this.authState = await queryAuthState();
+
+      if (!this.authState.accessTokenExpiry) {
+        return;
+      }
+
+      const validDuration = this.authState.accessTokenExpiry * 1000 - Date.now();
+
+      // Refresh the access token 10s earlier to prevent the token from expiring
+      // before the new token is returned.
+      window.setTimeout(updateAuthState, validDuration - 10000);
+    };
+    updateAuthState();
+  }
+
   @computed({ keepAlive: true })
   get resultDb(): ResultDb | null {
-    if (this.isDisposed || this.userId === null) {
+    if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
     return new ResultDb(this.makeClient(CONFIGS.RESULT_DB.HOST));
@@ -92,7 +111,7 @@ export class AppState {
 
   @computed({ keepAlive: true })
   get uiSpecificService(): UISpecificService | null {
-    if (this.isDisposed || this.userId === null) {
+    if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
     return new UISpecificService(this.makeClient(CONFIGS.RESULT_DB.HOST));
@@ -100,7 +119,7 @@ export class AppState {
 
   @computed({ keepAlive: true })
   get milo(): MiloInternal | null {
-    if (this.isDisposed || this.userId === null) {
+    if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
     return new MiloInternal(this.makeClient(''));
@@ -108,7 +127,7 @@ export class AppState {
 
   @computed({ keepAlive: true })
   get buildsService(): BuildsService | null {
-    if (this.isDisposed || this.userId === null) {
+    if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
     return new BuildsService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
@@ -116,7 +135,7 @@ export class AppState {
 
   @computed({ keepAlive: true })
   get buildersService(): BuildersService | null {
-    if (this.isDisposed || this.userId === null) {
+    if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
     return new BuildersService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
@@ -124,7 +143,7 @@ export class AppState {
 
   @computed({ keepAlive: true })
   get accessService(): AccessService | null {
-    if (this.isDisposed || this.userId === null) {
+    if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
     return new AccessService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
@@ -148,7 +167,9 @@ export class AppState {
   }
 
   private makeClient(host: string) {
-    return new PrpcClientExt({ host }, () => this.accessToken);
+    // Don't track the access token so services won't be refreshed when the
+    // access token is updated.
+    return new PrpcClientExt({ host }, () => untracked(() => this.authState?.accessToken || ''));
   }
 
   // Refresh all data that depends on the timestamp.

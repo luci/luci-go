@@ -32,14 +32,8 @@ import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
 import { genFeedbackUrl } from '../libs/utils';
 import { router } from '../routes';
+import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import commonStyle from '../styles/common_style.css';
-import { UserUpdateEvent } from './signin';
-
-const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
-  window.gapi?.load('auth2', () => {
-    gapi.auth2.init({ client_id: CONFIGS.OAUTH2.CLIENT_ID, scope: 'email' }).then(resolve, reject);
-  });
-});
 
 function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
   // TODO(weiweilin): add integration tests to ensure redirection works properly.
@@ -47,7 +41,7 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
     const mayRequireSignin = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(
       err.error.code
     );
-    if (mayRequireSignin && ele.appState.userId === '') {
+    if (mayRequireSignin && ele.appState.authState?.identity === ANONYMOUS_IDENTITY) {
       Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
       return false;
     }
@@ -73,26 +67,6 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
   });
 
   @observable.ref showUpdateBanner = false;
-
-  constructor() {
-    super();
-    // Expires the token slightly (10s) earlier so an expired token won't be
-    // used if gAuth takes a while to return the new access token.
-    // We can't solely rely on SW to check the expiration because an expired
-    // state could be used if <milo-page-layout /> is reinitialized at a later
-    // stage.
-    if (CACHED_AUTH_STATE && CACHED_AUTH_STATE.expiresAt > Date.now() + 10000) {
-      this.appState.accessToken = CACHED_AUTH_STATE.accessToken;
-      this.appState.userId = CACHED_AUTH_STATE.userId;
-    }
-
-    gAuthPromise
-      .then((gAuth) => (this.appState.gAuth = gAuth))
-      .catch(() => {
-        this.appState.userId = '';
-        this.appState.accessToken = '';
-      });
-  }
 
   onBeforeEnter() {
     if ('serviceWorker' in navigator) {
@@ -157,24 +131,11 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
           >settings</mwc-icon
         >
         <div id="signin">
-          ${this.appState.gAuth
-            ? html` <milo-signin
-                .gAuth=${this.appState.gAuth}
-                @user-update=${async (e: UserUpdateEvent) => {
-                  const authResponse = e.detail.getAuthResponse();
-                  const accessToken = authResponse.access_token || '';
-                  const userId = e.detail.isSignedIn() ? e.detail.getId() : '';
-                  this.appState.accessToken = accessToken;
-                  this.appState.userId = userId;
-                  const authState: AuthState = {
-                    accessToken,
-                    userId,
-                    // authResponse.expires_at is undefined when user is logged
-                    // out. We can cache this indefinitely.
-                    expiresAt: authResponse.expires_at ?? Infinity,
-                  };
-                  (await window.SW_PROMISE).messageSW({ type: 'SET_AUTH_STATE', authState });
-                }}
+          ${this.appState.authState
+            ? html`<milo-signin
+                .identity=${this.appState.authState.identity}
+                .email=${this.appState.authState.email}
+                .picture=${this.appState.authState.picture}
               ></milo-signin>`
             : ''}
         </div>

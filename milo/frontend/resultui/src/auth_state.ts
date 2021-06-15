@@ -14,7 +14,9 @@
 
 import { get as kvGet, set as kvSet } from 'idb-keyval';
 
-const AUTH_STATE_KEY = 'auth-state';
+import { AuthState } from './services/milo_internal';
+
+const AUTH_STATE_KEY = 'auth-state-v2';
 
 // In-memory cache. Can be used to access the cache synchronously.
 let cachedAuthState: AuthState | null = null;
@@ -34,7 +36,10 @@ export function setAuthState(authState: AuthState | null): Promise<void> {
  * 3. the auth state has expired.
  */
 export function getAuthStateSync() {
-  return cachedAuthState && cachedAuthState.expiresAt > Date.now() ? cachedAuthState : null;
+  if (!cachedAuthState?.accessTokenExpiry) {
+    return cachedAuthState;
+  }
+  return cachedAuthState.accessTokenExpiry * 1000 > Date.now() ? cachedAuthState : null;
 }
 
 /**
