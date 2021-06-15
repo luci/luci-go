@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4848ae2d_26f87188",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-15T02:00:18Z",
+      "side": 1,
+      "message": "I\u0027m worried about leaking the response of /auth-state via URL Fetch from another domain. E.g. imagine 5 years ago someone asked \"We want to fetch Milo pages from our website so we can parse them or something\" and as a response someone added a policy that allowed cross-origin URL fetch for any Milo HTTP endpoint. That would be bad. It is a hypothetical situation, but worth double checking.",
+      "parentUuid": "5c6fc74f_50239972",
+      "revId": "7b07fa2f6741d5503a1205d72237fcbea6a4c09c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0f336970_f48dff53",
