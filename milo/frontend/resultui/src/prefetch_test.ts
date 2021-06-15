@@ -35,7 +35,7 @@ describe('prefetch', () => {
   let uiSpecifiedService: UISpecificService;
 
   beforeEach(async () => {
-    await setAuthState({ accessToken: 'access-token', userId: 'user-id', expiresAt: Infinity });
+    await setAuthState({ accessToken: 'access-token', identity: 'user:user-id' });
 
     fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
     respondWithStub = sinon.stub<[Response | Promise<Response>], void>();
