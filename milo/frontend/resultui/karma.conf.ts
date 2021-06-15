@@ -14,6 +14,7 @@
 
 import fs from 'fs';
 import { Config } from 'karma';
+import path from 'path';
 import { DefinePlugin, ProvidePlugin } from 'webpack';
 
 import webpackConfig from './webpack.common';
@@ -21,6 +22,12 @@ import webpackConfig from './webpack.common';
 module.exports = (config: Config) => {
   const isDebug = process.argv.some((arg) => arg === '--debug');
   config.set({
+    protocol: 'https:',
+    httpsServerOptions: {
+      key: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.key')),
+      cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
+    },
+
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
