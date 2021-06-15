@@ -30,6 +30,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -209,9 +210,33 @@ func TestCancel(t *testing.T) {
 		})
 
 		Convey("Removing votes from non-CQ labels used in additional modes", func() {
+			const uLabel = "Ultra-Quick-Label"
 			const qLabel = "Quick-Label"
-			input.Trigger.AdditionalLabel = qLabel
+			input.Trigger.AdditionalLabel = uLabel
+			input.ConfigGroups = []*config.ConfigGroup{
+				{
+					Content: &cfgpb.ConfigGroup{
+						AdditionalModes: []*cfgpb.Mode{
+							{
+								Name:            "ULTRA_QUICK_RUN",
+								CqLabelValue:    1,
+								TriggeringLabel: uLabel,
+								TriggeringValue: 1,
+							},
+							{
+								Name:            "QUICK_RUN",
+								CqLabelValue:    1,
+								TriggeringLabel: qLabel,
+								TriggeringValue: 1,
+							},
+						},
+					},
+				},
+			}
 
+			ultraQuick := func(value int, timeAndUser ...interface{}) gf.CIModifier {
+				return gf.Vote(uLabel, value, timeAndUser...)
+			}
 			quick := func(value int, timeAndUser ...interface{}) gf.CIModifier {
 				return gf.Vote(qLabel, value, timeAndUser...)
 			}
@@ -220,19 +245,26 @@ func TestCancel(t *testing.T) {
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				// user-99 forgot to vote CQ+1.
 				quick(1, clock.Now(ctx).Add(-300*time.Second), gf.U("user-99"))(c.Info)
+				ultraQuick(1, clock.Now(ctx).Add(-200*time.Second), gf.U("user-99"))(c.Info)
 
-				// user-100 actually triggered QuickDryRun.
+				// user-100 actually triggered an ULTRA_QUICK_RUN.
 				gf.CQ(1, clock.Now(ctx).Add(-150*time.Second), gf.U("user-100"))(c.Info)
+				ultraQuick(1, clock.Now(ctx).Add(-150*time.Second), gf.U("user-100"))(c.Info)
 				quick(1, clock.Now(ctx).Add(-150*time.Second), gf.U("user-100"))(c.Info)
 
 				// user-101 CQ+1 was a noop.
 				gf.CQ(1, clock.Now(ctx).Add(-120*time.Second), gf.U("user-101"))(c.Info)
 
-				// user-102 votes were a noop, though weird, yet still must be removed.
-				quick(2, clock.Now(ctx).Add(-110*time.Second), gf.U("user-102"))(c.Info)
+				// user-102 votes for a QUICK_RUN is a noop, but should be removed as
+				// as well.
+				gf.CQ(1, clock.Now(ctx).Add(-110*time.Second), gf.U("user-101"))(c.Info)
+				quick(1, clock.Now(ctx).Add(-110*time.Second), gf.U("user-102"))(c.Info)
 
-				// user-103 votes is 0, and doesn't need a reset.
-				quick(0, clock.Now(ctx).Add(-100*time.Second), gf.U("user-103"))(c.Info)
+				// user-103 votes is a noop, though weird, yet still must be removed.
+				ultraQuick(3, clock.Now(ctx).Add(-100*time.Second), gf.U("user-104"))(c.Info)
+
+				// user-104 votes is 0, and doesn't need a reset.
+				ultraQuick(0, clock.Now(ctx).Add(-90*time.Second), gf.U("user-104"))(c.Info)
 			})
 			err := Cancel(ctx, input)
 			So(err, ShouldBeNil)
@@ -240,11 +272,16 @@ func TestCancel(t *testing.T) {
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
 			So(gf.NonZeroVotes(resultCI.Info, qLabel), ShouldBeEmpty)
+			So(gf.NonZeroVotes(resultCI.Info, uLabel), ShouldBeEmpty)
 			// The last request must be for account 100.
 			reqs := ct.GFake.Requests()
 			lastReq := reqs[len(reqs)-1].(*gerritpb.SetReviewRequest)
 			So(lastReq.GetOnBehalfOf(), ShouldEqual, 100)
-			So(lastReq.GetLabels(), ShouldResemble, map[string]int32{trigger.CQLabelName: 0, qLabel: 0})
+			So(lastReq.GetLabels(), ShouldResemble, map[string]int32{
+				trigger.CQLabelName: 0,
+				qLabel:              0,
+				uLabel:              0,
+			})
 		})
 
 		Convey("Skips zero votes", func() {
