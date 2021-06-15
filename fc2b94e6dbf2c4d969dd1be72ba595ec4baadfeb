@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c563f596_87236721",
+        "filename": "milo/frontend/resultui/src/auth_state_test.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T00:07:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b984ec9_00e68335",
+      "range": {
+        "startLine": 23,
+        "startChar": 15,
+        "endLine": 23,
+        "endChar": 51
+      },
+      "revId": "fc2b94e6dbf2c4d969dd1be72ba595ec4baadfeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66610810_fc5b5704",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-06-14T18:23:50Z",
       "side": 1,
       "message": "unused?",
+      "range": {
+        "startLine": 19,
+        "startChar": 9,
+        "endLine": 19,
+        "endChar": 18
+      },
+      "revId": "fc2b94e6dbf2c4d969dd1be72ba595ec4baadfeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0beffd5a_8d77dbed",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T00:07:33Z",
+      "side": 1,
+      "message": "This is used in L29.\nPreviously, we didn\u0027t need to import it because the type was declared in the global scope.",
+      "parentUuid": "66610810_fc5b5704",
       "range": {
         "startLine": 19,
         "startChar": 9,
