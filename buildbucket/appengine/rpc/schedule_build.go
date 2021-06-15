@@ -853,10 +853,11 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		blds[i].Proto.Status = pb.Status_SCHEDULED
 
 		setExperimentsFromProto(reqs[i], cfg, blds[i])
+		blds[i].IsLuci = true
+		blds[i].PubSubCallback.Topic = reqs[i].GetNotify().GetPubsubTopic()
+		blds[i].PubSubCallback.UserData = reqs[i].GetNotify().GetUserData()
 		// Tags are stored in the outer struct (see model/build.go).
 		blds[i].Tags = protoutil.StringPairMap(blds[i].Proto.Tags).Format()
-
-		blds[i].IsLuci = true
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {

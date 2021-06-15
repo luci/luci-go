@@ -33,7 +33,7 @@ func notifyPubSub(ctx context.Context, b *model.Build) error {
 	}); err != nil {
 		return errors.Annotate(err, "failed to enqueue global pubsub notification task: %d", b.ID).Err()
 	}
-	if b.PubSubCallback == (model.PubSubCallback{}) {
+	if b.PubSubCallback.Topic == "" {
 		return nil
 	}
 

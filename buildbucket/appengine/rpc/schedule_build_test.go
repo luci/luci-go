@@ -306,6 +306,10 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
+				Notify: &pb.NotificationConfig{
+					PubsubTopic: "topic",
+					UserData:    []byte("data"),
+				},
 				Tags: []*pb.StringPair{
 					{
 						Key:   "buildset",
@@ -400,6 +404,10 @@ func TestScheduleBuild(t *testing.T) {
 						"buildset:buildset",
 					},
 					Project: "project",
+					PubSubCallback: model.PubSubCallback{
+						Topic:    "topic",
+						UserData: []byte("data"),
+					},
 				},
 			})
 			So(sch.Tasks(), ShouldHaveLength, 1)
