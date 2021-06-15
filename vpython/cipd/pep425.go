@@ -69,6 +69,8 @@ func PlatformForPEP425Tag(t *vpython.PEP425Tag) string {
 		switch suffixSplit[len(suffixSplit)-1] {
 		case "intel", "x86_64", "fat64", "universal":
 			return "mac-amd64"
+		case "arm64":
+			return "mac-arm64"
 		case "i386", "fat32":
 			return "mac-386"
 		default:
