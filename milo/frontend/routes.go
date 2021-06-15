@@ -158,6 +158,8 @@ func Run(templatePath string) {
 	// Config for ResultUI frontend.
 	r.GET("/configs.js", baseMW, handleError(configsJSHandler))
 
+	r.GET("/auth-state", baseMW.Extend(middleware.WithContextTimeout(time.Minute), auth.Authenticate(server.CookieAuth)), handleError(getAuthState))
+
 	apiMW := baseMW.Extend(withGitMiddleware)
 	installAPIRoutes(r, apiMW)
 
