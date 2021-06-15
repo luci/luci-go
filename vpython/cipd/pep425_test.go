@@ -57,6 +57,7 @@ func TestPlatformForPEP425Tag(t *testing.T) {
 		{mkTag("macosx_10_10_intel"), "mac-amd64"},
 		{mkTag("macosx_10_9_universal"), "mac-amd64"},
 		{mkTag("macosx_12_12_fat64"), "mac-amd64"},
+		{mkTag("macosx_11_4_arm64"), "mac-arm64"},
 
 		{mkTag("win_pants"), ""},
 		{mkTag("win32"), "windows-386"},
