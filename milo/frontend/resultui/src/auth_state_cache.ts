@@ -24,7 +24,7 @@ let cachedAuthState: AuthState | null = null;
 /**
  * Update the auth state in IndexDB and the in-memory cache.
  */
-export function setAuthState(authState: AuthState | null): Promise<void> {
+export function setAuthStateCache(authState: AuthState | null): Promise<void> {
   cachedAuthState = authState;
   return kvSet(AUTH_STATE_KEY, authState);
 }
@@ -35,7 +35,7 @@ export function setAuthState(authState: AuthState | null): Promise<void> {
  * 2. the auth state is not cached in IndexDB, or
  * 3. the auth state has expired.
  */
-export function getAuthStateSync() {
+export function getAuthStateCacheSync() {
   if (!cachedAuthState?.accessTokenExpiry) {
     return cachedAuthState;
   }
@@ -47,7 +47,7 @@ export function getAuthStateSync() {
  * 1. the auth state is not cached in IndexDB, or
  * 2. the auth state has expired.
  */
-export async function getAuthState() {
+export async function getAuthStateCache() {
   cachedAuthState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
-  return getAuthStateSync();
+  return getAuthStateCacheSync();
 }
