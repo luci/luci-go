@@ -54,9 +54,11 @@ func Run(templatePath string) {
 	standard.InstallHandlers(r)
 
 	baseMW := standard.Base()
-	htmlMW := baseMW.Extend(
+	baseAuthMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
+	)
+	htmlMW := baseAuthMW.Extend(
 		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		withGitMiddleware,
 		withBuildbucketBuildsClient,
@@ -157,6 +159,8 @@ func Run(templatePath string) {
 
 	// Config for ResultUI frontend.
 	r.GET("/configs.js", baseMW, handleError(configsJSHandler))
+
+	r.GET("/auth-state", baseAuthMW, handleError(getAuthState))
 
 	apiMW := baseMW.Extend(withGitMiddleware)
 	installAPIRoutes(r, apiMW)

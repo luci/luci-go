@@ -38,32 +38,10 @@ service MiloInternal {
   // is from the same builder and is not expired, cancelled, or infra-failed.
   rpc QueryBlamelist(QueryBlamelistRequest) returns (QueryBlamelistResponse) {};
 
-  // Gets the current user.
-  //
-  // Return the current user if user is logged in. Otherwise, return an
-  // anonymous user.
-  rpc GetCurrentUser(GetCurrentUserRequest) returns (User) {};
-
   // Gets the project config.
   //
   // Return the config of the project.
   rpc GetProjectCfg(GetProjectCfgRequest) returns (.milo.Project) {};
-}
-
-// A request message for `GetCurrentUser` RPC.
-message GetCurrentUserRequest {}
-
-// A message that represents identity and profile of a user.
-message User {
-  // Identity string of the user (anonymous:anonymous if the user is not logged
-  // in).
-  string identity = 1;
-
-  // The email of the user. Optional, default "".
-  string email = 2;
-
-	// The URL of the user avatar. Optional, default "".
-  string picture = 3;
 }
 
 // A request message for `QueryBlamelist` RPC.
