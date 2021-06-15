@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9125337d_e0cb8a00",
+        "filename": "milo/frontend/resultui/cypress/support/stub_requests.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-15T19:54:02Z",
+      "side": 1,
+      "message": "nit: need",
+      "range": {
+        "startLine": 43,
+        "startChar": 35,
+        "endLine": 43,
+        "endChar": 40
+      },
+      "revId": "191f04c87bfd4ae700af97930d4e4d71a95d940d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
