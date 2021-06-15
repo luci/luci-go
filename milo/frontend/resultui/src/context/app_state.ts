@@ -15,6 +15,7 @@
 import stableStringify from 'fast-json-stable-stringify';
 import { computed, observable, untracked } from 'mobx';
 
+import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
 import { createContextLink } from '../libs/context';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { AccessService, BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
@@ -81,24 +82,34 @@ export class AppState {
   }
 
   constructor() {
-    const updateAuthState = async () => {
-      if (this.isDisposed) {
-        return;
+    const scheduleAuthStateUpdate = () => {
+      let validDuration = 0;
+      if (this.authState !== null) {
+        if (!this.authState.accessTokenExpiry) {
+          return;
+        }
+        validDuration = this.authState.accessTokenExpiry * 1000 - Date.now();
       }
 
-      this.authState = await queryAuthState();
+      window.setTimeout(
+        async () => {
+          if (this.isDisposed) {
+            return;
+          }
 
-      if (!this.authState.accessTokenExpiry) {
-        return;
-      }
-
-      const validDuration = this.authState.accessTokenExpiry * 1000 - Date.now();
-
-      // Refresh the access token 10s earlier to prevent the token from expiring
-      // before the new token is returned.
-      window.setTimeout(updateAuthState, validDuration - 10000);
+          this.authState = await queryAuthState();
+          setAuthStateCache(this.authState);
+          scheduleAuthStateUpdate();
+        },
+        // Refresh the access token 10s earlier to prevent the token from expiring
+        // before the new token is returned.
+        validDuration - 10000
+      );
     };
-    updateAuthState();
+
+    getAuthStateCache()
+      .then((authState) => (this.authState = authState))
+      .finally(scheduleAuthStateUpdate);
   }
 
   @computed({ keepAlive: true })
