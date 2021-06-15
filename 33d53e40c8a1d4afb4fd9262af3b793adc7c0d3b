@@ -16,6 +16,103 @@
       "message": "ptal",
       "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ea140f4_355a7691",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-15T20:42:17Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 520,
+        "startChar": 44,
+        "endLine": 520,
+        "endChar": 59
+      },
+      "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e4cbbeb_3619cf83",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 528,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-15T20:42:17Z",
+      "side": 1,
+      "message": "fwiw, i stopped checking this in e2e tests -- strictly strictly speaking this is impl detail, unlike finalRun.Status.",
+      "range": {
+        "startLine": 524,
+        "startChar": 3,
+        "endLine": 528,
+        "endChar": 44
+      },
+      "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20e03978_1dce3ad7",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-15T20:42:17Z",
+      "side": 1,
+      "message": "nit: worth saying that normally, there is just 1.",
+      "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08800a2d_b3ce20b7",
+        "filename": "cv/internal/gerrit/cancel/cancel_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-15T20:42:17Z",
+      "side": 1,
+      "message": "😄",
+      "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a033376_5e5f3a7c",
+        "filename": "cv/internal/prjmanager/prjpb/tasks.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-15T20:42:17Z",
+      "side": 1,
+      "message": "sgtm",
+      "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
