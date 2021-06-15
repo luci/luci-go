@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "12eb6202_79b0aa54",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-15T01:53:33Z",
+      "side": 1,
+      "message": "LGTM (I assume Milo doesn\u0027t leak /auth-state via some loose CORS policy, it would be bad to do so...)",
+      "revId": "7b07fa2f6741d5503a1205d72237fcbea6a4c09c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
