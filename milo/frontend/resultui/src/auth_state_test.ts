@@ -20,8 +20,8 @@ describe('auth_state', () => {
   it('support accessing auth state synchronously', () => {
     const state = {
       accessToken: Math.random().toString(),
-      userId: Math.random().toString(),
-      expiresAt: Date.now() + 1000,
+      identity: `user: ${Math.random()}`,
+      accessTokenExpiry: Date.now() / 1000 + 1000,
     };
     setAuthState(state);
     assert.deepEqual(getAuthStateSync(), state);
@@ -30,8 +30,8 @@ describe('auth_state', () => {
   it('support accessing auth state asynchronously', async () => {
     const state = {
       accessToken: Math.random().toString(),
-      userId: Math.random().toString(),
-      expiresAt: Date.now() + 1000,
+      identity: `user: ${Math.random()}`,
+      accessTokenExpiry: Date.now() / 1000 + 1000,
     };
     setAuthState(state);
     assert.deepEqual(await getAuthState(), state);
@@ -40,8 +40,8 @@ describe('auth_state', () => {
   it('clear expired auth state when accessing synchronously', () => {
     const state = {
       accessToken: Math.random().toString(),
-      userId: Math.random().toString(),
-      expiresAt: Date.now() - 1000,
+      identity: `user: ${Math.random()}`,
+      accessTokenExpiry: Date.now() / 1000 - 1000,
     };
     setAuthState(state);
     assert.deepEqual(getAuthStateSync(), null);
@@ -50,8 +50,8 @@ describe('auth_state', () => {
   it('clear expired auth state when accessing asynchronously', async () => {
     const state = {
       accessToken: Math.random().toString(),
-      userId: Math.random().toString(),
-      expiresAt: Date.now() - 1000,
+      identity: `user: ${Math.random()}`,
+      accessTokenExpiry: Date.now() / 1000 - 1000,
     };
     setAuthState(state);
     assert.deepEqual(await getAuthState(), null);
