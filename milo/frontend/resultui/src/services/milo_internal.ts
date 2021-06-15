@@ -128,8 +128,8 @@ export interface AuthState {
 /**
  * Gets the auth state associated with the current section.
  */
-export async function queryAuthState(): Promise<AuthState> {
-  const res = await fetch('/auth-state');
+export async function queryAuthState(fetchImpl = fetch): Promise<AuthState> {
+  const res = await fetchImpl('/auth-state');
   if (!res.ok) {
     throw new Error('failed to get auth-state:\n' + (await res.text()));
   }
