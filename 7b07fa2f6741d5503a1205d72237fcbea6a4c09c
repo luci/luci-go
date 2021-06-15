@@ -34,6 +34,23 @@
       "parentUuid": "12eb6202_79b0aa54",
       "revId": "7b07fa2f6741d5503a1205d72237fcbea6a4c09c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f336970_f48dff53",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-15T01:58:19Z",
+      "side": 1,
+      "message": "this is noop. The header is already written the moment c.Writer.Write was called.\nplease remove\n\nL73-78 can be just\n\n  err :\u003d ...\n  return errors.Annotate(err, ...)",
+      "revId": "7b07fa2f6741d5503a1205d72237fcbea6a4c09c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
