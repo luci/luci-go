@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bbbc4e7a_e737c86c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T02:11:21Z",
+      "side": 1,
+      "message": "CORS is not enabled for any milo endpoints though.\nAnd they will need access-control-allow-credential for that to work.\nThe likelihood of someone accidentally adding a global `access-control-allow-credential` header in the future is pretty low.",
+      "parentUuid": "4848ae2d_26f87188",
+      "revId": "7b07fa2f6741d5503a1205d72237fcbea6a4c09c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0f336970_f48dff53",
@@ -67,6 +85,24 @@
       "writtenOn": "2021-06-15T01:58:19Z",
       "side": 1,
       "message": "this is noop. The header is already written the moment c.Writer.Write was called.\nplease remove\n\nL73-78 can be just\n\n  err :\u003d ...\n  return errors.Annotate(err, ...)",
+      "revId": "7b07fa2f6741d5503a1205d72237fcbea6a4c09c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac656f8c_f0a923c6",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T02:11:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f336970_f48dff53",
       "revId": "7b07fa2f6741d5503a1205d72237fcbea6a4c09c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
