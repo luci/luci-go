@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f80d80d0_a3e465bb",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T00:02:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b75109c_9e04a0e8",
+      "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "74ca3436_17e5a0dd",
@@ -58,6 +76,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f6b2b61_58ff91c2",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T00:02:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74ca3436_17e5a0dd",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 71,
+        "endChar": 36
+      },
+      "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b665ffb8_d28162bf",
@@ -71,6 +113,30 @@
       "writtenOn": "2021-06-14T18:15:46Z",
       "side": 1,
       "message": "isn\u0027t this the default? why is it configured only for /auth-state ?",
+      "range": {
+        "startLine": 161,
+        "startChar": 36,
+        "endLine": 161,
+        "endChar": 78
+      },
+      "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb326245_816704e1",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T00:02:46Z",
+      "side": 1,
+      "message": "We set the default on htmlMW in L58, but we are extending from baseMW here.",
+      "parentUuid": "b665ffb8_d28162bf",
       "range": {
         "startLine": 161,
         "startChar": 36,
