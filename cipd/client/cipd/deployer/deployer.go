@@ -172,16 +172,8 @@ type Deployer interface {
 	// the one specified in the pin, returns an error.
 	RepairDeployed(ctx context.Context, subdir string, pin common.Pin, maxThreads int, params RepairParams) error
 
-	// TempFile returns os.File located in <base>/.cipd/tmp/*.
-	//
-	// The file is open for reading and writing.
-	TempFile(ctx context.Context, prefix string) (*os.File, error)
-
-	// CleanupTrash attempts to remove stale files.
-	//
-	// This is a best effort operation. Errors are logged (either at Debug or
-	// Warning level, depending on severity of the trash state).
-	CleanupTrash(ctx context.Context)
+	// FS returns an fs.FileSystem rooted at the deployer root dir.
+	FS() fs.FileSystem
 }
 
 // New return default Deployer implementation.
@@ -222,9 +214,7 @@ func (d errDeployer) RepairDeployed(context.Context, string, common.Pin, int, Re
 	return d.err
 }
 
-func (d errDeployer) TempFile(context.Context, string) (*os.File, error) { return nil, d.err }
-
-func (d errDeployer) CleanupTrash(context.Context) {}
+func (d errDeployer) FS() fs.FileSystem { return nil }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Real deployer implementation.
@@ -712,14 +702,6 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	return nil
 }
 
-func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, error) {
-	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), fs.SiteServiceDir, "tmp"))
-	if err != nil {
-		return nil, err
-	}
-	return ioutil.TempFile(dir, prefix)
-}
-
 func (d *deployerImpl) TempDir(ctx context.Context, prefix string, mode os.FileMode) (string, error) {
 	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), fs.SiteServiceDir, "tmp"))
 	if err != nil {
@@ -728,8 +710,8 @@ func (d *deployerImpl) TempDir(ctx context.Context, prefix string, mode os.FileM
 	return fs.TempDir(dir, prefix, mode)
 }
 
-func (d *deployerImpl) CleanupTrash(ctx context.Context) {
-	d.fs.CleanupTrash(ctx)
+func (d *deployerImpl) FS() fs.FileSystem {
+	return d.fs
 }
 
 ////////////////////////////////////////////////////////////////////////////////
