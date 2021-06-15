@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5148004c_d78d15b6",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T01:41:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85c5b4c0_c58869f9",
+      "range": {
+        "startLine": 54,
+        "startChar": 16,
+        "endLine": 54,
+        "endChar": 51
+      },
+      "revId": "4d49b23060d395271a7d2eb82860bc04379b5848",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ded394f2_53b41248",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "170b0774_78108eee",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T01:41:18Z",
+      "side": 1,
+      "message": "Yes, it does. That was a change made 2 years ago. https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1558891\nAnd using grpc tags seems to be the standard since then.",
+      "parentUuid": "ded394f2_53b41248",
+      "range": {
+        "startLine": 69,
+        "startChar": 62,
+        "endLine": 69,
+        "endChar": 87
+      },
+      "revId": "4d49b23060d395271a7d2eb82860bc04379b5848",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6b0b2d7f_6fcced96",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-06-15T00:36:20Z",
       "side": 1,
       "message": "I wonder if this is still used by anything because it will eventually likely stop working (the caller will be able to load the root HTML, but won\u0027t be able to call \"/auth-state\" because they have only OAuth2 token, not the session cookie).",
+      "range": {
+        "startLine": 59,
+        "startChar": 39,
+        "endLine": 59,
+        "endChar": 95
+      },
+      "revId": "4d49b23060d395271a7d2eb82860bc04379b5848",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "30e86d20_8ae76785",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-15T01:41:18Z",
+      "side": 1,
+      "message": "This should be fine because `/auth-state` will only be called by the new build page, and the new build page does not use server.OAuth2Method.",
+      "parentUuid": "6b0b2d7f_6fcced96",
       "range": {
         "startLine": 59,
         "startChar": 39,
