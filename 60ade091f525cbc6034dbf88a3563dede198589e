@@ -145,6 +145,30 @@
       },
       "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4238f70c_b5e2d20a",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-15T00:36:20Z",
+      "side": 1,
+      "message": "It might be better to avoid duplication:\n\n```\nbaseMW :\u003d ...\nbaseAuthMW :\u003d baseMW.Extend(\n  middleware.WithContextTimeout(time.Minute),\n  auth.Authenticate(server.CookieAuth, \u0026server.OAuth2Method{Scopes: []string{server.EmailScope}}),\n)\nhtmlMW :\u003d baseAuthMW.Extend(\n  withAccessClientMiddleware,\n  ...\n)\n\n...\n\nr.GET(\"/auth-state\", baseAuthMW, ...)\n\n```\n\n(this has a caveat that \"/auth-state\" will actually not work when it is authenticated via access tokens and  \u0026server.OAuth2Method{...}).",
+      "parentUuid": "cb326245_816704e1",
+      "range": {
+        "startLine": 161,
+        "startChar": 36,
+        "endLine": 161,
+        "endChar": 78
+      },
+      "revId": "60ade091f525cbc6034dbf88a3563dede198589e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

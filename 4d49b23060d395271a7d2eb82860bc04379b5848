@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85c5b4c0_c58869f9",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-15T00:36:20Z",
+      "side": 1,
+      "message": "note: this may panic if the incoming request is not authenticated via secure cookies. Might be better to explicitly check is Session() is not nil and return a nicer error message if it is.",
+      "range": {
+        "startLine": 54,
+        "startChar": 16,
+        "endLine": 54,
+        "endChar": 51
+      },
+      "revId": "4d49b23060d395271a7d2eb82860bc04379b5848",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ded394f2_53b41248",
+        "filename": "milo/frontend/get_auth_state.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-15T00:36:20Z",
+      "side": 1,
+      "message": "Does this apply to non-pRPC endpoints? Does handleError(...) recognize grpcutil tags?",
+      "range": {
+        "startLine": 69,
+        "startChar": 62,
+        "endLine": 69,
+        "endChar": 87
+      },
+      "revId": "4d49b23060d395271a7d2eb82860bc04379b5848",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b0b2d7f_6fcced96",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-15T00:36:20Z",
+      "side": 1,
+      "message": "I wonder if this is still used by anything because it will eventually likely stop working (the caller will be able to load the root HTML, but won\u0027t be able to call \"/auth-state\" because they have only OAuth2 token, not the session cookie).",
+      "range": {
+        "startLine": 59,
+        "startChar": 39,
+        "endLine": 59,
+        "endChar": 95
+      },
+      "revId": "4d49b23060d395271a7d2eb82860bc04379b5848",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
