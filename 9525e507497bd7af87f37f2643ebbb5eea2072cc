@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fb753a2_620a28d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-15T22:30:49Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5bbcaae4_04c7d379",
@@ -14,6 +31,41 @@
       "writtenOn": "2021-06-09T21:39:21Z",
       "side": 1,
       "message": "Simplest assumption for now.",
+      "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b22ac36b_5e9d3358",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 822,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-15T22:30:49Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "5bbcaae4_04c7d379",
+      "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "909a8194_7336346e",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-15T22:30:49Z",
+      "side": 1,
+      "message": "I\u0027d also mention the batch request implications here (i.e. if any build in a batch req is dry_run, they must all be dry_run)",
       "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
