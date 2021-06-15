@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7eb58974_18f1d757",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-15T03:23:52Z",
+      "side": 1,
+      "message": "PTAL\n\nThis is all necessary because we technically allow manifests like\n\n```\n@Subdir 1\nsome/pkg some:ver\n@Subdir 2\nsome/pkg some:ver\n@Subdir 3\nsome/pkg some:ver\n```\n\nSo when fetching stuff concurrently we must ensure not to fetch the same package multiple times (bad things may happen, especially when using \"temporary instance cache\" from https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2954704). \n\nNow all 3 concurrent fetches will get a pkg.Source backed by the exact same os.File object (still will unzip it multiple times, but it won\u0027t harm correctness and dedupping unzips will add a whole ton of complication, so I ignore it).",
+      "revId": "390f5b93f64cc06bf2ba18da4f0569a02d6525fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
