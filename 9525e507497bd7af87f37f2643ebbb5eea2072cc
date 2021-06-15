@@ -68,6 +68,23 @@
       "message": "I\u0027d also mention the batch request implications here (i.e. if any build in a batch req is dry_run, they must all be dry_run)",
       "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27cb3a42_81a48ae4",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-15T22:34:21Z",
+      "side": 1,
+      "message": "does it consume a build number? i.e. does the RPC make side effects?",
+      "revId": "9525e507497bd7af87f37f2643ebbb5eea2072cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
