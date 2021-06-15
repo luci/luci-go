@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getAuthStateCache, getAuthStateCacheSync } from './auth_state_cache';
+import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from './auth_state_cache';
 import { cached } from './libs/cached_fn';
 import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
 import { timeout } from './libs/utils';
 import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from './services/buildbucket';
+import { queryAuthState } from './services/milo_internal';
 import {
   constructArtifactName,
   getInvIdFromBuildId,
@@ -26,7 +27,12 @@ import {
   UISpecificService,
 } from './services/resultdb';
 
+// TSC isn't able to determine the scope properly.
+// Perform manual casting to fix typing.
+const _self = self as unknown as ServiceWorkerGlobalScope;
+
 const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
+const AUTH_STATE_CACHE_KEY = Math.random().toString();
 
 /**
  * Set the cache duration to 5s.
@@ -48,7 +54,9 @@ const CACHE_DURATION = 5000;
 const CACHE_OPTION = { acceptCache: false, skipUpdate: true };
 
 export class Prefetcher {
-  private readonly cachedPrpcUrls: readonly string[] = [
+  private readonly authStateUrl = `https://${_self.location.host}/auth-state`;
+  private readonly cachedUrls: readonly string[] = [
+    this.authStateUrl,
     `https://${this.configs.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
     `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
     `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
@@ -105,9 +113,14 @@ export class Prefetcher {
     // Prefetch services relies on the in-memory cache.
     // Call getAuthState to populate the in-memory cache.
     const authState = await getAuthStateCache();
+
+    const queryAuthStatePromise = queryAuthState((info, init) =>
+      this.cachedFetch({}, info, init, AUTH_STATE_CACHE_KEY, CACHE_DURATION).then((res) => res.clone())
+    ).then(setAuthStateCache);
     if (!authState) {
-      return;
+      await queryAuthStatePromise;
     }
+
     this.prefetchBuildPageResources(reqUrl);
     this.prefetchArtifactPageResources(reqUrl);
   }
@@ -199,18 +212,23 @@ export class Prefetcher {
    * Returns true if the URL might be cached. Returns false otherwise.
    */
   respondWithPrefetched(e: FetchEvent) {
-    if (!this.cachedPrpcUrls.includes(e.request.url)) {
+    if (!this.cachedUrls.includes(e.request.url)) {
       return false;
     }
 
     e.respondWith(
       (async () => {
+        const cacheKey =
+          e.request.url === this.authStateUrl
+            ? AUTH_STATE_CACHE_KEY
+            : await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, e.request.clone());
+
         const res = await this.cachedFetch(
           // The response can't be reused, don't keep it in cache.
           { skipUpdate: true, invalidateCache: true },
           e.request,
           undefined,
-          await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, e.request.clone()),
+          cacheKey,
           0
         );
         return res;
