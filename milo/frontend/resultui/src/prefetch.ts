@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getAuthState, getAuthStateSync } from './auth_state';
+import { getAuthStateCache, getAuthStateCacheSync } from './auth_state_cache';
 import { cached } from './libs/cached_fn';
 import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
@@ -92,7 +92,7 @@ export class Prefetcher {
         },
       },
 
-      () => getAuthStateSync()?.accessToken || ''
+      () => getAuthStateCacheSync()?.accessToken || ''
     );
   }
 
@@ -104,7 +104,7 @@ export class Prefetcher {
   async prefetchResources(reqUrl: URL) {
     // Prefetch services relies on the in-memory cache.
     // Call getAuthState to populate the in-memory cache.
-    const authState = await getAuthState();
+    const authState = await getAuthStateCache();
     if (!authState) {
       return;
     }

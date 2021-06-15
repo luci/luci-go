@@ -14,17 +14,17 @@
 
 import { assert } from 'chai';
 
-import { getAuthState, getAuthStateSync, setAuthState } from './auth_state';
+import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from './auth_state_cache';
 
-describe('auth_state', () => {
+describe('auth_state_cache', () => {
   it('support accessing auth state synchronously', () => {
     const state = {
       accessToken: Math.random().toString(),
       identity: `user: ${Math.random()}`,
       accessTokenExpiry: Date.now() / 1000 + 1000,
     };
-    setAuthState(state);
-    assert.deepEqual(getAuthStateSync(), state);
+    setAuthStateCache(state);
+    assert.deepEqual(getAuthStateCacheSync(), state);
   });
 
   it('support accessing auth state asynchronously', async () => {
@@ -33,8 +33,8 @@ describe('auth_state', () => {
       identity: `user: ${Math.random()}`,
       accessTokenExpiry: Date.now() / 1000 + 1000,
     };
-    setAuthState(state);
-    assert.deepEqual(await getAuthState(), state);
+    setAuthStateCache(state);
+    assert.deepEqual(await getAuthStateCache(), state);
   });
 
   it('clear expired auth state when accessing synchronously', () => {
@@ -43,8 +43,8 @@ describe('auth_state', () => {
       identity: `user: ${Math.random()}`,
       accessTokenExpiry: Date.now() / 1000 - 1000,
     };
-    setAuthState(state);
-    assert.deepEqual(getAuthStateSync(), null);
+    setAuthStateCache(state);
+    assert.deepEqual(getAuthStateCacheSync(), null);
   });
 
   it('clear expired auth state when accessing asynchronously', async () => {
@@ -53,7 +53,7 @@ describe('auth_state', () => {
       identity: `user: ${Math.random()}`,
       accessTokenExpiry: Date.now() / 1000 - 1000,
     };
-    setAuthState(state);
-    assert.deepEqual(await getAuthState(), null);
+    setAuthStateCache(state);
+    assert.deepEqual(await getAuthStateCache(), null);
   });
 });

@@ -14,7 +14,7 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
-import { getAuthState, setAuthState } from './auth_state';
+import { getAuthStateCache, setAuthStateCache } from './auth_state_cache';
 import { Prefetcher } from './prefetch';
 import { AuthState } from './services/milo_internal';
 
@@ -33,7 +33,7 @@ _self.addEventListener('message', async (e) => {
   switch (e.data.type) {
     case 'SET_AUTH_STATE': {
       const data = e.data as SetAuthStateEventData;
-      setAuthState(data.authState);
+      setAuthStateCache(data.authState);
       break;
     }
     default:
@@ -53,7 +53,7 @@ _self.addEventListener('fetch', async (e) => {
   if (url.pathname === '/ui/cached-auth-state.js') {
     e.respondWith(
       (async () => {
-        const authState = await getAuthState();
+        const authState = await getAuthStateCache();
         return new Response(`const CACHED_AUTH_STATE=${JSON.stringify(authState)};`, {
           headers: { 'content-type': 'application/javascript' },
         });
