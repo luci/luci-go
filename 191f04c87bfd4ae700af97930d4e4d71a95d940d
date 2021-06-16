@@ -22,6 +22,30 @@
       },
       "revId": "191f04c87bfd4ae700af97930d4e4d71a95d940d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c53d272_b1d574cc",
+        "filename": "milo/frontend/resultui/cypress/support/stub_requests.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-16T00:16:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9125337d_e0cb8a00",
+      "range": {
+        "startLine": 43,
+        "startChar": 35,
+        "endLine": 43,
+        "endChar": 40
+      },
+      "revId": "191f04c87bfd4ae700af97930d4e4d71a95d940d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
