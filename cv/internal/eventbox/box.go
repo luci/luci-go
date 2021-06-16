@@ -18,6 +18,7 @@ package eventbox
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -53,9 +54,12 @@ func List(ctx context.Context, recipient *datastore.Key) (Events, error) {
 		Parent:          recipient,
 		TombstonesDelay: TombstonesDelay,
 	}
-	switch l, err := d.List(ctx); {
+	const effectivelyUnlimited = 1000000
+	switch l, err := d.List(ctx, effectivelyUnlimited); {
 	case err != nil:
 		return nil, err
+	case len(l.Items) == effectivelyUnlimited:
+		panic(fmt.Errorf("fetched possibly not all events (limit: %d)", effectivelyUnlimited))
 	default:
 		return toEvents(l.Items), nil
 	}
@@ -63,7 +67,7 @@ func List(ctx context.Context, recipient *datastore.Key) (Events, error) {
 
 // ErrContention indicates Datastore contention, usually on the mailbox
 // recipient entity itself.
-var ErrContention = errors.New("Contention")
+var ErrContention = errors.New("Datastore Contention")
 
 // IsErrContention checks if error, possibly wrapped, is ErrContention.
 func IsErrContention(err error) bool {
@@ -75,7 +79,7 @@ func IsErrContention(err error) bool {
 	return ret
 }
 
-// ProcessBatch reliably processes events, while transactionally modifying state
+// ProcessBatch reliably processes outstanding events, while transactionally modifying state
 // and performing arbitrary side effects.
 //
 // Returns
@@ -85,16 +89,16 @@ func IsErrContention(err error) bool {
 //  - error while processing events. Returns wrapped ErrContention
 //    if entity's EVersion has changed or there is contention on Datastore
 //    entities involved in a transaction.
-func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([]PostProcessFn, error) {
+func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor, maxEvents int) ([]PostProcessFn, error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch")
 	var err error
 	span.Attribute("recipient", recipient.String())
 	defer func() { span.End(err) }()
-	postProcessFn, err := processBatch(ctx, recipient, p)
+	postProcessFn, err := processBatch(ctx, recipient, p, maxEvents)
 	return postProcessFn, err
 }
 
-func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([]PostProcessFn, error) {
+func processBatch(ctx context.Context, recipient *datastore.Key, p Processor, maxEvents int) ([]PostProcessFn, error) {
 	var state State
 	var expectedEV EVersion
 	eg, ectx := errgroup.WithContext(ctx)
@@ -108,7 +112,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([
 	}
 	var listing *dsset.Listing
 	eg.Go(func() (err error) {
-		if listing, err = d.List(ectx); err == nil {
+		if listing, err = d.List(ectx, maxEvents); err == nil {
 			err = dsset.CleanupGarbage(ectx, listing.Garbage)
 		}
 		return
@@ -187,6 +191,11 @@ type Processor interface {
 	LoadState(context.Context) (State, EVersion, error)
 	// PrepareMutation is called before a transaction to compute transitions based
 	// on a batch of events.
+	//
+	// The events in a batch are an arbitrary subset of all outstanding events.
+	// Because loading of events isn't synchronized with event senders,
+	// a recipient of events may see them in different order than the origination
+	// order, even if events were produced by a single sender.
 	//
 	// All actions that must be done atomically with updating state must be
 	// encapsulated inside Transition.SideEffectFn callback.
