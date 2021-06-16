@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62a25591_857e154d",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 825,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T19:51:51Z",
+      "side": 1,
+      "message": "this doesn\u0027t work in case of [false, true]\n\nif you want to ensure that all values in a sequence are same, it simpler to check that each consecutive pair has same value, i.e. loop from 1 to len-1 and compare current-vs-prev",
+      "revId": "5eecfa1f1710c31008dea3ae2e5750e9db0a8652",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1a6adfb_6ce71fb7",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 843,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T19:51:51Z",
+      "side": 1,
+      "message": "in vast majority of requests, this will allocate a slice just to be thrown away two statements later. Consider\n\n  var ids ...\n  if ... { \n    ids \u003d ...\n  } else {\n    ids \u003d ...\n  }",
+      "revId": "5eecfa1f1710c31008dea3ae2e5750e9db0a8652",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
