@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2db9503f_0d16655d",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 25
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-16T23:59:28Z",
+      "side": 1,
+      "message": "disposers are run in this.disconnectedCallback.\nIf the response comeback after this.disconnectedCallback is run, the reaction will never be disposed.\nThis shouldn\u0027t be possible because page-layout should live as long as the browser tab. But added a guard for that regardless.",
+      "parentUuid": "926f1f83_5d510003",
+      "revId": "bffdcedec0da358ecd394f1e70b0d9f7b077eaa9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be34ee68_32dee925",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "357d6fed_ee56842c",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 25
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-16T23:59:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be34ee68_32dee925",
+      "revId": "bffdcedec0da358ecd394f1e70b0d9f7b077eaa9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5238f386_239471d7",
@@ -48,6 +84,30 @@
       "writtenOn": "2021-06-16T06:01:31Z",
       "side": 1,
       "message": "nitty-nit: this is a low probability that two random numbers are equal. On the other hand, you could use an object: {}. It would definitely not equal, since its new.",
+      "range": {
+        "startLine": 133,
+        "startChar": 23,
+        "endLine": 133,
+        "endChar": 36
+      },
+      "revId": "bffdcedec0da358ecd394f1e70b0d9f7b077eaa9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa70a944_29d21cf2",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 25
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-16T23:59:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5238f386_239471d7",
       "range": {
         "startLine": 133,
         "startChar": 23,
