@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d24dd76d_b5577eb9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-16T00:59:09Z",
+      "side": 1,
+      "message": "I\u0027ll land this CL and refactor in a separate CL since I\u0027m tired of rebasing.",
+      "revId": "ee855a20d01f7c2b2ee538a9d36a340f28e6e196",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea04d256_e568d706",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1456,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-16T00:59:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1bc1fcba_e632785a",
+      "revId": "390f5b93f64cc06bf2ba18da4f0569a02d6525fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bcae971e_31f40518",
@@ -69,6 +87,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "71f192ea_6aaa6015",
+        "filename": "cipd/client/cipd/internal/instancecache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-16T00:59:09Z",
+      "side": 1,
+      "message": "We don\u0027t know here yet if we need to retry. We\u0027ll know only after we try to unzip the package. It is too expensive to rehash it here each time it is accessed. The retry will have to be organized at a higher level.",
+      "parentUuid": "bcae971e_31f40518",
+      "revId": "390f5b93f64cc06bf2ba18da4f0569a02d6525fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d6b59dca_11a9f3bd",
@@ -82,6 +118,24 @@
       "writtenOn": "2021-06-16T00:04:14Z",
       "side": 1,
       "message": "why not\n\n   CompareAndSwapInt32(\u0026f.closed, 0, 1)\n   \n? It\u0027s not likely that int32 is going to wrap... but the current construction _could_ do that.",
+      "revId": "390f5b93f64cc06bf2ba18da4f0569a02d6525fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f382274c_eb288c0c",
+        "filename": "cipd/client/cipd/internal/instancecache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-16T00:59:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6b59dca_11a9f3bd",
       "revId": "390f5b93f64cc06bf2ba18da4f0569a02d6525fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
