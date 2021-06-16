@@ -24,12 +24,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/client/cas"
+	chromecas "go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/cmd/cas/lib"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
@@ -64,7 +65,14 @@ func (af *authFlags) NewClient(ctx context.Context, instance string, readOnly bo
 	if af.parsedOpts == nil {
 		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
 	}
-	return cas.NewClient(ctx, instance, *af.parsedOpts, readOnly)
+	return chromecas.NewRBEClient(ctx, instance, *af.parsedOpts, readOnly)
+}
+
+func (af *authFlags) NewCASClient(ctx context.Context, instance string, readOnly bool) (*cas.Client, error) {
+	if af.parsedOpts == nil {
+		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
+	}
+	return chromecas.NewCASClient(ctx, instance, *af.parsedOpts, readOnly)
 }
 
 func getApplication() *cli.Application {
