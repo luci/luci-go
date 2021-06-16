@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6242a98b_6e91cf54",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 825,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-16T22:24:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62a25591_857e154d",
+      "revId": "5eecfa1f1710c31008dea3ae2e5750e9db0a8652",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b1a6adfb_6ce71fb7",
@@ -31,6 +49,24 @@
       "writtenOn": "2021-06-16T19:51:51Z",
       "side": 1,
       "message": "in vast majority of requests, this will allocate a slice just to be thrown away two statements later. Consider\n\n  var ids ...\n  if ... { \n    ids \u003d ...\n  } else {\n    ids \u003d ...\n  }",
+      "revId": "5eecfa1f1710c31008dea3ae2e5750e9db0a8652",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27728d1a_895697d9",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 843,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-16T22:24:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1a6adfb_6ce71fb7",
       "revId": "5eecfa1f1710c31008dea3ae2e5750e9db0a8652",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
