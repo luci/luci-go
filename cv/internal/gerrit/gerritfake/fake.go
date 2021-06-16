@@ -45,7 +45,7 @@ type Fake struct {
 	cs map[string]*Change
 
 	// parentsOf maps a change's patchset (host, change number, patchset)
-	// to one or more Git parents, each parent is another change's patchset.
+	// to one or more Git parents; each parent is another change's patchset.
 	//
 	// parentsOf[X] can be read as "changes on which X depends non-transitively".
 	//
@@ -114,8 +114,8 @@ const (
 	OpRead Operation = iota
 	// OpReview gates posting comments and votes on one's own behalf.
 	//
-	// NOTE: actual Gerrit has per-label ACLs for voting, but CV doesn't vote on
-	// its own.
+	// NOTE: The actual Gerrit service has per-label ACLs for voting, but CV
+	// doesn't vote on its own.
 	OpReview
 	// OpVote gates altering votes of behalf of others.
 	OpAlterVotesOfOthers

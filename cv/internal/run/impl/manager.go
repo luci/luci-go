@@ -40,7 +40,9 @@ import (
 	"go.chromium.org/luci/cv/internal/tree"
 )
 
-// RunManager manages Runs.
+// RunManager manages Runs, within one project.
+//
+// It decides starting, cancelation, submission etc. for Runs.
 type RunManager struct {
 	runNotifier *run.Notifier
 	pmNotifier  *prjmanager.Notifier

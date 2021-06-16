@@ -76,11 +76,11 @@ func IsErrConcurretMutation(err error) bool {
 // ProcessBatch reliably processes events, while transactionally modifying state
 // and performing arbitrary side effects.
 //
-// Returns
+// Returns:
 //  - a slice of non-nil post process functions which SHOULD be executed
 //    immediately after calling this function. Those are generally extra work
 //    that needs to be done as the result of state modification.
-//  - error while processing events. Returns wrapped ErrConcurretMutation
+//  - error while processing events. Returns wrapped ErrConcurrentMutation
 //    if entity's EVersion has changed.
 func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([]PostProcessFn, error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch")

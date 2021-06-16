@@ -170,7 +170,7 @@ func (s *State) triageOneComponent(ctx context.Context, oldC *prjpb.Component, s
 
 // actOnComponents executes actions on components produced by triageComponents.
 //
-// Expects the state to be already shallow cloned.
+// Expects the state to already be shallow cloned.
 func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEffect, error) {
 	// First, create Runs in parallel.
 	poolSize := concurrentComponentProcessing
@@ -196,8 +196,8 @@ func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEf
 		}
 	})
 
-	// Keep runsErr for now and try to make progress on actions/components without
-	// errors.
+	// Keep runsErr for now and try to make progress on actions/components
+	// without errors.
 
 	// Shallow-copy the components slice, as one or more components are highly
 	// likely to be modified in a loop below.
@@ -252,7 +252,7 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 	case err == nil:
 		return nil
 	case runcreator.StateChangedTag.In(err):
-		// This is transient error at component action level: on retry, the Triage()
+		// This is a transient error at component action level: on retry, the Triage()
 		// function will re-evaulate the state.
 		return transient.Tag.Apply(err)
 	default:
@@ -285,8 +285,8 @@ func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask
 		m.addI64(id)
 	}
 	// Verify only CLs not yet purged are being purged.
-	// NOTE: this iterates all CLs currently being purged, but there should be
-	// very few such CLs comparing to the total number of tracked CLs.
+	// NOTE: This iterates all CLs currently being purged, but there should be
+	// very few such CLs compared to the total number of tracked CLs.
 	for _, p := range s.PB.GetPurgingCls() {
 		if m.hasI64(p.GetClid()) {
 			panic(fmt.Errorf("can't purge %d CL which is already being purged", p.GetClid()))
