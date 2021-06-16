@@ -190,7 +190,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild rpc.
 //
-// Next ID: 20.
+// Next ID: 21.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -351,6 +351,14 @@ message ScheduleBuildRequest {
   // Only supports seconds precision for now.
   // For more information, see Build.grace_period in build.proto.
   google.protobuf.Duration grace_period = 19;
+
+  // Whether or not this request constitutes a dry run.
+  //
+  // A dry run returns the build proto without actually scheduling it. All
+  // fields except those which can only be computed at run-time are filled in.
+  // Does not cause side-effects. When batching, all requests must specify the
+  // same value for dry_run.
+  bool dry_run = 20;
 }
 
 // A request message for CancelBuild rpc.

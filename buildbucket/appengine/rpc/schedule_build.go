@@ -816,6 +816,17 @@ func setExperimentsFromProto(req *pb.ScheduleBuildRequest, cfg *pb.Builder, buil
 // scheduleBuilds handles requests to schedule builds. Requests must be
 // validated and authorized.
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
+	if len(reqs) == 0 {
+		return nil, nil
+	}
+
+	dryRun := reqs[0].DryRun
+	for _, req := range reqs {
+		if req.DryRun != dryRun {
+			return nil, appstatus.BadRequest(errors.Reason("all requests must have the same dry_run value").Err())
+		}
+	}
+
 	now := clock.Now(ctx).UTC()
 	user := auth.CurrentIdentity(ctx)
 	globalCfg, err := config.GetSettingsCfg(ctx)
@@ -832,7 +843,12 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 
 	blds := make([]*model.Build, len(reqs))
 	nums := make([]*model.Build, 0, len(reqs))
-	ids := buildid.NewBuildIDs(ctx, now, len(reqs))
+	var ids []int64
+	if dryRun {
+		ids = make([]int64, len(reqs))
+	} else {
+		ids = buildid.NewBuildIDs(ctx, now, len(reqs))
+	}
 	for i := range blds {
 		bucket := fmt.Sprintf("%s/%s", reqs[i].Builder.Project, reqs[i].Builder.Bucket)
 		cfg := cfgs[bucket][reqs[i].Builder.Builder]
@@ -845,12 +861,14 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			Proto:      *buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg),
 		}
 
-		// Set proto field values which can only be determined at creation-time.
-		blds[i].Proto.CreatedBy = string(user)
-		blds[i].Proto.CreateTime = timestamppb.New(now)
-		blds[i].Proto.Id = ids[i]
-		blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, blds[i].Proto.Id)
-		blds[i].Proto.Status = pb.Status_SCHEDULED
+		if !dryRun {
+			// Set proto field values which can only be determined at creation-time.
+			blds[i].Proto.CreatedBy = string(user)
+			blds[i].Proto.CreateTime = timestamppb.New(now)
+			blds[i].Proto.Id = ids[i]
+			blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, blds[i].Proto.Id)
+			blds[i].Proto.Status = pb.Status_SCHEDULED
+		}
 
 		setExperimentsFromProto(reqs[i], cfg, blds[i])
 		blds[i].IsLuci = true
@@ -870,6 +888,9 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		if cfg.GetBuildNumbers() == pb.Toggle_YES {
 			nums = append(nums, blds[i])
 		}
+	}
+	if dryRun {
+		return blds, nil
 	}
 	if err := generateBuildNumbers(ctx, nums); err != nil {
 		return nil, errors.Annotate(err, "error generating build numbers").Err()
