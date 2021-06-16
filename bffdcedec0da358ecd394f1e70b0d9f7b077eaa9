@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "926f1f83_5d510003",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 25
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T06:01:31Z",
+      "side": 1,
+      "message": "is addDisposer smart enough not to call the disposer right away if the object is already disposed?\nasking because this addDisposer call is async",
+      "revId": "bffdcedec0da358ecd394f1e70b0d9f7b077eaa9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be34ee68_32dee925",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 25
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T06:01:31Z",
+      "side": 1,
+      "message": "defensive programming: consider\n\n  const wasFirstUpdate \u003d firstUpdate;\n  firstUpdate \u003d false;\n  this.scheduleAuthStateUpdate(wasFirstUpdate);\n  \nin case scheduleAuthStateUpdate may recursively cause a change in authState\n\nalthough maybe delay below helps with that",
+      "revId": "bffdcedec0da358ecd394f1e70b0d9f7b077eaa9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5238f386_239471d7",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 25
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T06:01:31Z",
+      "side": 1,
+      "message": "nitty-nit: this is a low probability that two random numbers are equal. On the other hand, you could use an object: {}. It would definitely not equal, since its new.",
+      "range": {
+        "startLine": 133,
+        "startChar": 23,
+        "endLine": 133,
+        "endChar": 36
+      },
+      "revId": "bffdcedec0da358ecd394f1e70b0d9f7b077eaa9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
