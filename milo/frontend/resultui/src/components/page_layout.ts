@@ -15,25 +15,26 @@
 import '@material/mwc-icon';
 import '@material/mwc-icon-button';
 import '@material/mwc-snackbar';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable } from 'mobx';
+import { observable, reaction } from 'mobx';
 
 import './signin';
 import './tooltip';
+import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { NEW_MILO_VERSION_EVENT_TYPE } from '../libs/constants';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
-import { genFeedbackUrl } from '../libs/utils';
+import { genFeedbackUrl, timeout } from '../libs/utils';
 import { router } from '../routes';
-import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
+import { ANONYMOUS_IDENTITY, queryAuthState } from '../services/milo_internal';
 import commonStyle from '../styles/common_style.css';
+import { MiloBaseElement } from './milo_base';
 
 function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
   // TODO(weiweilin): add integration tests to ensure redirection works properly.
@@ -57,7 +58,7 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
 @customElement('milo-page-layout')
 @errorHandler(redirectToLogin)
 @provider
-export class PageLayoutElement extends MobxLitElement implements BeforeEnterObserver {
+export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObserver {
   @provideAppState({ global: true }) readonly appState = new AppState();
   @provideConfigsStore({ global: true }) readonly configsStore = new UserConfigsStore();
   @provideNotifier({ global: true }) readonly notifier = new ProgressiveNotifier({
@@ -83,6 +84,36 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener(NEW_MILO_VERSION_EVENT_TYPE, this.onNewMiloVersion);
+
+    let firstUpdate = true;
+    getAuthStateCache()
+      .then((authState) => (this.appState.authState = authState))
+      .finally(() => {
+        if (!this.isConnected) {
+          return;
+        }
+
+        this.addDisposer(
+          reaction(
+            () => this.appState.authState,
+            () => {
+              const wasFirstUpdate = firstUpdate;
+              firstUpdate = false;
+              // Cookie could be updated when the page was offline. Update the
+              // auth state immediately in the first update schedule.
+              this.scheduleAuthStateUpdate(wasFirstUpdate);
+            },
+            {
+              fireImmediately: true,
+              // Ensure there are at least 10s between updates. So the backend
+              // returning short-lived tokens won't cause the update action to
+              // fire rapidly.
+              // Note: the delay is not applied to the first call.
+              delay: 10000,
+            }
+          )
+        );
+      });
   }
 
   disconnectedCallback() {
@@ -93,6 +124,47 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
   }
 
   private onNewMiloVersion = () => (this.showUpdateBanner = true);
+
+  // A unique reference that functions as the ID of the last
+  // this.scheduleAuthStateUpdate call.
+  private lastScheduleId = {};
+
+  /**
+   * Updates the auth state when before it expires. When called multiple times,
+   * only the last call is respected.
+   *
+   * @param forceUpdate when set to true, update the auth state immediately.
+   */
+  private async scheduleAuthStateUpdate(forceUpdate = false) {
+    const scheduleId = {};
+    this.lastScheduleId = scheduleId;
+
+    let validDuration = 0;
+    if (!forceUpdate && this.appState.authState !== null) {
+      if (!this.appState.authState.accessTokenExpiry) {
+        return;
+      }
+      // Refresh the access token 10s earlier to prevent the token from
+      // expiring before the new token is returned.
+      validDuration = this.appState.authState.accessTokenExpiry * 1000 - Date.now() - 10000;
+    }
+
+    await timeout(validDuration);
+
+    if (!this.isConnected) {
+      return;
+    }
+
+    const newAuthState = await queryAuthState();
+
+    // There's another scheduled update. Abort the current one.
+    if (this.lastScheduleId !== scheduleId) {
+      return;
+    }
+
+    setAuthStateCache(newAuthState);
+    this.appState.authState = newAuthState;
+  }
 
   protected render() {
     return html`
