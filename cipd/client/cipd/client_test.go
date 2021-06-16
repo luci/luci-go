@@ -1085,7 +1085,7 @@ func TestFetchInstance(t *testing.T) {
 			So(storage.downloads(), ShouldEqual, 1)
 
 			// The file is in the cache now.
-			_, err = os.Stat(filepath.Join(cacheDir, pin.InstanceID))
+			_, err = os.Stat(filepath.Join(cacheDir, "instances", pin.InstanceID))
 			So(err, ShouldBeNil)
 
 			// The second fetch should use the instance cache (and thus make no
@@ -1105,7 +1105,7 @@ func TestFetchInstance(t *testing.T) {
 
 			// The file is in the cache now. Corrupt it by writing a bunch of zeros
 			// in the middle.
-			f, err := os.OpenFile(filepath.Join(cacheDir, pin.InstanceID), os.O_RDWR, 0644)
+			f, err := os.OpenFile(filepath.Join(cacheDir, "instances", pin.InstanceID), os.O_RDWR, 0644)
 			So(err, ShouldBeNil)
 			off, _ := f.Seek(1000, 0)
 			So(off, ShouldEqual, 1000)
@@ -1483,11 +1483,11 @@ func setupTagCache(cl *clientImpl, c C) string {
 }
 
 func setupInstanceCache(cl *clientImpl, c C) string {
-	c.So(cl.instanceCache, ShouldBeNil)
+	c.So(cl.globalInstanceCache, ShouldBeNil)
 	tempDir, err := ioutil.TempDir("", "cipd_instance_cache")
 	c.So(err, ShouldBeNil)
 	c.Reset(func() { os.RemoveAll(tempDir) })
-	cl.instanceCache = internal.NewInstanceCache(fs.NewFileSystem(tempDir, ""), cl.remoteFetchInstance)
+	cl.CacheDir = tempDir
 	return tempDir
 }
 
