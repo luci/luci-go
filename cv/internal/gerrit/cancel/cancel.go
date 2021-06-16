@@ -282,8 +282,10 @@ func applyLeaseForCL(ctx context.Context, clid common.CLID, duration time.Durati
 	dctx, cancel := context.WithDeadline(ctx, leaseExpireTime)
 	close := func() {
 		cancel()
-		// Best-effort termination since lease will expire naturally.
-		l.Terminate(ctx)
+		if err := l.Terminate(ctx); err != nil {
+			// Best-effort termination since lease will expire naturally.
+			errors.Log(ctx, err)
+		}
 	}
 	return dctx, close, nil
 }
