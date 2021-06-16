@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b1ba528_169653ac",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-16T02:20:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ea140f4_355a7691",
+      "range": {
+        "startLine": 520,
+        "startChar": 44,
+        "endLine": 520,
+        "endChar": 59
+      },
+      "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8e4cbbeb_3619cf83",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b340b6b_1b5dd9e2",
+        "filename": "cv/internal/cvtesting/e2e/runs_without_verifiers_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 528,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-16T02:20:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e4cbbeb_3619cf83",
+      "range": {
+        "startLine": 524,
+        "startChar": 3,
+        "endLine": 528,
+        "endChar": 44
+      },
+      "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "20e03978_1dce3ad7",
@@ -77,6 +125,24 @@
       "writtenOn": "2021-06-15T20:42:17Z",
       "side": 1,
       "message": "nit: worth saying that normally, there is just 1.",
+      "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e279a9ed_5991f59f",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-16T02:20:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20e03978_1dce3ad7",
       "revId": "33d53e40c8a1d4afb4fd9262af3b793adc7c0d3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
