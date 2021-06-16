@@ -110,6 +110,13 @@ export class Prefetcher {
    * fetched by the browser momentarily.
    */
   async prefetchResources(reqUrl: URL) {
+    // Prevents irrelevant requests from triggering excessive auth-state
+    // refresh requests.
+    // TODO(crbug/1108198): remove the /ui prefix.
+    if (!reqUrl.pathname.match(/^\/ui\/(p|b|inv|artifact)\//)) {
+      return;
+    }
+
     // Prefetch services relies on the in-memory cache.
     // Call getAuthState to populate the in-memory cache.
     const authState = await getAuthStateCache();
