@@ -36,6 +36,8 @@ import { ANONYMOUS_IDENTITY, queryAuthState } from '../services/milo_internal';
 import commonStyle from '../styles/common_style.css';
 import { MiloBaseElement } from './milo_base';
 
+export const refreshAuthChannel = new BroadcastChannel('refresh-auth-channel');
+
 function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
   // TODO(weiweilin): add integration tests to ensure redirection works properly.
   if (err.error instanceof GrpcError) {
@@ -84,6 +86,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener(NEW_MILO_VERSION_EVENT_TYPE, this.onNewMiloVersion);
+    refreshAuthChannel.addEventListener('message', this.onRefreshAuth);
 
     let firstUpdate = true;
     getAuthStateCache()
@@ -101,7 +104,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
             {
               fireImmediately: true,
               // Ensure there are at least 10s between updates. So the backend
-              // returning short-lived tokens won't cause the update action to
+              // returning a short-lived token won't cause the update action to
               // fire rapidly.
               // Note: the delay is not applied to the first call.
               delay: 10000,
@@ -114,11 +117,13 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
   disconnectedCallback() {
     this.appState.dispose();
     this.configsStore.dispose();
+    refreshAuthChannel.removeEventListener('message', this.onRefreshAuth);
     window.removeEventListener(NEW_MILO_VERSION_EVENT_TYPE, this.onNewMiloVersion);
     super.disconnectedCallback();
   }
 
   private onNewMiloVersion = () => (this.showUpdateBanner = true);
+  private onRefreshAuth = () => this.scheduleAuthStateUpdate(true);
 
   // Keeps track of the ID of the last scheduleAuthStateUpdate call.
   private lastScheduleId = 0;

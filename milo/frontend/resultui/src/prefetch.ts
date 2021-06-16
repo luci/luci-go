@@ -110,6 +110,10 @@ export class Prefetcher {
    * fetched by the browser momentarily.
    */
   async prefetchResources(reqUrl: URL) {
+    if (!reqUrl.pathname.match(/^\/ui\/(p|b|inv|artifact)\//)) {
+      return;
+    }
+
     // Prefetch services relies on the in-memory cache.
     // Call getAuthState to populate the in-memory cache.
     const authState = await getAuthStateCache();
