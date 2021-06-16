@@ -18,7 +18,7 @@ import { computed, observable, untracked } from 'mobx';
 import { createContextLink } from '../libs/context';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { AccessService, BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
-import { AuthState, MiloInternal, queryAuthState } from '../services/milo_internal';
+import { AuthState, MiloInternal } from '../services/milo_internal';
 import { ResultDb, UISpecificService } from '../services/resultdb';
 
 /**
@@ -78,27 +78,6 @@ export class AppState {
   // the user is logged in or not).
   @computed get userIdentity() {
     return this.authState?.identity || null;
-  }
-
-  constructor() {
-    const updateAuthState = async () => {
-      if (this.isDisposed) {
-        return;
-      }
-
-      this.authState = await queryAuthState();
-
-      if (!this.authState.accessTokenExpiry) {
-        return;
-      }
-
-      const validDuration = this.authState.accessTokenExpiry * 1000 - Date.now();
-
-      // Refresh the access token 10s earlier to prevent the token from expiring
-      // before the new token is returned.
-      window.setTimeout(updateAuthState, validDuration - 10000);
-    };
-    updateAuthState();
   }
 
   @computed({ keepAlive: true })
