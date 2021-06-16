@@ -100,7 +100,7 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *chang
 			bad, t = d.GetCombinableMismatchedMode(), tmplCombinableMismatchedMode
 			args["mode"] = task.GetTrigger().GetMode()
 		default:
-			return errors.Reason("usupported InvalidDeps reason %s", d).Err()
+			return errors.Reason("unsupported InvalidDeps reason %s", d).Err()
 		}
 		urls, err := depsURLs(ctx, bad)
 		if err != nil {
@@ -111,7 +111,7 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *chang
 		return t.Execute(sb, args)
 
 	default:
-		return errors.Reason("usupported purge reason %t: %s", v, reason).Err()
+		return errors.Reason("unsupported purge reason %t: %s", v, reason).Err()
 	}
 }
 

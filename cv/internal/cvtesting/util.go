@@ -395,7 +395,7 @@ func (t *Test) setUpTestClock(ctx context.Context) context.Context {
 		// Used in clock.WithTimeout(ctx) | clock.WithDeadline(ctx).
 		clock.ContextDeadlineTag,
 		// Used by CQDFake to wait until the next loop.
-		// NOTE: can't import cqdfake package const here due to ciruclar import,
+		// NOTE: can't import cqdfake package const here due to circular import,
 		// and while it's possible to refactor this, we expect to delete cqdfake
 		// relatively soon.
 		"cqdfake",

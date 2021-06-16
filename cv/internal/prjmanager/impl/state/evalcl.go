@@ -150,7 +150,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	return nil
 }
 
-// filterOutUpToDate removes from the given clid -> EVersion map entires for
+// filterOutUpToDate removes from the given clid -> EVersion map entries for
 // which PCL is already up to date.
 func (s *State) filterOutUpToDate(clEVersions map[int64]int64) {
 	// This isn't the most efficient way when P=len(PCLs) >> E=len(events)
@@ -275,7 +275,7 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 // Modifies the passed PCL.
 func (s *State) setApplicableConfigGroups(ap *changelist.ApplicableConfig_Project, snapshot *changelist.Snapshot, pcl *prjpb.PCL) {
 	// Most likely, ApplicableConfig stored in a CL entity is still up-to-date.
-	if uptodate := s.tryUsingApplicableConfigGroups(ap, pcl); uptodate {
+	if upToDate := s.tryUsingApplicableConfigGroups(ap, pcl); upToDate {
 		return
 	}
 	// Project's config has been updated after CL snapshot was made.

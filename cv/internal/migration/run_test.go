@@ -399,7 +399,7 @@ func TestSaveFinishedCQDRun(t *testing.T) {
 		mr := &migrationpb.ReportedRun{
 			Attempt: &cvbqpb.Attempt{
 				Key: "samekeyhash",
-				// Other fields are populated in practice, but this test ingores that.
+				// Other fields are populated in practice, but this test ignores that.
 			},
 		}
 

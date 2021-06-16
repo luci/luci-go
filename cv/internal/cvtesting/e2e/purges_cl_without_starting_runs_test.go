@@ -147,7 +147,7 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		const (
 			lProject   = "chromiumos"
 			gHost      = "chromium-review.example.com"
-			gRepo      = "cros/platform"
+			gRepo      = "cross/platform"
 			gRef       = "refs/heads/main"
 			gChange44  = 44
 			gChange45  = 45
@@ -270,7 +270,7 @@ func TestPurgesCLCQDependingOnItself(t *testing.T) {
 		const (
 			lProject  = "chromiumos"
 			gHost     = "chromium-review.example.com"
-			gRepo     = "cros/platform"
+			gRepo     = "cross/platform"
 			gRef      = "refs/heads/main"
 			gChange44 = 44
 		)
