@@ -22,11 +22,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -35,68 +40,206 @@ import (
 const testInstanceCacheMaxSize = 10
 
 func TestInstanceCache(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
 
-	Convey("InstanceCache", t, func(c C) {
+	Convey("InstanceCache", t, func() {
+		ctx := context.Background()
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+
 		tempDir, err := ioutil.TempDir("", "instanceche_test")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
-
-		now := time.Date(2016, 1, 2, 3, 4, 5, 6, time.UTC)
-
 		fs := fs.NewFileSystem(tempDir, "")
-		cache := NewInstanceCache(fs)
-		cache.maxSize = testInstanceCacheMaxSize
 
-		put := func(cache *InstanceCache, pin common.Pin, data string) {
-			err = cache.Put(ctx, pin, now, func(f *os.File) error {
-				_, err := f.WriteString(data)
-				So(err, ShouldBeNil)
-				return nil
-			})
-			So(err, ShouldBeNil)
-		}
-
-		testHas := func(cache *InstanceCache, pin common.Pin, data string) {
-			r, err := cache.Get(ctx, pin, now)
-			So(err, ShouldBeNil)
-			buf, err := ioutil.ReadAll(io.NewSectionReader(r, 0, r.Size()))
-			So(err, ShouldBeNil)
-			So(string(buf), ShouldEqual, data)
-			So(r.Close(ctx, false), ShouldBeNil)
-		}
-
-		Convey("Works", func() {
-			cache2 := NewInstanceCache(fs)
-			cache2.maxSize = testInstanceCacheMaxSize
-
-			pin := common.Pin{"pkg", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
-			r, err := cache.Get(ctx, pin, now)
-			So(os.IsNotExist(err), ShouldBeTrue)
-			So(r, ShouldResemble, nil)
-
-			// Add new.
-			put(cache, pin, "blah")
-			testHas(cache, pin, "blah")
-			testHas(cache2, pin, "blah")
-
-			// Replace existing.
-			put(cache, pin, "huh")
-			testHas(cache, pin, "huh")
-			testHas(cache2, pin, "huh")
-		})
-
-		pini := func(i int) common.Pin {
+		pin := func(i int) common.Pin {
 			pin := common.Pin{"pkg", fmt.Sprintf("%d", i)}
 			pin.InstanceID = strings.Repeat("a", 40-len(pin.InstanceID)) + pin.InstanceID
 			return pin
 		}
 
+		fakeData := func(p common.Pin) string {
+			return "data:" + p.InstanceID
+		}
+
+		var fetchM sync.Mutex
+		var fetchErr chan error
+		var fetchCalls int
+
+		cache := NewInstanceCache(fs, func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
+			fetchM.Lock()
+			fetchCalls++
+			fetchErrCh := fetchErr
+			fetchM.Unlock()
+			if fetchErrCh != nil {
+				if err := <-fetchErrCh; err != nil {
+					return err
+				}
+			}
+			_, err := w.Write([]byte(fakeData(pin)))
+			return err
+		})
+		cache.maxSize = testInstanceCacheMaxSize
+
+		access := func(cache *InstanceCache, pin common.Pin) (created bool, src pkg.Source) {
+			alloc := cache.Allocate(ctx, pin)
+			defer alloc.Release(ctx)
+
+			fetchM.Lock()
+			before := fetchCalls
+			fetchM.Unlock()
+
+			src, err := alloc.Realize(ctx)
+			So(err, ShouldBeNil)
+
+			fetchM.Lock()
+			created = fetchCalls > before
+			fetchM.Unlock()
+
+			return created, src
+		}
+
+		putNew := func(cache *InstanceCache, pin common.Pin) {
+			created, src := access(cache, pin)
+			So(created, ShouldBeTrue)
+			So(src.Close(ctx, false), ShouldBeNil)
+		}
+
+		testHas := func(cache *InstanceCache, pin common.Pin) {
+			created, src := access(cache, pin)
+			So(created, ShouldBeFalse)
+			buf, err := ioutil.ReadAll(io.NewSectionReader(src, 0, src.Size()))
+			So(err, ShouldBeNil)
+			So(string(buf), ShouldEqual, fakeData(pin))
+			So(src.Close(ctx, false), ShouldBeNil)
+		}
+
+		accessTime := func(cache *InstanceCache, pin common.Pin) (lastAccess time.Time, ok bool) {
+			cache.withState(ctx, clock.Now(ctx), func(s *messages.InstanceCache) (save bool) {
+				var entry *messages.InstanceCache_Entry
+				if entry, ok = s.Entries[pin.InstanceID]; ok {
+					lastAccess = entry.LastAccess.AsTime()
+				}
+				return false
+			})
+			return
+		}
+
+		Convey("Works in general", func() {
+			cache2 := NewInstanceCache(fs, nil)
+			cache2.maxSize = testInstanceCacheMaxSize
+
+			// Add new.
+			putNew(cache, pin(0))
+
+			// Check it can be seen even through another InstanceCache object.
+			testHas(cache, pin(0))
+			testHas(cache2, pin(0))
+		})
+
+		Convey("Concurrent access", func() {
+			const concurrency = 20
+
+			p := pin(0)
+
+			state := make([]struct {
+				alloc *Allocation
+				src   pkg.Source
+				err   error
+			}, concurrency)
+
+			// Try to "collide" concurrent Realize calls.
+			wg := sync.WaitGroup{}
+			wg.Add(concurrency)
+			fetchErr = make(chan error)
+			for i := 0; i < concurrency; i++ {
+				i := i
+				alloc := cache.Allocate(ctx, p)
+				state[i].alloc = alloc
+				go func() {
+					defer wg.Done()
+					state[i].src, state[i].err = alloc.Realize(ctx)
+				}()
+			}
+
+			// Created only one alloc.
+			So(cache.allocs, ShouldHaveLength, 1)
+
+			execute := func(realizeErr error) {
+				fetchErr <- realizeErr
+				close(fetchErr)
+				wg.Wait()
+			}
+
+			closeAll := func() {
+				// Close everything, but do not release allocations yet.
+				for _, s := range state {
+					if s.src != nil {
+						s.src.Close(ctx, false)
+					}
+				}
+				// Still holding to the alloc since have references.
+				So(cache.allocs, ShouldHaveLength, 1)
+				// Release all references.
+				for _, s := range state {
+					s.alloc.Release(ctx)
+				}
+				// The alloc is deleted for real.
+				So(cache.allocs, ShouldHaveLength, 0)
+			}
+
+			Convey("Success", func() {
+				execute(nil)
+
+				// None failed, but only one was actually creating the file.
+				So(fetchCalls, ShouldEqual, 1)
+				for _, s := range state {
+					So(s.err, ShouldBeNil)
+					buf, err := ioutil.ReadAll(io.NewSectionReader(s.src, 0, s.src.Size()))
+					So(err, ShouldBeNil)
+					So(string(buf), ShouldEqual, fakeData(p))
+				}
+
+				// Double-close is fine.
+				So(state[0].src.Close(ctx, false), ShouldBeNil)
+				So(state[0].src.Close(ctx, false), ShouldEqual, os.ErrClosed)
+
+				closeAll()
+
+				// The file is still in the cache.
+				testHas(cache, pin(0))
+			})
+
+			Convey("Error", func() {
+				var boomErr = fmt.Errorf("boom")
+
+				execute(boomErr)
+				defer closeAll()
+
+				// All failed, but only one actually was executing the fetch.
+				So(fetchCalls, ShouldEqual, 1)
+				for _, s := range state {
+					So(s.err, ShouldEqual, boomErr)
+					So(s.src, ShouldBeNil)
+				}
+			})
+
+			Convey("Corruption", func() {
+				execute(nil)
+
+				// Close the source as corrupted at least through one allocation.
+				So(state[0].src.Close(ctx, true), ShouldBeNil)
+				closeAll()
+
+				// The file was removed from the cache and we can recreate it now.
+				putNew(cache, pin(0))
+			})
+		})
+
 		Convey("GC respects MaxSize", func() {
 			// Add twice more the limit.
 			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
-				put(cache, pini(i), "blah")
-				now = now.Add(time.Second)
+				putNew(cache, pin(i))
+				tc.Add(time.Second)
 			}
 
 			// Check the number of actual files.
@@ -107,13 +250,13 @@ func TestInstanceCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(files, ShouldHaveLength, testInstanceCacheMaxSize+1) // 1 for state.db
 
-			// Try to get.
-			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
-				r, err := cache.Get(ctx, pini(i), now)
-				if r != nil {
-					r.Close(ctx, false)
-				}
-				So(os.IsNotExist(err), ShouldEqual, i < testInstanceCacheMaxSize)
+			// Only last testInstanceCacheMaxSize instances are still in the cache.
+			for i := testInstanceCacheMaxSize; i < testInstanceCacheMaxSize*2; i++ {
+				testHas(cache, pin(i))
+			}
+			// The rest are missing and can be recreated.
+			for i := 0; i < testInstanceCacheMaxSize; i++ {
+				putNew(cache, pin(i))
 			}
 		})
 
@@ -121,9 +264,9 @@ func TestInstanceCache(t *testing.T) {
 			cache.maxAge = 2500 * time.Millisecond
 			for i := 0; i < 8; i++ {
 				if i != 0 {
-					now = now.Add(time.Second)
+					tc.Add(time.Second)
 				}
-				put(cache, pini(i), "blah")
+				putNew(cache, pin(i))
 			}
 
 			// Age of last added item (i == 7) is 0 => age of i'th item is 7-i.
@@ -131,17 +274,15 @@ func TestInstanceCache(t *testing.T) {
 			// Condition for survival: age < cache.maxAge, e.g 7-i<2.5 => i >= 5.
 			//
 			// Thus we expect {5, 6, 7} to still be in the cache after the GC.
-			cache.GC(ctx, now)
+			cache.GC(ctx)
+			testHas(cache, pin(5))
+			testHas(cache, pin(6))
+			testHas(cache, pin(7))
 
-			alive := []int{}
-			for i := 0; i < 8; i++ {
-				r, _ := cache.Get(ctx, pini(i), now)
-				if r != nil {
-					r.Close(ctx, false)
-					alive = append(alive, i)
-				}
+			// The rest are missing and can be recreated.
+			for i := 0; i < 5; i++ {
+				putNew(cache, pin(i))
 			}
-			So(alive, ShouldResemble, []int{5, 6, 7})
 		})
 
 		Convey("Sync", func() {
@@ -151,20 +292,19 @@ func TestInstanceCache(t *testing.T) {
 			testSync := func(causeResync func()) {
 				// Add instances.
 				for i := 0; i < count; i++ {
-					put(cache, pini(i), "blah")
+					putNew(cache, pin(i))
 				}
 
 				causeResync()
 
 				// state.db must be restored.
 				for i := 0; i < count; i++ {
-					lastAccess, ok := cache.getAccessTime(ctx, now, pini(i))
+					lastAccess, ok := accessTime(cache, pin(i))
 					So(ok, ShouldBeTrue)
-					So(lastAccess, ShouldResemble, now)
+					So(lastAccess.UnixNano(), ShouldEqual, clock.Now(ctx).UnixNano())
 				}
 
-				_, ok := cache.getAccessTime(
-					ctx, now, common.Pin{"nonexistent", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"})
+				_, ok := accessTime(cache, common.Pin{"nonexistent", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"})
 				So(ok, ShouldBeFalse)
 			}
 

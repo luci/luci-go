@@ -1487,7 +1487,7 @@ func setupInstanceCache(cl *clientImpl, c C) string {
 	tempDir, err := ioutil.TempDir("", "cipd_instance_cache")
 	c.So(err, ShouldBeNil)
 	c.Reset(func() { os.RemoveAll(tempDir) })
-	cl.instanceCache = internal.NewInstanceCache(fs.NewFileSystem(tempDir, ""))
+	cl.instanceCache = internal.NewInstanceCache(fs.NewFileSystem(tempDir, ""), cl.remoteFetchInstance)
 	return tempDir
 }
 

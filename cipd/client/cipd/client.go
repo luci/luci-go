@@ -135,7 +135,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.3"
+	UserAgent = "cipd 2.5.4"
 )
 
 func init() {
@@ -641,7 +641,10 @@ func (client *clientImpl) getInstanceCache(ctx context.Context) *internal.Instan
 			return
 		}
 		path := filepath.Join(client.CacheDir, "instances")
-		client.instanceCache = internal.NewInstanceCache(fs.NewFileSystem(path, ""))
+		client.instanceCache = internal.NewInstanceCache(
+			fs.NewFileSystem(path, ""),
+			client.remoteFetchInstance,
+		)
 		logging.Infof(ctx, "cipd: using instance cache at %q", path)
 	})
 	return client.instanceCache
@@ -1450,55 +1453,9 @@ func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.P
 }
 
 func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache) (pkg.Source, error) {
-	attempt := 0
-	for {
-		attempt++
-
-		// Try to get the instance from cache.
-		now := clock.Now(ctx)
-		switch file, err := cache.Get(ctx, pin, now); {
-		case os.IsNotExist(err):
-			// No such package in the cache. This is fine.
-
-		case err != nil:
-			// Some unexpected error. Log and carry on, as if it is a cache miss.
-			logging.Warningf(ctx, "cipd: could not get %s from cache - %s", pin, err)
-
-		default:
-			logging.Infof(ctx, "cipd: instance cache hit for %s", pin)
-			return file, nil
-		}
-
-		// Download the package into the cache. 'remoteFetchInstance' verifies the
-		// hash. When reading from the cache, we can skip the hash check (and we
-		// indeed do, see 'cipd: instance cache hit' case above).
-		err := cache.Put(ctx, pin, now, func(f *os.File) error {
-			return client.remoteFetchInstance(ctx, pin, f)
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		// Try to open it now. There's (very) small chance that it has been evicted
-		// from the cache already. If this happens, try again. Do it only once.
-		//
-		// Note that theoretically we could keep open the handle to the file used in
-		// 'cache.Put' above, but this file gets renamed at some point, and renaming
-		// files with open handles on Windows is moot. So instead we close it,
-		// rename the file (this happens inside cache.Put), and reopen it again
-		// under the new name.
-		file, err := cache.Get(ctx, pin, clock.Now(ctx))
-		if err != nil {
-			logging.Errorf(ctx, "cipd: %s is unexpectedly missing from cache (%s)", pin, err)
-			if attempt == 1 {
-				logging.Infof(ctx, "cipd: retrying...")
-				continue
-			}
-			logging.Errorf(ctx, "cipd: giving up")
-			return nil, err
-		}
-		return file, nil
-	}
+	alloc := cache.Allocate(ctx, pin)
+	defer alloc.Release(ctx)
+	return alloc.Realize(ctx)
 }
 
 // remoteFetchInstance fetches the package file into 'output' and verifies its
