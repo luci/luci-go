@@ -70,7 +70,7 @@ func (af *authFlags) NewCASClient(ctx context.Context, instance string) (*rbecli
 	if af.parsedOpts == nil {
 		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
 	}
-	return cas.NewClient(ctx, instance, *af.parsedOpts, true)
+	return cas.NewRBEClient(ctx, instance, *af.parsedOpts, true)
 }
 
 func getApplication() *subcommands.DefaultApplication {

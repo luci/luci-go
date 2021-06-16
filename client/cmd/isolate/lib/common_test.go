@@ -22,16 +22,17 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"github.com/golang/protobuf/proto"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/cas"
+	chromecas "go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/isolate"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestElideNestedPaths(t *testing.T) {
@@ -112,16 +113,21 @@ func TestUploadToCAS(t *testing.T) {
 		fooDg := digest.NewFromBlob(fooContent)
 		barDg := digest.NewFromBlob(barContent)
 		bazDg := digest.NewFromBlob(bazContent)
-		fakeFlags := cas.Flags{
-			Instance: "foo",
+		fakeFlags := chromecas.Flags{
+			Instance:  "foo",
+			UseNewLib: true,
 		}
 		var opts auth.Options
 
 		e, cleanup := fakes.NewTestEnv(t)
 		defer cleanup()
 		run := baseCommandRun{
-			casClientFactory: func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
-				return e.Server.NewTestClient(ctx)
+			casClientFactory: func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
+				conn, err := e.Server.NewClientConn(ctx)
+				if err != nil {
+					return nil, err
+				}
+				return cas.NewClientWithConfig(ctx, conn, "instance", chromecas.DefaultConfig())
 			},
 		}
 		cas := e.Server.CAS
