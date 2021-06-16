@@ -38,7 +38,7 @@ import (
 const TaskClass = "refresh-gerrit-cl"
 const TaskClassBatch = "batch-refresh-gerrit-cl"
 
-// blindRefreshInterval sets interval between blind refresh of a Gerrit CL.
+// blindRefreshInterval sets interval between blind refreshes of a Gerrit CL.
 //
 // Doesn't affect refreshes with updatedHint specified.
 const blindRefreshInterval = time.Minute
@@ -62,7 +62,7 @@ type Updater struct {
 	tqd *tq.Dispatcher
 }
 
-// New creates new Updater.
+// New creates a new Updater.
 func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
 	u := &Updater{pm, rm, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
@@ -101,16 +101,16 @@ func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
 
 // Schedule enqueues a TQ task to refresh a Gerrit CL as soon as possible.
 //
-// It should be used instead of direct tq.AddTask for consistent deduplication
-// and ease of debugging.
+// It should be used instead of directly using tq.AddTask, for consistent
+// deduplication and ease of debugging.
 func (u *Updater) Schedule(ctx context.Context, p *RefreshGerritCL) error {
 	return u.ScheduleDelayed(ctx, p, 0)
 }
 
 // Schedule enqueues a TQ task to refresh a Gerrit CL after a given delay.
 //
-// It should be used instead of direct tq.AddTask for consistent deduplication
-// and ease of debugging.
+// It should be used instead of directly using tq.AddTask, for consistent
+// deduplication and ease of debugging.
 func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay time.Duration) error {
 	task := &tq.Task{
 		Payload: p,
@@ -146,7 +146,7 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 	return u.tqd.AddTask(ctx, task)
 }
 
-// Refresh fetches latest info from Gerrit.
+// Refresh fetches the latest info from Gerrit.
 //
 // If datastore already contains snapshot with Gerrit-reported update time equal
 // to or after updatedHint, then no updating or querying will be performed,
@@ -178,8 +178,8 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 // ScheduleBatch enqueues one TQ task transactionally to eventually refresh many
 // CLs.
 //
-// This function exist to write 1 Datastore entity during a transaction instead of
-// N entities if Schedule() was used for each CL.
+// This function exist to write 1 Datastore entity during a transaction instead
+// of N entities if Schedule() was used for each CL.
 func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, forceNotifyPM bool, cls []*changelist.CL) error {
 	tasks := make([]*RefreshGerritCL, len(cls))
 	for i, cl := range cls {
@@ -196,7 +196,7 @@ func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, forceNo
 		}
 	}
 	if len(tasks) == 1 {
-		// Optimization for frequent use-case of single-CL Runs.
+		// Optimization for the most frequent use-case of single-CL Runs.
 		return u.Schedule(ctx, tasks[0])
 	}
 	return u.tqd.AddTask(ctx, &tq.Task{

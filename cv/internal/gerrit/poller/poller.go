@@ -130,8 +130,8 @@ func (p *Poller) poll(ctx context.Context, luciProject string, eta time.Time) er
 	}
 }
 
-// pollInterval is approximate and merely best effort average interval between
-// polls of a single project.
+// pollInterval is an approximate and merely best-effort average interval
+// between polls of a single project.
 //
 // TODO(tandrii): revisit interval and error handling in pollWithConfig once CV
 // subscribes to Gerrit PubSub.
@@ -283,7 +283,7 @@ func (p *Poller) updateConfig(ctx context.Context, s *State, meta config.Meta) e
 	return nil
 }
 
-// save saves state of poller after the poll.
+// save saves the state of poller after the poll.
 func save(ctx context.Context, s *State) error {
 	var innerErr error
 	var copied State
