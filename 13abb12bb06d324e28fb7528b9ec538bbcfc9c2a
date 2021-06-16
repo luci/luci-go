@@ -16,6 +16,57 @@
       "message": "ping",
       "revId": "13abb12bb06d324e28fb7528b9ec538bbcfc9c2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64bbc86d_10dbb6a2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-16T23:22:49Z",
+      "side": 1,
+      "message": "lgtm with qUeStIOnS",
+      "revId": "13abb12bb06d324e28fb7528b9ec538bbcfc9c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "423f8761_723b4f40",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 638,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-16T23:22:49Z",
+      "side": 1,
+      "message": "Why is this tied to a batch and not a client? Is it just that \u0027batch\u0027 is a smaller scope than \u0027client\u0027? Would it be horrible to construct clients with \u0027batch\u0027 scope instead (i.e. where there are batches, instead construct clients)?",
+      "revId": "13abb12bb06d324e28fb7528b9ec538bbcfc9c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a201bdd_dfc0dd06",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1438,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-16T23:22:49Z",
+      "side": 1,
+      "message": "because then you would avoid this...",
+      "revId": "13abb12bb06d324e28fb7528b9ec538bbcfc9c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
