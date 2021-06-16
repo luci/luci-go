@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "78c67a7a_3017feab",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T06:55:29Z",
+      "side": 1,
+      "message": "nit: place key before value",
+      "revId": "065a9ad627aeae147ebbabfff3c010d761b55d21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ee0c183_3a59406b",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T06:55:29Z",
+      "side": 1,
+      "message": "assuming we have multiple service workers, does this code reused across them?\nshould the key be service-worker-specific? Is \"self\" here one of multiple service workers?",
+      "revId": "065a9ad627aeae147ebbabfff3c010d761b55d21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
