@@ -292,6 +292,112 @@ func TestScheduleBuild(t *testing.T) {
 			So(sch.Tasks(), ShouldBeEmpty)
 		})
 
+		Convey("dry run", func() {
+			So(datastore.Put(ctx, &model.Builder{
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				ID:     "builder",
+			}), ShouldBeNil)
+
+			Convey("mixed", func() {
+				reqs := []*pb.ScheduleBuildRequest{
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						DryRun: true,
+					},
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						DryRun: false,
+					},
+				}
+
+				blds, err := scheduleBuilds(ctx, reqs...)
+				So(err, ShouldErrLike, "all requests must have the same dry_run value")
+				So(blds, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
+			})
+
+			Convey("one", func() {
+				req := &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					DryRun: true,
+				}
+
+				blds, err := scheduleBuilds(ctx, req)
+				So(err, ShouldBeNil)
+				So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Exe: &pb.Executable{
+							Cmd: []string{"recipes"},
+						},
+						ExecutionTimeout: &durationpb.Duration{
+							Seconds: 10800,
+						},
+						GracePeriod: &durationpb.Duration{
+							Seconds: 30,
+						},
+						Infra: &pb.BuildInfra{
+							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Logdog: &pb.BuildInfra_LogDog{
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname: "rdbHost",
+							},
+							Swarming: &pb.BuildInfra_Swarming{
+								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+									{
+										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+										Path: "builder",
+										WaitForWarmCache: &durationpb.Duration{
+											Seconds: 240,
+										},
+									},
+								},
+								Priority: 30,
+							},
+						},
+						Input: &pb.Build_Input{
+							Properties: &structpb.Struct{},
+						},
+						SchedulingTimeout: &durationpb.Duration{
+							Seconds: 21600,
+						},
+						Tags: []*pb.StringPair{
+							{
+								Key:   "builder",
+								Value: "builder",
+							},
+						},
+					},
+				})
+				So(sch.Tasks(), ShouldBeEmpty)
+			})
+		})
+
 		Convey("zero", func() {
 			blds, err := scheduleBuilds(ctx)
 			So(err, ShouldBeNil)
@@ -411,6 +517,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			})
 			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(datastore.Get(ctx, blds), ShouldBeNil)
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
 			So(err, ShouldBeNil)
@@ -683,6 +790,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			})
 			So(sch.Tasks(), ShouldHaveLength, 3)
+			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
 	})
 
