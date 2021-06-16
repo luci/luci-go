@@ -46,6 +46,30 @@
       },
       "revId": "81d618f0cc482ee34e6e045de5b8f18a5966c9ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15d4f0ac_5669410f",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 781,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-16T21:38:58Z",
+      "side": 1,
+      "message": "that\u0027s a good idea. done",
+      "parentUuid": "a619db64_252009b7",
+      "range": {
+        "startLine": 781,
+        "startChar": 48,
+        "endLine": 781,
+        "endChar": 66
+      },
+      "revId": "81d618f0cc482ee34e6e045de5b8f18a5966c9ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
