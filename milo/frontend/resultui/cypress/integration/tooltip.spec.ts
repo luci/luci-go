@@ -19,10 +19,13 @@ describe('Tooltip', () => {
 
     cy.scrollTo(0, '100px');
     cy.wait(100);
-    cy.matchImageSnapshot('tooltip', { capture: 'viewport' });
+    cy.matchImageSnapshot('tooltip', { capture: 'viewport', clip: { x: 50, y: 500, width: 300, height: 100 } });
 
     cy.scrollTo(0, '200px');
     cy.wait(100);
-    cy.matchImageSnapshot('tooltip-scrolled', { capture: 'viewport' });
+    cy.matchImageSnapshot('tooltip-scrolled', {
+      capture: 'viewport',
+      clip: { x: 50, y: 400, width: 300, height: 100 },
+    });
   });
 });
