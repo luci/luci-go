@@ -286,13 +286,16 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		noAccessAt := now
 		if temporary {
 			noAccessAt = now.Add(noAccessGraceDuration)
-			err := f.scheduleRefresh(ctx, &RefreshGerritCL{
+			t := &RefreshGerritCL{
 				LuciProject: f.luciProject,
 				Host:        f.host,
 				Change:      f.change,
 				ClidHint:    int64(f.clidIfKnown()),
-				UpdatedHint: timestamppb.New(f.updatedHint),
-			}, noAccessGraceRetryDelay)
+			}
+			if !f.updatedHint.IsZero() {
+				t.UpdatedHint = timestamppb.New(f.updatedHint)
+			}
+			err := f.scheduleRefresh(ctx, t, noAccessGraceRetryDelay)
 			if err != nil {
 				return err
 			}
