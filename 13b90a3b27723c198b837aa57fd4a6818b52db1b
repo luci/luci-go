@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aafff74f_418457e0",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T06:07:40Z",
+      "side": 1,
+      "message": "nit: why not addDisposer?\nadding and removing would be in the same place\neven onRefreshAuth could be pulled here, and then everything is in one place",
+      "revId": "13b90a3b27723c198b837aa57fd4a6818b52db1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45e872a2_58fccc12",
+        "filename": "milo/frontend/resultui/src/components/signin.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-16T06:07:40Z",
+      "side": 1,
+      "message": "https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel/close\nsays channels must be closed eventually.\nI didn\u0027t find closure in this CL.\nIs this a memory leak?",
+      "revId": "13b90a3b27723c198b837aa57fd4a6818b52db1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
