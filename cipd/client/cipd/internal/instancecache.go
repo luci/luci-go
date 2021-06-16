@@ -19,10 +19,12 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -62,12 +64,19 @@ const (
 	instanceCacheStateFilename = "state.db"
 )
 
+// Fetcher knows how to populate a file in the cache given its pin.
+type Fetcher func(ctx context.Context, pin common.Pin, f io.WriteSeeker) error
+
 // InstanceCache is a file-system-based, thread-safe, LRU cache of instances.
 //
 // Does not validate instance hashes; it is caller's responsibility.
 type InstanceCache struct {
 	fs        fs.FileSystem
+	fetcher   Fetcher
 	stateLock sync.Mutex // synchronizes access to the state file.
+
+	allocsLock sync.Mutex
+	allocs     map[string]*Allocation // keyed by instance ID
 
 	// Defaults to instanceCacheMaxSize, mocked in tests.
 	maxSize int
@@ -75,68 +84,225 @@ type InstanceCache struct {
 	maxAge time.Duration
 }
 
+// Allocation is used to concurrently fetch files into the cache.
+//
+// It is a future/promise-like object keyed by instance ID that resolves into
+// a pkg.Source with that instance's data in the cache.
+//
+// Multiple callers can get a reference to the same allocation and call
+// `Realize` on it concurrently to get the cached file. The work will be done
+// only once, all pending `Realize` calls will get the same result.
+type Allocation struct {
+	cache *InstanceCache // the parent
+	pin   common.Pin     // the key of this allocation in the parent's map
+
+	m        sync.Mutex
+	refs     int           // the reference counter
+	corrupt  bool          // true if the file was closed as corrupted
+	realized bool          // true if `Realize` was already called
+	resolved chan struct{} // closed after `resolve` is completed
+	file     *os.File      // set only after `resolve` is completed
+	err      error         // set only after `resolve` is completed
+	size     int64         // set only after `resolve` is completed
+}
+
+// Realize blocks until the cached file is available.
+func (a *Allocation) Realize(ctx context.Context) (pkg.Source, error) {
+	a.m.Lock()
+	owner := !a.realized
+	a.realized = true
+	a.m.Unlock()
+
+	var err error
+	if owner {
+		err = a.resolve(a.cache.openOrFetch(ctx, a.pin))
+	} else {
+		err = a.wait(ctx)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	a.m.Lock()
+	defer a.m.Unlock()
+
+	// Will be decremented when the cacheFile below is closed.
+	a.refs++
+
+	return &cacheFile{
+		alloc: a,
+		file:  a.file,
+		size:  a.size,
+	}, nil
+}
+
+// Release decrements the reference counter on this allocation.
+//
+// Once it reaches zero the allocation is "forgotten" and creating it again
+// may result in a refetch of the file into the cache.
+func (a *Allocation) Release(ctx context.Context) {
+	_ = a.releaseAndClose(ctx, false)
+}
+
+// addRef increments the reference counter.
+func (a *Allocation) addRef() {
+	a.m.Lock()
+	a.refs++
+	a.m.Unlock()
+}
+
+// resolve is called once the file is downloaded (or failed to be downloaded).
+//
+// Unblocks all pending and future `wait` calls.
+func (a *Allocation) resolve(f *os.File, err error) error {
+	var stat os.FileInfo
+	if err == nil {
+		if stat, err = f.Stat(); err != nil {
+			f.Close()
+			f = nil
+		}
+	}
+
+	a.m.Lock()
+	defer a.m.Unlock()
+
+	a.file = f
+	a.err = err
+	if err == nil {
+		a.size = stat.Size()
+	}
+	close(a.resolved)
+
+	return err
+}
+
+// wait waits until `resolve` is called elsewhere (or the context deadlines).
+//
+// Either returns the same error as `resolve` or a context error.
+func (a *Allocation) wait(ctx context.Context) error {
+	select {
+	case <-a.resolved:
+		a.m.Lock()
+		defer a.m.Unlock()
+		return a.err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// releaseAndClose decrements the reference counter and closes the file.
+func (a *Allocation) releaseAndClose(ctx context.Context, corrupt bool) error {
+	a.m.Lock()
+	a.refs--
+	done := a.refs == 0
+	if done {
+		a.cache.forgetAlloc(a)
+	}
+	a.corrupt = a.corrupt || corrupt
+	corrupt = a.corrupt
+	file := a.file
+	a.m.Unlock()
+
+	if !done || file == nil {
+		return nil
+	}
+
+	corruptText := ""
+	if corrupt {
+		corruptText = " corrupt"
+	}
+
+	var err error
+	if err = file.Close(); err != nil && err != os.ErrClosed {
+		logging.Warningf(ctx, "cipd: failed to close%s cache file: %s", corruptText, err)
+	} else {
+		err = nil
+	}
+
+	if corrupt {
+		if err2 := a.cache.delete(ctx, a.pin); err2 != nil {
+			logging.Warningf(ctx, "cipd: failed to delete%s cache file: %s", corruptText, err2)
+			if err == nil {
+				err = err2
+			}
+		}
+	}
+
+	return err
+}
+
+// cacheFile is a downloaded instance file, implements pkg.Source.
+//
+// Multiple cacheFile instances may all point to the same *os.File (owned by
+// some single `alloc`).
+type cacheFile struct {
+	closed int32       // 1 if was already closed
+	alloc  *Allocation // the parent allocation
+	file   *os.File    // the underlying file owned by `alloc`
+	size   int64       // the size of `file`
+}
+
+func (f *cacheFile) ReadAt(p []byte, off int64) (int, error) { return f.file.ReadAt(p, off) }
+func (f *cacheFile) Size() int64                             { return f.size }
+
+func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
+	if atomic.CompareAndSwapInt32(&f.closed, 0, 1) {
+		return f.alloc.releaseAndClose(ctx, corrupt)
+	}
+	return os.ErrClosed
+}
+
 // NewInstanceCache initializes InstanceCache.
 //
-// fs will be the root of the cache.
-func NewInstanceCache(fs fs.FileSystem) *InstanceCache {
+// `fs` will be the root of the cache. `fetcher` will be used to fetch files
+// into the cache on cache misses.
+func NewInstanceCache(fs fs.FileSystem, fetcher Fetcher) *InstanceCache {
 	return &InstanceCache{
 		fs:      fs,
+		fetcher: fetcher,
+		allocs:  map[string]*Allocation{},
 		maxSize: instanceCacheMaxSize,
 		maxAge:  instanceCacheMaxAge,
 	}
 }
 
-type cacheFile struct {
-	*os.File
-
-	fs   fs.FileSystem
-	size int64
-}
-
-// Size returns the package file size.
-func (f *cacheFile) Size() int64 {
-	return f.size
-}
-
-// Close removes this file from the cache if corrupt is true.
+// Allocate returns a reference to a current or future cached instance.
 //
-// This will be true if the cached file is determined to be broken at a higher
-// level.
-//
-// This implements pkg.Source.
-func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
-	var err error
-	if err = f.File.Close(); err != nil && err != os.ErrClosed {
-		corruptText := ""
-		if corrupt {
-			corruptText = " corrupt"
-		}
-		logging.WithError(err).Warningf(ctx, "failed to close%s cache file", corruptText)
-	} else {
-		err = nil
+// Use `Realize` to get the actual package file. Call `Release` once the
+// allocation is no longer needed.
+func (c *InstanceCache) Allocate(ctx context.Context, pin common.Pin) *Allocation {
+	c.allocsLock.Lock()
+	defer c.allocsLock.Unlock()
+
+	alloc := c.allocs[pin.InstanceID]
+	if alloc != nil {
+		alloc.addRef()
+		return alloc
 	}
-	if corrupt {
-		var err2 error
-		if err2 = f.fs.EnsureFileGone(ctx, f.Name()); err2 != nil {
-			logging.WithError(err2).Warningf(ctx, "failed to delete corrupt cache file")
-		}
-		// only return err2 if err was already nil
-		if err == nil {
-			err = err2
-		}
+
+	alloc = &Allocation{
+		cache:    c,
+		pin:      pin,
+		refs:     1,
+		resolved: make(chan struct{}),
 	}
-	return err
+	c.allocs[pin.InstanceID] = alloc
+
+	return alloc
 }
 
-// UnderlyingFile is only used by tests and shouldn't be used directly.
-func (f *cacheFile) UnderlyingFile() *os.File {
-	return f.File
+// forgetAlloc removes `a` from `allocs`.
+func (c *InstanceCache) forgetAlloc(a *Allocation) {
+	c.allocsLock.Lock()
+	defer c.allocsLock.Unlock()
+	if c.allocs[a.pin.InstanceID] == a {
+		delete(c.allocs, a.pin.InstanceID)
+	}
 }
 
-// Get searches for the instance in the cache and opens it for reading.
-//
-// If the instance is not found, returns an os.IsNotExists error.
-func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) (pkg.Source, error) {
+// openOrFetch either opens an existing instance file or writes a new one.
+func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.File, error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
@@ -146,55 +312,105 @@ func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) 
 		return nil, fmt.Errorf("invalid instance ID %q", pin.InstanceID)
 	}
 
-	f, err := c.fs.OpenFile(path)
-	if err != nil {
-		return nil, err
-	}
-	stat, err := f.Stat()
-	if err != nil {
-		f.Close()
-		return nil, err
-	}
+	attempt := 0
+	for {
+		attempt++
 
-	c.withState(ctx, now, func(s *messages.InstanceCache) {
-		touch(s, pin.InstanceID, now)
-	})
+		// Try to see if we have the file in the cache already.
+		switch file, err := c.fs.OpenFile(path); {
+		case os.IsNotExist(err):
+			// No such file in the cache. This is fine.
+		case err != nil:
+			// Some unexpected error. Log and carry on, as if it is a cache miss.
+			logging.Warningf(ctx, "cipd: could not get %s from cache - %s", pin, err)
+		default:
+			logging.Infof(ctx, "cipd: instance cache hit for %s", pin)
+			c.touch(ctx, pin.InstanceID, false) // bump its last access time
+			return file, nil
+		}
 
-	return &cacheFile{
-		File: f,
-		fs:   c.fs,
-		size: stat.Size(),
-	}, nil
+		// No such cached instance, download it.
+		err := c.fs.EnsureFile(ctx, path, func(f *os.File) error {
+			return c.fetcher(ctx, pin, f)
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Try to open it now. There's a (very) small chance that it has been
+		// evicted from the cache already. If this happens, try again, but do it
+		// only once.
+		//
+		// Note that theoretically we could keep open the handle to the file used in
+		// EnsureFile above, but this file gets renamed at some point, and renaming
+		// files with open handles on Windows is moot. So instead we close it,
+		// rename the file (this happens inside EnsureFile), and reopen it again
+		// under the new name.
+		file, err := c.fs.OpenFile(path)
+		if err != nil {
+			logging.Errorf(ctx, "cipd: %s is unexpectedly missing from the cache: %s", pin, err)
+			if attempt == 1 {
+				logging.Infof(ctx, "cipd: retrying...")
+				continue
+			}
+			logging.Errorf(ctx, "cipd: giving up")
+			return nil, err
+		}
+		c.touch(ctx, pin.InstanceID, true) // mark it as accessed, run the GC
+		return file, nil
+	}
 }
 
-// Put caches an instance.
-//
-// write must write the instance contents. May remove some instances from the
-// cache that were not accessed for a long time.
-func (c *InstanceCache) Put(ctx context.Context, pin common.Pin, now time.Time, write func(*os.File) error) error {
-	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
-		return err
-	}
+// touch updates the cache state file (best effort).
+func (c *InstanceCache) touch(ctx context.Context, instanceID string, gc bool) {
+	now := clock.Now(ctx)
+	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
+		// Update LastAccess time.
+		entry := s.Entries[instanceID]
+		if entry == nil {
+			entry = &messages.InstanceCache_Entry{}
+			if s.Entries == nil {
+				s.Entries = map[string]*messages.InstanceCache_Entry{}
+			}
+			s.Entries[instanceID] = entry
+		}
+		entry.LastAccess = timestamppb.New(now)
+		// Optionally collect old entries.
+		if gc {
+			c.gc(ctx, s, now)
+		}
+		return true
+	})
+}
+
+// delete deletes an instance from the cache if it was there.
+func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 	path, err := c.fs.RootRelToAbs(pin.InstanceID)
 	if err != nil {
 		return fmt.Errorf("invalid instance ID %q", pin.InstanceID)
 	}
 
-	if err := c.fs.EnsureFile(ctx, path, write); err != nil {
+	if err := c.fs.EnsureFileGone(ctx, path); err != nil {
 		return err
 	}
 
-	c.withState(ctx, now, func(s *messages.InstanceCache) {
-		touch(s, pin.InstanceID, now)
-		c.gc(ctx, s, now)
+	c.withState(ctx, clock.Now(ctx), func(s *messages.InstanceCache) (save bool) {
+		if s.Entries[pin.InstanceID] == nil {
+			return false
+		}
+		delete(s.Entries, pin.InstanceID)
+		return true
 	})
+
 	return nil
 }
 
 // GC opportunistically purges entries that haven't been touched for too long.
-func (c *InstanceCache) GC(ctx context.Context, now time.Time) {
-	c.withState(ctx, now, func(s *messages.InstanceCache) {
+func (c *InstanceCache) GC(ctx context.Context) {
+	now := clock.Now(ctx)
+	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		c.gc(ctx, s, now)
+		return true
 	})
 }
 
@@ -385,7 +601,7 @@ func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceC
 
 // withState loads cache state from the state file, calls f and saves it back.
 // See also readState.
-func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache)) {
+func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache) (save bool)) {
 	state := &messages.InstanceCache{}
 
 	start := clock.Now(ctx)
@@ -402,33 +618,9 @@ func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*me
 	defer c.stateLock.Unlock()
 
 	c.readState(ctx, state, now)
-	f(state)
-	if err := c.saveState(ctx, state); err != nil {
-		logging.Warningf(ctx, "cipd: could not save instance cache - %s", err)
-	}
-}
-
-// getAccessTime returns last access time of an instance.
-// Used for testing.
-func (c *InstanceCache) getAccessTime(ctx context.Context, now time.Time, pin common.Pin) (lastAccess time.Time, ok bool) {
-	c.withState(ctx, now, func(s *messages.InstanceCache) {
-		var entry *messages.InstanceCache_Entry
-		if entry, ok = s.Entries[pin.InstanceID]; ok {
-			lastAccess = entry.LastAccess.AsTime()
+	if f(state) {
+		if err := c.saveState(ctx, state); err != nil {
+			logging.Warningf(ctx, "cipd: could not save instance cache - %s", err)
 		}
-	})
-	return
-}
-
-// touch updates/adds last access time for an instance.
-func touch(state *messages.InstanceCache, instanceID string, now time.Time) {
-	entry := state.Entries[instanceID]
-	if entry == nil {
-		entry = &messages.InstanceCache_Entry{}
-		if state.Entries == nil {
-			state.Entries = map[string]*messages.InstanceCache_Entry{}
-		}
-		state.Entries[instanceID] = entry
 	}
-	entry.LastAccess = timestamppb.New(now)
 }
