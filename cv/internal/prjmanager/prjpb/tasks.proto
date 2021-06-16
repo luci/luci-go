@@ -60,4 +60,7 @@ message PurgeCLTask {
   cv.run.Trigger trigger = 3;
 
   repeated cv.changelist.CLError reasons = 5;
+
+  // TODO(crbug/1217685): Pass watching ConfigGroups so that votes on the
+  // additional labels can be removed as well.
 }
