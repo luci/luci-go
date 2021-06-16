@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d18edee5_e2544e0e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-16T19:10:23Z",
+      "side": 1,
+      "message": "This affects `cipd` command, not just `vpython`. Setting CIPD_SERVICE_URL this way will unconditionally and silently override the service URL, even if one was passed explicitly via `cipd -service-url ...` or as `$ServiceURL` directive in an ensure file. This is not consistent with how other CIPD env vars are treated. The consistent behavior would be to pick up CIPD_SERVICE_URL only if `-service-url` flag is absent and the ensure file doesn\u0027t have `$ServiceURL`. This would be more complicated to implement (search for \"ServiceURL\" in https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cipd/client/cli/main.go?q\u003dcli%2Fmain.go\u0026ss\u003dchromium).\n\nSo please either implement the logic above, or at least rename the env var to CIPD_OVERRIDE_SERVICE_URL to indicate that it stomps over any other way to set the service URL.\n\nEither way, please document the env var in https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cipd/client/cli/main.go;l\u003d3297?q\u003dcli%2Fmain.go\u0026ss\u003dchromium",
+      "revId": "2b7187eb8b643d33a8dfb2ec70e9ef9a092aaa31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
