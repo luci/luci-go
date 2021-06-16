@@ -39,8 +39,24 @@ export interface StubRequestsOption {
   /**
    * A list of headers that must match when resolving cache. If not specified,
    * all headers must match.
+   *
+   * If not specified, all headers need to be matched.
    */
   readonly matchHeaders?: readonly string[];
+  /**
+   * A function that determines whether the cached request matches the incoming
+   * request. Headers not specified in matchHeaders are stripped from the
+   * request before executing this function. The original headers as passed as
+   * the 3rd an 4th parameters to the function.
+   *
+   * Defaults to deepEqual from 'fast-equals'.
+   */
+  readonly matchRequest?: (
+    cached: CachedRequest,
+    incoming: CachedRequest,
+    cachedHeaders: { readonly [key: string]: string },
+    incomingHeaders: { readonly [key: string]: string }
+  ) => boolean;
 }
 
 interface CachedRequest {
@@ -93,6 +109,8 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
     };
   };
 
+  const matchRequest = opt.matchRequest || deepEqual;
+
   // Ensure the file exist so cy.readFile won't throw.
   cy.writeFile(filename, '', { flag: 'a+' });
 
@@ -111,7 +129,9 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
       };
       const reqForComparison = stripIgnoredHeaders(fullReq);
 
-      const res = cache.find((entry) => deepEqual(stripIgnoredHeaders(entry.req), reqForComparison))?.res;
+      const res = cache.find((entry) =>
+        matchRequest(stripIgnoredHeaders(entry.req), reqForComparison, entry.req.headers, fullReq.headers)
+      )?.res;
 
       if (res) {
         incomingReq.reply(res.statusCode, res.body, res.headers);
