@@ -17,7 +17,9 @@ import { addMatchImageSnapshotCommand } from 'cypress-image-snapshot/command';
 import { addStubPrpcServicesCommand } from './stub_prpc_services';
 import { addStubRequestsCommand } from './stub_requests';
 
-addMatchImageSnapshotCommand();
+addMatchImageSnapshotCommand({
+  failureThreshold: 0.01,
+});
 addStubRequestsCommand();
 addStubPrpcServicesCommand();
 
