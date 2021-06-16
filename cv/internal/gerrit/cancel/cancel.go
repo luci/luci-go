@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -34,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -128,6 +130,11 @@ type Input struct {
 	// If the passed context has a closer deadline, uses that deadline as lease
 	// `ExpireTime`.
 	LeaseDuration time.Duration
+	// ConfigGroups are the ConfigGroups that are watching this CL.
+	//
+	// They are used to remove votes for additional modes. Normally, there is
+	// just 1 ConfigGroup.
+	ConfigGroups []*config.ConfigGroup
 	// RunCLExternalIDs are IDs of all CLs involved in the Run.
 	//
 	// It will be included in `botdata.BotData` and posted to Gerrit as part of
@@ -207,10 +214,21 @@ func cancelLeased(ctx context.Context, c *change, in *Input) error {
 		return errors.Reason("failed to cancel because ps %d is not current for %s/%d", in.CL.Snapshot.GetPatchset(), c.Host, c.Number).Tag(ErrPreconditionFailedTag).Err()
 	}
 
-	c.recordVotesToRemove(trigger.CQLabelName, ci)
+	labelsToRemove := stringset.NewFromSlice(trigger.CQLabelName)
 	if l := in.Trigger.GetAdditionalLabel(); l != "" {
-		c.recordVotesToRemove(l, ci)
+		labelsToRemove.Add(l)
 	}
+	for _, cg := range in.ConfigGroups {
+		for _, am := range cg.Content.GetAdditionalModes() {
+			if l := am.GetTriggeringLabel(); l != "" {
+				labelsToRemove.Add(l)
+			}
+		}
+	}
+	labelsToRemove.Iter(func(label string) bool {
+		c.recordVotesToRemove(label, ci)
+		return true
+	})
 
 	removeErr := c.removeVotesAndPostMsg(ctx, ci, in.Trigger, in.Message, in.Notify)
 	if removeErr == nil || !ErrPermanentTag.In(removeErr) {

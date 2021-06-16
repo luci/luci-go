@@ -428,6 +428,113 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 	})
 }
 
+func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV creates 1 CL Quick Dry Run first and then upgrades to Full Run", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "g-review"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange = 33
+		const quickLabel = "Quick-Label"
+
+		// TODO(tandrii): remove this once Run creation is not conditional on CV
+		// managing Runs for a project.
+		ct.EnableCVRunManagement(ctx, lProject)
+		// Start CQDaemon.
+		ct.MustCQD(ctx, lProject)
+
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
+			Name:            string(run.QuickDryRun),
+			CqLabelValue:    1,
+			TriggeringValue: 1,
+			TriggeringLabel: quickLabel,
+		}}
+		ct.Cfg.Create(ctx, lProject, cfg)
+
+		tStart := ct.Clock.Now()
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.CQ(+1, tStart, gf.U("user-2")),
+			gf.Vote(quickLabel, +1, tStart, gf.U("user-2")),
+		)))
+
+		/////////////////////////    Run CV   ////////////////////////////////
+		ct.LogPhase(ctx, "CV notices CL and starts the Run")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		var qdr *run.Run
+		ct.RunUntil(ctx, func() bool {
+			qdr = ct.EarliestCreatedRunOf(ctx, lProject)
+			return qdr != nil && qdr.Status == run.Status_RUNNING
+		})
+		So(qdr.Mode, ShouldEqual, run.QuickDryRun)
+
+		ct.LogPhase(ctx, "User upgrades to Full Run but doesn't unvote Quick-Label")
+		tStart2 := ct.Clock.Now()
+		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
+			gf.CQ(+2, tStart2, gf.U("user-2"))(c.Info)
+			gf.Updated(tStart2)(c.Info)
+		})
+		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 1) // vote stays
+		var fr *run.Run
+		ct.RunUntil(ctx, func() bool {
+			runs := ct.LoadRunsOf(ctx, lProject)
+			if len(runs) > 2 {
+				panic("impossible; more than 2 runs created.")
+			}
+			for _, r := range runs {
+				if r.ID == qdr.ID {
+					qdr = r
+				} else {
+					fr = r
+				}
+			}
+			return qdr.Status == run.Status_CANCELLED && (fr != nil && fr.Status == run.Status_RUNNING)
+		})
+		So(fr.Mode, ShouldEqual, run.FullRun)
+
+		ct.LogPhase(ctx, "CQDaemon decides that Full Run has failed and notifies CV")
+		ct.Clock.Add(time.Minute)
+		ct.MustCQD(ctx, lProject).SetVerifyClbk(
+			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+				r = proto.Clone(r).(*migrationpb.ReportedRun)
+				r.Attempt.Status = cvbqpb.AttemptStatus_FAILURE
+				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
+				return r
+			},
+		)
+		ct.RunUntil(ctx, func() bool {
+			return nil == datastore.Get(ctx, &migration.VerifiedCQDRun{ID: fr.ID})
+		})
+
+		ct.LogPhase(ctx, "CV finalizes the run")
+		var finalRun *run.Run
+		ct.RunUntil(ctx, func() bool {
+			finalRun = ct.LoadRun(ctx, fr.ID)
+			return finalRun != nil && run.IsEnded(finalRun.Status)
+		})
+
+		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 2)
+		So(finalRun.Status, ShouldEqual, run.Status_FAILED)
+		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
+		// Removed the stale Quick-Run vote.
+		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
+
+		ct.LogPhase(ctx, "BQ export must complete")
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 2 })
+	})
+}
+
 func TestCreatesSingularFullRunSuccess(t *testing.T) {
 	t.Parallel()
 
