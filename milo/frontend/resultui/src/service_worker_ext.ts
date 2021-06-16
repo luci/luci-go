@@ -14,9 +14,17 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
+import { get as kvGet, set as kvSet } from 'idb-keyval';
+
 import { Prefetcher } from './prefetch';
 
 importScripts('/configs.js');
+
+/**
+ * Update this value to ensure older versions are removed from the cache.
+ */
+const FORCE_UPDATE_TOKEN_VALUE = 'v1';
+const FORCE_UPDATE_TOKEN_KEY = 'force-update-token';
 
 // TSC isn't able to determine the scope properly.
 // Perform manual casting to fix typing.
@@ -39,4 +47,16 @@ _self.addEventListener('fetch', async (e) => {
   }
 
   prefetcher.prefetchResources(url);
+});
+
+_self.addEventListener('install', (e) => {
+  e.waitUntil(
+    (async () => {
+      const token = await kvGet(FORCE_UPDATE_TOKEN_KEY);
+      if (token !== FORCE_UPDATE_TOKEN_VALUE) {
+        await kvSet(FORCE_UPDATE_TOKEN_KEY, FORCE_UPDATE_TOKEN_VALUE);
+        _self.skipWaiting();
+      }
+    })()
+  );
 });
