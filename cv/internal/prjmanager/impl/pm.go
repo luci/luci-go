@@ -70,8 +70,7 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			err := pm.manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{
-				KnownRetry: []error{eventbox.ErrContention},
-				KnownFatal: []error{errTaskArrivedTooLate},
+				KnownFatal: []error{errTaskArrivedTooLate, eventbox.ErrContention},
 			}.Error(ctx, err)
 		},
 	)
@@ -93,17 +92,35 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
 
 func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string, taskETA time.Time) error {
+	retryViaNewTask := false
+	var err error
 	if delay := clock.Now(ctx).Sub(taskETA); delay > prjpb.MaxAcceptableDelay {
 		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)
-		// Scheduling new task reduces probability of concurrent tasks in extreme
-		// events.
-		if err := pm.pmNotifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); err != nil {
-			return err
+		retryViaNewTask = true
+		err = errTaskArrivedTooLate
+	} else {
+		err = pm.processBatch(ctx, luciProject)
+		if eventbox.IsErrContention(err) {
+			logging.Warningf(ctx, "Datastore contention; scheduling next task instead")
+			retryViaNewTask = true
 		}
-		// Hard-fail this task to avoid retries and get correct monitoring stats.
-		return errTaskArrivedTooLate
 	}
 
+	if retryViaNewTask {
+		// Scheduling new task reduces probability of concurrent tasks in extreme
+		// events.
+		if errNewTask := pm.pmNotifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); errNewTask == nil {
+			// Hard-fail this task to avoid retries and get correct monitoring stats
+			err = tq.Fatal.Apply(err)
+		} else {
+			// This should be rare and retry is the best we can do.
+			err = errNewTask
+		}
+	}
+	return errors.Annotate(err, "project %q", luciProject).Err()
+}
+
+func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) error {
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
 	proc := &pmProcessor{
 		luciProject: luciProject,
@@ -116,7 +133,7 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 	case err == nil:
 		for _, postProcessFn := range postProcessFns {
 			if err := postProcessFn(ctx); err != nil {
-				return errors.Annotate(err, "project %q", luciProject).Err()
+				return err
 			}
 		}
 		return nil
@@ -127,12 +144,12 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 		// deduplication.
 		if err2 := pm.pmNotifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
 			// This should be rare and retry is the best we can do.
-			return errors.Annotate(err2, "project %q", luciProject).Err()
+			return err2
 		}
 		// Hard-fail this task to avoid retries and get correct monitoring stats.
-		return errors.Annotate(err, "project %q", luciProject).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(err)
 	default:
-		return errors.Annotate(err, "project %q", luciProject).Err()
+		return err
 	}
 }
 
