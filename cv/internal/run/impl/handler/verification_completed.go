@@ -69,13 +69,13 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		default:
 			panic(fmt.Sprintf("impossible run mode %q", rs.Run.Mode))
 		}
-		if err := cancelTriggers(ctx, &rs.Run, msg); err != nil {
+		if err := cancelTriggers(ctx, rs, msg); err != nil {
 			return nil, err
 		}
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
-		if err := cancelTriggers(ctx, &rs.Run, vr.Payload.FinalMessage); err != nil {
+		if err := cancelTriggers(ctx, rs, vr.Payload.FinalMessage); err != nil {
 			return nil, err
 		}
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
@@ -85,8 +85,8 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	}
 }
 
-func cancelTriggers(ctx context.Context, r *run.Run, msg string) error {
-	runCLs, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
+func cancelTriggers(ctx context.Context, rs *state.RunState, msg string) error {
+	runCLs, err := run.LoadRunCLs(ctx, rs.Run.ID, rs.Run.CLs)
 	if err != nil {
 		return err
 	}
@@ -94,5 +94,9 @@ func cancelTriggers(ctx context.Context, r *run.Run, msg string) error {
 	for i, cl := range runCLs {
 		runCLExternalIDs[i] = cl.ExternalID
 	}
-	return cancelCLTriggers(ctx, r.ID, runCLs, runCLExternalIDs, msg)
+	cg, err := rs.LoadConfigGroup(ctx)
+	if err != nil {
+		return err
+	}
+	return cancelCLTriggers(ctx, rs.Run.ID, runCLs, runCLExternalIDs, msg, cg)
 }
