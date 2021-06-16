@@ -44,7 +44,7 @@ import (
 // once.
 //
 // This shouldn't be hit in practice under normal operation. This is chosen such
-// that PM can read these events and make some progress in 1 minute.
+// that RM can read these events and make some progress in 1 minute.
 const maxEventsPerBatch = 10000
 
 // RunManager manages Runs.
