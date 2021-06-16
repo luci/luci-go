@@ -135,7 +135,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.4"
+	UserAgent = "cipd 2.5.5"
 )
 
 func init() {
@@ -554,9 +554,11 @@ type clientImpl struct {
 	repo api.RepositoryClient
 
 	// batchLock protects guts of by BeginBatch/EndBatch implementation.
-	batchLock    sync.Mutex
-	batchNesting int
-	batchPending map[batchAwareOp]struct{}
+	batchLock           sync.Mutex
+	batchNesting        int
+	batchPending        map[batchAwareOp]struct{}
+	batchInstanceCache  *internal.InstanceCache // a temporary batch-scoped cache
+	globalInstanceCache *internal.InstanceCache // a cache at CacheDir, outlives the client
 
 	// storage knows how to upload and download raw binaries using signed URLs.
 	storage storage
@@ -566,10 +568,6 @@ type clientImpl struct {
 	// tagCache is a file-system based cache of resolved tags.
 	tagCache     *internal.TagCache
 	tagCacheInit sync.Once
-
-	// instanceCache is a file-system based cache of instances.
-	instanceCache     *internal.InstanceCache
-	instanceCacheInit sync.Once
 
 	// Plugin system.
 	pluginHost      plugin.Host            // nil if disabled
@@ -600,7 +598,10 @@ func (client *clientImpl) saveTagCache(ctx context.Context) {
 }
 
 func (client *clientImpl) cleanupTrash(ctx context.Context) {
-	client.deployer.CleanupTrash(ctx)
+	if f := client.deployer.FS(); f != nil {
+		f.EnsureDirectoryGone(ctx, filepath.Join(f.Root(), fs.SiteServiceDir, "tmp"))
+		f.CleanupTrash(ctx)
+	}
 }
 
 func (client *clientImpl) clearAdmissionCache(ctx context.Context) {
@@ -632,22 +633,54 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 	return client.tagCache
 }
 
-// getInstanceCache lazy-initializes instanceCache and returns it.
+// getInstanceCache returns an instance cache to download packages into.
 //
-// May return nil if instance cache is disabled.
-func (client *clientImpl) getInstanceCache(ctx context.Context) *internal.InstanceCache {
-	client.instanceCacheInit.Do(func() {
-		if client.CacheDir == "" {
-			return
+// Can be called only within a batch. Panics otherwise. Returns either a global
+// cache (if CacheDir option was set) or a temporary cache scoped to the
+// current batch.
+//
+// Returns an error if it can't create temp directories to hold the cache.
+func (client *clientImpl) getInstanceCache(ctx context.Context) (*internal.InstanceCache, error) {
+	client.batchLock.Lock()
+	defer client.batchLock.Unlock()
+	if client.batchNesting == 0 {
+		panic("getInstanceCache can be called only within a batch")
+	}
+
+	if client.CacheDir != "" {
+		if client.globalInstanceCache == nil {
+			path := filepath.Join(client.CacheDir, "instances")
+			client.globalInstanceCache = internal.NewInstanceCache(
+				fs.NewFileSystem(path, ""),
+				false,
+				client.remoteFetchInstance,
+			)
+			logging.Infof(ctx, "cipd: using instance cache at %q", path)
 		}
-		path := filepath.Join(client.CacheDir, "instances")
-		client.instanceCache = internal.NewInstanceCache(
-			fs.NewFileSystem(path, ""),
+		return client.globalInstanceCache, nil
+	}
+
+	if client.batchInstanceCache == nil {
+		var cacheDir string
+		var err error
+		if client.Root != "" {
+			cacheDir, err = client.deployer.FS().EnsureDirectory(ctx,
+				filepath.Join(client.Root, fs.SiteServiceDir, "tmp", "dl"))
+		} else {
+			cacheDir, err = ioutil.TempDir("", "cipd_dl_")
+		}
+		if err != nil {
+			return nil, err
+		}
+		logging.Infof(ctx, "cipd: using temporary instance cache at %q", cacheDir)
+		client.batchInstanceCache = internal.NewInstanceCache(
+			fs.NewFileSystem(cacheDir, ""),
+			true,
 			client.remoteFetchInstance,
 		)
-		logging.Infof(ctx, "cipd: using instance cache at %q", path)
-	})
-	return client.instanceCache
+	}
+
+	return client.batchInstanceCache, nil
 }
 
 func (client *clientImpl) Close(ctx context.Context) {
@@ -671,14 +704,34 @@ func (client *clientImpl) EndBatch(ctx context.Context) {
 	if client.batchNesting <= 0 {
 		panic("EndBatch called without corresponding BeginBatch")
 	}
+
 	client.batchNesting--
-	if client.batchNesting == 0 {
-		// Execute all pending batch aware calls now.
-		for op := range client.batchPending {
-			batchAwareOps[op](client, ctx)
-		}
-		client.batchPending = nil
+	if client.batchNesting != 0 {
+		return
 	}
+
+	// If had a batch-scoped instance cache open, delete it.
+	if client.batchInstanceCache != nil {
+		cacheDir := client.batchInstanceCache.Root()
+
+		var err error
+		if client.Root != "" {
+			err = client.deployer.FS().EnsureDirectoryGone(ctx, cacheDir)
+		} else {
+			err = os.RemoveAll(cacheDir)
+		}
+		if err != nil {
+			logging.Warningf(ctx, "cipd: leaking temp directory %s: %s", cacheDir, err)
+		}
+
+		client.batchInstanceCache = nil
+	}
+
+	// Execute all pending batch aware calls now.
+	for op := range client.batchPending {
+		batchAwareOps[op](client, ctx)
+	}
+	client.batchPending = nil
 }
 
 func (client *clientImpl) doBatchAwareOp(ctx context.Context, op batchAwareOp) {
@@ -1381,10 +1434,19 @@ func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pk
 	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return nil, err
 	}
-	if cache := client.getInstanceCache(ctx); cache != nil {
-		return client.fetchInstanceWithCache(ctx, pin, cache)
+
+	// Open a batch to make sure we have an instance cache (perhaps batch-scoped).
+	client.BeginBatch(ctx)
+	defer client.EndBatch(ctx)
+
+	cache, err := client.getInstanceCache(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return client.fetchInstanceNoCache(ctx, pin)
+
+	alloc := cache.Allocate(ctx, pin)
+	defer alloc.Release(ctx)
+	return alloc.Realize(ctx)
 }
 
 func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
@@ -1394,14 +1456,13 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 
 	// Deal with no-cache situation first, it is simple - just fetch the instance
 	// into the 'output'.
-	cache := client.getInstanceCache(ctx)
-	if cache == nil {
+	if client.CacheDir == "" {
 		return client.remoteFetchInstance(ctx, pin, output)
 	}
 
 	// If using the cache, always fetch into the cache first, and then copy data
 	// from the cache into the output.
-	input, err := client.fetchInstanceWithCache(ctx, pin, cache)
+	input, err := client.FetchInstance(ctx, pin)
 	if err != nil {
 		return err
 	}
@@ -1414,48 +1475,6 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 	logging.Infof(ctx, "cipd: copying the instance into the final destination...")
 	_, err = io.Copy(output, io.NewSectionReader(input, 0, input.Size()))
 	return err
-}
-
-func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.Pin) (pkg.Source, error) {
-	// Use temp file for storing package data. Delete it when the caller is done
-	// with it.
-	f, err := client.deployer.TempFile(ctx, pin.InstanceID)
-	if err != nil {
-		return nil, err
-	}
-	tmp := &deleteOnClose{File: f}
-
-	// Make sure to remove the garbage on errors or panics.
-	ok := false
-	defer func() {
-		if !ok {
-			if err := tmp.Close(ctx, false); err != nil {
-				logging.Warningf(ctx, "cipd: failed to close the temp file - %s", err)
-			}
-		}
-	}()
-
-	if err := client.remoteFetchInstance(ctx, pin, tmp); err != nil {
-		return nil, err
-	}
-
-	stat, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-	tmp.size = stat.Size()
-
-	if _, err := tmp.Seek(0, os.SEEK_SET); err != nil {
-		return nil, err
-	}
-	ok = true
-	return tmp, nil
-}
-
-func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache) (pkg.Source, error) {
-	alloc := cache.Allocate(ctx, pin)
-	defer alloc.Release(ctx)
-	return alloc.Realize(ctx)
 }
 
 // remoteFetchInstance fetches the package file into 'output' and verifies its
