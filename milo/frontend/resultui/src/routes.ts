@@ -15,6 +15,7 @@
 import { Router } from '@vaadin/router';
 
 import './components/page_layout';
+import { refreshAuthChannel } from './components/page_layout';
 
 export const NOT_FOUND_URL = '/not-found';
 
@@ -228,6 +229,13 @@ router.setRoutes({
           },
         },
       ],
+    },
+    {
+      path: '/auth-callback/:channel_id',
+      action: async (ctx) => {
+        new BroadcastChannel(ctx.params['channel_id'] as string).postMessage('close');
+        refreshAuthChannel.postMessage('refresh');
+      },
     },
     {
       path: '/:path*',

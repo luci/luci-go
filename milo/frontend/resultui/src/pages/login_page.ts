@@ -17,6 +17,7 @@ import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { observable, when } from 'mobx';
 
+import { changeUserState } from '../components/signin';
 import { AppState, consumeAppState } from '../context/app_state';
 import { consumer } from '../libs/context';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
@@ -53,11 +54,9 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
   }
 
   protected render() {
-    return html`
-      <div id="sign-in-message">
-        You must <a target="_blank" href="/auth/openid/login">sign in</a> to see anything useful.
-      </div>
-    `;
+    return html`<div id="sign-in-message">
+      You must <a @click=${() => changeUserState(true)}>sign in</a> to see anything useful.
+    </div>`;
   }
 
   static styles = [
@@ -65,6 +64,10 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
     css`
       #sign-in-message {
         margin: 8px 16px;
+      }
+      a {
+        text-decoration: underline;
+        cursor: pointer;
       }
     `,
   ];
