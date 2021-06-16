@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb5b7936_8fbbf4c6",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-16T23:50:34Z",
+      "side": 1,
+      "message": "for me, singular was better to contrast it with errors.MultiError.\nBut if \"one\" is clearer for you, i\u0027m OK, too.",
+      "range": {
+        "startLine": 258,
+        "startChar": 16,
+        "endLine": 258,
+        "endChar": 19
+      },
+      "revId": "96aa1fc941571a9d35e4177ce0802a0e40913a37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2fad134_9b6a1f54",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-16T23:50:34Z",
+      "side": 1,
+      "message": "not true. This RunManager *object* works with all projects, but individual manageProject is scoped to just 1 project.",
+      "range": {
+        "startLine": 43,
+        "startChar": 26,
+        "endLine": 43,
+        "endChar": 47
+      },
+      "revId": "96aa1fc941571a9d35e4177ce0802a0e40913a37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
