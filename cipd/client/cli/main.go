@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/system/signals"
 
 	"go.chromium.org/luci/auth/client/authcli"
 
@@ -3288,7 +3289,9 @@ func GetApplication(params Parameters) *cli.Application {
 				Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
 				Out:    os.Stderr,
 			}
-			return loggerConfig.Use(ctx)
+			ctx, cancel := context.WithCancel(loggerConfig.Use(ctx))
+			signals.HandleInterrupt(cancel)
+			return ctx
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{
