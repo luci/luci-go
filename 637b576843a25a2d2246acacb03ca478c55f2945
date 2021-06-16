@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0366c069_f725dd8c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-16T21:50:40Z",
+      "side": 1,
+      "message": "lgtm % nit",
+      "revId": "637b576843a25a2d2246acacb03ca478c55f2945",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1e1ac03_cf6e344f",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 782,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-16T21:50:40Z",
+      "side": 1,
+      "message": "technically \"%s/%s/+/%s\" to be consistent with other logdog stringy paths.",
+      "revId": "637b576843a25a2d2246acacb03ca478c55f2945",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
