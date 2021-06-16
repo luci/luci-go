@@ -65,7 +65,7 @@ func TestInstanceCache(t *testing.T) {
 		var fetchErr chan error
 		var fetchCalls int
 
-		cache := NewInstanceCache(fs, func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
+		cache := NewInstanceCache(fs, false, func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
 			fetchM.Lock()
 			fetchCalls++
 			fetchErrCh := fetchErr
@@ -124,8 +124,17 @@ func TestInstanceCache(t *testing.T) {
 			return
 		}
 
+		countTempFiles := func() int {
+			tempDirFile, err := os.Open(tempDir)
+			So(err, ShouldBeNil)
+			defer tempDirFile.Close()
+			files, err := tempDirFile.Readdirnames(0)
+			So(err, ShouldBeNil)
+			return len(files)
+		}
+
 		Convey("Works in general", func() {
-			cache2 := NewInstanceCache(fs, nil)
+			cache2 := NewInstanceCache(fs, false, nil)
 			cache2.maxSize = testInstanceCacheMaxSize
 
 			// Add new.
@@ -235,6 +244,37 @@ func TestInstanceCache(t *testing.T) {
 			})
 		})
 
+		Convey("Temp cache removes files", func() {
+			cache := NewInstanceCache(fs, true, func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
+				_, err := w.Write([]byte("blah"))
+				return err
+			})
+
+			alloc1 := cache.Allocate(ctx, pin(0))
+			alloc2 := cache.Allocate(ctx, pin(0))
+
+			// Nothing yet.
+			So(countTempFiles(), ShouldEqual, 0)
+
+			src, err := alloc1.Realize(ctx)
+			So(err, ShouldBeNil)
+
+			// A cached file appeared.
+			So(countTempFiles(), ShouldEqual, 1)
+
+			// Closing the file doesn't delete it yet, since we have allocs for it.
+			So(src.Close(ctx, false), ShouldBeNil)
+			So(countTempFiles(), ShouldEqual, 1)
+
+			// Still have the file since alloc2 may still be wanting it.
+			alloc1.Release(ctx)
+			So(countTempFiles(), ShouldEqual, 1)
+
+			// The cached file is gone after alloc2 referring it is closed.
+			alloc2.Release(ctx)
+			So(countTempFiles(), ShouldEqual, 0)
+		})
+
 		Convey("GC respects MaxSize", func() {
 			// Add twice more the limit.
 			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
@@ -243,12 +283,7 @@ func TestInstanceCache(t *testing.T) {
 			}
 
 			// Check the number of actual files.
-			tempDirFile, err := os.Open(tempDir)
-			So(err, ShouldBeNil)
-
-			files, err := tempDirFile.Readdirnames(0)
-			So(err, ShouldBeNil)
-			So(files, ShouldHaveLength, testInstanceCacheMaxSize+1) // 1 for state.db
+			So(countTempFiles(), ShouldEqual, testInstanceCacheMaxSize+1) // +1 for state.db
 
 			// Only last testInstanceCacheMaxSize instances are still in the cache.
 			for i := testInstanceCacheMaxSize; i < testInstanceCacheMaxSize*2; i++ {

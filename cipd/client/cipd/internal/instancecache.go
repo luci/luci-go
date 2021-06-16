@@ -72,6 +72,7 @@ type Fetcher func(ctx context.Context, pin common.Pin, f io.WriteSeeker) error
 // Does not validate instance hashes; it is caller's responsibility.
 type InstanceCache struct {
 	fs        fs.FileSystem
+	tmp       bool
 	fetcher   Fetcher
 	stateLock sync.Mutex // synchronizes access to the state file.
 
@@ -220,7 +221,7 @@ func (a *Allocation) releaseAndClose(ctx context.Context, corrupt bool) error {
 		err = nil
 	}
 
-	if corrupt {
+	if corrupt || a.cache.tmp {
 		if err2 := a.cache.delete(ctx, a.pin); err2 != nil {
 			logging.Warningf(ctx, "cipd: failed to delete%s cache file: %s", corruptText, err2)
 			if err == nil {
@@ -256,15 +257,23 @@ func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
 // NewInstanceCache initializes InstanceCache.
 //
 // `fs` will be the root of the cache. `fetcher` will be used to fetch files
-// into the cache on cache misses.
-func NewInstanceCache(fs fs.FileSystem, fetcher Fetcher) *InstanceCache {
+// into the cache on cache misses. If `tmp` is true, this is a temporary
+// instance cache: a cache of downloaded, but not yet installed packages. It has
+// a property that cached files self-destruct after being closed.
+func NewInstanceCache(fs fs.FileSystem, tmp bool, fetcher Fetcher) *InstanceCache {
 	return &InstanceCache{
 		fs:      fs,
 		fetcher: fetcher,
+		tmp:     tmp,
 		allocs:  map[string]*Allocation{},
 		maxSize: instanceCacheMaxSize,
 		maxAge:  instanceCacheMaxAge,
 	}
+}
+
+// Root returns an absolute path to the cache root directory.
+func (c *InstanceCache) Root() string {
+	return c.fs.Root()
 }
 
 // Allocate returns a reference to a current or future cached instance.
@@ -602,6 +611,10 @@ func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceC
 // withState loads cache state from the state file, calls f and saves it back.
 // See also readState.
 func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache) (save bool)) {
+	if c.tmp {
+		return // no need to keep state.db for temp caches
+	}
+
 	state := &messages.InstanceCache{}
 
 	start := clock.Now(ctx)
