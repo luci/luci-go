@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d53e9c4e_bfd7a51c",
+        "filename": "cv/internal/cvtesting/e2e/purges_cl_without_starting_runs_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-17T00:12:58Z",
+      "side": 1,
+      "message": "Revert and same for the other diff in this file.\n\nbtw, should we add cros to ignored word?",
+      "range": {
+        "startLine": 150,
+        "startChar": 17,
+        "endLine": 150,
+        "endChar": 31
+      },
+      "revId": "c419c3ff230cbbeb3f2cd978945b388b546355ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10863994_c9068add",
+        "filename": "cv/internal/run/impl/handler/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-17T00:12:58Z",
+      "side": 1,
+      "message": "revert",
+      "revId": "c419c3ff230cbbeb3f2cd978945b388b546355ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
