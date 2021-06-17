@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff199f6a_7854e306",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T22:06:54Z",
+      "side": 1,
+      "message": "CV is on Go 1.15, so I don\u0027t care (in fact, I\u0027ve moved it to go1.15 yesterday exactly for this reason) 😊",
+      "parentUuid": "30fd4fc0_d67e6fce",
+      "range": {
+        "startLine": 248,
+        "startChar": 68,
+        "endLine": 248,
+        "endChar": 82
+      },
+      "revId": "2cc67e5d93ba008c0557e79343567273bffec37b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "32f8bf43_b4a0149b",
@@ -125,6 +149,30 @@
       "side": 1,
       "message": "hm. never mind. this is not really important.",
       "parentUuid": "1aee6295_98da4879",
+      "range": {
+        "startLine": 55,
+        "startChar": 38,
+        "endLine": 55,
+        "endChar": 46
+      },
+      "revId": "2cc67e5d93ba008c0557e79343567273bffec37b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c623472d_1455dbfc",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T22:06:54Z",
+      "side": 1,
+      "message": "actually, I can keep float, but keep unit as seconds, as it\u0027s more natural this way and also less code.",
+      "parentUuid": "6f3e34b7_950dd893",
       "range": {
         "startLine": 55,
         "startChar": 38,
