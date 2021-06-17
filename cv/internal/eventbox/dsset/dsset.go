@@ -183,9 +183,12 @@ func (s *Set) Add(c context.Context, items []Item) error {
 // accumulation of a garbage in the set that will slow down 'List' and 'Pop'.
 //
 // Returns only transient errors.
-func (s *Set) List(ctx context.Context) (l *Listing, err error) {
-	if datastore.CurrentTransaction(ctx) != nil {
-		panic("dsset.Set.List must be called outside of a transaction")
+func (s *Set) List(ctx context.Context, maxEvents int) (l *Listing, err error) {
+	switch {
+	case datastore.CurrentTransaction(ctx) != nil:
+		panic(fmt.Errorf("dsset.Set.List must be called outside of a transaction"))
+	case maxEvents <= 0:
+		panic(fmt.Errorf("maxEvents must be >0, but %d given", maxEvents))
 	}
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/List")
 	defer func() { span.End(err) }()
@@ -206,7 +209,7 @@ func (s *Set) List(ctx context.Context) (l *Listing, err error) {
 
 	var entities []*itemEntity
 	eg.Go(func() error {
-		q := datastore.NewQuery("dsset.Item").Ancestor(s.Parent)
+		q := datastore.NewQuery("dsset.Item").Ancestor(s.Parent).Limit(int32(maxEvents))
 		return datastore.GetAll(ctx, q, &entities)
 	})
 	if err := eg.Wait(); err != nil {
