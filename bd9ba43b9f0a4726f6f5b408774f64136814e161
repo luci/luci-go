@@ -1,6 +1,40 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e8c4222_0367be7c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-17T01:24:51Z",
+      "side": 1,
+      "message": "Could you update deps and pass CQ?",
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c497910c_94198bf4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-17T01:24:51Z",
+      "side": 1,
+      "message": "I think current SDK implementation is somewhat changed from your proof of concept, do you still see equivalent or better performance than isolate?",
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "14be14eb_337e1698",
