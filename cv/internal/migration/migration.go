@@ -64,7 +64,7 @@ type MigrationServer struct {
 // Initially, this is just FYI for CV.
 func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.ReportRunsRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = m.checkAllowed(ctx); err != nil {
+	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
 
@@ -87,7 +87,7 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 // Only called iff run was given to CQDaemon by CV via FetchActiveRuns.
 func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationpb.ReportVerifiedRunRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = m.checkAllowed(ctx); err != nil {
+	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
 
@@ -124,7 +124,7 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 // It'll be removed upon hitting Milestone 1.
 func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = m.checkAllowed(ctx); err != nil {
+	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
 	k := req.GetRun().GetAttempt().GetKey()
@@ -161,7 +161,7 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 
 func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = m.checkAllowed(ctx); err != nil {
+	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
 	if req.AccessToken == "" || req.GerritHost == "" {
@@ -181,7 +181,7 @@ func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.
 
 func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationpb.PostGerritMessageRequest) (resp *migrationpb.PostGerritMessageResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = m.checkAllowed(ctx); err != nil {
+	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
 	logging.Debugf(ctx, "%s calls PostGerritMessage\n%s", auth.CurrentIdentity(ctx), req)
@@ -278,7 +278,7 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 // FetchActiveRuns returns all RUNNING runs without VerifiedCQDRun records.
 func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.FetchActiveRunsRequest) (resp *migrationpb.FetchActiveRunsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = m.checkAllowed(ctx); err != nil {
+	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
 	if req.GetLuciProject() == "" {
@@ -296,7 +296,7 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 // corresponding to not yet finished Runs.
 func (m *MigrationServer) FetchExcludedCLs(ctx context.Context, req *migrationpb.FetchExcludedCLsRequest) (resp *migrationpb.FetchExcludedCLsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = m.checkAllowed(ctx); err != nil {
+	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
 	if req.GetLuciProject() == "" {
@@ -310,7 +310,7 @@ func (m *MigrationServer) FetchExcludedCLs(ctx context.Context, req *migrationpb
 
 func (m *MigrationServer) FetchRunStatus(ctx context.Context, req *migrationpb.FetchRunStatusRequest) (resp *migrationpb.FetchRunStatusResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = m.checkAllowed(ctx); err != nil {
+	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
 	switch {
@@ -362,22 +362,22 @@ func (m *MigrationServer) FetchRunStatus(ctx context.Context, req *migrationpb.F
 	return res, nil
 }
 
-func (m *MigrationServer) checkAllowed(ctx context.Context) error {
+func (m *MigrationServer) checkAllowed(ctx context.Context) (context.Context, error) {
 	i := auth.CurrentIdentity(ctx)
 	if i.Kind() == identity.Project {
 		// Only small list of LUCI services is allowed,
 		// we can assume no malicious access, hence this is CQDaemon.
-		return nil
+		return logging.SetField(ctx, "project", i.Value()), nil
 	}
 	logging.Warningf(ctx, "Unusual caller %s", i)
 
 	switch yes, err := auth.IsMember(ctx, AllowGroup); {
 	case err != nil:
-		return status.Errorf(codes.Internal, "failed to check ACL")
+		return nil, status.Errorf(codes.Internal, "failed to check ACL")
 	case !yes:
-		return status.Errorf(codes.PermissionDenied, "not a member of %s", AllowGroup)
+		return nil, status.Errorf(codes.PermissionDenied, "not a member of %s", AllowGroup)
 	default:
-		return nil
+		return logging.SetField(ctx, "caller", i), nil
 	}
 }
 
