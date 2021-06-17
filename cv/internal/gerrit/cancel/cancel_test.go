@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -345,6 +346,44 @@ CV failed to unset the Commit-Queue label on your behalf. Please unvote and revo
 
 Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"rev-010001-002","cls":["x-review.example.com:10002","x-review.example.com:10003"]}`
 			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, expectedMsg)
+		})
+
+		Convey("Post Message if change is in bad state", func() {
+			first := true
+			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
+				gf.Status(gerritpb.ChangeStatus_ABANDONED)(c.Info)
+				// Unfortuantely, current gf.ACLs mode doesn't distinguish between
+				// setReview which removes votes on behalf of other users from just
+				// posting a message. So, this test is tied to an impl. which first
+				// tries to remove the vote, and then falls back to just posting a
+				// message.
+				c.ACLs = func(op gf.Operation, _ string) *status.Status {
+					switch {
+					case op != gf.OpReview:
+						return status.New(codes.OK, "")
+					case first:
+						// First call is supposed to remove votes.
+						first = false
+						return status.New(codes.FailedPrecondition, "change abandoned, no vote removals allowed")
+					default:
+						// 2+ call to SetReview.
+						return status.New(codes.OK, "")
+					}
+				}
+			})
+			err := Cancel(ctx, input)
+			So(err, ShouldErrLike, "change abandoned")
+			So(ErrPermanentTag.In(err), ShouldBeTrue)
+			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
+			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+				{
+					User:  user,
+					Value: 2,
+					Date:  timestamppb.New(triggerTime),
+				},
+			})
+			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
+			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldContainSubstring, "CV failed to unset the Commit-Queue label on your behalf")
 		})
 
 		Convey("Post Message also fails", func() {
