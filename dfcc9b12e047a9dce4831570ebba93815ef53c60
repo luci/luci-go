@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e10d4f6_cdf56873",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 502,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2021-06-17T17:18:05Z",
+      "side": 1,
+      "message": "Thanks for the addition! What does this emoji represent? I haven\u0027t seen it before.",
+      "revId": "dfcc9b12e047a9dce4831570ebba93815ef53c60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
