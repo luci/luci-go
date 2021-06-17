@@ -14,32 +14,13 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
-import { getAuthStateCache, setAuthStateCache } from './auth_state_cache';
 import { Prefetcher } from './prefetch';
-import { AuthState } from './services/milo_internal';
 
 importScripts('/configs.js');
 
 // TSC isn't able to determine the scope properly.
 // Perform manual casting to fix typing.
 const _self = self as unknown as ServiceWorkerGlobalScope;
-
-export interface SetAuthStateEventData {
-  type: 'SET_AUTH_STATE';
-  authState: AuthState | null;
-}
-
-_self.addEventListener('message', async (e) => {
-  switch (e.data.type) {
-    case 'SET_AUTH_STATE': {
-      const data = e.data as SetAuthStateEventData;
-      setAuthStateCache(data.authState);
-      break;
-    }
-    default:
-      console.warn('unexpected message type', e.data.type, e.data, e);
-  }
-});
 
 const prefetcher = new Prefetcher(CONFIGS, _self.fetch.bind(_self));
 
@@ -49,17 +30,6 @@ _self.addEventListener('fetch', async (e) => {
   }
 
   const url = new URL(e.request.url);
-  // Serve cached auth data.
-  if (url.pathname === '/ui/cached-auth-state.js') {
-    e.respondWith(
-      (async () => {
-        const authState = await getAuthStateCache();
-        return new Response(`const CACHED_AUTH_STATE=${JSON.stringify(authState)};`, {
-          headers: { 'content-type': 'application/javascript' },
-        });
-      })()
-    );
-  }
 
   // Ensure all clients served by this service worker use the same config.
   if (url.pathname === '/configs.js') {
