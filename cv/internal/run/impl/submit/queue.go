@@ -42,7 +42,7 @@ type queue struct {
 	Waitlist common.RunIDs `gae:",noindex"`
 	// Opts controls the rate of submission. Nil means no rate limiting.
 	Opts *cfgpb.SubmitOptions
-	// History records the timestamps of all submissions that happend within
+	// History records the timestamps of all submissions that happened within
 	// `Opts.BurstDelay` if supplied.
 	History []time.Time `gae:",noindex"`
 }

@@ -70,7 +70,7 @@ var tqParallelFlag = flag.Bool(tqConcurrentFlagName, false, "Runs TQ tasks in pa
 var extraVerbosityFlag = flag.Bool(extraVerboseFlagName, false, "Extra verbose mode. Use in combination with -v")
 
 func init() {
-	// HACK: bump up greately eventbox tombstone delay, especially useful in case
+	// HACK: Bump up greatly eventbox tombstone delay, especially useful in case
 	// of tqParallelFlag: the fake test clock is ran at much much
 	// higher speed than real clock, which results in spurious stale eventbox
 	// listing errors.
@@ -503,13 +503,13 @@ func (t *Test) flakifyDS(ctx context.Context) context.Context {
 		"BeginTransaction",
 		"GetMulti",
 	)
-	// NOTE: feature breaker currently doesn't allow simulating
+	// NOTE: Feature breaker currently doesn't allow simulating
 	// an error from actually successful DeleteMulti/PutMulti, a.k.a. submarine
 	// writes. However, the CommitTransaction feature breaker is simulating
 	// returning an error from an actually successful transaction, which makes
 	// ConcurrentTransactionProbability incorrectly simulated.
 	//
-	// NOTE: a transaction with 1 Get and 1 Put will roll a dice 4 times:
+	// NOTE: A transaction with 1 Get and 1 Put will roll a dice 4 times:
 	//   BeginTransaction, GetMulti, PutMulti, CommitTransaction.
 	//   However, in Cloud Datastore client, PutMulti within transaction doesn't
 	//   reach Datastore until the end of the transaction.

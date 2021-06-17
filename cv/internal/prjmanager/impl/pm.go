@@ -264,13 +264,13 @@ func (proc *pmProcessor) SaveState(ctx context.Context, st eventbox.State, ev ev
 
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
-	// noops are events that can be safely deleted before a transaction
+	// Noops are events that can be safely deleted before a transaction
 	// because another semantically **superseding** event will remain in
 	// eventbox.
 	//
-	// Safety note: semantically the same event isn't sufficient, since concurrent
-	// invocations of a PM must agree on which events can be deleted and which
-	// must be kept.
+	// Safety note: semantically the same event isn't sufficient, since
+	// concurrent invocations of a PM must agree on which events can be deleted
+	// and which must be kept.
 	noops eventbox.Events
 
 	// newConfig stores newConfig event with the largest ID if any.

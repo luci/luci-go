@@ -82,7 +82,7 @@ func IsErrContention(err error) bool {
 // ProcessBatch reliably processes outstanding events, while transactionally modifying state
 // and performing arbitrary side effects.
 //
-// Returns
+// Returns:
 //  - a slice of non-nil post process functions which SHOULD be executed
 //    immediately after calling this function. Those are generally extra work
 //    that needs to be done as the result of state modification.
