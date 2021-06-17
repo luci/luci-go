@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "693dd4ca_0d500470",
+        "filename": "cv/internal/cvtesting/e2e/purges_cl_without_starting_runs_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-17T00:49:36Z",
+      "side": 1,
+      "message": "Thanks, done. Note that \"cros\" is ignored by tricium spellchecker, but for this CL I just directly ran \"codespell -w *\"",
+      "parentUuid": "d53e9c4e_bfd7a51c",
+      "range": {
+        "startLine": 150,
+        "startChar": 17,
+        "endLine": 150,
+        "endChar": 31
+      },
+      "revId": "c419c3ff230cbbeb3f2cd978945b388b546355ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "10863994_c9068add",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-06-17T00:12:58Z",
       "side": 1,
       "message": "revert",
+      "revId": "c419c3ff230cbbeb3f2cd978945b388b546355ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9ec3308_9a6de9d4",
+        "filename": "cv/internal/run/impl/handler/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-17T00:49:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10863994_c9068add",
       "revId": "c419c3ff230cbbeb3f2cd978945b388b546355ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
