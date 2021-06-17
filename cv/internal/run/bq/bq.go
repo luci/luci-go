@@ -239,6 +239,9 @@ func reconcileAttempts(a, cqda *cvbqpb.Attempt) *cvbqpb.Attempt {
 	a.Substatus = cqda.Substatus
 	// The HasCustomRequirement is determined by CL description footers.
 	a.HasCustomRequirement = cqda.HasCustomRequirement
+	// While CQDaemon is in charge of submitting, gerrit_changes, and in
+	// particular submit_status for each CL should match what CQDaemon reports.
+	a.GerritChanges = cqda.GerritChanges
 	return a
 }
 
