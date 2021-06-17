@@ -778,7 +778,9 @@ func (sa *stagedArchival) finalize(c context.Context, ar *logdog.ArchiveStreamRe
 func (sa *stagedArchival) Close() error {
 	var clErr error
 	if sa.clclient != nil {
-		clErr = sa.clclient.Close()
+		clErr = errors.Annotate(sa.clclient.Close(),
+			"while closing CloudLogging client for (%s/%s/+/%s)",
+			sa.project, sa.desc.GetPrefix(), sa.desc.GetName()).Err()
 	}
 	return errors.Flatten(errors.MultiError{sa.gsclient.Close(), clErr})
 }
