@@ -14,6 +14,7 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
+import './force_update';
 import { Prefetcher } from './prefetch';
 
 importScripts('/configs.js');

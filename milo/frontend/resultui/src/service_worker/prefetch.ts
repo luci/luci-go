@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from './auth_state_cache';
-import { cached } from './libs/cached_fn';
-import { PrpcClientExt } from './libs/prpc_client_ext';
-import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
-import { timeout } from './libs/utils';
-import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from './services/buildbucket';
-import { queryAuthState } from './services/milo_internal';
+import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from '../auth_state_cache';
+import { cached } from '../libs/cached_fn';
+import { PrpcClientExt } from '../libs/prpc_client_ext';
+import { genCacheKeyForPrpcRequest } from '../libs/prpc_utils';
+import { timeout } from '../libs/utils';
+import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from '../services/buildbucket';
+import { queryAuthState } from '../services/milo_internal';
 import {
   constructArtifactName,
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
   ResultDb,
   UISpecificService,
-} from './services/resultdb';
+} from '../services/resultdb';
 
 // TSC isn't able to determine the scope properly.
 // Perform manual casting to fix typing.
