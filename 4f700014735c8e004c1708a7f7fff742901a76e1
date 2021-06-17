@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fca0d93_46dbc24e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-17T22:16:55Z",
+      "side": 1,
+      "message": "PTAL\n\nNot trying to make it \"good\", just removing blockers for implementing parallel fetches. FetchAndDeployInstance was sticking out by intersecting in functionality with EnsurePackages (leading to some code duplication in the parallel downloads code).",
+      "revId": "4f700014735c8e004c1708a7f7fff742901a76e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
