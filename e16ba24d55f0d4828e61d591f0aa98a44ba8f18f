@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "33cb31c0_5ae512c2",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-17T17:59:21Z",
+      "side": 1,
+      "message": "This should be a gauge (non cumulative) metric. The oldest age can actually go up and down. The value of a cumulative metric cannot go down.\n\nIf you are wondering that the you can see duration/counter metric values goes down in rendered grahs, then it\u0027s actual the output of Delta()/Rate(), not the raw metric value.\n\nFor example, at L29, the raw value of the cumulative metric always increases by Add(). The raw value of the metric is the total accumulated duration that a given resource (the worker instance) ever processed (and never decreases, unless reset())",
+      "range": {
+        "startLine": 43,
+        "startChar": 31,
+        "endLine": 43,
+        "endChar": 37
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2efa8277_66981029",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-17T17:59:21Z",
+      "side": 1,
+      "message": "The description states that it\u0027s the number of incoming events, but this metric path is named \"listing sizes\".\n\nMaybe, it\u0027s an implication of \"listing/sizes\", but I wonder if this metric path could be renamed differently.\ne.g., \"listing/count\", \"listing/items\", or something..",
+      "range": {
+        "startLine": 55,
+        "startChar": 31,
+        "endLine": 55,
+        "endChar": 36
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9da24b5_ad95288e",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-17T17:59:21Z",
+      "side": 1,
+      "message": "The convention is to capitalize error codes.\ne.g., TIMEOUT, FAILURE",
+      "range": {
+        "startLine": 76,
+        "startChar": 10,
+        "endLine": 76,
+        "endChar": 17
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
