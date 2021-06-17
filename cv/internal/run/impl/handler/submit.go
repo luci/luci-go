@@ -50,12 +50,12 @@ import (
 func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case run.IsEnded(status):
-		// It is safe to discard this event because this event either
-		//  * arrives after Run gets cancelled while waiting for submission.
-		//  * is sent by OnCQDVerificationCompleted handler as a fail-safe and Run
-		//    submission has already completed.
+		// It is safe to discard this event because this event either:
+		//  * arrives after Run gets cancelled while waiting for submission, or
+		//  * is sent by OnCQDVerificationCompleted handler as a fail-safe and
+		//    Run submission has already completed.
 		logging.Debugf(ctx, "received ReadyForSubmission event when Run is %s", status)
-		// Under certain race condition, this Run may still occupy the submit
+		// Under certain race conditions, this Run may still occupy the submit
 		// queue. So, check first without a transaction and then initiate a
 		// transaction to release if this Run currently occupies the submit queue.
 		if err := releaseSubmitQueueIfTaken(ctx, rs.Run.ID, impl.RM); err != nil {
@@ -359,7 +359,8 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 		runCLExternalIDs[i] = runCL.ExternalID
 	}
 
-	if len(allRunCLs) == 1 { // single CL Run
+	// Single-CL Run
+	if len(allRunCLs) == 1 {
 		var msg string
 		switch {
 		case sc.GetClFailure() != nil:
@@ -372,7 +373,7 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 		return cancelCLTriggers(ctx, runID, allRunCLs, runCLExternalIDs, msg, cg)
 	}
 
-	// Multi CLs Run
+	// Multi-CL Run
 	submitted, pending, failed := splitRunCLs(allRunCLs, submission, sc)
 	msgSuffix := makeSubmissionMsgSuffix(submitted, failed, pending)
 	switch {

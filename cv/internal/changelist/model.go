@@ -47,7 +47,7 @@ func GobID(host string, change int64) (ExternalID, error) {
 	return ExternalID(fmt.Sprintf("gerrit/%s/%d", host, change)), nil
 }
 
-// MustGobID is like GobID but panic on error.
+// MustGobID is like GobID but panics on error.
 func MustGobID(host string, change int64) ExternalID {
 	ret, err := GobID(host, change)
 	if err != nil {
@@ -71,7 +71,7 @@ func (e ExternalID) ParseGobID() (host string, change int64, err error) {
 	return
 }
 
-// URL returns URL to the CL.
+// URL returns URL of the CL.
 func (e ExternalID) URL() (string, error) {
 	parts := strings.SplitN(string(e), "/", 2)
 	if len(parts) != 2 {
@@ -121,9 +121,8 @@ type CL struct {
 	// indexed field based on UpdateTime but with entropy in the lowest bits to
 	// avoid hotspots.
 
-	// Snapshot is latest known state of a CL.
-	// It may and often is behind the source of truth -- the code reveview site
-	// (e.g. Gerrit).
+	// Snapshot is the latest known state of a CL. It may be and often is
+	// behind the source of truth, which is the code review site (e.g. Gerrit).
 	Snapshot *Snapshot
 
 	// ApplicableConfig keeps track of configs applicable to the CL.
@@ -144,12 +143,12 @@ type CL struct {
 	IncompleteRuns common.RunIDs `gae:",noindex"`
 }
 
-// URL returns URL to the CL.
+// URL returns URL of the CL.
 func (cl *CL) URL() (string, error) { return cl.ExternalID.URL() }
 
 // Mutate mutates the CL by executing `mut`.
 //
-// It does basic sanity check and ensures EVersion and UpdateTime are
+// It does basic sanity checks and ensures EVersion and UpdateTime are
 // correctly updated if `mut` has changed the CL.
 func (cl *CL) Mutate(ctx context.Context, mut func(*CL) (updated bool)) (updated bool) {
 	prevEV := cl.EVersion
@@ -174,7 +173,7 @@ type clMap struct {
 	InternalID common.CLID `gae:",noindex"` // int64. Indexed in CL entities.
 }
 
-// Get reads a CL from datastore.
+// Get reads a CL from Datastore.
 //
 // Returns datastore.ErrNoSuchEntity if it doesn't exist.
 func (eid ExternalID) Get(ctx context.Context) (*CL, error) {
@@ -188,7 +187,8 @@ func (eid ExternalID) Get(ctx context.Context) (*CL, error) {
 	return getExisting(ctx, m.InternalID, eid)
 }
 
-// GetOrInsert reads a CL from datastore, creating a new one if not exists yet.
+// GetOrInsert reads a CL from Datastore, creating a new one if it doesn't
+// exist yet.
 //
 // populate is called within a transaction to populate fields of a new entity.
 // It should be a fast function.
@@ -207,7 +207,7 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 		cl = nil
 		switch err = datastore.Get(ctx, &m); {
 		case err == nil:
-			// Has just been created by someone else.
+			// The CL has just been created by someone else.
 			return nil
 		case err != datastore.ErrNoSuchEntity:
 			return err
@@ -225,10 +225,10 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 	return cl, nil
 }
 
-// Delete deletes CL and its CLMap entities trasactionally.
+// Delete deletes CL and its CLMap entities transactionally.
 //
-// Thus, Delete and insertion (part of ExternalID.getOrInsert)
-// are atomic with respect to one another.
+// Thus, Delete and insertion (part of ExternalID.getOrInsert) are atomic with
+// respect to one another.
 //
 // However, ExternalID.get and fast path of ExternalID.getOrInsert if called
 // concurrently with Delete may return temporary error, but on retry they would
@@ -255,7 +255,7 @@ func Delete(ctx context.Context, id common.CLID) error {
 // Lookup loads CLID for each given ExternalID.
 //
 // CLID is 0 if ExternalID is not yet known.
-// Always returns a singular error.
+// Returns a single error (not MultiError) if there were multiple errors.
 func Lookup(ctx context.Context, eids []ExternalID) ([]common.CLID, error) {
 	out := make([]common.CLID, len(eids))
 	entities := make([]clMap, len(eids))
@@ -384,12 +384,11 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 // Either ExternalID or a known common.CLID must be provided.
 //
 // If common.CLID is not known and CL for provided ExternalID doesn't exist,
-// then a new CL is created with values from UpdateFields.
-// Otherwise, an existing CL entity will be updated as documented in
-// UpdateFields.
+// then a new CL is created with values from UpdateFields. Otherwise, an
+// existing CL entity will be updated as documented in UpdateFields.
 //
-// If notify is given AND cl entity is created/updated, notify will be called
-// in a transaction context after CL is successfully created/updated.
+// If notify is given AND CL entity is created or updated, notify will be called
+// in a transaction context after CL is successfully created or updated.
 func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID, fields UpdateFields, notify Notify) error {
 	if eid == "" && knownCLID == 0 {
 		panic("either ExternalID or known common.CLID must be provided")
@@ -468,7 +467,7 @@ func insert(ctx context.Context, eid ExternalID, populate func(*CL)) (*CL, error
 	}
 	// Create new CL and CLMap entry atomically.
 	cl := &CL{
-		ID:         0, // autogenerate by Datastore
+		ID:         0, // autogenerated by Datastore
 		ExternalID: eid,
 		EVersion:   1,
 	}
@@ -479,7 +478,7 @@ func insert(ctx context.Context, eid ExternalID, populate func(*CL)) (*CL, error
 	cl.Snapshot.PanicIfNotValid()
 	// datastore.Put will do RoundTime on its own, but without affecting our `cl`
 	// object. Since `cl` object is passed outside, do rounding here s.t. it has
-	// exact same data as would have been read from datastore right after the Put.
+	// exact same data as would have been read from Datastore right after the Put.
 	cl.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 
 	if err := datastore.Put(ctx, cl); err != nil {

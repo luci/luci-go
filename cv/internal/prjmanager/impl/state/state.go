@@ -260,9 +260,9 @@ func (s *State) OnCLsUpdated(ctx context.Context, clEVersions map[int64]int64) (
 	defer func() { span.End(err) }()
 
 	if s.PB.GetStatus() != prjpb.Status_STARTED {
-		// Ignore all incoming CL events. If PM is re-enabled,
-		// then first full poll will force re-sending of OnCLsUpdated event for all
-		// still interesting CLs.
+		// Ignore all incoming CL events. If PM is re-enabled, then first full
+		// poll will force re-sending of OnCLsUpdated event for all still
+		// interesting CLs.
 		return s, nil, nil
 	}
 
@@ -293,8 +293,8 @@ func (s *State) OnPurgesCompleted(ctx context.Context, events []*prjpb.PurgeComp
 		opIDs.Add(e.GetOperationId())
 	}
 	// Give 1 minute grace before expiring purging tasks. This doesn't change
-	// correctness, but decreases probability of starting another purge before PM
-	// observes CLUpdated event with results of prior purge.
+	// correctness, but decreases probability of starting another purge before
+	// PM observes CLUpdated event with results of prior purge.
 	expireCutOff := clock.Now(ctx).Add(-time.Minute)
 
 	deleted := map[int64]struct{}{}
@@ -397,7 +397,7 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 
 // UpgradeIfNecessary upgrades old state to new format if necessary.
 //
-// Returns the new or this state if nothing was changed.
+// Returns the new state, or this state if nothing was changed.
 func (s *State) UpgradeIfNecessary() *State {
 	if !s.needUpgrade() {
 		return s

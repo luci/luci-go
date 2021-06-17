@@ -41,6 +41,8 @@ import (
 )
 
 // RunManager manages Runs.
+//
+// It decides starting, cancelation, submission etc. for Runs.
 type RunManager struct {
 	runNotifier *run.Notifier
 	pmNotifier  *prjmanager.Notifier
