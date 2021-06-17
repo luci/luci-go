@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b62e2fef_78f942c7",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-17T01:52:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78c67a7a_3017feab",
+      "revId": "065a9ad627aeae147ebbabfff3c010d761b55d21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3ee0c183_3a59406b",
@@ -31,6 +49,24 @@
       "writtenOn": "2021-06-16T06:55:29Z",
       "side": 1,
       "message": "assuming we have multiple service workers, does this code reused across them?\nshould the key be service-worker-specific? Is \"self\" here one of multiple service workers?",
+      "revId": "065a9ad627aeae147ebbabfff3c010d761b55d21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "169e3554_5c840247",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-17T01:52:00Z",
+      "side": 1,
+      "message": "There can only be one activated SW and one installing/waiting SW for any scope at any time.\nself only reference one instance of service workers. Different service workers will initialise their own instance of this module.\nWe want the key to be shared between multiple service workers in the same scope, when the value is not updated (most of the time), we don\u0027t want to force update the \nservice worker.\nAdded the scope of the service worker to the key.",
+      "parentUuid": "3ee0c183_3a59406b",
       "revId": "065a9ad627aeae147ebbabfff3c010d761b55d21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
