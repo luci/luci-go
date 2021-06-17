@@ -72,6 +72,75 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6ddb04b3_cbe17406",
+        "filename": "client/cas/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-06-17T07:08:42Z",
+      "side": 1,
+      "message": "Can we just call it `NewLegacyClient`, and keep the `NewClient` for the new implementation? FWIU, We don\u0027t have plan to access to RBE from CAS/Swarming clients.",
+      "range": {
+        "startLine": 94,
+        "startChar": 5,
+        "endLine": 94,
+        "endChar": 17
+      },
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "718357a6_6071c402",
+        "filename": "client/cas/flag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-06-17T07:08:42Z",
+      "side": 1,
+      "message": "add crbug.com/1193375?",
+      "range": {
+        "startLine": 33,
+        "startChar": 63,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7eae5f10_2b1eb2e3",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-06-17T07:08:42Z",
+      "side": 1,
+      "message": "newLegacyCASClient?",
+      "range": {
+        "startLine": 105,
+        "startChar": 25,
+        "endLine": 105,
+        "endChar": 37
+      },
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "985d63c8_4e045155",
         "filename": "client/cmd/isolate/lib/common.go",
         "patchSetId": 2
