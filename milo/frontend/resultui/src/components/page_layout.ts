@@ -36,6 +36,8 @@ import { ANONYMOUS_IDENTITY, queryAuthState } from '../services/milo_internal';
 import commonStyle from '../styles/common_style.css';
 import { MiloBaseElement } from './milo_base';
 
+export const refreshAuthChannel = new BroadcastChannel('refresh-auth-channel');
+
 function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
   // TODO(weiweilin): add integration tests to ensure redirection works properly.
   if (err.error instanceof GrpcError) {
@@ -83,7 +85,19 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
 
   connectedCallback() {
     super.connectedCallback();
-    window.addEventListener(NEW_MILO_VERSION_EVENT_TYPE, this.onNewMiloVersion);
+
+    const onNewMiloVersion = () => (this.showUpdateBanner = true);
+    window.addEventListener(NEW_MILO_VERSION_EVENT_TYPE, onNewMiloVersion);
+    this.addDisposer(() => window.removeEventListener(NEW_MILO_VERSION_EVENT_TYPE, onNewMiloVersion));
+
+    const onRefreshAuth = () => this.scheduleAuthStateUpdate(true);
+    refreshAuthChannel.addEventListener('message', onRefreshAuth);
+    this.addDisposer(() => refreshAuthChannel.removeEventListener('message', onRefreshAuth));
+
+    this.addDisposer(() => {
+      this.appState.dispose();
+      this.configsStore.dispose();
+    });
 
     let firstUpdate = true;
     getAuthStateCache()
@@ -115,15 +129,6 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
         );
       });
   }
-
-  disconnectedCallback() {
-    this.appState.dispose();
-    this.configsStore.dispose();
-    window.removeEventListener(NEW_MILO_VERSION_EVENT_TYPE, this.onNewMiloVersion);
-    super.disconnectedCallback();
-  }
-
-  private onNewMiloVersion = () => (this.showUpdateBanner = true);
 
   // A unique reference that functions as the ID of the last
   // this.scheduleAuthStateUpdate call.
