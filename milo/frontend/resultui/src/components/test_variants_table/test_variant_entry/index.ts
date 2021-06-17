@@ -261,7 +261,6 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
         display: grid;
         grid-template-columns: 24px var(--columns) 1fr;
         grid-gap: 5px;
-        user-select: none;
         font-size: 16px;
         line-height: 24px;
       }
