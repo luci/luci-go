@@ -2593,7 +2593,7 @@ func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo
 	inspectInstance(ctx, inst, false)
 
 	d := deployer.New(root)
-	defer d.CleanupTrash(ctx)
+	defer d.FS().CleanupTrash(ctx)
 
 	// TODO(iannucci): add subdir arg to deployRun
 
