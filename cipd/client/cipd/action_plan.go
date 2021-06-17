@@ -27,6 +27,16 @@ import (
 
 // Helper structs and implementation guts of EnsurePackages call.
 
+// ActionKind defines what is being done to a particular package.
+type ActionKind string
+
+const (
+	ActionRemove  ActionKind = "remove"  // package removal
+	ActionRelink  ActionKind = "relink"  // restoration of broken symlinks
+	ActionRepair  ActionKind = "repair"  // restoration of deleted files
+	ActionInstall ActionKind = "install" // installation or upgrade
+)
+
 // Actions lists what the cipd.Client should do or did to ensure the state of
 // some single subdirectory under the installation root.
 //
@@ -103,7 +113,7 @@ func (p *RepairPlan) NumBrokenFiles() int {
 
 // ActionError holds an error that happened when working on the pin.
 type ActionError struct {
-	Action string     `json:"action"`
+	Action ActionKind `json:"action"`
 	Pin    common.Pin `json:"pin"`
 	Error  JSONError  `json:"error,omitempty"`
 }
@@ -184,6 +194,86 @@ func (am ActionMap) Log(ctx context.Context, verbose bool) {
 			}
 		}
 	}
+}
+
+// perPinActions is a "rotated" version of ActionMap where actions are grouped
+// by (operation, pin) pairs essentially, not by the subdir they touch.
+type perPinActions struct {
+	maintenance []pinAction     // don't need package data: removals and relinks
+	updates     []updateActions // need package data: installs and repairs
+}
+
+// pinAction is an action done to some pin in some subdir.
+type pinAction struct {
+	action     ActionKind
+	pin        common.Pin
+	subdir     string
+	repairPlan RepairPlan // populated for relinks and repairs only
+}
+
+// updateActions is a list of actions that need the package data of this
+// specific pin. These are installations (including updates) and repairs.
+type updateActions struct {
+	pin     common.Pin
+	updates []pinAction
+}
+
+// perPinActions splits the action map into per-pin action lists.
+func (am ActionMap) perPinActions() perPinActions {
+	var maintenance []pinAction
+
+	addMaintenanceAction := func(a ActionKind, subdir string, pin common.Pin, plan RepairPlan) {
+		maintenance = append(maintenance, pinAction{
+			action:     a,
+			pin:        pin,
+			subdir:     subdir,
+			repairPlan: plan,
+		})
+	}
+
+	var updates []updateActions
+	seen := map[common.Pin]int{} // pin => index in `updates`
+
+	addUpdateAction := func(a ActionKind, subdir string, pin common.Pin, plan RepairPlan) {
+		idx, ok := seen[pin]
+		if !ok {
+			updates = append(updates, updateActions{pin: pin})
+			idx = len(updates) - 1
+			seen[pin] = idx
+		}
+		updates[idx].updates = append(updates[idx].updates, pinAction{
+			action:     a,
+			pin:        pin,
+			subdir:     subdir,
+			repairPlan: plan,
+		})
+	}
+
+	am.LoopOrdered(func(subdir string, actions *Actions) {
+		for _, pin := range actions.ToRemove {
+			addMaintenanceAction(ActionRemove, subdir, pin, RepairPlan{})
+		}
+		for _, pin := range actions.ToInstall {
+			addUpdateAction(ActionInstall, subdir, pin, RepairPlan{})
+		}
+		for _, pair := range actions.ToUpdate {
+			addUpdateAction(ActionInstall, subdir, pair.To, RepairPlan{})
+		}
+		for _, broken := range actions.ToRepair {
+			if broken.RepairPlan.NeedsReinstall {
+				// Need the full reinstall, requires the package data.
+				addUpdateAction(ActionInstall, subdir, broken.Pin, broken.RepairPlan)
+			} else if len(broken.RepairPlan.ToRedeploy) != 0 {
+				// Need to redeploy some files, requires the package data.
+				addUpdateAction(ActionRepair, subdir, broken.Pin, broken.RepairPlan)
+			} else {
+				// Need to symlink existing files, no need to fetch the package data.
+				addMaintenanceAction(ActionRelink, subdir, broken.Pin, broken.RepairPlan)
+			}
+		}
+	})
+
+	return perPinActions{maintenance, updates}
 }
 
 // repairCB is called for each installed pin to decide whether it should be

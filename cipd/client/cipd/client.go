@@ -1686,13 +1686,13 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 			}
 		}
 		for _, pin := range allPins[subdir] {
-			var action string
+			var action ActionKind
 			var err error
 			if toDeploy[pin.PackageName] {
-				action = "install"
+				action = ActionInstall
 				err = client.FetchAndDeployInstance(ctx, subdir, pin, maxThreads)
 			} else if plan := toRepair[pin.PackageName]; plan != nil {
-				action = "repair"
+				action = ActionRepair
 				err = client.repairDeployed(ctx, subdir, pin, plan, maxThreads)
 			}
 			if err != nil {
