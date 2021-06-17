@@ -104,6 +104,7 @@ const (
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
 	EnvMaxThreads          = "CIPD_MAX_THREADS"
 	EnvAdmissionPlugin     = "CIPD_ADMISSION_PLUGIN"
+	EnvCIPDServiceUrl      = "CIPD_SERVICE_URL"
 )
 
 var (
@@ -411,6 +412,9 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 				return fmt.Errorf("bad %s: not a valid JSON - %q", EnvAdmissionPlugin, v)
 			}
 		}
+	}
+	if v := getEnv(EnvCIPDServiceUrl); v != "" {
+		opts.ServiceURL = v
 	}
 	return nil
 }
