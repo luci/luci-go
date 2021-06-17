@@ -258,7 +258,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
         background-color: var(--block-background-color);
         border-top: 1px solid var(--divider-color);
         cursor: pointer;
-        user-select: none;
         line-height: 24px;
         z-index: 1;
       }
