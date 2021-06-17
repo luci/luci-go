@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package eventbox batches incoming events for a single Datastore entity
-// for processing.
 package eventbox
 
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -36,8 +37,11 @@ import (
 
 // Emit emits a new event with provided value and auto-generated unique ID.
 func Emit(ctx context.Context, value []byte, to *datastore.Key) error {
-	d := dsset.Set{Parent: to} // TombstonesDelay doesn't matter for Add.
-	id := uuid.New().String()
+	// TombstonesDelay doesn't matter for Add.
+	d := dsset.Set{Parent: to}
+	// Keep IDs well distributed, but record creation time in it.
+	// See also oldestEventAge().
+	id := fmt.Sprintf("%s/%d", uuid.New().String(), clock.Now(ctx).UnixNano())
 	if err := d.Add(ctx, []dsset.Item{{ID: id, Value: value}}); err != nil {
 		return errors.Annotate(err, "failed to send event").Err()
 	}
@@ -112,9 +116,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor, ma
 	}
 	var listing *dsset.Listing
 	eg.Go(func() (err error) {
-		if listing, err = d.List(ectx, maxEvents); err == nil {
-			err = dsset.CleanupGarbage(ectx, listing.Garbage)
-		}
+		listing, err = listAndCleanup(ectx, &d, maxEvents)
 		return
 	})
 	if err := eg.Wait(); err != nil {
@@ -237,6 +239,42 @@ func toEvents(items []dsset.Item) Events {
 		es[i] = Event(item)
 	}
 	return es
+}
+
+func listAndCleanup(ctx context.Context, d *dsset.Set, maxEvents int) (*dsset.Listing, error) {
+	tStart := clock.Now(ctx)
+	listing, err := d.List(ctx, maxEvents)
+	recipient := monitoringRecipient(d.Parent)
+	metricListingDurationsMS.Add(ctx, float64(clock.Since(ctx, tStart).Milliseconds()), recipient, monitoringResult(err))
+	if err != nil {
+		return nil, err
+	}
+	metricListingCounts.Add(ctx, float64(len(listing.Items)), recipient)
+	metricListingOldestAgeMS.Set(ctx, float64(oldestEventAge(ctx, listing.Items).Milliseconds()), recipient)
+
+	if err := dsset.CleanupGarbage(ctx, listing.Garbage); err != nil {
+		return nil, err
+	}
+	return listing, nil
+}
+
+func oldestEventAge(ctx context.Context, items []dsset.Item) time.Duration {
+	var oldest time.Time
+	for _, item := range items {
+		// NOTE: there can be some events with old IDs, which didn't record
+		// timestamps.
+		if parts := strings.SplitN(item.ID, "/", 2); len(parts) == 2 {
+			if unixNano, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+				if t := time.Unix(0, unixNano); oldest.IsZero() || oldest.After(t) {
+					oldest = t
+				}
+			}
+		}
+	}
+	if oldest.IsZero() {
+		return 0
+	}
+	return clock.Since(ctx, oldest)
 }
 
 func deleteSemanticGarbage(ctx context.Context, d *dsset.Set, events Events) error {
