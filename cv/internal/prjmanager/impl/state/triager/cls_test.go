@@ -232,7 +232,7 @@ func TestCLsTriage(t *testing.T) {
 
 		Convey("Single CL Runs: typical CL stack", func() {
 			// CL 3 depends on 2, which in turn depends 1.
-			// Start configuraiton is each one is Dry-run triggered.
+			// Start configuration is each one is Dry-run triggered.
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid:               1,
@@ -348,7 +348,7 @@ func TestCLsTriage(t *testing.T) {
 
 		Convey("Multiple CL Runs: 1<->2 and 3 depending on both", func() {
 			// CL 3 depends on 1 and 2, while 1 and 2 depend on each other (e.g. via
-			// CQ-Depend).  Start configuraiton is each one is Dry-run triggered.
+			// CQ-Depend).  Start configuration is each one is Dry-run triggered.
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid:               1,

@@ -147,7 +147,7 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 				//
 				// This may happen in a many cases of multi-CL Runs, for example:
 				//  * during submitted: some CLs have already been submitted;
-				//  * during cancelation: some CLs' votes have already been removed;
+				//  * during cancellation: some CLs' votes have already been removed;
 				//  * a newly ingested LUCI project config splits Run across multiple
 				//    ConfigGroups or even makes one CL unwatched by the project.
 				return a.postponeDueToExistingRunDiffScope(ctx, &combo, prun)

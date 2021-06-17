@@ -38,7 +38,7 @@ func TestGerritCLDeleted(t *testing.T) {
 		const gRef = "refs/heads/main"
 		const gChange = 404
 
-		// TODO(tandrii): remove this once Run cancelation is not conditional on CV
+		// TODO(tandrii): remove this once Run cancellation is not conditional on CV
 		// managing Runs for a project.
 		ct.EnableCVRunManagement(ctx, lProject)
 

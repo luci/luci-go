@@ -196,7 +196,7 @@ func TestComponentsActions(t *testing.T) {
 				case 3:
 					return itriager.Result{NewValue: markTriaged(c)}, nil
 				}
-				panic("unrechable")
+				panic("unreachable")
 			}
 			actions, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
@@ -231,7 +231,7 @@ func TestComponentsActions(t *testing.T) {
 				case 2:
 					return itriager.Result{}, nil
 				}
-				panic("unrechable")
+				panic("unreachable")
 			}
 			actions, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
@@ -268,7 +268,7 @@ func TestComponentsActions(t *testing.T) {
 				case 2, 3:
 					return itriager.Result{NewValue: markTriaged(c)}, nil
 				}
-				panic("unrechable")
+				panic("unreachable")
 			}
 			actions, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)

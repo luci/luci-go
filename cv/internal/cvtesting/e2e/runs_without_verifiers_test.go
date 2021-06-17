@@ -202,7 +202,7 @@ func TestCreatesSingularRunCQDinChargeOK(t *testing.T) {
 		// ReportFinishedRun within O(minutes) of the removing of the Gerrit vote,
 		// otherwise failsafe on CV kicks in and finalizes such Run with CANCELED.
 		// Depending on test setup (e.g. flaky datastore), this test may exhibit
-		// either bahavior. See TestCreatesSingularRunCQDinChargeButCrashes for a
+		// either behavior. See TestCreatesSingularRunCQDinChargeButCrashes for a
 		// test this ensures failsafe actually works.
 		r = ct.LoadRun(ctx, r.ID)
 		if r.Status == run.Status_SUCCEEDED {

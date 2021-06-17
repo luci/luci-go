@@ -165,7 +165,7 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
 					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
-					// Must schedule a task per Run for cancelation.
+					// Must schedule a task per Run for cancellation.
 					So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
 
 					Convey("wait for all IncompleteRuns to finish", func() {

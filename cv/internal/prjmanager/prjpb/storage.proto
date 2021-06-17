@@ -192,7 +192,7 @@ message Component {
   //
   // A referenced CL is normally watched by this LUCI project. In rare cases,
   // referenced CL is no longer watched by this LUCI project but is still kept
-  // in a component becaues the CL is still a member of an incomplete Run in
+  // in a component because the CL is still a member of an incomplete Run in
   // this component. In this case, the CL's deps are no longer tracked.
   repeated int64 clids = 1;
 

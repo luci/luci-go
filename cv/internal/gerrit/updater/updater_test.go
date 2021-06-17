@@ -548,7 +548,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				})
 			})
 
-			Convey("Updates snapshots explicitely marked outdated", func() {
+			Convey("Updates snapshots explicitly marked outdated", func() {
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
 				cl.Mutate(ctx, func(cl *changelist.CL) (updated bool) {
 					cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
