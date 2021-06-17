@@ -40,6 +40,13 @@ import (
 	"go.chromium.org/luci/cv/internal/tree"
 )
 
+// maxEventsPerBatch limits the number of incoming events the PM will process at
+// once.
+//
+// This shouldn't be hit in practice under normal operation. This is chosen such
+// that RM can read these events and make some progress in 1 minute.
+const maxEventsPerBatch = 10000
+
 // RunManager manages Runs.
 type RunManager struct {
 	runNotifier *run.Notifier
@@ -90,7 +97,7 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
 		proc.handler = h
 	}
-	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc)
+	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
 	if err != nil {
 		return errors.Annotate(err, "run: %q", runID).Err()
 	}
