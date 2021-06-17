@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -145,23 +144,23 @@ type Input struct {
 	RunCLExternalIDs []changelist.ExternalID
 }
 
-// Cancel removes all votes on CQ label and posts the given message.
+// Cancel removes or "deactivates" CQ-triggering votes on a CL and posts the
+// given message.
 //
 // If the patcheset of the passed CL is not current, returns error tagged with
 // `ErrPreconditionFailedTag`.
 //
-// The triggering votes will be removed last and all other votes will be removed
-// in chronological order (latest to earliest). Message will posted in the same
-// rpc call to Gerrit that removes the triggering votes.
+// Normally, the triggering vote(s) will be removed last and all other votes
+// will be removed in chronological order (latest to earliest). Message will
+// posted in the same rpc call to Gerrit that removes the triggering votes.
 //
-// Returns nil if all votes are successfully removed or no action was even
-// necessary.
-//
-// If non-recoverable error occurs(e.g. lack of permission to remove votes),
-// attempts to post the message including original message in the input,
-// failure message and special `botdata.BotData` s.t. user is clearly
-// communicated with the error and CV won't create new Run by parsing the
-// `BotData` message. The returned error will be tagged with `ErrPermanentTag`.
+// Abnormally, e.g. lack of permission to remove votes, falls back to post a
+// special message which "deactivates" the triggering votes. This special
+// message is a combination of:
+//   * the original message in the input
+//   * reason for abnormality,
+//   * special `botdata.BotData` which ensures CV won't consider previously
+//     triggering votes as triggering in the future.
 func Cancel(ctx context.Context, in Input) error {
 	switch {
 	case in.CL.Snapshot == nil:
@@ -242,10 +241,11 @@ func cancelLeased(ctx context.Context, c *change, in *Input) error {
 		msgBuilder.WriteString("\n\n")
 	}
 	msgBuilder.WriteString(failMessage)
-	if postMsgErr := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Trigger, in.RunCLExternalIDs, in.Notify); postMsgErr != nil {
-		logging.WithError(postMsgErr).Errorf(ctx, "failed to post cancellation failure message to Gerrit")
+	if err := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Trigger, in.RunCLExternalIDs, in.Notify); err != nil {
+		// Return the original error, but add details from just posting a message.
+		return errors.Annotate(removeErr, "even just posting message also failed: %s", err).Err()
 	}
-	return removeErr
+	return nil
 }
 
 func ensurePSLatestInCV(ctx context.Context, cl *changelist.CL) error {
