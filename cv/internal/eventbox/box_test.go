@@ -142,13 +142,15 @@ func TestEventboxWorks(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
+		const limit = 10000
+
 		// Seed the first cell.
 		So(Emit(ctx, []byte{'+'}, key(ctx, 65)), ShouldBeNil)
 		l, err := List(ctx, key(ctx, 65))
 		So(err, ShouldBeNil)
 		So(l, ShouldHaveLength, 1)
 
-		ppfns, err := ProcessBatch(ctx, key(ctx, 65), &processor{65})
+		ppfns, err := ProcessBatch(ctx, key(ctx, 65), &processor{65}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 1)
@@ -156,28 +158,28 @@ func TestEventboxWorks(t *testing.T) {
 		So(mustList(ctx, 65), ShouldHaveLength, 0)
 
 		// Let the cell grow without incoming events.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 2)
 		So(mustGet(ctx, 65).Population, ShouldEqual, 1+3)
 		// Can't grow any more, no change to anything.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 2)
 		So(mustGet(ctx, 65).Population, ShouldEqual, 1+3)
 
 		// Advertise from nearby cell, twice.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
-		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustList(ctx, 65), ShouldHaveLength, 2)
 		// Emigrate, at most once.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 3)
@@ -185,16 +187,16 @@ func TestEventboxWorks(t *testing.T) {
 		So(mustList(ctx, 65), ShouldHaveLength, 0)
 
 		// Accept immigrants.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 64).Population, ShouldEqual, +1)
 
 		// Advertise to a cell with population = 1 is a noop.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 63), &processor{63})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 63), &processor{63}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
-		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 
@@ -205,18 +207,18 @@ func TestEventboxWorks(t *testing.T) {
 		So(Emit(ctx, []byte{'-'}, key(ctx, 49)), ShouldBeNil) // not enough people, ignored.
 		So(Emit(ctx, []byte{'-'}, key(ctx, 49)), ShouldBeNil) // not enough people, ignored.
 		So(mustList(ctx, 49), ShouldHaveLength, 5)
-		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).EVersion, ShouldEqual, 1)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 1)
 		So(mustList(ctx, 49), ShouldHaveLength, 2) // 2x'+' are waiting
 		// Slowly welcome remaining newcomers.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 2)
-		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49})
+		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 3)
@@ -258,6 +260,8 @@ func TestEventboxPostProcessFn(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
+		const limit = 10000
 		recipient := key(ctx, 753)
 
 		initState := int(149)
@@ -296,7 +300,7 @@ func TestEventboxPostProcessFn(t *testing.T) {
 					},
 				}, nil, nil
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldBeNil)
 			So(ppfns, ShouldHaveLength, 2)
 			for _, ppfn := range ppfns {
@@ -315,7 +319,9 @@ func TestEventboxFails(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
+		const limit = 100000
 		recipient := key(ctx, 77)
+
 		So(Emit(ctx, []byte{'+'}, recipient), ShouldBeNil)
 		So(Emit(ctx, []byte{'-'}, recipient), ShouldBeNil)
 
@@ -331,7 +337,7 @@ func TestEventboxFails(t *testing.T) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, nil, errors.New("oops")
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldErrLike, "oops")
 			So(ppfns, ShouldBeEmpty)
 		})
@@ -362,13 +368,13 @@ func TestEventboxFails(t *testing.T) {
 			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 				return 0, errors.New("ev error")
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldErrLike, "ev error")
 			So(ppfns, ShouldBeEmpty)
 			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 				return 1, nil
 			}
-			ppfns, err = ProcessBatch(ctx, recipient, p)
+			ppfns, err = ProcessBatch(ctx, recipient, p, limit)
 			So(IsErrContention(err), ShouldBeTrue)
 			So(ppfns, ShouldBeEmpty)
 			So(firstSideEffectCalled, ShouldBeFalse)
@@ -382,7 +388,7 @@ func TestEventboxFails(t *testing.T) {
 			second = func(_ context.Context) error {
 				return transient.Tag.Apply(errors.New("2nd failed"))
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldErrLike, "2nd failed")
 			So(ppfns, ShouldBeEmpty)
 			So(firstSideEffectCalled, ShouldBeTrue)
@@ -400,7 +406,7 @@ func TestEventboxFails(t *testing.T) {
 				So(s, ShouldEqual, secondState)
 				return transient.Tag.Apply(errors.New("savvvvvvvvvvvvvvvvvvvvvvvvvv hung"))
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldErrLike, "savvvvvvvvvvvvvvvv")
 			So(ppfns, ShouldBeEmpty)
 			// ... still no side effect.
@@ -416,7 +422,7 @@ func TestEventboxFails(t *testing.T) {
 		// Finally, check that first side effect is real, otherwise assertions above
 		// might be giving false sense of correctness.
 		p.saveState = func(context.Context, State, EVersion) error { return nil }
-		ppfns, err := ProcessBatch(ctx, recipient, p)
+		ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, firstIndex), ShouldNotBeNil)
@@ -448,6 +454,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
+		const limit = 100000
 		recipient := key(ctx, 77)
 		initState := int(99)
 		panicErr := errors.New("must not be transact!")
@@ -465,7 +472,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, nil, nil
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldBeNil)
 			So(ppfns, ShouldBeEmpty)
 		})
@@ -475,7 +482,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], nil
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldBeNil)
 			So(ppfns, ShouldBeEmpty)
 			l, err := List(ctx, recipient)
@@ -489,7 +496,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], errors.New("boom")
 			}
-			_, err := ProcessBatch(ctx, recipient, p)
+			_, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldErrLike, "boom")
 			l, err := List(ctx, recipient)
 			So(err, ShouldBeNil)
@@ -500,7 +507,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{}, nil, nil
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldBeNil)
 			So(ppfns, ShouldBeEmpty)
 		})
@@ -510,7 +517,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 					{TransitionTo: s},
 				}, nil, nil
 			}
-			ppfns, err := ProcessBatch(ctx, recipient, p)
+			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
 			So(err, ShouldBeNil)
 			So(ppfns, ShouldBeEmpty)
 		})
@@ -521,7 +528,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 					{TransitionTo: new(int)},
 				}, nil, nil
 			}
-			So(func() { ProcessBatch(ctx, recipient, p) }, ShouldPanicLike, panicErr)
+			So(func() { ProcessBatch(ctx, recipient, p, limit) }, ShouldPanicLike, panicErr)
 		})
 	})
 }

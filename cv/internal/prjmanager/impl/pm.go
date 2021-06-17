@@ -42,6 +42,15 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
+// maxEventsPerBatch limits the number of incoming events the PM will process at
+// once.
+//
+// This shouldn't be hit in practice under normal operation. This is chosen such
+// that PM can read these events and make some progress in 1 minute.
+const maxEventsPerBatch = 10000
+
+var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
+
 // ProjectManager implements managing projects.
 type ProjectManager struct {
 	// pmNotifier notifies itself and invokes itself via async TQ tasks.
@@ -89,8 +98,6 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 	return pm
 }
 
-var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
-
 func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string, taskETA time.Time) error {
 	retryViaNewTask := false
 	var err error
@@ -129,7 +136,7 @@ func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) 
 		clPurger:    pm.clPurger,
 		clPoller:    pm.clPoller,
 	}
-	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc); {
+	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch); {
 	case err == nil:
 		for _, postProcessFn := range postProcessFns {
 			if err := postProcessFn(ctx); err != nil {

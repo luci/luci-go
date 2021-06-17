@@ -70,12 +70,13 @@ func TestSet(t *testing.T) {
 			Parent:          datastore.NewKey(c, "Parent", "parent", 0, nil),
 			TombstonesDelay: time.Minute,
 		}
+		const limit = 10
 
 		// Add one item.
 		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
 
 		// The item is returned by the listing.
-		listing, err := set.List(c)
+		listing, err := set.List(c, limit)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldResemble, []Item{{ID: "abc"}})
 		So(listing.Garbage, ShouldBeNil)
@@ -90,13 +91,13 @@ func TestSet(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// The listing no longer returns it.
-		listing, err = set.List(c)
+		listing, err = set.List(c, limit)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
 
 		// The listing no longer returns the item, and there's no tombstones to
 		// cleanup.
-		listing, err = set.List(c)
+		listing, err = set.List(c, limit)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
 		So(listing.Garbage, ShouldBeNil)
@@ -106,7 +107,7 @@ func TestSet(t *testing.T) {
 
 		// The listing still doesn't return it, but we now have a tombstone to
 		// cleanup (again).
-		listing, err = set.List(c)
+		listing, err = set.List(c, limit)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
 		So(len(listing.Garbage), ShouldEqual, 1)
@@ -126,7 +127,7 @@ func TestSet(t *testing.T) {
 		// the tombstone (since it has no storage items associated with it and it's
 		// not ready to be evicted yet).
 		So(CleanupGarbage(c, listing.Garbage), ShouldBeNil)
-		listing, err = set.List(c)
+		listing, err = set.List(c, limit)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
 		So(listing.Garbage, ShouldBeNil)
@@ -135,7 +136,7 @@ func TestSet(t *testing.T) {
 		clock.Get(c).(testclock.TestClock).Add(2 * time.Minute)
 
 		// Listing now returns expired tombstone.
-		listing, err = set.List(c)
+		listing, err = set.List(c, limit)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
 		So(len(listing.Garbage), ShouldEqual, 1)
@@ -154,7 +155,7 @@ func TestSet(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// No tombstones returned any longer.
-		listing, err = set.List(c)
+		listing, err = set.List(c, limit)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
 		So(listing.Garbage, ShouldBeNil)
@@ -163,10 +164,25 @@ func TestSet(t *testing.T) {
 		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
 
 		// Yep, it is there.
-		listing, err = set.List(c)
+		listing, err = set.List(c, limit)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldResemble, []Item{{ID: "abc"}})
 		So(listing.Garbage, ShouldBeNil)
+	})
+
+	Convey("List obeys limit", t, func() {
+		c := testingContext()
+		set := Set{
+			Parent:          datastore.MakeKey(c, "Parent", "parent"),
+			TombstonesDelay: time.Minute,
+		}
+		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
+		So(set.Add(c, []Item{{ID: "def"}}), ShouldBeNil)
+		So(set.Add(c, []Item{{ID: "ghi"}}), ShouldBeNil)
+
+		l, err := set.List(c, 2)
+		So(err, ShouldBeNil)
+		So(l.Items, ShouldHaveLength, 2)
 	})
 
 	Convey("delete items non-transactionally", t, func() {
@@ -182,7 +198,7 @@ func TestSet(t *testing.T) {
 		So(set.Add(c, []Item{{ID: "def"}}), ShouldBeNil)
 		So(set.Add(c, []Item{{ID: "ghi"}}), ShouldBeNil)
 
-		l, err := set.List(c)
+		l, err := set.List(c, 10)
 		So(err, ShouldBeNil)
 		So(l.Items, ShouldHaveLength, 3)
 
@@ -200,7 +216,7 @@ func TestSet(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		l2, err := set.List(c)
+		l2, err := set.List(c, 10)
 		So(err, ShouldBeNil)
 		So(l2.Items, ShouldResemble, []Item{{ID: "ghi"}})
 	})
@@ -245,7 +261,7 @@ func TestStress(t *testing.T) {
 		}
 
 		consume := func() {
-			listing, err := set.List(c)
+			listing, err := set.List(c, 100000)
 			if err != nil || len(listing.Items) == 0 {
 				return
 			}
