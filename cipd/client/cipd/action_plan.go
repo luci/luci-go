@@ -121,6 +121,16 @@ type ActionError struct {
 // ActionMap is a map of subdir to the Actions which will occur within it.
 type ActionMap map[string]*Actions
 
+// Empty is true if ActionMap is empty.
+func (am ActionMap) Empty() bool {
+	for _, a := range am {
+		if !a.Empty() {
+			return false
+		}
+	}
+	return true
+}
+
 // LoopOrdered loops over the ActionMap in sorted order (by subdir).
 func (am ActionMap) LoopOrdered(cb func(subdir string, actions *Actions)) {
 	subdirs := make(sort.StringSlice, 0, len(am))
