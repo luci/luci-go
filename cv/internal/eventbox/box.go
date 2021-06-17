@@ -163,13 +163,10 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor, ma
 			eventsConsumed += len(t.Events)
 		}
 
-		logging.Debugf(ctx, "%d transitions, %d events", len(transitions), eventsConsumed)
 		if newState != state {
 			if err := p.SaveState(ctx, newState, expectedEV+1); err != nil {
 				return err
 			}
-		} else {
-			logging.Debugf(ctx, "state wasn't modified")
 		}
 		return dsset.FinishPop(ctx, popOp)
 	}, nil)
