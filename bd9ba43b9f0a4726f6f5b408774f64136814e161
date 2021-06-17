@@ -50,6 +50,23 @@
       "message": "PTAL.\n\nThis CL depends on landing and rolling https://github.com/bazelbuild/remote-apis-sdks/pull/360",
       "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "985d63c8_4e045155",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 550,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-17T01:29:53Z",
+      "side": 1,
+      "message": "no need to be public function?",
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
