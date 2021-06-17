@@ -16,6 +16,52 @@
       "message": "ptal again, please.",
       "revId": "2cc67e5d93ba008c0557e79343567273bffec37b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30fd4fc0_d67e6fce",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-17T21:49:30Z",
+      "side": 1,
+      "message": "Maybe, Seconds()? https://crrev.com/c/2949390",
+      "range": {
+        "startLine": 248,
+        "startChar": 68,
+        "endLine": 248,
+        "endChar": 82
+      },
+      "revId": "2cc67e5d93ba008c0557e79343567273bffec37b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1aee6295_98da4879",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-17T21:49:30Z",
+      "side": 1,
+      "message": "why Float? If you want a floating number below Millisecond, then change the unit. Otherwise, NewInt() should be good?",
+      "range": {
+        "startLine": 55,
+        "startChar": 38,
+        "endLine": 55,
+        "endChar": 46
+      },
+      "revId": "2cc67e5d93ba008c0557e79343567273bffec37b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
