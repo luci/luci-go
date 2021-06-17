@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5847bd3f_1cdeebaa",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 638,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-17T00:00:29Z",
+      "side": 1,
+      "message": "It is tied to a batch because we want to delete all temp crap ASAP to avoid occupying disk space.\n\nReplacing batches with clients will be a big and scary change and I don\u0027t think it will improve the API much. Right now batching is mostly transparent, the client engages it when necessary (with two lines of code). Either way I don\u0027t want to make this change now, it is mostly unrelated to parallel downloads.",
+      "parentUuid": "423f8761_723b4f40",
+      "revId": "13abb12bb06d324e28fb7528b9ec538bbcfc9c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8a201bdd_dfc0dd06",
@@ -65,6 +83,24 @@
       "writtenOn": "2021-06-16T23:22:49Z",
       "side": 1,
       "message": "because then you would avoid this...",
+      "revId": "13abb12bb06d324e28fb7528b9ec538bbcfc9c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e42e86a9_58e4d03f",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1438,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-17T00:00:29Z",
+      "side": 1,
+      "message": "I don\u0027t think it is a big deal.",
+      "parentUuid": "8a201bdd_dfc0dd06",
       "revId": "13abb12bb06d324e28fb7528b9ec538bbcfc9c2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

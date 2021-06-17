@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "df3cda03_4d61ac42",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 603,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-17T00:00:29Z",
+      "side": 1,
+      "message": "no, CleanupTrash assumes files there are placed via moveToTrash. Just adding random unstructured crap there may backfire.",
+      "parentUuid": "1683a8e4_d8bc3973",
+      "revId": "0a016cc0a411b80223f1606c8b73423c868cdd21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b9ea0160_76bb70d8",
         "filename": "cipd/client/cipd/client.go",
         "patchSetId": 2
