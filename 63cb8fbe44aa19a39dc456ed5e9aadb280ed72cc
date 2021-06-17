@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "448bba22_ab214665",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T23:38:11Z",
+      "side": 1,
+      "message": "^",
+      "revId": "63cb8fbe44aa19a39dc456ed5e9aadb280ed72cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f4ffd515_865c4dfa",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T23:38:11Z",
+      "side": 1,
+      "message": "^",
+      "revId": "63cb8fbe44aa19a39dc456ed5e9aadb280ed72cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
