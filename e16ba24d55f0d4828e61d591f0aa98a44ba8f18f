@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "76146c85_b5e3378e",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T21:24:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "02247a77_8033e70b",
+      "range": {
+        "startLine": 258,
+        "startChar": 8,
+        "endLine": 258,
+        "endChar": 9
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5a1530b6_bb7496a9",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "740e711b_38ea59c2",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T21:24:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a1530b6_bb7496a9",
+      "range": {
+        "startLine": 261,
+        "startChar": 17,
+        "endLine": 261,
+        "endChar": 20
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "135bfc12_81612ecf",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-06-17T18:47:44Z",
       "side": 1,
       "message": "would second precision be too coarse given that most of the time, the task is invoked right after the event is stored and we might have a skewed metrics because of that?",
+      "range": {
+        "startLine": 270,
+        "startChar": 6,
+        "endLine": 270,
+        "endChar": 45
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f26155cc_d3fc4f97",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T21:24:21Z",
+      "side": 1,
+      "message": "My thinking is that we care only if delay is \u003e1, probably \u003e10s,\nso 1s precision is good enough, Besides, DS transactions with writes take at least 100ms, so ms precision is 90% useless anyway.",
+      "parentUuid": "135bfc12_81612ecf",
       "range": {
         "startLine": 270,
         "startChar": 6,
