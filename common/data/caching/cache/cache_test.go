@@ -139,6 +139,14 @@ func TestNew(t *testing.T) {
 		So(c.Keys(), ShouldResemble, expected)
 		So(c.Close(), ShouldBeNil)
 
+		curdir, err := os.Getwd()
+		So(err, ShouldBeNil)
+		defer func() {
+			So(os.Chdir(curdir), ShouldBeNil)
+		}()
+
+		So(os.Chdir(td), ShouldBeNil)
+
 		rel, err := filepath.Rel(td, t.TempDir())
 		So(err, ShouldBeNil)
 		So(filepath.IsAbs(rel), ShouldBeFalse)
