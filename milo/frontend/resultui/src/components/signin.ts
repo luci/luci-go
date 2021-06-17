@@ -17,6 +17,39 @@ import { css, customElement, html, LitElement, property } from 'lit-element';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 
 /**
+ * Signs in/out the user.
+ *
+ * @param signIn pass true to sign in, false to sign out.
+ */
+export function changeUserState(signIn: boolean) {
+  const channelId = 'auth-channel-' + Math.random();
+  const redirectUrl = `/ui/auth-callback/${channelId}`;
+  const target = window.open(
+    `/auth/openid/${signIn ? 'login' : 'logout'}?${new URLSearchParams({ r: redirectUrl })}`,
+    '_blank'
+  );
+  if (!target) {
+    return;
+  }
+
+  const channel = new BroadcastChannel(channelId);
+
+  // Close the channel in 1hr to prevent memory leak in case the target never
+  // sent the message.
+  const timeout = window.setTimeout(() => channel.close(), 3600000);
+
+  channel.addEventListener(
+    'message',
+    () => {
+      window.clearTimeout(timeout);
+      channel.close();
+      target.close();
+    },
+    { once: true }
+  );
+}
+
+/**
  * `milo-signin` is a web component that manages signing into services using
  * client-side OAuth via gapi.auth2. milo-signin visually indicates whether the
  * user is signed in using either an icon or the user's profile picture. The
@@ -34,11 +67,11 @@ export class SignInElement extends LitElement {
 
   protected render() {
     if (!this.identity || this.identity === ANONYMOUS_IDENTITY) {
-      return html`<a target="_blank" href="/auth/openid/login">Login</a>`;
+      return html`<a @click=${() => changeUserState(true)}>Login</a>`;
     }
     return html`
       ${this.picture ? html`<img src=${this.picture} />` : ''}
-      <div>${this.email} | <a target="_blank" href="/auth/openid/logout">Logout</a></div>
+      <div>${this.email} | <a @click=${() => changeUserState(false)}>Logout</a></div>
     `;
   }
 
@@ -50,6 +83,8 @@ export class SignInElement extends LitElement {
     }
     a {
       color: var(--default-text-color);
+      text-decoration: underline;
+      cursor: pointer;
     }
     img {
       margin: 2px 3px;

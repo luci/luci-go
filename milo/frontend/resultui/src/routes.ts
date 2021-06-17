@@ -15,6 +15,7 @@
 import { Router } from '@vaadin/router';
 
 import './components/page_layout';
+import { refreshAuthChannel } from './components/page_layout';
 
 export const NOT_FOUND_URL = '/not-found';
 
@@ -228,6 +229,18 @@ router.setRoutes({
           },
         },
       ],
+    },
+    {
+      path: '/auth-callback/:channel_id',
+      action: async (ctx, cmd) => {
+        new BroadcastChannel(ctx.params['channel_id'] as string).postMessage('close');
+        refreshAuthChannel.postMessage('refresh');
+        await import(
+          /* webpackChunkName: "close_page" */
+          './pages/close_page'
+        );
+        return cmd.component('milo-close-page');
+      },
     },
     {
       path: '/:path*',
