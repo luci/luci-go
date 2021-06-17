@@ -43,6 +43,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "32f8bf43_b4a0149b",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-17T21:57:08Z",
+      "side": 1,
+      "message": "Thus, the count metric is updated only if the events are listed successfully, whereas the duration metric is updated either it was successful or not at L248? \n\nI\u0027d suggest to \n- add metric:result to the counter metric or\n- update the metric path and description of the counter metric to indicate that it only includes the successfully listed one.",
+      "range": {
+        "startLine": 252,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 69
+      },
+      "revId": "2cc67e5d93ba008c0557e79343567273bffec37b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1aee6295_98da4879",
         "filename": "cv/internal/eventbox/monitoring.go",
         "patchSetId": 5
