@@ -63,7 +63,7 @@ func MostSevereError(err error) error {
 //   }
 //
 // Given that:
-//  * TQ lib recognizes 2 errror tags:
+//  * TQ lib recognizes 2 error tags:
 //    * TQ.Fatal => HTTP 202, no retries
 //    * transient.Tag => HTTP 500, will be retried
 //    * else => HTTP 429, will be retried

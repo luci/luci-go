@@ -44,7 +44,7 @@ func triageDeps(pcl *prjpb.PCL, cgIndex int32, pm pmState) *triagedDeps {
 // triagedDeps categorizes deps of a CL, referred to below as the "dependent" CL.
 //
 // Categories are exclusive. Non-submitted OK deps are not recorded here to
-// avoid unnecesary allocations in the most common case, but they do affect
+// avoid unnecessary allocations in the most common case, but they do affect
 // lastTriggered time.
 type triagedDeps struct {
 	// lastTriggered among *all* deps which are triggered. Can be Zero time if no

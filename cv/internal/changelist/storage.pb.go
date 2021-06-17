@@ -676,7 +676,7 @@ func (x *ApplicableConfig) GetProjects() []*ApplicableConfig_Project {
 //
 // For example,
 //   * `infra` project has all its Gerrit CLs public and doesn't care about
-//      infromation leaks. All other LUCI projects can read its CLs, as well
+//      information leaks. All other LUCI projects can read its CLs, as well
 //      as the whole Internet.
 //   * `infra-internal` project protects its Gerrit CLs, making them visible
 //     to `infra-internal-scoped@...` account only.

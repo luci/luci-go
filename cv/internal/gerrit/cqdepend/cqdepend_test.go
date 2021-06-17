@@ -45,7 +45,7 @@ func TestParser(t *testing.T) {
 				{Subdomain: "y", Change: 456},
 			})
 		})
-		Convey("Ingores errors", func() {
+		Convey("Ignores errors", func() {
 			So(Parse("Title.\n\nCq-Depend: 2, x;3\nCq-Depend: y-review:4,z:5"), ShouldResemble, []Dep{
 				{Subdomain: "", Change: 2},
 				{Subdomain: "z", Change: 5},

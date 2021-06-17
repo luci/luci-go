@@ -527,7 +527,7 @@ type Component struct {
 	//
 	// A referenced CL is normally watched by this LUCI project. In rare cases,
 	// referenced CL is no longer watched by this LUCI project but is still kept
-	// in a component becaues the CL is still a member of an incomplete Run in
+	// in a component because the CL is still a member of an incomplete Run in
 	// this component. In this case, the CL's deps are no longer tracked.
 	Clids []int64 `protobuf:"varint,1,rep,packed,name=clids,proto3" json:"clids,omitempty"`
 	// Decision time is the earliest time when this component should be

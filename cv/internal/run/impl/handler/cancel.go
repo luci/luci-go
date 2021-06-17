@@ -31,7 +31,7 @@ import (
 
 // Cancel implements Handler interface.
 func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
-	// TODO(crbug/1215612): record the cause of cancelation inside Run.
+	// TODO(crbug/1215612): record the cause of cancellation inside Run.
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
@@ -52,7 +52,7 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	case err != nil:
 		return nil, err
 	case !cvInCharge && rs.Run.DelayCancelUntil.IsZero():
-		// All but CrOS projects have short CQ loop duraiton.
+		// All but CrOS projects have short CQ loop duration.
 		delay := 3 * time.Minute
 		if rs.Run.ID.LUCIProject() == "chromeos" {
 			delay = 10 * time.Minute

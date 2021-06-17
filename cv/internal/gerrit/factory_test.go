@@ -95,7 +95,7 @@ func TestMakeClient(t *testing.T) {
 		})
 
 		Convey("factory.makeClient", func() {
-			// This test calls ListChanges RPC becaues it is the easiest to mock empty
+			// This test calls ListChanges RPC because it is the easiest to mock empty
 			// response for.
 			var requests []*http.Request
 			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
