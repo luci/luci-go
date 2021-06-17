@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb7f75aa_3f65e392",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-17T00:49:51Z",
+      "side": 1,
+      "message": "Hm, I think it would be clearer it explicitly said \"single error (not MultiError)\"",
+      "parentUuid": "bb5b7936_8fbbf4c6",
+      "range": {
+        "startLine": 258,
+        "startChar": 16,
+        "endLine": 258,
+        "endChar": 19
+      },
+      "revId": "96aa1fc941571a9d35e4177ce0802a0e40913a37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b2fad134_9b6a1f54",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-06-16T23:50:34Z",
       "side": 1,
       "message": "not true. This RunManager *object* works with all projects, but individual manageProject is scoped to just 1 project.",
+      "range": {
+        "startLine": 43,
+        "startChar": 26,
+        "endLine": 43,
+        "endChar": 47
+      },
+      "revId": "96aa1fc941571a9d35e4177ce0802a0e40913a37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "924ebb23_edfbe6f6",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-17T00:49:51Z",
+      "side": 1,
+      "message": "Thanks! Removed. Also it looks like manageProject is a method of PM.\n\n(Note, not to be answered here, but some of the big questions that I think other people may have when looking at CV in the future are things like: \"What are PM and RM and what do they do exactly? What is eventbox and how are these \"notifiers\" used?\")",
+      "parentUuid": "b2fad134_9b6a1f54",
       "range": {
         "startLine": 43,
         "startChar": 26,
