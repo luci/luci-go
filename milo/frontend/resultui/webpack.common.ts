@@ -22,7 +22,7 @@ import { Configuration, DefinePlugin } from 'webpack';
 const config: Configuration = {
   entry: {
     index: './src/index.ts',
-    'service-worker-ext': './src/service_worker_ext.ts',
+    'service-worker-ext': './src/service_worker/service_worker_ext.ts',
   },
   output: {
     path: path.resolve(__dirname, './out/'),
