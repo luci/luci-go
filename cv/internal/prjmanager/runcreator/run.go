@@ -242,10 +242,7 @@ func (rb *Creator) checkRunExists(ctx context.Context) {
 			logging.Debugf(ctx, "Run(ID:%s) already created by us", rb.runID)
 			return errAlreadyCreated
 		default:
-			// Concurrent request computing RunID at exact same time should not
-			// normally happen, so log it as suspicious.
-			logging.Warningf(ctx, "Run(ID:%s) already created with OperationID %q", rb.runID, rb.run.CreationOperationID)
-			return errors.Reason("Run(ID:%s) already created with OperationID %q", rb.runID, rb.run.CreationOperationID).Err()
+			return errors.Reason("Run %q already created with OperationID %q", rb.runID, rb.run.CreationOperationID).Err()
 		}
 	})
 }
