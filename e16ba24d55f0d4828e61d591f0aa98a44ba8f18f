@@ -142,6 +142,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a700b94_7c67d6b7",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T21:34:15Z",
+      "side": 1,
+      "message": "decided to switch to ns in ID and ms in gauge just because it\u0027s simpler",
+      "parentUuid": "f26155cc_d3fc4f97",
+      "range": {
+        "startLine": 270,
+        "startChar": 6,
+        "endLine": 270,
+        "endChar": 45
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "33cb31c0_5ae512c2",
@@ -155,6 +179,30 @@
       "writtenOn": "2021-06-17T17:59:21Z",
       "side": 1,
       "message": "This should be a gauge (non cumulative) metric. The oldest age can actually go up and down. The value of a cumulative metric cannot go down.\n\nIf you are wondering that the you can see duration/counter metric values goes down in rendered grahs, then it\u0027s actual the output of Delta()/Rate(), not the raw metric value.\n\nFor example, at L29, the raw value of the cumulative metric always increases by Add(). The raw value of the metric is the total accumulated duration that a given resource (the worker instance) ever processed (and never decreases, unless reset())",
+      "range": {
+        "startLine": 43,
+        "startChar": 31,
+        "endLine": 43,
+        "endChar": 37
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7947f78e_f1dc6ce0",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T21:34:15Z",
+      "side": 1,
+      "message": "oops, i meant to make it, but got consumed by copy-pasta. Thanks + great explanation \u003d\u003e Done (see below)",
+      "parentUuid": "33cb31c0_5ae512c2",
       "range": {
         "startLine": 43,
         "startChar": 31,
@@ -212,6 +260,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2934f10_8d6cf19e",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T21:34:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d749ac1_37867b87",
+      "range": {
+        "startLine": 55,
+        "startChar": 31,
+        "endLine": 55,
+        "endChar": 36
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a9da24b5_ad95288e",
@@ -225,6 +297,30 @@
       "writtenOn": "2021-06-17T17:59:21Z",
       "side": 1,
       "message": "The convention is to capitalize error codes.\ne.g., TIMEOUT, FAILURE",
+      "range": {
+        "startLine": 76,
+        "startChar": 10,
+        "endLine": 76,
+        "endChar": 17
+      },
+      "revId": "e16ba24d55f0d4828e61d591f0aa98a44ba8f18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1146b13a_1fb919b5",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T21:34:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9da24b5_ad95288e",
       "range": {
         "startLine": 76,
         "startChar": 10,
