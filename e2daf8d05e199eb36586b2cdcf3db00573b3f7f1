@@ -16,6 +16,24 @@
       "message": "not for this CL, and very much optional:\n\nFrom the distance, it appears that there are two async programming models in JS: the new promises and the old addEventListener, and this piece of code seems to be stitching the two. I wonder if, in general, it would help if you could convert from the old programming model to the new one (a helper func that accepts a event name and returns a promise of when the event happens), then you could add a timeout to an existing promise (e.g. \"wait for any of two promises\"), and have just one callback instead of two (L39 and L44).\n\nThis makes sense only if you encounter this situation often.\nAlso I am not sure how to remove an event handler with such an event-\u003epromise adapter.",
       "revId": "e2daf8d05e199eb36586b2cdcf3db00573b3f7f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ca330b9_f7b5159d",
+        "filename": "milo/frontend/resultui/src/components/signin.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-17T04:32:08Z",
+      "side": 1,
+      "message": "SGTM. Though, there will always be some event based code. Particularly when\n1. it\u0027s unclear whether the event will happen or not.\n2. or the event can trigger multiple times.",
+      "parentUuid": "a5a4ed38_8d79bf6d",
+      "revId": "e2daf8d05e199eb36586b2cdcf3db00573b3f7f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
