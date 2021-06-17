@@ -16,12 +16,12 @@ import { aTimeout } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 
-import { setAuthStateCache } from './auth_state_cache';
-import { PrpcClientExt } from './libs/prpc_client_ext';
+import { setAuthStateCache } from '../auth_state_cache';
+import { PrpcClientExt } from '../libs/prpc_client_ext';
+import { BUILD_FIELD_MASK, BuildsService } from '../services/buildbucket';
+import { queryAuthState } from '../services/milo_internal';
+import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb, UISpecificService } from '../services/resultdb';
 import { Prefetcher } from './prefetch';
-import { BUILD_FIELD_MASK, BuildsService } from './services/buildbucket';
-import { queryAuthState } from './services/milo_internal';
-import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb, UISpecificService } from './services/resultdb';
 
 describe('prefetch', () => {
   let fetchStub: sinon.SinonStub<[RequestInfo, RequestInit | undefined], Promise<Response>>;
