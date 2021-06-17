@@ -144,7 +144,7 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 	case r == nil && optionalID != "":
 		return nil, appstatus.Errorf(codes.NotFound, "Run %q does not exist", optionalID)
 	case r == nil:
-		logging.Warningf(ctx, "No matching Run, saving FinishedCQDRun(attempt key %q) anyway", k)
+		logging.Warningf(ctx, "No matching Run, saving FinishedCQDRun(attempt key %q) anyway:\n%s", k, req)
 	case optionalID == "":
 		// Set the missing Run ID.
 		req.GetRun().Id = string(r.ID)
