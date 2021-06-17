@@ -66,6 +66,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cdc4436c_a4332b7c",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-17T22:02:22Z",
+      "side": 1,
+      "message": "Correct. This is exactly what I intended, because I always *assumed* that lack of obtaining the data -\u003e data may not be populated, unless there is clear status code.\n\nHence, I prefer your second alternative. However, is there any reason one should prefer the first alternative? What\u0027s your preference?",
+      "parentUuid": "32f8bf43_b4a0149b",
+      "range": {
+        "startLine": 252,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 69
+      },
+      "revId": "2cc67e5d93ba008c0557e79343567273bffec37b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1aee6295_98da4879",
         "filename": "cv/internal/eventbox/monitoring.go",
         "patchSetId": 5
