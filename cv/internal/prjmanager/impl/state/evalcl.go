@@ -28,7 +28,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -82,7 +82,7 @@ func (s *State) evalUpdatedCLs(ctx context.Context, clEVersions map[int64]int64)
 // Sorts passed cls slice and updates it with loaded from DS info.
 func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	if s.cfgMatcher == nil {
-		meta, err := config.GetHashMeta(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash())
+		meta, err := prjcfg.GetHashMeta(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash())
 		if err != nil {
 			return err
 		}
@@ -282,7 +282,7 @@ func (s *State) setApplicableConfigGroups(ap *changelist.ApplicableConfig_Projec
 	g := snapshot.GetGerrit()
 	ci := g.GetInfo()
 	for _, id := range s.cfgMatcher.Match(g.GetHost(), ci.GetProject(), ci.GetRef()) {
-		index := s.indexOfConfigGroup(config.ConfigGroupID(id))
+		index := s.indexOfConfigGroup(prjcfg.ConfigGroupID(id))
 		pcl.ConfigGroupIndexes = append(pcl.ConfigGroupIndexes, index)
 	}
 }
@@ -297,12 +297,12 @@ func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_P
 	expectedConfigHash := s.PB.GetConfigHash()
 	// At least 1 ID is guaranteed in ApplicableConfig_Project by gerrit.gobmap.
 	for _, id := range ap.GetConfigGroupIds() {
-		if config.ConfigGroupID(id).Hash() != expectedConfigHash {
+		if prjcfg.ConfigGroupID(id).Hash() != expectedConfigHash {
 			return false
 		}
 	}
 	for _, id := range ap.GetConfigGroupIds() {
-		index := s.indexOfConfigGroup(config.ConfigGroupID(id))
+		index := s.indexOfConfigGroup(prjcfg.ConfigGroupID(id))
 		pcl.ConfigGroupIndexes = append(pcl.ConfigGroupIndexes, index)
 	}
 	return true

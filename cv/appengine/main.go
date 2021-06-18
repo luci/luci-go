@@ -38,7 +38,7 @@ import (
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config/configcron"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/configcron"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"

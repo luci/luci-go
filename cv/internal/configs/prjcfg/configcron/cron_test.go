@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	cvconfig "go.chromium.org/luci/cv/internal/config"
+	cvconfig "go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"

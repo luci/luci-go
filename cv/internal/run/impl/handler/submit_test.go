@@ -32,7 +32,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -79,7 +79,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 			},
 		}
 		ct.Cfg.Create(ctx, rid.LUCIProject(), cg)
-		meta, err := config.GetLatestMeta(ctx, rid.LUCIProject())
+		meta, err := prjcfg.GetLatestMeta(ctx, rid.LUCIProject())
 		So(err, ShouldBeNil)
 		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
 		r.ConfigGroupID = meta.ConfigGroupIDs[0]
@@ -260,7 +260,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			},
 		}
 		ct.Cfg.Create(ctx, rid.LUCIProject(), cg)
-		meta, err := config.GetLatestMeta(ctx, rid.LUCIProject())
+		meta, err := prjcfg.GetLatestMeta(ctx, rid.LUCIProject())
 		So(err, ShouldBeNil)
 		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
 		r.ConfigGroupID = meta.ConfigGroupIDs[0]

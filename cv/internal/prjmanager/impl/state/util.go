@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // pokeRuns pokes run manager of each of IncompleteRuns.
@@ -41,7 +41,7 @@ func (s *State) pokeRuns(ctx context.Context) error {
 
 // indexOfConfigGroup returns index of the externed Config Group name, which
 // must exist.
-func (s *State) indexOfConfigGroup(id config.ConfigGroupID) int32 {
+func (s *State) indexOfConfigGroup(id prjcfg.ConfigGroupID) int32 {
 	if id.Hash() != s.PB.GetConfigHash() {
 		// TODO(tandrii): remove quick sanity check, extra string comparison is
 		// wasteful.

@@ -29,7 +29,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/run"
@@ -104,7 +104,7 @@ func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLID
 	return u.ScheduleBatch(ctx, runID.LUCIProject(), true /*force notify PM*/, cls)
 }
 
-func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *config.ConfigGroup) error {
+func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *prjcfg.ConfigGroup) error {
 	clids := make(common.CLIDs, len(toCancel))
 	for i, runCL := range toCancel {
 		clids[i] = runCL.ID
@@ -127,7 +127,7 @@ func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.R
 					Requester:        "Run Manager",
 					Notify:           cancel.OWNER | cancel.VOTERS,
 					LeaseDuration:    time.Minute,
-					ConfigGroups:     []*config.ConfigGroup{cg},
+					ConfigGroups:     []*prjcfg.ConfigGroup{cg},
 					RunCLExternalIDs: runCLExternalIDs,
 				})
 				return errors.Annotate(err, "failed to cancel triggers for cl %d", cls[i].ID).Err()

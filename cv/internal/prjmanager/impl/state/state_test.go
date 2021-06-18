@@ -34,7 +34,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -120,7 +120,7 @@ const cfgText1 = `
   }
 `
 
-func updateConfigToNoFallabck(ctx context.Context, ct *ctest) config.Meta {
+func updateConfigToNoFallabck(ctx context.Context, ct *ctest) prjcfg.Meta {
 	cfgText2 := strings.ReplaceAll(cfgText1, "fallback: YES", "fallback: NO")
 	cfg2 := &cfgpb.Config{}
 	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
@@ -129,7 +129,7 @@ func updateConfigToNoFallabck(ctx context.Context, ct *ctest) config.Meta {
 	return ct.Cfg.MustExist(ctx, ct.lProject)
 }
 
-func updateConfigRenameG1toG11(ctx context.Context, ct *ctest) config.Meta {
+func updateConfigRenameG1toG11(ctx context.Context, ct *ctest) prjcfg.Meta {
 	cfgText2 := strings.ReplaceAll(cfgText1, `"g1"`, `"g11"`)
 	cfg2 := &cfgpb.Config{}
 	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)

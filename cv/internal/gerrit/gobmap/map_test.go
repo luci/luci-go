@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -38,7 +38,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	// First set up an example project with two config groups to show basic
 	// regular usage; there is a "main" group which matches a main ref, and
 	// another fallback group that matches many other refs, but not all.
-	tc := config.TestController{}
+	tc := prjcfg.TestController{}
 	tc.Create(ctx, "chromium", &pb.Config{
 		ConfigGroups: []*pb.ConfigGroup{
 			{

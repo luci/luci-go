@@ -26,7 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -74,7 +74,7 @@ type State struct {
 	// usage.
 	alreadyCloned bool
 	// configGroups are cacehd config groups.
-	configGroups []*config.ConfigGroup
+	configGroups []*prjcfg.ConfigGroup
 	// cfgMatcher is lazily created, cached, and passed on to State clones.
 	cfgMatcher *cfgmatcher.Matcher
 	// pclIndex provides O(1) check if PCL exists for a CL.
@@ -87,13 +87,13 @@ type State struct {
 func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
-	meta, err := config.GetLatestMeta(ctx, s.PB.GetLuciProject())
+	meta, err := prjcfg.GetLatestMeta(ctx, s.PB.GetLuciProject())
 	if err != nil {
 		return nil, nil, err
 	}
 
 	switch meta.Status {
-	case config.StatusEnabled:
+	case prjcfg.StatusEnabled:
 		if s.PB.GetStatus() == prjpb.Status_STARTED && meta.Hash() == s.PB.GetConfigHash() {
 			return s, nil, nil // already up-to-date.
 		}
@@ -133,7 +133,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 			RunIDs:      s.PB.IncompleteRuns(),
 		}, err
 
-	case config.StatusDisabled, config.StatusNotExists:
+	case prjcfg.StatusDisabled, prjcfg.StatusNotExists:
 		// Intentionally not catching up with new ConfigHash (if any),
 		// since it's not actionable and also simpler.
 		switch s.PB.GetStatus() {

@@ -34,7 +34,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -133,7 +133,7 @@ type Input struct {
 	//
 	// They are used to remove votes for additional modes. Normally, there is
 	// just 1 ConfigGroup.
-	ConfigGroups []*config.ConfigGroup
+	ConfigGroups []*prjcfg.ConfigGroup
 	// RunCLExternalIDs are IDs of all CLs involved in the Run.
 	//
 	// It will be included in `botdata.BotData` and posted to Gerrit as part of

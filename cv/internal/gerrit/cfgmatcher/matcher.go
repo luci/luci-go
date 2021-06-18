@@ -27,18 +27,18 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // Matcher effieciently find matching ConfigGroupID for Gerrit CLs.
 type Matcher struct {
 	state                *MatcherState
-	cachedConfigGroupIDs []config.ConfigGroupID
+	cachedConfigGroupIDs []prjcfg.ConfigGroupID
 }
 
 // LoadMatcher instantiates Matcher from config stored in Datastore.
 func LoadMatcher(ctx context.Context, luciProject, configHash string) (*Matcher, error) {
-	meta, err := config.GetHashMeta(ctx, luciProject, configHash)
+	meta, err := prjcfg.GetHashMeta(ctx, luciProject, configHash)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func LoadMatcher(ctx context.Context, luciProject, configHash string) (*Matcher,
 }
 
 // LoadMatcherFrom instantiates Matcher from the given config.Meta.
-func LoadMatcherFrom(ctx context.Context, meta config.Meta) (*Matcher, error) {
+func LoadMatcherFrom(ctx context.Context, meta prjcfg.Meta) (*Matcher, error) {
 	configGroups, err := meta.GetConfigGroups(ctx)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func LoadMatcherFrom(ctx context.Context, meta config.Meta) (*Matcher, error) {
 //
 // meta, if not nil, must have been used to load the given ConfigGroups. It's an
 // optimization to re-use memory since most callers typically have it.
-func LoadMatcherFromConfigGroups(ctx context.Context, configGroups []*config.ConfigGroup, meta *config.Meta) *Matcher {
+func LoadMatcherFromConfigGroups(ctx context.Context, configGroups []*prjcfg.ConfigGroup, meta *prjcfg.Meta) *Matcher {
 	m := &Matcher{
 		state: &MatcherState{
 			// 1-2 Gerrit hosts is typical as of 2020.
@@ -74,7 +74,7 @@ func LoadMatcherFromConfigGroups(ctx context.Context, configGroups []*config.Con
 		m.cachedConfigGroupIDs = meta.ConfigGroupIDs
 	} else {
 		m.state.ConfigHash = configGroups[0].ID.Hash()
-		m.cachedConfigGroupIDs = make([]config.ConfigGroupID, len(configGroups))
+		m.cachedConfigGroupIDs = make([]prjcfg.ConfigGroupID, len(configGroups))
 		for i, cg := range configGroups {
 			m.cachedConfigGroupIDs[i] = cg.ID
 		}
@@ -83,7 +83,7 @@ func LoadMatcherFromConfigGroups(ctx context.Context, configGroups []*config.Con
 	for i, cg := range configGroups {
 		m.state.ConfigGroupNames[i] = cg.ID.Name()
 		for _, gerrit := range cg.Content.GetGerrit() {
-			host := config.GerritHost(gerrit)
+			host := prjcfg.GerritHost(gerrit)
 			var projectsMap map[string]*Groups
 			if ps, ok := m.state.GetHosts()[host]; ok {
 				projectsMap = ps.GetProjects()
@@ -120,16 +120,16 @@ func Deserialize(buf []byte) (*Matcher, error) {
 	if err := proto.Unmarshal(buf, m.state); err != nil {
 		return nil, errors.Annotate(err, "failed to Deserialize Matcher").Err()
 	}
-	m.cachedConfigGroupIDs = make([]config.ConfigGroupID, len(m.state.ConfigGroupNames))
+	m.cachedConfigGroupIDs = make([]prjcfg.ConfigGroupID, len(m.state.ConfigGroupNames))
 	hash := m.state.GetConfigHash()
 	for i, name := range m.state.ConfigGroupNames {
-		m.cachedConfigGroupIDs[i] = config.MakeConfigGroupID(hash, name)
+		m.cachedConfigGroupIDs[i] = prjcfg.MakeConfigGroupID(hash, name)
 	}
 	return m, nil
 }
 
 // Match returns ConfigGroupIDs matched for a given triple.
-func (m *Matcher) Match(host, project, ref string) []config.ConfigGroupID {
+func (m *Matcher) Match(host, project, ref string) []prjcfg.ConfigGroupID {
 	ps, ok := m.state.GetHosts()[host]
 	if !ok {
 		return nil
@@ -142,7 +142,7 @@ func (m *Matcher) Match(host, project, ref string) []config.ConfigGroupID {
 	if len(matched) == 0 {
 		return nil
 	}
-	ret := make([]config.ConfigGroupID, len(matched))
+	ret := make([]prjcfg.ConfigGroupID, len(matched))
 	for i, g := range matched {
 		ret[i] = m.cachedConfigGroupIDs[g.GetIndex()]
 	}
@@ -162,7 +162,7 @@ var defaultRefRegexpExclude = []string{"^$" /* matches nothing */}
 
 // MakeGroup returns a new Group based on the Gerrit Project section of a
 // ConfigGroup.
-func MakeGroup(g *config.ConfigGroup, p *cfgpb.ConfigGroup_Gerrit_Project) *Group {
+func MakeGroup(g *prjcfg.ConfigGroup, p *cfgpb.ConfigGroup_Gerrit_Project) *Group {
 	var inc, exc []string
 	if inc = p.GetRefRegexp(); len(inc) == 0 {
 		inc = defaultRefRegexpInclude

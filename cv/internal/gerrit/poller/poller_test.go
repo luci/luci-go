@@ -31,7 +31,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
@@ -106,10 +106,10 @@ func TestPartitionConfig(t *testing.T) {
 		Convey("groups by prefix if possible", func() {
 			// makeCfgs merges several projects configs into one just to re-use
 			// singleRepoConfig.
-			makeCfgs := func(cfgs ...*cfgpb.Config) (ret []*config.ConfigGroup) {
+			makeCfgs := func(cfgs ...*cfgpb.Config) (ret []*prjcfg.ConfigGroup) {
 				for _, cfg := range cfgs {
 					for _, cg := range cfg.GetConfigGroups() {
-						ret = append(ret, &config.ConfigGroup{Content: cg})
+						ret = append(ret, &prjcfg.ConfigGroup{Content: cg})
 					}
 				}
 				return

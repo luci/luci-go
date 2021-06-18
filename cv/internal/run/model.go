@@ -24,7 +24,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // RunKind is the Datastore entity kind for Run.
@@ -77,7 +77,7 @@ type Run struct {
 	//
 	// RunManager may update the ConfigGroup in the middle of the Run if it is
 	// notified that a new version of Config has been imported into CV.
-	ConfigGroupID config.ConfigGroupID `gae:",noindex"`
+	ConfigGroupID prjcfg.ConfigGroupID `gae:",noindex"`
 	// CLs are IDs of all CLs involved in this Run.
 	CLs common.CLIDs `gae:",noindex"`
 	// Options are Run-specific additions on top of LUCI project config.

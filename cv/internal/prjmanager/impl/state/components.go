@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
@@ -343,7 +343,7 @@ func (s *State) populatePurgeCLTasks(ctx context.Context, ts []*prjpb.PurgeCLTas
 
 func (s *State) makeTriageSupporter(ctx context.Context) (*triageSupporter, error) {
 	if s.configGroups == nil {
-		meta, err := config.GetHashMeta(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash())
+		meta, err := prjcfg.GetHashMeta(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash())
 		if err != nil {
 			return nil, err
 		}
@@ -371,7 +371,7 @@ type triageSupporter struct {
 	pcls         []*prjpb.PCL
 	pclIndex     map[common.CLID]int
 	purging      map[int64]*prjpb.PurgingCL
-	configGroups []*config.ConfigGroup
+	configGroups []*prjcfg.ConfigGroup
 }
 
 var _ itriager.PMState = (*triageSupporter)(nil)
@@ -388,7 +388,7 @@ func (a *triageSupporter) PurgingCL(clid int64) *prjpb.PurgingCL {
 	return a.purging[clid]
 }
 
-func (a *triageSupporter) ConfigGroup(index int32) *config.ConfigGroup {
+func (a *triageSupporter) ConfigGroup(index int32) *prjcfg.ConfigGroup {
 	return a.configGroups[index]
 }
 

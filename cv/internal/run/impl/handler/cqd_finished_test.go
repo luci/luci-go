@@ -30,7 +30,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -65,7 +65,7 @@ func TestOnCQDFinished(t *testing.T) {
 		}
 		cfg := &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "main"}}}
 		ct.Cfg.Create(ctx, lProject, cfg)
-		meta, err := config.GetLatestMeta(ctx, lProject)
+		meta, err := prjcfg.GetLatestMeta(ctx, lProject)
 		So(err, ShouldBeNil)
 		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
 		rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]

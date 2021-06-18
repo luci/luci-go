@@ -33,7 +33,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -51,7 +51,7 @@ type Creator struct {
 	//
 	// TODO(tandrii): support triggering via API calls by validating Run creation
 	// request against the latest config *before* transaction.
-	ConfigGroupID config.ConfigGroupID
+	ConfigGroupID prjcfg.ConfigGroupID
 	// InputCLs will reference the newly created Run via their IncompleteRuns
 	// field, and Run's RunCL entities will reference these InputCLs back.
 	// Required.

@@ -48,7 +48,7 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/bq"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/cv/internal/tree"
@@ -67,7 +67,7 @@ import (
 //   defer cancel()
 type Test struct {
 	// Cfg manipulates CV config.
-	Cfg config.TestController
+	Cfg prjcfg.TestController
 	// GFake is a Gerrit fake. Defaults to an empty one.
 	GFake *gf.Fake
 	// TreeFake is a fake Tree. Defaults to an open Tree.

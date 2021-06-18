@@ -39,7 +39,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cqdepend"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
@@ -721,7 +721,7 @@ func (f *fetcher) ensureGerritClient(ctx context.Context) error {
 
 // Checks whether this LUCI project watches any repo on this Gerrit host.
 func (f *fetcher) isHostWatched(ctx context.Context) (bool, error) {
-	meta, err := config.GetLatestMeta(ctx, f.luciProject)
+	meta, err := prjcfg.GetLatestMeta(ctx, f.luciProject)
 	if err != nil {
 		return false, err
 	}
@@ -731,7 +731,7 @@ func (f *fetcher) isHostWatched(ctx context.Context) (bool, error) {
 	}
 	for _, cg := range cgs {
 		for _, g := range cg.Content.GetGerrit() {
-			if config.GerritHost(g) == f.host {
+			if prjcfg.GerritHost(g) == f.host {
 				return true, nil
 			}
 		}

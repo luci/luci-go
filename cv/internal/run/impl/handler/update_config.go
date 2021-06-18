@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
@@ -56,11 +56,11 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 		runCLs, err = run.LoadRunCLs(egCtx, rs.Run.ID, rs.Run.CLs)
 		return err
 	})
-	var newMeta config.Meta
-	var newConfigGroups []*config.ConfigGroup
+	var newMeta prjcfg.Meta
+	var newConfigGroups []*prjcfg.ConfigGroup
 	upToDate := false
 	eg.Go(func() error {
-		switch metas, err := config.GetHashMetas(egCtx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID.Hash(), hash); {
+		switch metas, err := prjcfg.GetHashMetas(egCtx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID.Hash(), hash); {
 		case err != nil:
 			return err
 		case metas[0].EVersion >= metas[1].EVersion:
@@ -81,7 +81,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 	}
 
 	matcher := cfgmatcher.LoadMatcherFromConfigGroups(ctx, newConfigGroups, &newMeta)
-	cgsMap := make(map[string]*config.ConfigGroup, len(newConfigGroups))
+	cgsMap := make(map[string]*prjcfg.ConfigGroup, len(newConfigGroups))
 	for _, cg := range newConfigGroups {
 		cgsMap[cg.ID.Name()] = cg
 	}
@@ -92,7 +92,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 	//  * all CLs are watched by the same ConfigGroup,
 	//    although its name may have changed from the current Run.ConfigGroupID;
 	//  * each CL's .Trigger is still the same.
-	m := make(map[config.ConfigGroupID][]*run.RunCL, 1)
+	m := make(map[prjcfg.ConfigGroupID][]*run.RunCL, 1)
 	var unwatched, multiple, diffTrigger []*run.RunCL
 	for _, cl := range runCLs {
 		switch cgids := matchingConfigGroups(matcher, cl); len(cgids) {
@@ -125,7 +125,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 	return impl.Cancel(ctx, rs)
 }
 
-func matchingConfigGroups(matcher *cfgmatcher.Matcher, cl *run.RunCL) []config.ConfigGroupID {
+func matchingConfigGroups(matcher *cfgmatcher.Matcher, cl *run.RunCL) []prjcfg.ConfigGroupID {
 	ci := cl.Detail.GetGerrit().GetInfo()
 	if ci == nil {
 		panic(fmt.Errorf("only gerrit CLs are supported, not %s", cl.Detail))
@@ -135,8 +135,8 @@ func matchingConfigGroups(matcher *cfgmatcher.Matcher, cl *run.RunCL) []config.C
 
 func formatNoLongerFeasibleRunReason(
 	unwatched, multiple, diffTrigger []*run.RunCL,
-	m map[config.ConfigGroupID][]*run.RunCL,
-	newMeta *config.Meta,
+	m map[prjcfg.ConfigGroupID][]*run.RunCL,
+	newMeta *prjcfg.Meta,
 ) string {
 	// Computes detailed reason why to assist in debugging.
 	buf := strings.Builder{}

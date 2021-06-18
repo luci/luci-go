@@ -30,7 +30,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -157,7 +157,7 @@ func TestRunBuilder(t *testing.T) {
 
 		rb := Creator{
 			LUCIProject:              lProject,
-			ConfigGroupID:            config.ConfigGroupID("sha256:cafe/cq-group"),
+			ConfigGroupID:            prjcfg.ConfigGroupID("sha256:cafe/cq-group"),
 			OperationID:              "this-operation-id",
 			Mode:                     run.DryRun,
 			Owner:                    owner,
