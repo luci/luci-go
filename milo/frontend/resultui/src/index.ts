@@ -47,9 +47,9 @@ if ('serviceWorker' in navigator) {
     window.addEventListener(
       'load',
       async () => {
-        const registration = await navigator.serviceWorker.register('/redirect-sw.js');
+        const registration = await navigator.serviceWorker.register('/root-sw.js');
         // eslint-disable-next-line no-console
-        console.log('Redirect SW registered: ', registration);
+        console.log('Root SW registered: ', registration);
       },
       { once: true }
     );
