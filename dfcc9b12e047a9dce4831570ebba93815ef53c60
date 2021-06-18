@@ -16,6 +16,24 @@
       "message": "Thanks for the addition! What does this emoji represent? I haven\u0027t seen it before.",
       "revId": "dfcc9b12e047a9dce4831570ebba93815ef53c60",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2040edf8_a2c40cda",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 502,
+      "author": {
+        "id": 1513267
+      },
+      "writtenOn": "2021-06-18T17:21:17Z",
+      "side": 1,
+      "message": "It\u0027s just a winky face that I found on the internet. I though the addition of the eyebrows was funny so I started using it a lot with my friends.",
+      "parentUuid": "0e10d4f6_cdf56873",
+      "revId": "dfcc9b12e047a9dce4831570ebba93815ef53c60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
