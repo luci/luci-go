@@ -179,6 +179,11 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 				  * https://x-review.googlesource.com/102
 			`))
 			})
+			Convey("Too many", func() {
+				invalidDeps.TooMany = &changelist.CLError_InvalidDeps_TooMany{Actual: 5, MaxAllowed: 4}
+				s := mustFormat()
+				So(s, ShouldContainSubstring, "has too many deps: 5 (max supported: 4)")
+			})
 		})
 
 		Convey("Several reasons", func() {

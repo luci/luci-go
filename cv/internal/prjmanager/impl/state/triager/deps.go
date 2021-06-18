@@ -25,27 +25,18 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// triageDeps triages deps of a PCL. See triagedDeps for documentation.
-func triageDeps(pcl *prjpb.PCL, cgIndex int32, pm pmState) *triagedDeps {
-	cg := pm.ConfigGroup(cgIndex).Content
-	res := &triagedDeps{}
-	for _, dep := range pcl.GetDeps() {
-		dPCL := pm.PCL(dep.GetClid())
-		res.categorize(pcl, cgIndex, cg, dPCL, dep)
-		if tPB := dPCL.GetTrigger().GetTime(); tPB != nil {
-			if t := tPB.AsTime(); res.lastTriggered.IsZero() || res.lastTriggered.Before(t) {
-				res.lastTriggered = t
-			}
-		}
-	}
-	return res
-}
+// maxAllowedDeps limits how many non-submitted deps a CL may have for CV to
+// consider it.
+//
+// This applies to both singlular and combinable modes.
+// See also https://crbug.com/1217100.
+const maxAllowedDeps = 240
 
 // triagedDeps categorizes deps of a CL, referred to below as the "dependent" CL.
 //
 // Categories are exclusive. Non-submitted OK deps are not recorded here to
 // avoid unnecessary allocations in the most common case, but they do affect
-// lastTriggered time.
+// the lastTriggered time.
 type triagedDeps struct {
 	// lastTriggered among *all* deps which are triggered. Can be Zero time if no
 	// dep is triggered.
@@ -59,6 +50,32 @@ type triagedDeps struct {
 	notYetLoaded []*changelist.Dep
 
 	invalidDeps *changelist.CLError_InvalidDeps
+}
+
+// triageDeps triages deps of a PCL. See triagedDeps for documentation.
+func triageDeps(pcl *prjpb.PCL, cgIndex int32, pm pmState) *triagedDeps {
+	cg := pm.ConfigGroup(cgIndex).Content
+	res := &triagedDeps{}
+	for _, dep := range pcl.GetDeps() {
+		dPCL := pm.PCL(dep.GetClid())
+		res.categorize(pcl, cgIndex, cg, dPCL, dep)
+		if tPB := dPCL.GetTrigger().GetTime(); tPB != nil {
+			if t := tPB.AsTime(); res.lastTriggered.IsZero() || res.lastTriggered.Before(t) {
+				res.lastTriggered = t
+			}
+		}
+	}
+	if okDeps := len(pcl.GetDeps()) - len(res.submitted); okDeps > maxAllowedDeps {
+		// Only declare this invalid if every non-submitted DEP is OK.
+		if res.invalidDeps == nil && len(res.notYetLoaded) == 0 {
+			res.ensureInvalidDeps()
+			res.invalidDeps.TooMany = &changelist.CLError_InvalidDeps_TooMany{
+				Actual:     int32(okDeps),
+				MaxAllowed: maxAllowedDeps,
+			}
+		}
+	}
+	return res
 }
 
 // OK is true if triagedDeps doesn't have any not-OK deps.
