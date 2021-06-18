@@ -14,6 +14,6 @@
 
 // Package prjmanager implements public API for Project Manager.
 //
-// The Project Manager keeps track of the project config, incomplete runs,
-// and CLs in flight, and notifies runs when the project config changes.
+// The Project Manager keeps track of the LUCI Project config, incomplete runs,
+// and CLs in flight, and notifies Runs when the project config changes.
 package prjmanager
