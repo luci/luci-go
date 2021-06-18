@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8013a92_3496753b",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-18T22:14:17Z",
+      "side": 1,
+      "message": "No problem, cvbq is fine too.",
+      "parentUuid": "0ee79d50_1e158f7f",
+      "revId": "519a80e451a96f9654a3733a0b76d05f8fd53520",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9b56ecfd_6f1286e9",
