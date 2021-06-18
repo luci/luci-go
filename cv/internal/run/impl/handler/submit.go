@@ -176,9 +176,12 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 			SideEffectFn: se,
 		}, nil
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
-		return impl.TryResumeSubmission(ctx, rs)
+		return impl.tryResumeSubmission(ctx, rs, sc)
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
 		rs = rs.ShallowCopy()
+		if clFailure := sc.GetClFailure(); clFailure != nil {
+			rs.Run.Submission.FailedCl = clFailure.GetClid()
+		}
 		cg, err := rs.LoadConfigGroup(ctx)
 		if err != nil {
 			return nil, err
@@ -198,8 +201,15 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 
 // TryResumeSubmission implements Handler interface.
 func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
-	if rs.Run.Status != run.Status_SUBMITTING || rs.SubmissionScheduled {
+	return impl.tryResumeSubmission(ctx, rs, nil)
+}
+
+func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
+	switch {
+	case rs.Run.Status != run.Status_SUBMITTING || rs.SubmissionScheduled:
 		return &Result{State: rs}, nil
+	case sc != nil && sc.Result != eventpb.SubmissionResult_FAILED_TRANSIENT:
+		panic(fmt.Errorf("submission can only be resumed on nil submission completed event or event reporting transient failure; got %s", sc))
 	}
 
 	deadline := rs.Run.Submission.GetDeadline()
@@ -221,12 +231,25 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 			status = run.Status_SUCCEEDED
 		default: // None submitted or partially submitted
 			status = run.Status_FAILED
-			// synthesize submission completed event for timeout.
-			sc := &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-				FailureReason: &eventpb.SubmissionCompleted_Timeout{
-					Timeout: true,
-				},
+			// synthesize submission completed event with permanent failure.
+			if clFailure := sc.GetClFailure(); clFailure != nil {
+				rs.Run.Submission.FailedCl = clFailure.GetClid()
+				sc = &eventpb.SubmissionCompleted{
+					Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+					FailureReason: &eventpb.SubmissionCompleted_ClFailure{
+						ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+							Clid:    clFailure.GetClid(),
+							Message: fmt.Sprintf("CL failed to submit because of transient failure: %s. However, CV is running out of time to retry.", clFailure.GetMessage()),
+						},
+					},
+				}
+			} else {
+				sc = &eventpb.SubmissionCompleted{
+					Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+					FailureReason: &eventpb.SubmissionCompleted_Timeout{
+						Timeout: true,
+					},
+				}
 			}
 			cg, err := rs.LoadConfigGroup(ctx)
 			if err != nil {
@@ -586,6 +609,14 @@ var perCLRetryFactory retry.Factory = transient.Only(func() retry.Iterator {
 // `perCLRetryFactory`.
 func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.SubmissionCompleted {
 	for _, cl := range cls {
+		if clock.Now(ctx).After(s.deadline) {
+			return &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+				FailureReason: &eventpb.SubmissionCompleted_Timeout{
+					Timeout: true,
+				},
+			}
+		}
 		var submitted bool
 		var msg string
 		err := retry.Retry(ctx, perCLRetryFactory, func() error {
@@ -606,16 +637,7 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.Sub
 			return s.rm.NotifyCLSubmitted(ctx, s.runID, cl.ID)
 		}, retry.LogCallback(ctx, fmt.Sprintf("submit cl [id=%d, external_id=%q]", cl.ID, cl.ExternalID)))
 
-		switch {
-		case err == nil:
-		case clock.Now(ctx).After(s.deadline):
-			return &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-				FailureReason: &eventpb.SubmissionCompleted_Timeout{
-					Timeout: true,
-				},
-			}
-		default:
+		if err != nil {
 			evt := classifyErr(ctx, err)
 			if !submitted {
 				evt.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
