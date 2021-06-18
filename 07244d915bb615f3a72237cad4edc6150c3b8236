@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7570410b_e8f78771",
+        "filename": "milo/frontend/resultui/src/components/auto_complete.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-06-18T02:59:40Z",
+      "side": 1,
+      "message": "Is this change covered by the CL description?",
+      "range": {
+        "startLine": 225,
+        "startChar": 14,
+        "endLine": 225,
+        "endChar": 18
+      },
+      "revId": "07244d915bb615f3a72237cad4edc6150c3b8236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f54de09_b56ac59f",
+        "filename": "milo/frontend/resultui/src/pages/build_page/blamelist_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-06-18T02:59:40Z",
+      "side": 1,
+      "message": "Perhaps this value should be extracted to a var?",
+      "range": {
+        "startLine": 261,
+        "startChar": 15,
+        "endLine": 261,
+        "endChar": 20
+      },
+      "revId": "07244d915bb615f3a72237cad4edc6150c3b8236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
