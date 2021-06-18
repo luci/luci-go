@@ -34,11 +34,11 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/lease"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
