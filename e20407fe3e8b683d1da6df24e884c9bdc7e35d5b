@@ -88,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3f9c0c1_c027d89a",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T20:44:52Z",
+      "side": 1,
+      "message": "\u003e With a Gauge metric, we are not sure if a given data point (the latest value in a window) is P1 or P99. If the frequency of dsset.List() invocation per metric:recipient is as low as once a minute, this is ok. \n\nSolid point. Reverting back to Distr because for the busiest recipients I expect this to have 1-2 data points per second.\n\n\u003e ds perf, ...,  like I am doing for Spanner client)\n\nI expect this to be done at server/datastore level.\nStill, generic DS instrumentation won\u0027t be as helpful for specific queries here.",
+      "parentUuid": "e3e193e8_304c6fdf",
+      "range": {
+        "startLine": 28,
+        "startChar": 31,
+        "endLine": 28,
+        "endChar": 39
+      },
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "52969312_2936bb03",
@@ -101,6 +125,30 @@
       "writtenOn": "2021-06-18T17:52:53Z",
       "side": 1,
       "message": "nit-nit; you may consider moving this to dsset.go in a more general form, if you anticipate that `eventbox/{add,remove}/duration` will be added in the future.\n\n```\ndssetDur \u003d metric.NewCumulative(\n    \"cv/internal/eventbox/dsset/duration\",  // or cv/internal/eventbox/dsset/duration\n    \"Duration of dsset operations performed\",\n    {Units: types.Milliseconds},\n    fields.String(\"op\") // add, list, remove\n    fields.String(\"parent\")\n    fields.String(\"result\") // the string representation of the error code.\n)\n\ndssetCount \u003d metric.NewCounter(\n    \"cv/internal/eventbox/dsset/count\",\n    \"Number of dsset operations performed\",\n    nil,\n    fields.String(\"op\") // add, list, remove\n    fields.String(\"parent\")\n    fields.String(\"result\") // the string representation of the error code.\n)\n```",
+      "range": {
+        "startLine": 29,
+        "startChar": 3,
+        "endLine": 29,
+        "endChar": 37
+      },
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63e00245_8f68a867",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T20:44:52Z",
+      "side": 1,
+      "message": "yep, i considered that, but there is no reason to measure add() duration, and almost no reason to measure remove. As for the counter -- maybe.",
+      "parentUuid": "52969312_2936bb03",
       "range": {
         "startLine": 29,
         "startChar": 3,
