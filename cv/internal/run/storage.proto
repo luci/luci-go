@@ -103,6 +103,11 @@ message Submission {
   repeated int64 cls = 3;
   // IDs of all CLs that have been submitted successfully already.
   repeated int64 submitted_cls = 4;
+  // ID of the CL that fail to submit permanently if any.
+  //
+  // Since CV sumbits `cls` in its original order, CV will never attempt to
+  // submit any CL after this CL.
+  int64 failed_cl = 5;
   // If True, Tree is currently in open state.
   bool tree_open = 10;
   // The timestamp when the Tree status was last fetched.

@@ -433,21 +433,40 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				Convey("Single CL Run", func() {
 					rs.Run.Submission.Cls = []int64{2}
 					Convey("Not submitted", func() {
-						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-						So(err, ShouldBeNil)
-						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
-						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.SideEffectFn, ShouldNotBeNil)
-						So(res.PreserveEvents, ShouldBeFalse)
-						So(res.PostProcessFn, ShouldBeNil)
-						ci := ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info
-						lastMsg := gf.LastMessage(ci).GetMessage()
-						So(lastMsg, ShouldContainSubstring, timeoutMsg)
-						So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
-						for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
-							So(vote.GetValue(), ShouldEqual, 0)
+						runAndVerify := func(verifyMsgFn func(lastMsg string)) {
+							res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+							So(err, ShouldBeNil)
+							So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+							So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+							So(res.State.Run.Submission.FailedCl, ShouldEqual, sc.GetClFailure().GetClid())
+							So(res.SideEffectFn, ShouldNotBeNil)
+							So(res.PreserveEvents, ShouldBeFalse)
+							So(res.PostProcessFn, ShouldBeNil)
+							ci := ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info
+							verifyMsgFn(gf.LastMessage(ci).GetMessage())
+							for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
+								So(vote.GetValue(), ShouldEqual, 0)
+							}
+							So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
 						}
-						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+						Convey("CL failure", func() {
+							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
+								ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+									Clid:    2,
+									Message: "some transient failure",
+								},
+							}
+							runAndVerify(func(lastMsg string) {
+								So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
+								So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+							})
+						})
+						Convey("Unclassified failure", func() {
+							runAndVerify(func(lastMsg string) {
+								So(lastMsg, ShouldContainSubstring, timeoutMsg)
+								So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+							})
+						})
 					})
 					Convey("Submitted", func() {
 						rs.Run.Submission.SubmittedCls = []int64{2}
@@ -465,45 +484,98 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 				Convey("Multi CLs Run", func() {
 					rs.Run.Submission.Cls = []int64{2, 1}
-					Convey("None of the CLs are submitted", func() {
+					runAndVerify := func(verifyMsgFn func(changeNum int64, lastMsg string)) {
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 						So(err, ShouldBeNil)
 						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.State.Run.Submission.FailedCl, ShouldEqual, sc.GetClFailure().GetClid())
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2} {
 							ci := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
-							So(ci, gf.ShouldLastMessageContain, timeoutMsg)
-							So(ci, gf.ShouldLastMessageContain, "None of the CLs in the Run were submitted by CV")
-							So(ci, gf.ShouldLastMessageContain, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
-							for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
-								So(vote.GetValue(), ShouldEqual, 0)
+							verifyMsgFn(ci.GetNumber(), gf.LastMessage(ci).GetMessage())
+							if ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info.GetStatus() != gerritpb.ChangeStatus_MERGED {
+								for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
+									So(vote.GetValue(), ShouldEqual, 0)
+								}
 							}
 						}
 						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+					}
+
+					Convey("None of the CLs are submitted", func() {
+						Convey("CL failure", func() {
+							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
+								ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+									Clid:    2,
+									Message: "some transient failure",
+								},
+							}
+							runAndVerify(func(changeNum int64, lastMsg string) {
+								switch changeNum {
+								case ci1.GetNumber():
+									So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s): https://x-review.example.com/2222")
+								case ci2.GetNumber():
+									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
+								default:
+									panic(fmt.Errorf("unknown change: %d", changeNum))
+								}
+								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
+								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+							})
+						})
+						Convey("Unclassified failure", func() {
+							runAndVerify(func(_ int64, lastMsg string) {
+								So(lastMsg, ShouldContainSubstring, timeoutMsg)
+								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
+								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+							})
+						})
 					})
 
 					Convey("CLs partially submitted", func() {
 						rs.Run.Submission.SubmittedCls = []int64{2}
-						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-						So(err, ShouldBeNil)
-						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
-						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.SideEffectFn, ShouldNotBeNil)
-						So(res.PreserveEvents, ShouldBeFalse)
-						So(res.PostProcessFn, ShouldBeNil)
-						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2) // ci2 untouched
-						ci := ct.GFake.GetChange(gHost, int(ci1.GetNumber())).Info
-						So(ci, gf.ShouldLastMessageContain, timeoutMsg)
-						So(ci, gf.ShouldLastMessageContain, "CV partially submitted the CLs in the Run")
-						So(ci, gf.ShouldLastMessageContain, "Not submitted: [https://x-review.example.com/1111]")
-						So(ci, gf.ShouldLastMessageContain, "Submitted: [https://x-review.example.com/2222]")
-						for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
-							So(vote.GetValue(), ShouldEqual, 0)
-						}
-						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+						ct.GFake.MutateChange(gHost, int(ci2.GetNumber()), func(c *gf.Change) {
+							gf.PS(int(ci2.GetRevisions()[ci2.GetCurrentRevision()].GetNumber()) + 1)(c.Info)
+							gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
+						})
+
+						Convey("CL failure", func() {
+							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
+								ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
+									Clid:    1,
+									Message: "some transient failure",
+								},
+							}
+							runAndVerify(func(changeNum int64, lastMsg string) {
+								switch changeNum {
+								case ci1.GetNumber():
+									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
+									So(lastMsg, ShouldContainSubstring, "CV partially submitted the CLs in the Run")
+									So(lastMsg, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/1111]")
+									So(lastMsg, ShouldContainSubstring, "Submitted: [https://x-review.example.com/2222]")
+								case ci2.GetNumber():
+								default:
+									panic(fmt.Errorf("unknown change: %d", changeNum))
+								}
+							})
+						})
+						Convey("Unclassified failure", func() {
+							runAndVerify(func(changeNum int64, lastMsg string) {
+								switch changeNum {
+								case ci1.GetNumber():
+									So(lastMsg, ShouldContainSubstring, timeoutMsg)
+									So(lastMsg, ShouldContainSubstring, "CV partially submitted the CLs in the Run")
+									So(lastMsg, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/1111]")
+									So(lastMsg, ShouldContainSubstring, "Submitted: [https://x-review.example.com/2222]")
+								case ci2.GetNumber():
+								default:
+									panic(fmt.Errorf("unknown change: %d", changeNum))
+								}
+							})
+						})
 					})
 
 					Convey("CLs fully submitted", func() {
@@ -540,6 +612,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+					So(res.State.Run.Submission.FailedCl, ShouldEqual, sc.GetClFailure().GetClid())
 					So(res.SideEffectFn, ShouldNotBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
