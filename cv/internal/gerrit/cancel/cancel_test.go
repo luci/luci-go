@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -86,7 +87,7 @@ func TestCancel(t *testing.T) {
 
 		input := Input{
 			CL:            cl,
-			Trigger:       trigger.Find(ci, &cfgpb.ConfigGroup{}),
+			ConfigGroups:  []*config.ConfigGroup{{}},
 			LUCIProject:   lProject,
 			Message:       "Full Run has passed",
 			Requester:     "test",
@@ -97,6 +98,16 @@ func TestCancel(t *testing.T) {
 				changelist.MustGobID(gHost, int64(10003)),
 			},
 		}
+
+		findTrigger := func(resultCI *gerritpb.ChangeInfo) *run.Trigger {
+			for _, cg := range input.ConfigGroups {
+				if t := trigger.Find(resultCI, cg.Content); t != nil {
+					return t
+				}
+			}
+			return nil
+		}
+		input.Trigger = findTrigger(ci)
 
 		Convey("Fails PreCondition if CL has newer PS in datastore", func() {
 			newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
@@ -328,24 +339,25 @@ func TestCancel(t *testing.T) {
 					gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
 				)
 			})
-			err := Cancel(ctx, input)
-			So(err, ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
-			So(ErrPermanentTag.In(err), ShouldBeTrue)
-			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			So(Cancel(ctx, input), ShouldBeNil)
+			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
+			// CQ+2 vote remains.
+			So(gf.NonZeroVotes(resultCI, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
 				{
 					User:  user,
 					Value: 2,
 					Date:  timestamppb.New(triggerTime),
 				},
 			})
-			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
+			// But CL is no longer triggered.
+			So(findTrigger(resultCI), ShouldBeNil)
+			// Still, user should know what happened.
 			expectedMsg := input.Message + `
 
 CV failed to unset the Commit-Queue label on your behalf. Please unvote and revote on the Commit-Queue label to retry.
 
 Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"rev-010001-002","cls":["x-review.example.com:10002","x-review.example.com:10003"]}`
-			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, expectedMsg)
+			So(resultCI.GetMessages()[0].GetMessage(), ShouldEqual, expectedMsg)
 		})
 
 		Convey("Post Message if change is in bad state", func() {
@@ -372,18 +384,21 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 				}
 			})
 			err := Cancel(ctx, input)
-			So(err, ShouldErrLike, "change abandoned")
-			So(ErrPermanentTag.In(err), ShouldBeTrue)
-			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			So(err, ShouldBeNil)
+			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
+			// CQ+2 vote remains.
+			So(gf.NonZeroVotes(resultCI, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
 				{
 					User:  user,
 					Value: 2,
 					Date:  timestamppb.New(triggerTime),
 				},
 			})
-			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
-			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldContainSubstring, "CV failed to unset the Commit-Queue label on your behalf")
+			// But CL is no longer triggered.
+			So(findTrigger(resultCI), ShouldBeNil)
+			// Still, user should know what happened.
+			So(resultCI.GetMessages(), ShouldHaveLength, 1)
+			So(resultCI.GetMessages()[0].GetMessage(), ShouldContainSubstring, "CV failed to unset the Commit-Queue label on your behalf")
 		})
 
 		Convey("Post Message also fails", func() {
@@ -393,15 +408,15 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 			err := Cancel(ctx, input)
 			So(err, ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
 			So(ErrPermanentTag.In(err), ShouldBeTrue)
-			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
+			So(gf.NonZeroVotes(resultCI, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
 				{
 					User:  user,
 					Value: 2,
 					Date:  timestamppb.New(triggerTime),
 				},
 			})
-			So(resultCI.Info.GetMessages(), ShouldBeEmpty)
+			So(resultCI.GetMessages(), ShouldBeEmpty)
 		})
 	})
 }
