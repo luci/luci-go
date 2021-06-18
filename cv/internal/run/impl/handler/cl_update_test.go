@@ -26,12 +26,15 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
@@ -45,6 +48,7 @@ func TestOnCLUpdated(t *testing.T) {
 		defer cancel()
 
 		const lProject = "chromium"
+		const gHost = "x-review.example.com"
 		// TODO(yiwzhang): remove this once Run finalization fully conducted by CV.
 		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := &cfgpb.Config{
@@ -75,6 +79,7 @@ func TestOnCLUpdated(t *testing.T) {
 					Patchset:    ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(),
 					Kind: &changelist.Snapshot_Gerrit{
 						Gerrit: &changelist.Gerrit{
+							Host: gHost,
 							Info: ci,
 						},
 					},
@@ -172,6 +177,30 @@ func TestOnCLUpdated(t *testing.T) {
 			So(trigger.Find(newCI, cfg.GetConfigGroups()[0]), ShouldBeNil)
 			updateCL(newCI, aplConfigOK, accessOK)
 			runAndVerifyCancelled()
+		})
+		Convey("Defers to CQD on removed trigger if CQD finalized the Run first", func() {
+			// TODO(crbug/1179274): remove after M1 migration.
+			So(datastore.Put(ctx, &migration.FinishedCQDRun{
+				AttemptKey: rs.Run.ID.AttemptKey(),
+				UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+				Payload: &migrationpb.ReportedRun{
+					Id: "", // CQD reported it before this Run even existed
+					Attempt: &cvbqpb.Attempt{
+						Key:           rs.Run.ID.AttemptKey(),
+						Status:        cvbqpb.AttemptStatus_SUCCESS,
+						GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: gChange, Mode: cvbqpb.Mode_DRY_RUN}},
+					},
+				},
+			}), ShouldBeNil)
+			newCI := gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
+			So(trigger.Find(newCI, cfg.GetConfigGroups()[0]), ShouldBeNil)
+			updateCL(newCI, aplConfigOK, accessOK)
+
+			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			So(err, ShouldBeNil)
+			So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
 		})
 		Convey("Cancels Run on changed mode", func() {
 			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)

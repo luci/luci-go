@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -43,6 +44,15 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "skipping cancellation because Run is %s", status)
 		return &Result{State: rs}, nil
+	}
+
+	// TODO(crbug/1179274): cleanup after CV is fully in charge.
+	switch f, err := migration.LoadUnclaimedFinishedCQDRun(ctx, rs.Run.ID.AttemptKey()); {
+	case err != nil:
+		return nil, err
+	case f != nil:
+		// Instead of canceling, finalize the Run using CQDFinished if available.
+		return impl.onCQDFinished(ctx, rs, f)
 	}
 
 	rs = rs.ShallowCopy()

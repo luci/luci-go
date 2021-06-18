@@ -104,7 +104,7 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *co
 		return true
 	}
 	if o, c := rcl.Trigger, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content); hasTriggerChanged(o, c) {
-		logging.Infof(ctx, "%s has new trigger %s (old: %s)", clString, o, c)
+		logging.Infof(ctx, "%s has new trigger\nOLD: %s\nNEW: %s", clString, o, c)
 		return true
 	}
 	return false

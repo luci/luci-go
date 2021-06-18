@@ -29,6 +29,10 @@ import (
 
 // OnCQDFinished implements Handler interface.
 func (impl *Impl) OnCQDFinished(ctx context.Context, rs *state.RunState) (*Result, error) {
+	return impl.onCQDFinished(ctx, rs, nil)
+}
+
+func (impl *Impl) onCQDFinished(ctx context.Context, rs *state.RunState, fr *migration.FinishedCQDRun) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case run.IsEnded(status):
 		logging.Warningf(ctx, "Ignoring OnCQDFinished event because Run is %s", status)
@@ -37,9 +41,12 @@ func (impl *Impl) OnCQDFinished(ctx context.Context, rs *state.RunState) (*Resul
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
 	}
 
-	fr, err := migration.LoadFinishedCQDRun(ctx, rs.Run.ID)
-	if err != nil {
-		return nil, err
+	var err error
+	if fr == nil {
+		fr, err = migration.LoadFinishedCQDRun(ctx, rs.Run.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	rs = rs.ShallowCopy()
