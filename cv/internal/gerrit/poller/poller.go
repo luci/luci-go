@@ -33,7 +33,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -99,11 +99,11 @@ func (p *Poller) poll(ctx context.Context, luciProject string, eta time.Time) er
 	}
 	// TODO(tandrii): avoid concurrent polling of the same project via cheap
 	// best-effort locking in Redis.
-	meta, err := config.GetLatestMeta(ctx, luciProject)
+	meta, err := prjcfg.GetLatestMeta(ctx, luciProject)
 	switch {
 	case err != nil:
-	case (meta.Status == config.StatusDisabled ||
-		meta.Status == config.StatusNotExists):
+	case (meta.Status == prjcfg.StatusDisabled ||
+		meta.Status == prjcfg.StatusNotExists):
 		if err := gobmap.Update(ctx, luciProject); err != nil {
 			return err
 		}
@@ -111,7 +111,7 @@ func (p *Poller) poll(ctx context.Context, luciProject string, eta time.Time) er
 			return errors.Annotate(err, "failed to disable poller for %q", luciProject).Err()
 		}
 		return nil
-	case meta.Status == config.StatusEnabled:
+	case meta.Status == prjcfg.StatusEnabled:
 		err = p.pollWithConfig(ctx, luciProject, meta)
 	default:
 		panic(fmt.Errorf("unknown project config status: %d", meta.Status))
@@ -214,7 +214,7 @@ type State struct {
 }
 
 // pollWithConfig performs the poll and if necessary updates to newest project config.
-func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) error {
+func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta prjcfg.Meta) error {
 	stateBefore := State{LuciProject: luciProject}
 	switch err := datastore.Get(ctx, &stateBefore); {
 	case err != nil && err != datastore.ErrNoSuchEntity:
@@ -262,7 +262,7 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta co
 
 // updateConfig fetches latest config and updates poller's state
 // in RAM only.
-func (p *Poller) updateConfig(ctx context.Context, s *State, meta config.Meta) error {
+func (p *Poller) updateConfig(ctx context.Context, s *State, meta prjcfg.Meta) error {
 	s.ConfigHash = meta.Hash()
 	cgs, err := meta.GetConfigGroups(ctx)
 	if err != nil {

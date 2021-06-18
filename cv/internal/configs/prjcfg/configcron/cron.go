@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // PM encapsulates Project Manager notified by the ConfigRefresher.
@@ -72,7 +72,7 @@ func New(tqd *tq.Dispatcher, pm PM) *ProjectConfigRefresher {
 //
 // It's expected to be called by a cron.
 func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error {
-	projects, err := config.ProjectsWithConfig(ctx)
+	projects, err := prjcfg.ProjectsWithConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error
 		}
 	}
 
-	curEnabledProjects, err := config.GetAllProjectIDs(ctx, true)
+	curEnabledProjects, err := prjcfg.GetAllProjectIDs(ctx, true)
 	if err != nil {
 		return err
 	}
@@ -136,9 +136,9 @@ func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error
 }
 
 func (pcr *ProjectConfigRefresher) refreshProject(ctx context.Context, project string, disable bool) error {
-	action, actionFn := "update", config.UpdateProject
+	action, actionFn := "update", prjcfg.UpdateProject
 	if disable {
-		action, actionFn = "disable", config.DisableProject
+		action, actionFn = "disable", prjcfg.DisableProject
 	}
 	err := actionFn(ctx, project, func(ctx context.Context) error {
 		return pcr.pm.UpdateConfig(ctx, project)
