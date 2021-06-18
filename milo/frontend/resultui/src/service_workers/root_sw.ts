@@ -18,12 +18,12 @@
  * This is 200-400ms faster than redirecting on the server side.
  */
 
+// TSC isn't able to determine the scope properly.
+// Perform manual casting to fix typing.
+const _self = self as unknown as ServiceWorkerGlobalScope;
+
 // TODO(crbug/1108198): we don't need this after removing the /ui prefix.
-
-// Eslint isn't able to type-check webworker scripts.
-/* eslint-disable */
-
-self.addEventListener('fetch', (event) => {
+_self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   const isResultUI =
