@@ -29,6 +29,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
@@ -91,6 +93,13 @@ func cmdQuery(p Params) *subcommands.Command {
 				Useful when the invocations are a part of one computation, e.g. shards
 				of a test.
 			`))
+
+			r.Flags.StringVar(&r.trFields, "tr-fields", "", text.Doc(`
+				Test result fields to include in the response. Fields should be passed
+				as a comma separated string to match the JSON encoding schema of FieldMask.
+				Test result names will always be included even if "name" is not a part
+				of the fields.
+			`))
 			return r
 		},
 	}
@@ -103,6 +112,7 @@ type queryRun struct {
 	unexpected bool
 	testID     string
 	merge      bool
+	trFields   string
 	invIDs     []string
 
 	// TODO(crbug.com/1021849): add flag -artifact-dir
@@ -191,17 +201,24 @@ func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
 		})
 	}
 
+	trMask := &field_mask.FieldMask{}
+	if r.trFields != "" {
+		if err := protojson.Unmarshal([]byte(fmt.Sprintf(`"%s"`, r.trFields)), trMask); err != nil {
+			return errors.Annotate(err, "tr-fields").Err()
+		}
+	}
+
 	// Fetch items into resultC.
 	if r.merge {
 		eg.Go(func() error {
-			return r.fetchItems(ctx, invIDs, resultItem{}, resultC)
+			return r.fetchItems(ctx, invIDs, trMask, resultItem{}, resultC)
 		})
 	} else {
 		for _, id := range invIDs {
 			id := id
 			tmpl := resultItem{invocationID: id}
 			eg.Go(func() error {
-				return r.fetchItems(ctx, []string{id}, tmpl, resultC)
+				return r.fetchItems(ctx, []string{id}, trMask, tmpl, resultC)
 			})
 		}
 	}
@@ -229,7 +246,7 @@ func (r *queryRun) fetchInvocation(ctx context.Context, invID string, dest chan<
 }
 
 // fetchItems fetches test results and exonerations from the specified invocations.
-func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, resultItemTemplate resultItem, dest chan<- resultItem) error {
+func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, trMask *field_mask.FieldMask, resultItemTemplate resultItem, dest chan<- resultItem) error {
 	invNames := make([]string, len(invIDs))
 	for i, id := range invIDs {
 		invNames[i] = pbutil.InvocationName(id)
@@ -240,6 +257,7 @@ func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, resultItemTe
 		Invocations: invNames,
 		Predicate:   &pb.TestResultPredicate{TestIdRegexp: r.testID},
 		PageSize:    int32(r.limit),
+		ReadMask:    trMask,
 	}
 	if r.unexpected {
 		trReq.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
