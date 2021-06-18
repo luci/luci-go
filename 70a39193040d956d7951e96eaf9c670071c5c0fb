@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bbada25e_a7ac06f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-18T22:01:23Z",
+      "side": 1,
+      "message": "Because it\u0027s used in multiple other places? Or because you want to decrease the number of top-level directories in cv/internal?",
+      "revId": "70a39193040d956d7951e96eaf9c670071c5c0fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
