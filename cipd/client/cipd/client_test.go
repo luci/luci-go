@@ -1067,8 +1067,8 @@ func TestFetchInstance(t *testing.T) {
 		body, pin := buildTestInstance("pkg", map[string]string{"test_name": testFileBody})
 		setupRemoteInstance(body, pin, repo, storage)
 
-		Convey("FetchAndDeployInstance works", func() {
-			err := client.FetchAndDeployInstance(ctx, "", pin, 0)
+		Convey("fetchAndDeployInstance works", func() {
+			err := client.fetchAndDeployInstance(ctx, "", pin, 0)
 			So(err, ShouldBeNil)
 
 			body, err = ioutil.ReadFile(filepath.Join(client.Root, "test_name"))
@@ -1076,11 +1076,11 @@ func TestFetchInstance(t *testing.T) {
 			So(string(body), ShouldEqual, testFileBody)
 		})
 
-		Convey("FetchAndDeployInstance uses instance cache", func() {
+		Convey("fetchAndDeployInstance uses instance cache", func() {
 			cacheDir := setupInstanceCache(client, c)
 
 			// The initial fetch.
-			err := client.FetchAndDeployInstance(ctx, "1", pin, 0)
+			err := client.fetchAndDeployInstance(ctx, "1", pin, 0)
 			So(err, ShouldBeNil)
 			So(storage.downloads(), ShouldEqual, 1)
 
@@ -1090,16 +1090,16 @@ func TestFetchInstance(t *testing.T) {
 
 			// The second fetch should use the instance cache (and thus make no
 			// additional RPCs).
-			err = client.FetchAndDeployInstance(ctx, "2", pin, 0)
+			err = client.fetchAndDeployInstance(ctx, "2", pin, 0)
 			So(err, ShouldBeNil)
 			So(storage.downloads(), ShouldEqual, 1)
 		})
 
-		Convey("FetchAndDeployInstance handles cache corruption", func() {
+		Convey("fetchAndDeployInstance handles cache corruption", func() {
 			cacheDir := setupInstanceCache(client, c)
 
 			// The initial fetch.
-			err := client.FetchAndDeployInstance(ctx, "1", pin, 0)
+			err := client.fetchAndDeployInstance(ctx, "1", pin, 0)
 			So(err, ShouldBeNil)
 			So(storage.downloads(), ShouldEqual, 1)
 
@@ -1115,7 +1115,7 @@ func TestFetchInstance(t *testing.T) {
 
 			// The second fetch should discard the cache and redownload the package.
 			setupRemoteInstance(body, pin, repo, storage)
-			err = client.FetchAndDeployInstance(ctx, "2", pin, 0)
+			err = client.fetchAndDeployInstance(ctx, "2", pin, 0)
 			So(err, ShouldBeNil)
 			So(storage.downloads(), ShouldEqual, 2)
 		})

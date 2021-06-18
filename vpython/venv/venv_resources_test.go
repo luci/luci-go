@@ -31,6 +31,7 @@ import (
 	"github.com/danjacques/gofslock/fslock"
 
 	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
@@ -373,7 +374,8 @@ func cacheFromCIPDLocked(ctx context.Context, t *testing.T, cachePath, name, has
 		return errors.Annotate(err, "failed to resolve CIPD version for %s @%s", pkg, version).Err()
 	}
 
-	if err := client.FetchAndDeployInstance(ctx, "", pin, 1); err != nil {
+	_, err = client.EnsurePackages(ctx, common.PinSliceBySubdir{"": {pin}}, cipd.NotParanoid, 1, false)
+	if err != nil {
 		return errors.Annotate(err, "failed to fetch/deploy CIPD package").Err()
 	}
 
