@@ -422,6 +422,23 @@ func LoadFinishedCQDRun(ctx context.Context, rid common.RunID) (*FinishedCQDRun,
 	}
 }
 
+// LoadUnclaimedFinishedCQDRun returns a FinishedCQDRun with matching attemptKey
+// and not associatd with a Run or nil if such an entity doesn't exist.
+func LoadUnclaimedFinishedCQDRun(ctx context.Context, attemptKey string) (*FinishedCQDRun, error) {
+	f := &FinishedCQDRun{AttemptKey: attemptKey}
+	switch err := datastore.Get(ctx, f); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to load FinishedCQDRun for %q", attemptKey).Tag(transient.Tag).Err()
+	case f.RunID == "":
+		logging.Warningf(ctx, "Detected previously unclaimed FinishedCQDRun %q", attemptKey)
+		return f, nil
+	default:
+		return nil, nil
+	}
+}
+
 // makeGerritSetReviewRequest creates request to post a message to Gerrit at
 // CQDaemon's request.
 func makeGerritSetReviewRequest(r *run.Run, ci *gerritpb.ChangeInfo, msg, curRevision string, sendEmail bool) *gerritpb.SetReviewRequest {
