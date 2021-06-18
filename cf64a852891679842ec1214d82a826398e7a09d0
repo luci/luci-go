@@ -16,6 +16,126 @@
       "message": "ptal",
       "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "412d56ad_bbf6bb7e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T21:48:11Z",
+      "side": 1,
+      "message": "👍 % repeated field \u0026 nits",
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5b307187_09a8bfea",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T21:48:11Z",
+      "side": 1,
+      "message": "btw, in the future we should make it repeated  -- luckily it\u0027s backwards compat change.",
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3dab9f5_e3dd40db",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T21:48:11Z",
+      "side": 1,
+      "message": "which",
+      "range": {
+        "startLine": 111,
+        "startChar": 64,
+        "endLine": 111,
+        "endChar": 66
+      },
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40e5c312_adcb95d7",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T21:48:11Z",
+      "side": 1,
+      "message": "hm, we don\u0027t deliver event via cloud task, cloud task merely executes a Run Manager. How about:\n\ne.g. task queue not executing a Run Manager task before the whole submission timeout is reached",
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa1fd0f9_5f0e9447",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T21:48:11Z",
+      "side": 1,
+      "message": "typically",
+      "range": {
+        "startLine": 112,
+        "startChar": 5,
+        "endLine": 112,
+        "endChar": 14
+      },
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17938049_75e150c9",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T21:48:11Z",
+      "side": 1,
+      "message": "since this isn\u0027t impl detail, let\u0027s make it a repeated field right now.",
+      "range": {
+        "startLine": 115,
+        "startChar": 2,
+        "endLine": 115,
+        "endChar": 7
+      },
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
