@@ -29,8 +29,8 @@ load(
     "common_pb",
     "config_pb",
     "cq_pb",
-    "logdog_pb",
     "logdog_cloud_logging_pb",
+    "logdog_pb",
     "milo_pb",
     "notify_pb",
     "scheduler_pb",
@@ -235,7 +235,6 @@ def gen_logdog_cfg(ctx):
     if opts.props.cloud_logging_project:
         cl_cfg = logdog_cloud_logging_pb.CloudLoggingConfig(
             destination = opts.props.cloud_logging_project,
-            use_global_logdog_account = opts.props.use_global_logdog_account,
         )
 
     logdog = get_service("logdog", "defining LogDog options")
