@@ -43,7 +43,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
-	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
+	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 )
