@@ -16,6 +16,24 @@
       "message": "Is there some kind of security review required for package update CLs?  I\u0027m not aware of the procedures here (only worked with Google3 frontend code before)",
       "revId": "7664093f0a175c271f475431488689315b0832df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0274522_1492db16",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-18T01:56:30Z",
+      "side": 1,
+      "message": "AFAIK no. The chops guideline only mandates that HTML sanitisation package must be one the of approved ones and we must keep `npm audit` happy.",
+      "parentUuid": "d7c9e33b_ffef6d32",
+      "revId": "7664093f0a175c271f475431488689315b0832df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
