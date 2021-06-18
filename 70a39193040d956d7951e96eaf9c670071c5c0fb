@@ -16,6 +16,24 @@
       "message": "Because it\u0027s used in multiple other places? Or because you want to decrease the number of top-level directories in cv/internal?",
       "revId": "70a39193040d956d7951e96eaf9c670071c5c0fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d638f1d_93350949",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T22:07:02Z",
+      "side": 1,
+      "message": "the latter. YOu\u0027ve actually the one who motivated me: i\u0027d like to document the most important CV parts, and it\u0027s easier if non-important helper don\u0027t create noise.",
+      "parentUuid": "bbada25e_a7ac06f0",
+      "revId": "70a39193040d956d7951e96eaf9c670071c5c0fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
