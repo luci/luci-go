@@ -43,7 +43,7 @@ const (
 	SubmissionResult_SUCCEEDED SubmissionResult = 1
 	// Encountered transient failure.
 	//
-	// RM should retry if quota allows.
+	// RM should retry if the deadline hasn't been exceeded.
 	SubmissionResult_FAILED_TRANSIENT SubmissionResult = 2
 	// Encountered permanent failure.
 	//
@@ -731,12 +731,12 @@ type isSubmissionCompleted_FailureReason interface {
 }
 
 type SubmissionCompleted_ClFailure struct {
-	// This Run submission fails because of an individual CL submission
-	// failure.
+	// Individual CL submission failure. Could be transient or permanent.
 	ClFailure *SubmissionCompleted_CLSubmissionFailure `protobuf:"bytes,2,opt,name=cl_failure,json=clFailure,proto3,oneof"`
 }
 
 type SubmissionCompleted_Timeout struct {
+	// Submission deadline is exceeded. Must be permanet failure.
 	Timeout bool `protobuf:"varint,3,opt,name=timeout,proto3,oneof"`
 }
 
