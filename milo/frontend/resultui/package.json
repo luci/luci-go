@@ -35,7 +35,7 @@
     "broadcast-channel": "^3.7.0",
     "codemirror": "^5.61.0",
     "copy-to-clipboard": "^3.3.1",
-    "d3": "^6.7.0",
+    "d3": "^7.0.0",
     "diff2html": "^3.4.5",
     "dompurify": "^2.2.9",
     "fast-json-stable-stringify": "^2.1.0",
