@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dce66b7a_23530223",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-18T00:37:41Z",
+      "side": 1,
+      "message": "We will make root-sw.js do more than just redirection in a future CL.",
+      "revId": "0387bdf2c3bc3d30f7c5e5283e5fee01a94c69a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
