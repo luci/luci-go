@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "722af03c_5fe3b9bb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-18T00:54:11Z",
+      "side": 1,
+      "message": "PTAL\n\nI\u0027d like to ask you to concentrate on client.go and 🙈 on InstanceCache implementation. It will be cleaned up in a separate CL.",
+      "revId": "08f70871efb775d45c6dfc12d7b7623f092c9a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0c522a9_d7da946f",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1599,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-18T00:54:11Z",
+      "side": 1,
+      "message": "I decided to parallelize reading of the zip header too (because why not, it is mostly IO).",
+      "range": {
+        "startLine": 1599,
+        "startChar": 12,
+        "endLine": 1599,
+        "endChar": 16
+      },
+      "revId": "08f70871efb775d45c6dfc12d7b7623f092c9a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "303672c9_c32436e4",
+        "filename": "cipd/client/cipd/internal/instancecache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-18T00:54:11Z",
+      "side": 1,
+      "message": "I\u0027ll remove all this complexity in the future CLs, it is not needed anymore.",
+      "range": {
+        "startLine": 133,
+        "startChar": 3,
+        "endLine": 133,
+        "endChar": 13
+      },
+      "revId": "08f70871efb775d45c6dfc12d7b7623f092c9a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93fbdc27_baa24503",
+        "filename": "cipd/client/cipd/internal/instancecache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-18T00:54:11Z",
+      "side": 1,
+      "message": "note this is very temporary dumb implementation of the interface so I can land client.go changes and concentrate on the cache in a separate CL (I also tested client.go with the real concurrent implementation and it also works as expected).",
+      "range": {
+        "startLine": 316,
+        "startChar": 1,
+        "endLine": 321,
+        "endChar": 4
+      },
+      "revId": "08f70871efb775d45c6dfc12d7b7623f092c9a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
