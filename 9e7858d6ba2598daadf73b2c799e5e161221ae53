@@ -39,6 +39,30 @@
       },
       "revId": "9e7858d6ba2598daadf73b2c799e5e161221ae53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be911641_a09d340a",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T17:38:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb630433_005e6f32",
+      "range": {
+        "startLine": 107,
+        "startChar": 51,
+        "endLine": 107,
+        "endChar": 54
+      },
+      "revId": "9e7858d6ba2598daadf73b2c799e5e161221ae53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
