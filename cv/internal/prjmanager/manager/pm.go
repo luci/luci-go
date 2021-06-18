@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package manager
 
 import (
 	"context"
@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
-	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
+	"go.chromium.org/luci/cv/internal/prjmanager/manager/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/triager"
 	"go.chromium.org/luci/cv/internal/run"

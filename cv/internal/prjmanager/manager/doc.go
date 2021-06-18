@@ -13,4 +13,4 @@
 // limitations under the License.
 
 // Package impl implements a ProjectManager.
-package impl
+package manager
