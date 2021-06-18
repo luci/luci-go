@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "dbc93863_3039cc21",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-18T16:06:52Z",
+      "side": 1,
+      "message": "lgtm\n\n(should version be bumped?)",
+      "revId": "08f70871efb775d45c6dfc12d7b7623f092c9a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a0c522a9_d7da946f",
         "filename": "cipd/client/cipd/client.go",
         "patchSetId": 1
@@ -37,6 +54,40 @@
         "endLine": 1599,
         "endChar": 16
       },
+      "revId": "08f70871efb775d45c6dfc12d7b7623f092c9a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c467139_f083ea6f",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1633,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-18T16:06:52Z",
+      "side": 1,
+      "message": "nit: it makes me a bit nervous that the first real check of this err is ~40 lines down. However the code as written makes sense... I worry a bit about that code expanding or using \u0027err\u0027 in a casual way which introduces a bug, since a diff could easily omit these lines and \u0027err\u0027 is such a common var name. Maybe this could be `resErr` to at least call it out as a special thing?",
+      "revId": "08f70871efb775d45c6dfc12d7b7623f092c9a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2df1281e_3a13cdb6",
+        "filename": "cipd/client/cipd/internal/instancecache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-18T16:06:52Z",
+      "side": 1,
+      "message": "(as opposed to just pkg.Source)",
       "revId": "08f70871efb775d45c6dfc12d7b7623f092c9a3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
