@@ -30,8 +30,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	cvbq "go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
+	cvbq "go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
