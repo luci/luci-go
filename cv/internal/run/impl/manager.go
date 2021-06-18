@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -37,7 +38,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // maxEventsPerBatch limits the number of incoming events the PM will process at
