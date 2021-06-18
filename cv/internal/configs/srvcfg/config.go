@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // package servicecfg provides service-wide configs.
-package servicecfg
+package srvcfg
 
 import (
 	"context"
