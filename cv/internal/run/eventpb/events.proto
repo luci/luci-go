@@ -127,9 +127,9 @@ message SubmissionCompleted {
   }
 
   oneof failure_reason {
-    // This Run submission fails because of an individual CL submission
-    // failure.
+    // Individual CL submission failure. Could be transient or permanent.
     CLSubmissionFailure cl_failure = 2;
+    // Submission deadline is exceeded. Must be permanet failure.
     bool timeout = 3;
   }
 }
@@ -140,7 +140,7 @@ enum SubmissionResult {
   SUCCEEDED = 1;
   // Encountered transient failure.
   //
-  // RM should retry if quota allows.
+  // RM should retry if the deadline hasn't been exceeded.
   FAILED_TRANSIENT = 2;
   // Encountered permanent failure.
   //
@@ -150,5 +150,6 @@ enum SubmissionResult {
 
 message CQDVerificationCompleted {
 }
+
 message CQDFinished {
 }
