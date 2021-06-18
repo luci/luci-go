@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/configcron"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
@@ -44,7 +45,6 @@ import (
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
-	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/cv/internal/tree"
 )
 
@@ -114,7 +114,7 @@ func refreshConfig(ctx context.Context, pcr *configcron.ProjectConfigRefresher) 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error { return servicecfg.ImportConfig(ctx) })
+	eg.Go(func() error { return srvcfg.ImportConfig(ctx) })
 	eg.Go(func() error { return pcr.SubmitRefreshTasks(ctx) })
 	return eg.Wait()
 }

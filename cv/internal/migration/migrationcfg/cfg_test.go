@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/servicecfg"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -34,7 +34,7 @@ func TestIsCVInCharge(t *testing.T) {
 			ctx, cancel := ct.SetUp()
 			defer cancel()
 
-			So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
+			So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
 			res, err := IsCVInCharge(ctx, project)
 			So(err, ShouldBeNil)
