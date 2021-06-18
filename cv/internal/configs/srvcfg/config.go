@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package servicecfg provides service-wide configs.
-package servicecfg
+// Package srvcfg provides service-wide configs.
+package srvcfg
 
 import (
 	"context"
