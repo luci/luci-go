@@ -16,6 +16,24 @@
       "message": "should this just set Paranoid mode?",
       "revId": "f8ce7314a52b2b21ddfc5984d45295dcf12e60e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3a95e0e_6a25e168",
+        "filename": "cipd/client/cli/friendly.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-18T21:06:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81ece22f_427623fa",
+      "revId": "f8ce7314a52b2b21ddfc5984d45295dcf12e60e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
