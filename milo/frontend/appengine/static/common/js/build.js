@@ -82,9 +82,9 @@ $(document).ready(function() {
     setCookie('showNewBuildPage', true);
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/redirect-sw.js')
+      navigator.serviceWorker.register('/root-sw.js')
         .then((registration) => {
-          console.log('Redirect SW registered: ', registration);
+          console.log('Root SW registered: ', registration);
           window.open(newBuildPageLink.attr('href'), newBuildPageLink.attr('target') || '_self');
         });
       return false;

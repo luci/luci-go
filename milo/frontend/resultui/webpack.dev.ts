@@ -63,6 +63,14 @@ export default merge(common, {
       cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
     },
     before: (app) => {
+      app.use((req, _res, next) => {
+        // Host root-sw.js at root so it can have root scope.
+        if (/\/(root-sw\.js(\.map)?)$/.test(req.path)) {
+          req.url = req.url.slice(0, req.url.length - req.path.length) + '/ui' + req.path;
+        }
+        next();
+      });
+
       app.get('/configs.js', async (_req, res) => {
         res.set('content-type', 'application/javascript');
         const appConfigs = JSON.parse(fs.readFileSync(path.join(__dirname, 'dev-configs/configs.json'), 'utf8'));
@@ -72,11 +80,6 @@ export default merge(common, {
           .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST)
           .replace('{{.OAuth2.ClientID}}', appConfigs.OAUTH2.CLIENT_ID);
         res.send(config);
-      });
-
-      app.get('/redirect-sw.js', async (_req, res) => {
-        res.set('content-type', 'application/javascript');
-        res.send(fs.readFileSync(path.join(__dirname, 'assets/redirect-sw.js'), 'utf8'));
       });
 
       app.use(
