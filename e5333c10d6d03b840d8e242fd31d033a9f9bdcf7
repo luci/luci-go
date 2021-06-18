@@ -22,6 +22,30 @@
       },
       "revId": "e5333c10d6d03b840d8e242fd31d033a9f9bdcf7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0992035a_4103da8b",
+        "filename": "milo/frontend/resultui/src/components/signin.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-18T01:53:38Z",
+      "side": 1,
+      "message": "I inspected the source code, the listeners are stored as a property of the BoardcastChannel object. So it should be GCed as long as there is no other reference to the channel object. We don\u0027t need to remove the listener manually.",
+      "parentUuid": "9693a536_708df065",
+      "range": {
+        "startLine": 44,
+        "startChar": 12,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "e5333c10d6d03b840d8e242fd31d033a9f9bdcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
