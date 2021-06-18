@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f272b7b_375b8814",
+        "filename": "milo/frontend/resultui/src/components/auto_complete.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-18T03:40:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7570410b_e8f78771",
+      "range": {
+        "startLine": 225,
+        "startChar": 14,
+        "endLine": 225,
+        "endChar": 18
+      },
+      "revId": "07244d915bb615f3a72237cad4edc6150c3b8236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f54de09_b56ac59f",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-06-18T02:59:40Z",
       "side": 1,
       "message": "Perhaps this value should be extracted to a var?",
+      "range": {
+        "startLine": 261,
+        "startChar": 15,
+        "endLine": 261,
+        "endChar": 20
+      },
+      "revId": "07244d915bb615f3a72237cad4edc6150c3b8236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "13967ffd_08c6acb7",
+        "filename": "milo/frontend/resultui/src/pages/build_page/blamelist_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-18T03:40:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f54de09_b56ac59f",
       "range": {
         "startLine": 261,
         "startChar": 15,
