@@ -72,6 +72,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f3e319e4_82133fcb",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-18T22:19:45Z",
+      "side": 1,
+      "message": "Make sense. How about do it in a follow up CL to keep the change in this CL small.",
+      "parentUuid": "69377a9e_1e4fe9f6",
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f3dab9f5_e3dd40db",
         "filename": "cv/internal/run/storage.proto",
         "patchSetId": 2
@@ -83,6 +101,30 @@
       "writtenOn": "2021-06-18T21:48:11Z",
       "side": 1,
       "message": "which",
+      "range": {
+        "startLine": 111,
+        "startChar": 64,
+        "endLine": 111,
+        "endChar": 66
+      },
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5b106100_62d74eff",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-18T22:19:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3dab9f5_e3dd40db",
       "range": {
         "startLine": 111,
         "startChar": 64,
@@ -133,6 +175,48 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "48a8b7b5_12877512",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-18T22:19:45Z",
+      "side": 1,
+      "message": "That\u0027s what I mean actually :P",
+      "parentUuid": "40e5c312_adcb95d7",
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0896e4f7_c1f8b924",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-18T22:19:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa1fd0f9_5f0e9447",
+      "range": {
+        "startLine": 112,
+        "startChar": 5,
+        "endLine": 112,
+        "endChar": 14
+      },
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "17938049_75e150c9",
@@ -146,6 +230,30 @@
       "writtenOn": "2021-06-18T21:48:11Z",
       "side": 1,
       "message": "since this isn\u0027t impl detail, let\u0027s make it a repeated field right now.",
+      "range": {
+        "startLine": 115,
+        "startChar": 2,
+        "endLine": 115,
+        "endChar": 7
+      },
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3fac34e9_8d4d6d36",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-18T22:19:45Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "17938049_75e150c9",
       "range": {
         "startLine": 115,
         "startChar": 2,
