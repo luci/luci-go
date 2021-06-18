@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package impl implements a ProjectManager.
-package impl
+// Package manager implements a ProjectManager.
+package manager
