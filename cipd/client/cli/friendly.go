@@ -28,11 +28,11 @@ import (
 
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/common"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -278,10 +278,7 @@ func (site *installationSite) installedPackages(ctx context.Context) (map[string
 }
 
 // installPackage installs (or updates) a package.
-//
-// If 'force' is true, it will reinstall the package even if it is already
-// marked as installed at requested version. On errors returns (nil, error).
-func (site *installationSite) installPackage(ctx context.Context, pkgName, version string, maxThreads int, force bool) (*pinInfo, error) {
+func (site *installationSite) installPackage(ctx context.Context, pkgName, version string, paranoid cipd.ParanoidMode, maxThreads int) (*pinInfo, error) {
 	if site.client == nil {
 		return nil, errors.New("client is not initialized")
 	}
@@ -298,26 +295,35 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 		return nil, err
 	}
 
-	// Already installed?
-	doInstall := true
-	if !force {
-		d := deployer.New(site.siteRoot)
-		switch state, err := d.CheckDeployed(ctx, "", pkgName, cipd.NotParanoid, cipd.WithoutManifest); {
-		case err != nil:
-			logging.Errorf(ctx, "Failed to check installed package state - %s", err)
-			logging.Errorf(ctx, "Will attempt to reinstall")
-		case state.Deployed && state.Pin == resolved:
-			fmt.Printf("Package %s is up-to-date.\n", pkgName)
-			doInstall = false
-		}
+	// Install it by constructing an ensure file with all already installed
+	// packages plus the one we are installing (into the root "" subdir).
+	deployed, err := site.client.FindDeployed(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// Go for it.
-	if doInstall {
-		fmt.Printf("Installing %s (version %q)...\n", pkgName, version)
-		if err := site.client.FetchAndDeployInstance(ctx, "", resolved, maxThreads); err != nil {
-			return nil, err
+	found := false
+	root := deployed[""]
+	for idx := range root {
+		if root[idx].PackageName == resolved.PackageName {
+			root[idx] = resolved // upgrading the existing package
+			found = true
 		}
+	}
+	if !found {
+		if deployed == nil {
+			deployed = common.PinSliceBySubdir{}
+		}
+		deployed[""] = append(deployed[""], resolved) // install a new one
+	}
+
+	actions, err := site.client.EnsurePackages(ctx, deployed, paranoid, maxThreads, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if actions.Empty() {
+		fmt.Printf("Package %s is up-to-date.\n", pkgName)
 	}
 
 	// Update config saying what version to track. Remove tracking if an exact
@@ -441,7 +447,7 @@ func cmdInstall(params Parameters) *subcommands.Command {
 			c.authFlags.Register(&c.Flags, params.DefaultAuthOptions)
 			c.siteRootOptions.registerFlags(&c.Flags)
 			c.deployOptions.registerFlags(&c.Flags)
-			c.Flags.BoolVar(&c.force, "force", false, "Refetch and reinstall the package even if already installed.")
+			c.Flags.BoolVar(&c.force, "force", false, "Check all package files and present and reinstall them if missing.")
 			return c
 		},
 	}
@@ -454,8 +460,7 @@ type installRun struct {
 	deployOptions
 
 	defaultServiceURL string // used only if the site config has ServiceURL == ""
-
-	force bool
+	force             bool   // if true use CheckPresence paranoid mode
 }
 
 func (c *installRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -472,6 +477,11 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 	version := ""
 	if len(args) == 2 {
 		version = args[1]
+	}
+
+	paranoid := cipd.NotParanoid
+	if c.force {
+		paranoid = cipd.CheckPresence
 	}
 
 	// Auto initialize site root directory if necessary. Don't be too aggressive
@@ -498,7 +508,7 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 	defer site.client.Close(ctx)
 	site.client.BeginBatch(ctx)
 	defer site.client.EndBatch(ctx)
-	return c.done(site.installPackage(ctx, pkgName, version, c.maxThreads, c.force))
+	return c.done(site.installPackage(ctx, pkgName, version, paranoid, c.maxThreads))
 }
 
 ////////////////////////////////////////////////////////////////////////////////

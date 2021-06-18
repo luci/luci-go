@@ -135,7 +135,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.5"
+	UserAgent = "cipd 2.5.6"
 )
 
 func init() {
@@ -249,8 +249,8 @@ type Client interface {
 	//
 	// It verifies that the package hash matches pin.InstanceID.
 	//
-	// It returns an InstanceFile pointing to the raw package data. The caller
-	// must close it when done.
+	// It returns a pkg.Source pointing to the raw package data. The caller must
+	// close it when done.
 	FetchInstance(ctx context.Context, pin common.Pin) (pkg.Source, error)
 
 	// FetchInstanceTo downloads a package instance file into the given writer.
@@ -263,15 +263,6 @@ type Client interface {
 	// writing to 'output', so expect to discard all data there if FetchInstanceTo
 	// returns an error.
 	FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error
-
-	// FetchAndDeployInstance fetches the package instance and deploys it.
-	//
-	// Deploys to the given subdir under the site root (see ClientOptions.Root).
-	// It doesn't check whether the instance is already deployed.
-	//
-	// Ensures this package is allowed to be installed by querying a deployment
-	// admission plugin if it was configured.
-	FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin, maxThreads int) error
 
 	// ListPackages returns a list packages and prefixes under the given prefix.
 	ListPackages(ctx context.Context, prefix string, recursive, includeHidden bool) ([]string, error)
@@ -286,6 +277,12 @@ type Client interface {
 	//
 	// Returns an object that can be used to fetch the listing, page by page.
 	ListInstances(ctx context.Context, packageName string) (InstanceEnumerator, error)
+
+	// FindDeployed returns a list of packages deployed to the site root.
+	//
+	// It just does a shallow examination of the metadata directory, without
+	// paranoid checks that all installed packages are free from corruption.
+	FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error)
 
 	// EnsurePackages installs, removes and updates packages in the site root.
 	//
@@ -1568,7 +1565,14 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 	return err
 }
 
-func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin, maxThreads int) error {
+// fetchAndDeployInstance fetches the package instance and deploys it.
+//
+// Deploys to the given subdir under the site root (see ClientOptions.Root).
+// It doesn't check whether the instance is already deployed.
+//
+// Ensures this package is allowed to be installed by querying a deployment
+// admission plugin if it was configured.
+func (client *clientImpl) fetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin, maxThreads int) error {
 	if err := common.ValidateSubdir(subdir); err != nil {
 		return err
 	}
@@ -1585,6 +1589,10 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		_, err := client.deployer.DeployInstance(ctx, subdir, instance, maxThreads)
 		return err
 	})
+}
+
+func (client *clientImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
+	return client.deployer.FindDeployed(ctx)
 }
 
 func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, maxThreads int, dryRun bool) (ActionMap, error) {
@@ -1629,7 +1637,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	}
 
 	// Enqueue deployment admission checks if have the plugin enabled. They will
-	// be consulted later in FetchAndDeployInstance. This is just an optimization
+	// be consulted later in fetchAndDeployInstance. This is just an optimization
 	// to do checks in parallel with fetching and installing.
 	if client.pluginAdmission != nil {
 		aMap.LoopOrdered(func(subdir string, actions *Actions) {
@@ -1690,7 +1698,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 			var err error
 			if toDeploy[pin.PackageName] {
 				action = ActionInstall
-				err = client.FetchAndDeployInstance(ctx, subdir, pin, maxThreads)
+				err = client.fetchAndDeployInstance(ctx, subdir, pin, maxThreads)
 			} else if plan := toRepair[pin.PackageName]; plan != nil {
 				action = ActionRepair
 				err = client.repairDeployed(ctx, subdir, pin, plan, maxThreads)
