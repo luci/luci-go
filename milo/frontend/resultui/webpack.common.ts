@@ -22,12 +22,13 @@ import { Configuration, DefinePlugin } from 'webpack';
 const config: Configuration = {
   entry: {
     index: './src/index.ts',
-    'service-worker-ext': './src/service_worker/service_worker_ext.ts',
+    'service-worker-ext': './src/service_workers/service_worker_ext.ts',
+    'root-sw': './src/service_workers/root_sw.ts',
   },
   output: {
     path: path.resolve(__dirname, './out/'),
     publicPath: '/ui/',
-    filename: 'immutable/[name].[contenthash].bundle.js',
+    filename: ({ chunk }) => (chunk?.name === 'root-sw' ? '[name].js' : 'immutable/[name].[contenthash].bundle.js'),
     chunkFilename: 'immutable/[name].[contenthash].bundle.js',
   },
   module: {
@@ -59,7 +60,7 @@ const config: Configuration = {
     // independently.
     runtimeChunk: false,
     splitChunks: {
-      chunks: (chunk) => chunk.name !== 'service-worker-ext',
+      chunks: (chunk) => !['service-worker-ext', 'root-sw'].includes(chunk.name),
       maxInitialRequests: Infinity,
       minSize: 0,
       cacheGroups: {
