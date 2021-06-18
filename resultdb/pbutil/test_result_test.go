@@ -90,7 +90,7 @@ func TestTestResultName(t *testing.T) {
 			Convey(`bad unescape`, func() {
 				_, _, _, err := ParseTestResultName(
 					"invocations/a/tests/bad_hex_%gg/results/result1")
-				So(err, ShouldErrLike, "test id")
+				So(err, ShouldErrLike, "test id Im wrong")
 			})
 
 			Convey(`unescaped unprintable`, func() {
