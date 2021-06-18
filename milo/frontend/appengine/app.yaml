@@ -58,11 +58,11 @@ handlers:
   # So they can be cached longer.
   expiration: 7d
 
-# Host redirect-sw.js at root so it can have root scope.
-- url: /(redirect-sw.js(.map)?)$
+# Host root-sw.js at root so it can have root scope.
+- url: /(root-sw\.js(\.map)?)$
   secure: always
   static_files: resultui/\1
-  upload: resultui/redirect-sw.js(.map)?$
+  upload: resultui/root-sw\.js(\.map)?$
 
 # Other ResultUI static resources.
 - url: /ui
