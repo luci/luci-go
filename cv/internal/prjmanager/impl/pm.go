@@ -37,8 +37,8 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
-	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/triager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/prjmanager/triager"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
