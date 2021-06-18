@@ -1046,9 +1046,9 @@ func TestResolveVersion(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Instance fetching (including instance cache).
+// Instance fetching and installation (including instance cache).
 
-func TestFetchInstance(t *testing.T) {
+func TestEnsurePackage(t *testing.T) {
 	t.Parallel()
 
 	// Generate a pretty big and random file to be put into the test package, so
@@ -1067,8 +1067,12 @@ func TestFetchInstance(t *testing.T) {
 		body, pin := buildTestInstance("pkg", map[string]string{"test_name": testFileBody})
 		setupRemoteInstance(body, pin, repo, storage)
 
-		Convey("fetchAndDeployInstance works", func() {
-			err := client.fetchAndDeployInstance(ctx, "", pin, 0)
+		ensurePackages := func(ps common.PinSliceBySubdir) (ActionMap, error) {
+			return client.EnsurePackages(ctx, ps, NotParanoid, 0, false)
+		}
+
+		Convey("EnsurePackages works", func() {
+			_, err := ensurePackages(common.PinSliceBySubdir{"": {pin}})
 			So(err, ShouldBeNil)
 
 			body, err = ioutil.ReadFile(filepath.Join(client.Root, "test_name"))
@@ -1076,11 +1080,11 @@ func TestFetchInstance(t *testing.T) {
 			So(string(body), ShouldEqual, testFileBody)
 		})
 
-		Convey("fetchAndDeployInstance uses instance cache", func() {
+		Convey("EnsurePackages uses instance cache", func() {
 			cacheDir := setupInstanceCache(client, c)
 
 			// The initial fetch.
-			err := client.fetchAndDeployInstance(ctx, "1", pin, 0)
+			_, err := ensurePackages(common.PinSliceBySubdir{"1": {pin}})
 			So(err, ShouldBeNil)
 			So(storage.downloads(), ShouldEqual, 1)
 
@@ -1090,16 +1094,16 @@ func TestFetchInstance(t *testing.T) {
 
 			// The second fetch should use the instance cache (and thus make no
 			// additional RPCs).
-			err = client.fetchAndDeployInstance(ctx, "2", pin, 0)
+			_, err = ensurePackages(common.PinSliceBySubdir{"1": {pin}, "2": {pin}})
 			So(err, ShouldBeNil)
 			So(storage.downloads(), ShouldEqual, 1)
 		})
 
-		Convey("fetchAndDeployInstance handles cache corruption", func() {
+		Convey("EnsurePackages handles cache corruption", func() {
 			cacheDir := setupInstanceCache(client, c)
 
 			// The initial fetch.
-			err := client.fetchAndDeployInstance(ctx, "1", pin, 0)
+			_, err := ensurePackages(common.PinSliceBySubdir{"1": {pin}})
 			So(err, ShouldBeNil)
 			So(storage.downloads(), ShouldEqual, 1)
 
@@ -1115,20 +1119,13 @@ func TestFetchInstance(t *testing.T) {
 
 			// The second fetch should discard the cache and redownload the package.
 			setupRemoteInstance(body, pin, repo, storage)
-			err = client.fetchAndDeployInstance(ctx, "2", pin, 0)
+			_, err = ensurePackages(common.PinSliceBySubdir{"1": {pin}, "2": {pin}})
 			So(err, ShouldBeNil)
 			So(storage.downloads(), ShouldEqual, 2)
 		})
+
+		// TODO: Add more tests.
 	})
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Instance installation.
-
-func TestEnsurePackage(t *testing.T) {
-	t.Parallel()
-
-	// TODO
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1483,7 +1480,6 @@ func setupTagCache(cl *clientImpl, c C) string {
 }
 
 func setupInstanceCache(cl *clientImpl, c C) string {
-	c.So(cl.globalInstanceCache, ShouldBeNil)
 	tempDir, err := ioutil.TempDir("", "cipd_instance_cache")
 	c.So(err, ShouldBeNil)
 	c.Reset(func() { os.RemoveAll(tempDir) })

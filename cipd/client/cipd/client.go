@@ -52,6 +52,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -103,6 +104,7 @@ const (
 	EnvCacheDir            = "CIPD_CACHE_DIR"
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
 	EnvMaxThreads          = "CIPD_MAX_THREADS"
+	EnvParallelDownloads   = "CIPD_PARALLEL_DOWNLOADS"
 	EnvAdmissionPlugin     = "CIPD_ADMISSION_PLUGIN"
 )
 
@@ -135,7 +137,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.6"
+	UserAgent = "cipd 2.5.7"
 )
 
 func init() {
@@ -360,6 +362,12 @@ type ClientOptions struct {
 	// packages, since the backend won't authorize an anonymous access).
 	AuthenticatedClient *http.Client
 
+	// ParallelDownloads defines how many packages are allowed to be fetched
+	// concurrently.
+	//
+	// If <=1, packages will be fetched sequentially.
+	ParallelDownloads int
+
 	// UserAgent is put into User-Agent HTTP header with each request.
 	//
 	// Default is UserAgent const.
@@ -395,6 +403,15 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 				return fmt.Errorf("bad %s: not an absolute path - %s", EnvCacheDir, v)
 			}
 			opts.CacheDir = v
+		}
+	}
+	if opts.ParallelDownloads == 0 {
+		if v := getEnv(EnvParallelDownloads); v != "" {
+			val, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("bad %s: not an integer - %s", EnvParallelDownloads, v)
+			}
+			opts.ParallelDownloads = val
 		}
 	}
 	if opts.UserAgent == "" {
@@ -551,11 +568,9 @@ type clientImpl struct {
 	repo api.RepositoryClient
 
 	// batchLock protects guts of by BeginBatch/EndBatch implementation.
-	batchLock           sync.Mutex
-	batchNesting        int
-	batchPending        map[batchAwareOp]struct{}
-	batchInstanceCache  *internal.InstanceCache // a temporary batch-scoped cache
-	globalInstanceCache *internal.InstanceCache // a cache at CacheDir, outlives the client
+	batchLock    sync.Mutex
+	batchNesting int
+	batchPending map[batchAwareOp]struct{}
 
 	// storage knows how to upload and download raw binaries using signed URLs.
 	storage storage
@@ -630,54 +645,54 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 	return client.tagCache
 }
 
-// getInstanceCache returns an instance cache to download packages into.
+// instanceCache returns an instance cache to download packages into.
 //
-// Can be called only within a batch. Panics otherwise. Returns either a global
-// cache (if CacheDir option was set) or a temporary cache scoped to the
-// current batch.
+// Returns a new object each time. Multiple InstanceCache objects may perhaps
+// share the same underlying cache directory if used concurrently (just like two
+// different CIPD processes share it).
 //
-// Returns an error if it can't create temp directories to hold the cache.
-func (client *clientImpl) getInstanceCache(ctx context.Context) (*internal.InstanceCache, error) {
-	client.batchLock.Lock()
-	defer client.batchLock.Unlock()
-	if client.batchNesting == 0 {
-		panic("getInstanceCache can be called only within a batch")
-	}
+// This is a heavy object that may spawn multiple goroutines inside. Must be
+// closed with Close() when done working with it.
+func (client *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache, error) {
+	var cacheDir string
+	var err error
+	var tmp bool
 
 	if client.CacheDir != "" {
-		if client.globalInstanceCache == nil {
-			path := filepath.Join(client.CacheDir, "instances")
-			client.globalInstanceCache = internal.NewInstanceCache(
-				fs.NewFileSystem(path, ""),
-				false,
-				client.remoteFetchInstance,
-			)
-			logging.Infof(ctx, "cipd: using instance cache at %q", path)
-		}
-		return client.globalInstanceCache, nil
-	}
+		// This is a persistent global cache (not a temp one).
+		cacheDir = filepath.Join(client.CacheDir, "instances")
+	} else {
+		// This is going to be a temporary cache that self-destructs.
+		tmp = true
 
-	if client.batchInstanceCache == nil {
-		var cacheDir string
-		var err error
 		if client.Root != "" {
-			cacheDir, err = client.deployer.FS().EnsureDirectory(ctx,
-				filepath.Join(client.Root, fs.SiteServiceDir, "tmp", "dl"))
+			// Create the root tmp directory in the site root guts.
+			tmpDir, err := client.deployer.FS().EnsureDirectory(ctx, filepath.Join(client.Root, fs.SiteServiceDir, "tmp"))
+			if err != nil {
+				return nil, err
+			}
+			// An inside it create a unique directory for the new InstanceCache.
+			// Multiple temp caches must not reuse the same directory or they'll
+			// interfere with one another when deleting instances or cleaning them up
+			// when closing.
+			cacheDir, err = ioutil.TempDir(tmpDir, "dl_")
 		} else {
+			// When not using a site root, just create the directory in /tmp.
 			cacheDir, err = ioutil.TempDir("", "cipd_dl_")
 		}
-		if err != nil {
-			return nil, err
-		}
-		logging.Infof(ctx, "cipd: using temporary instance cache at %q", cacheDir)
-		client.batchInstanceCache = internal.NewInstanceCache(
-			fs.NewFileSystem(cacheDir, ""),
-			true,
-			client.remoteFetchInstance,
-		)
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	return client.batchInstanceCache, nil
+	cache := &internal.InstanceCache{
+		FS:                fs.NewFileSystem(cacheDir, ""),
+		Tmp:               tmp,
+		Fetcher:           client.remoteFetchInstance,
+		ParallelDownloads: client.ParallelDownloads,
+	}
+	cache.Launch(ctx) // start background download goroutines
+	return cache, nil
 }
 
 func (client *clientImpl) Close(ctx context.Context) {
@@ -701,34 +716,12 @@ func (client *clientImpl) EndBatch(ctx context.Context) {
 	if client.batchNesting <= 0 {
 		panic("EndBatch called without corresponding BeginBatch")
 	}
-
-	client.batchNesting--
-	if client.batchNesting != 0 {
-		return
-	}
-
-	// If had a batch-scoped instance cache open, delete it.
-	if client.batchInstanceCache != nil {
-		cacheDir := client.batchInstanceCache.Root()
-
-		var err error
-		if client.Root != "" {
-			err = client.deployer.FS().EnsureDirectoryGone(ctx, cacheDir)
-		} else {
-			err = os.RemoveAll(cacheDir)
+	if client.batchNesting--; client.batchNesting == 0 {
+		for op := range client.batchPending {
+			batchAwareOps[op](client, ctx)
 		}
-		if err != nil {
-			logging.Warningf(ctx, "cipd: leaking temp directory %s: %s", cacheDir, err)
-		}
-
-		client.batchInstanceCache = nil
+		client.batchPending = nil
 	}
-
-	// Execute all pending batch aware calls now.
-	for op := range client.batchPending {
-		batchAwareOps[op](client, ctx)
-	}
-	client.batchPending = nil
 }
 
 func (client *clientImpl) doBatchAwareOp(ctx context.Context, op batchAwareOp) {
@@ -1432,18 +1425,21 @@ func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pk
 		return nil, err
 	}
 
-	// Open a batch to make sure we have an instance cache (perhaps batch-scoped).
-	client.BeginBatch(ctx)
-	defer client.EndBatch(ctx)
-
-	cache, err := client.getInstanceCache(ctx)
+	cache, err := client.instanceCache(ctx)
 	if err != nil {
 		return nil, err
 	}
+	defer cache.Close(ctx)
 
-	alloc := cache.Allocate(ctx, pin)
-	defer alloc.Release(ctx)
-	return alloc.Realize(ctx)
+	cache.RequestInstances([]*internal.InstanceRequest{
+		{Context: ctx, Pin: pin},
+	})
+	res := cache.WaitInstance()
+
+	if res.Err != nil {
+		return nil, res.Err
+	}
+	return res.Source, nil
 }
 
 func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
@@ -1509,88 +1505,6 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	return
 }
 
-// fetchAndDo will fetch and open an instance and pass it to the callback.
-//
-// If the callback fails with an error that indicates a corrupted instance, will
-// delete the instance from the cache, refetch it and call the callback again,
-// thus the callback should be idempotent.
-//
-// Any other error from the callback is propagated as is.
-func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb func(pkg.Instance) error) error {
-	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
-		return err
-	}
-
-	doit := func() (err error) {
-		// Fetch the package (verifying its hash) and obtain a pointer to its data.
-		instanceFile, err := client.FetchInstance(ctx, pin)
-		if err != nil {
-			return
-		}
-
-		// Notify the underlying object if 'err' is a corruption error.
-		type corruptable interface {
-			Close(ctx context.Context, corrupt bool) error
-		}
-		closeMaybeCorrupted := func(f corruptable) {
-			corrupt := reader.IsCorruptionError(err)
-			if clErr := f.Close(ctx, corrupt); clErr != nil && clErr != os.ErrClosed {
-				logging.Warningf(ctx, "cipd: failed to close the package file - %s", clErr)
-			}
-		}
-
-		// Open the instance. This reads its manifest. 'FetchInstance' has verified
-		// the hash already, so skip the verification.
-		instance, err := reader.OpenInstance(ctx, instanceFile, reader.OpenInstanceOpts{
-			VerificationMode: reader.SkipHashVerification,
-			InstanceID:       pin.InstanceID,
-		})
-		if err != nil {
-			closeMaybeCorrupted(instanceFile)
-			return
-		}
-
-		defer client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
-		defer closeMaybeCorrupted(instance)
-
-		// Use it. 'defer' will take care of removing the temp file if needed.
-		return cb(instance)
-	}
-
-	err := doit()
-	if err != nil && reader.IsCorruptionError(err) {
-		logging.WithError(err).Warningf(ctx, "cipd: unpacking failed, retrying.")
-		err = doit()
-	}
-	return err
-}
-
-// fetchAndDeployInstance fetches the package instance and deploys it.
-//
-// Deploys to the given subdir under the site root (see ClientOptions.Root).
-// It doesn't check whether the instance is already deployed.
-//
-// Ensures this package is allowed to be installed by querying a deployment
-// admission plugin if it was configured.
-func (client *clientImpl) fetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin, maxThreads int) error {
-	if err := common.ValidateSubdir(subdir); err != nil {
-		return err
-	}
-
-	if client.pluginAdmission != nil {
-		defer client.doBatchAwareOp(ctx, batchAwareOpClearAdmissionCache)
-		err := client.pluginAdmission.CheckAdmission(pin).Wait(ctx)
-		if err != nil {
-			return errors.Annotate(err, "not admitted for deployment").Err()
-		}
-	}
-
-	return client.fetchAndDo(ctx, pin, func(instance pkg.Instance) error {
-		_, err := client.deployer.DeployInstance(ctx, subdir, instance, maxThreads)
-		return err
-	})
-}
-
 func (client *clientImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
 	return client.deployer.FindDeployed(ctx)
 }
@@ -1636,84 +1550,158 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		return
 	}
 
-	// Enqueue deployment admission checks if have the plugin enabled. They will
-	// be consulted later in fetchAndDeployInstance. This is just an optimization
-	// to do checks in parallel with fetching and installing.
-	if client.pluginAdmission != nil {
-		aMap.LoopOrdered(func(subdir string, actions *Actions) {
-			for _, p := range actions.ToInstall {
-				client.pluginAdmission.CheckAdmission(p)
-			}
-			for _, pair := range actions.ToUpdate {
-				client.pluginAdmission.CheckAdmission(pair.To)
-			}
-			for _, broken := range actions.ToRepair {
-				if broken.RepairPlan.NeedsReinstall {
-					client.pluginAdmission.CheckAdmission(broken.Pin)
-				}
-			}
+	hasErrors := false
+	reportActionErr := func(a pinAction, err error) {
+		logging.Errorf(ctx, "Failed to %s %s - %s (subdir %q)", a.action, a.pin, err, a.subdir)
+		aMap[a.subdir].Errors = append(aMap[a.subdir].Errors, ActionError{
+			Action: a.action,
+			Pin:    a.pin,
+			Error:  JSONError{err},
 		})
+		hasErrors = true
 	}
 
-	hasErrors := false
+	// Need a cache to fetch packages into.
+	cache, err := client.instanceCache(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer cache.Close(ctx)
 
-	// Remove all unneeded stuff.
-	aMap.LoopOrdered(func(subdir string, actions *Actions) {
-		for _, pin := range actions.ToRemove {
-			err = client.deployer.RemoveDeployed(ctx, subdir, pin.PackageName)
-			if err != nil {
-				logging.Errorf(ctx, "Failed to remove %s - %s (subdir %q)", pin.PackageName, err, subdir)
-				hasErrors = true
-				actions.Errors = append(actions.Errors, ActionError{
-					Action: "remove",
-					Pin:    pin,
-					Error:  JSONError{err},
-				})
-			}
-		}
-	})
+	// Figure out what pins we need to fetch and what to do with them once
+	// they are fetched. Collect a list of packages to delete and "relink".
+	perPinActions := aMap.perPinActions()
 
-	// Install all new and updated stuff, repair broken stuff. Install in the
-	// order specified by 'pins'. Order matters if multiple packages install same
-	// file.
-	aMap.LoopOrdered(func(subdir string, actions *Actions) {
-		toDeploy := make(map[string]bool, len(actions.ToInstall)+len(actions.ToUpdate))
-		toRepair := make(map[string]*RepairPlan, len(actions.ToRepair))
-		for _, p := range actions.ToInstall {
-			toDeploy[p.PackageName] = true
+	// Enqueue deployment admission checks if have the plugin enabled. They will
+	// be consulted later before unzipping fetched instances. This is just an
+	// optimization to do checks in parallel with fetching and installing.
+	if client.pluginAdmission != nil {
+		defer client.doBatchAwareOp(ctx, batchAwareOpClearAdmissionCache)
+		for _, a := range perPinActions.updates {
+			client.pluginAdmission.CheckAdmission(a.pin)
 		}
-		for _, pair := range actions.ToUpdate {
-			toDeploy[pair.To.PackageName] = true
+	}
+
+	// The state carried through the fetch task queue. Describes what needs to be
+	// done once a package is fetched.
+	type pinActionsState struct {
+		pin      common.Pin  // the pin we are fetching
+		updates  []pinAction // what to do with it when we get it
+		attempts int         // incremented on a retry after detecting a corruption
+	}
+
+	// Start fetching all packages we will need.
+	reqs := make([]*internal.InstanceRequest, len(perPinActions.updates))
+	for i, a := range perPinActions.updates {
+		reqs[i] = &internal.InstanceRequest{
+			Context: ctx,
+			Pin:     a.pin,
+			Open:    true, // want pkg.Instance, not just pkg.Source
+			State: pinActionsState{
+				pin:     a.pin,
+				updates: a.updates,
+			},
 		}
-		for _, broken := range actions.ToRepair {
-			if broken.RepairPlan.NeedsReinstall {
-				toDeploy[broken.Pin.PackageName] = true
-			} else {
-				plan := broken.RepairPlan
-				toRepair[broken.Pin.PackageName] = &plan
+	}
+	cache.RequestInstances(reqs)
+
+	// While packages are being fetched, do maintenance operations that do not
+	// require package data (removals and restoration of broken symlinks).
+	for _, a := range perPinActions.maintenance {
+		var err error
+		switch a.action {
+		case ActionRemove:
+			err = client.deployer.RemoveDeployed(ctx, a.subdir, a.pin.PackageName)
+		case ActionRelink:
+			err = client.deployer.RepairDeployed(ctx, a.subdir, a.pin, maxThreads, deployer.RepairParams{
+				ToRelink: a.repairPlan.ToRelink,
+			})
+		default:
+			// The invariant of perPinActions().
+			panic(fmt.Sprintf("impossible maintenance action %s", a.action))
+		}
+		if err != nil {
+			reportActionErr(a, err)
+		}
+	}
+
+	// As soon as some package data is fetched, perform all installations, updates
+	// and repairs that needed it.
+	for cache.HasPendingFetches() {
+		res := cache.WaitInstance()
+		state := res.State.(pinActionsState)
+		deployErr := res.Err
+
+		// Check if we are even allowed to install this package. Note that
+		// CheckAdmission results are cached internally and it is fine to call
+		// it multiple times with the same pin (which may happen if we are
+		// refetching a corrupted package).
+		if deployErr == nil && client.pluginAdmission != nil {
+			admErr := client.pluginAdmission.CheckAdmission(state.pin).Wait(ctx)
+			if admErr != nil {
+				deployErr = errors.Annotate(admErr, "not admitted for deployment").Err()
 			}
 		}
-		for _, pin := range allPins[subdir] {
-			var action ActionKind
-			var err error
-			if toDeploy[pin.PackageName] {
-				action = ActionInstall
-				err = client.fetchAndDeployInstance(ctx, subdir, pin, maxThreads)
-			} else if plan := toRepair[pin.PackageName]; plan != nil {
-				action = ActionRepair
-				err = client.repairDeployed(ctx, subdir, pin, plan, maxThreads)
-			}
-			if err != nil {
-				logging.Errorf(ctx, "Failed to %s %s - %s", action, pin, err)
-				hasErrors = true
-				actions.Errors = append(actions.Errors, ActionError{
-					Action: action,
-					Pin:    pin,
-					Error:  JSONError{err},
+
+		// Keep installing stuff as long as it keeps working (no errors).
+		actionIdx := 0
+		for deployErr == nil && actionIdx < len(state.updates) {
+			switch a := state.updates[actionIdx]; a.action {
+			case ActionInstall:
+				_, deployErr = client.deployer.DeployInstance(ctx, a.subdir, res.Instance, maxThreads)
+			case ActionRepair:
+				deployErr = client.deployer.RepairDeployed(ctx, a.subdir, state.pin, maxThreads, deployer.RepairParams{
+					Instance:   res.Instance,
+					ToRedeploy: a.repairPlan.ToRedeploy,
+					ToRelink:   a.repairPlan.ToRelink,
 				})
+			default:
+				// The invariant of perPinActions().
+				panic(fmt.Sprintf("impossible update action %s", a.action))
+			}
+			if deployErr == nil {
+				actionIdx++
 			}
 		}
-	})
+
+		// Close the instance, marking it as corrupted if necessary. Note it may be
+		// nil if res.Err above was non-nil.
+		corruption := reader.IsCorruptionError(deployErr)
+		if res.Instance != nil {
+			res.Instance.Close(ctx, corruption)
+		}
+
+		// If we've got a corrupted package, ask the cache to refetch it. We'll
+		// resume operations from where we left (redoing the last failed one again).
+		// Note that the cache should have removed the bad package from its
+		// internals as soon as we closed it as corrupted above.
+		//
+		// Do it no more than once.
+		if corruption && state.attempts < 1 {
+			logging.Warningf(ctx, "cipd: refetching %s after failing to unpack it: %s", state.pin, deployErr)
+			cache.RequestInstances([]*internal.InstanceRequest{
+				{
+					Context: ctx,
+					Pin:     state.pin,
+					Open:    true,
+					State: pinActionsState{
+						pin:      state.pin,
+						updates:  state.updates[actionIdx:],
+						attempts: state.attempts + 1,
+					},
+				},
+			})
+			continue
+		}
+
+		// If we are here, we are done with this pin (either installed or gave up).
+		// Mark all unfinished actions as failed if necessary.
+		if deployErr != nil {
+			for ; actionIdx < len(state.updates); actionIdx++ {
+				reportActionErr(state.updates[actionIdx], err)
+			}
+		}
+	}
 
 	// Opportunistically cleanup the trash left from previous installs.
 	client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
@@ -1787,24 +1775,6 @@ func (client *clientImpl) makeRepairChecker(ctx context.Context, paranoia Parano
 			return nil // the package needs no repairs
 		}
 	}
-}
-
-func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin common.Pin, plan *RepairPlan, maxThreads int) error {
-	// Fetch the package from the backend (or the cache) if some files are really
-	// missing. Skip this if we only need to restore symlinks.
-	if len(plan.ToRedeploy) != 0 {
-		logging.Infof(ctx, "Getting %q to extract %d missing file(s) from it", pin.PackageName, len(plan.ToRedeploy))
-		return client.fetchAndDo(ctx, pin, func(instance pkg.Instance) error {
-			return client.deployer.RepairDeployed(ctx, subdir, pin, maxThreads, deployer.RepairParams{
-				Instance:   instance,
-				ToRedeploy: plan.ToRedeploy,
-				ToRelink:   plan.ToRelink,
-			})
-		})
-	}
-	return client.deployer.RepairDeployed(ctx, subdir, pin, maxThreads, deployer.RepairParams{
-		ToRelink: plan.ToRelink,
-	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////

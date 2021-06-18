@@ -3308,6 +3308,11 @@ func GetApplication(params Parameters) *cli.Application {
 				ShortDesc: "Number of worker threads for extracting packages. " +
 					"If 0, uses CPU count. (-max-threads, if given and not 1, takes precedence.)",
 			},
+			cipd.EnvParallelDownloads: {
+				Advanced: true,
+				ShortDesc: "How many packages are allowed to be fetched concurrently. " +
+					"If <=1, packages will be fetched sequentially. Default is 0 for now.",
+			},
 			cipd.EnvAdmissionPlugin: {
 				Advanced:  true,
 				ShortDesc: "JSON-encoded list with a command line of a deployment admission plugin.",

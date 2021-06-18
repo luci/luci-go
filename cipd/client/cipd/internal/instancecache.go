@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -65,19 +66,61 @@ const (
 )
 
 // Fetcher knows how to populate a file in the cache given its pin.
+//
+// It must check the hash of the downloaded package matches the pin.
 type Fetcher func(ctx context.Context, pin common.Pin, f io.WriteSeeker) error
+
+// InstanceRequest is passed to RequestInstances.
+type InstanceRequest struct {
+	Context context.Context // carries the cancellation signal
+	Pin     common.Pin      // identifies the instance to fetch
+	Open    bool            // true to return it as a pkg.Instance as opposed to pkg.Source
+	State   interface{}     // passed to the InstanceResult as is
+}
+
+// InstanceResult is a result of a completed InstanceRequest.
+type InstanceResult struct {
+	Err      error        // non-nil if failed to obtain the instance
+	Source   pkg.Source   // set only if Open was false, must be closed by the caller
+	Instance pkg.Instance // set only if Open was true, must be closed by the caller
+	State    interface{}  // copied from the InstanceRequest
+}
 
 // InstanceCache is a file-system-based, thread-safe, LRU cache of instances.
 //
-// Does not validate instance hashes; it is caller's responsibility.
+// It also knowns how to populate the cache using the given Fetcher callback,
+// fetching multiple instances concurrently.
+//
+// Does not validate instance hashes; it is the responsibility of the supplied
+// Fetcher callback.
 type InstanceCache struct {
-	fs        fs.FileSystem
-	tmp       bool
-	fetcher   Fetcher
+	// FS is a root of the cache directory.
+	FS fs.FileSystem
+
+	// Tmp, if true, indicates this is a temporary instance cache.
+	//
+	// It is a cache of downloaded, but not yet installed packages. It has a
+	// property that cached files self-destruct after being closed and the entire
+	// cache directory is removed in Close().
+	Tmp bool
+
+	// Fetcher is used to fetch files into the cache on cache misses.
+	//
+	// It must check the hash of the downloaded package matches the pin.
+	Fetcher Fetcher
+
+	// ParallelDownloads limits how many parallel fetches can happen at once.
+	//
+	// Currently ignored.
+	ParallelDownloads int
+
 	stateLock sync.Mutex // synchronizes access to the state file.
 
 	allocsLock sync.Mutex
 	allocs     map[string]*Allocation // keyed by instance ID
+
+	fetchQueue   chan func() *InstanceResult
+	fetchPending int32
 
 	// Defaults to instanceCacheMaxSize, mocked in tests.
 	maxSize int
@@ -221,7 +264,7 @@ func (a *Allocation) releaseAndClose(ctx context.Context, corrupt bool) error {
 		err = nil
 	}
 
-	if corrupt || a.cache.tmp {
+	if corrupt || a.cache.Tmp {
 		if err2 := a.cache.delete(ctx, a.pin); err2 != nil {
 			logging.Warningf(ctx, "cipd: failed to delete%s cache file: %s", corruptText, err2)
 			if err == nil {
@@ -254,26 +297,90 @@ func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
 	return os.ErrClosed
 }
 
-// NewInstanceCache initializes InstanceCache.
+// Launch prepares the cache for fetching packages in background.
 //
-// `fs` will be the root of the cache. `fetcher` will be used to fetch files
-// into the cache on cache misses. If `tmp` is true, this is a temporary
-// instance cache: a cache of downloaded, but not yet installed packages. It has
-// a property that cached files self-destruct after being closed.
-func NewInstanceCache(fs fs.FileSystem, tmp bool, fetcher Fetcher) *InstanceCache {
-	return &InstanceCache{
-		fs:      fs,
-		fetcher: fetcher,
-		tmp:     tmp,
-		allocs:  map[string]*Allocation{},
-		maxSize: instanceCacheMaxSize,
-		maxAge:  instanceCacheMaxAge,
+// Must be called before RequestInstance.
+func (c *InstanceCache) Launch(ctx context.Context) {
+	tmp := ""
+	if c.Tmp {
+		tmp = " temporary"
+	}
+	logging.Infof(ctx, "cipd: using%s instance cache at %q", tmp, c.FS.Root())
+
+	c.fetchQueue = make(chan func() *InstanceResult, 100000)
+}
+
+// Close shuts down goroutines started in Launch and cleans up temp files.
+func (c *InstanceCache) Close(ctx context.Context) {
+	close(c.fetchQueue)
+
+	if c.Tmp {
+		if err := os.RemoveAll(c.FS.Root()); err != nil {
+			logging.Warningf(ctx, "cipd: leaking temp directory %s: %s", c.FS.Root(), err)
+		}
 	}
 }
 
-// Root returns an absolute path to the cache root directory.
-func (c *InstanceCache) Root() string {
-	return c.fs.Root()
+// RequestInstances enqueues requests to fetch instances into the cache.
+//
+// The results can be waited upon using WaitInstance() method. Each enqueued
+// InstanceRequest will get an exactly one InstanceResponse (perhaps with an
+// error inside). The order of responses may not match order of requests.
+func (c *InstanceCache) RequestInstances(reqs []*InstanceRequest) {
+	// TODO(vadimsh): Rewrite not to use Allocation, use a worker pool to control
+	// concurrency, etc. This is just a MVP implementation of the interface to
+	// make sure cipd.Client is comfortable using it.
+
+	atomic.AddInt32(&c.fetchPending, int32(len(reqs)))
+
+	for _, req := range reqs {
+		ctx := req.Context
+		pin := req.Pin
+		open := req.Open
+		state := req.State
+
+		c.fetchQueue <- func() *InstanceResult {
+			res := &InstanceResult{State: state}
+
+			alloc := c.Allocate(ctx, pin)
+			defer alloc.Release(ctx)
+
+			switch src, err := alloc.Realize(ctx); {
+			case err != nil:
+				res.Err = err
+			case !open:
+				res.Source = src
+			default:
+				instance, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
+					VerificationMode: reader.SkipHashVerification, // the cache did it already
+					InstanceID:       pin.InstanceID,
+				})
+				if err != nil {
+					src.Close(ctx, reader.IsCorruptionError(err))
+					res.Err = err
+				} else {
+					res.Instance = instance
+				}
+			}
+
+			return res
+		}
+	}
+}
+
+// HasPendingFetches is true if there's some uncompleted InstanceRequest whose
+// completion notification will (eventually) unblock WaitInstance.
+func (c *InstanceCache) HasPendingFetches() bool {
+	return atomic.LoadInt32(&c.fetchPending) > 0
+}
+
+// WaitInstance blocks until some InstanceRequest is available.
+func (c *InstanceCache) WaitInstance() *InstanceResult {
+	// TODO(vadimsh): This is really just a serial execution for now to reproduce
+	// the previous non-parallel behavior.
+	r := (<-c.fetchQueue)()
+	atomic.AddInt32(&c.fetchPending, -1)
+	return r
 }
 
 // Allocate returns a reference to a current or future cached instance.
@@ -288,6 +395,10 @@ func (c *InstanceCache) Allocate(ctx context.Context, pin common.Pin) *Allocatio
 	if alloc != nil {
 		alloc.addRef()
 		return alloc
+	}
+
+	if c.allocs == nil {
+		c.allocs = make(map[string]*Allocation, 1)
 	}
 
 	alloc = &Allocation{
@@ -316,7 +427,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 		return nil, err
 	}
 
-	path, err := c.fs.RootRelToAbs(pin.InstanceID)
+	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid instance ID %q", pin.InstanceID)
 	}
@@ -326,7 +437,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 		attempt++
 
 		// Try to see if we have the file in the cache already.
-		switch file, err := c.fs.OpenFile(path); {
+		switch file, err := c.FS.OpenFile(path); {
 		case os.IsNotExist(err):
 			// No such file in the cache. This is fine.
 		case err != nil:
@@ -339,8 +450,8 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 		}
 
 		// No such cached instance, download it.
-		err := c.fs.EnsureFile(ctx, path, func(f *os.File) error {
-			return c.fetcher(ctx, pin, f)
+		err := c.FS.EnsureFile(ctx, path, func(f *os.File) error {
+			return c.Fetcher(ctx, pin, f)
 		})
 		if err != nil {
 			return nil, err
@@ -355,7 +466,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 		// files with open handles on Windows is moot. So instead we close it,
 		// rename the file (this happens inside EnsureFile), and reopen it again
 		// under the new name.
-		file, err := c.fs.OpenFile(path)
+		file, err := c.FS.OpenFile(path)
 		if err != nil {
 			logging.Errorf(ctx, "cipd: %s is unexpectedly missing from the cache: %s", pin, err)
 			if attempt == 1 {
@@ -394,12 +505,12 @@ func (c *InstanceCache) touch(ctx context.Context, instanceID string, gc bool) {
 
 // delete deletes an instance from the cache if it was there.
 func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
-	path, err := c.fs.RootRelToAbs(pin.InstanceID)
+	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
 		return fmt.Errorf("invalid instance ID %q", pin.InstanceID)
 	}
 
-	if err := c.fs.EnsureFileGone(ctx, path); err != nil {
+	if err := c.FS.EnsureFileGone(ctx, path); err != nil {
 		return err
 	}
 
@@ -451,11 +562,20 @@ func (h *garbageHeap) Pop() interface{} {
 //   2. If the number of instances in the state is greater than maximum, oldest
 //      instances are removed.
 func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, now time.Time) {
+	maxAge := c.maxAge
+	if maxAge == 0 {
+		maxAge = instanceCacheMaxAge
+	}
+	maxSize := c.maxSize
+	if maxSize == 0 {
+		maxSize = instanceCacheMaxSize
+	}
+
 	// Kick out entries older than some threshold first.
 	garbage := stringset.New(0)
 	for instanceID, e := range state.Entries {
 		age := now.Sub(e.LastAccess.AsTime())
-		if age > c.maxAge {
+		if age > maxAge {
 			garbage.Add(instanceID)
 			logging.Infof(ctx, "cipd: purging cached instance %s (age %s)", instanceID, age)
 		}
@@ -463,7 +583,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 
 	// If still have too many entries, kick out oldest. Ignore entries already
 	// designated as garbage.
-	moreGarbage := len(state.Entries) - garbage.Len() - c.maxSize
+	moreGarbage := len(state.Entries) - garbage.Len() - maxSize
 	if moreGarbage > 0 {
 		logging.Infof(ctx, "cipd: still need to purge %d cached instance(s)", moreGarbage)
 		g := make(garbageHeap, 0, len(state.Entries)-garbage.Len())
@@ -484,18 +604,18 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 	}
 
 	garbage.Iter(func(instanceID string) bool {
-		path, err := c.fs.RootRelToAbs(instanceID)
+		path, err := c.FS.RootRelToAbs(instanceID)
 		if err != nil {
 			panic("impossible")
 		}
 		// EnsureFileGone logs errors already.
-		if c.fs.EnsureFileGone(ctx, path) == nil {
+		if c.FS.EnsureFileGone(ctx, path) == nil {
 			delete(state.Entries, instanceID)
 		}
 		return true
 	})
 
-	c.fs.CleanupTrash(ctx)
+	c.FS.CleanupTrash(ctx)
 }
 
 // readState loads cache state from the state file.
@@ -504,7 +624,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 // Newly discovered files are considered last accessed at zero time.
 // If synchronization fails, then the state is considered empty.
 func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceCache, now time.Time) {
-	statePath, err := c.fs.RootRelToAbs(instanceCacheStateFilename)
+	statePath, err := c.FS.RootRelToAbs(instanceCacheStateFilename)
 	if err != nil {
 		panic("impossible")
 	}
@@ -550,7 +670,7 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 // Preserves lastAccess of existing instances. Newly discovered files are
 // considered last accessed now.
 func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceCache, now time.Time) error {
-	root, err := os.Open(c.fs.Root())
+	root, err := os.Open(c.FS.Root())
 	switch {
 
 	case os.IsNotExist(err):
@@ -600,18 +720,18 @@ func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceC
 		return err
 	}
 
-	statePath, err := c.fs.RootRelToAbs(instanceCacheStateFilename)
+	statePath, err := c.FS.RootRelToAbs(instanceCacheStateFilename)
 	if err != nil {
 		panic("impossible")
 	}
 
-	return fs.EnsureFile(ctx, c.fs, statePath, bytes.NewReader(stateBytes))
+	return fs.EnsureFile(ctx, c.FS, statePath, bytes.NewReader(stateBytes))
 }
 
 // withState loads cache state from the state file, calls f and saves it back.
 // See also readState.
 func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache) (save bool)) {
-	if c.tmp {
+	if c.Tmp {
 		return // no need to keep state.db for temp caches
 	}
 
