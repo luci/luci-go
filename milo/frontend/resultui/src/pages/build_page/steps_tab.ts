@@ -129,7 +129,7 @@ export class StepsTabElement extends MiloBaseElement {
 
       mwc-button {
         margin-top: 1px;
-        width: 145px;
+        width: 155px;
       }
 
       .config-section {

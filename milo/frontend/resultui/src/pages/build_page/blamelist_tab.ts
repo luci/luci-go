@@ -258,6 +258,7 @@ export class BlamelistTabElement extends MiloBaseElement {
 
       mwc-button {
         margin-top: 1px;
+        width: 155px;
       }
 
       #repo-selector {
