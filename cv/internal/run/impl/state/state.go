@@ -22,9 +22,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
+	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // RunState represents the current state of a Run.

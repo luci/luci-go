@@ -20,11 +20,11 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-	"go.chromium.org/luci/cv/internal/tree"
 )
 
 // Result is the result of handling the events.

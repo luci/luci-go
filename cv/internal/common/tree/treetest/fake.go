@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
-	"go.chromium.org/luci/cv/internal/tree"
+	"go.chromium.org/luci/cv/internal/common/tree"
 )
 
 // Fake simulates Tree status app in test.

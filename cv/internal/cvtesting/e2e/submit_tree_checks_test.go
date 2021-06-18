@@ -24,9 +24,9 @@ import (
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/common/tree"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/tree"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

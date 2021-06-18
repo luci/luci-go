@@ -48,11 +48,11 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/bq"
+	"go.chromium.org/luci/cv/internal/common/tree"
+	"go.chromium.org/luci/cv/internal/common/tree/treetest"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/tree"
-	"go.chromium.org/luci/cv/internal/tree/treetest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

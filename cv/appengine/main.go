@@ -38,6 +38,7 @@ import (
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/configcron"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -47,7 +48,6 @@ import (
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
-	"go.chromium.org/luci/cv/internal/tree"
 )
 
 func main() {
