@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0ee79d50_1e158f7f",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T22:11:55Z",
+      "side": 1,
+      "message": "tbh, i think cvbq is fine, at least I like it more than \"commonbq\".",
+      "parentUuid": "07f0e404_3da0815f",
+      "revId": "519a80e451a96f9654a3733a0b76d05f8fd53520",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9b56ecfd_6f1286e9",
         "filename": "cv/internal/run/bq/exporter.go",
         "patchSetId": 1
