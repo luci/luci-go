@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ac9e1d6_efa1dfc8",
+        "filename": "cv/internal/configs/prjcfg/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-18T21:45:43Z",
+      "side": 1,
+      "message": "prjcfg",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 17
+      },
+      "revId": "a932ac0cf685cddfe1e2831e66d09ce072d036c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
