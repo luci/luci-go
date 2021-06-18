@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81ece22f_427623fa",
+        "filename": "cipd/client/cli/friendly.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-18T15:22:53Z",
+      "side": 1,
+      "message": "should this just set Paranoid mode?",
+      "revId": "f8ce7314a52b2b21ddfc5984d45295dcf12e60e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
