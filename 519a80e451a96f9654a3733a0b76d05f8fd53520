@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ee12d26_4190dd61",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T22:14:25Z",
+      "side": 1,
+      "message": "discussed in IM, Quinten doesn\u0027t insist, so i land as is 😄",
+      "parentUuid": "0ee79d50_1e158f7f",
+      "revId": "519a80e451a96f9654a3733a0b76d05f8fd53520",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9b56ecfd_6f1286e9",
@@ -84,6 +102,24 @@
       "writtenOn": "2021-06-18T22:03:48Z",
       "side": 1,
       "message": "Same here, could be commonbq or something",
+      "revId": "519a80e451a96f9654a3733a0b76d05f8fd53520",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7b8aa63_437e08de",
+        "filename": "cv/internal/run/bq/exporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T22:14:25Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "9b56ecfd_6f1286e9",
       "revId": "519a80e451a96f9654a3733a0b76d05f8fd53520",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
