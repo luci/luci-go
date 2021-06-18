@@ -16,6 +16,23 @@
       "message": "PTAL\n\nExample: https://paste.googleplex.com/5965965083803648",
       "revId": "b8fa34347a7c646b41abc5520fe6734371c2f732",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb3e62cf_90fdcb25",
+        "filename": "resultdb/cli/cmd_query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-18T21:16:06Z",
+      "side": 1,
+      "message": "hmm, abstraction level mismatch: `rdb query` is designed to be test-result-agnostic (although it has test-result-specific flags, but their names are clearly test-result-specific). \n\nhere the flag name looks test-result-agnostic, but it is actually test-result-specific.\n\nFor example, `rdb query` also prints invocations, but read-mask doesn\u0027t apply to them.\n\nI don\u0027t like long flag names, but I am out of better ideas. How about \"tr-read-mask\"?",
+      "revId": "b8fa34347a7c646b41abc5520fe6734371c2f732",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
