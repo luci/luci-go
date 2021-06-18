@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 const (
@@ -46,13 +46,13 @@ const (
 
 // partitionConfig partitions LUCI Project config into minimal number of
 // SubPollers for efficient querying.
-func partitionConfig(cgs []*config.ConfigGroup) []*SubPoller {
+func partitionConfig(cgs []*prjcfg.ConfigGroup) []*SubPoller {
 	// 1 LUCI project typically watches 1-2 GoB hosts.
 	hosts := make([]string, 0, 2)
 	repos := make(map[string]stringset.Set, 2)
 	for _, cg := range cgs {
 		for _, g := range cg.Content.GetGerrit() {
-			host := config.GerritHost(g)
+			host := prjcfg.GerritHost(g)
 			if repos[host] == nil {
 				hosts = append(hosts, host)
 				repos[host] = stringset.New(len(g.GetProjects()))

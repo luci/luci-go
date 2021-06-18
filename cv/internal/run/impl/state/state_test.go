@@ -22,7 +22,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tree"
@@ -57,7 +57,7 @@ func TestCheckTree(t *testing.T) {
 				},
 			},
 		})
-		meta, err := config.GetLatestMeta(ctx, lProject)
+		meta, err := prjcfg.GetLatestMeta(ctx, lProject)
 		So(err, ShouldBeNil)
 		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
 		rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
@@ -99,7 +99,7 @@ func TestCheckTree(t *testing.T) {
 					// No Tree defined
 				},
 			})
-			meta, err := config.GetLatestMeta(ctx, lProject)
+			meta, err := prjcfg.GetLatestMeta(ctx, lProject)
 			So(err, ShouldBeNil)
 			So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
 			rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]

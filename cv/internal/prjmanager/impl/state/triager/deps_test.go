@@ -27,7 +27,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -106,7 +106,7 @@ func TestDepsTriage(t *testing.T) {
 
 		sup := &simplePMState{
 			pb: &prjpb.PState{},
-			cgs: []*config.ConfigGroup{
+			cgs: []*prjcfg.ConfigGroup{
 				{ID: "hash/singular", Content: &cfgpb.ConfigGroup{}},
 				{ID: "hash/combinable", Content: &cfgpb.ConfigGroup{CombineCls: &cfgpb.CombineCLs{}}},
 				{ID: "hash/another", Content: &cfgpb.ConfigGroup{}},

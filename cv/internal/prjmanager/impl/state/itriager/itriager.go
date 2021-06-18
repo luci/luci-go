@@ -20,7 +20,7 @@ package itriager
 import (
 	"context"
 
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
@@ -90,5 +90,5 @@ type PMState interface {
 
 	// ConfigGroup returns a ConfigGroup for a given index of the current
 	// (from the view point of PM) LUCI project config version.
-	ConfigGroup(index int32) *config.ConfigGroup
+	ConfigGroup(index int32) *prjcfg.ConfigGroup
 }

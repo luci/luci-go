@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 )
 
@@ -82,10 +82,10 @@ func Update(ctx context.Context, project string) error {
 		return errors.Annotate(err, "failed to get MapPart entities for project %q", project).Tag(transient.Tag).Err()
 	}
 
-	switch meta, err := config.GetLatestMeta(ctx, project); {
+	switch meta, err := prjcfg.GetLatestMeta(ctx, project); {
 	case err != nil:
 		return err
-	case meta.Status != config.StatusEnabled:
+	case meta.Status != prjcfg.StatusEnabled:
 		// The project was disabled or removed, delete everything.
 		toDelete = mps
 	default:
@@ -115,7 +115,7 @@ func Update(ctx context.Context, project string) error {
 //
 // It computes which of the existing MapPart entities should be
 // removed, and which MapPart entities should be put (added or updated).
-func listUpdates(ctx context.Context, mps []*mapPart, latestConfigGroups []*config.ConfigGroup,
+func listUpdates(ctx context.Context, mps []*mapPart, latestConfigGroups []*prjcfg.ConfigGroup,
 	latestHash, project string) (toPut, toDelete []*mapPart) {
 	// Make a map of host/repo to config hashes for currently
 	// existing MapPart entities; used below.
@@ -161,11 +161,11 @@ func listUpdates(ctx context.Context, mps []*mapPart, latestConfigGroups []*conf
 // internalGroups converts config.ConfigGroups to cfgmatcher.Groups.
 //
 // It returns a map of host/repo to cfgmatcher.Groups.
-func internalGroups(configGroups []*config.ConfigGroup) map[string]*cfgmatcher.Groups {
+func internalGroups(configGroups []*prjcfg.ConfigGroup) map[string]*cfgmatcher.Groups {
 	ret := make(map[string]*cfgmatcher.Groups)
 	for _, g := range configGroups {
 		for _, gerrit := range g.Content.Gerrit {
-			host := config.GerritHost(gerrit)
+			host := prjcfg.GerritHost(gerrit)
 			for _, p := range gerrit.Projects {
 				hostRepo := host + "/" + p.Name
 				group := cfgmatcher.MakeGroup(g, p)

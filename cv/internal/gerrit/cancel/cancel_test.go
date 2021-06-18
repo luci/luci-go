@@ -31,7 +31,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -214,7 +214,7 @@ func TestCancel(t *testing.T) {
 			const uLabel = "Ultra-Quick-Label"
 			const qLabel = "Quick-Label"
 			input.Trigger.AdditionalLabel = uLabel
-			input.ConfigGroups = []*config.ConfigGroup{
+			input.ConfigGroups = []*prjcfg.ConfigGroup{
 				{
 					Content: &cfgpb.ConfigGroup{
 						AdditionalModes: []*cfgpb.Mode{

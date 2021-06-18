@@ -29,7 +29,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 	"go.chromium.org/luci/cv/internal/run"
@@ -263,7 +263,7 @@ func (a *runStage) postponeExpandingExistingRunScope(ctx context.Context, combo 
 	return nil, time.Time{}, nil
 }
 
-func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*runcreator.Creator, error) {
+func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.ConfigGroup) (*runcreator.Creator, error) {
 	latestIndex := -1
 	cls := make([]*changelist.CL, len(combo.all))
 	for i, info := range combo.all {

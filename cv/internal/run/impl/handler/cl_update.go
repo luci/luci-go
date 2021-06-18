@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -74,7 +74,7 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 	return &Result{State: rs}, nil
 }
 
-func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *config.ConfigGroup) bool {
+func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *prjcfg.ConfigGroup) bool {
 	clString := fmt.Sprintf("CL %d %s", cl.ID, cl.ExternalID)
 	switch kind, reason := cl.AccessKindWithReason(ctx, cg.ProjectString()); kind {
 	case changelist.AccessDenied:

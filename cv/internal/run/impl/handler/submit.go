@@ -38,7 +38,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -348,7 +348,7 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 	return nil
 }
 
-func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted, cg *config.ConfigGroup) error {
+func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
 	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
 	if err != nil {
