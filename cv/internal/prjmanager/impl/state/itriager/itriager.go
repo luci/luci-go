@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
+	"go.chromium.org/luci/cv/internal/run/runcreator"
 )
 
 // Triage triages a component deciding what and when has to be done.

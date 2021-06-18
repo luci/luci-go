@@ -38,8 +38,8 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runcreator"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

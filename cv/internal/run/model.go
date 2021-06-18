@@ -35,6 +35,8 @@ const RunCLKind = "RunCL"
 
 // Run is an entity that contains high-level information about a CV Run.
 //
+// In production, Run entities are created only by the "runcreator" package.
+//
 // Detailed information about CLs and Tryjobs are stored in its child entities.
 type Run struct {
 	// $kind must match RunKind.
