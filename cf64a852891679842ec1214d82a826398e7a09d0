@@ -54,6 +54,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "69377a9e_1e4fe9f6",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T21:49:39Z",
+      "side": 1,
+      "message": "i take it back. one can\u0027t have repeated inside oneoff, one has to wrap it with an extra message{} 😞 Maybe do it now while backwards-incompatible change is fine?",
+      "parentUuid": "5b307187_09a8bfea",
+      "revId": "cf64a852891679842ec1214d82a826398e7a09d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f3dab9f5_e3dd40db",
         "filename": "cv/internal/run/storage.proto",
         "patchSetId": 2
