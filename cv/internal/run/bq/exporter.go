@@ -21,8 +21,8 @@ import (
 
 	"go.chromium.org/luci/server/tq"
 
-	cvbq "go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
+	cvbq "go.chromium.org/luci/cv/internal/common/bq"
 )
 
 const exportRunToBQTaskClass = "bq-export"

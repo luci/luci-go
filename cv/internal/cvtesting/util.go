@@ -47,7 +47,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
-	"go.chromium.org/luci/cv/internal/bq"
+	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
