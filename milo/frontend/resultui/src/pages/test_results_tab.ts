@@ -160,6 +160,11 @@ export class TestResultsTabElement extends MiloBaseElement {
   static styles = [
     commonStyle,
     css`
+      :host {
+        /* Required to make 'position: sticky' work in Safari. */
+        display: block;
+      }
+
       #header {
         display: grid;
         grid-template-columns: auto auto 1fr auto;
@@ -177,7 +182,7 @@ export class TestResultsTabElement extends MiloBaseElement {
       }
       mwc-button {
         margin-top: 1px;
-        width: 145px;
+        width: var(--expand-button-width);
       }
 
       .filters-container {

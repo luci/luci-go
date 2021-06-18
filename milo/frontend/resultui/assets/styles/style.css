@@ -53,4 +53,6 @@ html {
   --light-active-color: #d9edfc;
   --delete-color: var(--failure-color);
   --mdc-theme-primary: var(--active-color);
+
+  --expand-button-width: 155px;
 }
