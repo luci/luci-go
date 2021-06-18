@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tree"
 )
@@ -37,7 +37,7 @@ type RunState struct {
 	// transition completes.
 	SubmissionScheduled bool
 	// cg is the cached config group used by this Run.
-	cg *config.ConfigGroup
+	cg *prjcfg.ConfigGroup
 }
 
 // ShallowCopy returns a shallow copy of run state
@@ -57,13 +57,13 @@ func (rs *RunState) ShallowCopy() *RunState {
 // LoadConfigGroup loads the ConfigGroup used by this Run.
 //
 // Result is cached inside the state.
-func (rs *RunState) LoadConfigGroup(ctx context.Context) (*config.ConfigGroup, error) {
+func (rs *RunState) LoadConfigGroup(ctx context.Context) (*prjcfg.ConfigGroup, error) {
 	cgID := rs.Run.ConfigGroupID
 	if rs.cg != nil && cgID == rs.cg.ID {
 		return rs.cg, nil
 	}
 	var err error
-	rs.cg, err = config.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), cgID)
+	rs.cg, err = prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), cgID)
 	if err != nil {
 		return nil, err
 	}

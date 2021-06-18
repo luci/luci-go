@@ -20,7 +20,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -91,10 +91,10 @@ func TestPartitionConfig(t *testing.T) {
 		meta := ct.Cfg.MustExist(ctx, luciProject)
 		hash := meta.Hash()
 
-		ids := func(ids ...string) []config.ConfigGroupID {
-			ret := make([]config.ConfigGroupID, len(ids))
+		ids := func(ids ...string) []prjcfg.ConfigGroupID {
+			ret := make([]prjcfg.ConfigGroupID, len(ids))
 			for i, id := range ids {
-				ret[i] = config.MakeConfigGroupID(hash, id)
+				ret[i] = prjcfg.MakeConfigGroupID(hash, id)
 			}
 			return ret
 		}

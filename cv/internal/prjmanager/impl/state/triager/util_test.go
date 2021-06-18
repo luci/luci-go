@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -28,7 +28,7 @@ import (
 // package.
 type simplePMState struct {
 	pb  *prjpb.PState
-	cgs []*config.ConfigGroup
+	cgs []*prjcfg.ConfigGroup
 }
 
 func (s *simplePMState) PCL(clid int64) *prjpb.PCL {
@@ -49,7 +49,7 @@ func (s *simplePMState) PurgingCL(clid int64) *prjpb.PurgingCL {
 	return nil
 }
 
-func (s *simplePMState) ConfigGroup(index int32) *config.ConfigGroup {
+func (s *simplePMState) ConfigGroup(index int32) *prjcfg.ConfigGroup {
 	return s.cgs[index]
 }
 
