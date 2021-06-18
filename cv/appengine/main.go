@@ -19,6 +19,8 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"golang.org/x/sync/errgroup"
 
@@ -97,7 +99,10 @@ func main() {
 		// Register cron.
 		pcr := configcron.New(&tq.Default, pmNotifier)
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
-			return refreshConfig(ctx, pcr)
+			if err := refreshConfig(ctx, pcr); err != nil {
+				return err
+			}
+			return errors.New("crbug/1217773: temporary hack to force alert fires", transient.Tag)
 		})
 
 		// The service has no UI, so just redirect to the RPC Explorer.
