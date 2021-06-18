@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9693a536_708df065",
+        "filename": "milo/frontend/resultui/src/components/signin.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-06-18T01:39:25Z",
+      "side": 1,
+      "message": "Technically close won\u0027t free the listener, but I\u0027m not sure if the overall channel will be GC\u0027ed after close hence cleaning this up.  Perhaps you should also remove the event listener at the same time you close the channel?",
+      "range": {
+        "startLine": 44,
+        "startChar": 12,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "e5333c10d6d03b840d8e242fd31d033a9f9bdcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
