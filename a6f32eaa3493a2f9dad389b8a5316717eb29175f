@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b58c3143_e0bc1b2d",
+        "filename": "cv/internal/configs/srvcfg/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-18T21:45:33Z",
+      "side": 1,
+      "message": "srvcfg",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 21
+      },
+      "revId": "a6f32eaa3493a2f9dad389b8a5316717eb29175f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
