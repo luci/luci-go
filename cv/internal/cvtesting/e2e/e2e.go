@@ -55,7 +55,7 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/prjmanager"
-	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
+	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
 	"go.chromium.org/luci/cv/internal/run"
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
