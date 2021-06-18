@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b62ee1ee_ef3306a3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-18T20:59:57Z",
+      "side": 1,
+      "message": "PTAL; I\u0027m removing the deprecated param before sending out the PSA.\n",
+      "revId": "dabfd6c2cb68b8a3c9d3c7c6403f0469014bbe34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
