@@ -27,6 +27,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
@@ -35,7 +36,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/cv/internal/servicecfg"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -71,7 +71,7 @@ func TestPurgeCL(t *testing.T) {
 				ProjectRegexp: []string{".+"},
 			},
 		}
-		So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
+		So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
 		cfg := makeConfig(gHost, gRepo)
 		ct.Cfg.Create(ctx, lProject, cfg)
@@ -180,7 +180,7 @@ func TestPurgeCL(t *testing.T) {
 
 			Convey("Doesn't purge if CV isn't managing Runs for the project", func() {
 				settings.UseCvRuns.ProjectRegexpExclude = []string{lProject}
-				So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
+				So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))

@@ -27,12 +27,12 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
-	"go.chromium.org/luci/cv/internal/servicecfg"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 )
 
 // IsCVInCharge returns true if CQDaemon is using *this* CV's runs.
 func IsCVInCharge(ctx context.Context, luciProject string) (bool, error) {
-	cfg, err := servicecfg.GetMigrationConfig(ctx)
+	cfg, err := srvcfg.GetMigrationConfig(ctx)
 	if err != nil {
 		return false, err
 	}

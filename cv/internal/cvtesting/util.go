@@ -49,8 +49,8 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/cv/internal/tree"
 	"go.chromium.org/luci/cv/internal/tree/treetest"
 
@@ -164,7 +164,7 @@ func (t *Test) EnableCVRunManagement(ctx context.Context, lProject string) {
 		t.DisableCVRunManagement(ctx)
 	}
 	t.migrationSettings.UseCvRuns.ProjectRegexp = append(t.migrationSettings.UseCvRuns.ProjectRegexp, lProject)
-	So(servicecfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
+	So(srvcfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
 }
 
 // DisableCVRunManagement disables CV Run management for all projects.
@@ -181,7 +181,7 @@ func (t *Test) DisableCVRunManagement(ctx context.Context) {
 		},
 		UseCvRuns: &migrationpb.Settings_UseCVRuns{},
 	}
-	So(servicecfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
+	So(srvcfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
 }
 
 func (t *Test) setMaxDuration() {
