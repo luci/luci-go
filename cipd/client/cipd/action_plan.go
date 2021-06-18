@@ -131,8 +131,8 @@ func (am ActionMap) Empty() bool {
 	return true
 }
 
-// LoopOrdered loops over the ActionMap in sorted order (by subdir).
-func (am ActionMap) LoopOrdered(cb func(subdir string, actions *Actions)) {
+// loopOrdered loops over the ActionMap in sorted order (by subdir).
+func (am ActionMap) loopOrdered(cb func(subdir string, actions *Actions)) {
 	subdirs := make(sort.StringSlice, 0, len(am))
 	for subdir := range am {
 		subdirs = append(subdirs, subdir)
@@ -259,7 +259,7 @@ func (am ActionMap) perPinActions() perPinActions {
 		})
 	}
 
-	am.LoopOrdered(func(subdir string, actions *Actions) {
+	am.loopOrdered(func(subdir string, actions *Actions) {
 		for _, pin := range actions.ToRemove {
 			addMaintenanceAction(ActionRemove, subdir, pin, RepairPlan{})
 		}

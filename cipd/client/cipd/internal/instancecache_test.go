@@ -65,20 +65,23 @@ func TestInstanceCache(t *testing.T) {
 		var fetchErr chan error
 		var fetchCalls int
 
-		cache := NewInstanceCache(fs, false, func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
-			fetchM.Lock()
-			fetchCalls++
-			fetchErrCh := fetchErr
-			fetchM.Unlock()
-			if fetchErrCh != nil {
-				if err := <-fetchErrCh; err != nil {
-					return err
+		cache := &InstanceCache{
+			FS: fs,
+			Fetcher: func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
+				fetchM.Lock()
+				fetchCalls++
+				fetchErrCh := fetchErr
+				fetchM.Unlock()
+				if fetchErrCh != nil {
+					if err := <-fetchErrCh; err != nil {
+						return err
+					}
 				}
-			}
-			_, err := w.Write([]byte(fakeData(pin)))
-			return err
-		})
-		cache.maxSize = testInstanceCacheMaxSize
+				_, err := w.Write([]byte(fakeData(pin)))
+				return err
+			},
+			maxSize: testInstanceCacheMaxSize,
+		}
 
 		access := func(cache *InstanceCache, pin common.Pin) (created bool, src pkg.Source) {
 			alloc := cache.Allocate(ctx, pin)
@@ -134,8 +137,7 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		Convey("Works in general", func() {
-			cache2 := NewInstanceCache(fs, false, nil)
-			cache2.maxSize = testInstanceCacheMaxSize
+			cache2 := &InstanceCache{FS: fs}
 
 			// Add new.
 			putNew(cache, pin(0))
@@ -245,10 +247,14 @@ func TestInstanceCache(t *testing.T) {
 		})
 
 		Convey("Temp cache removes files", func() {
-			cache := NewInstanceCache(fs, true, func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
-				_, err := w.Write([]byte("blah"))
-				return err
-			})
+			cache := &InstanceCache{
+				FS:  fs,
+				Tmp: true,
+				Fetcher: func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
+					_, err := w.Write([]byte("blah"))
+					return err
+				},
+			}
 
 			alloc1 := cache.Allocate(ctx, pin(0))
 			alloc2 := cache.Allocate(ctx, pin(0))
