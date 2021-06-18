@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7c9e33b_ffef6d32",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-06-18T01:42:26Z",
+      "side": 1,
+      "message": "Is there some kind of security review required for package update CLs?  I\u0027m not aware of the procedures here (only worked with Google3 frontend code before)",
+      "revId": "7664093f0a175c271f475431488689315b0832df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
