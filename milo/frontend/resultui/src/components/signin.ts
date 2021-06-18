@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html, LitElement, property } from 'lit-element';
 
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
@@ -38,15 +39,11 @@ export function changeUserState(signIn: boolean) {
   // sent the message.
   const timeout = window.setTimeout(() => channel.close(), 3600000);
 
-  channel.addEventListener(
-    'message',
-    () => {
-      window.clearTimeout(timeout);
-      channel.close();
-      target.close();
-    },
-    { once: true }
-  );
+  channel.addEventListener('message', () => {
+    window.clearTimeout(timeout);
+    channel.close();
+    target.close();
+  });
 }
 
 /**

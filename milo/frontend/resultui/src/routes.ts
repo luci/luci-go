@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Router } from '@vaadin/router';
+import { BroadcastChannel } from 'broadcast-channel';
 
 import './components/page_layout';
 import { refreshAuthChannel } from './components/page_layout';

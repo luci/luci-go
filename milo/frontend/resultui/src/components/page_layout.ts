@@ -17,6 +17,7 @@ import '@material/mwc-icon-button';
 import '@material/mwc-snackbar';
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { BeforeEnterObserver, Router } from '@vaadin/router';
+import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable, reaction } from 'mobx';
