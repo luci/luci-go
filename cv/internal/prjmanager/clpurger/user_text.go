@@ -99,6 +99,11 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *chang
 		case len(d.GetCombinableMismatchedMode()) > 0:
 			bad, t = d.GetCombinableMismatchedMode(), tmplCombinableMismatchedMode
 			args["mode"] = task.GetTrigger().GetMode()
+		case d.GetTooMany() != nil:
+			args["max"] = d.GetTooMany().GetMaxAllowed()
+			args["actual"] = d.GetTooMany().GetActual()
+			t = tmplTooManyDeps
+			bad = nil // there is no point listing all of them.
 		default:
 			return errors.Reason("unsupported InvalidDeps reason %s", d).Err()
 		}
@@ -213,4 +218,8 @@ var tmplCombinableMismatchedMode = tmplMust(`
 {{CQ_OR_CV}} can't process the CL because its mode {{.mode | printf "%q"}} does not match mode on its dependencies:
 {{range $url := .deps}}  * {{$url}}
 {{end}}
+`)
+
+var tmplTooManyDeps = tmplMust(`
+{{CQ_OR_CV}} can't process the CL because it has too many deps: {{.actual}} (max supported: {{.max}})
 `)

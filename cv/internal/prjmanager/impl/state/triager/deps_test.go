@@ -221,6 +221,38 @@ func TestDepsTriage(t *testing.T) {
 						})
 						So(td.OK(), ShouldBeFalse)
 					})
+
+					Convey("Too many deps", func() {
+						// Create maxAllowedDeps+1 deps.
+						sup.pb.Pcls = make([]*prjpb.PCL, 0, maxAllowedDeps+2)
+						deps := make([]*changelist.Dep, 0, maxAllowedDeps+1)
+						for i := 1; i <= maxAllowedDeps+1; i++ {
+							sup.pb.Pcls = append(sup.pb.Pcls, &prjpb.PCL{
+								Clid:               int64(1000 + i),
+								ConfigGroupIndexes: []int32{cgIdx},
+								Trigger:            dryRun(epoch.Add(time.Second)),
+							})
+							deps = append(deps, &changelist.Dep{Clid: int64(1000 + i), Kind: changelist.DepKind_SOFT})
+						}
+						// Add the PCL with the above deps.
+						sup.pb.Pcls = append(sup.pb.Pcls, &prjpb.PCL{
+							Clid:               2000,
+							ConfigGroupIndexes: []int32{cgIdx},
+							Trigger:            dryRun(epoch.Add(time.Second)),
+							Deps:               deps,
+						})
+						td := do(sup.PCL(2000), cgIdx)
+						So(td, shouldResembleTriagedDeps, &triagedDeps{
+							lastTriggered: epoch.Add(time.Second),
+							invalidDeps: &changelist.CLError_InvalidDeps{
+								TooMany: &changelist.CLError_InvalidDeps_TooMany{
+									Actual:     maxAllowedDeps + 1,
+									MaxAllowed: maxAllowedDeps,
+								},
+							},
+						})
+						So(td.OK(), ShouldBeFalse)
+					})
 				})
 			}
 			sameTests("singular", singIdx)

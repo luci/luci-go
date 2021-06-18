@@ -338,5 +338,12 @@ message CLError {
     repeated Dep combinable_untriggered = 4;
     // CQ-ed deps of a different mode.
     repeated Dep combinable_mismatched_mode = 5;
+
+    message TooMany {
+      int32 actual = 1;
+      int32 max_allowed = 2;
+    }
+    // There are more non-submitted deps than is supported by CV.
+    TooMany too_many = 6;
   }
 }
