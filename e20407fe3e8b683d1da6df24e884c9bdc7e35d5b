@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08b0e6b4_3b43162f",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T00:51:35Z",
+      "side": 1,
+      "message": "will rename this later.",
+      "range": {
+        "startLine": 39,
+        "startChar": 5,
+        "endLine": 39,
+        "endChar": 9
+      },
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6ff3364_77c9a75d",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T00:51:35Z",
+      "side": 1,
+      "message": "gauge, because I care about latest value in a window. We can still compute distr. over a window if necessary.",
+      "range": {
+        "startLine": 28,
+        "startChar": 31,
+        "endLine": 28,
+        "endChar": 39
+      },
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72776aec_2d03ddc8",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T00:51:35Z",
+      "side": 1,
+      "message": "same as above -- only care about latest value.",
+      "range": {
+        "startLine": 50,
+        "startChar": 14,
+        "endLine": 50,
+        "endChar": 28
+      },
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24237f82_9451265e",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T00:51:35Z",
+      "side": 1,
+      "message": "same as above -- only care about the latest value.",
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

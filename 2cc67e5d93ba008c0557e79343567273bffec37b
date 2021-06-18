@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "97eeabb6_8eed43d0",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-18T00:51:35Z",
+      "side": 1,
+      "message": "Discussed offline. The metrics are changed substantially.",
+      "parentUuid": "cdc4436c_a4332b7c",
+      "range": {
+        "startLine": 252,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 69
+      },
+      "revId": "2cc67e5d93ba008c0557e79343567273bffec37b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1aee6295_98da4879",
