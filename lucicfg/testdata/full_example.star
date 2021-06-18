@@ -35,7 +35,6 @@ luci.project(
 luci.logdog(
     gs_bucket = "chromium-luci-logdog",
     cloud_logging_project = "chromium-build-logs",
-    use_global_logdog_account = True,
 )
 
 luci.milo(
@@ -942,7 +941,6 @@ lucicfg.emit(
 # archive_gs_bucket: "chromium-luci-logdog"
 # cloud_logging_config {
 #   destination: "chromium-build-logs"
-#   use_global_logdog_account: true
 # }
 # ===
 #
