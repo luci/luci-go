@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "984a780a_b05d8303",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-18T17:52:53Z",
+      "side": 1,
+      "message": "The new sent/removed/sizes metrics look good to me, but please find my comment for the list metric",
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "08b0e6b4_3b43162f",
         "filename": "cv/internal/eventbox/box.go",
         "patchSetId": 8
@@ -42,6 +59,76 @@
         "startChar": 31,
         "endLine": 28,
         "endChar": 39
+      },
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e3e193e8_304c6fdf",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-18T17:52:53Z",
+      "side": 1,
+      "message": "Yes, but practically no. You can compute dist with the reported data point, but it will not be the same.\n\nIn a Gauge metric, a data point represents a single view of the monitored resource at a specific time. Therefore, set() just overrides the existing value in the memory storage. In other words, only the latest data passed to set() before the flush() is reported.\n\nIn a Distribution metric, a data point is a list of buckets, and add() adds a given data value into the bucket. Therefore, all the data points are kept and flush()-ed together.\n\nIf you compute a dist over a Gauge metric, of which metric data is likely lost most of the data points, you would likely get a whole different value, unless the number of samples in the metric is as low as the retention frequency.\n\n---------------------------------------\nYes, you can keep this as a gauge if you want the latest value in a window. However, the graph can be very funky and go up and down. IIUC, the intent of this metric is to track the performance of dsset.List() call, which mainly represents the datastore perf.\n\nWith a Gauge metric, we are not sure if a given data point (the latest value in a window) is P1 or P99. If the frequency of dsset.List() invocation per metric:recipient is as low as once a minute, this is ok. Otherwise, I\u0027d suggesting this to be a distribution.\n\n(btw, if you\u0027d like to monitor datastore performance, you may consider installing grpcmon into the ds client, like I am doing for Spanner client)",
+      "parentUuid": "b6ff3364_77c9a75d",
+      "range": {
+        "startLine": 28,
+        "startChar": 31,
+        "endLine": 28,
+        "endChar": 39
+      },
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52969312_2936bb03",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-18T17:52:53Z",
+      "side": 1,
+      "message": "nit-nit; you may consider moving this to dsset.go in a more general form, if you anticipate that `eventbox/{add,remove}/duration` will be added in the future.\n\n```\ndssetDur \u003d metric.NewCumulative(\n    \"cv/internal/eventbox/dsset/duration\",  // or cv/internal/eventbox/dsset/duration\n    \"Duration of dsset operations performed\",\n    {Units: types.Milliseconds},\n    fields.String(\"op\") // add, list, remove\n    fields.String(\"parent\")\n    fields.String(\"result\") // the string representation of the error code.\n)\n\ndssetCount \u003d metric.NewCounter(\n    \"cv/internal/eventbox/dsset/count\",\n    \"Number of dsset operations performed\",\n    nil,\n    fields.String(\"op\") // add, list, remove\n    fields.String(\"parent\")\n    fields.String(\"result\") // the string representation of the error code.\n)\n```",
+      "range": {
+        "startLine": 29,
+        "startChar": 3,
+        "endLine": 29,
+        "endChar": 37
+      },
+      "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09faedf1_07e98c35",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-18T17:52:53Z",
+      "side": 1,
+      "message": "👍 The metric paths and descriptions look intuitive and easy to understand what they are for.",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 2
       },
       "revId": "e20407fe3e8b683d1da6df24e884c9bdc7e35d5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
