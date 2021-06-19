@@ -107,10 +107,7 @@ type singleQuery struct {
 }
 
 func (q *singleQuery) full(ctx context.Context) error {
-	ctx = logging.SetFields(ctx, logging.Fields{
-		"luciProject": q.luciProject,
-		"poll":        "full",
-	})
+	ctx = logging.SetField(ctx, "poll", "full")
 	started := clock.Now(ctx)
 	after := started.Add(-common.MaxTriggerAge)
 	changes, err := q.fetch(ctx, after, buildQuery(q.sp, queryLimited))
@@ -125,7 +122,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 	cur := uniqueSortedIDsOf(changes)
 	if diff := common.DifferenceSorted(q.sp.Changes, cur); len(diff) != 0 {
 		// `diff` changes are no longer matching the limited query,
-		// so they probably updated since.
+		// so they were probably updated since.
 		if err := q.p.scheduleRefreshTasks(ctx, q.luciProject, q.sp.GetHost(), diff); err != nil {
 			return err
 		}
@@ -138,10 +135,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 }
 
 func (q *singleQuery) incremental(ctx context.Context) error {
-	ctx = logging.SetFields(ctx, logging.Fields{
-		"luciProject": q.luciProject,
-		"poll":        "incremental",
-	})
+	ctx = logging.SetField(ctx, "poll", "incremental")
 	started := clock.Now(ctx)
 
 	lastInc := q.sp.GetLastIncrTime()
