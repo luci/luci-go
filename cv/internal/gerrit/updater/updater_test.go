@@ -178,6 +178,15 @@ func TestSchedule(t *testing.T) {
 				So(do(taskU1), ShouldResembleProto, []proto.Message{taskU0, taskU1})
 				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskU0, taskU1, taskMinimal})
 			})
+
+			Convey("only within knownRefreshInterval", func() {
+				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0})
+				ct.Clock.Add(knownRefreshInterval)
+				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0, taskU0})
+				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0, taskU0})
+				ct.Clock.Add(knownRefreshInterval)
+				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0, taskU0, taskU0})
+			})
 		})
 
 		Convey("BatchSchedule creates just one task within a transaction", func() {
