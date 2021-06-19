@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "70fb364f_aa116d95",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-19T02:47:11Z",
+      "side": 0,
+      "message": "this was confusion #1, this channel is not actually used to coordinate goroutines, it is just essentially a filtered copy of filesToExtract",
+      "range": {
+        "startLine": 240,
+        "startChar": 1,
+        "endLine": 240,
+        "endChar": 10
+      },
+      "revId": "22b2c6c7507aac2d4a4e7b9b7dca05609cfd2986",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14d59fca_0a6e8b72",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-19T02:47:11Z",
+      "side": 0,
+      "message": "it is a tight loop with no blocking calls...",
+      "range": {
+        "startLine": 248,
+        "startChar": 2,
+        "endLine": 250,
+        "endChar": 3
+      },
+      "revId": "22b2c6c7507aac2d4a4e7b9b7dca05609cfd2986",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8fb785e_d220ccd2",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-19T02:47:11Z",
+      "side": 0,
+      "message": "doesn\u0027t handle context cancelation correctly",
+      "range": {
+        "startLine": 273,
+        "startChar": 4,
+        "endLine": 279,
+        "endChar": 4
+      },
+      "revId": "22b2c6c7507aac2d4a4e7b9b7dca05609cfd2986",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14d0723c_df4f61c3",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-19T02:47:11Z",
+      "side": 0,
+      "message": "WTF",
+      "range": {
+        "startLine": 305,
+        "startChar": 18,
+        "endLine": 305,
+        "endChar": 36
+      },
+      "revId": "22b2c6c7507aac2d4a4e7b9b7dca05609cfd2986",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbfa9f09_13c3c02d",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-19T02:47:11Z",
+      "side": 0,
+      "message": "symlinks have f.Size() \u003d\u003d 0 by construction",
+      "range": {
+        "startLine": 376,
+        "startChar": 2,
+        "endLine": 378,
+        "endChar": 3
+      },
+      "revId": "22b2c6c7507aac2d4a4e7b9b7dca05609cfd2986",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
