@@ -75,8 +75,7 @@ func GetSettingsLoader(serviceID string, flags *CommandLineFlags) archivist.Sett
 			IndexPrefixRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.PrefixRange }),
 			IndexByteRange:   indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.ByteRange }),
 
-			CloudLoggingProjectID:        pcfg.CloudLoggingConfig.GetDestination(),
-			CloudLoggingWithProjectScope: !pcfg.CloudLoggingConfig.GetUseGlobalLogdogAccount(),
+			CloudLoggingProjectID: pcfg.CloudLoggingConfig.GetDestination(),
 		}
 
 		// Fold project settings into loaded ones.

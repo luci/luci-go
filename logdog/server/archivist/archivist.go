@@ -154,10 +154,6 @@ type Settings struct {
 	//
 	// May be empty, if no export is configured.
 	CloudLoggingProjectID string
-
-	// CloudLoggingWithProjectScope tells whether Logdog should export logs to
-	// Cloud Logging with the ProjectScope credential or the default Logdog service account.
-	CloudLoggingWithProjectScope bool
 }
 
 // SettingsLoader returns archival Settings for a given project.
@@ -182,7 +178,7 @@ type Archivist struct {
 	// CLClientFactory obtains a Cloud Logging client for log exports.
 	// `luciProject` is the ID of the LUCI project to export logs from, and
 	// `clProject` is the ID of the Google Cloud project to export logs to.
-	CLClientFactory func(ctx context.Context, luciProject, clProject string, useProjectScope bool) (CLClient, error)
+	CLClientFactory func(ctx context.Context, luciProject, clProject string) (CLClient, error)
 }
 
 // storageBufferSize is the size, in bytes, of the LogEntry buffer that is used
@@ -468,7 +464,7 @@ func (a *Archivist) makeStagedArchival(c context.Context, project string, realm 
 		if err = gcloud.ValidateProjectID(st.CloudLoggingProjectID); err != nil {
 			return nil, errors.Annotate(err, "CloudLoggingProjectID %q", st.CloudLoggingProjectID).Err()
 		}
-		clc, err := a.CLClientFactory(c, project, st.CloudLoggingProjectID, st.CloudLoggingWithProjectScope)
+		clc, err := a.CLClientFactory(c, project, st.CloudLoggingProjectID)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey:   err,
