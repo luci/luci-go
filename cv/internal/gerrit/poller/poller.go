@@ -167,7 +167,7 @@ func (p *Poller) schedule(ctx context.Context, luciProject string, after time.Ti
 	if now := clock.Now(ctx); after.IsZero() || now.After(after) {
 		after = now
 	}
-	offset := common.ProjectOffset("gerrit-poller", pollInterval, luciProject)
+	offset := common.DistributeOffset(pollInterval, "gerrit-poller", luciProject)
 	offset = offset.Truncate(time.Millisecond) // more readable logs
 	eta := after.UTC().Truncate(pollInterval).Add(offset)
 	for !eta.After(after) {

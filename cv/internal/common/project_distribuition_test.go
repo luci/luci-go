@@ -26,14 +26,14 @@ import (
 func TestProjectOffset(t *testing.T) {
 	t.Parallel()
 
-	Convey("ProjectOffset forms uniformish distribution", t, func() {
+	Convey("DistributeOffset forms uniformish distribution", t, func() {
 
 		testIntervalOf100x := func(d time.Duration) {
 			Convey((100 * d).String(), func() {
 				offsets := make([]time.Duration, 101)
 				for i := 0; i < 101; i++ {
 					project := fmt.Sprintf("project-%d", i*i)
-					offsets[i] = ProjectOffset("kind", 100*d, project)
+					offsets[i] = DistributeOffset(100*d, "kind", project)
 				}
 				sort.Slice(offsets, func(i, j int) bool { return offsets[i] < offsets[j] })
 				So(offsets[0], ShouldBeGreaterThanOrEqualTo, time.Duration(0))
