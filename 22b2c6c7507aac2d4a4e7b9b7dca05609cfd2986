@@ -49,6 +49,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "6bb6ffa3_9758bc57",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-19T15:39:08Z",
+      "side": 0,
+      "message": "lol what",
+      "parentUuid": "14d59fca_0a6e8b72",
+      "range": {
+        "startLine": 248,
+        "startChar": 2,
+        "endLine": 250,
+        "endChar": 3
+      },
+      "revId": "22b2c6c7507aac2d4a4e7b9b7dca05609cfd2986",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c8fb785e_d220ccd2",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 1
@@ -83,6 +107,30 @@
       "writtenOn": "2021-06-19T02:47:11Z",
       "side": 0,
       "message": "WTF",
+      "range": {
+        "startLine": 305,
+        "startChar": 18,
+        "endLine": 305,
+        "endChar": 36
+      },
+      "revId": "22b2c6c7507aac2d4a4e7b9b7dca05609cfd2986",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f70f1e7_f04bd564",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-19T15:39:08Z",
+      "side": 0,
+      "message": "uh... hm. I don\u0027t see any deep discussion on why this was added https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1817265. Maybe worth asking oliver?",
+      "parentUuid": "14d0723c_df4f61c3",
       "range": {
         "startLine": 305,
         "startChar": 18,

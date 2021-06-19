@@ -16,6 +16,29 @@
       "message": "PTAL.\n\nI was working on a CL that changes how CIPD reports progress of operations and while debugging an issue noticed that ExtractFiles is kind of weird (or at least it appears so to me since the code for parallel extraction was added by a contributor).",
       "revId": "9047abbdccb14bf24be7ad89ffe9a65b7a74ca38",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "174ae4ab_b4524334",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-19T15:39:08Z",
+      "side": 1,
+      "message": "what about common folder structure?",
+      "range": {
+        "startLine": 268,
+        "startChar": 30,
+        "endLine": 268,
+        "endChar": 35
+      },
+      "revId": "9047abbdccb14bf24be7ad89ffe9a65b7a74ca38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
