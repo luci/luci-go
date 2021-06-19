@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e87b54d_4f2f1995",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-19T05:54:17Z",
+      "side": 1,
+      "message": "PTAL. (Will land and deploy this after lucicfg-1.26.0 is fully deployed - https://crrev.com/i/3920950)",
+      "revId": "0bf013d06c54b2e69c5b6529e85a7fce394dd46d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
