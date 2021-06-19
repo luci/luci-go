@@ -156,7 +156,7 @@ const pokePMInterval = 10 * time.Minute
 
 func (pcr *ProjectConfigRefresher) maybePokePM(ctx context.Context, project string) error {
 	now := clock.Now(ctx).UTC()
-	offset := common.ProjectOffset("cron-poke", pokePMInterval, project)
+	offset := common.DistributeOffset(pokePMInterval, "cron-poke", project)
 	nextPokeETA := now.Truncate(pokePMInterval).Add(offset)
 	if nextPokeETA.Before(now) {
 		nextPokeETA = nextPokeETA.Add(pokePMInterval)

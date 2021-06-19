@@ -19,17 +19,18 @@ import (
 	"time"
 )
 
-// ProjectOffset deterministically chooses an offset per LUCI project in
-// [1..pollInterval) range aimining for uniform distribution across projects.
+// DistributeOffset deterministically chooses an offset across keys
+// in [1..pollInterval) range aimining for uniform distribution across all keys.
 //
-// Kind purpose is to de-sync project offsets for different purposes.
-func ProjectOffset(kind string, pollInterval time.Duration, luciProject string) time.Duration {
+// A key is simply a concatenation of key parts with '\0' filler in between.
+func DistributeOffset(pollInterval time.Duration, keyParts ...string) time.Duration {
 	// Basic idea: interval/N*random(0..N), but deterministic on kind+luciProject.
 	// Use fast hash function, as we don't need strong collision resistance.
 	h := fnv.New32a()
-	h.Write([]byte(kind))
-	h.Write([]byte{'/'})
-	h.Write([]byte(luciProject))
+	for _, part := range keyParts {
+		h.Write([]byte(part))
+		h.Write([]byte{0})
+	}
 	r := h.Sum32()
 
 	i := int64(pollInterval)
