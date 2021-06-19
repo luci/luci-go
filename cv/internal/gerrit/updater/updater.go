@@ -35,13 +35,17 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 )
 
-const TaskClass = "refresh-gerrit-cl"
-const TaskClassBatch = "batch-refresh-gerrit-cl"
+const (
+	TaskClass      = "refresh-gerrit-cl"
+	TaskClassBatch = "batch-refresh-gerrit-cl"
 
-// blindRefreshInterval sets interval between blind refreshes of a Gerrit CL.
-//
-// Doesn't affect refreshes with updatedHint specified.
-const blindRefreshInterval = time.Minute
+	// blindRefreshInterval sets interval between blind refreshes of a Gerrit CL.
+	blindRefreshInterval = time.Minute
+
+	// knownRefreshInterval sets interval between refreshes of a Gerrit CL when
+	// updatedHint is known.
+	knownRefreshInterval = 15 * time.Minute
+)
 
 var errStaleData = errors.New("Fetched stale Gerrit data", transient.Tag)
 
@@ -131,16 +135,42 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 
 	// If done within transaction or if must notify PM, can't use de-dup.
 	if datastore.CurrentTransaction(ctx) == nil && !p.GetForceNotifyPm() {
-		ts := updatedHint
+		// Dedup in the short term to avoid excessive number of refreshes,
+		// but ensure eventually calling Schedule with the same payload results in a
+		// new task. This is done by de-duping only within a single "epoch" window,
+		// which differs by CL to avoid synchronized herd of requests hitting
+		// Gerrit.
+		//
+		// +----------------------------------------------------------------------+
+		// |                 ... -> time goes forward -> ....                     |
+		// +----------------------------------------------------------------------+
+		// |                                                                      |
+		// | ... | epoch (N-1, CL-A) | epoch (N, CL-A) | epoch (N+1, CL-A) | ...  |
+		// |                                                                      |
+		// |            ... | epoch (N-1, CL-B) | epoch (N, CL-B) | ...           |
+		// +----------------------------------------------------------------------+
+		//
+		// Furthermore, de-dup window differs based on wheter updatedHint is given
+		// or it's a blind refresh.
+		interval := blindRefreshInterval
 		if updatedHint.IsZero() {
-			ts = clock.Now(ctx).Add(delay).Truncate(blindRefreshInterval).Add(blindRefreshInterval)
+			interval = knownRefreshInterval
+		}
+		changeInHex := strconv.FormatInt(p.GetChange(), 16)
+		epochOffset := common.DistributeOffset(interval, "refresh-gerrit-cl", p.GetLuciProject(), p.GetHost(), changeInHex)
+		epochTS := clock.Now(ctx).Add(delay).Truncate(interval).Add(interval + epochOffset)
+
+		u := updatedHint
+		if updatedHint.IsZero() {
+			u = time.Unix(0, 0)
 		}
 		task.DeduplicationKey = strings.Join([]string{
 			"v0",
 			p.GetLuciProject(),
 			p.GetHost(),
-			strconv.FormatInt(p.GetChange(), 16),
-			strconv.FormatInt(ts.UnixNano(), 16),
+			changeInHex,
+			strconv.FormatInt(epochTS.UnixNano(), 16),
+			strconv.FormatInt(u.UnixNano(), 16),
 		}, "\n")
 	}
 	return u.tqd.AddTask(ctx, task)

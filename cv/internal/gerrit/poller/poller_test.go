@@ -221,6 +221,7 @@ func TestPoller(t *testing.T) {
 	t.Parallel()
 
 	Convey("Polling & task scheduling works", t, func() {
+		// TODO(tandrii); de-couple this test from how CL updater works.
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -311,7 +312,7 @@ func TestPoller(t *testing.T) {
 					// Run all tasks.
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 					// Due to CL update task de-dup, regardless of what next incremental
-					// poll discovered, there shouldn't more CL update tasks.
+					// poll discovered, there shouldn't be more CL update tasks.
 					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 					So(updatertest.PFilter(ct.TQ.Tasks()), ShouldBeEmpty)
 					// But there should be 2 CLs populated in Datastore.
@@ -344,11 +345,9 @@ func TestPoller(t *testing.T) {
 						}})
 
 						So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
-						// CL 31 has no task because it didn't change since incremental
-						// poll and so it was de-duped.
-						So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{32, 33, 34})
+						So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
 						// 33 has ForceNotifyPM=true. Such task isn't de-dupe-able.
-						uTask33 := updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber()[1]
+						uTask33 := updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber()[2]
 						So(uTask33.GetForceNotifyPm(), ShouldBeTrue)
 
 						// And PM is notified only 31 and 32 for now.
@@ -368,9 +367,7 @@ func TestPoller(t *testing.T) {
 							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 							// PM must be notified on all 31..34.
 							So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32, 33, 34))
-							// Because 33 was previously imported with ForceNotifyPm=true,
-							// the new task without ForceNotifyPm is't deduped.
-							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{33})
+							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
 							So(updatertest.PFilter(ct.TQ.Tasks())[0].GetForceNotifyPm(), ShouldBeFalse)
 						})
 
@@ -402,9 +399,9 @@ func TestPoller(t *testing.T) {
 							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 							// PM must be still notified on all 31..34.
 							So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32, 33, 34))
+							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
 							// 33 and 34 have 1 final refresh task without updateHint.
-							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{33, 34})
-							for _, p := range updatertest.PFilter(ct.TQ.Tasks()) {
+							for _, p := range updatertest.PFilter(ct.TQ.Tasks())[2:] {
 								So(p.GetForceNotifyPm(), ShouldBeFalse)
 								So(p.GetUpdatedHint(), ShouldBeNil)
 							}
