@@ -28,6 +28,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -76,8 +77,8 @@ func TestUpdateConfig(t *testing.T) {
 		}
 
 		// Seed project with one version of prior config.
-		ct.Cfg.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "ev1"}}})
-		metaBefore := ct.Cfg.MustExist(ctx, lProject)
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "ev1"}}})
+		metaBefore := prjcfgtest.MustExist(ctx, lProject)
 		So(metaBefore.EVersion, ShouldEqual, 1)
 		// Set up initial Run state.
 		cfgCurrent := &cfgpb.Config{
@@ -110,8 +111,8 @@ func TestUpdateConfig(t *testing.T) {
 				},
 			},
 		}
-		ct.Cfg.Update(ctx, lProject, cfgCurrent)
-		metaCurrent := ct.Cfg.MustExist(ctx, lProject)
+		prjcfgtest.Update(ctx, lProject, cfgCurrent)
+		metaCurrent := prjcfgtest.MustExist(ctx, lProject)
 		triggerTime := clock.Now(ctx).UTC()
 		cgMain := cfgCurrent.GetConfigGroups()[0]
 		putRunCL(gf.CI(1, gf.Project(gRepoFirst), gf.CQ(+1, triggerTime, gf.U("user-1"))), cgMain)
@@ -128,7 +129,7 @@ func TestUpdateConfig(t *testing.T) {
 				CreateTime:    triggerTime,
 				StartTime:     triggerTime.Add(1 * time.Minute),
 				Status:        run.Status_RUNNING,
-				ConfigGroupID: ct.Cfg.MustExist(ctx, lProject).ConfigGroupIDs[0], // main
+				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0], // main
 			},
 		}
 		// Prepare new config as a copy of existing one. Add extra ConfigGroup to it
@@ -139,8 +140,8 @@ func TestUpdateConfig(t *testing.T) {
 		h := &Impl{CLUpdater: &clUpdaterMock{}}
 
 		updateConfig := func() *Result {
-			ct.Cfg.Update(ctx, lProject, cfgNew)
-			metaNew := ct.Cfg.MustExist(ctx, lProject)
+			prjcfgtest.Update(ctx, lProject, cfgNew)
+			metaNew := prjcfgtest.MustExist(ctx, lProject)
 			res, err := h.UpdateConfig(ctx, rs, metaNew.Hash())
 			So(err, ShouldBeNil)
 			return res

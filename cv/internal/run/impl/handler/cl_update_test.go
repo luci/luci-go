@@ -31,6 +31,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -56,7 +57,7 @@ func TestOnCLUpdated(t *testing.T) {
 				{Name: "main"},
 			},
 		}
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 		h := &Impl{
 			CLUpdater: &clUpdaterMock{},
 		}
@@ -68,7 +69,7 @@ func TestOnCLUpdated(t *testing.T) {
 				ID:            common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef")),
 				StartTime:     triggerTime.Add(1 * time.Minute),
 				Status:        run.Status_RUNNING,
-				ConfigGroupID: ct.Cfg.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			},
 		}
 		updateCL := func(ci *gerritpb.ChangeInfo, ap *changelist.ApplicableConfig, acc *changelist.Access) changelist.CL {
@@ -93,7 +94,7 @@ func TestOnCLUpdated(t *testing.T) {
 		}
 
 		aplConfigOK := &changelist.ApplicableConfig{Projects: []*changelist.ApplicableConfig_Project{
-			{Name: lProject, ConfigGroupIds: ct.Cfg.MustExist(ctx, lProject).ConfigGroupNames},
+			{Name: lProject, ConfigGroupIds: prjcfgtest.MustExist(ctx, lProject).ConfigGroupNames},
 		}}
 		accessOK := (*changelist.Access)(nil)
 

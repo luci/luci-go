@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package prjcfg
+// Package prjcfgtest eases controlling of project configs in test.
+//
+// In integration tests, prefer setting configs via cfgclient/cfgmemory and
+// calling SubmitRefreshTasks and executing all outstanding tasks via tq.
+package prjcfgtest
 
 import (
 	"context"
@@ -26,26 +30,18 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
-
-// TestController eases controlling of project configs in unittests.
-//
-// In integration tests, prefer setting configs via cfgclient/cfgmemory and
-// calling SubmitRefreshTasks and executing all outstanding tasks via tq.
-type TestController struct {
-	// No members. This struct serves as a namespace to discourage accidental use
-	// in production.
-}
 
 // Create creates project config for the first time.
 //
 // Panics if project config already exists.
-func (t TestController) Create(ctx context.Context, project string, cfg *pb.Config) {
-	t.MustNotExist(ctx, project)
+func Create(ctx context.Context, project string, cfg *pb.Config) {
+	MustNotExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-		config.ProjectSet(project): {ConfigFileName: prototext.Format(cfg)},
+		config.ProjectSet(project): {prjcfg.ConfigFileName: prototext.Format(cfg)},
 	}))
-	err := UpdateProject(ctx, project, func(context.Context) error { return nil })
+	err := prjcfg.UpdateProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {
 		panic(err)
 	}
@@ -54,12 +50,12 @@ func (t TestController) Create(ctx context.Context, project string, cfg *pb.Conf
 // Update updates project config to, presumed, newer version.
 //
 // Panics if project config doesn't exist.
-func (t TestController) Update(ctx context.Context, project string, cfg *pb.Config) {
-	t.MustExist(ctx, project)
+func Update(ctx context.Context, project string, cfg *pb.Config) {
+	MustExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-		config.ProjectSet(project): {ConfigFileName: prototext.Format(cfg)},
+		config.ProjectSet(project): {prjcfg.ConfigFileName: prototext.Format(cfg)},
 	}))
-	err := UpdateProject(ctx, project, func(context.Context) error { return nil })
+	err := prjcfg.UpdateProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {
 		panic(err)
 	}
@@ -68,9 +64,9 @@ func (t TestController) Update(ctx context.Context, project string, cfg *pb.Conf
 // Disable disables project.
 //
 // Panics if project config doesn't exist.
-func (t TestController) Disable(ctx context.Context, project string) {
-	t.MustExist(ctx, project)
-	err := DisableProject(ctx, project, func(context.Context) error { return nil })
+func Disable(ctx context.Context, project string) {
+	MustExist(ctx, project)
+	err := prjcfg.DisableProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {
 		panic(err)
 	}
@@ -79,12 +75,12 @@ func (t TestController) Disable(ctx context.Context, project string) {
 // Enable enables project.
 //
 // Panics if project config doesn't exist.
-func (t TestController) Enable(ctx context.Context, project string) {
-	m := t.MustExist(ctx, project)
+func Enable(ctx context.Context, project string) {
+	m := MustExist(ctx, project)
 	if _, err := m.GetConfigGroups(ctx); err != nil {
 		panic(err)
 	}
-	p := ProjectConfig{Project: project}
+	p := prjcfg.ProjectConfig{Project: project}
 	if err := datastore.Get(ctx, &p); err != nil {
 		panic(err)
 	}
@@ -98,19 +94,19 @@ func (t TestController) Enable(ctx context.Context, project string) {
 // Delete deletes the project config.
 //
 // Panics if project config doesn't exist.
-func (t TestController) Delete(ctx context.Context, project string) {
-	m := t.MustExist(ctx, project)
+func Delete(ctx context.Context, project string) {
+	m := MustExist(ctx, project)
 	cfgs, err := m.GetConfigGroups(ctx)
 	if err != nil {
 		panic(err)
 	}
-	if err := datastore.Delete(ctx, &ProjectConfig{Project: project}, cfgs); err != nil {
+	if err := datastore.Delete(ctx, &prjcfg.ProjectConfig{Project: project}, cfgs); err != nil {
 		panic(err)
 	}
 }
 
-func (_ TestController) MustExist(ctx context.Context, project string) Meta {
-	switch m, err := GetLatestMeta(ctx, project); {
+func MustExist(ctx context.Context, project string) prjcfg.Meta {
+	switch m, err := prjcfg.GetLatestMeta(ctx, project); {
 	case err != nil:
 		panic(err)
 	case !m.Exists():
@@ -120,8 +116,8 @@ func (_ TestController) MustExist(ctx context.Context, project string) Meta {
 	}
 }
 
-func (_ TestController) MustNotExist(ctx context.Context, project string) {
-	switch m, err := GetLatestMeta(ctx, project); {
+func MustNotExist(ctx context.Context, project string) {
+	switch m, err := prjcfg.GetLatestMeta(ctx, project); {
 	case err != nil:
 		panic(err)
 	case m.Exists():

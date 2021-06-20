@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -45,7 +46,7 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		)
 
 		ct.EnableCVRunManagement(ctx, lProject)
-		ct.Cfg.Create(ctx, lProject, MakeCfgSingular("cg0", gHost, gRepo, gRef))
+		prjcfgtest.Create(ctx, lProject, MakeCfgSingular("cg0", gHost, gRepo, gRef))
 
 		ci := gf.CI(
 			gChange, gf.Project(gRepo), gf.Ref(gRef),
@@ -100,8 +101,8 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 		cfg1.GetConfigGroups()[0].CombineCls = &cfgpb.CombineCLs{
 			StabilizationDelay: durationpb.New(stabilizationDelay),
 		}
-		ct.Cfg.Create(ctx, lProject, cfg1)
-		ct.Cfg.Create(ctx, lProject2, MakeCfgSingular("cg0", gHost2, gRepo2, gRef))
+		prjcfgtest.Create(ctx, lProject, cfg1)
+		prjcfgtest.Create(ctx, lProject2, MakeCfgSingular("cg0", gHost2, gRepo2, gRef))
 
 		tStart := ct.Now()
 
@@ -168,7 +169,7 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 			TriggeringLabel: quickLabel,
 			TriggeringValue: 1,
 		}}
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Now()
 		ci44 := gf.CI(
@@ -230,7 +231,7 @@ func TestPurgesSingularFullRunWithOpenDeps(t *testing.T) {
 		ct.LogPhase(ctx, "Set up stack of 2 CLs")
 		ct.EnableCVRunManagement(ctx, lProject)
 
-		ct.Cfg.Create(ctx, lProject, MakeCfgSingular("cg0", gHost, gRepo, gRef))
+		prjcfgtest.Create(ctx, lProject, MakeCfgSingular("cg0", gHost, gRepo, gRef))
 
 		tStart := ct.Now()
 		ciOpen := gf.CI(
@@ -278,7 +279,7 @@ func TestPurgesCLCQDependingOnItself(t *testing.T) {
 		ct.LogPhase(ctx, "Set up a CL depending on itself")
 		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 		tStart := ct.Now()
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 			gChange44, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
