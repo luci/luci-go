@@ -16,7 +16,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/usertext"
 )
 
 // OnCQDVerificationCompleted implements Handler interface.
@@ -60,15 +60,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
-		var msg string
-		switch rs.Run.Mode {
-		case run.DryRun:
-			msg = "Dry run: This CL passed the CQ dry run."
-		case run.QuickDryRun:
-			msg = "Quick dry run: This CL passed the CQ dry run."
-		default:
-			panic(fmt.Sprintf("impossible run mode %q", rs.Run.Mode))
-		}
+		msg := usertext.OnRunSucceeded(rs.Run.Mode)
 		if err := cancelTriggers(ctx, rs, msg); err != nil {
 			return nil, err
 		}
