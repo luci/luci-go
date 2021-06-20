@@ -19,6 +19,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -47,7 +48,8 @@ func NewExporter(tqd *tq.Dispatcher, bqc cvbq.Client) *Exporter {
 		Kind: tq.Transactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*ExportRunToBQTask)
-			err := send(ctx, bqc, common.RunID(task.RunId))
+			ctx = logging.SetField(ctx, "run", task.GetRunId())
+			err := send(ctx, bqc, common.RunID(task.GetRunId()))
 			return common.TQifyError(ctx, err)
 		},
 	})
