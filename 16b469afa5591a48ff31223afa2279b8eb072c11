@@ -83,6 +83,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b658b4e4_9765e8c1",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-20T22:54:14Z",
+      "side": 1,
+      "message": "oops, done.",
+      "parentUuid": "cdbe7880_b45f865f",
+      "range": {
+        "startLine": 46,
+        "startChar": 2,
+        "endLine": 46,
+        "endChar": 46
+      },
+      "revId": "16b469afa5591a48ff31223afa2279b8eb072c11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "12979773_8dfde162",
@@ -96,6 +120,30 @@
       "writtenOn": "2021-06-20T20:56:51Z",
       "side": 1,
       "message": "same. remove unit",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 53,
+        "endChar": 46
+      },
+      "revId": "16b469afa5591a48ff31223afa2279b8eb072c11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef719409_b9215273",
+        "filename": "cv/internal/eventbox/monitoring.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-20T22:54:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12979773_8dfde162",
       "range": {
         "startLine": 53,
         "startChar": 2,
