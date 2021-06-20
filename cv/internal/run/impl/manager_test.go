@@ -155,7 +155,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return notifier.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+					return notifier.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_ClSubmitted{
 							ClSubmitted: &eventpb.CLSubmitted{
 								Clid: 1,
@@ -174,7 +174,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return notifier.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+					return notifier.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_SubmissionCompleted{
 							SubmissionCompleted: &eventpb.SubmissionCompleted{
 								Result: eventpb.SubmissionResult_SUCCEEDED,
@@ -191,7 +191,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return notifier.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+					return notifier.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_ReadyForSubmission{
 							ReadyForSubmission: &eventpb.ReadyForSubmission{},
 						},

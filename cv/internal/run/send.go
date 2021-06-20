@@ -29,25 +29,25 @@ import (
 
 // Notifier notifies Run Manager.
 type Notifier struct {
-	// TaskRefs are used to register handlers of RM implementation to
-	// avoid circular dependency.
-	TaskRefs eventpb.TaskRefs
+	// TasksBinding are used to register handlers of RM implementation to avoid
+	// circular dependency.
+	TasksBinding eventpb.TasksBinding
 }
 
 func NewNotifier(tqd *tq.Dispatcher) *Notifier {
-	return &Notifier{TaskRefs: eventpb.Register(tqd)}
+	return &Notifier{TasksBinding: eventpb.Register(tqd)}
 }
 
 // Invoke invokes Run Manager to process events at the provided `eta`.
 //
 // If the provided `eta` is zero, invokes immediately.
 func (n *Notifier) Invoke(ctx context.Context, runID common.RunID, eta time.Time) error {
-	return n.TaskRefs.Dispatch(ctx, string(runID), eta)
+	return n.TasksBinding.Dispatch(ctx, string(runID), eta)
 }
 
 // Start tells RunManager to start the given run.
 func (n *Notifier) Start(ctx context.Context, runID common.RunID) error {
-	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Start{
 			Start: &eventpb.Start{},
 		},
@@ -74,9 +74,9 @@ func (n *Notifier) PokeAfter(ctx context.Context, runID common.RunID, after time
 	if after > 0 {
 		t := clock.Now(ctx).Add(after)
 		evt.ProcessAfter = timestamppb.New(t)
-		return n.TaskRefs.Send(ctx, runID, evt, t)
+		return n.TasksBinding.Send(ctx, runID, evt, t)
 	}
-	return n.TaskRefs.SendNow(ctx, runID, evt)
+	return n.TasksBinding.SendNow(ctx, runID, evt)
 }
 
 // PokeAt tells RunManager to check its own state at around `eta`.
@@ -92,14 +92,14 @@ func (n *Notifier) PokeAt(ctx context.Context, runID common.RunID, eta time.Time
 	}
 	if eta.After(clock.Now(ctx)) {
 		evt.ProcessAfter = timestamppb.New(eta)
-		return n.TaskRefs.Send(ctx, runID, evt, eta)
+		return n.TasksBinding.Send(ctx, runID, evt, eta)
 	}
-	return n.TaskRefs.SendNow(ctx, runID, evt)
+	return n.TasksBinding.SendNow(ctx, runID, evt)
 }
 
 // UpdateConfig tells RunManager to update the given Run to new config.
 func (n *Notifier) UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
-	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_NewConfig{
 			NewConfig: &eventpb.NewConfig{
 				Hash:     hash,
@@ -113,7 +113,7 @@ func (n *Notifier) UpdateConfig(ctx context.Context, runID common.RunID, hash st
 //
 // TODO(yiwzhang,tandrii): support reason.
 func (n *Notifier) Cancel(ctx context.Context, runID common.RunID) error {
-	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Cancel{
 			Cancel: &eventpb.Cancel{},
 		},
@@ -133,14 +133,14 @@ func (n *Notifier) CancelAt(ctx context.Context, runID common.RunID, eta time.Ti
 	}
 	if eta.After(clock.Now(ctx)) {
 		evt.ProcessAfter = timestamppb.New(eta)
-		return n.TaskRefs.Send(ctx, runID, evt, eta)
+		return n.TasksBinding.Send(ctx, runID, evt, eta)
 	}
-	return n.TaskRefs.SendNow(ctx, runID, evt)
+	return n.TasksBinding.SendNow(ctx, runID, evt)
 }
 
 // NotifyCLUpdated informs RunManager that given CL has a new version available.
 func (n *Notifier) NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
-	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_ClUpdated{
 			ClUpdated: &eventpb.CLUpdated{
 				Clid:     int64(clid),
@@ -159,10 +159,10 @@ func (n *Notifier) NotifyReadyForSubmission(ctx context.Context, runID common.Ru
 		},
 	}
 	if eta.IsZero() {
-		return n.TaskRefs.SendNow(ctx, runID, evt)
+		return n.TasksBinding.SendNow(ctx, runID, evt)
 	}
 	evt.ProcessAfter = timestamppb.New(eta)
-	return n.TaskRefs.Send(ctx, runID, evt, eta)
+	return n.TasksBinding.Send(ctx, runID, evt, eta)
 }
 
 // NotifyCLSubmitted informs RunManager that the provided CL is submitted.
@@ -191,7 +191,7 @@ func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.R
 		},
 	}
 	if invokeRM {
-		return n.TaskRefs.SendNow(ctx, runID, evt)
+		return n.TasksBinding.SendNow(ctx, runID, evt)
 	}
 	return eventpb.SendWithoutDispatch(ctx, runID, evt)
 }
@@ -201,7 +201,7 @@ func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.R
 //
 // TODO(crbug/1141880): Remove this event after migration.
 func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
-	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_CqdVerificationCompleted{
 			CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
 		},
@@ -213,7 +213,7 @@ func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID com
 //
 // TODO(crbug/1141880): Remove this event after migration.
 func (n *Notifier) NotifyCQDFinished(ctx context.Context, runID common.RunID) error {
-	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
+	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_CqdFinished{
 			CqdFinished: &eventpb.CQDFinished{},
 		},

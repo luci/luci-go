@@ -71,9 +71,9 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 		pmNotifier:  n,
 		runNotifier: rn,
 		clPurger:    clpurger.New(n, u),
-		clPoller:    poller.New(n.TaskRefs.Tqd, u, n),
+		clPoller:    poller.New(n.TasksBinding.TQDispatcher, u, n),
 	}
-	n.TaskRefs.ManageProject.AttachHandler(
+	n.TasksBinding.ManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.ManageProjectTask)
 			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
@@ -84,14 +84,14 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 		},
 	)
 
-	n.TaskRefs.KickManageProject.AttachHandler(
+	n.TasksBinding.KickManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.KickManageProjectTask)
 			var eta time.Time
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
 			}
-			err := n.TaskRefs.Dispatch(ctx, task.GetLuciProject(), eta)
+			err := n.TasksBinding.Dispatch(ctx, task.GetLuciProject(), eta)
 			return common.TQifyError(ctx, err)
 		},
 	)
@@ -116,7 +116,7 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 	if retryViaNewTask {
 		// Scheduling new task reduces probability of concurrent tasks in extreme
 		// events.
-		if errNewTask := pm.pmNotifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); errNewTask == nil {
+		if errNewTask := pm.pmNotifier.TasksBinding.Dispatch(ctx, luciProject, time.Time{}); errNewTask == nil {
 			// Hard-fail this task to avoid retries and get correct monitoring stats
 			err = tq.Fatal.Apply(err)
 		} else {
@@ -149,7 +149,7 @@ func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) 
 		// overlapped with another task, and risking another overlap for a busy
 		// project, schedule a new one in the future which will get a chance of
 		// deduplication.
-		if err2 := pm.pmNotifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
+		if err2 := pm.pmNotifier.TasksBinding.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
 			// This should be rare and retry is the best we can do.
 			return err2
 		}

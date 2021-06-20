@@ -39,18 +39,19 @@ const (
 	taskInterval = time.Second
 )
 
-// TaskRefs are task refs used by RunManager to separate task creation and
-// handling, which in turns avoids circular dependency.
-type TaskRefs struct {
-	ManageRun  tq.TaskClassRef
-	KickManage tq.TaskClassRef
-
-	Tqd *tq.Dispatcher
+// TasksBinding binds Run Manager tasks to a TQ Dispatcher.
+//
+// This struct exists to separate task creation and handling,
+// which in turns avoids circular dependency.
+type TasksBinding struct {
+	ManageRun    tq.TaskClassRef
+	KickManage   tq.TaskClassRef
+	TQDispatcher *tq.Dispatcher
 }
 
 // Register registers tasks with the given TQ Dispatcher.
-func Register(tqd *tq.Dispatcher) TaskRefs {
-	t := TaskRefs{
+func Register(tqd *tq.Dispatcher) TasksBinding {
+	t := TasksBinding{
 		ManageRun: tqd.RegisterTaskClass(tq.TaskClass{
 			ID:        ManageRunTaskClass,
 			Prototype: &ManageRunTask{},
@@ -65,7 +66,7 @@ func Register(tqd *tq.Dispatcher) TaskRefs {
 			Kind:      tq.Transactional,
 			Quiet:     true,
 		}),
-		Tqd: tqd,
+		TQDispatcher: tqd,
 	}
 	t.KickManage.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*KickManageRunTask)
@@ -86,7 +87,7 @@ func Register(tqd *tq.Dispatcher) TaskRefs {
 //  * next possible.
 //
 // To avoid actually dispatching TQ tasks in tests, use runtest.MockDispatch().
-func (tr TaskRefs) Dispatch(ctx context.Context, runID string, eta time.Time) error {
+func (tr TasksBinding) Dispatch(ctx context.Context, runID string, eta time.Time) error {
 	mock, mocked := ctx.Value(&mockDispatcherContextKey).(func(string, time.Time))
 
 	if datastore.CurrentTransaction(ctx) != nil {
@@ -99,7 +100,7 @@ func (tr TaskRefs) Dispatch(ctx context.Context, runID string, eta time.Time) er
 			mock(runID, eta)
 			return nil
 		}
-		return tr.Tqd.AddTask(ctx, &tq.Task{
+		return tr.TQDispatcher.AddTask(ctx, &tq.Task{
 			DeduplicationKey: "", // not allowed in a transaction
 			Payload:          payload,
 		})
@@ -124,7 +125,7 @@ func (tr TaskRefs) Dispatch(ctx context.Context, runID string, eta time.Time) er
 		mock(runID, eta)
 		return nil
 	}
-	return tr.Tqd.AddTask(ctx, &tq.Task{
+	return tr.TQDispatcher.AddTask(ctx, &tq.Task{
 		Title:            runID,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", runID, eta.UnixNano()),
 		ETA:              eta,
@@ -143,12 +144,12 @@ func InstallMockDispatcher(ctx context.Context, f func(runID string, eta time.Ti
 }
 
 // SendNow sends the event to Run's eventbox and invokes RunManager immediately.
-func (tr TaskRefs) SendNow(ctx context.Context, runID common.RunID, evt *Event) error {
+func (tr TasksBinding) SendNow(ctx context.Context, runID common.RunID, evt *Event) error {
 	return tr.Send(ctx, runID, evt, time.Time{})
 }
 
 // Send sends the event to Run's eventbox and invokes RunManager at `eta`.
-func (tr TaskRefs) Send(ctx context.Context, runID common.RunID, evt *Event, eta time.Time) error {
+func (tr TasksBinding) Send(ctx context.Context, runID common.RunID, evt *Event, eta time.Time) error {
 	if err := SendWithoutDispatch(ctx, runID, evt); err != nil {
 		return err
 	}
