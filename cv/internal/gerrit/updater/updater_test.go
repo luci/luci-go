@@ -39,7 +39,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -370,7 +370,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		const gRepo = "depot_tools"
 
 		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
-		gobmap.Update(ctx, lProject)
+		gobmaptest.Update(ctx, lProject)
 
 		task := &RefreshGerritCL{
 			LuciProject: lProject,
@@ -419,7 +419,7 @@ func TestUpdateCLWorks(t *testing.T) {
 
 				// But update LUCI project config to stop watching entire host.
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig("other-"+gHost, gRepo))
-				gobmap.Update(ctx, lProject)
+				gobmaptest.Update(ctx, lProject)
 				task.Change = 1
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				cl := getCL(ctx, gHost, 1)
@@ -641,7 +641,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("No longer watched", func() {
 				ct.Clock.Add(time.Second)
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
-				gobmap.Update(ctx, lProject)
+				gobmaptest.Update(ctx, lProject)
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
@@ -657,8 +657,8 @@ func TestUpdateCLWorks(t *testing.T) {
 				const lProject2 = "proj-2"
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another repo"))
 				ct.Cfg.Create(ctx, lProject2, singleRepoConfig(gHost, gRepo))
-				gobmap.Update(ctx, lProject)
-				gobmap.Update(ctx, lProject2)
+				gobmaptest.Update(ctx, lProject)
+				gobmaptest.Update(ctx, lProject2)
 
 				// Use a hint that'd normally prevent an update.
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
