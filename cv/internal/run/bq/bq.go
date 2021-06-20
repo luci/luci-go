@@ -88,7 +88,10 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 		case err != nil:
 			return err
 		case !yes:
-			logging.Errorf(ctx, "CV is not in charge, but it finalized a Run. Exporting to CV's BQ table only")
+			// Per crbug/1220934 investigation, this actually happens due to
+			// inevitable races between user updating Gerrit in quick succession and
+			// when CV & CQD observe Gerrit.
+			logging.Warningf(ctx, "CV is not in charge, but it finalized a Run. Exporting to CV's BQ table only")
 		default:
 			logging.Debugf(ctx, "CV exporting Run to CQ BQ table")
 			eg.Go(func() error {
