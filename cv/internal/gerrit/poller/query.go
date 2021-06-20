@@ -197,7 +197,7 @@ const maxLoadCLBatchSize = 100
 
 func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
 	// TODO(tandrii): optimize by checking if CV is interested in the
-	// (host,project,ref) these changes come from before triggering tasks.
+	// (host,project,ref) of these changes from before triggering tasks.
 	logging.Debugf(ctx, "scheduling %d CLUpdate tasks", len(changes))
 
 	var clids []common.CLID

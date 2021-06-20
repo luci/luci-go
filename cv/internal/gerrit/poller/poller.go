@@ -190,7 +190,8 @@ func (p *Poller) schedule(ctx context.Context, luciProject string, after time.Ti
 
 // State persists poller's State in datastore.
 //
-// State is exported for exposure via Admin API.
+// State is exported for exposure via Admin API for debugging/observation.
+// It must not be used elsewhere.
 type State struct {
 	_kind string `gae:"$kind,GerritPoller"`
 

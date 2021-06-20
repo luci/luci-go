@@ -162,6 +162,8 @@ func SendWithoutDispatch(ctx context.Context, runID common.RunID, evt *Event) er
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
+	// Must be the same as run.RunKind, which can't imported due to circular
+	// imports.
 	to := datastore.MakeKey(ctx, "Run", string(runID))
 	return eventbox.Emit(ctx, value, to)
 }
