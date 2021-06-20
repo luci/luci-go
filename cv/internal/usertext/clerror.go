@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package clpurger
+package usertext
 
 import (
 	"context"
@@ -26,23 +26,46 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
-func formatMessage(ctx context.Context, task *prjpb.PurgeCLTask, cl *changelist.CL) (string, error) {
-	sb := strings.Builder{}
-	for i, r := range task.GetReasons() {
-		if i != 0 {
-			sb.WriteString("\n")
-		}
-		if err := formatOneReason(ctx, task, r, cl, &sb); err != nil {
-			return "", err
-		}
+// SFormatCLErrors is the same as FormatCLErrors but returns a string.
+func SFormatCLErrors(ctx context.Context, reasons []*changelist.CLError, cl *changelist.CL, mode run.Mode) (string, error) {
+	var sb strings.Builder
+	if err := FormatCLErrors(ctx, reasons, cl, mode, &sb); err != nil {
+		return "", err
 	}
 	return sb.String(), nil
 }
 
-func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *changelist.CLError, cl *changelist.CL, sb *strings.Builder) error {
+// FormatCLError formats 1 CL error by writing it into strings.Builder.
+//
+// mode should be specified if known.
+func FormatCLErrors(ctx context.Context, reasons []*changelist.CLError, cl *changelist.CL, mode run.Mode, sb *strings.Builder) error {
+	for i, r := range reasons {
+		if err := FormatCLError(ctx, r, cl, mode, sb); err != nil {
+			return err
+		}
+		if i > 0 {
+			sb.WriteRune('\n')
+		}
+	}
+	return nil
+}
+
+// SFormatCLError is the same as FormatCLError but returns a string.
+func SFormatCLError(ctx context.Context, reason *changelist.CLError, cl *changelist.CL, mode run.Mode) (string, error) {
+	var sb strings.Builder
+	if err := FormatCLError(ctx, reason, cl, mode, &sb); err != nil {
+		return "", err
+	}
+	return sb.String(), nil
+}
+
+// FormatCLError formats 1 CL error by writing it into strings.Builder.
+//
+// mode should be specified if known.
+func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changelist.CL, mode run.Mode, sb *strings.Builder) error {
 	switch v := reason.GetKind().(type) {
 	case *changelist.CLError_OwnerLacksEmail:
 		if !v.OwnerLacksEmail {
@@ -93,12 +116,12 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *chang
 			bad, t = d.GetWrongConfigGroup(), tmplWrongDepsConfigGroup
 		case len(d.GetSingleFullDeps()) > 0:
 			bad, t = d.GetSingleFullDeps(), tmplSingleFullOpenDeps
-			args["mode"] = task.GetTrigger().GetMode()
+			args["mode"] = string(mode)
 		case len(d.GetCombinableUntriggered()) > 0:
 			bad, t = d.GetCombinableUntriggered(), tmplCombinableUntriggered
 		case len(d.GetCombinableMismatchedMode()) > 0:
 			bad, t = d.GetCombinableMismatchedMode(), tmplCombinableMismatchedMode
-			args["mode"] = task.GetTrigger().GetMode()
+			args["mode"] = string(mode)
 		case d.GetTooMany() != nil:
 			args["max"] = d.GetTooMany().GetMaxAllowed()
 			args["actual"] = d.GetTooMany().GetActual()
@@ -136,20 +159,6 @@ func depsURLs(ctx context.Context, deps []*changelist.Dep) ([]string, error) {
 		}
 	}
 	return urls, nil
-}
-
-func tmplMust(text string) *template.Template {
-	text = strings.TrimSpace(text)
-	return template.Must(template.New("").Funcs(tmplFuncs).Parse(text))
-}
-
-var tmplFuncs = template.FuncMap{
-	"CQ_OR_CV": func() string { return "CQ" },
-	"CONTACT_YOUR_INFRA": func() string {
-		// TODO(tandrii): ideally, CV or even LUCI would provide project-specific
-		// URL from a config.
-		return "Please contact your EngProd or infrastructure team"
-	},
 }
 
 var tmplCLOwnerLacksEmails = tmplMust(`
