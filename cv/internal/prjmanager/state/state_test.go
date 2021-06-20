@@ -185,6 +185,7 @@ func TestUpdateConfig(t *testing.T) {
 				Pcls:                nil,
 				RepartitionRequired: false,
 			})
+			So(s1.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED, prjpb.LogReason_STATUS_CHANGED})
 		})
 
 		// Add 3 CLs: 101 standalone and 202<-203 as a stack.
@@ -315,6 +316,7 @@ func TestUpdateConfig(t *testing.T) {
 					Components:          markForTriage(pb1.Components),
 					RepartitionRequired: true,
 				})
+				So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED})
 			})
 
 			Convey("If PCLs stay same, RepartitionRequired must be false", func() {
@@ -373,6 +375,7 @@ func TestUpdateConfig(t *testing.T) {
 				Components:          markForTriage(pb1.Components),
 				RepartitionRequired: true,
 			})
+			So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED, prjpb.LogReason_STATUS_CHANGED})
 		})
 
 		Convey("disabled project waits for incomplete Runs", func() {
@@ -385,6 +388,7 @@ func TestUpdateConfig(t *testing.T) {
 			So(sideEffect, ShouldResemble, &CancelIncompleteRuns{
 				RunIDs: common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
 			})
+			So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED})
 		})
 
 		Convey("disabled project stops iff there are no incomplete Runs", func() {
@@ -398,6 +402,7 @@ func TestUpdateConfig(t *testing.T) {
 			pb := backupPB(s1)
 			pb.Status = prjpb.Status_STOPPED
 			So(s2.PB, ShouldResembleProto, pb)
+			So(prjpb.SortAndDedupeLogReasons(s2.LogReasons), ShouldResemble, []prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED})
 		})
 
 		// The rest of the test coverage of UpdateConfig is achieved by testing code
@@ -917,6 +922,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					CreatedPruns:        nil, // removed
 					RepartitionRequired: true,
 				})
+				So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED})
 			})
 		})
 	})
