@@ -21,16 +21,16 @@ func (s *State) cloneShallow() *State {
 	*ret = *s
 	// Don't use proto.merge to avoid deep copy.
 	ret.PB = &prjpb.PState{
-		LuciProject:      s.PB.GetLuciProject(),
-		Status:           s.PB.GetStatus(),
-		ConfigHash:       s.PB.GetConfigHash(),
-		ConfigGroupNames: s.PB.GetConfigGroupNames(),
-		Pcls:             s.PB.GetPcls(),
-		Components:       s.PB.GetComponents(),
-		RepartitionRequired:  s.PB.GetRepartitionRequired(),
-		CreatedPruns:     s.PB.GetCreatedPruns(),
-		NextEvalTime:     s.PB.GetNextEvalTime(),
-		PurgingCls:       s.PB.GetPurgingCls(),
+		LuciProject:         s.PB.GetLuciProject(),
+		Status:              s.PB.GetStatus(),
+		ConfigHash:          s.PB.GetConfigHash(),
+		ConfigGroupNames:    s.PB.GetConfigGroupNames(),
+		Pcls:                s.PB.GetPcls(),
+		Components:          s.PB.GetComponents(),
+		RepartitionRequired: s.PB.GetRepartitionRequired(),
+		CreatedPruns:        s.PB.GetCreatedPruns(),
+		NextEvalTime:        s.PB.GetNextEvalTime(),
+		PurgingCls:          s.PB.GetPurgingCls(),
 	}
 
 	s.alreadyCloned = true

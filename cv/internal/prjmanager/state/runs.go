@@ -90,10 +90,10 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 		}
 		if pruns, modified := c.COWPRuns(nil, toAdd); modified {
 			return &prjpb.Component{
-				Clids:        c.GetClids(),
-				DecisionTime: c.GetDecisionTime(),
-				Pruns:        pruns,
-				TriageRequired:        true,
+				Clids:          c.GetClids(),
+				DecisionTime:   c.GetDecisionTime(),
+				Pruns:          pruns,
+				TriageRequired: true,
 			}
 		}
 		return c
@@ -131,10 +131,10 @@ func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
 		}
 		if pruns, modified := c.COWPRuns(delIfFinished, nil); modified {
 			return &prjpb.Component{
-				Pruns:        pruns,
-				Clids:        c.GetClids(),
-				DecisionTime: c.GetDecisionTime(),
-				TriageRequired:        true,
+				Pruns:          pruns,
+				Clids:          c.GetClids(),
+				DecisionTime:   c.GetDecisionTime(),
+				TriageRequired: true,
 			}
 		}
 		return c
