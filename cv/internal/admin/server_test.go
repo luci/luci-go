@@ -106,6 +106,39 @@ func TestGetProject(t *testing.T) {
 	})
 }
 
+func TestGetProjectLogs(t *testing.T) {
+	t.Parallel()
+
+	Convey("GetProjectLogs works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "luci"
+		d := AdminServer{}
+
+		Convey("without access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+			})
+			_, err := d.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("with access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+			Convey("nothing", func() {
+				resp, err := d.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
+				So(err, ShouldBeNil)
+				So(resp.GetLogs(), ShouldHaveLength, 0)
+			})
+		})
+	})
+}
+
 func TestGetRun(t *testing.T) {
 	t.Parallel()
 
