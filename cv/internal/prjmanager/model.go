@@ -90,7 +90,7 @@ func (p *Project) ConfigHash() string {
 
 // Load loads LUCI project state from Datastore.
 //
-// If project doesn't exist in Datastore, returns nil, nil, nil.
+// If project doesn't exist in Datastore, returns nil, nil.
 func Load(ctx context.Context, luciProject string) (*Project, error) {
 	p := &Project{ID: luciProject}
 	switch err := datastore.Get(ctx, p); {
