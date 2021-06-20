@@ -21,6 +21,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -87,8 +88,8 @@ func TestPartitionConfig(t *testing.T) {
 		const gHost1 = "1.example.com"
 		const gHost2 = "2.example.com"
 
-		ct.Cfg.Create(ctx, luciProject, cfg)
-		meta := ct.Cfg.MustExist(ctx, luciProject)
+		prjcfgtest.Create(ctx, luciProject, cfg)
+		meta := prjcfgtest.MustExist(ctx, luciProject)
 		hash := meta.Hash()
 
 		ids := func(ids ...string) []prjcfg.ConfigGroupID {
