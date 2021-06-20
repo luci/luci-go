@@ -230,7 +230,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 					gf.Updated(now.Add(-1*time.Minute))))
 				_, err := h.OnCQDVerificationCompleted(ctx, rs)
 				So(err, ShouldBeNil)
-				So(gf.LastMessage(ct.GFake.GetChange(gHost, gChange).Info).GetMessage(), ShouldContainSubstring, "Quick dry run: This CL passed the CQ dry run.")
+				So(gf.LastMessage(ct.GFake.GetChange(gHost, gChange).Info).GetMessage(), ShouldContainSubstring, "CL passed")
 			})
 		})
 
