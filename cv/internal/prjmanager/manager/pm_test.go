@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
@@ -61,7 +62,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		const lProject = "infra"
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
 
-		ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+		prjcfgtest.Create(ctx, lProject, singleRepoConfig("host", "repo"))
 
 		So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
@@ -105,7 +106,7 @@ func TestProjectLifeCycle(t *testing.T) {
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
 
 		Convey("with new project", func() {
-			ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+			prjcfgtest.Create(ctx, lProject, singleRepoConfig("host", "repo"))
 			So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 			// Second event is a noop, but should still be consumed at once.
 			So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
@@ -144,7 +145,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				simulateRunCreated("111-beef")
 				simulateRunCreated("222-cafe")
 
-				ct.Cfg.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
+				prjcfgtest.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
 				So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
@@ -156,7 +157,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
 
 				Convey("disable project with incomplete runs", func() {
-					ct.Cfg.Disable(ctx, lProject)
+					prjcfgtest.Disable(ctx, lProject)
 					So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
@@ -187,7 +188,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			Convey("delete project without incomplete runs", func() {
 				// No components means also no runs.
 				p.State.Components = nil
-				ct.Cfg.Delete(ctx, lProject)
+				prjcfgtest.Delete(ctx, lProject)
 				So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
@@ -230,7 +231,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 			// Postpone creation of Runs, which isn't important in this test.
 			StabilizationDelay: durationpb.New(time.Hour),
 		}
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 		gobmaptest.Update(ctx, lProject)
 
 		// Put #43 CL directly w/o notifying the PM.
@@ -247,7 +248,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 						gf.CQ(+2, ct.Clock.Now(), gf.U("user-1"))),
 				}},
 			}
-			meta := ct.Cfg.MustExist(ctx, lProject)
+			meta := prjcfgtest.MustExist(ctx, lProject)
 			cl.ApplicableConfig = &changelist.ApplicableConfig{
 				Projects: []*changelist.ApplicableConfig_Project{
 					{Name: lProject, ConfigGroupIds: []string{string(meta.ConfigGroupIDs[0])}},

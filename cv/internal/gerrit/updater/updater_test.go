@@ -36,6 +36,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -369,7 +370,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		const gHostInternal = "internal-review.example.com"
 		const gRepo = "depot_tools"
 
-		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+		prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 		gobmaptest.Update(ctx, lProject)
 
 		task := &RefreshGerritCL{
@@ -418,7 +419,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// But update LUCI project config to stop watching entire host.
-				ct.Cfg.Update(ctx, lProject, singleRepoConfig("other-"+gHost, gRepo))
+				prjcfgtest.Update(ctx, lProject, singleRepoConfig("other-"+gHost, gRepo))
 				gobmaptest.Update(ctx, lProject)
 				task.Change = 1
 				So(u.Refresh(ctx, task), ShouldBeNil)
@@ -640,7 +641,7 @@ func TestUpdateCLWorks(t *testing.T) {
 
 			Convey("No longer watched", func() {
 				ct.Clock.Add(time.Second)
-				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
+				prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
 				gobmaptest.Update(ctx, lProject)
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
@@ -655,8 +656,8 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("Watched by a diff project", func() {
 				ct.Clock.Add(time.Second)
 				const lProject2 = "proj-2"
-				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another repo"))
-				ct.Cfg.Create(ctx, lProject2, singleRepoConfig(gHost, gRepo))
+				prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, "another repo"))
+				prjcfgtest.Create(ctx, lProject2, singleRepoConfig(gHost, gRepo))
 				gobmaptest.Update(ctx, lProject)
 				gobmaptest.Update(ctx, lProject2)
 

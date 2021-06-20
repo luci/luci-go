@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
@@ -95,7 +96,7 @@ func TestPokeRecheckTree(t *testing.T) {
 					},
 				},
 			}
-			ct.Cfg.Create(ctx, lProject, cfg)
+			prjcfgtest.Create(ctx, lProject, cfg)
 			meta, err := prjcfg.GetLatestMeta(ctx, lProject)
 			So(err, ShouldBeNil)
 			So(meta.ConfigGroupIDs, ShouldHaveLength, 1)

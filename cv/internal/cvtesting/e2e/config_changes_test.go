@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
@@ -62,7 +63,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 		))
 
 		ct.LogPhase(ctx, "CV starts 2 runs while watching first repo only")
-		ct.Cfg.Create(ctx, lProject, cfgFirst)
+		prjcfgtest.Create(ctx, lProject, cfgFirst)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 		var runFirstSingle, runFirstCombo *run.Run
@@ -83,7 +84,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 			Name:      gRepoSecond,
 			RefRegexp: []string{"refs/heads/.+"},
 		})
-		ct.Cfg.Update(ctx, lProject, cfgBoth)
+		prjcfgtest.Update(ctx, lProject, cfgBoth)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 		var runSecondSingle *run.Run
@@ -101,7 +102,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 
 		ct.LogPhase(ctx, "CV watches only the second repo, stops Runs on CLs from the first repo, and purges second combo CL")
 		cfgSecond := MakeCfgCombinable("main", gHost, gRepoSecond, "refs/heads/.+")
-		ct.Cfg.Update(ctx, lProject, cfgSecond)
+		prjcfgtest.Update(ctx, lProject, cfgSecond)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
 			runFirstSingle = ct.LoadRun(ctx, runFirstSingle.ID)
