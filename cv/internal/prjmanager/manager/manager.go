@@ -43,12 +43,21 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// maxEventsPerBatch limits the number of incoming events the PM will process at
-// once.
-//
-// This shouldn't be hit in practice under normal operation. This is chosen such
-// that PM can read these events and make some progress in 1 minute.
-const maxEventsPerBatch = 10000
+const (
+	// maxEventsPerBatch limits the number of incoming events the PM will process at
+	// once.
+	//
+	// This shouldn't be hit in practice under normal operation. This is chosen such
+	// that PM can read these events and make some progress in 1 minute.
+	maxEventsPerBatch = 10000
+
+	// logProjectStateFrequency forces saving ProjectLog entity iff
+	// Project.EVersion is divisible by logProjectStateFrequency.
+	//
+	// In practice, the busiest projects sustain at most ~1 QPS of updates.
+	// Thus, value of 60 limits ProjectLog to at most 1/minute or 1.5k/day.
+	logProjectStateFrequency = 60
+)
 
 var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
 
@@ -259,8 +268,12 @@ func (proc *pmProcessor) SaveState(ctx context.Context, st eventbox.State, ev ev
 		})
 	}
 
-	if len(s.LogReasons) > 0 {
-		deduped := prjpb.SortAndDedupeLogReasons(s.LogReasons)
+	switch reasons := s.LogReasons; {
+	case new.EVersion%logProjectStateFrequency == 0:
+		reasons = append(s.LogReasons, prjpb.LogReason_FYI_PERIODIC)
+		fallthrough
+	case len(reasons) > 0:
+		deduped := prjpb.SortAndDedupeLogReasons(reasons)
 		txndefer.Defer(ctx, func(ctx context.Context) {
 			logging.Debugf(ctx, "Saved ProjectLog @ %d due to %s", new.EVersion, prjpb.FormatLogReasons(deduped))
 		})
