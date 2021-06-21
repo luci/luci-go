@@ -126,11 +126,6 @@ func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (
 	return inst, nil
 }
 
-type fileToExtract struct {
-	fs.File
-	index int
-}
-
 // ExtractFiles extracts all given files into a destination, with a progress
 // report.
 //
@@ -154,9 +149,12 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 		}
 	}
 
-	progress := newProgressReporter(ctx, files)
+	type fileToExtract struct {
+		fs.File     // the actual file to extract
+		index   int // its index in the `extracted` list
+	}
 
-	extracted = make([]pkg.FileInfo, len(files))
+	// recordExtracted writes into a correct slot in `extracted`.
 	recordExtracted := func(f fileToExtract, symlink, hash string) {
 		fi := pkg.FileInfo{
 			Name:       f.Name(),
@@ -170,12 +168,10 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 		if modTime := f.ModTime(); !modTime.IsZero() {
 			fi.ModTime = modTime.Unix()
 		}
-
 		extracted[f.index] = fi
 	}
 
 	extractSymlinkFile := func(f fileToExtract) error {
-		defer progress.advance(f)
 		target, err := f.SymlinkTarget()
 		if err != nil {
 			return err
@@ -188,7 +184,6 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 	}
 
 	extractRegularFile := func(f fileToExtract) (err error) {
-		defer progress.advance(f)
 		out, err := dest.CreateFile(ctx, f.Name(), fs.CreateFileOptions{
 			Executable: f.Executable(),
 			Writable:   f.Writable(),
@@ -216,78 +211,95 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 		return err
 	}
 
+	// Estimate of the work to do for the progress reporter.
+	var progressTotalCount uint64
+	var progressTotalSize uint64
+
+	// Will be handled at the very end.
+	var manifestFile fs.File
+
+	filesToExtract := make([]fileToExtract, 0, len(files))
+	for _, f := range files {
+		// Extract everything except files under .cipdpkg dir (they are special CIPD
+		// guts that are interpreted by CIPD itself and thus don't need to be
+		// blindly extracted with everything else). Grab the manifest from them
+		// though. It will be extended with []pkg.FileInfo of extracted files and
+		// dropped to disk too, to represent the now unpacked package.
+		name := f.Name()
+		if name != pkg.ManifestName && strings.HasPrefix(name, pkg.ServiceDir+"/") {
+			continue
+		}
+
+		// Will going to extract this file.
+		progressTotalCount++
+		progressTotalSize += f.Size()
+
+		if name == pkg.ManifestName {
+			// We delay writing the extended manifest until the very end because we
+			// need to know hashes of all extract files (to put them inside the
+			// manifest), so we need to extract them all first.
+			manifestFile = f
+		} else {
+			// Extract through worker threads.
+			filesToExtract = append(filesToExtract, fileToExtract{
+				File:  f,
+				index: len(filesToExtract), // to know what `extracted` slot to update
+			})
+		}
+	}
+
+	// `extracted` is updated by recordExtracted. Each item in `filesToExtract`
+	// holds an index of a slot in `extracted` it corresponds. This is used to
+	// preserve the original order of pkg.FileInfo entries even after we sort
+	// `filesToExtract` below
+	extracted = make([]pkg.FileInfo, len(filesToExtract))
+
+	// Figure out how many worker threads to run. We assume `ExtractFiles` itself
+	// is not called concurrently with other CPU-intensive operations.
 	if maxThreads <= 0 {
 		maxThreads = runtime.NumCPU()
 	}
-	workerCount := len(files)
+	workerCount := len(filesToExtract)
 	if workerCount > maxThreads {
 		workerCount = maxThreads
 	}
 
-	filesToExtract := make([]fileToExtract, len(files))
-	for i, f := range files {
-		filesToExtract[i] = fileToExtract{File: f, index: i}
-	}
+	// If using multiple threads, sort the files by size (descending) so that
+	// large files are processed first. This helps distribute processing more
+	// evenly between worker threads.
 	if workerCount > 1 {
-		// If using multiple threads, sort the files by size (descending) so
-		// that large files are processed first. This helps distribute
-		// processing more evenly between worker threads.
 		sort.Slice(filesToExtract, func(i, j int) bool {
 			return filesToExtract[i].Size() > filesToExtract[j].Size()
 		})
 	}
 
-	fileQueue := make(chan fileToExtract, len(files))
-	// Extract everything except files under .cipdpkg dir (they are special CIPD
-	// guts that are interpreted by CIPD itself and thus don't need to be blindly
-	// extracted with everything else). Grab the manifest from them though. It
-	// will be extended with []pkg.FileInfo of extracted files and dropped to disk
-	// too, to represent the now unpacked package.
-	var manifestFile fs.File
-	for _, f := range filesToExtract {
-		if err = ctx.Err(); err != nil {
-			break
-		}
-
-		switch {
-		case f.Name() == pkg.ManifestName:
-			// We delay writing the extended manifest until the very end because we
-			// need to know hashes of all extract files (to put them inside the
-			// manifest), so we need to extract them all first.
-			manifestFile = f
-			progress.advance(f)
-		case strings.HasPrefix(f.Name(), pkg.ServiceDir+"/"):
-			// Skip private package files. Note that pkg.ManifestName is one such
-			// file, so the order of 'case' branches here is important.
-			progress.advance(f)
-		default:
-			// Send file to a worker thread for extraction.
-			fileQueue <- f
-		}
-	}
-	close(fileQueue)
+	// We now know how much work needs to be done.
+	progress := newProgressReporter(ctx, progressTotalCount, progressTotalSize)
 
 	// Spawn worker threads to do the CPU-intensive extraction in parallel.
 	err = parallel.WorkPool(workerCount, func(tasks chan<- func() error) {
-		for {
-			if err = ctx.Err(); err != nil {
-				return
-			}
-			f, queueOpen := <-fileQueue
-			if !queueOpen {
-				return
-			}
-			tasks <- func() error {
+		for _, f := range filesToExtract {
+			f := f
+			task := func() error {
+				defer progress.advance(f.Size())
 				if f.Symlink() {
 					return extractSymlinkFile(f)
 				} else {
 					return extractRegularFile(f)
 				}
 			}
+			select {
+			case tasks <- task:
+			case <-ctx.Done():
+				return
+			}
 		}
 	})
 
 	switch {
+	case ctx.Err() != nil:
+		err = ctx.Err()
+		return
 	case err != nil || bool(!withManifest):
 		return
 	case manifestFile == nil:
@@ -302,7 +314,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 	if err != nil {
 		return
 	}
-	manifest.Files = excludeNoNameFiles(extracted)
+	manifest.Files = extracted
 
 	// And place it into the destination.
 	out, err := dest.CreateFile(ctx, pkg.ManifestName, fs.CreateFileOptions{})
@@ -315,20 +327,8 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 		}
 	}()
 	err = pkg.WriteManifest(&manifest, out)
+	progress.advance(manifestFile.Size())
 	return
-}
-
-// excludeNoNameFiles returns all the files with non-empty names. It does the
-// filtering in-place to avoid extra memory allocation.
-func excludeNoNameFiles(files []pkg.FileInfo) []pkg.FileInfo {
-	keepCount := 0
-	for _, file := range files {
-		if file.Name != "" {
-			files[keepCount] = file
-			keepCount++
-		}
-	}
-	return files[:keepCount]
 }
 
 // ExtractFilesTxn is like ExtractFiles, but it also opens and closes
@@ -359,23 +359,21 @@ func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.Transactional
 //
 // Can be shared by multiple goroutines.
 type progressReporter struct {
-	sync.Mutex
+	ctx        context.Context
+	totalCount uint64 // total number of files to extract
+	totalSize  uint64 // total expected uncompressed size of files
 
-	ctx context.Context
-
-	totalCount     uint64    // total number of files to extract
-	totalSize      uint64    // total expected uncompressed size of files
+	m              sync.Mutex
 	extractedCount uint64    // number of files extract so far
 	extractedSize  uint64    // bytes uncompressed so far
 	prevReport     time.Time // time when we did the last progress report
 }
 
-func newProgressReporter(ctx context.Context, files []fs.File) *progressReporter {
-	r := &progressReporter{ctx: ctx, totalCount: uint64(len(files))}
-	for _, f := range files {
-		if !f.Symlink() {
-			r.totalSize += f.Size()
-		}
+func newProgressReporter(ctx context.Context, totalCount, totalSize uint64) *progressReporter {
+	r := &progressReporter{
+		ctx:        ctx,
+		totalCount: totalCount,
+		totalSize:  totalSize,
 	}
 	if r.totalCount != 0 {
 		logging.Infof(
@@ -386,7 +384,7 @@ func newProgressReporter(ctx context.Context, files []fs.File) *progressReporter
 }
 
 // advance moves the progress indicator, occasionally logging it.
-func (r *progressReporter) advance(f fs.File) {
+func (r *progressReporter) advance(size uint64) {
 	if r.totalCount == 0 {
 		return
 	}
@@ -395,14 +393,8 @@ func (r *progressReporter) advance(f fs.File) {
 	reportNow := false
 	progress := 0
 
-	// We don't count size of the symlinks toward total.
-	var size uint64
-	if !f.Symlink() {
-		size = f.Size()
-	}
-
 	// Report progress on first and last 'advance' calls and each 0.5 sec.
-	r.Lock()
+	r.m.Lock()
 	r.extractedSize += size
 	r.extractedCount++
 	if r.extractedCount == 1 || r.extractedCount == r.totalCount || now.Sub(r.prevReport) > 500*time.Millisecond {
@@ -414,7 +406,7 @@ func (r *progressReporter) advance(f fs.File) {
 		}
 		r.prevReport = now
 	}
-	r.Unlock()
+	r.m.Unlock()
 
 	if reportNow {
 		logging.Infof(r.ctx, "cipd: extracting - %d%%", progress)
