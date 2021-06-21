@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/eventbox/dsset"
+	"go.chromium.org/luci/cv/internal/common/eventbox/dsset"
 )
 
 // Emit emits a new event with provided value and auto-generated unique ID.
