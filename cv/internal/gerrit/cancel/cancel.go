@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -150,9 +151,9 @@ type Input struct {
 // If the patcheset of the passed CL is not current, returns error tagged with
 // `ErrPreconditionFailedTag`.
 //
-// Normally, the triggering vote(s) will be removed last and all other votes
-// will be removed in chronological order (latest to earliest). Message will
-// posted in the same rpc call to Gerrit that removes the triggering votes.
+// Normally, the triggering vote(s) is removed last and all other votes
+// are removed in chronological order (latest to earliest).
+// After all votes are removed, the message is posted to Gerrit.
 //
 // Abnormally, e.g. lack of permission to remove votes, falls back to post a
 // special message which "deactivates" the triggering votes. This special
@@ -203,6 +204,7 @@ var failMessage = "CV failed to unset the " + trigger.CQLabelName +
 	trigger.CQLabelName + " label to retry."
 
 func cancelLeased(ctx context.Context, c *change, in *Input) error {
+	logging.Infof(ctx, "Canceling triggers on %s/%d", c.Host, c.Number)
 	ci, err := c.getLatest(ctx)
 	switch {
 	case err != nil:
@@ -235,6 +237,7 @@ func cancelLeased(ctx context.Context, c *change, in *Input) error {
 	}
 
 	// Received permanent error, try posting message.
+	logging.Warningf(ctx, "Falling back to canceling via botdata message %s/%d", c.Host, c.Number)
 	var msgBuilder strings.Builder
 	if in.Message != "" {
 		msgBuilder.WriteString(in.Message)
@@ -365,16 +368,18 @@ func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeI
 			errs = append(errs, err)
 		}
 	}
+	if needRemoveTriggerVote {
+		// Remoe the triggering vote last.
+		if err := c.removeVote(ctx, t.GetGerritAccountId(), "", gerritpb.Notify_NOTIFY_NONE, nil); err != nil {
+			errs = append(errs, err)
+		}
+	}
 	if len(errs) != 0 {
 		return common.MostSevereError(errs)
 	}
 
 	n, nd := notify.toGerritNotify(accounts)
-	if !needRemoveTriggerVote {
-		// No need to remove triggering votes, post message only.
-		return c.annotateGerritErr(ctx, c.postGerritMsg(ctx, ci, msg, t, n, nd), "post message")
-	}
-	return c.removeVote(ctx, t.GetGerritAccountId(), msg, n, nd)
+	return c.annotateGerritErr(ctx, c.postGerritMsg(ctx, ci, msg, t, n, nd), "post message")
 }
 
 func (c *change) removeVote(ctx context.Context, accountID int64, msg string, n gerritpb.Notify, nd *gerritpb.NotifyDetails) error {

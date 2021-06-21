@@ -15,7 +15,6 @@
 package cancel
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -48,6 +47,7 @@ func TestCancel(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
 		user := gf.U("user-100")
 		const gHost = "x-review.example.com"
 		const lProject = "lProject"
@@ -153,6 +153,20 @@ func TestCancel(t *testing.T) {
 			So(transient.Tag.In(err), ShouldBeTrue)
 		})
 
+		splitSetReviewRequests := func() (onBehalf, asSelf []*gerritpb.SetReviewRequest) {
+			for _, req := range ct.GFake.Requests() {
+				switch r, ok := req.(*gerritpb.SetReviewRequest); {
+				case !ok:
+				case r.GetOnBehalfOf() != 0:
+					// OnBehalfOf removes votes and must happen before any asSelf.
+					So(asSelf, ShouldBeEmpty)
+					onBehalf = append(onBehalf, r)
+				default:
+					asSelf = append(asSelf, r)
+				}
+			}
+			return onBehalf, asSelf
+		}
 		Convey("Remove single vote", func() {
 			err := Cancel(ctx, input)
 			So(err, ShouldBeNil)
@@ -160,14 +174,13 @@ func TestCancel(t *testing.T) {
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
 			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
 			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
-			var setReviewReq *gerritpb.SetReviewRequest
-			for _, req := range ct.GFake.Requests() {
-				if r, ok := req.(*gerritpb.SetReviewRequest); ok {
-					setReviewReq = r
-				}
-			}
-			So(setReviewReq.GetOnBehalfOf(), ShouldEqual, user.GetAccountId())
-			So(setReviewReq.GetNotifyDetails(), ShouldResembleProto,
+
+			onBehalfs, asSelf := splitSetReviewRequests()
+			So(onBehalfs, ShouldHaveLength, 1)
+			So(onBehalfs[0].GetOnBehalfOf(), ShouldEqual, user.GetAccountId())
+			So(onBehalfs[0].GetNotifyDetails(), ShouldBeNil)
+			So(asSelf, ShouldHaveLength, 1)
+			So(asSelf[0].GetNotifyDetails(), ShouldResembleProto,
 				&gerritpb.NotifyDetails{
 					Recipients: []*gerritpb.NotifyDetails_Recipient{
 						{
@@ -193,32 +206,28 @@ func TestCancel(t *testing.T) {
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
 			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
 			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
-			orderedRemovals := []int{}
-			for _, req := range ct.GFake.Requests() {
-				if r, ok := req.(*gerritpb.SetReviewRequest); ok {
-					orderedRemovals = append(orderedRemovals, int(r.OnBehalfOf))
-					if r.OnBehalfOf != user.GetAccountId() {
-						So(r.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-						So(r.GetNotifyDetails(), ShouldBeNil)
-					} else {
-						So(r.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_OWNER)
-						So(r.GetNotifyDetails(), ShouldResembleProto,
-							&gerritpb.NotifyDetails{
-								Recipients: []*gerritpb.NotifyDetails_Recipient{
-									{
-										RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
-										Info: &gerritpb.NotifyDetails_Info{
-											Accounts: []int64{100, 101, 102, 103},
-										},
-									},
-								},
-							})
-					}
-				}
+
+			onBehalfs, asSelf := splitSetReviewRequests()
+			for _, r := range onBehalfs {
+				So(r.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+				So(r.GetNotifyDetails(), ShouldBeNil)
 			}
 			// The triggering vote(s) must have been removed last, the order of
 			// removals for the rest doesn't matter so long as it does the job.
-			So(orderedRemovals[len(orderedRemovals)-1], ShouldEqual, 100)
+			So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), ShouldEqual, 100)
+			So(asSelf, ShouldHaveLength, 1)
+			So(asSelf[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_OWNER)
+			So(asSelf[0].GetNotifyDetails(), ShouldResembleProto,
+				&gerritpb.NotifyDetails{
+					Recipients: []*gerritpb.NotifyDetails_Recipient{
+						{
+							RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
+							Info: &gerritpb.NotifyDetails_Info{
+								Accounts: []int64{100, 101, 102, 103},
+							},
+						},
+					},
+				})
 		})
 
 		Convey("Removing votes from non-CQ labels used in additional modes", func() {
@@ -285,11 +294,11 @@ func TestCancel(t *testing.T) {
 			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
 			So(gf.NonZeroVotes(resultCI.Info, qLabel), ShouldBeEmpty)
 			So(gf.NonZeroVotes(resultCI.Info, uLabel), ShouldBeEmpty)
+
+			onBehalfs, _ := splitSetReviewRequests()
 			// The last request must be for account 100.
-			reqs := ct.GFake.Requests()
-			lastReq := reqs[len(reqs)-1].(*gerritpb.SetReviewRequest)
-			So(lastReq.GetOnBehalfOf(), ShouldEqual, 100)
-			So(lastReq.GetLabels(), ShouldResemble, map[string]int32{
+			So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), ShouldEqual, 100)
+			So(onBehalfs[len(onBehalfs)-1].GetLabels(), ShouldResemble, map[string]int32{
 				trigger.CQLabelName: 0,
 				qLabel:              0,
 				uLabel:              0,
@@ -309,16 +318,9 @@ func TestCancel(t *testing.T) {
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
 			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
 			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
-			count := 0
-			for _, req := range ct.GFake.Requests() {
-				if r, ok := req.(*gerritpb.SetReviewRequest); ok {
-					So(r.OnBehalfOf, ShouldEqual, user.GetAccountId())
-					count++
-				}
-			}
-			if count != 1 {
-				So(fmt.Sprintf("expected exactly one request to remove vote on behalf of user-%d; got %d", user.GetAccountId(), count), ShouldBeEmpty)
-			}
+			onBehalfs, _ := splitSetReviewRequests()
+			So(onBehalfs, ShouldHaveLength, 1)
+			So(onBehalfs[0].GetOnBehalfOf(), ShouldEqual, user.GetAccountId())
 		})
 
 		Convey("Post Message even if triggering votes has been removed already", func() {
@@ -361,26 +363,13 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 		})
 
 		Convey("Post Message if change is in bad state", func() {
-			first := true
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.Status(gerritpb.ChangeStatus_ABANDONED)(c.Info)
-				// Unfortuantely, current gf.ACLs mode doesn't distinguish between
-				// setReview which removes votes on behalf of other users from just
-				// posting a message. So, this test is tied to an impl. which first
-				// tries to remove the vote, and then falls back to just posting a
-				// message.
 				c.ACLs = func(op gf.Operation, _ string) *status.Status {
-					switch {
-					case op != gf.OpReview:
-						return status.New(codes.OK, "")
-					case first:
-						// First call is supposed to remove votes.
-						first = false
+					if op == gf.OpAlterVotesOfOthers {
 						return status.New(codes.FailedPrecondition, "change abandoned, no vote removals allowed")
-					default:
-						// 2+ call to SetReview.
-						return status.New(codes.OK, "")
 					}
+					return status.New(codes.OK, "")
 				}
 			})
 			err := Cancel(ctx, input)
