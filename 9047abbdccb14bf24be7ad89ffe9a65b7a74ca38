@@ -39,6 +39,30 @@
       },
       "revId": "9047abbdccb14bf24be7ad89ffe9a65b7a74ca38",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3be6076d_047af26c",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-21T19:16:29Z",
+      "side": 1,
+      "message": "What do you mean? Also this comment was written by not-me.",
+      "parentUuid": "174ae4ab_b4524334",
+      "range": {
+        "startLine": 268,
+        "startChar": 30,
+        "endLine": 268,
+        "endChar": 35
+      },
+      "revId": "9047abbdccb14bf24be7ad89ffe9a65b7a74ca38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

@@ -143,6 +143,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "5ad8f567_2ebd8414",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-21T19:16:29Z",
+      "side": 0,
+      "message": "I know why it was added. It skips files skipped by `for _, f :\u003d range filesToExtract` loop because they end up having default empty name. It is no longer necessary after I refactored this loop.",
+      "parentUuid": "4f70f1e7_f04bd564",
+      "range": {
+        "startLine": 305,
+        "startChar": 18,
+        "endLine": 305,
+        "endChar": 36
+      },
+      "revId": "22b2c6c7507aac2d4a4e7b9b7dca05609cfd2986",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "dbfa9f09_13c3c02d",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 1
