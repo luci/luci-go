@@ -16,6 +16,92 @@
       "message": "ptal",
       "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a4c2d3e_198e7b84",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:54:45Z",
+      "side": 1,
+      "message": "Generally LGTM, with nits",
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "82cbc138_b1411fc7",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:54:45Z",
+      "side": 1,
+      "message": "You\u0027ll always have to remember to update any time sensitive words like this.\n\nOptionally you could rephrase it so that it\u0027s still correct if you forget to update it, e.g.\n\n    As of June 2021, CLs are submitted serially and submitter returns immediately upon failure so `cl_failures` will have only one entry. However, when CV support parallel CL submission...",
+      "range": {
+        "startLine": 136,
+        "startChar": 7,
+        "endLine": 136,
+        "endChar": 16
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e15c6eb_8a231ca3",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:54:45Z",
+      "side": 1,
+      "message": "CLs",
+      "range": {
+        "startLine": 108,
+        "startChar": 5,
+        "endLine": 108,
+        "endChar": 7
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97e0fdbb_de87c434",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:54:45Z",
+      "side": 1,
+      "message": "as if CV has never attempted to submit them",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 49
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
