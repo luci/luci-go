@@ -22,6 +22,30 @@
       },
       "revId": "736b33f515893be2e2923d989db41184b8a10464",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b87b918e_d4583743",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-21T12:51:44Z",
+      "side": 1,
+      "message": "I can do, but choose to utilize nature of t.TempDir() without any thought.",
+      "parentUuid": "1ea4730b_65f37de5",
+      "range": {
+        "startLine": 9,
+        "startChar": 10,
+        "endLine": 9,
+        "endChar": 32
+      },
+      "revId": "736b33f515893be2e2923d989db41184b8a10464",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
