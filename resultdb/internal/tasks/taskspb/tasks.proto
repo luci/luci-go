@@ -24,12 +24,6 @@ message TryFinalizeInvocation {
   string invocation_id = 1;
 }
 
-// Deprecated, do not use. Use one of the two below.
-message ExportInvocationToBQ {
-  string invocation_id = 1;
-  luci.resultdb.v1.BigQueryExport bq_export = 2;
-}
-
 message ExportInvocationTestResultsToBQ {
   string invocation_id = 1;
   luci.resultdb.v1.BigQueryExport bq_export = 2;
