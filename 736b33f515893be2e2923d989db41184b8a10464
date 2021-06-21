@@ -46,6 +46,30 @@
       },
       "revId": "736b33f515893be2e2923d989db41184b8a10464",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3fb66fce_3b23127c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-06-21T13:00:50Z",
+      "side": 1,
+      "message": "Ah, this change is to move to the temporal dir created at the beginning of the test. Ack.",
+      "parentUuid": "b87b918e_d4583743",
+      "range": {
+        "startLine": 9,
+        "startChar": 10,
+        "endLine": 9,
+        "endChar": 32
+      },
+      "revId": "736b33f515893be2e2923d989db41184b8a10464",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
