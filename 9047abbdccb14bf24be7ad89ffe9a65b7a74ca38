@@ -63,6 +63,30 @@
       },
       "revId": "9047abbdccb14bf24be7ad89ffe9a65b7a74ca38",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb0ce139_32132065",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-21T20:38:15Z",
+      "side": 1,
+      "message": "Ah; well I was wondering how all the various threads coordinated to create all the intermediate folder structure. It seems like if you picked wrong you could end up in a situation with a lot of unnecessary mkdir calls which error out.",
+      "parentUuid": "3be6076d_047af26c",
+      "range": {
+        "startLine": 268,
+        "startChar": 30,
+        "endLine": 268,
+        "endChar": 35
+      },
+      "revId": "9047abbdccb14bf24be7ad89ffe9a65b7a74ca38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
