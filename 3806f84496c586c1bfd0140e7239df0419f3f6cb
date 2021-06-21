@@ -16,6 +16,23 @@
       "message": "ptal",
       "revId": "3806f84496c586c1bfd0140e7239df0419f3f6cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "243b51f0_47caf609",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T22:42:40Z",
+      "side": 1,
+      "message": "👍 thank you. Also, thanks for paying attention in my prior CL, and shame on me for forgetting my own thinking from 2015 😞",
+      "revId": "3806f84496c586c1bfd0140e7239df0419f3f6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
