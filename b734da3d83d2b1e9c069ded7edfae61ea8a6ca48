@@ -60,6 +60,145 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e83077bc_a2359812",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T23:37:38Z",
+      "side": 1,
+      "message": "yeah, I do my best to write \"As of June 2021\", but sometimes I forget, so thanks Quinten for noticing.",
+      "parentUuid": "82cbc138_b1411fc7",
+      "range": {
+        "startLine": 136,
+        "startChar": 7,
+        "endLine": 136,
+        "endChar": 16
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26e8e03d_7bd145a1",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T23:37:38Z",
+      "side": 1,
+      "message": "true, but it\u0027s not limited to parallel. Imagine submit of 4-CL stack done via 1 RPC.",
+      "range": {
+        "startLine": 138,
+        "startChar": 52,
+        "endLine": 138,
+        "endChar": 77
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08f31a57_5c3ac09d",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T23:37:38Z",
+      "side": 1,
+      "message": "change tag\n\nit\u0027s no longer backwards compatible, afaik.",
+      "range": {
+        "startLine": 141,
+        "startChar": 39,
+        "endLine": 141,
+        "endChar": 40
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "71542900_c95ee4df",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T23:37:38Z",
+      "side": 1,
+      "message": "nit: yes, but it\u0027d be clearer if you increment it right before each loop.",
+      "range": {
+        "startLine": 420,
+        "startChar": 2,
+        "endLine": 420,
+        "endChar": 11
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "129aaadb_267c1000",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T23:37:38Z",
+      "side": 1,
+      "message": "won\u0027t try",
+      "range": {
+        "startLine": 435,
+        "startChar": 36,
+        "endLine": 435,
+        "endChar": 50
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc697cc9_0fea605e",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T23:37:38Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 439,
+        "startChar": 0,
+        "endLine": 449,
+        "endChar": 20
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1e15c6eb_8a231ca3",
         "filename": "cv/internal/run/storage.proto",
         "patchSetId": 2
