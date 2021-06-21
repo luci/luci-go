@@ -15,6 +15,7 @@
 package cancel
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -200,34 +201,59 @@ func TestCancel(t *testing.T) {
 				gf.CQ(1, clock.Now(ctx).Add(-100*time.Second), gf.U("user-103"))(c.Info)
 			})
 
-			err := Cancel(ctx, input)
-			So(err, ShouldBeNil)
-			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
-			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
-			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
+			Convey("Success", func() {
+				err := Cancel(ctx, input)
+				So(err, ShouldBeNil)
+				resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
+				So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
+				So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
+				So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
 
-			onBehalfs, asSelf := splitSetReviewRequests()
-			for _, r := range onBehalfs {
-				So(r.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-				So(r.GetNotifyDetails(), ShouldBeNil)
-			}
-			// The triggering vote(s) must have been removed last, the order of
-			// removals for the rest doesn't matter so long as it does the job.
-			So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), ShouldEqual, 100)
-			So(asSelf, ShouldHaveLength, 1)
-			So(asSelf[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_OWNER)
-			So(asSelf[0].GetNotifyDetails(), ShouldResembleProto,
-				&gerritpb.NotifyDetails{
-					Recipients: []*gerritpb.NotifyDetails_Recipient{
-						{
-							RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
-							Info: &gerritpb.NotifyDetails_Info{
-								Accounts: []int64{100, 101, 102, 103},
+				onBehalfs, asSelf := splitSetReviewRequests()
+				for _, r := range onBehalfs {
+					So(r.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+					So(r.GetNotifyDetails(), ShouldBeNil)
+				}
+				// The triggering vote(s) must have been removed last, the order of
+				// removals for the rest doesn't matter so long as it does the job.
+				So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), ShouldEqual, 100)
+				So(asSelf, ShouldHaveLength, 1)
+				So(asSelf[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_OWNER)
+				So(asSelf[0].GetNotifyDetails(), ShouldResembleProto,
+					&gerritpb.NotifyDetails{
+						Recipients: []*gerritpb.NotifyDetails_Recipient{
+							{
+								RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
+								Info: &gerritpb.NotifyDetails_Info{
+									Accounts: []int64{100, 101, 102, 103},
+								},
 							},
 						},
-					},
+					})
+			})
+
+			Convey("Removing non-triggering votes fails", func() {
+				ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
+					c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject).Or(
+						gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
+					) // no permission to vote on behalf of others
 				})
+				err := Cancel(ctx, input)
+				So(err, ShouldBeNil)
+				onBehalfs, _ := splitSetReviewRequests()
+				So(onBehalfs, ShouldHaveLength, 3) // all non-triggering votes
+				for _, r := range onBehalfs {
+					switch r.GetOnBehalfOf() {
+					case 100:
+						// CV shouldn't remove triggering votes if removal of non-triggering
+						// votes fails.
+						So(r.GetOnBehalfOf(), ShouldNotEqual, 100)
+					case 101, 102, 103:
+					default:
+						panic(fmt.Errorf("unknown on_behalf_of %d", r.GetOnBehalfOf()))
+					}
+				}
+			})
 		})
 
 		Convey("Removing votes from non-CQ labels used in additional modes", func() {

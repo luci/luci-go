@@ -357,7 +357,7 @@ func (c *change) sortedAccountIDs() []int64 {
 
 func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify Notify) error {
 	accounts := c.sortedAccountIDs()
-	var errs errors.MultiError
+	var nonTriggeringVotesRemovalErrs errors.MultiError
 	needRemoveTriggerVote := false
 	for _, accountID := range accounts {
 		if accountID == t.GetGerritAccountId() {
@@ -365,21 +365,25 @@ func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeI
 			continue
 		}
 		if err := c.removeVote(ctx, accountID, "", gerritpb.Notify_NOTIFY_NONE, nil); err != nil {
-			errs = append(errs, err)
+			nonTriggeringVotesRemovalErrs = append(nonTriggeringVotesRemovalErrs, err)
 		}
 	}
+	if err := common.MostSevereError(nonTriggeringVotesRemovalErrs); err != nil {
+		// Return if failure occurs during removal of non-triggering votes so that
+		// triggering votes will be kept. Otherwise, CV may create a new Run using
+		// the non-triggering votes that CV fails to remove.
+		return err
+	}
+
 	if needRemoveTriggerVote {
-		// Remoe the triggering vote last.
+		// Remove the triggering vote last.
 		if err := c.removeVote(ctx, t.GetGerritAccountId(), "", gerritpb.Notify_NOTIFY_NONE, nil); err != nil {
-			errs = append(errs, err)
+			return err
 		}
-	}
-	if len(errs) != 0 {
-		return common.MostSevereError(errs)
 	}
 
 	n, nd := notify.toGerritNotify(accounts)
-	return c.annotateGerritErr(ctx, c.postGerritMsg(ctx, ci, msg, t, n, nd), "post message")
+	return c.postGerritMsg(ctx, ci, msg, t, n, nd)
 }
 
 func (c *change) removeVote(ctx context.Context, accountID int64, msg string, n gerritpb.Notify, nd *gerritpb.NotifyDetails) error {
@@ -417,10 +421,7 @@ func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo,
 		return err
 	}
 	n, nd := notify.toGerritNotify(c.sortedAccountIDs())
-	if err := c.postGerritMsg(ctx, ci, msg, t, n, nd); err != nil {
-		return c.annotateGerritErr(ctx, err, "post message")
-	}
-	return nil
+	return c.postGerritMsg(ctx, ci, msg, t, n, nd)
 }
 
 // postGerritMsg posts the given message to Gerrit.
