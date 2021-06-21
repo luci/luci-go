@@ -22,6 +22,30 @@
       },
       "revId": "4644f0a82ac03aba9ec590e64a274535e477be53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f8cca76_1a99a2c6",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-21T19:18:53Z",
+      "side": 0,
+      "message": "Good catch, thank you. Done.",
+      "parentUuid": "b58742f6_645decd7",
+      "range": {
+        "startLine": 122,
+        "startChar": 25,
+        "endLine": 122,
+        "endChar": 45
+      },
+      "revId": "4644f0a82ac03aba9ec590e64a274535e477be53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
