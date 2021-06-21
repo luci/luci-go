@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba6fe783_febc8e53",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-21T19:44:45Z",
+      "side": 1,
+      "message": "Remove",
+      "range": {
+        "startLine": 372,
+        "startChar": 5,
+        "endLine": 372,
+        "endChar": 10
+      },
+      "revId": "4a6b2a0dca581b335ab61a189341d482a658971d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0338f56_1124c85e",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-21T19:44:45Z",
+      "side": 1,
+      "message": "major: I think I intentionally return error (if any) after removing all non-triggering votes and before removing triggering votes. The idea is to remove triggering votes *iff* all non-triggering votes are successfully removed. Otherwise, if unfortunately (though not very likely to happen), if CV failed to remove one of the non-triggering vote but removed triggering votes successfully, CV would create a new Run based on that not-removed vote.",
+      "range": {
+        "startLine": 377,
+        "startChar": 0,
+        "endLine": 380,
+        "endChar": 0
+      },
+      "revId": "4a6b2a0dca581b335ab61a189341d482a658971d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06036a8e_aebdcd26",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 382,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-21T19:44:45Z",
+      "side": 1,
+      "message": "this seems to be a bug from me :( err is already annotated in postGerritMsg.",
+      "range": {
+        "startLine": 382,
+        "startChar": 8,
+        "endLine": 382,
+        "endChar": 27
+      },
+      "revId": "4a6b2a0dca581b335ab61a189341d482a658971d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
