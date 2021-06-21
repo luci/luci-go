@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfb99b07_0563a193",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T22:55:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ba6fe783_febc8e53",
+      "range": {
+        "startLine": 372,
+        "startChar": 5,
+        "endLine": 372,
+        "endChar": 10
+      },
+      "revId": "4a6b2a0dca581b335ab61a189341d482a658971d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a0338f56_1124c85e",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f4c0ce7_80bd457d",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T22:55:43Z",
+      "side": 1,
+      "message": "👍 excellent, and thanks for addressing this and other feedback on your own CL https://crrev.com/c/2976875",
+      "parentUuid": "a0338f56_1124c85e",
+      "range": {
+        "startLine": 377,
+        "startChar": 0,
+        "endLine": 380,
+        "endChar": 0
+      },
+      "revId": "4a6b2a0dca581b335ab61a189341d482a658971d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "06036a8e_aebdcd26",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-06-21T19:44:45Z",
       "side": 1,
       "message": "this seems to be a bug from me :( err is already annotated in postGerritMsg.",
+      "range": {
+        "startLine": 382,
+        "startChar": 8,
+        "endLine": 382,
+        "endChar": 27
+      },
+      "revId": "4a6b2a0dca581b335ab61a189341d482a658971d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5d75e2e_d4e2cb53",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 382,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-21T22:55:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "06036a8e_aebdcd26",
       "range": {
         "startLine": 382,
         "startChar": 8,
