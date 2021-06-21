@@ -126,9 +126,18 @@ message SubmissionCompleted {
     string message = 2; // Required
   }
 
+  message CLSubmissionFailures {
+    repeated CLSubmissionFailure failures = 1;
+  }
+
   oneof failure_reason {
-    // Individual CL submission failure. Could be transient or permanent.
-    CLSubmissionFailure cl_failure = 2;
+    // CLs that fail to submit. Could be transient or permanent.
+    //
+    // Currently, CLs are submitted serially and submitter returns immediately
+    // if any of the CL submission fails. Therefore, `cl_failures` contains at
+    // most one CL. However, once CV supports parallel CL submission, submitter
+    // may report multiple CL submission failures during the parallel execution.
+    CLSubmissionFailures cl_failures = 2;
     // Submission deadline is exceeded. Must be permanet failure.
     bool timeout = 3;
   }

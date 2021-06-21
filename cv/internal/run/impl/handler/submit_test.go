@@ -438,7 +438,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							So(err, ShouldBeNil)
 							So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 							So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-							So(res.State.Run.Submission.FailedCl, ShouldEqual, sc.GetClFailure().GetClid())
+							for i, f := range sc.GetClFailures().GetFailures() {
+								So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+							}
 							So(res.SideEffectFn, ShouldNotBeNil)
 							So(res.PreserveEvents, ShouldBeFalse)
 							So(res.PostProcessFn, ShouldBeNil)
@@ -450,10 +452,11 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
 						}
 						Convey("CL failure", func() {
-							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
-								ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-									Clid:    2,
-									Message: "some transient failure",
+							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
+								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+										{Clid: 2, Message: "some transient failure"},
+									},
 								},
 							}
 							runAndVerify(func(lastMsg string) {
@@ -489,7 +492,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.State.Run.Submission.FailedCl, ShouldEqual, sc.GetClFailure().GetClid())
+						for i, f := range sc.GetClFailures().GetFailures() {
+							So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+						}
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
@@ -507,16 +512,17 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 					Convey("None of the CLs are submitted", func() {
 						Convey("CL failure", func() {
-							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
-								ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-									Clid:    2,
-									Message: "some transient failure",
+							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
+								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+										{Clid: 2, Message: "some transient failure"},
+									},
 								},
 							}
 							runAndVerify(func(changeNum int64, lastMsg string) {
 								switch changeNum {
 								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s): https://x-review.example.com/2222")
+									So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):\n  https://x-review.example.com/2222")
 								case ci2.GetNumber():
 									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
 								default:
@@ -543,10 +549,11 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						})
 
 						Convey("CL failure", func() {
-							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
-								ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-									Clid:    1,
-									Message: "some transient failure",
+							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
+								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+										{Clid: 1, Message: "some transient failure"},
+									},
 								},
 							}
 							runAndVerify(func(changeNum int64, lastMsg string) {
@@ -612,7 +619,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
-					So(res.State.Run.Submission.FailedCl, ShouldEqual, sc.GetClFailure().GetClid())
+					for i, f := range sc.GetClFailures().GetFailures() {
+						So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+					}
 					So(res.SideEffectFn, ShouldNotBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
@@ -624,10 +633,14 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				}
 
 				Convey("CL Submission failure", func() {
-					sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
-						ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-							Clid:    2,
-							Message: "CV failed to submit this CL because of merge conflict",
+					sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
+						ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+							Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+								{
+									Clid:    2,
+									Message: "CV failed to submit this CL because of merge conflict",
+								},
+							},
 						},
 					}
 					runAndVerify(func(lastMsg string) {
@@ -666,16 +679,20 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				}
 				Convey("None of the CLs are submitted", func() {
 					Convey("CL Submission failure", func() {
-						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
-							ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-								Clid:    2,
-								Message: "CV failed to submit this CL because of merge conflict",
+						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
+							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+									{
+										Clid:    2,
+										Message: "CV failed to submit this CL because of merge conflict",
+									},
+								},
 							},
 						}
 						runAndVerify(func(changeNum int64, lastMsg string) {
 							switch changeNum {
 							case 1111:
-								So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s): https://x-review.example.com/2222")
+								So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):\n  https://x-review.example.com/2222")
 							case 2222:
 								So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
 							}
@@ -701,10 +718,14 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					})
 
 					Convey("CL Submission failure", func() {
-						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
-							ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-								Clid:    1,
-								Message: "CV failed to submit this CL because of merge conflict",
+						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
+							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+									{
+										Clid:    1,
+										Message: "CV failed to submit this CL because of merge conflict",
+									},
+								},
 							},
 						}
 						runAndVerify(func(changeNum int64, lastMsg string) {
@@ -848,10 +869,11 @@ func TestSubmitter(t *testing.T) {
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-						FailureReason: &eventpb.SubmissionCompleted_ClFailure{
-							ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-								Clid:    2,
-								Message: permDeniedMsg,
+						FailureReason: &eventpb.SubmissionCompleted_ClFailures{
+							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+									{Clid: 2, Message: permDeniedMsg},
+								},
 							},
 						},
 					},
@@ -872,10 +894,14 @@ func TestSubmitter(t *testing.T) {
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-						FailureReason: &eventpb.SubmissionCompleted_ClFailure{
-							ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-								Clid:    2,
-								Message: fmt.Sprintf(failedPreconditionMsgFmt, fmt.Sprintf("rpc error: code = FailedPrecondition desc = revision %s is not current revision", ci2.GetCurrentRevision())),
+						FailureReason: &eventpb.SubmissionCompleted_ClFailures{
+							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+									{
+										Clid:    2,
+										Message: fmt.Sprintf(failedPreconditionMsgFmt, fmt.Sprintf("rpc error: code = FailedPrecondition desc = revision %s is not current revision", ci2.GetCurrentRevision())),
+									},
+								},
 							},
 						},
 					},
