@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87255784_728f42ac",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-21T12:09:52Z",
+      "side": 1,
+      "message": "inconsistent capitalization with L207?",
+      "range": {
+        "startLine": 240,
+        "startChar": 24,
+        "endLine": 240,
+        "endChar": 25
+      },
+      "revId": "107a98e69fb5365de31522e4380cb50ed2363ea8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15e539cf_4a4f804b",
+        "filename": "cv/internal/gerrit/cancel/cancel_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-21T12:09:52Z",
+      "side": 1,
+      "message": "removes?",
+      "range": {
+        "startLine": 161,
+        "startChar": 19,
+        "endLine": 161,
+        "endChar": 25
+      },
+      "revId": "107a98e69fb5365de31522e4380cb50ed2363ea8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
