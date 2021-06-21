@@ -388,7 +388,7 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 		fallthrough
 	case tPB != nil:
 		s.PB.NextEvalTime = tPB
-		if err := s.PMNotifier.TaskRefs.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
+		if err := s.PMNotifier.TasksBinding.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
 			return nil, nil, err
 		}
 	}

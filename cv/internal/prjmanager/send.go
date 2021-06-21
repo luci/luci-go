@@ -27,15 +27,15 @@ import (
 
 // Notifier notifies PM.
 type Notifier struct {
-	// TaskRefs are used to register handlers of PM Implementation & CL Purger to
+	// TasksBinding are used to register handlers of PM Implementation & CL Purger to
 	// avoid circular dependency.
-	TaskRefs prjpb.TaskRefs
+	TasksBinding prjpb.TasksBinding
 }
 
 // NewNotifier creates a new PM notifier and registers it in the provided
 // tq.Dispatcher.
 func NewNotifier(tqd *tq.Dispatcher) *Notifier {
-	return &Notifier{TaskRefs: prjpb.Register(tqd)}
+	return &Notifier{TasksBinding: prjpb.Register(tqd)}
 }
 
 // UpdateConfig tells ProjectManager to read and update to newest ProjectConfig
@@ -43,7 +43,7 @@ func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 //
 // Results in stopping ProjectManager if ProjectConfig got disabled or deleted.
 func (n *Notifier) UpdateConfig(ctx context.Context, luciProject string) error {
-	return n.TaskRefs.SendNow(ctx, luciProject, &prjpb.Event{
+	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_NewConfig{
 			NewConfig: &prjpb.NewConfig{},
 		},
@@ -53,7 +53,7 @@ func (n *Notifier) UpdateConfig(ctx context.Context, luciProject string) error {
 // Poke tells ProjectManager to poke all downstream actors and check its own
 // state.
 func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
-	return n.TaskRefs.SendNow(ctx, luciProject, &prjpb.Event{
+	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_Poke{
 			Poke: &prjpb.Poke{},
 		},
@@ -62,7 +62,7 @@ func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
 
 // NotifyCLUpdated tells ProjectManager to check latest version of a given CL.
 func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
-	return n.TaskRefs.SendNow(ctx, luciProject, &prjpb.Event{
+	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClUpdated{
 			ClUpdated: &prjpb.CLUpdated{
 				Clid:     int64(clid),
@@ -76,7 +76,7 @@ func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid
 //
 // In each given CL, .ID and .EVersion must be set.
 func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
-	return n.TaskRefs.SendNow(ctx, luciProject, &prjpb.Event{
+	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClsUpdated{
 			ClsUpdated: prjpb.MakeCLsUpdated(cls),
 		},
@@ -100,7 +100,7 @@ func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string,
 	if err != nil {
 		return err
 	}
-	return n.TaskRefs.Dispatch(ctx, luciProject, eta)
+	return n.TasksBinding.Dispatch(ctx, luciProject, eta)
 }
 
 // NotifyRunCreated is sent by ProjectManager to itself within a Run creation
@@ -131,7 +131,7 @@ func (n *Notifier) NotifyRunCreated(ctx context.Context, runID common.RunID) err
 
 // NotifyRunFinished tells ProjectManager that a run has finalized its state.
 func (n *Notifier) NotifyRunFinished(ctx context.Context, runID common.RunID) error {
-	return n.TaskRefs.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
+	return n.TasksBinding.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunFinished{
 			RunFinished: &prjpb.RunFinished{
 				RunId: string(runID),

@@ -62,10 +62,10 @@ func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.C
 		PM:         pm,
 		RM:         n,
 		TreeClient: tc,
-		BQExporter: runbq.NewExporter(n.TaskRefs.Tqd, bqc),
+		BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc),
 		CLUpdater:  u,
 	}}
-	n.TaskRefs.ManageRun.AttachHandler(
+	n.TasksBinding.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*eventpb.ManageRunTask)
 			ctx = logging.SetField(ctx, "run", task.GetRunId())

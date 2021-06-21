@@ -49,7 +49,7 @@ type Purger struct {
 // PM Notifier.
 func New(n *prjmanager.Notifier, u *updater.Updater) *Purger {
 	p := &Purger{n, u}
-	n.TaskRefs.PurgeProjectCL.AttachHandler(
+	n.TasksBinding.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
 			err := p.PurgeCL(ctx, task)
@@ -61,7 +61,7 @@ func New(n *prjmanager.Notifier, u *updater.Updater) *Purger {
 
 // Schedule enqueues a task to purge a CL for immediate execution.
 func (p *Purger) Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
-	return p.pmNotifier.TaskRefs.Tqd.AddTask(ctx, &tq.Task{
+	return p.pmNotifier.TasksBinding.TQDispatcher.AddTask(ctx, &tq.Task{
 		Payload: t,
 		// No DeduplicationKey as these tasks are created transactionally by PM.
 		Title: fmt.Sprintf("%s/%d/%s", t.GetLuciProject(), t.GetPurgingCl().GetClid(), t.GetPurgingCl().GetOperationId()),

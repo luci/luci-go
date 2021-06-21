@@ -51,20 +51,20 @@ const (
 	PurgeProjectCLTaskClass    = "purge-project-cl"
 )
 
-// TaskRefs are task refs used by PM to separate task creation and handling,
+// TasksBinding binds Project Manager tasks to a TQ Dispatcher.
+//
+// This struct exists to separate task creation and handling,
 // which in turns avoids circular dependency.
-type TaskRefs struct {
+type TasksBinding struct {
 	ManageProject     tq.TaskClassRef
 	KickManageProject tq.TaskClassRef
 	PurgeProjectCL    tq.TaskClassRef
-
-	// TODO(tandrii): hide this member.
-	Tqd *tq.Dispatcher
+	TQDispatcher      *tq.Dispatcher
 }
 
-func Register(tqd *tq.Dispatcher) TaskRefs {
-	return TaskRefs{
-		Tqd: tqd,
+func Register(tqd *tq.Dispatcher) TasksBinding {
+	return TasksBinding{
+		TQDispatcher: tqd,
 
 		ManageProject: tqd.RegisterTaskClass(tq.TaskClass{
 			ID:        ManageProjectTaskClass,
@@ -97,7 +97,7 @@ func Register(tqd *tq.Dispatcher) TaskRefs {
 // * next possible.
 //
 // To avoid actually dispatching TQ tasks in tests, use pmtest.MockDispatch().
-func (tr TaskRefs) Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
+func (tr TasksBinding) Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	mock, mocked := ctx.Value(&mockDispatcherContextKey).(func(string, time.Time))
 
 	if datastore.CurrentTransaction(ctx) != nil {
@@ -113,7 +113,7 @@ func (tr TaskRefs) Dispatch(ctx context.Context, luciProject string, eta time.Ti
 			mock(luciProject, eta)
 			return nil
 		}
-		return tr.Tqd.AddTask(ctx, &tq.Task{
+		return tr.TQDispatcher.AddTask(ctx, &tq.Task{
 			Title:            luciProject,
 			DeduplicationKey: "", // not allowed in a transaction
 			Payload:          payload,
@@ -139,7 +139,7 @@ func (tr TaskRefs) Dispatch(ctx context.Context, luciProject string, eta time.Ti
 		mock(luciProject, eta)
 		return nil
 	}
-	return tr.Tqd.AddTask(ctx, &tq.Task{
+	return tr.TQDispatcher.AddTask(ctx, &tq.Task{
 		Title:            luciProject,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", luciProject, eta.UnixNano()),
 		ETA:              eta,
@@ -158,7 +158,7 @@ func InstallMockDispatcher(ctx context.Context, f func(luciProject string, eta t
 }
 
 // SendNow sends the event to Project's eventbox and invokes PM immediately.
-func (tr TaskRefs) SendNow(ctx context.Context, luciProject string, e *Event) error {
+func (tr TasksBinding) SendNow(ctx context.Context, luciProject string, e *Event) error {
 	if err := Send(ctx, luciProject, e); err != nil {
 		return err
 	}
