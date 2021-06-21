@@ -179,8 +179,12 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		return impl.tryResumeSubmission(ctx, rs, sc)
 	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
 		rs = rs.ShallowCopy()
-		if clFailure := sc.GetClFailure(); clFailure != nil {
-			rs.Run.Submission.FailedCl = clFailure.GetClid()
+		if clFailures := sc.GetClFailures(); clFailures != nil {
+			failedCLs := make([]int64, len(clFailures.GetFailures()))
+			for i, f := range clFailures.GetFailures() {
+				failedCLs[i] = f.GetClid()
+			}
+			rs.Run.Submission.FailedCls = failedCLs
 		}
 		cg, err := rs.LoadConfigGroup(ctx)
 		if err != nil {
@@ -232,16 +236,22 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		default: // None submitted or partially submitted
 			status = run.Status_FAILED
 			// synthesize submission completed event with permanent failure.
-			if clFailure := sc.GetClFailure(); clFailure != nil {
-				rs.Run.Submission.FailedCl = clFailure.GetClid()
+			if clFailures := sc.GetClFailures(); clFailures != nil {
+				rs.Run.Submission.FailedCls = make([]int64, len(clFailures.GetFailures()))
 				sc = &eventpb.SubmissionCompleted{
 					Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-					FailureReason: &eventpb.SubmissionCompleted_ClFailure{
-						ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-							Clid:    clFailure.GetClid(),
-							Message: fmt.Sprintf("CL failed to submit because of transient failure: %s. However, CV is running out of time to retry.", clFailure.GetMessage()),
+					FailureReason: &eventpb.SubmissionCompleted_ClFailures{
+						ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+							Failures: make([]*eventpb.SubmissionCompleted_CLSubmissionFailure, len(clFailures.GetFailures())),
 						},
 					},
+				}
+				for i, f := range clFailures.GetFailures() {
+					rs.Run.Submission.FailedCls[i] = f.GetClid()
+					sc.GetClFailures().Failures[i] = &eventpb.SubmissionCompleted_CLSubmissionFailure{
+						Clid:    f.GetClid(),
+						Message: fmt.Sprintf("CL failed to submit because of transient failure: %s. However, CV is running out of time to retry.", f.GetMessage()),
+					}
 				}
 			} else {
 				sc = &eventpb.SubmissionCompleted{
@@ -386,8 +396,12 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 	if len(allRunCLs) == 1 {
 		var msg string
 		switch {
-		case sc.GetClFailure() != nil:
-			msg = sc.GetClFailure().GetMessage()
+		case sc.GetClFailures() != nil:
+			failures := sc.GetClFailures().GetFailures()
+			if len(failures) != 1 {
+				panic(fmt.Errorf("expected exactly 1 failed CL, got %v", failures))
+			}
+			msg = failures[0].GetMessage()
 		case sc.GetTimeout():
 			msg = timeoutMsg
 		default:
@@ -397,25 +411,55 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 	}
 
 	// Multi-CL Run
-	submitted, pending, failed := splitRunCLs(allRunCLs, submission, sc)
+	submitted, failed, pending := splitRunCLs(allRunCLs, submission, sc)
 	msgSuffix := makeSubmissionMsgSuffix(submitted, failed, pending)
 	switch {
-	case sc.GetClFailure() != nil:
+	case sc.GetClFailures() != nil:
 		var wg sync.WaitGroup
-		wg.Add(2)
-		errs := make(errors.MultiError, 2)
-		go func() {
-			defer wg.Done()
-			msg := fmt.Sprintf("%s\n\n%s", sc.GetClFailure().GetMessage(), msgSuffix)
-			errs[0] = cancelCLTriggers(ctx, runID, []*run.RunCL{failed}, runCLExternalIDs, msg, cg)
-		}()
-		go func() {
-			defer wg.Done()
-			if len(pending) > 0 {
-				notAttemptedMsg := fmt.Sprintf("CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s): %s\n%s", failed.ExternalID.MustURL(), msgSuffix)
-				errs[1] = cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, notAttemptedMsg, cg)
-			}
-		}()
+		errs := make(errors.MultiError, len(failed)+len(pending))
+		// cancel triggers of CLs that fail to submit.
+		messages := make(map[common.CLID]string, len(sc.GetClFailures().GetFailures()))
+		for _, f := range sc.GetClFailures().GetFailures() {
+			messages[common.CLID(f.GetClid())] = f.GetMessage()
+		}
+		for i, failedCL := range failed {
+			i, failedCL := i, failedCL
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				msg := fmt.Sprintf("%s\n\n%s", messages[failedCL.ID], msgSuffix)
+				errs[i] = cancelCLTriggers(ctx, runID, []*run.RunCL{failedCL}, runCLExternalIDs, msg, cg)
+			}()
+		}
+		// cancel triggers of CLs that CV won't try to submit.
+		var sb strings.Builder
+		fmt.Fprint(&sb, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):")
+		// TODO(yiwzhang): Once CV learns how to submit multiple CLs in parallel,
+		// this should be optimized to print out failed CLs that each pending CL
+		// depends on instead of printing out all failed CLs.
+		// Example: considering a CL group where CL B and CL C are submitted in
+		// parallel and neither of them succeeds:
+		//   A (submitted)
+		//   |
+		//   |--> B (failed) --> D (pending)
+		//   |
+		//   |--> C (failed) --> E (pending)
+		// the message CV posts on CL D should only include the fact that CV fails
+		// to submit CL B.
+		for _, f := range failed {
+			fmt.Fprintf(&sb, "\n  %s", f.ExternalID.MustURL())
+		}
+		fmt.Fprint(&sb, "\n\n")
+		fmt.Fprint(&sb, msgSuffix)
+		pendingMsg := sb.String()
+		for i, pendingCL := range pending {
+			i, pendingCL := i, pendingCL
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				errs[len(failed)+i] = cancelCLTriggers(ctx, runID, []*run.RunCL{pendingCL}, runCLExternalIDs, pendingMsg, cg)
+			}()
+		}
 		wg.Wait()
 		return common.MostSevereError(errs)
 	case sc.GetTimeout():
@@ -427,17 +471,17 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 	}
 }
 
-func makeSubmissionMsgSuffix(submitted []*run.RunCL, failed *run.RunCL, pending []*run.RunCL) string {
+func makeSubmissionMsgSuffix(submitted, failed, pending []*run.RunCL) string {
 	submittedURLs := make([]string, len(submitted))
 	for i, cl := range submitted {
 		submittedURLs[i] = cl.ExternalID.MustURL()
 	}
-	notSubmittedURLs := make([]string, 0, len(pending)+1)
-	if failed != nil {
-		notSubmittedURLs = append(notSubmittedURLs, failed.ExternalID.MustURL())
+	notSubmittedURLs := make([]string, len(failed)+len(pending))
+	for i, cl := range failed {
+		notSubmittedURLs[i] = cl.ExternalID.MustURL()
 	}
-	for _, cl := range pending {
-		notSubmittedURLs = append(notSubmittedURLs, cl.ExternalID.MustURL())
+	for i, cl := range pending {
+		notSubmittedURLs[len(failed)+i] = cl.ExternalID.MustURL()
 	}
 	if len(submittedURLs) > 0 { // partial submission
 		return fmt.Sprintf(partiallySubmittedMsgSuffixFmt,
@@ -483,25 +527,30 @@ func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID 
 	return ret, nil
 }
 
-func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.SubmissionCompleted) (submitted, pending []*run.RunCL, failed *run.RunCL) {
+func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.SubmissionCompleted) (submitted, failed, pending []*run.RunCL) {
 	submittedSet := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
-	failedCLID := common.CLID(sc.GetClFailure().GetClid())
-	if _, ok := submittedSet[failedCLID]; ok {
-		panic(fmt.Errorf("impossible; cl %d is marked both submitted and failed", failedCLID))
+	failedSet := make(map[common.CLID]struct{}, len(sc.GetClFailures().GetFailures()))
+	for _, f := range sc.GetClFailures().GetFailures() {
+		failedCLID := common.CLID(f.GetClid())
+		if _, ok := submittedSet[failedCLID]; ok {
+			panic(fmt.Errorf("impossible; cl %d is marked both submitted and failed", failedCLID))
+		}
+		failedSet[failedCLID] = struct{}{}
 	}
+
 	submitted = make([]*run.RunCL, 0, len(submittedSet))
-	pending = make([]*run.RunCL, 0, len(cls)-len(submittedSet))
+	failed = make([]*run.RunCL, 0, len(failedSet))
+	pending = make([]*run.RunCL, 0, len(cls)-len(submittedSet)-len(failedSet))
 	for _, cl := range cls {
-		switch _, ok := submittedSet[cl.ID]; {
-		case ok:
+		if _, ok := submittedSet[cl.ID]; ok {
 			submitted = append(submitted, cl)
-		case cl.ID == failedCLID:
-			failed = cl
-		default:
+		} else if _, ok := failedSet[cl.ID]; ok {
+			failed = append(failed, cl)
+		} else {
 			pending = append(pending, cl)
 		}
 	}
-	return submitted, pending, failed
+	return submitted, failed, pending
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -640,10 +689,11 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.Sub
 		if err != nil {
 			evt := classifyErr(ctx, err)
 			if !submitted {
-				evt.FailureReason = &eventpb.SubmissionCompleted_ClFailure{
-					ClFailure: &eventpb.SubmissionCompleted_CLSubmissionFailure{
-						Clid:    int64(cl.ID),
-						Message: msg,
+				evt.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
+					ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+						Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+							{Clid: int64(cl.ID), Message: msg},
+						},
 					},
 				}
 			}

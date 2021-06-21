@@ -126,11 +126,25 @@ message SubmissionCompleted {
     string message = 2; // Required
   }
 
+  message CLSubmissionFailures {
+    repeated CLSubmissionFailure failures = 1;
+  }
+
   oneof failure_reason {
-    // Individual CL submission failure. Could be transient or permanent.
-    CLSubmissionFailure cl_failure = 2;
+    // Deprecated. Use `cl_failures` instead.
+    //
+    // TODO(yiwzhang): delete after no event has this field set.
+    CLSubmissionFailure cl_failure = 2 [deprecated = true];
     // Submission deadline is exceeded. Must be permanet failure.
     bool timeout = 3;
+    // CLs that fail to submit. Could be transient or permanent.
+    //
+    // As of June 2021, CLs are submitted serially and submitter returns
+    // immediately upon failure so `cl_failures` will have only one entry.
+    // However, submitter may report multiple CL submission failures in the
+    // future (e.g. CV supports parallel CL submission or CV submits a CL
+    // stack in one RPC).
+    CLSubmissionFailures cl_failures = 4;
   }
 }
 

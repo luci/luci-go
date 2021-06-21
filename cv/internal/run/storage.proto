@@ -103,15 +103,15 @@ message Submission {
   repeated int64 cls = 3;
   // IDs of all CLs that have been submitted successfully already.
   repeated int64 submitted_cls = 4;
-  // ID of the CL that fails to submit if any.
+  // IDs of all CLs that fails to submit if any.
   //
-  // Since CV sumbits `cls` in its original order, CV will never attempt to
-  // submit any CL after this CL.
+  // CLs that are neither in this list nor in the `submitted_cls` should be
+  // treated as if CV has never attempted to submit them.
   //
   // This could be empty even when the entire submission fails, which would be
   // typically caused by faulty infrastructure (e.g. Task Queue not executing
   // a Run Manager task before the whole submission timeout is reached).
-  int64 failed_cl = 5;
+  repeated int64 failed_cls = 5;
   // If True, Tree is currently in open state.
   bool tree_open = 10;
   // The timestamp when the Tree status was last fetched.
