@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4f75c0a_8de67364",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:44:53Z",
+      "side": 1,
+      "message": "You could also explain how it\u0027s more efficient.\n\nAFAIU, in places where we want to update, we usually (always?) already have the config \"Meta\" object available, so passing it in avoids fetching it twice.",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 48
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98d622b5_1926ec3c",
+        "filename": "cv/internal/gerrit/gobmap/gobmaptest/update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:44:53Z",
+      "side": 1,
+      "message": "Maybe \"the mapping\", since strictly speaking gobmap is just the name of the package, but not of anything in the package.",
+      "range": {
+        "startLine": 24,
+        "startChar": 44,
+        "endLine": 24,
+        "endChar": 50
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15d4ada3_7414f747",
+        "filename": "cv/internal/gerrit/gobmap/gobmaptest/update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:44:53Z",
+      "side": 1,
+      "message": "Typo, convenience",
+      "range": {
+        "startLine": 24,
+        "startChar": 13,
+        "endLine": 24,
+        "endChar": 24
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b005c93_3fcd9eb2",
+        "filename": "cv/internal/gerrit/gobmap/gobmaptest/update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:44:53Z",
+      "side": 1,
+      "message": "is a",
+      "range": {
+        "startLine": 24,
+        "startChar": 10,
+        "endLine": 24,
+        "endChar": 12
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a62e0707_f1d812c9",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:44:53Z",
+      "side": 1,
+      "message": "This one has a bug number that could be written as well, crbug.com/1179286",
+      "range": {
+        "startLine": 73,
+        "startChar": 8,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f3bc3a6_36ffd343",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:44:53Z",
+      "side": 1,
+      "message": "This could have a period for consistency.",
+      "range": {
+        "startLine": 78,
+        "startChar": 21,
+        "endLine": 78,
+        "endChar": 29
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

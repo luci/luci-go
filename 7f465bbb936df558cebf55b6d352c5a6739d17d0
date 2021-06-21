@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34350292_eb451fad",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-21T18:44:53Z",
+      "side": 0,
+      "message": "Oops, I made a typo in my username.\n\nDo we still want to batch puts/deletes?",
+      "range": {
+        "startLine": 99,
+        "startChar": 9,
+        "endLine": 99,
+        "endChar": 17
+      },
+      "revId": "7f465bbb936df558cebf55b6d352c5a6739d17d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
