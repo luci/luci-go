@@ -116,15 +116,6 @@ type bqExporter struct {
 	maxTokenSize int
 }
 
-// Tasks describes how to route legacy bq export tasks.
-var Tasks = tq.RegisterTaskClass(tq.TaskClass{
-	ID:            "bq-export",
-	Prototype:     &taskspb.ExportInvocationToBQ{},
-	Kind:          tq.Transactional,
-	Queue:         "bqexporter",                 // use a dedicated queue
-	RoutingPrefix: "/internal/tasks/bqexporter", // for routing to "bqexporter" service
-})
-
 // TestResultTasks describes how to route bq test result export tasks.
 var TestResultTasks = tq.RegisterTaskClass(tq.TaskClass{
 	ID:            "bq-test-result-export",
@@ -160,10 +151,6 @@ func InitServer(srv *server.Server, opts Options) error {
 		rbecasClient: bytestream.NewByteStreamClient(conn),
 		maxTokenSize: bufio.MaxScanTokenSize,
 	}
-	Tasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
-		task := msg.(*taskspb.ExportInvocationToBQ)
-		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
-	})
 	TestResultTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationTestResultsToBQ)
 		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
