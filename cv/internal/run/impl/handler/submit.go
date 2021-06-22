@@ -761,7 +761,7 @@ const (
 		// TODO(yiwzhang): Generally, time out means CV is doing something
 		// wrong and looping over internally, However, timeout could also
 		// happen when submitting large CL stack and Gerrit is slow. In that
-		// case, CV can do nothing about it. After launching m1, gather data
+		// case, CV can't do anything about it. After launching m1, gather data
 		// to see under what circumstance it may happen and revise this message
 		// so that CV doesn't get blamed for timeout it isn't responsible for.
 		"Please contact LUCI team https://bit.ly/3sMReYs."

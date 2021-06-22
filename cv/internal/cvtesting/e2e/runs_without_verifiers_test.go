@@ -422,7 +422,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
 		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "Quick dry run: This CL passed the CQ dry run.")
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "Quick dry run: This CL passed")
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
