@@ -38,6 +38,10 @@ import (
 	"go.chromium.org/luci/cv/internal/run/runcreator"
 )
 
+const concurrentComponentProcessing = 16
+
+var errCaughtPanic = errors.New("caught panic")
+
 // earliestDecisionTime returns the earliest decision time of all components.
 //
 // Returns the same time as time.Time and as proto, and boolean indicating that
@@ -73,8 +77,6 @@ type cAction struct {
 	// runsFailed is modified during actOnComponents.
 	runsFailed int32
 }
-
-const concurrentComponentProcessing = 16
 
 // triageComponents triages components.
 //
@@ -151,10 +153,11 @@ func needsTriage(c *prjpb.Component, now time.Time) bool {
 
 func (s *State) triageOneComponent(ctx context.Context, oldC *prjpb.Component, sup itriager.PMState) (res itriager.Result, err error) {
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		logging.Errorf(ctx, "caught panic %s:\n%s", p.Reason, p.Stack)
-		logging.Debugf(ctx, "caught panic on component:\n%s", protojson.Format(oldC))
+		logging.Errorf(ctx, "caught panic %s:\n\n%s", p.Reason, p.Stack)
+		// Log as a separate message under debug level to avoid sending it to Cloud
+		// Error.
 		logging.Debugf(ctx, "caught panic current state:\n%s", protojson.Format(s.PB))
-		err = errors.Reason("caught panic: %s", p.Reason).Err()
+		err = errCaughtPanic
 	})
 	res, err = s.ComponentTriage(ctx, oldC, sup)
 	if err != nil {
@@ -245,9 +248,8 @@ func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEf
 
 func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prjpb.Component) (err error) {
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		logging.Errorf(ctx, "caught panic while creating a Run %s:\n%s", p.Reason, p.Stack)
-		logging.Debugf(ctx, "caught panic: component %s", protojson.Format(c))
-		err = errors.Reason("caught panic: %s", p.Reason).Err()
+		logging.Errorf(ctx, "caught panic while creating a Run %s\n\n%s", p.Reason, p.Stack)
+		err = errCaughtPanic
 	})
 
 	switch _, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier); {
