@@ -65,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "abc863e0_fd934ca8",
+        "filename": "cv/internal/gerrit/gobmap/gobmaptest/update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:34:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3da65727_32e94f1c",
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "98d622b5_1926ec3c",
