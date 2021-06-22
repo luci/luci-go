@@ -33,7 +33,6 @@ import (
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/zip"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -41,6 +40,7 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -355,31 +355,40 @@ func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.Transactional
 	return ExtractFiles(ctx, files, dest, maxThreads, withManifest)
 }
 
-// progressReporter periodically logs progress of the extraction.
+// progressReporter logs progress of the extraction.
 //
 // Can be shared by multiple goroutines.
 type progressReporter struct {
 	ctx        context.Context
+	activity   ui.Activity
 	totalCount uint64 // total number of files to extract
 	totalSize  uint64 // total expected uncompressed size of files
+	formatStr  string // a format string for the title with proper padding
 
 	m              sync.Mutex
-	extractedCount uint64    // number of files extract so far
-	extractedSize  uint64    // bytes uncompressed so far
-	prevReport     time.Time // time when we did the last progress report
+	extractedCount uint64 // number of files extract so far
+	extractedSize  uint64 // bytes uncompressed so far
 }
 
 func newProgressReporter(ctx context.Context, totalCount, totalSize uint64) *progressReporter {
 	r := &progressReporter{
 		ctx:        ctx,
+		activity:   ui.CurrentActivity(ctx),
 		totalCount: totalCount,
 		totalSize:  totalSize,
 	}
+
+	// Construct a string like "Extracting (%5d files left)".
+	pad := len(fmt.Sprintf("%d", r.totalCount))
+	r.formatStr = fmt.Sprintf("Extracting (%%%dd files left)", pad)
+
 	if r.totalCount != 0 {
-		logging.Infof(
-			r.ctx, "cipd: about to extract %.1f MB (%d files)",
-			float64(r.totalSize)/1000.0/1000.0, r.totalCount)
+		r.activity.Progress(ctx,
+			fmt.Sprintf(r.formatStr, r.totalCount),
+			ui.UnitBytes, 0, int64(r.totalSize),
+		)
 	}
+
 	return r
 }
 
@@ -389,28 +398,19 @@ func (r *progressReporter) advance(size uint64) {
 		return
 	}
 
-	now := clock.Now(r.ctx)
-	reportNow := false
-	progress := 0
-
-	// Report progress on first and last 'advance' calls and each 0.5 sec.
 	r.m.Lock()
+	defer r.m.Unlock()
+
 	r.extractedSize += size
 	r.extractedCount++
-	if r.extractedCount == 1 || r.extractedCount == r.totalCount || now.Sub(r.prevReport) > 500*time.Millisecond {
-		reportNow = true
-		if r.totalSize != 0 {
-			progress = int(float64(r.extractedSize) * 100 / float64(r.totalSize))
-		} else {
-			progress = int(float64(r.extractedCount) * 100 / float64(r.totalCount))
-		}
-		r.prevReport = now
-	}
-	r.m.Unlock()
 
-	if reportNow {
-		logging.Infof(r.ctx, "cipd: extracting - %d%%", progress)
-	}
+	// Need to report activity under the lock since otherwise the activity
+	// progress tracker may see occasional "roll backs" of the progress if two
+	// `advance` calls are racing.
+	r.activity.Progress(r.ctx,
+		fmt.Sprintf(r.formatStr, r.totalCount-r.extractedCount),
+		ui.UnitBytes, int64(r.extractedSize), int64(r.totalSize),
+	)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
