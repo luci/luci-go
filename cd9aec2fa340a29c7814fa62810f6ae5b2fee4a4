@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4f04c2e_05ae9bb3",
+        "filename": "cv/internal/common/errors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T17:41:04Z",
+      "side": 1,
+      "message": "we don\u0027t care about stacktrace any more, but thank you for .Off() -- TIL!",
+      "parentUuid": "cd8ec5c6_7fdf77e4",
+      "range": {
+        "startLine": 120,
+        "startChar": 10,
+        "endLine": 120,
+        "endChar": 30
+      },
+      "revId": "cd9aec2fa340a29c7814fa62810f6ae5b2fee4a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6d93c80e_0ba5515f",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-06-22T17:28:28Z",
       "side": 1,
       "message": "nit: this feels redundant since the defer take cares of adding tags.",
+      "range": {
+        "startLine": 135,
+        "startChar": 9,
+        "endLine": 135,
+        "endChar": 34
+      },
+      "revId": "cd9aec2fa340a29c7814fa62810f6ae5b2fee4a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a58477e_6aad585f",
+        "filename": "cv/internal/common/errors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T17:41:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d93c80e_0ba5515f",
       "range": {
         "startLine": 135,
         "startChar": 9,
