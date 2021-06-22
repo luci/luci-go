@@ -53,18 +53,20 @@ type TasksBinding struct {
 func Register(tqd *tq.Dispatcher) TasksBinding {
 	t := TasksBinding{
 		ManageRun: tqd.RegisterTaskClass(tq.TaskClass{
-			ID:        ManageRunTaskClass,
-			Prototype: &ManageRunTask{},
-			Queue:     "manage-run",
-			Kind:      tq.NonTransactional,
-			Quiet:     true,
+			ID:           ManageRunTaskClass,
+			Prototype:    &ManageRunTask{},
+			Queue:        "manage-run",
+			Kind:         tq.NonTransactional,
+			QuietOnError: true,
+			Quiet:        true,
 		}),
 		KickManage: tqd.RegisterTaskClass(tq.TaskClass{
-			ID:        fmt.Sprintf("kick-%s", ManageRunTaskClass),
-			Prototype: &KickManageRunTask{},
-			Queue:     "kick-manage-run",
-			Kind:      tq.Transactional,
-			Quiet:     true,
+			ID:           fmt.Sprintf("kick-%s", ManageRunTaskClass),
+			Prototype:    &KickManageRunTask{},
+			Queue:        "kick-manage-run",
+			Kind:         tq.Transactional,
+			QuietOnError: true,
+			Quiet:        true,
 		}),
 		TQDispatcher: tqd,
 	}

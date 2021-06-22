@@ -47,11 +47,12 @@ type Refresher struct {
 func NewRefresher(tqd *tq.Dispatcher, pm PM) *Refresher {
 	pcr := &Refresher{pm, tqd}
 	pcr.tqd.RegisterTaskClass(tq.TaskClass{
-		ID:        "refresh-project-config",
-		Prototype: &RefreshProjectConfigTask{},
-		Queue:     "refresh-project-config",
-		Kind:      tq.NonTransactional,
-		Quiet:     true,
+		ID:           "refresh-project-config",
+		Prototype:    &RefreshProjectConfigTask{},
+		Queue:        "refresh-project-config",
+		Kind:         tq.NonTransactional,
+		Quiet:        true,
+		QuietOnError: true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*RefreshProjectConfigTask)
 			if err := pcr.refreshProject(ctx, task.GetProject(), task.GetDisable()); err != nil {

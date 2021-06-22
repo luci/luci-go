@@ -39,10 +39,11 @@ type Exporter struct {
 func NewExporter(tqd *tq.Dispatcher, bqc cvbq.Client) *Exporter {
 	exporter := &Exporter{tqd, bqc}
 	tqd.RegisterTaskClass(tq.TaskClass{
-		ID:        exportRunToBQTaskClass,
-		Prototype: &ExportRunToBQTask{},
-		Queue:     "bq-export",
-		Quiet:     true,
+		ID:           exportRunToBQTaskClass,
+		Prototype:    &ExportRunToBQTask{},
+		Queue:        "bq-export",
+		Quiet:        true,
+		QuietOnError: true,
 		// BQ Export should be done in a transaction, because we want
 		// BQ exported if and only if Run Status is changed in datastore.
 		Kind: tq.Transactional,
