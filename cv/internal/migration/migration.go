@@ -58,26 +58,8 @@ type MigrationServer struct {
 	migrationpb.UnimplementedMigrationServer
 }
 
-// ReportRuns notifies CV of the Runs CQDaemon is currently working with.
-//
-// Used to determine whether CV's view of the world matches that of CQDaemon.
-// Initially, this is just FYI for CV.
+// ReportRuns is deprecated.
 func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.ReportRunsRequest) (resp *emptypb.Empty, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if ctx, err = m.checkAllowed(ctx); err != nil {
-		return nil, err
-	}
-
-	project := "<UNKNOWN>"
-	if i := auth.CurrentIdentity(ctx); i.Kind() == identity.Project {
-		project = i.Value()
-	}
-
-	cls := 0
-	for _, r := range req.Runs {
-		cls += len(r.Attempt.GerritChanges)
-	}
-	logging.Infof(ctx, "CQD[%s] is working on %d attempts %d CLs right now", project, len(req.Runs), cls)
 	return &emptypb.Empty{}, nil
 }
 

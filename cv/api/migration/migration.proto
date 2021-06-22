@@ -34,10 +34,7 @@ import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
 // migration from CQDaemon to CV.
 service Migration {
 
-  // ReportRuns notifies CV of the Runs CQDaemon is currently working with.
-  //
-  // Used to determine whether CV's view of the world matches that of CQDaemon.
-  // Initially, this is just FYI for CV.
+  // ReportRuns is deprecated.
   rpc ReportRuns(ReportRunsRequest) returns (google.protobuf.Empty);
 
   // ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
