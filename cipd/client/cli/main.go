@@ -326,9 +326,12 @@ type clientOptions struct {
 	authFlags authcli.Flags
 }
 
-func (opts *clientOptions) resolvedServiceURL() string {
+func (opts *clientOptions) resolvedServiceURL(ctx context.Context) string {
 	if opts.serviceURL != "" {
 		return opts.serviceURL
+	}
+	if v := cli.Getenv(ctx, cipd.EnvCIPDServiceUrl); v != "" {
+		return v
 	}
 	return opts.hardcoded.ServiceURL
 }
@@ -360,7 +363,6 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 	}
 
 	realOpts := cipd.ClientOptions{
-		ServiceURL:          opts.resolvedServiceURL(),
 		Root:                opts.rootDir,
 		CacheDir:            opts.cacheDir,
 		Versions:            opts.versions,
@@ -372,6 +374,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 	if err := realOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
 		return cipd.ClientOptions{}, err
 	}
+	realOpts.ServiceURL = opts.resolvedServiceURL(ctx)
 	return realOpts, nil
 }
 
@@ -1390,7 +1393,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 
 	if ensureFileOut != "" {
 		buf := bytes.Buffer{}
-		resolved.ServiceURL = clientOpts.resolvedServiceURL()
+		resolved.ServiceURL = clientOpts.resolvedServiceURL(ctx)
 		resolved.ParanoidMode = ""
 		if err = resolved.Serialize(&buf); err == nil {
 			err = ioutil.WriteFile(ensureFileOut, buf.Bytes(), 0666)
@@ -3316,6 +3319,10 @@ func GetApplication(params Parameters) *cli.Application {
 			cipd.EnvAdmissionPlugin: {
 				Advanced:  true,
 				ShortDesc: "JSON-encoded list with a command line of a deployment admission plugin.",
+			},
+			cipd.EnvCIPDServiceUrl: {
+				Advanced:  true,
+				ShortDesc: "Override CIPD service URL.",
 			},
 		},
 
