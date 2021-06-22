@@ -87,6 +87,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "93d29d26_b2c73044",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1030,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-22T04:12:51Z",
+      "side": 1,
+      "message": "haha fair enough; injecting a logger makes a lot more sense than trying to hunt down all the callsites...",
+      "parentUuid": "690d1323_5006c600",
+      "revId": "ba47648d9b95ca966372e99622ff61b45e5b828e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "54e90207_e8307eda",
