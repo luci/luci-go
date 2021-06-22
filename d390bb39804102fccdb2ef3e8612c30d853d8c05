@@ -68,6 +68,30 @@
       },
       "revId": "d390bb39804102fccdb2ef3e8612c30d853d8c05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4bc16a1_db4dcb36",
+        "filename": "cv/internal/prjmanager/prjpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T04:36:06Z",
+      "side": 1,
+      "message": "scratch that, it is used in downstream CL: https://crrev.com/c/2974907",
+      "parentUuid": "dfa85d0c_f8185fc0",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 128,
+        "endChar": 0
+      },
+      "revId": "d390bb39804102fccdb2ef3e8612c30d853d8c05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
