@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "657e1e85_43b63d0b",
+        "filename": "cv/internal/admin/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T04:36:43Z",
+      "side": 1,
+      "message": "GetProjectLogs",
+      "range": {
+        "startLine": 113,
+        "startChar": 29,
+        "endLine": 113,
+        "endChar": 39
+      },
+      "revId": "faad0833d8849909f8c14844deca4a0cfd267af6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
