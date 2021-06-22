@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package configcron
+package prjcfg
 
 import (
 	"context"
@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	cvconfig "go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,11 +42,11 @@ func TestConfigRefreshCron(t *testing.T) {
 		defer cancel()
 
 		pm := mockPM{}
-		pcr := New(ct.TQDispatcher, &pm)
+		pcr := NewRefresher(ct.TQDispatcher, &pm)
 
 		Convey("for a new project", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-				config.ProjectSet("chromium"): {cvconfig.ConfigFileName: ""},
+				config.ProjectSet("chromium"): {ConfigFileName: ""},
 			}))
 			// Project chromium doesn't exist in datastore.
 			err := pcr.SubmitRefreshTasks(ctx)
@@ -61,9 +60,9 @@ func TestConfigRefreshCron(t *testing.T) {
 
 		Convey("for an existing project", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-				config.ProjectSet("chromium"): {cvconfig.ConfigFileName: ""},
+				config.ProjectSet("chromium"): {ConfigFileName: ""},
 			}))
-			So(datastore.Put(ctx, &cvconfig.ProjectConfig{
+			So(datastore.Put(ctx, &ProjectConfig{
 				Project: "chromium",
 				Enabled: true,
 			}), ShouldBeNil)
@@ -98,7 +97,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 					config.ProjectSet("chromium"): {"other.cfg": ""},
 				}))
-				So(datastore.Put(ctx, &cvconfig.ProjectConfig{
+				So(datastore.Put(ctx, &ProjectConfig{
 					Project: "chromium",
 					Enabled: true,
 				}), ShouldBeNil)
@@ -112,7 +111,7 @@ func TestConfigRefreshCron(t *testing.T) {
 			})
 			Convey("that doesn't exist in LUCI Config", func() {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
-				So(datastore.Put(ctx, &cvconfig.ProjectConfig{
+				So(datastore.Put(ctx, &ProjectConfig{
 					Project: "chromium",
 					Enabled: true,
 				}), ShouldBeNil)
@@ -126,7 +125,7 @@ func TestConfigRefreshCron(t *testing.T) {
 			})
 			Convey("Skip already disabled Project", func() {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
-				So(datastore.Put(ctx, &cvconfig.ProjectConfig{
+				So(datastore.Put(ctx, &ProjectConfig{
 					Project: "foo",
 					Enabled: false,
 				}), ShouldBeNil)

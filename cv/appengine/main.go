@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg/configcron"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -95,7 +95,7 @@ func main() {
 		})
 
 		// Register cron.
-		pcr := configcron.New(&tq.Default, pmNotifier)
+		pcr := prjcfg.NewRefresher(&tq.Default, pmNotifier)
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
 			return refreshConfig(ctx, pcr)
 		})
@@ -109,7 +109,7 @@ func main() {
 	})
 }
 
-func refreshConfig(ctx context.Context, pcr *configcron.ProjectConfigRefresher) error {
+func refreshConfig(ctx context.Context, pcr *prjcfg.ProjectConfigRefresher) error {
 	// The cron job interval is 1 minute.
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()

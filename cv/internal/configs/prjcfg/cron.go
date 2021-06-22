@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package configcron
+package prjcfg
 
 import (
 	"context"
@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // PM encapsulates Project Manager notified by the ConfigRefresher.
@@ -44,8 +43,8 @@ type ProjectConfigRefresher struct {
 	tqd *tq.Dispatcher
 }
 
-// New creates new ProjectConfigRefresher and registers its TQ tasks.
-func New(tqd *tq.Dispatcher, pm PM) *ProjectConfigRefresher {
+// NewRefresher creates a new ProjectConfigRefresher and registers its TQ tasks.
+func NewRefresher(tqd *tq.Dispatcher, pm PM) *ProjectConfigRefresher {
 	pcr := &ProjectConfigRefresher{pm, tqd}
 	pcr.tqd.RegisterTaskClass(tq.TaskClass{
 		ID:        "refresh-project-config",
@@ -72,7 +71,7 @@ func New(tqd *tq.Dispatcher, pm PM) *ProjectConfigRefresher {
 //
 // It's expected to be called by a cron.
 func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error {
-	projects, err := prjcfg.ProjectsWithConfig(ctx)
+	projects, err := ProjectsWithConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -100,7 +99,7 @@ func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error
 		}
 	}
 
-	curEnabledProjects, err := prjcfg.GetAllProjectIDs(ctx, true)
+	curEnabledProjects, err := GetAllProjectIDs(ctx, true)
 	if err != nil {
 		return err
 	}
@@ -136,9 +135,9 @@ func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error
 }
 
 func (pcr *ProjectConfigRefresher) refreshProject(ctx context.Context, project string, disable bool) error {
-	action, actionFn := "update", prjcfg.UpdateProject
+	action, actionFn := "update", UpdateProject
 	if disable {
-		action, actionFn = "disable", prjcfg.DisableProject
+		action, actionFn = "disable", DisableProject
 	}
 	err := actionFn(ctx, project, func(ctx context.Context) error {
 		return pcr.pm.UpdateConfig(ctx, project)

@@ -12,5 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package prjcfg implements CV config ingestion from LUCI Config.
+// Package prjcfg handles project-scoped CV config.
+//
+// Configs are ingested and kept up to date using `ProjectConfigRefresher`,
+// which is supposed to be called frequently, typically by a cron job.
+//
+// Every time config is changed, corresponding Project Manager is notified.
+// Additionally, Project managers is "poked" probabilistically for reliability
+// even if there were no changes so long as corresponding LUCI project's config
+// remains active.
+//
+// TODO(crbug/1221908): implement pruning of old configs.
 package prjcfg
