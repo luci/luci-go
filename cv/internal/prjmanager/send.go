@@ -25,23 +25,23 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-// Notifier notifies PM.
+// Notifier notifies Project Manager.
 type Notifier struct {
-	// TasksBinding are used to register handlers of PM Implementation & CL Purger to
+	// TasksBinding are used to register handlers of Project Manager Implementation & CL Purger to
 	// avoid circular dependency.
 	TasksBinding prjpb.TasksBinding
 }
 
-// NewNotifier creates a new PM notifier and registers it in the provided
-// tq.Dispatcher.
+// NewNotifier creates a new Project Manager notifier and registers it in the
+// provided tq.Dispatcher.
 func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 	return &Notifier{TasksBinding: prjpb.Register(tqd)}
 }
 
-// UpdateConfig tells ProjectManager to read and update to newest ProjectConfig
+// UpdateConfig tells Project Manager to read and update to newest ProjectConfig
 // by fetching it from Datatstore.
 //
-// Results in stopping ProjectManager if ProjectConfig got disabled or deleted.
+// Results in stopping Project Manager if ProjectConfig got disabled or deleted.
 func (n *Notifier) UpdateConfig(ctx context.Context, luciProject string) error {
 	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_NewConfig{
@@ -50,7 +50,7 @@ func (n *Notifier) UpdateConfig(ctx context.Context, luciProject string) error {
 	})
 }
 
-// Poke tells ProjectManager to poke all downstream actors and check its own
+// Poke tells Project Manager to poke all downstream actors and check its own
 // state.
 func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
 	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
@@ -60,7 +60,7 @@ func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
 	})
 }
 
-// NotifyCLUpdated tells ProjectManager to check latest version of a given CL.
+// NotifyCLUpdated tells Project Manager to check latest version of a given CL.
 func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
 	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClUpdated{
@@ -72,7 +72,7 @@ func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid
 	})
 }
 
-// NotifyCLsUpdated is a batch of NotifyCLUpdated for the same ProjectManager.
+// NotifyCLsUpdated is a batch of NotifyCLUpdated for the same Project Manager.
 //
 // In each given CL, .ID and .EVersion must be set.
 func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
@@ -83,7 +83,7 @@ func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls
 	})
 }
 
-// NotifyPurgeCompleted tells ProjectManager that a CL purge has completed.
+// NotifyPurgeCompleted tells Project Manager that a CL purge has completed.
 //
 // The ultimate result of CL purge is the updated state of a CL itself, thus no
 // information is provided here.
@@ -103,21 +103,21 @@ func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string,
 	return n.TasksBinding.Dispatch(ctx, luciProject, eta)
 }
 
-// NotifyRunCreated is sent by ProjectManager to itself within a Run creation
+// NotifyRunCreated is sent by Project Manager to itself within a Run creation
 // transaction.
 //
 // Unlike other event-sending of Notifier, this one only creates an event and
 // doesn't create a task. This is fine because:
 //   * if Run creation transaction fails, then this event isn't actually
 //     created anyways.
-//   * if ProjectManager observes the Run creation success, then it'll act as if
+//   * if Project Manager observes the Run creation success, then it'll act as if
 //     this event was received in the upcoming state transition. Yes, it won't
 //     process this event immediately, but at this point the event is a noop,
 //     so it'll be cleared out from the eventbox upon next invocation of
-//     ProjectManager. So there is no need to create a TQ task.
-//   * else, namely Run creation succeeds but ProjectManager sees it as a
-//     failure OR ProjectManager fails at any point before it can act on
-//     RunCreation, then the existing TQ task running ProjectManager will be
+//     Project Manager. So there is no need to create a TQ task.
+//   * else, namely Run creation succeeds but Project Manager sees it as a
+//     failure OR Project Manager fails at any point before it can act on
+//     RunCreation, then the existing TQ task running Project Manager will be
 //     retried. So once again there is no need to create a TQ task.
 func (n *Notifier) NotifyRunCreated(ctx context.Context, runID common.RunID) error {
 	return prjpb.Send(ctx, runID.LUCIProject(), &prjpb.Event{
@@ -129,7 +129,7 @@ func (n *Notifier) NotifyRunCreated(ctx context.Context, runID common.RunID) err
 	})
 }
 
-// NotifyRunFinished tells ProjectManager that a run has finalized its state.
+// NotifyRunFinished tells Project Manager that a run has finalized its state.
 func (n *Notifier) NotifyRunFinished(ctx context.Context, runID common.RunID) error {
 	return n.TasksBinding.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunFinished{

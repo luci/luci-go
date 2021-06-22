@@ -171,8 +171,8 @@ func Send(ctx context.Context, luciProject string, e *Event) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	// Must be same as prjmanager.ProjectKind, but can't import due to circular
-	// imports.
+	// Must be the same as prjmanager.ProjectKind, which can't imported due to
+	// circular imports.
 	to := datastore.MakeKey(ctx, "Project", luciProject)
 	return eventbox.Emit(ctx, value, to)
 }
