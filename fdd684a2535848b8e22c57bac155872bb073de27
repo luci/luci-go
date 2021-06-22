@@ -16,6 +16,24 @@
       "message": "nit nit: I would rename the file to cl_error.go for better readability.",
       "revId": "fdd684a2535848b8e22c57bac155872bb073de27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03b8eee6_ccd675fc",
+        "filename": "cv/internal/usertext/clerror.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T09:54:43Z",
+      "side": 1,
+      "message": "https://crrev.com/c/2977112",
+      "parentUuid": "f7bfe7e5_dd23feee",
+      "revId": "fdd684a2535848b8e22c57bac155872bb073de27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
