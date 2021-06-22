@@ -92,6 +92,7 @@ export class TextArtifactElement extends MobxLitElement {
       }
       pre {
         white-space: pre-wrap;
+        overflow-wrap: break-word;
       }
     `,
   ];

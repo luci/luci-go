@@ -541,6 +541,7 @@ export class OverviewTabElement extends MobxLitElement {
       }
       #summary-html pre {
         white-space: pre-wrap;
+        overflow-wrap: break-word;
         font-size: 12px;
       }
       #summary-html * {
