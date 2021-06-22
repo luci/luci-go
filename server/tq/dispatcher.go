@@ -405,6 +405,11 @@ type Task struct {
 // See Handler doc for more details.
 var Fatal = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped")}
 
+// OmitLoggingError is an error tag used to indicate that the handler doesn't
+// want the error from the task logged, presumably because the handler already
+// did the logging itself.
+var OmitLoggingError = errors.BoolTag{Key: errors.NewTagKey("this error should not be logged")}
+
 // Used to override HTTP status of some errors.
 var (
 	httpStatusKey = errors.NewTagKey("http status override")
@@ -1353,7 +1358,7 @@ func parseHeaders(h http.Header) ExecutionInfo {
 //
 // `msg` is sent to the caller as is. `err` is logged, but not sent.
 func httpReply(c *router.Context, code int, msg string, err error) {
-	if err != nil {
+	if err != nil && !OmitLoggingError.In(err) {
 		logging.Errorf(c.Context, "server/tq task %s: %s", msg, err)
 	}
 	http.Error(c.Writer, msg, code)
