@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d447708a_bd4ddf60",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1512169
+      },
+      "writtenOn": "2021-06-22T08:17:22Z",
+      "side": 1,
+      "message": "Vadim, is there any news?",
+      "revId": "b2829868b60aef4092a189f7ffd6b820826e2ffd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
