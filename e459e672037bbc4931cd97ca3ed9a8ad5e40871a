@@ -22,6 +22,30 @@
       },
       "revId": "e459e672037bbc4931cd97ca3ed9a8ad5e40871a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fd71864_e6a50c12",
+        "filename": "cv/internal/configs/prjcfg/prjcfgtest/testing.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T01:06:56Z",
+      "side": 1,
+      "message": "Yeah, i know. And I thought that was good because we don\u0027t get \"free\" pokes,\nbut after more thinking we don\u0027t need to run *cron* all the time, only after every config update. So, I kept this comment as I want to act on it.",
+      "parentUuid": "1b90b575_b73bee7e",
+      "range": {
+        "startLine": 17,
+        "startChar": 3,
+        "endLine": 18,
+        "endChar": 73
+      },
+      "revId": "e459e672037bbc4931cd97ca3ed9a8ad5e40871a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
