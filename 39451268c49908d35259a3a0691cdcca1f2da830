@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ce8e745_5703450a",
+        "filename": "cv/internal/configs/prjcfg/cron.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T00:55:25Z",
+      "side": 1,
+      "message": "nit: \"Refresher\" or \"ProjectConfig Referesher\"",
+      "range": {
+        "startLine": 46,
+        "startChar": 30,
+        "endLine": 46,
+        "endChar": 52
+      },
+      "revId": "39451268c49908d35259a3a0691cdcca1f2da830",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
