@@ -22,6 +22,30 @@
       },
       "revId": "39451268c49908d35259a3a0691cdcca1f2da830",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24493895_a624e525",
+        "filename": "cv/internal/configs/prjcfg/cron.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T09:51:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ce8e745_5703450a",
+      "range": {
+        "startLine": 46,
+        "startChar": 30,
+        "endLine": 46,
+        "endChar": 52
+      },
+      "revId": "39451268c49908d35259a3a0691cdcca1f2da830",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
