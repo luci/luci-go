@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2068f30_878dd021",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-22T18:08:04Z",
+      "side": 1,
+      "message": "Initially, I considered adding an option to enable grpcmon.client.\ne.g., --grpcmon_client\n\nHowever, I didn\u0027t find a reason to disable it yet, and decided to enable it always, as long as tsmon is enabled.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/server/server.go;l\u003d1811-1814\n\nPTAL. If this works as expected, I will add it to other clients.\nhttps://source.chromium.org/search?q\u003dNewClient\u0026sq\u003d\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2Fserver%2F",
+      "revId": "3fa431fb98ab0bdecf2fa18838eceb0a78a0caf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
