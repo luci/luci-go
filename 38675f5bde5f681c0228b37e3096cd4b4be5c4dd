@@ -16,6 +16,23 @@
       "message": "Vadim, I\u0027d like your feedback, too.",
       "revId": "38675f5bde5f681c0228b37e3096cd4b4be5c4dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53e8a80c_69431c78",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-22T18:47:59Z",
+      "side": 1,
+      "message": "Perhaps this can be made a part of TaskClass (similar to Quite field or just don\u0027t log errors from Quite tasks)?",
+      "revId": "38675f5bde5f681c0228b37e3096cd4b4be5c4dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
