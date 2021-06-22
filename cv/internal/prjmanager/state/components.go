@@ -82,12 +82,15 @@ type cAction struct {
 //
 // Doesn't modify the state itself.
 //
-// Returns an action per each component that needs acting upon.
-func (s *State) triageComponents(ctx context.Context) ([]*cAction, error) {
+// Returns:
+//  * an action per each component that needs acting upon;
+//  * indication whether the state should be stored for debugging purpose;
+//  * error, if any.
+func (s *State) triageComponents(ctx context.Context) ([]*cAction, bool, error) {
 	var sup itriager.PMState
 	sup, err := s.makeTriageSupporter(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	poolSize := min(concurrentComponentProcessing, len(s.PB.GetComponents()))
@@ -123,17 +126,17 @@ func (s *State) triageComponents(ctx context.Context) ([]*cAction, error) {
 	})
 	switch merrs, ok := poolErr.(errors.MultiError); {
 	case poolErr == nil || (ok && len(merrs) == 0):
-		return actions, nil
+		return actions, false, nil
 	case !ok:
 		panic(fmt.Errorf("Unexpected return from parallel.WorkPool: %s", poolErr))
 	case len(actions) > 0:
 		// Components are independent, so proceed despite errors on some components
 		// since partial progress is better than none.
 		logging.Warningf(ctx, "triageComponents: %d errors, but proceeding to act on %d components", len(merrs), len(actions))
-		return actions, nil
+		return actions, errors.Contains(merrs, errCaughtPanic), nil
 	default:
 		err := common.MostSevereError(merrs)
-		return nil, errors.Annotate(err, "failed to triage %d components, keeping the most severe error", len(merrs)).Err()
+		return nil, false, errors.Annotate(err, "failed to triage %d components, keeping the most severe error", len(merrs)).Err()
 	}
 }
 
