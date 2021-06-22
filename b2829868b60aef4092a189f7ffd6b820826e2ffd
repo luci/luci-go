@@ -16,6 +16,24 @@
       "message": "Vadim, is there any news?",
       "revId": "b2829868b60aef4092a189f7ffd6b820826e2ffd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29ceb247_3dd8fffc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-22T18:54:52Z",
+      "side": 1,
+      "message": "Gerrit sends notification only when you reply to a comment. I didn\u0027t see you uploaded the second pathset.",
+      "parentUuid": "d447708a_bd4ddf60",
+      "revId": "b2829868b60aef4092a189f7ffd6b820826e2ffd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
