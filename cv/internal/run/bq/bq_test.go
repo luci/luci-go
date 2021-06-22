@@ -117,11 +117,13 @@ func TestMakeAttempt(t *testing.T) {
 				CreateTime:    epoch,
 				StartTime:     epoch.Add(time.Minute * 2),
 				EndTime:       epoch.Add(time.Minute * 30),
-				CLs:           common.CLIDs{3, 5},
+				CLs:           common.CLIDs{3, 5, 7},
 				Submission: &run.Submission{
-					// CL 3 was submitted, but CL 5 was not.
-					Cls:          []int64{3, 5},
+					// CL 3 was submitted, CL 5 failed to submit and CL 7 was never
+					// attempted.
+					Cls:          []int64{3, 5, 7},
 					SubmittedCls: []int64{3},
+					FailedCls:    []int64{5},
 				},
 				Mode: run.FullRun,
 			}
@@ -168,6 +170,27 @@ func TestMakeAttempt(t *testing.T) {
 				},
 				Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
 			}), ShouldBeNil)
+			So(datastore.Put(ctx, &run.RunCL{
+				ID:         7,
+				Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				ExternalID: "gerrit/foo-review.googlesource.com/777",
+				Detail: &changelist.Snapshot{
+					LuciProject:           "lproject",
+					Patchset:              3,
+					MinEquivalentPatchset: 2,
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: "foo-review.googlesource.com",
+							Info: &gerrit.ChangeInfo{
+								Number:  777,
+								Project: "gproject",
+								Ref:     "refs/heads/main",
+							},
+						},
+					},
+				},
+				Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
+			}), ShouldBeNil)
 
 			a, err := makeAttempt(ctx, r)
 			So(err, ShouldBeNil)
@@ -175,8 +198,8 @@ func TestMakeAttempt(t *testing.T) {
 				Key:                  runID.AttemptKey(),
 				LuciProject:          "lproject",
 				ConfigGroup:          r.ConfigGroupID.Name(),
-				ClGroupKey:           "cad522cbfdc9e5ca",
-				EquivalentClGroupKey: "187bf41fdbe46088",
+				ClGroupKey:           "54090427bcf39a01",
+				EquivalentClGroupKey: "07b4731d9f201da5",
 				StartTime:            timestamppb.New(r.CreateTime),
 				EndTime:              timestamppb.New(r.EndTime),
 				GerritChanges: []*cvbqpb.GerritChange{
@@ -199,6 +222,16 @@ func TestMakeAttempt(t *testing.T) {
 						TriggerTime:                timestamppb.New(epoch),
 						Mode:                       cvbqpb.Mode_FULL_RUN,
 						SubmitStatus:               cvbqpb.GerritChange_FAILURE,
+					},
+					{
+						Host:                       "foo-review.googlesource.com",
+						Project:                    "gproject",
+						Change:                     777,
+						Patchset:                   3,
+						EarliestEquivalentPatchset: 2,
+						TriggerTime:                timestamppb.New(epoch),
+						Mode:                       cvbqpb.Mode_FULL_RUN,
+						SubmitStatus:               cvbqpb.GerritChange_PENDING,
 					},
 				},
 				// In the case of submit failure for one or more CLs,
