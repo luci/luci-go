@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1839aab5_3160dfc7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-22T23:57:13Z",
+      "side": 1,
+      "message": "Before: https://ci.chromium.org/ui/p/chromium/builders/try/linux-rel/577131/test-results\nAfter: https://weiweilin-0-dot-luci-milo.appspot.com/ui/p/chromium/builders/try/linux-rel/577131/test-results\n",
+      "revId": "79ea26db412b52bd3c7894bedf0b7150614c709d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
