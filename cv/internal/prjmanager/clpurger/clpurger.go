@@ -37,6 +37,8 @@ import (
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/usertext"
 )
 
 // Purger purges CLs for Project Manager.
@@ -117,7 +119,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		return nil
 	}
 
-	msg, err := formatMessage(ctx, task, cl)
+	msg, err := usertext.SFormatCLErrors(ctx, task.GetReasons(), cl, run.Mode(task.GetTrigger().GetMode()))
 	if err != nil {
 		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
 	}
