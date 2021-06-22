@@ -318,6 +318,7 @@ export class ResultEntryElement extends MobxLitElement {
         margin: 0;
         font-size: 12px;
         white-space: pre-wrap;
+        overflow-wrap: break-word;
       }
 
       .kv-key::after {

@@ -175,7 +175,15 @@ export type RenderErrorFn<T extends LitElement> = (err: ErrorEvent, ele: T) => u
  */
 export function renderErrorInPre<T extends LitElement>(err: ErrorEvent, _ele: T): unknown {
   return html`
-    <pre style="background-color: var(--block-background-color); padding: 5px; margin: 8px 16px;">
+    <pre
+      style="
+        background-color: var(--block-background-color);
+        padding: 5px;
+        margin: 8px 16px;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+      "
+    >
 An error occurred:
 ${err.message}</pre
     >
