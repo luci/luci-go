@@ -83,7 +83,9 @@ func (e *directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fu
 	ctx = logging.SetField(ctx, fmt.Sprintf("TQ-%.8s", info.TaskID), info.ExecutionCount)
 	err := e.d.handlePush(ctx, body, info)
 	if err != nil {
-		logging.Errorf(ctx, "server/tq task error: %s", err)
+		if !quietOnError.In(err) {
+			logging.Errorf(ctx, "server/tq task error: %s", err)
+		}
 		retry = !Fatal.In(err)
 	}
 }

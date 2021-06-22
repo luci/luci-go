@@ -294,6 +294,12 @@ type TaskClass struct {
 	// Quiet, if set, instructs the dispatcher not to log bodies of tasks.
 	Quiet bool
 
+	// QuietOnError, if set, instructs the dispatcher not to log errors returned
+	// by the task handler.
+	//
+	// This is useful if task handler wants to do its own custom error logging.
+	QuietOnError bool
+
 	// Custom, if given, will be called to generate a custom payload from the
 	// task's proto payload.
 	//
@@ -411,6 +417,9 @@ var (
 	httpStatus404 = errors.TagValue{Key: httpStatusKey, Value: 404}
 	httpStatus400 = errors.TagValue{Key: httpStatusKey, Value: 400}
 )
+
+// quietOnError is an error tag used to implement TaskClass.QuietOnError.
+var quietOnError = errors.BoolTag{Key: errors.NewTagKey("QuietOnError")}
 
 // Handler is called to handle one enqueued task.
 //
@@ -1175,6 +1184,10 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 		}
 		metrics.ServerTaskLatency.Add(ctx, float64(latency), cls.ID, result, retry)
 	}
+
+	if err != nil && cls.QuietOnError {
+		err = quietOnError.Apply(err)
+	}
 	return err
 }
 
@@ -1353,7 +1366,7 @@ func parseHeaders(h http.Header) ExecutionInfo {
 //
 // `msg` is sent to the caller as is. `err` is logged, but not sent.
 func httpReply(c *router.Context, code int, msg string, err error) {
-	if err != nil {
+	if err != nil && !quietOnError.In(err) {
 		logging.Errorf(c.Context, "server/tq task %s: %s", msg, err)
 	}
 	http.Error(c.Writer, msg, code)
