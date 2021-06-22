@@ -109,7 +109,7 @@ func main() {
 	})
 }
 
-func refreshConfig(ctx context.Context, pcr *prjcfg.ProjectConfigRefresher) error {
+func refreshConfig(ctx context.Context, pcr *prjcfg.Refresher) error {
 	// The cron job interval is 1 minute.
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
