@@ -78,6 +78,9 @@ func (ids CLIDs) Swap(i int, j int) {
 
 // Set returns a new set of CLIDs.
 func (ids CLIDs) Set() map[CLID]struct{} {
+	if ids == nil {
+		return nil
+	}
 	ret := make(map[CLID]struct{}, len(ids))
 	for _, id := range ids {
 		ret[id] = struct{}{}
@@ -97,6 +100,9 @@ func (ids CLIDs) Contains(id CLID) bool {
 
 // MakeCLIDs returns CLIDs from list of clids in int64.
 func MakeCLIDs(ids ...int64) CLIDs {
+	if ids == nil {
+		return nil
+	}
 	ret := make(CLIDs, len(ids))
 	for i, id := range ids {
 		ret[i] = CLID(id)

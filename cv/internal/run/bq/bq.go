@@ -130,13 +130,11 @@ func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
 	if err != nil {
 		return nil, err
 	}
-	submittedSet := make(map[int64]struct{}, len(r.Submission.GetSubmittedCls()))
-	for _, clid := range r.Submission.GetSubmittedCls() {
-		submittedSet[clid] = struct{}{}
-	}
+	submittedSet := common.MakeCLIDs(r.Submission.GetSubmittedCls()...).Set()
+	failedSet := common.MakeCLIDs(r.Submission.GetFailedCls()...).Set()
 	gerritChanges := make([]*cvbqpb.GerritChange, len(runCLs))
 	for i, cl := range runCLs {
-		gerritChanges[i] = toGerritChange(cl, submittedSet, r.Mode)
+		gerritChanges[i] = toGerritChange(cl, submittedSet, failedSet, r.Mode)
 	}
 
 	// TODO(crbug/1173168, crbug/1105669): We want to change the BQ
@@ -170,7 +168,7 @@ func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
 // toGerritChange creates a GerritChange for the given RunCL.
 //
 // This includes the submit status of the CL.
-func toGerritChange(cl *run.RunCL, submitted map[int64]struct{}, mode run.Mode) *cvbqpb.GerritChange {
+func toGerritChange(cl *run.RunCL, submitted, failed map[common.CLID]struct{}, mode run.Mode) *cvbqpb.GerritChange {
 	detail := cl.Detail
 	ci := detail.GetGerrit().GetInfo()
 	gc := &cvbqpb.GerritChange{
@@ -187,10 +185,12 @@ func toGerritChange(cl *run.RunCL, submitted map[int64]struct{}, mode run.Mode) 
 	if mode == run.FullRun {
 		// Mark the CL submit status as success if it appears in the submitted CLs
 		// list, and failure if it does not.
-		if _, ok := submitted[int64(cl.ID)]; ok {
+		if _, ok := submitted[cl.ID]; ok {
 			gc.SubmitStatus = cvbqpb.GerritChange_SUCCESS
-		} else {
+		} else if _, ok := failed[cl.ID]; ok {
 			gc.SubmitStatus = cvbqpb.GerritChange_FAILURE
+		} else {
+			gc.SubmitStatus = cvbqpb.GerritChange_PENDING
 		}
 	}
 
