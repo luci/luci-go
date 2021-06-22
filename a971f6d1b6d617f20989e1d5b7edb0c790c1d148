@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b8df7a9_9a08e6ad",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:16:52Z",
+      "side": 1,
+      "message": "FWIW,I actually meant  right above the\n\nwg.Add(len(failed))\nfor i, failedCL :\u003d range failed {",
+      "revId": "a971f6d1b6d617f20989e1d5b7edb0c790c1d148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
