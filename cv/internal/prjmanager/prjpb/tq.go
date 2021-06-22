@@ -67,25 +67,28 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 		TQDispatcher: tqd,
 
 		ManageProject: tqd.RegisterTaskClass(tq.TaskClass{
-			ID:        ManageProjectTaskClass,
-			Prototype: &ManageProjectTask{},
-			Queue:     "manage-project",
-			Kind:      tq.NonTransactional,
-			Quiet:     true,
+			ID:           ManageProjectTaskClass,
+			Prototype:    &ManageProjectTask{},
+			Queue:        "manage-project",
+			Kind:         tq.NonTransactional,
+			Quiet:        true,
+			QuietOnError: true,
 		}),
 		KickManageProject: tqd.RegisterTaskClass(tq.TaskClass{
-			ID:        KickManageProjectTaskClass,
-			Prototype: &KickManageProjectTask{},
-			Queue:     "kick-manage-project",
-			Kind:      tq.Transactional,
-			Quiet:     true,
+			ID:           KickManageProjectTaskClass,
+			Prototype:    &KickManageProjectTask{},
+			Queue:        "kick-manage-project",
+			Kind:         tq.Transactional,
+			Quiet:        true,
+			QuietOnError: true,
 		}),
 		PurgeProjectCL: tqd.RegisterTaskClass(tq.TaskClass{
-			ID:        PurgeProjectCLTaskClass,
-			Prototype: &PurgeCLTask{},
-			Queue:     "purge-project-cl",
-			Kind:      tq.Transactional,
-			Quiet:     false, // these tasks are rare enough that verbosity only helps.
+			ID:           PurgeProjectCLTaskClass,
+			Prototype:    &PurgeCLTask{},
+			Queue:        "purge-project-cl",
+			Kind:         tq.Transactional,
+			Quiet:        false, // these tasks are rare enough that verbosity only helps.
+			QuietOnError: true,
 		}),
 	}
 }

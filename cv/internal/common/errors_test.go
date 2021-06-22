@@ -41,13 +41,18 @@ func TestTQifyError(t *testing.T) {
 		}
 		ctx = logging.SetLevel(ctx, logging.Debug)
 
-		assertLoggedStack := func() string {
+		assertLoggedStack := func() {
 			So(ml.Messages(), ShouldHaveLength, 1)
 			m := ml.Messages()[0]
 			So(m.Level, ShouldEqual, logging.Error)
 			So(m.Msg, ShouldContainSubstring, "common.TestTQifyError()")
 			So(m.Msg, ShouldContainSubstring, "errors_test.go")
-			return m.Msg
+		}
+		assertLoggedAt := func(level logging.Level) {
+			So(ml.Messages(), ShouldHaveLength, 1)
+			m := ml.Messages()[0]
+			So(m.Level, ShouldEqual, level)
+			So(m.Msg, ShouldNotContainSubstring, "errors_test.go")
 		}
 
 		errOops := errors.New("oops")
@@ -77,12 +82,12 @@ func TestTQifyError(t *testing.T) {
 			Convey("non-transient becomes Fatal and is logged", func() {
 				err := TQifyError(ctx, errOops)
 				So(tq.Fatal.In(err), ShouldBeTrue)
-				So(assertLoggedStack(), ShouldContainSubstring, "oops")
+				assertLoggedStack()
 			})
 			Convey("transient is retried and logged", func() {
 				err := TQifyError(ctx, errTransBoo)
 				So(tq.Fatal.In(err), ShouldBeFalse)
-				So(assertLoggedStack(), ShouldContainSubstring, "boo")
+				assertLoggedStack()
 			})
 		})
 
@@ -92,37 +97,38 @@ func TestTQifyError(t *testing.T) {
 				KnownFatal: []error{errOops},
 			}
 			Convey("on unknown error", func() {
-				Convey("transient -> retried and logged", func() {
+				Convey("transient -> retry and log entire stack", func() {
 					err := tqify.Error(ctx, errTransRare)
-					So(err, ShouldEqual, errTransRare)
-					So(assertLoggedStack(), ShouldContainSubstring, "lacking emoji")
+					So(tq.Fatal.In(err), ShouldBeFalse)
+					assertLoggedStack()
 				})
-				Convey("non-transient -> Fatal and logged", func() {
+				Convey("non-transient -> tq.Fatal and ", func() {
 					err := tqify.Error(ctx, errRare)
 					So(tq.Fatal.In(err), ShouldBeTrue)
-					So(assertLoggedStack(), ShouldContainSubstring, "lacking emoji")
+					assertLoggedStack()
 				})
 			})
 
-			Convey("KnownFatal => tq.Fatal, no log", func() {
+			Convey("KnownFatal => tq.Fatal, log as warning", func() {
 				err := tqify.Error(ctx, errWrapOops)
 				So(tq.Fatal.In(err), ShouldBeTrue)
-				So(ml.Messages(), ShouldBeEmpty)
+				assertLoggedAt(logging.Warning)
 			})
-			Convey("KnownRetry => non-transient, non-Fatal, no log", func() {
+			Convey("KnownRetry => non-transient, non-Fatal, log as warning", func() {
 				err := tqify.Error(ctx, errTransBoo)
 				So(tq.Fatal.In(err), ShouldBeFalse)
 				So(transient.Tag.In(err), ShouldBeFalse)
-				So(ml.Messages(), ShouldBeEmpty)
+				assertLoggedAt(logging.Warning)
 			})
-			Convey("KnownRetry & KnownFatal => KnownRetry wins", func() {
+			Convey("KnownRetry & KnownFatal => KnownRetry wins, log about a BUG", func() {
 				err := tqify.Error(ctx, errMulti)
 				So(tq.Fatal.In(err), ShouldBeFalse)
 				So(transient.Tag.In(err), ShouldBeFalse)
-				So(ml.Messages(), ShouldHaveLength, 1)
-				m := ml.Messages()[0]
-				So(m.Level, ShouldEqual, logging.Error)
-				So(m.Msg, ShouldContainSubstring, "BUG: invalid TQIfy config")
+				So(ml.Messages(), ShouldHaveLength, 2)
+				So(ml.Messages()[0].Level, ShouldEqual, logging.Error)
+				So(ml.Messages()[0].Msg, ShouldContainSubstring, "BUG: invalid TQIfy config")
+				So(ml.Messages()[1].Level, ShouldEqual, logging.Warning)
+				So(ml.Messages()[1].Msg, ShouldContainSubstring, errMulti.Error())
 			})
 		})
 	})

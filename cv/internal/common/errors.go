@@ -101,23 +101,31 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
+
 	retry := matchesErrors(err, t.KnownRetry...)
 	fail := matchesErrors(err, t.KnownFatal...)
 	switch {
-	case retry && transient.Tag.In(err):
-		// Return the same error but w/o transient tag.
-		return errors.Reason("%s", err).Err()
-	case retry && fail:
-		logging.Errorf(ctx, "BUG: invalid TQIfy config %v: error %s matched both KnownRetry and KnownFatal", t, err)
-		fallthrough
 	case retry:
+		if fail {
+			logging.Errorf(ctx, "BUG: invalid TQIfy config %v: error %s matched both KnownRetry and KnownFatal", t, err)
+		}
+		logging.Warningf(ctx, "Will retry due to anticipated error: %s", err)
+		if transient.Tag.In(err) {
+			// Get rid of transient tag for TQ to treat error as 429.
+			return transient.Tag.Off().Apply(err)
+		}
 		return err
+
 	case fail:
+		logging.Warningf(ctx, "Failing due to anticipated error: %s", err)
 		return tq.Fatal.Apply(err)
+
 	case !transient.Tag.In(err):
+		// Unexpected error which isn't considered retryable.
 		err = tq.Fatal.Apply(err)
 		fallthrough
 	default:
+		// Unexpected error get logged with full stacktrace.
 		LogError(ctx, err)
 		return err
 	}

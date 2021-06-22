@@ -70,11 +70,12 @@ type Updater struct {
 func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
 	u := &Updater{pm, rm, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
-		ID:        TaskClass,
-		Prototype: &RefreshGerritCL{},
-		Queue:     "refresh-gerrit-cl",
-		Quiet:     true,
-		Kind:      tq.FollowsContext,
+		ID:           TaskClass,
+		Prototype:    &RefreshGerritCL{},
+		Queue:        "refresh-gerrit-cl",
+		Quiet:        true,
+		QuietOnError: true,
+		Kind:         tq.FollowsContext,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
@@ -88,11 +89,12 @@ func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
 		},
 	})
 	tqd.RegisterTaskClass(tq.TaskClass{
-		ID:        TaskClassBatch,
-		Prototype: &BatchRefreshGerritCL{},
-		Queue:     "refresh-gerrit-cl",
-		Quiet:     true,
-		Kind:      tq.Transactional,
+		ID:           TaskClassBatch,
+		Prototype:    &BatchRefreshGerritCL{},
+		Queue:        "refresh-gerrit-cl",
+		Quiet:        true,
+		QuietOnError: true,
+		Kind:         tq.Transactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*BatchRefreshGerritCL)

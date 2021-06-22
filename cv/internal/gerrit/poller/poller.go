@@ -56,11 +56,12 @@ type Poller struct {
 func New(tqd *tq.Dispatcher, clUpdater *updater.Updater, pm PM) *Poller {
 	p := &Poller{tqd, clUpdater, pm}
 	tqd.RegisterTaskClass(tq.TaskClass{
-		ID:        task.ClassID,
-		Prototype: &task.PollGerritTask{},
-		Queue:     "poll-gerrit",
-		Quiet:     true,
-		Kind:      tq.NonTransactional,
+		ID:           task.ClassID,
+		Prototype:    &task.PollGerritTask{},
+		Queue:        "poll-gerrit",
+		Quiet:        true,
+		QuietOnError: true,
+		Kind:         tq.NonTransactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*task.PollGerritTask)
 			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
