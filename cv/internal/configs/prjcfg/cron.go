@@ -38,14 +38,14 @@ type PM interface {
 	UpdateConfig(ctx context.Context, luciProject string) error
 }
 
-type ProjectConfigRefresher struct {
+type Refresher struct {
 	pm  PM
 	tqd *tq.Dispatcher
 }
 
-// NewRefresher creates a new ProjectConfigRefresher and registers its TQ tasks.
-func NewRefresher(tqd *tq.Dispatcher, pm PM) *ProjectConfigRefresher {
-	pcr := &ProjectConfigRefresher{pm, tqd}
+// NewRefresher creates a new project config Refresher and registers its TQ tasks.
+func NewRefresher(tqd *tq.Dispatcher, pm PM) *Refresher {
+	pcr := &Refresher{pm, tqd}
 	pcr.tqd.RegisterTaskClass(tq.TaskClass{
 		ID:        "refresh-project-config",
 		Prototype: &RefreshProjectConfigTask{},
@@ -70,7 +70,7 @@ func NewRefresher(tqd *tq.Dispatcher, pm PM) *ProjectConfigRefresher {
 // or disable projects that do not have CV config in LUCI Config.
 //
 // It's expected to be called by a cron.
-func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error {
+func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
 	projects, err := ProjectsWithConfig(ctx)
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error
 		for _, task := range tasks {
 			task := task
 			workCh <- func() (err error) {
-				if err = pcr.tqd.AddTask(ctx, task); err != nil {
+				if err = r.tqd.AddTask(ctx, task); err != nil {
 					logging.Errorf(ctx, "Failed to submit task for %q: %s", task.Title, err)
 				}
 				return
@@ -134,26 +134,26 @@ func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error
 	return nil
 }
 
-func (pcr *ProjectConfigRefresher) refreshProject(ctx context.Context, project string, disable bool) error {
+func (r *Refresher) refreshProject(ctx context.Context, project string, disable bool) error {
 	action, actionFn := "update", UpdateProject
 	if disable {
 		action, actionFn = "disable", DisableProject
 	}
 	err := actionFn(ctx, project, func(ctx context.Context) error {
-		return pcr.pm.UpdateConfig(ctx, project)
+		return r.pm.UpdateConfig(ctx, project)
 	})
 	if err != nil {
 		return errors.Annotate(err, "failed to %s project %q", action, project).Err()
 	}
 	if !disable {
-		return pcr.maybePokePM(ctx, project)
+		return r.maybePokePM(ctx, project)
 	}
 	return nil
 }
 
 const pokePMInterval = 10 * time.Minute
 
-func (pcr *ProjectConfigRefresher) maybePokePM(ctx context.Context, project string) error {
+func (r *Refresher) maybePokePM(ctx context.Context, project string) error {
 	now := clock.Now(ctx).UTC()
 	offset := common.DistributeOffset(pokePMInterval, "cron-poke", project)
 	nextPokeETA := now.Truncate(pokePMInterval).Add(offset)
@@ -166,7 +166,7 @@ func (pcr *ProjectConfigRefresher) maybePokePM(ctx context.Context, project stri
 	// poke. This will sometimes result in 2 pokes sent instead of 1, but pokes
 	// are less likely to not be sent at all.
 	if nextPokeETA.Sub(now) < 90*time.Second {
-		return pcr.pm.Poke(ctx, project)
+		return r.pm.Poke(ctx, project)
 	}
 	return nil
 }
