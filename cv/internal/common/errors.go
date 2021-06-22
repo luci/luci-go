@@ -16,6 +16,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -97,29 +98,41 @@ type TQIfy struct {
 	KnownFatal []error
 }
 
-func (t TQIfy) Error(ctx context.Context, err error) error {
-	if err == nil {
+func (t TQIfy) Error(ctx context.Context, in error) (out error) {
+	if in == nil {
 		return nil
 	}
-	retry := matchesErrors(err, t.KnownRetry...)
-	fail := matchesErrors(err, t.KnownFatal...)
+
+	// CV takes care of logging with appropriate severity, so TQ shouldn't log
+	// anything.
+	defer func() { out = tq.OmitLoggingError.Apply(out) }()
+
+	retry := matchesErrors(in, t.KnownRetry...)
+	fail := matchesErrors(in, t.KnownFatal...)
 	switch {
-	case retry && transient.Tag.In(err):
-		// Return the same error but w/o transient tag.
-		return errors.Reason("%s", err).Err()
-	case retry && fail:
-		logging.Errorf(ctx, "BUG: invalid TQIfy config %v: error %s matched both KnownRetry and KnownFatal", t, err)
-		fallthrough
 	case retry:
-		return err
+		if fail {
+			logging.Errorf(ctx, "BUG: invalid TQIfy config %v: error %s matched both KnownRetry and KnownFatal", t, in)
+		}
+		logging.Warningf(ctx, "Will retry due to anticipated error: %s", in)
+		if transient.Tag.In(in) {
+			// Need to remove the transient.Tag for TQ to treat error as 429.
+			return fmt.Errorf("%s", in)
+		}
+		return in
+
 	case fail:
-		return tq.Fatal.Apply(err)
-	case !transient.Tag.In(err):
-		err = tq.Fatal.Apply(err)
+		logging.Warningf(ctx, "Failing due to anticipated error: %s", in)
+		return tq.Fatal.Apply(in)
+
+	case !transient.Tag.In(in):
+		// Unexpected error which isn't considered retryable.
+		in = tq.Fatal.Apply(in)
 		fallthrough
 	default:
-		LogError(ctx, err)
-		return err
+		// Unexpected error get logged with full stacktrace.
+		LogError(ctx, in)
+		return tq.OmitLoggingError.Apply(in)
 	}
 }
 
