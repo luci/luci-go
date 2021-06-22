@@ -869,10 +869,6 @@ form.command_forcebuild .force-any .force-text {
   display: inline;
 }
 
-.summary-markdown p {
-  display: inline;
-}
-
 .summary-markdown h1 {
   font-size: 1rem;
 }
