@@ -119,7 +119,7 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 		fallthrough
 	default:
 		LogError(ctx, err)
-		return err
+		return tq.OmitLoggingError.Apply(err)
 	}
 }
 
