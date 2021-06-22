@@ -25,6 +25,8 @@ const _ = grpc.SupportPackageIsVersion7
 type AdminClient interface {
 	// GetProject returns current Project state.
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
+	// GetProjectLogs returns ProjectLogs recorded in the past.
+	GetProjectLogs(ctx context.Context, in *GetProjectLogsRequest, opts ...grpc.CallOption) (*GetProjectLogsResponse, error)
 	// GetRun returns current Run state.
 	GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*GetRunResponse, error)
 	// GetCL returns current CL state.
@@ -56,6 +58,15 @@ func NewAdminClient(cc grpc.ClientConnInterface) AdminClient {
 func (c *adminClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
 	out := new(GetProjectResponse)
 	err := c.cc.Invoke(ctx, "/admin.Admin/GetProject", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminClient) GetProjectLogs(ctx context.Context, in *GetProjectLogsRequest, opts ...grpc.CallOption) (*GetProjectLogsResponse, error) {
+	out := new(GetProjectLogsResponse)
+	err := c.cc.Invoke(ctx, "/admin.Admin/GetProjectLogs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +151,8 @@ func (c *adminClient) SendRunEvent(ctx context.Context, in *SendRunEventRequest,
 type AdminServer interface {
 	// GetProject returns current Project state.
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
+	// GetProjectLogs returns ProjectLogs recorded in the past.
+	GetProjectLogs(context.Context, *GetProjectLogsRequest) (*GetProjectLogsResponse, error)
 	// GetRun returns current Run state.
 	GetRun(context.Context, *GetRunRequest) (*GetRunResponse, error)
 	// GetCL returns current CL state.
@@ -167,6 +180,9 @@ type UnimplementedAdminServer struct {
 
 func (UnimplementedAdminServer) GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProject not implemented")
+}
+func (UnimplementedAdminServer) GetProjectLogs(context.Context, *GetProjectLogsRequest) (*GetProjectLogsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectLogs not implemented")
 }
 func (UnimplementedAdminServer) GetRun(context.Context, *GetRunRequest) (*GetRunResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRun not implemented")
@@ -219,6 +235,24 @@ func _Admin_GetProject_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).GetProject(ctx, req.(*GetProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admin_GetProjectLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).GetProjectLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/admin.Admin/GetProjectLogs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).GetProjectLogs(ctx, req.(*GetProjectLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -377,6 +411,10 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProject",
 			Handler:    _Admin_GetProject_Handler,
+		},
+		{
+			MethodName: "GetProjectLogs",
+			Handler:    _Admin_GetProjectLogs_Handler,
 		},
 		{
 			MethodName: "GetRun",
