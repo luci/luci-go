@@ -18,7 +18,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
 import { createContextLink } from '../libs/context';
 import * as iter from '../libs/iter_utils';
-import { unwrapObservable } from '../libs/utils';
+import { unwrapObservable } from '../libs/unwrap_observable';
 import { BuildExt } from '../models/build_ext';
 import {
   Build,

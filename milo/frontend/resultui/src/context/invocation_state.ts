@@ -17,7 +17,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { createContextLink } from '../libs/context';
 import { parseSearchQuery } from '../libs/search_query';
-import { unwrapObservable } from '../libs/utils';
+import { unwrapObservable } from '../libs/unwrap_observable';
 import { TestLoader } from '../models/test_loader';
 import { TestPresentationConfig } from '../services/buildbucket';
 import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant } from '../services/resultdb';
