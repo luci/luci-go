@@ -108,6 +108,59 @@ func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectReq
 	}
 }
 
+func (d *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjectLogsRequest) (resp *adminpb.GetProjectLogsResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = checkAllowed(ctx, "GetProjectLogs"); err != nil {
+		return
+	}
+	switch {
+	case req.GetPageToken() != "":
+		return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	case req.GetPageSize() < 0:
+		return nil, status.Errorf(codes.InvalidArgument, "negative page size not allowed")
+	case req.GetProject() == "":
+		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+	case req.GetEversionMin() < 0:
+		return nil, status.Errorf(codes.InvalidArgument, "eversion_min must be non-negative")
+	case req.GetEversionMax() < 0:
+		return nil, status.Errorf(codes.InvalidArgument, "eversion_max must be non-negative")
+	}
+
+	q := datastore.NewQuery(prjmanager.ProjectLogKind)
+	q = q.Ancestor(datastore.MakeKey(ctx, prjmanager.ProjectKind, req.GetProject()))
+
+	if m := req.GetEversionMin(); m > 0 {
+		q.Gte("EVersion", m)
+	}
+	if m := req.GetEversionMax(); m > 0 {
+		q.Lte("EVersion", m)
+	}
+	switch s := req.GetPageSize(); {
+	case s > 1024:
+		q.Limit(1024)
+	case s > 0:
+		q.Limit(s)
+	default:
+		q.Limit(128)
+	}
+
+	var out []*prjmanager.ProjectLog
+	if err = datastore.GetAll(ctx, q, &out); err != nil {
+		return nil, err
+	}
+
+	resp = &adminpb.GetProjectLogsResponse{Logs: make([]*adminpb.ProjectLog, len(out))}
+	for i, l := range out {
+		resp.Logs[i] = &adminpb.ProjectLog{
+			Eversion:   l.EVersion,
+			State:      l.State,
+			UpdateTime: tspbNillable(l.UpdateTime),
+			Reasons:    &prjpb.LogReasons{Reasons: l.Reasons},
+		}
+	}
+	return resp, nil
+}
+
 func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (resp *adminpb.GetRunResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = checkAllowed(ctx, "GetRun"); err != nil {
