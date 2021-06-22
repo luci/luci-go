@@ -23,10 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MigrationClient interface {
-	// ReportRuns notifies CV of the Runs CQDaemon is currently working with.
-	//
-	// Used to determine whether CV's view of the world matches that of CQDaemon.
-	// Initially, this is just FYI for CV.
+	// ReportRuns is deprecated.
 	ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
 	//
@@ -167,10 +164,7 @@ func (c *migrationClient) ReportUsedNetrc(ctx context.Context, in *ReportUsedNet
 // All implementations must embed UnimplementedMigrationServer
 // for forward compatibility
 type MigrationServer interface {
-	// ReportRuns notifies CV of the Runs CQDaemon is currently working with.
-	//
-	// Used to determine whether CV's view of the world matches that of CQDaemon.
-	// Initially, this is just FYI for CV.
+	// ReportRuns is deprecated.
 	ReportRuns(context.Context, *ReportRunsRequest) (*emptypb.Empty, error)
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
 	//
