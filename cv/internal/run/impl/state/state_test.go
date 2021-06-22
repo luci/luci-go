@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -45,7 +46,7 @@ func TestCheckTree(t *testing.T) {
 				Submission: &run.Submission{},
 			},
 		}
-		ct.Cfg.Create(ctx, lProject, &cfgpb.Config{
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
 				{
 					Name: "main",
@@ -93,7 +94,7 @@ func TestCheckTree(t *testing.T) {
 
 		Convey("Tree not defined", func() {
 			ct.TreeFake.ModifyState(ctx, tree.Closed)
-			ct.Cfg.Update(ctx, lProject, &cfgpb.Config{
+			prjcfgtest.Update(ctx, lProject, &cfgpb.Config{
 				ConfigGroups: []*cfgpb.ConfigGroup{
 					{Name: "main"},
 					// No Tree defined

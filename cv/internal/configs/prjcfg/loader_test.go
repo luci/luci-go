@@ -18,6 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/encoding/prototext"
+
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
+	cfgmemory "go.chromium.org/luci/config/impl/memory"
 	gaememory "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -34,11 +39,9 @@ func TestLoadingConfigs(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		tc := TestController{}
 		const project = "chromium"
 
 		Convey("Not existing project", func() {
-			tc.MustNotExist(ctx, project)
 			m, err := GetLatestMeta(ctx, project)
 			So(err, ShouldBeNil)
 			So(m.Exists(), ShouldBeFalse)
@@ -78,10 +81,12 @@ func TestLoadingConfigs(t *testing.T) {
 				},
 			},
 		}
-		tc.Create(ctx, project, cfg)
+		ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
+			config.ProjectSet(project): {ConfigFileName: prototext.Format(cfg)},
+		}))
+		So(UpdateProject(ctx, project, func(context.Context) error { return nil }), ShouldBeNil)
 
 		Convey("Enabled project", func() {
-			tc.MustExist(ctx, project)
 			m, err := GetLatestMeta(ctx, project)
 			So(err, ShouldBeNil)
 			So(m.Exists(), ShouldBeTrue)
@@ -119,9 +124,13 @@ func TestLoadingConfigs(t *testing.T) {
 				},
 			},
 		})
-		tc.Update(ctx, project, cfg)
+
+		ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
+			config.ProjectSet(project): {ConfigFileName: prototext.Format(cfg)},
+		}))
+		So(UpdateProject(ctx, project, func(context.Context) error { return nil }), ShouldBeNil)
+
 		Convey("Updated project", func() {
-			tc.MustExist(ctx, project)
 			m, err := GetLatestMeta(ctx, project)
 			So(err, ShouldBeNil)
 			So(m.Exists(), ShouldBeTrue)
@@ -145,9 +154,8 @@ func TestLoadingConfigs(t *testing.T) {
 			})
 		})
 
-		tc.Disable(ctx, project)
+		So(DisableProject(ctx, project, func(context.Context) error { return nil }), ShouldBeNil)
 		Convey("Disabled project", func() {
-			tc.MustExist(ctx, project)
 			m, err := GetLatestMeta(ctx, project)
 			So(err, ShouldBeNil)
 			So(m.Exists(), ShouldBeTrue)
@@ -159,27 +167,29 @@ func TestLoadingConfigs(t *testing.T) {
 			So(len(cgs), ShouldEqual, 3)
 		})
 
-		tc.Enable(ctx, project)
+		// Re-enable the project.
+		So(UpdateProject(ctx, project, func(context.Context) error { return nil }), ShouldBeNil)
 		Convey("Re-enabled project", func() {
-			tc.MustExist(ctx, project)
 			m, err := GetLatestMeta(ctx, project)
 			So(err, ShouldBeNil)
 			So(m.Exists(), ShouldBeTrue)
 			So(m.Status, ShouldEqual, StatusEnabled)
 		})
 
+		m, err := GetLatestMeta(ctx, project)
+		So(err, ShouldBeNil)
+		cgs, err := m.GetConfigGroups(ctx)
+		So(err, ShouldBeNil)
+
 		Convey("Deleted project", func() {
-			tc.Delete(ctx, project)
-			tc.MustNotExist(ctx, project)
-			m, err := GetLatestMeta(ctx, project)
+			So(datastore.Delete(ctx, &ProjectConfig{Project: project}, cgs), ShouldBeNil)
+
+			m, err = GetLatestMeta(ctx, project)
 			So(err, ShouldBeNil)
 			So(m.Exists(), ShouldBeFalse)
 		})
 
 		Convey("reading partially deleted project", func() {
-			m, err := GetLatestMeta(ctx, project)
-			So(err, ShouldBeNil)
-			cgs, err := m.GetConfigGroups(ctx)
 			So(datastore.Delete(ctx, cgs[1]), ShouldBeNil)
 			_, err = m.GetConfigGroups(ctx)
 			So(err, ShouldErrLike, "ConfigGroups for")

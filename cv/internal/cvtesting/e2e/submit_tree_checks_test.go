@@ -25,6 +25,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common/tree"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -61,7 +62,7 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 				Url: "https://tree-status.example.com/",
 			},
 		}
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 		for _, gChange := range []int{gChangeWait, gChangeSubmit} {

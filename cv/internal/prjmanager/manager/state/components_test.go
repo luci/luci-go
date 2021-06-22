@@ -31,6 +31,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -102,8 +103,8 @@ func TestComponentsActions(t *testing.T) {
 
 		const lProject = "luci-project"
 
-		ct.Cfg.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "main"}}})
-		meta := ct.Cfg.MustExist(ctx, lProject)
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "main"}}})
+		meta := prjcfgtest.MustExist(ctx, lProject)
 		state := &State{
 			PB: &prjpb.PState{
 				LuciProject: lProject,
@@ -320,13 +321,13 @@ func TestComponentsActions(t *testing.T) {
 		Convey("With Run Creation", func() {
 			// Run creation requires ProjectStateOffload entity to exist.
 			So(datastore.Put(ctx, &prjmanager.ProjectStateOffload{
-				ConfigHash: ct.Cfg.MustExist(ctx, lProject).ConfigGroupIDs[0].Hash(),
+				ConfigHash: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0].Hash(),
 				Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject),
 				Status:     prjpb.Status_STARTED,
 			}), ShouldBeNil)
 
 			makeRunCreator := func(clid int64, fail bool) *runcreator.Creator {
-				cfgGroups, err := ct.Cfg.MustExist(ctx, lProject).GetConfigGroups(ctx)
+				cfgGroups, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
 				if err != nil {
 					panic(err)
 				}

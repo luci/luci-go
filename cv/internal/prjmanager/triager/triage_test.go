@@ -29,6 +29,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -66,10 +67,10 @@ func TestTriage(t *testing.T) {
 				{Name: "another"},
 			},
 		}
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 		pm := &simplePMState{pb: &prjpb.PState{}}
 		var err error
-		pm.cgs, err = ct.Cfg.MustExist(ctx, lProject).GetConfigGroups(ctx)
+		pm.cgs, err = prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
 		So(err, ShouldBeNil)
 
 		dryRun := func(t time.Time) *run.Trigger {

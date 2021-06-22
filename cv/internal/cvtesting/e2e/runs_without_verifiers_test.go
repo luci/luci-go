@@ -31,6 +31,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration"
@@ -59,7 +60,7 @@ func TestCreatesSingularRun(t *testing.T) {
 		// managing Runs for a project.
 		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 
@@ -125,7 +126,7 @@ func TestCreatesSingularRunCQDinChargeOK(t *testing.T) {
 
 		ct.DisableCVRunManagement(ctx)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 
@@ -240,7 +241,7 @@ func TestCreatesSingularRunCQDinChargeButCrashes(t *testing.T) {
 
 		ct.DisableCVRunManagement(ctx)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 
@@ -351,7 +352,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 			TriggeringValue: 1,
 			TriggeringLabel: quickLabel,
 		}}
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 
@@ -457,7 +458,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 			TriggeringValue: 1,
 			TriggeringLabel: quickLabel,
 		}}
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 
@@ -558,7 +559,7 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		ct.MustCQD(ctx, lProject)
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 
@@ -652,7 +653,7 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 		ct.MustCQD(ctx, lProject)
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 
@@ -719,7 +720,7 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		// managing Runs for a project.
 		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 
@@ -797,7 +798,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		ct.MustCQD(ctx, lProject)
 
 		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
 

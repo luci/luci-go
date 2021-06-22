@@ -24,6 +24,7 @@ import (
 
 	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -38,8 +39,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	// First set up an example project with two config groups to show basic
 	// regular usage; there is a "main" group which matches a main ref, and
 	// another fallback group that matches many other refs, but not all.
-	tc := prjcfg.TestController{}
-	tc.Create(ctx, "chromium", &pb.Config{
+	prjcfgtest.Create(ctx, "chromium", &pb.Config{
 		ConfigGroups: []*pb.ConfigGroup{
 			{
 				Name: "group_main",
@@ -78,7 +78,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	})
 
 	update := func(lProject string) error {
-		meta := tc.MustExist(ctx, lProject)
+		meta := prjcfgtest.MustExist(ctx, lProject)
 		cgs, err := meta.GetConfigGroups(ctx)
 		if err != nil {
 			panic(err)
@@ -145,7 +145,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	Convey("Lookup again returns nothing for disabled project", t, func() {
 		// Simulate deleting project. Projects that are deleted are first
 		// disabled in practice.
-		tc.Disable(ctx, "chromium")
+		prjcfgtest.Disable(ctx, "chromium")
 		So(update("chromium"), ShouldBeNil)
 		So(
 			lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
@@ -155,8 +155,8 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	Convey("With two matches and no fallback...", t, func() {
 		// Simulate the project being updated so that the "other" group is no
 		// longer a fallback group. Now some refs will match both groups.
-		tc.Enable(ctx, "chromium")
-		tc.Update(ctx, "chromium", &pb.Config{
+		prjcfgtest.Enable(ctx, "chromium")
+		prjcfgtest.Update(ctx, "chromium", &pb.Config{
 			ConfigGroups: []*pb.ConfigGroup{
 				{
 					Name: "group_main",
@@ -204,7 +204,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	Convey("With two repos in main group and no other group...", t, func() {
 		// This update includes both additions and removals,
 		// and also tests multiple hosts.
-		tc.Update(ctx, "chromium", &pb.Config{
+		prjcfgtest.Update(ctx, "chromium", &pb.Config{
 			ConfigGroups: []*pb.ConfigGroup{
 				{
 					Name: "group_main",
@@ -255,7 +255,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	Convey("With another project matching the same ref...", t, func() {
 		// Below another project is created that watches the same repo and ref.
 		// This tests multiple projects matching for one Lookup.
-		tc.Create(ctx, "foo", &pb.Config{
+		prjcfgtest.Create(ctx, "foo", &pb.Config{
 			ConfigGroups: []*pb.ConfigGroup{
 				{
 					Name: "group_foo",

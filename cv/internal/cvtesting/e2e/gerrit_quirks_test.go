@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -43,7 +44,7 @@ func TestGerritCLDeleted(t *testing.T) {
 		ct.EnableCVRunManagement(ctx, lProject)
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(

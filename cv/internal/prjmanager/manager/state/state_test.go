@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -124,18 +125,18 @@ func updateConfigToNoFallabck(ctx context.Context, ct *ctest) prjcfg.Meta {
 	cfgText2 := strings.ReplaceAll(cfgText1, "fallback: YES", "fallback: NO")
 	cfg2 := &cfgpb.Config{}
 	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
-	ct.Cfg.Update(ctx, ct.lProject, cfg2)
+	prjcfgtest.Update(ctx, ct.lProject, cfg2)
 	gobmaptest.Update(ctx, ct.lProject)
-	return ct.Cfg.MustExist(ctx, ct.lProject)
+	return prjcfgtest.MustExist(ctx, ct.lProject)
 }
 
 func updateConfigRenameG1toG11(ctx context.Context, ct *ctest) prjcfg.Meta {
 	cfgText2 := strings.ReplaceAll(cfgText1, `"g1"`, `"g11"`)
 	cfg2 := &cfgpb.Config{}
 	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
-	ct.Cfg.Update(ctx, ct.lProject, cfg2)
+	prjcfgtest.Update(ctx, ct.lProject, cfg2)
 	gobmaptest.Update(ctx, ct.lProject)
-	return ct.Cfg.MustExist(ctx, ct.lProject)
+	return prjcfgtest.MustExist(ctx, ct.lProject)
 }
 
 func TestUpdateConfig(t *testing.T) {
@@ -153,8 +154,8 @@ func TestUpdateConfig(t *testing.T) {
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
 
-		ct.Cfg.Create(ctx, ct.lProject, cfg1)
-		meta := ct.Cfg.MustExist(ctx, ct.lProject)
+		prjcfgtest.Create(ctx, ct.lProject, cfg1)
+		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 		gobmaptest.Update(ctx, ct.lProject)
 
 		clPoller := poller.New(ct.TQDispatcher, nil, nil)
@@ -375,7 +376,7 @@ func TestUpdateConfig(t *testing.T) {
 		})
 
 		Convey("disabled project waits for incomplete Runs", func() {
-			ct.Cfg.Disable(ctx, ct.lProject)
+			prjcfgtest.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := s1.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
 			pb := backupPB(s1)
@@ -390,7 +391,7 @@ func TestUpdateConfig(t *testing.T) {
 			for _, c := range s1.PB.GetComponents() {
 				c.Pruns = nil
 			}
-			ct.Cfg.Disable(ctx, ct.lProject)
+			prjcfgtest.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := s1.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
 			So(sideEffect, ShouldBeNil)
@@ -503,8 +504,8 @@ func TestOnCLsUpdated(t *testing.T) {
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
 
-		ct.Cfg.Create(ctx, ct.lProject, cfg1)
-		meta := ct.Cfg.MustExist(ctx, ct.lProject)
+		prjcfgtest.Create(ctx, ct.lProject, cfg1)
+		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 		gobmaptest.Update(ctx, ct.lProject)
 
 		// Add 3 CLs: 101 standalone and 202<-203 as a stack.
@@ -750,8 +751,8 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
-		ct.Cfg.Create(ctx, ct.lProject, cfg1)
-		meta := ct.Cfg.MustExist(ctx, ct.lProject)
+		prjcfgtest.Create(ctx, ct.lProject, cfg1)
+		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 
 		run1 := &run.Run{ID: common.RunID(ct.lProject + "/101-aaa"), CLs: common.CLIDs{101}}
 		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: common.CLIDs{709, 707, 708}}
@@ -1030,8 +1031,8 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 
 		cfg := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg), ShouldBeNil)
-		ct.Cfg.Create(ctx, ct.lProject, cfg)
-		meta := ct.Cfg.MustExist(ctx, ct.lProject)
+		prjcfgtest.Create(ctx, ct.lProject, cfg)
+		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 		gobmaptest.Update(ctx, ct.lProject)
 
 		// Simulate existence of "test-b" project watching the same Gerrit host but
@@ -1040,7 +1041,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		cfgTextB := strings.ReplaceAll(cfgText1, "repo/a", "repo/b")
 		cfgB := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgTextB), cfgB), ShouldBeNil)
-		ct.Cfg.Create(ctx, lProjectB, cfgB)
+		prjcfgtest.Create(ctx, lProjectB, cfgB)
 		gobmaptest.Update(ctx, lProjectB)
 
 		cis := make(map[int]*gerritpb.ChangeInfo, 20)

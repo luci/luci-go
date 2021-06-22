@@ -27,6 +27,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -74,7 +75,7 @@ func TestPurgeCL(t *testing.T) {
 		So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
 		cfg := makeConfig(gHost, gRepo)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 		gobmaptest.Update(ctx, lProject)
 
 		// Fake 1 CL in gerrit & import it to Datastore.

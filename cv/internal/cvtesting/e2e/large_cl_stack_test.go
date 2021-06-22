@@ -24,6 +24,7 @@ import (
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -53,7 +54,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 		ct.EnableCVRunManagement(ctx, lProject)
 
 		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
-		ct.Cfg.Create(ctx, lProject, cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 		cis := make([]*gerritpb.ChangeInfo, N)

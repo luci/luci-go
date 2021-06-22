@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
@@ -258,7 +259,7 @@ func TestPoller(t *testing.T) {
 		})
 
 		Convey("with existing project config, establishes task chain", func() {
-			ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+			prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 			So(p.Poke(ctx, lProject), ShouldBeNil)
 			// Execute next poll task, which should result in full poll.
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
@@ -416,7 +417,7 @@ func TestPoller(t *testing.T) {
 				So(datastore.Put(ctx, before), ShouldBeNil)
 
 				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
-				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
+				prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				after := mustGetState(lProject)
 				So(after.ConfigHash, ShouldNotEqual, before.ConfigHash)
@@ -439,7 +440,7 @@ func TestPoller(t *testing.T) {
 					HasOnlyProject(lProject), ShouldBeTrue)
 
 				Convey("if SubPollers state can't be re-used, schedules CL update events", func() {
-					ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
+					prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 					after := mustGetState(lProject)
 					So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
@@ -463,7 +464,7 @@ func TestPoller(t *testing.T) {
 			})
 
 			Convey("disabled project => remove poller state & stop task chain", func() {
-				ct.Cfg.Disable(ctx, lProject)
+				prjcfgtest.Disable(ctx, lProject)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
 				So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
@@ -472,7 +473,7 @@ func TestPoller(t *testing.T) {
 			})
 
 			Convey("deleted => remove poller state & stop task chain", func() {
-				ct.Cfg.Delete(ctx, lProject)
+				prjcfgtest.Delete(ctx, lProject)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
 				So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
