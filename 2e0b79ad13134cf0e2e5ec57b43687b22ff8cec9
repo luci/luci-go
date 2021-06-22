@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d360524e_996b346b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:33:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4f75c0a_8de67364",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 48
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3da65727_32e94f1c",
@@ -110,6 +134,78 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ceb27b5_227688ae",
+        "filename": "cv/internal/gerrit/gobmap/gobmaptest/update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:33:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "15d4ada3_7414f747",
+      "range": {
+        "startLine": 24,
+        "startChar": 13,
+        "endLine": 24,
+        "endChar": 24
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29a05ce5_c6a0939a",
+        "filename": "cv/internal/gerrit/gobmap/gobmaptest/update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:33:05Z",
+      "side": 1,
+      "message": "made it gobmap.Update",
+      "parentUuid": "98d622b5_1926ec3c",
+      "range": {
+        "startLine": 24,
+        "startChar": 44,
+        "endLine": 24,
+        "endChar": 50
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f70463fd_815b8af8",
+        "filename": "cv/internal/gerrit/gobmap/gobmaptest/update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:33:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b005c93_3fcd9eb2",
+      "range": {
+        "startLine": 24,
+        "startChar": 10,
+        "endLine": 24,
+        "endChar": 12
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a62e0707_f1d812c9",
@@ -133,6 +229,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b975933_0f23d410",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:33:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a62e0707_f1d812c9",
+      "range": {
+        "startLine": 73,
+        "startChar": 8,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3f3bc3a6_36ffd343",
@@ -146,6 +266,30 @@
       "writtenOn": "2021-06-21T18:44:53Z",
       "side": 1,
       "message": "This could have a period for consistency.",
+      "range": {
+        "startLine": 78,
+        "startChar": 21,
+        "endLine": 78,
+        "endChar": 29
+      },
+      "revId": "2e0b79ad13134cf0e2e5ec57b43687b22ff8cec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea1a512e_4d7f36c1",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:33:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f3bc3a6_36ffd343",
       "range": {
         "startLine": 78,
         "startChar": 21,

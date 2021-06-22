@@ -22,6 +22,30 @@
       },
       "revId": "7f465bbb936df558cebf55b6d352c5a6739d17d0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "56846028_1b06bfd4",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T00:33:05Z",
+      "side": 0,
+      "message": "No. Turns out our datastore lib automatically does batching for Delete/Get/Put.\n\nWhen I convinced you to add this comment I was under impression that it didn\u0027t after reading code from Vadim. Apparently, a while ago there was some problem with datastore lib batching in the past, but I\u0027m yet to see it in CV.\n\nOne minor concern I have is that the library processes batches concurrently without any limit, so asking say 100K entities will result in ~200 goroutines hammering Datastore with 500 entities each, but we shouldn\u0027t really need to load these many entities at once anyway.",
+      "parentUuid": "34350292_eb451fad",
+      "range": {
+        "startLine": 99,
+        "startChar": 9,
+        "endLine": 99,
+        "endChar": 17
+      },
+      "revId": "7f465bbb936df558cebf55b6d352c5a6739d17d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
