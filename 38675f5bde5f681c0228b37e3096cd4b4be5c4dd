@@ -33,6 +33,24 @@
       "message": "Perhaps this can be made a part of TaskClass (similar to Quite field or just don\u0027t log errors from Quite tasks)?",
       "revId": "38675f5bde5f681c0228b37e3096cd4b4be5c4dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2628791d_b0bf8121",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T19:27:32Z",
+      "side": 1,
+      "message": "Part of TaskClass -- i like that.\n\nDon\u0027t log errors from Quite tasks \u003d\u003e I\u0027m afraid it\u0027ll be misunderstood, even if documented.",
+      "parentUuid": "53e8a80c_69431c78",
+      "revId": "38675f5bde5f681c0228b37e3096cd4b4be5c4dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
