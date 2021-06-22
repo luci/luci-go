@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "213d1425_4c4cd725",
+        "filename": "cv/internal/prjmanager/state/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T22:16:32Z",
+      "side": 1,
+      "message": "\u003e ineffectual assignment to mutated\n\nHey, it finally works! Gotta peer bonus someone 😊",
+      "parentUuid": "03571d86_43c78ed3",
+      "range": {
+        "startLine": 388,
+        "startChar": 3,
+        "endLine": 389,
+        "endChar": 0
+      },
+      "revId": "840f5bd9cd2a6838f0d022cf60e2017e3b45c85f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
