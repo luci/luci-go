@@ -371,16 +371,20 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	}
 
 	var sideEffect SideEffect
-	switch actions, err := s.triageComponents(ctx); {
+	switch actions, saveForDebug, err := s.triageComponents(ctx); {
 	case err != nil:
 		if !mutated {
 			return nil, nil, err
 		}
 		// Don't lose progress made so far.
 		logging.Warningf(ctx, "Failed to triageComponents %s, but proceeding to save repartitioned state", err)
-	case len(actions) > 0:
+	case len(actions) > 0 || saveForDebug:
 		if !mutated {
-			s = s.cloneShallow()
+			if saveForDebug {
+				s = s.cloneShallow(prjpb.LogReason_DEBUG)
+			} else {
+				s = s.cloneShallow()
+			}
 			mutated = true
 		}
 		sideEffect, err = s.actOnComponents(ctx, actions)
