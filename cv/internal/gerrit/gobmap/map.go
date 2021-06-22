@@ -65,49 +65,38 @@ type mapPart struct {
 	ConfigHash string `gae:",noindex"`
 }
 
-// Update loads the new config and updates the gob map entities
-// accordingly.
+// Update updates the gob map entities according to the given project config.
 //
-// This may include adding, removing and modifying entities.
+// This may include adding, removing and modifying entities, which is not done
+// atomically.
 //
-// TODO(qyearsley): Handle possible race condition; There may be 2 or more
-// concurrent Update calls, which could lead to corrupted data.
-func Update(ctx context.Context, project string) error {
+// TODO(crbug.com/1179286): Handle possible race condition; There may be 2 or
+// more concurrent Update calls, which could lead to corrupted data.
+func Update(ctx context.Context, meta *prjcfg.Meta, cgs []*prjcfg.ConfigGroup) error {
 	var toPut, toDelete []*mapPart
 
-	// Fetch stored GWM entities
+	// Fetch stored GWM entities.
 	mps := []*mapPart{}
-	q := datastore.NewQuery(mapKind).Eq("Project", project)
+	q := datastore.NewQuery(mapKind).Eq("Project", meta.Project)
 	if err := datastore.GetAll(ctx, q, &mps); err != nil {
-		return errors.Annotate(err, "failed to get MapPart entities for project %q", project).Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to get MapPart entities for project %q", meta.Project).Tag(transient.Tag).Err()
 	}
 
-	switch meta, err := prjcfg.GetLatestMeta(ctx, project); {
-	case err != nil:
-		return err
-	case meta.Status != prjcfg.StatusEnabled:
+	if meta.Status != prjcfg.StatusEnabled {
 		// The project was disabled or removed, delete everything.
 		toDelete = mps
-	default:
-		cgs, err := meta.GetConfigGroups(ctx)
-		if err != nil {
-			return err
-		}
-		toPut, toDelete = listUpdates(ctx, mps, cgs, meta.Hash(), project)
+	} else {
+		toPut, toDelete = listUpdates(ctx, mps, cgs, meta.Hash(), meta.Project)
 	}
 
-	// TODO(qyearsle): split Delete/Put into batches of ~128 and execute in
-	// parallel. Reason: some LUCI projects watch 100s of repos, while
-	// Delete/Put are limited to ~500 entities.
 	if err := datastore.Delete(ctx, toDelete); err != nil {
 		return errors.Annotate(err, "failed to delete %d MapPart entities when updating project %q",
-			len(toDelete), project).Tag(transient.Tag).Err()
+			len(toDelete), meta.Project).Tag(transient.Tag).Err()
 	}
 	if err := datastore.Put(ctx, toPut); err != nil {
 		return errors.Annotate(err, "failed to put %d MapPart entities when updating project %q",
-			len(toPut), project).Tag(transient.Tag).Err()
+			len(toPut), meta.Project).Tag(transient.Tag).Err()
 	}
-
 	return nil
 }
 

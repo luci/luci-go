@@ -102,9 +102,8 @@ func (p *Poller) poll(ctx context.Context, luciProject string, eta time.Time) er
 	meta, err := prjcfg.GetLatestMeta(ctx, luciProject)
 	switch {
 	case err != nil:
-	case (meta.Status == prjcfg.StatusDisabled ||
-		meta.Status == prjcfg.StatusNotExists):
-		if err := gobmap.Update(ctx, luciProject); err != nil {
+	case (meta.Status == prjcfg.StatusDisabled || meta.Status == prjcfg.StatusNotExists):
+		if err := gobmap.Update(ctx, &meta, nil); err != nil {
 			return err
 		}
 		if err = datastore.Delete(ctx, &State{LuciProject: luciProject}); err != nil {
@@ -261,16 +260,14 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 	return nil
 }
 
-// updateConfig fetches latest config and updates poller's state
-// in RAM only.
+// updateConfig fetches latest config, updates gobmap and poller's own state.
 func (p *Poller) updateConfig(ctx context.Context, s *State, meta prjcfg.Meta) error {
 	s.ConfigHash = meta.Hash()
 	cgs, err := meta.GetConfigGroups(ctx)
 	if err != nil {
 		return err
 	}
-	// TODO(tandrii): gobmap.Update will need meta & cgs. Pass it to it.
-	if err := gobmap.Update(ctx, s.LuciProject); err != nil {
+	if err := gobmap.Update(ctx, &meta, cgs); err != nil {
 		return err
 	}
 	proposed := partitionConfig(cgs)

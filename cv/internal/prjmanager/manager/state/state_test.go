@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -125,7 +125,7 @@ func updateConfigToNoFallabck(ctx context.Context, ct *ctest) prjcfg.Meta {
 	cfg2 := &cfgpb.Config{}
 	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
 	ct.Cfg.Update(ctx, ct.lProject, cfg2)
-	gobmap.Update(ctx, ct.lProject)
+	gobmaptest.Update(ctx, ct.lProject)
 	return ct.Cfg.MustExist(ctx, ct.lProject)
 }
 
@@ -134,7 +134,7 @@ func updateConfigRenameG1toG11(ctx context.Context, ct *ctest) prjcfg.Meta {
 	cfg2 := &cfgpb.Config{}
 	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
 	ct.Cfg.Update(ctx, ct.lProject, cfg2)
-	gobmap.Update(ctx, ct.lProject)
+	gobmaptest.Update(ctx, ct.lProject)
 	return ct.Cfg.MustExist(ctx, ct.lProject)
 }
 
@@ -155,7 +155,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		ct.Cfg.Create(ctx, ct.lProject, cfg1)
 		meta := ct.Cfg.MustExist(ctx, ct.lProject)
-		So(gobmap.Update(ctx, ct.lProject), ShouldBeNil)
+		gobmaptest.Update(ctx, ct.lProject)
 
 		clPoller := poller.New(ct.TQDispatcher, nil, nil)
 
@@ -505,7 +505,7 @@ func TestOnCLsUpdated(t *testing.T) {
 
 		ct.Cfg.Create(ctx, ct.lProject, cfg1)
 		meta := ct.Cfg.MustExist(ctx, ct.lProject)
-		So(gobmap.Update(ctx, ct.lProject), ShouldBeNil)
+		gobmaptest.Update(ctx, ct.lProject)
 
 		// Add 3 CLs: 101 standalone and 202<-203 as a stack.
 		triggerTS := timestamppb.New(ct.Clock.Now())
@@ -1032,7 +1032,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		So(prototext.Unmarshal([]byte(cfgText1), cfg), ShouldBeNil)
 		ct.Cfg.Create(ctx, ct.lProject, cfg)
 		meta := ct.Cfg.MustExist(ctx, ct.lProject)
-		gobmap.Update(ctx, ct.lProject)
+		gobmaptest.Update(ctx, ct.lProject)
 
 		// Simulate existence of "test-b" project watching the same Gerrit host but
 		// diff repo.
@@ -1041,7 +1041,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		cfgB := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgTextB), cfgB), ShouldBeNil)
 		ct.Cfg.Create(ctx, lProjectB, cfgB)
-		gobmap.Update(ctx, lProjectB)
+		gobmaptest.Update(ctx, lProjectB)
 
 		cis := make(map[int]*gerritpb.ChangeInfo, 20)
 		makeCI := func(i int, project string, cq int, extra ...gf.CIModifier) {

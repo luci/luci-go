@@ -77,8 +77,17 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		},
 	})
 
+	update := func(lProject string) error {
+		meta := tc.MustExist(ctx, lProject)
+		cgs, err := meta.GetConfigGroups(ctx)
+		if err != nil {
+			panic(err)
+		}
+		return Update(ctx, &meta, cgs)
+	}
+
 	Convey("Update with nonexistent project stores nothing", t, func() {
-		So(Update(ctx, "bogus"), ShouldBeNil)
+		So(Update(ctx, &prjcfg.Meta{Project: "bogus", Status: prjcfg.StatusNotExists}, nil), ShouldBeNil)
 		mps := []*mapPart{}
 		q := datastore.NewQuery(mapKind)
 		So(datastore.GetAll(ctx, q, &mps), ShouldBeNil)
@@ -92,7 +101,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	})
 
 	Convey("Basic behavior with one project", t, func() {
-		So(Update(ctx, "chromium"), ShouldBeNil)
+		So(update("chromium"), ShouldBeNil)
 
 		Convey("Lookup with main ref returns main group", func() {
 			// Note that even though the other config group also matches,
@@ -137,7 +146,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		// Simulate deleting project. Projects that are deleted are first
 		// disabled in practice.
 		tc.Disable(ctx, "chromium")
-		So(Update(ctx, "chromium"), ShouldBeNil)
+		So(update("chromium"), ShouldBeNil)
 		So(
 			lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 			ShouldBeEmpty)
@@ -184,7 +193,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 
 		Convey("Lookup main ref matching two refs", func() {
 			// This adds coverage for matching two groups.
-			So(Update(ctx, "chromium"), ShouldBeNil)
+			So(update("chromium"), ShouldBeNil)
 			So(
 				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 				ShouldResemble,
@@ -222,8 +231,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				},
 			},
 		})
-
-		So(Update(ctx, "chromium"), ShouldBeNil)
+		So(update("chromium"), ShouldBeNil)
 
 		Convey("main group matches two different hosts", func() {
 
@@ -265,8 +273,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				},
 			},
 		})
-
-		So(Update(ctx, "foo"), ShouldBeNil)
+		So(update("foo"), ShouldBeNil)
 
 		Convey("main group matches two different projects", func() {
 			So(
