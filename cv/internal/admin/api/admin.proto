@@ -38,6 +38,9 @@ service Admin {
   // GetProject returns current Project state.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
 
+  // GetProjectLogs returns ProjectLogs recorded in the past.
+  rpc GetProjectLogs(GetProjectLogsRequest) returns (GetProjectLogsResponse);
+
   // GetRun returns current Run state.
   rpc GetRun(GetRunRequest) returns (GetRunResponse);
 
@@ -75,6 +78,28 @@ message GetProjectRequest {
 message GetProjectResponse {
   cv.prjmanager.prjpb.PState state = 2;
   repeated cv.prjmanager.prjpb.Event events = 3;
+}
+
+message GetProjectLogsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+
+  string project = 3;
+
+  // Optional. Limits EVersions to [eversion_min, eversion_max].
+  int64 eversion_min = 4;
+  int64 eversion_max = 5; // inclusive, for ease of use by humans.
+}
+
+message GetProjectLogsResponse {
+  repeated ProjectLog logs = 1;
+}
+
+message ProjectLog {
+  int64 eversion = 1;
+  cv.prjmanager.prjpb.PState state = 2;
+  google.protobuf.Timestamp update_time = 3;
+  cv.prjmanager.prjpb.LogReasons reasons = 4;
 }
 
 message GetRunRequest {
