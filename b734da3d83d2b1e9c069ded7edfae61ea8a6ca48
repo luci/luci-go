@@ -84,6 +84,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "cd30affa_6ad00a6e",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T00:12:23Z",
+      "side": 1,
+      "message": "thanks, fixed",
+      "parentUuid": "e83077bc_a2359812",
+      "range": {
+        "startLine": 136,
+        "startChar": 7,
+        "endLine": 136,
+        "endChar": 16
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "26e8e03d_7bd145a1",
         "filename": "cv/internal/run/eventpb/events.proto",
         "patchSetId": 2
@@ -95,6 +119,30 @@
       "writtenOn": "2021-06-21T23:37:38Z",
       "side": 1,
       "message": "true, but it\u0027s not limited to parallel. Imagine submit of 4-CL stack done via 1 RPC.",
+      "range": {
+        "startLine": 138,
+        "startChar": 52,
+        "endLine": 138,
+        "endChar": 77
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ac66b2f_158d59ef",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T00:12:23Z",
+      "side": 1,
+      "message": "oh, true. modified the comment a bit.",
+      "parentUuid": "26e8e03d_7bd145a1",
       "range": {
         "startLine": 138,
         "startChar": 52,
@@ -128,6 +176,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "34e10359_da04fb60",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T00:12:23Z",
+      "side": 1,
+      "message": "oh true, I was being too aggressive. kept the original fields so that CV shouldn\u0027t have any serialization error and will delete it tomorrow.",
+      "parentUuid": "08f31a57_5c3ac09d",
+      "range": {
+        "startLine": 141,
+        "startChar": 39,
+        "endLine": 141,
+        "endChar": 40
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "71542900_c95ee4df",
@@ -151,6 +223,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d7cf64b_3e848638",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T00:12:23Z",
+      "side": 1,
+      "message": "good point.",
+      "parentUuid": "71542900_c95ee4df",
+      "range": {
+        "startLine": 420,
+        "startChar": 2,
+        "endLine": 420,
+        "endChar": 11
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "129aaadb_267c1000",
@@ -164,6 +260,30 @@
       "writtenOn": "2021-06-21T23:37:38Z",
       "side": 1,
       "message": "won\u0027t try",
+      "range": {
+        "startLine": 435,
+        "startChar": 36,
+        "endLine": 435,
+        "endChar": 50
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34d36475_9249c9b9",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T00:12:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "129aaadb_267c1000",
       "range": {
         "startLine": 435,
         "startChar": 36,
@@ -220,6 +340,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a8b576b_f0b7375b",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T00:12:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e15c6eb_8a231ca3",
+      "range": {
+        "startLine": 108,
+        "startChar": 5,
+        "endLine": 108,
+        "endChar": 7
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "97e0fdbb_de87c434",
@@ -233,6 +377,30 @@
       "writtenOn": "2021-06-21T18:54:45Z",
       "side": 1,
       "message": "as if CV has never attempted to submit them",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 49
+      },
+      "revId": "b734da3d83d2b1e9c069ded7edfae61ea8a6ca48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d0d5863_e0126233",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-22T00:12:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97e0fdbb_de87c434",
       "range": {
         "startLine": 109,
         "startChar": 13,
