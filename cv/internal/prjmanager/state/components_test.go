@@ -314,7 +314,7 @@ func TestComponentsActions(t *testing.T) {
 				panic(errors.New("oops"))
 			}
 			_, _, err := state.ExecDeferred(ctx)
-			So(err, ShouldErrLike, "caught panic: oops")
+			So(err, ShouldErrLike, errCaughtPanic)
 			So(state.PB, ShouldResembleProto, pb)
 		})
 
@@ -463,7 +463,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 
 				_, _, err := state.ExecDeferred(ctx)
-				So(err, ShouldErrLike, "caught panic: LUCIProject is required")
+				So(err, ShouldErrLike, errCaughtPanic)
 				So(state.PB, ShouldResembleProto, pb)
 			})
 		})
