@@ -80,10 +80,11 @@ type InstanceRequest struct {
 
 // InstanceResult is a result of a completed InstanceRequest.
 type InstanceResult struct {
-	Err      error        // non-nil if failed to obtain the instance
-	Source   pkg.Source   // set only if Open was false, must be closed by the caller
-	Instance pkg.Instance // set only if Open was true, must be closed by the caller
-	State    interface{}  // copied from the InstanceRequest
+	Context  context.Context // copied from the InstanceRequest
+	Err      error           // non-nil if failed to obtain the instance
+	Source   pkg.Source      // set only if Open was false, must be closed by the caller
+	Instance pkg.Instance    // set only if Open was true, must be closed by the caller
+	State    interface{}     // copied from the InstanceRequest
 }
 
 // InstanceCache is a file-system-based, thread-safe, LRU cache of instances.
@@ -340,7 +341,7 @@ func (c *InstanceCache) RequestInstances(reqs []*InstanceRequest) {
 		state := req.State
 
 		c.fetchQueue <- func() *InstanceResult {
-			res := &InstanceResult{State: state}
+			res := &InstanceResult{Context: ctx, State: state}
 
 			alloc := c.Allocate(ctx, pin)
 			defer alloc.Release(ctx)

@@ -77,6 +77,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/version"
 )
@@ -138,7 +139,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.7"
+	UserAgent = "cipd 2.5.8"
 )
 
 func init() {
@@ -608,7 +609,7 @@ var batchAwareOps = map[batchAwareOp]func(*clientImpl, context.Context){
 func (client *clientImpl) saveTagCache(ctx context.Context) {
 	if client.tagCache != nil {
 		if err := client.tagCache.Save(ctx); err != nil {
-			logging.Warningf(ctx, "cipd: failed to save tag cache - %s", err)
+			logging.Warningf(ctx, "Failed to save tag cache - %s", err)
 		}
 	}
 }
@@ -855,10 +856,10 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	if cache != nil {
 		cached, err := cache.ResolveTag(ctx, packageName, version)
 		if err != nil {
-			logging.Warningf(ctx, "cipd: could not query tag cache - %s", err)
+			logging.Warningf(ctx, "Could not query tag cache - %s", err)
 		}
 		if cached.InstanceID != "" {
-			logging.Debugf(ctx, "cipd: tag cache hit for %s:%s - %s", packageName, version, cached.InstanceID)
+			logging.Debugf(ctx, "Tag cache hit for %s:%s - %s", packageName, version, cached.InstanceID)
 			return cached, nil
 		}
 	}
@@ -879,7 +880,7 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	// If was resolving a tag, store it in the cache.
 	if cache != nil {
 		if err := cache.AddTag(ctx, pin, version); err != nil {
-			logging.Warningf(ctx, "cipd: could not add tag to the cache")
+			logging.Warningf(ctx, "Could not add tag to the cache")
 		}
 		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 	}
@@ -1030,9 +1031,9 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	}
 
 	if targetVersion == pin.InstanceID {
-		logging.Infof(ctx, "cipd: updating client to %s", pin)
+		logging.Infof(ctx, "Updating CIPD client to %s", pin)
 	} else {
-		logging.Infof(ctx, "cipd: updating client to %s (%s)", pin, targetVersion)
+		logging.Infof(ctx, "Updating CIPD client to %s (%s)", pin, targetVersion)
 	}
 
 	// Grab the signed URL of the client binary if we haven't done so already.
@@ -1068,7 +1069,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 
 	// attemptToRegister calls RegisterInstance RPC and logs the result.
 	attemptToRegister := func() (*api.UploadOperation, error) {
-		logging.Infof(ctx, "cipd: registering %s", pin)
+		logging.Infof(ctx, "Registering %s", pin)
 		resp, err := client.repo.RegisterInstance(ctx, &api.Instance{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
@@ -1078,11 +1079,11 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 		}
 		switch resp.Status {
 		case api.RegistrationStatus_REGISTERED:
-			logging.Infof(ctx, "cipd: instance %s was successfully registered", pin)
+			logging.Infof(ctx, "Instance %s was successfully registered", pin)
 			return nil, nil
 		case api.RegistrationStatus_ALREADY_REGISTERED:
 			logging.Infof(
-				ctx, "cipd: instance %s is already registered by %s on %s",
+				ctx, "Instance %s is already registered by %s on %s",
 				pin, resp.Instance.RegisteredBy,
 				resp.Instance.RegisteredTs.AsTime().Local())
 			return nil, nil
@@ -1109,7 +1110,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 	if err := client.finalizeUpload(ctx, uploadOp.OperationId, timeout); err != nil {
 		return err
 	}
-	logging.Infof(ctx, "cipd: successfully uploaded and verified %s", pin)
+	logging.Infof(ctx, "Successfully uploaded and verified %s", pin)
 
 	// Try the registration again now that the file is uploaded to CAS. It should
 	// succeed.
@@ -1148,7 +1149,7 @@ func (client *clientImpl) finalizeUpload(ctx context.Context, opID string, timeo
 		case op.Status == api.UploadStatus_ERRORED:
 			return errors.New(op.ErrorMessage) // fatal verification error
 		case op.Status == api.UploadStatus_UPLOADING || op.Status == api.UploadStatus_VERIFYING:
-			logging.Infof(ctx, "cipd: uploading - verifying")
+			logging.Infof(ctx, "Verifying...")
 			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), sleep).Incomplete() {
 				return ErrFinalizationTimeout
 			}
@@ -1205,7 +1206,7 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
-	logging.Infof(ctx, "cipd: setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
+	logging.Infof(ctx, "Setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
 
 	err := client.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
 		_, err := client.repo.CreateRef(ctx, &api.Ref{
@@ -1218,11 +1219,11 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 
 	switch err {
 	case nil:
-		logging.Infof(ctx, "cipd: ref %q is set", ref)
+		logging.Infof(ctx, "Ref %q is set", ref)
 	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "cipd: failed to set ref - deadline exceeded")
+		logging.Errorf(ctx, "Failed to set ref - deadline exceeded")
 	default:
-		logging.Errorf(ctx, "cipd: failed to set ref - %s", err)
+		logging.Errorf(ctx, "Failed to set ref - %s", err)
 	}
 	return err
 }
@@ -1241,7 +1242,7 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
 			return err
 		}
-		logging.Infof(ctx, "cipd: attaching tag %s", t)
+		logging.Infof(ctx, "Attaching tag %s", t)
 	}
 
 	err := client.retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
@@ -1255,11 +1256,11 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 
 	switch err {
 	case nil:
-		logging.Infof(ctx, "cipd: all tags attached")
+		logging.Infof(ctx, "All tags attached")
 	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "cipd: failed to attach tags - deadline exceeded")
+		logging.Errorf(ctx, "Failed to attach tags - deadline exceeded")
 	default:
-		logging.Errorf(ctx, "cipd: failed to attach tags - %s", err)
+		logging.Errorf(ctx, "Failed to attach tags - %s", err)
 	}
 	return err
 }
@@ -1283,7 +1284,7 @@ func (client *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin commo
 		if err := common.ValidateContentType(m.ContentType); err != nil {
 			return errors.Annotate(err, "bad metadata %q", m.Key).Err()
 		}
-		logging.Infof(ctx, "cipd: attaching metadata with key %q", m.Key)
+		logging.Infof(ctx, "Attaching metadata with key %q", m.Key)
 		apiMD[i] = &api.InstanceMetadata{
 			Key:         m.Key,
 			Value:       m.Value,
@@ -1302,11 +1303,11 @@ func (client *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin commo
 
 	switch err {
 	case nil:
-		logging.Infof(ctx, "cipd: metadata attached")
+		logging.Infof(ctx, "Metadata attached")
 	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "cipd: failed to attach metadata - deadline exceeded")
+		logging.Errorf(ctx, "Failed to attach metadata - deadline exceeded")
 	default:
-		logging.Errorf(ctx, "cipd: failed to attach metadata - %s", err)
+		logging.Errorf(ctx, "Failed to attach metadata - %s", err)
 	}
 	return err
 }
@@ -1465,11 +1466,11 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 	}
 	defer func() {
 		if err := input.Close(ctx, false); err != nil {
-			logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
+			logging.Warningf(ctx, "Failed to close the package file - %s", err)
 		}
 	}()
 
-	logging.Infof(ctx, "cipd: copying the instance into the final destination...")
+	logging.Infof(ctx, "Copying the instance into the final destination...")
 	_, err = io.Copy(output, io.NewSectionReader(input, 0, input.Size()))
 	return err
 }
@@ -1480,15 +1481,15 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	startTS := clock.Now(ctx)
 	defer func() {
 		if err != nil {
-			logging.Errorf(ctx, "cipd: failed to fetch %s - %s", pin, err)
+			logging.Errorf(ctx, "Failed to fetch %s: %s", pin, err)
 		} else {
-			logging.Infof(ctx, "cipd: successfully fetched %s in %.1fs", pin, clock.Now(ctx).Sub(startTS).Seconds())
+			logging.Infof(ctx, "Fetched %s in %.1fs", pin, clock.Now(ctx).Sub(startTS).Seconds())
 		}
 	}()
 
 	objRef := common.InstanceIDToObjectRef(pin.InstanceID)
 
-	logging.Infof(ctx, "cipd: resolving fetch URL for %s", pin)
+	logging.Infof(ctx, "Resolving fetch URL for %s", pin)
 	resp, err := client.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 		Package:  pin.PackageName,
 		Instance: objRef,
@@ -1555,7 +1556,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	}
 
 	hasErrors := false
-	reportActionErr := func(a pinAction, err error) {
+	reportActionErr := func(ctx context.Context, a pinAction, err error) {
 		logging.Errorf(ctx, "Failed to %s %s - %s (subdir %q)", a.action, a.pin, err, a.subdir)
 		aMap[a.subdir].Errors = append(aMap[a.subdir].Errors, ActionError{
 			Action: a.action,
@@ -1586,22 +1587,35 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		}
 	}
 
+	// Activities are responsible for rendering the UI of parallel operations.
+	activities := ui.NewActivityGroup(ctx)
+	defer func() {
+		activities.Close()
+		if !hasErrors {
+			logging.Infof(ctx, "All changes applied.")
+		} else {
+			err = ErrEnsurePackagesFailed
+		}
+	}()
+
 	// The state carried through the fetch task queue. Describes what needs to be
 	// done once a package is fetched.
 	type pinActionsState struct {
-		pin      common.Pin  // the pin we are fetching
-		updates  []pinAction // what to do with it when we get it
-		attempts int         // incremented on a retry after detecting a corruption
+		ctx      context.Context // the installation activity context
+		pin      common.Pin      // the pin we are fetching
+		updates  []pinAction     // what to do with it when we get it
+		attempts int             // incremented on a retry after detecting a corruption
 	}
 
 	// Start fetching all packages we will need.
 	reqs := make([]*internal.InstanceRequest, len(perPinActions.updates))
 	for i, a := range perPinActions.updates {
 		reqs[i] = &internal.InstanceRequest{
-			Context: ctx,
+			Context: ui.NewActivity(ctx, activities, "fetch"),
 			Pin:     a.pin,
 			Open:    true, // want pkg.Instance, not just pkg.Source
 			State: pinActionsState{
+				ctx:     ui.NewActivity(ctx, activities, "unzip"),
 				pin:     a.pin,
 				updates: a.updates,
 			},
@@ -1611,21 +1625,24 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 
 	// While packages are being fetched, do maintenance operations that do not
 	// require package data (removals and restoration of broken symlinks).
-	for _, a := range perPinActions.maintenance {
-		var err error
-		switch a.action {
-		case ActionRemove:
-			err = client.deployer.RemoveDeployed(ctx, a.subdir, a.pin.PackageName)
-		case ActionRelink:
-			err = client.deployer.RepairDeployed(ctx, a.subdir, a.pin, maxThreads, deployer.RepairParams{
-				ToRelink: a.repairPlan.ToRelink,
-			})
-		default:
-			// The invariant of perPinActions().
-			panic(fmt.Sprintf("impossible maintenance action %s", a.action))
-		}
-		if err != nil {
-			reportActionErr(a, err)
+	if len(perPinActions.maintenance) > 0 {
+		ctx := ui.NewActivity(ctx, activities, "cleanup")
+		for _, a := range perPinActions.maintenance {
+			var err error
+			switch a.action {
+			case ActionRemove:
+				err = client.deployer.RemoveDeployed(ctx, a.subdir, a.pin.PackageName)
+			case ActionRelink:
+				err = client.deployer.RepairDeployed(ctx, a.subdir, a.pin, maxThreads, deployer.RepairParams{
+					ToRelink: a.repairPlan.ToRelink,
+				})
+			default:
+				// The invariant of perPinActions().
+				panic(fmt.Sprintf("impossible maintenance action %s", a.action))
+			}
+			if err != nil {
+				reportActionErr(ctx, a, err)
+			}
 		}
 	}
 
@@ -1634,6 +1651,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	for cache.HasPendingFetches() {
 		res := cache.WaitInstance()
 		state := res.State.(pinActionsState)
+		ctx := state.ctx // the installation activity context
 		deployErr := res.Err
 
 		// Check if we are even allowed to install this package. Note that
@@ -1682,13 +1700,14 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		//
 		// Do it no more than once.
 		if corruption && state.attempts < 1 {
-			logging.Warningf(ctx, "cipd: refetching %s after failing to unpack it: %s", state.pin, deployErr)
+			logging.Warningf(res.Context, "Refetching %s after failing to unpack it: %s", state.pin, deployErr)
 			cache.RequestInstances([]*internal.InstanceRequest{
 				{
-					Context: ctx,
+					Context: res.Context, // reuse the existing download UI activity
 					Pin:     state.pin,
 					Open:    true,
 					State: pinActionsState{
+						ctx:      state.ctx,
 						pin:      state.pin,
 						updates:  state.updates[actionIdx:],
 						attempts: state.attempts + 1,
@@ -1702,7 +1721,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		// Mark all unfinished actions as failed if necessary.
 		if deployErr != nil {
 			for ; actionIdx < len(state.updates); actionIdx++ {
-				reportActionErr(state.updates[actionIdx], err)
+				reportActionErr(ctx, state.updates[actionIdx], deployErr)
 			}
 		}
 	}
@@ -1710,11 +1729,6 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	// Opportunistically cleanup the trash left from previous installs.
 	client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 
-	if !hasErrors {
-		logging.Infof(ctx, "All changes applied.")
-	} else {
-		err = ErrEnsurePackagesFailed
-	}
 	return
 }
 
