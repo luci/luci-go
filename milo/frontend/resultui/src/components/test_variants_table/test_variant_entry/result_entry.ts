@@ -31,7 +31,7 @@ import { consumer } from '../../../libs/context';
 import { reportRenderError } from '../../../libs/error_handler';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { displayCompactDuration, parseProtoDuration } from '../../../libs/time_utils';
-import { unwrapObservable } from '../../../libs/utils';
+import { unwrapObservable } from '../../../libs/unwrap_observable';
 import { router } from '../../../routes';
 import { Artifact, ListArtifactsResponse, TestResult } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';

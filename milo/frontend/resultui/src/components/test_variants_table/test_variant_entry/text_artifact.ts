@@ -23,7 +23,8 @@ import { consumeArtifacts, consumeArtifactsFinalized } from '../../../context/ar
 import { ARTIFACT_LENGTH_LIMIT } from '../../../libs/constants';
 import { consumer } from '../../../libs/context';
 import { reportRenderError } from '../../../libs/error_handler';
-import { unwrapObservable, urlSetSearchQueryParam } from '../../../libs/utils';
+import { unwrapObservable } from '../../../libs/unwrap_observable';
+import { urlSetSearchQueryParam } from '../../../libs/utils';
 import { Artifact } from '../../../services/resultdb';
 import commonStyle from '../../../styles/common_style.css';
 

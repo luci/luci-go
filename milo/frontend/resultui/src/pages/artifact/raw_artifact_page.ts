@@ -22,7 +22,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumer } from '../../libs/context';
 import { reportError, reportRenderError } from '../../libs/error_handler';
-import { unwrapObservable } from '../../libs/utils';
+import { unwrapObservable } from '../../libs/unwrap_observable';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 import { consumeArtifactIdent } from './artifact_page_layout';
