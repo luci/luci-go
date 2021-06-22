@@ -26,8 +26,12 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-// ProjectKind is the Datastore entity kind for Project.
-const ProjectKind = "Project"
+const (
+	// ProjectKind is the Datastore entity kind for Project.
+	ProjectKind = "Project"
+	// ProjectLogKind is the Datastore entity kind for ProjectLog.
+	ProjectLogKind = "ProjectLog"
+)
 
 // Project is an entity per LUCI Project in Datastore.
 type Project struct {
@@ -39,7 +43,7 @@ type Project struct {
 	ID string `gae:"$id"`
 
 	// EVersion is entity version. Every update should increment it by 1.
-	EVersion int `gae:",noindex"`
+	EVersion int64 `gae:",noindex"`
 	// UpdateTime is exact time of when this entity was last updated.
 	//
 	// It's not indexed to avoid hot areas in the index.
@@ -63,14 +67,34 @@ type Project struct {
 // retries.
 type ProjectStateOffload struct {
 	_kind string `gae:"$kind,ProjectRarelyChanged"`
-	// ID is alaways the same, set/read only by the datastore ORM.
-	ID      string         `gae:"$id,const"`
-	Project *datastore.Key `gae:"$parent"`
 
-	// Status of project manager {STARTED, STOPPING, STOPPED (disabled)}.
+	Project *datastore.Key `gae:"$parent"`
+	// ID is alaways the same, set/read only by the datastore ORM.
+	ID string `gae:"$id,const"`
+
+	// Status of the project {STARTED, STOPPING, STOPPED (disabled)}.
 	Status prjpb.Status `gae:",noindex"`
 	// ConfigHash is the latest processed Project Config hash.
 	ConfigHash string `gae:",noindex"`
+}
+
+// ProjectLog stores historic state of a project.
+type ProjectLog struct {
+	_kind string `gae:"$kind,ProjectLog"`
+
+	Project *datastore.Key `gae:"$parent"`
+	// EVersion and other fields are the same as the Project & ProjectStateOffload
+	// entities written at the same time.
+	EVersion   int64        `gae:"$id"`
+	Status     prjpb.Status `gae:",noindex"`
+	ConfigHash string       `gae:",noindex"`
+	UpdateTime time.Time    `gae:",noindex"`
+	State      *prjpb.PState
+
+	// Reasons records why this Log entity was written.
+	//
+	// There can be more than one, all of which will be indexed.
+	Reasons []prjpb.LogReason `gae:"reason"`
 }
 
 // IncompleteRuns are IDs of Runs which aren't yet completed.

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
@@ -239,13 +240,15 @@ func (proc *pmProcessor) SaveState(ctx context.Context, st eventbox.State, ev ev
 	s := st.(*state.State)
 	// Erase PB.LuciProject as it's already stored as Project{ID:...}.
 	s.PB.LuciProject = ""
-	entities := make([]interface{}, 1, 2)
-	entities[0] = &prjmanager.Project{
+
+	new := &prjmanager.Project{
 		ID:         proc.luciProject,
-		EVersion:   int(ev),
-		UpdateTime: clock.Now(ctx).UTC(),
+		EVersion:   int64(ev),
+		UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
 		State:      s.PB,
 	}
+	entities := make([]interface{}, 1, 3)
+	entities[0] = new
 
 	old := proc.loadedPState
 	if s.PB.GetConfigHash() != old.GetConfigHash() || s.PB.GetStatus() != old.GetStatus() {
@@ -253,6 +256,22 @@ func (proc *pmProcessor) SaveState(ctx context.Context, st eventbox.State, ev ev
 			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, proc.luciProject),
 			Status:     s.PB.GetStatus(),
 			ConfigHash: s.PB.GetConfigHash(),
+		})
+	}
+
+	if len(s.LogReasons) > 0 {
+		deduped := prjpb.SortAndDedupeLogReasons(s.LogReasons)
+		txndefer.Defer(ctx, func(ctx context.Context) {
+			logging.Debugf(ctx, "Saved ProjectLog @ %d due to %s", new.EVersion, prjpb.FormatLogReasons(deduped))
+		})
+		entities = append(entities, &prjmanager.ProjectLog{
+			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, proc.luciProject),
+			EVersion:   new.EVersion,
+			Status:     s.PB.GetStatus(),
+			ConfigHash: s.PB.GetConfigHash(),
+			State:      new.State,
+			UpdateTime: new.UpdateTime,
+			Reasons:    deduped,
 		})
 	}
 
