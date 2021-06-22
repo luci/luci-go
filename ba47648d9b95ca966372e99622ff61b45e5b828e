@@ -69,6 +69,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "690d1323_5006c600",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1030,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-22T01:23:00Z",
+      "side": 1,
+      "message": "ui.Activity injects a logger into the context. My plan is to have a terminal line (or two) per activity to display the current progress indicator and the last log message. I have no idea if it would be usable though. \n\nEither way I also planned to do a fancy UI only for the parallel part of EnsurePackage. So the typical run would look like: log vomit, log vomit, suddenly a bunch of progress bars updating in place, log vomit again. I think I saw such UX marvels already in npm or cargo, can\u0027t recall...",
+      "parentUuid": "0b787796_404aa1e7",
+      "revId": "ba47648d9b95ca966372e99622ff61b45e5b828e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "54e90207_e8307eda",
@@ -86,6 +104,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "30f4d2b1_01f9126b",
+        "filename": "cipd/client/cipd/ui/activities.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-22T01:23:00Z",
+      "side": 1,
+      "message": "Progress bars will be sorted by (order, kind) pair in the UI. Removed for now.",
+      "parentUuid": "54e90207_e8307eda",
+      "revId": "ba47648d9b95ca966372e99622ff61b45e5b828e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "01043abc_8705af5d",
@@ -99,6 +135,24 @@
       "writtenOn": "2021-06-19T15:53:18Z",
       "side": 1,
       "message": "wdyt about just leaving this blank when unknown? I kinda think it\u0027s noisy for tiny files...",
+      "revId": "ba47648d9b95ca966372e99622ff61b45e5b828e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce73d12c_864834f3",
+        "filename": "cipd/client/cipd/ui/primitive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-22T01:23:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01043abc_8705af5d",
       "revId": "ba47648d9b95ca966372e99622ff61b45e5b828e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
