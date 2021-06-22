@@ -36,8 +36,8 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
-	"go.chromium.org/luci/cv/internal/prjmanager/manager/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/prjmanager/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/triager"
 	"go.chromium.org/luci/cv/internal/run"
 )
