@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -231,7 +231,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 			StabilizationDelay: durationpb.New(time.Hour),
 		}
 		ct.Cfg.Create(ctx, lProject, cfg)
-		So(gobmap.Update(ctx, lProject), ShouldBeNil)
+		gobmaptest.Update(ctx, lProject)
 
 		// Put #43 CL directly w/o notifying the PM.
 		cl43, err := changelist.MustGobID(gHost, 43).GetOrInsert(ctx, func(cl *changelist.CL) {
