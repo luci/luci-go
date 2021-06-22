@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c4ef7bb_eb09f50b",
+        "filename": "cv/internal/prjmanager/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T09:56:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "913ecf61_f384e69d",
+      "range": {
+        "startLine": 75,
+        "startChar": 18,
+        "endLine": 75,
+        "endChar": 21
+      },
+      "revId": "d390bb39804102fccdb2ef3e8612c30d853d8c05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "da7b715d_b64d60cd",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-06-22T04:31:18Z",
       "side": 1,
       "message": "from the func doc, this should be \u0027, \u0027.",
+      "range": {
+        "startLine": 47,
+        "startChar": 16,
+        "endLine": 47,
+        "endChar": 19
+      },
+      "revId": "d390bb39804102fccdb2ef3e8612c30d853d8c05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "542bbd1b_22608097",
+        "filename": "cv/internal/prjmanager/prjpb/logreason.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-22T09:56:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da7b715d_b64d60cd",
       "range": {
         "startLine": 47,
         "startChar": 16,
