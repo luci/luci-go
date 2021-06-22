@@ -41,7 +41,7 @@ import (
 // The state object must not be re-used except for serializing public state
 // after its public methods returned a modified State or an error.
 // This allows for efficient evolution of cached helper datastructures which
-// would other have to be copied, too.
+// would otherwise have to be copied, too.
 //
 // To illustrate correct and incorrect usages:
 //     s0 := &State{...}
@@ -61,7 +61,11 @@ type State struct {
 	// https://en.wikipedia.org/wiki/Copy-on-write
 	PB *prjpb.PState
 
-	// Dependencies.
+	// LogReasons is append-only accumulation of reasons to record this state for
+	// posterity.
+	LogReasons []prjpb.LogReason
+
+	// Dependencies used to prepare state transitions.
 	PMNotifier      *prjmanager.Notifier
 	RunNotifier     *run.Notifier
 	CLPurger        *clpurger.Purger
@@ -80,10 +84,10 @@ type State struct {
 	// pclIndex provides O(1) check if PCL exists for a CL.
 	//
 	// lazily created, see ensurePCLIndex().
-	pclIndex pclIndex // CLID => index.
+	pclIndex pclIndex // CLID => index in PB.Pcls slice.
 }
 
-// UpdateConfig updates PM to latest config version.
+// UpdateConfig updates PM to the latest config version.
 func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
@@ -104,8 +108,12 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 			return nil, nil, err
 		}
 
-		s = s.cloneShallow()
-		s.PB.Status = prjpb.Status_STARTED
+		if s.PB.Status == prjpb.Status_STARTED {
+			s = s.cloneShallow(prjpb.LogReason_CONFIG_CHANGED)
+		} else {
+			s = s.cloneShallow(prjpb.LogReason_CONFIG_CHANGED, prjpb.LogReason_STATUS_CHANGED)
+			s.PB.Status = prjpb.Status_STARTED
+		}
 		s.PB.ConfigHash = meta.Hash()
 		s.PB.ConfigGroupNames = meta.ConfigGroupNames
 
@@ -143,7 +151,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 		case prjpb.Status_STOPPED:
 			return s, nil, nil
 		case prjpb.Status_STARTED:
-			s = s.cloneShallow()
+			s = s.cloneShallow(prjpb.LogReason_STATUS_CHANGED)
 			s.PB.Status = prjpb.Status_STOPPING
 			fallthrough
 		case prjpb.Status_STOPPING:
@@ -152,7 +160,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 			}
 			runs := s.PB.IncompleteRuns()
 			if len(runs) == 0 {
-				s = s.cloneShallow()
+				s = s.cloneShallow(prjpb.LogReason_STATUS_CHANGED)
 				s.PB.Status = prjpb.Status_STOPPED
 				return s, nil, nil
 			}
@@ -243,6 +251,7 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (_ *
 	s = s.cloneShallow()
 	incompleteRunsCount := s.removeFinishedRuns(finished.Set())
 	if s.PB.GetStatus() == prjpb.Status_STOPPING && incompleteRunsCount == 0 {
+		s.LogReasons = append(s.LogReasons, prjpb.LogReason_STATUS_CHANGED)
 		s.PB.Status = prjpb.Status_STOPPED
 		return s, nil, nil
 	}

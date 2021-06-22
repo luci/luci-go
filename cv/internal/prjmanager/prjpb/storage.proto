@@ -108,6 +108,24 @@ enum Status {
   STOPPED = 3;
 }
 
+// LogReason records why a change to the project state was logged.
+//
+// See ProjectLog entity.
+enum LogReason {
+  LOG_REASON_UNSPECIFIED = 0;
+
+  // Due to passage of time or number of versions.
+  // TODO(tandrii): implement.
+  FYI_PERIODIC = 1;
+
+  STATUS_CHANGED = 2;
+  CONFIG_CHANGED = 3;
+}
+
+message LogReasons {
+  repeated LogReason reasons = 1;
+}
+
 // PCL is a tracked CL.
 message PCL {
   reserved 14;

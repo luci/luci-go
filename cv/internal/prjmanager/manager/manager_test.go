@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProjectTQLateTasks(t *testing.T) {
@@ -115,9 +116,10 @@ func TestProjectLifeCycle(t *testing.T) {
 			events, err := eventbox.List(ctx, lProjectKey)
 			So(err, ShouldBeNil)
 			So(events, ShouldHaveLength, 0)
-			p, ps := loadProjectEntities(ctx, lProject)
+			p, ps, plog := loadProjectEntities(ctx, lProject)
 			So(p.EVersion, ShouldEqual, 1)
 			So(ps.Status, ShouldEqual, prjpb.Status_STARTED)
+			So(plog, ShouldNotBeNil)
 			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 			// Ensure first poller task gets executed.
@@ -150,8 +152,9 @@ func TestProjectLifeCycle(t *testing.T) {
 
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
-				p, _ = loadProjectEntities(ctx, lProject)
+				p, _, plog = loadProjectEntities(ctx, lProject)
 				So(p.IncompleteRuns(), ShouldEqual, common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe"))
+				So(plog, ShouldNotBeNil)
 				// Must schedule a task per Run for config updates for each of the
 				// started run.
 				So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
@@ -161,9 +164,10 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
-					p, ps := loadProjectEntities(ctx, lProject)
+					p, ps, plog := loadProjectEntities(ctx, lProject)
 					So(p.EVersion, ShouldEqual, 3)
 					So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
+					So(plog, ShouldNotBeNil)
 					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 					// Must schedule a task per Run for cancellation.
@@ -172,15 +176,19 @@ func TestProjectLifeCycle(t *testing.T) {
 					Convey("wait for all IncompleteRuns to finish", func() {
 						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
-						p, ps := loadProjectEntities(ctx, lProject)
+
+						p, ps, plog := loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
 						So(p.IncompleteRuns(), ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
+						So(plog, ShouldBeNil) // still STOPPING.
 
 						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
-						p, ps = loadProjectEntities(ctx, lProject)
+
+						p, ps, plog = loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjpb.Status_STOPPED)
 						So(p.IncompleteRuns(), ShouldBeEmpty)
+						So(plog, ShouldNotBeNil)
 					})
 				})
 			})
@@ -192,9 +200,10 @@ func TestProjectLifeCycle(t *testing.T) {
 				So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
-				p, ps := loadProjectEntities(ctx, lProject)
+				p, ps, plog := loadProjectEntities(ctx, lProject)
 				So(p.EVersion, ShouldEqual, 2)
 				So(ps.Status, ShouldEqual, prjpb.Status_STOPPED)
+				So(plog, ShouldNotBeNil)
 				So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			})
 		})
@@ -330,18 +339,45 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 	})
 }
 
-func loadProjectEntities(ctx context.Context, luciProject string) (*prjmanager.Project, *prjmanager.ProjectStateOffload) {
+func loadProjectEntities(ctx context.Context, luciProject string) (
+	*prjmanager.Project,
+	*prjmanager.ProjectStateOffload,
+	*prjmanager.ProjectLog,
+) {
 	p := &prjmanager.Project{ID: luciProject}
-	ps := &prjmanager.ProjectStateOffload{
-		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject),
+	switch err := datastore.Get(ctx, p); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil, nil
+	case err != nil:
+		panic(err)
 	}
-	err := datastore.Get(ctx, p, ps)
-	if merr, ok := err.(errors.MultiError); ok && merr[0] == datastore.ErrNoSuchEntity {
-		So(merr[1], ShouldEqual, datastore.ErrNoSuchEntity)
-		return nil, nil
+
+	key := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
+	ps := &prjmanager.ProjectStateOffload{Project: key}
+	if err := datastore.Get(ctx, ps); err != nil {
+		// ProjectStateOffload must exist if Project exists.
+		panic(err)
 	}
-	So(err, ShouldBeNil)
-	return p, ps
+
+	plog := &prjmanager.ProjectLog{
+		Project:  datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject),
+		EVersion: p.EVersion,
+	}
+	switch err := datastore.Get(ctx, plog); {
+	case err == datastore.ErrNoSuchEntity:
+		return p, ps, nil
+	case err != nil:
+		panic(err)
+	default:
+		// Quick check invariant that plog replicates what's stored in Project &
+		// ProjectStateOffload entities at the same EVersion.
+		So(plog.EVersion, ShouldEqual, p.EVersion)
+		So(plog.Status, ShouldEqual, ps.Status)
+		So(plog.ConfigHash, ShouldEqual, ps.ConfigHash)
+		So(plog.State, ShouldResembleProto, p.State)
+		So(plog.Reasons, ShouldNotBeEmpty)
+		return p, ps, plog
+	}
 }
 
 func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {

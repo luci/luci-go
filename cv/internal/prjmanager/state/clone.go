@@ -16,9 +16,14 @@ package state
 
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 
-func (s *State) cloneShallow() *State {
+// cloneShallow returns cloned state ready for in-place mutation.
+func (s *State) cloneShallow(reasons ...prjpb.LogReason) *State {
 	ret := &State{}
 	*ret = *s
+	if len(reasons) > 0 {
+		ret.LogReasons = append(ret.LogReasons, reasons...)
+	}
+
 	// Don't use proto.merge to avoid deep copy.
 	ret.PB = &prjpb.PState{
 		LuciProject:         s.PB.GetLuciProject(),
