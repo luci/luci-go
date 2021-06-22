@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "809d6cf0_f2102573",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-22T23:55:22Z",
+      "side": 1,
+      "message": "b.Proto.Tags should be empty because tags are stored in the indexable b.Tags instead, but due to some ScheduleBuild dry-run related changes it\u0027s currently not empty. I\u0027ll need to write a follow-up CL to correct that, but pre-allocating p.Tags circumvents the duplicated tag issue in the bug (and this line doesn\u0027t need to be removed once the follow-up is written).",
+      "revId": "90901af107163f3be37fe7be9ade274a9113382d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
