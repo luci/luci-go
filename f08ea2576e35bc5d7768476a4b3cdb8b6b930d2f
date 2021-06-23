@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7cc847a6_b639751f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T19:02:36Z",
+      "side": 1,
+      "message": "Purge \u003d remove user\u0027s CQ vote without starting a Run.\n\nProblem: in the two use cases described in storage.proto,\nstatus quo is CV trying to create a new Run, failing, because Run with this ID already exists, and scheduling a retry. Example: https://screenshot.googleplex.com/euNWRURbwzjdBJA\n\nProposed solution: don\u0027t retry, but detect such case and purge the CL as invalid,\ninviting user to re-trigger if necessary.\n\nDoes this help?",
+      "parentUuid": "1545a3fb_5d6a77d8",
+      "revId": "f08ea2576e35bc5d7768476a4b3cdb8b6b930d2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b2d21b5d_8929e840",
         "filename": "cv/internal/changelist/storage.proto",
         "patchSetId": 6
@@ -36,6 +54,29 @@
         "startChar": 9,
         "endLine": 355,
         "endChar": 15
+      },
+      "revId": "f08ea2576e35bc5d7768476a4b3cdb8b6b930d2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b6a412ed_44575d37",
+        "filename": "cv/internal/prjmanager/triager/runs.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T19:02:36Z",
+      "side": 1,
+      "message": "purge",
+      "range": {
+        "startLine": 44,
+        "startChar": 57,
+        "endLine": 44,
+        "endChar": 62
       },
       "revId": "f08ea2576e35bc5d7768476a4b3cdb8b6b930d2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
