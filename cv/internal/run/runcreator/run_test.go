@@ -273,6 +273,19 @@ func TestRunBuilder(t *testing.T) {
 			})
 		})
 
+		Convey("ExpectedRunID works if CreateTime is given", func() {
+			rb.CreateTime = ct.Clock.Now()
+			// For realism and to prevent non-determinism in production,
+			// make CreateTime in the past.
+			ct.Clock.Add(time.Second)
+			So(rb.ExpectedRunID(), ShouldResemble, common.RunID(expectedRunID))
+		})
+
+		Convey("ExpectedRunID panics if CreateTime is not given", func() {
+			rb.CreateTime = time.Time{}
+			So(func() { rb.ExpectedRunID() }, ShouldPanic)
+		})
+
 		Convey("New Run is created", func() {
 			r, err := rb.Create(ctx, pmNotifier, runNotifier)
 			So(err, ShouldBeNil)
