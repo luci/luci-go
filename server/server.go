@@ -2082,7 +2082,11 @@ func (s *Server) initErrorReporting() error {
 	s.errRptClient, err = errorreporting.NewClient(s.Context, s.Options.CloudProject, errorreporting.Config{
 		ServiceName:    s.getServiceID(),
 		ServiceVersion: s.Options.imageVersion(),
-		OnError:        func(err error) { logging.Errorf(s.Context, "Error Reporting could not log error: %s", err) },
+		OnError: func(err error) {
+			// TODO(crbug/1204640): s/Warningf/Errorf once "Error Reporting" is itself
+			// more reliable.
+			logging.Warningf(s.Context, "Error Reporting could not log error: %s", err)
+		},
 	}, option.WithTokenSource(s.cloudTS))
 	if err != nil {
 		return err
