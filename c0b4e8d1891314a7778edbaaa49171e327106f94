@@ -66,6 +66,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9ae19bbd_9255fc3e",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-23T17:49:46Z",
+      "side": 1,
+      "message": "IMO explicit \u003e\u003e\u003e implicit, especially when we face ambiguity like this.\ne.g. MultiErr contains err1 and err2. \nerr1 is annotated with a code\nerr2 is not and that is intentional, because the intention is to make it HTTP 500.\n\nI\u0027d expect [the code that chose to use MultiError] in a domain-specific way to also know what\u0027s the right way to resolve this (i.e. I am not entirely sure this generic piece of code would know what\u0027s the right thing to do)\n\nalso see my comment below",
+      "parentUuid": "9f609996_d77f83d8",
+      "range": {
+        "startLine": 213,
+        "startChar": 28,
+        "endLine": 214,
+        "endChar": 20
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "57689c53_2ca7ee66",
         "filename": "grpc/grpcutil/errors.go",
         "patchSetId": 1
@@ -82,6 +106,29 @@
         "startChar": 31,
         "endLine": 221,
         "endChar": 49
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f314532e_6e33d024",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-23T17:49:46Z",
+      "side": 1,
+      "message": "i generally do not recommend Tag, for reasons I described in \nhttps://chromium.googlesource.com/infra/luci/luci-go/+/fd11ae65a39f5f859aeeeaa84756fabcaf653505",
+      "range": {
+        "startLine": 224,
+        "startChar": 16,
+        "endLine": 224,
+        "endChar": 19
       },
       "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
