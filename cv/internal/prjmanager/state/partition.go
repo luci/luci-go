@@ -87,9 +87,10 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []*prjpb.Component {
 
 	canReuse := func(c *prjpb.Component) (root int, can bool) {
-		// Old component can be re-used iff both:
+		// Old component can be re-used iff all of:
 		//  (1) it has exactly the same set in the new partition.
 		//  (2) it does not contain unused CLs.
+		//  (3) it contains at least 1 active CL.
 		clids := c.GetClids()
 
 		// Check (1).
@@ -103,21 +104,26 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 			}
 		}
 
-		// Check (2).
-		// Note that 2+ CL component which satisfies (1) can't have an unused CL.
-		// Unused CL don't have relation to other CLs, and so wouldn't be grouped
-		// into the same set in a new partition.
-
-		// TODO(crbug/1182446): remove this field-validation code.
+		// Check (2) and (3).
+		hasActive := false
 		for _, clid := range clids {
-			if cat.unused.hasI64(clid) && len(clids) != 1 {
-				panic(fmt.Errorf("Component with %d CLs %v has unused CL %d", len(clids), clids, clid))
+			if cat.unused.hasI64(clid) {
+				if len(clids) != 1 {
+					// Note that 2+ CL component which satisfies (1) can't have an unused CL.
+					// Unused CL don't have relation to other CLs, and so wouldn't be grouped
+					// into the same set in a new partition.
+					panic(fmt.Errorf("Component with %d CLs %v has unused CL %d", len(clids), clids, clid))
+				}
+				return -1, false
+			}
+			if cat.active.hasI64(clid) {
+				hasActive = true
 			}
 		}
-
-		if len(clids) == 1 && cat.unused.hasI64(clids[0]) {
+		if !hasActive {
 			return -1, false
 		}
+
 		return root, true
 	}
 	// First, try to re-use existing components whenever possible.
