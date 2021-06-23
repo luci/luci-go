@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "405d19df_ba7daca2",
+        "filename": "common/data/disjointset/disjointset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-23T18:27:04Z",
+      "side": 1,
+      "message": "nit, typo",
+      "range": {
+        "startLine": 119,
+        "startChar": 22,
+        "endLine": 119,
+        "endChar": 30
+      },
+      "revId": "884039da9c8bf307d0747a55e9069ae34be03dd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97cd65ad_043761ab",
+        "filename": "common/data/disjointset/disjointset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-23T18:27:04Z",
+      "side": 1,
+      "message": "(And, because the sets are supposed to be disjoint, they shouldn\u0027t have equal first elements, right?)",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 9
+      },
+      "revId": "884039da9c8bf307d0747a55e9069ae34be03dd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
