@@ -23,6 +23,30 @@
       },
       "revId": "840f5bd9cd2a6838f0d022cf60e2017e3b45c85f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b79482b_2d75ac5c",
+        "filename": "cv/internal/prjmanager/state/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-23T00:38:50Z",
+      "side": 1,
+      "message": "hooray, but how is it an ineffectual assignment to mutated?",
+      "parentUuid": "213d1425_4c4cd725",
+      "range": {
+        "startLine": 388,
+        "startChar": 3,
+        "endLine": 389,
+        "endChar": 0
+      },
+      "revId": "840f5bd9cd2a6838f0d022cf60e2017e3b45c85f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
