@@ -342,6 +342,8 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 }
 
 func TestVirtualEnv(t *testing.T) {
+	// TODO(crbug/1060092): fix and re-enable the test.
+	t.Skip("flaky, see https://crbug.com/1060092")
 	t.Parallel()
 
 	for _, tc := range []struct {
