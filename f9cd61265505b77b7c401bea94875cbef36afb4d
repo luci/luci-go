@@ -22,6 +22,30 @@
       },
       "revId": "f9cd61265505b77b7c401bea94875cbef36afb4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5c96fe7_9bf6f938",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-06-23T06:12:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4dcb7154_2563ec59",
+      "range": {
+        "startLine": 160,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 21
+      },
+      "revId": "f9cd61265505b77b7c401bea94875cbef36afb4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
