@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b85f6e6a_fdbbc89a",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-23T17:43:46Z",
+      "side": 1,
+      "message": "drive-by: I am failing to see the connection between the CL description and this.",
+      "revId": "b1b42f3fd6f415e1c1690209392327645d4c89f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
