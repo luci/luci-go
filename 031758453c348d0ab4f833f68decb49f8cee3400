@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b792a0bb_99dfe9a9",
+        "filename": "cv/internal/cvtesting/manual/giant_stack.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T17:36:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "823332a1_cbfeccb9",
+      "range": {
+        "startLine": 59,
+        "startChar": 30,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "031758453c348d0ab4f833f68decb49f8cee3400",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "d6533d00_dd40d09e",
         "filename": "cv/internal/cvtesting/manual/giant_stack.py",
         "patchSetId": 1
@@ -37,6 +61,30 @@
       "writtenOn": "2021-06-23T17:17:05Z",
       "side": 1,
       "message": "guess this is CrOS style? one commit \u003d\u003e one CL.",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 14
+      },
+      "revId": "031758453c348d0ab4f833f68decb49f8cee3400",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e3281e7_be2d9bd5",
+        "filename": "cv/internal/cvtesting/manual/giant_stack.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T17:36:20Z",
+      "side": 1,
+      "message": "yes, it\u0027s faster. Doing this with Git Cl takes ~5s/CL, which way too long to wait.",
+      "parentUuid": "d6533d00_dd40d09e",
       "range": {
         "startLine": 97,
         "startChar": 0,
