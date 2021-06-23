@@ -47,6 +47,30 @@
       },
       "revId": "840f5bd9cd2a6838f0d022cf60e2017e3b45c85f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "740d8688_0c2fec3b",
+        "filename": "cv/internal/prjmanager/state/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T01:02:20Z",
+      "side": 1,
+      "message": "It was ineffectual in PS#1, but in PS#2 i found \u0026 fixed a minor bug.",
+      "parentUuid": "8b79482b_2d75ac5c",
+      "range": {
+        "startLine": 388,
+        "startChar": 3,
+        "endLine": 389,
+        "endChar": 0
+      },
+      "revId": "840f5bd9cd2a6838f0d022cf60e2017e3b45c85f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
