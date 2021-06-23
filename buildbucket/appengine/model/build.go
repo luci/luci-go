@@ -273,6 +273,7 @@ func (b *Build) ToProto(ctx context.Context, m *mask.Mask) (*pb.Build, error) {
 // input/output properties.
 func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
 	p := proto.Clone(&b.Proto).(*pb.Build)
+	p.Tags = make([]*pb.StringPair, 0, len(b.Tags))
 	for _, t := range b.Tags {
 		k, v := strpair.Parse(t)
 		if !isHiddenTag(k) {
