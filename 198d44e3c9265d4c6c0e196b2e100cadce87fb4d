@@ -33,6 +33,24 @@
       "message": "Presumably to make logs less verbose and easier to read?",
       "revId": "198d44e3c9265d4c6c0e196b2e100cadce87fb4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f9d591b_58ac5142",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T20:17:58Z",
+      "side": 1,
+      "message": "No. See bug -- this is posted the user, who definitely doesn\u0027t care about our grpc wrapper of Gerrit API 😊",
+      "parentUuid": "e1353d06_5eab0955",
+      "revId": "198d44e3c9265d4c6c0e196b2e100cadce87fb4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
