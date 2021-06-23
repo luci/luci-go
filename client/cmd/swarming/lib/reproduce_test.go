@@ -15,7 +15,6 @@
 package lib
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -165,6 +164,8 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix",
 			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.out, "chicken-output.json")))
 		expected.Dir = filepath.Join(c.work, relativeCwd)
+		expected.Stdout = &stdout
+		expected.Stderr = &stderr
 
 		expectedEnvMap.Remove("removeKey")
 		expectedEnvMap.Set("key", "value1")
@@ -238,6 +239,8 @@ func TestPrepareTaskRequestEnvironment_Isolate(t *testing.T) {
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
 		expected.Dir = c.work
+		expected.Stdout = &stdout
+		expected.Stderr = &stderr
 
 		expected.Env = expectedEnvMap.Sorted()
 		So(cmd, ShouldResemble, expected)
@@ -283,15 +286,14 @@ func TestReproduceTaskRequestCommand(t *testing.T) {
 			cmd = exec.CommandContext(ctx, "echo", "chicken")
 		}
 
-		var stdBuffer bytes.Buffer
-		cmd.Stdout = &stdBuffer
-		cmd.Stderr = &stdBuffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
 		err := c.executeTaskRequestCommand(ctx, &swarming.SwarmingRpcsTaskRequest{}, cmd)
 		So(err, ShouldBeNil)
 		if runtime.GOOS == "windows" {
-			So(stdBuffer.String(), ShouldEqual, "chicken\r\n")
+			So(stdout.String(), ShouldEqual, "chicken\r\n")
 		} else {
-			So(stdBuffer.String(), ShouldEqual, "chicken\n")
+			So(stdout.String(), ShouldEqual, "chicken\n")
 		}
 
 	})

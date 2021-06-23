@@ -15,6 +15,7 @@
 package lib
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -42,6 +43,12 @@ import (
 	"go.chromium.org/luci/resultdb/cli"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// To ensure stdout and stderr of the command can be accessilbe for both logging
+// in executeTaskRequestCommand() and validation in tests, these must be global.
+// These are assigned to the command during command creation.
+var stdout bytes.Buffer
+var stderr bytes.Buffer
 
 // CmdReproduce returns an object fo the `reproduce` subcommand.
 func CmdReproduce(authFlags AuthFlags) *subcommands.Command {
@@ -131,7 +138,6 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 	if err != nil {
 		return errors.Annotate(err, "failed to create command from task request").Err()
 	}
-
 	return c.executeTaskRequestCommand(ctx, tr, cmd)
 }
 
@@ -155,11 +161,12 @@ func (c *reproduceRun) executeTaskRequestCommand(ctx context.Context, tr *swarmi
 	}
 
 	if err := cmd.Start(); err != nil {
-		return errors.Annotate(err, "failed to start command: %v", cmd).Err()
+		return errors.Annotate(err, "failed to start command: %v: %s", cmd, stderr.String()).Err()
 	}
 	if err := cmd.Wait(); err != nil {
-		return errors.Annotate(err, "failed to complete command: %v", cmd).Err()
+		return errors.Annotate(err, "failed to complete command: %v: %s", cmd, stderr.String()).Err()
 	}
+	logging.Infof(ctx, "Result: %s", stdout.String())
 	return nil
 }
 
@@ -252,6 +259,8 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 	cmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
 	cmd.Env = cmdEnvMap.Sorted()
 	cmd.Dir = execDir
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	return cmd, nil
 }
