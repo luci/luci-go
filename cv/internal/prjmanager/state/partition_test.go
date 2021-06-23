@@ -16,9 +16,13 @@ package state
 
 import (
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -332,6 +336,96 @@ func TestRepartition(t *testing.T) {
 						{Clids: []int64{5}, Id: "5"},
 					}},
 					{Clids: []int64{6}, TriageRequired: true, Pruns: []*prjpb.PRun{{Clids: []int64{6}, Id: "6"}}},
+				},
+			})
+		})
+	})
+}
+
+func TestPartitionSpecialCases(t *testing.T) {
+	t.Parallel()
+
+	Convey("Special cases of partitioning", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		epoch := ct.Clock.Now().Truncate(time.Hour)
+
+		Convey("crbug/1217775", func() {
+			s0 := &State{PB: &prjpb.PState{
+				// PCLs form a stack 11 <- 12 <- 13.
+				Pcls: []*prjpb.PCL{
+					{
+						Clid: 10,
+						// ConfigGroupIndexes: []int32{0},
+						Status: prjpb.PCL_OK,
+						Trigger: &run.Trigger{
+							Time: timestamppb.New(epoch.Add(1 * time.Minute)),
+							Mode: string(run.DryRun),
+						},
+					},
+					{
+						Clid: 11,
+						// ConfigGroupIndexes: []int32{0},
+						Deps: []*changelist.Dep{
+							{Clid: 10, Kind: changelist.DepKind_HARD},
+						},
+						Status:  prjpb.PCL_OK,
+						Trigger: nil, // no longer triggered, because its DryRun has just finished.
+					},
+					{
+						Clid: 12,
+						// ConfigGroupIndexes: []int32{0},
+						Deps: []*changelist.Dep{
+							{Clid: 10, Kind: changelist.DepKind_SOFT},
+							{Clid: 11, Kind: changelist.DepKind_HARD},
+						},
+						Status: prjpb.PCL_OK,
+						Trigger: &run.Trigger{
+							Time: timestamppb.New(epoch.Add(2 * time.Minute)),
+							Mode: string(run.DryRun),
+						},
+					},
+				},
+
+				Components: []*prjpb.Component{
+					{
+						Clids: []int64{11},
+						// Associated DryRun has just been completed and removed and
+						// TriageRequired set to true.
+						TriageRequired: true,
+					},
+				},
+
+				CreatedPruns: []*prjpb.PRun{
+					{Id: "chromium/8999-1-aa10", Clids: []int64{10}},
+					{Id: "chromium/8999-1-aa12", Clids: []int64{12}},
+				},
+			}}
+
+			cat := s0.categorizeCLs(ctx)
+			So(cat.active, ShouldResemble, clidsSet{10: {}, 12: {}})
+			So(cat.deps, ShouldResemble, clidsSet{11: {}})
+			So(cat.unused, ShouldBeEmpty)
+			So(cat.unloaded, ShouldBeEmpty)
+
+			s1 := s0.cloneShallow()
+			s1.repartition(cat)
+
+			// All PCLs are still used.
+			So(s1.PB.GetPcls(), ShouldResembleProto, s0.PB.GetPcls())
+			// But CreatedPruns must be moved into components.
+			So(s1.PB.GetCreatedPruns(), ShouldBeEmpty)
+			// Because CLs are related, there should be just 1 component remaining with
+			// both Runs.
+			So(s1.PB.GetComponents(), ShouldResembleProto, []*prjpb.Component{
+				{
+					Clids: []int64{10, 12},
+					Pruns: []*prjpb.PRun{
+						{Id: "chromium/8999-1-aa10", Clids: []int64{10}},
+						{Id: "chromium/8999-1-aa12", Clids: []int64{12}},
+					},
+					TriageRequired: true,
 				},
 			})
 		})
