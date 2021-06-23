@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -371,16 +373,20 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	}
 
 	var sideEffect SideEffect
-	switch actions, err := s.triageComponents(ctx); {
+	switch actions, saveForDebug, err := s.triageComponents(ctx); {
 	case err != nil:
 		if !mutated {
 			return nil, nil, err
 		}
 		// Don't lose progress made so far.
 		logging.Warningf(ctx, "Failed to triageComponents %s, but proceeding to save repartitioned state", err)
-	case len(actions) > 0:
+	case len(actions) > 0 || saveForDebug:
 		if !mutated {
-			s = s.cloneShallow()
+			if saveForDebug {
+				s = s.cloneShallow(prjpb.LogReason_DEBUG)
+			} else {
+				s = s.cloneShallow()
+			}
 			mutated = true
 		}
 		sideEffect, err = s.actOnComponents(ctx, actions)
@@ -395,8 +401,15 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 		t = clock.Now(ctx)
 		tPB = timestamppb.New(t)
 		fallthrough
-	case tPB != nil:
+	case tPB != nil && !proto.Equal(tPB, s.PB.GetNextEvalTime()):
+		if !mutated {
+			s = s.cloneShallow()
+		}
 		s.PB.NextEvalTime = tPB
+		fallthrough
+	case tPB != nil:
+		// Always create a new task if there is NextEvalTime. If it is in the
+		// future, it'll be deduplicated as needed.
 		if err := s.PMNotifier.TasksBinding.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
 			return nil, nil, err
 		}

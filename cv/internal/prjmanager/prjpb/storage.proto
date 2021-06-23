@@ -115,11 +115,11 @@ enum LogReason {
   LOG_REASON_UNSPECIFIED = 0;
 
   // Due to passage of time or number of versions.
-  // TODO(tandrii): implement.
   FYI_PERIODIC = 1;
-
   STATUS_CHANGED = 2;
   CONFIG_CHANGED = 3;
+  // On-demand save for debugging reasons, e.g. on caught panic.
+  DEBUG = 4;
 }
 
 message LogReasons {

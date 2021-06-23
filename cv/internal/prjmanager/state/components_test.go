@@ -167,8 +167,9 @@ func TestComponentsActions(t *testing.T) {
 				calledOn <- c
 				return itriager.Result{}, nil
 			}
-			actions, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
+			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldBeNil)
 			So(state.PB, ShouldResembleProto, pb)
 			So(collectCalledOn(), ShouldBeEmpty)
@@ -176,6 +177,7 @@ func TestComponentsActions(t *testing.T) {
 			Convey("ExecDeferred", func() {
 				state2, sideEffect, err := state.ExecDeferred(ctx)
 				So(err, ShouldBeNil)
+				So(state.PB, ShouldResembleProto, pb)
 				So(state2, ShouldEqual, state) // pointer comparison
 				So(sideEffect, ShouldBeNil)
 				// Always creates new task iff there is NextEvalTime.
@@ -199,8 +201,9 @@ func TestComponentsActions(t *testing.T) {
 				}
 				panic("unreachable")
 			}
-			actions, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
+			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldHaveLength, 2)
 			So(collectCalledOn(), ShouldResemble, []int{1, 3})
 
@@ -234,8 +237,9 @@ func TestComponentsActions(t *testing.T) {
 				}
 				panic("unreachable")
 			}
-			actions, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
+			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldHaveLength, 3)
 			So(state.PB, ShouldResembleProto, pb)
 
@@ -271,8 +275,9 @@ func TestComponentsActions(t *testing.T) {
 				}
 				panic("unreachable")
 			}
-			actions, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := state.triageComponents(ctx)
 			So(err, ShouldBeNil)
+			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldHaveLength, 2)
 			So(state.PB, ShouldResembleProto, pb)
 
@@ -296,7 +301,7 @@ func TestComponentsActions(t *testing.T) {
 			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				return itriager.Result{}, errors.New("oops")
 			}
-			_, err := state.triageComponents(ctx)
+			_, _, err := state.triageComponents(ctx)
 			So(err, ShouldErrLike, "failed to triage 2 components")
 			So(state.PB, ShouldResembleProto, pb)
 
