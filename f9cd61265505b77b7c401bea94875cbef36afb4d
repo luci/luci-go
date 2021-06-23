@@ -70,6 +70,30 @@
       },
       "revId": "f9cd61265505b77b7c401bea94875cbef36afb4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf3fb3a4_3166271a",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-06-23T15:39:32Z",
+      "side": 1,
+      "message": "My bad, sorry I misunderstood.",
+      "parentUuid": "90a369fa_ac4aeb1c",
+      "range": {
+        "startLine": 160,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 21
+      },
+      "revId": "f9cd61265505b77b7c401bea94875cbef36afb4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
