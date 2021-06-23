@@ -675,7 +675,7 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.Sub
 					submitted = true
 				default:
 					var isTransient bool
-					msg, isTransient = classifyGerritErr(err)
+					msg, isTransient = classifyGerritErr(ctx, err)
 					if isTransient {
 						return transient.Tag.Apply(err)
 					}
@@ -770,20 +770,25 @@ const (
 
 // classifyGerritErr returns message to be posted on the CL for the given
 // submission error and whether the error is transient.
-func classifyGerritErr(err error) (msg string, isTransient bool) {
-	switch grpcutil.Code(err) {
+func classifyGerritErr(ctx context.Context, err error) (msg string, isTransient bool) {
+	grpcStatus, ok := grpcutil.ToGRPCStatus(err)
+	if !ok {
+		return fmt.Sprintf(unexpectedMsgFmt, err), transient.Tag.In(err)
+	}
+	switch code, msg := grpcStatus.Code(), grpcStatus.Message(); code {
 	case codes.PermissionDenied:
 		return permDeniedMsg, false
 	case codes.FailedPrecondition:
 		// Gerrit returns 409. Either because change can't be merged, or
 		// this revision isn't the latest.
-		return fmt.Sprintf(failedPreconditionMsgFmt, err), false
+		return fmt.Sprintf(failedPreconditionMsgFmt, msg), false
 	case codes.ResourceExhausted:
 		return resourceExhaustedMsg, true
 	case codes.Internal:
-		return fmt.Sprintf(unexpectedMsgFmt, err), true
+		return fmt.Sprintf(unexpectedMsgFmt, msg), true
 	default:
-		return fmt.Sprintf(unexpectedMsgFmt, err), false
+		logging.Warningf(ctx, "unclassified grpc code [%s] received from Gerrit. Full error: %s", code, err)
+		return fmt.Sprintf(unexpectedMsgFmt, msg), false
 	}
 }
 
