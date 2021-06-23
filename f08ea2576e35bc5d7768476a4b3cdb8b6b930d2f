@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1545a3fb_5d6a77d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-23T18:38:35Z",
+      "side": 1,
+      "message": "I\u0027ve only just quickly skimmed this CL -- I forget exactly what purging is, and why we want to purge -- could you briefly explain the problem currently and how this solves it?",
+      "revId": "f08ea2576e35bc5d7768476a4b3cdb8b6b930d2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2d21b5d_8929e840",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-23T18:38:35Z",
+      "side": 1,
+      "message": "Nit: capitalize for consistency, and consider being more verbose and using full sentences, e.g.\n\n 1. A user uploads a CL on ref A, then sets CQ+1. Before the Dry Run completes, the CL is moved to ref B while preserving the CQ+1 vote. In this case, the old Run is finalized, but the new Run has the exact same trigger, which causes problems (specifically, two different Runs with the same key?).\n 2. A user uploads a CL, then abandons and restores the CL while maintaining the CQ+1 vote. Again, this will cause similar problems as in the above case.",
+      "range": {
+        "startLine": 355,
+        "startChar": 9,
+        "endLine": 355,
+        "endChar": 15
+      },
+      "revId": "f08ea2576e35bc5d7768476a4b3cdb8b6b930d2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
