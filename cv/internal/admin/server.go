@@ -179,6 +179,9 @@ func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (res
 	}
 
 	cl, err := loadCL(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	runs := make([]string, len(cl.IncompleteRuns))
 	for i, id := range cl.IncompleteRuns {
 		runs[i] = string(id)
