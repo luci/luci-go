@@ -33,14 +33,15 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 	pm := pmState{s}
 	res := itriager.Result{}
 	var nextPurge, nextRun time.Time
+	var clsWithReusedTriggers []*clInfo
 	var err error
 
 	cls := triageCLs(c, pm)
-	res.CLsToPurge, nextPurge = stagePurges(ctx, cls, pm)
-	res.RunsToCreate, nextRun, err = stageNewRuns(ctx, c, cls, pm)
+	res.RunsToCreate, clsWithReusedTriggers, nextRun, err = stageNewRuns(ctx, c, cls, pm)
 	if err != nil {
 		return res, err
 	}
+	res.CLsToPurge, nextPurge = stagePurges(ctx, cls, pm, clsWithReusedTriggers)
 
 	if len(res.RunsToCreate) > 0 || len(res.CLsToPurge) > 0 {
 		res.NewValue = c.CloneShallow()

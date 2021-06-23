@@ -40,7 +40,15 @@ import (
 //
 // Guarantees that returned Run Creators are CL-wise disjoint, and thus can be
 // created totally independently.
-func stageNewRuns(ctx context.Context, c *prjpb.Component, cls map[int64]*clInfo, pm pmState) ([]*runcreator.Creator, time.Time, error) {
+//
+// In exceptional cases, also returns the list of CLs to prune because their
+// trigger matches existing finalized Run.
+func stageNewRuns(ctx context.Context, c *prjpb.Component, cls map[int64]*clInfo, pm pmState) (
+	[]*runcreator.Creator,
+	[]*clInfo,
+	time.Time,
+	error,
+) {
 	var next time.Time
 	var out []*runcreator.Creator
 
@@ -48,6 +56,7 @@ func stageNewRuns(ctx context.Context, c *prjpb.Component, cls map[int64]*clInfo
 		pm:         pm,
 		c:          c,
 		cls:        cls,
+		reused:     nil,
 		visitedCLs: make(map[int64]struct{}, len(cls)),
 	}
 	// For determinism, iterate in fixed order:
@@ -55,14 +64,14 @@ func stageNewRuns(ctx context.Context, c *prjpb.Component, cls map[int64]*clInfo
 		info := cls[clid]
 		switch rc, nt, err := rs.stageNewRunsFrom(ctx, clid, info); {
 		case err != nil:
-			return nil, time.Time{}, err
+			return nil, nil, time.Time{}, err
 		case rc != nil:
 			out = append(out, rc)
 		default:
 			next = earliest(next, nt)
 		}
 	}
-	return out, next, nil
+	return out, rs.reused, next, nil
 }
 
 type runStage struct {
@@ -73,6 +82,10 @@ type runStage struct {
 	cls map[int64]*clInfo
 
 	// mutable
+
+	// reused tracks CLs triggers of which have already resulted in the finalized
+	// Run.
+	reused []*clInfo
 
 	// visitedCLs tracks CLs already considered. Ensures that 1 CL can appear in
 	// at most 1 new Run.
@@ -191,6 +204,7 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 	if err != nil {
 		return nil, time.Time{}, err
 	}
+	// TODO(crbug/1220909): check if such a Run already exists.
 	return rc, time.Time{}, nil
 }
 

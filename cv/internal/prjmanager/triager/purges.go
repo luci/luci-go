@@ -26,7 +26,8 @@ import (
 
 // stagePurges returns either purgeCLtasks for immediate purging OR the earliest
 // time when a CL should be purged. Zero time means no purges to be done.
-func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prjpb.PurgeCLTask, time.Time) {
+func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState, clsWithReusedTriggers []*clInfo) ([]*prjpb.PurgeCLTask, time.Time) {
+	// TODO(crbug/1220909): purge clsWithReusedTriggers.
 	now := clock.Now(ctx)
 	var out []*prjpb.PurgeCLTask
 	next := time.Time{}
