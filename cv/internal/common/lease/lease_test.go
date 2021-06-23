@@ -121,6 +121,12 @@ func TestLease(t *testing.T) {
 			err := l.Terminate(ctx)
 			So(err, ShouldBeNil)
 			So(mustLoadLease(ctx, rid), ShouldBeNil)
+
+			Convey("No-op if lease is already terminated", func() {
+				err := l.Terminate(ctx)
+				So(err, ShouldBeNil)
+				So(mustLoadLease(ctx, rid), ShouldBeNil)
+			})
 		})
 
 		Convey("Errors if lease is not current", func() {

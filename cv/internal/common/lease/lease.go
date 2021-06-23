@@ -180,6 +180,8 @@ func (l *Lease) Terminate(ctx context.Context) error {
 		switch {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
+		case cur == nil:
+			return nil // lease is already terminated
 		case !bytes.Equal(cur.Token, l.Token):
 			return ErrConflict
 		}
