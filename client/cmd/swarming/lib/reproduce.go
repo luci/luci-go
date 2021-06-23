@@ -252,6 +252,8 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 	cmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
 	cmd.Env = cmdEnvMap.Sorted()
 	cmd.Dir = execDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	return cmd, nil
 }
