@@ -16,6 +16,52 @@
       "message": "ptal",
       "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0b6866d_6ad0bbf9",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T17:42:28Z",
+      "side": 1,
+      "message": "^",
+      "range": {
+        "startLine": 186,
+        "startChar": 1,
+        "endLine": 187,
+        "endChar": 35
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f609996_d77f83d8",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T17:42:28Z",
+      "side": 1,
+      "message": "The above function treats MultiError differently, which may lead to confusion.\nThat said, the above func only cares about *Code* which is easy to de-duplicate,\nunlike entire Statuses.\n\nMaybe nodir@ has a good thought?",
+      "range": {
+        "startLine": 213,
+        "startChar": 28,
+        "endLine": 214,
+        "endChar": 20
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
