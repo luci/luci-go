@@ -163,20 +163,11 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
     `;
   }
 
-  private onMouseClick(e: MouseEvent) {
-    // We need to get composedPath instead of target because if links are
-    // in shadowDOM, target will be redirected
-    if (e.composedPath().length === 0) {
-      return;
+  private trackInteraction = () => {
+    if (this.invState.testLoader?.hasAssociatedUnexpectedResults(this.step.name)) {
+      trackEvent(GA_CATEGORIES.STEP_WITH_UNEXPECTED_RESULTS, GA_ACTIONS.INSPECT_TEST, VISIT_ID);
     }
-    const target = e.composedPath()[0] as Element;
-    if (target.tagName === 'A') {
-      const href = target.getAttribute('href') || '';
-      if (this.invState.testLoader?.nonExpectedTestVariants.length) {
-        trackEvent(GA_CATEGORIES.STEP_LINKS_OF_BUILD_WITH_NON_EXPECTED_TESTS, GA_ACTIONS.CLICK, href);
-      }
-    }
-  }
+  };
 
   connectedCallback() {
     super.connectedCallback();
@@ -199,12 +190,9 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
         { fireImmediately: true }
       )
     );
-    this.addEventListener('click', this.onMouseClick);
-  }
 
-  disconnectedCallback() {
-    this.removeEventListener('click', this.onMouseClick);
-    super.disconnectedCallback();
+    this.addEventListener('click', this.trackInteraction);
+    this.addDisposer(() => this.removeEventListener('click', this.trackInteraction));
   }
 
   firstUpdated() {
@@ -251,6 +239,8 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
               @click=${(e: Event) => {
                 this.configsStore.setStepPin(this.step.name, !this.isPinned);
                 e.stopPropagation();
+                // Users are not consuming the step info when (un)setting the
+                // pins, don't record step interaction.
               }}
             >
             </milo-pin-toggle>
@@ -258,7 +248,10 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
               .textToCopy=${this.step.name}
               title="Copy the step name."
               class="hidden-icon"
-              @click=${(e: Event) => e.stopPropagation()}
+              @click=${(e: Event) => {
+                e.stopPropagation();
+                this.trackInteraction();
+              }}
             ></milo-copy-to-clipboard>
             <span id="header-markdown">${this.step.header}</span>
           </div>
