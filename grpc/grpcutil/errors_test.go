@@ -73,3 +73,56 @@ func TestCode(t *testing.T) {
 		})
 	})
 }
+
+func TestStatus(t *testing.T) {
+	t.Parallel()
+
+	Convey("ToGRPCStatus returns the correct status", t, func() {
+		Convey("For simple GRPC error", func() {
+			errGRPCNotFound := status.Error(codes.NotFound, "foobar not found")
+			grpcStatus, ok := ToGRPCStatus(errGRPCNotFound)
+			So(ok, ShouldBeTrue)
+			So(grpcStatus.Code(), ShouldEqual, codes.NotFound)
+			So(grpcStatus.Message(), ShouldEqual, "foobar not found")
+		})
+
+		Convey("For wrapped GRPC error", func() {
+			errGRPCNotFound := status.Error(codes.NotFound, "foobar not found")
+			errWrapped := lucierr.Annotate(errGRPCNotFound, "wrapped").Err()
+			grpcStatus, ok := ToGRPCStatus(errWrapped)
+			So(ok, ShouldBeTrue)
+			So(grpcStatus.Code(), ShouldEqual, codes.NotFound)
+			So(grpcStatus.Message(), ShouldEqual, "foobar not found")
+		})
+
+		Convey("For tagged GRPC error", func() {
+			errTagged := lucierr.New("foobar", NotFoundTag)
+			grpcStatus, ok := ToGRPCStatus(errTagged)
+			So(ok, ShouldBeTrue)
+			So(grpcStatus.Code(), ShouldEqual, codes.NotFound)
+			So(grpcStatus.Message(), ShouldEqual, "foobar")
+		})
+
+		Convey("For non-GRPC error", func() {
+			grpcStatus, ok := ToGRPCStatus(errors.New("foobar"))
+			So(ok, ShouldBeFalse)
+			So(grpcStatus.Code(), ShouldEqual, codes.Unknown)
+			So(grpcStatus.Message(), ShouldEqual, "foobar")
+		})
+
+		Convey("For Multi-errors", func() {
+			errGRPCNotFound := status.Error(codes.NotFound, "foobar not found")
+			errPlain := errors.New("foobar")
+			for _, err := range []lucierr.MultiError{
+				lucierr.NewMultiError(errGRPCNotFound),
+				lucierr.NewMultiError(errPlain),
+				lucierr.NewMultiError(errGRPCNotFound, errPlain),
+			} {
+				grpcStatus, ok := ToGRPCStatus(err)
+				So(ok, ShouldBeFalse)
+				So(grpcStatus.Code(), ShouldEqual, codes.Unknown)
+				So(grpcStatus.Message(), ShouldEqual, err.Error())
+			}
+		})
+	})
+}

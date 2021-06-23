@@ -18,7 +18,6 @@ import (
 	"context"
 	"net/http"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -175,7 +174,7 @@ func CodeStatus(code codes.Code) int {
 
 // Code returns the gRPC code for a given error.
 //
-// In addition to the functionality of grpc.Code, this will unwrap any wrapped
+// In addition to the functionality of status.Code, this will unwrap any wrapped
 // errors before asking for its code.
 //
 // If the error is a MultiError containing more than one type of error code,
@@ -200,13 +199,32 @@ func Code(err error) codes.Code {
 		}
 		return code
 	}
-	// TODO(nodir): use status.FromError
-	return grpc.Code(errors.Unwrap(err))
+	return status.Code(errors.Unwrap(err))
 }
 
 // ToGRPCErr is a shorthand for Errf(Code(err), "%s", err)
 func ToGRPCErr(err error) error {
 	return Errf(Code(err), "%s", err)
+}
+
+// ToGRPCStatus returns a GRPC Status representing `err` if it is a GRPC error.
+//
+// Returns status with codes.Unknown and `ok` as false if the given error is
+// not a GRPC error or is a `errors.MultiError` even though it may contain a
+// valid GRPC error.
+//
+// Note that this will unwrap any wrapped errors before parsing the status.
+func ToGRPCStatus(err error) (st *status.Status, ok bool) {
+	if _, isMulti := err.(errors.MultiError); isMulti {
+		return status.New(codes.Unknown, err.Error()), false
+	}
+	if st, ok := status.FromError(errors.Unwrap(err)); ok {
+		return st, ok
+	}
+	if code, ok := Tag.In(err); ok {
+		return status.New(code, err.Error()), true
+	}
+	return status.New(codes.Unknown, err.Error()), false
 }
 
 // IsTransientCode returns true if a given gRPC code is associated with a
@@ -242,7 +260,7 @@ func GRPCifyAndLogErr(c context.Context, err error) error {
 		return err
 	}
 	grpcErr := ToGRPCErr(err)
-	code := grpc.Code(grpcErr)
+	code := status.Code(grpcErr)
 	if code == codes.Internal || code == codes.Unknown {
 		errors.Log(c, err)
 	}
