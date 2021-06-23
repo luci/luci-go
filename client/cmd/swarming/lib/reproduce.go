@@ -131,7 +131,6 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 	if err != nil {
 		return errors.Annotate(err, "failed to create command from task request").Err()
 	}
-
 	return c.executeTaskRequestCommand(ctx, tr, cmd)
 }
 
@@ -252,6 +251,8 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 	cmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
 	cmd.Env = cmdEnvMap.Sorted()
 	cmd.Dir = execDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	return cmd, nil
 }
