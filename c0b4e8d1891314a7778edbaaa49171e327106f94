@@ -62,6 +62,29 @@
       },
       "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57689c53_2ca7ee66",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-23T17:46:20Z",
+      "side": 1,
+      "message": "this may actually return a multiError, too,\nbut presumably status.FromError should not look inside.\n\nSo, why do you need to a separate handling of multiError above? I\u0027d expect removing L218..L220 would still result in equal code.",
+      "range": {
+        "startLine": 221,
+        "startChar": 31,
+        "endLine": 221,
+        "endChar": 49
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
