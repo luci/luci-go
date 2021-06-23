@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0fd0c4d_284713d4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1512169
+      },
+      "writtenOn": "2021-06-23T14:50:08Z",
+      "side": 1,
+      "message": "Vadim, could you tell me please, when changes in this PR will be rolled to main chromium?",
+      "revId": "137145d7e40a787ddc5b2bbcf63b74b96dc33a42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
