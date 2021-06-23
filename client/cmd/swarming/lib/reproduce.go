@@ -15,6 +15,7 @@
 package lib
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -154,12 +155,17 @@ func (c *reproduceRun) executeTaskRequestCommand(ctx context.Context, tr *swarmi
 		defer exported.Close()
 	}
 
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	if err := cmd.Start(); err != nil {
-		return errors.Annotate(err, "failed to start command: %v", cmd).Err()
+		return errors.Annotate(err, "failed to start command: %v: %s", cmd, stderr.String()).Err()
 	}
 	if err := cmd.Wait(); err != nil {
-		return errors.Annotate(err, "failed to complete command: %v", cmd).Err()
+		return errors.Annotate(err, "failed to complete command: %v: %s", cmd, stderr.String()).Err()
 	}
+	logging.Infof(ctx, "Result: %s", out.String())
 	return nil
 }
 
