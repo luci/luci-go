@@ -292,6 +292,12 @@ func TestBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
+					Tags: []*pb.StringPair{
+						{
+							Key:   "k1",
+							Value: "v1",
+						},
+					},
 				},
 				Project:   "project",
 				BucketID:  "project/bucket",
