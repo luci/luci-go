@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/system/terminal"
 
 	"go.chromium.org/luci/auth/client/authcli"
 
@@ -57,6 +58,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/plugin/host"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -3292,8 +3294,16 @@ func GetApplication(params Parameters) *cli.Application {
 				Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
 				Out:    os.Stderr,
 			}
+
 			ctx, cancel := context.WithCancel(loggerConfig.Use(ctx))
 			signals.HandleInterrupt(cancel)
+
+			// If writing to a real terminal (rather than redirecting to a file),
+			// use a fancy UI with progress bars.
+			if terminal.IsTerminal(int(os.Stderr.Fd())) {
+				ctx = ui.SetImplementation(ctx, &ui.FancyImplementation{Out: os.Stderr})
+			}
+
 			return ctx
 		},
 

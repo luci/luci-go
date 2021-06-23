@@ -20,7 +20,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
-var activityCtxKey = "cipd.ui.Activity"
+var (
+	activityCtxKey = "cipd.ui.Activity"
+	implCtxKey     = "cipd.ui.Implementation"
+)
 
 // Units is what kind of units to use for an activity progress.
 type Units string
@@ -39,6 +42,8 @@ type Activity interface {
 	Progress(ctx context.Context, title string, units Units, cur, total int64)
 	// Log is called by the logging system when the activity is installed into the context.
 	Log(ctx context.Context, level logging.Level, calldepth int, f string, args []interface{})
+	// Done is called when the activity finishes.
+	Done(ctx context.Context)
 }
 
 // ActivityGroup is a group of related activities stopped at the same time.
@@ -49,13 +54,27 @@ type ActivityGroup interface {
 	Close()
 }
 
-// NewActivityGroup creates a new activity group using factory in the context.
+// Implementation implements a UI that shows activities.
 //
-// If there's no factory there, uses a primitive implementation that just writes
-// activity progress as log messages.
+// It lives in the context.
+type Implementation interface {
+	// NewActivityGroup creates a new activity group.
+	NewActivityGroup(ctx context.Context) ActivityGroup
+}
+
+// SetImplementation puts the Implementation into the context.
+func SetImplementation(ctx context.Context, impl Implementation) context.Context {
+	return context.WithValue(ctx, &implCtxKey, impl)
+}
+
+// NewActivityGroup creates a new activity group.
+//
+// Uses Implementation in the context. If there's no implementation there, uses
+// a primitive implementation that just writes activity progress as log messages.
 func NewActivityGroup(ctx context.Context) ActivityGroup {
-	// TODO(vadimsh): Actually use a factory from the context, so that callers
-	// that have some UI can supply the implementation.
+	if impl := ctx.Value(&implCtxKey); impl != nil {
+		return impl.(Implementation).NewActivityGroup(ctx)
+	}
 	return &primitiveActivityGroup{}
 }
 
@@ -79,6 +98,14 @@ func CurrentActivity(ctx context.Context) Activity {
 		return a
 	}
 	return &primitiveActivity{logger: logging.GetFactory(ctx)}
+}
+
+// ActivityDone marks the current activity in the context as finished.
+//
+// Such activity should not be receiving any updates anymore. The UI may stop
+// rendering it.
+func ActivityDone(ctx context.Context) {
+	CurrentActivity(ctx).Done(ctx)
 }
 
 // activityLogger forwards messages to the given activity.

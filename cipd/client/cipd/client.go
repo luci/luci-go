@@ -1062,10 +1062,21 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	return pin, nil
 }
 
-func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) error {
+func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) (err error) {
 	if timeout == 0 {
 		timeout = CASFinalizationTimeout
 	}
+
+	// Activities are responsible for rendering the UI of parallel operations.
+	activities := ui.NewActivityGroup(ctx)
+	ctx = ui.NewActivity(ctx, activities, "")
+	defer func() {
+		if err != nil {
+			logging.Errorf(ctx, "Instance registration failed: %s", err)
+		}
+		ui.ActivityDone(ctx)
+		activities.Close()
+	}()
 
 	// attemptToRegister calls RegisterInstance RPC and logs the result.
 	attemptToRegister := func() (*api.UploadOperation, error) {
@@ -1644,6 +1655,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 				reportActionErr(ctx, a, err)
 			}
 		}
+		ui.ActivityDone(ctx)
 	}
 
 	// As soon as some package data is fetched, perform all installations, updates
@@ -1651,15 +1663,18 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	for cache.HasPendingFetches() {
 		res := cache.WaitInstance()
 		state := res.State.(pinActionsState)
-		ctx := state.ctx // the installation activity context
+		installCtx := state.ctx // the installation activity context
 		deployErr := res.Err
+
+		// Mark the fetch activity as completed.
+		ui.ActivityDone(res.Context)
 
 		// Check if we are even allowed to install this package. Note that
 		// CheckAdmission results are cached internally and it is fine to call
 		// it multiple times with the same pin (which may happen if we are
 		// refetching a corrupted package).
 		if deployErr == nil && client.pluginAdmission != nil {
-			admErr := client.pluginAdmission.CheckAdmission(state.pin).Wait(ctx)
+			admErr := client.pluginAdmission.CheckAdmission(state.pin).Wait(installCtx)
 			if admErr != nil {
 				deployErr = errors.Annotate(admErr, "not admitted for deployment").Err()
 			}
@@ -1670,9 +1685,9 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		for deployErr == nil && actionIdx < len(state.updates) {
 			switch a := state.updates[actionIdx]; a.action {
 			case ActionInstall:
-				_, deployErr = client.deployer.DeployInstance(ctx, a.subdir, res.Instance, maxThreads)
+				_, deployErr = client.deployer.DeployInstance(installCtx, a.subdir, res.Instance, maxThreads)
 			case ActionRepair:
-				deployErr = client.deployer.RepairDeployed(ctx, a.subdir, state.pin, maxThreads, deployer.RepairParams{
+				deployErr = client.deployer.RepairDeployed(installCtx, a.subdir, state.pin, maxThreads, deployer.RepairParams{
 					Instance:   res.Instance,
 					ToRedeploy: a.repairPlan.ToRedeploy,
 					ToRelink:   a.repairPlan.ToRelink,
@@ -1690,7 +1705,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		// nil if res.Err above was non-nil.
 		corruption := reader.IsCorruptionError(deployErr)
 		if res.Instance != nil {
-			res.Instance.Close(ctx, corruption)
+			res.Instance.Close(installCtx, corruption)
 		}
 
 		// If we've got a corrupted package, ask the cache to refetch it. We'll
@@ -1700,10 +1715,10 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		//
 		// Do it no more than once.
 		if corruption && state.attempts < 1 {
-			logging.Warningf(res.Context, "Refetching %s after failing to unpack it: %s", state.pin, deployErr)
+			logging.Warningf(installCtx, "Refetching %s after failing to unpack it: %s", state.pin, deployErr)
 			cache.RequestInstances([]*internal.InstanceRequest{
 				{
-					Context: res.Context, // reuse the existing download UI activity
+					Context: ui.NewActivity(ctx, activities, "fetch"),
 					Pin:     state.pin,
 					Open:    true,
 					State: pinActionsState{
@@ -1721,9 +1736,10 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		// Mark all unfinished actions as failed if necessary.
 		if deployErr != nil {
 			for ; actionIdx < len(state.updates); actionIdx++ {
-				reportActionErr(ctx, state.updates[actionIdx], deployErr)
+				reportActionErr(installCtx, state.updates[actionIdx], deployErr)
 			}
 		}
+		ui.ActivityDone(installCtx)
 	}
 
 	// Opportunistically cleanup the trash left from previous installs.

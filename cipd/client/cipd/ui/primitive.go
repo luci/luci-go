@@ -117,6 +117,9 @@ func (a *primitiveActivity) Log(ctx context.Context, level logging.Level, callde
 	a.logger(ctx).LogCall(level, calldepth+1, a.logPrefix()+f, args)
 }
 
+func (a *primitiveActivity) Done(ctx context.Context) {
+}
+
 func (a *primitiveActivity) logPrefix() string {
 	if a.parent != nil {
 		return a.parent.logPrefix(a.kind, a.id)
