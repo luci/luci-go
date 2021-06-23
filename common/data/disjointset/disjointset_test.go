@@ -61,4 +61,24 @@ func TestDisjointSet(t *testing.T) {
 			}
 		}
 	})
+
+	Convey("DisjointSet SortedSets & String work", t, func() {
+		d := New(7)
+		d.Merge(0, 4)
+		d.Merge(0, 6)
+		d.Merge(1, 3)
+		d.Merge(2, 5)
+
+		So(d.SortedSets(), ShouldResemble, [][]int{
+			{0, 4, 6},
+			{1, 3},
+			{2, 5},
+		})
+
+		So(d.String(), ShouldResemble, `DisjointSet([
+  [0, 4, 6]
+  [1, 3]
+  [2, 5]
+])`)
+	})
 }

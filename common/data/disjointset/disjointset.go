@@ -15,6 +15,12 @@
 // Package DisjointSet provides a disjoint-set data structure with fixed size.
 package disjointset
 
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
+
 // DisjointSet implements a disjoint-set data structure with fixed size.
 //
 // Each element is represented by a 0-based array index.
@@ -91,4 +97,60 @@ func (d *DisjointSet) Merge(i, j int) bool {
 	d.items[i].size += d.items[j].size
 	d.count--
 	return true
+}
+
+// Sets returns disjoint sets in an unspecified unorder.
+//
+// Elements in each set are sorted.
+func (d DisjointSet) Sets() [][]int {
+	byParent := make(map[int][]int, d.count)
+	for i := range d.items {
+		root := d.RootOf(i)
+		byParent[root] = append(byParent[root], i)
+	}
+	out := make([][]int, 0, d.count)
+	for _, set := range byParent {
+		sort.Ints(set)
+		out = append(out, set)
+	}
+	return out
+}
+
+// SortedSets returns disjoint sets ordered by size, largest first.
+//
+// For determinism, when size is the same, set with smaller first element is
+// first.
+//
+// Elements in each set are sorted.
+func (d DisjointSet) SortedSets() [][]int {
+	out := d.Sets()
+	sort.Slice(out, func(i, j int) bool {
+		switch l, r := len(out[i]), len(out[j]); {
+		case l > r:
+			return true
+		case l < r:
+			return false
+		default:
+			return out[i][0] < out[j][0]
+		}
+	})
+	return out
+}
+
+// String formats a disjoint set as a human-readable string.
+func (d DisjointSet) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("DisjointSet([\n")
+	for _, set := range d.SortedSets() {
+		sb.WriteString("  [")
+		for i, el := range set {
+			if i != 0 {
+				sb.WriteString(", ")
+			}
+			fmt.Fprintf(&sb, "%d", el)
+		}
+		sb.WriteString("]\n")
+	}
+	sb.WriteString("])")
+	return sb.String()
 }
