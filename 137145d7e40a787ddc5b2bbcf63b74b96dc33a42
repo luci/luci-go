@@ -16,6 +16,24 @@
       "message": "Vadim, could you tell me please, when changes in this PR will be rolled to main chromium?",
       "revId": "137145d7e40a787ddc5b2bbcf63b74b96dc33a42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee47255e_df93ae65",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-24T03:24:57Z",
+      "side": 1,
+      "message": "I assume by \"rolled to main chromium\" you mean rolled into depot_tools, since chromium/src.git doesn\u0027t directly pin version of CIPD anywhere.\n\nI was planning to finish some changes of my own (https://crbug.com/1217435) and roll it all out at once. I expect it will happen next Monday June 28. Is that acceptable?",
+      "parentUuid": "b0fd0c4d_284713d4",
+      "revId": "137145d7e40a787ddc5b2bbcf63b74b96dc33a42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
