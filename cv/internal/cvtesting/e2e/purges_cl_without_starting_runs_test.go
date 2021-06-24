@@ -20,10 +20,15 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -299,5 +304,61 @@ func TestPurgesCLCQDependingOnItself(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
 		})
+	})
+}
+
+func TestPurgesOnTriggerReuse(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges CL which CQ-Depends on itself", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject = "chromiumos"
+			gHost    = "chromium-review.example.com"
+			gRepo    = "cros/platform"
+			gRef     = "refs/heads/main"
+			gChange  = 44
+		)
+
+		ct.LogPhase(ctx, "CV starts CQ Dry Run")
+		ct.EnableCVRunManagement(ctx, lProject)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		prjcfgtest.Create(ctx, lProject, cfg)
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+
+		tStart := ct.Now()
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
+			gf.Owner("user-1"),
+			gf.CQ(+1, tStart, gf.U("user-1")),
+		)))
+
+		var first *run.Run
+		ct.RunUntil(ctx, func() bool {
+			first = ct.EarliestCreatedRunOf(ctx, lProject)
+			return runtest.AreRunning(first)
+		})
+
+		ct.LogPhase(ctx, "User abandons the CL and CV completes the Run")
+		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
+			ct.Clock.Add(time.Minute)
+			c.Info.Status = gerritpb.ChangeStatus_MERGED
+			c.Info.Updated = timestamppb.New(ct.Clock.Now())
+		})
+		ct.RunUntil(ctx, func() bool { return runtest.AreEnded(ct.LoadRun(ctx, first.ID)) })
+
+		ct.LogPhase(ctx, "User restores the CL and CV purges the CL")
+		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
+			ct.Clock.Add(time.Minute)
+			c.Info.Status = gerritpb.ChangeStatus_NEW
+			c.Info.Updated = timestamppb.New(ct.Clock.Now())
+		})
+		ct.RunUntil(ctx, func() bool { return ct.MaxCQVote(ctx, gHost, gChange) == 0 })
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "triggered by the same vote")
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, string(first.ID))
 	})
 }

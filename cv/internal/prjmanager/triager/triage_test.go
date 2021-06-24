@@ -102,6 +102,45 @@ func TestTriage(t *testing.T) {
 			return c
 		}
 
+		putPCL := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
+			mods := []gf.CIModifier{gf.PS(1), gf.Updated(triggerTime)}
+			u := gf.U("user-1")
+			switch mode {
+			case run.FullRun:
+				mods = append(mods, gf.CQ(+2, triggerTime, u))
+			case run.DryRun:
+				mods = append(mods, gf.CQ(+1, triggerTime, u))
+			default:
+				panic(fmt.Errorf("unsupported %s", mode))
+			}
+			ci := gf.CI(clid, mods...)
+			tr := trigger.Find(ci, nil)
+			So(tr.GetMode(), ShouldResemble, string(mode))
+			cl := &changelist.CL{
+				ID:       common.CLID(clid),
+				EVersion: 1,
+				Snapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+					Host: gHost,
+					Info: ci,
+				}}},
+			}
+			for _, d := range depsCLIDs {
+				cl.Snapshot.Deps = append(cl.Snapshot.Deps, &changelist.Dep{
+					Clid: int64(d),
+					Kind: changelist.DepKind_SOFT,
+				})
+			}
+			So(datastore.Put(ctx, cl), ShouldBeNil)
+			return cl, &prjpb.PCL{
+				Clid:               int64(clid),
+				Eversion:           1,
+				Status:             prjpb.PCL_OK,
+				ConfigGroupIndexes: []int32{grpIndex},
+				Trigger:            tr,
+				Deps:               cl.Snapshot.GetDeps(),
+			}
+		}
+
 		Convey("Noops", func() {
 			pm.pb.Pcls = []*prjpb.PCL{
 				{Clid: 33, ConfigGroupIndexes: []int32{singIdx}, Trigger: dryRun(ct.Clock.Now())},
@@ -118,7 +157,7 @@ func TestTriage(t *testing.T) {
 			So(res.CLsToPurge, ShouldBeEmpty)
 		})
 
-		Convey("Prunes CLs", func() {
+		Convey("Purges CLs", func() {
 			pm.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid:               33,
@@ -163,48 +202,55 @@ func TestTriage(t *testing.T) {
 				So(res.CLsToPurge, ShouldHaveLength, 1)
 				So(res.RunsToCreate, ShouldBeEmpty)
 			})
+			Convey("with already existing Run:", func() {
+				_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second))
+				_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
+				pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
+				oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
+				ct.Clock.Add(stabilizationDelay)
+				const expectedRunID = "v8/9042327596854-1-690d9e2cc74b34aa"
+
+				Convey("wait a bit if Run is RUNNING", func() {
+					So(datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), ShouldBeNil)
+					res := mustTriage(oldC)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(5*time.Second).UTC())
+					So(res.RunsToCreate, ShouldBeEmpty)
+					So(res.CLsToPurge, ShouldBeEmpty)
+				})
+
+				r := &run.Run{
+					ID:      expectedRunID,
+					Status:  run.Status_CANCELLED,
+					EndTime: datastore.RoundTime(ct.Clock.Now().UTC()),
+				}
+				So(datastore.Put(ctx, r), ShouldBeNil)
+
+				Convey("wait a bit if Run was just finalized", func() {
+					ct.Clock.Add(5 * time.Second)
+					res := mustTriage(oldC)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, r.EndTime.Add(time.Minute).UTC())
+					So(res.RunsToCreate, ShouldBeEmpty)
+					So(res.CLsToPurge, ShouldBeEmpty)
+				})
+
+				Convey("purge CLs due to trigger re-use after long-ago finished Run", func() {
+					ct.Clock.Add(2 * time.Minute)
+					res := mustTriage(oldC)
+					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+					So(res.RunsToCreate, ShouldBeEmpty)
+					So(res.CLsToPurge, ShouldHaveLength, 2)
+					for _, p := range res.CLsToPurge {
+						So(p.GetReasons(), ShouldHaveLength, 1)
+						So(p.GetReasons()[0].GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
+					}
+				})
+			})
 		})
 
 		Convey("Creates Runs", func() {
-			putPCL := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
-				mods := []gf.CIModifier{gf.PS(1), gf.Updated(triggerTime)}
-				u := gf.U("user-1")
-				switch mode {
-				case run.FullRun:
-					mods = append(mods, gf.CQ(+2, triggerTime, u))
-				case run.DryRun:
-					mods = append(mods, gf.CQ(+1, triggerTime, u))
-				default:
-					panic(fmt.Errorf("unsupported %s", mode))
-				}
-				ci := gf.CI(clid, mods...)
-				tr := trigger.Find(ci, nil)
-				So(tr.GetMode(), ShouldResemble, string(mode))
-				cl := &changelist.CL{
-					ID:       common.CLID(clid),
-					EVersion: 1,
-					Snapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
-						Host: gHost,
-						Info: ci,
-					}}},
-				}
-				for _, d := range depsCLIDs {
-					cl.Snapshot.Deps = append(cl.Snapshot.Deps, &changelist.Dep{
-						Clid: int64(d),
-						Kind: changelist.DepKind_SOFT,
-					})
-				}
-				So(datastore.Put(ctx, cl), ShouldBeNil)
-				return cl, &prjpb.PCL{
-					Clid:               int64(clid),
-					Eversion:           1,
-					Status:             prjpb.PCL_OK,
-					ConfigGroupIndexes: []int32{grpIndex},
-					Trigger:            tr,
-					Deps:               cl.Snapshot.GetDeps(),
-				}
-			}
-
 			Convey("Singular", func() {
 				Convey("OK", func() {
 					_, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
