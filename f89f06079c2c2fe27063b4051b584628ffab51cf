@@ -16,6 +16,24 @@
       "message": "i guess this is the reason why refresh-gerrit-cl error rate high alert fires this morning?",
       "revId": "f89f06079c2c2fe27063b4051b584628ffab51cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef5bb529_b62a5879",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-24T17:24:52Z",
+      "side": 1,
+      "message": "dunno. I was inspired by -dev while testing 240-CL long stacks 😊",
+      "parentUuid": "1f2e86ae_797c9cf5",
+      "revId": "f89f06079c2c2fe27063b4051b584628ffab51cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
