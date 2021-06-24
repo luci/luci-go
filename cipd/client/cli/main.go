@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/system/terminal"
 
 	"go.chromium.org/luci/auth/client/authcli"
 
@@ -57,10 +58,19 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/plugin/host"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
 )
 
 // TODO(vadimsh): Add some tests.
+
+// This is a killswitch that disables the fancy terminal progress bar UI in case
+// it has some fatal bugs or a user has aversion towards it.
+//
+// Note that cipd.Client doesn't know anything about the UI implementation and
+// thus this env var is defined here rather than in cipd/client.go like other
+// env vars.
+const envSimpleTerminalUI = "CIPD_SIMPLE_TERMINAL_UI"
 
 func expandTemplate(tmpl string) (pkg string, err error) {
 	pkg, err = template.DefaultExpander().Expand(tmpl)
@@ -129,6 +139,19 @@ func (c *cipdSubcommand) ModifyContext(ctx context.Context) context.Context {
 	} else {
 		ctx = c.logConfig.Set(ctx)
 	}
+
+	// Note: cli.Getenv is not effective here yet since the context is not fully
+	// initialized.
+	useSimpleUI := os.Getenv(envSimpleTerminalUI) == "1"
+
+	// If writing to a real terminal (rather than redirecting to a file) and not
+	// running at a verbose logging level, use a fancy UI with progress bars. It
+	// is more human readable, but doesn't preserve details of all operations in
+	// the terminal output.
+	if !useSimpleUI && logging.GetLevel(ctx) > logging.Debug && terminal.IsTerminal(int(os.Stderr.Fd())) {
+		ctx = ui.SetImplementation(ctx, &ui.FancyImplementation{Out: os.Stderr})
+	}
+
 	return ctx
 }
 
@@ -3323,6 +3346,10 @@ func GetApplication(params Parameters) *cli.Application {
 			cipd.EnvCIPDServiceUrl: {
 				Advanced:  true,
 				ShortDesc: "Override CIPD service URL.",
+			},
+			envSimpleTerminalUI: {
+				Advanced:  true,
+				ShortDesc: "If set disables the fancy terminal UI with progress bars in favor of a simpler one that just logs to stderr.",
 			},
 		},
 
