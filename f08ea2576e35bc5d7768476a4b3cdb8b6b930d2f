@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5b65f30_b9402766",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-24T00:23:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2d21b5d_8929e840",
+      "range": {
+        "startLine": 355,
+        "startChar": 9,
+        "endLine": 355,
+        "endChar": 15
+      },
+      "revId": "f08ea2576e35bc5d7768476a4b3cdb8b6b930d2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b6a412ed_44575d37",
