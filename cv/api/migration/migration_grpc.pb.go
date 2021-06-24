@@ -23,8 +23,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MigrationClient interface {
-	// ReportRuns is deprecated.
-	ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
 	//
 	// The Run may not contain CV's id, but CV can figure out the the ID using
@@ -86,15 +84,6 @@ type migrationClient struct {
 
 func NewMigrationClient(cc grpc.ClientConnInterface) MigrationClient {
 	return &migrationClient{cc}
-}
-
-func (c *migrationClient) ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/migration.Migration/ReportRuns", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *migrationClient) ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
@@ -164,8 +153,6 @@ func (c *migrationClient) ReportUsedNetrc(ctx context.Context, in *ReportUsedNet
 // All implementations must embed UnimplementedMigrationServer
 // for forward compatibility
 type MigrationServer interface {
-	// ReportRuns is deprecated.
-	ReportRuns(context.Context, *ReportRunsRequest) (*emptypb.Empty, error)
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
 	//
 	// The Run may not contain CV's id, but CV can figure out the the ID using
@@ -226,9 +213,6 @@ type MigrationServer interface {
 type UnimplementedMigrationServer struct {
 }
 
-func (UnimplementedMigrationServer) ReportRuns(context.Context, *ReportRunsRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportRuns not implemented")
-}
 func (UnimplementedMigrationServer) ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportFinishedRun not implemented")
 }
@@ -261,24 +245,6 @@ type UnsafeMigrationServer interface {
 
 func RegisterMigrationServer(s grpc.ServiceRegistrar, srv MigrationServer) {
 	s.RegisterService(&Migration_ServiceDesc, srv)
-}
-
-func _Migration_ReportRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportRunsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MigrationServer).ReportRuns(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/migration.Migration/ReportRuns",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigrationServer).ReportRuns(ctx, req.(*ReportRunsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Migration_ReportFinishedRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -414,10 +380,6 @@ var Migration_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "migration.Migration",
 	HandlerType: (*MigrationServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "ReportRuns",
-			Handler:    _Migration_ReportRuns_Handler,
-		},
 		{
 			MethodName: "ReportFinishedRun",
 			Handler:    _Migration_ReportFinishedRun_Handler,
