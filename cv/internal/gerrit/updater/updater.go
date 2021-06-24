@@ -48,6 +48,7 @@ const (
 )
 
 var errStaleData = errors.New("Fetched stale Gerrit data", transient.Tag)
+var errOutOfQuota = errors.New("Out of Gerrit Quota", transient.Tag)
 
 // PM encapsulates interaction with Project Manager by the Gerrit CL Updater.
 type PM interface {
@@ -84,7 +85,7 @@ func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
 			return common.TQIfy{
 				// Don't log the entire stack trace of stale data, which is sadly an
 				// hourly occurrence.
-				KnownRetry: []error{errStaleData},
+				KnownRetry: []error{errStaleData, errOutOfQuota},
 			}.Error(ctx, err)
 		},
 	})

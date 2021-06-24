@@ -338,6 +338,8 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 	case codes.NotFound, codes.PermissionDenied:
 		// Either no access OR CL was deleted OR eventual consistency.
 		return nil, setNoAccess(true /* temporary */)
+	case codes.ResourceExhausted:
+		return nil, errOutOfQuota
 	default:
 		return nil, gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 	}
@@ -374,6 +376,8 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 		// change of ACLs. So, err transiently s.t. retry handles the same error
 		// when re-fetching ChangeInfo.
 		return errors.Annotate(err, "failed to fetch related changes for %s", f).Tag(transient.Tag).Err()
+	case codes.ResourceExhausted:
+		return errOutOfQuota
 	default:
 		return gerrit.UnhandledError(ctx, err, "failed to fetch related changes for %s", f)
 	}
@@ -568,6 +572,9 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 		// change of ACLs. So, err transiently s.t. retry handles the same error
 		// when re-fetching ChangeInfo.
 		return errors.Annotate(err, "failed to fetch files for %s", f).Tag(transient.Tag).Err()
+
+	case codes.ResourceExhausted:
+		return errOutOfQuota
 
 	default:
 		return gerrit.UnhandledError(ctx, err, "failed to fetch files for %s", f)
