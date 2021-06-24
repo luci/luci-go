@@ -70,6 +70,23 @@
       "parentUuid": "29b00651_fee02133",
       "revId": "ccc5cd57bc84c5cb5eb42da8381ac28be01622bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "baa873ec_5cd3572f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-24T09:52:16Z",
+      "side": 1,
+      "message": "thank you for review, Takuto!",
+      "revId": "ccc5cd57bc84c5cb5eb42da8381ac28be01622bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
