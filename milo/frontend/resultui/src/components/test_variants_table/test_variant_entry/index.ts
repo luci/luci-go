@@ -27,13 +27,16 @@ import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../.
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
-import { TestVariant } from '../../../services/resultdb';
+import { TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
 const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite']);
+
+// Only track test variants with unexpected, non-exonerated test results.
+const TRACKED_STATUS = [TestVariantStatus.UNEXPECTED, TestVariantStatus.UNEXPECTEDLY_SKIPPED, TestVariantStatus.FLAKY];
 
 /**
  * Renders an expandable entry of the given test variant.
@@ -145,6 +148,22 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     return this.columnGetters.map((fn) => fn(this.variant));
   }
 
+  private trackInteraction = () => {
+    if (TRACKED_STATUS.includes(this.variant.status)) {
+      trackEvent(GA_CATEGORIES.TEST_VARIANT_WITH_UNEXPECTED_RESULTS, GA_ACTIONS.INSPECT_TEST, VISIT_ID);
+    }
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener('click', this.trackInteraction);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener('click', this.trackInteraction);
+    super.disconnectedCallback();
+  }
+
   private renderBody() {
     if (!this.shouldRenderContent) {
       return html``;
@@ -159,7 +178,10 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           <span class="greyed-out" title=${this.variant.testId}>ID: ${this.variant.testId}</span>
           <milo-copy-to-clipboard
             .textToCopy=${this.variant.testId}
-            @click=${(e: Event) => e.stopPropagation()}
+            @click=${(e: Event) => {
+              e.stopPropagation();
+              this.trackInteraction();
+            }}
             title="copy test ID to clipboard"
           ></milo-copy-to-clipboard>
         </div>
@@ -217,13 +239,19 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
             <span title=${this.longName}>${this.shortName}</span>
             <milo-copy-to-clipboard
               .textToCopy=${this.longName}
-              @click=${(e: Event) => e.stopPropagation()}
+              @click=${(e: Event) => {
+                e.stopPropagation();
+                this.trackInteraction();
+              }}
               title="copy test name to clipboard"
             ></milo-copy-to-clipboard>
             <milo-copy-to-clipboard
               id="link-copy-button"
               .textToCopy=${() => this.genTestLink()}
-              @click=${(e: Event) => e.stopPropagation()}
+              @click=${(e: Event) => {
+                e.stopPropagation();
+                this.trackInteraction();
+              }}
               title="copy link to the test"
             >
               <mwc-icon slot="copy-icon">link</mwc-icon>
