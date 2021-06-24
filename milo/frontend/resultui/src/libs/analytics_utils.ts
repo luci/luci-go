@@ -20,7 +20,7 @@ export enum GA_CATEGORIES {
   RELATED_BUILD_TAB = 'Related Builds Tab',
   TIMELINE_TAB = 'Timeline Tab',
   BLAMELIST_TAB = 'Blamelist Tab',
-  STEP_LINKS_OF_BUILD_WITH_NON_EXPECTED_TESTS = 'Step Links of Build with Non-expected Tests',
+  STEP_WITH_UNEXPECTED_RESULTS = 'Step with Unexpected Results',
   LEGACY_BUILD_PAGE = 'Legacy Build Page',
 }
 
@@ -29,9 +29,9 @@ export enum GA_ACTIONS {
   SWITCH_VERSION_TEMP = 'Switch Version Temporarily',
   PAGE_VISITED = 'Page Visited',
   TAB_VISITED = 'Tab Visited',
-  CLICK = 'Click',
   LOADING_TIME = 'Loading Time',
   EXPAND_ENTRY = 'Expand Entry',
+  INSPECT_TEST = 'Inspect Test',
 }
 
 export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
