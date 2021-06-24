@@ -16,6 +16,46 @@
       "message": "+Takuto for stamping",
       "revId": "337efbc7325ae8c5df9545e1f875c20deb5b449d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d513bcac_55391a3d",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-24T09:20:38Z",
+      "side": 1,
+      "message": "http://go/tott/486 prefers issue number rather than username.\nThere is no issue for this?",
+      "range": {
+        "startLine": 361,
+        "startChar": 14,
+        "endLine": 361,
+        "endChar": 21
+      },
+      "revId": "337efbc7325ae8c5df9545e1f875c20deb5b449d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f80d314_8921c3b6",
+        "filename": "cv/internal/usertext/cl_error.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-24T09:20:38Z",
+      "side": 1,
+      "message": "ditto if you actually plan to fix this?",
+      "revId": "337efbc7325ae8c5df9545e1f875c20deb5b449d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
