@@ -34,6 +34,24 @@
       "parentUuid": "0de15eac_15305cf7",
       "revId": "8a2b567d9aaf6a29dddbae3c752fc6adb74aef10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a73444a_d2739b4d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-24T21:53:57Z",
+      "side": 1,
+      "message": "\u003e Where would I make that change?\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/lucicfg/starlark/stdlib/internal/luci/generators.star#381\n\nI think to_json should be changed to json.indent(to_json(...), ...): https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/lucicfg/doc/README.md#json.indent\n\nAnother change we can do at this time (since we are messing with JSON output anyway) is to replace to_json with json.encode, since to_json is deprecated in favor of starlark-standard `json` module. It will change the order of keys in the generated JSON from alphabetical to the original order in the starlark dicts (which is deterministic and based on order of insertion). Not sure how many people it will upset though... It may also turn all existing cr-buildbucket.cfg into not passing `lucicfg validate`. You can try it with Chromium configs and see if it looks nicer or not.\n\n(See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/lucicfg/README.md#making-changes-to-the-starlark-portion-of-the-code for how to make changes to the starlark portion of lucicfg)",
+      "parentUuid": "bdb0ba25_3e092da3",
+      "revId": "8a2b567d9aaf6a29dddbae3c752fc6adb74aef10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
