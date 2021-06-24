@@ -40,6 +40,9 @@ import (
 //
 // Guarantees that returned Run Creators are CL-wise disjoint, and thus can be
 // created totally independently.
+//
+// In exceptional cases, also marks some CLs for purging if their trigger
+// matches the existing finalized Run.
 func stageNewRuns(ctx context.Context, c *prjpb.Component, cls map[int64]*clInfo, pm pmState) ([]*runcreator.Creator, time.Time, error) {
 	var next time.Time
 	var out []*runcreator.Creator
@@ -191,7 +194,41 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 	if err != nil {
 		return nil, time.Time{}, err
 	}
-	return rc, time.Time{}, nil
+
+	// Check if Run about to be created already exists in order to detect avoid
+	// infinite retries if CL triggers are somehow re-used.
+	existing := run.Run{ID: rc.ExpectedRunID()}
+	switch err := datastore.Get(ctx, &existing); {
+	case err == datastore.ErrNoSuchEntity:
+		// This is the expected case.
+		// NOTE: actual creation may still fail due to a race, and that's fine.
+		return rc, time.Time{}, nil
+	case err != nil:
+		return nil, time.Time{}, errors.Annotate(err, "failed to check for existing Run %q", existing.ID).Tag(transient.Tag).Err()
+	case !run.IsEnded(existing.Status):
+		// The Run already exists. Most likely another triager called from another
+		// TQ was first. Check again in a few seconds, at which point PM should
+		// incorporate existing Run into its state.
+		logging.Warningf(ctx, "Run %q already exists. If this warning persists, there is a bug in PM which appears to not see this Run", existing.ID)
+		return nil, clock.Now(ctx).Add(5 * time.Second), nil
+	default:
+		since := clock.Since(ctx, existing.EndTime)
+		if since < time.Minute {
+			logging.Warningf(ctx, "Recently finalized Run %q already exists, will check later", existing.ID)
+			return nil, existing.EndTime.Add(time.Minute), nil
+		}
+		logging.Errorf(ctx, "Run %q already exists, finalized %s ago; will purge CLs with reused triggers", existing.ID, since)
+		for _, info := range combo.all {
+			info.purgeReasons = append(info.purgeReasons, &changelist.CLError{
+				Kind: &changelist.CLError_ReusedTrigger_{
+					ReusedTrigger: &changelist.CLError_ReusedTrigger{
+						Run: string(existing.ID),
+					},
+				},
+			})
+		}
+		return nil, time.Time{}, nil
+	}
 }
 
 func (a *runStage) reverseDeps() map[int64][]int64 {
