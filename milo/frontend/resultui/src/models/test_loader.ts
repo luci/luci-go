@@ -241,6 +241,36 @@ export class TestLoader {
     }
   }
 
+  private readonly stepsWithUnexpectedResults = new Set<string>();
+
+  /**
+   * Returns true if the step has unexpected, non-exonerated test results.
+   * Returns false otherwise.
+   *
+   * This function may return false negatives when tests are not all loaded. But
+   * because builds typically take longer to load than tests, it's unlikely for
+   * the users to click on a step entry before all unexpected test results are
+   * loaded.
+   *
+   * TODO(weiweilin): delete this once we no longer needs it to record GA
+   * events.
+   */
+  hasAssociatedUnexpectedResults(stepName: string) {
+    return this.stepsWithUnexpectedResults.has(stepName);
+  }
+
+  /**
+   * Adds the associated steps of the test variant to stepsWithFailedResults.
+   */
+  private recordStep(v: TestVariant) {
+    v.results?.forEach((r) => {
+      const stepName = r.result.tags?.find((t) => t.key === 'step_name')?.value;
+      if (stepName !== undefined) {
+        this.stepsWithUnexpectedResults.add(stepName);
+      }
+    });
+  }
+
   @action
   private processTestVariants(testVariants: readonly TestVariant[]) {
     this.unfilteredTestVariantCount += testVariants.length;
@@ -250,16 +280,19 @@ export class TestLoader {
           this._stage = LoadingStage.LoadingUnexpected;
           this.unfilteredUnexpectedVariants.push(testVariant);
           this.unfilteredNonExpectedVariants.push(testVariant);
+          this.recordStep(testVariant);
           break;
         case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
           this._stage = LoadingStage.LoadingUnexpectedlySkipped;
           this._unfilteredUnexpectedlySkippedVariantsCount++;
           this.unfilteredNonExpectedVariants.push(testVariant);
+          this.recordStep(testVariant);
           break;
         case TestVariantStatus.FLAKY:
           this._stage = LoadingStage.LoadingFlaky;
           this._unfilteredFlakyVariantsCount++;
           this.unfilteredNonExpectedVariants.push(testVariant);
+          this.recordStep(testVariant);
           break;
         case TestVariantStatus.EXONERATED:
           this._stage = LoadingStage.LoadingExonerated;
