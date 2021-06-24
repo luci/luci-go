@@ -52,6 +52,24 @@
       "parentUuid": "b3bd139c_d7faaf33",
       "revId": "ccc5cd57bc84c5cb5eb42da8381ac28be01622bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "493afdcc_c062a871",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-24T09:51:55Z",
+      "side": 1,
+      "message": "ACK. I\u0027m not a maximalist in this regard, because I find bug updates too noisy on monorail bugs.",
+      "parentUuid": "29b00651_fee02133",
+      "revId": "ccc5cd57bc84c5cb5eb42da8381ac28be01622bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
