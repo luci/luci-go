@@ -307,6 +307,18 @@ class ErrorHandlerTestForwardWithoutMsgElement extends LitElement {
   }
 }
 
+@customElement('milo-error-handler-test-recover')
+@errorHandler((e) => {
+  e.stopImmediatePropagation();
+  e.preventDefault();
+  return false;
+})
+class ErrorHandlerTestRecoverElement extends LitElement {
+  protected render() {
+    return html`<slot></slot>`;
+  }
+}
+
 describe('forwardWithoutMsg', () => {
   it('should dispatch an error event to the parent element with the same error but no message', async () => {
     after(fixtureCleanup);
@@ -321,7 +333,7 @@ describe('forwardWithoutMsg', () => {
     const errorHandlerEle = parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
       'milo-error-handler-test-forward-without-msg'
     )!;
-    const err = new Error();
+    const err = new Error('error msg');
     const childEle = errorHandlerEle.querySelector('div')!;
     childEle.dispatchEvent(new ErrorEvent('error', { error: err, message: 'error msg', bubbles: true }));
     await aTimeout(0);
@@ -333,5 +345,51 @@ describe('forwardWithoutMsg', () => {
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
     assert.strictEqual((event as ErrorEvent).message, '');
+  });
+
+  it('should recover from the error if e.preventDefault() is called', async () => {
+    after(fixtureCleanup);
+    const parentEle = await fixture(html`
+      <milo-error-handler-test-recover>
+        <milo-error-handler-test-forward-without-msg>
+          <div></div>
+        </milo-error-handler-test-forward-without-msg>
+      </milo-error-handler-test-recover>
+    `);
+    const errorHandlerEle = parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
+      'milo-error-handler-test-forward-without-msg'
+    )!;
+    const err = new Error('error msg');
+    const childEle = errorHandlerEle.querySelector('div')!;
+    childEle.dispatchEvent(
+      new ErrorEvent('error', { error: err, message: 'error msg', bubbles: true, cancelable: true })
+    );
+    await aTimeout(0);
+    assert.strictEqual(errorHandlerEle.shadowRoot?.querySelector('pre'), null);
+  });
+
+  it('can recover from the error even when the error is forwarded multiple times', async () => {
+    after(fixtureCleanup);
+    const parentEle = await fixture<ErrorHandlerTestRecoverElement>(html`
+      <milo-error-handler-test-recover>
+        <milo-error-handler-test-forward-without-msg id="outer">
+          <div>
+            <milo-error-handler-test-forward-without-msg id="inner">
+              <div id="child"></div>
+            </milo-error-handler-test-forward-without-msg>
+          </div>
+        </milo-error-handler-test-forward-without-msg>
+      </milo-error-handler-test-recover>
+    `);
+    const outerErrorHandlerEle = parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>('#outer')!;
+    const innerErrorHandlerEle = parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>('#inner')!;
+    const err = new Error('error msg');
+    const childEle = innerErrorHandlerEle.querySelector('#child')!;
+    childEle.dispatchEvent(
+      new ErrorEvent('error', { error: err, message: 'error msg', bubbles: true, cancelable: true })
+    );
+    await aTimeout(0);
+    assert.strictEqual(outerErrorHandlerEle.shadowRoot?.querySelector('pre'), null);
+    assert.strictEqual(innerErrorHandlerEle.shadowRoot?.querySelector('pre'), null);
   });
 });
