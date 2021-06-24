@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f2e86ae_797c9cf5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-24T17:23:34Z",
+      "side": 1,
+      "message": "i guess this is the reason why refresh-gerrit-cl error rate high alert fires this morning?",
+      "revId": "f89f06079c2c2fe27063b4051b584628ffab51cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
