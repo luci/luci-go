@@ -317,7 +317,6 @@ type Gerrit struct {
 	//      * number
 	//      * ref
 	//      * created
-	//      * description (patchset title)
 	//      * commit (for current_revision only)
 	//          * message (current CL description)
 	//  * labels
