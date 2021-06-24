@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 )
@@ -122,7 +123,9 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	// Initialize the client.
 	options := []option.ClientOption{
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
-		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(grpcmon.NewUnaryClientInterceptor(nil))),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(
+			grpcmon.NewUnaryClientInterceptor(grpcutil.UnaryClientPanicCatcherInterceptor),
+		)),
 	}
 	if m.opts.SpannerEndpoint != "" {
 		options = append(options, option.WithEndpoint(m.opts.SpannerEndpoint))

@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 
@@ -278,7 +279,9 @@ func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, u
 	return cloudlogging.NewClient(
 		ctx, cloudProject,
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)),
-		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(grpcmon.NewUnaryClientInterceptor(nil))),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(grpcmon.NewUnaryClientInterceptor(
+			grpcutil.UnaryClientPanicCatcherInterceptor,
+		))),
 	)
 }
 

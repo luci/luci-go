@@ -35,3 +35,16 @@ func UnaryServerPanicCatcherInterceptor(ctx context.Context, req interface{}, in
 	})
 	return handler(ctx, req)
 }
+
+// UnaryClientPanicCatcherInterceptor is a grpc.UnaryClientInterceptor that
+// catches panics in RPC calls, recovers them and returns codes.Internal gRPC
+// errors instead.
+func UnaryClientPanicCatcherInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
+	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+		logging.Fields{
+			"panic.error": p.Reason,
+		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", method, p.Reason, p.Stack)
+		err = Internal
+	})
+	return invoker(ctx, method, req, reply, cc, opts...)
+}
