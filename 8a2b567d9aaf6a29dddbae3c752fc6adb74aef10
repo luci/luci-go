@@ -16,6 +16,24 @@
       "message": "Please bump https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/lucicfg/version.go#27.\n\nAlso have you tried using thus compiled lucicfg against Chromium configs to see if it works for real?",
       "revId": "8a2b567d9aaf6a29dddbae3c752fc6adb74aef10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bdb0ba25_3e092da3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-06-24T21:34:04Z",
+      "side": 1,
+      "message": "The buildbucket output would need to be modified to produce a multiline string for the properties. Right now it\u0027s just a single line json blob. Where would I make that change?\n\nWith a generator that turns it into a multiline string, running lucicfg compiled with this change breaks it up into multiple strings as expected.",
+      "parentUuid": "0de15eac_15305cf7",
+      "revId": "8a2b567d9aaf6a29dddbae3c752fc6adb74aef10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
