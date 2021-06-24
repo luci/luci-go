@@ -138,6 +138,12 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		args["deps"] = urls
 		return t.Execute(sb, args)
 
+	case *changelist.CLError_ReusedTrigger_:
+		if v.ReusedTrigger == nil {
+			return errors.New("reused_trigger must be set")
+		}
+		return tmplReusedTrigger.Execute(sb, v.ReusedTrigger)
+
 	default:
 		return errors.Reason("unsupported purge reason %t: %s", v, reason).Err()
 	}
@@ -231,4 +237,14 @@ var tmplCombinableMismatchedMode = tmplMust(`
 
 var tmplTooManyDeps = tmplMust(`
 {{CQ_OR_CV}} can't process the CL because it has too many deps: {{.actual}} (max supported: {{.max}})
+`)
+
+// TODO(crbug/1223350): once we have a way to reference prior Runs, add a link
+// to the Run.
+var tmplReusedTrigger = tmplMust(`
+{{CQ_OR_CV}} can't process the CL because it has previously completed a Run ({{.Run | printf "%q"}}) triggered by the same vote(s).
+
+This may happens in rare circumstances such as moving a Gerrit Change to a new branch or abandoning & restoring the CL during an ongoing CQ Run.
+
+Please re-trigger the CQ if neccessary.
 `)

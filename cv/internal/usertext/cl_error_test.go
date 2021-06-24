@@ -178,6 +178,12 @@ func TestFormatCLError(t *testing.T) {
 					So(s, ShouldContainSubstring, "has too many deps: 5 (max supported: 4)")
 				})
 			})
+			Convey("Reuse of triggers", func() {
+				reason.Kind = &changelist.CLError_ReusedTrigger_{
+					ReusedTrigger: &changelist.CLError_ReusedTrigger{Run: "some/123-1-run"},
+				}
+				So(mustFormat(), ShouldContainSubstring, `previously completed a Run ("some/123-1-run") triggered by the same vote(s)`)
+			})
 		})
 
 		Convey("Multiple", func() {

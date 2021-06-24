@@ -319,6 +319,7 @@ message CLError {
     string unsupported_mode = 4;
     bool self_cq_depend = 5;
     string corrupt_gerrit_metadata = 6;
+    ReusedTrigger reused_trigger = 7;
   }
 
   message WatchedByManyConfigGroups {
@@ -345,5 +346,24 @@ message CLError {
     }
     // There are more non-submitted deps than is supported by CV.
     TooMany too_many = 6;
+  }
+
+  // ReusedTrigger means a CL trigger (e.g. CQ+1 vote) has already resulted in
+  // a CQ Run which was finalized.
+  //
+  // Two known cases when this happens with a Gerrit CL:
+  //  1. A user uploads a CL on ref A, then votes CQ+1.
+  //     Before the Dry Run completes, the CL is moved to ref B, while
+  //     preserving the CQ+1 vote.
+  //     The old Run is finalized, but the new Run has the exact same trigger,
+  //     which in CQDaemon-compatible mode means the new Run's ID is exactly the
+  //     same as the old one, so CV can't create a new Run.
+  //     TODO(crbug/1223349): after CQDaemon is deleted, the Run ID generation scheme
+  //     can take into account the ref of a CL, and this use case can be allowed.
+  //  2. The same as above but instead of moving CL between refs, abandon and
+  //     restore the CL.
+  message ReusedTrigger {
+    // ID of the finalized Run.
+    string run = 1;
   }
 }
