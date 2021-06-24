@@ -34,6 +34,24 @@
       "parentUuid": "b7e1740f_56fbe0a8",
       "revId": "ccc5cd57bc84c5cb5eb42da8381ac28be01622bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29b00651_fee02133",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-24T09:50:20Z",
+      "side": 1,
+      "message": "I tend to leave reference as far as possible. That is my preference.",
+      "parentUuid": "b3bd139c_d7faaf33",
+      "revId": "ccc5cd57bc84c5cb5eb42da8381ac28be01622bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
