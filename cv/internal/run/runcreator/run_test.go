@@ -244,7 +244,7 @@ func TestRunBuilder(t *testing.T) {
 		Convey("First test to fail: check ID assumption", func() {
 			// If this test fails due to change of runID scheme, update the constant
 			// above.
-			rb.prepare(ctx)
+			rb.prepare(ct.Clock.Now())
 			So(rb.runID, ShouldEqual, expectedRunID)
 		})
 
@@ -271,6 +271,19 @@ func TestRunBuilder(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(r, ShouldNotBeNil)
 			})
+		})
+
+		Convey("ExpectedRunID works if CreateTime is given", func() {
+			rb.CreateTime = ct.Clock.Now()
+			// For realism and to prevent non-determinism in production,
+			// make CreateTime in the past.
+			ct.Clock.Add(time.Second)
+			So(rb.ExpectedRunID(), ShouldResemble, common.RunID(expectedRunID))
+		})
+
+		Convey("ExpectedRunID panics if CreateTime is not given", func() {
+			rb.CreateTime = time.Time{}
+			So(func() { rb.ExpectedRunID() }, ShouldPanic)
 		})
 
 		Convey("New Run is created", func() {

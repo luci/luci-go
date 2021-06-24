@@ -147,9 +147,8 @@ func (rb *Creator) Create(ctx context.Context, pm PM, rm RM) (ret *run.Run, err 
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")
 	defer func() { span.End(err) }()
 
-	if err := rb.prepare(ctx); err != nil {
-		return nil, err
-	}
+	now := clock.Now(ctx)
+	rb.prepare(now)
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		ret, innerErr = rb.createTransactionally(ctx, pm, rm)
@@ -166,7 +165,18 @@ func (rb *Creator) Create(ctx context.Context, pm PM, rm RM) (ret *run.Run, err 
 	}
 }
 
-func (rb *Creator) prepare(ctx context.Context) error {
+// ExpectedRunID returns RunID of the Run to be created.
+//
+// Only works if non-Zero CreateTime is specified. Otherwise, panics.
+func (rb *Creator) ExpectedRunID() common.RunID {
+	if rb.CreateTime.IsZero() {
+		panic("CreateTime must be given")
+	}
+	rb.prepare(time.Time{})
+	return rb.runID
+}
+
+func (rb *Creator) prepare(now time.Time) {
 	switch {
 	case rb.LUCIProject == "":
 		panic("LUCIProject is required")
@@ -189,12 +199,11 @@ func (rb *Creator) prepare(ctx context.Context) error {
 		}
 	}
 	if rb.CreateTime.IsZero() {
-		rb.CreateTime = clock.Now(ctx)
+		rb.CreateTime = now
 	}
 	rb.CreateTime = datastore.RoundTime(rb.CreateTime).UTC()
 	rb.computeCLsDigest()
 	rb.computeRunID()
-	return nil
 }
 
 func (rb *Creator) createTransactionally(ctx context.Context, pm PM, rm RM) (*run.Run, error) {
