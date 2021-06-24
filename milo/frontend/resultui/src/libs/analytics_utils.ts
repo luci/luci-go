@@ -21,6 +21,7 @@ export enum GA_CATEGORIES {
   TIMELINE_TAB = 'Timeline Tab',
   BLAMELIST_TAB = 'Blamelist Tab',
   STEP_WITH_UNEXPECTED_RESULTS = 'Step with Unexpected Results',
+  TEST_VARIANT_WITH_UNEXPECTED_RESULTS = 'Test Variant with Unexpected Results',
   LEGACY_BUILD_PAGE = 'Legacy Build Page',
 }
 
