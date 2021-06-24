@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/system/terminal"
 
 	"go.chromium.org/luci/auth/client/authcli"
 
@@ -57,6 +58,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/plugin/host"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -129,6 +131,15 @@ func (c *cipdSubcommand) ModifyContext(ctx context.Context) context.Context {
 	} else {
 		ctx = c.logConfig.Set(ctx)
 	}
+
+	// If writing to a real terminal (rather than redirecting to a file) and not
+	// running at a verbose logging level, use a fancy UI with progress bars. It
+	// is more human readable, but doesn't preserve details of all operations in
+	// the terminal output.
+	if logging.GetLevel(ctx) > logging.Debug && terminal.IsTerminal(int(os.Stderr.Fd())) {
+		ctx = ui.SetImplementation(ctx, &ui.FancyImplementation{Out: os.Stderr})
+	}
+
 	return ctx
 }
 
