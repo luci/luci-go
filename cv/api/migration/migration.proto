@@ -34,9 +34,6 @@ import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
 // migration from CQDaemon to CV.
 service Migration {
 
-  // ReportRuns is deprecated.
-  rpc ReportRuns(ReportRunsRequest) returns (google.protobuf.Empty);
-
   // ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
   //
   // The Run may not contain CV's id, but CV can figure out the the ID using
@@ -97,10 +94,6 @@ service Migration {
   // CQDaemon.
   rpc ReportUsedNetrc(ReportUsedNetrcRequest) returns (google.protobuf.Empty);
 
-}
-
-message ReportRunsRequest {
-  repeated ReportedRun runs = 1;
 }
 
 message ReportFinishedRunRequest {

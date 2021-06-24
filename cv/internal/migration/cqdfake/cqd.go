@@ -239,15 +239,7 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	if len(errs) > 0 {
 		return errs
 	}
-
-	req := &migrationpb.ReportRunsRequest{
-		Runs: make([]*migrationpb.ReportedRun, 0, len(cqd.attempts)),
-	}
-	for _, a := range cqd.attempts {
-		req.Runs = append(req.Runs, a)
-	}
-	_, err = cqd.CV.ReportRuns(cqd.migrationAPIContext(ctx), req)
-	return err
+	return nil
 }
 
 func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*migrationpb.ReportedRun, error) {

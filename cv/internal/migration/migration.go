@@ -58,11 +58,6 @@ type MigrationServer struct {
 	migrationpb.UnimplementedMigrationServer
 }
 
-// ReportRuns is deprecated.
-func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.ReportRunsRequest) (resp *emptypb.Empty, err error) {
-	return &emptypb.Empty{}, nil
-}
-
 // ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
 // verifying.
 //
