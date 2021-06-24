@@ -22,6 +22,30 @@
       },
       "revId": "4670734e2fb636066d2724008e548546dfe5fba9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f4db21aa_25be40b9",
+        "filename": "milo/frontend/resultui/src/libs/analytics_utils.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-06-24T03:26:54Z",
+      "side": 0,
+      "message": "Sure. It\u0027s in the linked bug. https://crbug.com/1222912",
+      "parentUuid": "d3ef15da_45ba8642",
+      "range": {
+        "startLine": 23,
+        "startChar": 2,
+        "endLine": 23,
+        "endChar": 45
+      },
+      "revId": "4670734e2fb636066d2724008e548546dfe5fba9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
