@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -28,8 +29,55 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 
+	"github.com/protocolbuffers/txtpbfmt/ast"
 	"github.com/protocolbuffers/txtpbfmt/parser"
 )
+
+type textPBNodeTransformer func(node *ast.Node) (*ast.Node, error)
+
+func transformTextPBAst(nodes []*ast.Node, transform textPBNodeTransformer) error {
+	for i, node := range nodes {
+		node, err := transform(node)
+		if err != nil {
+			return err
+		}
+		nodes[i] = node
+		if err := transformTextPBAst(node.Children, transform); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isTextPBMultiline(astValue *ast.Value) bool {
+	value := astValue.Value
+	return strings.HasPrefix(value, `"`) &&
+		strings.HasSuffix(value, `"`) &&
+		!strings.HasPrefix(value, `"""`) &&
+		!strings.HasSuffix(value, `"""`) &&
+		strings.Contains(value, `\n`)
+}
+
+func convertTextPBMultiLine(node *ast.Node) (*ast.Node, error) {
+	var values []*ast.Value
+	for _, value := range node.Values {
+		if isTextPBMultiline(value) {
+			s := value.Value[1 : len(value.Value)-1]
+			for i, sub := range strings.SplitAfter(s, `\n`) {
+				newValue := &ast.Value{Value: fmt.Sprintf(`"%s"`, sub)}
+				if i == 0 {
+					newValue.PreComments = value.PreComments
+					newValue.InlineComment = value.InlineComment
+				}
+				values = append(values, newValue)
+			}
+		} else {
+			values = append(values, value)
+		}
+	}
+	node.Values = values
+	return node, nil
+}
 
 // ToTextPB serializes a protobuf message to text proto.
 func ToTextPB(msg *Message) ([]byte, error) {
@@ -44,9 +92,16 @@ func ToTextPB(msg *Message) ([]byte, error) {
 	}
 	// prototext randomly injects spaces into the generate output. Pass it through
 	// a formatter to get rid of them.
-	return parser.FormatWithConfig(blob, parser.Config{
+	nodes, err := parser.ParseWithConfig(blob, parser.Config{
 		SkipAllColons: true,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if err := transformTextPBAst(nodes, convertTextPBMultiLine); err != nil {
+		return nil, err
+	}
+	return []byte(parser.Pretty(nodes, 0)), nil
 }
 
 // ToJSONPB serializes a protobuf message to JSONPB string.

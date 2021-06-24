@@ -378,7 +378,7 @@ def _handle_executable(node):
         if executable.props.recipe:
             props_dict = dict(props_dict)
             props_dict["recipe"] = executable.props.recipe
-        properties = to_json(props_dict)
+        properties = json.indent(to_json(props_dict), indent = "  ")
     return executable_def, recipe_def, properties
 
 def _buildbucket_caches(caches):
