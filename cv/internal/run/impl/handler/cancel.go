@@ -51,6 +51,9 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	case err != nil:
 		return nil, err
 	case f != nil:
+		if err := migration.ClaimFinishedCQRun(ctx, f, rs.Run.ID); err != nil {
+			return nil, err
+		}
 		// Instead of canceling, finalize the Run using CQDFinished if available.
 		return impl.onCQDFinished(ctx, rs, f)
 	}

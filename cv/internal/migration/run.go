@@ -439,6 +439,43 @@ func LoadUnclaimedFinishedCQDRun(ctx context.Context, attemptKey string) (*Finis
 	}
 }
 
+// ClaimFinishedCQRun associates a FinishedCQDRun with a Run.
+func ClaimFinishedCQRun(ctx context.Context, fr *FinishedCQDRun, rid common.RunID) error {
+	if fr.RunID != "" {
+		return errors.Reason("given FinishedCQDRun must not be assocaited with a Run yet, but it is %q", fr.RunID).Err()
+	}
+
+	var innerErr error
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		defer func() { innerErr = err }()
+		tmp := FinishedCQDRun{AttemptKey: fr.AttemptKey}
+		switch err := datastore.Get(ctx, &tmp); {
+		case err != nil:
+			return errors.Annotate(err, "failed to load FinishedCQDRun for %q", fr.AttemptKey).Tag(transient.Tag).Err()
+		case tmp.RunID == rid:
+			return nil // already claimed, probably this is a retry of DS transaction.
+		case tmp.RunID != "":
+			return errors.Reason("FinishedCQDRun %q in Datastore is already associated with %q, not %q", fr.AttemptKey, tmp.RunID, rid).Err()
+		}
+		fr.RunID = rid
+		fr.Payload.Id = string(rid)
+		if err := datastore.Put(ctx, fr); err != nil {
+			return errors.Annotate(err, "failed to save FinishedCQDRun for %q", fr.AttemptKey).Tag(transient.Tag).Err()
+		}
+		return nil
+	}, nil)
+
+	switch {
+	case innerErr != nil:
+		return innerErr
+	case err != nil:
+		return errors.Annotate(err, "failed to ClaimFinishedCQRun %q for %q", fr.AttemptKey, rid).Tag(transient.Tag).Err()
+	default:
+		logging.Warningf(ctx, "ClaimFinishedCQRun %q FinishedCQDRun with Run %q", fr.AttemptKey, rid)
+		return nil
+	}
+}
+
 // makeGerritSetReviewRequest creates request to post a message to Gerrit at
 // CQDaemon's request.
 func makeGerritSetReviewRequest(r *run.Run, ci *gerritpb.ChangeInfo, msg, curRevision string, sendEmail bool) *gerritpb.SetReviewRequest {

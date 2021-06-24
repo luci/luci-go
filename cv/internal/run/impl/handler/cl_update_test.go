@@ -184,6 +184,7 @@ func TestOnCLUpdated(t *testing.T) {
 			So(datastore.Put(ctx, &migration.FinishedCQDRun{
 				AttemptKey: rs.Run.ID.AttemptKey(),
 				UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+				RunID:      "", // CQD reported it before this Run even existed
 				Payload: &migrationpb.ReportedRun{
 					Id: "", // CQD reported it before this Run even existed
 					Attempt: &cvbqpb.Attempt{
@@ -202,6 +203,11 @@ func TestOnCLUpdated(t *testing.T) {
 			So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
+
+			fr, err := migration.LoadFinishedCQDRun(ctx, rs.Run.ID)
+			So(err, ShouldBeNil)
+			So(fr.RunID, ShouldResemble, rs.Run.ID)
+			So(fr.Payload.GetId(), ShouldResemble, string(rs.Run.ID))
 		})
 		Convey("Cancels Run on changed mode", func() {
 			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
