@@ -80,6 +80,24 @@
       "message": "ditto if you actually plan to fix this?",
       "revId": "337efbc7325ae8c5df9545e1f875c20deb5b449d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6283c350_75e29dc5",
+        "filename": "cv/internal/usertext/cl_error.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-24T09:35:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f80d314_8921c3b6",
+      "revId": "337efbc7325ae8c5df9545e1f875c20deb5b449d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
