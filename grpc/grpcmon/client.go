@@ -52,6 +52,11 @@ var (
 // It can be optionally chained with other interceptor. The reported metrics
 // include time spent in this other interceptor too.
 //
+// It doesn't catch panics. To report a panic as codes.Internal,
+// Pass grpcutil.UnaryServerPanicCatcherInternceptor to `next`.
+// Otherwise, a panic from RPC clients would be reported only to the server metrics,
+// not to the client metrics, when the client was used in server.
+//
 // Can be passed to a gRPC client via WithUnaryInterceptor(...) dial option.
 //
 // Use option.WithGRPCDialOption(grpc.WithUnaryInterceptor(...)) when
