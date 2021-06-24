@@ -7,10 +7,18 @@ queue:
   rate: 500/s
 - name: manage-project
   rate: 30/s
+  retry_parameters:
+    min_backoff_seconds: 1
+    max_backoff_seconds: 5
+    task_age_limit: 1h
 - name: kick-manage-run
   rate: 500/s
 - name: manage-run
   rate: 30/s
+  retry_parameters:
+    min_backoff_seconds: 1
+    max_backoff_seconds: 5
+    task_age_limit: 1h
 - name: poll-gerrit
   rate: 10/s
   retry_parameters:
@@ -19,13 +27,12 @@ queue:
 - name: purge-project-cl
   rate: 30/s
 - name: refresh-project-config
-  rate: 1000/m
+  rate: 20/s
 - name: refresh-gerrit-cl
   rate: 50/s
   retry_parameters:
     min_backoff_seconds: 1
     max_backoff_seconds: 300
-    max_doublings: 0
-    task_age_limit: 1d
+    task_age_limit: 1h
 - name: tq-sweep
   rate: 500/s
