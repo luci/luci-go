@@ -70,6 +70,30 @@
       },
       "revId": "923b9502a4a7887eff76cbf34af44ac9472e246b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8d790ec_c8c40ba5",
+        "filename": "cv/internal/run/runcreator/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-24T17:11:33Z",
+      "side": 1,
+      "message": "TIL and lgtm",
+      "parentUuid": "f6fe7d7d_ae3a9471",
+      "range": {
+        "startLine": 174,
+        "startChar": 12,
+        "endLine": 174,
+        "endChar": 32
+      },
+      "revId": "923b9502a4a7887eff76cbf34af44ac9472e246b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
