@@ -73,6 +73,7 @@ export function reportError<T extends unknown[], V>(
           message: e.toString(),
           composed: true,
           bubbles: true,
+          cancelable: true,
         })
       );
       if (fallbackFn) {
@@ -118,6 +119,7 @@ export function reportErrorAsync<T extends unknown[], V>(
           message: e.toString(),
           composed: true,
           bubbles: true,
+          cancelable: true,
         })
       );
       if (fallbackFn) {
@@ -149,8 +151,10 @@ export function handleLocally<T extends LitElement>(err: ErrorEvent, _ele: T): b
 /**
  * A OnError function that stops the error from propagating, dispatches a new
  * error event on the parent element with the same error but with an empty error
- * message. If the error message is not empty, instructs the error handler
- * element to render the error.
+ * message. Ancestor error handlers can use event.preventDefault() to signal
+ * that the error is recoverable. If the error message is not empty, and
+ * event.preventDefault() is not called, instructs the error handler element to
+ * render the error.
  */
 export function forwardWithoutMsg<T extends LitElement>(err: ErrorEvent, ele: T): boolean {
   err.stopPropagation();
@@ -159,8 +163,16 @@ export function forwardWithoutMsg<T extends LitElement>(err: ErrorEvent, ele: T)
     message: '',
     bubbles: true,
     composed: true,
+    cancelable: true,
   });
-  ele.parentNode?.dispatchEvent(event);
+
+  // If the event is canceled, that means the error can be recovered.
+  const canceled = !(ele.parentNode?.dispatchEvent(event) ?? true);
+  if (canceled) {
+    err.preventDefault();
+    return false;
+  }
+
   return err.message !== '';
 }
 
@@ -198,12 +210,15 @@ export function errorHandler<T extends LitElement>(
   renderError: RenderErrorFn<T> = renderErrorInPre
 ) {
   return function consumerMixin<C extends Constructor<T>>(cls: C) {
-    let error: ErrorEvent | null = null;
-    let errorListener = (_e: ErrorEvent) => {};
+    const errorSymbol = Symbol('error');
+    const errorListenerSymbol = Symbol('errorListener');
 
     // TypeScript doesn't allow type parameter in extends or implements
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
     class ErrorHandler extends (cls as Constructor<LitElement>) {
+      [errorSymbol]: ErrorEvent | null = null;
+      [errorListenerSymbol] = (_e: ErrorEvent) => {};
+
       constructor() {
         super();
 
@@ -218,29 +233,31 @@ export function errorHandler<T extends LitElement>(
         // protected render = reportRenderError.bind(this)(() => {...});
         const superRender = this.render;
         this.render = function () {
-          return error === null ? superRender.bind(this)() : renderError(error, this as LitElement as T);
+          return this[errorSymbol] === null
+            ? superRender.bind(this)()
+            : renderError(this[errorSymbol]!, this as LitElement as T);
         };
       }
 
       connectedCallback() {
         super.connectedCallback();
-        errorListener = (e) => {
+        this[errorListenerSymbol] = (e) => {
           if (onError(e, this as LitElement as T)) {
-            error = e;
+            this[errorSymbol] = e;
 
             // Requesting update immediately may cause the request to be
             // ignored when the element in the middle of an update.
             // Schedule an update instead.
             this.updateComplete.then(() => this.requestUpdate());
           } else {
-            error = null;
+            this[errorSymbol] = null;
           }
         };
-        this.addEventListener('error', errorListener);
+        this.addEventListener('error', this[errorListenerSymbol]);
       }
 
       disconnectedCallback() {
-        this.removeEventListener('error', errorListener);
+        this.removeEventListener('error', this[errorListenerSymbol]);
         super.disconnectedCallback();
       }
     }
