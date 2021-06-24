@@ -316,7 +316,7 @@ func (p *AdmissionPlugin) onConnected(req *protocol.ListAdmissionsRequest) error
 	if atomic.AddInt32(&p.connects, 1) != 1 {
 		return status.Errorf(codes.FailedPrecondition, "already called ListAdmissions")
 	}
-	logging.Infof(p.ctx, "Using deployment admission plugin %q", req.PluginVersion)
+	logging.Debugf(p.ctx, "Using deployment admission plugin %q", req.PluginVersion)
 
 	var err error
 	if req.ProtocolVersion != p.protocolVersion {
