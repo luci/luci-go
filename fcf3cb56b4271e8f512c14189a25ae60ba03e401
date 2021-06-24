@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ac24747_643710fb",
+        "filename": "cv/internal/run/runcreator/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-24T09:20:44Z",
+      "side": 1,
+      "message": "\u003e SA1012: do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use\n\nHm, it appears guidelines say context.Background() is better.",
+      "parentUuid": "183a0c17_1b92eed8",
+      "range": {
+        "startLine": 174,
+        "startChar": 12,
+        "endLine": 175,
+        "endChar": 0
+      },
+      "revId": "fcf3cb56b4271e8f512c14189a25ae60ba03e401",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
