@@ -16,6 +16,24 @@
       "message": "Why is this useful? The code covered by the interceptor is the gRPC library itself (and perhaps other interceptors), they should not panic.\n\nIt is more useful for servers because the interceptors covers actual request handlers that can do a lot of random stuff that can panic.",
       "revId": "fe12d1a5e2318f1b2ea5594fdedb93f80c87a7a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54c871c9_75f834a7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-24T21:28:29Z",
+      "side": 1,
+      "message": "\u003e\u003e The code covered by the interceptor is the gRPC library itself (and perhaps other interceptors), they should not panic.\n\nThat\u0027s practically true. They should not panic. I will abandon this.",
+      "parentUuid": "776b2953_2c5ba186",
+      "revId": "fe12d1a5e2318f1b2ea5594fdedb93f80c87a7a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
