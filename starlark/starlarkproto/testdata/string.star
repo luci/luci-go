@@ -24,6 +24,11 @@ assert.eq(m.s, '')
 m.s = 'blah'
 assert.eq(m.s, 'blah')
 assert.eq(proto.to_textpb(m), 's: "blah"\n')
+# Converting string with newlines to Text PB results in multiple one-line
+# strings
+m.s = 'blah\nblah\nblah'
+assert.eq(m.s, 'blah\nblah\nblah')
+assert.eq(proto.to_textpb(m), 's:\n  "blah\\n"\n  "blah\\n"\n  "blah"\n')
 
 # Setting through constructor works.
 m2 = testprotos.SimpleFields(s='blah')
