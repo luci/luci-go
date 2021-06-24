@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "776b2953_2c5ba186",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-24T21:20:45Z",
+      "side": 1,
+      "message": "Why is this useful? The code covered by the interceptor is the gRPC library itself (and perhaps other interceptors), they should not panic.\n\nIt is more useful for servers because the interceptors covers actual request handlers that can do a lot of random stuff that can panic.",
+      "revId": "fe12d1a5e2318f1b2ea5594fdedb93f80c87a7a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
