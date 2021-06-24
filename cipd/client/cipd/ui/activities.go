@@ -16,11 +16,17 @@ package ui
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"sync"
 
 	"go.chromium.org/luci/common/logging"
 )
 
-var activityCtxKey = "cipd.ui.Activity"
+var (
+	activityCtxKey = "cipd.ui.Activity"
+	implCtxKey     = "cipd.ui.Implementation"
+)
 
 // Units is what kind of units to use for an activity progress.
 type Units string
@@ -39,46 +45,106 @@ type Activity interface {
 	Progress(ctx context.Context, title string, units Units, cur, total int64)
 	// Log is called by the logging system when the activity is installed into the context.
 	Log(ctx context.Context, level logging.Level, calldepth int, f string, args []interface{})
+	// Done is called when the activity finishes.
+	Done(ctx context.Context)
 }
 
-// ActivityGroup is a group of related activities stopped at the same time.
-type ActivityGroup interface {
-	// NewActivity creates a new activity in this group.
-	NewActivity(ctx context.Context, kind string) Activity
-	// Close marks all activities in this group as finished.
-	Close()
-}
-
-// NewActivityGroup creates a new activity group using factory in the context.
+// ActivityGroup is a group of related activities running at the same time.
 //
-// If there's no factory there, uses a primitive implementation that just writes
-// activity progress as log messages.
-func NewActivityGroup(ctx context.Context) ActivityGroup {
-	// TODO(vadimsh): Actually use a factory from the context, so that callers
-	// that have some UI can supply the implementation.
-	return &primitiveActivityGroup{}
+// Used to assign unique titles to them.
+type ActivityGroup struct {
+	m   sync.RWMutex
+	ids map[string]int
+}
+
+// allocateID returns the next sequential ID for this given kind.
+func (g *ActivityGroup) allocateID(kind string) int {
+	g.m.Lock()
+	defer g.m.Unlock()
+
+	if g.ids == nil {
+		g.ids = map[string]int{}
+	}
+	id := g.ids[kind] + 1
+	g.ids[kind] = id
+
+	return id
+}
+
+// activityTitle returns a title for the activity with the given ID.
+func (g *ActivityGroup) activityTitle(kind string, id int) string {
+	g.m.RLock()
+	total := g.ids[kind]
+	g.m.RUnlock()
+	if total <= 1 {
+		return kind
+	}
+	totalStr := fmt.Sprintf("%d", total)
+	idStr := fmt.Sprintf("%d", id)
+	return fmt.Sprintf("%s %s/%s", kind, padLeft(idStr, len(totalStr)), totalStr)
+}
+
+// Implementation implements a UI that shows activities.
+//
+// It lives in the context.
+type Implementation interface {
+	// NewActivity creates a new activity, optionally putting it in a group.
+	NewActivity(ctx context.Context, group *ActivityGroup, kind string) Activity
+}
+
+// SetImplementation puts the Implementation into the context.
+func SetImplementation(ctx context.Context, impl Implementation) context.Context {
+	return context.WithValue(ctx, &implCtxKey, impl)
 }
 
 // NewActivity creates a new activity and sets it as current in the context.
 //
 // This also replaces the logger with the one that logs into the activity.
-func NewActivity(ctx context.Context, g ActivityGroup, kind string) context.Context {
-	a := g.NewActivity(ctx, kind)
-	ctx = context.WithValue(ctx, &activityCtxKey, a)
+// If `group` is not-nil, adds this activity into the group. Otherwise it stands
+// on its own (whatever it means depends on the UI implementation).
+//
+// If there's no Implementation in the context, sets up a primitive activity
+// implementation that just logs into the logger.
+func NewActivity(ctx context.Context, group *ActivityGroup, kind string) context.Context {
+	var activity Activity
+	if impl, _ := ctx.Value(&implCtxKey).(Implementation); impl != nil {
+		activity = impl.NewActivity(ctx, group, kind)
+	} else {
+		primitive := &primitiveActivity{
+			logger: logging.GetFactory(ctx),
+			kind:   kind,
+			group:  group,
+		}
+		if group != nil && kind != "" {
+			primitive.id = group.allocateID(kind)
+		}
+		activity = primitive
+	}
+	ctx = context.WithValue(ctx, &activityCtxKey, activity)
 	return logging.SetFactory(ctx, func(ctx context.Context) logging.Logger {
-		return &activityLogger{activity: a, callCtx: ctx}
+		return &activityLogger{activity: activity, callCtx: ctx}
 	})
 }
 
 // CurrentActivity returns the current activity in the context.
 //
 // Constructs a primitive implementation that just logs into the logger if
-// there's no activity in the context.
+// there's no current activity in the context.
 func CurrentActivity(ctx context.Context) Activity {
 	if a, _ := ctx.Value(&activityCtxKey).(Activity); a != nil {
 		return a
 	}
 	return &primitiveActivity{logger: logging.GetFactory(ctx)}
+}
+
+// ActivityDone marks the current activity in the context as finished.
+//
+// Such activity should not be receiving any updates anymore. The UI may stop
+// rendering it.
+func ActivityDone(ctx context.Context) {
+	if a, _ := ctx.Value(&activityCtxKey).(Activity); a != nil {
+		a.Done(ctx)
+	}
 }
 
 // activityLogger forwards messages to the given activity.
@@ -105,4 +171,12 @@ func (l *activityLogger) Errorf(fmt string, args ...interface{}) {
 
 func (l *activityLogger) LogCall(level logging.Level, calldepth int, f string, args []interface{}) {
 	l.activity.Log(l.callCtx, level, calldepth+1, f, args)
+}
+
+// padLeft pads an ASCII string with spaces on the left to make it l bytes long.
+func padLeft(s string, l int) string {
+	if len(s) < l {
+		return strings.Repeat(" ", l-len(s)) + s
+	}
+	return s
 }
