@@ -69,6 +69,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ebde777d_2de6d80c",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1260,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-25T21:36:46Z",
+      "side": 1,
+      "message": "\u003e or in other words; why not return `ctx, done`?\n\nThis didn\u0027t occur to me. Changed NewActivity to return CancelFunc. It made some uses uglier, but whatever.",
+      "parentUuid": "47ddc290_280dd1cd",
+      "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d5d265c8_458d7395",
@@ -82,6 +100,24 @@
       "writtenOn": "2021-06-25T20:51:17Z",
       "side": 1,
       "message": "why is this inlined if progressRune isn\u0027t? :p",
+      "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9c515e8_d15804dd",
+        "filename": "cipd/client/cipd/ui/fancy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-25T21:36:46Z",
+      "side": 1,
+      "message": "Asking important questions :) Inlined progress rune too.",
+      "parentUuid": "d5d265c8_458d7395",
       "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
