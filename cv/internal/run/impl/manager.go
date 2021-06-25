@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
+	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -75,6 +76,7 @@ func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.C
 			return common.TQIfy{
 				KnownRetry: []error{
 					handler.ErrTransientSubmissionFailure,
+					lease.ErrConflict,
 					eventbox.ErrContention,
 				},
 			}.Error(ctx, err)
