@@ -61,9 +61,6 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 			return impl.PM.NotifyRunFinished(ctx, rid)
 		},
 		func(ctx context.Context) error {
-			// TODO(qyearsley): Send to a different project/table depending on:
-			//   1. Whether CQDaemond sends rows (see rs.Run.FinishedCQDRun)
-			//   2. Whether the project is dev or prod
 			return impl.BQExporter.Schedule(ctx, rid)
 		},
 	)
@@ -96,8 +93,8 @@ func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLID
 	if err := datastore.Put(ctx, cls); err != nil {
 		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
 	}
-	// TODO(crbug/1215792): refactor this to work well even when CLs belong to multiple
-	// projects and reference other Runs.
+	// TODO(crbug/1215792): refactor this to work well even when CLs belong to
+	// multiple projects and reference other Runs.
 	if err := pm.NotifyCLsUpdated(ctx, runID.LUCIProject(), cls); err != nil {
 		return err
 	}
