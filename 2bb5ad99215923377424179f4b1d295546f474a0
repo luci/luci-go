@@ -16,6 +16,23 @@
       "message": "PTAL. A bit messy...\n\nI changed the API of ui.Activity a bit to allow set-tag etc. to open activities too. It makes `cipd register` look pretty fancy out of the box. Another API \"feature\" is that it should all transparently fall back to regular logging if the context doesn\u0027t have a fancy implementation installed (happens in tests, in vpython and any other place where cipd is used as a library).\n\nThere\u0027s a scattering of minor changes to make log lines more compact and/or more informative. When using the fancy UI long lines are truncated with \"...\" when they reach the viewport border (instead of being wrapped). Wrapping totally screws up everything (since we end up printing more lines than we expect). Is it probably possible to incorporate it somehow, but I already spent waaaaay to much time on this...",
       "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d5d07ad_598b4bf7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-25T18:47:09Z",
+      "side": 1,
+      "message": "ping",
+      "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
