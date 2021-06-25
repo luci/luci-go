@@ -587,3 +587,16 @@ func PrepareMutation(t *testing.T) {
 		})
 	})
 }
+
+func TestMonitoring(t *testing.T) {
+	t.Parallel()
+
+	Convey("Coercing Run IDs into project", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		So(monitoringRecipient(datastore.MakeKey(ctx, "Run", "test/123")), ShouldResemble, "Run/test")
+		So(monitoringRecipient(datastore.MakeKey(ctx, "Project", "test")), ShouldResemble, "Project/test")
+	})
+}
