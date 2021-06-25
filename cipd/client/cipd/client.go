@@ -132,14 +132,14 @@ var (
 
 	// ErrEnsurePackagesFailed is returned by EnsurePackages if something is not
 	// right.
-	ErrEnsurePackagesFailed = errors.New("failed to update packages, see the log")
+	ErrEnsurePackagesFailed = errors.New("failed to update the deployment")
 )
 
 var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.8"
+	UserAgent = "cipd 2.5.9"
 )
 
 func init() {
@@ -1062,10 +1062,18 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	return pin, nil
 }
 
-func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) error {
+func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) (err error) {
 	if timeout == 0 {
 		timeout = CASFinalizationTimeout
 	}
+
+	ctx, done := ui.NewActivity(ctx, nil, "")
+	defer func() {
+		if err != nil {
+			logging.Errorf(ctx, "Instance registration failed: %s", err)
+		}
+		done()
+	}()
 
 	// attemptToRegister calls RegisterInstance RPC and logs the result.
 	attemptToRegister := func() (*api.UploadOperation, error) {
@@ -1206,6 +1214,10 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
+
+	ctx, done := ui.NewActivity(ctx, nil, "")
+	defer done()
+
 	logging.Infof(ctx, "Setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
 
 	err := client.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
@@ -1242,7 +1254,18 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
 			return err
 		}
-		logging.Infof(ctx, "Attaching tag %s", t)
+	}
+
+	ctx, done := ui.NewActivity(ctx, nil, "")
+	defer done()
+
+	if len(tags) == 1 {
+		logging.Infof(ctx, "Attaching tag %q", tags[0])
+	} else {
+		for _, t := range tags {
+			logging.Infof(ctx, "Will attach tag %q", t)
+		}
+		logging.Infof(ctx, "Attaching tags")
 	}
 
 	err := client.retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
@@ -1256,7 +1279,11 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 
 	switch err {
 	case nil:
-		logging.Infof(ctx, "All tags attached")
+		if len(tags) == 1 {
+			logging.Infof(ctx, "Tag %q was attached", tags[0])
+		} else {
+			logging.Infof(ctx, "All tags were attached")
+		}
 	case ErrProcessingTimeout:
 		logging.Errorf(ctx, "Failed to attach tags - deadline exceeded")
 	default:
@@ -1284,12 +1311,23 @@ func (client *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin commo
 		if err := common.ValidateContentType(m.ContentType); err != nil {
 			return errors.Annotate(err, "bad metadata %q", m.Key).Err()
 		}
-		logging.Infof(ctx, "Attaching metadata with key %q", m.Key)
 		apiMD[i] = &api.InstanceMetadata{
 			Key:         m.Key,
 			Value:       m.Value,
 			ContentType: m.ContentType,
 		}
+	}
+
+	ctx, done := ui.NewActivity(ctx, nil, "")
+	defer done()
+
+	if len(md) == 1 {
+		logging.Infof(ctx, "Attaching metadata %q", md[0].Key)
+	} else {
+		for _, m := range md {
+			logging.Infof(ctx, "Will attach metadata %q", m.Key)
+		}
+		logging.Infof(ctx, "Attaching metadata")
 	}
 
 	err := client.retryUntilReady(ctx, MetadataAttachTimeout, func(ctx context.Context) error {
@@ -1303,7 +1341,11 @@ func (client *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin commo
 
 	switch err {
 	case nil:
-		logging.Infof(ctx, "Metadata attached")
+		if len(md) == 1 {
+			logging.Infof(ctx, "Metadata %q was attached", md[0].Key)
+		} else {
+			logging.Infof(ctx, "Metadata was attached")
+		}
 	case ErrProcessingTimeout:
 		logging.Errorf(ctx, "Failed to attach metadata - deadline exceeded")
 	default:
@@ -1335,7 +1377,7 @@ func (client *clientImpl) retryUntilReady(ctx context.Context, timeout time.Dura
 		case status.Code(err) == codes.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
 		case status.Code(err) == codes.FailedPrecondition: // the instance is not ready
-			logging.Warningf(ctx, "cipd: %s", client.humanErr(err))
+			logging.Warningf(ctx, "Not ready: %s", client.humanErr(err))
 			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay).Incomplete() {
 				return ErrProcessingTimeout
 			}
@@ -1557,7 +1599,11 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 
 	hasErrors := false
 	reportActionErr := func(ctx context.Context, a pinAction, err error) {
-		logging.Errorf(ctx, "Failed to %s %s - %s (subdir %q)", a.action, a.pin, err, a.subdir)
+		subdir := ""
+		if a.subdir != "" {
+			subdir = fmt.Sprintf(" in %q", a.subdir)
+		}
+		logging.Errorf(ctx, "Failed to %s %q%s: %s", a.action, a.pin.PackageName, subdir, err)
 		aMap[a.subdir].Errors = append(aMap[a.subdir].Errors, ActionError{
 			Action: a.action,
 			Pin:    a.pin,
@@ -1587,35 +1633,32 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		}
 	}
 
-	// Activities are responsible for rendering the UI of parallel operations.
-	activities := ui.NewActivityGroup(ctx)
-	defer func() {
-		activities.Close()
-		if !hasErrors {
-			logging.Infof(ctx, "All changes applied.")
-		} else {
-			err = ErrEnsurePackagesFailed
-		}
-	}()
+	// Group all activities together so they get different IDs.
+	activities := &ui.ActivityGroup{}
 
 	// The state carried through the fetch task queue. Describes what needs to be
 	// done once a package is fetched.
 	type pinActionsState struct {
-		ctx      context.Context // the installation activity context
-		pin      common.Pin      // the pin we are fetching
-		updates  []pinAction     // what to do with it when we get it
-		attempts int             // incremented on a retry after detecting a corruption
+		ctx      context.Context    // the installation activity context
+		done     context.CancelFunc // called once the unzipping is done
+		pin      common.Pin         // the pin we are fetching
+		updates  []pinAction        // what to do with it when we get it
+		attempts int                // incremented on a retry after detecting a corruption
 	}
 
 	// Start fetching all packages we will need.
 	reqs := make([]*internal.InstanceRequest, len(perPinActions.updates))
 	for i, a := range perPinActions.updates {
+		fetchCtx, fetchDone := ui.NewActivity(ctx, activities, "fetch")
+		unzipCtx, unzipDone := ui.NewActivity(ctx, activities, "unzip")
 		reqs[i] = &internal.InstanceRequest{
-			Context: ui.NewActivity(ctx, activities, "fetch"),
+			Context: fetchCtx,
+			Done:    fetchDone,
 			Pin:     a.pin,
 			Open:    true, // want pkg.Instance, not just pkg.Source
 			State: pinActionsState{
-				ctx:     ui.NewActivity(ctx, activities, "unzip"),
+				ctx:     unzipCtx,
+				done:    unzipDone,
 				pin:     a.pin,
 				updates: a.updates,
 			},
@@ -1626,7 +1669,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	// While packages are being fetched, do maintenance operations that do not
 	// require package data (removals and restoration of broken symlinks).
 	if len(perPinActions.maintenance) > 0 {
-		ctx := ui.NewActivity(ctx, activities, "cleanup")
+		ctx, done := ui.NewActivity(ctx, activities, "cleanup")
 		for _, a := range perPinActions.maintenance {
 			var err error
 			switch a.action {
@@ -1644,6 +1687,8 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 				reportActionErr(ctx, a, err)
 			}
 		}
+		logging.Infof(ctx, "All cleanups done")
+		done()
 	}
 
 	// As soon as some package data is fetched, perform all installations, updates
@@ -1651,7 +1696,8 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	for cache.HasPendingFetches() {
 		res := cache.WaitInstance()
 		state := res.State.(pinActionsState)
-		ctx := state.ctx // the installation activity context
+		unzipCtx := state.ctx // the installation activity context
+		unzipDone := state.done
 		deployErr := res.Err
 
 		// Check if we are even allowed to install this package. Note that
@@ -1659,9 +1705,13 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		// it multiple times with the same pin (which may happen if we are
 		// refetching a corrupted package).
 		if deployErr == nil && client.pluginAdmission != nil {
-			admErr := client.pluginAdmission.CheckAdmission(state.pin).Wait(ctx)
+			admErr := client.pluginAdmission.CheckAdmission(state.pin).Wait(unzipCtx)
 			if admErr != nil {
-				deployErr = errors.Annotate(admErr, "not admitted for deployment").Err()
+				if status, ok := status.FromError(admErr); ok && status.Code() == codes.FailedPrecondition {
+					deployErr = errors.Reason("not admitted: %s", status.Message()).Err()
+				} else {
+					deployErr = errors.Annotate(admErr, "admission check failed").Err()
+				}
 			}
 		}
 
@@ -1670,9 +1720,9 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		for deployErr == nil && actionIdx < len(state.updates) {
 			switch a := state.updates[actionIdx]; a.action {
 			case ActionInstall:
-				_, deployErr = client.deployer.DeployInstance(ctx, a.subdir, res.Instance, maxThreads)
+				_, deployErr = client.deployer.DeployInstance(unzipCtx, a.subdir, res.Instance, maxThreads)
 			case ActionRepair:
-				deployErr = client.deployer.RepairDeployed(ctx, a.subdir, state.pin, maxThreads, deployer.RepairParams{
+				deployErr = client.deployer.RepairDeployed(unzipCtx, a.subdir, state.pin, maxThreads, deployer.RepairParams{
 					Instance:   res.Instance,
 					ToRedeploy: a.repairPlan.ToRedeploy,
 					ToRelink:   a.repairPlan.ToRelink,
@@ -1690,7 +1740,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		// nil if res.Err above was non-nil.
 		corruption := reader.IsCorruptionError(deployErr)
 		if res.Instance != nil {
-			res.Instance.Close(ctx, corruption)
+			res.Instance.Close(unzipCtx, corruption)
 		}
 
 		// If we've got a corrupted package, ask the cache to refetch it. We'll
@@ -1700,14 +1750,21 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		//
 		// Do it no more than once.
 		if corruption && state.attempts < 1 {
-			logging.Warningf(res.Context, "Refetching %s after failing to unpack it: %s", state.pin, deployErr)
+			logging.Errorf(unzipCtx, "Failed to unzip %s, will refetch: %s", state.pin.PackageName, deployErr)
+			unzipDone()
+
+			refetchCtx, refetchDone := ui.NewActivity(ctx, activities, "refetch")
+			reunzipCtx, reunzipDone := ui.NewActivity(ctx, activities, "reunzip")
+
 			cache.RequestInstances([]*internal.InstanceRequest{
 				{
-					Context: res.Context, // reuse the existing download UI activity
+					Context: refetchCtx,
+					Done:    refetchDone,
 					Pin:     state.pin,
 					Open:    true,
 					State: pinActionsState{
-						ctx:      state.ctx,
+						ctx:      reunzipCtx,
+						done:     reunzipDone,
 						pin:      state.pin,
 						updates:  state.updates[actionIdx:],
 						attempts: state.attempts + 1,
@@ -1721,14 +1778,20 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		// Mark all unfinished actions as failed if necessary.
 		if deployErr != nil {
 			for ; actionIdx < len(state.updates); actionIdx++ {
-				reportActionErr(ctx, state.updates[actionIdx], deployErr)
+				reportActionErr(unzipCtx, state.updates[actionIdx], deployErr)
 			}
 		}
+		unzipDone()
 	}
 
 	// Opportunistically cleanup the trash left from previous installs.
 	client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 
+	if !hasErrors {
+		logging.Infof(ctx, "All changes applied.")
+	} else {
+		err = ErrEnsurePackagesFailed
+	}
 	return
 }
 
