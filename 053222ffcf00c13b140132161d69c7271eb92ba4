@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fce7d8b1_a65dd067",
+        "filename": "cv/internal/common/eventbox/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-25T22:28:52Z",
+      "side": 1,
+      "message": "run.RunKind.",
+      "range": {
+        "startLine": 79,
+        "startChar": 16,
+        "endLine": 79,
+        "endChar": 21
+      },
+      "revId": "053222ffcf00c13b140132161d69c7271eb92ba4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3085e021_bc68f7d1",
+        "filename": "cv/internal/common/eventbox/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-25T22:28:52Z",
+      "side": 1,
+      "message": "Maybe `common.RunID(id).LUCIProject()` instead?",
+      "range": {
+        "startLine": 80,
+        "startChar": 7,
+        "endLine": 80,
+        "endChar": 38
+      },
+      "revId": "053222ffcf00c13b140132161d69c7271eb92ba4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
