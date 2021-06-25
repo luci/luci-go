@@ -131,6 +131,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cd2f793e_24fb70ef",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-25T23:49:56Z",
+      "side": 1,
+      "message": "I think status.FromError(errors.Unwrap(err)) straight inside the CV is good enough: CV code knows that exactly one RPC was called. There is no reason to worry about MultiError or Tags.",
+      "parentUuid": "0df50816_de75d4bd",
+      "range": {
+        "startLine": 213,
+        "startChar": 28,
+        "endLine": 214,
+        "endChar": 20
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "57689c53_2ca7ee66",
         "filename": "grpc/grpcutil/errors.go",
         "patchSetId": 1
