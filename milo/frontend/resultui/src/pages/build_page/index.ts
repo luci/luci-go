@@ -62,35 +62,39 @@ const TAB_NAME_LABEL_TUPLES = Object.freeze([
 ]);
 
 function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
+  let recovered = false;
   if (err.error instanceof LoadTestVariantsError) {
     // Ignore request using the old invocation ID.
     if (!err.error.req.invocations.includes(`invocations/${ele.buildState.invocationId}`)) {
-      err.stopPropagation();
-      return false;
+      recovered = true;
     }
 
     // Old builds don't support computed invocation ID.
     // Disable it and try again.
     if (ele.buildState.useComputedInvId && !err.error.req.pageToken) {
       ele.buildState.useComputedInvId = false;
-      err.stopPropagation();
-      return false;
+      recovered = true;
     }
   } else if (err.error instanceof QueryInvocationError) {
     // Ignore request using the old invocation ID.
     if (err.error.invId !== ele.buildState.invocationId) {
-      err.stopPropagation();
-      return false;
+      recovered = true;
     }
 
     // Old builds don't support computed invocation ID.
     // Disable it and try again.
     if (ele.buildState.useComputedInvId) {
       ele.buildState.useComputedInvId = false;
-      err.stopPropagation();
-      return false;
+      recovered = true;
     }
   }
+
+  if (recovered) {
+    err.stopImmediatePropagation();
+    err.preventDefault();
+    return false;
+  }
+
   return forwardWithoutMsg(err, ele);
 }
 
