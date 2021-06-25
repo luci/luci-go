@@ -110,6 +110,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "578bd107_6f4ef337",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-25T19:02:57Z",
+      "side": 1,
+      "message": "First, hardcoding \"chromium:public\" in the client is incorrect (there are many other projects) and dangerous (results of internal tasks may end up publicly visible by default). Generally there\u0027s no default, this setting tells what ACLs the new task should have (who can see it etc), it is part of the task definition.\n\nNext, using \"chromium:public\" for all tasks in chromium-swarm is also incorrect, since there are many other projects there. Generally e.g. v8 tasks (using v8 task accounts) will refuse to run in \"chromium:public\" realm because Chromium ACLs do not expect to execute tasks with v8 accounts.\n\nI like \u0027realm_for_developer:chromium:public\u0027 idea, but specifying it as a tag on all task is cumbersome and will require lots of changes in recipes etc.\n\nMaybe we can annotate \"chromium:public\" realm in realms.cfg with a flag that it should be used for Swarming \"reproduce\" command (there\u0027s RealmData mechanism for that [1]). Then Swarming can look it up based on the original tasks\u0027s realm when rendering its UI. \n\n[1]: https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/components/components/auth/proto/realms.proto#213",
+      "parentUuid": "b680dc49_77a417ba",
+      "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2f7e118c_4d7fbd38",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 1
