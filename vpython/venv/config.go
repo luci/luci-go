@@ -114,6 +114,11 @@ type Config struct {
 	// If false, the VirtualEnv will block pending the lock's availability.
 	FailIfLocked bool
 
+	// Set to true if the VirtualEnv package has a newer version of pip that no
+	// longer supports the --use-wheel option.
+	// TODO(bryner): Remove once the corresponding infra code is updated.
+	OmitUseWheel bool
+
 	// si is the system Python interpreter. It is resolved during
 	// "resolvePythonInterpreter".
 	si *python.Interpreter
