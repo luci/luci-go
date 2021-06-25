@@ -88,6 +88,24 @@
       "parentUuid": "eaa00b04_2a9674e2",
       "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b680dc49_77a417ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-25T04:54:52Z",
+      "side": 1,
+      "message": "I\u0027m not sure if it\u0027s a good idea, maybe we can specify one realm per swarming host, if tasks on one host have the same visibility.\n\nFor example all tasks reproducing tasks on chromium-swarm will use \"chromium:public\" by default.",
+      "parentUuid": "39090b51_fb5bc5b0",
+      "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
