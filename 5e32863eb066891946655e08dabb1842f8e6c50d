@@ -70,6 +70,24 @@
       "parentUuid": "952c723d_7badfbe8",
       "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39090b51_fb5bc5b0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-25T04:49:57Z",
+      "side": 1,
+      "message": "Good point. \n\nI agree for other luci projects, they should use another project specific realm for this usage. Although I don\u0027t think they exist at the moment.\n\nVadim, WDYT?",
+      "parentUuid": "eaa00b04_2a9674e2",
+      "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
