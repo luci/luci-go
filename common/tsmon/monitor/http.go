@@ -65,6 +65,11 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) (err error) 
 		}
 	}()
 
+	// Don't waste time on serialization if we are already too late.
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
 	// Serialize the tsmon cells into protobufs.
 	req := &pb.Request{
 		Payload: &pb.MetricsPayload{

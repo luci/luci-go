@@ -1824,6 +1824,7 @@ func (s *Server) initTSMon() error {
 			Enabled:            true,
 			ProdXAccount:       s.Options.TsMonAccount,
 			FlushIntervalSec:   60,
+			FlushTimeoutSec:    15, // we are flushing in background, can wait
 			ReportRuntimeStats: true,
 		},
 		Target: func(c context.Context) target.Task {
