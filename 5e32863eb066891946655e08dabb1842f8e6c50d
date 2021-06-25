@@ -129,6 +129,30 @@
       },
       "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8f7201d_3315a478",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-25T08:14:19Z",
+      "side": 1,
+      "message": "they don\u0027t and they shouldn\u0027t. Results in \"chromium:public\" are visible to everyone.",
+      "parentUuid": "2f7e118c_4d7fbd38",
+      "range": {
+        "startLine": 77,
+        "startChar": 39,
+        "endLine": 77,
+        "endChar": 54
+      },
+      "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
