@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "42ce3c5c_de9cb28f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-25T00:24:13Z",
+      "side": 1,
+      "message": "circling back to this CL, sorry for delay in response.",
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f0b6866d_6ad0bbf9",
         "filename": "grpc/grpcutil/errors.go",
         "patchSetId": 1
@@ -90,6 +107,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0df50816_de75d4bd",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-25T00:24:13Z",
+      "side": 1,
+      "message": "\u003e That said, the above func only cares about *Code* which is easy to de-duplicate, unlike entire Statuses.\n\nYes, this is the exact reason I have to make the behavior diverge from `Code`.\n\n\u003e I\u0027d expect [the code that chose to use MultiError] in a domain-specific way to also know what\u0027s the right way to resolve this (i.e. I am not entirely sure this generic piece of code would know what\u0027s the right thing to do)\n\nCan\u0027t agree more.\n\nSo if this function doesn\u0027t have special logic for multi-error, and based on the other comment from Nodir that it is not ideal to support the code tag. Should we just directly call `status.FromError(errors.Unwrap(err))` at the application site instead of providing a helper function here? WDYT?",
+      "parentUuid": "9ae19bbd_9255fc3e",
+      "range": {
+        "startLine": 213,
+        "startChar": 28,
+        "endLine": 214,
+        "endChar": 20
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "57689c53_2ca7ee66",
         "filename": "grpc/grpcutil/errors.go",
         "patchSetId": 1
@@ -101,6 +142,30 @@
       "writtenOn": "2021-06-23T17:46:20Z",
       "side": 1,
       "message": "this may actually return a multiError, too,\nbut presumably status.FromError should not look inside.\n\nSo, why do you need to a separate handling of multiError above? I\u0027d expect removing L218..L220 would still result in equal code.",
+      "range": {
+        "startLine": 221,
+        "startChar": 31,
+        "endLine": 221,
+        "endChar": 49
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29c973ed_4ef38505",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-25T00:24:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "57689c53_2ca7ee66",
       "range": {
         "startLine": 221,
         "startChar": 31,
@@ -124,6 +189,30 @@
       "writtenOn": "2021-06-23T17:49:46Z",
       "side": 1,
       "message": "i generally do not recommend Tag, for reasons I described in \nhttps://chromium.googlesource.com/infra/luci/luci-go/+/fd11ae65a39f5f859aeeeaa84756fabcaf653505",
+      "range": {
+        "startLine": 224,
+        "startChar": 16,
+        "endLine": 224,
+        "endChar": 19
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c743f3d3_30ba6cb4",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-25T00:24:13Z",
+      "side": 1,
+      "message": "Agree that the code tag doesn\u0027t mesh well with status detail. I added support for tag simply because I saw `Code()` supports tag so I don\u0027t want to break the contract of this package.",
+      "parentUuid": "f314532e_6e33d024",
       "range": {
         "startLine": 224,
         "startChar": 16,
