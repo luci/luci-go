@@ -33,6 +33,57 @@
       "message": "ping",
       "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93ea315c_dad79c3a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-25T20:51:17Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47ddc290_280dd1cd",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1260,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-25T20:51:17Z",
+      "side": 1,
+      "message": "hm.... it seems kind of weird to me to have three `ctx` on these two lines.\n\nIs there a use case for where `ActivityDone` _should_ have a different ctx than the one returned by NewActivity?\n\n(or in other words; why not return `ctx, done`?)",
+      "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5d265c8_458d7395",
+        "filename": "cipd/client/cipd/ui/fancy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-25T20:51:17Z",
+      "side": 1,
+      "message": "why is this inlined if progressRune isn\u0027t? :p",
+      "revId": "2bb5ad99215923377424179f4b1d295546f474a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
