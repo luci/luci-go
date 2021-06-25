@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -70,7 +71,15 @@ var (
 )
 
 func monitoringRecipient(r *datastore.Key) string {
-	return fmt.Sprintf("%s/%s", r.Kind(), r.StringID())
+	// TODO(tandrii): refactor this hack, aiming to quickly reduce # of distinct
+	// fields.
+	id := r.StringID()
+	// Run IDs are basically 'project/...'. Project IDs are just 'project'.
+	// Coerce all Run IDs into 'project'.
+	if r.Kind() == "Run" {
+		id = id[:strings.IndexRune(id, '/')]
+	}
+	return fmt.Sprintf("%s/%s", r.Kind(), id)
 }
 
 func monitoringResult(err error) string {
