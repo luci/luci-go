@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bdef3517_8e602b62",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-25T06:34:36Z",
+      "side": 1,
+      "message": "lgtm (but a more \u0027permanent\u0027 way might be to somehow clue this code into the virtualenv version)",
+      "revId": "8aaec6de6f04e5161143660bb845591fe6f0ff8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
