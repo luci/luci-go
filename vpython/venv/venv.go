@@ -66,21 +66,21 @@ const (
 // directly, we can pass command-line flag equivalents. The benefits of using
 // "--isolated" are worth the cost of exporting dual environment/flag versions
 // of these isolation directives.
-var pipIsolateOptions = []struct {
+type pipOption struct {
 	// env is the environment variable string to add ("FOO=BAR").
 	env string
 	// installFlag is the "pip install" flag equivalent.
 	installFlag string
-}{
+}
+
+var pipIsolateOptions = []pipOption{
 	// Override any global configuration that prohibits binary (wheel) usage.
 	{"PIP_NO_BINARY=:none:", "--no-binary=:none:"},
 
 	// Enforce that all packages must be installed with wheels.
 	{"PIP_ONLY_BINARY=:all:", "--only-binary=:all:"},
-
-	// Override (deprecated) "--no-use-wheel" option.
-	{"PIP_USE_WHEEL=1", "--use-wheel"},
 }
+var useWheelOption = pipOption{"PIP_USE_WHEEL=1", "--use-wheel"}
 
 // blocker is an fslock.Blocker implementation that sleeps lockHeldDelay in
 // between attempts.
@@ -751,6 +751,9 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env 
 	for _, opt := range pipIsolateOptions {
 		pythonCmd = append(pythonCmd, opt.installFlag)
 	}
+	if !e.Config.OmitUseWheel {
+		pythonCmd = append(pythonCmd, useWheelOption.installFlag)
+	}
 
 	cmd := e.Interpreter().MkIsolatedCommand(c,
 		python.ModuleTarget{Module: "pip"},
@@ -861,6 +864,9 @@ func (e *Env) isolatedSetupEnvironment(bootstrapDir string) environ.Env {
 	// internally, we are stuck overriding it with our own preferred defaults.
 	for _, opt := range pipIsolateOptions {
 		env.SetEntry(opt.env)
+	}
+	if !e.Config.OmitUseWheel {
+		env.SetEntry(useWheelOption.env)
 	}
 
 	return env
