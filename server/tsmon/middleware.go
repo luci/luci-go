@@ -113,9 +113,6 @@ const (
 	// the last successful flush (if ever) was too long ago.
 	noFlushErrorThreshold = 5 * time.Minute
 
-	// flushTimeout defines the deadline for the flush operation.
-	flushTimeout = 5 * time.Second
-
 	// flushMaxRetry defines the maximum delay between flush retries.
 	flushMaxRetry = 10 * time.Minute
 
@@ -304,7 +301,11 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 	}
 
 	// The flush must be fast. Limit it by some timeout.
-	c, cancel := clock.WithTimeout(c, flushTimeout)
+	timeout := settings.FlushTimeoutSec
+	if timeout == 0 {
+		timeout = defaultSettings.FlushTimeoutSec
+	}
+	c, cancel := clock.WithTimeout(c, time.Duration(timeout)*time.Second)
 	defer cancel()
 
 	// Report per-process statistic.

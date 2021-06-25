@@ -60,6 +60,12 @@ type Settings struct {
 	// Default is 60 sec.
 	FlushIntervalSec int `json:"flush_interval_sec"`
 
+	// FlushTimeoutSec defines how long to wait for the metrics to flush before
+	// giving up.
+	//
+	// Default is 5 sec.
+	FlushTimeoutSec int `json:"flush_timeout_sec"`
+
 	// ReportRuntimeStats is true to enable reporting of Go RT stats on flush.
 	//
 	// Default is false.
@@ -69,6 +75,7 @@ type Settings struct {
 // Prefilled portion of settings.
 var defaultSettings = Settings{
 	FlushIntervalSec: 60,
+	FlushTimeoutSec:  5,
 }
 
 // fetchCachedSettings fetches Settings from the settings store or panics.
@@ -201,6 +208,20 @@ func (p *settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 			Help: "How often to flush metrics, in seconds. The default value (60 sec) " +
 				"is highly recommended. Change it only if you know what you are doing.",
 		},
+		{
+			ID:       "FlushTimeoutSec",
+			Title:    "Flush timeout, sec",
+			Type:     portal.FieldText,
+			ReadOnly: ro,
+			Validator: func(v string) error {
+				if i, err := strconv.Atoi(v); err != nil || i < 0 {
+					return errors.New("expecting a non-negative integer")
+				}
+				return nil
+			},
+			Help: "How long to wait for the metrics to flush before giving up, in seconds. " +
+				"Change it only if you know what you are doing.",
+		},
 		portal.YesOrNoField(portal.Field{
 			ID:       "ReportRuntimeStats",
 			Title:    "Report runtime stats",
@@ -232,6 +253,7 @@ func (p *settingsPage) ReadSettings(c context.Context) (map[string]string, error
 		"Enabled":            s.Enabled.String(),
 		"ProdXAccount":       s.ProdXAccount,
 		"FlushIntervalSec":   strconv.Itoa(s.FlushIntervalSec),
+		"FlushTimeoutSec":    strconv.Itoa(s.FlushTimeoutSec),
 		"ReportRuntimeStats": s.ReportRuntimeStats.String(),
 	}, nil
 }
@@ -251,6 +273,9 @@ func (p *settingsPage) WriteSettings(c context.Context, values map[string]string
 	}
 	var err error
 	if modified.FlushIntervalSec, err = strconv.Atoi(values["FlushIntervalSec"]); err != nil {
+		return err
+	}
+	if modified.FlushTimeoutSec, err = strconv.Atoi(values["FlushTimeoutSec"]); err != nil {
 		return err
 	}
 	if err := modified.ReportRuntimeStats.Set(values["ReportRuntimeStats"]); err != nil {
