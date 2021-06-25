@@ -74,7 +74,7 @@ func (c *reproduceRun) init(authFlags AuthFlags) {
 
 	c.Flags.StringVar(&c.work, "work", "work", "Directory to map the task input files into and execute the task.")
 	c.Flags.StringVar(&c.out, "out", "out", "Directory that will hold the task results.")
-	c.Flags.StringVar(&c.realm, "realm", "", "Realm to create invocation in if ResultDB is enabled.")
+	c.Flags.StringVar(&c.realm, "realm", "chromium:public", "Realm to create invocation in if ResultDB is enabled.")
 	c.Flags.StringVar(&c.resultsHost, "results-host", chromeinfra.ResultDBHost, "Hostname of the ResultDB service to usse. e.g. 'results.api.cr.dev'")
 	c.cipdDownloader = downloadCIPDPackages
 	c.createInvocation = createInvocation
@@ -138,9 +138,6 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 func (c *reproduceRun) executeTaskRequestCommand(ctx context.Context, tr *swarming.SwarmingRpcsTaskRequest, cmd *exec.Cmd) error {
 	// Enable ResultDB if necessary.
 	if tr.Resultdb != nil && tr.Resultdb.Enable {
-		if c.realm == "" {
-			return errors.Reason("must provide -realm if task request has ResultDB enabled").Err()
-		}
 		authcli, err := c.authFlags.NewHTTPClient(ctx)
 		if err != nil {
 			return errors.Annotate(err, "failed to create client").Err()
