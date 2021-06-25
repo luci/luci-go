@@ -52,6 +52,24 @@
       "parentUuid": "f1bf084e_fb5991a6",
       "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eaa00b04_2a9674e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-06-25T04:43:59Z",
+      "side": 1,
+      "message": "Like showing -realm flag only when realm is used in the task?\nIs it fine to consider only \u0027chromium:public\u0027 for that case?\n\nIt might be better to add tag like \u0027realm_for_developer:chromium:public\u0027 in swarming task, and extract that when showing instruction in Swarming UI, as other team may use resultdb with different realm.",
+      "parentUuid": "952c723d_7badfbe8",
+      "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
