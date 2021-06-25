@@ -29,6 +29,7 @@ import (
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
@@ -287,6 +288,8 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 		return common.Pin{}, err
 	}
 
+	startTS := clock.Now(ctx)
+
 	pin = inst.Pin()
 	logging.Infof(ctx, "Deploying %s into %s(/%s)", pin, d.fs.Root(), subdir)
 
@@ -393,7 +396,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	defer func() {
 		wg.Wait()
 		if err == nil {
-			logging.Infof(ctx, "Deployed %s", origPin)
+			logging.Infof(ctx, "Deployed %s in %.1fs", origPin, clock.Since(ctx, startTS).Seconds())
 		} else {
 			logging.Errorf(ctx, "Failed to deploy %s: %s", origPin, err)
 		}

@@ -36,9 +36,9 @@ const progressReportInterval = 500 * time.Millisecond
 type primitiveActivity struct {
 	logger logging.Factory // wrapped logger
 
-	parent *primitiveActivityGroup
-	kind   string
-	id     int
+	group *ActivityGroup // may be nil if not inside a group
+	kind  string
+	id    int
 
 	m          sync.Mutex
 	lastReport time.Time
@@ -114,83 +114,14 @@ func (a *primitiveActivity) Progress(ctx context.Context, title string, units Un
 }
 
 func (a *primitiveActivity) Log(ctx context.Context, level logging.Level, calldepth int, f string, args []interface{}) {
-	a.logger(ctx).LogCall(level, calldepth+1, a.logPrefix()+f, args)
-}
-
-func (a *primitiveActivity) logPrefix() string {
-	if a.parent != nil {
-		return a.parent.logPrefix(a.kind, a.id)
-	}
-	return ""
-}
-
-// speedGauge measures speed using exponential averaging.
-type speedGauge struct {
-	speed   float64 // the last measured speed or -1 if not yet known
-	prevTS  time.Time
-	prevVal int64
-	samples int
-}
-
-func (s *speedGauge) reset(ts time.Time, val int64) {
-	s.speed = -1
-	s.prevTS = ts
-	s.prevVal = val
-	s.samples = 0
-}
-
-func (s *speedGauge) advance(ts time.Time, val int64) {
-	dt := ts.Sub(s.prevTS)
-	if dt < 200*time.Millisecond {
-		return // too soon
-	}
-
-	v := float64(val-s.prevVal) / dt.Seconds()
-
-	s.prevTS = ts
-	s.prevVal = val
-	s.samples++
-
-	// Apply exponential average. Take the first sample as a base.
-	if s.samples == 1 {
-		s.speed = v
-	} else {
-		s.speed = 0.07*v + 0.93*s.speed
+	if a.logger != nil {
+		prefix := ""
+		if a.group != nil && a.kind != "" {
+			prefix = "[" + a.group.activityTitle(a.kind, a.id) + "] "
+		}
+		a.logger(ctx).LogCall(level, calldepth+1, prefix+f, args)
 	}
 }
 
-// primitiveActivityGroup just adds a unique log prefix to every activity.
-type primitiveActivityGroup struct {
-	m   sync.RWMutex
-	ids map[string]int
-}
-
-func (p *primitiveActivityGroup) Close() {}
-
-func (p *primitiveActivityGroup) NewActivity(ctx context.Context, kind string) Activity {
-	p.m.Lock()
-	defer p.m.Unlock()
-
-	if p.ids == nil {
-		p.ids = map[string]int{}
-	}
-	id := p.ids[kind] + 1
-	p.ids[kind] = id
-
-	return &primitiveActivity{
-		logger: logging.GetFactory(ctx),
-		parent: p,
-		kind:   kind,
-		id:     id,
-	}
-}
-
-func (p *primitiveActivityGroup) logPrefix(kind string, id int) string {
-	p.m.RLock()
-	total := p.ids[kind]
-	p.m.RUnlock()
-	if total <= 1 {
-		return fmt.Sprintf("[%s]", kind)
-	}
-	return fmt.Sprintf("[%s %d/%d] ", kind, id, total)
+func (a *primitiveActivity) Done(ctx context.Context) {
 }

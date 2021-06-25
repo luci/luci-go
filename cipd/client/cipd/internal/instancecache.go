@@ -72,10 +72,11 @@ type Fetcher func(ctx context.Context, pin common.Pin, f io.WriteSeeker) error
 
 // InstanceRequest is passed to RequestInstances.
 type InstanceRequest struct {
-	Context context.Context // carries the cancellation signal
-	Pin     common.Pin      // identifies the instance to fetch
-	Open    bool            // true to return it as a pkg.Instance as opposed to pkg.Source
-	State   interface{}     // passed to the InstanceResult as is
+	Context context.Context    // carries the cancellation signal
+	Done    context.CancelFunc // called right before the result is enqueued
+	Pin     common.Pin         // identifies the instance to fetch
+	Open    bool               // true to return it as a pkg.Instance as opposed to pkg.Source
+	State   interface{}        // passed to the InstanceResult as is
 }
 
 // InstanceResult is a result of a completed InstanceRequest.
@@ -336,11 +337,15 @@ func (c *InstanceCache) RequestInstances(reqs []*InstanceRequest) {
 
 	for _, req := range reqs {
 		ctx := req.Context
+		done := req.Done
 		pin := req.Pin
 		open := req.Open
 		state := req.State
 
 		c.fetchQueue <- func() *InstanceResult {
+			if done != nil {
+				defer done()
+			}
 			res := &InstanceResult{Context: ctx, State: state}
 
 			alloc := c.Allocate(ctx, pin)
