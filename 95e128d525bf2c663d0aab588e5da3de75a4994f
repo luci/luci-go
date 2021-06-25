@@ -16,6 +16,23 @@
       "message": "ptal",
       "revId": "95e128d525bf2c663d0aab588e5da3de75a4994f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54e48d33_9f3059c7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-25T18:25:34Z",
+      "side": 1,
+      "message": "In the short term, lgtm.\nIn the medium term -- why not schedule a new task like poke() after min(10s, leaseExpiration)?",
+      "revId": "95e128d525bf2c663d0aab588e5da3de75a4994f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
