@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5510962d_0c244767",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-26T01:13:39Z",
+      "side": 1,
+      "message": "I kept this unary to be used by pRPC clients. I don\u0027t think pRPC clients can use grpc.DialOptions, but correct me if I\u0027m wrong.",
+      "range": {
+        "startLine": 65,
+        "startChar": 5,
+        "endLine": 65,
+        "endChar": 30
+      },
+      "revId": "a9f498bae0e79824e0aa48d5ec8e2d2fbffcc07e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
