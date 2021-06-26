@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67069e28_00523221",
+        "filename": "grpc/grpcmon/client_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-26T00:19:28Z",
+      "side": 1,
+      "message": "I couldn\u0027t find ways to pass grpc.DialOption{} to prpc.Client{}. Thus, I used grpc.Server{} instead.",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 46
+      },
+      "revId": "76538136a5b6cfadc5792595d2782af34f0e71c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
