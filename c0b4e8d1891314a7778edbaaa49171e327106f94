@@ -153,6 +153,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "78bc3ec3_90e526b7",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-26T00:39:34Z",
+      "side": 1,
+      "message": "sgtm.",
+      "parentUuid": "cd2f793e_24fb70ef",
+      "range": {
+        "startLine": 213,
+        "startChar": 28,
+        "endLine": 214,
+        "endChar": 20
+      },
+      "revId": "c0b4e8d1891314a7778edbaaa49171e327106f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "57689c53_2ca7ee66",
