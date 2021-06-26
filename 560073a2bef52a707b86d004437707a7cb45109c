@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b4e5bc6f_b9b35c66",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-26T00:17:04Z",
+      "side": 1,
+      "message": "PTAL. Use of StatsHandler was necessary to capture the total round trip duration of a stream RPC call.",
+      "revId": "560073a2bef52a707b86d004437707a7cb45109c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
