@@ -277,8 +277,8 @@ func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, u
 	}
 	return cloudlogging.NewClient(
 		ctx, cloudProject,
+		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)),
-		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(grpcmon.NewUnaryClientInterceptor(nil))),
 	)
 }
 
