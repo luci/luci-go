@@ -44,11 +44,13 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/cloud"
+	"go.chromium.org/luci/grpc/grpcmon"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -182,7 +184,10 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to initialize the token source").Err()
 		}
-		clientOpts = []option.ClientOption{option.WithTokenSource(ts)}
+		clientOpts = []option.ClientOption{
+			option.WithTokenSource(ts),
+			option.WithGRPCDialOption(grpc.WithUnaryInterceptor(grpcmon.NewUnaryClientInterceptor(nil))),
+		}
 	}
 
 	client, err := datastore.NewClient(ctx, cloudProject, clientOpts...)
