@@ -270,18 +270,11 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 }
 
 func (c *client) AddToAttentionSet(ctx context.Context, req *gerritpb.AttentionSetRequest, opts ...grpc.CallOption) (*gerritpb.AccountInfo, error) {
-	path := fmt.Sprintf("/changes/%s/attention", gerritChangeIDForRouting(req.Number, req.Project))
-	var data *attentionSetInput
-	if i := req.GetInput(); i != nil {
-		data = toAttentionSetInput(i)
-	} else {
-		// TODO(tandrii): migrate current users and remove.
-		data = &attentionSetInput{
-			User:   req.User,
-			Reason: req.Reason,
-			Notify: enumToString(int32(req.Notify.Number()), gerritpb.Notify_name),
-		}
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
 	}
+	path := fmt.Sprintf("/changes/%s/attention", gerritChangeIDForRouting(req.Number, req.Project))
+	data := toAttentionSetInput(req.GetInput())
 	var resp accountInfo
 	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp); err != nil {
 		return nil, errors.Annotate(err, "add to attention set").Err()
