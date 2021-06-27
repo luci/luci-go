@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -243,6 +242,5 @@ func (n *Notifier) sendWithoutDispatch(ctx context.Context, runID common.RunID, 
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	to := datastore.MakeKey(ctx, RunKind, string(runID))
-	return eventbox.Emit(ctx, value, to)
+	return eventbox.Emit(ctx, value, EventboxRecipient(ctx, runID))
 }

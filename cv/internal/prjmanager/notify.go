@@ -21,7 +21,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -161,6 +160,5 @@ func (n *Notifier) sendWithoutDispatch(ctx context.Context, luciProject string, 
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	to := datastore.MakeKey(ctx, ProjectKind, luciProject)
-	return eventbox.Emit(ctx, value, to)
+	return eventbox.Emit(ctx, value, EventboxRecipient(ctx, luciProject))
 }

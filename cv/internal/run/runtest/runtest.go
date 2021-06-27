@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -69,8 +68,7 @@ func Tasks(in tqtesting.TaskList) tqtesting.TaskList {
 }
 
 func iterEventBox(ctx context.Context, runID common.RunID, cb func(*eventpb.Event)) {
-	runKey := datastore.MakeKey(ctx, run.RunKind, string(runID))
-	events, err := eventbox.List(ctx, runKey)
+	events, err := eventbox.List(ctx, run.EventboxRecipient(ctx, runID))
 	So(err, ShouldBeNil)
 	for _, item := range events {
 		evt := &eventpb.Event{}
