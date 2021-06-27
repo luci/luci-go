@@ -373,6 +373,11 @@ func TestPushHandler(t *testing.T) {
 			So(call(`{"class": "test-1", "body": {}}`, nil), ShouldEqual, 202)
 		})
 
+		Convey("Handler ignore error", func() {
+			handlerErr = errors.New("boo", Ignore)
+			So(call(`{"class": "test-1", "body": {}}`, nil), ShouldEqual, 204)
+		})
+
 		Convey("Handler transient error", func() {
 			handlerErr = errors.New("boo", transient.Tag)
 			So(call(`{"class": "test-1", "body": {}}`, nil), ShouldEqual, 500)
