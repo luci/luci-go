@@ -18,10 +18,15 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -43,7 +48,7 @@ func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 //
 // Results in stopping Project Manager if ProjectConfig got disabled or deleted.
 func (n *Notifier) UpdateConfig(ctx context.Context, luciProject string) error {
-	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
+	return n.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_NewConfig{
 			NewConfig: &prjpb.NewConfig{},
 		},
@@ -53,7 +58,7 @@ func (n *Notifier) UpdateConfig(ctx context.Context, luciProject string) error {
 // Poke tells Project Manager to poke all downstream actors and check its own
 // state.
 func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
-	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
+	return n.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_Poke{
 			Poke: &prjpb.Poke{},
 		},
@@ -62,7 +67,7 @@ func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
 
 // NotifyCLUpdated tells Project Manager to check latest version of a given CL.
 func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
-	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
+	return n.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClUpdated{
 			ClUpdated: &prjpb.CLUpdated{
 				Clid:     int64(clid),
@@ -76,7 +81,7 @@ func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid
 //
 // In each given CL, .ID and .EVersion must be set.
 func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
-	return n.TasksBinding.SendNow(ctx, luciProject, &prjpb.Event{
+	return n.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClsUpdated{
 			ClsUpdated: prjpb.MakeCLsUpdated(cls),
 		},
@@ -88,9 +93,9 @@ func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls
 // The ultimate result of CL purge is the updated state of a CL itself, thus no
 // information is provided here.
 //
-// TODO(tandrii): remove eta parameter once CV does all the purging.
+// TODO(crbug/1224170): remove eta parameter once CV does all the purging.
 func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string, eta time.Time) error {
-	err := prjpb.Send(ctx, luciProject, &prjpb.Event{
+	err := n.sendWithoutDispatch(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_PurgeCompleted{
 			PurgeCompleted: &prjpb.PurgeCompleted{
 				OperationId: operationID,
@@ -120,7 +125,7 @@ func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string,
 //     RunCreation, then the existing TQ task running Project Manager will be
 //     retried. So once again there is no need to create a TQ task.
 func (n *Notifier) NotifyRunCreated(ctx context.Context, runID common.RunID) error {
-	return prjpb.Send(ctx, runID.LUCIProject(), &prjpb.Event{
+	return n.sendWithoutDispatch(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunCreated{
 			RunCreated: &prjpb.RunCreated{
 				RunId: string(runID),
@@ -131,11 +136,31 @@ func (n *Notifier) NotifyRunCreated(ctx context.Context, runID common.RunID) err
 
 // NotifyRunFinished tells Project Manager that a run has finalized its state.
 func (n *Notifier) NotifyRunFinished(ctx context.Context, runID common.RunID) error {
-	return n.TasksBinding.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
+	return n.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunFinished{
 			RunFinished: &prjpb.RunFinished{
 				RunId: string(runID),
 			},
 		},
 	})
+}
+
+// SendNow sends the event to Project's eventbox and invokes Project Manager
+// immediately.
+func (n *Notifier) SendNow(ctx context.Context, luciProject string, e *prjpb.Event) error {
+	if err := n.sendWithoutDispatch(ctx, luciProject, e); err != nil {
+		return err
+	}
+	return n.TasksBinding.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
+}
+
+// sendWithoutDispatch sends the event to Project's eventbox without invoking a
+// PM.
+func (n *Notifier) sendWithoutDispatch(ctx context.Context, luciProject string, e *prjpb.Event) error {
+	value, err := proto.Marshal(e)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal").Err()
+	}
+	to := datastore.MakeKey(ctx, ProjectKind, luciProject)
+	return eventbox.Emit(ctx, value, to)
 }

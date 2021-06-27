@@ -19,15 +19,11 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
-
-	"go.chromium.org/luci/cv/internal/common/eventbox"
 )
 
 const (
@@ -158,24 +154,4 @@ var mockDispatcherContextKey = "prjpb.mockDispatcher"
 // See pmtest.MockDispatch().
 func InstallMockDispatcher(ctx context.Context, f func(luciProject string, eta time.Time)) context.Context {
 	return context.WithValue(ctx, &mockDispatcherContextKey, f)
-}
-
-// SendNow sends the event to Project's eventbox and invokes PM immediately.
-func (tr TasksBinding) SendNow(ctx context.Context, luciProject string, e *Event) error {
-	if err := Send(ctx, luciProject, e); err != nil {
-		return err
-	}
-	return tr.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
-}
-
-// Send sends the event to Project's eventbox without invoking a PM.
-func Send(ctx context.Context, luciProject string, e *Event) error {
-	value, err := proto.Marshal(e)
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
-	}
-	// Must be the same as prjmanager.ProjectKind, which can't imported due to
-	// circular imports.
-	to := datastore.MakeKey(ctx, "Project", luciProject)
-	return eventbox.Emit(ctx, value, to)
 }
