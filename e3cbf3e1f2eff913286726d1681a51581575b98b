@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6246e670_585bb6a9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-27T18:05:55Z",
+      "side": 1,
+      "message": "PTAL\n\nExample on CV -dev: http://shortn/_cOWgU4Fint ",
+      "revId": "e3cbf3e1f2eff913286726d1681a51581575b98b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
