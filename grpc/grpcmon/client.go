@@ -16,13 +16,18 @@ package grpcmon
 
 import (
 	"context"
+	"fmt"
+	"reflect"
+	"strings"
 	"time"
 
 	gcode "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -69,6 +74,51 @@ func NewUnaryClientInterceptor(next grpc.UnaryClientInterceptor) grpc.UnaryClien
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
+}
+
+func NewInstrumentedProxy(client interface{}) grpc.ClientConnInterface {
+	return &proxy{client}
+}
+
+type proxy struct {
+	client interface{}
+}
+
+// Invoke performs a unary RPC and returns after the response is received
+// into reply.
+func (p *proxy) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+	name := method[strings.LastIndex(method, "/")+1:]
+	callable := reflect.ValueOf(p.client).MethodByName(name)
+	callArgs := []reflect.Value{
+		reflect.ValueOf(ctx),
+		reflect.ValueOf(args),
+		reflect.ValueOf(opts),
+	}
+
+	started := clock.Now(ctx)
+	var err error
+	defer func() {
+		reportClientRPCMetrics(ctx, method, err, clock.Now(ctx).Sub(started))
+	}()
+
+	callRes := callable.CallSlice(callArgs)
+
+	if len(callRes) != 2 {
+		panic(fmt.Errorf("%d values in response, but 2 expected", len(callRes)))
+	}
+	if !callRes[1].IsNil() {
+		err = callRes[1].Interface().(error)
+		if err != nil {
+			return err
+		}
+	}
+	proto.Merge(reply.(proto.Message), callRes[0].Interface().(proto.Message))
+	return nil
+}
+
+// NewStream begins a streaming RPC.
+func (p *proxy) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	return nil, errors.New("NewStream is not supported")
 }
 
 // reportClientRPCMetrics sends metrics after RPC call has finished.

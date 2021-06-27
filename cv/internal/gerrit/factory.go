@@ -84,7 +84,7 @@ func (f *factory) makeClient(ctx context.Context, gerritHost, luciProject string
 		if err != nil {
 			return
 		}
-		value, err = gerrit.NewRESTClient(&http.Client{Transport: t}, gerritHost, true)
+		value, err = gerrit.NewInstrumentedRESTClient(&http.Client{Transport: t}, gerritHost, true)
 		return
 	})
 	if err != nil {

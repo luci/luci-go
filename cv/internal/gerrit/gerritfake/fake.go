@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/grpc/grpcmon"
 
 	"go.chromium.org/luci/cv/internal/gerrit"
 )
@@ -67,7 +68,10 @@ func (f *Fake) Install(ctx context.Context) context.Context {
 			// Quick catch of common mistake.
 			panic(fmt.Errorf("wrong gerritHost or luciProject: %q %q", gerritHost, luciProject))
 		}
-		return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
+		// TODO(tandrii): undo this.
+		// return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
+		c := &Client{f: f, luciProject: luciProject, host: gerritHost}
+		return gerritpb.NewGerritClient(grpcmon.NewInstrumentedProxy(c)), nil
 	})
 }
 

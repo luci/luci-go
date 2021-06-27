@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/grpc/grpcmon"
 )
 
 const (
@@ -80,6 +81,16 @@ func NewRESTClient(httpClient *http.Client, host string, auth bool) (gerritpb.Ge
 		baseURL += "/a"
 	}
 	return &client{Client: httpClient, BaseURL: baseURL}, nil
+}
+
+// NewInstrumentedRESTClient is the same as NewRESTClient but instrumented with
+// grpcmon.
+func NewInstrumentedRESTClient(httpClient *http.Client, host string, auth bool) (gerritpb.GerritClient, error) {
+	c, err := NewRESTClient(httpClient, host, auth)
+	if err != nil {
+		return nil, err
+	}
+	return gerritpb.NewGerritClient(grpcmon.NewInstrumentedProxy(c)), nil
 }
 
 // Implementation.
