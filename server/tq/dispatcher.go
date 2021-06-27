@@ -405,11 +405,19 @@ type Task struct {
 	ETA time.Time
 }
 
-// Fatal is an error tag used to indicate that the handler wants the task to
-// be dropped.
-//
-// See Handler doc for more details.
-var Fatal = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped")}
+var (
+	// Fatal is an error tag used to indicate that the handler wants the task to
+	// be dropped due to unrecoverable failure.
+	//
+	// See Handler doc for more details.
+	Fatal = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped due to fatal failure")}
+
+	// Ignore is an error tag used to indicate that the handler wants the task to
+	// be dropped as no longer needed.
+	//
+	// See Handler doc for more details.
+	Ignore = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped as no longer needed")}
+)
 
 // Used to override HTTP status of some errors.
 var (
@@ -423,9 +431,16 @@ var quietOnError = errors.BoolTag{Key: errors.NewTagKey("QuietOnError")}
 
 // Handler is called to handle one enqueued task.
 //
-// If it returns an error tagged with Fatal tag, the task will be dropped with
-// HTTP 202 reply to Cloud Tasks. Otherwise it will be retried later (per the
-// queue configuration) with HTTP 429 reply.
+// If Handler returns an error tagged with Ignore tag, the task will be dropped
+// with HTTP 204 reply to Cloud Tasks. This is useful when task is no longer
+// needed yet it's desirable to distinguish such a case from the normal case
+// for monitoring purposes (e.g. in emitted logs or tsmon metrics).
+//
+// If Handler returns an error tagged with Fatal tag, the task will be dropped with
+// HTTP 202 reply to Cloud Tasks. This should be rarely used.
+//
+// Otherwise, the task will be retried later (per the queue configuration) with
+// HTTP 429 reply.
 //
 // Errors tagged with transient.Tag result in HTTP 500 replies. They also
 // trigger a retry.
@@ -1164,6 +1179,8 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	switch {
 	case Fatal.In(err):
 		result = "fatal"
+	case Ignore.In(err):
+		result = "ignore"
 	case transient.Tag.In(err):
 		result = "transient"
 	case err != nil:
@@ -1379,6 +1396,8 @@ func replyWithErr(c *router.Context, err error) {
 		httpReply(c, 200, "OK", nil)
 	case Fatal.In(err):
 		httpReply(c, 202, "fatal error", err)
+	case Ignore.In(err):
+		httpReply(c, 204, "" /* HTTP 204 means no content */, err)
 	case transient.Tag.In(err):
 		httpReply(c, 500, "transient error", err)
 	default:
