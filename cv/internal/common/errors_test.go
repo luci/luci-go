@@ -102,16 +102,17 @@ func TestTQifyError(t *testing.T) {
 					So(tq.Fatal.In(err), ShouldBeFalse)
 					assertLoggedStack()
 				})
-				Convey("non-transient -> tq.Fatal and ", func() {
+				Convey("non-transient -> tq.Fatal", func() {
 					err := tqify.Error(ctx, errRare)
 					So(tq.Fatal.In(err), ShouldBeTrue)
 					assertLoggedStack()
 				})
 			})
 
-			Convey("KnownFatal => tq.Fatal, log as warning", func() {
+			Convey("KnownFatal => tq.Ignore, log as warning", func() {
 				err := tqify.Error(ctx, errWrapOops)
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				So(tq.Ignore.In(err), ShouldBeTrue)
+				So(tq.Fatal.In(err), ShouldBeFalse)
 				assertLoggedAt(logging.Warning)
 			})
 			Convey("KnownRetry => non-transient, non-Fatal, log as warning", func() {

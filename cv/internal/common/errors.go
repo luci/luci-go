@@ -63,10 +63,13 @@ func MostSevereError(err error) error {
 //   }
 //
 // Given that:
-//  * TQ lib recognizes 2 error tags:
-//    * TQ.Fatal => HTTP 202, no retries
-//    * transient.Tag => HTTP 500, will be retried
-//    * else => HTTP 429, will be retried
+//  * TQ lib recognizes these error kinds:
+//    * tq.Ignore => HTTP 204, no retries
+//    * tq.Fatal => HTTP 202, no retries, but treated with alertable in our
+//      monitoring configuration;
+//    * transient.Tag => HTTP 500, will be retried;
+//    * else => HTTP 429, will be retried.
+//
 // OTOH, CV uses
 //  * transient.Tag to treat all _transient_ situations, where retry should
 //    help
@@ -118,14 +121,15 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 
 	case fail:
 		logging.Warningf(ctx, "Failing due to anticipated error: %s", err)
-		return tq.Fatal.Apply(err)
+		return tq.Ignore.Apply(err)
 
 	case !transient.Tag.In(err):
 		// Unexpected error which isn't considered retryable.
+		// These should be rare.
 		err = tq.Fatal.Apply(err)
 		fallthrough
 	default:
-		// Unexpected error get logged with full stacktrace.
+		// Unexpected error is logged with full stacktrace.
 		LogError(ctx, err)
 		return err
 	}
