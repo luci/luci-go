@@ -89,6 +89,10 @@ type Run struct {
 	// If set, Submission is in progress or has completed.
 	Submission *Submission
 
+	// LatestCLsRefresh is the latest time when Run Manager scheduled async
+	// refresh of CLs.
+	LatestCLsRefresh time.Time `gae:",noindex"`
+
 	// TODO(yiwzhang): Define
 	//  * RemainingTryjobQuota: Run-level Tryjob quota.
 

@@ -288,7 +288,6 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 	}
 
 	if len(tr.newConfigEvents.events) > 0 {
-		// TODO(tandrii,yiwzhang): update config.
 		res, err := rp.handler.UpdateConfig(ctx, rs, tr.newConfigEvents.hash)
 		if err != nil {
 			return nil, err
@@ -341,7 +340,6 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 	}
 
 	if len(tr.pokeEvents) > 0 {
-		// TODO(crbug/1178658): trigger CL updater to refetch Run's CLs.
 		res, err := rp.handler.Poke(ctx, rs)
 		if err != nil {
 			return nil, err
