@@ -16,6 +16,24 @@
       "message": "why does the tq.Ignore change gets reverted here?",
       "revId": "1ca9ca6962968e2905af6ccacaa452acf3cd079f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d288b1cc_bb8a38ab",
+        "filename": "cv/internal/common/errors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-28T22:17:52Z",
+      "side": 1,
+      "message": "I don\u0027t know. My local doesn\u0027t have it. I\u0027ve rebased everything and now the weirdness is gone.",
+      "parentUuid": "463cfd6a_79ce7fe7",
+      "revId": "1ca9ca6962968e2905af6ccacaa452acf3cd079f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
