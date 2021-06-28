@@ -275,6 +275,9 @@ func (a *fancyActivity) Progress(ctx context.Context, title string, units Units,
 }
 
 func (a *fancyActivity) Log(ctx context.Context, level logging.Level, calldepth int, f string, args []interface{}) {
+	if level <= logging.Debug {
+		return
+	}
 	a.mutateLockedState(func() {
 		a.logMessage = fmt.Sprintf(f, args...)
 		a.logLevel = level
@@ -316,20 +319,19 @@ func (a *fancyActivity) renderLine(advance bool, width int) (line string, active
 	}
 	a.m.Unlock()
 
-	// Construct the string with detailed progress stats.
-	detailsStr := ""
+	// Construct strings with detailed progress and speed stats.
+	progressStr := ""
+	speedStr := ""
 	if progressTotal != 0 {
-		totalStr := fmt.Sprintf("%.1f", float64(progressTotal)/1000000.0)
-		curStr := fmt.Sprintf("%.1f", float64(progressCur)/1000000.0)
-		speedStr := "??"
-		if speed >= 0 {
-			speedStr = fmt.Sprintf("%.1f", speed/1000000.0)
-		}
-		detailsStr = fmt.Sprintf(" %s/%s MB, %s MB/s",
-			padLeft(curStr, len(totalStr)),
-			totalStr,
-			speedStr,
+		progressStr = fmt.Sprintf(" %.1f/%.1f MB",
+			float64(progressCur)/1000000.0,
+			float64(progressTotal)/1000000.0,
 		)
+		if speed >= 0 {
+			speedStr = fmt.Sprintf("│ %.1f MB/s ", speed/1000000.0)
+		} else {
+			speedStr = "│ ?? MB/s "
+		}
 	}
 
 	// The line being constructed.
@@ -390,12 +392,13 @@ func (a *fancyActivity) renderLine(advance bool, width int) (line string, active
 	} else {
 		// Write the progress title along with some stats.
 		start := runes
-		writeString(progressTitle + detailsStr + " ")
+		writeString(progressTitle + progressStr + " ")
 
-		// Pad it with spaces on the right to align progress bars across lines.
-		if titleLen := runes - start; titleLen < 36 {
-			writeString(strings.Repeat(" ", 36-titleLen))
+		// Pad it with spaces on the right to align speed indicators across lines.
+		if titleLen := runes - start; titleLen < 30 {
+			writeString(strings.Repeat(" ", 30-titleLen))
 		}
+		writeString(padRight(speedStr, len("| 1000.0 MB/s ")))
 
 		// Too wide progress lines look ugly.
 		if width > 160 {

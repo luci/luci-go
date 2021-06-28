@@ -98,6 +98,11 @@ const (
 	// MetadataAttachTimeout is how long to wait for an instance to be processed
 	// when attaching metadata in AttachMetadataWhenReady.
 	MetadataAttachTimeout = 3 * time.Minute
+
+	// DefaultParallelDownloads is a default value for CIPD_PARALLEL_DOWNLOADS.
+	//
+	// See ParallelDownloads client option.
+	DefaultParallelDownloads = 4
 )
 
 // Environment variable definitions
@@ -139,7 +144,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.9"
+	UserAgent = "cipd 2.6.0"
 )
 
 func init() {
@@ -367,7 +372,11 @@ type ClientOptions struct {
 	// ParallelDownloads defines how many packages are allowed to be fetched
 	// concurrently.
 	//
-	// If <=1, packages will be fetched sequentially.
+	// Possible values:
+	//   0: will use some default value (perhaps loading it from the environ).
+	//  <0: will do fetching and unzipping completely serially.
+	//   1: will fetch at most one package at once and unzip in parallel to that.
+	//  >1: will fetch multiple packages at once and unzip in parallel to that.
 	ParallelDownloads int
 
 	// UserAgent is put into User-Agent HTTP header with each request.
@@ -413,7 +422,14 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 			if err != nil {
 				return fmt.Errorf("bad %s: not an integer - %s", EnvParallelDownloads, v)
 			}
-			opts.ParallelDownloads = val
+			// CIPD_PARALLEL_DOWNLOADS == 0 means "no parallel work at all", this is
+			// conveyed by negatives in opts.ParallelDownloads (because 0 was already
+			// used to represent "use defaults").
+			if val == 0 {
+				opts.ParallelDownloads = -1
+			} else {
+				opts.ParallelDownloads = val
+			}
 		}
 	}
 	if opts.UserAgent == "" {
@@ -609,7 +625,7 @@ var batchAwareOps = map[batchAwareOp]func(*clientImpl, context.Context){
 func (client *clientImpl) saveTagCache(ctx context.Context) {
 	if client.tagCache != nil {
 		if err := client.tagCache.Save(ctx); err != nil {
-			logging.Warningf(ctx, "Failed to save tag cache - %s", err)
+			logging.Warningf(ctx, "Failed to save tag cache: %s", err)
 		}
 	}
 }
@@ -690,11 +706,22 @@ func (client *clientImpl) instanceCache(ctx context.Context) (*internal.Instance
 		return nil, err
 	}
 
+	// Since 0 is used as "use defaults" indicator, we have to use negatives to
+	// represent "do not do anything in parallel at all" (by passing 0 to
+	// the InstanceCache).
+	parallelDownloads := client.ParallelDownloads
+	switch {
+	case parallelDownloads == 0:
+		parallelDownloads = DefaultParallelDownloads
+	case parallelDownloads < 0:
+		parallelDownloads = 0
+	}
+
 	cache := &internal.InstanceCache{
 		FS:                fs.NewFileSystem(cacheDir, ""),
 		Tmp:               tmp,
 		Fetcher:           client.remoteFetchInstance,
-		ParallelDownloads: client.ParallelDownloads,
+		ParallelDownloads: parallelDownloads,
 	}
 	cache.Launch(ctx) // start background download goroutines
 	return cache, nil
@@ -856,7 +883,7 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	if cache != nil {
 		cached, err := cache.ResolveTag(ctx, packageName, version)
 		if err != nil {
-			logging.Warningf(ctx, "Could not query tag cache - %s", err)
+			logging.Warningf(ctx, "Could not query tag cache: %s", err)
 		}
 		if cached.InstanceID != "" {
 			logging.Debugf(ctx, "Tag cache hit for %s:%s - %s", packageName, version, cached.InstanceID)
@@ -1218,7 +1245,7 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 	ctx, done := ui.NewActivity(ctx, nil, "")
 	defer done()
 
-	logging.Infof(ctx, "Setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
+	logging.Infof(ctx, "Setting ref of %s: %q => %q", pin.PackageName, ref, pin.InstanceID)
 
 	err := client.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
 		_, err := client.repo.CreateRef(ctx, &api.Ref{
@@ -1233,9 +1260,9 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 	case nil:
 		logging.Infof(ctx, "Ref %q is set", ref)
 	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "Failed to set ref - deadline exceeded")
+		logging.Errorf(ctx, "Failed to set ref: deadline exceeded")
 	default:
-		logging.Errorf(ctx, "Failed to set ref - %s", err)
+		logging.Errorf(ctx, "Failed to set ref: %s", err)
 	}
 	return err
 }
@@ -1285,9 +1312,9 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 			logging.Infof(ctx, "All tags were attached")
 		}
 	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "Failed to attach tags - deadline exceeded")
+		logging.Errorf(ctx, "Failed to attach tags: deadline exceeded")
 	default:
-		logging.Errorf(ctx, "Failed to attach tags - %s", err)
+		logging.Errorf(ctx, "Failed to attach tags: %s", err)
 	}
 	return err
 }
@@ -1347,9 +1374,9 @@ func (client *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin commo
 			logging.Infof(ctx, "Metadata was attached")
 		}
 	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "Failed to attach metadata - deadline exceeded")
+		logging.Errorf(ctx, "Failed to attach metadata: deadline exceeded")
 	default:
-		logging.Errorf(ctx, "Failed to attach metadata - %s", err)
+		logging.Errorf(ctx, "Failed to attach metadata: %s", err)
 	}
 	return err
 }
@@ -1472,6 +1499,9 @@ func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pk
 		return nil, err
 	}
 
+	ctx, done := ui.NewActivity(ctx, nil, "")
+	defer done()
+
 	cache, err := client.instanceCache(ctx)
 	if err != nil {
 		return nil, err
@@ -1494,6 +1524,9 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 		return err
 	}
 
+	ctx, done := ui.NewActivity(ctx, nil, "")
+	defer done()
+
 	// Deal with no-cache situation first, it is simple - just fetch the instance
 	// into the 'output'.
 	if client.CacheDir == "" {
@@ -1508,13 +1541,17 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 	}
 	defer func() {
 		if err := input.Close(ctx, false); err != nil {
-			logging.Warningf(ctx, "Failed to close the package file - %s", err)
+			logging.Warningf(ctx, "Failed to close the instance file: %s", err)
 		}
 	}()
 
 	logging.Infof(ctx, "Copying the instance into the final destination...")
-	_, err = io.Copy(output, io.NewSectionReader(input, 0, input.Size()))
-	return err
+	if _, err = io.Copy(output, io.NewSectionReader(input, 0, input.Size())); err != nil {
+		logging.Errorf(ctx, "Failed to copy the instance file: %s", err)
+		return err
+	}
+	logging.Infof(ctx, "Successfully copied the instance %s", pin)
+	return nil
 }
 
 // remoteFetchInstance fetches the package file into 'output' and verifies its
@@ -1603,7 +1640,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		if a.subdir != "" {
 			subdir = fmt.Sprintf(" in %q", a.subdir)
 		}
-		logging.Errorf(ctx, "Failed to %s %q%s: %s", a.action, a.pin.PackageName, subdir, err)
+		logging.Errorf(ctx, "Failed to %s %s%s: %s", a.action, a.pin.PackageName, subdir, err)
 		aMap[a.subdir].Errors = append(aMap[a.subdir].Errors, ActionError{
 			Action: a.action,
 			Pin:    a.pin,
@@ -1831,7 +1868,7 @@ func (client *clientImpl) makeRepairChecker(ctx context.Context, paranoia Parano
 			// properly fail later.
 			return &RepairPlan{
 				NeedsReinstall:  true,
-				ReinstallReason: fmt.Sprintf("failed to check the package state - %s", err),
+				ReinstallReason: fmt.Sprintf("failed to check the package state: %s", err),
 			}
 		case !state.Deployed:
 			// This should generally not happen. Can probably happen if two clients
