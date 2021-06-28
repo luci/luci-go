@@ -18,12 +18,16 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
@@ -47,7 +51,7 @@ func (n *Notifier) Invoke(ctx context.Context, runID common.RunID, eta time.Time
 
 // Start tells RunManager to start the given run.
 func (n *Notifier) Start(ctx context.Context, runID common.RunID) error {
-	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
+	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Start{
 			Start: &eventpb.Start{},
 		},
@@ -74,9 +78,9 @@ func (n *Notifier) PokeAfter(ctx context.Context, runID common.RunID, after time
 	if after > 0 {
 		t := clock.Now(ctx).Add(after)
 		evt.ProcessAfter = timestamppb.New(t)
-		return n.TasksBinding.Send(ctx, runID, evt, t)
+		return n.Send(ctx, runID, evt, t)
 	}
-	return n.TasksBinding.SendNow(ctx, runID, evt)
+	return n.SendNow(ctx, runID, evt)
 }
 
 // PokeAt tells RunManager to check its own state at around `eta`.
@@ -92,14 +96,14 @@ func (n *Notifier) PokeAt(ctx context.Context, runID common.RunID, eta time.Time
 	}
 	if eta.After(clock.Now(ctx)) {
 		evt.ProcessAfter = timestamppb.New(eta)
-		return n.TasksBinding.Send(ctx, runID, evt, eta)
+		return n.Send(ctx, runID, evt, eta)
 	}
-	return n.TasksBinding.SendNow(ctx, runID, evt)
+	return n.SendNow(ctx, runID, evt)
 }
 
 // UpdateConfig tells RunManager to update the given Run to new config.
 func (n *Notifier) UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
-	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
+	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_NewConfig{
 			NewConfig: &eventpb.NewConfig{
 				Hash:     hash,
@@ -113,7 +117,7 @@ func (n *Notifier) UpdateConfig(ctx context.Context, runID common.RunID, hash st
 //
 // TODO(yiwzhang,tandrii): support reason.
 func (n *Notifier) Cancel(ctx context.Context, runID common.RunID) error {
-	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
+	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Cancel{
 			Cancel: &eventpb.Cancel{},
 		},
@@ -133,14 +137,14 @@ func (n *Notifier) CancelAt(ctx context.Context, runID common.RunID, eta time.Ti
 	}
 	if eta.After(clock.Now(ctx)) {
 		evt.ProcessAfter = timestamppb.New(eta)
-		return n.TasksBinding.Send(ctx, runID, evt, eta)
+		return n.Send(ctx, runID, evt, eta)
 	}
-	return n.TasksBinding.SendNow(ctx, runID, evt)
+	return n.SendNow(ctx, runID, evt)
 }
 
 // NotifyCLUpdated informs RunManager that given CL has a new version available.
 func (n *Notifier) NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
-	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
+	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_ClUpdated{
 			ClUpdated: &eventpb.CLUpdated{
 				Clid:     int64(clid),
@@ -159,10 +163,10 @@ func (n *Notifier) NotifyReadyForSubmission(ctx context.Context, runID common.Ru
 		},
 	}
 	if eta.IsZero() {
-		return n.TasksBinding.SendNow(ctx, runID, evt)
+		return n.SendNow(ctx, runID, evt)
 	}
 	evt.ProcessAfter = timestamppb.New(eta)
-	return n.TasksBinding.Send(ctx, runID, evt, eta)
+	return n.Send(ctx, runID, evt, eta)
 }
 
 // NotifyCLSubmitted informs RunManager that the provided CL is submitted.
@@ -173,7 +177,7 @@ func (n *Notifier) NotifyReadyForSubmission(ctx context.Context, runID common.Ru
 // result for each individual CLs after submission completes.
 // Waking up RM unnecessarily may increase the contention of Run entity.
 func (n *Notifier) NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error {
-	return eventpb.SendWithoutDispatch(ctx, runID, &eventpb.Event{
+	return n.sendWithoutDispatch(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_ClSubmitted{
 			ClSubmitted: &eventpb.CLSubmitted{
 				Clid: int64(clid),
@@ -191,9 +195,9 @@ func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.R
 		},
 	}
 	if invokeRM {
-		return n.TasksBinding.SendNow(ctx, runID, evt)
+		return n.SendNow(ctx, runID, evt)
 	}
-	return eventpb.SendWithoutDispatch(ctx, runID, evt)
+	return n.sendWithoutDispatch(ctx, runID, evt)
 }
 
 // NotifyCQDVerificationCompleted tells RunManager that CQDaemon has completed
@@ -201,7 +205,7 @@ func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.R
 //
 // TODO(crbug/1141880): Remove this event after migration.
 func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
-	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
+	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_CqdVerificationCompleted{
 			CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
 		},
@@ -211,11 +215,34 @@ func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID com
 // NotifyCQDFinished tells RunManager that CQDaemon has finished the provided
 // Run.
 //
-// TODO(crbug/1141880): Remove this event after migration.
+// TODO(crbug/1224170): Remove this event after migration.
 func (n *Notifier) NotifyCQDFinished(ctx context.Context, runID common.RunID) error {
-	return n.TasksBinding.SendNow(ctx, runID, &eventpb.Event{
+	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_CqdFinished{
 			CqdFinished: &eventpb.CQDFinished{},
 		},
 	})
+}
+
+// SendNow sends the event to Run's eventbox and invokes RunManager immediately.
+func (n *Notifier) SendNow(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
+	return n.Send(ctx, runID, evt, time.Time{})
+}
+
+// Send sends the event to Run's eventbox and invokes RunManager at `eta`.
+func (n *Notifier) Send(ctx context.Context, runID common.RunID, evt *eventpb.Event, eta time.Time) error {
+	if err := n.sendWithoutDispatch(ctx, runID, evt); err != nil {
+		return err
+	}
+	return n.TasksBinding.Dispatch(ctx, string(runID), eta)
+}
+
+// sendWithoutDispatch sends the event to Run's eventbox without invoking RM.
+func (n *Notifier) sendWithoutDispatch(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
+	value, err := proto.Marshal(evt)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal").Err()
+	}
+	to := datastore.MakeKey(ctx, RunKind, string(runID))
+	return eventbox.Emit(ctx, value, to)
 }

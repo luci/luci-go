@@ -450,7 +450,7 @@ func (d *AdminServer) SendProjectEvent(ctx context.Context, req *adminpb.SendPro
 		return nil, status.Errorf(codes.NotFound, "project not found")
 	}
 
-	if err := d.PMNotifier.TasksBinding.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
+	if err := d.PMNotifier.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -475,7 +475,7 @@ func (d *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEven
 		return nil, status.Errorf(codes.Internal, "failed to fetch Run")
 	}
 
-	if err := d.RunNotifier.TasksBinding.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
+	if err := d.RunNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
 	}
 	return &emptypb.Empty{}, nil
