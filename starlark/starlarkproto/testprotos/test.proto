@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package testprotos;
 
+import "go.chromium.org/luci/common/proto/options.proto";
 import "go.chromium.org/luci/starlark/starlarkproto/testprotos/another.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -38,6 +39,8 @@ message SimpleFields {
   repeated bytes bs_rep = 11;
   repeated sint64 si64_rep = 12;
   repeated string str_rep = 13;
+  string json = 14 [(luci.text_pb_format) = JSON];
+  repeated string json_rep = 15 [(luci.text_pb_format) = JSON];
 }
 
 message MessageFields {
@@ -94,4 +97,12 @@ message MapWithPrimitiveType {
 
 message MapWithMessageType {
   map<string, Simple> m = 1;
+}
+
+message Json {
+  string json = 1 [(luci.text_pb_format) = JSON];
+}
+
+message NestedJson {
+  Json nested = 1;
 }

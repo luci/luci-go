@@ -16,8 +16,12 @@ package starlarkproto
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+
+	luciproto "go.chromium.org/luci/common/proto"
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -25,11 +29,79 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 
+	"github.com/protocolbuffers/txtpbfmt/ast"
 	"github.com/protocolbuffers/txtpbfmt/parser"
 )
+
+func isSingleQuotedString(s string) bool {
+	return strings.HasPrefix(s, `"`) && strings.HasSuffix(s, `"`) &&
+		!strings.HasPrefix(s, `"""`) && !strings.HasSuffix(s, `"""`)
+}
+
+func transformTextPBValue(value *ast.Value, desc protoreflect.FieldDescriptor) ([]*ast.Value, error) {
+	opts := desc.Options().(*descriptorpb.FieldOptions)
+	format := proto.GetExtension(opts, luciproto.E_TextPbFormat).(luciproto.TextPBFieldFormat)
+	switch format {
+	case luciproto.TextPBFieldFormat_JSON:
+		if !isSingleQuotedString(value.Value) {
+			break
+		}
+		var s string
+		// The value will be a string with escaped quotes, unmarshal it
+		// to get the actual string value
+		if err := json.Unmarshal([]byte(value.Value), &s); err != nil {
+			return nil, err
+		}
+		buf := &bytes.Buffer{}
+		if err := json.Indent(buf, []byte(s), "", "  "); err != nil {
+			return nil, err
+		}
+		var values []*ast.Value
+		for _, line := range strings.Split(buf.String(), "\n") {
+			// Marshal each line so that the contents are properly
+			// escaped
+			data, err := json.Marshal(&line)
+			if err != nil {
+				return nil, err
+			}
+			values = append(values, &ast.Value{Value: string(data)})
+		}
+		return values, nil
+	}
+	return []*ast.Value{value}, nil
+}
+
+func transformTextPBNode(node *ast.Node, desc protoreflect.MessageDescriptor) error {
+	fDesc := desc.Fields().ByName(protoreflect.Name(node.Name))
+	var values []*ast.Value
+	for _, value := range node.Values {
+		newValues, err := transformTextPBValue(value, fDesc)
+		if err != nil {
+			return err
+		}
+		values = append(values, newValues...)
+	}
+	for _, child := range node.Children {
+		if err := transformTextPBNode(child, fDesc.Message()); err != nil {
+			return err
+		}
+	}
+	node.Values = values
+	return nil
+}
+
+func transformTextPBAst(nodes []*ast.Node, desc protoreflect.MessageDescriptor) error {
+	for _, node := range nodes {
+		if err := transformTextPBNode(node, desc); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // ToTextPB serializes a protobuf message to text proto.
 func ToTextPB(msg *Message) ([]byte, error) {
@@ -44,9 +116,16 @@ func ToTextPB(msg *Message) ([]byte, error) {
 	}
 	// prototext randomly injects spaces into the generate output. Pass it through
 	// a formatter to get rid of them.
-	return parser.FormatWithConfig(blob, parser.Config{
+	nodes, err := parser.ParseWithConfig(blob, parser.Config{
 		SkipAllColons: true,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if err := transformTextPBAst(nodes, msg.MessageType().Descriptor()); err != nil {
+		return nil, err
+	}
+	return []byte(parser.Pretty(nodes, 0)), nil
 }
 
 // ToJSONPB serializes a protobuf message to JSONPB string.
