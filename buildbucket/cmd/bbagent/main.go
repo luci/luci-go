@@ -60,11 +60,6 @@ import (
 	"go.chromium.org/luci/luciexe/invoke"
 )
 
-// defaultUpdateBuildTimeout is the timeout for an UpdateBuild RPC, except for
-// the final one.
-// As of 2021 Mar, the 99-ile was 0.5s ~ 2s.
-const defaultUpdateBuildTimeout = 10 * time.Second
-
 func main() {
 	go func() {
 		// serves "/debug" endpoints for pprof.
@@ -113,10 +108,8 @@ func mainImpl() int {
 
 	// We send a single status=STARTED here, and will send the final build status
 	// after the user executable completes.
-	tctx, tcancel := clock.WithTimeout(ctx, defaultUpdateBuildTimeout)
-	defer tcancel()
 	_, err = bbclient.UpdateBuild(
-		tctx,
+		ctx,
 		&bbpb.UpdateBuildRequest{
 			Build: &bbpb.Build{
 				Id:     input.Build.Id,
@@ -318,12 +311,8 @@ func mainImpl() int {
 		retcode = 1
 	}
 	bbclientRetriesEnabled = true
-	// Final UpdateBuild call, set timeout to be 60s which is the appengine
-	// frontend maximum serve time.
-	ftctx, fcancel := clock.WithTimeout(cctx, 60*time.Second)
-	defer fcancel()
 	_, bbErr := bbclient.UpdateBuild(
-		ftctx,
+		cctx,
 		&bbpb.UpdateBuildRequest{
 			Build:      finalBuild,
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: updateMask},
