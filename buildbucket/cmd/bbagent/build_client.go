@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
@@ -85,6 +84,10 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 		}
 		return nil
 	}
+
+	// As of 2021-06-28, the P99 of UpdateBuild latency is ~2.1s.
+	// So 5s should be long enough for the most of requests.
+	opts.PerRPCTimeout = 5 * time.Second
 
 	prpcClient := &prpc.Client{
 		Host:    hostname,
@@ -173,9 +176,7 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 			b.Data[0].Item = nil
 		}
 
-		tctx, cancel := clock.WithTimeout(ctx, defaultUpdateBuildTimeout)
-		defer cancel()
-		_, err := client.UpdateBuild(tctx, req)
+		_, err := client.UpdateBuild(ctx, req)
 		return err
 	}
 }
