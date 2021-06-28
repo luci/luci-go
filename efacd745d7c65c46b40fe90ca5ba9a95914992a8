@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11763c72_d5cd191a",
+        "filename": "cv/internal/common/eventbox/box.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-28T18:01:43Z",
+      "side": 1,
+      "message": "Would too many distinct value also cause problem to a span in  trace?",
+      "revId": "efacd745d7c65c46b40fe90ca5ba9a95914992a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
