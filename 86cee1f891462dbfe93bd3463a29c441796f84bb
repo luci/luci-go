@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0637153c_7329a963",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T22:57:47Z",
+      "side": 1,
+      "message": "nit: it would be nice to document how to install it similar to how NewUnaryClientInterceptor is documented.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 13
+      },
+      "revId": "86cee1f891462dbfe93bd3463a29c441796f84bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "01a89382_cc499fce",
+        "filename": "grpc/grpcmon/client_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T22:57:47Z",
+      "side": 1,
+      "message": "Unused?",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 1
+      },
+      "revId": "86cee1f891462dbfe93bd3463a29c441796f84bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56dac65a_3a4c60b3",
+        "filename": "grpc/grpcmon/client_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T22:57:47Z",
+      "side": 1,
+      "message": "Note that some Cloud libraries (at least Spanner) were observed to use contexts derived directly from context.Background() for RPCs (e.g. https://github.com/googleapis/google-cloud-go/blob/spanner/v1.21.0/spanner/session.go#L229 and much of the session management t seems). Such contexts will not have tsmon stuff inside. We may need to teach ClientRPCStatsMonitor to accepts a pointer to tsmon state in its constructor. It can be done later though if it is indeed a big problem.",
+      "range": {
+        "startLine": 112,
+        "startChar": 28,
+        "endLine": 112,
+        "endChar": 31
+      },
+      "revId": "86cee1f891462dbfe93bd3463a29c441796f84bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
