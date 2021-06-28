@@ -67,6 +67,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "577f1dfa_ca3c1535",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T22:29:31Z",
+      "side": 1,
+      "message": "No, pRPC client doesn\u0027t understand gRPC dial options at all.",
+      "parentUuid": "86ec5a1a_6577123b",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 57
+      },
+      "revId": "6e1e82f31a1adce43c9fdea941a94b50df053519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c9b011fe_37d97a07",
         "filename": "grpc/grpcmon/client.go",
         "patchSetId": 9
