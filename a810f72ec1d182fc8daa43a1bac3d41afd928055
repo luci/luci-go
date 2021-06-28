@@ -39,6 +39,47 @@
       },
       "revId": "a810f72ec1d182fc8daa43a1bac3d41afd928055",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db57345e_f054ac5d",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 718,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-28T22:17:20Z",
+      "side": 1,
+      "message": "ack",
+      "parentUuid": "3af3a676_ab82cac5",
+      "range": {
+        "startLine": 708,
+        "startChar": 0,
+        "endLine": 718,
+        "endChar": 2
+      },
+      "revId": "a810f72ec1d182fc8daa43a1bac3d41afd928055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "94dac83b_53631e00",
+        "filename": "cipd/client/cipd/ui/activities.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-28T22:17:20Z",
+      "side": 1,
+      "message": "why not https://github.com/keltia/leftpad ?\n\n(/s :p)",
+      "revId": "a810f72ec1d182fc8daa43a1bac3d41afd928055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
