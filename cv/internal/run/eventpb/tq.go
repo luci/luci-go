@@ -23,11 +23,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/cv/internal/common"
 )
 
 const (
@@ -143,29 +142,4 @@ var mockDispatcherContextKey = "eventpb.mockDispatcher"
 // See runtest.MockDispatch().
 func InstallMockDispatcher(ctx context.Context, f func(runID string, eta time.Time)) context.Context {
 	return context.WithValue(ctx, &mockDispatcherContextKey, f)
-}
-
-// SendNow sends the event to Run's eventbox and invokes RunManager immediately.
-func (tr TasksBinding) SendNow(ctx context.Context, runID common.RunID, evt *Event) error {
-	return tr.Send(ctx, runID, evt, time.Time{})
-}
-
-// Send sends the event to Run's eventbox and invokes RunManager at `eta`.
-func (tr TasksBinding) Send(ctx context.Context, runID common.RunID, evt *Event, eta time.Time) error {
-	if err := SendWithoutDispatch(ctx, runID, evt); err != nil {
-		return err
-	}
-	return tr.Dispatch(ctx, string(runID), eta)
-}
-
-// SendWithoutDispatch sends the event to Run's eventbox without invoking RM.
-func SendWithoutDispatch(ctx context.Context, runID common.RunID, evt *Event) error {
-	value, err := proto.Marshal(evt)
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
-	}
-	// Must be the same as run.RunKind, which can't imported due to circular
-	// imports.
-	to := datastore.MakeKey(ctx, "Run", string(runID))
-	return eventbox.Emit(ctx, value, to)
 }
