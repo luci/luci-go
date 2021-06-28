@@ -138,7 +138,6 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 }
 
 func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) error {
-	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
 	proc := &pmProcessor{
 		luciProject: luciProject,
 		pmNotifier:  pm.pmNotifier,
@@ -146,6 +145,7 @@ func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) 
 		clPurger:    pm.clPurger,
 		clPoller:    pm.clPoller,
 	}
+	recipient := prjmanager.EventboxRecipient(ctx, luciProject)
 	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch); {
 	case err == nil:
 		for _, postProcessFn := range postProcessFns {

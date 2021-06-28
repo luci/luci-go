@@ -17,6 +17,7 @@ package eventbox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/common/logging"
@@ -78,7 +79,7 @@ func (p *processor) PrepareMutation(ctx context.Context, events Events, s State)
 			ts = append(ts, Transition{
 				SideEffectFn: func(ctx context.Context) error {
 					logging.Debugf(ctx, "advertised to %d to migrate", p.index+1)
-					return Emit(ctx, []byte{'-'}, key(ctx, p.index+1))
+					return Emit(ctx, []byte{'-'}, mkRecipient(ctx, p.index+1))
 				},
 				Events:       nil,        // Don't consume any events.
 				TransitionTo: population, // Same state.
@@ -125,13 +126,20 @@ func (p *processor) PrepareMutation(ctx context.Context, events Events, s State)
 			population = add(-1)
 			t.SideEffectFn = func(ctx context.Context) error {
 				logging.Debugf(ctx, "emigrated to %d", p.index-1)
-				return Emit(ctx, []byte{'+'}, key(ctx, p.index-1))
+				return Emit(ctx, []byte{'+'}, mkRecipient(ctx, p.index-1))
 			}
 		}
 		t.TransitionTo = population
 		ts = append(ts, t)
 	}
 	return
+}
+
+func mkRecipient(ctx context.Context, id int) Recipient {
+	return Recipient{
+		Key:              datastore.MakeKey(ctx, "cell", id),
+		MonitoringString: fmt.Sprintf("cell-%d", id),
+	}
 }
 
 func TestEventboxWorks(t *testing.T) {
@@ -145,12 +153,12 @@ func TestEventboxWorks(t *testing.T) {
 		const limit = 10000
 
 		// Seed the first cell.
-		So(Emit(ctx, []byte{'+'}, key(ctx, 65)), ShouldBeNil)
-		l, err := List(ctx, key(ctx, 65))
+		So(Emit(ctx, []byte{'+'}, mkRecipient(ctx, 65)), ShouldBeNil)
+		l, err := List(ctx, mkRecipient(ctx, 65))
 		So(err, ShouldBeNil)
 		So(l, ShouldHaveLength, 1)
 
-		ppfns, err := ProcessBatch(ctx, key(ctx, 65), &processor{65}, limit)
+		ppfns, err := ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 1)
@@ -158,28 +166,28 @@ func TestEventboxWorks(t *testing.T) {
 		So(mustList(ctx, 65), ShouldHaveLength, 0)
 
 		// Let the cell grow without incoming events.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 2)
 		So(mustGet(ctx, 65).Population, ShouldEqual, 1+3)
 		// Can't grow any more, no change to anything.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 2)
 		So(mustGet(ctx, 65).Population, ShouldEqual, 1+3)
 
 		// Advertise from nearby cell, twice.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
-		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustList(ctx, 65), ShouldHaveLength, 2)
 		// Emigrate, at most once.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 3)
@@ -187,48 +195,44 @@ func TestEventboxWorks(t *testing.T) {
 		So(mustList(ctx, 65), ShouldHaveLength, 0)
 
 		// Accept immigrants.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 64).Population, ShouldEqual, +1)
 
 		// Advertise to a cell with population = 1 is a noop.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 63), &processor{63}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 63), &processor{63}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
-		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 
 		// Lots of events at once.
-		So(Emit(ctx, []byte{'+'}, key(ctx, 49)), ShouldBeNil)
-		So(Emit(ctx, []byte{'+'}, key(ctx, 49)), ShouldBeNil) // will have to wait
-		So(Emit(ctx, []byte{'+'}, key(ctx, 49)), ShouldBeNil) // will have to wait
-		So(Emit(ctx, []byte{'-'}, key(ctx, 49)), ShouldBeNil) // not enough people, ignored.
-		So(Emit(ctx, []byte{'-'}, key(ctx, 49)), ShouldBeNil) // not enough people, ignored.
+		So(Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), ShouldBeNil)
+		So(Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), ShouldBeNil) // will have to wait
+		So(Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), ShouldBeNil) // will have to wait
+		So(Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), ShouldBeNil) // not enough people, ignored.
+		So(Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), ShouldBeNil) // not enough people, ignored.
 		So(mustList(ctx, 49), ShouldHaveLength, 5)
-		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).EVersion, ShouldEqual, 1)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 1)
 		So(mustList(ctx, 49), ShouldHaveLength, 2) // 2x'+' are waiting
 		// Slowly welcome remaining newcomers.
-		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 2)
-		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49}, limit)
+		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
 		So(err, ShouldBeNil)
 		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 3)
 		// Finally, must be done.
 		So(mustList(ctx, 49), ShouldHaveLength, 0)
 	})
-}
-
-func key(ctx context.Context, id int) *datastore.Key {
-	return datastore.MakeKey(ctx, "cell", id)
 }
 
 func get(ctx context.Context, index int) (*cell, error) {
@@ -248,7 +252,7 @@ func mustGet(ctx context.Context, index int) *cell {
 }
 
 func mustList(ctx context.Context, index int) Events {
-	l, err := List(ctx, key(ctx, index))
+	l, err := List(ctx, mkRecipient(ctx, index))
 	So(err, ShouldBeNil)
 	return l
 }
@@ -262,7 +266,7 @@ func TestEventboxPostProcessFn(t *testing.T) {
 		defer cancel()
 
 		const limit = 10000
-		recipient := key(ctx, 753)
+		recipient := mkRecipient(ctx, 753)
 
 		initState := int(149)
 		p := &mockProc{
@@ -320,7 +324,7 @@ func TestEventboxFails(t *testing.T) {
 		defer cancel()
 
 		const limit = 100000
-		recipient := key(ctx, 77)
+		recipient := mkRecipient(ctx, 77)
 
 		So(Emit(ctx, []byte{'+'}, recipient), ShouldBeNil)
 		So(Emit(ctx, []byte{'-'}, recipient), ShouldBeNil)
@@ -455,7 +459,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 		defer cancel()
 
 		const limit = 100000
-		recipient := key(ctx, 77)
+		recipient := mkRecipient(ctx, 77)
 		initState := int(99)
 		panicErr := errors.New("must not be transact!")
 
@@ -585,18 +589,5 @@ func PrepareMutation(t *testing.T) {
 			So(Chain(f1, nil, ferr, f2)(ctx), ShouldErrLike, breakChain)
 			So(ops, ShouldResemble, []string{"f1", "ferr"})
 		})
-	})
-}
-
-func TestMonitoring(t *testing.T) {
-	t.Parallel()
-
-	Convey("Coercing Run IDs into project", t, func() {
-		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
-		defer cancel()
-
-		So(monitoringRecipient(datastore.MakeKey(ctx, "Run", "test/123")), ShouldResemble, "Run/test")
-		So(monitoringRecipient(datastore.MakeKey(ctx, "Project", "test")), ShouldResemble, "Project/test")
 	})
 }

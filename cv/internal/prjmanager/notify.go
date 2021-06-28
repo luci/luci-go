@@ -30,6 +30,14 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
+// EventboxRecipient returns eventbox.Recipient for a given LUCI project.
+func EventboxRecipient(ctx context.Context, luciProject string) eventbox.Recipient {
+	return eventbox.Recipient{
+		Key:              datastore.MakeKey(ctx, ProjectKind, luciProject),
+		MonitoringString: "Project/" + luciProject,
+	}
+}
+
 // Notifier notifies Project Manager.
 type Notifier struct {
 	// TasksBinding are used to register handlers of Project Manager Implementation & CL Purger to
@@ -161,6 +169,5 @@ func (n *Notifier) sendWithoutDispatch(ctx context.Context, luciProject string, 
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	to := datastore.MakeKey(ctx, ProjectKind, luciProject)
-	return eventbox.Emit(ctx, value, to)
+	return eventbox.Emit(ctx, value, EventboxRecipient(ctx, luciProject))
 }

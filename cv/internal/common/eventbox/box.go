@@ -35,17 +35,29 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox/dsset"
 )
 
+// Recipient is the recipient of the events.
+type Recipient struct {
+	// Key is the Datastore key of the recipient.
+	//
+	// The corresponding entity doesn't have to exist.
+	Key *datastore.Key
+	// MonitoringString is the value for the metric field "recipient".
+	//
+	// There should be very few distinct values.
+	MonitoringString string
+}
+
 // Emit emits a new event with provided value and auto-generated unique ID.
-func Emit(ctx context.Context, value []byte, to *datastore.Key) error {
+func Emit(ctx context.Context, value []byte, to Recipient) error {
 	// TombstonesDelay doesn't matter for Add.
-	d := dsset.Set{Parent: to}
+	d := dsset.Set{Parent: to.Key}
 	// Keep IDs well distributed, but record creation time in it.
 	// See also oldestEventAge().
 	id := fmt.Sprintf("%s/%d", uuid.New().String(), clock.Now(ctx).UnixNano())
 	if err := d.Add(ctx, []dsset.Item{{ID: id, Value: value}}); err != nil {
 		return errors.Annotate(err, "failed to send event").Err()
 	}
-	metricSent.Add(ctx, 1, monitoringRecipient(to))
+	metricSent.Add(ctx, 1, to.MonitoringString)
 	return nil
 }
 
@@ -54,9 +66,9 @@ func Emit(ctx context.Context, value []byte, to *datastore.Key) error {
 var TombstonesDelay = 5 * time.Minute
 
 // List returns unprocessed events. For use in tests only.
-func List(ctx context.Context, recipient *datastore.Key) (Events, error) {
+func List(ctx context.Context, r Recipient) (Events, error) {
 	d := dsset.Set{
-		Parent:          recipient,
+		Parent:          r.Key,
 		TombstonesDelay: TombstonesDelay,
 	}
 	const effectivelyUnlimited = 1000000
@@ -94,16 +106,16 @@ func IsErrContention(err error) bool {
 //  - error while processing events. Returns wrapped ErrContention
 //    if entity's EVersion has changed or there is contention on Datastore
 //    entities involved in a transaction.
-func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor, maxEvents int) ([]PostProcessFn, error) {
+func ProcessBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) ([]PostProcessFn, error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch")
 	var err error
-	span.Attribute("recipient", recipient.String())
+	span.Attribute("recipient", r.MonitoringString)
 	defer func() { span.End(err) }()
-	postProcessFn, err := processBatch(ctx, recipient, p, maxEvents)
+	postProcessFn, err := processBatch(ctx, r, p, maxEvents)
 	return postProcessFn, err
 }
 
-func processBatch(ctx context.Context, recipient *datastore.Key, p Processor, maxEvents int) ([]PostProcessFn, error) {
+func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) ([]PostProcessFn, error) {
 	var state State
 	var expectedEV EVersion
 	eg, ectx := errgroup.WithContext(ctx)
@@ -112,12 +124,12 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor, ma
 		return
 	})
 	d := dsset.Set{
-		Parent:          recipient,
+		Parent:          r.Key,
 		TombstonesDelay: TombstonesDelay,
 	}
 	var listing *dsset.Listing
 	eg.Go(func() (err error) {
-		listing, err = listAndCleanup(ectx, &d, maxEvents)
+		listing, err = listAndCleanup(ectx, r, &d, maxEvents)
 		return
 	})
 	if err := eg.Wait(); err != nil {
@@ -126,7 +138,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor, ma
 
 	// Compute resulting state before transaction.
 	transitions, garbage, err := p.PrepareMutation(ctx, toEvents(listing.Items), state)
-	if gErr := deleteSemanticGarbage(ctx, &d, garbage); gErr != nil {
+	if gErr := deleteSemanticGarbage(ctx, r, &d, garbage); gErr != nil {
 		return nil, gErr
 	}
 	if err != nil {
@@ -183,7 +195,7 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor, ma
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to commit mutation").Tag(transient.Tag).Err()
 	default:
-		metricRemoved.Add(ctx, int64(eventsRemoved), monitoringRecipient(recipient))
+		metricRemoved.Add(ctx, int64(eventsRemoved), r.MonitoringString)
 		return postProcessFns, nil
 	}
 }
@@ -245,21 +257,20 @@ func toEvents(items []dsset.Item) Events {
 	return es
 }
 
-func listAndCleanup(ctx context.Context, d *dsset.Set, maxEvents int) (*dsset.Listing, error) {
+func listAndCleanup(ctx context.Context, r Recipient, d *dsset.Set, maxEvents int) (*dsset.Listing, error) {
 	tStart := clock.Now(ctx)
 	listing, err := d.List(ctx, maxEvents)
-	recipient := monitoringRecipient(d.Parent)
-	metricListDurationsS.Add(ctx, float64(clock.Since(ctx, tStart).Milliseconds()), recipient, monitoringResult(err))
+	metricListDurationsS.Add(ctx, float64(clock.Since(ctx, tStart).Milliseconds()), r.MonitoringString, monitoringResult(err))
 	if err != nil {
 		return nil, err
 	}
-	metricSize.Set(ctx, int64(len(listing.Items)), recipient)
-	metricOldestAgeS.Set(ctx, oldestEventAge(ctx, listing.Items).Seconds(), recipient)
+	metricSize.Set(ctx, int64(len(listing.Items)), r.MonitoringString)
+	metricOldestAgeS.Set(ctx, oldestEventAge(ctx, listing.Items).Seconds(), r.MonitoringString)
 
 	if err := dsset.CleanupGarbage(ctx, listing.Garbage); err != nil {
 		return nil, err
 	}
-	metricRemoved.Add(ctx, int64(len(listing.Garbage)), recipient)
+	metricRemoved.Add(ctx, int64(len(listing.Garbage)), r.MonitoringString)
 	return listing, nil
 }
 
@@ -287,7 +298,7 @@ func oldestEventAge(ctx context.Context, items []dsset.Item) time.Duration {
 	return age
 }
 
-func deleteSemanticGarbage(ctx context.Context, d *dsset.Set, events Events) error {
+func deleteSemanticGarbage(ctx context.Context, r Recipient, d *dsset.Set, events Events) error {
 	l := len(events)
 	if l == 0 {
 		return nil
@@ -304,7 +315,7 @@ func deleteSemanticGarbage(ctx context.Context, d *dsset.Set, events Events) err
 	if err != nil {
 		return errors.Annotate(err, "failed to delete %d semantic garbage events before transaction", l).Err()
 	}
-	metricRemoved.Add(ctx, int64(l), monitoringRecipient(d.Parent))
+	metricRemoved.Add(ctx, int64(l), r.MonitoringString)
 	return nil
 }
 
