@@ -132,12 +132,12 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 		updatedHint = t.AsTime().UTC()
 		task.Title += fmt.Sprintf("/u-%s", updatedHint.Format(time.RFC3339))
 	}
-	if p.GetForceNotifyPm() {
+	if p.GetForceNotify() {
 		task.Title += "/forceNotify"
 	}
 
 	// If done within transaction or if must notify PM, can't use de-dup.
-	if datastore.CurrentTransaction(ctx) == nil && !p.GetForceNotifyPm() {
+	if datastore.CurrentTransaction(ctx) == nil && !p.GetForceNotify() {
 		// Dedup in the short term to avoid excessive number of refreshes,
 		// but ensure eventually calling Schedule with the same payload results in a
 		// new task. This is done by de-duping only within a single "epoch" window,
@@ -183,7 +183,7 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 //
 // If datastore already contains snapshot with Gerrit-reported update time equal
 // to or after updatedHint, then no updating or querying will be performed,
-// but forceNotifyPM will still be obeyed.
+// but forceNotify will still be obeyed.
 //
 // Prefer Schedule() instead of Refresh() in production.
 func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
@@ -192,10 +192,10 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 		rm:              u.rm,
 		scheduleRefresh: u.ScheduleDelayed,
 
-		luciProject:   r.GetLuciProject(),
-		host:          r.GetHost(),
-		change:        r.GetChange(),
-		forceNotifyPM: r.GetForceNotifyPm(),
+		luciProject: r.GetLuciProject(),
+		host:        r.GetHost(),
+		change:      r.GetChange(),
+		forceNotify: r.GetForceNotify(),
 	}
 	if uh := r.GetUpdatedHint(); uh != nil {
 		f.updatedHint = uh.AsTime()
@@ -215,7 +215,7 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 // entities if Schedule() was used for each CL.
 //
 // Otherwise, enqueues 1 TQ task per CL non-transactionally.
-func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, forceNotifyPM bool, cls []*changelist.CL) error {
+func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, forceNotify bool, cls []*changelist.CL) error {
 	tasks := make([]*RefreshGerritCL, len(cls))
 	for i, cl := range cls {
 		host, change, err := cl.ExternalID.ParseGobID()
@@ -223,11 +223,11 @@ func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, forceNo
 			return errors.Annotate(err, "CL %d %q is not a Gerrit CL", cl.ID, cl.ExternalID).Err()
 		}
 		tasks[i] = &RefreshGerritCL{
-			Host:          host,
-			Change:        change,
-			ClidHint:      int64(cl.ID),
-			LuciProject:   luciProject,
-			ForceNotifyPm: forceNotifyPM,
+			Host:        host,
+			Change:      change,
+			ClidHint:    int64(cl.ID),
+			LuciProject: luciProject,
+			ForceNotify: forceNotify,
 		}
 	}
 	switch {

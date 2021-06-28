@@ -81,9 +81,9 @@ func TestSchedule(t *testing.T) {
 			return ct.TQ.Tasks().SortByETA().Payloads()
 		}
 
-		doBatch := func(ForceNotifyPm bool, cls []*changelist.CL) []proto.Message {
+		doBatch := func(forceNotify bool, cls []*changelist.CL) []proto.Message {
 			err := datastore.RunInTransaction(ctx, func(tctx context.Context) error {
-				So(u.ScheduleBatch(tctx, lProject, ForceNotifyPm, cls), ShouldBeNil)
+				So(u.ScheduleBatch(tctx, lProject, forceNotify, cls), ShouldBeNil)
 				return nil
 			}, nil)
 			So(err, ShouldBeNil)
@@ -139,15 +139,15 @@ func TestSchedule(t *testing.T) {
 			So(do(taskWithHint), ShouldResembleProto, []proto.Message{taskMinimal})
 		})
 
-		Convey("ForceNotifyPM is never deduped", func() {
+		Convey("ForceNotify is never deduped", func() {
 			taskForce := proto.Clone(taskMinimal).(*RefreshGerritCL)
-			taskForce.ForceNotifyPm = true
+			taskForce.ForceNotify = true
 			So(do(taskForce), ShouldResembleProto, []proto.Message{taskForce})
 
 			Convey("itself", func() {
 				So(do(taskForce), ShouldResembleProto, []proto.Message{taskForce, taskForce})
 			})
-			Convey("task without forceNotifyPM", func() {
+			Convey("task without forceNotify", func() {
 				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskForce, taskMinimal})
 			})
 			Convey("task with updatedHint", func() {
@@ -201,20 +201,20 @@ func TestSchedule(t *testing.T) {
 				12: cls[1],
 				13: cls[2],
 			}
-			test := func(ForceNotifyPm bool) {
-				Convey(fmt.Sprintf("forceNotifyPM=%t", ForceNotifyPm), func() {
-					So(doBatch(ForceNotifyPm, cls), ShouldHaveLength, 1)
+			test := func(forceNotify bool) {
+				Convey(fmt.Sprintf("forceNotify=%t", forceNotify), func() {
+					So(doBatch(forceNotify, cls), ShouldHaveLength, 1)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassBatch))
 					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, len(cls))
 					for _, p := range ct.TQ.Tasks().Payloads() {
 						t := p.(*RefreshGerritCL)
 						cl := clMap[t.GetChange()]
 						So(t, ShouldResembleProto, &RefreshGerritCL{
-							Change:        t.Change,
-							Host:          gHost,
-							ClidHint:      int64(cl.ID),
-							LuciProject:   lProject,
-							ForceNotifyPm: ForceNotifyPm,
+							Change:      t.Change,
+							Host:        gHost,
+							ClidHint:    int64(cl.ID),
+							LuciProject: lProject,
+							ForceNotify: forceNotify,
 						})
 					}
 				})
@@ -551,7 +551,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(pm.popNotifiedProjects(), ShouldBeEmpty)
 
 				Convey("But notifies PM if explicitly asked to do so", func() {
-					task.ForceNotifyPm = true
+					task.ForceNotify = true
 					So(u.Refresh(ctx, task), ShouldBeNil)
 					So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion) // not touched
 					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})

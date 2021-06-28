@@ -57,11 +57,11 @@ type fetcher struct {
 	rm              RM
 	scheduleRefresh func(ctx context.Context, p *RefreshGerritCL, delay time.Duration) error
 
-	luciProject   string
-	host          string
-	change        int64
-	updatedHint   time.Time
-	forceNotifyPM bool
+	luciProject string
+	host        string
+	change      int64
+	updatedHint time.Time
+	forceNotify bool
 
 	g gerrit.CLReaderClient
 
@@ -145,32 +145,29 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		if f.priorCL == nil {
 			panic("update can't be skipped iff priorCL is not set")
 		}
-		if f.forceNotifyPM {
-			return f.pm.NotifyCLUpdated(ctx, f.luciProject, f.priorCL.ID, f.priorCL.EVersion)
+		if f.forceNotify {
+			return f.notify(ctx, f.priorCL)
 		}
 		return nil
 	default:
-		return changelist.Update(
-			ctx,
-			f.externalID, f.clidIfKnown(),
-			f.toUpdate,
-			func(ctx context.Context, cl *changelist.CL) error {
-				eg, ectx := errgroup.WithContext(ctx)
-				eg.Go(func() error {
-					return f.pm.NotifyCLUpdated(ectx, f.luciProject, cl.ID, cl.EVersion)
-				})
-				// Generally, a CL will have only one Run at a time. Hence, use
-				// unbounded parallelism here.
-				for _, rid := range cl.IncompleteRuns {
-					rid := rid
-					eg.Go(func() error {
-						return f.rm.NotifyCLUpdated(ectx, rid, cl.ID, cl.EVersion)
-					})
-				}
-				return eg.Wait()
-			},
-		)
+		return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate, f.notify)
 	}
+}
+
+func (f *fetcher) notify(ctx context.Context, cl *changelist.CL) error {
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		return f.pm.NotifyCLUpdated(ectx, f.luciProject, cl.ID, cl.EVersion)
+	})
+	// Generally, a CL will have only one Run at a time. Hence, use
+	// unbounded parallelism here.
+	for _, rid := range cl.IncompleteRuns {
+		rid := rid
+		eg.Go(func() error {
+			return f.rm.NotifyCLUpdated(ectx, rid, cl.ID, cl.EVersion)
+		})
+	}
+	return eg.Wait()
 }
 
 // fetchExisting efficiently fetches new snapshot from Gerrit,

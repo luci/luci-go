@@ -224,11 +224,11 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
 		for i, c := range changes {
 			payload := &updater.RefreshGerritCL{
-				LuciProject:   q.luciProject,
-				Host:          q.sp.GetHost(),
-				Change:        c.GetNumber(),
-				UpdatedHint:   c.GetUpdated(),
-				ForceNotifyPm: forceNotifyPM && (clids[i] == 0),
+				LuciProject: q.luciProject,
+				Host:        q.sp.GetHost(),
+				Change:      c.GetNumber(),
+				UpdatedHint: c.GetUpdated(),
+				ForceNotify: forceNotifyPM && (clids[i] == 0),
 			}
 			work <- func() error {
 				return q.p.clUpdater.Schedule(ctx, payload)
@@ -264,10 +264,10 @@ func (p *Poller) scheduleRefreshTasks(ctx context.Context, luciProject, host str
 	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
 		for i, c := range changes {
 			payload := &updater.RefreshGerritCL{
-				LuciProject:   luciProject,
-				Host:          host,
-				Change:        c,
-				ForceNotifyPm: 0 == clids[i], // notify iff CL ID isn't yet known.
+				LuciProject: luciProject,
+				Host:        host,
+				Change:      c,
+				ForceNotify: 0 == clids[i], // notify iff CL ID isn't yet known.
 			}
 			// Distribute these tasks in time to avoid high peaks (e.g. see
 			// https://crbug.com/1211057).

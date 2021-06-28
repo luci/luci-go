@@ -210,7 +210,7 @@ func TestScheduleRefreshTasks(t *testing.T) {
 		var forced []int64
 		for _, task := range tasks {
 			p := task.Payload.(*updater.RefreshGerritCL)
-			if p.GetForceNotifyPm() {
+			if p.GetForceNotify() {
 				forced = append(forced, p.GetChange())
 			}
 		}
@@ -349,7 +349,7 @@ func TestPoller(t *testing.T) {
 						So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
 						// 33 has ForceNotifyPM=true. Such task isn't de-dupe-able.
 						uTask33 := updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber()[2]
-						So(uTask33.GetForceNotifyPm(), ShouldBeTrue)
+						So(uTask33.GetForceNotify(), ShouldBeTrue)
 
 						// And PM is notified only 31 and 32 for now.
 						So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32))
@@ -369,7 +369,7 @@ func TestPoller(t *testing.T) {
 							// PM must be notified on all 31..34.
 							So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32, 33, 34))
 							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
-							So(updatertest.PFilter(ct.TQ.Tasks())[0].GetForceNotifyPm(), ShouldBeFalse)
+							So(updatertest.PFilter(ct.TQ.Tasks())[0].GetForceNotify(), ShouldBeFalse)
 						})
 
 						Convey("full poll schedules tasks for no longer found changes", func() {
@@ -403,7 +403,7 @@ func TestPoller(t *testing.T) {
 							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
 							// 33 and 34 have 1 final refresh task without updateHint.
 							for _, p := range updatertest.PFilter(ct.TQ.Tasks())[2:] {
-								So(p.GetForceNotifyPm(), ShouldBeFalse)
+								So(p.GetForceNotify(), ShouldBeFalse)
 								So(p.GetUpdatedHint(), ShouldBeNil)
 							}
 						})
@@ -458,7 +458,7 @@ func TestPoller(t *testing.T) {
 					So(pm.projects, ShouldBeEmpty)
 					So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32})
 					for _, p := range updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber() {
-						So(p.GetForceNotifyPm(), ShouldBeTrue)
+						So(p.GetForceNotify(), ShouldBeTrue)
 					}
 				})
 			})
