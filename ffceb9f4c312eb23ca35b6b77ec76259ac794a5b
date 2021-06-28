@@ -16,6 +16,57 @@
       "message": "PTAL",
       "revId": "ffceb9f4c312eb23ca35b6b77ec76259ac794a5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d512f79_957ab13d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-28T22:24:11Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "ffceb9f4c312eb23ca35b6b77ec76259ac794a5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "766fc15a_b0aec378",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-28T22:24:11Z",
+      "side": 1,
+      "message": "add the comment re: P99 times here",
+      "revId": "ffceb9f4c312eb23ca35b6b77ec76259ac794a5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bf338b48_1b25a962",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-28T22:24:11Z",
+      "side": 1,
+      "message": "IIUC with the prpc.DefaultOptions() and a 5 sec per-rpc timeout, this cannot ever hit 60s.\n\nI think we should just remove `tctx` here entirely.",
+      "revId": "ffceb9f4c312eb23ca35b6b77ec76259ac794a5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
