@@ -98,6 +98,11 @@ const (
 	// MetadataAttachTimeout is how long to wait for an instance to be processed
 	// when attaching metadata in AttachMetadataWhenReady.
 	MetadataAttachTimeout = 3 * time.Minute
+
+	// DefaultParallelDownloads is a default value for CIPD_PARALLEL_DOWNLOADS.
+	//
+	// See ParallelDownloads client option.
+	DefaultParallelDownloads = 4
 )
 
 // Environment variable definitions
@@ -139,7 +144,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.5.9"
+	UserAgent = "cipd 2.6.0"
 )
 
 func init() {
@@ -367,7 +372,11 @@ type ClientOptions struct {
 	// ParallelDownloads defines how many packages are allowed to be fetched
 	// concurrently.
 	//
-	// If <=1, packages will be fetched sequentially.
+	// Possible values:
+	//   0: will use some default value (perhaps loading it from the environ).
+	//  <0: will do fetching and unzipping completely serially.
+	//   1: will fetch at most one package at once and unzip in parallel to that.
+	//  >1: will fetch multiple packages at once and unzip in parallel to that.
 	ParallelDownloads int
 
 	// UserAgent is put into User-Agent HTTP header with each request.
@@ -413,7 +422,14 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 			if err != nil {
 				return fmt.Errorf("bad %s: not an integer - %s", EnvParallelDownloads, v)
 			}
-			opts.ParallelDownloads = val
+			// CIPD_PARALLEL_DOWNLOADS == 0 means "no parallel work at all", this is
+			// conveyed by negatives in opts.ParallelDownloads (because 0 was already
+			// used to represent "use defaults").
+			if val == 0 {
+				opts.ParallelDownloads = -1
+			} else {
+				opts.ParallelDownloads = val
+			}
 		}
 	}
 	if opts.UserAgent == "" {
@@ -690,11 +706,22 @@ func (client *clientImpl) instanceCache(ctx context.Context) (*internal.Instance
 		return nil, err
 	}
 
+	// Since 0 is used as "use defaults" indicator, we have to use negatives to
+	// represent "do not do anything in parallel at all" (by passing 0 to
+	// the InstanceCache).
+	parallelDownloads := client.ParallelDownloads
+	switch {
+	case parallelDownloads == 0:
+		parallelDownloads = DefaultParallelDownloads
+	case parallelDownloads < 0:
+		parallelDownloads = 0
+	}
+
 	cache := &internal.InstanceCache{
 		FS:                fs.NewFileSystem(cacheDir, ""),
 		Tmp:               tmp,
 		Fetcher:           client.remoteFetchInstance,
-		ParallelDownloads: client.ParallelDownloads,
+		ParallelDownloads: parallelDownloads,
 	}
 	cache.Launch(ctx) // start background download goroutines
 	return cache, nil
