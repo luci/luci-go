@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a7ddb25_09d6d4c8",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T22:40:30Z",
+      "side": 1,
+      "message": "It will not work with pRPC clients, there\u0027s no per-RPC monitoring for pRPC clients. Only whatever monitoring is implemented by http.InstrumentedTransport.",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 18
+      },
+      "revId": "e6f6316013fdb7bd3f9f9eda2f546a8ccf44a7d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
