@@ -1027,20 +1027,7 @@ message AttentionSetRequest {
   // Optional, but recommended for better routing and faster RPC execution.
   string project = 2;
 
-  // TODO(tandrii): use AttentionSetInput instead and remove these fields.
   AttentionSetInput input = 6;
-
-  // A unique identifier for an account.
-  //
-  // Source of truth:
-  // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
-  string user = 3;
-
-  // The justification for adding/removing the user.
-  string reason = 4;
-
-  // Defines who should be notified after change is created, defaults to OWNER.
-  Notify notify = 5;
 }
 
 // Information to add/remove a user from the attention set.

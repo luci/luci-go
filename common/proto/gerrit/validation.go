@@ -54,3 +54,20 @@ func (n *NotifyDetails_Recipient) Validate() error {
 	}
 	return nil
 }
+
+func (r *AttentionSetRequest) Validate() error {
+	if r.Number <= 0 {
+		return errors.New("number must be positive")
+	}
+	if r.GetInput() == nil {
+		return errors.New("input is required")
+	}
+	return r.GetInput().Validate()
+}
+
+func (i *AttentionSetInput) Validate() error {
+	if i.GetUser() == "" {
+		return errors.New("user is required")
+	}
+	return nil
+}

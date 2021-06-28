@@ -710,61 +710,6 @@ func TestSetReview(t *testing.T) {
 	})
 }
 
-func TestAddToAttentionSetLegacy(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-
-	Convey("Add to attention set", t, func() {
-		var actualURL *url.URL
-		var actualBody []byte
-		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
-			actualURL = r.URL
-			// ignore the error because body contents will be checked
-			actualBody, _ = ioutil.ReadAll(r.Body)
-			w.WriteHeader(200)
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprint(w, `)]}'
-				{
-					"_account_id": 10001,
-					"name": "FYI reviewer",
-					"email": "fyi@test.com",
-					"username": "fyi"
-				}`)
-		})
-		defer srv.Close()
-
-		req := &gerritpb.AttentionSetRequest{
-			Project: "someproject",
-			Number:  42,
-			User:    "fyi@test.com",
-			Reason:  "For awareness",
-			Notify:  gerritpb.Notify_NOTIFY_ALL,
-		}
-		res, err := c.AddToAttentionSet(ctx, req)
-		So(err, ShouldBeNil)
-
-		// assert the request was as expected
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/attention")
-		expectedBody, err := json.Marshal(attentionSetInput{
-			User:   "fyi@test.com",
-			Reason: "For awareness",
-			Notify: "ALL",
-		})
-		if err != nil {
-			t.Logf("failed to encode expected body: %v\n", err)
-		}
-		So(actualBody, ShouldResemble, expectedBody)
-
-		// assert the result was as expected
-		So(res, ShouldResemble, &gerritpb.AccountInfo{
-			AccountId: 10001,
-			Name:      "FYI reviewer",
-			Email:     "fyi@test.com",
-			Username:  "fyi",
-		})
-	})
-}
-
 func TestAddToAttentionSet(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
