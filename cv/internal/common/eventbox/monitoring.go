@@ -16,15 +16,12 @@ package eventbox
 
 import (
 	"context"
-	"fmt"
 	"math"
-	"strings"
 
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 var (
@@ -69,18 +66,6 @@ var (
 		field.String("recipient"),
 	)
 )
-
-func monitoringRecipient(r *datastore.Key) string {
-	// TODO(tandrii): refactor this hack, aiming to quickly reduce # of distinct
-	// fields.
-	id := r.StringID()
-	// Run IDs are basically 'project/...'. Project IDs are just 'project'.
-	// Coerce all Run IDs into 'project'.
-	if r.Kind() == "Run" {
-		id = id[:strings.IndexRune(id, '/')]
-	}
-	return fmt.Sprintf("%s/%s", r.Kind(), id)
-}
 
 func monitoringResult(err error) string {
 	switch {
