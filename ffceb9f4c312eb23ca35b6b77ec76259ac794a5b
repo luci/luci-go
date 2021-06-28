@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3cfdd9b5_d8ce2282",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-28T23:09:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "766fc15a_b0aec378",
+      "revId": "ffceb9f4c312eb23ca35b6b77ec76259ac794a5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bf338b48_1b25a962",
@@ -83,6 +101,24 @@
       "side": 1,
       "message": "+1",
       "parentUuid": "bf338b48_1b25a962",
+      "revId": "ffceb9f4c312eb23ca35b6b77ec76259ac794a5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db51f3de_bfffbdbb",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-28T23:09:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74a83f41_7e9004cc",
       "revId": "ffceb9f4c312eb23ca35b6b77ec76259ac794a5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
