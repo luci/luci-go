@@ -21,7 +21,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -48,8 +47,7 @@ func Projects(in tqtesting.TaskList) (projects []string) {
 }
 
 func iterEventBox(ctx context.Context, project string, cb func(*prjpb.Event)) {
-	projKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, project)
-	events, err := eventbox.List(ctx, projKey)
+	events, err := eventbox.List(ctx, prjmanager.EventboxRecipient(ctx, project))
 	So(err, ShouldBeNil)
 	for _, item := range events {
 		evt := &prjpb.Event{}

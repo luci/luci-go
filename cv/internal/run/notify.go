@@ -31,6 +31,16 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
+// EventboxRecipient returns eventbox.Recipient for a given Run.
+func EventboxRecipient(ctx context.Context, runID common.RunID) eventbox.Recipient {
+	return eventbox.Recipient{
+		Key: datastore.MakeKey(ctx, RunKind, string(runID)),
+		// There are lots of Runs, so aggregate all their metrics behind their LUCI
+		// project.
+		MonitoringString: "Run/" + runID.LUCIProject(),
+	}
+}
+
 // Notifier notifies Run Manager.
 type Notifier struct {
 	// TasksBinding are used to register handlers of RM implementation to avoid
@@ -243,6 +253,5 @@ func (n *Notifier) sendWithoutDispatch(ctx context.Context, runID common.RunID, 
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	to := datastore.MakeKey(ctx, RunKind, string(runID))
-	return eventbox.Emit(ctx, value, to)
+	return eventbox.Emit(ctx, value, EventboxRecipient(ctx, runID))
 }

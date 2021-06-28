@@ -90,7 +90,6 @@ var pokeInterval = 5 * time.Minute
 var fakeHandlerKey = "Fake Run Events Handler"
 
 func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
-	recipient := datastore.MakeKey(ctx, run.RunKind, string(runID))
 	proc := &runProcessor{
 		runID:       runID,
 		runNotifier: rm.runNotifier,
@@ -101,6 +100,7 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
 		proc.handler = h
 	}
+	recipient := run.EventboxRecipient(ctx, runID)
 	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
 	if err != nil {
 		return errors.Annotate(err, "run: %q", runID).Err()
