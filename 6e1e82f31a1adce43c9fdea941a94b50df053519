@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "94b1035a_e69ac89f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T22:10:45Z",
+      "side": 1,
+      "message": "Note that Google Cloud libraries already set stats handler to capture gRPC traces and to propagate Cloud Trace contexts: https://github.com/googleapis/google-api-go-client/blob/6c8f9c553065cd8c92cb6f51c2eabea88ffb3407/transport/grpc/dial.go#L180 It is the component that captures these: https://screenshot.googleplex.com/rghqbVCAn3NAPr6\n\nWe\u0027ll probably need a way to chain stats handlers together to preserve this functionality.",
+      "revId": "6e1e82f31a1adce43c9fdea941a94b50df053519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "16a5e4c1_ba3fde4f",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T22:10:45Z",
+      "side": 1,
+      "message": "Should we remove NewUnaryClientInterceptor completely then? When is it appropriate to use NewUnaryClientInterceptor instead of grpc.WithStatsHandler?",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 57
+      },
+      "revId": "6e1e82f31a1adce43c9fdea941a94b50df053519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9b011fe_37d97a07",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T22:10:45Z",
+      "side": 1,
+      "message": "It is alright to panic then.",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 29
+      },
+      "revId": "6e1e82f31a1adce43c9fdea941a94b50df053519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
