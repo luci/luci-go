@@ -19,10 +19,17 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+)
+
+const (
+	treeCheckInterval = time.Minute
+	clRefreshInterval = 10 * time.Minute
 )
 
 // Poke implements Handler interface.
@@ -41,13 +48,24 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		case err != nil:
 			return nil, err
 		case !open:
-			// check again after 1 minute.
-			if err := impl.RM.PokeAfter(ctx, rs.Run.ID, 1*time.Minute); err != nil {
+			if err := impl.RM.PokeAfter(ctx, rs.Run.ID, treeCheckInterval); err != nil {
 				return nil, err
 			}
-			return &Result{State: rs}, nil
 		default:
 			return impl.OnReadyForSubmission(ctx, rs)
+		}
+	}
+
+	if shouldRefreshCLs(ctx, rs) {
+		switch cls, err := changelist.LoadCLs(ctx, rs.Run.CLs); {
+		case err != nil:
+			return nil, err
+		default:
+			if err := impl.CLUpdater.ScheduleBatch(ctx, rs.Run.ID.LUCIProject(), true, cls); err != nil {
+				return nil, err
+			}
+			rs = rs.ShallowCopy()
+			rs.Run.LatestCLsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
 		}
 	}
 	return &Result{State: rs}, nil
@@ -55,9 +73,19 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 
 func shouldCheckTree(ctx context.Context, st run.Status, sub *run.Submission) bool {
 	return st == run.Status_WAITING_FOR_SUBMISSION &&
-		// Tree was closed in last tree check.
+		// Tree was closed during the last Tree check.
 		(sub.GetLastTreeCheckTime() != nil && !sub.GetTreeOpen()) &&
-		// Last Tree check was more than 1 minute ago so that CV doesn't call
-		// Tree App too often.
-		clock.Now(ctx).Sub(sub.GetLastTreeCheckTime().AsTime()) >= 1*time.Minute
+		// Avoid too frequent refreshes of the Tree.
+		clock.Now(ctx).Sub(sub.GetLastTreeCheckTime().AsTime()) >= treeCheckInterval
+}
+
+func shouldRefreshCLs(ctx context.Context, rs *state.RunState) bool {
+	if run.IsEnded(rs.Run.Status) {
+		return false
+	}
+	last := rs.Run.LatestCLsRefresh
+	if last.IsZero() {
+		last = rs.Run.CreateTime
+	}
+	return clock.Since(ctx, last) > clRefreshInterval
 }

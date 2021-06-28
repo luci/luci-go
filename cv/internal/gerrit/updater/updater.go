@@ -208,11 +208,13 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	return f.update(ctx, common.CLID(r.GetClidHint()))
 }
 
-// ScheduleBatch enqueues one TQ task transactionally to eventually refresh many
-// CLs.
+// ScheduleBatch schedules refresh of several Gerrit CLs.
 //
-// This function exist to write 1 Datastore entity during a transaction instead
-// of N entities if Schedule() was used for each CL.
+// If called in a transaction, enqueues exactly one TQ task transactionally.
+// This allows to write 1 Datastore entity during a transaction instead of N
+// entities if Schedule() was used for each CL.
+//
+// Otherwise, enqueues 1 TQ task per CL non-transactionally.
 func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, forceNotifyPM bool, cls []*changelist.CL) error {
 	tasks := make([]*RefreshGerritCL, len(cls))
 	for i, cl := range cls {
@@ -228,14 +230,18 @@ func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, forceNo
 			ForceNotifyPm: forceNotifyPM,
 		}
 	}
-	if len(tasks) == 1 {
+	switch {
+	case len(tasks) == 1:
 		// Optimization for the most frequent use-case of single-CL Runs.
 		return u.Schedule(ctx, tasks[0])
+	case datastore.CurrentTransaction(ctx) == nil:
+		return u.RefreshBatch(ctx, &BatchRefreshGerritCL{Tasks: tasks})
+	default:
+		return u.tqd.AddTask(ctx, &tq.Task{
+			Payload: &BatchRefreshGerritCL{Tasks: tasks},
+			Title:   fmt.Sprintf("batch-%s-%d-cls", luciProject, len(tasks)),
+		})
 	}
-	return u.tqd.AddTask(ctx, &tq.Task{
-		Payload: &BatchRefreshGerritCL{Tasks: tasks},
-		Title:   fmt.Sprintf("batch-%s-%d-cls", luciProject, len(tasks)),
-	})
 }
 
 // RefreshBatch schedules a refresh task per CL in a batch.
