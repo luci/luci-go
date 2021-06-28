@@ -180,3 +180,11 @@ func padLeft(s string, l int) string {
 	}
 	return s
 }
+
+// padRight pads an ASCII string with spaces on the right to make it l bytes long.
+func padRight(s string, l int) string {
+	if len(s) < l {
+		return s + strings.Repeat(" ", l-len(s))
+	}
+	return s
+}
