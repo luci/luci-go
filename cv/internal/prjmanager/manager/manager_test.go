@@ -61,13 +61,13 @@ func TestProjectTQLateTasks(t *testing.T) {
 		_ = New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, pmNotifier, runNotifier))
 
 		const lProject = "infra"
-		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
+		recipient := prjmanager.EventboxRecipient(ctx, lProject)
 
 		prjcfgtest.Create(ctx, lProject, singleRepoConfig("host", "repo"))
 
 		So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
-		events1, err := eventbox.List(ctx, lProjectKey)
+		events1, err := eventbox.List(ctx, recipient)
 		So(err, ShouldBeNil)
 
 		// Simulate stuck TQ task, which gets executed with a huge delay.
@@ -75,7 +75,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 		// It must not modify PM state nor consume events.
 		So(datastore.Get(ctx, &prjmanager.Project{ID: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
-		events2, err := eventbox.List(ctx, lProjectKey)
+		events2, err := eventbox.List(ctx, recipient)
 		So(err, ShouldBeNil)
 		So(events2, ShouldResemble, events1)
 		// But schedules new task instead.
@@ -84,7 +84,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		// Next task coming ~on time proceeds normally.
 		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 		So(datastore.Get(ctx, &prjmanager.Project{ID: lProject}), ShouldBeNil)
-		events3, err := eventbox.List(ctx, lProjectKey)
+		events3, err := eventbox.List(ctx, recipient)
 		So(err, ShouldBeNil)
 		So(events3, ShouldBeEmpty)
 	})
@@ -104,7 +104,7 @@ func TestProjectLifeCycle(t *testing.T) {
 		_ = New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, pmNotifier, runNotifier))
 
 		const lProject = "infra"
-		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
+		recipient := prjmanager.EventboxRecipient(ctx, lProject)
 
 		Convey("with new project", func() {
 			prjcfgtest.Create(ctx, lProject, singleRepoConfig("host", "repo"))
@@ -113,7 +113,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
-			events, err := eventbox.List(ctx, lProjectKey)
+			events, err := eventbox.List(ctx, recipient)
 			So(err, ShouldBeNil)
 			So(events, ShouldHaveLength, 0)
 			p, ps, plog := loadProjectEntities(ctx, lProject)
@@ -142,7 +142,7 @@ func TestProjectLifeCycle(t *testing.T) {
 					}}
 					value, err := proto.Marshal(e)
 					So(err, ShouldBeNil)
-					So(eventbox.Emit(ctx, value, lProjectKey), ShouldBeNil)
+					So(eventbox.Emit(ctx, value, recipient), ShouldBeNil)
 				}
 				simulateRunCreated("111-beef")
 				simulateRunCreated("222-cafe")
@@ -222,6 +222,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		const gHost = "host"
 		const gRepo = "repo"
 
+		recipient := prjmanager.EventboxRecipient(ctx, lProject)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
 		clUpdater := updater.New(ct.TQDispatcher, pmNotifier, runNotifier)
@@ -289,8 +290,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		cl44, err = changelist.MustGobID(gHost, 44).Get(ctx)
 		So(err, ShouldBeNil)
 
-		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
-		events, err := eventbox.List(ctx, lProjectKey)
+		events, err := eventbox.List(ctx, recipient)
 		So(err, ShouldBeNil)
 		// 1 refreshCLAndNotifyPM(44), 1 from NotifyCLsUpdated, 3*n from loop.
 		So(events, ShouldHaveLength, 3*n+2)
@@ -327,7 +327,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 			}
 		}
 
-		events, err = eventbox.List(ctx, lProjectKey)
+		events, err = eventbox.List(ctx, recipient)
 		So(err, ShouldBeNil)
 		So(events, ShouldBeEmpty)
 		So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})

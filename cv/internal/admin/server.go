@@ -81,7 +81,7 @@ func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectReq
 
 	resp = &adminpb.GetProjectResponse{}
 	eg.Go(func() error {
-		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, prjmanager.ProjectKind, req.GetProject()))
+		list, err := eventbox.List(ctx, prjmanager.EventboxRecipient(ctx, req.GetProject()))
 		if err != nil {
 			return err
 		}
@@ -562,7 +562,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 
 	var events []*eventpb.Event
 	eg.Go(func() error {
-		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, run.RunKind, string(rid)))
+		list, err := eventbox.List(ctx, run.EventboxRecipient(ctx, rid))
 		if err != nil {
 			return err
 		}
