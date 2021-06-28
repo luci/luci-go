@@ -146,6 +146,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4bf336c0_70d191db",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-28T18:44:00Z",
+      "side": 1,
+      "message": "Yes, get_realm_data() is the API. The problem is we need to populate this data first. It will require changes to https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/auth_service/proto/realms_config.proto and to https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/auth_service/realms/rules.py#251 and to lucicfg and to actual project configs. So it\u0027s not exactly trivial.",
+      "parentUuid": "ea556d98_773d2169",
+      "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2f7e118c_4d7fbd38",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 1
