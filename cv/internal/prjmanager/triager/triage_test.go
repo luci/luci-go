@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/retry/transient"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -277,13 +276,13 @@ func TestTriage(t *testing.T) {
 					So(res.RunsToCreate, ShouldBeEmpty)
 				})
 
-				Convey("EVersion mismatch is a transient error", func() {
+				Convey("EVersion mismatch is an ErrOutdatedPMState", func() {
 					cl, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
 					cl.EVersion = 2
 					So(datastore.Put(ctx, cl), ShouldBeNil)
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
-					So(transient.Tag.In(err), ShouldBeTrue)
+					So(itriager.IsErrOutdatedPMState(err), ShouldBeTrue)
 					So(err, ShouldErrLike, "EVersion changed 1 => 2")
 				})
 

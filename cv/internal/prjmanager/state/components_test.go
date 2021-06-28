@@ -296,6 +296,36 @@ func TestComponentsActions(t *testing.T) {
 			})
 		})
 
+		Convey("outdated PMState detected during triage", func() {
+			markComponentsForTriage(1, 2, 3)
+			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				switch c.GetClids()[0] {
+				case 1:
+					return itriager.Result{}, errors.Annotate(itriager.ErrOutdatedPMState, "smth changed").Err()
+				case 2, 3:
+					return itriager.Result{NewValue: markTriaged(c)}, nil
+				}
+				panic("unreachable")
+			}
+			actions, saveForDebug, err := state.triageComponents(ctx)
+			So(err, ShouldBeNil)
+			So(saveForDebug, ShouldBeFalse)
+			So(actions, ShouldHaveLength, 2)
+			So(state.PB, ShouldResembleProto, pb)
+
+			Convey("ExecDeferred", func() {
+				state2, sideEffect, err := state.ExecDeferred(ctx)
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				pb.Components[2].TriageRequired = false
+				pb.Components[3].TriageRequired = false
+				pb.NextEvalTime = timestamppb.New(ct.Clock.Now()) // re-triage ASAP.
+				So(state2.PB, ShouldResembleProto, pb)
+				// Self-poke task must be scheduled for earliest possible from now.
+				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, ct.Clock.Now().Add(prjpb.PMTaskInterval)), ShouldNotBeEmpty)
+			})
+		})
+
 		Convey("100% failure in triage", func() {
 			markComponentsForTriage(1, 2)
 			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {

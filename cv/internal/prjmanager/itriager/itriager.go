@@ -20,6 +20,7 @@ package itriager
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run/runcreator"
@@ -39,6 +40,9 @@ import (
 //   * and for each such CL's dependency, either:
 //      * dep is not yet loaded,
 //      * OR dep must be itself a component's CL.
+//
+// May return special, possibly wrapped, ErrOutdatedPMState to signal that
+// Triage function has detected outdated PMState.
 type Triage func(ctx context.Context, c *prjpb.Component, s PMState) (Result, error)
 
 // Result is the result of a component traige.
@@ -91,4 +95,13 @@ type PMState interface {
 	// ConfigGroup returns a ConfigGroup for a given index of the current
 	// (from the view point of PM) LUCI project config version.
 	ConfigGroup(index int32) *prjcfg.ConfigGroup
+}
+
+// ErrOutdatedPMState signals that PMState is out dated.
+var ErrOutdatedPMState = errors.New("outdated PM state")
+
+// IsErrOutdatedPMState returns true if given error is a possibly wrapped
+// ErrOutdatedPMState.
+func IsErrOutdatedPMState(err error) bool {
+	return errors.Contains(err, ErrOutdatedPMState)
 }

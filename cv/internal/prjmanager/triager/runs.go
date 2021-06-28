@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runcreator"
@@ -319,7 +320,7 @@ func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Con
 	for i, cl := range cls {
 		exp, act := combo.all[i].pcl.GetEversion(), int64(cl.EVersion)
 		if exp != act {
-			return nil, errors.Reason("CL %d EVersion changed %d => %d", cl.ID, exp, act).Tag(transient.Tag).Err()
+			return nil, errors.Annotate(itriager.ErrOutdatedPMState, "CL %d EVersion changed %d => %d", cl.ID, exp, act).Err()
 		}
 		ci := cl.Snapshot.GetGerrit().GetInfo()
 		msg := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
