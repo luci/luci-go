@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "62bf2685_0f9f8232",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-28T22:35:54Z",
+      "side": 1,
+      "message": "I will add MultiStatsHandler in a separate CL.",
+      "parentUuid": "94b1035a_e69ac89f",
+      "revId": "6e1e82f31a1adce43c9fdea941a94b50df053519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "16a5e4c1_ba3fde4f",
@@ -89,6 +107,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f83d1fd1_58c41bf7",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-28T22:35:54Z",
+      "side": 1,
+      "message": "I updated the comment. PTAL",
+      "parentUuid": "577f1dfa_ca3c1535",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 57
+      },
+      "revId": "6e1e82f31a1adce43c9fdea941a94b50df053519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c9b011fe_37d97a07",
@@ -102,6 +144,30 @@
       "writtenOn": "2021-06-28T22:10:45Z",
       "side": 1,
       "message": "It is alright to panic then.",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 29
+      },
+      "revId": "6e1e82f31a1adce43c9fdea941a94b50df053519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "069ff008_e7711c09",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-28T22:35:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9b011fe_37d97a07",
       "range": {
         "startLine": 109,
         "startChar": 1,
