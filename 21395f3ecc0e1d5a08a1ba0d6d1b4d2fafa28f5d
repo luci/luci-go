@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cf75cb0_4d19e54d",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-28T21:53:14Z",
+      "side": 1,
+      "message": "^",
+      "range": {
+        "startLine": 198,
+        "startChar": 89,
+        "endLine": 198,
+        "endChar": 102
+      },
+      "revId": "21395f3ecc0e1d5a08a1ba0d6d1b4d2fafa28f5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4307282f_08dd8a8c",
@@ -14,6 +37,30 @@
       "writtenOn": "2021-06-28T18:58:48Z",
       "side": 1,
       "message": "forceNotify",
+      "range": {
+        "startLine": 231,
+        "startChar": 17,
+        "endLine": 231,
+        "endChar": 30
+      },
+      "revId": "21395f3ecc0e1d5a08a1ba0d6d1b4d2fafa28f5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f7b54e84_0a0ebe79",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-28T21:53:14Z",
+      "side": 1,
+      "message": "Here it\u0027s correct. The purpose is to notify PM about all CLs that it may need to worry about. I intentionally left forceNotifyPM as a paramater to scheduleTasks.\nDoes this make sen?",
+      "parentUuid": "4307282f_08dd8a8c",
       "range": {
         "startLine": 231,
         "startChar": 17,
