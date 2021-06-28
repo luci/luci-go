@@ -3336,8 +3336,8 @@ func GetApplication(params Parameters) *cli.Application {
 			},
 			cipd.EnvParallelDownloads: {
 				Advanced: true,
-				ShortDesc: "How many packages are allowed to be fetched concurrently. " +
-					"If <=1, packages will be fetched sequentially. Default is 0 for now.",
+				ShortDesc: fmt.Sprintf("How many packages are allowed to be fetched concurrently. "+
+					"If <=1, packages will be fetched sequentially. Default is %d.", cipd.DefaultParallelDownloads),
 			},
 			cipd.EnvAdmissionPlugin: {
 				Advanced:  true,

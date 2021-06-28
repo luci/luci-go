@@ -65,40 +65,44 @@ func TestInstanceCache(t *testing.T) {
 		var fetchErr chan error
 		var fetchCalls int
 
-		cache := &InstanceCache{
-			FS: fs,
-			Fetcher: func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
-				fetchM.Lock()
-				fetchCalls++
-				fetchErrCh := fetchErr
-				fetchM.Unlock()
-				if fetchErrCh != nil {
-					if err := <-fetchErrCh; err != nil {
-						return err
-					}
+		fetcher := func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
+			fetchM.Lock()
+			fetchCalls++
+			fetchErrCh := fetchErr
+			fetchM.Unlock()
+			if fetchErrCh != nil {
+				if err := <-fetchErrCh; err != nil {
+					return err
 				}
-				_, err := w.Write([]byte(fakeData(pin)))
-				return err
-			},
-			maxSize: testInstanceCacheMaxSize,
+			}
+			_, err := w.Write([]byte(fakeData(pin)))
+			return err
 		}
 
-		access := func(cache *InstanceCache, pin common.Pin) (created bool, src pkg.Source) {
-			alloc := cache.Allocate(ctx, pin)
-			defer alloc.Release(ctx)
+		cache := &InstanceCache{
+			FS:      fs,
+			Fetcher: fetcher,
+			maxSize: testInstanceCacheMaxSize,
+		}
+		cache.Launch(ctx)
+		defer cache.Close(ctx)
 
+		access := func(cache *InstanceCache, pin common.Pin) (created bool, src pkg.Source) {
 			fetchM.Lock()
 			before := fetchCalls
 			fetchM.Unlock()
 
-			src, err := alloc.Realize(ctx)
-			So(err, ShouldBeNil)
+			cache.RequestInstances([]*InstanceRequest{
+				{Context: ctx, Pin: pin},
+			})
+			res := cache.WaitInstance()
+			So(res.Err, ShouldBeNil)
 
 			fetchM.Lock()
 			created = fetchCalls > before
 			fetchM.Unlock()
 
-			return created, src
+			return created, res.Source
 		}
 
 		putNew := func(cache *InstanceCache, pin common.Pin) {
@@ -107,12 +111,16 @@ func TestInstanceCache(t *testing.T) {
 			So(src.Close(ctx, false), ShouldBeNil)
 		}
 
+		readSrc := func(src pkg.Source) string {
+			buf, err := ioutil.ReadAll(io.NewSectionReader(src, 0, src.Size()))
+			So(err, ShouldBeNil)
+			return string(buf)
+		}
+
 		testHas := func(cache *InstanceCache, pin common.Pin) {
 			created, src := access(cache, pin)
 			So(created, ShouldBeFalse)
-			buf, err := ioutil.ReadAll(io.NewSectionReader(src, 0, src.Size()))
-			So(err, ShouldBeNil)
-			So(string(buf), ShouldEqual, fakeData(pin))
+			So(readSrc(src), ShouldEqual, fakeData(pin))
 			So(src.Close(ctx, false), ShouldBeNil)
 		}
 
@@ -137,7 +145,9 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		Convey("Works in general", func() {
-			cache2 := &InstanceCache{FS: fs}
+			cache2 := &InstanceCache{FS: fs, Fetcher: fetcher}
+			cache2.Launch(ctx)
+			defer cache2.Close(ctx)
 
 			// Add new.
 			putNew(cache, pin(0))
@@ -147,138 +157,143 @@ func TestInstanceCache(t *testing.T) {
 			testHas(cache2, pin(0))
 		})
 
-		Convey("Concurrent access", func() {
-			const concurrency = 20
-
-			p := pin(0)
-
-			state := make([]struct {
-				alloc *Allocation
-				src   pkg.Source
-				err   error
-			}, concurrency)
-
-			// Try to "collide" concurrent Realize calls.
-			wg := sync.WaitGroup{}
-			wg.Add(concurrency)
-			fetchErr = make(chan error)
-			for i := 0; i < concurrency; i++ {
-				i := i
-				alloc := cache.Allocate(ctx, p)
-				state[i].alloc = alloc
-				go func() {
-					defer wg.Done()
-					state[i].src, state[i].err = alloc.Realize(ctx)
-				}()
-			}
-
-			// Created only one alloc.
-			So(cache.allocs, ShouldHaveLength, 1)
-
-			execute := func(realizeErr error) {
-				fetchErr <- realizeErr
-				close(fetchErr)
-				wg.Wait()
-			}
-
-			closeAll := func() {
-				// Close everything, but do not release allocations yet.
-				for _, s := range state {
-					if s.src != nil {
-						s.src.Close(ctx, false)
-					}
-				}
-				// Still holding to the alloc since have references.
-				So(cache.allocs, ShouldHaveLength, 1)
-				// Release all references.
-				for _, s := range state {
-					s.alloc.Release(ctx)
-				}
-				// The alloc is deleted for real.
-				So(cache.allocs, ShouldHaveLength, 0)
-			}
-
-			Convey("Success", func() {
-				execute(nil)
-
-				// None failed, but only one was actually creating the file.
-				So(fetchCalls, ShouldEqual, 1)
-				for _, s := range state {
-					So(s.err, ShouldBeNil)
-					buf, err := ioutil.ReadAll(io.NewSectionReader(s.src, 0, s.src.Size()))
-					So(err, ShouldBeNil)
-					So(string(buf), ShouldEqual, fakeData(p))
-				}
-
-				// Double-close is fine.
-				So(state[0].src.Close(ctx, false), ShouldBeNil)
-				So(state[0].src.Close(ctx, false), ShouldEqual, os.ErrClosed)
-
-				closeAll()
-
-				// The file is still in the cache.
-				testHas(cache, pin(0))
-			})
-
-			Convey("Error", func() {
-				var boomErr = fmt.Errorf("boom")
-
-				execute(boomErr)
-				defer closeAll()
-
-				// All failed, but only one actually was executing the fetch.
-				So(fetchCalls, ShouldEqual, 1)
-				for _, s := range state {
-					So(s.err, ShouldEqual, boomErr)
-					So(s.src, ShouldBeNil)
-				}
-			})
-
-			Convey("Corruption", func() {
-				execute(nil)
-
-				// Close the source as corrupted at least through one allocation.
-				So(state[0].src.Close(ctx, true), ShouldBeNil)
-				closeAll()
-
-				// The file was removed from the cache and we can recreate it now.
-				putNew(cache, pin(0))
-			})
-		})
-
 		Convey("Temp cache removes files", func() {
 			cache := &InstanceCache{
-				FS:  fs,
-				Tmp: true,
-				Fetcher: func(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
-					_, err := w.Write([]byte("blah"))
-					return err
-				},
+				FS:      fs,
+				Tmp:     true,
+				Fetcher: fetcher,
+			}
+			cache.Launch(ctx)
+			defer cache.Close(ctx)
+
+			So(countTempFiles(), ShouldEqual, 0)
+
+			cache.RequestInstances([]*InstanceRequest{
+				{Context: ctx, Pin: pin(0)},
+			})
+			res := cache.WaitInstance()
+			So(res.Err, ShouldBeNil)
+
+			So(countTempFiles(), ShouldEqual, 1)
+			So(res.Source.Close(ctx, false), ShouldBeNil)
+			So(countTempFiles(), ShouldEqual, 0)
+		})
+
+		Convey("Redownloads corrupted files", func() {
+			So(countTempFiles(), ShouldEqual, 0)
+
+			// Download the first time.
+			cache.RequestInstances([]*InstanceRequest{
+				{Context: ctx, Pin: pin(0)},
+			})
+			res := cache.WaitInstance()
+			So(res.Err, ShouldBeNil)
+			So(fetchCalls, ShouldEqual, 1)
+			So(res.Source.Close(ctx, false), ShouldBeNil)
+
+			// Stored in the cache (plus state.db file).
+			So(countTempFiles(), ShouldEqual, 2)
+
+			// The second call grabs it from the cache.
+			cache.RequestInstances([]*InstanceRequest{
+				{Context: ctx, Pin: pin(0)},
+			})
+			res = cache.WaitInstance()
+			So(res.Err, ShouldBeNil)
+			So(fetchCalls, ShouldEqual, 1)
+
+			// Close as corrupted. Should be removed from the cache.
+			So(res.Source.Close(ctx, true), ShouldBeNil)
+
+			// Only state.db file left.
+			So(countTempFiles(), ShouldEqual, 1)
+
+			// Download the second time.
+			cache.RequestInstances([]*InstanceRequest{
+				{Context: ctx, Pin: pin(0)},
+			})
+			res = cache.WaitInstance()
+			So(res.Err, ShouldBeNil)
+			So(fetchCalls, ShouldEqual, 2)
+			So(res.Source.Close(ctx, false), ShouldBeNil)
+		})
+
+		Convey("Concurrency", func() {
+			cache := &InstanceCache{
+				FS:      fs,
+				Fetcher: fetcher,
+			}
+			defer cache.Close(ctx)
+
+			var reqs []*InstanceRequest
+			for i := 0; i < 100; i++ {
+				reqs = append(reqs, &InstanceRequest{
+					Context: ctx,
+					Pin:     pin(i),
+					State:   i,
+				})
 			}
 
-			alloc1 := cache.Allocate(ctx, pin(0))
-			alloc2 := cache.Allocate(ctx, pin(0))
+			Convey("Preserves the order when using single stream", func() {
+				cache.ParallelDownloads = 1
+				cache.Launch(ctx)
 
-			// Nothing yet.
-			So(countTempFiles(), ShouldEqual, 0)
+				cache.RequestInstances(reqs)
+				for i := 0; i < len(reqs); i++ {
+					res := cache.WaitInstance()
+					So(res.Err, ShouldBeNil)
+					So(res.State.(int), ShouldEqual, i)
+					So(readSrc(res.Source), ShouldEqual, fakeData(pin(i)))
+					So(res.Source.Close(ctx, false), ShouldBeNil)
+				}
+			})
 
-			src, err := alloc1.Realize(ctx)
-			So(err, ShouldBeNil)
+			Convey("Doesn't deadlock", func() {
+				cache.ParallelDownloads = 4
+				cache.Launch(ctx)
 
-			// A cached file appeared.
-			So(countTempFiles(), ShouldEqual, 1)
+				seen := map[int]struct{}{}
 
-			// Closing the file doesn't delete it yet, since we have allocs for it.
-			So(src.Close(ctx, false), ShouldBeNil)
-			So(countTempFiles(), ShouldEqual, 1)
+				cache.RequestInstances(reqs)
+				for i := 0; i < len(reqs); i++ {
+					res := cache.WaitInstance()
+					So(res.Err, ShouldBeNil)
+					So(res.Source.Close(ctx, false), ShouldBeNil)
+					seen[res.State.(int)] = struct{}{}
+				}
 
-			// Still have the file since alloc2 may still be wanting it.
-			alloc1.Release(ctx)
-			So(countTempFiles(), ShouldEqual, 1)
+				So(len(seen), ShouldEqual, len(reqs))
+			})
 
-			// The cached file is gone after alloc2 referring it is closed.
-			alloc2.Release(ctx)
-			So(countTempFiles(), ShouldEqual, 0)
+			Convey("Handles errors", func() {
+				fetchErr = make(chan error, len(reqs))
+
+				cache.ParallelDownloads = 4
+				cache.Launch(ctx)
+
+				cache.RequestInstances(reqs)
+
+				// Make errCount fetches fail and rest succeed.
+				const errCount = 10
+				for i := 0; i < errCount; i++ {
+					fetchErr <- fmt.Errorf("boom %d", i)
+				}
+				for i := errCount; i < len(reqs); i++ {
+					fetchErr <- nil
+				}
+
+				errs := 0
+				for i := 0; i < len(reqs); i++ {
+					res := cache.WaitInstance()
+					if res.Source != nil {
+						So(res.Source.Close(ctx, false), ShouldBeNil)
+					}
+					if res.Err != nil {
+						errs++
+					}
+				}
+				So(errs, ShouldEqual, errCount)
+			})
 		})
 
 		Convey("GC respects MaxSize", func() {
