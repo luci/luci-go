@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4307282f_08dd8a8c",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-28T18:58:48Z",
+      "side": 1,
+      "message": "forceNotify",
+      "range": {
+        "startLine": 231,
+        "startChar": 17,
+        "endLine": 231,
+        "endChar": 30
+      },
+      "revId": "21395f3ecc0e1d5a08a1ba0d6d1b4d2fafa28f5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
