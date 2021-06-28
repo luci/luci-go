@@ -1370,7 +1370,7 @@ func TestGerritError(t *testing.T) {
 func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gerritpb.GerritClient) {
 	// TODO(tandrii): rename this func once newMockClient name is no longer used in the same package.
 	srv := httptest.NewServer(http.HandlerFunc(handler))
-	return srv, &client{BaseURL: srv.URL}
+	return srv, &client{baseURL: srv.URL}
 }
 
 // parseTime parses a RFC3339Nano formatted timestamp string.

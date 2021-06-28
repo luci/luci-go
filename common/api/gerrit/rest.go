@@ -65,7 +65,7 @@ const (
 //
 // The host must be a full Gerrit host, e.g. "chromium-review.googlesource.com".
 //
-// If `auth` is true,  this indicates that the given HTTP client sends
+// If `auth` is true, this indicates that the given HTTP client sends
 // authenticated requests. If so, the requests to Gerrit will include "/a/" URL
 // path prefix.
 //
@@ -79,7 +79,7 @@ func NewRESTClient(httpClient *http.Client, host string, auth bool) (gerritpb.Ge
 	if auth {
 		baseURL += "/a"
 	}
-	return &client{Client: httpClient, BaseURL: baseURL}, nil
+	return &client{hClient: httpClient, baseURL: baseURL}, nil
 }
 
 // Implementation.
@@ -89,10 +89,10 @@ var jsonPrefix = []byte(")]}'")
 
 // client implements gerritpb.GerritClient.
 type client struct {
-	Client *http.Client
-	// BaseURL is the base URL for all API requests,
+	hClient *http.Client
+	// baseURL is the base URL for all API requests,
 	// for example "https://chromium-review.googlesource.com/a".
-	BaseURL string
+	baseURL string
 }
 
 func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
@@ -479,7 +479,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 // If error happens before HTTP status code was determined, HTTP status code
 // will be -1.
 func (c *client) callRaw(ctx context.Context, method, urlPath string, params url.Values, headers map[string]string, data []byte, expectedHTTPCodes ...int) (int, []byte, error) {
-	url := c.BaseURL + urlPath
+	url := c.baseURL + urlPath
 	if len(params) > 0 {
 		url += "?" + params.Encode()
 	}
@@ -497,7 +497,7 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 		req.Header.Set(k, v)
 	}
 
-	res, err := ctxhttp.Do(ctx, c.Client, req)
+	res, err := ctxhttp.Do(ctx, c.hClient, req)
 	if err != nil {
 		return -1, []byte{}, status.Errorf(codes.Internal, "failed to execute %s HTTP request: %s", method, err)
 	}
