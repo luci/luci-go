@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e87ee463_e36bd420",
+        "filename": "cv/internal/common/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-28T19:05:49Z",
+      "side": 1,
+      "message": "ignore",
+      "range": {
+        "startLine": 106,
+        "startChar": 1,
+        "endLine": 106,
+        "endChar": 5
+      },
+      "revId": "393ec7cfcb9616544b7416907224c683af56c067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
