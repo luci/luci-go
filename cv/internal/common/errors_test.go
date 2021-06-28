@@ -93,8 +93,8 @@ func TestTQifyError(t *testing.T) {
 
 		Convey("With Known errors", func() {
 			tqify := TQIfy{
-				KnownRetry: []error{errBoo},
-				KnownFatal: []error{errOops},
+				KnownRetry:  []error{errBoo},
+				KnownIgnore: []error{errOops},
 			}
 			Convey("on unknown error", func() {
 				Convey("transient -> retry and log entire stack", func() {
@@ -109,7 +109,7 @@ func TestTQifyError(t *testing.T) {
 				})
 			})
 
-			Convey("KnownFatal => tq.Ignore, log as warning", func() {
+			Convey("KnownIgnore => tq.Ignore, log as warning", func() {
 				err := tqify.Error(ctx, errWrapOops)
 				So(tq.Ignore.In(err), ShouldBeTrue)
 				So(tq.Fatal.In(err), ShouldBeFalse)
@@ -121,7 +121,7 @@ func TestTQifyError(t *testing.T) {
 				So(transient.Tag.In(err), ShouldBeFalse)
 				assertLoggedAt(logging.Warning)
 			})
-			Convey("KnownRetry & KnownFatal => KnownRetry wins, log about a BUG", func() {
+			Convey("KnownRetry & KnownIgnore => KnownRetry wins, log about a BUG", func() {
 				err := tqify.Error(ctx, errMulti)
 				So(tq.Fatal.In(err), ShouldBeFalse)
 				So(transient.Tag.In(err), ShouldBeFalse)
