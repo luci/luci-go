@@ -900,7 +900,7 @@ func TestSubmitter(t *testing.T) {
 								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
 									{
 										Clid:    2,
-										Message: fmt.Sprintf(failedPreconditionMsgFmt, fmt.Sprintf("rpc error: code = FailedPrecondition desc = revision %s is not current revision", ci2.GetCurrentRevision())),
+										Message: fmt.Sprintf(failedPreconditionMsgFmt, fmt.Sprintf("revision %s is not current revision", ci2.GetCurrentRevision())),
 									},
 								},
 							},
