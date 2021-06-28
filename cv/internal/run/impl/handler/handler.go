@@ -108,7 +108,7 @@ type RM interface {
 
 // CLUpdater encapsulates interaction with CL Updater by the Run events handler.
 type CLUpdater interface {
-	ScheduleBatch(ctx context.Context, luciProject string, forceNotifyPM bool, cls []*changelist.CL) error
+	ScheduleBatch(ctx context.Context, luciProject string, forceNotify bool, cls []*changelist.CL) error
 }
 
 // Impl is a prod implementation of Handler interface.
