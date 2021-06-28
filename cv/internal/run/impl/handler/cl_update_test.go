@@ -234,7 +234,12 @@ func TestOnCLUpdated(t *testing.T) {
 					lProject: {NoAccessTime: timestamppb.New(ct.Clock.Now().Add(time.Minute))},
 				}}
 				updateCL(ci, aplConfigOK, acc)
-				ensureNoop()
+				res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+				So(err, ShouldBeNil)
+				So(res.State, ShouldEqual, rs)
+				So(res.SideEffectFn, ShouldBeNil)
+				// Event must be preserved, s.t. the same CL is re-visited later.
+				So(res.PreserveEvents, ShouldBeTrue)
 			})
 			Convey("cancel if code review access was lost a while ago", func() {
 				acc := &changelist.Access{ByProject: map[string]*changelist.Access_Project{

@@ -66,29 +66,41 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		return nil, err
 	}
 
+	preserveEvents := false
 	for i := range clids {
-		if shouldCancel(ctx, cls[i], runCLs[i], cg) {
+		switch shouldCancel(ctx, cls[i], runCLs[i], cg) {
+		case yes:
 			return impl.Cancel(ctx, rs)
+		case preserveEvent:
+			preserveEvents = true
 		}
 	}
-	return &Result{State: rs}, nil
+	return &Result{State: rs, PreserveEvents: preserveEvents}, nil
 }
 
-func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *prjcfg.ConfigGroup) bool {
+type shouldCancelResult int
+
+const (
+	yes shouldCancelResult = iota
+	no
+	preserveEvent
+)
+
+func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *prjcfg.ConfigGroup) shouldCancelResult {
 	clString := fmt.Sprintf("CL %d %s", cl.ID, cl.ExternalID)
 	switch kind, reason := cl.AccessKindWithReason(ctx, cg.ProjectString()); kind {
 	case changelist.AccessDenied:
 		logging.Warningf(ctx, "No longer have access to %s: %s", clString, reason)
-		return true
+		return yes
 	case changelist.AccessDeniedProbably:
 		logging.Warningf(ctx, "Probably no longer have access to %s (%s), not canceling yet", clString, reason)
 		// Keep the run Running for now. The access should become either
 		// AccessGranted or AccessDenied, eventually.
-		return false
+		return preserveEvent
 	case changelist.AccessUnknown:
 		logging.Errorf(ctx, "Unknown access to %s (%s), not canceling yet", clString, reason)
 		// Keep the run Running for now, it should become clear eventually.
-		return false
+		return no
 	case changelist.AccessGranted:
 		// The expected and most likely case.
 	default:
@@ -97,17 +109,17 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *pr
 
 	if o, c := rcl.Detail.GetPatchset(), cl.Snapshot.GetPatchset(); o != c {
 		logging.Infof(ctx, "%s has new patchset %d => %d", clString, o, c)
-		return true
+		return yes
 	}
 	if o, c := rcl.Detail.GetGerrit().GetInfo().GetRef(), cl.Snapshot.GetGerrit().GetInfo().GetRef(); o != c {
 		logging.Warningf(ctx, "%s has new ref %q => %q", clString, o, c)
-		return true
+		return yes
 	}
 	if o, c := rcl.Trigger, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content); hasTriggerChanged(o, c) {
 		logging.Infof(ctx, "%s has new trigger\nOLD: %s\nNEW: %s", clString, o, c)
-		return true
+		return yes
 	}
-	return false
+	return no
 }
 
 func hasTriggerChanged(old, cur *run.Trigger) bool {
