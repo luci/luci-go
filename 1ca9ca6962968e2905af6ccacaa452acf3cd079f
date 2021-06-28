@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "463cfd6a_79ce7fe7",
+        "filename": "cv/internal/common/errors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-28T17:46:43Z",
+      "side": 1,
+      "message": "why does the tq.Ignore change gets reverted here?",
+      "revId": "1ca9ca6962968e2905af6ccacaa452acf3cd079f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
