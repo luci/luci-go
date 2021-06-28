@@ -89,7 +89,7 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			err := pm.manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{
-				KnownFatal: []error{errTaskArrivedTooLate, eventbox.ErrContention},
+				KnownIgnore: []error{errTaskArrivedTooLate, eventbox.ErrContention},
 			}.Error(ctx, err)
 		},
 	)

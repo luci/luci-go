@@ -84,20 +84,17 @@ type TQIfy struct {
 	// * retries may not happen if task queue configuration prevents it, e.g.
 	// because task has exhausted its retry quota.
 	//
-	// Retry and Fatal should not match the same error, but if this happens, Retry
-	// takes effect and Fatal is ignored to avoid accidental damage.
-	//
-	// Stack trace isn't logged, but server/tq still logs the error string.
+	// KnownRetry and KnownIgnore should not match the same error, but if this
+	// happens, Retry takes effect and KnownIgnore is ignored to avoid accidental
+	// loss of tasks.
 	//
 	// Must contain only leaf errors, i.e. no annotated or MultiError objects.
 	KnownRetry []error
-	// KnownFatal are expected errors which will result in HTTP 202 and no
+	// KnownIgnore are expected errors which will result in HTTP 204 and no
 	// retries.
 	//
-	// Stack trace isn't logged, but server/tq still logs the error string.
-	//
 	// Must contain only leaf errors, i.e. no annotated or MultiError objects.
-	KnownFatal []error
+	KnownIgnore []error
 }
 
 func (t TQIfy) Error(ctx context.Context, err error) error {
@@ -106,11 +103,11 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 	}
 
 	retry := matchesErrors(err, t.KnownRetry...)
-	fail := matchesErrors(err, t.KnownFatal...)
+	ignore := matchesErrors(err, t.KnownIgnore...)
 	switch {
 	case retry:
-		if fail {
-			logging.Errorf(ctx, "BUG: invalid TQIfy config %v: error %s matched both KnownRetry and KnownFatal", t, err)
+		if ignore {
+			logging.Errorf(ctx, "BUG: invalid TQIfy config %v: error %s matched both KnownRetry and KnownIgnore", t, err)
 		}
 		logging.Warningf(ctx, "Will retry due to anticipated error: %s", err)
 		if transient.Tag.In(err) {
@@ -119,7 +116,7 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 		}
 		return err
 
-	case fail:
+	case ignore:
 		logging.Warningf(ctx, "Failing due to anticipated error: %s", err)
 		return tq.Ignore.Apply(err)
 
