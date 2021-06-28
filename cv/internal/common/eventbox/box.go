@@ -279,7 +279,12 @@ func oldestEventAge(ctx context.Context, items []dsset.Item) time.Duration {
 	if oldest.IsZero() {
 		return 0
 	}
-	return clock.Since(ctx, oldest)
+	age := clock.Since(ctx, oldest)
+	if age < 0 {
+		// Clocks aren't perfectly synchronized, so round age up to 0.
+		age = 0
+	}
+	return age
 }
 
 func deleteSemanticGarbage(ctx context.Context, d *dsset.Set, events Events) error {
