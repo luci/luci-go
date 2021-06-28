@@ -16,6 +16,24 @@
       "message": "Would too many distinct value also cause problem to a span in  trace?",
       "revId": "efacd745d7c65c46b40fe90ca5ba9a95914992a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15fa083c_3b592bbd",
+        "filename": "cv/internal/common/eventbox/box.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-28T21:55:30Z",
+      "side": 1,
+      "message": "Good question, I think it shouldn\u0027t, but I don\u0027t know for sure. What I do know is that this was the case for ~weeks now, and traces still appear to work",
+      "parentUuid": "11763c72_d5cd191a",
+      "revId": "efacd745d7c65c46b40fe90ca5ba9a95914992a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
