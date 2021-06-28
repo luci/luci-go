@@ -355,7 +355,7 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 	// Just ignore the corrupted cache file.
 	cache := messages.TagCache{}
 	if err := UnmarshalWithSHA256(blob, &cache); err != nil {
-		logging.Warningf(ctx, "cipd: can't deserialize tag cache - %s", err)
+		logging.Warningf(ctx, "Can't deserialize tag cache: %s", err)
 		return &messages.TagCache{}, nil
 	}
 

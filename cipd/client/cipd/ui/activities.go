@@ -99,6 +99,8 @@ func SetImplementation(ctx context.Context, impl Implementation) context.Context
 
 // NewActivity creates a new activity and sets it as current in the context.
 //
+// Does nothing if the context is already associated with an activity.
+//
 // This also replaces the logger with the one that logs into the activity.
 // If `group` is not-nil, adds this activity into the group. Otherwise it stands
 // on its own (whatever it means depends on the UI implementation).
@@ -109,6 +111,10 @@ func SetImplementation(ctx context.Context, impl Implementation) context.Context
 // The activity must be closed through the returned CancelFunc. Note that it
 // will also close the associated context.
 func NewActivity(ctx context.Context, group *ActivityGroup, kind string) (context.Context, context.CancelFunc) {
+	if ctx.Value(&activityCtxKey) != nil {
+		return context.WithCancel(ctx)
+	}
+
 	var activity Activity
 	if impl, _ := ctx.Value(&implCtxKey).(Implementation); impl != nil {
 		activity = impl.NewActivity(ctx, group, kind)
@@ -177,6 +183,14 @@ func (l *activityLogger) LogCall(level logging.Level, calldepth int, f string, a
 func padLeft(s string, l int) string {
 	if len(s) < l {
 		return strings.Repeat(" ", l-len(s)) + s
+	}
+	return s
+}
+
+// padRight pads an ASCII string with spaces on the right to make it l bytes long.
+func padRight(s string, l int) string {
+	if len(s) < l {
+		return s + strings.Repeat(" ", l-len(s))
 	}
 	return s
 }

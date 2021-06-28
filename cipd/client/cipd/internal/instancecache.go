@@ -90,7 +90,7 @@ type InstanceResult struct {
 
 // InstanceCache is a file-system-based, thread-safe, LRU cache of instances.
 //
-// It also knowns how to populate the cache using the given Fetcher callback,
+// It also knows how to populate the cache using the given Fetcher callback,
 // fetching multiple instances concurrently.
 //
 // Does not validate instance hashes; it is the responsibility of the supplied
@@ -113,16 +113,22 @@ type InstanceCache struct {
 
 	// ParallelDownloads limits how many parallel fetches can happen at once.
 	//
-	// Currently ignored.
+	// The zero value means to do fetches in a blocking way in WaitInstance.
 	ParallelDownloads int
 
 	stateLock sync.Mutex // synchronizes access to the state file.
 
-	allocsLock sync.Mutex
-	allocs     map[string]*Allocation // keyed by instance ID
-
-	fetchQueue   chan func() *InstanceResult
 	fetchPending int32
+	fetchReq     chan *InstanceRequest
+	fetchRes     chan *InstanceResult // non-nil only if ParallelDownloads > 0
+	fetchWG      sync.WaitGroup
+
+	// Fetch tokens implement a semaphore that gradually ramps up the download
+	// concurrency.
+	fetchTokensM    sync.Mutex
+	fetchTokensC    int
+	fetchTokensDone bool
+	fetchTokens     chan struct{}
 
 	// Defaults to instanceCacheMaxSize, mocked in tests.
 	maxSize int
@@ -130,145 +136,33 @@ type InstanceCache struct {
 	maxAge time.Duration
 }
 
-// Allocation is used to concurrently fetch files into the cache.
-//
-// It is a future/promise-like object keyed by instance ID that resolves into
-// a pkg.Source with that instance's data in the cache.
-//
-// Multiple callers can get a reference to the same allocation and call
-// `Realize` on it concurrently to get the cached file. The work will be done
-// only once, all pending `Realize` calls will get the same result.
-type Allocation struct {
-	cache *InstanceCache // the parent
-	pin   common.Pin     // the key of this allocation in the parent's map
-
-	m        sync.Mutex
-	refs     int           // the reference counter
-	corrupt  bool          // true if the file was closed as corrupted
-	realized bool          // true if `Realize` was already called
-	resolved chan struct{} // closed after `resolve` is completed
-	file     *os.File      // set only after `resolve` is completed
-	err      error         // set only after `resolve` is completed
-	size     int64         // set only after `resolve` is completed
+// cacheFile is a downloaded instance file, implements pkg.Source.
+type cacheFile struct {
+	cache *InstanceCache
+	pin   common.Pin
+	file  *os.File
+	size  int64
 }
 
-// Realize blocks until the cached file is available.
-func (a *Allocation) Realize(ctx context.Context) (pkg.Source, error) {
-	a.m.Lock()
-	owner := !a.realized
-	a.realized = true
-	a.m.Unlock()
+func (f *cacheFile) ReadAt(p []byte, off int64) (int, error) { return f.file.ReadAt(p, off) }
+func (f *cacheFile) Size() int64                             { return f.size }
 
-	var err error
-	if owner {
-		err = a.resolve(a.cache.openOrFetch(ctx, a.pin))
-	} else {
-		err = a.wait(ctx)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	a.m.Lock()
-	defer a.m.Unlock()
-
-	// Will be decremented when the cacheFile below is closed.
-	a.refs++
-
-	return &cacheFile{
-		alloc: a,
-		file:  a.file,
-		size:  a.size,
-	}, nil
-}
-
-// Release decrements the reference counter on this allocation.
-//
-// Once it reaches zero the allocation is "forgotten" and creating it again
-// may result in a refetch of the file into the cache.
-func (a *Allocation) Release(ctx context.Context) {
-	_ = a.releaseAndClose(ctx, false)
-}
-
-// addRef increments the reference counter.
-func (a *Allocation) addRef() {
-	a.m.Lock()
-	a.refs++
-	a.m.Unlock()
-}
-
-// resolve is called once the file is downloaded (or failed to be downloaded).
-//
-// Unblocks all pending and future `wait` calls.
-func (a *Allocation) resolve(f *os.File, err error) error {
-	var stat os.FileInfo
-	if err == nil {
-		if stat, err = f.Stat(); err != nil {
-			f.Close()
-			f = nil
-		}
-	}
-
-	a.m.Lock()
-	defer a.m.Unlock()
-
-	a.file = f
-	a.err = err
-	if err == nil {
-		a.size = stat.Size()
-	}
-	close(a.resolved)
-
-	return err
-}
-
-// wait waits until `resolve` is called elsewhere (or the context deadlines).
-//
-// Either returns the same error as `resolve` or a context error.
-func (a *Allocation) wait(ctx context.Context) error {
-	select {
-	case <-a.resolved:
-		a.m.Lock()
-		defer a.m.Unlock()
-		return a.err
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-// releaseAndClose decrements the reference counter and closes the file.
-func (a *Allocation) releaseAndClose(ctx context.Context, corrupt bool) error {
-	a.m.Lock()
-	a.refs--
-	done := a.refs == 0
-	if done {
-		a.cache.forgetAlloc(a)
-	}
-	a.corrupt = a.corrupt || corrupt
-	corrupt = a.corrupt
-	file := a.file
-	a.m.Unlock()
-
-	if !done || file == nil {
-		return nil
-	}
-
+func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
 	corruptText := ""
 	if corrupt {
 		corruptText = " corrupt"
 	}
 
 	var err error
-	if err = file.Close(); err != nil && err != os.ErrClosed {
-		logging.Warningf(ctx, "cipd: failed to close%s cache file: %s", corruptText, err)
+	if err = f.file.Close(); err != nil && err != os.ErrClosed {
+		logging.Warningf(ctx, "Failed to close%s cache file: %s", corruptText, err)
 	} else {
 		err = nil
 	}
 
-	if corrupt || a.cache.Tmp {
-		if err2 := a.cache.delete(ctx, a.pin); err2 != nil {
-			logging.Warningf(ctx, "cipd: failed to delete%s cache file: %s", corruptText, err2)
+	if corrupt || f.cache.Tmp {
+		if err2 := f.cache.delete(ctx, f.pin); err2 != nil {
+			logging.Warningf(ctx, "Failed to delete%s cache file: %s", corruptText, err2)
 			if err == nil {
 				err = err2
 			}
@@ -278,47 +172,86 @@ func (a *Allocation) releaseAndClose(ctx context.Context, corrupt bool) error {
 	return err
 }
 
-// cacheFile is a downloaded instance file, implements pkg.Source.
-//
-// Multiple cacheFile instances may all point to the same *os.File (owned by
-// some single `alloc`).
-type cacheFile struct {
-	closed int32       // 1 if was already closed
-	alloc  *Allocation // the parent allocation
-	file   *os.File    // the underlying file owned by `alloc`
-	size   int64       // the size of `file`
-}
-
-func (f *cacheFile) ReadAt(p []byte, off int64) (int, error) { return f.file.ReadAt(p, off) }
-func (f *cacheFile) Size() int64                             { return f.size }
-
-func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
-	if atomic.CompareAndSwapInt32(&f.closed, 0, 1) {
-		return f.alloc.releaseAndClose(ctx, corrupt)
-	}
-	return os.ErrClosed
-}
-
 // Launch prepares the cache for fetching packages in background.
 //
-// Must be called before RequestInstance.
+// Must be called before RequestInstances.
 func (c *InstanceCache) Launch(ctx context.Context) {
+	if c.ParallelDownloads < 0 {
+		panic("ParallelDownloads must be non-negative")
+	}
+
 	tmp := ""
 	if c.Tmp {
 		tmp = " temporary"
 	}
-	logging.Infof(ctx, "cipd: using%s instance cache at %q", tmp, c.FS.Root())
+	logging.Infof(ctx, "Using%s instance cache at %s", tmp, c.FS.Root())
 
-	c.fetchQueue = make(chan func() *InstanceResult, 100000)
+	// This is an effectively an unlimited buffer. At very least it should be
+	// large enough to hold all requests submitted by RequestInstances(...) before
+	// the first WaitInstance() call when ParallelDownloads == 0 and the channel
+	// is drained only in WaitInstance(). When ParallelDownloads > 0 the buffer
+	// size doesn't matter much.
+	c.fetchReq = make(chan *InstanceRequest, 1000000)
+
+	// If allowed to fetch in parallel, run the work pool that does the job.
+	if c.ParallelDownloads > 0 {
+		// The buffer size here controls how many packages are allowed to sit in the
+		// "downloaded, but not yet installed" queue before the pipeline starts
+		// blocking new downloads. Each such pending file takes some resources (at
+		// least an open file descriptor and some memory), so it's better to limit
+		// the buffer size by some reasonable number.
+		c.fetchRes = make(chan *InstanceResult, 50)
+
+		// Start with 1 allowed concurrent download. It will eventually ramp up to
+		// ParallelDownloads with each finished download, see grabConcurrencySlot.
+		// This is a heuristic to make sure we download the first package ASAP, so
+		// the installer has something to install while more packages are being
+		// downloaded.
+		c.fetchTokens = make(chan struct{}, c.ParallelDownloads)
+		c.fetchTokens <- struct{}{}
+		c.fetchTokensC = 1
+
+		c.fetchWG.Add(c.ParallelDownloads)
+		for i := 0; i < c.ParallelDownloads; i++ {
+			go func() {
+				defer c.fetchWG.Done()
+
+				handleOne := func() bool {
+					defer c.grabConcurrencySlot()()
+					req, ok := <-c.fetchReq
+					if !ok {
+						return false
+					}
+					c.fetchRes <- c.handleRequest(req)
+					return true
+				}
+
+				for handleOne() {
+					// Keep spinning until c.fetchReq is closed.
+				}
+			}()
+		}
+	}
 }
 
 // Close shuts down goroutines started in Launch and cleans up temp files.
+//
+// The caller should ensure there's no pending fetches before making this call.
 func (c *InstanceCache) Close(ctx context.Context) {
-	close(c.fetchQueue)
+	if c.HasPendingFetches() {
+		panic("closing an InstanceCache with some fetches still pending")
+	}
 
+	close(c.fetchReq)
+	if c.ParallelDownloads > 0 {
+		c.unblockAllConcurrencySlots()
+		c.fetchWG.Wait()
+	}
+
+	// Self-destruct if the cache was temporary.
 	if c.Tmp {
 		if err := os.RemoveAll(c.FS.Root()); err != nil {
-			logging.Warningf(ctx, "cipd: leaking temp directory %s: %s", c.FS.Root(), err)
+			logging.Warningf(ctx, "Leaking temp directory %s: %s", c.FS.Root(), err)
 		}
 	}
 }
@@ -327,50 +260,11 @@ func (c *InstanceCache) Close(ctx context.Context) {
 //
 // The results can be waited upon using WaitInstance() method. Each enqueued
 // InstanceRequest will get an exactly one InstanceResponse (perhaps with an
-// error inside). The order of responses may not match order of requests.
+// error inside). The order of responses may not match the order of requests.
 func (c *InstanceCache) RequestInstances(reqs []*InstanceRequest) {
-	// TODO(vadimsh): Rewrite not to use Allocation, use a worker pool to control
-	// concurrency, etc. This is just a MVP implementation of the interface to
-	// make sure cipd.Client is comfortable using it.
-
 	atomic.AddInt32(&c.fetchPending, int32(len(reqs)))
-
-	for _, req := range reqs {
-		ctx := req.Context
-		done := req.Done
-		pin := req.Pin
-		open := req.Open
-		state := req.State
-
-		c.fetchQueue <- func() *InstanceResult {
-			if done != nil {
-				defer done()
-			}
-			res := &InstanceResult{Context: ctx, State: state}
-
-			alloc := c.Allocate(ctx, pin)
-			defer alloc.Release(ctx)
-
-			switch src, err := alloc.Realize(ctx); {
-			case err != nil:
-				res.Err = err
-			case !open:
-				res.Source = src
-			default:
-				instance, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
-					VerificationMode: reader.SkipHashVerification, // the cache did it already
-					InstanceID:       pin.InstanceID,
-				})
-				if err != nil {
-					src.Close(ctx, reader.IsCorruptionError(err))
-					res.Err = err
-				} else {
-					res.Instance = instance
-				}
-			}
-
-			return res
-		}
+	for _, r := range reqs {
+		c.fetchReq <- r
 	}
 }
 
@@ -381,50 +275,112 @@ func (c *InstanceCache) HasPendingFetches() bool {
 }
 
 // WaitInstance blocks until some InstanceRequest is available.
-func (c *InstanceCache) WaitInstance() *InstanceResult {
-	// TODO(vadimsh): This is really just a serial execution for now to reproduce
-	// the previous non-parallel behavior.
-	r := (<-c.fetchQueue)()
+func (c *InstanceCache) WaitInstance() (res *InstanceResult) {
+	if c.ParallelDownloads == 0 {
+		// No parallelism allowed, fetch inline.
+		res = c.handleRequest(<-c.fetchReq)
+	} else {
+		// Otherwise wait for the work pool to finish a request.
+		res = <-c.fetchRes
+	}
 	atomic.AddInt32(&c.fetchPending, -1)
-	return r
+	return
 }
 
-// Allocate returns a reference to a current or future cached instance.
+// grabConcurrencySlot is called right before processing a fetch request.
 //
-// Use `Realize` to get the actual package file. Call `Release` once the
-// allocation is no longer needed.
-func (c *InstanceCache) Allocate(ctx context.Context, pin common.Pin) *Allocation {
-	c.allocsLock.Lock()
-	defer c.allocsLock.Unlock()
-
-	alloc := c.allocs[pin.InstanceID]
-	if alloc != nil {
-		alloc.addRef()
-		return alloc
+// It implements the gradual ramp up of download parallelism. It blocks until
+// the request is allowed to run.
+func (c *InstanceCache) grabConcurrencySlot() (done func()) {
+	_, ok := <-c.fetchTokens
+	if !ok {
+		return func() {} // we are exiting
 	}
 
-	if c.allocs == nil {
-		c.allocs = make(map[string]*Allocation, 1)
-	}
+	return func() {
+		c.fetchTokensM.Lock()
+		defer c.fetchTokensM.Unlock()
+		if c.fetchTokensDone {
+			return
+		}
 
-	alloc = &Allocation{
-		cache:    c,
-		pin:      pin,
-		refs:     1,
-		resolved: make(chan struct{}),
-	}
-	c.allocs[pin.InstanceID] = alloc
+		// Return the token we grabbed.
+		c.fetchTokens <- struct{}{}
 
-	return alloc
+		// If still ramping up, add one more token to increase the concurrency.
+		if c.fetchTokensC < c.ParallelDownloads {
+			c.fetchTokensC++
+			c.fetchTokens <- struct{}{}
+		}
+	}
 }
 
-// forgetAlloc removes `a` from `allocs`.
-func (c *InstanceCache) forgetAlloc(a *Allocation) {
-	c.allocsLock.Lock()
-	defer c.allocsLock.Unlock()
-	if c.allocs[a.pin.InstanceID] == a {
-		delete(c.allocs, a.pin.InstanceID)
+// unblockAllConcurrencySlots is called when closing.
+func (c *InstanceCache) unblockAllConcurrencySlots() {
+	c.fetchTokensM.Lock()
+	defer c.fetchTokensM.Unlock()
+	c.fetchTokensDone = true
+	close(c.fetchTokens)
+}
+
+// handleRequest handles an *InstanceRequest producing an *InstanceResult.
+func (c *InstanceCache) handleRequest(req *InstanceRequest) *InstanceResult {
+	if req.Done != nil {
+		defer req.Done()
 	}
+
+	res := &InstanceResult{
+		Context: req.Context,
+		Err:     req.Context.Err(),
+		State:   req.State,
+	}
+	if res.Err != nil {
+		return res
+	}
+
+	ctx := req.Context
+	pin := req.Pin
+
+	switch src, err := c.openAsSource(ctx, pin); {
+	case err != nil:
+		res.Err = err
+	case !req.Open:
+		res.Source = src
+	default:
+		instance, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
+			VerificationMode: reader.SkipHashVerification, // the fetcher did it already
+			InstanceID:       pin.InstanceID,
+		})
+		if err != nil {
+			src.Close(ctx, reader.IsCorruptionError(err))
+			res.Err = err
+		} else {
+			res.Instance = instance
+		}
+	}
+
+	return res
+}
+
+// openAsSource fetches the instance file and returns it as pkg.Source.
+func (c *InstanceCache) openAsSource(ctx context.Context, pin common.Pin) (pkg.Source, error) {
+	f, err := c.openOrFetch(ctx, pin)
+	if err != nil {
+		return nil, err
+	}
+
+	stat, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
+
+	return &cacheFile{
+		cache: c,
+		pin:   pin,
+		file:  f,
+		size:  stat.Size(),
+	}, nil
 }
 
 // openOrFetch either opens an existing instance file or writes a new one.
@@ -448,9 +404,9 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			// No such file in the cache. This is fine.
 		case err != nil:
 			// Some unexpected error. Log and carry on, as if it is a cache miss.
-			logging.Warningf(ctx, "cipd: could not get %s from cache - %s", pin, err)
+			logging.Warningf(ctx, "Could not get %s from the cache: %s", pin, err)
 		default:
-			logging.Infof(ctx, "cipd: instance cache hit for %s", pin)
+			logging.Infof(ctx, "Cache hit for %s", pin)
 			c.touch(ctx, pin.InstanceID, false) // bump its last access time
 			return file, nil
 		}
@@ -472,18 +428,19 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 		// files with open handles on Windows is moot. So instead we close it,
 		// rename the file (this happens inside EnsureFile), and reopen it again
 		// under the new name.
-		file, err := c.FS.OpenFile(path)
-		if err != nil {
-			logging.Errorf(ctx, "cipd: %s is unexpectedly missing from the cache: %s", pin, err)
-			if attempt == 1 {
-				logging.Infof(ctx, "cipd: retrying...")
-				continue
-			}
-			logging.Errorf(ctx, "cipd: giving up")
+		switch file, err := c.FS.OpenFile(path); {
+		case os.IsNotExist(err) && attempt == 1:
+			logging.Infof(ctx, "Pin %s is still not in the cache, retrying...", pin)
+		case os.IsNotExist(err) && attempt > 1:
+			logging.Errorf(ctx, "Pin %s is unexpectedly missing from the cache", pin)
 			return nil, err
+		case err != nil:
+			logging.Errorf(ctx, "Failed to open the instance %s: %s", pin, err)
+			return nil, err
+		default:
+			c.touch(ctx, pin.InstanceID, true) // mark it as accessed, run the GC
+			return file, nil
 		}
-		c.touch(ctx, pin.InstanceID, true) // mark it as accessed, run the GC
-		return file, nil
 	}
 }
 
@@ -583,7 +540,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 		age := now.Sub(e.LastAccess.AsTime())
 		if age > maxAge {
 			garbage.Add(instanceID)
-			logging.Infof(ctx, "cipd: purging cached instance %s (age %s)", instanceID, age)
+			logging.Debugf(ctx, "Purging cached instance %q (age %s)", instanceID, age)
 		}
 	}
 
@@ -591,7 +548,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 	// designated as garbage.
 	moreGarbage := len(state.Entries) - garbage.Len() - maxSize
 	if moreGarbage > 0 {
-		logging.Infof(ctx, "cipd: still need to purge %d cached instance(s)", moreGarbage)
+		logging.Debugf(ctx, "Still need to purge %d cached instance(s)", moreGarbage)
 		g := make(garbageHeap, 0, len(state.Entries)-garbage.Len())
 		for instanceID, e := range state.Entries {
 			if !garbage.Has(instanceID) {
@@ -605,7 +562,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 		for i := 0; i < moreGarbage; i++ {
 			item := heap.Pop(&g).(*garbageCandidate)
 			garbage.Add(item.instanceID)
-			logging.Infof(ctx, "cipd: purging cached instance %s (age %s)", item.instanceID, now.Sub(item.lastAccessTime))
+			logging.Debugf(ctx, "Purging cached instance %q (age %s)", item.instanceID, now.Sub(item.lastAccessTime))
 		}
 	}
 
@@ -642,15 +599,15 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 		sync = true
 
 	case err != nil:
-		logging.Warningf(ctx, "cipd: could not read instance cache - %s", err)
+		logging.Warningf(ctx, "Could not read the instance cache state: %s", err)
 		sync = true
 
 	default:
 		if err := UnmarshalWithSHA256(stateBytes, state); err != nil {
 			if err == ErrUnknownSHA256 {
-				logging.Warningf(ctx, "cipd: need to rebuild instance cache index file")
+				logging.Warningf(ctx, "Need to rebuild instance cache index file")
 			} else {
-				logging.Warningf(ctx, "cipd: instance cache file is corrupted - %s", err)
+				logging.Warningf(ctx, "Instance cache file is corrupted: %s", err)
 			}
 			*state = messages.InstanceCache{}
 			sync = true
@@ -664,7 +621,7 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 
 	if sync {
 		if err := c.syncState(ctx, state, now); err != nil {
-			logging.Warningf(ctx, "cipd: failed to sync instance cache - %s", err)
+			logging.Warningf(ctx, "Failed to sync instance cache: %s", err)
 		}
 		c.gc(ctx, state, now)
 	}
@@ -715,7 +672,7 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 	}
 
 	state.LastSynced = timestamppb.New(now)
-	logging.Infof(ctx, "cipd: synchronized instance cache with instance files")
+	logging.Debugf(ctx, "Synchronized instance cache with instance files")
 	return nil
 }
 
@@ -746,9 +703,9 @@ func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*me
 	start := clock.Now(ctx)
 	defer func() {
 		totalTime := clock.Since(ctx, start)
-		if totalTime > 2*time.Second {
+		if totalTime > 5*time.Second {
 			logging.Warningf(
-				ctx, "cipd: instance cache state update took %s (%d entries)",
+				ctx, "Instance cache state update took %s (%d entries)",
 				totalTime, len(state.Entries))
 		}
 	}()
@@ -759,7 +716,7 @@ func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*me
 	c.readState(ctx, state, now)
 	if f(state) {
 		if err := c.saveState(ctx, state); err != nil {
-			logging.Warningf(ctx, "cipd: could not save instance cache - %s", err)
+			logging.Warningf(ctx, "Could not save instance cache: %s", err)
 		}
 	}
 }
