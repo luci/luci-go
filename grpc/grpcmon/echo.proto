@@ -1,0 +1,21 @@
+// Copyright 2021 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package grpcmon;
+
+option go_package = "go.chromium.org/luci/grpc/grpcmon";
+
+service Echo{
+  rpc Say (SayRequest) returns (SayResponse) {}
+}
+
+message SayRequest {
+  string msg = 1;
+}
+
+message SayResponse {
+  string msg = 2;
+}
