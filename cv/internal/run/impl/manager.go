@@ -103,11 +103,11 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 	recipient := run.EventboxRecipient(ctx, runID)
 	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
 	if err != nil {
-		return errors.Annotate(err, "run: %q", runID).Err()
+		return err
 	}
 	for _, postProcessFn := range postProcessFns {
 		if err := postProcessFn(ctx); err != nil {
-			return errors.Annotate(err, "run: %q", runID).Err()
+			return err
 		}
 	}
 	return nil
