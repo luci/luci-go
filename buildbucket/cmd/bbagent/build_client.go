@@ -173,8 +173,11 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 			b.Data[0].Item = nil
 		}
 
-		tctx, cancel := clock.WithTimeout(ctx, defaultUpdateBuildTimeout)
+		// This RPC is currently served by an AppEngine frontend instance which
+		// is capped at a 60s request time.
+		tctx, cancel := clock.WithTimeout(ctx, 60*time.Second+500*time.Millisecond)
 		defer cancel()
+
 		_, err := client.UpdateBuild(tctx, req)
 		return err
 	}
