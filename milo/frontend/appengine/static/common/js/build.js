@@ -32,6 +32,8 @@ $(document).ready(function() {
   }
 
   trackEvent('Old Build Page', 'Page Visited', window.location.href);
+  const project = /\/p\/([^\/]+)\//.exec(window.location.href)?.[1] || 'unknown';
+  trackEvent('Project Build Page', 'Visited Legacy', project)
 
   $('li.substeps').each(function() {
     const substep = $(this);

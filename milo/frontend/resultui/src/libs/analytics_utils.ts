@@ -23,6 +23,7 @@ export enum GA_CATEGORIES {
   STEP_WITH_UNEXPECTED_RESULTS = 'Step with Unexpected Results',
   TEST_VARIANT_WITH_UNEXPECTED_RESULTS = 'Test Variant with Unexpected Results',
   LEGACY_BUILD_PAGE = 'Legacy Build Page',
+  PROJECT_BUILD_PAGE = 'Project Build Page',
 }
 
 export enum GA_ACTIONS {
@@ -33,6 +34,8 @@ export enum GA_ACTIONS {
   LOADING_TIME = 'Loading Time',
   EXPAND_ENTRY = 'Expand Entry',
   INSPECT_TEST = 'Inspect Test',
+  VISITED_LEGACY = 'Visited Legacy',
+  VISITED_NEW = 'Visited New',
 }
 
 export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
