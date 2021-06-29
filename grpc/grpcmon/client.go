@@ -96,6 +96,7 @@ type ClientRPCStatsMonitor struct{}
 // from the returned context.
 //
 // Can be passed to a gRPC client via WithStatsHandler(...) dial option.
+// To chain with the existing stats handler, use WithMultiStatsHandler.
 func (m *ClientRPCStatsMonitor) TagRPC(ctx context.Context, tag *stats.RPCTagInfo) context.Context {
 	return context.WithValue(ctx, &rtKey, tag)
 }

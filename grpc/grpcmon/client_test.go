@@ -81,9 +81,7 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 		RegisterEchoServer(srv, svc)
 		l, err := net.Listen("tcp", "localhost:0")
 		So(err, ShouldBeNil)
-		go func() {
-			_ = srv.Serve(l)
-		}()
+		go func() { _ = srv.Serve(l) }()
 		defer srv.Stop()
 
 		// construct a client
@@ -94,9 +92,7 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 			grpc.WithStatsHandler(&ClientRPCStatsMonitor{}),
 		)
 		So(err, ShouldBeNil)
-		defer func() {
-			_ = conn.Close()
-		}()
+		defer func() { So(conn.Close(), ShouldBeNil) }()
 		client := NewEchoClient(conn)
 		ctx, memStore := testContext()
 
