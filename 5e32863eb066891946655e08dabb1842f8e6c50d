@@ -200,6 +200,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2c526ee0_03e8b50c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-06-29T01:06:41Z",
+      "side": 1,
+      "message": "How about this?\n\"Please substitute the realm option with a realm has `role/resultdb.invocationCreator` in the realms.cfg on your project\"",
+      "parentUuid": "8a9a9c39_b90178aa",
+      "revId": "5e32863eb066891946655e08dabb1842f8e6c50d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2f7e118c_4d7fbd38",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 1
