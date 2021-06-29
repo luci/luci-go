@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b7266d1_c0961775",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-29T23:05:57Z",
+      "side": 1,
+      "message": "Uploaded another patchset to resolve data race in unit tests.",
+      "revId": "ee4102e76fe2adcc870eaca5827341ec58bfe4ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
