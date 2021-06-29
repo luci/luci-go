@@ -365,7 +365,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		const lProject = "infra"
+		const lProject = "proj-1"
 		const gHost = "chromium-review.example.com"
 		const gHostInternal = "internal-review.example.com"
 		const gRepo = "depot_tools"
@@ -679,14 +679,18 @@ func TestUpdateCLWorks(t *testing.T) {
 
 				Convey("without access", func() {
 					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
-						c.ACLs = gf.ACLRestricted("not-lProject2")
+						c.ACLs = gf.ACLRestricted("neither-lProject-nor-lProject2")
 					})
 					So(u.Refresh(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
-					// Snapshot is kept as is, including its ExternalUpdateTime.
+					// Snapshot is kept as is, incl. binding to old project and its ExternalUpdateTime.
 					So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
-					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessDeniedProbably)
+					So(cl2.Snapshot.GetLuciProject(), ShouldResemble, lProject)
+					// TODO(tandrii): refactor CL access info to ensure that 403/404 for
+					// the first time (in a context of a specific LUCI project) is
+					// AccessDeniedProbably.
+					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessDenied)
 					// A different PM is notified anyway.
 					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
 				})
