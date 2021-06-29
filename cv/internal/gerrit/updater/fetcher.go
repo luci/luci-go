@@ -45,6 +45,21 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 )
 
+const (
+	// noAccessGraceDuration works around eventually consistent Gerrit,
+	// whereby Gerrit can temporarily return 404 for a CL that actually exists.
+	noAccessGraceDuration = 10 * time.Minute
+
+	// noAccessGraceRetryDelay determines when to schedule next retry task.
+	noAccessGraceRetryDelay = 1 * time.Minute
+
+	// autoRefreshAfter makes CLs worthy of "blind" refresh.
+	//
+	// "blind" refresh means that CL is already stored in Datastore and is up to
+	// the date to the best knowledge of CV.
+	autoRefreshAfter = 2 * time.Hour
+)
+
 // fetcher efficiently computes new snapshot by fetching data from Gerrit.
 //
 // It ensures each dependency is resolved to an existing CLID,
@@ -96,9 +111,10 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		// a dependency of another CL.
 		err = f.fetchNew(ctx)
 
-	case f.updatedHint.IsZero() || f.priorCL.Snapshot.GetOutdated() != nil:
+	case needsRefresh(ctx, f.priorCL, f.luciProject) || f.updatedHint.IsZero():
 		logging.Debugf(ctx, "force updating %s", f)
-		fallthrough
+		err = f.fetchExisting(ctx)
+
 	case f.updatedHint.After(f.priorCL.Snapshot.GetExternalUpdateTime().AsTime()):
 		// Either force update or updatedHint is after the snapshot we already have.
 
@@ -108,7 +124,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		// being used to transition to the main branch:
 		// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#move-change
 		// Therefore, here, proceed to fetchng snapshot.
-
+		logging.Debugf(ctx, "updating %s to at least %s", f, f.updatedHint)
 		err = f.fetchExisting(ctx)
 
 	default:
@@ -261,14 +277,6 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 	}
 	return nil
 }
-
-const (
-	// noAccessGraceDuration works around eventually consistent Gerrit,
-	// whereby Gerrit can temporarily return 404 for a CL that actually exists.
-	noAccessGraceDuration = 10 * time.Minute
-	// noAccessGraceRetryDelay determines when to schedule next retry task.
-	noAccessGraceRetryDelay = 1 * time.Minute
-)
 
 // fetchChangeInfo fetches newest ChangeInfo from Gerrit.
 //
@@ -621,7 +629,7 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 		resolved = append(resolved, &changelist.Dep{Clid: int64(depCL.ID), Kind: kind})
 		lock.Unlock()
 
-		if depNeedsFetching(depCL, f.luciProject) {
+		if needsRefresh(ctx, depCL, f.luciProject) {
 			depHost, depChange, err := eid.ParseGobID()
 			if err != nil {
 				panic("impossible: by construction, all deps are Gerrit, too")
@@ -786,18 +794,24 @@ func (f *fetcher) String() string {
 	return fmt.Sprintf("CL(%s/%d [%d])", f.host, f.change, f.priorCL.ID)
 }
 
-func depNeedsFetching(dep *changelist.CL, luciProject string) bool {
+// needsRefresh returns true if CL
+func needsRefresh(ctx context.Context, cl *changelist.CL, luciProject string) bool {
 	switch {
-	case dep == nil:
+	case cl == nil:
 		panic("dep must be not nil")
-	case dep.Snapshot == nil:
+	case cl.Snapshot == nil:
 		return true
-	case dep.Snapshot.GetOutdated() != nil:
+	case cl.Snapshot.GetOutdated() != nil:
 		return true
-	case dep.Snapshot.GetLuciProject() != luciProject:
+	case cl.Snapshot.GetLuciProject() != luciProject:
+		return true
+	case clock.Since(ctx, cl.UpdateTime) > autoRefreshAfter:
+		// Strictly speaking, cl.UpdateTime isn't just changed on refresh, but also
+		// whenever Run starts/ends. However, the start of Run is usually
+		// happenening right after recent refresh, and end of Run is usually
+		// followed by the refresh.
 		return true
 	default:
-		// TODO(tandrii): add mechanism to refresh purely due to passage of time.
 		return false
 	}
 }
