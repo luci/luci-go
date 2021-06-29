@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -160,7 +160,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 			logging.Errorf(ctx, "failed to cleanup temp dir %q: %s", tdir, err)
 		}
 	}()
-	casClient, err := cas.NewClient(ctx, jd.CasUserPayload.CasInstance, authOpts, false)
+	casClient, err := casclient.NewLegacy(ctx, jd.CasUserPayload.CasInstance, authOpts, false)
 	if err != nil {
 		return err
 	}
