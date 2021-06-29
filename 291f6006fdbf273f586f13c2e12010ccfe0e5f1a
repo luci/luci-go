@@ -47,6 +47,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "94c9c3a9_1640f064",
+        "filename": "grpc/grpcmon/multi_stats_handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-29T21:51:08Z",
+      "side": 1,
+      "message": "This is weird. I don\u0027t maintain imports by myself in most cases. This line is what go vet auto adds. I had to manually remove this alias to stop go vet to add it.",
+      "parentUuid": "cbd7410a_7031ba38",
+      "range": {
+        "startLine": 19,
+        "startChar": 1,
+        "endLine": 19,
+        "endChar": 8
+      },
+      "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4f34dfcb_89ed11b0",
@@ -83,6 +107,30 @@
       "writtenOn": "2021-06-29T21:24:41Z",
       "side": 1,
       "message": "why?",
+      "range": {
+        "startLine": 31,
+        "startChar": 14,
+        "endLine": 31,
+        "endChar": 89
+      },
+      "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8831c77_59d3600d",
+        "filename": "grpc/grpcmon/multi_stats_handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-29T21:51:08Z",
+      "side": 1,
+      "message": "stats.Handler is an interface, and I had to add the following check to stop unit tests panicking when `m.Logger \u003d\u003d nil` couldn\u0027t catch the nil correctly.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/common/archive/archive.go;l\u003d104-106\n\nI thought the same applies?",
+      "parentUuid": "f7e99bdd_088c5d37",
       "range": {
         "startLine": 31,
         "startChar": 14,
