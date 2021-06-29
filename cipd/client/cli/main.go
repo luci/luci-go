@@ -145,10 +145,10 @@ func (c *cipdSubcommand) ModifyContext(ctx context.Context) context.Context {
 	useSimpleUI := os.Getenv(envSimpleTerminalUI) == "1"
 
 	// If writing to a real terminal (rather than redirecting to a file) and not
-	// running at a verbose logging level, use a fancy UI with progress bars. It
-	// is more human readable, but doesn't preserve details of all operations in
-	// the terminal output.
-	if !useSimpleUI && logging.GetLevel(ctx) > logging.Debug && terminal.IsTerminal(int(os.Stderr.Fd())) {
+	// running at a non-default logging level, use a fancy UI with progress bars.
+	// It is more human readable, but doesn't preserve details of all operations
+	// in the terminal output.
+	if !useSimpleUI && logging.GetLevel(ctx) == logging.Info && terminal.IsTerminal(int(os.Stderr.Fd())) {
 		ctx = ui.SetImplementation(ctx, &ui.FancyImplementation{Out: os.Stderr})
 	}
 
