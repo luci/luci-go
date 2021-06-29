@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -69,7 +68,7 @@ func (af *authFlags) NewCASClient(ctx context.Context, instance string) (*rbecli
 	if af.parsedOpts == nil {
 		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
 	}
-	return cas.NewClient(ctx, instance, *af.parsedOpts, true)
+	return cas.NewLegacyClient(ctx, instance, *af.parsedOpts, true)
 }
 
 func getApplication() *subcommands.DefaultApplication {
