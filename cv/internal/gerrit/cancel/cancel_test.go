@@ -110,6 +110,21 @@ func TestCancel(t *testing.T) {
 		}
 		input.Trigger = findTrigger(ci)
 
+		Convey("Fails PreCondition if CL is AccessDenied from code review site", func() {
+			noAccessTime := ct.Clock.Now().UTC().Add(1 * time.Minute)
+			cl.Access = &changelist.Access{
+				ByProject: map[string]*changelist.Access_Project{
+					lProject: {
+						UpdateTime:   timestamppb.New(noAccessTime),
+						NoAccessTime: timestamppb.New(noAccessTime),
+					},
+				},
+			}
+			err := Cancel(ctx, input)
+			So(err, ShouldErrLike, "failed to cancel trigger because CV lost access to this CL")
+			So(ErrPreconditionFailedTag.In(err), ShouldBeTrue)
+		})
+
 		Convey("Fails PreCondition if CL has newer PS in datastore", func() {
 			newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
 			gf.PS(3)(newCI)
