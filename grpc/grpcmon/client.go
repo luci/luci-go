@@ -16,6 +16,7 @@ package grpcmon
 
 import (
 	"context"
+	"math"
 	"time"
 
 	gcode "google.golang.org/genproto/googleapis/rpc/code"
@@ -31,6 +32,15 @@ import (
 )
 
 var (
+	// sizeBucket covers range of 1..4MiB
+	//
+	// This bucket is used to bucketize the distribution of sent/received
+	// message sizes.
+	//
+	// The default message size limit in gRPC is 4MiB. The limit is adjustable,
+	// but the coverage should be large enough to cover most payloads.
+	sizeBucket = distribution.GeometricBucketer(math.Pow(16, 0.055), 100)
+
 	grpcClientCount = metric.NewCounter(
 		"grpc/client/count",
 		"Total number of RPCs.",
@@ -43,8 +53,40 @@ var (
 		"Distribution of client-side RPC duration (in milliseconds).",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
-		field.String("method"),         // full name of the grpc method
-		field.String("canonical_code")) // grpc.Code of the result in string
+		field.String("method"),
+		field.String("canonical_code"))
+
+	grpcClientSentMsg = metric.NewCumulativeDistribution(
+		"grpc/client/sent_messages",
+		"Count Distribution of sent messages per client-side RPC.",
+		nil,
+		// TODO(ddoman): tune bucket.
+		distribution.DefaultBucketer,
+		field.String("method"))
+
+	grpcClientRecvMsg = metric.NewCumulativeDistribution(
+		"grpc/client/recv_messages",
+		"Count distribution of received messages per client-side RPC.",
+		nil,
+		// TODO(ddoman): tune bucket.
+		distribution.DefaultBucketer,
+		field.String("method"))
+
+	grpcClientSentByte = metric.NewCumulativeDistribution(
+		"/grpc/client/sent_msg_bytes",
+		"Size distribution of request protocol messages. Size is the actual number "+
+			"of bytes sent on the wire, which may have been subject to compressions.",
+		&types.MetricMetadata{Units: types.Bytes},
+		sizeBucket,
+		field.String("method"))
+
+	grpcClientRecvByte = metric.NewCumulativeDistribution(
+		"/grpc/client/recv_msg_bytes",
+		"Size distribution of response protocol messages. Size is the actual number "+
+			"of bytes received on the wire, which may have been subject to compressions.",
+		&types.MetricMetadata{Units: types.Bytes},
+		sizeBucket,
+		field.String("method"))
 
 	rtKey = "Holds the current rpc tag"
 )
@@ -110,16 +152,37 @@ func (m *ClientRPCStatsMonitor) handleRPCEnd(ctx context.Context, e *stats.End) 
 	reportClientRPCMetrics(ctx, rt.FullMethodName, e.Error, e.EndTime.Sub(e.BeginTime))
 }
 
+// handleRPC updates the metrics with the information for an incoming payload.
+func (m *ClientRPCStatsMonitor) handleRPCInPayload(ctx context.Context, p *stats.InPayload) {
+	rt, ok := ctx.Value(&rtKey).(*stats.RPCTagInfo)
+	if !ok {
+		panic("handleRPCInPayload: missing rpc-tag")
+	}
+	grpcClientRecvMsg.Add(ctx, 1, rt.FullMethodName)
+	grpcClientRecvByte.Add(ctx, float64(p.WireLength), rt.FullMethodName)
+}
+
+// handleRPC updates the metrics with the information for an outgoing payload.
+func (m *ClientRPCStatsMonitor) handleRPCOutPayload(ctx context.Context, p *stats.OutPayload) {
+	rt, ok := ctx.Value(&rtKey).(*stats.RPCTagInfo)
+	if !ok {
+		panic("handleRPCOutPayload: missing rpc-tag")
+	}
+	grpcClientSentMsg.Add(ctx, 1, rt.FullMethodName)
+	grpcClientSentByte.Add(ctx, float64(p.WireLength), rt.FullMethodName)
+}
+
 // HandleRPC processes the RPC stats.
 func (m *ClientRPCStatsMonitor) HandleRPC(ctx context.Context, s stats.RPCStats) {
 	switch event := s.(type) {
 	case *stats.End:
 		m.handleRPCEnd(ctx, event)
+	case *stats.InPayload:
+		m.handleRPCInPayload(ctx, event)
+	case *stats.OutPayload:
+		m.handleRPCOutPayload(ctx, event)
 	default:
-		// do nothing
-		//
-		// TODO(ddoman): handle InPayload and OutPayload to report
-		// sent_msg, sent_msg_bytes, recv_msg, and recv_msg_bytes.
+		// do nothing.
 	}
 }
 
