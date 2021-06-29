@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "472a2690_b03254f4",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T22:07:50Z",
+      "side": 1,
+      "message": "I think we should add here\n\n  if origin \u003d\u003d \"\" {\n    return\n  }\n  \nTo skip calling `AccessControl(ctx, \"\")`, since it was never called like this before (again, who knows how the user-supplied callback would react).",
+      "range": {
+        "startLine": 378,
+        "startChar": 1,
+        "endLine": 378,
+        "endChar": 45
+      },
+      "revId": "8995483dd449ec95a3a12c864fd39f54727fa577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
