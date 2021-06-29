@@ -25,7 +25,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -109,7 +109,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer signals.HandleInterrupt(cancel)()
-	ctx, err := cas.ContextWithMetadata(ctx, "cas")
+	ctx, err := casclient.ContextWithMetadata(ctx, "cas")
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		is.Inputs = append(is.Inputs, path)
 	}
 
-	client, err := c.authFlags.NewClient(ctx, c.casFlags.Instance, false)
+	client, err := c.authFlags.NewClientLegacy(ctx, c.casFlags.Instance, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to create cas client").Err()
 	}
