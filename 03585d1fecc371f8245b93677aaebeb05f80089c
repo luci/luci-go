@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f388801c_e27b5774",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:20:06Z",
+      "side": 1,
+      "message": "At least Cloud PubSub and Cloud BigTable libraries override it [1] and allow much larger payloads (up to 100MB). I suspect Logdog might be using such large messages. I think we should cover at least up to 16MB, probably more.\n\nhttps://github.com/googleapis/google-cloud-go/blob/v0.34.0/bigtable/bigtable.go#L74",
+      "range": {
+        "startLine": 38,
+        "startChar": 29,
+        "endLine": 38,
+        "endChar": 50
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52b12120_9e54a0d1",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:20:06Z",
+      "side": 1,
+      "message": "nit \"messages/sent\" or \"messages_sent\", so metrics have a common prefix (for autocomplete etc)",
+      "range": {
+        "startLine": 58,
+        "startChar": 15,
+        "endLine": 58,
+        "endChar": 28
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17b802e6_a45306f1",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:20:06Z",
+      "side": 1,
+      "message": "bytes/sent?",
+      "range": {
+        "startLine": 74,
+        "startChar": 16,
+        "endLine": 74,
+        "endChar": 30
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0498537e_823cdc69",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:20:06Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 4
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f27f3177_967165f4",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:20:06Z",
+      "side": 1,
+      "message": "This should be a comment on ClientRPCStatsMonitor, not on this method.",
+      "range": {
+        "startLine": 138,
+        "startChar": 1,
+        "endLine": 138,
+        "endChar": 72
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "316cbdb4_61fa8e2c",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:20:06Z",
+      "side": 1,
+      "message": "please extract into a function, it is copy-pasted 3 times already. Looks like only FullMethodName is used, so maybe `methodNameFromTag(ctx)`.",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 149,
+        "endChar": 2
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
