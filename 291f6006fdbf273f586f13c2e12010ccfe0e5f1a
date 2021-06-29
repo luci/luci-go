@@ -354,6 +354,30 @@
       },
       "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "83f6e050_94259d69",
+        "filename": "grpc/grpcmon/multi_stats_handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T22:18:56Z",
+      "side": 1,
+      "message": "No, it was just an observation :)",
+      "parentUuid": "12045e4f_bee6a176",
+      "range": {
+        "startLine": 34,
+        "startChar": 5,
+        "endLine": 34,
+        "endChar": 14
+      },
+      "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
