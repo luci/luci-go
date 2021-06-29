@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver/tarring"
-	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
@@ -68,7 +68,7 @@ isolate. Format of files is:
 
 type batchArchiveRun struct {
 	commonServerFlags
-	casFlags             cas.Flags
+	casFlags             casclient.Flags
 	dumpJSON             string
 	maxConcurrentChecks  int
 	maxConcurrentUploads int
@@ -161,7 +161,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	}
 
 	if c.casFlags.Instance != "" {
-		ctx, err := cas.ContextWithMetadata(ctx, "isolate")
+		ctx, err := casclient.ContextWithMetadata(ctx, "isolate")
 		if err != nil {
 			return err
 		}
