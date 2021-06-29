@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
 	. "github.com/smartystreets/goconvey/convey"
@@ -44,6 +45,14 @@ func (af *testAuthFlags) Parse() error { return nil }
 
 func (af *testAuthFlags) NewClient(ctx context.Context, _ string, _ bool) (*client.Client, error) {
 	return af.testEnv.Server.NewTestClient(ctx)
+}
+
+func (af *testAuthFlags) NewCASClient(ctx context.Context, instance string, _ bool) (*cas.Client, error) {
+	conn, err := af.testEnv.Server.NewClientConn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return cas.NewClient(ctx, conn, instance)
 }
 
 func TestArchiveDownload(t *testing.T) {

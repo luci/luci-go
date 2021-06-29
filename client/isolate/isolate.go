@@ -235,6 +235,8 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 // ProcessIsolateForCAS works similarly to ProcessIsolate. However, it is
 // simpler in that it returns a list of dependency *relative* paths and the
 // root directory, which are the necessary input to upload to RBE-CAS.
+//
+// TODO(crbug.com/1193375): remove after migrating to RBE's cas package.
 func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
