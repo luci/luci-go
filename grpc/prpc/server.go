@@ -171,16 +171,18 @@ func (s *Server) RegisterOverride(serviceName, methodName string, fn Override) {
 
 // authenticate forces authentication set by RegisterDefaultAuth.
 func (s *Server) authenticate() router.Middleware {
-	a := s.Authenticator
-	if a == nil {
-		a = GetDefaultAuth()
-		if a == nil {
-			panic("prpc: no custom Authenticator was provided and default authenticator was not registered.\n" +
-				"Either explicitly set `Server.Authenticator = NoAuthentication`, or use RegisterDefaultAuth()")
-		}
-	}
-
 	return func(c *router.Context, next router.Handler) {
+		// Allow Authenticator to be replaced at any time before the serving by
+		// delaying reading it as much as possible.
+		a := s.Authenticator
+		if a == nil {
+			a = GetDefaultAuth()
+			if a == nil {
+				panic("prpc: no custom Authenticator was provided and default authenticator was not registered.\n" +
+					"Either explicitly set `Server.Authenticator = NoAuthentication`, or use RegisterDefaultAuth()")
+			}
+		}
+
 		ctx, err := a.Authenticate(c.Context, c.Request)
 		if err == nil {
 			c.Context = ctx
