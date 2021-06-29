@@ -76,7 +76,7 @@ func teeErr(err error, keep *error) error {
 
 // logDetails logs debug information about the request.
 func logDetails(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
-	logging.Debugf(ctx, "%q called %q", auth.CurrentIdentity(ctx), methodName)
+	logging.Debugf(ctx, "%q called %q with request %s", auth.CurrentIdentity(ctx), methodName, proto.MarshalTextString(req))
 	return ctx, nil
 }
 
