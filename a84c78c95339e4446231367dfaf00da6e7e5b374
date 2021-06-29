@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0708e36_9664d9c8",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-29T15:27:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35e7329d_78a1cac0",
+      "range": {
+        "startLine": 58,
+        "startChar": 70,
+        "endLine": 58,
+        "endChar": 75
+      },
+      "revId": "a84c78c95339e4446231367dfaf00da6e7e5b374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "88c3eb63_cec74f30",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-06-14T21:26:30Z",
       "side": 1,
       "message": "nit: get/search/cancel",
+      "range": {
+        "startLine": 61,
+        "startChar": 70,
+        "endLine": 61,
+        "endChar": 74
+      },
+      "revId": "a84c78c95339e4446231367dfaf00da6e7e5b374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e505d2e3_4bda60fa",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-06-29T15:27:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88c3eb63_cec74f30",
       "range": {
         "startLine": 61,
         "startChar": 70,
