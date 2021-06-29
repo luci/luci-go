@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c4511737_13d3d345",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-29T17:35:54Z",
+      "side": 1,
+      "message": "Currently waiting for https://github.com/bazelbuild/remote-apis-sdks/pull/364",
+      "parentUuid": "4e8c4222_0367be7c",
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c497910c_94198bf4",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
@@ -31,6 +49,24 @@
       "writtenOn": "2021-06-17T01:24:51Z",
       "side": 1,
       "message": "I think current SDK implementation is somewhat changed from your proof of concept, do you still see equivalent or better performance than isolate?",
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96b497b0_9c34bd8d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-29T17:35:54Z",
+      "side": 1,
+      "message": "see https://bugs.chromium.org/p/chromium/issues/detail?id\u003d1193375#c53",
+      "parentUuid": "c497910c_94198bf4",
       "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -93,6 +129,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "02d5ea64_6cb41dba",
+        "filename": "client/cas/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-29T17:35:54Z",
+      "side": 1,
+      "message": "renamed the package to casclient and renamed functions to New and NewLegacy.",
+      "parentUuid": "6ddb04b3_cbe17406",
+      "range": {
+        "startLine": 94,
+        "startChar": 5,
+        "endLine": 94,
+        "endChar": 17
+      },
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "718357a6_6071c402",
@@ -106,6 +166,30 @@
       "writtenOn": "2021-06-17T07:08:42Z",
       "side": 1,
       "message": "add crbug.com/1193375?",
+      "range": {
+        "startLine": 33,
+        "startChar": 63,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "809e78e6_ca4123e0",
+        "filename": "client/cas/flag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-29T17:35:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "718357a6_6071c402",
       "range": {
         "startLine": 33,
         "startChar": 63,
@@ -139,6 +223,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "71d9b76c_e8286b14",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-29T17:35:54Z",
+      "side": 1,
+      "message": "called it newClientLegacy, so that it has a common prefix with newClient",
+      "parentUuid": "7eae5f10_2b1eb2e3",
+      "range": {
+        "startLine": 105,
+        "startChar": 25,
+        "endLine": 105,
+        "endChar": 37
+      },
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "985d63c8_4e045155",
@@ -152,6 +260,24 @@
       "writtenOn": "2021-06-17T01:29:53Z",
       "side": 1,
       "message": "no need to be public function?",
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a960d143_63ab3936",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 550,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-06-29T17:35:54Z",
+      "side": 1,
+      "message": "note: it is not visible outside of the package because the type is not public.\n\nThe function being public means other types in this package may use it. If regexpCache has a function used only by regexpCache, then such function would be private.\n\nWDYT?",
+      "parentUuid": "985d63c8_4e045155",
       "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
