@@ -131,7 +131,7 @@ func main() {
 		srv.PRPC.HackFixFieldMasksForJSON = true
 
 		// makeOverride(prod % -> Go, dev % -> Go).
-		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(75, 100))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(100, 100))
 
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		return nil
