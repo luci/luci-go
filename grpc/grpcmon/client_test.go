@@ -16,6 +16,7 @@ package grpcmon
 
 import (
 	"context"
+	"net"
 	"testing"
 	"time"
 
@@ -60,5 +61,82 @@ func TestUnaryClientInterceptor(t *testing.T) {
 		run(status.Error(codes.Unauthenticated, "no auth"), time.Minute)
 		So(count("UNAUTHENTICATED"), ShouldEqual, 1)
 		So(duration("UNAUTHENTICATED"), ShouldEqual, 60000)
+	})
+}
+
+type echoService struct {
+	err error
+}
+
+func (s *echoService) Say(c context.Context, req *SayRequest) (*SayResponse, error) {
+	return &SayResponse{Msg: req.GetMsg()}, s.err
+}
+
+func TestClientRPCStatsMonitor(t *testing.T) {
+	method := "/grpcmon.Echo/Say"
+
+	Convey("ClientRPCStatsMonitor", t, func() {
+		// spin up a server
+		srv, svc := grpc.NewServer(), &echoService{}
+		RegisterEchoServer(srv, svc)
+		l, err := net.Listen("tcp", "localhost:0")
+		So(err, ShouldBeNil)
+		go func() {
+			_ = srv.Serve(l)
+		}()
+		defer srv.Stop()
+
+		// construct a client
+		conn, err := grpc.Dial(
+			l.Addr().String(),
+			grpc.WithInsecure(),
+			grpc.WithBlock(),
+			grpc.WithStatsHandler(&ClientRPCStatsMonitor{}),
+		)
+		So(err, ShouldBeNil)
+		defer func() {
+			_ = conn.Close()
+		}()
+		client := NewEchoClient(conn)
+		ctx, memStore := testContext()
+
+		run := func(err error, msg string) {
+			svc.err = err
+			resp, rerr := client.Say(ctx, &SayRequest{Msg: msg})
+			if err == nil {
+				So(resp.GetMsg(), ShouldEqual, msg)
+			}
+			So(rerr, ShouldResemble, err)
+		}
+		count := func(code string) int64 {
+			val := memStore.Get(ctx, grpcClientCount, time.Time{}, []interface{}{method, code})
+			So(val, ShouldNotBeNil)
+			return val.(int64)
+		}
+		duration := func(code string) interface{} {
+			return memStore.Get(ctx, grpcClientDuration, time.Time{}, []interface{}{method, code})
+		}
+
+		Convey("Captures count and duration", func() {
+			// grpc uses time.Now() to assign a value to grpc.End.{BeginTime, EndTime}, and
+			// we cannot stub it out.
+			//
+			// Therefore, this only checks the duration has been set or not.
+			// i.e., nil or not.
+			So(duration("OK"), ShouldBeNil)
+			run(nil, "echo!")
+			So(count("OK"), ShouldEqual, 1)
+			So(duration("OK"), ShouldNotBeNil)
+
+			So(duration("PERMISSION_DENIED"), ShouldBeNil)
+			run(status.Error(codes.PermissionDenied, "no permission"), "echo!")
+			So(count("PERMISSION_DENIED"), ShouldEqual, 1)
+			So(duration("PERMISSION_DENIED"), ShouldNotBeNil)
+
+			So(duration("UNAUTHENTICATED"), ShouldBeNil)
+			run(status.Error(codes.Unauthenticated, "no auth"), "echo!")
+			So(count("UNAUTHENTICATED"), ShouldEqual, 1)
+			So(duration("UNAUTHENTICATED"), ShouldNotBeNil)
+		})
 	})
 }
