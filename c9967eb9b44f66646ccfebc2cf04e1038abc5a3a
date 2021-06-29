@@ -16,6 +16,52 @@
       "message": "How am i expected to land \nthis change and this one: https://chromium-review.googlesource.com/c/infra/infra/+/2993906\n\nas close together as possible?",
       "revId": "c9967eb9b44f66646ccfebc2cf04e1038abc5a3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6792b92e_32640c19",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:07:43Z",
+      "side": 1,
+      "message": "returns ...",
+      "range": {
+        "startLine": 73,
+        "startChar": 18,
+        "endLine": 73,
+        "endChar": 44
+      },
+      "revId": "c9967eb9b44f66646ccfebc2cf04e1038abc5a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "275287c5_06aca812",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 386,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:07:43Z",
+      "side": 1,
+      "message": "better to call it only once per request, who knows what the user-supplied callback may be doing",
+      "range": {
+        "startLine": 386,
+        "startChar": 4,
+        "endLine": 386,
+        "endChar": 38
+      },
+      "revId": "c9967eb9b44f66646ccfebc2cf04e1038abc5a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
