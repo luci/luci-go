@@ -53,6 +53,24 @@ func (cl *CL) AccessKind(ctx context.Context, luciProject string) AccessKind {
 	return kind
 }
 
+// AccessKind returns AccessKind of a CL from code review site.
+func (cl *CL) AccessKindFromCodeReviewSite(ctx context.Context, luciProject string) AccessKind {
+	if pa := cl.Access.GetByProject()[luciProject]; pa != nil {
+		switch ct, now := pa.GetNoAccessTime(), clock.Now(ctx); {
+		case ct == nil && pa.GetNoAccess():
+			// Legacy not yet upgraded entity.
+			return AccessDenied
+		case ct == nil:
+			panic(fmt.Errorf("Access.Project %q without NoAccess fields: %s", luciProject, pa))
+		case now.Before(ct.AsTime()):
+			return AccessDeniedProbably
+		default:
+			return AccessDenied
+		}
+	}
+	return AccessGranted
+}
+
 // AccessKindWithReason returns AccessKind of a CL and a reason for it.
 func (cl *CL) AccessKindWithReason(ctx context.Context, luciProject string) (AccessKind, string) {
 	switch projects := cl.ApplicableConfig.GetProjects(); {
@@ -69,19 +87,11 @@ func (cl *CL) AccessKindWithReason(ctx context.Context, luciProject string) (Acc
 		// CL is watched by this project only.
 	}
 
-	if pa := cl.Access.GetByProject()[luciProject]; pa != nil {
-		now := clock.Now(ctx)
-		switch ct := pa.GetNoAccessTime(); {
-		case ct == nil && pa.GetNoAccess():
-			// Legacy not yet upgraded entity.
-			return AccessDenied, "code review site denied access [legacy CL]"
-		case ct == nil:
-			panic(fmt.Errorf("Access.Project %q without NoAccess fields: %s", luciProject, pa))
-		case now.Before(ct.AsTime()):
-			return AccessDeniedProbably, "code review site denied access recently"
-		default:
-			return AccessDenied, "code review site denied access"
-		}
+	switch cl.AccessKindFromCodeReviewSite(ctx, luciProject) {
+	case AccessDenied:
+		return AccessDenied, "code review site denied access"
+	case AccessDeniedProbably:
+		return AccessDeniedProbably, "code review site denied access recently"
 	}
 
 	if cl.ApplicableConfig == nil || cl.Snapshot == nil {
