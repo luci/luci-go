@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/common/tree"
+	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
@@ -78,6 +79,9 @@ func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.C
 					handler.ErrTransientSubmissionFailure,
 					lease.ErrConflict,
 					eventbox.ErrContention,
+				},
+				KnownIgnoreTags: []errors.BoolTag{
+					cancel.ErrPreconditionFailedTag,
 				},
 			}.Error(ctx, err)
 		},
