@@ -56,11 +56,25 @@ var (
 	NoAuthentication Authenticator = nullAuthenticator{}
 )
 
-// AllowOriginAll returns true unconditionally.
+// AccessControlDecision describes what access control headers to add.
+type AccessControlDecision int
+
+const (
+	// AccessDefault does not write any CORS headers at all.
+	AccessDefault AccessControlDecision = iota
+	// AccessAllowWithoutCredentials adds usual CORS headers except for 'Access-Control-Allow-Credentials'.
+	// This may be used with cookie-based authentication.
+	AccessAllowWithoutCredentials
+	// AccessAllowWithCredentials adds all usual CORS headers.
+	// This must NOT be used with cookie-based authentication.
+	AccessAllowWithCredentials
+)
+
+// AllowOriginAll returns AccessAllowWithCredentials unconditionally.
 // It can be used as Server.AccessControl.
 // It must NOT be used in combination with cookie-based authentication.
-func AllowOriginAll(c context.Context, origin string) bool {
-	return true
+func AllowOriginAll(c context.Context, origin string) AccessControlDecision {
+	return AccessAllowWithCredentials
 }
 
 // Override is a pRPC method-specific override which may optionally handle the
@@ -87,14 +101,14 @@ type Server struct {
 	Authenticator Authenticator
 
 	// AccessControl, if not nil, is a callback that is invoked per request to
-	// determine if permissive access control headers should be added to the
-	// response.
+	// determine what permissive access control headers, if any, should be added to
+	// the response.
 	//
 	// This callback includes the request Context and the origin header supplied
-	// by the client. If nil, or if it returns false, no headers will be written.
-	// Otherwise, access control headers for the specified origin will be
-	// included in the response.
-	AccessControl func(c context.Context, origin string) bool
+	// by the client. If nil, no headers will be written.
+	// Otherwise, see AccessControlDecision for what access control headers will be
+	// included in the response for the specified origin.
+	AccessControl func(c context.Context, origin string) AccessControlDecision
 
 	// HackFixFieldMasksForJSON indicates whether to attempt a workaround for
 	// https://github.com/golang/protobuf/issues/745 when the request has
@@ -364,14 +378,20 @@ func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
 	// Don't write out access control headers if the origin is unspecified.
 	const originHeader = "Origin"
 	origin := c.Request.Header.Get(originHeader)
-	if origin == "" || s.AccessControl == nil || !s.AccessControl(c.Context, origin) {
+	if origin == "" || s.AccessControl == nil {
+		return
+	}
+	accessControl := s.AccessControl(c.Context, origin)
+	if accessControl == AccessDefault {
 		return
 	}
 
 	h := c.Writer.Header()
 	h.Add("Access-Control-Allow-Origin", origin)
 	h.Add("Vary", originHeader)
-	h.Add("Access-Control-Allow-Credentials", "true")
+	if accessControl == AccessAllowWithCredentials {
+		h.Add("Access-Control-Allow-Credentials", "true")
+	}
 
 	if preflight {
 		h.Add("Access-Control-Allow-Headers", allowHeaders)

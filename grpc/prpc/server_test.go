@@ -171,9 +171,26 @@ func TestServer(t *testing.T) {
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, unimplemented)
 			})
 
+			Convey(`When access control is enabled without credentials`, func() {
+				server.AccessControl = func(c context.Context, origin string) AccessControlDecision {
+					return AccessAllowWithoutCredentials
+				}
+				req.Header.Add("Origin", "http://example.com")
+
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
+				So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
+				So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "")
+				So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, HeaderGRPCCode)
+			})
 			Convey(`When access control is enabled for "http://example.com"`, func() {
-				server.AccessControl = func(c context.Context, origin string) bool {
-					return origin == "http://example.com"
+				server.AccessControl = func(c context.Context, origin string) AccessControlDecision {
+					if origin == "http://example.com" {
+						return AccessAllowWithCredentials
+					}
+					return AccessDefault
+
 				}
 
 				Convey(`When sending an OPTIONS request`, func() {

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -99,7 +100,7 @@ func main() {
 	})
 }
 
-func accessControl(ctx context.Context, origin string) bool {
+func accessControl(ctx context.Context, origin string) prpc.AccessControlDecision {
 	cfg, err := config.Config(ctx)
 	if err != nil {
 		panic(fmt.Sprintf("failed to get config for the access control check: %s", err))
@@ -107,13 +108,13 @@ func accessControl(ctx context.Context, origin string) bool {
 
 	ccfg := cfg.GetCoordinator()
 	if ccfg == nil {
-		return false
+		return prpc.AccessDefault
 	}
 
 	for _, o := range ccfg.RpcAllowOrigins {
 		if o == origin {
-			return true
+			return prpc.AccessAllowWithCredentials
 		}
 	}
-	return false
+	return prpc.AccessDefault
 }
