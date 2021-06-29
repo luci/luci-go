@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6da2cd5_685a7303",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-06-29T04:31:35Z",
+      "side": 1,
+      "message": "How am i expected to land \nthis change and this one: https://chromium-review.googlesource.com/c/infra/infra/+/2993906\n\nas close together as possible?",
+      "revId": "c9967eb9b44f66646ccfebc2cf04e1038abc5a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
