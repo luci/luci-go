@@ -88,6 +88,8 @@ func reportClientRPCMetrics(ctx context.Context, method string, err error, dur t
 
 // ClientRPCStatsMonitor implements stats.Handler to update tsmon metrics with
 // RPC stats.
+//
+// To chain this with other stats handler, use WithMultiStatsHandler.
 type ClientRPCStatsMonitor struct{}
 
 // TagRPC creates a context for the RPC.
