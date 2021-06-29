@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d37fd3d_f2bbf8e8",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:24:41Z",
+      "side": 1,
+      "message": "this should be a comment on ClientRPCStatsMonitor struct, not on this method.",
+      "range": {
+        "startLine": 99,
+        "startChar": 3,
+        "endLine": 99,
+        "endChar": 71
+      },
+      "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cbd7410a_7031ba38",
+        "filename": "grpc/grpcmon/multi_stats_handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:24:41Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 19,
+        "startChar": 1,
+        "endLine": 19,
+        "endChar": 8
+      },
+      "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f34dfcb_89ed11b0",
+        "filename": "grpc/grpcmon/multi_stats_handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:24:41Z",
+      "side": 1,
+      "message": "what?",
+      "range": {
+        "startLine": 25,
+        "startChar": 51,
+        "endLine": 25,
+        "endChar": 54
+      },
+      "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7e99bdd_088c5d37",
+        "filename": "grpc/grpcmon/multi_stats_handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:24:41Z",
+      "side": 1,
+      "message": "why?",
+      "range": {
+        "startLine": 31,
+        "startChar": 14,
+        "endLine": 31,
+        "endChar": 89
+      },
+      "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2c80ba1_86b593a8",
+        "filename": "grpc/grpcmon/multi_stats_handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-29T21:24:41Z",
+      "side": 1,
+      "message": "I sense it was copy-pasted from somewhere....",
+      "range": {
+        "startLine": 34,
+        "startChar": 5,
+        "endLine": 34,
+        "endChar": 14
+      },
+      "revId": "291f6006fdbf273f586f13c2e12010ccfe0e5f1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
