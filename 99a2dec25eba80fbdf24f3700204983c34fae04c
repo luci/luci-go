@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f53232dc_5032ad49",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T17:30:56Z",
+      "side": 1,
+      "message": "This is for the 4B/Q bug \"LogDog could linkify URLs\".\n\nThe complexity here is about escaping. Given that the template library escapes things in HTML full mode, URLs have to be linkified after escaping, and remain safe. Performance is also a potential issue.\n\nNot sure who may want to review this, so I CC Robbie and Andrii as well :-)\n\n - Would we rather use the \"_template_html_escaper\" hack or linkify the whole output of the template (maybe the performance isn\u0027t as good)? But maybe it\u0027s OK since in general there aren\u0027t that many lines with URLs.\n - Does this look safe?",
+      "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a6619b9_7b870940",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 650,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T17:30:56Z",
+      "side": 1,
+      "message": "This is obviously smells, because this depends on an undocumented and internal behavior of the template library.\n\nThe alternative would be to take the whole output of lineTemplate and linkify any URLs afterwards, which will only be in the text part. e.g. something like:\n\n    if urlPattern.MatchString(lt.Text) {\n        b :\u003d bytes.NewBuffer([]byte{})\n        lineTemplate.Execute(b, lt)\n        _, ierr \u003d fmt.Fprint(w, linkify(b.String()))\n    } else {\n        // Normal path, no URLs.\n        lineTemplate.Execute(w, lt)\n    }",
+      "range": {
+        "startLine": 646,
+        "startChar": 0,
+        "endLine": 650,
+        "endChar": 52
+      },
+      "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b902b233_36191e5c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 781,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T17:30:56Z",
+      "side": 1,
+      "message": "Hypothetically if we really restrict the character set in URLs that we linkify, we don\u0027t need escaping here.",
+      "range": {
+        "startLine": 779,
+        "startChar": 0,
+        "endLine": 781,
+        "endChar": 37
+      },
+      "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
