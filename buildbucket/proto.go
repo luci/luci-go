@@ -14,7 +14,11 @@
 
 package buildbucket
 
-import "go.chromium.org/luci/common/data/stringset"
+import (
+	"go.chromium.org/luci/common/data/stringset"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
+)
 
 // This file contains helper functions for pb package.
 // TODO(nodir): move existing helpers from pb to this file.
@@ -41,3 +45,33 @@ const (
 var WellKnownExperiments = stringset.NewFromSlice(
 	ExperimentBBCanarySoftware, ExperimentNonProduction, ExperimentBBAgent, ExperimentUseRealms,
 )
+
+var (
+	// DisallowedAppendTagKeys is the set of tag keys which cannot be set via
+	// UpdateBuild. Clients calling UpdateBuild must strip these before making
+	// the request.
+	DisallowedAppendTagKeys = stringset.NewFromSlice("build_address", "buildset", "builder")
+)
+
+// StripDisallowedTagKeys modifies `tags` in-place to remove tags with
+// DisallowedAppendTagKeys keys.
+//
+// This does not preserve the order of `tags`.
+func StripDisallowedTagKeys(tags *[]*pb.StringPair) {
+	if tags == nil {
+		return
+	}
+
+	ts := *tags
+
+	for i := len(ts) - 1; i >= 0; i-- {
+		if DisallowedAppendTagKeys.Has(ts[i].Key) {
+			ts[i] = ts[len(ts)-1]
+			ts[len(ts)-1] = nil // allow pruned StringPair to be gc'd.
+			ts = ts[:len(ts)-1]
+		}
+	}
+
+	*tags = ts
+}
+

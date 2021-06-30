@@ -25,8 +25,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/buildbucket"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
@@ -36,6 +34,9 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
+
+	"go.chromium.org/luci/buildbucket"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // BuildsClient is a trimmed version of `bbpb.BuildsClient` which only
@@ -159,6 +160,7 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
 		} else {
 			build := b.Data[0].Item.(*bbpb.Build)
+			buildbucket.StripDisallowedTagKeys(&build.Tags)
 			req = &bbpb.UpdateBuildRequest{
 				Build: build,
 				UpdateMask: &field_mask.FieldMask{

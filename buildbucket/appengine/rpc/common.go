@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -57,10 +58,9 @@ const (
 )
 
 var (
-	blocklistKeyForAppend = stringset.NewFromSlice("build_address", "buildset", "builder")
-	reservedKeys          = stringset.NewFromSlice("build_address")
-	gitilesCommitRegex    = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]{40})$`)
-	gerritCLRegex         = regexp.MustCompile(`^patch/gerrit/([^/]+)/(\d+)/(\d+)$`)
+	reservedKeys       = stringset.NewFromSlice("build_address")
+	gitilesCommitRegex = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]{40})$`)
+	gerritCLRegex      = regexp.MustCompile(`^patch/gerrit/([^/]+)/(\d+)/(\d+)$`)
 )
 
 // commonPostlude converts an appstatus error to a gRPC error and logs it.
@@ -132,7 +132,7 @@ func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
 		if strings.Contains(k, ":") {
 			return errors.Reason(`tag key "%s" cannot have a colon`, k).Err()
 		}
-		if m == TagAppend && blocklistKeyForAppend.Has(k) {
+		if m == TagAppend && buildbucket.DisallowedAppendTagKeys.Has(k) {
 			return errors.Reason(`tag key "%s" cannot be added to an existing build`, k).Err()
 		}
 		if k == "buildset" {
