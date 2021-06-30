@@ -126,7 +126,7 @@ func main() {
 
 		// makeOverride(prod % -> Go, dev % -> Go).
 		// Does not affect batched ScheduleBuild requests (see rpc/batch.go).
-		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(100, 100))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 100))
 
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		return nil
