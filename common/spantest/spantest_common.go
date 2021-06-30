@@ -34,11 +34,11 @@ import (
 	"cloud.google.com/go/spanner"
 	spandb "cloud.google.com/go/spanner/admin/database/apiv1"
 	spanins "cloud.google.com/go/spanner/admin/instance/apiv1"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	dbpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
 	inspb "google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
@@ -57,12 +57,6 @@ type TempDBConfig struct {
 	// Defaults to chromeinfra.TestSpannerInstance.
 	InstanceName string
 
-	// Credentials will be used to authenticate to Spanner.
-	// If nil, auth.Authenticator with SilentLogin and chrome-infra auth options
-	// will be used.
-	// This means that that the user may have to login with luci-auth tool.
-	Credentials credentials.PerRPCCredentials
-
 	// InitScriptPath is a path to a DDL script to initialize the database.
 	//
 	// In lieu of a proper DDL parser, it is parsed using regexes.
@@ -72,20 +66,6 @@ type TempDBConfig struct {
 	//
 	// If empty, the database is created with no tables.
 	InitScriptPath string
-}
-
-func (cfg *TempDBConfig) credentials(ctx context.Context) (credentials.PerRPCCredentials, error) {
-	if cfg.Credentials != nil {
-		return cfg.Credentials, nil
-	}
-
-	opts := chromeinfra.DefaultAuthOptions()
-	opts.Scopes = spandb.DefaultAuthScopes()
-	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
-	if err := a.CheckLoginRequired(); err != nil {
-		return nil, errors.Annotate(err, "please login with `luci-auth login -scopes %q`", strings.Join(opts.Scopes, " ")).Err()
-	}
-	return a.PerRPCCredentials()
 }
 
 var ddlStatementSepRe = regexp.MustCompile(`;\s*\n`)
@@ -163,11 +143,11 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig, e *Emulator) (*TempDB, err
 	if e != nil {
 		opts = append(opts, e.opts()...)
 	} else {
-		creds, err := cfg.credentials(ctx)
+		tokenSource, err := tokenSource(ctx)
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+		opts = append(opts, option.WithTokenSource(tokenSource))
 	}
 
 	client, err := spandb.NewDatabaseAdminClient(ctx, opts...)
@@ -201,6 +181,16 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig, e *Emulator) (*TempDB, err
 		Name: db.Name,
 		opts: opts,
 	}, nil
+}
+
+func tokenSource(ctx context.Context) (oauth2.TokenSource, error) {
+	opts := chromeinfra.DefaultAuthOptions()
+	opts.Scopes = spandb.DefaultAuthScopes()
+	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+	if err := a.CheckLoginRequired(); err != nil {
+		return nil, errors.Annotate(err, "please login with `luci-auth login -scopes %q`", strings.Join(opts.Scopes, " ")).Err()
+	}
+	return a.TokenSource()
 }
 
 // SanitizeDBName tranforms name to a valid one.
