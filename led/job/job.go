@@ -331,6 +331,19 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		if parentTaskId != "" {
 			sw.Task.ParentTaskId = parentTaskId
 		}
+		switch resultdb {
+		case RDBOff:
+			sw.Task.Resultdb = nil
+		case RDBOn:
+			if sw.Task.Realm != "" {
+				sw.Task.Resultdb = &swarmingpb.ResultDBCfg{
+					Enable: true,
+				}
+			} else {
+				return errors.Reason("ResultDB cannot be enabled on raw swarming tasks if the realm field is unset").Err()
+			}
+		default:
+		}
 		return nil
 	}
 	if jd.UserPayload != nil && jd.CasUserPayload != nil {
