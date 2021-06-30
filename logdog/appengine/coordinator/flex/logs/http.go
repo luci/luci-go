@@ -15,6 +15,7 @@
 package logs
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"html"
@@ -22,6 +23,7 @@ import (
 	"image/color"
 	"math"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -639,14 +641,21 @@ type logLineStruct struct {
 var errorTemplate = template.Must(template.New("error").Parse(`
 <div class="error line">LOGDOG ERROR: {{.}}</div>`))
 
-var lineTemplate = template.Must(template.New("line").Parse(`
+var lineTemplate = template.Must(template.New("line").Funcs(template.FuncMap{
+	"linkify": linkify,
+	// "_html_template_htmlescaper" is a magical name used internally by the
+	// template library. By using this name, the template library will consider
+	// the text already escaped so it doesn't need to be escaped again before
+	// calling linkify.
+	"_html_template_htmlescaper": template.HTMLEscaper,
+}).Parse(`
 <div class="line" id="{{.ID}}">
 	<div class="timestamp" onclick="window.location.hash='{{.ID}}'"
 			 data-timestamp="{{.DataTimestamp}}" data-delta="{{.DurationInfo.Delta}}"
 			 onmouseover="utils.maybeFormatTime(this)" style="{{.DurationInfo.Style}}">
 		{{.DurationInfo.Text}}
 	</div>
-	<span class="text">{{.Text}}</span>
+	<span class="text">{{.Text | _html_template_htmlescaper | linkify}}</span>
 </div>`))
 
 // serve reads log entries from data.ch and writes into w.
@@ -685,14 +694,16 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 		}
 
 		for i, line := range log.GetText().GetLines() {
-			// For html full mode, we escape and wrap each line with a div.
-			// For html lite mode, just escape the line.
+			// For HTML full mode, we escape, linkify URLs in text,
+			// and wrap each line with a div with timing information.
+			// For HTML lite mode, just escape and linkify the line.
 			// For raw mode, we just regurgitate the line.
 			ierr = nil
 			switch data.options.format {
 			case formatHTMLFull:
 				lt := logLineStruct{
-					// Note: We want to use PrefixIndex because we might be viewing more than 1 stream.
+					// Note: We want to use PrefixIndex because we might be
+					// viewing more than 1 stream.
 					ID: fmt.Sprintf("L%d_%d", log.PrefixIndex, i),
 					// The templating engine below escapes the lines for us.
 					Text: string(line.GetValue()),
@@ -711,7 +722,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 				prevDuration = duration
 				ierr = lineTemplate.Execute(w, lt)
 			case formatHTMLLite:
-				text := template.HTMLEscapeString(string(line.GetValue()))
+				text := linkify(template.HTMLEscapeString(string(line.GetValue())))
 				_, ierr = fmt.Fprintf(w, "%s\n", text)
 			case formatRAW:
 				_, ierr = fmt.Fprintf(w, "%s%s", line.GetValue(), line.GetDelimiter())
@@ -752,4 +763,25 @@ func GetHandler(ctx *router.Context) {
 		logging.WithError(err).Errorf(ctx.Context, "failed to serve logs")
 	}
 	writeFooter(ctx, start, err, data.options.isHTML())
+}
+
+var linkTemplate = template.Must(template.New("link").Parse(`<a href="{{.}}">{{.}}</a>`))
+
+var urlPattern = regexp.MustCompile(
+	`\b(https?:\/\/` + // Only match URLs with http(s).
+		`[\w-]+(\.[\w-]+)+` + // Domain name, may have word chars and dashes.
+		`\.?(:\d+)?` + // Optional period, optional port.
+		`(\/\S*)?)\b`) // Path, may be empty, may not have spaces.
+
+func linkify(line string) string {
+	return urlPattern.ReplaceAllStringFunc(line, func(url string) string {
+		w := bytes.NewBuffer([]byte{})
+		// The template will escape any special characters in the path part of
+		// the URL.
+		err := linkTemplate.Execute(w, url)
+		if err != nil {
+			return url // On template error, return text unchanged.
+		}
+		return w.String()
+	})
 }
