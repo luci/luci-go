@@ -46,6 +46,30 @@
       },
       "revId": "154ba43ef28db4f4f31a76c5008921be1c9c78d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc479965_2dff8ae9",
+        "filename": "led/job/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-06-30T17:40:26Z",
+      "side": 1,
+      "message": "The idea is that -resultdb can be (on, off, unset) if it\u0027s unset we don\u0027t do anything, and if it\u0027s off, we set Task.Resultdb to nil explicitly; though I couldn\u0027t find any code setting it, I didn\u0027t want to make the assumption that nothing is ever going to set it.",
+      "parentUuid": "1ed0eb14_2eea6868",
+      "range": {
+        "startLine": 337,
+        "startChar": 2,
+        "endLine": 337,
+        "endChar": 13
+      },
+      "revId": "154ba43ef28db4f4f31a76c5008921be1c9c78d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
