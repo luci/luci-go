@@ -148,8 +148,11 @@ type Input struct {
 // Cancel removes or "deactivates" CQ-triggering votes on a CL and posts the
 // given message.
 //
-// If the patcheset of the passed CL is not current, returns error tagged with
-// `ErrPreconditionFailedTag`.
+// Returns error tagged with `ErrPreconditionFailedTag` if one of the
+// following conditions is matched.
+//  * The patchset of the provided CL is not the latest in Gerrit.
+//  * The provided CL gets `changelist.AccessDenied` or
+//    `changelist.AccessDeniedProbably` from Gerrit.
 //
 // Normally, the triggering vote(s) is removed last and all other votes
 // are removed in chronological order (latest to earliest).
@@ -170,6 +173,8 @@ func Cancel(ctx context.Context, in Input) error {
 		panic("trigger must be non-nil")
 	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
 		panic(errors.Reason("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject()).Err())
+	case in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted:
+		return errors.New("failed to cancel trigger because CV lost access to this CL", ErrPreconditionFailedTag)
 	}
 	if err := in.Notify.validate(); err != nil {
 		panic(err)
