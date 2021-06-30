@@ -459,6 +459,11 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 	body = bytes.TrimPrefix(body, jsonPrefix)
 	if err == nil && dest != nil {
 		if err = json.Unmarshal(body, dest); err != nil {
+			// Special case for hosts which respond with a redirect when ACLs are
+			// misconfigured.
+			if bytes.Contains(body, []byte("<html")) && bytes.Contains(body, []byte("Single Sign On")) {
+				return ret, status.Errorf(codes.PermissionDenied, "redirected to Single Sign On")
+			}
 			logging.Errorf(ctx, "failed to deserialize response %s; body:\n\n%s", err, string(body))
 			return ret, status.Errorf(codes.Internal, "failed to deserialize response: %s", err)
 		}
