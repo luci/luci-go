@@ -79,9 +79,9 @@ func MostSevereError(err error) error {
 // giving stale data. Getting HTTP 500s in this case is an unfortunate noise,
 // which obscures other infrequent situations which are worth looking at.
 type TQIfy struct {
-	// KnownRetry are expected errors which will result in HTTP 429 and retries*.
+	// KnownRetry are expected errors which will result in HTTP 429 and retries.
 	//
-	// * retries may not happen if task queue configuration prevents it, e.g.
+	// Retries may not happen if task queue configuration prevents it, e.g.
 	// because task has exhausted its retry quota.
 	//
 	// KnownRetry and KnownIgnore should not match the same error, but if this
@@ -90,11 +90,21 @@ type TQIfy struct {
 	//
 	// Must contain only leaf errors, i.e. no annotated or MultiError objects.
 	KnownRetry []error
+	// KnownRetryTags are similar to `KnowRetry`, but are the expected tags that
+	// the CV error should be tagged with.
+	//
+	// Must not contain `transient.Tag`.
+	KnownRetryTags []errors.BoolTag
 	// KnownIgnore are expected errors which will result in HTTP 204 and no
 	// retries.
 	//
 	// Must contain only leaf errors, i.e. no annotated or MultiError objects.
 	KnownIgnore []error
+	// KnownIgnoreTags are similar to `KnownIgnore`, but are the expected tags
+	// that the CV error should be tagged with.
+	//
+	// Must not contain `transient.Tag`.
+	KnownIgnoreTags []errors.BoolTag
 }
 
 func (t TQIfy) Error(ctx context.Context, err error) error {
@@ -102,8 +112,8 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 		return nil
 	}
 
-	retry := matchesErrors(err, t.KnownRetry...)
-	ignore := matchesErrors(err, t.KnownIgnore...)
+	retry := matchesErrors(err, t.KnownRetry...) || matchesErrorTags(err, t.KnownRetryTags...)
+	ignore := matchesErrors(err, t.KnownIgnore...) || matchesErrorTags(err, t.KnownIgnoreTags...)
 	switch {
 	case retry:
 		if ignore {
@@ -165,17 +175,37 @@ func LogError(ctx context.Context, err error, expectedErrors ...error) {
 }
 
 func matchesErrors(err error, knownErrors ...error) bool {
-	omit := false
+	for _, kErr := range knownErrors {
+		switch kErr.(type) {
+		case errors.MultiError:
+			panic("knownErrors MUST not contain errors.MultiError")
+		case errors.Wrapped:
+			panic("knownErrors MUST not contain annotated error")
+		}
+	}
+	matched := false
 	errors.WalkLeaves(err, func(iErr error) bool {
 		for _, kErr := range knownErrors {
 			if iErr == kErr {
-				omit = true
+				matched = true
 				return false // stop iteration
 			}
 		}
 		return true // continue iterating
 	})
-	return omit
+	return matched
+}
+
+func matchesErrorTags(err error, knownTags ...errors.BoolTag) bool {
+	for _, kTag := range knownTags {
+		if kTag == transient.Tag {
+			panic("knownTags MUST not contain transient.Tag")
+		}
+		if kTag.In(err) {
+			return true
+		}
+	}
+	return false
 }
 
 // IsDatastoreContention is best-effort detection of transactions aborted due to

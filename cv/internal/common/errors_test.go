@@ -66,11 +66,14 @@ func TestTQifyError(t *testing.T) {
 		Convey("matchesErrors is true if it matches ANY leaf errors", func() {
 			So(matchesErrors(errWrapOops, errOops), ShouldBeTrue)
 			So(matchesErrors(errMulti, errOops), ShouldBeTrue)
-			So(matchesErrors(errWrapOops, errWrapOops), ShouldBeFalse)
-			So(matchesErrors(errMulti, errWrapOops), ShouldBeFalse)
 
 			So(matchesErrors(errTransRare, errOops, errBoo, errRare), ShouldBeTrue)
 			So(matchesErrors(errTransRare, errOops, errBoo), ShouldBeFalse)
+		})
+
+		Convey("matchesErrors panics for invalid knownErrs", func() {
+			So(func() { matchesErrors(errOops, errMulti) }, ShouldPanic)
+			So(func() { matchesErrors(errOops, errWrapOops) }, ShouldPanic)
 		})
 
 		Convey("Simple", func() {
@@ -92,9 +95,17 @@ func TestTQifyError(t *testing.T) {
 		})
 
 		Convey("With Known errors", func() {
+			errRetryTag := errors.BoolTag{
+				Key: errors.NewTagKey("this error should be retried"),
+			}
+			errIgnoreTag := errors.BoolTag{
+				Key: errors.NewTagKey("this error should be ignored"),
+			}
 			tqify := TQIfy{
-				KnownRetry:  []error{errBoo},
-				KnownIgnore: []error{errOops},
+				KnownRetry:      []error{errBoo},
+				KnownRetryTags:  []errors.BoolTag{errRetryTag},
+				KnownIgnore:     []error{errOops},
+				KnownIgnoreTags: []errors.BoolTag{errIgnoreTag},
 			}
 			Convey("on unknown error", func() {
 				Convey("transient -> retry and log entire stack", func() {
@@ -115,8 +126,20 @@ func TestTQifyError(t *testing.T) {
 				So(tq.Fatal.In(err), ShouldBeFalse)
 				assertLoggedAt(logging.Warning)
 			})
+			Convey("KnownIgnoreTags => tq.Ignore, log as warning", func() {
+				err := tqify.Error(ctx, errIgnoreTag.Apply(errRare))
+				So(tq.Ignore.In(err), ShouldBeTrue)
+				So(tq.Fatal.In(err), ShouldBeFalse)
+				assertLoggedAt(logging.Warning)
+			})
 			Convey("KnownRetry => non-transient, non-Fatal, log as warning", func() {
 				err := tqify.Error(ctx, errTransBoo)
+				So(tq.Fatal.In(err), ShouldBeFalse)
+				So(transient.Tag.In(err), ShouldBeFalse)
+				assertLoggedAt(logging.Warning)
+			})
+			Convey("KnownRetryTags => non-transient, non-Fatal, log as warning", func() {
+				err := tqify.Error(ctx, errRetryTag.Apply(errRare))
 				So(tq.Fatal.In(err), ShouldBeFalse)
 				So(transient.Tag.In(err), ShouldBeFalse)
 				assertLoggedAt(logging.Warning)
