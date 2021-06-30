@@ -20,6 +20,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f7323abf_161b8840",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 769,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-30T22:43:49Z",
+      "side": 1,
+      "message": "wouldn\u0027t this allow characters like \" and \u003e?  So if you had a URL like\n\n  https://example.com\"\u003elol\u003c/a\u003eCRAFTED_HTML\n  \nI think it would end up dumping unescaped html into the output",
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0b244e89_46862f49",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 5
@@ -43,6 +60,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ba401476_13cd671e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 775,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-30T22:43:49Z",
+      "side": 1,
+      "message": ".Text is a string so I don\u0027t think []byte helps?",
+      "parentUuid": "0b244e89_46862f49",
+      "range": {
+        "startLine": 775,
+        "startChar": 18,
+        "endLine": 775,
+        "endChar": 24
+      },
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "597e0c58_86a6e35d",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 5
@@ -54,6 +95,24 @@
       "writtenOn": "2021-06-30T21:52:20Z",
       "side": 1,
       "message": "This implementation, in order to separately handle all the text between URLs and inside multiple URLs, gets indexes of matches and goes through those indexes.\n\nIt would also be possible to match only one URL per line, and us a template like:\n\n    `{{.Before}}\u003ca href\u003d\"{{.URL}}\"\u003e{{.URL}}\u003c/a\u003e{{.After}}`)\n\nIn general, I don\u0027t believe the performance should be significantly different, because in the common case there are no URLs anyway. Let me know what you think.",
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "36db7a26_9660efb4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 776,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-06-30T22:43:49Z",
+      "side": 1,
+      "message": "In terms of performance, I\u0027m more concerned about the thousands of lines which DON\u0027T have any url in them.\n\nddoman found recently that the regexp engine in Go can be surprisingly slow sometimes; I wonder if it would make sense to scan the string for \u0027http\u0027 first, and then run the regex only after finding that?\n\nWould you mind doing some benchmarks to see if this matters?",
+      "parentUuid": "597e0c58_86a6e35d",
       "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
