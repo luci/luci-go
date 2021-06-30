@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "413d8fed_ec517167",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-30T20:56:24Z",
+      "side": 1,
+      "message": "I don\u0027t see this refactoring in this CL?",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 37
+      },
+      "revId": "6bd07d25e3d5941f6bd57ba3e4a4a0e11791c820",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35f93bec_6a6c96ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-06-30T20:56:24Z",
+      "side": 1,
+      "message": "I\u0027m wondering who will initiate the refresh though if CL has been merged long time back?",
+      "revId": "6bd07d25e3d5941f6bd57ba3e4a4a0e11791c820",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
