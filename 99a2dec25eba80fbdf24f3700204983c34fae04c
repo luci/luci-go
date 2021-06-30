@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9c0097f6_c54576c9",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 650,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-30T20:00:18Z",
+      "side": 1,
+      "message": "Why not make `linkify` return `template.HTML` instead of `string` (and make it call template.HTMLEscapeString inside)? It is the standard way to denote that something has already been escaped.",
+      "parentUuid": "6a6619b9_7b870940",
+      "range": {
+        "startLine": 646,
+        "startChar": 0,
+        "endLine": 650,
+        "endChar": 52
+      },
+      "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b902b233_36191e5c",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -59,6 +83,29 @@
         "startChar": 0,
         "endLine": 781,
         "endChar": 37
+      },
+      "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "01341b7d_82d6517e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-06-30T20:00:18Z",
+      "side": 1,
+      "message": "I think these tests are somewhat misleading. `linkify` currently *always* accepts already escaped text. I\u0027m not sure that \"https://example.com/5%20%22/#x x\" would survive the escaping as it. So I\u0027m not sure it is even a possible input to `linkify`.\n\nI think `linkify` should should escaping inside and return template.HTML to indicate it is escaped text already.",
+      "range": {
+        "startLine": 108,
+        "startChar": 5,
+        "endLine": 108,
+        "endChar": 23
       },
       "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
