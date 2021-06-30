@@ -16,6 +16,29 @@
       "message": "ptal",
       "revId": "1f533b7400f6fd4f110e5cb8d8dff3d286a939a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6319d897_6a084ae5",
+        "filename": "cv/internal/common/errors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-30T19:47:39Z",
+      "side": 1,
+      "message": "yeah, but this was intentionally done this way:\n * I don\u0027t recall us having \u003e5 layers of errors + we compact multierrors early in the process;\n * # of knownXYZ should be small, too\n * this is a rare situation\n\n\u003d\u003e\n\ndon\u0027t care about performance 😊",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 181,
+        "endChar": 61
+      },
+      "revId": "1f533b7400f6fd4f110e5cb8d8dff3d286a939a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
