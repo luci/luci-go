@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb78ae84_69e68a1f",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-30T00:22:17Z",
+      "side": 1,
+      "message": "consider renaming schedulePct (here or follow up)",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 4
+      },
+      "revId": "6e773276cc6ccc389a8995c22acc269624100651",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
