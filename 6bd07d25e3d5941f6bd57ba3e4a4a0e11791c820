@@ -63,6 +63,24 @@
       "message": "I\u0027m wondering who will initiate the refresh though if CL has been merged long time back?",
       "revId": "6bd07d25e3d5941f6bd57ba3e4a4a0e11791c820",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad758b2b_9b73f4c6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-30T21:55:23Z",
+      "side": 1,
+      "message": "if the CL was merged a while back and no currently active CL is referencing it, then we don\u0027t have to refresh. It\u0027s OK to have stale CL data in CV -- we aren\u0027t faithfully replicating Gerrit.\n\nOTOH, if another active CL references old CL as a dep, then this code should take care of refresh.",
+      "parentUuid": "35f93bec_6a6c96ab",
+      "revId": "6bd07d25e3d5941f6bd57ba3e4a4a0e11791c820",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
