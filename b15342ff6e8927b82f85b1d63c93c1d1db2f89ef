@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b9a1ffa_e19f0d57",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-06-30T15:25:09Z",
+      "side": 1,
+      "message": "Here\u0027s an alternate idea for how to handle making the properties easier to review/blame, let me know what you think",
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
