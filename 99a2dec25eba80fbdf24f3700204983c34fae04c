@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "430c12ad_c7e57254",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 650,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T21:52:20Z",
+      "side": 1,
+      "message": "That\u0027s much better! Now done. (I didn\u0027t know about this, and I missed this when reading the docs.)",
+      "parentUuid": "9c0097f6_c54576c9",
+      "range": {
+        "startLine": 646,
+        "startChar": 0,
+        "endLine": 650,
+        "endChar": 52
+      },
+      "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b902b233_36191e5c",
@@ -88,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd7d6ed3_fe5bebff",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 781,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T21:52:20Z",
+      "side": 1,
+      "message": "Not relevant anymore if we\u0027re changing `linkify` to always escape any text and output template.HTML.",
+      "parentUuid": "b902b233_36191e5c",
+      "range": {
+        "startLine": 779,
+        "startChar": 0,
+        "endLine": 781,
+        "endChar": 37
+      },
+      "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "01341b7d_82d6517e",
@@ -101,6 +149,30 @@
       "writtenOn": "2021-06-30T20:00:18Z",
       "side": 1,
       "message": "I think these tests are somewhat misleading. `linkify` currently *always* accepts already escaped text. I\u0027m not sure that \"https://example.com/5%20%22/#x x\" would survive the escaping as it. So I\u0027m not sure it is even a possible input to `linkify`.\n\nI think `linkify` should should escaping inside and return template.HTML to indicate it is escaped text already.",
+      "range": {
+        "startLine": 108,
+        "startChar": 5,
+        "endLine": 108,
+        "endChar": 23
+      },
+      "revId": "99a2dec25eba80fbdf24f3700204983c34fae04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d3e859f0_22e84d95",
+        "filename": "logdog/appengine/coordinator/flex/logs/http_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T21:52:20Z",
+      "side": 1,
+      "message": "You\u0027re right ...\n\nin the latest patchset, linkify now accepts unescaped text, and always outputs HTML text that is supposed to be safe.",
+      "parentUuid": "01341b7d_82d6517e",
       "range": {
         "startLine": 108,
         "startChar": 5,

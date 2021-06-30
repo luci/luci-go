@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "186945a3_3fd93e3a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T21:52:20Z",
+      "side": 1,
+      "message": "Thanks! Please take another look.",
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b244e89_46862f49",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 775,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T21:52:20Z",
+      "side": 1,
+      "message": "This function could also take []byte, but I wasn\u0027t sure if there was any advantage to that, and this way seemed simpler to me.",
+      "range": {
+        "startLine": 775,
+        "startChar": 18,
+        "endLine": 775,
+        "endChar": 24
+      },
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "597e0c58_86a6e35d",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 776,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-06-30T21:52:20Z",
+      "side": 1,
+      "message": "This implementation, in order to separately handle all the text between URLs and inside multiple URLs, gets indexes of matches and goes through those indexes.\n\nIt would also be possible to match only one URL per line, and us a template like:\n\n    `{{.Before}}\u003ca href\u003d\"{{.URL}}\"\u003e{{.URL}}\u003c/a\u003e{{.After}}`)\n\nIn general, I don\u0027t believe the performance should be significantly different, because in the common case there are no URLs anyway. Let me know what you think.",
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
