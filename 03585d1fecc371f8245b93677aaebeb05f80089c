@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2bc29a1_40788b0b",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-30T06:14:42Z",
+      "side": 1,
+      "message": "Set to 4GiB. JFYI, The logs of logdog-cl-export shows that cloud-logging API sometimes fail when the payload size was \u003e 1GiB (and seems to auto-retry with a smaller chunk)",
+      "parentUuid": "f388801c_e27b5774",
+      "range": {
+        "startLine": 38,
+        "startChar": 29,
+        "endLine": 38,
+        "endChar": 50
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "52b12120_9e54a0d1",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-06-29T21:20:06Z",
       "side": 1,
       "message": "nit \"messages/sent\" or \"messages_sent\", so metrics have a common prefix (for autocomplete etc)",
+      "range": {
+        "startLine": 58,
+        "startChar": 15,
+        "endLine": 58,
+        "endChar": 28
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3cad51f3_9ecf52fe",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-30T06:14:42Z",
+      "side": 1,
+      "message": "# of metrics under /chrome/infra is too small.\nYou can also search metrics by suffix in pcon, too.\n(type \u0027/chrome/infra\u0027, press \u0027space\u0027, and then type \u0027messages\u0027)\n\nThe HTTP metric paths are \"http/{request,response}_bytes\", not \"http/bytes_{request,response}\"\n\nI fixed the below metric paths to match with http://shortn/_pao9pc0oTG.",
+      "parentUuid": "52b12120_9e54a0d1",
       "range": {
         "startLine": 58,
         "startChar": 15,
@@ -93,6 +141,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "240274d5_f55d70a1",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-30T06:14:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17b802e6_a45306f1",
+      "range": {
+        "startLine": 74,
+        "startChar": 16,
+        "endLine": 74,
+        "endChar": 30
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "87ba9ce0_cd2658b9",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-30T06:14:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0498537e_823cdc69",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 4
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f27f3177_967165f4",
@@ -116,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "05d18760_521ce46c",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-30T06:14:42Z",
+      "side": 1,
+      "message": "oops. fixed.",
+      "parentUuid": "f27f3177_967165f4",
+      "range": {
+        "startLine": 138,
+        "startChar": 1,
+        "endLine": 138,
+        "endChar": 72
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "316cbdb4_61fa8e2c",
@@ -129,6 +249,30 @@
       "writtenOn": "2021-06-29T21:20:06Z",
       "side": 1,
       "message": "please extract into a function, it is copy-pasted 3 times already. Looks like only FullMethodName is used, so maybe `methodNameFromTag(ctx)`.",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 149,
+        "endChar": 2
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c171b491_32806865",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-06-30T06:14:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "316cbdb4_61fa8e2c",
       "range": {
         "startLine": 145,
         "startChar": 1,
