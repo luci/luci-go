@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9db5eeb_13ec2f98",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-06-30T21:51:25Z",
+      "side": 1,
+      "message": "Sorry, the \"R\u003dyiwzhang\" line broke my CL description. PTAL again -- does it make sense?",
+      "parentUuid": "413d8fed_ec517167",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 37
+      },
+      "revId": "6bd07d25e3d5941f6bd57ba3e4a4a0e11791c820",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "35f93bec_6a6c96ab",
