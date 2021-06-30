@@ -28,6 +28,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	. "go.chromium.org/luci/common/testing/assertions"
+
 	"go.chromium.org/luci/led/job"
 )
 
@@ -88,6 +90,20 @@ func TestCreateSwarmRaw(t *testing.T) {
 		So(jd.GetSwarming(), ShouldNotBeNil)
 		So(jd.Info().SwarmingHostname(), ShouldEqual, "swarming.example.com")
 		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+	})
+
+	Convey(`consume non-buildbucket swarming task with resultdb enabling`, t, func() {
+		jd := readTestFixture("raw_iso")
+		Convey(`realm unset`, func() {
+			So(jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), ShouldErrLike,
+				"ResultDB cannot be enabled on raw swarming tasks if the realm field is unset")
+			So(jd.GetSwarming().GetTask().GetResultdb().GetEnable(), ShouldBeFalse)
+		})
+		Convey(`realm set`, func() {
+			jd.GetSwarming().GetTask().Realm = "some:realm"
+			So(jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), ShouldBeNil)
+			So(jd.GetSwarming().GetTask().GetResultdb().GetEnable(), ShouldBeTrue)
+		})
 	})
 }
 
