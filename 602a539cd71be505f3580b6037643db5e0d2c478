@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82ffdaae_73322725",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-30T01:41:39Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "602a539cd71be505f3580b6037643db5e0d2c478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38e27d25_d151fdca",
+        "filename": "led/job/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-06-30T01:41:39Z",
+      "side": 1,
+      "message": "User has to explicitly enable resultdb in this case.\n\nI tried to see if we can have resultdb enabled automatically, based on whether the original task has an invocation. But it seems that the resultdb_info field is not part of the default read mask of swarming task request.\n\nTo support it, we may need to either change https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/led/ledcmd/get_swarm.go;l\u003d70;drc\u003d001f3ca542548a3e0a2c2ee88e14d6844724659f with customized read mask or send a feature request to swarming to include resultdb_info by default. Either way, we can do in a follow-up CL.",
+      "revId": "602a539cd71be505f3580b6037643db5e0d2c478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
