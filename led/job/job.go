@@ -331,6 +331,12 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		if parentTaskId != "" {
 			sw.Task.ParentTaskId = parentTaskId
 		}
+
+		if resultdb == RDBOn {
+			sw.Task.Resultdb = &swarmingpb.ResultDBCfg{
+				Enable: true,
+			}
+		}
 		return nil
 	}
 	if jd.UserPayload != nil && jd.CasUserPayload != nil {
@@ -371,6 +377,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	default:
 		enable_resultdb = bbi.GetResultdb() != nil && bbi.Resultdb.GetInvocation() != ""
 	}
+
 	if enable_resultdb {
 		// Clear the original build's ResultDB invocation.
 		bbi.Resultdb.Invocation = ""
