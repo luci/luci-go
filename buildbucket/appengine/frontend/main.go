@@ -16,7 +16,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -93,13 +92,9 @@ func main() {
 		// through to this service, proxying the remainder to Python.
 		makeOverride := func(prodPct, devPct int) func(*router.Context) bool {
 			return func(ctx *router.Context) bool {
-				// TODO(crbug/1090540): remove env k-v
-				ctx.Context = context.WithValue(ctx.Context, "env", "Prod")
 				pct := prodPct
 				if isDev(ctx.Request) {
 					pct = devPct
-					// TODO(crbug/1090540): remove env k-v
-					ctx.Context = context.WithValue(ctx.Context, "env", "Dev")
 				}
 				switch val := ctx.Request.Header.Get("Should-Proxy"); val {
 				case "true":
@@ -109,7 +104,6 @@ func main() {
 					pct = 100
 					logging.Debugf(ctx.Context, "request demanded not to be proxied")
 				}
-				ctx.Context = rpc.WithTrafficSplit(ctx.Context, pct)
 				if mathrand.Intn(ctx.Context, 100) < pct {
 					return false
 				}
@@ -131,6 +125,7 @@ func main() {
 		srv.PRPC.HackFixFieldMasksForJSON = true
 
 		// makeOverride(prod % -> Go, dev % -> Go).
+		// Does not affect batched ScheduleBuild requests (see rpc/batch.go).
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(100, 100))
 
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)

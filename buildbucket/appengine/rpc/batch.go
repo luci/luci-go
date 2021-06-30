@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -67,6 +69,10 @@ func getTrafficSplit(c context.Context) int {
 // Batch handles a batch request. Implements pb.BuildsServer.
 func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
 	pct := getTrafficSplit(ctx)
+	isDev := strings.Contains(info.AppID(ctx), "cr-buildbucket-dev")
+	if isDev {
+		pct = 100
+	}
 	res := &pb.BatchResponse{}
 	if len(req.GetRequests()) == 0 {
 		return res, nil
@@ -113,7 +119,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	pyResC := make(chan *pyBatchResponse)
 	if len(pyBatchReq.Requests) != 0 {
 		go func() {
-			pyClient, err := b.newPyBBClient(ctx)
+			pyClient, err := b.newPyBBClient(ctx, isDev)
 			if err != nil {
 				pyResC <- &pyBatchResponse{res: nil, err: err}
 				return
@@ -213,7 +219,7 @@ func toBatchResponseError(ctx context.Context, err error) *pb.BatchResponse_Resp
 }
 
 // newPyBBClient constructs a BuildBucket python client.
-func (b *Builds) newPyBBClient(ctx context.Context) (pb.BuildsClient, error) {
+func (b *Builds) newPyBBClient(ctx context.Context, isDev bool) (pb.BuildsClient, error) {
 	switch fakeErr, ok := ctx.Value(&testFakeTransportError).(error); {
 	case ok:
 		return nil, fakeErr
@@ -222,7 +228,7 @@ func (b *Builds) newPyBBClient(ctx context.Context) (pb.BuildsClient, error) {
 	}
 
 	pyHost := "default-dot-cr-buildbucket.appspot.com"
-	if ctx.Value("env") == "Dev" {
+	if isDev {
 		pyHost = "default-dot-cr-buildbucket-dev.appspot.com"
 	}
 	t, err := auth.GetRPCTransport(ctx, auth.AsCredentialsForwarder)
