@@ -22,6 +22,30 @@
       },
       "revId": "cc19a3e8588039eab7b89079d1a284a36a51ef18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0e0bb46_2ed1c3b6",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-07-01T03:37:04Z",
+      "side": 1,
+      "message": "This particular render function doesn\u0027t throw an error anymore.\nBut it doesn\u0027t hurt to have it. As we refractor the code this method may throw an error in the future. And we don\u0027t want the test results tab to break the entire build page.\nTypically, a render function may break when it accesses some computed property that depends on a network query. e.g. this.invocationState.invocation.\nIf the query fail, accessing that property will throw an error.",
+      "parentUuid": "bcb891c4_331dee2a",
+      "range": {
+        "startLine": 145,
+        "startChar": 21,
+        "endLine": 145,
+        "endChar": 38
+      },
+      "revId": "cc19a3e8588039eab7b89079d1a284a36a51ef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
