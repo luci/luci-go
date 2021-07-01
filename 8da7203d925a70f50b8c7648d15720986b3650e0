@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fbd86c26_b36e1389",
+        "filename": "resultdb/cli/terminate_unix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-07-01T23:19:00Z",
+      "side": 1,
+      "message": "I thought about this. And I only added this to avoid saying \"Sent termination signal to subprocess, it has ~%s to terminate\"\n\nMy interpretation of return value of a call to terminate() is:\n - nil: the sigterm/ctrl_break was sent as expected.\n - non-nil: the signal was not sent, and the reason is blah.\n\nso that the caller knows to wait for the process to wrap up if the signal was sent, or immediately stop waiting (whether sigkilling or giving up on the process)",
+      "parentUuid": "eab0339e_129fa966",
+      "revId": "8da7203d925a70f50b8c7648d15720986b3650e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9c252f15_d0d415ee",
         "filename": "resultdb/cli/terminate_unix.go",
         "patchSetId": 2
@@ -31,6 +49,30 @@
       "writtenOn": "2021-07-01T22:53:08Z",
       "side": 1,
       "message": "note; this function doesn\u0027t look goroutine safe to me, so if multiple goroutines are interacting with \u0027cmd\u0027, you\u0027ll need to make sure they\u0027re mutually exclusive.",
+      "range": {
+        "startLine": 38,
+        "startChar": 8,
+        "endLine": 38,
+        "endChar": 11
+      },
+      "revId": "8da7203d925a70f50b8c7648d15720986b3650e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55bb3455_9a3e08b9",
+        "filename": "resultdb/cli/terminate_unix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-07-01T23:19:00Z",
+      "side": 1,
+      "message": "good point. Will make a patch.",
+      "parentUuid": "9c252f15_d0d415ee",
       "range": {
         "startLine": 38,
         "startChar": 8,
