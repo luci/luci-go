@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package internal.gerrit.updater;
+package cv.internal.gerrit.updater;
 
 option go_package = "go.chromium.org/luci/cv/internal/gerrit/updater;updater";
 

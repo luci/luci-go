@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cv.gerrit.cfgmatcher;
+package cv.internal.gerrit.cfgmatcher;
 
 option go_package = "go.chromium.org/luci/cv/internal/gerrit/cfgmatcher;cfgmatcher";
 

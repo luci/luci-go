@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cv.prjmanager.prjpb;
+package cv.internal.prjmanager.prjpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
@@ -57,9 +57,9 @@ message PurgeCLTask {
   string luci_project = 1;
   PurgingCL purging_cl = 2;
 
-  cv.run.Trigger trigger = 3;
+  cv.internal.run.Trigger trigger = 3;
 
-  repeated cv.changelist.CLError reasons = 5;
+  repeated cv.internal.changelist.CLError reasons = 5;
 
   // TODO(crbug/1217685): Pass watching ConfigGroups so that votes on the
   // additional labels can be removed as well.

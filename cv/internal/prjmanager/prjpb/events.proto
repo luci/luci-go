@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cv.prjmanager.prjpb;
+package cv.internal.prjmanager.prjpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
