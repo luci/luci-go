@@ -380,7 +380,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     `;
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     if (this.isShortLink) {
       return html``;
     }

@@ -49,7 +49,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
     return unwrapObservable(this.content$, null);
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     return html`
       <link
         rel="stylesheet"

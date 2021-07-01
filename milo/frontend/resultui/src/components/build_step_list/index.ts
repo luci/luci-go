@@ -77,7 +77,7 @@ export class BuildStepListElement extends MiloBaseElement {
     );
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     return html`
       ${this.buildState.build?.rootSteps.map(
         (step) => html`<milo-build-step-entry .step=${step}></milo-build-step-entry>`

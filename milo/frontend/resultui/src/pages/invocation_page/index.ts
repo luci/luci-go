@@ -121,7 +121,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
     ];
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     if (this.invocationState.invocationId === '') {
       return html``;
     }

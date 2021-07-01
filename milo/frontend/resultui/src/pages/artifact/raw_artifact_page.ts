@@ -59,7 +59,7 @@ export class RawArtifactPageElement extends MiloBaseElement {
 
     this.addDisposer(
       autorun(
-        reportError.bind(this)(() => {
+        reportError(this, () => {
           if (this.artifact) {
             window.open(this.artifact.fetchUrl, '_self');
           }
@@ -68,7 +68,7 @@ export class RawArtifactPageElement extends MiloBaseElement {
     );
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     if (!this.artifact) {
       return html`<div id="content" class="active-text">Loading artifact <milo-dot-spinner></milo-dot-spinner></div>`;
     }

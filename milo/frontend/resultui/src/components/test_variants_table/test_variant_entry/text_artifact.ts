@@ -66,7 +66,7 @@ export class TextArtifactElement extends MobxLitElement {
     return unwrapObservable(this.content$, null);
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     const label = this.isInvLevelArtifact ? 'Inv-level artifact' : 'Artifact';
 
     if (this.finalized && this.fetchUrl === '') {

@@ -142,7 +142,7 @@ export class TestResultsTabElement extends MiloBaseElement {
     `;
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     return html`
       <div id="header">
         <milo-tvt-config-widget class="filters-container"></milo-tvt-config-widget>

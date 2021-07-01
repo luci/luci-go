@@ -92,7 +92,7 @@ describe('reportError', () => {
     const err = new SpecialErrorClass('err msg');
 
     assert.throw(
-      reportError.bind(div)(() => {
+      reportError(div, () => {
         throw err;
       }),
       SpecialErrorClass
@@ -112,7 +112,8 @@ describe('reportError', () => {
     class SpecialErrorClass extends Error {}
     const err = new SpecialErrorClass('err msg');
 
-    reportError.bind(div)(
+    reportError(
+      div,
       () => {
         throw err;
       },
@@ -136,7 +137,8 @@ describe('reportError', () => {
     const fallbackErr = new FallbackErrorClass('fallback err msg');
 
     assert.throw(
-      reportError.bind(div)(
+      reportError(
+        div,
         () => {
           throw err;
         },
@@ -163,7 +165,7 @@ describe('reportErrorAsync', () => {
     class SpecialErrorClass extends Error {}
     const err = new SpecialErrorClass('err msg');
     try {
-      await reportErrorAsync.bind(div)(async () => {
+      await reportErrorAsync(div, async () => {
         throw err;
       })();
       assert.fail("should've thrown an error");
@@ -189,7 +191,7 @@ describe('reportErrorAsync', () => {
     class SpecialErrorClass extends Error {}
     const err = new SpecialErrorClass('err msg');
     try {
-      await reportErrorAsync.bind(div)(() => {
+      await reportErrorAsync(div, () => {
         throw err;
       })();
       assert.fail("should've thrown an error");
@@ -215,7 +217,8 @@ describe('reportErrorAsync', () => {
     class SpecialErrorClass extends Error {}
     const err = new SpecialErrorClass('err msg');
 
-    await reportErrorAsync.bind(div)(
+    await reportErrorAsync(
+      div,
       () => {
         throw err;
       },
@@ -239,7 +242,8 @@ describe('reportErrorAsync', () => {
     const fallbackErr = new FallbackErrorClass('fallback err msg');
 
     try {
-      await reportErrorAsync.bind(div)(
+      await reportErrorAsync(
+        div,
         async () => {
           throw err;
         },
@@ -273,7 +277,8 @@ describe('reportErrorAsync', () => {
     const fallbackErr = new FallbackErrorClass('fallback err msg');
 
     try {
-      await reportErrorAsync.bind(div)(
+      await reportErrorAsync(
+        div,
         async () => {
           throw err;
         },
