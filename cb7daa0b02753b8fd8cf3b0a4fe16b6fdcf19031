@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "741e09eb_42c7cb29",
+        "filename": "cv/internal/configs/prjcfg/cron.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-01T02:47:15Z",
+      "side": 1,
+      "message": "Good point, will do in a follow-up CL.",
+      "parentUuid": "da5171a2_8c479378",
+      "range": {
+        "startLine": 59,
+        "startChar": 22,
+        "endLine": 59,
+        "endChar": 24
+      },
+      "revId": "cb7daa0b02753b8fd8cf3b0a4fe16b6fdcf19031",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "9914d3d1_23a21630",
