@@ -264,6 +264,9 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 		Root:       workdir,
 		ServiceURL: chromeinfra.CIPDServiceURL,
 	}
+	if err := opts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+		return errors.Annotate(err, "failed to create CIPD client").Err()
+	}
 	client, err := cipd.NewClient(opts)
 	if err != nil {
 		return errors.Annotate(err, "failed to create CIPD client").Err()
@@ -279,7 +282,7 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 	}
 
 	// Download packages.
-	if _, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, 1, false); err != nil {
+	if _, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, false); err != nil {
 		return errors.Annotate(err, "failed to install or update CIPD packages").Err()
 	}
 	return nil
