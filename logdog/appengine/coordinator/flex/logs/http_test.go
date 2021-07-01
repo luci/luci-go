@@ -15,6 +15,7 @@
 package logs
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"net/http/httptest"
@@ -101,5 +102,75 @@ func TestHTTP(t *testing.T) {
 			// Note: HTML escapes don't show up in the GoConvey web interface.
 			So(body, ShouldEqual, fmt.Sprintf(`<div class="error line">LOGDOG ERROR: %s</div>`, template.HTMLEscapeString(msg)))
 		})
+	})
+}
+
+func TestLinkifyHelperFunction(t *testing.T) {
+	t.Parallel()
+
+	Convey(`linkify changes URLs to HTML links`, t, func() {
+		Convey(`with nothing that looks like a URL`, func() {
+			So(linkify(""), ShouldEqual, "")
+			So(linkify(" foo "), ShouldEqual, " foo ")
+		})
+
+		Convey(`does normal HTML escaping`, func() {
+			So(linkify("<foo>"), ShouldEqual, "&lt;foo&gt;")
+		})
+
+		Convey(`with invalid URLs`, func() {
+			So(linkify("example.com"), ShouldEqual, "example.com")
+			So(linkify("http: //example.com"), ShouldEqual, "http: //example.com")
+			So(linkify("ftp://example.com/foo"), ShouldEqual, "ftp://example.com/foo")
+			So(linkify("xhttp://example.com/"), ShouldEqual, "xhttp://example.com/")
+			So(linkify("http://ex~ample.com"), ShouldEqual, "http://ex~ample.com")
+		})
+
+		Convey(`with single simple URLs`, func() {
+			So(linkify("http://example.com"), ShouldEqual,
+				`<a href="http://example.com">http://example.com</a>`)
+			So(linkify("https://example2.com"), ShouldEqual,
+				`<a href="https://example2.com">https://example2.com</a>`)
+			So(linkify("https://example.com/$foo"), ShouldEqual,
+				`<a href="https://example.com/$foo">https://example.com/$foo</a>`)
+			So(linkify("https://example.com/5%20%22/#x x"), ShouldEqual,
+				`<a href="https://example.com/5%20%22/#x">https://example.com/5%20%22/#x</a> x`)
+			So(linkify("https://example.com.:443"), ShouldEqual,
+				`<a href="https://example.com.:443">https://example.com.:443</a>`)
+		})
+
+		Convey(`with single URLs that have " and & in the path part`, func() {
+			So(linkify("https://example.com/\"/x"), ShouldEqual,
+				`<a href="https://example.com/%22/x">https://example.com/&#34;/x</a>`)
+			So(linkify("https://example.com/&/x"), ShouldEqual,
+				`<a href="https://example.com/&amp;/x">https://example.com/&amp;/x</a>`)
+		})
+
+		Convey(`with single URLs that have " and <> immediately after the domain`, func() {
+			So(linkify(`https://example.com"lol</a>CRAFTED_HTML`), ShouldEqual,
+				`<a href="https://example.com">https://example.com</a>&#34;lol&lt;/a&gt;CRAFTED_HTML`)
+		})
+
+		Convey(`with single URLs that have " and <> in the path part`, func() {
+			So(linkify(`https://example.com/"lol</a>CRAFTED_HTML`), ShouldEqual,
+
+				`<a href="https://example.com/%22lol%3c/a%3eCRAFTED_HTML">https://example.com/&#34;lol&lt;/a&gt;CRAFTED_HTML</a>`)
+		})
+
+		Convey(`with multiple URLs`, func() {
+			So(linkify("x http://x.com z http://y.com y"), ShouldEqual,
+				`x <a href="http://x.com">http://x.com</a> z <a href="http://y.com">http://y.com</a> y`)
+			So(linkify("http://x.com http://y.com"), ShouldEqual,
+				`<a href="http://x.com">http://x.com</a> <a href="http://y.com">http://y.com</a>`)
+		})
+
+		Convey(`lineTemplate uses linkify`, func() {
+			lt := logLineStruct{Text: "See https://crbug.com/1167332."}
+			w := bytes.NewBuffer([]byte{})
+			So(lineTemplate.Execute(w, lt), ShouldBeNil)
+			So(w.String(), ShouldContainSubstring,
+				`<span class="text">See <a href="https://crbug.com/1167332">https://crbug.com/1167332</a>.</span>`)
+		})
+
 	})
 }
