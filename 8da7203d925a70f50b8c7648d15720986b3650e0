@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eab0339e_129fa966",
+        "filename": "resultdb/cli/terminate_unix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T22:53:08Z",
+      "side": 1,
+      "message": "imo it shouldn\u0027t be an error that the process already exited when calling terminate?",
+      "revId": "8da7203d925a70f50b8c7648d15720986b3650e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c252f15_d0d415ee",
+        "filename": "resultdb/cli/terminate_unix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T22:53:08Z",
+      "side": 1,
+      "message": "note; this function doesn\u0027t look goroutine safe to me, so if multiple goroutines are interacting with \u0027cmd\u0027, you\u0027ll need to make sure they\u0027re mutually exclusive.",
+      "range": {
+        "startLine": 38,
+        "startChar": 8,
+        "endLine": 38,
+        "endChar": 11
+      },
+      "revId": "8da7203d925a70f50b8c7648d15720986b3650e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81b1cdb5_65718884",
+        "filename": "resultdb/cli/terminate_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T22:53:08Z",
+      "side": 1,
+      "message": "same",
+      "revId": "8da7203d925a70f50b8c7648d15720986b3650e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
