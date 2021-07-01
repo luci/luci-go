@@ -26,7 +26,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -327,6 +326,28 @@ func makeCLIError(msg string, args ...interface{}) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// maxThreadsOption mixin.
+
+type maxThreadsOption struct {
+	maxThreads int
+}
+
+func (opts *maxThreadsOption) registerFlags(f *flag.FlagSet) {
+	f.IntVar(&opts.maxThreads, "max-threads", 0,
+		"Number of worker threads for extracting packages. If 0 or negative, uses CPU count.")
+}
+
+// loadMaxThreads should only be used by subcommands that do not instantiate
+// the full CIPD client.
+func (opts *maxThreadsOption) loadMaxThreads(ctx context.Context) (int, error) {
+	clientOpts := cipd.ClientOptions{MaxThreads: opts.maxThreads}
+	if err := clientOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+		return 0, err
+	}
+	return clientOpts.MaxThreads, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // clientOptions mixin.
 
 type rootDirFlag bool
@@ -336,6 +357,13 @@ const (
 	withoutRootDir rootDirFlag = false
 )
 
+type maxThreadsFlag bool
+
+const (
+	withMaxThreads    maxThreadsFlag = true
+	withoutMaxThreads maxThreadsFlag = false
+)
+
 // clientOptions defines command line arguments related to CIPD client creation.
 // Subcommands that need a CIPD client embed it.
 type clientOptions struct {
@@ -343,6 +371,7 @@ type clientOptions struct {
 
 	serviceURL string // also mutated by loadEnsureFile
 	cacheDir   string
+	maxThreads maxThreadsOption
 	rootDir    string              // used only if registerFlags got withRootDir arg
 	versions   ensure.VersionsFile // mutated by loadEnsureFile
 
@@ -359,7 +388,7 @@ func (opts *clientOptions) resolvedServiceURL(ctx context.Context) string {
 	return opts.hardcoded.ServiceURL
 }
 
-func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, rootDir rootDirFlag) {
+func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, rootDir rootDirFlag, maxThreads maxThreadsFlag) {
 	opts.hardcoded = params
 
 	f.StringVar(&opts.serviceURL, "service-url", "",
@@ -370,6 +399,9 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 
 	if rootDir {
 		f.StringVar(&opts.rootDir, "root", "<path>", "Path to an installation site root directory.")
+	}
+	if maxThreads {
+		opts.maxThreads.registerFlags(f)
 	}
 
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
@@ -390,6 +422,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 		CacheDir:            opts.cacheDir,
 		Versions:            opts.versions,
 		AuthenticatedClient: client,
+		MaxThreads:          opts.maxThreads.maxThreads,
 		AnonymousClient:     http.DefaultClient,
 		PluginHost:          &host.Host{PluginsContext: ctx},
 		LoginInstructions:   "run `cipd auth-login` to login or relogin",
@@ -810,31 +843,6 @@ func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// deployOptions mixin.
-
-type deployOptions struct {
-	maxThreads int
-}
-
-func (opts *deployOptions) registerFlags(f *flag.FlagSet) {
-	f.IntVar(&opts.maxThreads, "max-threads", 1,
-		"Number of worker threads for extracting packages. If 0, uses CPU count.")
-}
-
-func (opts *deployOptions) loadMaxThreads(ctx context.Context) (int, error) {
-	if opts.maxThreads == 1 {
-		if v := cli.Getenv(ctx, cipd.EnvMaxThreads); v != "" {
-			maxThreads, err := strconv.Atoi(v)
-			if err != nil {
-				return opts.maxThreads, fmt.Errorf("bad %s: not an integer - %s", cipd.EnvMaxThreads, v)
-			}
-			opts.maxThreads = maxThreads
-		}
-	}
-	return opts.maxThreads, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // hashOptions mixin.
 
 // allAlgos is used in the flag help text, it is "sha256, sha1, ...".
@@ -1209,7 +1217,7 @@ func cmdCreate(params Parameters) *subcommands.Command {
 			c.Opts.refsOptions.registerFlags(&c.Flags)
 			c.Opts.tagsOptions.registerFlags(&c.Flags)
 			c.Opts.metadataOptions.registerFlags(&c.Flags)
-			c.Opts.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.Opts.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Opts.uploadOptions.registerFlags(&c.Flags)
 			c.Opts.hashOptions.registerFlags(&c.Flags)
 			return c
@@ -1283,7 +1291,7 @@ though, so a failed operation can be safely retried.
 			c.refsOptions.registerFlags(&c.Flags)
 			c.tagsOptions.registerFlags(&c.Flags)
 			c.metadataOptions.registerFlags(&c.Flags)
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "<version>",
 				"Package version to resolve. Could also be a tag or a ref.")
 			return c
@@ -1358,9 +1366,8 @@ For the full syntax of the ensure file, see:
 		CommandRun: func() subcommands.CommandRun {
 			c := &ensureRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir, withMaxThreads)
 			c.ensureFileOptions.registerFlags(&c.Flags, withEnsureOutFlag, withLegacyListFlag)
-			c.deployOptions.registerFlags(&c.Flags)
 			return c
 		},
 	}
@@ -1370,7 +1377,6 @@ type ensureRun struct {
 	cipdSubcommand
 	clientOptions
 	ensureFileOptions
-	deployOptions
 }
 
 func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -1379,21 +1385,16 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	maxThreads, err := c.loadMaxThreads(ctx)
-	if err != nil {
-		return c.done(nil, err)
-	}
-
 	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
 	if err != nil {
 		return c.done(nil, err)
 	}
 
-	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, maxThreads, false, c.clientOptions)
+	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, false, c.clientOptions)
 	return c.done(pins, err)
 }
 
-func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, maxThreads int, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
+func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
 	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -1409,7 +1410,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 		return nil, nil, err
 	}
 
-	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, maxThreads, dryRun)
+	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, dryRun)
 	if err != nil {
 		return nil, actions, err
 	}
@@ -1441,7 +1442,7 @@ func cmdEnsureFileVerify(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &ensureFileVerifyRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withoutLegacyListFlag)
 			return c
 		},
@@ -1499,7 +1500,7 @@ func cmdEnsureFileResolve(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &ensureFileResolveRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withoutLegacyListFlag)
 			return c
 		},
@@ -1560,7 +1561,7 @@ func cmdPuppetCheckUpdates(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &checkUpdatesRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir, withMaxThreads)
 			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withLegacyListFlag)
 			return c
 		},
@@ -1584,9 +1585,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 		return 0 // on fatal errors ask puppet to run 'ensure' for real
 	}
 
-	// Since this is a dry run, the maxThreads value won't have any effect, so
-	// just pass 1.
-	_, actions, err := ensurePackages(ctx, ef, "", 1, true, c.clientOptions)
+	_, actions, err := ensurePackages(ctx, ef, "", true, c.clientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if transient.Tag.In(err) {
@@ -1612,7 +1611,7 @@ func cmdResolve(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &resolveRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to resolve.")
 			return c
 		},
@@ -1667,7 +1666,7 @@ func cmdDescribe(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &describeRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to describe.")
 			return c
 		},
@@ -1749,7 +1748,7 @@ func cmdInstances(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &instancesRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.IntVar(&c.limit, "limit", 20, "How many instances to return or 0 for all.")
 			return c
 		},
@@ -1893,7 +1892,7 @@ func cmdSetRef(params Parameters) *subcommands.Command {
 			c := &setRefRun{}
 			c.registerBaseFlags()
 			c.refsOptions.registerFlags(&c.Flags)
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to point the ref to.")
 			return c
 		},
@@ -2006,7 +2005,7 @@ func cmdSetTag(params Parameters) *subcommands.Command {
 			c := &setTagRun{}
 			c.registerBaseFlags()
 			c.tagsOptions.registerFlags(&c.Flags)
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "<version>",
 				"Package version to resolve. Could also be a tag or a ref.")
 			return c
@@ -2057,7 +2056,7 @@ func cmdSetMetadata(params Parameters) *subcommands.Command {
 			c := &setMetadataRun{}
 			c.registerBaseFlags()
 			c.metadataOptions.registerFlags(&c.Flags)
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "<version>",
 				"Package version to resolve. Could also be a tag or a ref.")
 			return c
@@ -2115,7 +2114,7 @@ func cmdListPackages(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &listPackagesRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.BoolVar(&c.recursive, "r", false, "Whether to list packages in subdirectories.")
 			c.Flags.BoolVar(&c.showHidden, "h", false, "Whether also to list hidden packages.")
 			return c
@@ -2178,7 +2177,7 @@ func cmdSearch(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &searchRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.tagsOptions.registerFlags(&c.Flags)
 			return c
 		},
@@ -2240,7 +2239,7 @@ func cmdListACL(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &listACLRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			return c
 		},
 	}
@@ -2334,7 +2333,7 @@ func cmdEditACL(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &editACLRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.Var(&c.owner, "owner", "Users (user:email) or groups (`group:name`) to grant OWNER role.")
 			c.Flags.Var(&c.writer, "writer", "Users (user:email) or groups (`group:name`) to grant WRITER role.")
 			c.Flags.Var(&c.reader, "reader", "Users (user:email) or groups (`group:name`) to grant READER role.")
@@ -2418,7 +2417,7 @@ func cmdCheckACL(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &checkACLRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.BoolVar(&c.owner, "owner", false, "Check for OWNER role.")
 			c.Flags.BoolVar(&c.writer, "writer", false, "Check for WRITER role.")
 			c.Flags.BoolVar(&c.reader, "reader", false, "Check for READER role.")
@@ -2579,7 +2578,7 @@ func cmdDeploy() *subcommands.Command {
 			c := &deployRun{}
 			c.registerBaseFlags()
 			c.hashOptions.registerFlags(&c.Flags)
-			c.deployOptions.registerFlags(&c.Flags)
+			c.maxThreadsOption.registerFlags(&c.Flags)
 			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
 			return c
 		},
@@ -2589,7 +2588,7 @@ func cmdDeploy() *subcommands.Command {
 type deployRun struct {
 	cipdSubcommand
 	hashOptions
-	deployOptions
+	maxThreadsOption
 
 	rootDir string
 }
@@ -2638,7 +2637,7 @@ func cmdFetch(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &fetchRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to fetch.")
 			c.Flags.StringVar(&c.outputPath, "out", "<path>", "Path to a file to write fetch to.")
 			return c
@@ -2810,7 +2809,7 @@ func cmdRegister(params Parameters) *subcommands.Command {
 			c.Opts.refsOptions.registerFlags(&c.Flags)
 			c.Opts.tagsOptions.registerFlags(&c.Flags)
 			c.Opts.metadataOptions.registerFlags(&c.Flags)
-			c.Opts.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.Opts.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Opts.uploadOptions.registerFlags(&c.Flags)
 			c.Opts.hashOptions.registerFlags(&c.Flags)
 			return c
@@ -2919,7 +2918,7 @@ func cmdSelfUpdate(params Parameters) *subcommands.Command {
 			c.logConfig.Level = logging.Warning
 
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "", "Version of the client to update to (incompatible with -version-file).")
 			c.Flags.StringVar(&c.versionFile, "version-file", "",
 				"Indicates the path to read the new version from (<version-file> itself) and "+
@@ -3003,7 +3002,7 @@ func cmdSelfUpdateRoll(params Parameters) *subcommands.Command {
 			c := &selfupdateRollRun{}
 
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
 			c.Flags.StringVar(&c.version, "version", "", "Version of the client to roll to.")
 			c.Flags.StringVar(&c.versionFile, "version-file", "<version-file>",
 				"Indicates the path to a file with the version (<version-file> itself) and "+
@@ -3214,7 +3213,7 @@ func cmdCheckDeployment(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &checkDeploymentRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir, withoutMaxThreads)
 			return c
 		},
 	}
@@ -3263,8 +3262,7 @@ func cmdRepairDeployment(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &repairDeploymentRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
-			c.deployOptions.registerFlags(&c.Flags)
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir, withMaxThreads)
 			return c
 		},
 	}
@@ -3273,7 +3271,6 @@ func cmdRepairDeployment(params Parameters) *subcommands.Command {
 type repairDeploymentRun struct {
 	cipdSubcommand
 	clientOptions
-	deployOptions
 }
 
 func (c *repairDeploymentRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -3281,21 +3278,17 @@ func (c *repairDeploymentRun) Run(a subcommands.Application, args []string, env 
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	maxThreads, err := c.loadMaxThreads(ctx)
-	if err != nil {
-		return c.done(nil, err)
-	}
-	return c.done(repairDeployment(ctx, c.clientOptions, maxThreads))
+	return c.done(repairDeployment(ctx, c.clientOptions))
 }
 
-func repairDeployment(ctx context.Context, clientOpts clientOptions, maxThreads int) (cipd.ActionMap, error) {
+func repairDeployment(ctx context.Context, clientOpts clientOptions) (cipd.ActionMap, error) {
 	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer client.Close(ctx)
 
-	return client.RepairDeployment(ctx, cipd.CheckIntegrity, maxThreads)
+	return client.RepairDeployment(ctx, cipd.CheckIntegrity)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3332,7 +3325,7 @@ func GetApplication(params Parameters) *cli.Application {
 			cipd.EnvMaxThreads: {
 				Advanced: true,
 				ShortDesc: "Number of worker threads for extracting packages. " +
-					"If 0, uses CPU count. (-max-threads, if given and not 1, takes precedence.)",
+					"If 0 or negative, uses CPU count. (-max-threads, if given and not 0, takes precedence.)",
 			},
 			cipd.EnvParallelDownloads: {
 				Advanced: true,

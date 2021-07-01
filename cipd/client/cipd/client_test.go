@@ -1068,7 +1068,7 @@ func TestEnsurePackage(t *testing.T) {
 		setupRemoteInstance(body, pin, repo, storage)
 
 		ensurePackages := func(ps common.PinSliceBySubdir) (ActionMap, error) {
-			return client.EnsurePackages(ctx, ps, NotParanoid, 0, false)
+			return client.EnsurePackages(ctx, ps, NotParanoid, false)
 		}
 
 		Convey("EnsurePackages works", func() {

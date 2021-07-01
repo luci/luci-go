@@ -51,6 +51,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"sync"
@@ -144,7 +145,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.0"
+	UserAgent = "cipd 2.6.1"
 )
 
 func init() {
@@ -307,7 +308,7 @@ type Client interface {
 	// struct, but won't actually perform them.
 	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoidMode, maxThreads int, dryRun bool) (ActionMap, error)
+	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error)
 
 	// CheckDeployment looks at what is supposed to be installed and compares it
 	// to what is really installed.
@@ -320,10 +321,14 @@ type Client interface {
 	// appears to be broken (per given paranoia mode).
 	//
 	// Returns an action map of what it did.
-	RepairDeployment(ctx context.Context, paranoia ParanoidMode, maxThreads int) (ActionMap, error)
+	RepairDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error)
 }
 
 // ClientOptions is passed to NewClient factory function.
+//
+// If you construct options manually, you almost certainly also need to call
+// LoadFromEnv to load unset values from environment variables before passing
+// options to NewClient.
 type ClientOptions struct {
 	// ServiceURL is root URL of the backend service.
 	//
@@ -368,6 +373,11 @@ type ClientOptions struct {
 	// Default is same as AnonymousClient (it will probably not work for most
 	// packages, since the backend won't authorize an anonymous access).
 	AuthenticatedClient *http.Client
+
+	// MaxThreads defines how many threads to use when unzipping packages.
+	//
+	// If 0 or negative, will use all available CPUs.
+	MaxThreads int
 
 	// ParallelDownloads defines how many packages are allowed to be fetched
 	// concurrently.
@@ -416,6 +426,15 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 			opts.CacheDir = v
 		}
 	}
+	if opts.MaxThreads == 0 {
+		if v := getEnv(EnvMaxThreads); v != "" {
+			maxThreads, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("bad %s: not an integer - %s", EnvMaxThreads, v)
+			}
+			opts.MaxThreads = maxThreads
+		}
+	}
 	if opts.ParallelDownloads == 0 {
 		if v := getEnv(EnvParallelDownloads); v != "" {
 			val, err := strconv.Atoi(v)
@@ -460,6 +479,9 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	if opts.UserAgent == "" {
 		opts.UserAgent = UserAgent
+	}
+	if opts.MaxThreads <= 0 {
+		opts.MaxThreads = runtime.NumCPU()
 	}
 
 	// Validate and normalize service URL.
@@ -1593,11 +1615,11 @@ func (client *clientImpl) FindDeployed(ctx context.Context) (common.PinSliceBySu
 	return client.deployer.FindDeployed(ctx)
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, maxThreads int, dryRun bool) (ActionMap, error) {
-	return client.ensurePackagesImpl(ctx, allPins, paranoia, maxThreads, dryRun, false)
+func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error) {
+	return client.ensurePackagesImpl(ctx, allPins, paranoia, dryRun, false)
 }
 
-func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, maxThreads int, dryRun, silent bool) (aMap ActionMap, err error) {
+func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun, silent bool) (aMap ActionMap, err error) {
 	if err = allPins.Validate(common.AnyHash); err != nil {
 		return
 	}
@@ -1713,7 +1735,7 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 			case ActionRemove:
 				err = client.deployer.RemoveDeployed(ctx, a.subdir, a.pin.PackageName)
 			case ActionRelink:
-				err = client.deployer.RepairDeployed(ctx, a.subdir, a.pin, maxThreads, deployer.RepairParams{
+				err = client.deployer.RepairDeployed(ctx, a.subdir, a.pin, client.MaxThreads, deployer.RepairParams{
 					ToRelink: a.repairPlan.ToRelink,
 				})
 			default:
@@ -1757,9 +1779,9 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		for deployErr == nil && actionIdx < len(state.updates) {
 			switch a := state.updates[actionIdx]; a.action {
 			case ActionInstall:
-				_, deployErr = client.deployer.DeployInstance(unzipCtx, a.subdir, res.Instance, maxThreads)
+				_, deployErr = client.deployer.DeployInstance(unzipCtx, a.subdir, res.Instance, client.MaxThreads)
 			case ActionRepair:
-				deployErr = client.deployer.RepairDeployed(unzipCtx, a.subdir, state.pin, maxThreads, deployer.RepairParams{
+				deployErr = client.deployer.RepairDeployed(unzipCtx, a.subdir, state.pin, client.MaxThreads, deployer.RepairParams{
 					Instance:   res.Instance,
 					ToRedeploy: a.repairPlan.ToRedeploy,
 					ToRelink:   a.repairPlan.ToRelink,
@@ -1839,17 +1861,17 @@ func (client *clientImpl) CheckDeployment(ctx context.Context, paranoia Paranoid
 	if err != nil {
 		return nil, err
 	}
-	return client.ensurePackagesImpl(ctx, existing, paranoia, 1, true, true)
+	return client.ensurePackagesImpl(ctx, existing, paranoia, true, true)
 }
 
-func (client *clientImpl) RepairDeployment(ctx context.Context, paranoia ParanoidMode, maxThreads int) (ActionMap, error) {
+func (client *clientImpl) RepairDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error) {
 	// And this is a real run of EnsurePackages(already installed pkgs), so it
 	// can do repairs, if necessary.
 	existing, err := client.deployer.FindDeployed(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return client.EnsurePackages(ctx, existing, paranoia, maxThreads, false)
+	return client.EnsurePackages(ctx, existing, paranoia, false)
 }
 
 // makeRepairChecker returns a function that decided whether we should attempt

@@ -278,7 +278,7 @@ func (site *installationSite) installedPackages(ctx context.Context) (map[string
 }
 
 // installPackage installs (or updates) a package.
-func (site *installationSite) installPackage(ctx context.Context, pkgName, version string, paranoid cipd.ParanoidMode, maxThreads int) (*pinInfo, error) {
+func (site *installationSite) installPackage(ctx context.Context, pkgName, version string, paranoid cipd.ParanoidMode) (*pinInfo, error) {
 	if site.client == nil {
 		return nil, errors.New("client is not initialized")
 	}
@@ -317,7 +317,7 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 		deployed[""] = append(deployed[""], resolved) // install a new one
 	}
 
-	actions, err := site.client.EnsurePackages(ctx, deployed, paranoid, maxThreads, false)
+	actions, err := site.client.EnsurePackages(ctx, deployed, paranoid, false)
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +446,6 @@ func cmdInstall(params Parameters) *subcommands.Command {
 			c.registerBaseFlags()
 			c.authFlags.Register(&c.Flags, params.DefaultAuthOptions)
 			c.siteRootOptions.registerFlags(&c.Flags)
-			c.deployOptions.registerFlags(&c.Flags)
 			c.Flags.BoolVar(&c.force, "force", false, "Check all package files and present and reinstall them if missing.")
 			return c
 		},
@@ -457,7 +456,6 @@ type installRun struct {
 	cipdSubcommand
 	authFlags authcli.Flags
 	siteRootOptions
-	deployOptions
 
 	defaultServiceURL string // used only if the site config has ServiceURL == ""
 	force             bool   // if true use CheckPresence paranoid mode
@@ -508,7 +506,7 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 	defer site.client.Close(ctx)
 	site.client.BeginBatch(ctx)
 	defer site.client.EndBatch(ctx)
-	return c.done(site.installPackage(ctx, pkgName, version, paranoid, c.maxThreads))
+	return c.done(site.installPackage(ctx, pkgName, version, paranoid))
 }
 
 ////////////////////////////////////////////////////////////////////////////////

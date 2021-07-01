@@ -374,7 +374,7 @@ func cacheFromCIPDLocked(ctx context.Context, t *testing.T, cachePath, name, has
 		return errors.Annotate(err, "failed to resolve CIPD version for %s @%s", pkg, version).Err()
 	}
 
-	_, err = client.EnsurePackages(ctx, common.PinSliceBySubdir{"": {pin}}, cipd.NotParanoid, 1, false)
+	_, err = client.EnsurePackages(ctx, common.PinSliceBySubdir{"": {pin}}, cipd.NotParanoid, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch/deploy CIPD package").Err()
 	}
