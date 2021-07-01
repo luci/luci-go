@@ -86,6 +86,30 @@
       },
       "revId": "cb7daa0b02753b8fd8cf3b0a4fe16b6fdcf19031",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ce74560_e9301e05",
+        "filename": "cv/internal/prjmanager/manager/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-01T02:48:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9914d3d1_23a21630",
+      "range": {
+        "startLine": 149,
+        "startChar": 0,
+        "endLine": 153,
+        "endChar": 2
+      },
+      "revId": "cb7daa0b02753b8fd8cf3b0a4fe16b6fdcf19031",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
