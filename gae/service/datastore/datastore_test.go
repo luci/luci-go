@@ -1031,6 +1031,26 @@ func TestGet(t *testing.T) {
 						"cannot use nil as single argument")
 				})
 
+				Convey("get with typed nil is an error", func() {
+					So(func() { Get(c, (*CommonStruct)(nil)) }, ShouldPanicLike,
+						"cannot use typed nil as single argument")
+				})
+
+				Convey("get with nil inside a slice is an error", func() {
+					So(func() { Get(c, []interface{}{&CommonStruct{}, nil}) }, ShouldPanicLike,
+						"invalid input slice: has nil at index 1")
+				})
+
+				Convey("get with typed nil inside a slice is an error", func() {
+					So(func() { Get(c, []interface{}{&CommonStruct{}, (*CommonStruct)(nil)}) }, ShouldPanicLike,
+						"invalid input slice: has nil at index 1")
+				})
+
+				Convey("get with nil inside a struct slice is an error", func() {
+					So(func() { Get(c, []*CommonStruct{&CommonStruct{}, nil}) }, ShouldPanicLike,
+						"invalid input slice: has nil at index 1")
+				})
+
 				Convey("get with ptr-to-nonstruct is an error", func() {
 					val := 100
 					So(func() { Get(c, &val) }, ShouldPanicLike,
