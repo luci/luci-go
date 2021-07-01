@@ -280,22 +280,11 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	// SIGKILLed by the the expiration of cmdCtx.
 	go func() {
 		evt := <-lucictx.SoftDeadlineDone(cmdCtx)
-		if cmd.ProcessState == nil || cmd.ProcessState.Exited() {
-			// No process is running. Do nothing.
+		if evt == lucictx.ClosureEvent {
+			// Cleanup only.
 			return
 		}
-		switch evt {
-		case lucictx.ClosureEvent:
-			// This should almost never happen, if cmdCtx is already done
-			// (as implied by this event), then the process would have been
-			// killed, and we would have exited above.
-			// It is possible that the process is currently being killed,
-			// so do nothing.
-			return
-		default:
-			logging.Infof(ctx, "Caught %s", evt.String())
-		}
-
+		logging.Infof(ctx, "Caught %s", evt.String())
 		if err := terminate(ctx, cmd); err != nil {
 			logging.Warningf(ctx, "Could not terminate subprocess (%s), cancelling its context", err)
 			cancelCmd()
