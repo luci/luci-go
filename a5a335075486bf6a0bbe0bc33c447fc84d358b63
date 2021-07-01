@@ -16,6 +16,23 @@
       "message": "Thanks for review Robbie, and it was indeed worthwhile to try to shortcut to avoid a regexp check.",
       "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5fb431f8_7b84abb9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-07-01T17:48:50Z",
+      "side": 1,
+      "message": "This is my last day before leave, so if I don\u0027t get this checked in and tested, could someone else verify this change?",
+      "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
