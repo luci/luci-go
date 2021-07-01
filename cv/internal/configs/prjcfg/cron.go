@@ -56,13 +56,9 @@ func NewRefresher(tqd *tq.Dispatcher, pm PM) *Refresher {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*RefreshProjectConfigTask)
 			if err := pcr.refreshProject(ctx, task.GetProject(), task.GetDisable()); err != nil {
-				err = common.TQIfy{}.Error(ctx, err)
 				// Never retry tasks because the refresh task is submitted every minute
 				// by the AppEngine Cron.
-				if !tq.Fatal.In(err) {
-					return tq.Ignore.Apply(err)
-				}
-				return err
+				return common.TQIfy{NeverRetry: true}.Error(ctx, err)
 			}
 			return nil
 		},

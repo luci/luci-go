@@ -85,12 +85,28 @@ func TestTQifyError(t *testing.T) {
 			Convey("non-transient becomes Fatal and is logged", func() {
 				err := TQifyError(ctx, errOops)
 				So(tq.Fatal.In(err), ShouldBeTrue)
+				So(tq.Ignore.In(err), ShouldBeFalse)
 				assertLoggedStack()
 			})
 			Convey("transient is retried and logged", func() {
 				err := TQifyError(ctx, errTransBoo)
 				So(tq.Fatal.In(err), ShouldBeFalse)
+				So(tq.Ignore.In(err), ShouldBeFalse)
 				assertLoggedStack()
+			})
+			Convey("with NeverRetry set", func() {
+				Convey("non-transient is still Fatal and logged", func() {
+					err := TQIfy{NeverRetry: true}.Error(ctx, errOops)
+					So(tq.Fatal.In(err), ShouldBeTrue)
+					So(tq.Ignore.In(err), ShouldBeFalse)
+					assertLoggedStack()
+				})
+				Convey("transient is not retried but logged", func() {
+					err := TQIfy{NeverRetry: true}.Error(ctx, errTransBoo)
+					So(tq.Ignore.In(err), ShouldBeTrue)
+					So(tq.Fatal.In(err), ShouldBeFalse)
+					assertLoggedStack()
+				})
 			})
 		})
 
@@ -153,6 +169,21 @@ func TestTQifyError(t *testing.T) {
 				So(ml.Messages()[0].Msg, ShouldContainSubstring, "BUG: invalid TQIfy config")
 				So(ml.Messages()[1].Level, ShouldEqual, logging.Warning)
 				So(ml.Messages()[1].Msg, ShouldContainSubstring, errMulti.Error())
+			})
+
+			Convey("Panic if KnownRetry is used with with NeverRetry", func() {
+				tqify = TQIfy{
+					KnownRetry: []error{errBoo},
+					NeverRetry: true,
+				}
+				So(func() { tqify.Error(ctx, errBoo) }, ShouldPanic)
+			})
+			Convey("Panic if KnownRetryTag is used with with NeverRetry", func() {
+				tqify = TQIfy{
+					KnownRetryTags: []errors.BoolTag{errRetryTag},
+					NeverRetry:     true,
+				}
+				So(func() { tqify.Error(ctx, errRetryTag.Apply(errRare)) }, ShouldPanic)
 			})
 		})
 	})

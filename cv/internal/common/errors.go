@@ -95,6 +95,17 @@ type TQIfy struct {
 	//
 	// Must not contain `transient.Tag`.
 	KnownRetryTags []errors.BoolTag
+	// NeverRetry instructs TQ not to retry on any unexpected error.
+	//
+	// Transient error will be tagged with `tq.Ignore` while non-transient error
+	// will be tagged with `tq.Fatal`. See the struct doc for what each tag means.
+	//
+	// Recommend to use this flag when tasks are executed periodically in short
+	// interval (e.g. refresh config task) where as retrying failed task is not
+	// necessary.
+	//
+	// Mutually exclusive with `KnownRetry` and `KnownRetryTags`.
+	NeverRetry bool
 	// KnownIgnore are expected errors which will result in HTTP 204 and no
 	// retries.
 	//
@@ -111,8 +122,13 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
-
-	retry := matchesErrors(err, t.KnownRetry...) || matchesErrorTags(err, t.KnownRetryTags...)
+	retry := false
+	switch {
+	case !t.NeverRetry:
+		retry = matchesErrors(err, t.KnownRetry...) || matchesErrorTags(err, t.KnownRetryTags...)
+	case len(t.KnownRetry) > 0 || len(t.KnownRetryTags) > 0:
+		panic("NeverRetry and KnownRetry/KnownRetryTags are mutually exclusive")
+	}
 	ignore := matchesErrors(err, t.KnownIgnore...) || matchesErrorTags(err, t.KnownIgnoreTags...)
 	switch {
 	case retry:
@@ -130,15 +146,17 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 		logging.Warningf(ctx, "Failing due to anticipated error: %s", err)
 		return tq.Ignore.Apply(err)
 
-	case !transient.Tag.In(err):
-		// Unexpected error which isn't considered retryable.
-		// These should be rare.
-		err = tq.Fatal.Apply(err)
-		fallthrough
 	default:
 		// Unexpected error is logged with full stacktrace.
 		LogError(ctx, err)
-		return err
+		switch {
+		case !transient.Tag.In(err):
+			return tq.Fatal.Apply(err)
+		case t.NeverRetry:
+			return tq.Ignore.Apply(err)
+		default:
+			return err
+		}
 	}
 }
 
