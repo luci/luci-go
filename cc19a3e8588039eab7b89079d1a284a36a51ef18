@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcb891c4_331dee2a",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-07-01T01:58:02Z",
+      "side": 1,
+      "message": "Not for this cl: I picked this one at random to read the rendering code: can this actually throw an error during rendering? \n\nOther than this.invocationState being null I can\u0027t see anything that would throw?  Am I missing something?",
+      "range": {
+        "startLine": 145,
+        "startChar": 21,
+        "endLine": 145,
+        "endChar": 38
+      },
+      "revId": "cc19a3e8588039eab7b89079d1a284a36a51ef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
