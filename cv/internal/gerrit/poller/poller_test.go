@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
-	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	pt "go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -252,7 +251,7 @@ func TestPoller(t *testing.T) {
 
 		Convey("without project config, it's a noop", func() {
 			So(p.Poke(ctx, lProject), ShouldBeNil)
-			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+			So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 			So(ct.TQ.Tasks().Payloads(), ShouldBeEmpty)
 			So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
@@ -274,7 +273,7 @@ func TestPoller(t *testing.T) {
 			So(watchedBy(ctx, gHost, gRepo, "refs/heads/main").HasOnlyProject(lProject), ShouldBeTrue)
 
 			// Ensure follow up task has been created.
-			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+			So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 			Convey("with CLs", func() {
 				getCL := func(host string, change int) *changelist.CL {
@@ -307,14 +306,14 @@ func TestPoller(t *testing.T) {
 						Changes:      []int64{31, 32},
 					}})
 					// TQ tasks.
-					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+					So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 					So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32})
 
 					// Run all tasks.
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 					// Due to CL update task de-dup, regardless of what next incremental
 					// poll discovered, there shouldn't be more CL update tasks.
-					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+					So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 					So(updatertest.PFilter(ct.TQ.Tasks()), ShouldBeEmpty)
 					// But there should be 2 CLs populated in Datastore.
 					So(getCL(gHost, 31), ShouldNotBeNil)
@@ -345,7 +344,7 @@ func TestPoller(t *testing.T) {
 							Changes:      []int64{31, 32, 33, 34},
 						}})
 
-						So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+						So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 						So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
 						// 33 has ForceNotifyPM=true. Such task isn't de-dupe-able.
 						uTask33 := updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber()[2]
@@ -365,7 +364,7 @@ func TestPoller(t *testing.T) {
 							ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 							So(mustGetState(lProject).SubPollers.GetSubPollers()[0].GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 
-							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+							So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 							// PM must be notified on all 31..34.
 							So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32, 33, 34))
 							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
@@ -397,7 +396,7 @@ func TestPoller(t *testing.T) {
 							})
 
 							// 1x Poll + 1x PM task + 4x CL refresh.
-							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+							So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 							// PM must be still notified on all 31..34.
 							So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32, 33, 34))
 							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32, 33, 34})
@@ -451,7 +450,7 @@ func TestPoller(t *testing.T) {
 						},
 					})
 
-					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+					So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 					// PM can't be notified directly, because CL31 and CL32 are not in
 					// Datastore yet (unlikely, but possible if Gerrit updater TQ is
 					// stalled).
