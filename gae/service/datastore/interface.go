@@ -133,9 +133,12 @@ func parseRunCallback(cbIface interface{}) (rcb resolvedRunCallback, isKey bool,
 //	- *P where *P is a concrete type implementing PropertyLoadSaver
 //	- []S or []*S where S is a struct
 //	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-//	- []I where i is some interface type. Each element of the slice must
-//	  be non-nil, and its underlying type must be either *S or *P.
+//	- []I, where I is some interface type. Each element of the slice must have
+//	  either *S or *P as its underlying type.
 //	- []*Key, to populate a slice of partial-valid keys.
+//
+// nil values (or interface-typed nils) are not allowed, neither as standalone
+// arguments nor inside slices. Passing them will cause a panic.
 //
 // If an error is encountered, the returned error value will depend on the
 // input arguments. If one argument is supplied, the result will be the
@@ -546,10 +549,13 @@ func getAllRaw(raw RawInterface, q *Query, dst interface{}) error {
 //	- *P, where *P is a concrete type implementing PropertyLoadSaver
 //	- []S or []*S, where S is a struct
 //	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-//	- []I, where I is some interface type. Each element of the slice must
-//	  be non-nil, and its underlying type must be either *S or *P.
+//	- []I, where I is some interface type. Each element of the slice must have
+//	  either *S or *P as its underlying type.
 //	- *Key, to check a specific key from the datastore.
 //	- []*Key, to check a slice of keys from the datastore.
+//
+// nil values (or interface-typed nils) are not allowed, neither as standalone
+// arguments nor inside slices. Passing them will cause a panic.
 //
 // If an error is encountered, the returned error value will depend on the
 // input arguments. If one argument is supplied, the result will be the
@@ -598,8 +604,11 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 //	- *P, where *P is a concrete type implementing PropertyLoadSaver
 //	- []S or []*S, where S is a struct
 //	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-//	- []I, where I is some interface type. Each element of the slice must
-//	  be non-nil, and its underlying type must be either *S or *P.
+//	- []I, where I is some interface type. Each element of the slice must have
+//	  either *S or *P as its underlying type.
+//
+// nil values (or interface-typed nils) are not allowed, neither as standalone
+// arguments nor inside slices. Passing them will cause a panic.
 //
 // If an error is encountered, the returned error value will depend on the
 // input arguments. If one argument is supplied, the result will be the
@@ -675,8 +684,11 @@ func Get(c context.Context, dst ...interface{}) error {
 //	- *P, where *P is a concrete type implementing PropertyLoadSaver
 //	- []S or []*S, where S is a struct
 //	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-//	- []I, where I is some interface type. Each element of the slice must
-//	  be non-nil, and its underlying type must be either *S or *P.
+//	- []I, where I is some interface type. Each element of the slice must have
+//	  either *S or *P as its underlying type.
+//
+// nil values (or interface-typed nils) are not allowed, neither as standalone
+// arguments nor inside slices. Passing them will cause a panic.
 //
 // A *Key will be extracted from src via KeyForObj. If
 // extractedKey.IsIncomplete() is true, and the object is put to the datastore
@@ -747,10 +759,13 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 //	- *P, where *P is a concrete type implementing PropertyLoadSaver
 //	- []S or []*S, where S is a struct
 //	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-//	- []I, where I is some interface type. Each element of the slice must
-//	  be non-nil, and its underlying type must be either *S or *P.
+//	- []I, where I is some interface type. Each element of the slice must have
+//	  either *S or *P as its underlying type.
 //	- *Key, to remove a specific key from the datastore.
 //	- []*Key, to remove a slice of keys from the datastore.
+//
+// nil values (or interface-typed nils) are not allowed, neither as standalone
+// arguments nor inside slices. Passing them will cause a panic.
 //
 // If an error is encountered, the returned error value will depend on the
 // input arguments. If one argument is supplied, the result will be the

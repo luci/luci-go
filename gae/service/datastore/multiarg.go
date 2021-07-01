@@ -289,6 +289,19 @@ func isOKSingleType(t reflect.Type, allowKey bool) error {
 	}
 }
 
+func isNilValue(t reflect.Type, v reflect.Value) bool {
+	k := t.Kind()
+	// `var v Interface = nil` and `var v *Struct = nil`.
+	if (k == reflect.Ptr || k == reflect.Interface) && v.IsNil() {
+		return true
+	}
+	// `var v Interface = (*Struct)nil`.
+	if k == reflect.Interface && v.Elem().IsNil() {
+		return true
+	}
+	return false
+}
+
 // keyMGS is a MetaGetterSetter that wraps a single key value/slot. It only
 // implements operations on the "key" key.
 //
@@ -388,6 +401,12 @@ func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMulti
 		v := reflect.ValueOf(arg)
 		vt := v.Type()
 
+		// The arg can be a "typed nil", they are not allowed either.
+		if isNilValue(vt, v) {
+			lme.Assign(i, errors.New("cannot use typed nil as single argument"))
+			continue
+		}
+
 		// Try and treat the argument as a single-value first. This allows slices
 		// that implement PropertyLoadSaver to be properly treated as a single
 		// element.
@@ -419,6 +438,21 @@ func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMulti
 		if err != nil {
 			lme.Assign(i, fmt.Errorf("invalid input type (%T): %s", arg, err))
 			continue
+		}
+
+		// The type checks out, but there may be nils sneaking inside the slice.
+		if isSlice {
+			for sliceIdx := 0; sliceIdx < v.Len(); sliceIdx++ {
+				e := v.Index(sliceIdx)
+				if isNilValue(e.Type(), e) {
+					err = fmt.Errorf("invalid input slice: has nil at index %d", sliceIdx)
+					break
+				}
+			}
+			if err != nil {
+				lme.Assign(i, err)
+				continue
+			}
 		}
 
 		elem := &mma.elems[i]
