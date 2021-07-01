@@ -598,8 +598,11 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 //	- *P, where *P is a concrete type implementing PropertyLoadSaver
 //	- []S or []*S, where S is a struct
 //	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-//	- []I, where I is some interface type. Each element of the slice must
-//	  be non-nil, and its underlying type must be either *S or *P.
+//	- []I, where I is some interface type. Each element of the slice must have
+//	  either *S or *P as its underlying type.
+//
+// nil values (or interface-typed nils) are not allowed, neither as standalone
+// arguments nor inside slices. Passing them will cause a panic.
 //
 // If an error is encountered, the returned error value will depend on the
 // input arguments. If one argument is supplied, the result will be the
