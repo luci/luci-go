@@ -19,19 +19,20 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/isolate"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestElideNestedPaths(t *testing.T) {
@@ -112,16 +113,21 @@ func TestUploadToCAS(t *testing.T) {
 		fooDg := digest.NewFromBlob(fooContent)
 		barDg := digest.NewFromBlob(barContent)
 		bazDg := digest.NewFromBlob(bazContent)
-		fakeFlags := cas.Flags{
-			Instance: "foo",
+		fakeFlags := casclient.Flags{
+			Instance:  "foo",
+			UseNewLib: true,
 		}
 		var opts auth.Options
 
 		e, cleanup := fakes.NewTestEnv(t)
 		defer cleanup()
 		run := baseCommandRun{
-			casClientFactory: func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
-				return e.Server.NewTestClient(ctx)
+			clientFactory: func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
+				conn, err := e.Server.NewClientConn(ctx)
+				if err != nil {
+					return nil, err
+				}
+				return cas.NewClientWithConfig(ctx, conn, "instance", casclient.DefaultConfig())
 			},
 		}
 		cas := e.Server.CAS
@@ -237,14 +243,9 @@ func TestUploadToCAS(t *testing.T) {
 			writeFile(tmpDir, "bar", barContent)
 			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
 
-			filteredRe := filepath.Join("filtered", "foo")
-			if runtime.GOOS == "windows" {
-				// Need to escape `\` on Windows
-				filteredRe = `filtered\\foo`
-			}
 			dgs, err := run.uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate:             isol1Path,
-				IgnoredPathFilterRe: filteredRe,
+				IgnoredPathFilterRe: "filtered/foo",
 			})
 			So(err, ShouldBeNil)
 			So(dgs, ShouldHaveLength, 1)
@@ -255,7 +256,10 @@ func TestUploadToCAS(t *testing.T) {
 			}}
 			blob, ok := cas.Get(dgs[0])
 			So(ok, ShouldBeTrue)
-			So(blob, ShouldResemble, mustMarshal(isol1Dir))
+
+			gotDir := &repb.Directory{}
+			So(proto.Unmarshal(blob, gotDir), ShouldBeNil)
+			So(gotDir, ShouldResembleProto, isol1Dir)
 
 			So(cas.BlobWrites(fooDg), ShouldEqual, 0)
 			So(cas.BlobWrites(barDg), ShouldEqual, 1)
