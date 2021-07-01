@@ -69,6 +69,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a73b7ba7_a30d21ef",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 776,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-07-01T22:17:53Z",
+      "side": 1,
+      "message": "Right, I don\u0027t think I would expect that to make much of a difference, since finding the start of the regexp in the few lines with URLs is probably a pretty small portion of the time taken.",
+      "parentUuid": "be7f5232_a8186470",
+      "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3e18986a_8fc7d29c",
@@ -82,6 +100,24 @@
       "writtenOn": "2021-07-01T22:11:30Z",
       "side": 1,
       "message": "nice",
+      "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0da69515_70a9027b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-07-01T22:17:53Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "3e18986a_8fc7d29c",
       "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
