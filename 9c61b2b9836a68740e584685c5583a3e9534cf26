@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "b3eddd2c_f6ffa215",
+        "filename": "gae/service/datastore/multiarg.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T22:37:32Z",
+      "side": 1,
+      "message": "maybe \n\n  cannot use typed nil as single argument\n  \n?",
+      "revId": "9c61b2b9836a68740e584685c5583a3e9534cf26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "06b206a3_1461cc7e",
@@ -14,6 +31,30 @@
       "writtenOn": "2021-07-01T22:32:02Z",
       "side": 1,
       "message": "it is theoretically possible to delay this check until GetPLS or whatever is called, but the resulting panic will likely look a lot more messier (and I don\u0027t really understand the code very much).",
+      "range": {
+        "startLine": 443,
+        "startChar": 2,
+        "endLine": 456,
+        "endChar": 3
+      },
+      "revId": "9c61b2b9836a68740e584685c5583a3e9534cf26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4956cfe_85c56b65",
+        "filename": "gae/service/datastore/multiarg.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T22:37:32Z",
+      "side": 1,
+      "message": "I think doing it here is correct, since GetPLS is really supposed to only be considering the types (not the values)",
+      "parentUuid": "06b206a3_1461cc7e",
       "range": {
         "startLine": 443,
         "startChar": 2,
