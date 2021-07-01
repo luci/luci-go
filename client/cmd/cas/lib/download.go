@@ -32,7 +32,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
@@ -305,7 +305,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer signals.HandleInterrupt(cancel)()
-	ctx, err := cas.ContextWithMetadata(ctx, "cas")
+	ctx, err := casclient.ContextWithMetadata(ctx, "cas")
 	if err != nil {
 		return err
 	}
@@ -315,7 +315,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
 	}
 
-	c, err := r.authFlags.NewClient(ctx, r.casFlags.Instance, true)
+	c, err := r.authFlags.NewClientLegacy(ctx, r.casFlags.Instance, true)
 	if err != nil {
 		return err
 	}

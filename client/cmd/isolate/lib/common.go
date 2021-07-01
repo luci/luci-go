@@ -23,12 +23,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
@@ -41,10 +43,11 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/archiver/tarring"
-	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -60,7 +63,9 @@ type baseCommandRun struct {
 	profiler     profiling.Profiler
 
 	// Overriden in tests.
-	casClientFactory func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error)
+
+	clientFactory       func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error)
+	clientFactoryLegacy func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error)
 }
 
 var _ cli.ContextModificator = (*baseCommandRun)(nil)
@@ -97,10 +102,20 @@ func (c *baseCommandRun) ModifyContext(ctx context.Context) context.Context {
 	return c.logConfig.Set(ctx)
 }
 
-func (c *baseCommandRun) newCASClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
-	factory := c.casClientFactory
+func (c *baseCommandRun) newClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
+	factory := c.clientFactory
 	if factory == nil {
-		factory = cas.NewClient
+		factory = casclient.New
+	}
+	return factory(ctx, instance, opts, readOnly)
+}
+
+// TODO(crbug.com/1225524): remove this function.
+
+func (c *baseCommandRun) newClientLegacy(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
+	factory := c.clientFactoryLegacy
+	if factory == nil {
+		factory = casclient.NewLegacy
 	}
 	return factory(ctx, instance, opts, readOnly)
 }
@@ -251,11 +266,11 @@ type archiveLogger struct {
 }
 
 // LogSummary logs (to eventlog and stderr) a high-level summary of archive operations(s).
-func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int, bytesHit, bytesPushed units.Size) {
+func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int, bytesHit, bytesMissed units.Size) {
 	if !al.quiet {
 		duration := time.Since(al.start)
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", hits, bytesHit)
-		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", misses, bytesPushed)
+		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", misses, bytesMissed)
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration.Round(time.Millisecond))
 	}
 }
@@ -281,7 +296,118 @@ func (al *archiveLogger) printSummary(summary tarring.IsolatedSummary) {
 	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
 }
 
+func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *casclient.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+	var rootDgs []digest.Digest
+	var err error
+	if fl.UseNewLib {
+		rootDgs, err = r.uploadToCASNew(ctx, authOpts, fl, al, opts...)
+	} else {
+		rootDgs, err = r.uploadToCASLegacy(ctx, authOpts, fl, al, opts...)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if dumpJSON == "" {
+		return rootDgs, nil
+	}
+
+	m := make(map[string]string, len(opts))
+	for i, o := range opts {
+		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
+	}
+	f, err := os.Create(dumpJSON)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return rootDgs, json.NewEncoder(f).Encode(m)
+}
+
+func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Options, fl *casclient.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+	cl, err := r.newClient(ctx, fl.Instance, authOpts, false)
+	if err != nil {
+		return nil, err
+	}
+
+	start := clock.Now(ctx)
+	eg, ctx := errgroup.WithContext(ctx)
+
+	// Prepare directories to upload.
+	inputs := make([]*cas.UploadInput, len(opts))
+	inputC := make(chan *cas.UploadInput)
+	regexps := regexpCache{}
+	eg.Go(func() error {
+		defer close(inputC)
+		for i, o := range opts {
+			deps, path, _, err := isolate.ProcessIsolate(o)
+			if err != nil {
+				return err
+			}
+
+			in := &cas.UploadInput{
+				Path:      path,
+				Allowlist: make([]string, len(deps)),
+			}
+			for i, dep := range deps {
+				if in.Allowlist[i], err = filepath.Rel(path, dep); err != nil {
+					return errors.Annotate(err, "failed to compute relative path for %q", dep).Err()
+				}
+			}
+			if o.IgnoredPathFilterRe != "" {
+				if in.Exclude, err = regexps.Compile(o.IgnoredPathFilterRe); err != nil {
+					return errors.Reason("invalid regexp %q: %s", o.IgnoredPathFilterRe, err).Err()
+				}
+			}
+
+			inputs[i] = in
+			select {
+			case inputC <- in:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		return nil
+	})
+
+	// Upload the inputs.
+	var uploadRes *cas.UploadResult
+	eg.Go(func() (err error) {
+		uploadRes, err = cl.Upload(ctx, cas.UploadOptions{}, inputC)
+		return
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Collect digests.
+	// Upload succeeded, so all digests are available by this time.
+	rootDgs := make([]digest.Digest, len(inputs))
+	for i, in := range inputs {
+		if rootDgs[i], err = in.Digest("."); err != nil {
+			return nil, errors.Annotate(err, "failed to retrieve digest for %q", in.Path).Err()
+		}
+	}
+
+	// Log stats.
+	st := &uploadRes.Stats
+	logging.Infof(ctx, "finished upload for %d blobs (%d uploaded, %d bytes), took %s",
+		st.CacheHits.Digests+st.CacheMisses.Digests,
+		st.CacheMisses.Digests,
+		st.CacheMisses.Bytes,
+		clock.Since(ctx, start))
+	if al != nil {
+		al.LogSummary(ctx,
+			int(st.CacheHits.Digests), int(st.CacheMisses.Digests),
+			units.Size(st.CacheHits.Bytes), units.Size(st.CacheMisses.Bytes))
+	}
+
+	return rootDgs, nil
+}
+
 func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec, error) {
+	// TODO(crbug.com/1193375): remove this func after migrating to RBE's cas package.
 	inputPaths, execRoot, err := isolate.ProcessIsolateForCAS(opts)
 	if err != nil {
 		return "", nil, err
@@ -302,12 +428,14 @@ func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec
 	return execRoot, inputSpec, nil
 }
 
-func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *cas.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+// TODO(crbug.com/1193375): remove this func after migrating to RBE's cas package.
+func (r *baseCommandRun) uploadToCASLegacy(ctx context.Context, authOpts auth.Options, fl *casclient.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+
 	// To cancel |uploadEg| when there is error in |digestEg|.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	cl, err := r.newCASClient(ctx, fl.Instance, authOpts, false)
+	cl, err := r.newClientLegacy(ctx, fl.Instance, authOpts, false)
 	if err != nil {
 		return nil, err
 	}
@@ -416,18 +544,21 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 		al.LogSummary(ctx, entryCount-int(uploadEntryCount), int(uploadEntryCount), units.Size(entrySize-uploadEntrySize), units.Size(uploadEntrySize))
 	}
 
-	if dumpJSON == "" {
-		return rootDgs, nil
+	return rootDgs, nil
+}
+
+type regexpCache map[string]*regexp.Regexp
+
+func (c regexpCache) Compile(expr string) (*regexp.Regexp, error) {
+	if re, ok := c[expr]; ok {
+		return re, nil
 	}
 
-	m := make(map[string]string, len(opts))
-	for i, o := range opts {
-		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
-	}
-	f, err := os.Create(dumpJSON)
+	re, err := regexp.Compile(expr)
 	if err != nil {
-		return rootDgs, err
+		return nil, err
 	}
-	defer f.Close()
-	return rootDgs, json.NewEncoder(f).Encode(m)
+
+	c[expr] = re
+	return re, nil
 }

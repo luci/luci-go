@@ -30,7 +30,7 @@ import (
 	"github.com/mattn/go-tty"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -133,7 +133,7 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 			return err
 		}
 	}
-	casClient, err := cas.NewClient(ctx, casInstance, authOpts, false)
+	casClient, err := casclient.NewLegacy(ctx, casInstance, authOpts, false)
 	if err != nil {
 		return err
 	}

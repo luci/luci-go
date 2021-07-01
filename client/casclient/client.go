@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package cas provides remote-apis-sdks client with luci integration.
-package cas
+package casclient
 
 import (
 	"context"
@@ -21,7 +21,9 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
@@ -30,8 +32,38 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-// NewClient returns luci auth configured Client for RBE-CAS.
-func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
+// New returns luci auth configured Client for RBE-CAS.
+func New(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
+	creds, err := perRPCCreds(ctx, instance, opts, readOnly)
+	if err != nil {
+		return nil, err
+	}
+
+	dialParams := client.DialParams{
+		Service:            "remotebuildexecution.googleapis.com:443",
+		TransportCredsOnly: true,
+		DialOpts:           []grpc.DialOption{grpc.WithPerRPCCredentials(creds)},
+	}
+	conn, err := client.Dial(ctx, dialParams.Service, dialParams)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to dial RBE").Err()
+	}
+
+	cl, err := cas.NewClientWithConfig(ctx, conn, instance, DefaultConfig())
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create client").Err()
+	}
+	return cl, nil
+}
+
+// DefaultConfig returns default CAS client configuration.
+func DefaultConfig() cas.ClientConfig {
+	cfg := cas.DefaultClientConfig()
+	cfg.CompressedBytestreamThreshold = 0 // compress always
+	return cfg
+}
+
+func perRPCCreds(ctx context.Context, instance string, opts auth.Options, readOnly bool) (credentials.PerRPCCredentials, error) {
 	project := strings.Split(instance, "/")[1]
 	var role string
 	if readOnly {
@@ -54,20 +86,31 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 	}
+	return creds, nil
+}
+
+// NewLegacy returns luci auth configured legacy Client for RBE.
+// In general, NewClient is preferred.
+// TODO(crbug.com/1225524): remove this.
+func NewLegacy(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
+	creds, err := perRPCCreds(ctx, instance, opts, readOnly)
+	if err != nil {
+		return nil, err
+	}
 	dialParams := client.DialParams{
 		Service:            "remotebuildexecution.googleapis.com:443",
 		TransportCredsOnly: true,
 	}
 
-	cl, err := client.NewClient(ctx, instance, dialParams, ClientOptions(creds)...)
+	cl, err := client.NewClient(ctx, instance, dialParams, Options(creds)...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create client").Err()
 	}
 	return cl, nil
 }
 
-// ClientOptions returns CAS client options.
-func ClientOptions(creds credentials.PerRPCCredentials) []client.Opt {
+// Options returns CAS client options.
+func Options(creds credentials.PerRPCCredentials) []client.Opt {
 	casConcurrency := runtime.NumCPU() * 2
 	if runtime.GOOS == "windows" {
 		// This is for better file write performance on Windows (http://b/171672371#comment6).

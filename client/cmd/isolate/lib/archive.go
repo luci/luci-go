@@ -27,7 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver/tarring"
-	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
@@ -60,7 +60,7 @@ func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 type archiveRun struct {
 	commonServerFlags
 	isolateFlags
-	casFlags             cas.Flags
+	casFlags             casclient.Flags
 	maxConcurrentChecks  int
 	maxConcurrentUploads int
 	dumpJSON             string
@@ -97,7 +97,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		quiet: c.defaultFlags.Quiet,
 	}
 	if c.casFlags.Instance != "" {
-		ctx, err := cas.ContextWithMetadata(ctx, "isolate")
+		ctx, err := casclient.ContextWithMetadata(ctx, "isolate")
 		if err != nil {
 			return err
 		}
