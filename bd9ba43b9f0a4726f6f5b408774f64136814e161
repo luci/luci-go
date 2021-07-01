@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7aa5ae76_3e249910",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-07-01T03:51:13Z",
+      "side": 1,
+      "message": "changed the test to drop support for os-native path regexp",
+      "parentUuid": "c4511737_13d3d345",
+      "revId": "bd9ba43b9f0a4726f6f5b408774f64136814e161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c497910c_94198bf4",
