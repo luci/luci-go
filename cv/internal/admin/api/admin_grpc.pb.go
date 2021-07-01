@@ -45,6 +45,8 @@ type AdminClient interface {
 	SendProjectEvent(ctx context.Context, in *SendProjectEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// SendRunEvent sends event to a RM.
 	SendRunEvent(ctx context.Context, in *SendRunEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// ScheduleTask schedules an arbitrary CV TQ task.
+	ScheduleTask(ctx context.Context, in *ScheduleTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminClient struct {
@@ -145,6 +147,15 @@ func (c *adminClient) SendRunEvent(ctx context.Context, in *SendRunEventRequest,
 	return out, nil
 }
 
+func (c *adminClient) ScheduleTask(ctx context.Context, in *ScheduleTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/ScheduleTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServer is the server API for Admin service.
 // All implementations must embed UnimplementedAdminServer
 // for forward compatibility
@@ -171,6 +182,8 @@ type AdminServer interface {
 	SendProjectEvent(context.Context, *SendProjectEventRequest) (*emptypb.Empty, error)
 	// SendRunEvent sends event to a RM.
 	SendRunEvent(context.Context, *SendRunEventRequest) (*emptypb.Empty, error)
+	// ScheduleTask schedules an arbitrary CV TQ task.
+	ScheduleTask(context.Context, *ScheduleTaskRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServer()
 }
 
@@ -207,6 +220,9 @@ func (UnimplementedAdminServer) SendProjectEvent(context.Context, *SendProjectEv
 }
 func (UnimplementedAdminServer) SendRunEvent(context.Context, *SendRunEventRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendRunEvent not implemented")
+}
+func (UnimplementedAdminServer) ScheduleTask(context.Context, *ScheduleTaskRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ScheduleTask not implemented")
 }
 func (UnimplementedAdminServer) mustEmbedUnimplementedAdminServer() {}
 
@@ -401,6 +417,24 @@ func _Admin_SendRunEvent_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Admin_ScheduleTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ScheduleTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).ScheduleTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cv.internal.admin.api.Admin/ScheduleTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).ScheduleTask(ctx, req.(*ScheduleTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Admin_ServiceDesc is the grpc.ServiceDesc for Admin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -447,6 +481,10 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendRunEvent",
 			Handler:    _Admin_SendRunEvent_Handler,
+		},
+		{
+			MethodName: "ScheduleTask",
+			Handler:    _Admin_ScheduleTask_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

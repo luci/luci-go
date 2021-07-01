@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -38,6 +40,8 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestParseGerritURL(t *testing.T) {
@@ -512,6 +516,86 @@ func TestSendRunEvent(t *testing.T) {
 					Event: &eventpb.Event{Event: &eventpb.Event_Poke{Poke: &eventpb.Poke{}}},
 				})
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			})
+		})
+	})
+}
+
+func TestScheduleTask(t *testing.T) {
+	t.Parallel()
+
+	Convey("ScheduleTask works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		d := AdminServer{
+			TQDispatcher: ct.TQDispatcher,
+			PMNotifier:   prjmanager.NewNotifier(ct.TQDispatcher),
+		}
+		req := &adminpb.ScheduleTaskRequest{
+			DeduplicationKey: "key",
+			ManageProject: &prjpb.ManageProjectTask{
+				Eta:         timestamppb.New(ct.Clock.Now()),
+				LuciProject: lProject,
+			},
+		}
+		reqTrans := &adminpb.ScheduleTaskRequest{
+			KickManageProject: &prjpb.KickManageProjectTask{
+				Eta:         timestamppb.New(ct.Clock.Now()),
+				LuciProject: lProject,
+			},
+		}
+
+		Convey("without access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+			})
+			_, err := d.ScheduleTask(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("with access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+			Convey("OK", func() {
+				Convey("Non-Transactional", func() {
+					_, err := d.ScheduleTask(ctx, req)
+					So(err, ShouldBeNil)
+					So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
+						req.GetManageProject(),
+					})
+				})
+				Convey("Transactional", func() {
+					_, err := d.ScheduleTask(ctx, reqTrans)
+					So(err, ShouldBeNil)
+					So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
+						reqTrans.GetKickManageProject(),
+					})
+				})
+			})
+			Convey("InvalidArgument", func() {
+				Convey("Missing payload", func() {
+					req.ManageProject = nil
+					_, err := d.ScheduleTask(ctx, req)
+					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+					So(err, ShouldErrLike, "none given")
+				})
+				Convey("Two payloads", func() {
+					req.KickManageProject = reqTrans.GetKickManageProject()
+					_, err := d.ScheduleTask(ctx, req)
+					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+					So(err, ShouldErrLike, "but 2+ given")
+				})
+				Convey("Trans + DeduplicationKey is not allwoed", func() {
+					reqTrans.DeduplicationKey = "beef"
+					_, err := d.ScheduleTask(ctx, reqTrans)
+					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+					So(err, ShouldErrLike, `"KickManageProjectTask" is transactional`)
+				})
 			})
 		})
 	})
