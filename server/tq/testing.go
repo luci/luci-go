@@ -86,6 +86,6 @@ func (e *directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fu
 		if !quietOnError.In(err) {
 			logging.Errorf(ctx, "server/tq task error: %s", err)
 		}
-		retry = !Fatal.In(err)
+		retry = !Fatal.In(err) && !Ignore.In(err)
 	}
 }
