@@ -68,6 +68,24 @@
       "message": "Vadim, I found that after updating depot_tools CIPD client supports environment variable CIPD_SERVICE_URL, but vpython still doesn\u0027t. Could you tell me when new vpython tool will be rolled in depot_tools?",
       "revId": "137145d7e40a787ddc5b2bbcf63b74b96dc33a42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b581adf0_340bf80c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-01T19:36:47Z",
+      "side": 1,
+      "message": "vpython had some other scary changes (https://chromium-review.googlesource.com/c/infra/infra/+/2992392) but they have been reverted. I\u0027ll try to update vpython in depot_tools in the next 8h.",
+      "parentUuid": "75b7f96a_da89c858",
+      "revId": "137145d7e40a787ddc5b2bbcf63b74b96dc33a42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
