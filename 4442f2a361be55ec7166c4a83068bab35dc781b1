@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ccaf0add_8377d233",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 769,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-07-01T01:09:43Z",
+      "side": 1,
+      "message": "It would not, only because the template library is used inside of linkify, and the template library knows to escape both the href and text part in the `linkTemplate` above.\n\nI added a couple more tests like this to the unit test to demonstrate.",
+      "parentUuid": "f7323abf_161b8840",
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0b244e89_46862f49",
@@ -82,6 +100,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "42834a2c_92fc8e94",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 775,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-07-01T01:09:43Z",
+      "side": 1,
+      "message": "That\u0027s true, although for the HTML Lite mode case, line.GetValue() is []byte.",
+      "parentUuid": "ba401476_13cd671e",
+      "range": {
+        "startLine": 775,
+        "startChar": 18,
+        "endLine": 775,
+        "endChar": 24
+      },
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "597e0c58_86a6e35d",
@@ -113,6 +155,24 @@
       "side": 1,
       "message": "In terms of performance, I\u0027m more concerned about the thousands of lines which DON\u0027T have any url in them.\n\nddoman found recently that the regexp engine in Go can be surprisingly slow sometimes; I wonder if it would make sense to scan the string for \u0027http\u0027 first, and then run the regex only after finding that?\n\nWould you mind doing some benchmarks to see if this matters?",
       "parentUuid": "597e0c58_86a6e35d",
+      "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e21bbcb7_4f8d1390",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 776,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-07-01T01:09:43Z",
+      "side": 1,
+      "message": "Great idea!\n\nIn a test just calling linkify on lines of length ~80 without \"http\" in the line, where BenchmarkLinkify tests the original and BenchmarkLinkify2 tests the modified version that first calls strings.Contains(...):\n\n  name                             # loops              speed\n  BenchmarkLinkify-48               471219              2399 ns/op\n  BenchmarkLinkify2-48             9814316               124.3 ns/op\n\nSo scanning the string with strings.Contains first is more than 10X faster (for logs with no URLs).\n\nIn the latest patchset, I added the simpler check at the top of the function.",
+      "parentUuid": "36db7a26_9660efb4",
       "revId": "4442f2a361be55ec7166c4a83068bab35dc781b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
