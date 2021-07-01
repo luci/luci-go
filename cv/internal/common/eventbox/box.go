@@ -164,10 +164,16 @@ func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 		case latestEV != expectedEV:
 			return errors.Annotate(ErrContention, "EVersion read %d, but expected %d", latestEV, expectedEV).Tag(transient.Tag).Err()
 		}
+
 		popOp, err := d.BeginPop(ctx, listing)
-		if err != nil {
+		switch {
+		case err == nil:
+		case common.IsDatastoreContention(err):
+			return errors.Annotate(ErrContention, "failed to execute mutation").Err()
+		case err != nil:
 			return err
 		}
+
 		var newState State
 		for _, t := range transitions {
 			if err := t.apply(ctx, popOp); err != nil {
