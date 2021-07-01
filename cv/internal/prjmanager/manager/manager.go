@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -59,7 +58,7 @@ const (
 	logProjectStateFrequency = 60
 )
 
-var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
+var errTaskArrivedTooLate = errors.New("task arrived too late")
 
 // ProjectManager implements managing projects.
 type ProjectManager struct {
@@ -110,14 +109,14 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectM
 
 func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string, taskETA time.Time) error {
 	retryViaNewTask := false
-	var err error
+	var processErr error
 	if delay := clock.Now(ctx).Sub(taskETA); delay > prjpb.MaxAcceptableDelay {
 		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)
 		retryViaNewTask = true
-		err = errTaskArrivedTooLate
+		processErr = errTaskArrivedTooLate
 	} else {
-		err = pm.processBatch(ctx, luciProject)
-		if eventbox.IsErrContention(err) {
+		processErr = pm.processBatch(ctx, luciProject)
+		if eventbox.IsErrContention(processErr) {
 			logging.Warningf(ctx, "Datastore contention; scheduling next task instead")
 			retryViaNewTask = true
 		}
@@ -126,15 +125,12 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 	if retryViaNewTask {
 		// Scheduling new task reduces probability of concurrent tasks in extreme
 		// events.
-		if errNewTask := pm.pmNotifier.TasksBinding.Dispatch(ctx, luciProject, time.Time{}); errNewTask == nil {
-			// Hard-fail this task to avoid retries and get correct monitoring stats
-			err = tq.Fatal.Apply(err)
-		} else {
+		if err := pm.pmNotifier.TasksBinding.Dispatch(ctx, luciProject, time.Time{}); err != nil {
 			// This should be rare and retry is the best we can do.
-			err = errNewTask
+			return err
 		}
 	}
-	return errors.Annotate(err, "project %q", luciProject).Err()
+	return processErr
 }
 
 func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) error {
@@ -146,28 +142,14 @@ func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) 
 		clPoller:    pm.clPoller,
 	}
 	recipient := prjmanager.EventboxRecipient(ctx, luciProject)
-	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch); {
-	case err == nil:
-		for _, postProcessFn := range postProcessFns {
-			if err := postProcessFn(ctx); err != nil {
-				return err
-			}
-		}
-		return nil
-	case eventbox.IsErrContention(err):
-		// Instead of retrying this task at a later time, which has already
-		// overlapped with another task, and risking another overlap for a busy
-		// project, schedule a new one in the future which will get a chance of
-		// deduplication.
-		if err2 := pm.pmNotifier.TasksBinding.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
-			// This should be rare and retry is the best we can do.
-			return err2
-		}
-		// Hard-fail this task to avoid retries and get correct monitoring stats.
-		return tq.Fatal.Apply(err)
-	default:
+	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
+	if err != nil {
 		return err
 	}
+	if l := len(postProcessFns); l > 0 {
+		panic(fmt.Errorf("postProcessFns is not supported in PM; got %d", l))
+	}
+	return nil
 }
 
 // pmProcessor implements eventbox.Processor.
