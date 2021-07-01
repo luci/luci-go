@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	clientswarming "go.chromium.org/luci/client/swarming"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
@@ -39,7 +40,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/lucictx"
-	"go.chromium.org/luci/resultdb/cli"
+	rdbcli "go.chromium.org/luci/resultdb/cli"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -264,6 +265,9 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 		Root:       workdir,
 		ServiceURL: chromeinfra.CIPDServiceURL,
 	}
+	if err := opts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+		return errors.Annotate(err, "failed to create CIPD client").Err()
+	}
 	client, err := cipd.NewClient(opts)
 	if err != nil {
 		return errors.Annotate(err, "failed to create CIPD client").Err()
@@ -279,7 +283,7 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 	}
 
 	// Download packages.
-	if _, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, 1, false); err != nil {
+	if _, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, false); err != nil {
 		return errors.Annotate(err, "failed to install or update CIPD packages").Err()
 	}
 	return nil
@@ -303,7 +307,7 @@ func createInvocation(ctx context.Context, authcli *http.Client, realm string, r
 		Options: prpc.DefaultOptions(),
 	})
 
-	invID, err := cli.GenInvID(ctx)
+	invID, err := rdbcli.GenInvID(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -337,6 +341,6 @@ func createInvocation(ctx context.Context, authcli *http.Client, realm string, r
 		}); err != nil {
 			logging.WithError(err).Warningf(ctx, "failed to finalize invocation")
 		}
-		fmt.Printf("created invocation = %s\n", cli.MustReturnInvURL(resultsHost, invocation.Name))
+		fmt.Printf("created invocation = %s\n", rdbcli.MustReturnInvURL(resultsHost, invocation.Name))
 	}, nil
 }
