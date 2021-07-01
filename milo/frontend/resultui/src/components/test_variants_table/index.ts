@@ -58,13 +58,13 @@ export class TestVariantsTableElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => this.invocationState.testLoader,
-        (testLoader) => reportErrorAsync.bind(this)(async () => testLoader?.loadFirstPageOfTestVariants())(),
+        (testLoader) => reportErrorAsync(this, async () => testLoader?.loadFirstPageOfTestVariants())(),
         { fireImmediately: true }
       )
     );
   }
 
-  private loadMore = reportErrorAsync.bind(this)(async () => this.invocationState.testLoader?.loadNextTestVariants());
+  private loadMore = reportErrorAsync(this, async () => this.invocationState.testLoader?.loadNextTestVariants());
 
   private renderAllVariants() {
     const testLoader = this.invocationState.testLoader;

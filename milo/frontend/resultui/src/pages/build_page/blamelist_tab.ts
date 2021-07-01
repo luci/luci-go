@@ -121,7 +121,7 @@ export class BlamelistTabElement extends MiloBaseElement {
     );
   }
 
-  private loadNextPage = reportErrorAsync.bind(this)(async () => {
+  private loadNextPage = reportErrorAsync(this, async () => {
     this.isLoading = true;
     this.endOfPage = false;
     const iter = await this.queryBlamelistResIter.next();
@@ -142,7 +142,7 @@ export class BlamelistTabElement extends MiloBaseElement {
   }
   private readonly toggleAllEntriesByHotkey = () => this.toggleAllEntries(!this.allEntriesWereExpanded);
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     if (this.buildState.build && !this.selectedBlamelistPin) {
       return html`
         <div id="no-blamelist">

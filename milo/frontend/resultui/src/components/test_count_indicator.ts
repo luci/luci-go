@@ -50,7 +50,7 @@ export class TestCountIndicatorElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => this.invState.testLoader,
-        (testLoader) => reportErrorAsync.bind(this)(async () => testLoader?.loadFirstPageOfTestVariants())(),
+        (testLoader) => reportErrorAsync(this, async () => testLoader?.loadFirstPageOfTestVariants())(),
         { fireImmediately: true }
       )
     );

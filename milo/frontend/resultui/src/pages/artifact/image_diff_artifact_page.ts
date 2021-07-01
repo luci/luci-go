@@ -110,7 +110,7 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
     return;
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     if (this.isLoading) {
       return html`<div id="loading-spinner" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
     }

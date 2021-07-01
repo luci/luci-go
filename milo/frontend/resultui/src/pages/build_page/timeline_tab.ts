@@ -165,7 +165,7 @@ export class TimelineTabElement extends MiloBaseElement {
     this.addDisposer(autorun(() => this.renderTimeline()));
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     if (!this.buildState.build) {
       return html`<div id="load">Loading <milo-dot-spinner></milo-load-spinner></div>`;
     }
@@ -177,7 +177,7 @@ export class TimelineTabElement extends MiloBaseElement {
     return html`<div id="timeline">${this.sidePanelEle}${this.headerEle}${this.bodyEle}${this.footerEle}</div>`;
   });
 
-  private renderTimeline = reportError.bind(this)(() => {
+  private renderTimeline = reportError(this, () => {
     const build = this.buildState.build;
     if (!build || !build.startTime || build.steps.length === 0) {
       return;

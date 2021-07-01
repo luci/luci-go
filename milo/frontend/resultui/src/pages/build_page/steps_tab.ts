@@ -56,7 +56,7 @@ export class StepsTabElement extends MiloBaseElement {
   }
   private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     return html`
       <div id="header">
         <div class="config-section">

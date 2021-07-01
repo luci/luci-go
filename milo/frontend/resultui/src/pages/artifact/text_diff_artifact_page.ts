@@ -70,7 +70,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
     return unwrapObservable(this.content$, null);
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     if (!this.content) {
       return html`<div id="content" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
     }

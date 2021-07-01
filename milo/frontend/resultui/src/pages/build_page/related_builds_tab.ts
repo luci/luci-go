@@ -48,7 +48,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     trackEvent(GA_CATEGORIES.RELATED_BUILD_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
 
-  protected render = reportRenderError.bind(this)(() => {
+  protected render = reportRenderError(this, () => {
     if (this.buildState.relatedBuilds === null) {
       return this.renderLoadingBar();
     }

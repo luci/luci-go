@@ -26,7 +26,7 @@
  * ```typescript
  * @customElement('some-component-that-may-throw')
  * export class SomeComponentThatMayThrow extends LitElement {
- *   protected render = reportError.bind(this)(() => {
+ *   protected render = reportError(this, () => {
  *     // Rendering code goes here.
  *   });
  * }
@@ -47,9 +47,9 @@ import { html, LitElement } from 'lit-element';
 
 /**
  * Wraps the specified fn. Whenever fn throws an error, dispatches an error
- * event from `this` element.
+ * event from the element.
  *
- * @param this the element where the error event should be dispatched from/
+ * @param ele the element where the error event should be dispatched from/
  * @param fn the fn of which the error will be reported as an error event.
  * @param fallbackFn the fallback function invoked when fn throws an error to
  *     recover from the error
@@ -59,7 +59,7 @@ import { html, LitElement } from 'lit-element';
  *     fallbackFn is specified.
  */
 export function reportError<T extends unknown[], V>(
-  this: Element,
+  ele: Element,
   fn: (...params: T) => V,
   fallbackFn?: (err: unknown, ...params: T) => V
 ): (...params: T) => V {
@@ -67,7 +67,7 @@ export function reportError<T extends unknown[], V>(
     try {
       return fn(...params);
     } catch (e) {
-      this.dispatchEvent(
+      ele.dispatchEvent(
         new ErrorEvent('error', {
           error: e,
           message: e.toString(),
@@ -91,11 +91,11 @@ export function reportError<T extends unknown[], V>(
  * By default, fallback to render the error message in a <pre>.
  */
 export function reportRenderError(
-  this: Element,
+  ele: Element,
   fn: () => unknown,
   fallbackFn = (_err: unknown): unknown => ''
 ): () => unknown {
-  return reportError.bind(this)(fn, fallbackFn);
+  return reportError(ele, fn, fallbackFn);
 }
 
 /**
@@ -104,7 +104,7 @@ export function reportRenderError(
  * See the documentation of reportError for details.
  */
 export function reportErrorAsync<T extends unknown[], V>(
-  this: Element,
+  ele: Element,
   fn: (...params: T) => Promise<V>,
   fallbackFn?: (err: unknown, ...params: T) => Promise<V>
 ): (...params: T) => Promise<V> {
@@ -113,7 +113,7 @@ export function reportErrorAsync<T extends unknown[], V>(
       // Don't elide await here or non-immediate errors won't be cached.
       return await fn(...params);
     } catch (e) {
-      this.dispatchEvent(
+      ele.dispatchEvent(
         new ErrorEvent('error', {
           error: e,
           message: e.toString(),
@@ -230,7 +230,7 @@ export function errorHandler<T extends LitElement>(
         // The render function is likely converted to property function in the
         // parent class with a syntax like below.
         //
-        // protected render = reportRenderError.bind(this)(() => {...});
+        // protected render = reportRenderError(this, () => {...});
         const superRender = this.render;
         this.render = function () {
           return this[errorSymbol] === null
