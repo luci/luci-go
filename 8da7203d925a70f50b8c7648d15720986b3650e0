@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6c67bd9_e2ffe9a4",
+        "filename": "resultdb/cli/terminate_unix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T23:22:03Z",
+      "side": 1,
+      "message": "hm, ok.",
+      "parentUuid": "fbd86c26_b36e1389",
+      "revId": "8da7203d925a70f50b8c7648d15720986b3650e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c252f15_d0d415ee",
