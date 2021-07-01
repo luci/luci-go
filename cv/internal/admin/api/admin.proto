@@ -23,10 +23,16 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+import "go.chromium.org/luci/cv/internal/configs/prjcfg/tasks.proto";
 import "go.chromium.org/luci/cv/internal/gerrit/poller/storage.proto";
-import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
+import "go.chromium.org/luci/cv/internal/gerrit/poller/task/task.proto";
+import "go.chromium.org/luci/cv/internal/gerrit/updater/tasks.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/events.proto";
+import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
+import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/tasks.proto";
+import "go.chromium.org/luci/cv/internal/run/bq/tasks.proto";
 import "go.chromium.org/luci/cv/internal/run/eventpb/events.proto";
+import "go.chromium.org/luci/cv/internal/run/eventpb/tasks.proto";
 import "go.chromium.org/luci/cv/internal/run/storage.proto";
 
 
@@ -65,6 +71,9 @@ service Admin {
   rpc SendProjectEvent(SendProjectEventRequest) returns (google.protobuf.Empty);
   // SendRunEvent sends event to a RM.
   rpc SendRunEvent(SendRunEventRequest) returns (google.protobuf.Empty);
+
+  // ScheduleTask schedules an arbitrary CV TQ task.
+  rpc ScheduleTask(ScheduleTaskRequest) returns (google.protobuf.Empty);
 }
 
 message GetProjectRequest {
@@ -214,4 +223,26 @@ message SearchRunsRequest {
 message RunsResponse {
   repeated GetRunResponse runs = 1;
   string next_page_token = 2;
+}
+
+message ScheduleTaskRequest {
+  // Next tag: 12.
+
+  // Exactly one of the following.
+  // Not using oneof because it's more congitive load to type for something
+  // meant as a debug API only.
+
+  cv.internal.configs.prjcfg.RefreshProjectConfigTask refresh_project_config = 1;
+  cv.internal.gerrit.poller.task.PollGerritTask poll_gerrit = 2;
+  cv.internal.gerrit.updater.RefreshGerritCL refresh_gerrit_cl = 3;
+  cv.internal.gerrit.updater.BatchRefreshGerritCL batch_refresh_gerrit_cl = 4;
+  cv.internal.prjmanager.prjpb.ManageProjectTask manage_project = 5;
+  cv.internal.prjmanager.prjpb.KickManageProjectTask kick_manage_project = 6;
+  cv.internal.prjmanager.prjpb.PurgeCLTask purge_cl = 7;
+  cv.internal.run.bq.ExportRunToBQTask export_run_to_bq = 8;
+  cv.internal.run.eventpb.ManageRunTask manage_run = 9;
+  cv.internal.run.eventpb.KickManageRunTask kick_manage_run = 10;
+
+  // Optional.
+  string deduplication_key  = 11;
 }

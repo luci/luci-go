@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strconv"
 	"time"
@@ -37,6 +38,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/tq"
 
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -55,6 +57,7 @@ import (
 const allowGroup = "service-luci-change-verifier-admins"
 
 type AdminServer struct {
+	TQDispatcher  *tq.Dispatcher
 	GerritUpdater *updater.Updater
 	PMNotifier    *prjmanager.Notifier
 	RunNotifier   *run.Notifier
@@ -477,6 +480,68 @@ func (d *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEven
 
 	if err := d.RunNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (d *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTaskRequest) (_ *emptypb.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = checkAllowed(ctx, "ScheduleTask"); err != nil {
+		return
+	}
+
+	const trans = true
+	var possiblePayloads = []struct {
+		inTransaction bool
+		payload       proto.Message
+	}{
+		{trans, req.GetBatchRefreshGerritCl()},
+		{false, req.GetExportRunToBq()},
+		{trans, req.GetKickManageProject()},
+		{trans, req.GetKickManageRun()},
+		{false, req.GetManageProject()},
+		{false, req.GetManageRun()},
+		{false, req.GetPollGerrit()},
+		{trans, req.GetPurgeCl()},
+		{false, req.GetRefreshGerritCl()},
+		{false, req.GetRefreshProjectConfig()},
+	}
+
+	chosen := possiblePayloads[0]
+	for _, another := range possiblePayloads[1:] {
+		switch {
+		case reflect.ValueOf(another.payload).IsNil():
+		case !reflect.ValueOf(chosen.payload).IsNil():
+			return nil, status.Errorf(codes.InvalidArgument, "exactly one task payload required, but 2+ given")
+		default:
+			chosen = another
+		}
+	}
+
+	if reflect.ValueOf(chosen.payload).IsNil() {
+		return nil, status.Errorf(codes.InvalidArgument, "exactly one task payload required, but none given")
+	}
+	kind := chosen.payload.ProtoReflect().Type().Descriptor().Name()
+	if chosen.inTransaction && req.GetDeduplicationKey() != "" {
+		return nil, status.Errorf(codes.InvalidArgument, "task %q is transactional, so the deduplication_key is not allowed", kind)
+	}
+
+	t := &tq.Task{
+		Payload:          chosen.payload,
+		DeduplicationKey: req.GetDeduplicationKey(),
+		Title:            fmt.Sprintf("admin/%s/%s/%s", auth.CurrentIdentity(ctx), kind, req.GetDeduplicationKey()),
+	}
+
+	if chosen.inTransaction {
+		err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			return d.TQDispatcher.AddTask(ctx, t)
+		}, nil)
+	} else {
+		err = d.TQDispatcher.AddTask(ctx, t)
+	}
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to schedule task: %s", err)
 	}
 	return &emptypb.Empty{}, nil
 }
