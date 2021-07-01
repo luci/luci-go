@@ -33,6 +33,57 @@
       "message": "This is my last day before leave, so if I don\u0027t get this checked in and tested, could someone else verify this change?",
       "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23d0a799_d833d4da",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T22:11:30Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be7f5232_a8186470",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 776,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T22:11:30Z",
+      "side": 1,
+      "message": "nit; I _think_ this could be improved further to actually find the index of \u0027http\u0027, and then only run regex starting at that point... but probably it wouldn\u0027t make a material difference since the number of urls in logs isn\u0027t THAT high.",
+      "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e18986a_8fc7d29c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-01T22:11:30Z",
+      "side": 1,
+      "message": "nice",
+      "revId": "a5a335075486bf6a0bbe0bc33c447fc84d358b63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
