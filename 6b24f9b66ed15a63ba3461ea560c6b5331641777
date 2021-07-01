@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc78ad20_b647cd9c",
+        "filename": "cv/internal/prjmanager/manager/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-01T01:02:09Z",
+      "side": 0,
+      "message": "👍",
+      "revId": "6b24f9b66ed15a63ba3461ea560c6b5331641777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9af6a99a_6502c12e",
+        "filename": "cv/internal/prjmanager/manager/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-01T01:02:09Z",
+      "side": 0,
+      "message": "I think this is still important",
+      "range": {
+        "startLine": 162,
+        "startChar": 2,
+        "endLine": 165,
+        "endChar": 3
+      },
+      "revId": "6b24f9b66ed15a63ba3461ea560c6b5331641777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
