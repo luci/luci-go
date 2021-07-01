@@ -33,7 +33,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import { getLegacyURLPathForBuild, getURLPathForBuilder, getURLPathForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
+import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
@@ -244,7 +244,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // Redirect to the long link after the build is fetched.
       this.addDisposer(
         when(
-          () => this.buildState.build !== null,
+          reportError(this, () => this.buildState.build !== null),
           () => {
             const build = this.buildState.build!;
             if (build.number !== undefined) {
