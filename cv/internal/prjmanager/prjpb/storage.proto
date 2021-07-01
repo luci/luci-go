@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cv.prjmanager.prjpb;
+package cv.internal.prjmanager.prjpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
@@ -176,7 +176,7 @@ message PCL {
   // which isn't necessary for PM decision making. It should be (re)-computed
   // based on CL snapshots at the time only when actual Run is actually being
   // created.
-  cv.run.Trigger trigger = 12;
+  cv.internal.run.Trigger trigger = 12;
 
   // Submitted means CV isn't going to work on a CL, but CL is still tracked as
   // a dep of another CL or as a member of an incomplete Run (though the other
@@ -184,7 +184,7 @@ message PCL {
   bool submitted = 13;
 
   // If set, describes one or more problems with CL.
-  repeated cv.changelist.CLError errors = 15;
+  repeated cv.internal.changelist.CLError errors = 15;
 }
 
 // PRun is an incomplete Run on which CV is currently working.

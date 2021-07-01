@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cv.run.bq;
+package cv.internal.run.bq;
 
 option go_package = "go.chromium.org/luci/cv/internal/run/bq;bq";
 

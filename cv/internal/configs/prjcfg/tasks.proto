@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package internal.configs.prjcfg;
+package cv.internal.configs.prjcfg;
 
 option go_package = "go.chromium.org/luci/cv/internal/configs/prjcfg;prjcfg";
 

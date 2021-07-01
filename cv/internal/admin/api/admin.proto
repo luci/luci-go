@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package admin;
+package cv.internal.admin.api;
 
 option go_package = "go.chromium.org/luci/cv/internal/admin/api;adminpb";
 
@@ -76,8 +76,8 @@ message GetProjectRequest {
 // The project state and outstanding events come from different entities,
 // read in parallel.
 message GetProjectResponse {
-  cv.prjmanager.prjpb.PState state = 2;
-  repeated cv.prjmanager.prjpb.Event events = 3;
+  cv.internal.prjmanager.prjpb.PState state = 2;
+  repeated cv.internal.prjmanager.prjpb.Event events = 3;
 }
 
 message GetProjectLogsRequest {
@@ -97,9 +97,9 @@ message GetProjectLogsResponse {
 
 message ProjectLog {
   int64 eversion = 1;
-  cv.prjmanager.prjpb.PState state = 2;
+  cv.internal.prjmanager.prjpb.PState state = 2;
   google.protobuf.Timestamp update_time = 3;
-  cv.prjmanager.prjpb.LogReasons reasons = 4;
+  cv.internal.prjmanager.prjpb.LogReasons reasons = 4;
 }
 
 message GetRunRequest {
@@ -115,7 +115,7 @@ message GetRunResponse {
   string id = 1;
   int64 eversion = 2;
   string mode = 3;
-  cv.run.Status status = 4;
+  cv.internal.run.Status status = 4;
   google.protobuf.Timestamp create_time = 5;
   google.protobuf.Timestamp start_time = 6;
   google.protobuf.Timestamp update_time = 7;
@@ -124,12 +124,12 @@ message GetRunResponse {
   string config_group_id = 10;
   repeated int64 cls = 11;
   repeated string external_cls = 15;
-  cv.run.Submission submission = 12;
+  cv.internal.run.Submission submission = 12;
   bool finalized_by_cqd = 13;
   google.protobuf.Timestamp delay_cancel_until = 14;
 
   // Events.
-  repeated cv.run.eventpb.Event events = 61;
+  repeated cv.internal.run.eventpb.Event events = 61;
 }
 
 message GetCLRequest{
@@ -153,9 +153,9 @@ message GetCLResponse {
   int64 eversion = 2;
   string external_id = 3;
   google.protobuf.Timestamp update_time = 8;
-  cv.changelist.Snapshot snapshot = 4;
-  cv.changelist.ApplicableConfig applicable_config = 5;
-  cv.changelist.Access access = 6;
+  cv.internal.changelist.Snapshot snapshot = 4;
+  cv.internal.changelist.ApplicableConfig applicable_config = 5;
+  cv.internal.changelist.Access access = 6;
   repeated string incomplete_runs = 7;
 }
 
@@ -168,7 +168,7 @@ message GetPollerResponse {
   int64 eversion = 2;
   google.protobuf.Timestamp update_time = 3;
   string config_hash = 4;
-  cv.gerrit.poller.SubPollers subpollers = 5;
+  cv.internal.gerrit.poller.SubPollers subpollers = 5;
 }
 
 message DeleteProjectEventsRequest {
@@ -191,12 +191,12 @@ message RefreshProjectCLsResponse{
 
 message SendProjectEventRequest {
   string project = 1;
-  cv.prjmanager.prjpb.Event event = 2;
+  cv.internal.prjmanager.prjpb.Event event = 2;
 }
 
 message SendRunEventRequest {
   string run = 1;
-  cv.run.eventpb.Event event = 2;
+  cv.internal.run.eventpb.Event event = 2;
 }
 
 message SearchRunsRequest {
@@ -206,7 +206,7 @@ message SearchRunsRequest {
   // Optional. If omitted, scans across all active projects.
   string project = 3;
   // Optional. Returns Runs with the given status, only.
-  cv.run.Status status = 4;
+  cv.internal.run.Status status = 4;
   // Optional. Limits Runs referencing the given CL.
   GetCLRequest cl = 5;
 }

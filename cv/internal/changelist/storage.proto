@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cv.changelist;
+package cv.internal.changelist;
 
 option go_package = "go.chromium.org/luci/cv/internal/changelist";
 

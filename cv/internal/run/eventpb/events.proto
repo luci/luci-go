@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cv.run.eventpb;
+package cv.internal.run.eventpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 

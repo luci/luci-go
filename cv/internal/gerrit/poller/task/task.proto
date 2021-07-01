@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package internal.gerrit.poller.task;
+package cv.internal.gerrit.poller.task;
 
 option go_package = "go.chromium.org/luci/cv/internal/gerrit/poller/task;task";
 
