@@ -49,6 +49,9 @@ type Bucket struct {
 	// Bucket is the bucket in v2 format.
 	// e.g. try (never luci.chromium.try).
 	Bucket string `gae:"bucket_name"`
+	// Legacy indicates whether the bucket is a v1 legacy bucket.
+	// Legacy buckets do not have Swarming configs.
+	Legacy bool `gae:"legacy"`
 	// Proto is the pb.Bucket proto representation of the bucket.
 	//
 	// acl_sets is zeroed by inlining acls. swarming.builders is
