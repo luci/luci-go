@@ -273,6 +273,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	setSysProcAttr(cmd)
+	procStarted := false
 
 	// Interrupt the subprocess if rdb-stream is interrupted or the deadline
 	// approaches.
@@ -280,12 +281,12 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	// SIGKILLed by the the expiration of cmdCtx.
 	go func() {
 		evt := <-lucictx.SoftDeadlineDone(cmdCtx)
-		if evt == lucictx.ClosureEvent {
+		if !procStarted || evt == lucictx.ClosureEvent {
 			// Cleanup only.
 			return
 		}
 		logging.Infof(ctx, "Caught %s", evt.String())
-		if err := terminate(ctx, cmd); err != nil {
+		if err := terminate(ctx, cmd.Process); err != nil {
 			logging.Warningf(ctx, "Could not terminate subprocess (%s), cancelling its context", err)
 			cancelCmd()
 			return
@@ -331,6 +332,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		if err := cmd.Start(); err != nil {
 			return errors.Annotate(err, "cmd.start").Err()
 		}
+		procStarted = true
 		return cmd.Wait()
 	})
 }
@@ -342,7 +344,7 @@ func (r *streamRun) getLocationTags(ctx context.Context) (*sinkpb.LocationTags, 
 	f, err := ioutil.ReadFile(r.locTagsFile)
 	switch {
 	case os.IsNotExist(err):
-		logging.Warningf(ctx, "rdb-stream: %s doesn not exist", r.locTagsFile)
+		logging.Warningf(ctx, "rdb-stream: %s does not exist", r.locTagsFile)
 		return nil, nil
 	case err != nil:
 		return nil, err
