@@ -58,7 +58,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
-		_ = New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, pmNotifier, runNotifier))
+		_ = New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, runNotifier))
 
 		const lProject = "infra"
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
@@ -101,7 +101,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
-		_ = New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, pmNotifier, runNotifier))
+		_ = New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, runNotifier))
 
 		const lProject = "infra"
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
@@ -225,7 +225,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
-		clUpdater := updater.New(ct.TQDispatcher, pmNotifier, runNotifier)
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, runNotifier)
 		pm := New(pmNotifier, runNotifier, clUpdater)
 
 		refreshCLAndNotifyPM := func(c int64) {

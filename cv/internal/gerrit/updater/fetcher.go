@@ -327,9 +327,6 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		return nil, setNoAccess(false /* permanent*/)
 	}
 
-	if err := f.ensureGerritClient(ctx); err != nil {
-		return nil, err
-	}
 	ci, err := f.g.GetChange(ctx, &gerritpb.GetChangeRequest{
 		Number:  f.change,
 		Project: f.gerritProjectIfKnown(),
@@ -363,9 +360,6 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
 func (f *fetcher) fetchRelated(ctx context.Context) error {
-	if err := f.ensureGerritClient(ctx); err != nil {
-		return err
-	}
 	resp, err := f.g.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 		Number:     f.change,
 		Project:    f.gerritProjectIfKnown(),
@@ -544,9 +538,6 @@ func (f *fetcher) countRelatedWhichAreParents(this *gerritpb.GetRelatedChangesRe
 
 // fetchFiles fetches files for the current revision of the new Snapshot.
 func (f *fetcher) fetchFiles(ctx context.Context) error {
-	if err := f.ensureGerritClient(ctx); err != nil {
-		return err
-	}
 	resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
 		Number:     f.change,
 		Project:    f.gerritProjectIfKnown(),
@@ -720,15 +711,6 @@ func (f *fetcher) ensureNotStale(ctx context.Context, externalUpdateTime *timest
 		return nil
 	}
 	return errStaleData
-}
-
-func (f *fetcher) ensureGerritClient(ctx context.Context) error {
-	if f.g != nil {
-		return nil
-	}
-	var err error
-	f.g, err = gerrit.CurrentClient(ctx, f.host, f.luciProject)
-	return err
 }
 
 // Checks whether this LUCI project watches any repo on this Gerrit host.
