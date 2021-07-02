@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3b876c9e_59d0e4c3",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-02T01:15:14Z",
+      "side": 1,
+      "message": "Can you verify it won\u0027t be too coarse at ranges we care most about (10KB-1MB)? 4GB messages seem like super extreme.",
+      "parentUuid": "a2bc29a1_40788b0b",
+      "range": {
+        "startLine": 38,
+        "startChar": 29,
+        "endLine": 38,
+        "endChar": 50
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "52b12120_9e54a0d1",
         "filename": "grpc/grpcmon/client.go",
         "patchSetId": 2
