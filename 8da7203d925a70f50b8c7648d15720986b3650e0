@@ -127,6 +127,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "aac9a74f_efb43095",
+        "filename": "resultdb/cli/terminate_unix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-02T01:02:43Z",
+      "side": 1,
+      "message": "I mean that I don\u0027t know if it\u0027s safe to do `cmd.Wait` and also run this function (which looks at cmd.ProcessState) simultaneously.\n\nIMO I would simply always Signal the process, and then sort out the \"oh it\u0027s already gone\" error after the fact.",
+      "parentUuid": "f5eff63a_a8f00696",
+      "range": {
+        "startLine": 38,
+        "startChar": 8,
+        "endLine": 38,
+        "endChar": 11
+      },
+      "revId": "8da7203d925a70f50b8c7648d15720986b3650e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "81b1cdb5_65718884",
         "filename": "resultdb/cli/terminate_windows.go",
         "patchSetId": 2
