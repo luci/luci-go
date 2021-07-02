@@ -36,12 +36,6 @@ func setSysProcAttr(c *exec.Cmd) {
 }
 
 func terminate(ctx context.Context, cmd *exec.Cmd) error {
-	switch {
-	case cmd == nil || cmd.Process == nil:
-		return errors.Reason("There is no subprocess to terminate").Err()
-	case cmd.ProcessState != nil && cmd.ProcessState.Exited():
-		return errors.Reason("The subprocess has already exited").Err()
-	}
 	logging.Infof(ctx, "Sending CTRL_BREAK_EVENT to the subprocess")
 	return windows.GenerateConsoleCtrlEvent(windows.CTRL_BREAK_EVENT, uint32(cmd.Process.Pid))
 }
