@@ -18,23 +18,16 @@ package cli
 
 import (
 	"context"
+	"os"
 	"os/exec"
 	"syscall"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
 func setSysProcAttr(_ *exec.Cmd) {}
 
-func terminate(ctx context.Context, cmd *exec.Cmd) error {
-	switch {
-	case cmd == nil || cmd.Process == nil:
-		return errors.Reason("There is no subprocess to terminate").Err()
-	case cmd.ProcessState != nil && cmd.ProcessState.Exited():
-		return errors.Reason("The subprocess has already exited").Err()
-	}
+func terminate(ctx context.Context, p *os.Process) error {
 	logging.Infof(ctx, "Sending syscall.SIGTERM to subprocess")
-	return cmd.Process.Signal(syscall.SIGTERM)
-
+	return p.Signal(syscall.SIGTERM)
 }
