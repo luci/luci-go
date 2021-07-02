@@ -16,6 +16,23 @@
       "message": "See https://chromium-review.googlesource.com/c/infra/infra/+/3001402.",
       "revId": "b7fdb782a3f0a1be3e0a04151bc5bc0910bf643a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3efaf302_1ef8019e",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-07-02T16:31:59Z",
+      "side": 1,
+      "message": "why not b.Proto.Swarming \u003d\u003d nil",
+      "revId": "b7fdb782a3f0a1be3e0a04151bc5bc0910bf643a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
