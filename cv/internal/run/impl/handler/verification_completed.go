@@ -61,13 +61,13 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
 		msg := usertext.OnRunSucceeded(rs.Run.Mode)
-		if err := cancelTriggers(ctx, rs, msg); err != nil {
+		if err := impl.cancelTriggers(ctx, rs, msg); err != nil {
 			return nil, err
 		}
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
-		if err := cancelTriggers(ctx, rs, vr.Payload.FinalMessage); err != nil {
+		if err := impl.cancelTriggers(ctx, rs, vr.Payload.FinalMessage); err != nil {
 			return nil, err
 		}
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
@@ -77,7 +77,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	}
 }
 
-func cancelTriggers(ctx context.Context, rs *state.RunState, msg string) error {
+func (impl *Impl) cancelTriggers(ctx context.Context, rs *state.RunState, msg string) error {
 	runCLs, err := run.LoadRunCLs(ctx, rs.Run.ID, rs.Run.CLs)
 	if err != nil {
 		return err
@@ -90,5 +90,5 @@ func cancelTriggers(ctx context.Context, rs *state.RunState, msg string) error {
 	if err != nil {
 		return err
 	}
-	return cancelCLTriggers(ctx, rs.Run.ID, runCLs, runCLExternalIDs, msg, cg)
+	return impl.cancelCLTriggers(ctx, rs.Run.ID, runCLs, runCLExternalIDs, msg, cg)
 }
