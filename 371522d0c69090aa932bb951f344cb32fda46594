@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "558183c9_b62c5c2d",
+        "filename": "cv/internal/run/impl/handler/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-02T05:50:26Z",
+      "side": 1,
+      "message": "nit: should we change this to CV?",
+      "range": {
+        "startLine": 44,
+        "startChar": 27,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "371522d0c69090aa932bb951f344cb32fda46594",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd9724cf_12424665",
+        "filename": "cv/internal/run/impl/handler/start_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-02T05:50:26Z",
+      "side": 1,
+      "message": "nit: Should this goes to cvtesting?",
+      "range": {
+        "startLine": 72,
+        "startChar": 3,
+        "endLine": 73,
+        "endChar": 66
+      },
+      "revId": "371522d0c69090aa932bb951f344cb32fda46594",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
