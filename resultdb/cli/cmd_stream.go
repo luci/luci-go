@@ -24,6 +24,7 @@ import (
 	"os/user"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -273,6 +274,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	setSysProcAttr(cmd)
+	cmdProcMu := sync.Mutex{}
 
 	// Interrupt the subprocess if rdb-stream is interrupted or the deadline
 	// approaches.
@@ -285,7 +287,11 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 			return
 		}
 		logging.Infof(ctx, "Caught %s", evt.String())
-		if err := terminate(ctx, cmd); err != nil {
+
+		// Prevent accessing cmd.Process while it's being started.
+		cmdProcMu.Lock()
+		defer cmdProcMu.Unlock()
+		if err := terminate(ctx, cmd.Process); err != nil {
 			logging.Warningf(ctx, "Could not terminate subprocess (%s), cancelling its context", err)
 			cancelCmd()
 			return
@@ -328,7 +334,12 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		}()
 		exported.SetInCmd(cmd)
 		logging.Infof(ctx, "rdb-stream: starting the test command - %q", cmd.Args)
-		if err := cmd.Start(); err != nil {
+
+		cmdProcMu.Lock()
+		err = cmd.Start()
+		cmdProcMu.Unlock()
+
+		if err != nil {
 			return errors.Annotate(err, "cmd.start").Err()
 		}
 		return cmd.Wait()
@@ -342,7 +353,7 @@ func (r *streamRun) getLocationTags(ctx context.Context) (*sinkpb.LocationTags, 
 	f, err := ioutil.ReadFile(r.locTagsFile)
 	switch {
 	case os.IsNotExist(err):
-		logging.Warningf(ctx, "rdb-stream: %s doesn not exist", r.locTagsFile)
+		logging.Warningf(ctx, "rdb-stream: %s does not exist", r.locTagsFile)
 		return nil, nil
 	case err != nil:
 		return nil, err
