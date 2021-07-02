@@ -63,10 +63,6 @@ type Fake struct {
 	requestsMu sync.RWMutex
 }
 
-func (f *Fake) Install(ctx context.Context) context.Context {
-	return gerrit.UseClientFactory(ctx, f.Factory())
-}
-
 func (f *Fake) Factory() gerrit.ClientFactory {
 	f.m.Lock()
 	if f.factory == nil {
