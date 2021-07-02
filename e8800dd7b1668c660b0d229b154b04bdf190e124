@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f02bb98e_c1318b94",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-02T06:01:17Z",
+      "side": 1,
+      "message": "note: cmdCtx may be problematic here. It means that when the context closes, Go will SIGKILL the process. That said I\u0027m not familiar with rdb so I\u0027m not sure if the context can really be canceled like that...",
+      "revId": "e8800dd7b1668c660b0d229b154b04bdf190e124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "abf0c776_37f81ab5",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-02T06:01:17Z",
+      "side": 1,
+      "message": "this is touched from multiple goroutines; needs synchronization. may as well:\n\n  var cmdMu sync.Mutex\n  \n  go func() {\n    evt :\u003d \u003c-lucictx...\n    cmdMu.Lock()\n    proc :\u003d cmd.Process\n    cmdMu.Unlock()\n    // look at proc here\n    ...\n  }()\n  \n  ...\n  \n  return sink.Run(..., func(...) {\n    ...\n    \n    cmdMu.Lock()\n    err \u003d cmd.Start()\n    cmdMu.Unlock()\n\n    if err !\u003d nil { ... }\n    cmd.Wait()\n  })",
+      "range": {
+        "startLine": 335,
+        "startChar": 2,
+        "endLine": 335,
+        "endChar": 13
+      },
+      "revId": "e8800dd7b1668c660b0d229b154b04bdf190e124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
