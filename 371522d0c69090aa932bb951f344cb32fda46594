@@ -93,6 +93,30 @@
       },
       "revId": "371522d0c69090aa932bb951f344cb32fda46594",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0c9d550_fd72e9bf",
+        "filename": "cv/internal/run/impl/handler/start_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-02T17:51:11Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6e87d62c_37916595",
+      "range": {
+        "startLine": 72,
+        "startChar": 3,
+        "endLine": 73,
+        "endChar": 66
+      },
+      "revId": "371522d0c69090aa932bb951f344cb32fda46594",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
