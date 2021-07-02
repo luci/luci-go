@@ -115,6 +115,7 @@ func TestOnCQDFinished(t *testing.T) {
 
 		h := &Impl{
 			RM:        run.NewNotifier(ct.TQDispatcher),
+			GFactory:  ct.GFake.Factory(),
 			CLUpdater: &clUpdaterMock{},
 		}
 
