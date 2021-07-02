@@ -16,6 +16,24 @@
       "message": "can we change `terminate` to take Process directly?\n\nI think the calling code should know if it called Start or not, right?",
       "revId": "3839f1928a7f516c42b809ffebd733ff4e36ef58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22bc7ae8_5e14b5db",
+        "filename": "resultdb/cli/terminate_unix.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-07-02T05:49:07Z",
+      "side": 1,
+      "message": "Done, i think.",
+      "parentUuid": "ce87e211_00a272ce",
+      "revId": "3839f1928a7f516c42b809ffebd733ff4e36ef58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
