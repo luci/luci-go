@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bee12a0f_6111efec",
+        "filename": "cv/internal/run/impl/handler/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-02T17:13:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "558183c9_b62c5c2d",
+      "range": {
+        "startLine": 44,
+        "startChar": 27,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "371522d0c69090aa932bb951f344cb32fda46594",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bd9724cf_12424665",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-07-02T05:50:26Z",
       "side": 1,
       "message": "nit: Should this goes to cvtesting?",
+      "range": {
+        "startLine": 72,
+        "startChar": 3,
+        "endLine": 73,
+        "endChar": 66
+      },
+      "revId": "371522d0c69090aa932bb951f344cb32fda46594",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e87d62c_37916595",
+        "filename": "cv/internal/run/impl/handler/start_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-02T17:13:42Z",
+      "side": 1,
+      "message": "Yeah, definitely considered, esp. the getSentDistr func.\nbut I don\u0027t know how to make it work well yet, and I didn\u0027t want to spread stupidity just yet.",
+      "parentUuid": "bd9724cf_12424665",
       "range": {
         "startLine": 72,
         "startChar": 3,
