@@ -103,6 +103,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f5eff63a_a8f00696",
+        "filename": "resultdb/cli/terminate_unix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-07-02T00:35:36Z",
+      "side": 1,
+      "message": "There\u0027s an issue though, the main goroutine will be blocked on cmd.Wait() when we get the interrupt, and it won\u0027t unblock until after the process is done. (Which we are trying to induce here).\n\nDid you mean that we should guard against racy access to cmd.Process instead of cmd?",
+      "parentUuid": "55bb3455_9a3e08b9",
+      "range": {
+        "startLine": 38,
+        "startChar": 8,
+        "endLine": 38,
+        "endChar": 11
+      },
+      "revId": "8da7203d925a70f50b8c7648d15720986b3650e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "81b1cdb5_65718884",
         "filename": "resultdb/cli/terminate_windows.go",
         "patchSetId": 2
