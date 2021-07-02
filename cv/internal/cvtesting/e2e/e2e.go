@@ -156,6 +156,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		RunNotifier: t.RunNotifier,
 	}
 	t.AdminServer = &admin.AdminServer{
+		TQDispatcher:  t.TQDispatcher,
 		RunNotifier:   t.RunNotifier,
 		PMNotifier:    t.PMNotifier,
 		GerritUpdater: clUpdater,
