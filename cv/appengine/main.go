@@ -89,6 +89,7 @@ func main() {
 			RunNotifier: runNotifier,
 		})
 		adminpb.RegisterAdminServer(srv.PRPC, &admin.AdminServer{
+			TQDispatcher:  &tq.Default,
 			GerritUpdater: clUpdater,
 			PMNotifier:    pmNotifier,
 			RunNotifier:   runNotifier,
