@@ -364,13 +364,13 @@ func TestListChanges(t *testing.T) {
 		f := WithCIs("empty", ACLRestricted("empty"))
 		ctx := f.Install(context.Background())
 
-		mustCurrentClient := func(host, luciProject string) gerrit.QueryClient {
+		mustCurrentClient := func(host, luciProject string) gerrit.Client {
 			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl
 		}
 
-		listChangeIDs := func(client gerrit.QueryClient, req *gerritpb.ListChangesRequest) []int {
+		listChangeIDs := func(client gerrit.Client, req *gerritpb.ListChangesRequest) []int {
 			out, err := client.ListChanges(ctx, req)
 			So(err, ShouldBeNil)
 			So(out.GetMoreChanges(), ShouldBeFalse)
@@ -526,7 +526,7 @@ func TestSetReview(t *testing.T) {
 		tc.Add(2 * time.Minute)
 		ctx = f.Install(ctx)
 
-		mustWriterClient := func(host, luciProject string) gerrit.CLWriterClient {
+		mustWriterClient := func(host, luciProject string) gerrit.Client {
 			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl
@@ -684,7 +684,7 @@ func TestSubmitRevision(t *testing.T) {
 		tc.Add(2 * time.Minute)
 		ctx = f.Install(ctx)
 
-		mustWriterClient := func(host, luciProject string) gerrit.CLWriterClient {
+		mustWriterClient := func(host, luciProject string) gerrit.Client {
 			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl

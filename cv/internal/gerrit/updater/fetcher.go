@@ -78,7 +78,7 @@ type fetcher struct {
 	updatedHint time.Time
 	forceNotify bool
 
-	g gerrit.CLReaderClient
+	g gerrit.Client
 
 	externalID changelist.ExternalID
 	priorCL    *changelist.CL

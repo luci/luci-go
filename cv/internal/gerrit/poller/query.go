@@ -103,7 +103,7 @@ type singleQuery struct {
 	luciProject string
 	sp          *SubPoller
 	p           *Poller
-	client      gerrit.QueryClient
+	client      gerrit.Client
 }
 
 func (q *singleQuery) full(ctx context.Context) error {
