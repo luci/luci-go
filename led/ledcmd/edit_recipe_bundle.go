@@ -121,6 +121,11 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, authOpts aut
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
 		je.TaskPayloadSource("", "")
 		je.TaskPayloadPath(RecipeDirectory)
+		if opts.DebugSleep != 0 {
+			je.Env(map[string]string{
+				"RECIPES_DEBUG_SLEEP": fmt.Sprintf("%f", opts.DebugSleep.Seconds()),
+			})
+		}
 	})
 }
 
@@ -175,22 +180,6 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 	if err = cmdErr(cmd, cmd.Run(), "creating bundle"); err != nil {
 		return
 	}
-	if opts.DebugSleep != 0 {
-		for _, basename := range []string{"recipes", "luciexe"} {
-			fname := filepath.Join(toDirectory, basename)
-			seconds := opts.DebugSleep / time.Second
-			msg := "echo ENTERING DEBUG SLEEP. SSH to the bot to debug."
-
-			if err = appendText(fname, "\n%s\nsleep %d\n", msg, seconds); err != nil {
-				return
-			}
-			// Wait for a bogus event that won't occur... Windows sucks, amirite?
-			if err = appendText(fname+".bat", "\r\n%s\r\nwaitfor /t %d DebugSessionEnd\r\n", msg, seconds); err != nil {
-				return
-			}
-		}
-	}
-
 	return
 }
 
