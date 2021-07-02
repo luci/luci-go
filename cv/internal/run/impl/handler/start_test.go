@@ -15,12 +15,21 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
+	"google.golang.org/protobuf/types/known/durationpb"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -35,16 +44,34 @@ func TestStart(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
+		const (
+			lProject           = "chromium"
+			stabilizationDelay = time.Minute
+			startLatency       = 2 * time.Minute
+		)
+
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{
+			Name: "combinable",
+			CombineCls: &cfgpb.CombineCLs{
+				StabilizationDelay: durationpb.New(stabilizationDelay),
+			},
+		}}})
+
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:         "chromium/1111111111111-deadbeef",
-				Status:     run.Status_PENDING,
-				CreateTime: clock.Now(ctx).UTC().Add(-1 * time.Minute),
+				ID:            lProject + "/1111111111111-deadbeef",
+				Status:        run.Status_PENDING,
+				CreateTime:    clock.Now(ctx).UTC().Add(-startLatency),
+				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			},
 		}
 		h := &Impl{}
 
 		Convey("Starts when Run is PENDING", func() {
+			ctx, _, _ = tsmon.WithFakes(ctx)
+			tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
+
 			rs.Run.Status = run.Status_PENDING
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
@@ -52,6 +79,11 @@ func TestStart(t *testing.T) {
 			So(res.State.Run.StartTime, ShouldResemble, clock.Now(ctx).UTC())
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
+
+			So(tsmonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
+				ShouldAlmostEqual, startLatency.Seconds())
+			So(tsmonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
+				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
 		})
 
 		statuses := []run.Status{
@@ -73,4 +105,9 @@ func TestStart(t *testing.T) {
 			})
 		}
 	})
+}
+
+func tsmonSentDistr(ctx context.Context, m types.Metric, fieldVals ...interface{}) *distribution.Distribution {
+	resetTime := time.Time{}
+	return tsmon.GetState(ctx).Store().Get(ctx, m, resetTime, fieldVals).(*distribution.Distribution)
 }

@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -38,8 +39,24 @@ func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 		return &Result{State: rs}, nil
 	}
 
+	cg, err := rs.LoadConfigGroup(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	res := &Result{State: rs.ShallowCopy()}
 	res.State.Run.Status = run.Status_RUNNING
 	res.State.Run.StartTime = clock.Now(ctx).UTC()
+	recordPickupLatency(ctx, &(res.State.Run), cg)
 	return res, nil
+}
+
+func recordPickupLatency(ctx context.Context, r *run.Run, cg *prjcfg.ConfigGroup) {
+	delay := r.StartTime.Sub(r.CreateTime)
+	metricPickupLatencyS.Add(ctx, delay.Seconds(), r.ID.LUCIProject())
+
+	if d := cg.Content.GetCombineCls().GetStabilizationDelay(); d != nil {
+		delay -= d.AsDuration()
+	}
+	metricPickupLatencyAdjustedS.Add(ctx, delay.Seconds(), r.ID.LUCIProject())
 }
