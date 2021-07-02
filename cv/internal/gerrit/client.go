@@ -24,13 +24,43 @@ import (
 )
 
 // Client defines a subset of Gerrit API used by CV.
-//
-// It's a union of more specific interfaces such that small code chunks can be tested
-// by faking or mocking only relevant methods.
 type Client interface {
-	CLReaderClient
-	CLWriterClient
-	QueryClient
+	// Lists changes that match a query.
+	//
+	// Note, although the Gerrit API supports multiple queries, for which
+	// it can return multiple lists of changes, this is not a foreseen use-case
+	// so this API just includes one query with one returned list of changes.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
+	ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error)
+
+	// Loads a change by id.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
+	GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error)
+
+	// Retrieves related changes of a revision.
+	//
+	// Related changes are changes that either depend on, or are dependencies of
+	// the revision.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-related-changes
+	GetRelatedChanges(ctx context.Context, in *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error)
+
+	// Lists the files that were modified, added or deleted in a revision.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
+	ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error)
+
+	// Set various review bits on a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
+	SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error)
+
+	// Submit a specific revision of a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
+	SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error)
 }
 
 // Client must be a subset of gerritpb.Client.
@@ -59,52 +89,6 @@ func CurrentClient(ctx context.Context, gerritHost, luciProject string) (Client,
 		return nil, errors.New("not a valid Gerrit context, no ClientFactory available")
 	}
 	return f(ctx, gerritHost, luciProject)
-}
-
-// CLReaderClient defines a subset of Gerrit API used by CV to fetch CL details.
-type CLReaderClient interface {
-	// Loads a change by id.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
-	GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error)
-
-	// Retrieves related changes of a revision.
-	//
-	// Related changes are changes that either depend on, or are dependencies of
-	// the revision.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-related-changes
-	GetRelatedChanges(ctx context.Context, in *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error)
-
-	// Lists the files that were modified, added or deleted in a revision.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
-	ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error)
-}
-
-// CLWriterClient defines a subset of Gerrit API used by CV to mutate CL.
-type CLWriterClient interface {
-	// Set various review bits on a change.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
-	SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error)
-
-	// Submit a specific revision of a change.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
-	SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error)
-}
-
-// QueryClient defines a subset of Gerrit API used by CV to query for CLs.
-type QueryClient interface {
-	// Lists changes that match a query.
-	//
-	// Note, although the Gerrit API supports multiple queries, for which
-	// it can return multiple lists of changes, this is not a foreseen use-case
-	// so this API just includes one query with one returned list of changes.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
-	ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error)
 }
 
 // ClientFactory creates Client tied to Gerrit host and LUCI project.
