@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -75,12 +76,12 @@ type ProjectManager struct {
 
 // New creates a new ProjectManager and registers it for handling tasks created
 // by the given TQ Notifier.
-func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectManager {
+func New(n *prjmanager.Notifier, rn *run.Notifier, g gerrit.ClientFactory, u *updater.Updater) *ProjectManager {
 	pm := &ProjectManager{
 		pmNotifier:  n,
 		runNotifier: rn,
 		clPurger:    clpurger.New(n, u),
-		clPoller:    poller.New(n.TasksBinding.TQDispatcher, u, n),
+		clPoller:    poller.New(n.TasksBinding.TQDispatcher, g, u, n),
 	}
 	n.TasksBinding.ManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
