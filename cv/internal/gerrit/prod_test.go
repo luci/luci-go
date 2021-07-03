@@ -130,14 +130,11 @@ func TestMakeClient(t *testing.T) {
 				So(requests, ShouldHaveLength, 1)
 				So(requests[0].Header["Authorization"], ShouldResemble, []string{"Bearer modern-1"})
 
-				// Ensure clients re-use works even if context expires.
+				// Ensure client can be used even if context of its creation expires.
 				limitedCancel()
 				So(limitedCtx.Err(), ShouldNotBeNil)
 				// force token refresh
 				tclock.Add(3 * time.Minute)
-				c2, err := f.makeClient(ctx, u.Host, "modern")
-				So(err, ShouldBeNil)
-				So(c2, ShouldEqual, c) // pointer comparison
 				_, err = c.ListChanges(ctx, &gerrit.ListChangesRequest{})
 				So(err, ShouldBeNil)
 				So(requests, ShouldHaveLength, 2)
@@ -156,12 +153,9 @@ func TestMakeClient(t *testing.T) {
 				tokenB64 := base64.StdEncoding.EncodeToString([]byte("legacy-2"))
 				So(requests[0].Header["Authorization"], ShouldResemble, []string{"Basic " + tokenB64})
 
-				// Ensure clients re-use works even if context expires.
+				// Ensure client can be used even if context of its creation expires.
 				limitedCancel()
 				So(limitedCtx.Err(), ShouldNotBeNil)
-				c2, err := f.makeClient(ctx, u.Host, "not-migrated")
-				So(err, ShouldBeNil)
-				So(c2, ShouldEqual, c) // pointer comparison
 				_, err = c.ListChanges(ctx, &gerrit.ListChangesRequest{})
 				So(err, ShouldBeNil)
 				So(requests, ShouldHaveLength, 2)
