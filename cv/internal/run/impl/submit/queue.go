@@ -181,23 +181,21 @@ func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
 		return err
 	}
 
-	var notify common.RunID
 	switch waitlistIdx := q.Waitlist.Index(runID); {
-	case waitlistIdx >= 0:
+	case waitlistIdx != -1:
 		q.Waitlist = append(q.Waitlist[:waitlistIdx], q.Waitlist[waitlistIdx+1:]...)
 	case q.Current == runID:
 		q.Current = ""
-		if len(q.Waitlist) > 0 {
-			notify = q.Waitlist[0]
-		}
 	default:
 		return nil
 	}
+
 	if err := datastore.Put(ctx, q); err != nil {
 		return errors.Annotate(err, "failed to put SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
 	}
-	if notify != "" {
-		if err := notifyFn(ctx, notify, q.nextSubmissionETA()); err != nil {
+
+	if q.Current == "" && len(q.Waitlist) > 0 {
+		if err := notifyFn(ctx, q.Waitlist[0], q.nextSubmissionETA()); err != nil {
 			return err
 		}
 	}

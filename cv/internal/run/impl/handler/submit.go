@@ -343,11 +343,17 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 // releaseSubmitQueueIfTaken checks if submit queue is occupied by the given
 // Run before trying to release.
 func releaseSubmitQueueIfTaken(ctx context.Context, runID common.RunID, rm RM) error {
-	switch current, err := submit.CurrentRun(ctx, runID.LUCIProject()); {
+	switch current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, runID); {
 	case err != nil:
 		return err
 	case current == runID:
 		return releaseSubmitQueue(ctx, runID, rm)
+	default:
+		for _, w := range waitlist {
+			if w == runID {
+				return releaseSubmitQueue(ctx, runID, rm)
+			}
+		}
 	}
 	return nil
 }
