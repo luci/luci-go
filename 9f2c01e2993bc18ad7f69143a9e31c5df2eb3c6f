@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8615929c_ff1d4704",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-03T23:32:02Z",
+      "side": 1,
+      "message": "JFYI: it\u0027s what I had to do in order to deploy dirty code to prod.",
+      "revId": "9f2c01e2993bc18ad7f69143a9e31c5df2eb3c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
