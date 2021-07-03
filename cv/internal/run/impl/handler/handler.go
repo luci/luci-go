@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/common/tree"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -115,6 +116,7 @@ type CLUpdater interface {
 type Impl struct {
 	PM         PM
 	RM         RM
+	GFactory   gerrit.ClientFactory
 	CLUpdater  CLUpdater
 	BQExporter *bq.Exporter
 	TreeClient tree.Client
