@@ -48,7 +48,7 @@ func TestMakeClient(t *testing.T) {
 		const gHost = "first.example.com"
 
 		So(datastore.Put(ctx, &netrcToken{gHost, "legacy-1"}), ShouldBeNil)
-		f, err := newFactory(ctx)
+		f, err := newProd(ctx)
 		So(err, ShouldBeNil)
 
 		Convey("factory.token", func() {
