@@ -417,8 +417,8 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 			}
 		}
 		if len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0 {
-			validateRegexp(ctx, "location_regexp", b.LocationRegexp)
-			validateRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude)
+			validateRegexp(ctx, "location_regexp", b.LocationRegexp, locationRegexpHeuristic)
+			validateRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude, locationRegexpHeuristic)
 			if b.IncludableOnly {
 				ctx.Errorf("includable_only is not combinable with location_regexp[_exclude]")
 			}
@@ -567,17 +567,46 @@ func validateEquivalentBuilder(ctx *validation.Context, b *v2.Verifiers_Tryjob_E
 	}
 }
 
-func validateRegexp(ctx *validation.Context, field string, values []string) {
+type regexpExtraCheck func(ctx *validation.Context, field string, r *regexp.Regexp, value string)
+
+func validateRegexp(ctx *validation.Context, field string, values []string, extra ...regexpExtraCheck) {
 	valid := stringset.New(len(values))
 	for i, v := range values {
 		if v == "" {
 			ctx.Errorf("%s #%d: must not be empty", field, i+1)
-		} else if _, err := regexp.Compile(v); err != nil {
-			ctx.Errorf("%s %q: %s", field, v, err)
-		} else if !valid.Add(v) {
+			continue
+		}
+		if !valid.Add(v) {
 			ctx.Errorf("duplicate %s: %q", field, v)
+			continue
+		}
+		r, err := regexp.Compile(v)
+		if err != nil {
+			ctx.Errorf("%s %q: %s", field, v, err)
+			continue
+		}
+		for _, f := range extra {
+			f(ctx, field, r, v)
 		}
 	}
+}
+
+// locationRegexpHeuristic catches common mistakes in location_regexp[_exclude].
+func locationRegexpHeuristic(ctx *validation.Context, field string, r *regexp.Regexp, value string) {
+	if prefix, _ := r.LiteralPrefix(); !strings.HasPrefix(prefix, "https://") {
+		return
+	}
+	const gsource = ".googlesource.com"
+	idx := strings.Index(value, gsource)
+	if idx == -1 {
+		return
+	}
+	subdomain := value[len("https://"):idx]
+	if strings.HasSuffix(subdomain, "-review") {
+		return
+	}
+	exp := value[:idx] + "-review" + value[idx:]
+	ctx.Warningf("%s %q is probably missing '-review' suffix; did you mean %q?", field, value, exp)
 }
 
 func validateParentLocationRegexp(ctx *validation.Context, child, parent *v2.Verifiers_Tryjob_Builder) {

@@ -578,6 +578,12 @@ func TestTryjobValidation(t *testing.T) {
 					location_regexp: "b"
 					location_regexp_exclude: "redundant/but/not/caught"
 				}`), ShouldBeNil)
+
+			So(mustWarn(validate(`
+				builders {
+					name: "a/b/c"
+					location_regexp: "https://x.googlesource.com/my/repo/[+]/*.cpp"
+				}`)), ShouldErrLike, `did you mean "https://x-review.googlesource.com/my/repo/[+]/*.cpp"?`)
 		})
 
 		Convey("equivalent_to", func() {
