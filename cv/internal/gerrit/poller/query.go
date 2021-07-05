@@ -78,21 +78,21 @@ const (
 	moreChangesTrustFactor = 0.5
 )
 
-// subpoll queries Gerrit and updates the state of individual SubPoller.
-func (p *Poller) subpoll(ctx context.Context, luciProject string, sp *SubPoller) error {
+// doOneQuery queries Gerrit and updates the query's state.
+func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QueryState) error {
 	q := singleQuery{
 		luciProject: luciProject,
-		sp:          sp,
+		qs:          qs,
 		p:           p,
 	}
 	var err error
-	if q.client, err = p.gFactory(ctx, sp.GetHost(), luciProject); err != nil {
+	if q.client, err = p.gFactory(ctx, qs.GetHost(), luciProject); err != nil {
 		return err
 	}
-	if sp.GetLastFullTime() == nil {
+	if qs.GetLastFullTime() == nil {
 		return q.full(ctx)
 	}
-	nextFullAt := sp.GetLastFullTime().AsTime().Add(fullPollInterval)
+	nextFullAt := qs.GetLastFullTime().AsTime().Add(fullPollInterval)
 	if clock.Now(ctx).Before(nextFullAt) {
 		return q.incremental(ctx)
 	}
@@ -101,7 +101,7 @@ func (p *Poller) subpoll(ctx context.Context, luciProject string, sp *SubPoller)
 
 type singleQuery struct {
 	luciProject string
-	sp          *SubPoller
+	qs          *QueryState
 	p           *Poller
 	client      gerrit.Client
 }
@@ -110,7 +110,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 	ctx = logging.SetField(ctx, "poll", "full")
 	started := clock.Now(ctx)
 	after := started.Add(-common.MaxTriggerAge)
-	changes, err := q.fetch(ctx, after, buildQuery(q.sp, queryLimited))
+	changes, err := q.fetch(ctx, after, q.qs.gerritString(queryLimited))
 	// There can be partial result even if err != nil.
 	switch err2 := q.scheduleTasks(ctx, changes, true); {
 	case err != nil:
@@ -120,17 +120,17 @@ func (q *singleQuery) full(ctx context.Context) error {
 	}
 
 	cur := uniqueSortedIDsOf(changes)
-	if diff := common.DifferenceSorted(q.sp.Changes, cur); len(diff) != 0 {
+	if diff := common.DifferenceSorted(q.qs.Changes, cur); len(diff) != 0 {
 		// `diff` changes are no longer matching the limited query,
 		// so they were probably updated since.
-		if err := q.p.scheduleRefreshTasks(ctx, q.luciProject, q.sp.GetHost(), diff); err != nil {
+		if err := q.p.scheduleRefreshTasks(ctx, q.luciProject, q.qs.GetHost(), diff); err != nil {
 			return err
 		}
 	}
 
-	q.sp.Changes = cur
-	q.sp.LastFullTime = timestamppb.New(started)
-	q.sp.LastIncrTime = nil
+	q.qs.Changes = cur
+	q.qs.LastFullTime = timestamppb.New(started)
+	q.qs.LastIncrTime = nil
 	return nil
 }
 
@@ -138,9 +138,9 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 	ctx = logging.SetField(ctx, "poll", "incremental")
 	started := clock.Now(ctx)
 
-	lastInc := q.sp.GetLastIncrTime()
+	lastInc := q.qs.GetLastIncrTime()
 	if lastInc == nil {
-		if lastInc = q.sp.GetLastFullTime(); lastInc == nil {
+		if lastInc = q.qs.GetLastFullTime(); lastInc == nil {
 			panic("must have been a full poll")
 		}
 	}
@@ -149,7 +149,7 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 	// vote. This ensures that CV notices quickly when previously NEW & CQ-ed
 	// change has either CQ vote removed OR status changed (e.g. submitted or
 	// abandoned).
-	changes, err := q.fetch(ctx, after, buildQuery(q.sp, queryAll))
+	changes, err := q.fetch(ctx, after, q.qs.gerritString(queryAll))
 	// There can be partial result even if err != nil.
 	switch err2 := q.scheduleTasks(ctx, changes, false); {
 	case err != nil:
@@ -158,8 +158,8 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 		return err2
 	}
 
-	q.sp.Changes = common.UnionSorted(q.sp.Changes, uniqueSortedIDsOf(changes))
-	q.sp.LastIncrTime = timestamppb.New(started)
+	q.qs.Changes = common.UnionSorted(q.qs.Changes, uniqueSortedIDsOf(changes))
+	q.qs.LastIncrTime = timestamppb.New(started)
 	return nil
 }
 
@@ -208,7 +208,7 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 		var err error
 		eids := make([]changelist.ExternalID, len(changes))
 		for i, c := range changes {
-			if eids[i], err = changelist.GobID(q.sp.GetHost(), c.GetNumber()); err != nil {
+			if eids[i], err = changelist.GobID(q.qs.GetHost(), c.GetNumber()); err != nil {
 				return err
 			}
 		}
@@ -225,7 +225,7 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 		for i, c := range changes {
 			payload := &updater.RefreshGerritCL{
 				LuciProject: q.luciProject,
-				Host:        q.sp.GetHost(),
+				Host:        q.qs.GetHost(),
 				Change:      c.GetNumber(),
 				UpdatedHint: c.GetUpdated(),
 				ForceNotify: forceNotifyPM && (clids[i] == 0),
@@ -322,10 +322,10 @@ const (
 	queryAll
 )
 
-// buildQuery returns query string.
+// gerritString encodes query for Gerrit.
 //
 // If queryLimited, unlike queryAll, searches for NEW CLs with CQ vote.
-func buildQuery(sp *SubPoller, kind queryKind) string {
+func (qs *QueryState) gerritString(kind queryKind) string {
 	buf := strings.Builder{}
 	switch kind {
 	case queryLimited:
@@ -337,8 +337,9 @@ func buildQuery(sp *SubPoller, kind queryKind) string {
 		panic(fmt.Errorf("unknown queryKind %d", kind))
 	}
 	// TODO(crbug/1163177): specify `branch:` search term to restrict search to
-	// specific refs. This requires changing partitioning poller into subpollers,
-	// but will provide more targeted queries, reducing load on CV & Gerrit.
+	// specific refs. For projects watching a single ref, this will provide more
+	// targeted queries, reducing load on CV & Gerrit, but care must be taken to
+	// to avoid excessive number of queries when multiple refs are watched.
 
 	emitProjectValue := func(p string) {
 		// Even though it appears to work without, Gerrit doc says project names
@@ -350,14 +351,14 @@ func buildQuery(sp *SubPoller, kind queryKind) string {
 	}
 
 	// One of .OrProjects or .CommonProjectPrefix must be set.
-	switch prs := sp.GetOrProjects(); len(prs) {
+	switch prs := qs.GetOrProjects(); len(prs) {
 	case 0:
-		if sp.GetCommonProjectPrefix() == "" {
+		if qs.GetCommonProjectPrefix() == "" {
 			panic("partitionConfig function should have ensured this")
 		}
 		// project*s* means find matching projects by prefix
 		buf.WriteString("projects:")
-		emitProjectValue(sp.GetCommonProjectPrefix())
+		emitProjectValue(qs.GetCommonProjectPrefix())
 	case 1:
 		buf.WriteString("project:")
 		emitProjectValue(prs[0])
