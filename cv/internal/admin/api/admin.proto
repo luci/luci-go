@@ -25,7 +25,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 import "go.chromium.org/luci/cv/internal/configs/prjcfg/tasks.proto";
 import "go.chromium.org/luci/cv/internal/gerrit/poller/storage.proto";
-import "go.chromium.org/luci/cv/internal/gerrit/poller/task/task.proto";
+import "go.chromium.org/luci/cv/internal/gerrit/poller/task.proto";
 import "go.chromium.org/luci/cv/internal/gerrit/updater/tasks.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/events.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
@@ -233,7 +233,7 @@ message ScheduleTaskRequest {
   // meant as a debug API only.
 
   cv.internal.configs.prjcfg.RefreshProjectConfigTask refresh_project_config = 1;
-  cv.internal.gerrit.poller.task.PollGerritTask poll_gerrit = 2;
+  cv.internal.gerrit.poller.PollGerritTask poll_gerrit = 2;
   cv.internal.gerrit.updater.RefreshGerritCL refresh_gerrit_cl = 3;
   cv.internal.gerrit.updater.BatchRefreshGerritCL batch_refresh_gerrit_cl = 4;
   cv.internal.prjmanager.prjpb.ManageProjectTask manage_project = 5;
