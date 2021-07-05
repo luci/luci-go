@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package cv.internal.gerrit.poller.task;
+package cv.internal.gerrit.poller;
 
-option go_package = "go.chromium.org/luci/cv/internal/gerrit/poller/task;task";
+option go_package = "go.chromium.org/luci/cv/internal/gerrit/poller;poller";
 
 import "google/protobuf/timestamp.proto";
 

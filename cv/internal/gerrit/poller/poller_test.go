@@ -34,8 +34,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	pt "go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
-	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -55,7 +53,7 @@ func TestSchedule(t *testing.T) {
 		p := New(ct.TQDispatcher, nil, nil, nil)
 
 		So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
-		payloads := pt.PFilter(ct.TQ.Tasks())
+		payloads := FilterPayloads(ct.TQ.Tasks().SortByETA().Payloads())
 		So(payloads, ShouldHaveLength, 1)
 		first := payloads[0]
 		So(first.GetLuciProject(), ShouldEqual, project)
@@ -65,11 +63,11 @@ func TestSchedule(t *testing.T) {
 
 		Convey("idempotency via task deduplication", func() {
 			So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
-			So(pt.PFilter(ct.TQ.Tasks()), ShouldHaveLength, 1)
+			So(FilterPayloads(ct.TQ.Tasks().SortByETA().Payloads()), ShouldHaveLength, 1)
 
 			Convey("but only for the same project", func() {
 				So(p.schedule(ctx, "another-project", time.Time{}), ShouldBeNil)
-				ids := pt.Projects(ct.TQ.Tasks())
+				ids := FilterProjects(ct.TQ.Tasks().SortByETA().Payloads())
 				sort.Strings(ids)
 				So(ids, ShouldResemble, []string{"another-project", project})
 			})
@@ -77,14 +75,14 @@ func TestSchedule(t *testing.T) {
 
 		Convey("schedule next poll", func() {
 			So(p.schedule(ctx, project, firstETA), ShouldBeNil)
-			payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
+			payloads := FilterPayloads(ct.TQ.Tasks().SortByETA().Payloads())
 			So(payloads, ShouldHaveLength, 2)
 			So(payloads[1].GetEta().AsTime(), ShouldEqual, firstETA.Add(pollInterval))
 
 			Convey("from a delayed prior poll", func() {
 				ct.Clock.Set(firstETA.Add(pollInterval).Add(pollInterval / 2))
 				So(p.schedule(ctx, project, firstETA), ShouldBeNil)
-				payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
+				payloads := FilterPayloads(ct.TQ.Tasks().SortByETA().Payloads())
 				So(payloads, ShouldHaveLength, 3)
 				So(payloads[2].GetEta().AsTime(), ShouldEqual, firstETA.Add(2*pollInterval))
 			})
@@ -124,7 +122,7 @@ func TestObservesProjectLifetime(t *testing.T) {
 			So(mustLoadState().EVersion, ShouldEqual, 1)
 			for i := 0; i < 10; i++ {
 				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassID))
 			}
 			So(mustLoadState().EVersion, ShouldEqual, 11)
 		})
@@ -161,7 +159,7 @@ func TestObservesProjectLifetime(t *testing.T) {
 			So(mustLoadState().EVersion, ShouldEqual, 1)
 
 			prjcfgtest.Disable(ctx, lProject)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassID))
 
 			So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 			So(ct.TQ.Tasks(), ShouldBeEmpty)
