@@ -23,7 +23,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -31,7 +30,6 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -94,66 +92,6 @@ func TestSchedule(t *testing.T) {
 					So(payloads[2].GetEta().AsTime(), ShouldEqual, firstETA.Add(2*pollInterval))
 				})
 			})
-		})
-	})
-}
-
-func TestPartitionConfig(t *testing.T) {
-	t.Parallel()
-
-	Convey("partitionConfig works", t, func() {
-
-		Convey("groups by prefix if possible", func() {
-			// makeCfgs merges several projects configs into one just to re-use
-			// singleRepoConfig.
-			makeCfgs := func(cfgs ...*cfgpb.Config) (ret []*prjcfg.ConfigGroup) {
-				for _, cfg := range cfgs {
-					for _, cg := range cfg.GetConfigGroups() {
-						ret = append(ret, &prjcfg.ConfigGroup{Content: cg})
-					}
-				}
-				return
-			}
-			cgs := makeCfgs(singleRepoConfig("h1", "infra/222", "infra/111"))
-			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
-				{Host: "h1", OrProjects: []string{"infra/111", "infra/222"}},
-			})
-
-			cgs = append(cgs, makeCfgs(singleRepoConfig("h1", sharedPrefixRepos("infra", 30)...))...)
-			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
-				{Host: "h1", CommonProjectPrefix: "infra"},
-			})
-			cgs = append(cgs, makeCfgs(singleRepoConfig("h2", "infra/499", "infra/132"))...)
-			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
-				{Host: "h1", CommonProjectPrefix: "infra"},
-				{Host: "h2", OrProjects: []string{"infra/132", "infra/499"}},
-			})
-		})
-
-		Convey("evenly distributes repos among SubPollers", func() {
-			So(minReposPerPrefixQuery, ShouldBeGreaterThan, 5)
-			repos := stringset.New(23)
-			repos.AddAll(sharedPrefixRepos("a", 5))
-			repos.AddAll(sharedPrefixRepos("b", 5))
-			repos.AddAll(sharedPrefixRepos("c", 3))
-			repos.AddAll(sharedPrefixRepos("d", 5))
-			repos.AddAll(sharedPrefixRepos("e", 5))
-			subpollers := partitionHostRepos(
-				"host",
-				repos.ToSlice(), // effectively shuffles repos
-				7,               // at most 7 per query.
-			)
-			So(subpollers, ShouldHaveLength, 4) // 7*3 < 23 < 7*4
-
-			for _, sp := range subpollers {
-				// Ensure each has 5..6 repos instead max of 7.
-				So(len(sp.GetOrProjects()), ShouldBeBetweenOrEqual, 5, 6)
-				So(sort.StringsAreSorted(sp.GetOrProjects()), ShouldBeTrue)
-				repos.DelAll(sp.GetOrProjects())
-			}
-
-			// Ensure no overlaps or missed repos.
-			So(repos.ToSortedSlice(), ShouldResemble, []string{})
 		})
 	})
 }
