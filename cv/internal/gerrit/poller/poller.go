@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -48,13 +49,14 @@ type PM interface {
 // ones.
 type Poller struct {
 	tqd       *tq.Dispatcher
+	gFactory  gerrit.ClientFactory
 	clUpdater *updater.Updater
 	pm        PM
 }
 
 // New creates a new Poller, registering it in the given TQ dispatcher.
-func New(tqd *tq.Dispatcher, clUpdater *updater.Updater, pm PM) *Poller {
-	p := &Poller{tqd, clUpdater, pm}
+func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, clUpdater *updater.Updater, pm PM) *Poller {
+	p := &Poller{tqd, g, clUpdater, pm}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           task.ClassID,
 		Prototype:    &task.PollGerritTask{},

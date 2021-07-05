@@ -56,7 +56,7 @@ func TestSchedule(t *testing.T) {
 		ct.Clock.Set(ct.Clock.Now().Truncate(pollInterval).Add(pollInterval))
 		const project = "chromium"
 
-		p := New(ct.TQDispatcher, nil, nil)
+		p := New(ct.TQDispatcher, nil, nil, nil)
 
 		Convey("schedule works", func() {
 			So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
@@ -171,7 +171,7 @@ func TestScheduleRefreshTasks(t *testing.T) {
 		const gRepo = "infra/infra"
 
 		pm := pmMock{}
-		p := New(ct.TQDispatcher, updater.New(ct.TQDispatcher, ct.GFake.Factory(), &pm, nil), &pm)
+		p := New(ct.TQDispatcher, ct.GFake.Factory(), updater.New(ct.TQDispatcher, ct.GFake.Factory(), &pm, nil), &pm)
 
 		changes := []int64{1, 2, 3, 4, 5}
 		const notYetSaved = 4
@@ -247,7 +247,7 @@ func TestPoller(t *testing.T) {
 		}
 
 		pm := pmMock{}
-		p := New(ct.TQDispatcher, updater.New(ct.TQDispatcher, ct.GFake.Factory(), &pm, nil), &pm)
+		p := New(ct.TQDispatcher, ct.GFake.Factory(), updater.New(ct.TQDispatcher, ct.GFake.Factory(), &pm, nil), &pm)
 
 		Convey("without project config, it's a noop", func() {
 			So(p.Poke(ctx, lProject), ShouldBeNil)
