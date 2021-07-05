@@ -16,6 +16,7 @@ package manager
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -41,9 +42,9 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -54,11 +55,10 @@ func TestProjectTQLateTasks(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		ctx, _ = runtest.MockDispatch(ctx)
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
-		runNotifier := run.NewNotifier(ct.TQDispatcher)
-		_ = New(pmNotifier, runNotifier, ct.GFake.Factory(), updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, runNotifier))
+		runNotifier := runNotifierMock{}
+		_ = New(pmNotifier, &runNotifier, ct.GFake.Factory(), updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, &runNotifier))
 
 		const lProject = "infra"
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
@@ -97,11 +97,10 @@ func TestProjectLifeCycle(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		ctx, rmDispatcher := runtest.MockDispatch(ctx)
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
-		runNotifier := run.NewNotifier(ct.TQDispatcher)
-		_ = New(pmNotifier, runNotifier, ct.GFake.Factory(), updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, runNotifier))
+		runNotifier := runNotifierMock{}
+		_ = New(pmNotifier, &runNotifier, ct.GFake.Factory(), updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, &runNotifier))
 
 		const lProject = "infra"
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
@@ -155,9 +154,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				p, _, plog = loadProjectEntities(ctx, lProject)
 				So(p.IncompleteRuns(), ShouldEqual, common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe"))
 				So(plog, ShouldNotBeNil)
-				// Must schedule a task per Run for config updates for each of the
-				// started run.
-				So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
+				So(runNotifier.popUpdateConfig(), ShouldResemble, p.IncompleteRuns())
 
 				Convey("disable project with incomplete runs", func() {
 					prjcfgtest.Disable(ctx, lProject)
@@ -169,9 +166,8 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
 					So(plog, ShouldNotBeNil)
 					So(poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), ShouldResemble, []string{lProject})
-
-					// Must schedule a task per Run for cancellation.
-					So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
+					// Should ask Runs to cancel themselves.
+					So(runNotifier.popCancel(), ShouldResemble, p.IncompleteRuns())
 
 					Convey("wait for all IncompleteRuns to finish", func() {
 						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
@@ -224,9 +220,9 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
-		runNotifier := run.NewNotifier(ct.TQDispatcher)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, runNotifier)
-		pm := New(pmNotifier, runNotifier, ct.GFake.Factory(), clUpdater)
+		runNotifier := runNotifierMock{}
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, &runNotifier)
+		pm := New(pmNotifier, &runNotifier, ct.GFake.Factory(), clUpdater)
 
 		refreshCLAndNotifyPM := func(c int64) {
 			So(clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
@@ -401,4 +397,54 @@ func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
 			},
 		},
 	}
+}
+
+type runNotifierMock struct {
+	m            sync.Mutex
+	cancel       common.RunIDs
+	updateConfig common.RunIDs
+}
+
+func (r *runNotifierMock) NotifyCLUpdated(ctx context.Context, rid common.RunID, cl common.CLID, eversion int) error {
+	panic("not implemented")
+}
+
+func (r *runNotifierMock) Start(ctx context.Context, id common.RunID) error {
+	return nil
+}
+
+func (r *runNotifierMock) PokeNow(ctx context.Context, id common.RunID) error {
+	panic("not implemented")
+}
+
+func (r *runNotifierMock) Cancel(ctx context.Context, id common.RunID) error {
+	r.m.Lock()
+	r.cancel = append(r.cancel, id)
+	r.m.Unlock()
+	return nil
+}
+
+func (r *runNotifierMock) UpdateConfig(ctx context.Context, id common.RunID, hash string, eversion int64) error {
+	r.m.Lock()
+	r.updateConfig = append(r.updateConfig, id)
+	r.m.Unlock()
+	return nil
+}
+
+func (r *runNotifierMock) popUpdateConfig() common.RunIDs {
+	r.m.Lock()
+	out := r.updateConfig
+	r.updateConfig = nil
+	r.m.Unlock()
+	sort.Sort(out)
+	return out
+}
+
+func (r *runNotifierMock) popCancel() common.RunIDs {
+	r.m.Lock()
+	out := r.cancel
+	r.cancel = nil
+	r.m.Unlock()
+	sort.Sort(out)
+	return out
 }
