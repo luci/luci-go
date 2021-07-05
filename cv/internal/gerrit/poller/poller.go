@@ -214,12 +214,14 @@ type State struct {
 	EVersion int64 `gae:",noindex"`
 	// ConfigHash defines which Config version was last worked on.
 	ConfigHash string `gae:",noindex"`
-	// SubPollers track individual states of sub pollers.
+	// QueryStates tracks states of individual queries.
 	//
-	// Most LUCI projects will have just 1 per Gerrit host,
-	// but CV may split the set of watched Gerrit projects (aka Git repos) on the
-	// same Gerrit host among several SubPollers.
-	SubPollers *SubPollers
+	// Most LUCI projects will run just 1 query per Gerrit host.
+	// But, if a LUCI project is watching many Gerrit projects (a.k.a. Git repos),
+	// then the Gerrit projects may be split between several queries.
+	//
+	// TODO(tandrii): rename the datastore property name.
+	QueryStates *QueryStates `gae:"SubPollers"`
 }
 
 // pollWithConfig performs the poll and if necessary updates to newest project config.
@@ -234,15 +236,15 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 		}
 	}
 
-	// Use WorkPool to limit concurrency, but keep track of errors per SubPollers
+	// Use WorkPool to limit concurrency, but keep track of errors per query
 	// ourselves because WorkPool doesn't guarantee specific errors order.
-	errs := make(errors.MultiError, len(stateBefore.SubPollers.GetSubPollers()))
+	errs := make(errors.MultiError, len(stateBefore.QueryStates.GetStates()))
 	err := parallel.WorkPool(10, func(work chan<- func() error) {
-		for i, sp := range stateBefore.SubPollers.GetSubPollers() {
-			i, sp := i, sp
+		for i, qs := range stateBefore.QueryStates.GetStates() {
+			i, qs := i, qs
 			work <- func() error {
-				err := p.subpoll(ctx, luciProject, sp)
-				errs[i] = errors.Annotate(err, "subpoller %s", sp).Err()
+				err := p.doOneQuery(ctx, luciProject, qs)
+				errs[i] = errors.Annotate(err, "query %s", qs).Err()
 				return nil
 			}
 		}
@@ -250,9 +252,9 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 	if err != nil {
 		panic(err)
 	}
-	// Save state regardless of failure of individual subpollers.
+	// Save state regardless of failure of individual queries.
 	if saveErr := save(ctx, &stateBefore); saveErr != nil {
-		// saving error supersedes subpoller errors.
+		// saving error supersedes per-query errors.
 		return saveErr
 	}
 	err = common.MostSevereError(errs)
@@ -263,7 +265,7 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 		// Some progress. We'll retry during next poll.
 		// TODO(tandrii): revisit this logic once CV subscribes to PubSub and makes
 		// polling much less frequent.
-		err = errors.Annotate(err, "failed %d/%d pollers for %q. Most severe error:", n, len(errs), luciProject).Err()
+		err = errors.Annotate(err, "failed %d/%d queries for %q. The most severe error:", n, len(errs), luciProject).Err()
 		common.LogError(ctx, err)
 	}
 	return nil
@@ -280,13 +282,13 @@ func (p *Poller) updateConfig(ctx context.Context, s *State, meta prjcfg.Meta) e
 		return err
 	}
 	proposed := partitionConfig(cgs)
-	toUse, discarded := reuseIfPossible(s.SubPollers.GetSubPollers(), proposed)
+	toUse, discarded := reuseIfPossible(s.QueryStates.GetStates(), proposed)
 	for _, d := range discarded {
 		if err := p.scheduleRefreshTasks(ctx, s.LuciProject, d.GetHost(), d.Changes); err != nil {
 			return err
 		}
 	}
-	s.SubPollers = &SubPollers{SubPollers: toUse}
+	s.QueryStates = &QueryStates{States: toUse}
 	return nil
 }
 

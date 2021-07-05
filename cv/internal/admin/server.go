@@ -219,11 +219,11 @@ func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerReque
 		return nil, status.Errorf(codes.Internal, "failed to fetch poller state")
 	}
 	resp = &adminpb.GetPollerResponse{
-		Project:    s.LuciProject,
-		Eversion:   s.EVersion,
-		ConfigHash: s.ConfigHash,
-		UpdateTime: timestamppb.New(s.UpdateTime),
-		Subpollers: s.SubPollers,
+		Project:     s.LuciProject,
+		Eversion:    s.EVersion,
+		ConfigHash:  s.ConfigHash,
+		UpdateTime:  timestamppb.New(s.UpdateTime),
+		QueryStates: s.QueryStates,
 	}
 	return resp, nil
 }

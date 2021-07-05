@@ -20,12 +20,12 @@ option go_package = "go.chromium.org/luci/cv/internal/gerrit/poller;poller";
 
 import "google/protobuf/timestamp.proto";
 
-// SubPoller represents execution of a single Gerrit query over time.
+// QueryState represents execution of a single Gerrit query over time.
 //
 // Exactly one of (or_projects, common_project_prefix) must be specified.
 // Not using oneof to avoid wrapping or_projects in a message as oneof doesn't
 // support repeated fields.
-message SubPoller {
+message QueryState {
   // Host is Gerrit host.
   string host = 1;
   // Enumerated Gerrit projects, e.g. ["infra/infra", "infra/luci/luci-go"].
@@ -38,17 +38,19 @@ message SubPoller {
   // When the last incremental poll was started.
   google.protobuf.Timestamp last_incr_time = 12;
 
-  // Changes are changes which were last observed by the SubPoller.
+  // Changes are changes which were last observed by the query execution.
   //
   // These are not CL IDs, but Gerrit change numbers.
   //
-  // The full poll resets.
+  // The full poll resets these.
   // The incremental poll adds newly discovered CLs.
   //
   // Sorted.
   repeated int64 changes = 13;
 }
 
-message SubPollers {
-  repeated SubPoller sub_pollers = 1;
+// QueryStates exists to reference several QueryStates as a single property in a
+// Datastore entity.
+message QueryStates {
+  repeated QueryState states = 1;
 }
