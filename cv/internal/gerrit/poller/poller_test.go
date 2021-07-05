@@ -49,7 +49,7 @@ import (
 func TestSchedule(t *testing.T) {
 	t.Parallel()
 
-	Convey("schedule works", t, func() {
+	Convey("Schedule works", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -59,41 +59,39 @@ func TestSchedule(t *testing.T) {
 
 		p := New(ct.TQDispatcher, nil, nil, nil)
 
-		Convey("schedule works", func() {
+		So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
+		payloads := pt.PFilter(ct.TQ.Tasks())
+		So(payloads, ShouldHaveLength, 1)
+		first := payloads[0]
+		So(first.GetLuciProject(), ShouldEqual, project)
+		firstETA := first.GetEta().AsTime()
+		So(firstETA.UnixNano(), ShouldBeBetweenOrEqual,
+			ct.Clock.Now().UnixNano(), ct.Clock.Now().Add(pollInterval).UnixNano())
+
+		Convey("idempotency via task deduplication", func() {
 			So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
-			payloads := pt.PFilter(ct.TQ.Tasks())
-			So(payloads, ShouldHaveLength, 1)
-			first := payloads[0]
-			So(first.GetLuciProject(), ShouldEqual, project)
-			firstETA := first.GetEta().AsTime()
-			So(firstETA.UnixNano(), ShouldBeBetweenOrEqual,
-				ct.Clock.Now().UnixNano(), ct.Clock.Now().Add(pollInterval).UnixNano())
+			So(pt.PFilter(ct.TQ.Tasks()), ShouldHaveLength, 1)
 
-			Convey("idempotency via task deduplication", func() {
-				So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
-				So(pt.PFilter(ct.TQ.Tasks()), ShouldHaveLength, 1)
-
-				Convey("but only for the same project", func() {
-					So(p.schedule(ctx, "another-project", time.Time{}), ShouldBeNil)
-					ids := pt.Projects(ct.TQ.Tasks())
-					sort.Strings(ids)
-					So(ids, ShouldResemble, []string{"another-project", project})
-				})
+			Convey("but only for the same project", func() {
+				So(p.schedule(ctx, "another-project", time.Time{}), ShouldBeNil)
+				ids := pt.Projects(ct.TQ.Tasks())
+				sort.Strings(ids)
+				So(ids, ShouldResemble, []string{"another-project", project})
 			})
+		})
 
-			Convey("schedule next poll", func() {
+		Convey("schedule next poll", func() {
+			So(p.schedule(ctx, project, firstETA), ShouldBeNil)
+			payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
+			So(payloads, ShouldHaveLength, 2)
+			So(payloads[1].GetEta().AsTime(), ShouldEqual, firstETA.Add(pollInterval))
+
+			Convey("from a delayed prior poll", func() {
+				ct.Clock.Set(firstETA.Add(pollInterval).Add(pollInterval / 2))
 				So(p.schedule(ctx, project, firstETA), ShouldBeNil)
 				payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
-				So(payloads, ShouldHaveLength, 2)
-				So(payloads[1].GetEta().AsTime(), ShouldEqual, firstETA.Add(pollInterval))
-
-				Convey("from a delayed prior poll", func() {
-					ct.Clock.Set(firstETA.Add(pollInterval).Add(pollInterval / 2))
-					So(p.schedule(ctx, project, firstETA), ShouldBeNil)
-					payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
-					So(payloads, ShouldHaveLength, 3)
-					So(payloads[2].GetEta().AsTime(), ShouldEqual, firstETA.Add(2*pollInterval))
-				})
+				So(payloads, ShouldHaveLength, 3)
+				So(payloads[2].GetEta().AsTime(), ShouldEqual, firstETA.Add(2*pollInterval))
 			})
 		})
 	})
