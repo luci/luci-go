@@ -134,10 +134,11 @@ func (c *downloadRun) outputResults(cache *cache.Cache, initStats initCacheStats
 func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	// Prepare isolated client.
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(func() {
+	defer cancel()
+	defer signals.HandleInterrupt(func() {
 		pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
 		cancel()
-	})
+	})()
 	if err := c.runMain(ctx, a, args); err != nil {
 		errors.Log(ctx, err)
 		return err
