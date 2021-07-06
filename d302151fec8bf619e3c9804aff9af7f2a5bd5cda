@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cbbe8172_0f14867b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-07-06T07:29:32Z",
+      "side": 1,
+      "message": "Add a bug or a URL to a discussion for the context.",
+      "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
