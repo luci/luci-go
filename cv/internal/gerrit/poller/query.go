@@ -83,36 +83,28 @@ func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QuerySt
 	q := singleQuery{
 		luciProject: luciProject,
 		qs:          qs,
-		p:           p,
 	}
 	var err error
 	if q.client, err = p.gFactory(ctx, qs.GetHost(), luciProject); err != nil {
 		return err
 	}
 	if qs.GetLastFullTime() == nil {
-		return q.full(ctx)
+		return p.doFullQuery(ctx, q)
 	}
 	nextFullAt := qs.GetLastFullTime().AsTime().Add(fullPollInterval)
 	if clock.Now(ctx).Before(nextFullAt) {
-		return q.incremental(ctx)
+		return p.doIncrementalQuery(ctx, q)
 	}
-	return q.full(ctx)
+	return p.doFullQuery(ctx, q)
 }
 
-type singleQuery struct {
-	luciProject string
-	qs          *QueryState
-	p           *Poller
-	client      gerrit.Client
-}
-
-func (q *singleQuery) full(ctx context.Context) error {
+func (p *Poller) doFullQuery(ctx context.Context, q singleQuery) error {
 	ctx = logging.SetField(ctx, "poll", "full")
 	started := clock.Now(ctx)
 	after := started.Add(-common.MaxTriggerAge)
 	changes, err := q.fetch(ctx, after, q.qs.gerritString(queryLimited))
 	// There can be partial result even if err != nil.
-	switch err2 := q.scheduleTasks(ctx, changes, true); {
+	switch err2 := p.scheduleTasks(ctx, q.luciProject, q.qs.GetHost(), changes, true); {
 	case err != nil:
 		return err
 	case err2 != nil:
@@ -123,7 +115,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 	if diff := common.DifferenceSorted(q.qs.Changes, cur); len(diff) != 0 {
 		// `diff` changes are no longer matching the limited query,
 		// so they were probably updated since.
-		if err := q.p.scheduleRefreshTasks(ctx, q.luciProject, q.qs.GetHost(), diff); err != nil {
+		if err := p.scheduleRefreshTasks(ctx, q.luciProject, q.qs.GetHost(), diff); err != nil {
 			return err
 		}
 	}
@@ -134,7 +126,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 	return nil
 }
 
-func (q *singleQuery) incremental(ctx context.Context) error {
+func (p *Poller) doIncrementalQuery(ctx context.Context, q singleQuery) error {
 	ctx = logging.SetField(ctx, "poll", "incremental")
 	started := clock.Now(ctx)
 
@@ -151,7 +143,7 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 	// abandoned).
 	changes, err := q.fetch(ctx, after, q.qs.gerritString(queryAll))
 	// There can be partial result even if err != nil.
-	switch err2 := q.scheduleTasks(ctx, changes, false); {
+	switch err2 := p.scheduleTasks(ctx, q.luciProject, q.qs.GetHost(), changes, false); {
 	case err != nil:
 		return err
 	case err2 != nil:
@@ -163,7 +155,13 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 	return nil
 }
 
-func (q *singleQuery) fetch(ctx context.Context, after time.Time, query string) ([]*gerritpb.ChangeInfo, error) {
+type singleQuery struct {
+	luciProject string
+	qs          *QueryState
+	client      gerrit.Client
+}
+
+func (q singleQuery) fetch(ctx context.Context, after time.Time, query string) ([]*gerritpb.ChangeInfo, error) {
 	opts := gerritutil.PagingListChangesOptions{
 		Limit:                  changesPerPoll,
 		PageSize:               pageSize,
@@ -195,7 +193,7 @@ func (q *singleQuery) fetch(ctx context.Context, after time.Time, query string) 
 // notifying PM.
 const maxLoadCLBatchSize = 100
 
-func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
+func (p *Poller) scheduleTasks(ctx context.Context, luciProject, gerritHost string, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
 	// TODO(tandrii): optimize by checking if CV is interested in the
 	// (host,project,ref) of these changes from before triggering tasks.
 	logging.Debugf(ctx, "scheduling %d CLUpdate tasks", len(changes))
@@ -208,7 +206,7 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 		var err error
 		eids := make([]changelist.ExternalID, len(changes))
 		for i, c := range changes {
-			if eids[i], err = changelist.GobID(q.qs.GetHost(), c.GetNumber()); err != nil {
+			if eids[i], err = changelist.GobID(gerritHost, c.GetNumber()); err != nil {
 				return err
 			}
 		}
@@ -216,7 +214,7 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 		if err != nil {
 			return err
 		}
-		if err := q.p.notifyPMifKnown(ctx, q.luciProject, clids, maxLoadCLBatchSize); err != nil {
+		if err := p.notifyPMifKnown(ctx, luciProject, clids, maxLoadCLBatchSize); err != nil {
 			return err
 		}
 	}
@@ -224,14 +222,14 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
 		for i, c := range changes {
 			payload := &updater.RefreshGerritCL{
-				LuciProject: q.luciProject,
-				Host:        q.qs.GetHost(),
+				LuciProject: luciProject,
+				Host:        gerritHost,
 				Change:      c.GetNumber(),
 				UpdatedHint: c.GetUpdated(),
 				ForceNotify: forceNotifyPM && (clids[i] == 0),
 			}
 			work <- func() error {
-				return q.p.clUpdater.Schedule(ctx, payload)
+				return p.clUpdater.Schedule(ctx, payload)
 			}
 		}
 	})
