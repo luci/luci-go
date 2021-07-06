@@ -32,7 +32,16 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// factory knows how to construct Gerrit Clients.
+// NewFactory returns ClientFactory for use in production.
+func NewFactory(ctx context.Context) (ClientFactory, error) {
+	f, err := newProd(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return f.makeClient, nil
+}
+
+// prodFactory knows how to construct Gerrit clients.
 //
 // CV must use project-scoped credentials, but not every project has configured
 // project-scoped service account (PSSA). The alternative and legacy
@@ -51,7 +60,7 @@ import (
 // auth.GetRPCTransport(ctx, auth.AsProject, ...) helpfully and transparently
 // defaults to auth.AsSelf if LUCI project doesn't have PSSA configured.
 // Thus CV can't rely on the above method as is.
-type factory struct {
+type prodFactory struct {
 	baseTransport http.RoundTripper
 	clientCache   *lru.Cache // caches clients per (LUCI project, host).
 	legacyCache   *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
@@ -59,23 +68,12 @@ type factory struct {
 	mockMintProjectToken func(context.Context, auth.ProjectTokenParams) (*auth.Token, error)
 }
 
-// TODO(tandrii): cleanup the API & names after all CV components take
-// ClientFactory explicitly instead of via context.
-
-func NewFactory(ctx context.Context) (ClientFactory, error) {
-	f, err := newFactory(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return f.makeClient, nil
-}
-
-func newFactory(ctx context.Context) (*factory, error) {
+func newProd(ctx context.Context) (*prodFactory, error) {
 	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {
 		return nil, err
 	}
-	return &factory{
+	return &prodFactory{
 		baseTransport: t,
 		clientCache:   lru.New(64),
 		// CV supports <20 legacy hosts. New ones shouldn't be added.
@@ -83,7 +81,7 @@ func newFactory(ctx context.Context) (*factory, error) {
 	}, nil
 }
 
-func (f *factory) makeClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
+func (f *prodFactory) makeClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 	if strings.ContainsRune(luciProject, '.') {
 		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())
 	}
@@ -104,7 +102,7 @@ func (f *factory) makeClient(ctx context.Context, gerritHost, luciProject string
 	return client.(Client), nil
 }
 
-func (f *factory) transport(gerritHost, luciProject string) (http.RoundTripper, error) {
+func (f *prodFactory) transport(gerritHost, luciProject string) (http.RoundTripper, error) {
 	// Do what auth.GetRPCTransport(ctx, auth.AsProject, ...) would do,
 	// except default to legacy ~/.netrc creds if PSSA is not configured.
 	// See factory doc for more details.
@@ -118,7 +116,7 @@ func (f *factory) transport(gerritHost, luciProject string) (http.RoundTripper, 
 	}), nil
 }
 
-func (f *factory) token(ctx context.Context, gerritHost, luciProject string) (*oauth2.Token, error) {
+func (f *prodFactory) token(ctx context.Context, gerritHost, luciProject string) (*oauth2.Token, error) {
 	req := auth.ProjectTokenParams{
 		MinTTL:      2 * time.Minute,
 		LuciProject: luciProject,
