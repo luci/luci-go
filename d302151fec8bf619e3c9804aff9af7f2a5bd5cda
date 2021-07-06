@@ -129,6 +129,30 @@
       },
       "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "098beb7a_ba02b98a",
+        "filename": "client/cmd/isolated/lib/download.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-07-06T08:16:30Z",
+      "side": 1,
+      "message": "Ack. Thank you!",
+      "parentUuid": "31349130_6b64858b",
+      "range": {
+        "startLine": 140,
+        "startChar": 0,
+        "endLine": 140,
+        "endChar": 10
+      },
+      "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
