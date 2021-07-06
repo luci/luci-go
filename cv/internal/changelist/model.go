@@ -207,7 +207,9 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 		cl = nil
 		switch err = datastore.Get(ctx, &m); {
 		case err == nil:
-			// The CL has just been created by someone else.
+			// The CL has just been created by someone else, possibly even us if there
+			// was a "submarine" write to Datastore (e.g. network flake while waiting
+			// for prior transaction attempt).
 			return nil
 		case err != datastore.ErrNoSuchEntity:
 			return err
@@ -231,7 +233,7 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 // respect to one another.
 //
 // However, ExternalID.get and fast path of ExternalID.getOrInsert if called
-// concurrently with Delete may return temporary error, but on retry they would
+// concurrently with Delete may return a temporary error, but on retry they would
 // return ErrNoSuchEntity.
 func Delete(ctx context.Context, id common.CLID) error {
 	cl := CL{ID: id}
@@ -287,6 +289,8 @@ func Lookup(ctx context.Context, eids []ExternalID) ([]common.CLID, error) {
 
 // UpdateFields defines what parts of CL metadata to update.
 //
+// TODO(tandrii): delete this struct.
+//
 // At least one field must be specified.
 type UpdateFields struct {
 	// Snapshot overwrites existing CL snapshot if newer according to its
@@ -330,7 +334,7 @@ func (u UpdateFields) shouldUpdateSnapshot(cl *CL) bool {
 	}
 }
 
-func (u UpdateFields) apply(cl *CL) (changed bool) {
+func (u UpdateFields) Apply(cl *CL) (changed bool) {
 	if u.ApplicableConfig != nil && !cl.ApplicableConfig.SemanticallyEqual(u.ApplicableConfig) {
 		cl.ApplicableConfig = u.ApplicableConfig
 		changed = true
@@ -377,68 +381,6 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 	}
 
 	return
-}
-
-// Update updates CL entity.
-//
-// Either ExternalID or a known common.CLID must be provided.
-//
-// If common.CLID is not known and CL for provided ExternalID doesn't exist,
-// then a new CL is created with values from UpdateFields. Otherwise, an
-// existing CL entity will be updated as documented in UpdateFields.
-//
-// If notify is given AND CL entity is created or updated, notify will be called
-// in a transaction context after CL is successfully created or updated.
-func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID, fields UpdateFields, notify Notify) error {
-	if eid == "" && knownCLID == 0 {
-		panic("either ExternalID or known common.CLID must be provided")
-	}
-	if fields.IsEmpty() {
-		panic("must specify at least one UpdateFields field")
-	}
-
-	var innerErr error
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
-		defer func() { innerErr = err }()
-		if knownCLID == 0 {
-			m := clMap{ExternalID: eid}
-			switch err := datastore.Get(ctx, &m); {
-			case err == datastore.ErrNoSuchEntity:
-				// Insert a new entity with EVersion = 1.
-				cl, err := insert(ctx, eid, func(cl *CL) {
-					cl.Snapshot = fields.Snapshot
-					cl.ApplicableConfig = fields.ApplicableConfig
-					cl.Access = fields.AddDependentMeta
-				})
-				if err == nil && notify != nil {
-					err = errors.Annotate(notify(ctx, cl), "notifyCallback failed on %s", eid).Err()
-				}
-				return err
-			case err != nil:
-				return errors.Annotate(err, "failed to get CLMap entity").Tag(transient.Tag).Err()
-			}
-			knownCLID = m.InternalID
-		}
-		cl, err := getExisting(ctx, knownCLID, eid)
-		if err != nil {
-			return err
-		}
-		// Update exsting entity.
-		updated, err := update(ctx, cl, fields.apply)
-		if err == nil && updated && notify != nil {
-			err = errors.Annotate(notify(ctx, cl), "notifyCallback failed on %d", cl.ID).Err()
-		}
-		return err
-	}, nil)
-
-	switch {
-	case innerErr != nil:
-		return innerErr
-	case err != nil:
-		return errors.Annotate(err, "failed to update CL").Tag(transient.Tag).Err()
-	default:
-		return nil
-	}
 }
 
 func getExisting(ctx context.Context, clid common.CLID, eid ExternalID) (*CL, error) {

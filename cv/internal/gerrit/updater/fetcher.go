@@ -68,6 +68,8 @@ const (
 //
 // The prior Snapshot, if given, can reduce RPCs made to Gerrit.
 type fetcher struct {
+	clMutator *changelist.Mutator
+	// TODO(tandrii): get rid of pm & rm and use clMutator exclusively.
 	pm              pmNotifier
 	rm              rmNotifier
 	scheduleRefresh func(ctx context.Context, p *RefreshGerritCL, delay time.Duration) error
@@ -166,8 +168,20 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		}
 		return nil
 	default:
-		return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate, f.notify)
+		if clid := f.clidIfKnown(); clid != 0 {
+			_, err = f.clMutator.Update(ctx, f.luciProject, clid, f.updateCLentity)
+		} else {
+			_, err = f.clMutator.Upsert(ctx, f.luciProject, f.externalID, f.updateCLentity)
+		}
+		return err
 	}
+}
+
+func (f *fetcher) updateCLentity(cl *changelist.CL) error {
+	if !f.toUpdate.Apply(cl) {
+		return changelist.ErrStopMutation
+	}
+	return nil
 }
 
 func (f *fetcher) notify(ctx context.Context, cl *changelist.CL) error {
