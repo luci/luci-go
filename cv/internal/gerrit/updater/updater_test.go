@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 
@@ -413,7 +412,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				// Add a CL readable to current LUCI project.
 				ci := gf.CI(1, gf.Project(gRepo), gf.Ref("refs/heads/main"))
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
-				client, err := gerrit.CurrentClient(ctx, gHost, lProject)
+				client, err := ct.GFake.Factory()(ctx, gHost, lProject)
 				So(err, ShouldBeNil)
 				_, err = client.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 1})
 				So(err, ShouldBeNil)

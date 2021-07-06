@@ -19,7 +19,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
@@ -61,25 +60,6 @@ type Client interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
 	SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error)
-}
-
-// Client must be a subset of gerritpb.Client.
-var _ Client = (gerritpb.GerritClient)(nil)
-
-var clientCtxKey = "go.chromium.org/luci/cv/internal/gerrit.Client"
-
-// UseClientFactory puts a given ClientFactory into in the context.
-func UseClientFactory(ctx context.Context, f ClientFactory) context.Context {
-	return context.WithValue(ctx, &clientCtxKey, f)
-}
-
-// CurrentClient returns the Client in the context or an error.
-func CurrentClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
-	f, _ := ctx.Value(&clientCtxKey).(ClientFactory)
-	if f == nil {
-		return nil, errors.New("not a valid Gerrit context, no ClientFactory available")
-	}
-	return f(ctx, gerritHost, luciProject)
 }
 
 // ClientFactory creates Client tied to Gerrit host and LUCI project.
