@@ -87,6 +87,7 @@ func TestPokeRecheckTree(t *testing.T) {
 		h := &Impl{
 			RM:         run.NewNotifier(ct.TQDispatcher),
 			TreeClient: ct.TreeFake.Client(),
+			GFactory:   ct.GFake.Factory(),
 			CLUpdater:  clUpdater,
 		}
 

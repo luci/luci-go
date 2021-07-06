@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/common/tree"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -55,16 +56,16 @@ const maxEventsPerBatch = 10000
 type RunManager struct {
 	runNotifier *run.Notifier
 	pmNotifier  *prjmanager.Notifier
-	clUpdater   *updater.Updater
 	handler     handler.Handler
 }
 
-func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater, tc tree.Client, bqc bq.Client) *RunManager {
-	rm := &RunManager{n, pm, u, &handler.Impl{
+func New(n *run.Notifier, pm *prjmanager.Notifier, g gerrit.ClientFactory, u *updater.Updater, tc tree.Client, bqc bq.Client) *RunManager {
+	rm := &RunManager{n, pm, &handler.Impl{
 		PM:         pm,
 		RM:         n,
 		TreeClient: tc,
 		BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc),
+		GFactory:   g,
 		CLUpdater:  u,
 	}}
 	n.TasksBinding.ManageRun.AttachHandler(
@@ -98,7 +99,6 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 		runID:       runID,
 		runNotifier: rm.runNotifier,
 		pmNotifier:  rm.pmNotifier,
-		clUpdater:   rm.clUpdater,
 		handler:     rm.handler,
 	}
 	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
@@ -123,7 +123,6 @@ type runProcessor struct {
 
 	runNotifier *run.Notifier
 	pmNotifier  *prjmanager.Notifier
-	clUpdater   *updater.Updater
 
 	handler handler.Handler
 }
