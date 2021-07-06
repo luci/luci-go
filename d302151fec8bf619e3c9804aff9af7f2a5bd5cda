@@ -81,6 +81,30 @@
       },
       "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64df162b_c0d9cc09",
+        "filename": "client/cmd/isolated/lib/download.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-07-06T08:01:07Z",
+      "side": 1,
+      "message": "Yeah, I understand that situation.\nHow about the one at L137? Wouldn\u0027t it be called when a signal is sent?\n(Maybe it won\u0027t. That\u0027s why we have singals.HandleInterrupt(cancel) in the first place.)",
+      "parentUuid": "3447650e_184f0b52",
+      "range": {
+        "startLine": 140,
+        "startChar": 0,
+        "endLine": 140,
+        "endChar": 10
+      },
+      "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
