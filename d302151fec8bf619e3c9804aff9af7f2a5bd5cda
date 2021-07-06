@@ -105,6 +105,30 @@
       },
       "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "31349130_6b64858b",
+        "filename": "client/cmd/isolated/lib/download.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-07-06T08:05:23Z",
+      "side": 1,
+      "message": "There is a chance that can be called even when a signal is sent too.\nBut calling cancel() function multiple times is fine.\nhttps://golang.org/pkg/context/#CancelFunc",
+      "parentUuid": "64df162b_c0d9cc09",
+      "range": {
+        "startLine": 140,
+        "startChar": 0,
+        "endLine": 140,
+        "endChar": 10
+      },
+      "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
