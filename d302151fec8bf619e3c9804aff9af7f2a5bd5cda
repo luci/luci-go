@@ -57,6 +57,30 @@
       },
       "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3447650e_184f0b52",
+        "filename": "client/cmd/isolated/lib/download.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-07-06T07:46:17Z",
+      "side": 1,
+      "message": "This cancel won\u0027t be called if signals are not sent to the process.\nhttps://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/system/signals/interrupt.go;l\u003d30;drc\u003d2e8395c44a3052c157ecb5f247ce9083eaa98326",
+      "parentUuid": "8a20b7bc_bf6ecb75",
+      "range": {
+        "startLine": 140,
+        "startChar": 0,
+        "endLine": 140,
+        "endChar": 10
+      },
+      "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
