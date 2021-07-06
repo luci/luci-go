@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
 const (
@@ -62,14 +63,15 @@ type RM interface {
 
 // Updater updates CLs in Datastore by querying Gerrit.
 type Updater struct {
-	pm  PM
-	rm  RM
-	tqd *tq.Dispatcher
+	gFactory gerrit.ClientFactory
+	pm       PM
+	rm       RM
+	tqd      *tq.Dispatcher
 }
 
 // New creates a new Updater.
-func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
-	u := &Updater{pm, rm, tqd}
+func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, pm PM, rm RM) *Updater {
+	u := &Updater{g, pm, rm, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClass,
 		Prototype:    &RefreshGerritCL{},
@@ -205,6 +207,10 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	if f.externalID, err = changelist.GobID(f.host, f.change); err != nil {
 		return err
 	}
+	if f.g, err = u.gFactory(ctx, f.host, f.luciProject); err != nil {
+		return err
+	}
+
 	return f.update(ctx, common.CLID(r.GetClidHint()))
 }
 
