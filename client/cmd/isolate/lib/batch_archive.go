@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -148,7 +149,10 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
+	defer signals.HandleInterrupt(func() {
+		pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
+		cancel()
+	})()
 
 	opts, err := toArchiveOptions(args)
 	if err != nil {
