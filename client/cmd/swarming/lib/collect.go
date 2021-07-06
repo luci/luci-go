@@ -475,10 +475,11 @@ func (c *collectRun) pollForTasks(
 func (c *collectRun) main(_ subcommands.Application, taskIDs []string) error {
 	// Set up swarming service.
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(func() {
+	defer cancel()
+	defer signals.HandleInterrupt(func() {
 		pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
 		cancel()
-	})
+	})()
 	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err
