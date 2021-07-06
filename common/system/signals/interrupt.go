@@ -43,5 +43,8 @@ func HandleInterrupt(fn func()) (stopper func()) {
 		}
 	}()
 
-	return func() { signal.Stop(ch) }
+	return func() {
+		signal.Stop(ch)
+		close(ch)
+	}
 }
