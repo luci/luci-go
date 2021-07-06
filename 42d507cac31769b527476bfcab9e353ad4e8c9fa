@@ -16,6 +16,24 @@
       "message": "+tikuta@ do you think you can semi-stamp this fix so I can get rid of taintend prod code?\nI fully expect Yiwei to review this once US holidays are over.",
       "revId": "42d507cac31769b527476bfcab9e353ad4e8c9fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ef32850_266f8994",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-06T08:04:07Z",
+      "side": 1,
+      "message": "Thank you, Takuto!",
+      "parentUuid": "b1608e7c_0c6d0db4",
+      "revId": "42d507cac31769b527476bfcab9e353ad4e8c9fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
