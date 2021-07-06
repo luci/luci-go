@@ -16,6 +16,24 @@
       "message": "Add a bug or a URL to a discussion for the context.",
       "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fb0ab961_6f49514d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-07-06T07:30:50Z",
+      "side": 1,
+      "message": "This doesn\u0027t have relevant context.\nI just found wrong usages.",
+      "parentUuid": "cbbe8172_0f14867b",
+      "revId": "d302151fec8bf619e3c9804aff9af7f2a5bd5cda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
