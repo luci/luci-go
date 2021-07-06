@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package pollertest provides test helpers for Gerrit Poller.
-package pollertest
+package poller
 
 import (
-	"go.chromium.org/luci/server/tq/tqtesting"
-
-	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
+	"google.golang.org/protobuf/proto"
 )
 
-// PFilter returns payloads of Gerrit Poller tasks.
-func PFilter(in tqtesting.TaskList) (out []*task.PollGerritTask) {
-	for _, t := range in.SortByETA() {
-		if t.Class == task.ClassID {
-			out = append(out, t.Payload.(*task.PollGerritTask))
+// FilterPayloads returns payloads for Gerrit Poller tasks only.
+func FilterPayloads(payloads []proto.Message) []*PollGerritTask {
+	var out []*PollGerritTask
+	for _, p := range payloads {
+		if t, ok := p.(*PollGerritTask); ok {
+			out = append(out, t)
 		}
 	}
-	return
+	return out
 }
 
-// Projects filters tasks to only Gerrit Poller ones and returns their LUCI
-// projects.
-func Projects(in tqtesting.TaskList) []string {
-	out := PFilter(in)
+// FilterProjects returns Projects from the tasks for Gerrit Poller.
+func FilterProjects(payloads []proto.Message) []string {
+	out := FilterPayloads(payloads)
 	ret := make([]string, len(out))
 	for i, p := range out {
 		ret[i] = p.GetLuciProject()
