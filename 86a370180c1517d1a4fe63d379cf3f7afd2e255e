@@ -34,6 +34,24 @@
       "parentUuid": "16a30623_4d5c279a",
       "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2a92c59_6ea0cd0a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-07-07T03:16:57Z",
+      "side": 1,
+      "message": "Well, once the corresponding change to go/src/infra/tools/vpython is submitted, I don\u0027t expect the old case to be hit at all, but it _could_ be if there are API users of vpython I\u0027m not aware of. But my hope was to be able to rip out all these pip version flags \"soon\".\n\nOne thing I ran into trying to add it as another fallback case is that the API is also slightly different (returns a class instead of a tuple) so it needs further massaging before passing to json. So then that introduces more state, or probing the type, etc.\n\nWDYT?",
+      "parentUuid": "a54375a1_f7bc4716",
+      "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
