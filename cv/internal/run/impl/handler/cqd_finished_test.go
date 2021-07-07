@@ -113,11 +113,7 @@ func TestOnCQDFinished(t *testing.T) {
 			rs.Run.CLs = append(rs.Run.CLs, common.CLID(createdCLsCounter))
 		}
 
-		h := &Impl{
-			RM:        run.NewNotifier(ct.TQDispatcher),
-			GFactory:  ct.GFake.Factory(),
-			CLUpdater: &clUpdaterMock{},
-		}
+		h, _, _, _ := makeTestImpl(&ct)
 
 		statuses := []run.Status{
 			run.Status_SUCCEEDED,
