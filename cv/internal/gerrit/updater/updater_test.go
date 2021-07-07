@@ -63,7 +63,7 @@ func TestSchedule(t *testing.T) {
 		// messages.
 		const scheduleTimeIncrement = time.Nanosecond
 
-		u := New(ct.TQDispatcher, nil, nil)
+		u := New(ct.TQDispatcher, nil, nil, nil)
 
 		do := func(t *RefreshGerritCL) []proto.Message {
 			So(u.Schedule(ctx, t), ShouldBeNil)
@@ -379,7 +379,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		}
 		pm := pmMock{}
 		rm := rmMock{}
-		u := New(ct.TQDispatcher, &pm, &rm)
+		u := New(ct.TQDispatcher, ct.GFake.Factory(), &pm, &rm)
 
 		Convey("No access or permission denied", func() {
 			Convey("after getting error from Gerrit", func() {
