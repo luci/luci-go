@@ -68,6 +68,7 @@ func TestEndRun(t *testing.T) {
 		clUpdater := &clUpdaterMock{}
 		h := &Impl{
 			PM:         prjmanager.NewNotifier(ct.TQDispatcher),
+			GFactory:   ct.GFake.Factory(),
 			CLUpdater:  clUpdater,
 			BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake),
 		}

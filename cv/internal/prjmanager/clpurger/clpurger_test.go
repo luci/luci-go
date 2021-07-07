@@ -52,7 +52,7 @@ func TestPurgeCL(t *testing.T) {
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), pmNotifier, nil)
-		purger := New(pmNotifier, clUpdater)
+		purger := New(pmNotifier, ct.GFake.Factory(), clUpdater)
 
 		const lProject = "lprj"
 		const gHost = "x-review"
