@@ -119,6 +119,10 @@ type Config struct {
 	// TODO(bryner): Remove once the corresponding infra code is updated.
 	OmitUseWheel bool
 
+	// Set to true if the VirtualEnv package has a newer version of pip that has
+	// _internal.utils.compatibility_tags rather than _internal.pep425tags.
+	PipUseCompatibilityTags bool
+
 	// si is the system Python interpreter. It is resolved during
 	// "resolvePythonInterpreter".
 	si *python.Interpreter

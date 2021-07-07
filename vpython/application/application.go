@@ -100,6 +100,10 @@ type Config struct {
 	// TODO(bryner): Remove once the corresponding infra code is updated.
 	VENVOmitUseWheel bool
 
+	// Set to true if the VirtualEnv package has a newer version of pip that has
+	// _internal.utils.compatibility_tags rather than _internal.pep425tags.
+	VENVPipUseCompatibilityTags bool
+
 	// BaseWheels is the set of wheels to include in the spec. These will always
 	// be merged into the runtime spec and normalized, such that any duplicate
 	// wheels will be deduplicated.
@@ -391,14 +395,15 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 		Config: cfg,
 		opts: vpython.Options{
 			EnvConfig: venv.Config{
-				BaseDir:           "", // (Determined below).
-				MaxHashLen:        6,
-				SetupEnv:          env,
-				Package:           cfg.VENVPackage,
-				PruneThreshold:    cfg.PruneThreshold,
-				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
-				Loader:            cfg.PackageLoader,
-				OmitUseWheel:      cfg.VENVOmitUseWheel,
+				BaseDir:                 "", // (Determined below).
+				MaxHashLen:              6,
+				SetupEnv:                env,
+				Package:                 cfg.VENVPackage,
+				PruneThreshold:          cfg.PruneThreshold,
+				MaxPrunesPerSweep:       cfg.MaxPrunesPerSweep,
+				Loader:                  cfg.PackageLoader,
+				OmitUseWheel:            cfg.VENVOmitUseWheel,
+				PipUseCompatibilityTags: cfg.VENVPipUseCompatibilityTags,
 			},
 			BaseWheels:   cfg.BaseWheels,
 			WaitForEnv:   true,

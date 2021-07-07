@@ -671,13 +671,26 @@ except ImportError:
 sys.stdout.write(json.dumps(pep425tags.get_supported()))
 `
 
+const pep425TagsScriptNew = `
+import json, sys
+import pip._internal.utils.compatibility_tags as compatibility_tags
+sys.stdout.write(json.dumps([(t.interpreter, t.abi, t.platform)
+                             for t in compatibility_tags.get_supported()]))
+`
+
 // getPEP425Tags calls Python's pip.pep425tags package to retrieve the tags.
 //
 // This must be run while "pip" is installed in the VirtualEnv.
 func (e *Env) getPEP425Tags(c context.Context, env []string) ([]*vpython.PEP425Tag, error) {
 	type pep425TagEntry []string
 
-	cmd := e.Interpreter().MkIsolatedCommand(c, python.CommandTarget{Command: pep425TagsScript})
+	var tagsScript string
+	if e.Config.PipUseCompatibilityTags {
+		tagsScript = pep425TagsScriptNew
+	} else {
+		tagsScript = pep425TagsScript
+	}
+	cmd := e.Interpreter().MkIsolatedCommand(c, python.CommandTarget{Command: tagsScript})
 	defer cmd.Cleanup()
 	cmd.Env = env
 
