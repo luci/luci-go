@@ -157,7 +157,7 @@ func TestUpdateConfig(t *testing.T) {
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 		gobmaptest.Update(ctx, ct.lProject)
 
-		clPoller := poller.New(ct.TQDispatcher, nil, nil)
+		clPoller := poller.New(ct.TQDispatcher, nil, nil, nil)
 
 		Convey("initializes newly started project", func() {
 			// Newly started project doesn't have any CLs, yet, regardless of what CL

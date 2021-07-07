@@ -86,7 +86,7 @@ func (p *Poller) subpoll(ctx context.Context, luciProject string, sp *SubPoller)
 		p:           p,
 	}
 	var err error
-	if q.client, err = gerrit.CurrentClient(ctx, sp.GetHost(), luciProject); err != nil {
+	if q.client, err = p.gFactory(ctx, sp.GetHost(), luciProject); err != nil {
 		return err
 	}
 	if sp.GetLastFullTime() == nil {

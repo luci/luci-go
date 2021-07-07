@@ -72,7 +72,7 @@ func main() {
 		pmNotifier := prjmanager.NewNotifier(&tq.Default)
 		runNotifier := run.NewNotifier(&tq.Default)
 		clUpdater := updater.New(&tq.Default, gFactory, pmNotifier, runNotifier)
-		_ = pmimpl.New(pmNotifier, runNotifier, clUpdater)
+		_ = pmimpl.New(pmNotifier, runNotifier, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {
 			return err
