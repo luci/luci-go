@@ -135,6 +135,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7fcfbd0e_b53da206",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-07T17:38:31Z",
+      "side": 1,
+      "message": "Actually, should this error out or should it just fall back to using the string as is?",
+      "parentUuid": "7efd1ec6_a192f544",
+      "range": {
+        "startLine": 61,
+        "startChar": 15,
+        "endLine": 61,
+        "endChar": 18
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ba921755_db2759dc",
         "filename": "starlark/starlarkproto/functions.go",
         "patchSetId": 6
