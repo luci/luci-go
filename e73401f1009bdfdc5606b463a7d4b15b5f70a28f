@@ -1,0 +1,228 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32ce599e_10025911",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "ValidateFailureReason",
+      "range": {
+        "startLine": 196,
+        "startChar": 3,
+        "endLine": 196,
+        "endChar": 23
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d938d477_70baf319",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "fr",
+      "range": {
+        "startLine": 196,
+        "startChar": 51,
+        "endLine": 196,
+        "endChar": 54
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "658294a9_6bc1b0c4",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "here you disallow the max size (1024), but the error says it \u0027exceeds\u0027 (i.e. not \u0027equal or exceeds\u0027). In the protobuf description you also you say you allow \u0027up to\u0027 1024 bytes in UTF-8. Therefore, I think this should be a \u0027\u003e\u0027 instead of a \u0027\u003e\u003d\u0027.",
+      "range": {
+        "startLine": 198,
+        "startChar": 4,
+        "endLine": 198,
+        "endChar": 60
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "01b2536a_b3299f06",
+        "filename": "resultdb/proto/bq/test_result_row.pb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "nit: e.g.",
+      "range": {
+        "startLine": 103,
+        "startChar": 4,
+        "endLine": 103,
+        "endChar": 6
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2156727c_21e837e3",
+        "filename": "resultdb/proto/bq/test_result_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "nit: e.g. (see line 59)",
+      "range": {
+        "startLine": 103,
+        "startChar": 5,
+        "endLine": 103,
+        "endChar": 7
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d718bc7e_309a99aa",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "nit: insert comma.",
+      "range": {
+        "startLine": 24,
+        "startChar": 14,
+        "endLine": 24,
+        "endChar": 15
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f84dc2a_d303f1ae",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "nit: surplus space.",
+      "range": {
+        "startLine": 26,
+        "startChar": 64,
+        "endLine": 26,
+        "endChar": 65
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e5299a2_be92ca1a",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "nit: insert comma",
+      "range": {
+        "startLine": 31,
+        "startChar": 27,
+        "endLine": 31,
+        "endChar": 28
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2eddad6_5f18cf8e",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "Move up to line 27-28? At the moment it reads like an example of another \u0027other fields\u0027 (from TestResult).",
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "14e6955d_14574435",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2021-07-07T06:57:50Z",
+      "side": 1,
+      "message": "nit: extra space.",
+      "range": {
+        "startLine": 137,
+        "startChar": 40,
+        "endLine": 137,
+        "endChar": 41
+      },
+      "revId": "e73401f1009bdfdc5606b463a7d4b15b5f70a28f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
