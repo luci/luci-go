@@ -116,7 +116,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			if err := markSubmitting(ctx, rs); err != nil {
 				return nil, err
 			}
-			s := newSubmitter(ctx, rs.Run.ID, rs.Run.Submission, impl.RM)
+			s := newSubmitter(ctx, rs.Run.ID, rs.Run.Submission, impl.RM, impl.GFactory)
 			rs.SubmissionScheduled = true
 			return &Result{
 				State:         rs,
@@ -281,7 +281,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		// Matching taskID indicates current task is the retry of a previous
 		// submitting task that has failed transiently. Continue the submission.
 		rs = rs.ShallowCopy()
-		s := newSubmitter(ctx, rs.Run.ID, rs.Run.Submission, impl.RM)
+		s := newSubmitter(ctx, rs.Run.ID, rs.Run.Submission, impl.RM, impl.GFactory)
 		rs.SubmissionScheduled = true
 		return &Result{
 			State:         rs,
@@ -573,9 +573,11 @@ type submitter struct {
 	clids common.CLIDs
 	// rm is used to interact with Run Manager.
 	rm RM
+	// gFactory is used to interact with Gerrit.
+	gFactory gerrit.ClientFactory
 }
 
-func newSubmitter(ctx context.Context, runID common.RunID, submission *run.Submission, rm RM) *submitter {
+func newSubmitter(ctx context.Context, runID common.RunID, submission *run.Submission, rm RM, g gerrit.ClientFactory) *submitter {
 	notSubmittedCLs := make(common.CLIDs, 0, len(submission.GetCls())-len(submission.GetSubmittedCls()))
 	submitted := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
 	for _, cl := range submission.GetCls() {
@@ -589,6 +591,7 @@ func newSubmitter(ctx context.Context, runID common.RunID, submission *run.Submi
 		deadline: submission.GetDeadline().AsTime(),
 		clids:    notSubmittedCLs,
 		rm:       rm,
+		gFactory: g,
 	}
 }
 
@@ -712,7 +715,7 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.Sub
 }
 
 func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
-	gc, err := gerrit.CurrentClient(ctx, cl.Detail.GetGerrit().GetHost(), s.runID.LUCIProject())
+	gc, err := s.gFactory(ctx, cl.Detail.GetGerrit().GetHost(), s.runID.LUCIProject())
 	if err != nil {
 		return err
 	}

@@ -58,10 +58,11 @@ func TestRelationship(t *testing.T) {
 		//  2_1 --<-- 3_2 --<-- 4_3
 		f.SetDependsOn("host", "4_3", "3_2")
 		f.SetDependsOn("host", "3_2", "2_1")
-		ctx := f.Install(context.Background())
+		ctx := context.Background()
+		gFactory := f.Factory()
 
 		Convey("with allowed project", func() {
-			gc, err := gerrit.CurrentClient(ctx, "host", "infra")
+			gc, err := gFactory(ctx, "host", "infra")
 			So(err, ShouldBeNil)
 
 			Convey("No relations", func() {
@@ -219,7 +220,7 @@ func TestRelationship(t *testing.T) {
 		})
 
 		Convey("with disallowed project", func() {
-			gc, err := gerrit.CurrentClient(ctx, "host", "spying-luci-project")
+			gc, err := gFactory(ctx, "host", "spying-luci-project")
 			So(err, ShouldBeNil)
 			_, err = gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 				Number:     4,
@@ -257,8 +258,8 @@ func TestFiles(t *testing.T) {
 		ciNoFiles := CI(3, Files())
 		f := WithCIs("host", ACLRestricted("infra"), ciDefault, ciCustom, ciNoFiles)
 
-		ctx := f.Install(context.Background())
-		gc, err := gerrit.CurrentClient(ctx, "host", "infra")
+		ctx := context.Background()
+		gc, err := f.Factory()(ctx, "host", "infra")
 		So(err, ShouldBeNil)
 
 		Convey("change or revision NotFound", func() {
@@ -314,8 +315,8 @@ func TestGetChange(t *testing.T) {
 		So(ci.GetRevisions(), ShouldHaveLength, 4)
 		f := WithCIs("host", ACLRestricted("infra"), ci)
 
-		ctx := f.Install(context.Background())
-		gc, err := gerrit.CurrentClient(ctx, "host", "infra")
+		ctx := context.Background()
+		gc, err := f.Factory()(ctx, "host", "infra")
 		So(err, ShouldBeNil)
 
 		Convey("NotFound", func() {
@@ -362,10 +363,11 @@ func TestListChanges(t *testing.T) {
 
 	Convey("ListChanges works", t, func() {
 		f := WithCIs("empty", ACLRestricted("empty"))
-		ctx := f.Install(context.Background())
+		gFactory := f.Factory()
+		ctx := context.Background()
 
 		mustCurrentClient := func(host, luciProject string) gerrit.Client {
-			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
+			cl, err := gFactory(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl
 		}
@@ -478,7 +480,7 @@ func TestListChanges(t *testing.T) {
 
 		Convey("Bad queries", func() {
 			test := func(query string) error {
-				client, err := gerrit.CurrentClient(ctx, "infra", "chromium")
+				client, err := gFactory(ctx, "infra", "chromium")
 				So(err, ShouldBeNil)
 				_, err = client.ListChanges(ctx, &gerritpb.ListChangesRequest{Query: query})
 				So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
@@ -523,11 +525,11 @@ func TestSetReview(t *testing.T) {
 			ACLGrant(OpReview, codes.PermissionDenied, "chromium").Or(ACLGrant(OpAlterVotesOfOthers, codes.PermissionDenied, "chromium")),
 			ciBefore,
 		)
+		gFactory := f.Factory()
 		tc.Add(2 * time.Minute)
-		ctx = f.Install(ctx)
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
-			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
+			cl, err := gFactory(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl
 		}
@@ -682,10 +684,9 @@ func TestSubmitRevision(t *testing.T) {
 			ci,
 		)
 		tc.Add(2 * time.Minute)
-		ctx = f.Install(ctx)
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
-			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
+			cl, err := f.Factory()(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl
 		}

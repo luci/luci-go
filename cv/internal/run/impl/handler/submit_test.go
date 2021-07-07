@@ -773,6 +773,7 @@ func TestSubmitter(t *testing.T) {
 			deadline: now.Add(1 * time.Minute),
 			clids:    common.CLIDs{1, 2},
 			rm:       run.NewNotifier(ct.TQDispatcher),
+			gFactory: ct.GFake.Factory(),
 		}
 		So(datastore.Put(ctx,
 			&run.Run{
@@ -954,7 +955,9 @@ func TestOnCLSubmitted(t *testing.T) {
 			},
 		}}
 
-		h := &Impl{}
+		h := &Impl{
+			GFactory: ct.GFake.Factory(),
+		}
 		Convey("Single", func() {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{3})
 			So(err, ShouldBeNil)

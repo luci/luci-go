@@ -66,7 +66,6 @@ func main() {
 		if err != nil {
 			return err
 		}
-		srv.Context = gerrit.UseClientFactory(srv.Context, gFactory)
 
 		// Register TQ handlers.
 		pmNotifier := prjmanager.NewNotifier(&tq.Default)
@@ -85,6 +84,7 @@ func main() {
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{
+			GFactory:    gFactory,
 			RunNotifier: runNotifier,
 		})
 		adminpb.RegisterAdminServer(srv.PRPC, &admin.AdminServer{

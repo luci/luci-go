@@ -155,6 +155,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,
+		GFactory:    gFactory,
 	}
 	t.AdminServer = &admin.AdminServer{
 		TQDispatcher:  t.TQDispatcher,

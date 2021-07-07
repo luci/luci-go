@@ -53,8 +53,10 @@ func TestCQDFakeInactiveCV(t *testing.T) {
 		))
 		cqd := CQDFake{
 			LUCIProject: lProject,
-			CV:          &migration.MigrationServer{},
-			GFake:       ct.GFake,
+			CV: &migration.MigrationServer{
+				GFactory: ct.GFake.Factory(),
+			},
+			GFake: ct.GFake,
 		}
 		ct.DisableCVRunManagement(ctx)
 
