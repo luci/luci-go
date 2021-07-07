@@ -52,6 +52,24 @@
       "parentUuid": "a54375a1_f7bc4716",
       "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7f309d9f_826ae247",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2021-07-07T03:40:55Z",
+      "side": 1,
+      "message": "Up to you. Either way is fine by me, but I\u0027d prefer not adding this flag, for two reasons:\n\n* It\u0027s part of the API surface. Once this flag is out in the wild it\u0027s hard to be confident nothing\u0027s still depending on it when you want to remove it.\n* It creates the possibility of misconfiguration. This flag must be set to a particular value depending on the VirtualEnv/pip version. Without the flag it would just work regardless of what version you run against.\n\nI think it\u0027s worth the possibility of one extra import on startup in configurations we don\u0027t even know exist to avoid these downsides.\n\nFor handling the extra case you could just keep it as a completely separate code path, right? Something like:\n\n```\nimport json, sys\ntry:\n  import pip._internal.utils.compatibility_tags as compatibility_tags\n  tags \u003d [(t.interpreter, t.abi, t.platform)\n          for t in compatibility_tags.get_supported()]\nexcept ImportError:\n  try:\n    import pip._internal.pep425tags as pep425tags\n  except ImportError:\n    import pip.pep425tags as pep425tags\n  tags \u003d pep425tags.get_supported()\n\nsys.stdout.write(json.dumps(tags))\n```\n\nA little ugly but not too bad.",
+      "parentUuid": "f2a92c59_6ea0cd0a",
+      "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
