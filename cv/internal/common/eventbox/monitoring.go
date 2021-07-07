@@ -27,7 +27,7 @@ import (
 var (
 	metricListDurationsS = metric.NewCumulativeDistribution(
 		"cv/internal/eventbox/list/duration",
-		"Duration of a list op.",
+		"Distribuition of duration of a list op.",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		// Bucketer for 1ms..10m range since anything above 10m is bad.
 		//
