@@ -66,3 +66,12 @@ type Client interface {
 //
 // Gerrit host and LUCI project determine the authentication being used.
 type ClientFactory func(ctx context.Context, gerritHost, luciProject string) (Client, error)
+
+// NewFactory returns ClientFactory for use in production.
+func NewFactory(ctx context.Context) (ClientFactory, error) {
+	f, err := newProd(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return CachingFactory(64, f.makeClient), nil
+}
