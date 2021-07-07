@@ -68,16 +68,18 @@ type ProjectManager struct {
 	// runNotifier notifies Run Manager.
 	runNotifier state.RunNotifier
 
-	clPurger *clpurger.Purger
-	clPoller *poller.Poller
+	clMutator *changelist.Mutator
+	clPurger  *clpurger.Purger
+	clPoller  *poller.Poller
 }
 
 // New creates a new ProjectManager and registers it for handling tasks created
 // by the given TQ Notifier.
-func New(n *prjmanager.Notifier, rn state.RunNotifier, g gerrit.ClientFactory, u *updater.Updater) *ProjectManager {
+func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g gerrit.ClientFactory, u *updater.Updater) *ProjectManager {
 	pm := &ProjectManager{
 		pmNotifier:  n,
 		runNotifier: rn,
+		clMutator:   c,
 		clPurger:    clpurger.New(n, g, u),
 		clPoller:    poller.New(n.TasksBinding.TQDispatcher, g, u, n),
 	}
@@ -137,6 +139,7 @@ func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) 
 		luciProject: luciProject,
 		pmNotifier:  pm.pmNotifier,
 		runNotifier: pm.runNotifier,
+		clMutator:   pm.clMutator,
 		clPurger:    pm.clPurger,
 		clPoller:    pm.clPoller,
 	}
@@ -157,6 +160,7 @@ type pmProcessor struct {
 
 	pmNotifier  *prjmanager.Notifier
 	runNotifier state.RunNotifier
+	clMutator   *changelist.Mutator
 	clPurger    *clpurger.Purger
 	clPoller    *poller.Poller
 
@@ -167,6 +171,7 @@ type pmProcessor struct {
 // LoadState is called to load the state before a transaction.
 func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
 	s := &state.State{
+		CLMutator:       proc.clMutator,
 		PMNotifier:      proc.pmNotifier,
 		RunNotifier:     proc.runNotifier,
 		CLPurger:        proc.clPurger,
