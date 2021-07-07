@@ -276,7 +276,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// This event is the only event notifying PM about CL#43.
-		So(pmNotifier.NotifyCLsUpdated(ctx, lProject, []*changelist.CL{cl43, cl44}), ShouldBeNil)
+		So(pmNotifier.NotifyCLsUpdated(ctx, lProject, changelist.ToUpdatedEvents(cl43, cl44)), ShouldBeNil)
 
 		const n = 10
 		for i := 0; i < n; i++ {
