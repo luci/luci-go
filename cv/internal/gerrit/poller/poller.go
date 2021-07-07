@@ -40,9 +40,15 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 )
 
-// PM encapsulates interaction with Project Manager by the Gerrit Poller.
+// PM encapsulates interaction with Project Manager by the Poller.
 type PM interface {
 	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
+}
+
+// CLUpdater encapsulates interaction with Gerrit CL Updater by the Poller.
+type CLUpdater interface {
+	Schedule(context.Context, *updater.RefreshGerritCL) error
+	ScheduleDelayed(context.Context, *updater.RefreshGerritCL, time.Duration) error
 }
 
 // Poller polls Gerrit to discover new CLs and modifications of the existing
@@ -50,12 +56,12 @@ type PM interface {
 type Poller struct {
 	tqd       *tq.Dispatcher
 	gFactory  gerrit.ClientFactory
-	clUpdater *updater.Updater
+	clUpdater CLUpdater
 	pm        PM
 }
 
 // New creates a new Poller, registering it in the given TQ dispatcher.
-func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, clUpdater *updater.Updater, pm PM) *Poller {
+func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, clUpdater CLUpdater, pm PM) *Poller {
 	p := &Poller{tqd, g, clUpdater, pm}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           task.ClassID,

@@ -18,11 +18,13 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -51,6 +53,7 @@ func TestSchedule(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
 		ct.Clock.Set(ct.Clock.Now().Truncate(pollInterval).Add(pollInterval))
 		const project = "chromium"
 
@@ -109,7 +112,8 @@ func TestScheduleRefreshTasks(t *testing.T) {
 		const gRepo = "infra/infra"
 
 		pm := pmMock{}
-		p := New(ct.TQDispatcher, ct.GFake.Factory(), updater.New(ct.TQDispatcher, ct.GFake.Factory(), &pm, nil), &pm)
+		clUpdater := clUpdaterMock{}
+		p := New(ct.TQDispatcher, ct.GFake.Factory(), &clUpdater, &pm)
 
 		changes := []int64{1, 2, 3, 4, 5}
 		const notYetSaved = 4
@@ -120,7 +124,7 @@ func TestScheduleRefreshTasks(t *testing.T) {
 				continue
 			}
 			cl, err := changelist.MustGobID(gHost, i).GetOrInsert(ctx, func(cl *changelist.CL) {
-				// in practice, cl.Snapshot would be populated, but for this test it
+				// In practice, cl.Snapshot would be populated, but for this test it
 				// doesn't matter.
 			})
 			So(err, ShouldBeNil)
@@ -137,16 +141,16 @@ func TestScheduleRefreshTasks(t *testing.T) {
 		So(ids, ShouldResemble, knownIDs)
 
 		// CL Updater must have scheduled tasks.
-		tasks := ct.TQ.Tasks().SortByETA()
-		So(tasks, ShouldHaveLength, len(changes))
+		etas := clUpdater.peekETAs()
+		payloads := clUpdater.popPayloadsByETA()
+		So(payloads, ShouldHaveLength, len(changes))
 		// Tasks must be somewhat distributed in time.
 		mid := ct.Clock.Now().Add(fullPollInterval / 2)
-		So(tasks[1].ETA, ShouldHappenBefore, mid)
-		So(tasks[len(tasks)-2].ETA, ShouldHappenAfter, mid)
+		So(etas[1], ShouldHappenBefore, mid)
+		So(etas[3], ShouldHappenAfter, mid)
 		// For not yet saved CL, PM must be forcefully notified.
 		var forced []int64
-		for _, task := range tasks {
-			p := task.Payload.(*updater.RefreshGerritCL)
+		for _, p := range payloads {
 			if p.GetForceNotify() {
 				forced = append(forced, p.GetChange())
 			}
@@ -485,6 +489,9 @@ func (p *pmMock) NotifyCLsUpdated(ctx context.Context, luciProject string, cls [
 }
 
 func (p *pmMock) popNotifiedCLs(luciProject string) common.CLIDs {
+	if p.projects == nil {
+		return nil
+	}
 	res := p.projects[luciProject]
 	delete(p.projects, luciProject)
 	return sortedCLIDs(res...)
@@ -513,4 +520,55 @@ func sortedCLIDs(ids ...common.CLID) common.CLIDs {
 	res := common.CLIDs(ids)
 	res.Dedupe() // it also sorts as a by-product.
 	return res
+}
+
+type clUpdaterMock struct {
+	m     sync.Mutex
+	tasks []struct {
+		payload *updater.RefreshGerritCL
+		eta     time.Time
+	}
+}
+
+func (c *clUpdaterMock) Schedule(ctx context.Context, t *updater.RefreshGerritCL) error {
+	return c.ScheduleDelayed(ctx, t, 0)
+}
+
+func (c *clUpdaterMock) ScheduleDelayed(ctx context.Context, t *updater.RefreshGerritCL, d time.Duration) error {
+	c.m.Lock()
+	defer c.m.Unlock()
+	c.tasks = append(c.tasks, struct {
+		payload *updater.RefreshGerritCL
+		eta     time.Time
+	}{t, clock.Now(ctx).Add(d)})
+	return nil
+}
+
+func (c *clUpdaterMock) sortTasksByETAlocked() {
+	sort.Slice(c.tasks, func(i, j int) bool { return c.tasks[i].eta.Before(c.tasks[j].eta) })
+}
+
+func (c *clUpdaterMock) peekETAs() []time.Time {
+	c.m.Lock()
+	defer c.m.Unlock()
+	c.sortTasksByETAlocked()
+	out := make([]time.Time, len(c.tasks))
+	for i, t := range c.tasks {
+		out[i] = t.eta
+	}
+	return out
+}
+
+func (c *clUpdaterMock) popPayloadsByETA() []*updater.RefreshGerritCL {
+	c.m.Lock()
+	c.sortTasksByETAlocked()
+	tasks := c.tasks
+	c.tasks = nil
+	c.m.Unlock()
+
+	out := make([]*updater.RefreshGerritCL, len(tasks))
+	for i, t := range tasks {
+		out[i] = t.payload
+	}
+	return out
 }

@@ -43,6 +43,7 @@ func TestBuildQuery(t *testing.T) {
 			So(buildQuery(sp, queryLimited), ShouldEqual,
 				`status:NEW label:Commit-Queue>0 projects:"shared"`)
 		})
+
 		Convey("unlimited", func() {
 			sp.CommonProjectPrefix = "shared"
 			So(buildQuery(sp, queryAll), ShouldEqual,
