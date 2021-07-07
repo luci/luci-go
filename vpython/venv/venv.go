@@ -661,14 +661,20 @@ func (e *Env) getStdlibPath(c context.Context, env []string) (string, error) {
 // [1]: abi (e.g., "cp27mu", "none")
 // [2]: arch (e.g., "x86_64", "armv7l", "any")
 //
-// pep425tags was moved from pip to pip._internal around version 10.0.0.
+// pep425tags was moved from pip to pip._internal around version 10.0.0, and replaced
+// with pip._internal.utils.compatibility_tags as of version 20.1.
 const pep425TagsScript = `
 import json, sys
 try:
-  import pip._internal.pep425tags as pep425tags
+  import pip._internal.utils.compatibility_tags as compatibility_tags
+  tags = [(t.interpreter, t.abi, t.platform) for t in compatibility_tags.get_supported()]
 except ImportError:
-  import pip.pep425tags as pep425tags
-sys.stdout.write(json.dumps(pep425tags.get_supported()))
+  try:
+    import pip._internal.pep425tags as pep425tags
+  except ImportError:
+    import pip.pep425tags as pep425tags
+  tags = pep425tags.get_supported()
+sys.stdout.write(json.dumps(tags))
 `
 
 // getPEP425Tags calls Python's pip.pep425tags package to retrieve the tags.
