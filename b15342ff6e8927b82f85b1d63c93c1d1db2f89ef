@@ -159,6 +159,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1d79a455_e2b64418",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-07T20:30:56Z",
+      "side": 1,
+      "message": "I think it should error our. A string annotated as \"contains JSON\" should contain JSON.",
+      "parentUuid": "7fcfbd0e_b53da206",
+      "range": {
+        "startLine": 61,
+        "startChar": 15,
+        "endLine": 61,
+        "endChar": 18
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ba921755_db2759dc",
         "filename": "starlark/starlarkproto/functions.go",
         "patchSetId": 6
@@ -263,6 +287,30 @@
       "side": 1,
       "message": "It does, but then the backslash newline after the open triple quotes doesn\u0027t work, so the first line has to appear with the opening triple quote. Let me know what you prefer.",
       "parentUuid": "c015b885_a14ffb7a",
+      "range": {
+        "startLine": 23,
+        "startChar": 30,
+        "endLine": 23,
+        "endChar": 33
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "56cff1c0_79e5dc2a",
+        "filename": "starlark/starlarkproto/testdata/json.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-07T20:30:56Z",
+      "side": 1,
+      "message": "Eh, doesn\u0027t matter, it is a test file.",
+      "parentUuid": "0a43304d_4dbd274f",
       "range": {
         "startLine": 23,
         "startChar": 30,
