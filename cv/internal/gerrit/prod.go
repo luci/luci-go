@@ -32,15 +32,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// NewFactory returns ClientFactory for use in production.
-func NewFactory(ctx context.Context) (ClientFactory, error) {
-	f, err := newProd(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return f.makeClient, nil
-}
-
 // prodFactory knows how to construct Gerrit clients.
 //
 // CV must use project-scoped credentials, but not every project has configured
@@ -62,7 +53,6 @@ func NewFactory(ctx context.Context) (ClientFactory, error) {
 // Thus CV can't rely on the above method as is.
 type prodFactory struct {
 	baseTransport http.RoundTripper
-	clientCache   *lru.Cache // caches clients per (LUCI project, host).
 	legacyCache   *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
 
 	mockMintProjectToken func(context.Context, auth.ProjectTokenParams) (*auth.Token, error)
@@ -75,7 +65,6 @@ func newProd(ctx context.Context) (*prodFactory, error) {
 	}
 	return &prodFactory{
 		baseTransport: t,
-		clientCache:   lru.New(64),
 		// CV supports <20 legacy hosts. New ones shouldn't be added.
 		legacyCache: lru.New(20),
 	}, nil
@@ -85,21 +74,11 @@ func (f *prodFactory) makeClient(ctx context.Context, gerritHost, luciProject st
 	if strings.ContainsRune(luciProject, '.') {
 		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())
 	}
-	key := luciProject + "/" + gerritHost
-	client, err := f.clientCache.GetOrCreate(ctx, key, func() (value interface{}, ttl time.Duration, err error) {
-		// Default ttl of 0 means never expire. Note that specific authorization
-		// token is still loaded per each request (see transport() function).
-		t, err := f.transport(gerritHost, luciProject)
-		if err != nil {
-			return
-		}
-		value, err = gerrit.NewRESTClient(&http.Client{Transport: t}, gerritHost, true)
-		return
-	})
+	t, err := f.transport(gerritHost, luciProject)
 	if err != nil {
 		return nil, err
 	}
-	return client.(Client), nil
+	return gerrit.NewRESTClient(&http.Client{Transport: t}, gerritHost, true)
 }
 
 func (f *prodFactory) transport(gerritHost, luciProject string) (http.RoundTripper, error) {
