@@ -22,6 +22,30 @@
       },
       "revId": "878b8c6c8926348322b304603894fd64c0dc2eab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "20238c43_41f22f45",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-07T22:24:12Z",
+      "side": 1,
+      "message": "yes, because we serialize into binary, not JSON 😊\n\nIt\u0027s more problematic for task payloads, which are JSONPB.\n\nBut 👍 for being vigilant reviewer.",
+      "parentUuid": "f7914a5c_38efc225",
+      "range": {
+        "startLine": 224,
+        "startChar": 1,
+        "endLine": 224,
+        "endChar": 44
+      },
+      "revId": "878b8c6c8926348322b304603894fd64c0dc2eab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
