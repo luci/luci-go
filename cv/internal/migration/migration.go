@@ -54,6 +54,7 @@ type RunNotifier interface {
 // MigrationServer implements CQDaemon -> CV migration API.
 type MigrationServer struct {
 	RunNotifier RunNotifier
+	GFactory    gerrit.ClientFactory
 
 	migrationpb.UnimplementedMigrationServer
 }
@@ -233,7 +234,7 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 			return &migrationpb.PostGerritMessageResponse{}, nil
 		}
 	}
-	gc, err := gerrit.CurrentClient(ctx, req.GetHost(), req.GetProject())
+	gc, err := m.GFactory(ctx, req.GetHost(), req.GetProject())
 	if err != nil {
 		return nil, appstatus.Errorf(codes.Internal, "failed to obtain Gerrit Client: %s", err)
 	}

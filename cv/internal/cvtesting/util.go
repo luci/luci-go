@@ -137,7 +137,6 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 
 	ctx = t.installDS(ctx)
 	ctx = txndefer.FilterRDS(ctx)
-	ctx = t.GFake.Install(ctx)
 	return ctx, t.cleanup
 }
 
