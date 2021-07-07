@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "16a30623_4d5c279a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-07-07T02:57:32Z",
+      "side": 1,
+      "message": "I\u0027d welcome any suggestions for a better way to do this. I thought about adding more fallback cases to the current script, but worry that it would slow down vpython startup time (extra filesystem operations to probe for more modules)",
+      "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
