@@ -407,7 +407,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 
 		const lProject = "luci"
 		d := AdminServer{
-			GerritUpdater: updater.New(ct.TQDispatcher, nil, nil),
+			GerritUpdater: updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, nil),
 			PMNotifier:    prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 

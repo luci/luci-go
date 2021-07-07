@@ -62,17 +62,16 @@ func main() {
 			srv.Context = common.SetDev(srv.Context)
 		}
 
-		switch ctx, err := gerrit.UseProd(srv.Context); {
-		case err != nil:
-			return nil
-		default:
-			srv.Context = ctx
+		gFactory, err := gerrit.NewFactory(srv.Context)
+		if err != nil {
+			return err
 		}
+		srv.Context = gerrit.UseClientFactory(srv.Context, gFactory)
 
 		// Register TQ handlers.
 		pmNotifier := prjmanager.NewNotifier(&tq.Default)
 		runNotifier := run.NewNotifier(&tq.Default)
-		clUpdater := updater.New(&tq.Default, pmNotifier, runNotifier)
+		clUpdater := updater.New(&tq.Default, gFactory, pmNotifier, runNotifier)
 		_ = pmimpl.New(pmNotifier, runNotifier, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {

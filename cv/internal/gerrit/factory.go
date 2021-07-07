@@ -59,6 +59,17 @@ type factory struct {
 	mockMintProjectToken func(context.Context, auth.ProjectTokenParams) (*auth.Token, error)
 }
 
+// TODO(tandrii): cleanup the API & names after all CV components take
+// ClientFactory explicitly instead of via context.
+
+func NewFactory(ctx context.Context) (ClientFactory, error) {
+	f, err := newFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return f.makeClient, nil
+}
+
 func newFactory(ctx context.Context) (*factory, error) {
 	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {

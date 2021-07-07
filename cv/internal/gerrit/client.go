@@ -73,15 +73,6 @@ func UseClientFactory(ctx context.Context, f ClientFactory) context.Context {
 	return context.WithValue(ctx, &clientCtxKey, f)
 }
 
-// UseProd puts a production ClientFactory into in the context.
-func UseProd(ctx context.Context) (context.Context, error) {
-	f, err := newFactory(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return UseClientFactory(ctx, f.makeClient), nil
-}
-
 // CurrentClient returns the Client in the context or an error.
 func CurrentClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 	f, _ := ctx.Value(&clientCtxKey).(ClientFactory)

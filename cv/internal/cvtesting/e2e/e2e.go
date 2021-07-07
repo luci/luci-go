@@ -148,7 +148,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 
 	t.PMNotifier = prjmanager.NewNotifier(t.TQDispatcher)
 	t.RunNotifier = run.NewNotifier(t.TQDispatcher)
-	clUpdater := updater.New(t.TQDispatcher, t.PMNotifier, t.RunNotifier)
+	clUpdater := updater.New(t.TQDispatcher, t.GFake.Factory(), t.PMNotifier, t.RunNotifier)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clUpdater)
 	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clUpdater, t.TreeFake.Client(), t.BQFake)
 
