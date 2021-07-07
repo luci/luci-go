@@ -51,12 +51,13 @@ func init() {
 
 func generateTestResultRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TestResultRow{})
-	// We also need to get FileDescriptorProto for StringPair and TestMetadata
+	// We also need to get FileDescriptorProto for StringPair, TestMetadata and FailureReason
 	// because they are defined in different files.
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdtmd, _ := descriptor.MessageDescriptorProto(&pb.TestMetadata{})
+	fdfr, _ := descriptor.MessageDescriptorProto(&pb.FailureReason{})
 	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
-	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fdinv}}
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fdfr, fdinv}}
 	return generateSchema(fdset, testResultRowMessage)
 }
 
@@ -102,6 +103,7 @@ func (i *testResultRowInput) row() protoiface.MessageV1 {
 		Exonerated:    i.exonerated,
 		PartitionTime: i.exported.CreateTime,
 		TestMetadata:  tr.TestMetadata,
+		FailureReason: tr.FailureReason,
 	}
 
 	if len(ret.SummaryHtml) > maxSummaryLength {
