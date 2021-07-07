@@ -34,5 +34,7 @@ queue:
     min_backoff_seconds: 1
     max_backoff_seconds: 300
     task_age_limit: 1h
+- name: notify-on-cl-updated
+  rate: 30/s
 - name: tq-sweep
   rate: 500/s
