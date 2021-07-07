@@ -54,26 +54,21 @@ func TestCL(t *testing.T) {
 			So(err, ShouldErrLike, "invalid host")
 		})
 
-		Convey("get not exists", func() {
+		Convey("ExternalID.Get fails if CL doesn't exist", func() {
 			_, err := eid.Get(ctx)
 			So(err, ShouldResemble, datastore.ErrNoSuchEntity)
 		})
 
-		Convey("create", func() {
-			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
-				cl.Snapshot = makeSnapshot(luciProject, epoch)
-			})
+		Convey("ExternalID.MustCreateIfNotExists creates a CL", func() {
+			cl := eid.MustCreateIfNotExists(ctx)
+			So(cl, ShouldNotBeNil)
+			So(cl.ExternalID, ShouldResemble, eid)
+			// ID must be autoset to non-0 value.
+			So(cl.ID, ShouldNotEqual, 0)
+			So(cl.EVersion, ShouldEqual, 1)
+			So(cl.UpdateTime, ShouldResemble, epoch)
 
-			Convey("GetOrInsert succeed", func() {
-				So(err, ShouldBeNil)
-				So(cl.ExternalID, ShouldResemble, eid)
-				// ID must be autoset to non-0 value.
-				So(cl.ID, ShouldNotEqual, 0)
-				So(cl.EVersion, ShouldEqual, 1)
-				So(cl.UpdateTime, ShouldResemble, epoch)
-			})
-
-			Convey("Get exists", func() {
+			Convey("ExternalID.Get loads existing CL", func() {
 				cl2, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
 				So(cl2.ID, ShouldEqual, cl.ID)
@@ -83,11 +78,9 @@ func TestCL(t *testing.T) {
 				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
 			})
 
-			Convey("GetOrInsert already exists", func() {
-				cl3, err := eid.GetOrInsert(ctx, func(cl *CL) {
-					cl.Snapshot = &Snapshot{Patchset: 999}
-				})
-				So(err, ShouldBeNil)
+			Convey("ExternalID.MustCreateIfNotExists loads existing CL", func() {
+				cl3 := eid.MustCreateIfNotExists(ctx)
+				So(cl3, ShouldNotBeNil)
 				So(cl3.ID, ShouldEqual, cl.ID)
 				So(cl3.ExternalID, ShouldResemble, eid)
 				So(cl3.EVersion, ShouldEqual, 1)
@@ -151,9 +144,7 @@ func TestLookup(t *testing.T) {
 		for i := range eids {
 			eids[i] = MustGobID("x-review.example.com", int64(i+1))
 			if i%2 == 0 {
-				cl, err := eids[i].GetOrInsert(ctx, func(*CL) {})
-				So(err, ShouldBeNil)
-				ids[i] = cl.ID
+				ids[i] = eids[i].MustCreateIfNotExists(ctx).ID
 			}
 		}
 
