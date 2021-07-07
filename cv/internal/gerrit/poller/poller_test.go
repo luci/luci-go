@@ -97,66 +97,6 @@ func TestSchedule(t *testing.T) {
 	})
 }
 
-func TestScheduleRefreshTasks(t *testing.T) {
-	t.Parallel()
-
-	Convey("scheduleRefreshTasks works", t, func() {
-		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
-		defer cancel()
-
-		const lProject = "chromium"
-		const gHost = "chromium-review.example.com"
-		const gRepo = "infra/infra"
-
-		pm := pmMock{}
-		clUpdater := clUpdaterMock{}
-		p := New(ct.TQDispatcher, ct.GFake.Factory(), &clUpdater, &pm)
-
-		changes := []int64{1, 2, 3, 4, 5}
-		const notYetSaved = 4
-
-		var knownIDs common.CLIDs
-		for _, i := range changes {
-			if i == notYetSaved {
-				continue
-			}
-			cl, err := changelist.MustGobID(gHost, i).GetOrInsert(ctx, func(cl *changelist.CL) {
-				// In practice, cl.Snapshot would be populated, but for this test it
-				// doesn't matter.
-			})
-			So(err, ShouldBeNil)
-			knownIDs = append(knownIDs, cl.ID)
-		}
-		sort.Sort(knownIDs)
-
-		err := p.scheduleRefreshTasks(ctx, lProject, gHost, changes)
-		So(err, ShouldBeNil)
-
-		// PM must be notified immediately on CLs already saved.
-		ids := pm.projects[lProject]
-		sort.Sort(ids)
-		So(ids, ShouldResemble, knownIDs)
-
-		// CL Updater must have scheduled tasks.
-		etas := clUpdater.peekETAs()
-		payloads := clUpdater.popPayloadsByETA()
-		So(payloads, ShouldHaveLength, len(changes))
-		// Tasks must be somewhat distributed in time.
-		mid := ct.Clock.Now().Add(fullPollInterval / 2)
-		So(etas[1], ShouldHappenBefore, mid)
-		So(etas[3], ShouldHappenAfter, mid)
-		// For not yet saved CL, PM must be forcefully notified.
-		var forced []int64
-		for _, p := range payloads {
-			if p.GetForceNotify() {
-				forced = append(forced, p.GetChange())
-			}
-		}
-		So(forced, ShouldResemble, []int64{notYetSaved})
-	})
-}
-
 func TestPoller(t *testing.T) {
 	t.Parallel()
 
