@@ -70,6 +70,24 @@
       "parentUuid": "f2a92c59_6ea0cd0a",
       "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8cc7a554_4dc08030",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-07-07T04:15:49Z",
+      "side": 1,
+      "message": "Fair points, PTAL",
+      "parentUuid": "7f309d9f_826ae247",
+      "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
