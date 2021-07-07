@@ -16,6 +16,24 @@
       "message": "I\u0027d welcome any suggestions for a better way to do this. I thought about adding more fallback cases to the current script, but worry that it would slow down vpython startup time (extra filesystem operations to probe for more modules)",
       "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a54375a1_f7bc4716",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2021-07-07T03:09:55Z",
+      "side": 1,
+      "message": "Do we expect there to be multiple cases that come up commonly? If there\u0027s only one common case we can put that one first, and incur no slowdown from the others since they don\u0027t get hit.",
+      "parentUuid": "16a30623_4d5c279a",
+      "revId": "86a370180c1517d1a4fe63d379cf3f7afd2e255e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
