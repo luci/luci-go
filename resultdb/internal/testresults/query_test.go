@@ -356,6 +356,18 @@ func TestQueryTestResults(t *testing.T) {
 			So(actual, ShouldResembleProto, expected)
 		})
 
+		Convey(`Failure reason`, func() {
+			expected := insert.MakeTestResults("inv1", "DoFailureReason", nil, pb.TestStatus_PASS)
+			expected[0].FailureReason = &pb.FailureReason{
+				PrimaryErrorMessage: "want true, got false",
+			}
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+
+			actual, _ := mustFetch(q)
+			So(actual, ShouldResembleProto, expected)
+		})
+
 		Convey(`Variant in the mask`, func() {
 			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 
