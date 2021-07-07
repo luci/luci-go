@@ -101,7 +101,7 @@ func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLID
 	return u.ScheduleBatch(ctx, runID.LUCIProject(), true /*force notify PM*/, cls)
 }
 
-func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *prjcfg.ConfigGroup) error {
+func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *prjcfg.ConfigGroup) error {
 	clids := make(common.CLIDs, len(toCancel))
 	for i, runCL := range toCancel {
 		clids[i] = runCL.ID
@@ -116,7 +116,7 @@ func cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.R
 		for i := range toCancel {
 			i := i
 			work <- func() error {
-				err := cancel.Cancel(ctx, cancel.Input{
+				err := cancel.Cancel(ctx, impl.GFactory, cancel.Input{
 					CL:               cls[i],
 					Trigger:          toCancel[i].Trigger,
 					LUCIProject:      luciProject,

@@ -60,6 +60,7 @@ func TestOnCLUpdated(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, cfg)
 		h := &Impl{
 			CLUpdater: &clUpdaterMock{},
+			GFactory:  ct.GFake.Factory(),
 		}
 
 		// initial state

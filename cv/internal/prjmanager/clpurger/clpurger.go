@@ -31,6 +31,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -44,13 +45,14 @@ import (
 // Purger purges CLs for Project Manager.
 type Purger struct {
 	pmNotifier *prjmanager.Notifier
+	gFactory   gerrit.ClientFactory
 	clUpdater  *updater.Updater
 }
 
 // New creates a Purger and registers it for handling tasks created by the given
 // PM Notifier.
-func New(n *prjmanager.Notifier, u *updater.Updater) *Purger {
-	p := &Purger{n, u}
+func New(n *prjmanager.Notifier, g gerrit.ClientFactory, u *updater.Updater) *Purger {
+	p := &Purger{n, g, u}
 	n.TasksBinding.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
@@ -124,7 +126,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
 	}
 	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
-	err = cancel.Cancel(ctx, cancel.Input{
+	err = cancel.Cancel(ctx, p.gFactory, cancel.Input{
 		LUCIProject:      task.GetLuciProject(),
 		CL:               cl,
 		LeaseDuration:    time.Minute,

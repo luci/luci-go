@@ -81,7 +81,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		_ = runimpl.New(runNotifier, pmNotifier, clUpdater, tc, bqc)
+		_ = runimpl.New(runNotifier, pmNotifier, gFactory, clUpdater, tc, bqc)
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{

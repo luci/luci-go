@@ -146,11 +146,12 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		}
 	}
 
+	gFactory := t.GFake.Factory()
 	t.PMNotifier = prjmanager.NewNotifier(t.TQDispatcher)
 	t.RunNotifier = run.NewNotifier(t.TQDispatcher)
-	clUpdater := updater.New(t.TQDispatcher, t.GFake.Factory(), t.PMNotifier, t.RunNotifier)
-	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, t.GFake.Factory(), clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clUpdater, t.TreeFake.Client(), t.BQFake)
+	clUpdater := updater.New(t.TQDispatcher, gFactory, t.PMNotifier, t.RunNotifier)
+	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, gFactory, clUpdater)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, gFactory, clUpdater, t.TreeFake.Client(), t.BQFake)
 
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,

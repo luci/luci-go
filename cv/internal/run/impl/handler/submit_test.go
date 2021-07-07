@@ -131,6 +131,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		h := &Impl{
 			RM:         run.NewNotifier(ct.TQDispatcher),
 			TreeClient: ct.TreeFake.Client(),
+			GFactory:   ct.GFake.Factory(),
 			CLUpdater:  &clUpdaterMock{},
 		}
 
@@ -340,6 +341,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		rs := &state.RunState{Run: r}
 		h := &Impl{
 			RM:        run.NewNotifier(ct.TQDispatcher),
+			GFactory:  ct.GFake.Factory(),
 			CLUpdater: &clUpdaterMock{},
 		}
 

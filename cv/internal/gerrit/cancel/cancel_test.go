@@ -49,6 +49,7 @@ func TestCancel(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
+		gFactory := ct.GFake.Factory()
 		user := gf.U("user-100")
 		const gHost = "x-review.example.com"
 		const lProject = "lProject"
@@ -120,7 +121,7 @@ func TestCancel(t *testing.T) {
 					},
 				},
 			}
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldErrLike, "failed to cancel trigger because CV lost access to this CL")
 			So(ErrPreconditionFailedTag.In(err), ShouldBeTrue)
 		})
@@ -146,7 +147,7 @@ func TestCancel(t *testing.T) {
 				},
 			}
 			So(datastore.Put(ctx, newCL), ShouldBeNil)
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldErrLike, "failed to cancel because ps 2 is not current for cl(99999)")
 			So(ErrPreconditionFailedTag.In(err), ShouldBeTrue)
 		})
@@ -155,7 +156,7 @@ func TestCancel(t *testing.T) {
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.PS(3)(c.Info)
 			})
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldErrLike, "failed to cancel because ps 2 is not current for x-review.example.com/10001")
 			So(ErrPreconditionFailedTag.In(err), ShouldBeTrue)
 		})
@@ -164,7 +165,7 @@ func TestCancel(t *testing.T) {
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.Updated(clock.Now(ctx).Add(-3 * time.Minute))(c.Info)
 			})
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldErrLike, "got stale change info from gerrit for x-review.example.com/10001")
 			So(transient.Tag.In(err), ShouldBeTrue)
 		})
@@ -184,7 +185,7 @@ func TestCancel(t *testing.T) {
 			return onBehalf, asSelf
 		}
 		Convey("Remove single vote", func() {
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
@@ -217,7 +218,7 @@ func TestCancel(t *testing.T) {
 			})
 
 			Convey("Success", func() {
-				err := Cancel(ctx, input)
+				err := Cancel(ctx, gFactory, input)
 				So(err, ShouldBeNil)
 				resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 				So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
@@ -253,7 +254,7 @@ func TestCancel(t *testing.T) {
 						gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
 					) // no permission to vote on behalf of others
 				})
-				err := Cancel(ctx, input)
+				err := Cancel(ctx, gFactory, input)
 				So(err, ShouldBeNil)
 				onBehalfs, _ := splitSetReviewRequests()
 				So(onBehalfs, ShouldHaveLength, 3) // all non-triggering votes
@@ -328,7 +329,7 @@ func TestCancel(t *testing.T) {
 				// user-104 votes is 0, and doesn't need a reset.
 				ultraQuick(0, clock.Now(ctx).Add(-90*time.Second), gf.U("user-104"))(c.Info)
 			})
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldBeNil)
 
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
@@ -353,7 +354,7 @@ func TestCancel(t *testing.T) {
 				gf.CQ(0, clock.Now(ctx).Add(-110*time.Second), gf.U("user-103"))(c.Info)
 			})
 
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
@@ -368,7 +369,7 @@ func TestCancel(t *testing.T) {
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.CQ(0, clock.Now(ctx), user)(c.Info)
 			})
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
@@ -382,7 +383,7 @@ func TestCancel(t *testing.T) {
 					gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
 				)
 			})
-			So(Cancel(ctx, input), ShouldBeNil)
+			So(Cancel(ctx, gFactory, input), ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
 			So(gf.NonZeroVotes(resultCI, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
@@ -413,7 +414,7 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 					return status.New(codes.OK, "")
 				}
 			})
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
@@ -435,7 +436,7 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject)
 			})
-			err := Cancel(ctx, input)
+			err := Cancel(ctx, gFactory, input)
 			So(err, ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
 			So(ErrPermanentTag.In(err), ShouldBeTrue)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info

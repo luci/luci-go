@@ -190,7 +190,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		if err != nil {
 			return nil, err
 		}
-		if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc, cg); err != nil {
+		if err := impl.cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc, cg); err != nil {
 			return nil, err
 		}
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
@@ -265,7 +265,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 			if err != nil {
 				return nil, err
 			}
-			if err := cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc, cg); err != nil {
+			if err := impl.cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc, cg); err != nil {
 				return nil, err
 			}
 		}
@@ -387,7 +387,7 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 	return nil
 }
 
-func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
+func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
 	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
 	if err != nil {
@@ -413,7 +413,7 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 		default:
 			msg = defaultMsg
 		}
-		return cancelCLTriggers(ctx, runID, allRunCLs, runCLExternalIDs, msg, cg)
+		return impl.cancelCLTriggers(ctx, runID, allRunCLs, runCLExternalIDs, msg, cg)
 	}
 
 	// Multi-CL Run
@@ -434,7 +434,7 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 			go func() {
 				defer wg.Done()
 				msg := fmt.Sprintf("%s\n\n%s", messages[failedCL.ID], msgSuffix)
-				errs[i] = cancelCLTriggers(ctx, runID, []*run.RunCL{failedCL}, runCLExternalIDs, msg, cg)
+				errs[i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{failedCL}, runCLExternalIDs, msg, cg)
 			}()
 		}
 		// cancel triggers of CLs that CV won't try to submit.
@@ -463,17 +463,17 @@ func cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submi
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				errs[len(failed)+i] = cancelCLTriggers(ctx, runID, []*run.RunCL{pendingCL}, runCLExternalIDs, pendingMsg, cg)
+				errs[len(failed)+i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{pendingCL}, runCLExternalIDs, pendingMsg, cg)
 			}()
 		}
 		wg.Wait()
 		return common.MostSevereError(errs)
 	case sc.GetTimeout():
 		msg := fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix)
-		return cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg)
+		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg)
 	default:
 		msg := fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
-		return cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg)
+		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg)
 	}
 }
 

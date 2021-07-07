@@ -65,6 +65,7 @@ func TestCancel(t *testing.T) {
 		h := &Impl{
 			PM:        prjmanager.NewNotifier(ct.TQDispatcher),
 			RM:        run.NewNotifier(ct.TQDispatcher),
+			GFactory:  ct.GFake.Factory(),
 			CLUpdater: &clUpdaterMock{},
 		}
 

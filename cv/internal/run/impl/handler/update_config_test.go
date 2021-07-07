@@ -137,7 +137,10 @@ func TestUpdateConfig(t *testing.T) {
 		cfgNew := proto.Clone(cfgCurrent).(*cfgpb.Config)
 		cfgNew.ConfigGroups = append(cfgNew.ConfigGroups, &cfgpb.ConfigGroup{Name: "foo"})
 
-		h := &Impl{CLUpdater: &clUpdaterMock{}}
+		h := &Impl{
+			GFactory:  ct.GFake.Factory(),
+			CLUpdater: &clUpdaterMock{},
+		}
 
 		updateConfig := func() *Result {
 			prjcfgtest.Update(ctx, lProject, cfgNew)
