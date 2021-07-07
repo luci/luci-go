@@ -165,7 +165,7 @@ type Input struct {
 //   * reason for abnormality,
 //   * special `botdata.BotData` which ensures CV won't consider previously
 //     triggering votes as triggering in the future.
-func Cancel(ctx context.Context, in Input) error {
+func Cancel(ctx context.Context, gFactory gerrit.ClientFactory, in Input) error {
 	switch {
 	case in.CL.Snapshot == nil:
 		panic("cl.Snapshot must be non-nil")
@@ -191,7 +191,9 @@ func Cancel(ctx context.Context, in Input) error {
 		Number:      in.CL.Snapshot.GetGerrit().GetInfo().GetNumber(),
 		Revision:    in.CL.Snapshot.GetGerrit().GetInfo().GetCurrentRevision(),
 	}
-	if err := c.initGerritClient(ctx); err != nil {
+
+	var err error
+	if c.gc, err = gFactory(ctx, c.Host, c.LUCIProject); err != nil {
 		return err
 	}
 
@@ -310,13 +312,6 @@ type change struct {
 	//
 	// For ease of passing to SetReview API, each label maps to 0.
 	votesToRemove map[int64]map[string]int32
-}
-
-func (c *change) initGerritClient(ctx context.Context) (err error) {
-	if c.gc == nil {
-		c.gc, err = gerrit.CurrentClient(ctx, c.Host, c.LUCIProject)
-	}
-	return err
 }
 
 func (c *change) getLatest(ctx context.Context) (*gerritpb.ChangeInfo, error) {

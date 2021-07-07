@@ -80,7 +80,7 @@ func New(n *prjmanager.Notifier, rn *run.Notifier, g gerrit.ClientFactory, u *up
 	pm := &ProjectManager{
 		pmNotifier:  n,
 		runNotifier: rn,
-		clPurger:    clpurger.New(n, u),
+		clPurger:    clpurger.New(n, g, u),
 		clPoller:    poller.New(n.TasksBinding.TQDispatcher, g, u, n),
 	}
 	n.TasksBinding.ManageProject.AttachHandler(
