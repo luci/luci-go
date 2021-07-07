@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -113,9 +114,9 @@ func TestRunManager(t *testing.T) {
 			{
 				&eventpb.Event{
 					Event: &eventpb.Event_ClUpdated{
-						ClUpdated: &eventpb.CLUpdated{
+						ClUpdated: &changelist.CLUpdatedEvent{
 							Clid:     int64(1),
-							EVersion: int64(2),
+							Eversion: int64(2),
 						},
 					},
 				},
