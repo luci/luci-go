@@ -20,33 +20,33 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestBuildQuery(t *testing.T) {
+func TestGerritQueryString(t *testing.T) {
 	t.Parallel()
 
-	Convey("buildQuery works", t, func() {
-		sp := &SubPoller{}
+	Convey("gerritString works", t, func() {
+		qs := &QueryState{}
 
 		Convey("single project", func() {
-			sp.OrProjects = []string{"inf/ra"}
-			So(buildQuery(sp, queryLimited), ShouldEqual,
+			qs.OrProjects = []string{"inf/ra"}
+			So(qs.gerritString(queryLimited), ShouldEqual,
 				`status:NEW label:Commit-Queue>0 project:"inf/ra"`)
 		})
 
 		Convey("many projects", func() {
-			sp.OrProjects = []string{"inf/ra", "second"}
-			So(buildQuery(sp, queryLimited), ShouldEqual,
+			qs.OrProjects = []string{"inf/ra", "second"}
+			So(qs.gerritString(queryLimited), ShouldEqual,
 				`status:NEW label:Commit-Queue>0 (project:"inf/ra" OR project:"second")`)
 		})
 
 		Convey("shared prefix", func() {
-			sp.CommonProjectPrefix = "shared"
-			So(buildQuery(sp, queryLimited), ShouldEqual,
+			qs.CommonProjectPrefix = "shared"
+			So(qs.gerritString(queryLimited), ShouldEqual,
 				`status:NEW label:Commit-Queue>0 projects:"shared"`)
 		})
 
 		Convey("unlimited", func() {
-			sp.CommonProjectPrefix = "shared"
-			So(buildQuery(sp, queryAll), ShouldEqual,
+			qs.CommonProjectPrefix = "shared"
+			So(qs.gerritString(queryAll), ShouldEqual,
 				`projects:"shared"`)
 		})
 	})

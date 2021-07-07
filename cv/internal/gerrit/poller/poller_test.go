@@ -205,7 +205,7 @@ func TestPoller(t *testing.T) {
 			st := mustGetState(lProject)
 			So(st.EVersion, ShouldEqual, 1)
 			fullPollStamp := timestamppb.New(ct.Clock.Now())
-			So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{{
+			So(st.QueryStates.GetStates(), ShouldResembleProto, []*QueryState{{
 				Host:         gHost,
 				OrProjects:   []string{gRepo},
 				LastFullTime: fullPollStamp,
@@ -238,7 +238,7 @@ func TestPoller(t *testing.T) {
 					// Execute next poll task, it should be incremental.
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 					st = mustGetState(lProject)
-					So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{{
+					So(st.QueryStates.GetStates(), ShouldResembleProto, []*QueryState{{
 						Host:         gHost,
 						OrProjects:   []string{gRepo},
 						LastFullTime: fullPollStamp,
@@ -277,7 +277,7 @@ func TestPoller(t *testing.T) {
 
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 						st = mustGetState(lProject)
-						So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{{
+						So(st.QueryStates.GetStates(), ShouldResembleProto, []*QueryState{{
 							Host:         gHost,
 							OrProjects:   []string{gRepo},
 							LastFullTime: timestamppb.New(ct.Clock.Now()),
@@ -302,7 +302,7 @@ func TestPoller(t *testing.T) {
 							ct.Clock.Add(fullPollInterval)
 							execTooLatePoll(ctx)
 							ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
-							So(mustGetState(lProject).SubPollers.GetSubPollers()[0].GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
+							So(mustGetState(lProject).QueryStates.GetStates()[0].GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 
 							So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 							// PM must be notified on all 31..34.
@@ -325,7 +325,7 @@ func TestPoller(t *testing.T) {
 							})
 
 							ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
-							So(mustGetState(lProject).SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
+							So(mustGetState(lProject).QueryStates.GetStates(), ShouldResembleProto, []*QueryState{
 								{
 									Host:         gHost,
 									OrProjects:   []string{gRepo},
@@ -350,9 +350,9 @@ func TestPoller(t *testing.T) {
 				})
 			})
 
-			Convey("notices updated config, updates SubPollers state", func() {
+			Convey("notices updated config, updates queries' state", func() {
 				before := mustGetState(lProject)
-				before.SubPollers.SubPollers[0].Changes = []int64{31, 32}
+				before.QueryStates.States[0].Changes = []int64{31, 32}
 				So(datastore.Put(ctx, before), ShouldBeNil)
 
 				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
@@ -360,14 +360,14 @@ func TestPoller(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				after := mustGetState(lProject)
 				So(after.ConfigHash, ShouldNotEqual, before.ConfigHash)
-				So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
+				So(after.QueryStates.GetStates(), ShouldResembleProto, []*QueryState{
 					{
 						Host:                gHost,
 						CommonProjectPrefix: "shared",
 						LastFullTime:        timestamppb.New(ct.Clock.Now()),
 					},
 					{
-						// Re-used SubPoller state.
+						// Re-used QueryState.
 						Host:         gHost,
 						OrProjects:   []string{gRepo},
 						LastFullTime: fullPollStamp,                   // same as before
@@ -378,11 +378,11 @@ func TestPoller(t *testing.T) {
 				So(watchedBy(ctx, gHost, "shared/001", "refs/heads/main").
 					HasOnlyProject(lProject), ShouldBeTrue)
 
-				Convey("if SubPollers state can't be re-used, schedules CL update events", func() {
+				Convey("if QueryState can't be re-used, schedules CL update events", func() {
 					prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 					after := mustGetState(lProject)
-					So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
+					So(after.QueryStates.GetStates(), ShouldResembleProto, []*QueryState{
 						{
 							Host:         gHost,
 							OrProjects:   []string{"another/repo"},

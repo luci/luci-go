@@ -177,7 +177,7 @@ message GetPollerResponse {
   int64 eversion = 2;
   google.protobuf.Timestamp update_time = 3;
   string config_hash = 4;
-  cv.internal.gerrit.poller.SubPollers subpollers = 5;
+  cv.internal.gerrit.poller.QueryStates query_states = 5;
 }
 
 message DeleteProjectEventsRequest {

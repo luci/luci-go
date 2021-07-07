@@ -45,8 +45,8 @@ const (
 )
 
 // partitionConfig partitions LUCI Project config into minimal number of
-// SubPollers for efficient querying.
-func partitionConfig(cgs []*prjcfg.ConfigGroup) []*SubPoller {
+// queries for efficient querying.
+func partitionConfig(cgs []*prjcfg.ConfigGroup) []*QueryState {
 	// 1 LUCI project typically watches 1-2 GoB hosts.
 	hosts := make([]string, 0, 2)
 	repos := make(map[string]stringset.Set, 2)
@@ -63,17 +63,16 @@ func partitionConfig(cgs []*prjcfg.ConfigGroup) []*SubPoller {
 		}
 	}
 	sort.Strings(hosts)
-	subpollers := make([]*SubPoller, 0, len(hosts))
+	queries := make([]*QueryState, 0, len(hosts))
 	for _, host := range hosts {
-		subpollers = append(subpollers,
-			partitionHostRepos(host, repos[host].ToSlice(), maxReposPerQuery)...)
+		queries = append(queries, partitionHostRepos(host, repos[host].ToSlice(), maxReposPerQuery)...)
 	}
-	return subpollers
+	return queries
 }
 
-// partitionHostRepos partitions repos of the same Gerrit host into SubPollers.
+// partitionHostRepos partitions repos of the same Gerrit host into queries.
 // Mutates the passed repos slice.
-func partitionHostRepos(host string, repos []string, maxReposPerQuery int) []*SubPoller {
+func partitionHostRepos(host string, repos []string, maxReposPerQuery int) []*QueryState {
 	// Heuristic targeting ChromeOS like structure with lots of repos under
 	// chromiumos/ prefix.
 	byPrefix := make(map[string][]string, 2)
@@ -87,51 +86,51 @@ func partitionHostRepos(host string, repos []string, maxReposPerQuery int) []*Su
 	}
 	sort.Strings(prefixes)
 
-	subpollers := make([]*SubPoller, 0, 1)
+	queries := make([]*QueryState, 0, 1)
 	remainingRepos := repos[:0] // re-use the slice.
 	for _, prefix := range prefixes {
 		if shared := byPrefix[prefix]; len(shared) < minReposPerPrefixQuery {
 			remainingRepos = append(remainingRepos, shared...)
 		} else {
-			subpollers = append(subpollers, &SubPoller{
+			queries = append(queries, &QueryState{
 				Host:                host,
 				CommonProjectPrefix: prefix,
 			})
 		}
 	}
 	if len(remainingRepos) == 0 {
-		return subpollers
+		return queries
 	}
 
-	// Split remainingRepos into SubPollers minimizing max of repos per SubPoller.
+	// Split remainingRepos into queries minimizing max of repos per query.
 	// TODO(crbug/1163177): take ref_regexp into account, since most LUCI projects
 	// watching >1 project use the same ref(s) for each, which in turn allows to
 	// specify `branch:` search term for Gerrit.
 	// Note that rounding up positive int division is (x-1)/y + 1.
-	neededSubPollers := (len(remainingRepos)-1)/maxReposPerQuery + 1
-	maxPerSubPoller := (len(remainingRepos)-1)/neededSubPollers + 1
+	neededQueries := (len(remainingRepos)-1)/maxReposPerQuery + 1
+	maxPerQuery := (len(remainingRepos)-1)/neededQueries + 1
 	sort.Strings(remainingRepos)
 	for {
-		sp := &SubPoller{Host: host}
+		q := &QueryState{Host: host}
 		switch l := len(remainingRepos); {
 		case l == 0:
-			return subpollers
-		case l <= maxPerSubPoller:
-			sp.OrProjects = remainingRepos
+			return queries
+		case l <= maxPerQuery:
+			q.OrProjects = remainingRepos
 		default:
-			sp.OrProjects = remainingRepos[:maxPerSubPoller]
+			q.OrProjects = remainingRepos[:maxPerQuery]
 		}
-		subpollers = append(subpollers, sp)
-		remainingRepos = remainingRepos[len(sp.GetOrProjects()):]
+		queries = append(queries, q)
+		remainingRepos = remainingRepos[len(q.GetOrProjects()):]
 	}
 }
 
-func reuseIfPossible(old, proposed []*SubPoller) (use, discarded []*SubPoller) {
+func reuseIfPossible(old, proposed []*QueryState) (use, discarded []*QueryState) {
 	// Crypto quality hash is used to to infer equality.
 	//
 	// Each string is emitted as (<len>, string).
 	// List of OrProjects is prefixed by its length.
-	hash := func(s *SubPoller) string {
+	hash := func(s *QueryState) string {
 		h := sha256.New()
 
 		buf := make([]byte, 10) // varint uint64 will definitely fit.
@@ -154,7 +153,7 @@ func reuseIfPossible(old, proposed []*SubPoller) (use, discarded []*SubPoller) {
 		return string(h.Sum(nil))
 	}
 
-	m := make(map[string]*SubPoller, len(old))
+	m := make(map[string]*QueryState, len(old))
 	for _, o := range old {
 		m[hash(o)] = o
 	}
