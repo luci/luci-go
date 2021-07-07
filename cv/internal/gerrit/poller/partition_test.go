@@ -45,22 +45,22 @@ func TestPartitionConfig(t *testing.T) {
 				return
 			}
 			cgs := makeCfgs(singleRepoConfig("h1", "infra/222", "infra/111"))
-			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
+			So(partitionConfig(cgs), ShouldResembleProto, []*QueryState{
 				{Host: "h1", OrProjects: []string{"infra/111", "infra/222"}},
 			})
 
 			cgs = append(cgs, makeCfgs(singleRepoConfig("h1", sharedPrefixRepos("infra", 30)...))...)
-			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
+			So(partitionConfig(cgs), ShouldResembleProto, []*QueryState{
 				{Host: "h1", CommonProjectPrefix: "infra"},
 			})
 			cgs = append(cgs, makeCfgs(singleRepoConfig("h2", "infra/499", "infra/132"))...)
-			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
+			So(partitionConfig(cgs), ShouldResembleProto, []*QueryState{
 				{Host: "h1", CommonProjectPrefix: "infra"},
 				{Host: "h2", OrProjects: []string{"infra/132", "infra/499"}},
 			})
 		})
 
-		Convey("evenly distributes repos among SubPollers", func() {
+		Convey("evenly distributes repos among queries", func() {
 			So(minReposPerPrefixQuery, ShouldBeGreaterThan, 5)
 			repos := stringset.New(23)
 			repos.AddAll(sharedPrefixRepos("a", 5))
@@ -68,18 +68,18 @@ func TestPartitionConfig(t *testing.T) {
 			repos.AddAll(sharedPrefixRepos("c", 3))
 			repos.AddAll(sharedPrefixRepos("d", 5))
 			repos.AddAll(sharedPrefixRepos("e", 5))
-			subpollers := partitionHostRepos(
+			queries := partitionHostRepos(
 				"host",
 				repos.ToSlice(), // effectively shuffles repos
 				7,               // at most 7 per query.
 			)
-			So(subpollers, ShouldHaveLength, 4) // 7*3 < 23 < 7*4
+			So(queries, ShouldHaveLength, 4) // 7*3 < 23 < 7*4
 
-			for _, sp := range subpollers {
+			for _, qs := range queries {
 				// Ensure each has 5..6 repos instead max of 7.
-				So(len(sp.GetOrProjects()), ShouldBeBetweenOrEqual, 5, 6)
-				So(sort.StringsAreSorted(sp.GetOrProjects()), ShouldBeTrue)
-				repos.DelAll(sp.GetOrProjects())
+				So(len(qs.GetOrProjects()), ShouldBeBetweenOrEqual, 5, 6)
+				So(sort.StringsAreSorted(qs.GetOrProjects()), ShouldBeTrue)
+				repos.DelAll(qs.GetOrProjects())
 			}
 
 			// Ensure no overlaps or missed repos.
