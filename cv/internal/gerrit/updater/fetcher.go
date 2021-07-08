@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/grpc/codes"
@@ -245,7 +246,8 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		return nil
 	}
 
-	if f.priorSnapshot().GetGerrit().GetInfo().GetCurrentRevision() == f.mustHaveCurrentRevision() {
+	// TODO(crbug/1227384): re-enable after incorrect Files bug is fixed.
+	if false && f.priorSnapshot().GetGerrit().GetInfo().GetCurrentRevision() == f.mustHaveCurrentRevision() {
 		// Re-use past results since CurrentRevision is the same.
 		f.toUpdate.Snapshot.GetGerrit().Files = f.priorSnapshot().GetGerrit().GetFiles()
 		f.toUpdate.Snapshot.GetGerrit().GitDeps = f.priorSnapshot().GetGerrit().GetGitDeps()
@@ -264,6 +266,16 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		}
 		if err = eg.Wait(); err != nil {
 			return err
+		}
+		// TODO(crbug/1227384): remove this check.
+		if rev := f.mustHaveCurrentRevision(); rev == f.priorSnapshot().GetGerrit().GetInfo().GetCurrentRevision() {
+			// Gerrit.Files are always sorted, so can compare two lists directly.
+			new := f.toUpdate.Snapshot.GetGerrit().GetFiles()
+			old := f.priorSnapshot().GetGerrit().GetFiles()
+			if diff := cmp.Diff(old, new); diff != "" {
+				// Emit the diff and old list first in case log line gets truncated
+				logging.Errorf(ctx, "crbug/1227384: invalid files but the same revision %s:\n%s\n\nOLD: %s\n\nNEW: %s", rev, diff, old, new)
+			}
 		}
 	}
 
