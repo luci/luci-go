@@ -102,9 +102,9 @@ func TestConcurentRunsSingular(t *testing.T) {
 			return actions[idxI].finishTime.Before(actions[idxJ].finishTime)
 		})
 
-		// Start CQDaemon and make him obey finishAt and finalStatus.
+		// Start CQDaemon and make it obey finishAt and finalStatus.
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
 				gChange := r.GetAttempt().GetGerritChanges()[0].GetChange()
 				a := actions[gChange-gChangeFirst]
 				if ct.Clock.Now().Before(a.finishTime) {
