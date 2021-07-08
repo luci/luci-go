@@ -105,6 +105,8 @@ func TestComponentsActions(t *testing.T) {
 
 		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "main"}}})
 		meta := prjcfgtest.MustExist(ctx, lProject)
+		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
+		runNotifier := run.NewNotifier(ct.TQDispatcher)
 		state := &State{
 			PB: &prjpb.PState{
 				LuciProject: lProject,
@@ -124,8 +126,9 @@ func TestComponentsActions(t *testing.T) {
 				},
 				NextEvalTime: timestamppb.New(now.Add(1 * time.Minute)),
 			},
-			PMNotifier:  prjmanager.NewNotifier(ct.TQDispatcher),
-			RunNotifier: run.NewNotifier(ct.TQDispatcher),
+			PMNotifier:  pmNotifier,
+			RunNotifier: runNotifier,
+			CLMutator:   changelist.NewMutator(ct.TQDispatcher, pmNotifier, runNotifier),
 		}
 
 		pb := backupPB(state)
