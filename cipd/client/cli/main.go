@@ -382,7 +382,7 @@ func (opts *clientOptions) resolvedServiceURL(ctx context.Context) string {
 	if opts.serviceURL != "" {
 		return opts.serviceURL
 	}
-	if v := cli.Getenv(ctx, cipd.EnvCIPDServiceUrl); v != "" {
+	if v := cli.Getenv(ctx, cipd.EnvCIPDServiceURL); v != "" {
 		return v
 	}
 	return opts.hardcoded.ServiceURL
@@ -3336,7 +3336,7 @@ func GetApplication(params Parameters) *cli.Application {
 				Advanced:  true,
 				ShortDesc: "JSON-encoded list with a command line of a deployment admission plugin.",
 			},
-			cipd.EnvCIPDServiceUrl: {
+			cipd.EnvCIPDServiceURL: {
 				Advanced:  true,
 				ShortDesc: "Override CIPD service URL.",
 			},
