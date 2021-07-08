@@ -65,13 +65,7 @@ func TestEndRun(t *testing.T) {
 		sort.Sort(cl.IncompleteRuns)
 		So(datastore.Put(ctx, &cl), ShouldBeNil)
 
-		clUpdater := &clUpdaterMock{}
-		h := &Impl{
-			PM:         prjmanager.NewNotifier(ct.TQDispatcher),
-			GFactory:   ct.GFake.Factory(),
-			CLUpdater:  clUpdater,
-			BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake),
-		}
+		h, _, _, clUpdater := makeTestImpl(&ct)
 		se := h.endRun(ctx, rs, run.Status_FAILED)
 		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.Run.EndTime, ShouldEqual, ct.Clock.Now())
@@ -88,6 +82,22 @@ func TestEndRun(t *testing.T) {
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
 		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 	})
+}
+
+func makeTestImpl(ct *cvtesting.Test) (*Impl, *prjmanager.Notifier, *run.Notifier, *clUpdaterMock) {
+	pm := prjmanager.NewNotifier(ct.TQDispatcher)
+	rm := run.NewNotifier(ct.TQDispatcher)
+	clu := &clUpdaterMock{}
+	impl := &Impl{
+		PM:         pm,
+		RM:         rm,
+		CLMutator:  changelist.NewMutator(ct.TQDispatcher, pm, rm),
+		CLUpdater:  clu,
+		TreeClient: ct.TreeFake.Client(),
+		GFactory:   ct.GFake.Factory(),
+		BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake),
+	}
+	return impl, pm, rm, clu
 }
 
 type clUpdaterMock struct {
