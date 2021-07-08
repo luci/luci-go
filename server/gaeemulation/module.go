@@ -44,7 +44,6 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/gae/filter/dscache"
@@ -186,7 +185,7 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 		}
 		clientOpts = []option.ClientOption{
 			option.WithTokenSource(ts),
-			option.WithGRPCDialOption(grpc.WithUnaryInterceptor(grpcmon.NewUnaryClientInterceptor(nil))),
+			option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
 		}
 	}
 
