@@ -73,7 +73,7 @@ const (
 // AllowOriginAll returns AccessAllowWithCredentials unconditionally.
 // It can be used as Server.AccessControl.
 // It must NOT be used in combination with cookie-based authentication.
-func AllowOriginAll(c context.Context, origin string) AccessControlDecision {
+func AllowOriginAll(ctx context.Context, origin string) AccessControlDecision {
 	return AccessAllowWithCredentials
 }
 
