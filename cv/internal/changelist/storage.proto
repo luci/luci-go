@@ -366,3 +366,14 @@ message CLError {
     string run = 1;
   }
 }
+
+// CLUpdatedEvent is just a CL ID pinned to its latest known EVersion.
+message CLUpdatedEvent {
+  int64 clid = 1;
+  int64 eversion = 2;
+}
+
+// CLUpdatedEvents is a batch of CLUpdatedEvents.
+message CLUpdatedEvents {
+  repeated CLUpdatedEvent events = 1;
+}

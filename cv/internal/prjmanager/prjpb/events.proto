@@ -18,6 +18,7 @@ package cv.internal.prjmanager.prjpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
+import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 
 // Event is a container for all kinds of events a project manager can receive.
 message Event {
@@ -26,8 +27,9 @@ message Event {
 
     Poke poke = 2;
 
-    CLUpdated cl_updated = 3;
-    CLsUpdated cls_updated = 7;
+    // Deprecated. Use batch version only.
+    cv.internal.changelist.CLUpdatedEvent cl_updated = 3;
+    cv.internal.changelist.CLUpdatedEvents cls_updated = 7;
 
     RunCreated run_created = 4;
     RunFinished run_finished = 5;
@@ -42,20 +44,6 @@ message NewConfig {}
 
 // Poke is sent to PM by Project Config updater.
 message Poke {}
-
-// CLUpdated is sent to PM when a CL entity attributes relevant to PM were
-// updated, e.g. Snapshot.
-message CLUpdated {
-  // Internal ID of a CL that was updated.
-  int64 clid = 1;
-  // EVersion of the updated CL entity.
-  int64 eversion = 2;
-}
-
-// CLsUpdated are multiple CLUpdated events.
-message CLsUpdated {
-  repeated CLUpdated cls = 1;
-}
 
 // RunCreated is sent to PM by either itself or API-based Run creation.
 message RunCreated {
@@ -73,7 +61,7 @@ message RunFinished {
 // See storage.proto:PurgingCL doc.
 //
 // There is no status of the purge because it's the CL state that matters,
-// hence success or failure will reach PM via CLUpdated event.
+// hence success or failure will reach PM via CLUpdatedEvent.
 message PurgeCompleted {
   // Operation ID suffices to identify a purge.
   string operation_id = 1;
