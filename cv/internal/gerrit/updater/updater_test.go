@@ -510,10 +510,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("Notify IncompleteRuns", func() {
 				rid1 := common.RunID("chromium/111-1-dead")
 				rid2 := common.RunID("chromium/222-1-beef")
-				cl.Mutate(ctx, func(cl *changelist.CL) (updated bool) {
-					cl.IncompleteRuns = []common.RunID{rid1, rid2}
-					return true
-				})
+				cl.IncompleteRuns = []common.RunID{rid1, rid2}
 				So(datastore.Put(ctx, cl), ShouldBeNil)
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				So(rm.popNotifiedRuns(), ShouldResemble, common.RunIDs{rid1, rid2})
@@ -527,10 +524,7 @@ func TestUpdateCLWorks(t *testing.T) {
 
 			Convey("Updates snapshots explicitly marked outdated", func() {
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
-				cl.Mutate(ctx, func(cl *changelist.CL) (updated bool) {
-					cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
-					return true
-				})
+				cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
 				So(datastore.Put(ctx, cl), ShouldBeNil)
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion+1)
