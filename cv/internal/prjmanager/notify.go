@@ -77,7 +77,7 @@ func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
 func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
 	return n.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClUpdated{
-			ClUpdated: &prjpb.CLUpdated{
+			ClUpdated: &changelist.CLUpdatedEvent{
 				Clid:     int64(clid),
 				Eversion: int64(eversion),
 			},

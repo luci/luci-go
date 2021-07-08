@@ -21,7 +21,8 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 )
 
-type sortableCLUpdated []*CLUpdated
+// TODO(tandrii): move this to changelist.
+type sortableCLUpdated []*changelist.CLUpdatedEvent
 
 func (s sortableCLUpdated) Len() int               { return len(s) }
 func (s sortableCLUpdated) Less(i int, j int) bool { return s[i].GetClid() < s[j].GetClid() }
@@ -30,19 +31,19 @@ func (s sortableCLUpdated) Swap(i int, j int)      { s[i], s[j] = s[j], s[i] }
 // MakeCLsUpdated returns CLsUpdated given the CLs.
 //
 // In each given CL, .ID and .EVersion must be set.
-func MakeCLsUpdated(cls []*changelist.CL) *CLsUpdated {
-	pbcls := make(sortableCLUpdated, len(cls))
+func MakeCLsUpdated(cls []*changelist.CL) *changelist.CLUpdatedEvents {
+	events := make(sortableCLUpdated, len(cls))
 	for i, cl := range cls {
 		if cl.ID == 0 || cl.EVersion == 0 {
 			panic(fmt.Errorf("ID %d and EVersion %d must not be 0", cl.ID, cl.EVersion))
 		}
-		pbcls[i] = &CLUpdated{
+		events[i] = &changelist.CLUpdatedEvent{
 			Clid:     int64(cl.ID),
 			Eversion: int64(cl.EVersion),
 		}
 	}
-	sort.Sort(pbcls)
-	return &CLsUpdated{
-		Cls: pbcls,
+	sort.Sort(events)
+	return &changelist.CLUpdatedEvents{
+		Events: events,
 	}
 }

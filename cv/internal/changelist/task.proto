@@ -18,19 +18,12 @@ package cv.internal.changelist;
 
 option go_package = "go.chromium.org/luci/cv/internal/changelist;changelist";
 
+import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+
 // BatchOnCLUpdatedTask notifies many Projects and Runs about updated CLs.
 //
 // Queue: "notify-on-cl-updated".
 message BatchOnCLUpdatedTask {
-  message Events {
-    repeated CLUpdatedEvent events = 1;
-  }
-  map<string, Events> projects = 1;
-  map<string, Events> runs = 2;
-}
-
-// CLUpdatedEvent is just a CL ID pinned to its latest known EVersion.
-message CLUpdatedEvent {
-  int64 clid = 1;
-  int64 eversion = 2;
+  map<string, CLUpdatedEvents> projects = 1;
+  map<string, CLUpdatedEvents> runs = 2;
 }

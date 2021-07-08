@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -333,7 +334,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.triageCLUpdated(v.ClUpdated, item.ID)
 	case *prjpb.Event_ClsUpdated:
 		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
-		for _, cl := range v.ClsUpdated.Cls {
+		for _, cl := range v.ClsUpdated.GetEvents() {
 			tr.triageCLUpdated(cl, item.ID)
 		}
 
@@ -364,7 +365,7 @@ func (tr *triageResult) highestIDWins(item eventbox.Event, target *eventbox.Even
 	}
 }
 
-func (tr *triageResult) triageCLUpdated(v *prjpb.CLUpdated, id string) {
+func (tr *triageResult) triageCLUpdated(v *changelist.CLUpdatedEvent, id string) {
 	clid := v.GetClid()
 	ev := v.GetEversion()
 

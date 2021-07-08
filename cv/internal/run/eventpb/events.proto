@@ -19,6 +19,7 @@ package cv.internal.run.eventpb;
 option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 
 // Event is a container for all kinds of events a Run Manager can receive.
 message Event {
@@ -45,7 +46,8 @@ message Event {
     //
     // Sent by Gerrit Updater if Run is inside the `IncompleteRuns` list of
     // a CL.
-    CLUpdated cl_updated = 5;
+    // TODO(tandrii): deprecate this and transition to a batch version.
+    cv.internal.changelist.CLUpdatedEvent cl_updated = 5;
     // On ReadyForSubmission event, Run Manager will try to submit CLs in
     // this Run.
     ReadyForSubmission ready_for_submission = 6;
@@ -100,13 +102,6 @@ message NewConfig {
   // Provided for identifying the latest NewConfig message
   // if there are more than one outstanding NewConfig event.
   int64 eversion = 2;
-}
-
-message CLUpdated {
-  // Internal ID of a CL that was updated.
-  int64 clid = 1;
-  // EVersion of the updated CL entity.
-  int64 eVersion = 2;
 }
 
 message ReadyForSubmission {
