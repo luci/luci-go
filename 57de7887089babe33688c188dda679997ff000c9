@@ -22,6 +22,30 @@
       },
       "revId": "57de7887089babe33688c188dda679997ff000c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8611654d_e1bca7ce",
+        "filename": "cv/internal/changelist/task.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T21:22:55Z",
+      "side": 1,
+      "message": "nvm, saw the next CL.",
+      "parentUuid": "41d813a8_cf1aba65",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 1
+      },
+      "revId": "57de7887089babe33688c188dda679997ff000c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
