@@ -59,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0021586f_fa35447f",
+        "filename": "cv/internal/changelist/mutator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T22:15:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f7119c9f_a33332a8",
+      "range": {
+        "startLine": 247,
+        "startChar": 3,
+        "endLine": 247,
+        "endChar": 10
+      },
+      "revId": "2da5ca5ad8a6cd866b441f3487a6d8fca8b9e8d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "85b62c05_a6c2dcc6",
@@ -72,6 +96,30 @@
       "writtenOn": "2021-07-08T19:27:09Z",
       "side": 1,
       "message": "nit: move it closer to where run is paralleled, i.e. after L357",
+      "range": {
+        "startLine": 350,
+        "startChar": 0,
+        "endLine": 351,
+        "endChar": 28
+      },
+      "revId": "2da5ca5ad8a6cd866b441f3487a6d8fca8b9e8d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ade4a4e8_bcfc0fda",
+        "filename": "cv/internal/changelist/mutator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T22:15:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85b62c05_a6c2dcc6",
       "range": {
         "startLine": 350,
         "startChar": 0,
