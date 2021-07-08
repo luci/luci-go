@@ -22,6 +22,30 @@
       },
       "revId": "8740c86cc0d5d9470c4542eebf9e74df144cb143",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "70fb2a1d_8ab301a7",
+        "filename": "cv/internal/gerrit/updater/fetcher.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "52243f72_c6fc492c",
+      "range": {
+        "startLine": 180,
+        "startChar": 26,
+        "endLine": 180,
+        "endChar": 27
+      },
+      "revId": "8740c86cc0d5d9470c4542eebf9e74df144cb143",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
