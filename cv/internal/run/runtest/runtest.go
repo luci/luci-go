@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -135,9 +136,9 @@ func AssertReceivedPoke(ctx context.Context, runID common.RunID, eta time.Time) 
 func AssertReceivedCLUpdate(ctx context.Context, runID common.RunID, clid common.CLID, eversion int) {
 	AssertInEventbox(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_ClUpdated{
-			ClUpdated: &eventpb.CLUpdated{
+			ClUpdated: &changelist.CLUpdatedEvent{
 				Clid:     int64(clid),
-				EVersion: int64(eversion),
+				Eversion: int64(eversion),
 			},
 		},
 	})

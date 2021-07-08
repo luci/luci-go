@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -156,9 +157,9 @@ func (n *Notifier) CancelAt(ctx context.Context, runID common.RunID, eta time.Ti
 func (n *Notifier) NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
 	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_ClUpdated{
-			ClUpdated: &eventpb.CLUpdated{
+			ClUpdated: &changelist.CLUpdatedEvent{
 				Clid:     int64(clid),
-				EVersion: int64(eVersion),
+				Eversion: int64(eVersion),
 			},
 		},
 	})
