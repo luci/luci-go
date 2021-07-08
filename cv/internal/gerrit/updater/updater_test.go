@@ -589,7 +589,9 @@ func TestUpdateCLWorks(t *testing.T) {
 				ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 					// Only ChangeInfo but not ListFiles and GetRelatedChanges RPCs should
 					// be called. So, ensure 2+ RPCs return 5xx.
-					c.ACLs = okThenErr5xx()
+					// TODO(crbug/1227384): re-enable okThenErr5xx and remove file change.
+					// c.ACLs = okThenErr5xx()
+					gf.Files("crbug/1227384/detected.diff")(c.Info)
 				})
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
