@@ -20,12 +20,12 @@ import (
 	"time"
 
 	storage "cloud.google.com/go/bigquery/storage/apiv1beta2"
-	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 )
@@ -122,7 +122,7 @@ func (m *bqlogModule) Initialize(ctx context.Context, host module.Host, opts mod
 			return nil, errors.Annotate(err, "failed to initialize credentials").Err()
 		}
 		writer, err = storage.NewBigQueryWriteClient(ctx,
-			option.WithGRPCDialOption(grpc.WithStatsHandler(&ocgrpc.ClientHandler{})),
+			option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
 			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 			option.WithGRPCDialOption(grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time: time.Minute,

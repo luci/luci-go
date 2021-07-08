@@ -19,6 +19,7 @@ import (
 	"math"
 	"time"
 
+	"go.opencensus.io/plugin/ocgrpc"
 	gcode "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/stats"
@@ -122,6 +123,20 @@ func reportClientRPCMetrics(ctx context.Context, method string, err error, dur t
 	grpcClientCount.Add(ctx, 1, method, canon)
 	// TODO(tandrii): use dur.Milliseconds() once all GAE apps are >go1.11.
 	grpcClientDuration.Add(ctx, dur.Seconds()*1e3, method, canon)
+}
+
+// WithClientRPCStatsMonitor returns a DialOption that specifies a chain of
+// ClientRPCStatsMonitor and Opencensus' gRPC stats handler for all the outgoing
+// gRPC traffic.
+//
+// ClientRPCStatsMonitor updates the grpcmon metrics, and Opencensus' handler
+// propagates Google Cloud Trace contexts.
+func WithClientRPCStatsMonitor() grpc.DialOption {
+	return WithMultiStatsHandler(
+		&ClientRPCStatsMonitor{},
+		// https://github.com/googleapis/google-api-go-client/blob/6c8f9c553065cd8c92cb6f51c2eabea88ffb3407/transport/grpc/dial.go#L180
+		&ocgrpc.ClientHandler{},
+	)
 }
 
 // ClientRPCStatsMonitor implements stats.Handler to update tsmon metrics with
