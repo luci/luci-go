@@ -128,12 +128,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 		rs := &state.RunState{Run: r}
 
-		h := &Impl{
-			RM:         run.NewNotifier(ct.TQDispatcher),
-			TreeClient: ct.TreeFake.Client(),
-			GFactory:   ct.GFake.Factory(),
-			CLUpdater:  &clUpdaterMock{},
-		}
+		h, _, _, _ := makeTestImpl(&ct)
 
 		statuses := []run.Status{
 			run.Status_SUCCEEDED,
@@ -339,11 +334,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		ct.GFake.SetDependsOn(gHost, ci1, ci2)
 
 		rs := &state.RunState{Run: r}
-		h := &Impl{
-			RM:        run.NewNotifier(ct.TQDispatcher),
-			GFactory:  ct.GFake.Factory(),
-			CLUpdater: &clUpdaterMock{},
-		}
+		h, _, _, _ := makeTestImpl(&ct)
 
 		statuses := []run.Status{
 			run.Status_SUCCEEDED,
@@ -955,9 +946,7 @@ func TestOnCLSubmitted(t *testing.T) {
 			},
 		}}
 
-		h := &Impl{
-			GFactory: ct.GFake.Factory(),
-		}
+		h, _, _, _ := makeTestImpl(&ct)
 		Convey("Single", func() {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{3})
 			So(err, ShouldBeNil)
