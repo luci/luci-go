@@ -16,6 +16,24 @@
       "message": "Del",
       "revId": "7cd3be00ae36fa65fcb8abbf7289800fd3bd1eaf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4cf1256_3148a24e",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T23:34:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e03433f_b68fa4c3",
+      "revId": "7cd3be00ae36fa65fcb8abbf7289800fd3bd1eaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
