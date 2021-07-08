@@ -40,6 +40,8 @@ import (
 	"go.chromium.org/luci/server/templates"
 	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
+	clientauth "go.chromium.org/luci/auth"
+
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
@@ -169,7 +171,19 @@ func Run(templatePath string) {
 }
 
 func installAPIRoutes(r *router.Router, base router.MiddlewareChain) {
-	server := &prpc.Server{}
+	server := &prpc.Server{
+		// The default OAuth2Method invalidates all access tokens associated
+		// with an OAuth client ID once the user signed out. This is problematic
+		// because the access token could be cached and we have Milo hosted on
+		// multiple domains.
+		Authenticator: &auth.Authenticator{
+			Methods: []auth.Method{
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{clientauth.OAuthScopeEmail},
+				},
+			},
+		},
+	}
 	milopb.RegisterMiloInternalServer(server, &backend.MiloInternalService{})
 
 	discovery.Enable(server)
