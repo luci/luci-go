@@ -178,18 +178,6 @@ func TestPurgeCL(t *testing.T) {
 				// The PM task should be ASAP.
 				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
-
-			Convey("Doesn't purge if CV isn't managing Runs for the project", func() {
-				settings.UseCvRuns.ProjectRegexpExclude = []string{lProject}
-				So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
-
-				So(schedule(), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
-				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
-				assertPMNotified("op")
-				// Should create PM task with ETA ~1 minute later.
-				So(pmDispatcher.LatestETAof(lProject), ShouldHappenAfter, ct.Clock.Now().Add(time.Minute-2*time.Second))
-			})
 		})
 	})
 }
