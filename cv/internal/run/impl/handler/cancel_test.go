@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -62,12 +61,7 @@ func TestCancel(t *testing.T) {
 				common.MakeRunID(lProject, ct.Clock.Now().Add(1*time.Minute), 1, []byte("cafecafe")),
 			},
 		}), ShouldBeNil)
-		h := &Impl{
-			PM:        prjmanager.NewNotifier(ct.TQDispatcher),
-			RM:        run.NewNotifier(ct.TQDispatcher),
-			GFactory:  ct.GFake.Factory(),
-			CLUpdater: &clUpdaterMock{},
-		}
+		h, _, _, _ := makeTestImpl(&ct)
 
 		Convey("When CV is in charge", func() {
 			ct.EnableCVRunManagement(ctx, lProject)

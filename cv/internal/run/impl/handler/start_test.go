@@ -66,7 +66,7 @@ func TestStart(t *testing.T) {
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			},
 		}
-		h := &Impl{}
+		h, _, _, _ := makeTestImpl(&ct)
 
 		Convey("Starts when Run is PENDING", func() {
 			ctx, _, _ = tsmon.WithFakes(ctx)
