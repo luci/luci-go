@@ -285,7 +285,13 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		if rev := f.mustHaveCurrentRevision(); rev == f.priorSnapshot().GetGerrit().GetInfo().GetCurrentRevision() {
 			// Gerrit.Files are always sorted, so can compare two lists directly.
 			new := f.toUpdate.Snapshot.GetGerrit().GetFiles()
+			if len(new) == 0 {
+				new = nil
+			}
 			old := f.priorSnapshot().GetGerrit().GetFiles()
+			if len(old) == 0 {
+				old = nil
+			}
 			if diff := cmp.Diff(old, new); diff != "" {
 				// Emit the diff and old list first in case log line gets truncated
 				logging.Errorf(ctx, "crbug/1227384: invalid files but the same revision %s:\n%s\n\nOLD: %s\n\nNEW: %s", rev, diff, old, new)
