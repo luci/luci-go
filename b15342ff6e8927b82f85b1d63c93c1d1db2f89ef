@@ -159,6 +159,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0e388d1_a3933052",
+        "filename": "lucicfg/examples/02-ci-and-try/generated/cr-buildbucket.cfg",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T14:20:11Z",
+      "side": 1,
+      "message": "Found out about the strings.Replacer type, so swapping back and forth is simple enough.",
+      "parentUuid": "cdc85c7f_e9be4d13",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 9
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bf2b010e_e6ad1855",
