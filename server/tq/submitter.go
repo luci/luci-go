@@ -20,7 +20,6 @@ import (
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	pubsub "cloud.google.com/go/pubsub/apiv1"
-	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -29,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcmon"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
 )
@@ -66,7 +66,7 @@ func NewCloudSubmitter(ctx context.Context, creds credentials.PerRPCCredentials)
 		option.WithGRPCDialOption(grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time: 5 * time.Minute,
 		})),
-		option.WithGRPCDialOption(grpc.WithStatsHandler(&ocgrpc.ClientHandler{})),
+		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 	}
 

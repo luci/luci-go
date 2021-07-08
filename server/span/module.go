@@ -122,7 +122,7 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	// Initialize the client.
 	options := []option.ClientOption{
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
-		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(grpcmon.NewUnaryClientInterceptor(nil))),
+		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
 	}
 	if m.opts.SpannerEndpoint != "" {
 		options = append(options, option.WithEndpoint(m.opts.SpannerEndpoint))
