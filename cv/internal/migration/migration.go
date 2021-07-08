@@ -97,46 +97,6 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 	return &emptypb.Empty{}, nil
 }
 
-// ReportFinishedRun is used by CQD to report runs it handled to completion.
-//
-// It'll be removed upon hitting Milestone 1.
-func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (resp *emptypb.Empty, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if ctx, err = m.checkAllowed(ctx); err != nil {
-		return nil, err
-	}
-	k := req.GetRun().GetAttempt().GetKey()
-	if k == "" {
-		return nil, appstatus.Error(codes.InvalidArgument, "attempt key is required")
-	}
-	if gc := req.GetRun().GetAttempt().GetGerritChanges(); len(gc) == 0 {
-		return nil, appstatus.Error(codes.InvalidArgument, "at least 1 gerrit change is required")
-	}
-
-	optionalID := common.RunID(req.GetRun().GetId())
-	logging.Debugf(ctx, "ReportFinishedRun(Run %q | Attempt %q)", optionalID, k)
-	r, err := fetchRun(ctx, optionalID, k)
-	switch {
-	case err != nil:
-		return nil, err
-	case r == nil && optionalID != "":
-		return nil, appstatus.Errorf(codes.NotFound, "Run %q does not exist", optionalID)
-	case r == nil:
-		logging.Warningf(ctx, "No matching Run, saving FinishedCQDRun(attempt key %q) anyway:\n%s", k, req)
-	case optionalID == "":
-		// Set the missing Run ID.
-		req.GetRun().Id = string(r.ID)
-	}
-
-	err = saveFinishedCQDRun(ctx, req.GetRun(), func(ctx context.Context) error {
-		if r != nil {
-			return m.RunNotifier.NotifyCQDFinished(ctx, r.ID)
-		}
-		return nil
-	})
-	return &emptypb.Empty{}, nil
-}
-
 func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if ctx, err = m.checkAllowed(ctx); err != nil {
@@ -268,22 +228,6 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 		return nil, err
 	}
 	return resp, nil
-}
-
-// FetchExcludedCLs returns all CLs referenced by VerifiedCQDRun entities
-// corresponding to not yet finished Runs.
-func (m *MigrationServer) FetchExcludedCLs(ctx context.Context, req *migrationpb.FetchExcludedCLsRequest) (resp *migrationpb.FetchExcludedCLsResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if ctx, err = m.checkAllowed(ctx); err != nil {
-		return nil, err
-	}
-	if req.GetLuciProject() == "" {
-		return nil, appstatus.Error(codes.InvalidArgument, "luci_project is required")
-	}
-
-	resp = &migrationpb.FetchExcludedCLsResponse{}
-	resp.Cls, err = fetchExcludedCLs(ctx, req.GetLuciProject())
-	return resp, err
 }
 
 func (m *MigrationServer) FetchRunStatus(ctx context.Context, req *migrationpb.FetchRunStatusRequest) (resp *migrationpb.FetchRunStatusResponse, err error) {
