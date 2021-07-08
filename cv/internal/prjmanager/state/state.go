@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // State is a state of Project Manager.
@@ -69,7 +68,7 @@ type State struct {
 
 	// Dependencies used to prepare state transitions.
 	PMNotifier      *prjmanager.Notifier
-	RunNotifier     *run.Notifier
+	RunNotifier     RunNotifier
 	CLPurger        *clpurger.Purger
 	CLPoller        *poller.Poller
 	ComponentTriage itriager.Triage
@@ -87,6 +86,13 @@ type State struct {
 	//
 	// lazily created, see ensurePCLIndex().
 	pclIndex pclIndex // CLID => index in PB.Pcls slice.
+}
+
+type RunNotifier interface {
+	Start(ctx context.Context, id common.RunID) error
+	PokeNow(ctx context.Context, id common.RunID) error
+	Cancel(ctx context.Context, id common.RunID) error
+	UpdateConfig(ctx context.Context, id common.RunID, hash string, eversion int64) error
 }
 
 // UpdateConfig updates PM to the latest config version.
