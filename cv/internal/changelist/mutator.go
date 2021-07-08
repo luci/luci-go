@@ -286,6 +286,29 @@ func (m *Mutator) Begin(ctx context.Context, project string, id common.CLID) (*C
 	return clMutation, nil
 }
 
+// Adopt starts a mutation of a given CL which was just read from Datastore.
+//
+// CL must have been loaded in the same Datastore transaction.
+// CL must have been kept read-only after loading. It's OK to modify it after
+// CLMutation is returned.
+//
+// Adopt exists when there is substantial advantage in batching loading of CL
+// and non-CL entities in a single Datastore RPC.
+// Prefer to use Begin unless performance consideration is critical.
+func (m *Mutator) Adopt(ctx context.Context, project string, cl *CL) *CLMutation {
+	clMutation := &CLMutation{
+		CL:      cl,
+		m:       m,
+		trans:   datastore.CurrentTransaction(ctx),
+		project: project,
+	}
+	if clMutation.trans == nil {
+		panic(fmt.Errorf("changelist.Mutator.Adopt must be called inside an existing Datastore transaction"))
+	}
+	clMutation.backup()
+	return clMutation
+}
+
 func (clm *CLMutation) backup() {
 	clm.id = clm.CL.ID
 	clm.externalID = clm.CL.ExternalID

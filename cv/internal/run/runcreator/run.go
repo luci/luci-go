@@ -147,7 +147,7 @@ var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("Run Creator: state c
 //
 //   * all other errors are non retryable and typically indicate a bug or severe
 //     misconfiguration. For example, lack of ProjectStateOffload entity.
-func (rb *Creator) Create(ctx context.Context, pm pmNotifier, rm rmNotifier) (ret *run.Run, err error) {
+func (rb *Creator) Create(ctx context.Context, clMutator *changelist.Mutator, pm pmNotifier, rm rmNotifier) (ret *run.Run, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")
 	defer func() { span.End(err) }()
 
@@ -155,7 +155,7 @@ func (rb *Creator) Create(ctx context.Context, pm pmNotifier, rm rmNotifier) (re
 	rb.prepare(now)
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		ret, innerErr = rb.createTransactionally(ctx, pm, rm)
+		ret, innerErr = rb.createTransactionally(ctx, clMutator, pm, rm)
 		return innerErr
 	}, nil)
 	switch {
@@ -210,14 +210,14 @@ func (rb *Creator) prepare(now time.Time) {
 	rb.computeRunID()
 }
 
-func (rb *Creator) createTransactionally(ctx context.Context, pm pmNotifier, rm rmNotifier) (*run.Run, error) {
+func (rb *Creator) createTransactionally(ctx context.Context, clMutator *changelist.Mutator, pm pmNotifier, rm rmNotifier) (*run.Run, error) {
 	switch err := rb.load(ctx); {
 	case err == errAlreadyCreated:
 		return rb.run, nil
 	case err != nil:
 		return nil, err
 	}
-	if err := rb.save(ctx, pm, rm); err != nil {
+	if err := rb.save(ctx, clMutator, pm, rm); err != nil {
 		return nil, err
 	}
 	return rb.run, nil
@@ -312,7 +312,7 @@ func (rb *Creator) checkCLsUnchanged(ctx context.Context) {
 // save saves all modified and created Datastore entities.
 //
 // It may be retried multiple times on failure.
-func (rb *Creator) save(ctx context.Context, pm pmNotifier, rm rmNotifier) error {
+func (rb *Creator) save(ctx context.Context, clMutator *changelist.Mutator, pm pmNotifier, rm rmNotifier) error {
 	// NOTE: within the Datastore transaction,
 	//  * NotifyRunCreated && run.Start put a Reminder entity in Datastore (see
 	//    server/tq/txn).
@@ -333,17 +333,15 @@ func (rb *Creator) save(ctx context.Context, pm pmNotifier, rm rmNotifier) error
 		if err := rb.saveRunCL(ctx, i); err != nil {
 			return err
 		}
-		if err := rb.saveCL(ctx, i, now); err != nil {
-			return err
-		}
 	}
-
-	// TODO(cbrug/1215792): notify all relevant PM & RM from each modified CL has updated.
-	if err := pm.NotifyCLsUpdated(ctx, rb.LUCIProject, changelist.ToUpdatedEvents(rb.cls...)); err != nil {
+	clMutations := make([]*changelist.CLMutation, len(rb.cls))
+	for i, cl := range rb.cls {
+		clMutations[i] = clMutator.Adopt(ctx, rb.LUCIProject, cl)
+		clMutations[i].CL.IncompleteRuns.InsertSorted(rb.runID)
+	}
+	if _, err := clMutator.FinalizeBatch(ctx, clMutations); err != nil {
 		return err
 	}
-	// In the future once Runs can be created via API requests, the PM has to be
-	// awoken.
 	if err := pm.NotifyRunCreated(ctx, rb.runID); err != nil {
 		return err
 	}
@@ -389,17 +387,6 @@ func (rb *Creator) saveRunCL(ctx context.Context, index int) error {
 	}
 	if err := datastore.Put(ctx, entity); err != nil {
 		return errors.Annotate(err, "failed to save RunCL %d", inputCL.ID).Tag(transient.Tag).Err()
-	}
-	return nil
-}
-
-func (rb *Creator) saveCL(ctx context.Context, index int, now time.Time) error {
-	cl := rb.cls[index]
-	cl.EVersion++
-	cl.UpdateTime = now
-	cl.IncompleteRuns.InsertSorted(rb.runID)
-	if err := datastore.Put(ctx, cl); err != nil {
-		return errors.Annotate(err, "failed to save CL %d", cl.ID).Tag(transient.Tag).Err()
 	}
 	return nil
 }
