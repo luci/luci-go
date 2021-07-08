@@ -71,7 +71,7 @@ func main() {
 		// Register TQ handlers.
 		pmNotifier := prjmanager.NewNotifier(&tq.Default)
 		runNotifier := run.NewNotifier(&tq.Default)
-		clMutator := changelist.NewMutator(pmNotifier, runNotifier)
+		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
 		clUpdater := updater.New(&tq.Default, gFactory, clMutator)
 		_ = pmimpl.New(pmNotifier, runNotifier, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
@@ -82,7 +82,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		_ = runimpl.New(runNotifier, pmNotifier, gFactory, clUpdater, tc, bqc)
+		_ = runimpl.New(runNotifier, pmNotifier, clMutator, clUpdater, gFactory, tc, bqc)
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{
