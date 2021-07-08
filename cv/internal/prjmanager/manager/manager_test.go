@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
-	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
+	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
@@ -120,7 +120,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			So(p.EVersion, ShouldEqual, 1)
 			So(ps.Status, ShouldEqual, prjpb.Status_STARTED)
 			So(plog, ShouldNotBeNil)
-			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+			So(poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), ShouldResemble, []string{lProject})
 
 			// Ensure first poller task gets executed.
 			ct.Clock.Add(time.Hour)
@@ -168,7 +168,7 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(p.EVersion, ShouldEqual, 3)
 					So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
 					So(plog, ShouldNotBeNil)
-					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+					So(poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), ShouldResemble, []string{lProject})
 
 					// Must schedule a task per Run for cancellation.
 					So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
@@ -204,7 +204,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				So(p.EVersion, ShouldEqual, 2)
 				So(ps.Status, ShouldEqual, prjpb.Status_STOPPED)
 				So(plog, ShouldNotBeNil)
-				So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+				So(poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), ShouldResemble, []string{lProject})
 			})
 		})
 	})
@@ -330,7 +330,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		events, err = eventbox.List(ctx, recipient)
 		So(err, ShouldBeNil)
 		So(events, ShouldBeEmpty)
-		So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+		So(poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), ShouldResemble, []string{lProject})
 
 		// At least 1 worker must finish successfully.
 		errCnt, _ := errs.Summary()

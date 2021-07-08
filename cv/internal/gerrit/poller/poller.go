@@ -36,9 +36,10 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
-	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 )
+
+const TaskClassID = "poll-gerrit"
 
 // PM encapsulates interaction with Project Manager by the Poller.
 type PM interface {
@@ -64,14 +65,14 @@ type Poller struct {
 func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, clUpdater CLUpdater, pm PM) *Poller {
 	p := &Poller{tqd, g, clUpdater, pm}
 	tqd.RegisterTaskClass(tq.TaskClass{
-		ID:           task.ClassID,
-		Prototype:    &task.PollGerritTask{},
+		ID:           TaskClassID,
+		Prototype:    &PollGerritTask{},
 		Queue:        "poll-gerrit",
 		Quiet:        true,
 		QuietOnError: true,
 		Kind:         tq.NonTransactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*task.PollGerritTask)
+			task := payload.(*PollGerritTask)
 			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			err := p.poll(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{
@@ -183,7 +184,7 @@ func (p *Poller) schedule(ctx context.Context, luciProject string, after time.Ti
 	}
 	task := &tq.Task{
 		Title: luciProject,
-		Payload: &task.PollGerritTask{
+		Payload: &PollGerritTask{
 			LuciProject: luciProject,
 			Eta:         timestamppb.New(eta),
 		},
