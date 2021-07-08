@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // SideEffect describes action to be done transactionally with updating state in
@@ -77,7 +76,7 @@ const concurrency = 16
 
 // UpdateIncompleteRunsConfig sends UpdateConfig events to incomplete Runs.
 type UpdateIncompleteRunsConfig struct {
-	RunNotifier *run.Notifier
+	RunNotifier RunNotifier
 	RunIDs      common.RunIDs
 	Hash        string
 	EVersion    int64
@@ -98,7 +97,7 @@ func (u *UpdateIncompleteRunsConfig) Do(ctx context.Context) error {
 
 // CancelIncompleteRuns sends Cancel event to incomplete Runs.
 type CancelIncompleteRuns struct {
-	RunNotifier *run.Notifier
+	RunNotifier RunNotifier
 	RunIDs      common.RunIDs
 }
 

@@ -40,7 +40,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/triager"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 const (
@@ -66,9 +65,7 @@ type ProjectManager struct {
 	// pmNotifier notifies itself and invokes itself via async TQ tasks.
 	pmNotifier *prjmanager.Notifier
 	// runNotifier notifies Run Manager.
-	//
-	// TODO(tandrii): define actually used subset as an interface.
-	runNotifier *run.Notifier
+	runNotifier state.RunNotifier
 
 	clPurger *clpurger.Purger
 	clPoller *poller.Poller
@@ -76,7 +73,7 @@ type ProjectManager struct {
 
 // New creates a new ProjectManager and registers it for handling tasks created
 // by the given TQ Notifier.
-func New(n *prjmanager.Notifier, rn *run.Notifier, g gerrit.ClientFactory, u *updater.Updater) *ProjectManager {
+func New(n *prjmanager.Notifier, rn state.RunNotifier, g gerrit.ClientFactory, u *updater.Updater) *ProjectManager {
 	pm := &ProjectManager{
 		pmNotifier:  n,
 		runNotifier: rn,
@@ -158,7 +155,7 @@ type pmProcessor struct {
 	luciProject string
 
 	pmNotifier  *prjmanager.Notifier
-	runNotifier *run.Notifier
+	runNotifier state.RunNotifier
 	clPurger    *clpurger.Purger
 	clPoller    *poller.Poller
 
