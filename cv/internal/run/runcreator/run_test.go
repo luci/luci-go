@@ -99,8 +99,6 @@ func TestRunBuilder(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
-		ctx, rmDispatcher := runtest.MockDispatch(ctx)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
 
@@ -338,17 +336,14 @@ func TestRunBuilder(t *testing.T) {
 				})
 			}
 
-			// PM event must sent, but PM itself must not be dispatched.
+			// Both PM and RM must be notified.
 			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
 				RunId: string(r.ID),
 			}}})
-			// TODO(crbug/1215792): fix this and don't actually dispatch PM.
-			So(pmDispatcher.PopProjects(), ShouldResemble, []string{lProject})
 			pmtest.AssertReceivedCLsNotified(ctx, lProject, rb.cls)
-
-			// RM must be sent an event and dispatched.
 			runtest.AssertInEventbox(ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
-			So(rmDispatcher.PopRuns(), ShouldResemble, common.RunIDs{r.ID})
+			// But only RM must have an immediate task to start working on a new Run.
+			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{r.ID})
 		})
 	})
 }
