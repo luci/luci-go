@@ -230,7 +230,6 @@ func TestDiscoversCLs(t *testing.T) {
 			Convey("On project start, just creates CLUpdater tasks with forceNotify", func() {
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
 				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{31, 32, 33, 34, 35})
-				So(clUpdater.peekScheduledChangesWithForceNotify(true), ShouldResemble, []int{31, 32, 33, 34, 35})
 				postFullQueryVerify()
 			})
 
@@ -252,8 +251,6 @@ func TestDiscoversCLs(t *testing.T) {
 				So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDs(knownCLIDs...))
 				// All CLs must have clUpdater tasks.
 				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{31, 32, 33, 34, 35})
-				// But only 34..35 should have forceNotify=true.
-				So(clUpdater.peekScheduledChangesWithForceNotify(true), ShouldResemble, []int{34, 35})
 				postFullQueryVerify()
 			})
 
@@ -281,10 +278,6 @@ func TestDiscoversCLs(t *testing.T) {
 				So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDs(knownCLIDs...))
 				// All current and prior CLs must have clUpdater tasks.
 				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{25, 26, 27, 31, 32, 33, 34, 35})
-				// But only 35 needs forceNotify=true as PM is already notified of
-				// others and will be additionally notified by CLUpdater if CLs are
-				// updated.
-				So(clUpdater.peekScheduledChangesWithForceNotify(true), ShouldResemble, []int{35})
 				postFullQueryVerify()
 			})
 
@@ -314,9 +307,6 @@ func TestDiscoversCLs(t *testing.T) {
 				// multiple tasks for changes 31..34. While this is unfortunte, it's
 				// rare enough that it doesn't really matter.
 				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{30, 31, 31, 32, 32, 33, 33, 34, 34, 35})
-				// And only 35 should have forceNotify=true, since the rest have reached
-				// PM directly.
-				So(clUpdater.peekScheduledChangesWithForceNotify(true), ShouldResemble, []int{35})
 				postFullQueryVerify()
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
@@ -335,7 +325,6 @@ func TestDiscoversCLs(t *testing.T) {
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
 
 				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{34, 35})
-				So(clUpdater.peekScheduledChangesWithForceNotify(false), ShouldResemble, []int{34, 35})
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
 				So(qs.GetLastIncrTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
@@ -349,7 +338,6 @@ func TestDiscoversCLs(t *testing.T) {
 				So(datastore.Put(ctx, s), ShouldBeNil)
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
 
-				So(clUpdater.peekScheduledChangesWithForceNotify(false), ShouldResemble, []int{34, 35})
 				qs := mustLoadState().QueryStates.GetStates()[0]
 				So(qs.GetLastIncrTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
@@ -482,19 +470,6 @@ func (c *clUpdaterMock) peekScheduledChanges() []int {
 	out := make([]int, len(c.tasks))
 	for i, t := range c.tasks {
 		out[i] = int(t.payload.GetChange())
-	}
-	sort.Ints(out)
-	return out
-}
-
-func (c *clUpdaterMock) peekScheduledChangesWithForceNotify(forceNotify bool) []int {
-	c.m.Lock()
-	defer c.m.Unlock()
-	out := make([]int, 0, len(c.tasks))
-	for _, t := range c.tasks {
-		if t.payload.GetForceNotify() == forceNotify {
-			out = append(out, int(t.payload.GetChange()))
-		}
 	}
 	sort.Ints(out)
 	return out

@@ -31,9 +31,8 @@ message RefreshGerritCL {
   // Optional fields.
   google.protobuf.Timestamp updated_hint = 4;
   int64 clid_hint = 5;
-  // If true, forces notifying Project and Run managers even if there are no
-  // updates to the CL.
-  bool force_notify = 6;
+
+  reserved 6; // force_notify
 }
 
 // BatchRefreshGerritCL is a batch of RefreshGerritCL tasks.

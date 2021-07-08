@@ -34,7 +34,7 @@ import (
 // notifying PM.
 const maxLoadCLBatchSize = 100
 
-func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, gerritHost string, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
+func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, host string, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
 	if len(changes) == 0 {
 		return nil
 	}
@@ -42,35 +42,23 @@ func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, gerritHost
 	// (host,project,ref) of these changes from before triggering tasks.
 	logging.Debugf(ctx, "scheduling %d CLUpdate tasks (forceNotifyPM: %t)", len(changes), forceNotifyPM)
 
-	var clids []common.CLID
 	if forceNotifyPM {
-		// Objective: make PM aware of all CLs.
-		// Optimization: avoid RefreshGerritCL with forceNotifyPM=true if possible,
-		// as this removes ability to de-duplicate.
-		var err error
-		eids := make([]changelist.ExternalID, len(changes))
+		changeNumbers := make([]int64, len(changes))
 		for i, c := range changes {
-			if eids[i], err = changelist.GobID(gerritHost, c.GetNumber()); err != nil {
-				return err
-			}
+			changeNumbers[i] = c.GetNumber()
 		}
-		clids, err = changelist.Lookup(ctx, eids)
-		if err != nil {
-			return err
-		}
-		if err := p.notifyPMifKnown(ctx, luciProject, clids, maxLoadCLBatchSize); err != nil {
+		if err := p.notifyPMifKnown(ctx, luciProject, host, changeNumbers, maxLoadCLBatchSize); err != nil {
 			return err
 		}
 	}
 
 	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
-		for i, c := range changes {
+		for _, c := range changes {
 			payload := &updater.RefreshGerritCL{
 				LuciProject: luciProject,
-				Host:        gerritHost,
+				Host:        host,
 				Change:      c.GetNumber(),
 				UpdatedHint: c.GetUpdated(),
-				ForceNotify: forceNotifyPM && (clids[i] == 0),
 			}
 			work <- func() error {
 				return p.clUpdater.Schedule(ctx, payload)
@@ -85,38 +73,20 @@ func (p *Poller) notifyOnUnmatchedCLs(ctx context.Context, luciProject, host str
 		return nil
 	}
 	logging.Debugf(ctx, "notifying CL Updater and PM on %d no longer matched CLs", len(changes))
-	var err error
-	eids := make([]changelist.ExternalID, len(changes))
-	for i, c := range changes {
-		if eids[i], err = changelist.GobID(host, c); err != nil {
-			return err
-		}
-	}
-	// Objective: make PM aware of all CLs.
-	// Optimization: avoid RefreshGerritCL with forceNotifyPM=true if possible,
-	// as this removes ability to de-duplicate.
-	// Since all no longer matched CLs are typically already stored in the
-	// Datastore, get their internal CL IDs and notify PM directly.
-	clids, err := changelist.Lookup(ctx, eids)
-	if err != nil {
+
+	if err := p.notifyPMifKnown(ctx, luciProject, host, changes, maxLoadCLBatchSize); err != nil {
 		return err
 	}
-
-	if err := p.notifyPMifKnown(ctx, luciProject, clids, maxLoadCLBatchSize); err != nil {
-		return err
-	}
-
 	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
 		for i, c := range changes {
 			payload := &updater.RefreshGerritCL{
 				LuciProject: luciProject,
 				Host:        host,
 				Change:      c,
-				ForceNotify: 0 == clids[i], // notify iff CL ID isn't yet known.
 			}
 			// Distribute these tasks in time to avoid high peaks (e.g. see
 			// https://crbug.com/1211057).
-			delay := (fullPollInterval * time.Duration(i)) / time.Duration(len(clids))
+			delay := (fullPollInterval * time.Duration(i)) / time.Duration(len(changes))
 			work <- func() error {
 				return p.clUpdater.ScheduleDelayed(ctx, payload, delay)
 			}
@@ -125,15 +95,31 @@ func (p *Poller) notifyOnUnmatchedCLs(ctx context.Context, luciProject, host str
 	return common.MostSevereError(errs)
 }
 
-// notifyPMifKnown notifies PM to update its CLs for each non-0 CLID.
+// notifyPMifKnown notifies PM to update its CLs for each Gerrit Change
+// with existing CL entity.
+//
+// For Gerrit Changes without a CL entity, either:
+//  * the Gerrit CL Updater will create it in the future and hence also notify
+//    the PM;
+//  * or if the Gerrit CL updater doesn't do it, then there is no point
+//    notifying the PM anyway.
 //
 // Obtains EVersion of each CL before notify a PM. Unfortunately, this loads a
-// lot of information we don't need, such as Snapshot. So, loads CLs in batches
+// lot of information we don't need, such as Snapshot. So, load CLs in batches
 // to avoid large memory footprint.
 //
 // In practice, most of these CLs would be already dscache-ed, so loading them
 // is fast.
-func (p *Poller) notifyPMifKnown(ctx context.Context, luciProject string, clids []common.CLID, maxBatchSize int) error {
+func (p *Poller) notifyPMifKnown(ctx context.Context, luciProject, host string, changes []int64, maxBatchSize int) error {
+	eids := make([]changelist.ExternalID, len(changes))
+	for i, c := range changes {
+		eids[i] = changelist.MustGobID(host, c)
+	}
+	clids, err := changelist.Lookup(ctx, eids)
+	if err != nil {
+		return err
+	}
+
 	cls := make([]*changelist.CL, 0, maxBatchSize)
 	flush := func() error {
 		if err := datastore.Get(ctx, cls); err != nil {

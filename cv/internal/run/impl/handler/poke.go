@@ -61,7 +61,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		case err != nil:
 			return nil, err
 		default:
-			if err := impl.CLUpdater.ScheduleBatch(ctx, rs.Run.ID.LUCIProject(), true, cls); err != nil {
+			if err := impl.CLUpdater.ScheduleBatch(ctx, rs.Run.ID.LUCIProject(), cls); err != nil {
 				return nil, err
 			}
 			rs = rs.ShallowCopy()

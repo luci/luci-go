@@ -74,13 +74,5 @@ func TestNotifyOnUnmatchedCLs(t *testing.T) {
 		mid := ct.Clock.Now().Add(fullPollInterval / 2)
 		So(etas[1], ShouldHappenBefore, mid)
 		So(etas[3], ShouldHappenAfter, mid)
-		// For not yet saved CL, PM must be forcefully notified.
-		var forced []int64
-		for _, p := range payloads {
-			if p.GetForceNotify() {
-				forced = append(forced, p.GetChange())
-			}
-		}
-		So(forced, ShouldResemble, []int64{notYetSaved})
 	})
 }
