@@ -246,27 +246,26 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		gobmaptest.Update(ctx, lProject)
 
 		// Put #43 CL directly w/o notifying the PM.
-		cl43, err := changelist.MustGobID(gHost, 43).GetOrInsert(ctx, func(cl *changelist.CL) {
-			cl.Snapshot = &changelist.Snapshot{
-				ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
-				LuciProject:           lProject,
-				MinEquivalentPatchset: 1,
-				Patchset:              1,
-				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
-					Host: gHost,
-					Info: gf.CI(43,
-						gf.Project(gRepo), gf.Ref("refs/heads/main"),
-						gf.CQ(+2, ct.Clock.Now(), gf.U("user-1"))),
-				}},
-			}
-			meta := prjcfgtest.MustExist(ctx, lProject)
-			cl.ApplicableConfig = &changelist.ApplicableConfig{
-				Projects: []*changelist.ApplicableConfig_Project{
-					{Name: lProject, ConfigGroupIds: []string{string(meta.ConfigGroupIDs[0])}},
-				},
-			}
-		})
-		So(err, ShouldBeNil)
+		cl43 := changelist.MustGobID(gHost, 43).MustCreateIfNotExists(ctx)
+		cl43.Snapshot = &changelist.Snapshot{
+			ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
+			LuciProject:           lProject,
+			MinEquivalentPatchset: 1,
+			Patchset:              1,
+			Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+				Host: gHost,
+				Info: gf.CI(43,
+					gf.Project(gRepo), gf.Ref("refs/heads/main"),
+					gf.CQ(+2, ct.Clock.Now(), gf.U("user-1"))),
+			}},
+		}
+		meta := prjcfgtest.MustExist(ctx, lProject)
+		cl43.ApplicableConfig = &changelist.ApplicableConfig{
+			Projects: []*changelist.ApplicableConfig_Project{
+				{Name: lProject, ConfigGroupIds: []string{string(meta.ConfigGroupIDs[0])}},
+			},
+		}
+		So(datastore.Put(ctx, cl43), ShouldBeNil)
 
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), gf.CI(
 			44, gf.Project(gRepo), gf.Ref("refs/heads/main"),
