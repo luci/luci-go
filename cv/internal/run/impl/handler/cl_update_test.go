@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -61,6 +62,7 @@ func TestOnCLUpdated(t *testing.T) {
 		h := &Impl{
 			CLUpdater: &clUpdaterMock{},
 			GFactory:  ct.GFake.Factory(),
+			RM:        run.NewNotifier(ct.TQDispatcher),
 		}
 
 		// initial state
@@ -229,10 +231,11 @@ func TestOnCLUpdated(t *testing.T) {
 				runAndVerifyCancelled()
 			})
 			Convey("wait if code review access was just lost, potentially due to eventual consistency", func() {
+				noAccessAt := ct.Clock.Now().Add(42 * time.Second)
 				acc := &changelist.Access{ByProject: map[string]*changelist.Access_Project{
 					// Set NoAccessTime to the future, providing some grace period to
 					// recover.
-					lProject: {NoAccessTime: timestamppb.New(ct.Clock.Now().Add(time.Minute))},
+					lProject: {NoAccessTime: timestamppb.New(noAccessAt)},
 				}}
 				updateCL(ci, aplConfigOK, acc)
 				res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
@@ -241,6 +244,11 @@ func TestOnCLUpdated(t *testing.T) {
 				So(res.SideEffectFn, ShouldBeNil)
 				// Event must be preserved, s.t. the same CL is re-visited later.
 				So(res.PreserveEvents, ShouldBeTrue)
+				// And Run Manager must have a task to re-check itself at around
+				// NoAccessTime.
+				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+				So(ct.TQ.Tasks().Payloads()[0].(*eventpb.ManageRunTask).GetRunId(), ShouldResemble, string(rs.Run.ID))
+				So(ct.TQ.Tasks()[0].ETA, ShouldHappenOnOrBetween, noAccessAt, noAccessAt.Add(time.Second))
 			})
 			Convey("cancel if code review access was lost a while ago", func() {
 				acc := &changelist.Access{ByProject: map[string]*changelist.Access_Project{

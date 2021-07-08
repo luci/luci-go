@@ -69,6 +69,9 @@ func TestGerritCLDeleted(t *testing.T) {
 
 		ct.LogPhase(ctx, "CL re-appears")
 		ct.GFake.CreateChange(backup)
+		// To avoid races in this test, "touch" the CL s.t. CV re-discovers it
+		// immediately even in incremental (not full) poll.
+		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) { gf.Updated(ct.Clock.Now())(c.Info) })
 		ct.RunUntil(ctx, func() bool {
 			return ct.LoadCL(ctx, r.CLs[0]).AccessKind(ctx, lProject) == changelist.AccessGranted
 		})

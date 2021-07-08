@@ -17,9 +17,11 @@ package handler
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -67,40 +69,43 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 	}
 
 	preserveEvents := false
+	var earliestReconsiderAt time.Time
 	for i := range clids {
-		switch shouldCancel(ctx, cls[i], runCLs[i], cg) {
+		switch yes, reconsiderAt := shouldCancel(ctx, cls[i], runCLs[i], cg); {
+		case !reconsiderAt.IsZero():
+			preserveEvents = true
+			if earliestReconsiderAt.IsZero() || earliestReconsiderAt.After(reconsiderAt) {
+				earliestReconsiderAt = reconsiderAt
+			}
 		case yes:
 			return impl.Cancel(ctx, rs)
-		case preserveEvent:
-			preserveEvents = true
+		}
+	}
+	if preserveEvents {
+		logging.Debugf(ctx, "Will reconsider OnCLUpdated event(s) after %s", earliestReconsiderAt.Sub(clock.Now(ctx)))
+		if err := impl.RM.Invoke(ctx, rs.Run.ID, earliestReconsiderAt); err != nil {
+			return nil, err
 		}
 	}
 	return &Result{State: rs, PreserveEvents: preserveEvents}, nil
 }
 
-type shouldCancelResult int
-
-const (
-	yes shouldCancelResult = iota
-	no
-	preserveEvent
-)
-
-func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *prjcfg.ConfigGroup) shouldCancelResult {
+func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *prjcfg.ConfigGroup) (bool, time.Time) {
+	project := cg.ProjectString()
 	clString := fmt.Sprintf("CL %d %s", cl.ID, cl.ExternalID)
-	switch kind, reason := cl.AccessKindWithReason(ctx, cg.ProjectString()); kind {
+	switch kind, reason := cl.AccessKindWithReason(ctx, project); kind {
 	case changelist.AccessDenied:
 		logging.Warningf(ctx, "No longer have access to %s: %s", clString, reason)
-		return yes
+		return true, time.Time{}
 	case changelist.AccessDeniedProbably:
 		logging.Warningf(ctx, "Probably no longer have access to %s (%s), not canceling yet", clString, reason)
 		// Keep the run Running for now. The access should become either
 		// AccessGranted or AccessDenied, eventually.
-		return preserveEvent
+		return false, cl.Access.GetByProject()[project].GetNoAccessTime().AsTime()
 	case changelist.AccessUnknown:
 		logging.Errorf(ctx, "Unknown access to %s (%s), not canceling yet", clString, reason)
 		// Keep the run Running for now, it should become clear eventually.
-		return no
+		return false, time.Time{}
 	case changelist.AccessGranted:
 		// The expected and most likely case.
 	default:
@@ -109,17 +114,17 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *pr
 
 	if o, c := rcl.Detail.GetPatchset(), cl.Snapshot.GetPatchset(); o != c {
 		logging.Infof(ctx, "%s has new patchset %d => %d", clString, o, c)
-		return yes
+		return true, time.Time{}
 	}
 	if o, c := rcl.Detail.GetGerrit().GetInfo().GetRef(), cl.Snapshot.GetGerrit().GetInfo().GetRef(); o != c {
 		logging.Warningf(ctx, "%s has new ref %q => %q", clString, o, c)
-		return yes
+		return true, time.Time{}
 	}
 	if o, c := rcl.Trigger, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content); hasTriggerChanged(o, c) {
 		logging.Infof(ctx, "%s has new trigger\nOLD: %s\nNEW: %s", clString, o, c)
-		return yes
+		return true, time.Time{}
 	}
-	return no
+	return false, time.Time{}
 }
 
 func hasTriggerChanged(old, cur *run.Trigger) bool {
