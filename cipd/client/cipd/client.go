@@ -113,7 +113,7 @@ const (
 	EnvMaxThreads          = "CIPD_MAX_THREADS"
 	EnvParallelDownloads   = "CIPD_PARALLEL_DOWNLOADS"
 	EnvAdmissionPlugin     = "CIPD_ADMISSION_PLUGIN"
-	EnvCIPDServiceUrl      = "CIPD_SERVICE_URL"
+	EnvCIPDServiceURL      = "CIPD_SERVICE_URL"
 )
 
 var (
@@ -463,7 +463,7 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 			}
 		}
 	}
-	if v := getEnv(EnvCIPDServiceUrl); v != "" {
+	if v := getEnv(EnvCIPDServiceURL); v != "" {
 		opts.ServiceURL = v
 	}
 	return nil
