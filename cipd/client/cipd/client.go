@@ -719,6 +719,9 @@ func (client *clientImpl) instanceCache(ctx context.Context) (*internal.Instance
 			// interfere with one another when deleting instances or cleaning them up
 			// when closing.
 			cacheDir, err = ioutil.TempDir(tmpDir, "dl_")
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			// When not using a site root, just create the directory in /tmp.
 			cacheDir, err = ioutil.TempDir("", "cipd_dl_")
