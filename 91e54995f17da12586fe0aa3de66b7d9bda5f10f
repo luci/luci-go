@@ -16,6 +16,24 @@
       "message": "guess the same thing will be done to all other places where interface is used like PM and RM.",
       "revId": "91e54995f17da12586fe0aa3de66b7d9bda5f10f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8c66689_d540dc10",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T01:07:10Z",
+      "side": 1,
+      "message": "where possible. In RM, for instance, some interfaces are defined in handler and so I can\u0027t make them private since they are re-used in impl/ package.",
+      "parentUuid": "5b464153_9edfb33e",
+      "revId": "91e54995f17da12586fe0aa3de66b7d9bda5f10f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
