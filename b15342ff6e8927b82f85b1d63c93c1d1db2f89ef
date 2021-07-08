@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2520a3cb_9093aed7",
+        "filename": "buildbucket/proto/builder.pb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T02:10:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c8824c7a_a689b3f0",
+      "range": {
+        "startLine": 8,
+        "startChar": 18,
+        "endLine": 8,
+        "endChar": 25
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fdad5033_6a9b153f",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-07-02T01:10:20Z",
       "side": 1,
       "message": "pick at random and pray it is unused anywhere else :-/",
+      "range": {
+        "startLine": 53,
+        "startChar": 21,
+        "endLine": 53,
+        "endChar": 76
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8055a543_93e64b82",
+        "filename": "common/proto/options.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T02:10:09Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "fdad5033_6a9b153f",
       "range": {
         "startLine": 53,
         "startChar": 21,
@@ -89,6 +137,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cdc85c7f_e9be4d13",
+        "filename": "lucicfg/examples/02-ci-and-try/generated/cr-buildbucket.cfg",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T02:10:09Z",
+      "side": 1,
+      "message": "To use single quotes would require either re-implementing strconv.Quote  to use \u0027 as the quote character or doing some translation on the string to swap \u0027 and \" before and after calling strconv.Quote.",
+      "parentUuid": "2a85534f_b3eb9abc",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 9
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bf2b010e_e6ad1855",
         "filename": "starlark/starlarkproto/functions.go",
         "patchSetId": 6
@@ -100,6 +172,30 @@
       "writtenOn": "2021-07-02T01:10:20Z",
       "side": 1,
       "message": "This assumes JSON string escaping matches textproto string escaping which is not guaranteed anywhere. Can we perhaps use https://github.com/protocolbuffers/txtpbfmt/blob/master/unquote/unquote.go instead?",
+      "range": {
+        "startLine": 56,
+        "startChar": 12,
+        "endLine": 56,
+        "endChar": 26
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1027aa8_6f23d869",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T02:10:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bf2b010e_e6ad1855",
       "range": {
         "startLine": 56,
         "startChar": 12,
@@ -181,6 +277,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "721b264e_cc429de7",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T02:10:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1d79a455_e2b64418",
+      "range": {
+        "startLine": 61,
+        "startChar": 15,
+        "endLine": 61,
+        "endChar": 18
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ba921755_db2759dc",
@@ -194,6 +314,30 @@
       "writtenOn": "2021-07-02T01:10:20Z",
       "side": 1,
       "message": "Again it would be better to use some textproto library to do this escaping. Looking at the txtpbfmt code, it seems to be using strconv.Quote: https://github.com/protocolbuffers/txtpbfmt/blob/408574485efafaec71ca8ff5fb6362b5bbf82c44/ast/ast.go#L187 So maybe lets use it here too (still iffy though).",
+      "range": {
+        "startLine": 67,
+        "startChar": 16,
+        "endLine": 67,
+        "endChar": 28
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c079a9ee_cabc034b",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T02:10:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba921755_db2759dc",
       "range": {
         "startLine": 67,
         "startChar": 16,
@@ -227,6 +371,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8cc4da8_b1e0fa8e",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T02:10:09Z",
+      "side": 1,
+      "message": "The txtpbfmt Unquote function works on Node, not Value, so I rearranged the code and it\u0027s no longer doing transformations on individual values, so this bit is gone, but jsonTransformTextPBNode is now preallocating.",
+      "parentUuid": "d8afb277_f5b5983a",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 24
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "63cf8419_ddd59d22",
@@ -240,6 +408,30 @@
       "writtenOn": "2021-07-02T01:10:20Z",
       "side": 1,
       "message": "2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 12,
+        "endLine": 1,
+        "endChar": 16
+      },
+      "revId": "b15342ff6e8927b82f85b1d63c93c1d1db2f89ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4324493d_7865fdb7",
+        "filename": "starlark/starlarkproto/testdata/json.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2021-07-08T02:10:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63cf8419_ddd59d22",
       "range": {
         "startLine": 1,
         "startChar": 12,
