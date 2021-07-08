@@ -29,8 +29,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
@@ -201,7 +201,7 @@ func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
 		})
 	}
 
-	trMask := &field_mask.FieldMask{}
+	trMask := &fieldmaskpb.FieldMask{}
 	if r.trFields != "" {
 		if err := protojson.Unmarshal([]byte(fmt.Sprintf(`"%s"`, r.trFields)), trMask); err != nil {
 			return errors.Annotate(err, "tr-fields").Err()
@@ -246,7 +246,7 @@ func (r *queryRun) fetchInvocation(ctx context.Context, invID string, dest chan<
 }
 
 // fetchItems fetches test results and exonerations from the specified invocations.
-func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, trMask *field_mask.FieldMask, resultItemTemplate resultItem, dest chan<- resultItem) error {
+func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, trMask *fieldmaskpb.FieldMask, resultItemTemplate resultItem, dest chan<- resultItem) error {
 	invNames := make([]string, len(invIDs))
 	for i, id := range invIDs {
 		invNames[i] = pbutil.InvocationName(id)
