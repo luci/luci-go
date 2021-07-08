@@ -72,6 +72,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e5585ecb_c7a38eb7",
+        "filename": "grpc/grpcmon/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-07-08T18:05:23Z",
+      "side": 1,
+      "message": "LGTM.\nhttps://paste.googleplex.com/5318096513400832",
+      "parentUuid": "3b876c9e_59d0e4c3",
+      "range": {
+        "startLine": 38,
+        "startChar": 29,
+        "endLine": 38,
+        "endChar": 50
+      },
+      "revId": "03585d1fecc371f8245b93677aaebeb05f80089c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "52b12120_9e54a0d1",
