@@ -97,11 +97,279 @@ func TestSchedule(t *testing.T) {
 	})
 }
 
+func TestObservesProjectLifetime(t *testing.T) {
+	t.Parallel()
+
+	Convey("Gerrit Poller observes project lifetime", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "chromium"
+		const gHost = "chromium-review.example.com"
+		const gRepo = "infra/infra"
+
+		mustLoadState := func() *State {
+			st := &State{LuciProject: lProject}
+			So(datastore.Get(ctx, st), ShouldBeNil)
+			return st
+		}
+
+		p := New(ct.TQDispatcher, ct.GFake.Factory(), &clUpdaterMock{}, &pmMock{})
+
+		Convey("Without project config, does nothing", func() {
+			So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+			So(ct.TQ.Tasks(), ShouldBeEmpty)
+			So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("For an existing project, runs via a task chain", func() {
+			prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+			So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+			So(mustLoadState().EVersion, ShouldEqual, 1)
+			for i := 0; i < 10; i++ {
+				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
+			}
+			So(mustLoadState().EVersion, ShouldEqual, 11)
+		})
+
+		Convey("On config changes, updates its state", func() {
+			prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+			So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+			s := mustLoadState()
+			So(s.QueryStates.GetStates(), ShouldHaveLength, 1)
+			qs0 := s.QueryStates.GetStates()[0]
+			So(qs0.GetHost(), ShouldResemble, gHost)
+			So(qs0.GetOrProjects(), ShouldResemble, []string{gRepo})
+
+			const gRepo2 = "infra/zzzzz"
+			prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, gRepo, gRepo2))
+			So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+			s = mustLoadState()
+			So(s.QueryStates.GetStates(), ShouldHaveLength, 1)
+			qs0 = s.QueryStates.GetStates()[0]
+			So(qs0.GetOrProjects(), ShouldResemble, []string{gRepo, gRepo2})
+
+			prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, gRepo2))
+			So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+			s = mustLoadState()
+			So(s.QueryStates.GetStates(), ShouldHaveLength, 1)
+			qs0 = s.QueryStates.GetStates()[0]
+			So(qs0.GetOrProjects(), ShouldResemble, []string{gRepo2})
+		})
+
+		Convey("Once project is disabled, deletes state and task chain stops running", func() {
+			prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+			So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+			So(mustLoadState().EVersion, ShouldEqual, 1)
+
+			prjcfgtest.Disable(ctx, lProject)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
+
+			So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+			So(ct.TQ.Tasks(), ShouldBeEmpty)
+		})
+	})
+}
+
+func TestDiscoversCLs(t *testing.T) {
+	t.Parallel()
+
+	Convey("Gerrit Poller discovers CLs", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "chromium"
+		const gHost = "chromium-review.example.com"
+		const gRepo = "infra/infra"
+
+		mustLoadState := func() *State {
+			st := &State{LuciProject: lProject}
+			So(datastore.Get(ctx, st), ShouldBeNil)
+			return st
+		}
+		ensureCLEntity := func(change int64) *changelist.CL {
+			cl, err := changelist.MustGobID(gHost, change).GetOrInsert(ctx, func(*changelist.CL) {})
+			So(err, ShouldBeNil)
+			return cl
+		}
+
+		pm := pmMock{}
+		clUpdater := clUpdaterMock{}
+		p := New(ct.TQDispatcher, ct.GFake.Factory(), &clUpdater, &pm)
+
+		prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+		// Initialize Poller state for ease of modifications in test later.
+		So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+		ct.Clock.Add(10 * fullPollInterval)
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(),
+			// These CLs ordered from oldest to newest by .Updated.
+			gf.CI(31, gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-2*fullPollInterval))),
+			gf.CI(32, gf.CQ(+1), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-1*fullPollInterval))),
+			gf.CI(33, gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-2*incrementalPollOverlap))),
+			gf.CI(34, gf.CQ(+1), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-1*incrementalPollOverlap))),
+			gf.CI(35, gf.CQ(+1), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-1*time.Millisecond))),
+
+			// These must not be matched.
+			gf.CI(40, gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-common.MaxTriggerAge-time.Second))),
+			gf.CI(41, gf.CQ(+2), gf.Project("another/project"), gf.Updated(ct.Clock.Now())),
+			// TODO(tandrii): when poller becomes ref-ware, add this to the test.
+			// gf.CI(42, gf.CQ(+2), gf.Project(gRepo), gf.Ref("refs/not/matched"), gf.Updated(ct.Clock.Now())),
+		))
+
+		Convey("Discover all CLs in case of a full query", func() {
+			s := mustLoadState()
+			s.QueryStates.GetStates()[0].LastFullTime = nil // Force "full" fetch
+			So(datastore.Put(ctx, s), ShouldBeNil)
+
+			postFullQueryVerify := func() {
+				qs := mustLoadState().QueryStates.GetStates()[0]
+				So(qs.GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
+				So(qs.GetLastIncrTime(), ShouldBeNil)
+				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
+			}
+
+			Convey("On project start, just creates CLUpdater tasks with forceNotify", func() {
+				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{31, 32, 33, 34, 35})
+				So(clUpdater.peekScheduledChangesWithForceNotify(true), ShouldResemble, []int{31, 32, 33, 34, 35})
+				postFullQueryVerify()
+			})
+
+			Convey("In a typical case, uses forceNotify judiciously", func() {
+				// In a typical case, CV has been polling before and so is already aware
+				// of every CL except 35.
+				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33, 34}
+				So(datastore.Put(ctx, s), ShouldBeNil)
+				// However, 34 may not yet have an CL entity.
+				knownCLIDs := common.CLIDs{
+					ensureCLEntity(31).ID,
+					ensureCLEntity(32).ID,
+					ensureCLEntity(33).ID,
+				}
+
+				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+
+				// PM must be notified in "bulk".
+				So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDs(knownCLIDs...))
+				// All CLs must have clUpdater tasks.
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{31, 32, 33, 34, 35})
+				// But only 34..35 should have forceNotify=true.
+				So(clUpdater.peekScheduledChangesWithForceNotify(true), ShouldResemble, []int{34, 35})
+				postFullQueryVerify()
+			})
+
+			Convey("When previously known changes are no longer found, forces their refresh, too", func() {
+				// Test common occurence of CL no longer appearing in query results due
+				// to user or even CV action.
+				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(),
+					// No CQ vote.
+					gf.CI(25, gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
+					// Abandoned.
+					gf.CI(26, gf.Status(gerritpb.ChangeStatus_ABANDONED), gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
+					// Submitted.
+					gf.CI(27, gf.Status(gerritpb.ChangeStatus_ABANDONED), gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
+				))
+				s.QueryStates.GetStates()[0].Changes = []int64{25, 26, 27, 31, 32, 33, 34}
+				So(datastore.Put(ctx, s), ShouldBeNil)
+				var knownCLIDs common.CLIDs
+				for _, c := range s.QueryStates.GetStates()[0].Changes {
+					knownCLIDs = append(knownCLIDs, ensureCLEntity(c).ID)
+				}
+
+				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+
+				// PM must be notified in "bulk" for all previously known CLs.
+				So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDs(knownCLIDs...))
+				// All current and prior CLs must have clUpdater tasks.
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{25, 26, 27, 31, 32, 33, 34, 35})
+				// But only 35 needs forceNotify=true as PM is already notified of
+				// others and will be additionally notified by CLUpdater if CLs are
+				// updated.
+				So(clUpdater.peekScheduledChangesWithForceNotify(true), ShouldResemble, []int{35})
+				postFullQueryVerify()
+			})
+
+			Convey("On config change, force notifies PM and runs a full query", func() {
+				// Strictly speaking, this test isn't just a full pull, but also a
+				// config change.
+
+				// Simulate prior full fetch has just happened.
+				s.QueryStates.GetStates()[0].LastFullTime = timestamppb.New(ct.Clock.Now().Add(-pollInterval))
+				// But with a different query.
+				s.QueryStates.GetStates()[0].OrProjects = []string{gRepo, "repo/which/had/cl30"}
+				// And all CLs except but 35 are already known but also CL 30.
+				s.QueryStates.GetStates()[0].Changes = []int64{30, 31, 32, 33, 34}
+				s.ConfigHash = "some/other/hash"
+				So(datastore.Put(ctx, s), ShouldBeNil)
+				var knownCLIDs common.CLIDs
+				for _, c := range s.QueryStates.GetStates()[0].Changes {
+					knownCLIDs = append(knownCLIDs, ensureCLEntity(c).ID)
+				}
+
+				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+
+				// PM must be notified about all prior CLs.
+				So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDs(knownCLIDs...))
+				// All CLs must have clUpdater tasks.
+				// NOTE: the code isn't optimized for this use case, so there will be
+				// multiple tasks for changes 31..34. While this is unfortunte, it's
+				// rare enough that it doesn't really matter.
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{30, 31, 31, 32, 32, 33, 33, 34, 34, 35})
+				// And only 35 should have forceNotify=true, since the rest have reached
+				// PM directly.
+				So(clUpdater.peekScheduledChangesWithForceNotify(true), ShouldResemble, []int{35})
+				postFullQueryVerify()
+
+				qs := mustLoadState().QueryStates.GetStates()[0]
+				So(qs.GetOrProjects(), ShouldResemble, []string{gRepo})
+			})
+		})
+
+		Convey("Discover most recently modified CLs only in case of an incremental query", func() {
+			s := mustLoadState()
+			s.QueryStates.GetStates()[0].LastFullTime = timestamppb.New(ct.Clock.Now()) // Force incremental fetch
+			So(datastore.Put(ctx, s), ShouldBeNil)
+
+			Convey("In a typical case, schedules refresh tasks without forceNotify", func() {
+				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33}
+				So(datastore.Put(ctx, s), ShouldBeNil)
+				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{34, 35})
+				So(clUpdater.peekScheduledChangesWithForceNotify(false), ShouldResemble, []int{34, 35})
+
+				qs := mustLoadState().QueryStates.GetStates()[0]
+				So(qs.GetLastIncrTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
+				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
+			})
+
+			Convey("Even if CL is already known, schedules refresh task for it without forceNotify", func() {
+				// This is important because forceNotify=False allows de-duplication in
+				// an actual CLupdater implementation.
+				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33, 34, 35}
+				So(datastore.Put(ctx, s), ShouldBeNil)
+				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+
+				So(clUpdater.peekScheduledChangesWithForceNotify(false), ShouldResemble, []int{34, 35})
+				qs := mustLoadState().QueryStates.GetStates()[0]
+				So(qs.GetLastIncrTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
+				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
+			})
+		})
+	})
+}
+
+// TODO(tandrii): delete this one in the next CL to avoid
+// hard to read diff in review.
 func TestPoller(t *testing.T) {
 	t.Parallel()
 
 	Convey("Polling & task scheduling works", t, func() {
-		// TODO(tandrii); de-couple this test from how CL updater works.
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -508,5 +776,29 @@ func (c *clUpdaterMock) popPayloadsByETA() []*updater.RefreshGerritCL {
 	for i, t := range tasks {
 		out[i] = t.payload
 	}
+	return out
+}
+
+func (c *clUpdaterMock) peekScheduledChanges() []int {
+	c.m.Lock()
+	defer c.m.Unlock()
+	out := make([]int, len(c.tasks))
+	for i, t := range c.tasks {
+		out[i] = int(t.payload.GetChange())
+	}
+	sort.Ints(out)
+	return out
+}
+
+func (c *clUpdaterMock) peekScheduledChangesWithForceNotify(forceNotify bool) []int {
+	c.m.Lock()
+	defer c.m.Unlock()
+	out := make([]int, 0, len(c.tasks))
+	for _, t := range c.tasks {
+		if t.payload.GetForceNotify() == forceNotify {
+			out = append(out, int(t.payload.GetChange()))
+		}
+	}
+	sort.Ints(out)
 	return out
 }
