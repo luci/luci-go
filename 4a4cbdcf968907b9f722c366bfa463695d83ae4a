@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ced91374_90ec7493",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T21:36:27Z",
+      "side": 1,
+      "message": "nit: technically, this should be evaluated before yes.",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 30
+      },
+      "revId": "4a4cbdcf968907b9f722c366bfa463695d83ae4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
