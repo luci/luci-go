@@ -98,7 +98,7 @@ func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLID
 	if err := pm.NotifyCLsUpdated(ctx, runID.LUCIProject(), cls); err != nil {
 		return err
 	}
-	return u.ScheduleBatch(ctx, runID.LUCIProject(), true /*force notify PM*/, cls)
+	return u.ScheduleBatch(ctx, runID.LUCIProject(), cls)
 }
 
 func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *prjcfg.ConfigGroup) error {
