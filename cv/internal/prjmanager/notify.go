@@ -85,13 +85,12 @@ func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid
 	})
 }
 
-// NotifyCLsUpdated is a batch of NotifyCLUpdated for the same Project Manager.
-//
-// In each given CL, .ID and .EVersion must be set.
-func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
+// NotifyCLsUpdated tells Project Manager to check latest versions of the given
+// CLs.
+func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls *changelist.CLUpdatedEvents) error {
 	return n.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClsUpdated{
-			ClsUpdated: prjpb.MakeCLsUpdated(cls),
+			ClsUpdated: cls,
 		},
 	})
 }
