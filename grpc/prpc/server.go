@@ -73,7 +73,7 @@ const (
 // AllowOriginAll returns AccessAllowWithCredentials unconditionally.
 // It can be used as Server.AccessControl.
 // It must NOT be used in combination with cookie-based authentication.
-func AllowOriginAll(c context.Context, origin string) AccessControlDecision {
+func AllowOriginAll(ctx context.Context, origin string) AccessControlDecision {
 	return AccessAllowWithCredentials
 }
 
@@ -108,7 +108,7 @@ type Server struct {
 	// by the client. If nil, no headers will be written.
 	// Otherwise, see AccessControlDecision for what access control headers will be
 	// included in the response for the specified origin.
-	AccessControl func(c context.Context, origin string) AccessControlDecision
+	AccessControl func(ctx context.Context, origin string) AccessControlDecision
 
 	// HackFixFieldMasksForJSON indicates whether to attempt a workaround for
 	// https://github.com/golang/protobuf/issues/745 when the request has
