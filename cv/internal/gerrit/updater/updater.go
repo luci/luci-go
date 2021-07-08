@@ -51,34 +51,17 @@ const (
 var errStaleData = errors.New("Fetched stale Gerrit data", transient.Tag)
 var errOutOfQuota = errors.New("Out of Gerrit Quota", transient.Tag)
 
-// pmNotifier encapsulates interaction with Project Manager by the Gerrit CL Updater.
-//
-// In production, implemented by prjmanager.Notifier.
-type pmNotifier interface {
-	NotifyCLUpdated(ctx context.Context, project string, cl common.CLID, eversion int) error
-}
-
-// rmNotifier encapsulates interaction with Run Manager by the Gerrit CL Updater.
-//
-// In production, implemented by run.Notifier.
-type rmNotifier interface {
-	NotifyCLUpdated(ctx context.Context, rid common.RunID, cl common.CLID, eversion int) error
-}
-
 // Updater fetches Gerrit Change details and stores them as CV CLs in Datastore.
 type Updater struct {
 	gFactory  gerrit.ClientFactory
-	pm        pmNotifier
-	rm        rmNotifier
 	clMutator *changelist.Mutator
 	tqd       *tq.Dispatcher
 }
 
 // New creates a new Updater.
-func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, pm pmNotifier, rm rmNotifier) *Updater {
+func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, m *changelist.Mutator) *Updater {
 	// TODO(tandrii): require mutator instead of pm & rm.
-	m := changelist.NewMutator(pm, rm)
-	u := &Updater{g, pm, rm, m, tqd}
+	u := &Updater{g, m, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClass,
 		Prototype:    &RefreshGerritCL{},
