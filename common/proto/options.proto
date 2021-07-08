@@ -38,3 +38,26 @@ message Metadata {
 extend google.protobuf.FileOptions {
   optional Metadata file_metadata = 73700;
 }
+
+// Type of formatting to apply to a primitive field when converting a message to
+// TextPB
+enum TextPBFieldFormat {
+  // The default formatting for TextPB for the field
+  DEFAULT = 0;
+  // Interpret the field's value as a JSON object and format it across multiple
+  // lines, valid only for string fields
+  JSON = 1;
+}
+
+// Definition of field-level options understood by various LUCI tools.
+//
+// Usage:
+//
+//    import "go.chromium.org/luci/common/proto/options.proto";
+//
+//    message MyMessage {
+//      string my_field = 1 [(luci.text_pb_format) = JSON];
+//    }
+extend google.protobuf.FieldOptions {
+  optional TextPBFieldFormat text_pb_format = 73701;
+}
