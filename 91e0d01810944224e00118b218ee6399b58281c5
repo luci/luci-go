@@ -22,6 +22,30 @@
       },
       "revId": "91e0d01810944224e00118b218ee6399b58281c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce8742ed_2a4f837a",
+        "filename": "cv/internal/prjmanager/manager/manager_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T01:01:39Z",
+      "side": 1,
+      "message": "yes, I just don\u0027t care if it\u0027s called in this test.",
+      "parentUuid": "6bc25aa2_520f7b18",
+      "range": {
+        "startLine": 413,
+        "startChar": 1,
+        "endLine": 413,
+        "endChar": 11
+      },
+      "revId": "91e0d01810944224e00118b218ee6399b58281c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
