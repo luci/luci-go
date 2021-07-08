@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4651ab39_2a3440a4",
+        "filename": "cv/internal/changelist/mutator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T19:27:09Z",
+      "side": 1,
+      "message": "separate block",
+      "revId": "2da5ca5ad8a6cd866b441f3487a6d8fca8b9e8d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7119c9f_a33332a8",
+        "filename": "cv/internal/changelist/mutator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T19:27:09Z",
+      "side": 1,
+      "message": "Begin",
+      "range": {
+        "startLine": 247,
+        "startChar": 3,
+        "endLine": 247,
+        "endChar": 10
+      },
+      "revId": "2da5ca5ad8a6cd866b441f3487a6d8fca8b9e8d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85b62c05_a6c2dcc6",
+        "filename": "cv/internal/changelist/mutator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T19:27:09Z",
+      "side": 1,
+      "message": "nit: move it closer to where run is paralleled, i.e. after L357",
+      "range": {
+        "startLine": 350,
+        "startChar": 0,
+        "endLine": 351,
+        "endChar": 28
+      },
+      "revId": "2da5ca5ad8a6cd866b441f3487a6d8fca8b9e8d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c4f0d89_dbc88dbc",
+        "filename": "cv/internal/changelist/mutator_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T19:27:09Z",
+      "side": 1,
+      "message": "reorg import",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 51
+      },
+      "revId": "2da5ca5ad8a6cd866b441f3487a6d8fca8b9e8d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "866fad1b_0a9e369e",
+        "filename": "cv/internal/changelist/mutator_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T19:27:09Z",
+      "side": 1,
+      "message": "very cool",
+      "revId": "2da5ca5ad8a6cd866b441f3487a6d8fca8b9e8d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
