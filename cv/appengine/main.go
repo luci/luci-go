@@ -34,6 +34,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/admin"
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
@@ -70,7 +71,8 @@ func main() {
 		// Register TQ handlers.
 		pmNotifier := prjmanager.NewNotifier(&tq.Default)
 		runNotifier := run.NewNotifier(&tq.Default)
-		clUpdater := updater.New(&tq.Default, gFactory, pmNotifier, runNotifier)
+		clMutator := changelist.NewMutator(pmNotifier, runNotifier)
+		clUpdater := updater.New(&tq.Default, gFactory, clMutator)
 		_ = pmimpl.New(pmNotifier, runNotifier, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {
