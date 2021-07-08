@@ -74,6 +74,9 @@ func (s *echoService) Say(c context.Context, req *SayRequest) (*SayResponse, err
 
 func TestClientRPCStatsMonitor(t *testing.T) {
 	method := "/grpcmon.Echo/Say"
+	fields := func(fs ...interface{}) (ret []interface{}) {
+		return append([]interface{}{method}, fs...)
+	}
 
 	Convey("ClientRPCStatsMonitor", t, func() {
 		// spin up a server
@@ -104,18 +107,18 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 			}
 			So(rerr, ShouldResemble, err)
 		}
-		count := func(code string) int64 {
-			val := memStore.Get(ctx, grpcClientCount, time.Time{}, []interface{}{method, code})
-			So(val, ShouldNotBeNil)
-			return val.(int64)
-		}
-		duration := func(code string) interface{} {
-			return memStore.Get(ctx, grpcClientDuration, time.Time{}, []interface{}{method, code})
-		}
-
 		Convey("Captures count and duration", func() {
-			// grpc uses time.Now() to assign a value to grpc.End.{BeginTime, EndTime}, and
-			// we cannot stub it out.
+			count := func(code string) int64 {
+				val := memStore.Get(ctx, grpcClientCount, time.Time{}, fields(code))
+				So(val, ShouldNotBeNil)
+				return val.(int64)
+			}
+			duration := func(code string) interface{} {
+				return memStore.Get(ctx, grpcClientDuration, time.Time{}, fields(code))
+			}
+
+			// grpc uses time.Now() to assign a value to
+			// grpc.End.{BeginTime, EndTime}, and we cannot stub it out.
 			//
 			// Therefore, this only checks the duration has been set or not.
 			// i.e., nil or not.
@@ -133,6 +136,32 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 			run(status.Error(codes.Unauthenticated, "no auth"), "echo!")
 			So(count("UNAUTHENTICATED"), ShouldEqual, 1)
 			So(duration("UNAUTHENTICATED"), ShouldNotBeNil)
+		})
+
+		Convey("Captures sent/received messages", func() {
+			count := func(code string) (float64, float64) {
+				sent := memStore.Get(ctx, grpcClientSentMsg, time.Time{}, fields())
+				So(sent, ShouldNotBeNil)
+				recv := memStore.Get(ctx, grpcClientRecvMsg, time.Time{}, fields())
+				So(recv, ShouldNotBeNil)
+				return sent.(*distribution.Distribution).Sum(), recv.(*distribution.Distribution).Sum()
+			}
+			bytes := func(code string) (float64, float64) {
+				sent := memStore.Get(ctx, grpcClientSentByte, time.Time{}, fields())
+				So(sent, ShouldNotBeNil)
+				recv := memStore.Get(ctx, grpcClientRecvByte, time.Time{}, fields())
+				So(recv, ShouldNotBeNil)
+				return sent.(*distribution.Distribution).Sum(), recv.(*distribution.Distribution).Sum()
+			}
+
+			run(nil, "echo!")
+			sentCount, recvCount := count("OK")
+			So(sentCount, ShouldEqual, 1)
+			So(recvCount, ShouldEqual, 1)
+
+			sentBytes, recvBytes := bytes("OK")
+			So(sentBytes, ShouldBeGreaterThan, 0)
+			So(recvBytes, ShouldBeGreaterThan, 0)
 		})
 	})
 }
