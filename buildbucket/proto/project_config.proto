@@ -345,7 +345,7 @@ message Builder {
   // A JSON object representing Build.input.properties.
   // Individual object properties can be overridden with
   // ScheduleBuildRequest.properties.
-  string properties = 24;
+  string properties = 24 [(luci.text_pb_format) = JSON];
 
   // Swarming task priority.
   // A value between 20 and 255, inclusive.
