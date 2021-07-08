@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "de57aa65_e98dad03",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 727,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T13:00:06Z",
+      "side": 1,
+      "message": "i wonder why doesn\u0027t the linter complain about unchecked error here.",
+      "range": {
+        "startLine": 727,
+        "startChar": 3,
+        "endLine": 727,
+        "endChar": 49
+      },
+      "revId": "4d6071f95a7c783aa529c789041c205e95164b54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c13e9044_41203717",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 730,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T13:00:06Z",
+      "side": 1,
+      "message": "but it\u0027s used here.. fine.",
+      "revId": "4d6071f95a7c783aa529c789041c205e95164b54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
