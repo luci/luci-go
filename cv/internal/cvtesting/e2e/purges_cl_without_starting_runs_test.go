@@ -50,7 +50,6 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 			gChange  = 43
 		)
 
-		ct.EnableCVRunManagement(ctx, lProject)
 		prjcfgtest.Create(ctx, lProject, MakeCfgSingular("cg0", gHost, gRepo, gRef))
 
 		ci := gf.CI(
@@ -97,9 +96,6 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 			gRepo2    = "src"
 			gChange2  = 22
 		)
-		// Enable CV management of both projects.
-		ct.EnableCVRunManagement(ctx, lProject)
-		ct.EnableCVRunManagement(ctx, lProject2)
 
 		const stabilizationDelay = 2 * time.Minute
 		cfg1 := MakeCfgSingular("cg0", gHost, gRepo, gRef)
@@ -161,7 +157,6 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		)
 
 		ct.LogPhase(ctx, "Set up stack of 2 CLs with active combine_cls setting but differing modes")
-		ct.EnableCVRunManagement(ctx, lProject)
 
 		const stabilizationDelay = 5 * time.Minute
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
@@ -234,7 +229,6 @@ func TestPurgesSingularFullRunWithOpenDeps(t *testing.T) {
 		)
 
 		ct.LogPhase(ctx, "Set up stack of 2 CLs")
-		ct.EnableCVRunManagement(ctx, lProject)
 
 		prjcfgtest.Create(ctx, lProject, MakeCfgSingular("cg0", gHost, gRepo, gRef))
 
@@ -282,7 +276,6 @@ func TestPurgesCLCQDependingOnItself(t *testing.T) {
 		)
 
 		ct.LogPhase(ctx, "Set up a CL depending on itself")
-		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		tStart := ct.Now()
@@ -325,7 +318,6 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 		)
 
 		ct.LogPhase(ctx, "CV starts CQ Dry Run")
-		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)

@@ -47,7 +47,6 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 			gChangeSecondCombo  = 25
 			gChangeSecondSingle = 20
 		)
-		ct.EnableCVRunManagement(ctx, lProject)
 		cfgFirst := MakeCfgCombinable("main", gHost, gRepoFirst, "refs/heads/.+")
 		now := ct.Clock.Now()
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject),

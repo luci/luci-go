@@ -16,16 +16,12 @@ package handler
 
 import (
 	"context"
-	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/migration"
-	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -59,30 +55,10 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	}
 
 	rs = rs.ShallowCopy()
-	var se eventbox.SideEffectFn
-	// TODO(yiwzhang): remove this once Run finalization fully conducted by CV.
-	switch cvInCharge, err := migrationcfg.IsCVInCharge(ctx, rs.Run.ID.LUCIProject()); {
-	case err != nil:
-		return nil, err
-	case !cvInCharge && rs.Run.DelayCancelUntil.IsZero():
-		// All but CrOS projects have short CQ loop duration.
-		delay := 3 * time.Minute
-		if rs.Run.ID.LUCIProject() == "chromeos" {
-			delay = 10 * time.Minute
-		}
-		rs.Run.DelayCancelUntil = clock.Now(ctx).Add(delay).UTC()
-		se = func(ctx context.Context) error {
-			return impl.RM.CancelAt(ctx, rs.Run.ID, rs.Run.DelayCancelUntil)
-		}
-	case !cvInCharge && clock.Now(ctx).Before(rs.Run.DelayCancelUntil):
-		// Do nothing if rs.Run.DelayCancelUntil is not empty, there must be
-		// a Cancel event to be processed at that time.
-	default:
-		se = impl.endRun(ctx, rs, run.Status_CANCELLED)
-		if rs.Run.StartTime.IsZero() {
-			// This run has never started but already gets a cancelled event.
-			rs.Run.StartTime = rs.Run.EndTime
-		}
+	se := impl.endRun(ctx, rs, run.Status_CANCELLED)
+	if rs.Run.StartTime.IsZero() {
+		// This run has never started but already gets a cancelled event.
+		rs.Run.StartTime = rs.Run.EndTime
 	}
 
 	return &Result{
