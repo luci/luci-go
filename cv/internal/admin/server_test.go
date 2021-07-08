@@ -283,10 +283,8 @@ func TestSearchRuns(t *testing.T) {
 			})
 			Convey("filtering", func() {
 				const gHost = "r-review.example.com"
-				cl1, err := changelist.MustGobID(gHost, 1).GetOrInsert(ctx, func(*changelist.CL) {})
-				So(err, ShouldBeNil)
-				cl2, err := changelist.MustGobID(gHost, 2).GetOrInsert(ctx, func(*changelist.CL) {})
-				So(err, ShouldBeNil)
+				cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
+				cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
 
 				So(datastore.Put(ctx,
 					&run.Run{
