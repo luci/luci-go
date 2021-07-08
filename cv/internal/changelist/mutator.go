@@ -77,7 +77,7 @@ func NewMutator(tqd *tq.Dispatcher, pm pmNotifier, rm rmNotifier) *Mutator {
 //
 // In production, implemented by prjmanager.Notifier.
 type pmNotifier interface {
-	NotifyCLUpdated(ctx context.Context, project string, cl common.CLID, eversion int) error
+	NotifyCLsUpdated(ctx context.Context, project string, events *CLUpdatedEvents) error
 }
 
 // rmNotifier encapsulates interaction with Run Manager.
@@ -389,7 +389,11 @@ func (m *Mutator) notifyOne(ctx context.Context, clm *CLMutation) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	for _, p := range clm.projects() {
 		p := p
-		eg.Go(func() error { return m.pm.NotifyCLUpdated(ctx, p, clm.CL.ID, clm.CL.EVersion) })
+		eg.Go(func() error {
+			return m.pm.NotifyCLsUpdated(ctx, p, &CLUpdatedEvents{
+				Events: []*CLUpdatedEvent{clm.CL.ToUpdatedEvent()},
+			})
+		})
 	}
 	// One CL should have very few Runs, so it's fine to process each within the
 	// transaction in parallel.
@@ -432,13 +436,8 @@ func (m *Mutator) notifyMany(ctx context.Context, muts []*CLMutation) error {
 func (m *Mutator) handleBatchOnCLUpdatedTask(ctx context.Context, batch *BatchOnCLUpdatedTask) error {
 	errs := parallel.WorkPool(min(16, len(batch.GetProjects())+len(batch.GetRuns())), func(work chan<- func() error) {
 		for project, events := range batch.GetProjects() {
-			// TODO(tandrii): replace by NotifyCLsUpdated (batch) version.
-			for _, e := range events.GetEvents() {
-				project := project
-				clid := common.CLID(e.GetClid())
-				ev := int(e.GetEversion())
-				work <- func() error { return m.pm.NotifyCLUpdated(ctx, project, clid, ev) }
-			}
+			project, events := project, events
+			work <- func() error { return m.pm.NotifyCLsUpdated(ctx, project, events) }
 		}
 		for run, events := range batch.GetRuns() {
 			// In majority of cases, each Run gets exactly 1 CL event.
