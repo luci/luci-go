@@ -16,11 +16,13 @@ package changelist
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"sync"
 	"testing"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -28,6 +30,7 @@ import (
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -59,7 +62,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 		pm := pmMock{}
 		rm := rmMock{}
-		m := NewMutator(&pm, &rm)
+		m := NewMutator(ct.TQDispatcher, &pm, &rm)
 
 		Convey("Upsert method", func() {
 			Convey("creates", func() {
@@ -262,6 +265,176 @@ func TestMutatorSingleCL(t *testing.T) {
 	})
 }
 
+func TestMutatorBatch(t *testing.T) {
+	t.Parallel()
+
+	Convey("Mutator works on batch of CLs", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProjectAlt = "alt"
+		const lProject = "infra"
+		const run1 = lProject + "/1"
+		const run2 = lProject + "/2"
+		const run3 = lProject + "/3"
+		const gHost = "x-review.example.com"
+		const gChangeFirst = 100000
+		const N = 20
+
+		pm := pmMock{}
+		rm := rmMock{}
+		m := NewMutator(ct.TQDispatcher, &pm, &rm)
+
+		Convey(fmt.Sprintf("with %d CLs already in Datastore", N), func() {
+			var clids common.CLIDs
+			var expectedAltProject, expectedRun1, expectedRun2 common.CLIDs
+			for gChange := gChangeFirst; gChange < gChangeFirst+N; gChange++ {
+				cl, err := MustGobID(gHost, int64(gChange)).GetOrInsert(ctx, func(cl *CL) {})
+				So(err, ShouldBeNil)
+				clids = append(clids, cl.ID)
+				if gChange%2 == 0 {
+					cl.Snapshot = makeSnapshot(lProjectAlt, ct.Clock.Now())
+					expectedAltProject = append(expectedAltProject, cl.ID)
+				} else {
+					cl.Snapshot = makeSnapshot(lProject, ct.Clock.Now())
+				}
+				if gChange%3 == 0 {
+					cl.IncompleteRuns = append(cl.IncompleteRuns, run1)
+					expectedRun1 = append(expectedRun1, cl.ID)
+
+				}
+				if gChange%5 == 0 {
+					cl.IncompleteRuns = append(cl.IncompleteRuns, run2)
+					expectedRun2 = append(expectedRun2, cl.ID)
+				}
+				// Ensure each CL has unique EVersion later on.
+				cl.EVersion = 10 * gChange
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+			}
+			ct.Clock.Add(time.Minute)
+
+			// In all cases below, run3 is added to the list of incomplete CLs.
+			verify := func(resCLs []*CL) {
+				// Ensure the returned CLs are exactly what was stored in Datastore,
+				// and compute eversion map at the same time.
+				dsCLs, err := LoadCLs(ctx, clids)
+				So(err, ShouldBeNil)
+				eversions := make(map[common.CLID]int, len(dsCLs))
+				for i := range dsCLs {
+					So(dsCLs[i].IncompleteRuns.ContainsSorted(run3), ShouldBeTrue)
+					So(dsCLs[i].ID, ShouldEqual, resCLs[i].ID)
+					So(dsCLs[i].EVersion, ShouldEqual, resCLs[i].EVersion)
+					So(dsCLs[i].UpdateTime, ShouldResemble, resCLs[i].UpdateTime)
+					So(dsCLs[i].IncompleteRuns, ShouldResemble, resCLs[i].IncompleteRuns)
+					eversions[dsCLs[i].ID] = dsCLs[i].EVersion
+				}
+
+				// Ensure Project and Run managers were notified correctly.
+				assertNotified := func(actual map[common.CLID]int, expectedIDs common.CLIDs) {
+					expected := make(map[common.CLID]int, len(expectedIDs))
+					for _, id := range expectedIDs {
+						expected[id] = eversions[id]
+					}
+					So(actual, ShouldResemble, expected)
+				}
+				// The project in the context of which CLs were mutated must be notified
+				// on all CLs.
+				assertNotified(pm.byProject[lProject], clids)
+				// Ditto for the run3, which was added to all CLs.
+				assertNotified(rm.byRun[run3], clids)
+				// Others must be notified on relevant CLs, only.
+				assertNotified(pm.byProject[lProjectAlt], expectedAltProject)
+				assertNotified(rm.byRun[run1], expectedRun1)
+				assertNotified(rm.byRun[run2], expectedRun2)
+			}
+
+			Convey("BeginBatch + FinalizeBatch", func() {
+				var resCLs []*CL
+				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					resCLs = nil // reset in case of retries
+					muts, err := m.BeginBatch(ctx, lProject, clids)
+					So(err, ShouldBeNil)
+					eg, _ := errgroup.WithContext(ctx)
+					for i := range muts {
+						mut := muts[i]
+						eg.Go(func() error {
+							mut.CL.IncompleteRuns = append(mut.CL.IncompleteRuns, run3)
+							return nil
+						})
+					}
+					So(eg.Wait(), ShouldBeNil)
+					resCLs, err = m.FinalizeBatch(ctx, muts)
+					return err
+				}, nil)
+				So(transErr, ShouldBeNil)
+
+				// Execute the expected BatchOnCLUpdatedTask.
+				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+
+				verify(resCLs)
+			})
+
+			Convey("Manual begin + FinalizeBatch", func() {
+				var resCLs []*CL
+				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					resCLs = nil // reset in case of retries
+					muts := make([]*CLMutation, len(clids))
+					eg, egCtx := errgroup.WithContext(ctx)
+					for i, id := range clids {
+						i, id := i, id
+						eg.Go(func() error {
+							switch mut, err := m.Begin(egCtx, lProject, id); {
+							case err != nil:
+								return err
+							default:
+								mut.CL.IncompleteRuns = append(mut.CL.IncompleteRuns, run3)
+								muts[i] = mut
+								return nil
+							}
+						})
+					}
+					So(eg.Wait(), ShouldBeNil)
+					var err error
+					resCLs, err = m.FinalizeBatch(ctx, muts)
+					return err
+				}, nil)
+				So(transErr, ShouldBeNil)
+
+				// Execute the expected BatchOnCLUpdatedTask.
+				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+
+				verify(resCLs)
+			})
+
+			Convey("BeginBatch + manual finalization", func() {
+				var resCLs []*CL
+				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					resCLs = make([]*CL, len(clids)) // reset in case of retries
+					muts, err := m.BeginBatch(ctx, lProject, clids)
+					So(err, ShouldBeNil)
+					eg, egCtx := errgroup.WithContext(ctx)
+					for i, mut := range muts {
+						i, mut := i, mut
+						eg.Go(func() error {
+							mut.CL.IncompleteRuns = append(mut.CL.IncompleteRuns, run3)
+							var err error
+							resCLs[i], err = mut.Finalize(egCtx)
+							return err
+						})
+					}
+					return eg.Wait()
+				}, nil)
+				So(transErr, ShouldBeNil)
+
+				verify(resCLs)
+			})
+		})
+	})
+}
+
 func TestMutatorConcurrent(t *testing.T) {
 	t.Parallel()
 
@@ -284,7 +457,7 @@ func TestMutatorConcurrent(t *testing.T) {
 
 		pm := pmMock{}
 		rm := rmMock{}
-		m := NewMutator(&pm, &rm)
+		m := NewMutator(ct.TQDispatcher, &pm, &rm)
 
 		ctx, fb := featureBreaker.FilterRDS(ctx, nil)
 		// Use a single random source for all flaky.Errors(...) instances. Otherwise
