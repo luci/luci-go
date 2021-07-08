@@ -23,27 +23,6 @@ import re
 import sys
 
 
-def WebChecks(input_api, output_api):
-  """Run checks on the web/ directory."""
-  if input_api.is_committing:
-    error_type = output_api.PresubmitError
-  else:
-    error_type = output_api.PresubmitPromptWarning
-
-  output = []
-  output += input_api.RunTests([input_api.Command(
-      name='web presubmit',
-      cmd=[
-          input_api.python_executable,
-          input_api.os_path.join('web', 'web.py'),
-          'presubmit',
-      ],
-      kwargs={},
-      message=error_type,
-  )])
-  return output
-
-
 COPYRIGHT_TEMPLATE = """
 Copyright YEARPATTERN The LUCI Authors.
 
@@ -110,8 +89,6 @@ def CommonChecks(input_api, output_api):
     input_api.canned_checks.CheckLicense(
       input_api, output_api, header(input_api),
       source_file_filter=source_file_filter(input_api)))
-  # currently broken: crbug.com/794670
-  #results.extend(WebChecks(input_api, output_api))
   return results
 
 
