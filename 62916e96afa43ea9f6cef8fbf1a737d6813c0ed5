@@ -22,6 +22,30 @@
       },
       "revId": "62916e96afa43ea9f6cef8fbf1a737d6813c0ed5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "83e2acbd_126ea15a",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-08T01:03:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a144e868_e800169c",
+      "range": {
+        "startLine": 162,
+        "startChar": 54,
+        "endLine": 162,
+        "endChar": 60
+      },
+      "revId": "62916e96afa43ea9f6cef8fbf1a737d6813c0ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
