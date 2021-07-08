@@ -34,10 +34,13 @@ import (
 // notifying PM.
 const maxLoadCLBatchSize = 100
 
-func (p *Poller) scheduleTasks(ctx context.Context, luciProject, gerritHost string, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
+func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, gerritHost string, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
+	if len(changes) == 0 {
+		return nil
+	}
 	// TODO(tandrii): optimize by checking if CV is interested in the
 	// (host,project,ref) of these changes from before triggering tasks.
-	logging.Debugf(ctx, "scheduling %d CLUpdate tasks", len(changes))
+	logging.Debugf(ctx, "scheduling %d CLUpdate tasks (forceNotifyPM: %t)", len(changes), forceNotifyPM)
 
 	var clids []common.CLID
 	if forceNotifyPM {
@@ -77,8 +80,11 @@ func (p *Poller) scheduleTasks(ctx context.Context, luciProject, gerritHost stri
 	return common.MostSevereError(errs)
 }
 
-func (p *Poller) scheduleRefreshTasks(ctx context.Context, luciProject, host string, changes []int64) error {
-	logging.Debugf(ctx, "scheduling %d CLUpdate tasks for no longer matched CLs", len(changes))
+func (p *Poller) notifyOnUnmatchedCLs(ctx context.Context, luciProject, host string, changes []int64) error {
+	if len(changes) == 0 {
+		return nil
+	}
+	logging.Debugf(ctx, "notifying CL Updater and PM on %d no longer matched CLs", len(changes))
 	var err error
 	eids := make([]changelist.ExternalID, len(changes))
 	for i, c := range changes {

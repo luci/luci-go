@@ -25,10 +25,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestScheduleRefreshTasks(t *testing.T) {
+func TestNotifyOnUnmatchedCLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("scheduleRefreshTasks works", t, func() {
+	Convey("notifyOnUnmatchedCLs works", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -58,7 +58,7 @@ func TestScheduleRefreshTasks(t *testing.T) {
 		}
 		sort.Sort(knownIDs)
 
-		err := p.scheduleRefreshTasks(ctx, lProject, gHost, changes)
+		err := p.notifyOnUnmatchedCLs(ctx, lProject, gHost, changes)
 		So(err, ShouldBeNil)
 
 		// PM must be notified immediately on CLs already saved.
