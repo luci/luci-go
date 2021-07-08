@@ -111,14 +111,18 @@ type CL struct {
 	Snapshot         *changelist.Snapshot // Only needed for compat with CQDaemon.
 }
 
-// PM encapsulates interaction with Project Manager.
-type PM interface {
+// pmNotifier encapsulates interaction with Project Manager.
+//
+// In production, implemented by prjmanager.Notifier.
+type pmNotifier interface {
 	NotifyRunCreated(ctx context.Context, runID common.RunID) error
 	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
 }
 
-// RM encapsulates interaction with Run Manager.
-type RM interface {
+// rmNotifier encapsulates interaction with Run Manager.
+//
+// In production, implemented by run.Notifier.
+type rmNotifier interface {
 	Start(ctx context.Context, runID common.RunID) error
 }
 
@@ -143,7 +147,7 @@ var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("Run Creator: state c
 //
 //   * all other errors are non retryable and typically indicate a bug or severe
 //     misconfiguration. For example, lack of ProjectStateOffload entity.
-func (rb *Creator) Create(ctx context.Context, pm PM, rm RM) (ret *run.Run, err error) {
+func (rb *Creator) Create(ctx context.Context, pm pmNotifier, rm rmNotifier) (ret *run.Run, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")
 	defer func() { span.End(err) }()
 
@@ -206,7 +210,7 @@ func (rb *Creator) prepare(now time.Time) {
 	rb.computeRunID()
 }
 
-func (rb *Creator) createTransactionally(ctx context.Context, pm PM, rm RM) (*run.Run, error) {
+func (rb *Creator) createTransactionally(ctx context.Context, pm pmNotifier, rm rmNotifier) (*run.Run, error) {
 	switch err := rb.load(ctx); {
 	case err == errAlreadyCreated:
 		return rb.run, nil
@@ -308,7 +312,7 @@ func (rb *Creator) checkCLsUnchanged(ctx context.Context) {
 // save saves all modified and created Datastore entities.
 //
 // It may be retried multiple times on failure.
-func (rb *Creator) save(ctx context.Context, pm PM, rm RM) error {
+func (rb *Creator) save(ctx context.Context, pm pmNotifier, rm rmNotifier) error {
 	rb.dsBatcher.reset()
 	// Keep .CreateTime and .UpdateTime entities the same across all saved
 	// entities (except possibly Run, whose createTime can be overridden). Do

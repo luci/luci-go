@@ -41,8 +41,10 @@ import (
 
 const TaskClassID = "poll-gerrit"
 
-// PM encapsulates interaction with Project Manager by the Poller.
-type PM interface {
+// pmNotifier encapsulates interaction with Project Manager by the Poller.
+//
+// In production, implemented by prjmanager.Notifier.
+type pmNotifier interface {
 	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
 }
 
@@ -58,11 +60,11 @@ type Poller struct {
 	tqd       *tq.Dispatcher
 	gFactory  gerrit.ClientFactory
 	clUpdater CLUpdater
-	pm        PM
+	pm        pmNotifier
 }
 
 // New creates a new Poller, registering it in the given TQ dispatcher.
-func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, clUpdater CLUpdater, pm PM) *Poller {
+func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, clUpdater CLUpdater, pm pmNotifier) *Poller {
 	p := &Poller{tqd, g, clUpdater, pm}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClassID,

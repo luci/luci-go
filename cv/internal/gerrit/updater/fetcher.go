@@ -68,8 +68,8 @@ const (
 //
 // The prior Snapshot, if given, can reduce RPCs made to Gerrit.
 type fetcher struct {
-	pm              PM
-	rm              RM
+	pm              pmNotifier
+	rm              rmNotifier
 	scheduleRefresh func(ctx context.Context, p *RefreshGerritCL, delay time.Duration) error
 
 	luciProject string
