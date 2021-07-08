@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6bc25aa2_520f7b18",
+        "filename": "cv/internal/prjmanager/manager/manager_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T00:57:35Z",
+      "side": 1,
+      "message": "is this intentional?",
+      "range": {
+        "startLine": 413,
+        "startChar": 1,
+        "endLine": 413,
+        "endChar": 11
+      },
+      "revId": "91e0d01810944224e00118b218ee6399b58281c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
