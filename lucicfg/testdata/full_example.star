@@ -682,7 +682,14 @@ lucicfg.emit(
 #         cipd_version: "refs/heads/master"
 #         cmd: "cmd"
 #       }
-#       properties: "{\"prop1\":\"val1\",\"prop2\":[\"val2\",123]}"
+#       properties:
+#         "{"
+#         "  \"prop1\": \"val1\","
+#         "  \"prop2\": ["
+#         "    \"val2\","
+#         "    123"
+#         "  ]"
+#         "}"
 #     }
 #     builders {
 #       name: "linux ci builder"
