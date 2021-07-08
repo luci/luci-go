@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5b464153_9edfb33e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-08T01:01:14Z",
+      "side": 1,
+      "message": "guess the same thing will be done to all other places where interface is used like PM and RM.",
+      "revId": "91e54995f17da12586fe0aa3de66b7d9bda5f10f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
