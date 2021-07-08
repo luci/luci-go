@@ -69,17 +69,13 @@ const (
 //
 // The prior Snapshot, if given, can reduce RPCs made to Gerrit.
 type fetcher struct {
-	clMutator *changelist.Mutator
-	// TODO(tandrii): get rid of pm & rm and use clMutator exclusively.
-	pm              pmNotifier
-	rm              rmNotifier
+	clMutator       *changelist.Mutator
 	scheduleRefresh func(ctx context.Context, p *RefreshGerritCL, delay time.Duration) error
 
 	luciProject string
 	host        string
 	change      int64
 	updatedHint time.Time
-	forceNotify bool
 
 	g gerrit.Client
 
@@ -164,9 +160,6 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		if f.priorCL == nil {
 			panic("update can't be skipped iff priorCL is not set")
 		}
-		if f.forceNotify {
-			return f.notify(ctx, f.priorCL)
-		}
 		return nil
 	default:
 		if clid := f.clidIfKnown(); clid != 0 {
@@ -183,22 +176,6 @@ func (f *fetcher) updateCLEntity(cl *changelist.CL) error {
 		return changelist.ErrStopMutation
 	}
 	return nil
-}
-
-func (f *fetcher) notify(ctx context.Context, cl *changelist.CL) error {
-	eg, ectx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		return f.pm.NotifyCLUpdated(ectx, f.luciProject, cl.ID, cl.EVersion)
-	})
-	// Generally, a CL will have only one Run at a time. Hence, use
-	// unbounded parallelism here.
-	for _, rid := range cl.IncompleteRuns {
-		rid := rid
-		eg.Go(func() error {
-			return f.rm.NotifyCLUpdated(ectx, rid, cl.ID, cl.EVersion)
-		})
-	}
-	return eg.Wait()
 }
 
 // fetchExisting efficiently fetches new snapshot from Gerrit,

@@ -16,7 +16,6 @@ package updater
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -80,9 +79,9 @@ func TestSchedule(t *testing.T) {
 			return ct.TQ.Tasks().SortByETA().Payloads()
 		}
 
-		doBatch := func(forceNotify bool, cls []*changelist.CL) []proto.Message {
+		doBatch := func(cls []*changelist.CL) []proto.Message {
 			err := datastore.RunInTransaction(ctx, func(tctx context.Context) error {
-				So(u.ScheduleBatch(tctx, lProject, forceNotify, cls), ShouldBeNil)
+				So(u.ScheduleBatch(tctx, lProject, cls), ShouldBeNil)
 				return nil
 			}, nil)
 			So(err, ShouldBeNil)
@@ -138,25 +137,6 @@ func TestSchedule(t *testing.T) {
 			So(do(taskWithHint), ShouldResembleProto, []proto.Message{taskMinimal})
 		})
 
-		Convey("ForceNotify is never deduped", func() {
-			taskForce := proto.Clone(taskMinimal).(*RefreshGerritCL)
-			taskForce.ForceNotify = true
-			So(do(taskForce), ShouldResembleProto, []proto.Message{taskForce})
-
-			Convey("itself", func() {
-				So(do(taskForce), ShouldResembleProto, []proto.Message{taskForce, taskForce})
-			})
-			Convey("task without forceNotify", func() {
-				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskForce, taskMinimal})
-			})
-			Convey("task with updatedHint", func() {
-				taskForceUpdatedHint := proto.Clone(taskForce).(*RefreshGerritCL)
-				taskForceUpdatedHint.UpdatedHint = &timestamppb.Timestamp{Seconds: 1531230000}
-				So(do(taskForceUpdatedHint), ShouldResembleProto, []proto.Message{taskForce, taskForceUpdatedHint})
-				So(do(taskForceUpdatedHint), ShouldResembleProto, []proto.Message{taskForce, taskForceUpdatedHint, taskForceUpdatedHint})
-			})
-		})
-
 		Convey("UpdateHint is de-duped with the same UpdatedHint, only", func() {
 			// updatedHint logically has no relationship to now, but realistically it's usually
 			// quite recent. So, use 1 hour ago.
@@ -200,37 +180,32 @@ func TestSchedule(t *testing.T) {
 				12: cls[1],
 				13: cls[2],
 			}
-			test := func(forceNotify bool) {
-				Convey(fmt.Sprintf("forceNotify=%t", forceNotify), func() {
-					So(doBatch(forceNotify, cls), ShouldHaveLength, 1)
-					ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassBatch))
-					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, len(cls))
-					for _, p := range ct.TQ.Tasks().Payloads() {
-						t := p.(*RefreshGerritCL)
-						cl := clMap[t.GetChange()]
-						So(t, ShouldResembleProto, &RefreshGerritCL{
-							Change:      t.Change,
-							Host:        gHost,
-							ClidHint:    int64(cl.ID),
-							LuciProject: lProject,
-							ForceNotify: forceNotify,
-						})
-					}
+			So(doBatch(cls), ShouldHaveLength, 1)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassBatch))
+			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, len(cls))
+			for _, p := range ct.TQ.Tasks().Payloads() {
+				t := p.(*RefreshGerritCL)
+				cl := clMap[t.GetChange()]
+				So(t, ShouldResembleProto, &RefreshGerritCL{
+					Change:      t.Change,
+					Host:        gHost,
+					ClidHint:    int64(cl.ID),
+					LuciProject: lProject,
 				})
 			}
-			test(false)
-			test(true)
+		})
 
-			Convey("single CL optimization", func() {
-				So(doBatch(false, cls[:1]), ShouldHaveLength, 1)
-				So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
-					&RefreshGerritCL{
-						Change:      11,
-						Host:        gHost,
-						ClidHint:    1,
-						LuciProject: lProject,
-					},
-				})
+		Convey("BatchSchedule is just Schedule if there is just a single CL ", func() {
+			So(doBatch([]*changelist.CL{
+				{ID: 5, ExternalID: changelist.MustGobID(gHost, 15)},
+			}), ShouldHaveLength, 1)
+			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
+				&RefreshGerritCL{
+					Change:      15,
+					Host:        gHost,
+					ClidHint:    5,
+					LuciProject: lProject,
+				},
 			})
 		})
 	})
@@ -548,13 +523,6 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
 				So(pm.popNotifiedProjects(), ShouldBeEmpty)
-
-				Convey("But notifies PM if explicitly asked to do so", func() {
-					task.ForceNotify = true
-					So(u.Refresh(ctx, task), ShouldBeNil)
-					So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion) // not touched
-					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
-				})
 			})
 
 			Convey("Updates snapshots explicitly marked outdated", func() {
