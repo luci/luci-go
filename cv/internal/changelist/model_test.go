@@ -67,7 +67,7 @@ func TestCL(t *testing.T) {
 
 		Convey("create", func() {
 			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
-				cl.Snapshot = makeSnapshot(epoch)
+				cl.Snapshot = makeSnapshot(luciProject, epoch)
 			})
 
 			Convey("GetOrInsert succeed", func() {
@@ -182,7 +182,7 @@ func TestUpdate(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey("new CL is created", func() {
-			snap := makeSnapshot(epoch)
+			snap := makeSnapshot(luciProject, epoch)
 			acfg := makeApplicableConfig()
 			asdep := makeDependentMeta(epoch)
 			err := Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{
@@ -212,7 +212,7 @@ func TestUpdate(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 
-			snap := makeSnapshot(epoch)
+			snap := makeSnapshot(luciProject, epoch)
 			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{
 				Snapshot:  snap,
 				DelAccess: []string{luciProject},
@@ -234,7 +234,7 @@ func TestUpdate(t *testing.T) {
 			So(cl2.Access, ShouldResembleProto, asdep)
 
 			Convey("with known CLID", func() {
-				snap2 := makeSnapshot(epoch.Add(time.Minute))
+				snap2 := makeSnapshot(luciProject, epoch.Add(time.Minute))
 				err = Update(ctx, "" /*unspecified externalID*/, cl.ID,
 					UpdateFields{Snapshot: snap2},
 					func(ctx context.Context, cl *CL) error {
@@ -255,7 +255,7 @@ func TestUpdate(t *testing.T) {
 
 			Convey("skip update if same", func() {
 				err = Update(ctx, "", cl.ID, UpdateFields{
-					Snapshot:         makeSnapshot(epoch.Add(-time.Minute)),
+					Snapshot:         makeSnapshot(luciProject, epoch.Add(-time.Minute)),
 					ApplicableConfig: makeApplicableConfig(),
 					AddDependentMeta: makeDependentMeta(epoch.Add(-time.Minute), "another-project"),
 				}, func(context.Context, *CL) error {
@@ -360,7 +360,7 @@ func TestConcurrentUpdate(t *testing.T) {
 			asdepTS := epoch.Add(time.Second * time.Duration((73*d)%N))
 			go func() {
 				defer wg.Done()
-				snap := makeSnapshot(snapTS)
+				snap := makeSnapshot(luciProject, snapTS)
 				asdep := makeDependentMeta(asdepTS, "another-project")
 				var err error
 				for i := 0; i < R; i++ {
@@ -384,7 +384,7 @@ func TestConcurrentUpdate(t *testing.T) {
 		// Since all workers have succeeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)
-		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(latestTS))
+		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(luciProject, latestTS))
 		// DependentMeta's .CreateTime may be earlier than that of the latestTS,
 		// but .UpdateTime must be exactly latestTS.
 		So(cl.Access.GetByProject()["another-project"].GetUpdateTime().AsTime(), ShouldResemble, latestTS)
@@ -398,7 +398,7 @@ func TestConcurrentUpdate(t *testing.T) {
 
 const luciProject = "luci-project"
 
-func makeSnapshot(updatedTime time.Time) *Snapshot {
+func makeSnapshot(luciProject string, updatedTime time.Time) *Snapshot {
 	return &Snapshot{
 		ExternalUpdateTime: timestamppb.New(updatedTime),
 		Kind: &Snapshot_Gerrit{Gerrit: &Gerrit{
