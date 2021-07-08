@@ -319,47 +319,36 @@ func (clm *CLMutation) finalize(ctx context.Context) {
 	clm.CL.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 }
 
-func (clm *CLMutation) BeginBatch(ctx context.Context, project string, ids common.CLIDs) (*CL, error) {
+func (m *Mutator) BeginBatch(ctx context.Context, project string, ids common.CLIDs) ([]*CLMutation, error) {
 	panic("not implemented")
 }
 
-func (clm *CLMutation) FinalizeBatch(ctx context.Context) ([]*CL, error) {
+func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*CLMutation) ([]*CL, error) {
 	panic("not implemented")
 }
 
-type notification struct {
-	id       common.CLID
-	ev       int
-	projects []string
-	runs     common.RunIDs
-}
+///////////////////////////////////////////////////////////////////////////////
+// Internal implementation of notification dispatch.
 
-func (clm *CLMutation) notification() *notification {
-	n := &notification{
-		id:       clm.id,
-		ev:       clm.CL.EVersion,
-		runs:     append(common.RunIDs(nil), clm.CL.IncompleteRuns...), // copy
-		projects: make([]string, 1, 2),
-	}
-	n.projects[0] = clm.project
+// projects returns which LUCI projects to notify.
+func (clm *CLMutation) projects() []string {
 	if clm.priorProject != "" && clm.project != clm.priorProject {
-		n.projects = append(n.projects, clm.priorProject)
+		return []string{clm.project, clm.priorProject}
 	}
-	return n
+	return []string{clm.project}
 }
 
 func (m *Mutator) notifyOne(ctx context.Context, clm *CLMutation) error {
-	n := clm.notification()
 	eg, ctx := errgroup.WithContext(ctx)
-	for _, p := range n.projects {
+	for _, p := range clm.projects() {
 		p := p
-		eg.Go(func() error { return m.pm.NotifyCLUpdated(ctx, p, n.id, n.ev) })
+		eg.Go(func() error { return m.pm.NotifyCLUpdated(ctx, p, clm.CL.ID, clm.CL.EVersion) })
 	}
 	// One CL should have very few Runs, so it's fine to process each within the
 	// transaction in parallel.
-	for _, r := range n.runs {
+	for _, r := range clm.CL.IncompleteRuns {
 		r := r
-		eg.Go(func() error { return m.rm.NotifyCLUpdated(ctx, r, n.id, n.ev) })
+		eg.Go(func() error { return m.rm.NotifyCLUpdated(ctx, r, clm.CL.ID, clm.CL.EVersion) })
 	}
 	return eg.Wait()
 }

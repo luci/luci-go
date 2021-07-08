@@ -244,7 +244,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 		f := fetcher{
 			change: 111,
 			host:   "host",
-			toUpdate: changelist.UpdateFields{
+			toUpdate: updateFields{
 				Snapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}}},
 			},
 		}
@@ -674,8 +674,8 @@ func TestUpdateCLWorks(t *testing.T) {
 					So(cl2.Snapshot.GetExternalUpdateTime(), ShouldResemble, ct.GFake.GetChange(gHost, 123).Info.GetUpdated())
 					So(cl2.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
 					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessGranted)
-					// A different PM is notified.
-					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
+					// Both PMs are notified.
+					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject, lProject2})
 				})
 
 				Convey("without access", func() {
@@ -692,8 +692,8 @@ func TestUpdateCLWorks(t *testing.T) {
 					// the first time (in a context of a specific LUCI project) is
 					// AccessDeniedProbably.
 					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessDenied)
-					// A different PM is notified anyway.
-					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject2})
+					// Both PMs are notified anyway.
+					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject, lProject2})
 				})
 			})
 		})

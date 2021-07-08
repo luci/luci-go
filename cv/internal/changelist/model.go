@@ -207,7 +207,9 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 		cl = nil
 		switch err = datastore.Get(ctx, &m); {
 		case err == nil:
-			// The CL has just been created by someone else.
+			// The CL has just been created by someone else, possibly even us if there
+			// was a "submarine" write to Datastore (e.g. network flake while waiting
+			// for prior transaction attempt).
 			return nil
 		case err != datastore.ErrNoSuchEntity:
 			return err
@@ -231,7 +233,7 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 // respect to one another.
 //
 // However, ExternalID.get and fast path of ExternalID.getOrInsert if called
-// concurrently with Delete may return temporary error, but on retry they would
+// concurrently with Delete may return a temporary error, but on retry they would
 // return ErrNoSuchEntity.
 func Delete(ctx context.Context, id common.CLID) error {
 	cl := CL{ID: id}
@@ -285,162 +287,6 @@ func Lookup(ctx context.Context, eids []ExternalID) ([]common.CLID, error) {
 	}
 }
 
-// UpdateFields defines what parts of CL metadata to update.
-//
-// At least one field must be specified.
-type UpdateFields struct {
-	// Snapshot overwrites existing CL snapshot if newer according to its
-	// .ExternalUpdateTime.
-	Snapshot *Snapshot
-
-	// ApplicableConfig overwrites existing CL ApplicableConfig if semantically
-	// different from existing one.
-	ApplicableConfig *ApplicableConfig
-
-	// AddDependentMeta adds or overwrites metadata per LUCI project in CL AsDepMeta.
-	// Doesn't affect metadata stored for projects not referenced here.
-	AddDependentMeta *Access
-
-	// DelAccess deletes Access records for the given projects.
-	DelAccess []string
-}
-
-// IsEmpty returns true if no updates are necessary.
-func (u UpdateFields) IsEmpty() bool {
-	return (u.Snapshot == nil &&
-		u.ApplicableConfig == nil &&
-		len(u.AddDependentMeta.GetByProject()) == 0 &&
-		len(u.DelAccess) == 0)
-}
-
-func (u UpdateFields) shouldUpdateSnapshot(cl *CL) bool {
-	switch {
-	case u.Snapshot == nil:
-		return false
-	case cl.Snapshot == nil:
-		return true
-	case cl.Snapshot.GetOutdated() != nil:
-		return true
-	case u.Snapshot.GetExternalUpdateTime().AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()):
-		return true
-	case cl.Snapshot.GetLuciProject() != u.Snapshot.GetLuciProject():
-		return true
-	default:
-		return false
-	}
-}
-
-func (u UpdateFields) apply(cl *CL) (changed bool) {
-	if u.ApplicableConfig != nil && !cl.ApplicableConfig.SemanticallyEqual(u.ApplicableConfig) {
-		cl.ApplicableConfig = u.ApplicableConfig
-		changed = true
-	}
-
-	if u.shouldUpdateSnapshot(cl) {
-		cl.Snapshot = u.Snapshot
-		changed = true
-	}
-
-	switch {
-	case u.AddDependentMeta == nil:
-	case cl.Access == nil || cl.Access.GetByProject() == nil:
-		cl.Access = u.AddDependentMeta
-		changed = true
-	default:
-		e := cl.Access.GetByProject()
-		for lProject, v := range u.AddDependentMeta.GetByProject() {
-			if v.GetNoAccessTime() == nil {
-				panic("NoAccessTime must be set")
-			}
-			old, exists := e[lProject]
-			if !exists || old.GetUpdateTime().AsTime().Before(v.GetUpdateTime().AsTime()) {
-				if old.GetNoAccessTime() != nil && old.GetNoAccessTime().AsTime().Before(v.GetNoAccessTime().AsTime()) {
-					v.NoAccessTime = old.NoAccessTime
-				}
-				e[lProject] = v
-				changed = true
-			}
-		}
-	}
-
-	if len(u.DelAccess) > 0 && len(cl.Access.GetByProject()) > 0 {
-		for _, p := range u.DelAccess {
-			if _, exists := cl.Access.GetByProject()[p]; exists {
-				changed = true
-				delete(cl.Access.ByProject, p)
-				if len(cl.Access.GetByProject()) == 0 {
-					cl.Access = nil
-					break
-				}
-			}
-		}
-	}
-
-	return
-}
-
-// Update updates CL entity.
-//
-// Either ExternalID or a known common.CLID must be provided.
-//
-// If common.CLID is not known and CL for provided ExternalID doesn't exist,
-// then a new CL is created with values from UpdateFields. Otherwise, an
-// existing CL entity will be updated as documented in UpdateFields.
-//
-// If notify is given AND CL entity is created or updated, notify will be called
-// in a transaction context after CL is successfully created or updated.
-func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID, fields UpdateFields, notify Notify) error {
-	if eid == "" && knownCLID == 0 {
-		panic("either ExternalID or known common.CLID must be provided")
-	}
-	if fields.IsEmpty() {
-		panic("must specify at least one UpdateFields field")
-	}
-
-	var innerErr error
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
-		defer func() { innerErr = err }()
-		if knownCLID == 0 {
-			m := clMap{ExternalID: eid}
-			switch err := datastore.Get(ctx, &m); {
-			case err == datastore.ErrNoSuchEntity:
-				// Insert a new entity with EVersion = 1.
-				cl, err := insert(ctx, eid, func(cl *CL) {
-					cl.Snapshot = fields.Snapshot
-					cl.ApplicableConfig = fields.ApplicableConfig
-					cl.Access = fields.AddDependentMeta
-				})
-				if err == nil && notify != nil {
-					err = errors.Annotate(notify(ctx, cl), "notifyCallback failed on %s", eid).Err()
-				}
-				return err
-			case err != nil:
-				return errors.Annotate(err, "failed to get CLMap entity").Tag(transient.Tag).Err()
-			}
-			knownCLID = m.InternalID
-		}
-		cl, err := getExisting(ctx, knownCLID, eid)
-		if err != nil {
-			return err
-		}
-		// Update exsting entity.
-		updated, err := update(ctx, cl, fields.apply)
-		if err == nil && updated && notify != nil {
-			err = errors.Annotate(notify(ctx, cl), "notifyCallback failed on %d", cl.ID).Err()
-		}
-		return err
-	}, nil)
-
-	switch {
-	case innerErr != nil:
-		return innerErr
-	case err != nil:
-		return errors.Annotate(err, "failed to update CL").Tag(transient.Tag).Err()
-	default:
-		return nil
-	}
-}
-
 func getExisting(ctx context.Context, clid common.CLID, eid ExternalID) (*CL, error) {
 	cl := &CL{ID: clid}
 	switch err := datastore.Get(ctx, cl); {
@@ -488,18 +334,4 @@ func insert(ctx context.Context, eid ExternalID, populate func(*CL)) (*CL, error
 		return nil, errors.Annotate(err, "failed to save CLMap entity").Tag(transient.Tag).Err()
 	}
 	return cl, nil
-}
-
-func update(ctx context.Context, justRead *CL, mut func(*CL) (updated bool)) (updated bool, err error) {
-	if datastore.CurrentTransaction(ctx) == nil {
-		panic("must be called in transaction context")
-	}
-	updated = justRead.Mutate(ctx, mut)
-	if !updated {
-		return false, nil
-	}
-	if err = datastore.Put(ctx, justRead); err != nil {
-		err = errors.Annotate(err, "failed to put CL entity").Tag(transient.Tag).Err()
-	}
-	return true, err
 }

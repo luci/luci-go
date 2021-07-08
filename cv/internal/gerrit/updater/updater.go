@@ -67,15 +67,18 @@ type rmNotifier interface {
 
 // Updater fetches Gerrit Change details and stores them as CV CLs in Datastore.
 type Updater struct {
-	gFactory gerrit.ClientFactory
-	pm       pmNotifier
-	rm       rmNotifier
-	tqd      *tq.Dispatcher
+	gFactory  gerrit.ClientFactory
+	pm        pmNotifier
+	rm        rmNotifier
+	clMutator *changelist.Mutator
+	tqd       *tq.Dispatcher
 }
 
 // New creates a new Updater.
 func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, pm pmNotifier, rm rmNotifier) *Updater {
-	u := &Updater{g, pm, rm, tqd}
+	// TODO(tandrii): require mutator instead of pm & rm.
+	m := changelist.NewMutator(pm, rm)
+	u := &Updater{g, pm, rm, m, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClass,
 		Prototype:    &RefreshGerritCL{},
@@ -194,6 +197,7 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 // Prefer Schedule() instead of Refresh() in production.
 func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	f := fetcher{
+		clMutator:       u.clMutator,
 		pm:              u.pm,
 		rm:              u.rm,
 		scheduleRefresh: u.ScheduleDelayed,
