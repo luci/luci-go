@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -104,21 +105,20 @@ func TestFormatCLError(t *testing.T) {
 				// Save a CL snapshot for each dep.
 				deps := make(map[int]*changelist.Dep, 3)
 				for i := 101; i <= 102; i++ {
-					depCL, err := changelist.MustGobID(gHost, int64(i)).GetOrInsert(ctx, func(cl *changelist.CL) {
-						cl.Snapshot = &changelist.Snapshot{
-							LuciProject:           "whatever",
-							MinEquivalentPatchset: 1,
-							Patchset:              2,
-							ExternalUpdateTime:    timestamppb.New(testclock.TestRecentTimeUTC),
-							Kind: &changelist.Snapshot_Gerrit{
-								Gerrit: &changelist.Gerrit{
-									Host: gHost,
-									Info: gf.CI(i),
-								},
+					depCL := changelist.MustGobID(gHost, int64(i)).MustCreateIfNotExists(ctx)
+					depCL.Snapshot = &changelist.Snapshot{
+						LuciProject:           "whatever",
+						MinEquivalentPatchset: 1,
+						Patchset:              2,
+						ExternalUpdateTime:    timestamppb.New(testclock.TestRecentTimeUTC),
+						Kind: &changelist.Snapshot_Gerrit{
+							Gerrit: &changelist.Gerrit{
+								Host: gHost,
+								Info: gf.CI(i),
 							},
-						}
-					})
-					So(err, ShouldBeNil)
+						},
+					}
+					So(datastore.Put(ctx, depCL), ShouldBeNil)
 					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 				}
 				invalidDeps := &changelist.CLError_InvalidDeps{ /*set below*/ }

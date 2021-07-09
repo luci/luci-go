@@ -125,16 +125,15 @@ func TestPostGerritMessage(t *testing.T) {
 
 			// Put CL in CV (CL in Gerrit is faked separately below).
 			ci := gf.CI(int(req.GetChange()))
-			cl, err := changelist.MustGobID(req.GetHost(), req.GetChange()).GetOrInsert(ctx, func(cl *changelist.CL) {
-				cl.Snapshot = &changelist.Snapshot{
-					ExternalUpdateTime:    ci.GetUpdated(),
-					LuciProject:           req.GetProject(),
-					MinEquivalentPatchset: 1,
-					Patchset:              1,
-					Kind:                  &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{Info: ci}},
-				}
-			})
-			So(err, ShouldBeNil)
+			cl := changelist.MustGobID(req.GetHost(), req.GetChange()).MustCreateIfNotExists(ctx)
+			cl.Snapshot = &changelist.Snapshot{
+				ExternalUpdateTime:    ci.GetUpdated(),
+				LuciProject:           req.GetProject(),
+				MinEquivalentPatchset: 1,
+				Patchset:              1,
+				Kind:                  &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{Info: ci}},
+			}
+			So(datastore.Put(ctx, cl), ShouldBeNil)
 
 			Convey("propagates Gerrit errors", func() {
 				Convey("404", func() {
