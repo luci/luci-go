@@ -33,6 +33,24 @@
       "message": "I have no idea why there\u0027s so much repetitious stuff here...",
       "revId": "efbba613713993943620322094111bc733a87f87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52ef986b_676885a8",
+        "filename": "go.sum",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-09T05:12:22Z",
+      "side": 1,
+      "message": "wtf? this looks really weird...\n\nedit: I\u0027m guessing it\u0027s something like https://github.com/golang/protobuf/issues/1204",
+      "parentUuid": "58c7730f_92d2fcdf",
+      "revId": "efbba613713993943620322094111bc733a87f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
