@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6f13acd_5dc92613",
+        "filename": "starlark/starlarktest/vendored/update.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-09T20:23:05Z",
+      "side": 1,
+      "message": "Theoretically we can try to use it from Go code, but this depends on a notion of \"main module\" (it\u0027s how it discovers what version of go.starlark.net to use), and \"main module\" is conveyed through environ (PWD I think). I have no idea what would happen if this call is made from within a running Go test, especially if this test is in some another module (like infra.git).\n\nI decided it would be safer just to do the hack I did...",
+      "range": {
+        "startLine": 11,
+        "startChar": 12,
+        "endLine": 11,
+        "endChar": 52
+      },
+      "revId": "4b39318a7f0a19c5fa9c68864aca9071c086c9eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
