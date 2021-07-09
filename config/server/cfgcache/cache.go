@@ -92,7 +92,7 @@ type Entry struct {
 // Register registers the process cache slot and the validation hook.
 //
 // Must be called during the init time i.e. when initializing a global variable
-// or in a package init() function. Get() will panics if used with an
+// or in a package init() function. Get() will panic if used with an
 // unregistered entry.
 //
 // Panics if called twice. Returns `e` itself.
@@ -250,7 +250,7 @@ func (e *Entry) Get(ctx context.Context, meta *config.Meta) (proto.Message, erro
 	switch {
 	case err == caching.ErrNoProcessCache:
 		// A fallback useful in unit tests that may not have the process cache
-		// available. Production environments usually to have the cache installed
+		// available. Production environments usually have the cache installed
 		// by the framework code that initializes the root context.
 		return e.Fetch(ctx, meta)
 	case err != nil:
