@@ -138,17 +138,6 @@ func TestRunManager(t *testing.T) {
 			},
 			{
 				&eventpb.Event{
-					Event: &eventpb.Event_CqdFinished{
-						CqdFinished: &eventpb.CQDFinished{},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.NotifyCQDFinished(ctx, runID)
-				},
-				"OnCQDFinished",
-			},
-			{
-				&eventpb.Event{
 					Event: &eventpb.Event_ClSubmitted{
 						ClSubmitted: &eventpb.CLSubmitted{
 							Clid: 1,
@@ -447,15 +436,6 @@ func (fh *fakeHandler) TryResumeSubmission(ctx context.Context, rs *state.RunSta
 
 func (fh *fakeHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
 	fh.addInvocation("OnCQDVerificationCompleted")
-	return &handler.Result{
-		State:          rs.ShallowCopy(),
-		PreserveEvents: fh.preserveEvents,
-		PostProcessFn:  fh.postProcessFn,
-	}, nil
-}
-
-func (fh *fakeHandler) OnCQDFinished(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
-	fh.addInvocation("OnCQDFinished")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

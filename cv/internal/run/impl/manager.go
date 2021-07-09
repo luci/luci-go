@@ -155,7 +155,7 @@ func (rp *runProcessor) PrepareMutation(ctx context.Context, events eventbox.Eve
 		tr.triage(ctx, e)
 	}
 	ts, err := rp.processTriageResults(ctx, tr, s.(*state.RunState))
-	return ts, nil, err
+	return ts, tr.garbage, err
 }
 
 // FetchEVersion is called at the beginning of a transaction.
@@ -209,8 +209,9 @@ type triageResult struct {
 		sc    *eventpb.SubmissionCompleted
 	}
 	cqdVerificationCompletedEvents eventbox.Events
-	cqdFinished                    eventbox.Events
 	nextReadyEventTime             time.Time
+	// These events can be deleted even before the transaction starts.
+	garbage eventbox.Events
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -258,7 +259,9 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *eventpb.Event_CqdVerificationCompleted:
 		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
 	case *eventpb.Event_CqdFinished:
-		tr.cqdFinished = append(tr.cqdFinished, item)
+		// TODO(crbug/1227523): remove this after all such events are wiped out
+		// from datastore.
+		tr.garbage = append(tr.garbage, item)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -312,14 +315,6 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
 	}
-	if len(tr.cqdFinished) > 0 {
-		res, err := rp.handler.OnCQDFinished(ctx, rs)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, tr.cqdFinished, transitions)
-	}
-
 	if len(tr.clSubmittedEvents.events) > 0 {
 		res, err := rp.handler.OnCLSubmitted(ctx, rs, tr.clSubmittedEvents.cls)
 		if err != nil {

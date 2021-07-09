@@ -103,18 +103,6 @@ type Run struct {
 	// FinalizedByCQD is true iff the Run was finalized by CQDaemon, which
 	// includes submitting CLs and/or removing CQ votes and sending BQ row.
 	FinalizedByCQD bool `gae:",noindex"`
-	// DelayCancelUntil is the time CV can take charge from CQD and cancel
-	// this Run after discovering changes in CL(s) that results in Run
-	// cancellation.
-	//
-	// It acts as a grace period for CV to wait for the finished Run
-	// reported by CQD and avoid racing with discovering changes of
-	// Gerrit CLs that were caused by Run finalization in CQD. If,
-	// unfortunately, CQD is not able to report the finished Run (e.g.
-	// crash right before sending request), it is also okay to have a
-	// discrepant status from the actual status of the CQD Run/Attempt
-	// because the backfilling of Run data is best-effort.
-	DelayCancelUntil time.Time `gae:",noindex"`
 }
 
 // Mutate mutates the Run by executing `mut`.
