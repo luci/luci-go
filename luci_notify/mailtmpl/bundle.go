@@ -24,8 +24,8 @@ import (
 	text "text/template"
 	"time"
 
+	"github.com/russross/blackfriday/v2"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gopkg.in/russross/blackfriday.v2"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
