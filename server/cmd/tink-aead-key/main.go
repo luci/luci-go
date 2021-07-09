@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -107,7 +108,11 @@ func newSecretManagerAccessor(ctx context.Context, uri string, ts oauth2.TokenSo
 	if len(chunks) != 2 {
 		return nil, fmt.Errorf("sm://... URL should have form sm://<project>/<secret>")
 	}
-	client, err := secretmanager.NewClient(ctx, option.WithTokenSource(ts))
+	client, err := secretmanager.NewClient(
+		ctx,
+		option.WithTokenSource(ts),
+		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup Secret Manager client: %w", err)
 	}

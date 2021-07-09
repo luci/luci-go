@@ -42,6 +42,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcmon"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -139,7 +140,7 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig, e *Emulator) (*TempDB, err
 	// Use Spanner emulator if available.
 	// TODO(crbug.com/1066993): require Spanner emulator, then NewTempDB function
 	// can be moved in Emulator struct.
-	var opts []option.ClientOption
+	opts := []option.ClientOption{option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor())}
 	if e != nil {
 		opts = append(opts, e.opts()...)
 	} else {
@@ -260,7 +261,11 @@ func (e *Emulator) NewInstance(ctx context.Context, projectName string) (string,
 		// TODO(crbug.com/1066993): add the default to chromeinfra.
 		projectName = "projects/chops-spanner-testing"
 	}
-	opts := append(e.opts(), option.WithGRPCDialOption(grpc.WithBlock()))
+	opts := append(
+		e.opts(),
+		option.WithGRPCDialOption(grpc.WithBlock()),
+		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+	)
 
 	client, err := spanins.NewInstanceAdminClient(ctx, opts...)
 	if err != nil {
