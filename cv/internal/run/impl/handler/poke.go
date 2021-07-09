@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -34,14 +33,6 @@ const (
 
 // Poke implements Handler interface.
 func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error) {
-	// TODO(crbug/1179274): cleanup after CV is fully in charge.
-	switch f, err := migration.LoadUnclaimedFinishedCQDRun(ctx, rs.Run.ID.AttemptKey()); {
-	case err != nil:
-		return nil, err
-	case f != nil:
-		return impl.onCQDFinished(ctx, rs, f)
-	}
-
 	if shouldCheckTree(ctx, rs.Run.Status, rs.Run.Submission) {
 		rs = rs.ShallowCopy()
 		switch open, err := rs.CheckTree(ctx, impl.TreeClient); {

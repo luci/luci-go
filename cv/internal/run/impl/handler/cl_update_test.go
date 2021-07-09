@@ -26,16 +26,13 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -180,36 +177,6 @@ func TestOnCLUpdated(t *testing.T) {
 			So(trigger.Find(newCI, cfg.GetConfigGroups()[0]), ShouldBeNil)
 			updateCL(newCI, aplConfigOK, accessOK)
 			runAndVerifyCancelled()
-		})
-		Convey("Defers to CQD on removed trigger if CQD finalized the Run first", func() {
-			// TODO(crbug/1179274): remove after M1 migration.
-			So(datastore.Put(ctx, &migration.FinishedCQDRun{
-				AttemptKey: rs.Run.ID.AttemptKey(),
-				UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
-				RunID:      "", // CQD reported it before this Run even existed
-				Payload: &migrationpb.ReportedRun{
-					Id: "", // CQD reported it before this Run even existed
-					Attempt: &cvbqpb.Attempt{
-						Key:           rs.Run.ID.AttemptKey(),
-						Status:        cvbqpb.AttemptStatus_SUCCESS,
-						GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: gChange, Mode: cvbqpb.Mode_DRY_RUN}},
-					},
-				},
-			}), ShouldBeNil)
-			newCI := gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
-			So(trigger.Find(newCI, cfg.GetConfigGroups()[0]), ShouldBeNil)
-			updateCL(newCI, aplConfigOK, accessOK)
-
-			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
-			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-
-			fr, err := migration.LoadFinishedCQDRun(ctx, rs.Run.ID)
-			So(err, ShouldBeNil)
-			So(fr.RunID, ShouldResemble, rs.Run.ID)
-			So(fr.Payload.GetId(), ShouldResemble, string(rs.Run.ID))
 		})
 		Convey("Cancels Run on changed mode", func() {
 			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)

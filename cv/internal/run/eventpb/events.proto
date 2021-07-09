@@ -68,15 +68,7 @@ message Event {
     //
     // TODO(crbug/1141880): Remove this event after migration.
     CQDVerificationCompleted cqd_verification_completed = 30;
-    // On CQDFinished event, Run Manager will finalize the Run based on Run
-    // metadata provided by the CQDaemon.
-    //
-    // This event is sent by migration api when CQDaemon reports a Run it has
-    // finished working on, including submission of CLs or cancellation of
-    // triggers as well as sending BQ rows. So, Run Manager doesn't have to do
-    // any of that.
-    //
-    // TODO(crbug/1141880): Remove this event after migration.
+    // TODO(crbug/1227523): Remove this event after migration.
     CQDFinished cqd_finished = 31;
   }
 

@@ -273,7 +273,7 @@ func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
 		return nil, errors.Annotate(err, "failed to check VerifiedCQDRun existence").Tag(transient.Tag).Err()
 	}
 	for i, r := range in {
-		if !exists.Get(0, i) && r.DelayCancelUntil.IsZero() {
+		if !exists.Get(0, i) {
 			out = append(out, r)
 		}
 	}
@@ -284,7 +284,7 @@ func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
 //
 // To be removed after the first milestone is reached.
 //
-// TODO(crbug/1225760): wipe out such entities.
+// TODO(crbug/1227523): wipe all such entities.
 type FinishedCQDRun struct {
 	_kind string `gae:"$kind,migration.FinishedCQDRun"`
 	// AttemptKey is the CQD ID of the Run.

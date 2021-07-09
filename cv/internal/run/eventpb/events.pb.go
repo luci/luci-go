@@ -306,15 +306,7 @@ type Event_CqdVerificationCompleted struct {
 }
 
 type Event_CqdFinished struct {
-	// On CQDFinished event, Run Manager will finalize the Run based on Run
-	// metadata provided by the CQDaemon.
-	//
-	// This event is sent by migration api when CQDaemon reports a Run it has
-	// finished working on, including submission of CLs or cancellation of
-	// triggers as well as sending BQ rows. So, Run Manager doesn't have to do
-	// any of that.
-	//
-	// TODO(crbug/1141880): Remove this event after migration.
+	// TODO(crbug/1227523): Remove this event after migration.
 	CqdFinished *CQDFinished `protobuf:"bytes,31,opt,name=cqd_finished,json=cqdFinished,proto3,oneof"`
 }
 
