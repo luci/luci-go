@@ -20,7 +20,6 @@ package starlarktest
 
 import (
 	"fmt"
-	"go/build"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -30,6 +29,8 @@ import (
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarktest"
+
+	"go.chromium.org/luci/starlark/starlarktest/vendored"
 )
 
 // Options describe where to discover tests and how to run them.
@@ -46,6 +47,12 @@ type Options struct {
 
 // RunTests loads and executes all test scripts (testdata/**/*.star).
 func RunTests(t *testing.T, opts Options) {
+	cleanup, err := materializeAssertStar()
+	if err != nil {
+		t.Fatalf("failed to load assertion module - %s", err)
+	}
+	defer cleanup()
+
 	assertMod, err := starlarktest.LoadAssertModule()
 	if err != nil {
 		t.Fatalf("failed to load assertion module - %s", err)
@@ -120,18 +127,37 @@ func defaultExecutor(t *testing.T, path string, predeclared starlark.StringDict)
 	return err
 }
 
-func init() {
-	// Replace DataFile implementation with non-broken one that understands GOPATH
-	// with multiple entries. This is needed to pick up assert.star file under
-	// Starlark package tree.
-	starlarktest.DataFile = func(pkgdir, filename string) string {
-		rel := filepath.Join("go.starlark.net", pkgdir, filename)
-		for _, p := range build.Default.SrcDirs() {
-			full := filepath.Join(p, rel)
-			if _, err := os.Stat(full); err == nil {
-				return full
-			}
-		}
-		panic(fmt.Sprintf("could not find %s", rel))
+// materializeAssertStar creates assert.star file on disk to feed it to the
+// go.starlark.net/starlarktest package, since it wants a real file.
+//
+// It is unable to discover its own copy of assert.star when running in Modules
+// mode.
+func materializeAssertStar() (cleanup func(), err error) {
+	tmp, err := ioutil.TempDir("", "starlarktest")
+	if err != nil {
+		return nil, err
 	}
+
+	err = ioutil.WriteFile(
+		filepath.Join(tmp, "assert.star"),
+		vendored.GetAsset("starlarktest/assert.star"),
+		0600)
+	if err != nil {
+		os.RemoveAll(tmp)
+		return nil, err
+	}
+
+	prev := starlarktest.DataFile
+	starlarktest.DataFile = func(pkgdir, filename string) string {
+		path := fmt.Sprintf("%s/%s", pkgdir, filename)
+		if path == "starlarktest/assert.star" {
+			return filepath.Join(tmp, "assert.star")
+		}
+		panic("don't know how to load " + path)
+	}
+
+	return func() {
+		starlarktest.DataFile = prev
+		os.RemoveAll(tmp)
+	}, nil
 }
