@@ -39,6 +39,30 @@
       },
       "revId": "171bcb80dc299641853c58c8ae0d1d2019c59bbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b654c306_90403967",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-09T16:47:11Z",
+      "side": 1,
+      "message": "thanks https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3017390",
+      "parentUuid": "c90f50b1_0273b3d1",
+      "range": {
+        "startLine": 210,
+        "startChar": 37,
+        "endLine": 210,
+        "endChar": 50
+      },
+      "revId": "171bcb80dc299641853c58c8ae0d1d2019c59bbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
