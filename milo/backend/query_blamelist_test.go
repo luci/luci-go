@@ -140,6 +140,7 @@ func TestQueryBlamelist(t *testing.T) {
 		datastore.GetTestable(c).Consistent(true)
 		srv := &MiloInternalService{}
 		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 		gitMock := git.NewMockClient(ctrl)
 		c = git.Use(c, gitMock)
 		c = auth.WithState(c, &authtest.FakeState{Identity: "user"})
@@ -224,11 +225,6 @@ func TestQueryBlamelist(t *testing.T) {
 				},
 				PageSize: 2000,
 			}
-			gitMock.
-				EXPECT().
-				Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 1001, WithFiles: true}).
-				Return(commits, nil)
-
 			_, err := srv.QueryBlamelist(c, req)
 			So(err, ShouldNotBeNil)
 		})
@@ -246,7 +242,7 @@ func TestQueryBlamelist(t *testing.T) {
 				}
 				gitMock.
 					EXPECT().
-					Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 1001, WithFiles: true}).
+					Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 1001, WithFiles: true}).
 					Return(commits, nil)
 
 				_, err := srv.QueryBlamelist(c, req)
@@ -264,7 +260,7 @@ func TestQueryBlamelist(t *testing.T) {
 				}
 				gitMock.
 					EXPECT().
-					Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+					Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
 					Return(commits, nil)
 
 				_, err := srv.QueryBlamelist(c, req)
@@ -285,7 +281,7 @@ func TestQueryBlamelist(t *testing.T) {
 					}
 					gitMock.
 						EXPECT().
-						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
 						Return(commits, nil)
 
 					res, err := srv.QueryBlamelist(c, req)
@@ -308,7 +304,7 @@ func TestQueryBlamelist(t *testing.T) {
 					}
 					gitMock.
 						EXPECT().
-						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
 						Return(commits[5:], nil)
 
 					res, err := srv.QueryBlamelist(c, req)
@@ -336,7 +332,7 @@ func TestQueryBlamelist(t *testing.T) {
 
 					gitMock.
 						EXPECT().
-						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
 						Return(commits[0:3], nil)
 
 					res, err := srv.QueryBlamelist(c, req)
@@ -361,7 +357,7 @@ func TestQueryBlamelist(t *testing.T) {
 
 					gitMock.
 						EXPECT().
-						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, "commit6", &git.LogOptions{Limit: 3, WithFiles: true}).
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, "commit6", &git.LogOptions{Limit: 3, WithFiles: true}).
 						Return(commits[2:5], nil)
 
 					res, err = srv.QueryBlamelist(c, req)
@@ -386,7 +382,7 @@ func TestQueryBlamelist(t *testing.T) {
 
 					gitMock.
 						EXPECT().
-						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
 						Return(commits[5:8], nil)
 
 					res, err := srv.QueryBlamelist(c, req)
@@ -411,7 +407,7 @@ func TestQueryBlamelist(t *testing.T) {
 
 					gitMock.
 						EXPECT().
-						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, "commit1", &git.LogOptions{Limit: 3, WithFiles: true}).
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, "commit1", &git.LogOptions{Limit: 3, WithFiles: true}).
 						Return(commits[7:], nil)
 
 					res, err = srv.QueryBlamelist(c, req)
@@ -436,7 +432,7 @@ func TestQueryBlamelist(t *testing.T) {
 			}
 			gitMock.
 				EXPECT().
-				Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+				Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
 				Return(commits[5:], nil)
 
 			res, err := srv.QueryBlamelist(c, req)
