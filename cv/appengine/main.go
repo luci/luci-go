@@ -34,6 +34,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/admin"
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
+	"go.chromium.org/luci/cv/internal/aggrmetrics"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
@@ -100,6 +101,10 @@ func main() {
 		pcr := prjcfg.NewRefresher(&tq.Default, pmNotifier)
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
 			return refreshConfig(ctx, pcr)
+		})
+		aggregator := aggrmetrics.NewAggegator(&tq.Default)
+		cron.RegisterHandler("aggregate-metrics-minutely", func(ctx context.Context) error {
+			return aggregator.MinuteCron(ctx)
 		})
 
 		// The service has no UI, so just redirect to the RPC Explorer.
