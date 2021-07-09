@@ -384,13 +384,14 @@ func (r *renderedStack) dumpTo(w io.Writer, excludePkgs ...string) (n int, err e
 				w.Write(nlSlice)
 				needNL = false
 			}
-			if excludeSet.Has(f.pkg) {
-				if skipPkg == f.pkg {
+			pkg := dropVersionSuffix(f.pkg)
+			if excludeSet.Has(pkg) {
+				if skipPkg == pkg {
 					skipCount++
 				} else {
 					flushSkips("")
 					skipCount++
-					skipPkg = f.pkg
+					skipPkg = pkg
 				}
 				continue
 			}
@@ -409,6 +410,14 @@ func (r *renderedStack) dumpTo(w io.Writer, excludePkgs ...string) (n int, err e
 
 		return nil
 	})
+}
+
+// dropVersionSuffix takes "a/b@zzz" and returns "a/b".
+func dropVersionSuffix(pkg string) string {
+	if idx := strings.LastIndexAny(pkg, "@"); idx != -1 {
+		return pkg[:idx]
+	}
+	return pkg
 }
 
 // renderedError is a series of RenderedStacks, one for each goroutine that the
