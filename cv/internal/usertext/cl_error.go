@@ -219,7 +219,7 @@ var tmplSingleFullOpenDeps = tmplMust(`
 {{CQ_OR_CV}} can't process the CL in {{.mode | printf "%q"}} mode because it has not yet submitted dependencies:
 {{range $url := .deps}}  * {{$url}}
 {{end}}
-Please submit directly or via CQ the depenndencies first.
+Please submit directly or via CQ the dependencies first.
 `)
 
 var tmplCombinableUntriggered = tmplMust(`
