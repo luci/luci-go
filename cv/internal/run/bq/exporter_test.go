@@ -26,11 +26,9 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -95,8 +93,6 @@ func TestExportRunToBQ(t *testing.T) {
 		Convey("A row is sent", func() {
 			Convey("in prod", func() {
 				So(schedule(), ShouldBeNil)
-				// TODO(crbug/1218658): remove this once fix is found.
-				ct.EnableCVRunManagement(ctx, runID.LUCIProject())
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				rows := ct.BQFake.Rows("", CVDataset, CVTable)
 				So(rows, ShouldResembleProto, []*cvbqpb.Attempt{{
@@ -131,8 +127,6 @@ func TestExportRunToBQ(t *testing.T) {
 			})
 
 			Convey("in dev", func() {
-				// TODO(crbug/1218658): remove this once fix is found.
-				ct.EnableCVRunManagement(ctx, runID.LUCIProject())
 				So(schedule(), ShouldBeNil)
 				ctx = common.SetDev(ctx)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
@@ -140,28 +134,6 @@ func TestExportRunToBQ(t *testing.T) {
 				// Must not send to production legacy.
 				So(ct.BQFake.Rows(legacyProject, legacyDataset, legacyTable), ShouldHaveLength, 0)
 				So(ct.BQFake.Rows(legacyProjectDev, legacyDataset, legacyTable), ShouldHaveLength, 1)
-			})
-
-			Convey("while CQDaemon is in charge", func() {
-				So(datastore.Put(ctx, &migration.FinishedCQDRun{
-					AttemptKey: r.ID.AttemptKey(),
-					RunID:      r.ID,
-					Payload: &migrationpb.ReportedRun{
-						Attempt: &cvbqpb.Attempt{
-							// ... a bunch of fields ommitted...
-							Status:    cvbqpb.AttemptStatus_SUCCESS,
-							Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
-						},
-					},
-				}), ShouldBeNil)
-				r.FinalizedByCQD = true
-				So(datastore.Put(ctx, &r), ShouldBeNil)
-
-				So(schedule(), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
-				So(ct.BQFake.Rows("", CVDataset, CVTable), ShouldHaveLength, 1)
-				// And only 1 row has been sent.
-				So(ct.BQFake.TotalSent(), ShouldEqual, 1)
 			})
 		})
 	})

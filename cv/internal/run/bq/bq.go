@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	cvbq "go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/migration"
-	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -79,38 +78,22 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
-	if !r.FinalizedByCQD {
-		// Only export to legacy CQ dataset iff CQDaemon didn't finalize the Run
-		// itself, which would have included exporting BQ row.
-
-		// TODO(crbug/1218658): find a proper fix.
-		switch yes, err := migrationcfg.IsCVInCharge(ctx, r.ID.LUCIProject()); {
-		case err != nil:
-			return err
-		case !yes:
-			// Per crbug/1220934 investigation, this actually happens due to
-			// inevitable races between user updating Gerrit in quick succession and
-			// when CV & CQD observe Gerrit.
-			logging.Warningf(ctx, "CV is not in charge, but it finalized a Run. Exporting to CV's BQ table only")
-		default:
-			logging.Debugf(ctx, "CV exporting Run to CQ BQ table")
-			eg.Go(func() error {
-				project := legacyProject
-				if common.IsDev(ctx) {
-					project = legacyProjectDev
-				}
-				return client.SendRow(ctx, cvbq.Row{
-					CloudProject: project,
-					Dataset:      legacyDataset,
-					Table:        legacyTable,
-					OperationID:  "run-" + string(id),
-					Payload:      a,
-				})
-			})
+	logging.Debugf(ctx, "CV exporting Run to CQ BQ table")
+	eg.Go(func() error {
+		project := legacyProject
+		if common.IsDev(ctx) {
+			project = legacyProjectDev
 		}
-	}
+		return client.SendRow(ctx, cvbq.Row{
+			CloudProject: project,
+			Dataset:      legacyDataset,
+			Table:        legacyTable,
+			OperationID:  "run-" + string(id),
+			Payload:      a,
+		})
+	})
 
-	// *Always* export to local CV dataset.
+	// *Always* also export to the local CV dataset.
 	eg.Go(func() error {
 		return client.SendRow(ctx, cvbq.Row{
 			Dataset:     CVDataset,
@@ -119,9 +102,7 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 			Payload:     a,
 		})
 	})
-
 	return eg.Wait()
-
 }
 
 func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {

@@ -51,8 +51,7 @@ func TestOnCLUpdated(t *testing.T) {
 
 		const lProject = "chromium"
 		const gHost = "x-review.example.com"
-		// TODO(yiwzhang): remove this once Run finalization fully conducted by CV.
-		ct.EnableCVRunManagement(ctx, lProject)
+
 		cfg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
 				{Name: "main"},

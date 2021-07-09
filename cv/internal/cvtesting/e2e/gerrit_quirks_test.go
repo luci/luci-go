@@ -39,10 +39,6 @@ func TestGerritCLDeleted(t *testing.T) {
 		const gRef = "refs/heads/main"
 		const gChange = 404
 
-		// TODO(tandrii): remove this once Run cancellation is not conditional on CV
-		// managing Runs for a project.
-		ct.EnableCVRunManagement(ctx, lProject)
-
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)

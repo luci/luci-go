@@ -52,8 +52,6 @@ func TestUpdateConfig(t *testing.T) {
 			gRef        = "refs/heads/main"
 		)
 		runID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
-		// TODO(tandrii): remove this once Run finalization fully conducted by CV.
-		ct.EnableCVRunManagement(ctx, lProject)
 
 		putRunCL := func(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) {
 			tr := trigger.Find(ci, cg)

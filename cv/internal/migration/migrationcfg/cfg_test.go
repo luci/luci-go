@@ -28,7 +28,7 @@ import (
 func TestIsCVInCharge(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsCVInCharge works", t, func() {
+	Convey("IsCVInChargeOfSomething works", t, func() {
 		run := func(project string, settings *migrationpb.Settings, appID string) bool {
 			ct := cvtesting.Test{AppID: appID}
 			ctx, cancel := ct.SetUp()
@@ -36,7 +36,7 @@ func TestIsCVInCharge(t *testing.T) {
 
 			So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-			res, err := IsCVInCharge(ctx, project)
+			res, err := IsCVInChargeOfSomething(ctx, project)
 			So(err, ShouldBeNil)
 			return res
 		}

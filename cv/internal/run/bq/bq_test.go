@@ -321,30 +321,6 @@ func TestUsingAttemptInfoFromCQDaemon(t *testing.T) {
 			})
 
 		})
-
-		Convey("finalized by CQDaemon", func() {
-			r.FinalizedByCQD = true
-			Convey("error if no finished run found in datastore", func() {
-				_, err := fetchCQDAttempt(ctx, r)
-				So(err, ShouldErrLike, "no FinishedCQDRun for Run")
-			})
-
-			fr := &migration.FinishedCQDRun{
-				AttemptKey: r.CQDAttemptKey,
-				RunID:      runID,
-				Payload: &migrationpb.ReportedRun{
-					Id:      string(runID),
-					Attempt: attempt,
-				},
-			}
-			So(datastore.Put(ctx, fr), ShouldBeNil)
-
-			Convey("returns Attempt from datastore", func() {
-				a, err := fetchCQDAttempt(ctx, r)
-				So(err, ShouldBeNil)
-				So(a, ShouldResembleProto, attempt)
-			})
-		})
 	})
 
 	Convey("reconcileAttempts", t, func() {

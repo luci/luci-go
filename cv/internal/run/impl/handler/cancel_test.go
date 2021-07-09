@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -29,9 +28,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -69,78 +66,28 @@ func TestCancel(t *testing.T) {
 			CLUpdater: &clUpdaterMock{},
 		}
 
-		Convey("When CV is in charge", func() {
-			ct.EnableCVRunManagement(ctx, lProject)
-			now := ct.Clock.Now().UTC()
-			Convey("Backfill Start time", func() {
-				rs.Run.Status = run.Status_PENDING
-				res, err := h.Cancel(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
-				So(res.State.Run.StartTime, ShouldResemble, now)
-				So(res.State.Run.EndTime, ShouldResemble, now)
-				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-			})
-
-			Convey("Cancel works", func() {
-				rs.Run.Status = run.Status_RUNNING
-				rs.Run.StartTime = now.Add(-1 * time.Minute)
-				res, err := h.Cancel(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
-				So(res.State.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
-				So(res.State.Run.EndTime, ShouldResemble, now)
-				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-			})
+		now := ct.Clock.Now().UTC()
+		Convey("Backfill Start time", func() {
+			rs.Run.Status = run.Status_PENDING
+			res, err := h.Cancel(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.Run.StartTime, ShouldResemble, now)
+			So(res.State.Run.EndTime, ShouldResemble, now)
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
 		})
 
-		// TODO(yiwzhang): remove this once Run finalization fully conducted by CV.
-		Convey("When CQD is in charge", func() {
-			ct.DisableCVRunManagement(ctx)
-			now := ct.Clock.Now().UTC()
-			Convey("Delay cancellation", func() {
-				rs.Run.Status = run.Status_RUNNING
-				rs.Run.StartTime = now.Add(-1 * time.Minute)
-				res, err := h.Cancel(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
-				So(res.State.Run.DelayCancelUntil, ShouldEqual, now.Add(3*time.Minute))
-				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.SideEffectFn(ctx), ShouldBeNil)
-				runtest.AssertInEventbox(ctx, runID, &eventpb.Event{
-					Event: &eventpb.Event_Cancel{
-						Cancel: &eventpb.Cancel{},
-					},
-					ProcessAfter: timestamppb.New(now.Add(3 * time.Minute)),
-				})
-			})
-
-			Convey("Do nothing if it's not time to cancel yet", func() {
-				rs.Run.Status = run.Status_RUNNING
-				rs.Run.StartTime = now.Add(-1 * time.Minute)
-				rs.Run.DelayCancelUntil = now.Add(10 * time.Minute)
-				res, err := h.Cancel(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
-				So(res.State.Run.DelayCancelUntil, ShouldEqual, now.Add(10*time.Minute))
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-			})
-
-			Convey("Proceed to cancel if time has past DelayCancelUntil", func() {
-				rs.Run.Status = run.Status_RUNNING
-				rs.Run.StartTime = now.Add(-1 * time.Minute)
-				rs.Run.DelayCancelUntil = now.Add(-10 * time.Minute)
-				res, err := h.Cancel(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
-				So(res.State.Run.EndTime, ShouldResemble, now)
-				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-			})
+		Convey("Cancel works", func() {
+			rs.Run.Status = run.Status_RUNNING
+			rs.Run.StartTime = now.Add(-1 * time.Minute)
+			res, err := h.Cancel(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
+			So(res.State.Run.EndTime, ShouldResemble, now)
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
 		})
 
 		Convey("Cancels SUBMITTING Run", func() {

@@ -51,8 +51,6 @@ func TestHandleLargeCLStack(t *testing.T) {
 		// thus Run and all its CLs count as 1 such group.
 		const N = 19
 
-		ct.EnableCVRunManagement(ctx, lProject)
-
 		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)

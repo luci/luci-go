@@ -50,7 +50,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -148,36 +147,6 @@ func (t *Test) cleanup() {
 
 func (t *Test) RoundTestClock(multiple time.Duration) {
 	t.Clock.Set(t.Clock.Now().Add(multiple).Truncate(multiple))
-}
-
-// EnableCVRunManagement opts in the given project for CV managing Runs.
-//
-// Can be called multiple times to add more than 1 project.
-// Not goroutine-safe, do not call concurrently.
-func (t *Test) EnableCVRunManagement(ctx context.Context, lProject string) {
-	if t.migrationSettings == nil {
-		// Disable actual (re-)initializes the migration state.
-		t.DisableCVRunManagement(ctx)
-	}
-	t.migrationSettings.UseCvRuns.ProjectRegexp = append(t.migrationSettings.UseCvRuns.ProjectRegexp, lProject)
-	So(srvcfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
-}
-
-// DisableCVRunManagement disables CV Run management for all projects.
-//
-// Not goroutine-safe, do not call concurrently.
-func (t *Test) DisableCVRunManagement(ctx context.Context) {
-	t.migrationSettings = &migrationpb.Settings{
-		ApiHosts: []*migrationpb.Settings_ApiHost{
-			{
-				Host:          info.TrimmedAppID(ctx) + ".appspot.com",
-				Prod:          true,
-				ProjectRegexp: []string{".+"},
-			},
-		},
-		UseCvRuns: &migrationpb.Settings_UseCVRuns{},
-	}
-	So(srvcfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
 }
 
 func (t *Test) setMaxDuration() {

@@ -55,9 +55,6 @@ func TestCreatesSingularRun(t *testing.T) {
 		const gRef = "refs/heads/main"
 		const gChange = 33
 
-		// TODO(tandrii): remove this once Run creation is not conditional on CV
-		// managing Runs for a project.
-		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
@@ -124,9 +121,6 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		const gChange = 33
 		const quickLabel = "Quick-Label"
 
-		// TODO(tandrii): remove this once Run creation is not conditional on CV
-		// managing Runs for a project.
-		ct.EnableCVRunManagement(ctx, lProject)
 		// Start CQDaemon.
 		ct.MustCQD(ctx, lProject)
 
@@ -220,9 +214,6 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		const gChange = 33
 		const quickLabel = "Quick-Label"
 
-		// TODO(tandrii): remove this once Run creation is not conditional on CV
-		// managing Runs for a project.
-		ct.EnableCVRunManagement(ctx, lProject)
 		// Start CQDaemon.
 		ct.MustCQD(ctx, lProject)
 
@@ -327,9 +318,6 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		const gChange = 33
 		const gPatchSet = 6
 
-		// TODO(tandrii): remove this once Run creation is not conditional on CV
-		// managing Runs for a project.
-		ct.EnableCVRunManagement(ctx, lProject)
 		// Start CQDaemon.
 		ct.MustCQD(ctx, lProject)
 
@@ -413,7 +401,6 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 		const gRef = "refs/heads/main"
 		const gChange = 33
 
-		ct.EnableCVRunManagement(ctx, lProject)
 		// Start CQDaemon.
 		ct.MustCQD(ctx, lProject)
 
@@ -481,9 +468,6 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		const gRepo = "re/po"
 		const gRef = "refs/heads/main"
 
-		// TODO(tandrii): remove this once Run creation is not conditional on CV
-		// managing Runs for a project.
-		ct.EnableCVRunManagement(ctx, lProject)
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
@@ -556,9 +540,6 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		const gChange3 = 33
 		const gPatchSet = 6
 
-		// TODO(tandrii): remove this once Run creation is not conditional on CV
-		// managing Runs for a project.
-		ct.EnableCVRunManagement(ctx, lProject)
 		// Start CQDaemon.
 		ct.MustCQD(ctx, lProject)
 
