@@ -46,13 +46,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Controller, *buildbucketpb.MockBuildsClient) {
+func newMockClient(c context.Context, t *testing.T) (context.Context, *buildbucketpb.MockBuildsClient) {
 	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
 	client := buildbucketpb.NewMockBuildsClient(ctrl)
 	factory := func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
 		return client, nil
 	}
-	return WithBuildsClientFactory(c, factory), ctrl, client
+	return WithBuildsClientFactory(c, factory), client
 }
 
 // Buildbucket timestamps round off to milliseconds, so define a reference.
@@ -88,8 +89,7 @@ func TestPubSub(t *testing.T) {
 			IdentityGroups: []string{"all"},
 		})
 		c = caching.WithRequestCache(c)
-		c, ctrl, mbc := newMockClient(c, t)
-		defer ctrl.Finish()
+		c, mbc := newMockClient(c, t)
 
 		// Initialize the appropriate builder.
 		builderSummary := &model.BuilderSummary{

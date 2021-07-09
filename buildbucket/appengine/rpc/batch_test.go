@@ -48,7 +48,9 @@ func TestBatch(t *testing.T) {
 	t.Parallel()
 
 	Convey("Batch", t, func() {
-		mockPyBBClient := pb.NewMockBuildsClient(gomock.NewController(t))
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockPyBBClient := pb.NewMockBuildsClient(ctl)
 		srv := &Builds{testPyBuildsClient: mockPyBBClient}
 		ctx, _ := tq.TestingContext(txndefer.FilterRDS(memory.Use(context.Background())), nil)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
