@@ -75,8 +75,10 @@ func TestTriggerBuild(t *testing.T) {
 			SaveCallback:  func() error { return nil },
 			OverrideJobID: jobID,
 		}
-		// TODO(nodir): use goconvey.C instead of t in NewController.
-		gitilesMock := mock_gitiles.NewMockGitilesClient(gomock.NewController(t))
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		gitilesMock := mock_gitiles.NewMockGitilesClient(mockCtrl)
 
 		m := TaskManager{mockGitilesClient: gitilesMock}
 
@@ -303,7 +305,6 @@ func TestTriggerBuild(t *testing.T) {
 			expectRefs("refs/heads", strmap{
 				"refs/heads/master": "deadbeef",
 			})
-			expectRefs("refs/branch-heads", nil)
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
 			So(ctl.Log, ShouldNotContain, "Saved 1 known refs")
@@ -448,7 +449,6 @@ func TestTriggerBuild(t *testing.T) {
 			Convey("race or fluke", func() {
 				expectLog("1111", "001d", 50, nil, grpc.Errorf(codes.NotFound, "not found"))
 				expectLog("1111", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
-				expectLog("001d", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
 				So(m.LaunchTask(c, ctl), ShouldNotBeNil)
 				So(loadNoError(), ShouldResemble, strmap{
 					"refs/heads/master": "001d",
