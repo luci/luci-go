@@ -15,8 +15,10 @@
 // Package caching implements common server object caches.
 //
 // Two caches are defined:
+//
 // - A process-global LRU cache, which may retain data in between requests.
+//
 // - A per-request cache, which can be installed into the Context that is
-//   servicing an individual request, and will be purged at the end of that
-//   request.
+// servicing an individual request, and will be purged at the end of that
+// request.
 package caching
