@@ -51,7 +51,9 @@ func TestCreateInvocations(t *testing.T) {
 	t.Parallel()
 
 	Convey("create invocations", t, func() {
-		mockClient := rdbPb.NewMockRecorderClient(gomock.NewController(t))
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := rdbPb.NewMockRecorderClient(ctl)
 		ctx := context.WithValue(context.Background(), &mockRecorderClientKey, mockClient)
 		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
 		ctx = memory.UseInfo(ctx, "cr-buildbucket-dev")
@@ -219,7 +221,6 @@ func TestCreateInvocations(t *testing.T) {
 			bqExports := []*rdbPb.BigQueryExport{}
 			historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
 
-			sha256Bldr := sha256.Sum256([]byte("proj1/bucket/builder"))
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
 				&rdbPb.CreateInvocationRequest{
 					InvocationId: "build-1",
@@ -231,21 +232,6 @@ func TestCreateInvocations(t *testing.T) {
 					},
 					RequestId: "build-1",
 				}), gomock.Any()).Return(nil, grpcStatus.Error(codes.AlreadyExists, "already exists"))
-			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
-				&rdbPb.CreateInvocationRequest{
-					InvocationId: fmt.Sprintf("build-%s-123", hex.EncodeToString(sha256Bldr[:])),
-					Invocation: &rdbPb.Invocation{
-						IncludedInvocations: []string{"invocations/build-1"},
-						ProducerResource:    "//cr-buildbucket-dev.appspot.com/builds/1",
-						State:               rdbPb.Invocation_FINALIZING,
-						Realm:               "proj1:bucket",
-					},
-					RequestId: "build-1-123",
-				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
-				h, _ := opt.(grpc.HeaderCallOption)
-				h.HeaderAddr.Set("update-token", "token for build number 123")
-				return &rdbPb.Invocation{}, nil
-			})
 
 			err := CreateInvocations(ctx, builds, cfgs, "host")
 			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = AlreadyExists desc = already exists")
