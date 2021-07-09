@@ -120,7 +120,7 @@ message SubmissionCompleted {
   oneof failure_reason {
     // Deprecated. Use `cl_failures` instead.
     //
-    // TODO(yiwzhang): delete after no event has this field set.
+    // TODO(crbug/1227523): delete after no event has this field set.
     CLSubmissionFailure cl_failure = 2 [deprecated = true];
     // Submission deadline is exceeded. Must be permanet failure.
     bool timeout = 3;
