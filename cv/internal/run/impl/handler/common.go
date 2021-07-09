@@ -52,7 +52,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 
 	return eventbox.Chain(
 		func(ctx context.Context) error {
-			return removeRunFromCLs(ctx, rid, rs.Run.CLs, impl.CLUpdater, impl.PM)
+			return impl.removeRunFromCLs(ctx, rid, rs.Run.CLs)
 		},
 		func(ctx context.Context) error {
 			txndefer.Defer(ctx, func(postTransCtx context.Context) {
@@ -73,7 +73,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 //     operating on potentially outdated CL Snapshots;
 //   * schedules refresh of CL snapshot;
 //   * removes Run's ID from the list of CL's IncompleteRuns.
-func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLIDs, u CLUpdater, pm PM) error {
+func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be called in a transaction")
 	}
@@ -95,10 +95,10 @@ func removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLID
 	}
 	// TODO(crbug/1215792): refactor this to work well even when CLs belong to
 	// multiple projects and reference other Runs.
-	if err := pm.NotifyCLsUpdated(ctx, runID.LUCIProject(), cls); err != nil {
+	if err := impl.PM.NotifyCLsUpdated(ctx, runID.LUCIProject(), cls); err != nil {
 		return err
 	}
-	return u.ScheduleBatch(ctx, runID.LUCIProject(), cls)
+	return impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), cls)
 }
 
 func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *prjcfg.ConfigGroup) error {

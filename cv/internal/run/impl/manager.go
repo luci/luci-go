@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -59,14 +60,23 @@ type RunManager struct {
 	handler     handler.Handler
 }
 
-func New(n *run.Notifier, pm *prjmanager.Notifier, g gerrit.ClientFactory, u *updater.Updater, tc tree.Client, bqc bq.Client) *RunManager {
+func New(
+	n *run.Notifier,
+	pm *prjmanager.Notifier,
+	clm *changelist.Mutator,
+	u *updater.Updater,
+	g gerrit.ClientFactory,
+	tc tree.Client,
+	bqc bq.Client,
+) *RunManager {
 	rm := &RunManager{n, pm, &handler.Impl{
 		PM:         pm,
 		RM:         n,
-		TreeClient: tc,
+		CLUpdater:  u,
+		CLMutator:  clm,
 		BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc),
 		GFactory:   g,
-		CLUpdater:  u,
+		TreeClient: tc,
 	}}
 	n.TasksBinding.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {

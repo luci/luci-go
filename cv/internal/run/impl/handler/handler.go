@@ -114,6 +114,7 @@ type Impl struct {
 	RM         RM
 	GFactory   gerrit.ClientFactory
 	CLUpdater  CLUpdater
+	CLMutator  *changelist.Mutator
 	BQExporter *bq.Exporter
 	TreeClient tree.Client
 }
