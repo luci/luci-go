@@ -25,6 +25,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcmon"
 
 	gs "cloud.google.com/go/storage"
 
@@ -227,12 +228,11 @@ func (c *prodClient) deleteObject(o *gs.ObjectHandle) error {
 }
 
 func (c *prodClient) newClient() (*gs.Client, error) {
-	var optsArray [1]option.ClientOption
-	opts := optsArray[:0]
+	opts := []option.ClientOption{
+		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+	}
 	if c.rt != nil {
-		opts = append(opts, option.WithHTTPClient(&http.Client{
-			Transport: c.rt,
-		}))
+		opts = append(opts, option.WithHTTPClient(&http.Client{Transport: c.rt}))
 	}
 	return gs.NewClient(c, opts...)
 }
