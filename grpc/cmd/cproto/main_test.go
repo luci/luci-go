@@ -34,6 +34,11 @@ const (
 var train = flag.Bool("test.train", false, "retrain golden files")
 
 func TestMain(t *testing.T) {
+	// TODO(crbug.com/1057067): Reenable when we have protoc-gen-go etc. in PATH.
+	if os.Getenv("GO111MODULE") != "off" {
+		t.Skipf("no protoc-gen-go in modules mode")
+	}
+
 	if runtime.GOOS == "windows" || runtime.GOARCH == "386" {
 		t.Skipf("we don't have protoc on these build machines.")
 	}
