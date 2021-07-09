@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -78,15 +77,6 @@ func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	ctx = logging.SetField(ctx, "cl", task.GetPurgingCl().GetClid())
 	now := clock.Now(ctx)
 
-	switch yes, err := migrationcfg.IsCVInCharge(ctx, task.GetLuciProject()); {
-	case err != nil:
-		return err
-	case !yes:
-		logging.Warningf(ctx, "this app isn't managing Runs for the project")
-		// Don't notify PM immediately to give CQD more time do the same CL purge,
-		// otherwise PM will re-create purge task.
-		return p.notifyPM(ctx, task, now.Add(time.Minute))
-	}
 	if len(task.GetReasons()) == 0 {
 		return errors.Reason("no reasons given in %s", task).Err()
 	}

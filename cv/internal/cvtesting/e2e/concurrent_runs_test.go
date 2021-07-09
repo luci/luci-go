@@ -51,8 +51,6 @@ func TestConcurentRunsSingular(t *testing.T) {
 		const gChangeFirst = 1001
 		const N = 50
 
-		ct.EnableCVRunManagement(ctx, lProject)
-
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)

@@ -315,7 +315,9 @@ func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.ReportedRun
 		"Run %q | Attempt %q finished with %s %s.",
 		r.Id, r.Attempt.Key, r.Attempt.Status, r.Attempt.Substatus)
 
-	if err := cqd.finalizeRunViaCV(ctx, r, msg); err != nil {
+	var err error
+	err = cqd.finalizeRunViaCV(ctx, r, msg)
+	if err != nil {
 		return err
 	}
 	delete(cqd.attempts, r.Attempt.Key)

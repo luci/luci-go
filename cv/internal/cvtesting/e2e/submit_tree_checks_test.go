@@ -51,9 +51,6 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 			gChangeSubmit: "This is a revert.\n\nNo-Tree-Checks: True\nNo-Try: True",
 		}
 
-		// TODO(tandrii): remove this once Run creation is not conditional on CV
-		// managing Runs for a project.
-		ct.EnableCVRunManagement(ctx, lProject)
 		ct.TreeFake.ModifyState(ctx, tree.Closed)
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
