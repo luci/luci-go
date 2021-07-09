@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff0bdf7a_29d9713b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1395180
+      },
+      "writtenOn": "2021-07-09T16:37:11Z",
+      "side": 1,
+      "message": "Hi,\n\nI found a typo in this CL.\n\nKind regards,\n\nDaco",
+      "revId": "171bcb80dc299641853c58c8ae0d1d2019c59bbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c90f50b1_0273b3d1",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1395180
+      },
+      "writtenOn": "2021-07-09T16:37:11Z",
+      "side": 1,
+      "message": "dependencies",
+      "range": {
+        "startLine": 210,
+        "startChar": 37,
+        "endLine": 210,
+        "endChar": 50
+      },
+      "revId": "171bcb80dc299641853c58c8ae0d1d2019c59bbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
