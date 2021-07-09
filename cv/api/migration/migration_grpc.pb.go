@@ -23,13 +23,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MigrationClient interface {
-	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
-	//
-	// The Run may not contain CV's id, but CV can figure out the the ID using
-	// Run.Attempt.Key.
-	//
-	// Called by CQDaemon when CQDaemon is in charge of run management.
-	ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
 	// verifying.
 	//
@@ -65,14 +58,6 @@ type MigrationClient interface {
 	// FetchActiveRuns returns all currently RUNNING runs in CV for the given
 	// project.
 	FetchActiveRuns(ctx context.Context, in *FetchActiveRunsRequest, opts ...grpc.CallOption) (*FetchActiveRunsResponse, error)
-	// FetchExcludedCLs returns all CLs referenced by ReportVerifiedRuns but with
-	// not yet ended Runs.
-	//
-	// CQDaemon uses this to avoid processing these CLs when computing its own
-	// list of candidates.
-	//
-	// Called by CQDaemon when CQDaemon is in charge of run management.
-	FetchExcludedCLs(ctx context.Context, in *FetchExcludedCLsRequest, opts ...grpc.CallOption) (*FetchExcludedCLsResponse, error)
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
 	ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -84,15 +69,6 @@ type migrationClient struct {
 
 func NewMigrationClient(cc grpc.ClientConnInterface) MigrationClient {
 	return &migrationClient{cc}
-}
-
-func (c *migrationClient) ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/migration.Migration/ReportFinishedRun", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *migrationClient) ReportVerifiedRun(ctx context.Context, in *ReportVerifiedRunRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
@@ -131,15 +107,6 @@ func (c *migrationClient) FetchActiveRuns(ctx context.Context, in *FetchActiveRu
 	return out, nil
 }
 
-func (c *migrationClient) FetchExcludedCLs(ctx context.Context, in *FetchExcludedCLsRequest, opts ...grpc.CallOption) (*FetchExcludedCLsResponse, error) {
-	out := new(FetchExcludedCLsResponse)
-	err := c.cc.Invoke(ctx, "/migration.Migration/FetchExcludedCLs", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *migrationClient) ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/migration.Migration/ReportUsedNetrc", in, out, opts...)
@@ -153,13 +120,6 @@ func (c *migrationClient) ReportUsedNetrc(ctx context.Context, in *ReportUsedNet
 // All implementations must embed UnimplementedMigrationServer
 // for forward compatibility
 type MigrationServer interface {
-	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
-	//
-	// The Run may not contain CV's id, but CV can figure out the the ID using
-	// Run.Attempt.Key.
-	//
-	// Called by CQDaemon when CQDaemon is in charge of run management.
-	ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*emptypb.Empty, error)
 	// ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
 	// verifying.
 	//
@@ -195,14 +155,6 @@ type MigrationServer interface {
 	// FetchActiveRuns returns all currently RUNNING runs in CV for the given
 	// project.
 	FetchActiveRuns(context.Context, *FetchActiveRunsRequest) (*FetchActiveRunsResponse, error)
-	// FetchExcludedCLs returns all CLs referenced by ReportVerifiedRuns but with
-	// not yet ended Runs.
-	//
-	// CQDaemon uses this to avoid processing these CLs when computing its own
-	// list of candidates.
-	//
-	// Called by CQDaemon when CQDaemon is in charge of run management.
-	FetchExcludedCLs(context.Context, *FetchExcludedCLsRequest) (*FetchExcludedCLsResponse, error)
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
 	ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*emptypb.Empty, error)
@@ -213,9 +165,6 @@ type MigrationServer interface {
 type UnimplementedMigrationServer struct {
 }
 
-func (UnimplementedMigrationServer) ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportFinishedRun not implemented")
-}
 func (UnimplementedMigrationServer) ReportVerifiedRun(context.Context, *ReportVerifiedRunRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportVerifiedRun not implemented")
 }
@@ -227,9 +176,6 @@ func (UnimplementedMigrationServer) PostGerritMessage(context.Context, *PostGerr
 }
 func (UnimplementedMigrationServer) FetchActiveRuns(context.Context, *FetchActiveRunsRequest) (*FetchActiveRunsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchActiveRuns not implemented")
-}
-func (UnimplementedMigrationServer) FetchExcludedCLs(context.Context, *FetchExcludedCLsRequest) (*FetchExcludedCLsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchExcludedCLs not implemented")
 }
 func (UnimplementedMigrationServer) ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportUsedNetrc not implemented")
@@ -245,24 +191,6 @@ type UnsafeMigrationServer interface {
 
 func RegisterMigrationServer(s grpc.ServiceRegistrar, srv MigrationServer) {
 	s.RegisterService(&Migration_ServiceDesc, srv)
-}
-
-func _Migration_ReportFinishedRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportFinishedRunRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MigrationServer).ReportFinishedRun(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/migration.Migration/ReportFinishedRun",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigrationServer).ReportFinishedRun(ctx, req.(*ReportFinishedRunRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Migration_ReportVerifiedRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -337,24 +265,6 @@ func _Migration_FetchActiveRuns_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Migration_FetchExcludedCLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FetchExcludedCLsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MigrationServer).FetchExcludedCLs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/migration.Migration/FetchExcludedCLs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigrationServer).FetchExcludedCLs(ctx, req.(*FetchExcludedCLsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Migration_ReportUsedNetrc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportUsedNetrcRequest)
 	if err := dec(in); err != nil {
@@ -381,10 +291,6 @@ var Migration_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MigrationServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ReportFinishedRun",
-			Handler:    _Migration_ReportFinishedRun_Handler,
-		},
-		{
 			MethodName: "ReportVerifiedRun",
 			Handler:    _Migration_ReportVerifiedRun_Handler,
 		},
@@ -399,10 +305,6 @@ var Migration_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FetchActiveRuns",
 			Handler:    _Migration_FetchActiveRuns_Handler,
-		},
-		{
-			MethodName: "FetchExcludedCLs",
-			Handler:    _Migration_FetchExcludedCLs_Handler,
 		},
 		{
 			MethodName: "ReportUsedNetrc",

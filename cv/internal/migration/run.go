@@ -17,10 +17,7 @@ package migration
 import (
 	"context"
 	"strings"
-	"sync"
 	"time"
-
-	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -164,71 +161,6 @@ func makeActiveRun(ctx context.Context, r *run.Run) (*migrationpb.ActiveRun, err
 	}, nil
 }
 
-func fetchExcludedCLs(ctx context.Context, project string) ([]*cvbqpb.GerritChange, error) {
-	// Find all Runs with active status.
-	// This requires multiple queries per each Run status, since each query must
-	// use inequality on LUCI project (part of Run ID).
-	var m sync.Mutex
-	eg, egCtx := errgroup.WithContext(ctx)
-	var activeRuns []*run.Run
-	for v := range run.Status_name {
-		status := run.Status(v)
-		if status < run.Status_RUNNING || status >= run.Status_ENDED_MASK {
-			continue
-		}
-		eg.Go(func() error {
-			switch runs, err := fetchRunsWithStatus(egCtx, project, status); {
-			case err != nil:
-				return err
-			case len(runs) > 0:
-				m.Lock()
-				activeRuns = append(activeRuns, runs...)
-				m.Unlock()
-			}
-			return nil
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-	if len(activeRuns) == 0 {
-		return nil, nil
-	}
-
-	// Check which Runs have corresponding VerifiedCQDRun entities,
-	// and record CLID(s) of these Runs.
-	verified := make([]*datastore.Key, len(activeRuns))
-	for i, r := range activeRuns {
-		verified[i] = datastore.MakeKey(ctx, "migration.VerifiedCQDRun", string(r.ID))
-	}
-	exists, err := datastore.Exists(ctx, verified)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to check existence of VerifiedCQDRuns").Tag(transient.Tag).Err()
-	}
-	var excludedIDs common.CLIDs
-	for i, r := range activeRuns {
-		if !exists.Get(0, i) {
-			continue
-		}
-		excludedIDs = append(excludedIDs, r.CLs...)
-	}
-
-	// Convert CLIDs to Gerrit host/change for CQDaemon.
-	excludedIDs.Dedupe()
-	cls, err := changelist.LoadCLs(ctx, excludedIDs)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]*cvbqpb.GerritChange, len(cls))
-	for i, cl := range cls {
-		ret[i] = &cvbqpb.GerritChange{
-			Host:   cl.Snapshot.GetGerrit().GetHost(),
-			Change: cl.Snapshot.GetGerrit().Info.GetNumber(),
-		}
-	}
-	return ret, nil
-}
-
 func fetchRunsWithStatus(ctx context.Context, project string, status run.Status) ([]*run.Run, error) {
 	var runs []*run.Run
 	q := run.NewQueryWithLUCIProject(ctx, project).Eq("Status", status)
@@ -351,6 +283,8 @@ func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
 // FinishedCQDRun contains info about a finished Run reported by the CQDaemon.
 //
 // To be removed after the first milestone is reached.
+//
+// TODO(crbug/1225760): wipe out such entities.
 type FinishedCQDRun struct {
 	_kind string `gae:"$kind,migration.FinishedCQDRun"`
 	// AttemptKey is the CQD ID of the Run.
@@ -368,36 +302,6 @@ type FinishedCQDRun struct {
 	UpdateTime time.Time `gae:",noindex"`
 	// Everything that CQD has sent.
 	Payload *migrationpb.ReportedRun
-}
-
-func saveFinishedCQDRun(ctx context.Context, mr *migrationpb.ReportedRun, notify func(context.Context) error) error {
-	key := mr.GetAttempt().GetKey()
-	try := 0
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		try++
-		f := FinishedCQDRun{AttemptKey: key}
-		switch err := datastore.Get(ctx, &f); {
-		case err == datastore.ErrNoSuchEntity:
-			// expected.
-		case err != nil:
-			return err
-		default:
-			logging.Warningf(ctx, "Overwriting FinishedCQDRun %q in %d-th try", key, try)
-		}
-		f = FinishedCQDRun{
-			AttemptKey: key,
-			UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
-			Payload:    mr,
-		}
-		if id := f.Payload.GetId(); id != "" {
-			f.RunID = common.RunID(id)
-		}
-		if err := datastore.Put(ctx, &f); err != nil {
-			return err
-		}
-		return notify(ctx)
-	}, nil)
-	return errors.Annotate(err, "failed to record FinishedCQDRun %q after %d tries", key, try).Tag(transient.Tag).Err()
 }
 
 // LoadFinishedCQDRun loads from Datastore a FinishedCQDRun.

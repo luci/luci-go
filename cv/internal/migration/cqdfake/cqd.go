@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -38,8 +37,6 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 )
 
 // StartingMessage is what CQDaemon fake posts when starting working on a Run.
@@ -123,7 +120,7 @@ func (cqd *CQDFake) SetCandidatesClbk(clbk CandidatesClbk) {
 // VerifyClbk called once per CL per CQDaemon iteration.
 //
 // May modify the CL via copy-on-write and return the new value.
-type VerifyClbk func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun
+type VerifyClbk func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun
 
 // SetVerifyClbk (re)sets callback func called per CQDaemon active attempt
 // once per loop.
@@ -181,21 +178,17 @@ func (cqd *CQDFake) serve(ctx context.Context) {
 
 // iteration simulates one iteration of the CQDaemon loop.
 func (cqd *CQDFake) iteration(ctx context.Context) error {
-	cvInCharge, err := migrationcfg.IsCVInCharge(ctx, cqd.LUCIProject)
-	if err != nil {
+	if err := cqd.updateAttempts(ctx); err != nil {
 		return err
 	}
-	if err := cqd.updateAttempts(ctx, cvInCharge); err != nil {
-		return err
-	}
-	if err := cqd.verifyAll(ctx, cvInCharge); err != nil {
+	if err := cqd.verifyAll(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
-	candidates, err := cqd.fetchCandidates(ctx, cvInCharge)
+func (cqd *CQDFake) updateAttempts(ctx context.Context) error {
+	candidates, err := cqd.fetchCandidates(ctx)
 	if err != nil {
 		return err
 	}
@@ -211,14 +204,8 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	var errs errors.MultiError
 	for k, a := range cqd.attempts {
 		if !seen.Has(k) {
-			err = nil
-			if !cvInCharge {
-				a.Attempt.Status = cvbqpb.AttemptStatus_ABORTED
-			} else {
-				err = cqd.logRunStatus(ctx, a)
-			}
-			if err == nil {
-				err = cqd.deleteLocked(ctx, a, cvInCharge)
+			if err = cqd.logRunStatus(ctx, a); err == nil {
+				err = cqd.deleteLocked(ctx, a)
 			}
 			if err != nil {
 				errs = append(errs, err)
@@ -227,7 +214,7 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	}
 	for _, candidate := range candidates {
 		if _, exists := cqd.attempts[candidate.Attempt.Key]; !exists {
-			if err := cqd.addLocked(ctx, candidate, cvInCharge); err != nil {
+			if err := cqd.addLocked(ctx, candidate); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -242,79 +229,39 @@ func (cqd *CQDFake) updateAttempts(ctx context.Context, cvInCharge bool) error {
 	return nil
 }
 
-func (cqd *CQDFake) fetchCandidates(ctx context.Context, cvInCharge bool) ([]*migrationpb.ReportedRun, error) {
-	if cvInCharge {
-		req := migrationpb.FetchActiveRunsRequest{LuciProject: cqd.LUCIProject}
-		resp, err := cqd.CV.FetchActiveRuns(cqd.migrationAPIContext(ctx), &req)
-		if err != nil {
-			return nil, err
-		}
-		out := make([]*migrationpb.ReportedRun, len(resp.GetActiveRuns()))
-		for i, a := range resp.GetActiveRuns() {
-			out[i] = &migrationpb.ReportedRun{
-				Id: a.GetId(),
-				Attempt: &cvbqpb.Attempt{
-					Key:           common.RunID(a.GetId()).AttemptKey(),
-					GerritChanges: make([]*cvbqpb.GerritChange, len(a.GetCls())),
-					Status:        cvbqpb.AttemptStatus_STARTED,
-				},
-			}
-			avail := availableClids(a)
-			for j, cl := range a.GetCls() {
-				out[i].Attempt.GerritChanges[j] = cl.GetGc()
-				// Verify that each referenced deps is either a Run CL itself OR is in
-				// FyiDeps.
-				for _, d := range cl.GetDeps() {
-					if _, yes := avail[d.GetId()]; !yes {
-						panic(fmt.Errorf("ActiveRun %q: CL %d: references dep %d which isn't in given list %v",
-							a.GetId(), cl.GetId(), d.GetId(), avail))
-					}
-				}
-			}
-		}
-		return out, nil
-	}
-
-	f := cqd.candidatesClbk.Load()
-	if f == nil {
-		logging.Warningf(ctx, "CQDaemon active, but no candaidate callback set. Forgot to call CQDFake.SetCandidatesClbk?")
-		return nil, nil
-	}
-	runs := f.(CandidatesClbk)()
-	if len(runs) == 0 {
-		return nil, nil
-	}
-
-	// Filter out all runs with CLs matching those which CV is still processing.
-	req := &migrationpb.FetchExcludedCLsRequest{LuciProject: cqd.LUCIProject}
-	exCls, err := cqd.CV.FetchExcludedCLs(cqd.migrationAPIContext(ctx), req)
+func (cqd *CQDFake) fetchCandidates(ctx context.Context) ([]*migrationpb.ReportedRun, error) {
+	req := migrationpb.FetchActiveRunsRequest{LuciProject: cqd.LUCIProject}
+	resp, err := cqd.CV.FetchActiveRuns(cqd.migrationAPIContext(ctx), &req)
 	if err != nil {
 		return nil, err
 	}
-	clKey := func(cl *cvbqpb.GerritChange) string {
-		return fmt.Sprintf("%s/%d", cl.GetHost(), cl.GetChange())
-	}
-	exMap := stringset.New(len(exCls.GetCls()))
-	for _, cl := range exCls.GetCls() {
-		exMap.Add(clKey(cl))
-	}
-	out := runs[:0]
-	for _, r := range runs {
-		skip := false
-		for _, cl := range r.GetAttempt().GetGerritChanges() {
-			if exMap.Has(clKey(cl)) {
-				skip = true
-				break
-			}
+	out := make([]*migrationpb.ReportedRun, len(resp.GetActiveRuns()))
+	for i, a := range resp.GetActiveRuns() {
+		out[i] = &migrationpb.ReportedRun{
+			Id: a.GetId(),
+			Attempt: &cvbqpb.Attempt{
+				Key:           common.RunID(a.GetId()).AttemptKey(),
+				GerritChanges: make([]*cvbqpb.GerritChange, len(a.GetCls())),
+				Status:        cvbqpb.AttemptStatus_STARTED,
+			},
 		}
-		if !skip {
-			out = append(out, r)
+		avail := availableClids(a)
+		for j, cl := range a.GetCls() {
+			out[i].Attempt.GerritChanges[j] = cl.GetGc()
+			// Verify that each referenced deps is either a Run CL itself OR is in
+			// FyiDeps.
+			for _, d := range cl.GetDeps() {
+				if _, yes := avail[d.GetId()]; !yes {
+					panic(fmt.Errorf("ActiveRun %q: CL %d: references dep %d which isn't in given list %v",
+						a.GetId(), cl.GetId(), d.GetId(), avail))
+				}
+			}
 		}
 	}
 	return out, nil
 }
 
-func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
+func (cqd *CQDFake) verifyAll(ctx context.Context) error {
 	cqd.m.Lock()
 	defer func() {
 		cqd.setActiveAttemptKeysLocked()
@@ -325,13 +272,13 @@ func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
 		after := before
 		cqd.m.Unlock()
 		if f := cqd.verifyClbk.Load(); f != nil {
-			after = f.(VerifyClbk)(before, cvInCharge)
+			after = f.(VerifyClbk)(before)
 		}
 		cqd.m.Lock()
 		cqd.attempts[k] = after
 
 		if after.Attempt.Status > cvbqpb.AttemptStatus_STARTED {
-			if err := cqd.deleteLocked(ctx, after, cvInCharge); err != nil {
+			if err := cqd.deleteLocked(ctx, after); err != nil {
 				return err
 			}
 		}
@@ -339,35 +286,23 @@ func (cqd *CQDFake) verifyAll(ctx context.Context, cvInCharge bool) error {
 	return nil
 }
 
-func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.ReportedRun, cvInCharge bool) error {
+func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.ReportedRun) error {
 	if cqd.attempts == nil {
 		cqd.attempts = make(map[string]*migrationpb.ReportedRun, 1)
 	}
 	msg := fmt.Sprintf("Run %q | Attempt %q: %s", r.Id, r.Attempt.Key, StartingMessage)
 	for _, cl := range r.Attempt.GerritChanges {
-		if cvInCharge {
-			req := &migrationpb.PostGerritMessageRequest{
-				Project:    cqd.LUCIProject,
-				AttemptKey: r.Attempt.Key,
-				Host:       cl.Host,
-				Change:     cl.Change,
-				Revision:   "badly-faked-revision",
-				Comment:    msg,
-				SendEmail:  true,
-			}
-			if _, err := cqd.CV.PostGerritMessage(cqd.migrationAPIContext(ctx), req); err != nil {
-				return err
-			}
-		} else {
-			cqd.GFake.MutateChange(cl.Host, int(cl.Change), func(c *gf.Change) {
-				now := timestamppb.New(clock.Now(ctx))
-				c.Info.Messages = append(c.Info.Messages, &gerritpb.ChangeMessageInfo{
-					Message: msg,
-					Date:    now,
-					Author:  cqdGerritUser,
-				})
-				c.Info.Updated = now
-			})
+		req := &migrationpb.PostGerritMessageRequest{
+			Project:    cqd.LUCIProject,
+			AttemptKey: r.Attempt.Key,
+			Host:       cl.Host,
+			Change:     cl.Change,
+			Revision:   "badly-faked-revision",
+			Comment:    msg,
+			SendEmail:  true,
+		}
+		if _, err := cqd.CV.PostGerritMessage(cqd.migrationAPIContext(ctx), req); err != nil {
+			return err
 		}
 	}
 	cqd.attempts[r.Attempt.Key] = proto.Clone(r).(*migrationpb.ReportedRun)
@@ -375,18 +310,12 @@ func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.ReportedRun, c
 	return nil
 }
 
-func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.ReportedRun, cvInCharge bool) error {
+func (cqd *CQDFake) deleteLocked(ctx context.Context, r *migrationpb.ReportedRun) error {
 	msg := fmt.Sprintf(
 		"Run %q | Attempt %q finished with %s %s.",
 		r.Id, r.Attempt.Key, r.Attempt.Status, r.Attempt.Substatus)
 
-	var err error
-	if cvInCharge {
-		err = cqd.finalizeRunViaCV(ctx, r, msg)
-	} else {
-		err = cqd.finalizeRun(ctx, r, msg)
-	}
-	if err != nil {
+	if err := cqd.finalizeRunViaCV(ctx, r, msg); err != nil {
 		return err
 	}
 	delete(cqd.attempts, r.Attempt.Key)
@@ -419,45 +348,6 @@ func (cqd *CQDFake) finalizeRunViaCV(ctx context.Context, r *migrationpb.Reporte
 		}
 	}
 	_, err := cqd.CV.ReportVerifiedRun(cqd.migrationAPIContext(ctx), req)
-	return err
-}
-
-func (cqd *CQDFake) finalizeRun(ctx context.Context, r *migrationpb.ReportedRun, msg string) error {
-	submit := false
-	switch r.Attempt.Status {
-	case cvbqpb.AttemptStatus_ABORTED:
-		// don't touch Gerrit.
-	case cvbqpb.AttemptStatus_SUCCESS:
-		submit = r.Attempt.GerritChanges[0].GetMode() == cvbqpb.Mode_FULL_RUN
-		fallthrough
-	case cvbqpb.AttemptStatus_FAILURE, cvbqpb.AttemptStatus_INFRA_FAILURE:
-		for _, cl := range r.Attempt.GerritChanges {
-			cqd.GFake.MutateChange(cl.Host, int(cl.Change), func(c *gf.Change) {
-				now := timestamppb.New(clock.Now(ctx))
-				if submit {
-					c.Info.Status = gerritpb.ChangeStatus_MERGED
-					cl.SubmitStatus = cvbqpb.GerritChange_SUCCESS
-				} else {
-					// For simplicity, remove all votes that may trigger CQ in our
-					// end-to-end tests with CQDFake.
-					gf.ResetVotes(c.Info, trigger.CQLabelName, "Quick-Dry-Run")
-					c.Info.Messages = append(c.Info.Messages, &gerritpb.ChangeMessageInfo{
-						Message: msg,
-						Date:    now,
-						Author:  cqdGerritUser,
-					})
-				}
-				c.Info.Updated = now
-			})
-		}
-	}
-
-	if err := cqd.maybeCrash(ctx, OpReportFinishedRun, r.Attempt.GetKey()); err != nil {
-		return err
-	}
-	req := &migrationpb.ReportFinishedRunRequest{Run: proto.Clone(r).(*migrationpb.ReportedRun)}
-	_, err := cqd.CV.ReportFinishedRun(cqd.migrationAPIContext(ctx), req)
-	// TODO(tandrii): send event to BQ.
 	return err
 }
 

@@ -436,21 +436,6 @@ func (t *Test) MigrationFetchActiveRuns(ctx context.Context, project string) []*
 	return res.GetActiveRuns()
 }
 
-// MigrationFetchExcludedCLs returns FetchExcludedCLs from the Migration API
-// formatted as "host/number" strings.
-func (t *Test) MigrationFetchExcludedCLs(ctx context.Context, project string) []string {
-	req := &migrationpb.FetchExcludedCLsRequest{LuciProject: project}
-	res, err := t.MigrationServer.FetchExcludedCLs(t.MigrationContext(ctx), req)
-	if err != nil {
-		panic(err)
-	}
-	out := make([]string, len(res.GetCls()))
-	for i, cl := range res.GetCls() {
-		out[i] = fmt.Sprintf("%s/%d", cl.GetHost(), cl.GetChange())
-	}
-	return out
-}
-
 // MigrationContext returns context authorized to call to the Migration API.
 func (t *Test) MigrationContext(ctx context.Context) context.Context {
 	return auth.WithState(ctx, &authtest.FakeState{

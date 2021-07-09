@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -109,220 +108,6 @@ func TestCreatesSingularRun(t *testing.T) {
 	})
 }
 
-func TestCreatesSingularRunCQDinChargeOK(t *testing.T) {
-	t.Parallel()
-
-	Convey("CV creates and finalizes a 1 CL Run while CQD is in charge", t, func() {
-		/////////////////////////    Setup   ////////////////////////////////
-		ct := Test{}
-		ctx, cancel := ct.SetUp()
-		defer cancel()
-
-		const lProject = "e2e-always-create-runs"
-		const gHost = "g-review"
-		const gRepo = "re/po"
-		const gRef = "refs/heads/main"
-		const gChange = 33
-
-		ct.DisableCVRunManagement(ctx)
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		prjcfgtest.Create(ctx, lProject, cfg)
-
-		tStart := ct.Clock.Now()
-
-		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
-			gChange, gf.Project(gRepo), gf.Ref(gRef),
-			gf.Owner("user-1"),
-			gf.Updated(tStart), gf.CQ(+1, tStart, gf.U("user-2")),
-		)))
-		const expectedAttemptKey = "0a6686c7f19a33a3"
-
-		/////////////////////////    Run CV   ////////////////////////////////
-		ct.LogPhase(ctx, "CV and CQD notice CL and start a Run")
-
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
-		ct.MustCQD(ctx, lProject).SetCandidatesClbk(func() []*migrationpb.ReportedRun {
-			if ct.MaxCQVote(ctx, gHost, gChange) == 0 {
-				return nil
-			}
-			return []*migrationpb.ReportedRun{
-				{
-					Id: "", // CQD isn't aware of CV Runs while computing its own candidates.
-					Attempt: &cvbqpb.Attempt{
-						Key:           expectedAttemptKey,
-						GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: gChange, Mode: cvbqpb.Mode_DRY_RUN}},
-						Status:        cvbqpb.AttemptStatus_STARTED,
-					},
-				},
-			}
-		})
-
-		var r *run.Run
-		ct.RunUntil(ctx, func() bool {
-			r = ct.EarliestCreatedRunOf(ctx, lProject)
-			as := ct.MustCQD(ctx, lProject).ActiveAttemptKeys()
-			return r != nil && r.Status == run.Status_RUNNING && len(as) == 1 && as[0] == expectedAttemptKey
-		})
-		So(r.ID.AttemptKey(), ShouldResemble, expectedAttemptKey)
-
-		ct.LogPhase(ctx, "Dry Run passes in CQD and removes CQ+1 vote")
-		var endedAt time.Time
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(func(r *migrationpb.ReportedRun, _ bool) *migrationpb.ReportedRun {
-			if r.GetAttempt().GetEndTime() != nil {
-				return r // already finalized
-			}
-			endedAt = ct.Clock.Now()
-			ct.Clock.Add(time.Second)
-			return &migrationpb.ReportedRun{
-				Id: "",
-				Attempt: &cvbqpb.Attempt{
-					Key:                  expectedAttemptKey,
-					ClGroupKey:           "beef",
-					EquivalentClGroupKey: "beef",
-					GerritChanges:        []*cvbqpb.GerritChange{{Host: gHost, Change: gChange, Mode: cvbqpb.Mode_DRY_RUN}},
-					Status:               cvbqpb.AttemptStatus_SUCCESS,
-					Builds: []*cvbqpb.Build{
-						{Critical: true, Host: "bb-host", Id: 22233, Origin: cvbqpb.Build_NOT_REUSABLE},
-					},
-					ConfigGroup: cfg.GetConfigGroups()[0].GetName(),
-					LuciProject: lProject,
-					StartTime:   timestamppb.New(tStart),
-					EndTime:     timestamppb.New(endedAt),
-				},
-			}
-		})
-		ct.RunUntil(ctx, func() bool {
-			return ct.MaxCQVote(ctx, gHost, gChange) == 0
-		})
-
-		ct.LogPhase(ctx, "CV finalizes the Run")
-		ct.RunUntil(ctx, func() bool {
-			return run.IsEnded(ct.LoadRun(ctx, r.ID).Status)
-		})
-		// There is a race between CV and CQD here. CQD is supposed to call
-		// ReportFinishedRun within O(minutes) of the removing of the Gerrit vote,
-		// otherwise failsafe on CV kicks in and finalizes such Run with CANCELED.
-		// Depending on test setup (e.g. flaky datastore), this test may exhibit
-		// either behavior. See TestCreatesSingularRunCQDinChargeButCrashes for a
-		// test this ensures failsafe actually works.
-		r = ct.LoadRun(ctx, r.ID)
-		if r.Status == run.Status_SUCCEEDED {
-			So(r.EndTime, ShouldEqual, datastore.RoundTime(endedAt.UTC()))
-			// CV finalizes Run after CQD end time record.
-			So(r.UpdateTime, ShouldHappenAfter, r.EndTime)
-		} else {
-			So(r.Status, ShouldEqual, run.Status_CANCELLED)
-		}
-
-		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
-		ct.RunUntil(ctx, func() bool {
-			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
-		})
-
-		ct.LogPhase(ctx, "BQ export must complete")
-		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
-	})
-}
-
-func TestCreatesSingularRunCQDinChargeButCrashes(t *testing.T) {
-	t.Parallel()
-
-	Convey("CV creates and finalizes a 1 CL Run while CQD is in charge even if CQD crashes", t, func() {
-		/////////////////////////    Setup   ////////////////////////////////
-		ct := Test{}
-		ctx, cancel := ct.SetUp()
-		defer cancel()
-
-		const lProject = "e2e-always-create-runs"
-		const gHost = "g-review"
-		const gRepo = "re/po"
-		const gRef = "refs/heads/main"
-		const gChange = 33
-
-		ct.DisableCVRunManagement(ctx)
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		prjcfgtest.Create(ctx, lProject, cfg)
-
-		tStart := ct.Clock.Now()
-
-		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
-			gChange, gf.Project(gRepo), gf.Ref(gRef),
-			gf.Owner("user-1"),
-			gf.Updated(tStart), gf.CQ(+1, tStart, gf.U("user-2")),
-		)))
-		const expectedAttemptKey = "0a6686c7f19a33a3"
-
-		/////////////////////////    Run CV   ////////////////////////////////
-		ct.LogPhase(ctx, "CV and CQD notice CL and start a Run")
-
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
-		ct.MustCQD(ctx, lProject).SetCandidatesClbk(func() []*migrationpb.ReportedRun {
-			if ct.MaxCQVote(ctx, gHost, gChange) == 0 {
-				return nil
-			}
-			return []*migrationpb.ReportedRun{
-				{
-					Attempt: &cvbqpb.Attempt{
-						Key:           expectedAttemptKey,
-						GerritChanges: []*cvbqpb.GerritChange{{Host: gHost, Change: gChange, Mode: cvbqpb.Mode_DRY_RUN}},
-						Status:        cvbqpb.AttemptStatus_STARTED,
-					},
-				},
-			}
-		})
-
-		var r *run.Run
-		ct.RunUntil(ctx, func() bool {
-			r = ct.EarliestCreatedRunOf(ctx, lProject)
-			as := ct.MustCQD(ctx, lProject).ActiveAttemptKeys()
-			return r != nil && r.Status == run.Status_RUNNING && len(as) == 1 && as[0] == expectedAttemptKey
-		})
-		So(r.ID.AttemptKey(), ShouldResemble, expectedAttemptKey)
-
-		ct.LogPhase(ctx, "Dry Run passes in CQD, CQD removes CQ+1 vote and immediately crashes")
-		ct.MustCQD(ctx, lProject).SetShouldCrashClbk(func(op cqdfake.Operation, key string) bool {
-			return op == cqdfake.OpReportFinishedRun && key == expectedAttemptKey
-		})
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(func(r *migrationpb.ReportedRun, _ bool) *migrationpb.ReportedRun {
-			if r.GetAttempt().GetEndTime() != nil {
-				return r // already finalized
-			}
-			return &migrationpb.ReportedRun{
-				Id: "",
-				Attempt: &cvbqpb.Attempt{
-					Key:                  expectedAttemptKey,
-					ClGroupKey:           "beef",
-					EquivalentClGroupKey: "beef",
-					GerritChanges:        []*cvbqpb.GerritChange{{Host: gHost, Change: gChange, Mode: cvbqpb.Mode_DRY_RUN}},
-					Status:               cvbqpb.AttemptStatus_SUCCESS,
-					Builds: []*cvbqpb.Build{
-						{Critical: true, Host: "bb-host", Id: 22233, Origin: cvbqpb.Build_NOT_REUSABLE},
-					},
-					ConfigGroup: cfg.GetConfigGroups()[0].GetName(),
-					LuciProject: lProject,
-					StartTime:   timestamppb.New(tStart),
-					EndTime:     timestamppb.New(ct.Clock.Now()),
-				},
-			}
-		})
-		ct.RunUntil(ctx, func() bool {
-			return ct.MaxCQVote(ctx, gHost, gChange) == 0
-		})
-
-		ct.LogPhase(ctx, "CV finalizes the Run anyway after some delay")
-		ct.RunUntil(ctx, func() bool {
-			return ct.LoadRun(ctx, r.ID).Status == run.Status_CANCELLED
-		})
-		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
-		ct.RunUntil(ctx, func() bool {
-			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
-		})
-
-		ct.LogPhase(ctx, "BQ export must complete")
-		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
-	})
-}
-
 func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 	t.Parallel()
 
@@ -385,7 +170,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		ct.LogPhase(ctx, "CQDaemon decides that QuickDryRun has passed and notifies CV")
 		ct.Clock.Add(time.Minute)
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
 				r = proto.Clone(r).(*migrationpb.ReportedRun)
 				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
 				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
@@ -395,16 +180,6 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return nil == datastore.Get(ctx, &migration.VerifiedCQDRun{ID: r.ID})
 		})
-
-		// At this point CV must either report the `gChange` to be excluded from
-		// active attempts OR (if CV has already finalized this Run) not return this
-		// Run as active.
-		activeRuns := ct.MigrationFetchActiveRuns(ctx, lProject)
-		excludedCLs := ct.MigrationFetchExcludedCLs(ctx, lProject)
-		if len(activeRuns) > 0 {
-			So(activeRuns[0].Id, ShouldResemble, string(r.ID))
-			So(excludedCLs, ShouldResemble, []string{fmt.Sprintf("%s/%d", gHost, gChange)})
-		}
 
 		ct.LogPhase(ctx, "CV finalizes the run and sends BQ event")
 		var finalRun *run.Run
@@ -507,7 +282,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		ct.LogPhase(ctx, "CQDaemon decides that Full Run has failed and notifies CV")
 		ct.Clock.Add(time.Minute)
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
 				r = proto.Clone(r).(*migrationpb.ReportedRun)
 				r.Attempt.Status = cvbqpb.AttemptStatus_FAILURE
 				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
@@ -590,7 +365,7 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
 		ct.Clock.Add(time.Minute)
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
 				r = proto.Clone(r).(*migrationpb.ReportedRun)
 				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
 				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
@@ -601,16 +376,6 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 			res, err := datastore.Exists(ctx, &migration.VerifiedCQDRun{ID: r.ID})
 			return err == nil && res.All()
 		})
-
-		// At this point CV must either report the `gChange` to be excluded from
-		// active attempts OR (if CV has already finalized this Run) not return this
-		// Run as active.
-		activeRuns := ct.MigrationFetchActiveRuns(ctx, lProject)
-		excludedCLs := ct.MigrationFetchExcludedCLs(ctx, lProject)
-		if len(activeRuns) > 0 {
-			So(activeRuns[0].Id, ShouldResemble, string(r.ID))
-			So(excludedCLs, ShouldResemble, []string{fmt.Sprintf("%s/%d", gHost, gChange)})
-		}
 
 		ct.LogPhase(ctx, "CV submits the run and sends BQ event")
 		var finalRun *run.Run
@@ -871,7 +636,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
 		ct.Clock.Add(time.Minute)
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
 				r = proto.Clone(r).(*migrationpb.ReportedRun)
 				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
 				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
@@ -882,23 +647,6 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			res, err := datastore.Exists(ctx, &migration.VerifiedCQDRun{ID: r.ID})
 			return err == nil && res.All()
 		})
-
-		// At this point CV must either report the `gChange` to be excluded from
-		// active attempts OR (if CV has already finalized this Run) not return this
-		// Run as active.
-		activeRuns := ct.MigrationFetchActiveRuns(ctx, lProject)
-		excludedCLs := ct.MigrationFetchExcludedCLs(ctx, lProject)
-		if len(activeRuns) > 0 {
-			So(activeRuns[0].Id, ShouldResemble, string(r.ID))
-			sort.Strings(excludedCLs)
-			expected := []string{
-				fmt.Sprintf("%s/%d", gHost, gChange1),
-				fmt.Sprintf("%s/%d", gHost, gChange2),
-				fmt.Sprintf("%s/%d", gHost, gChange3),
-			}
-			sort.Strings(expected)
-			So(excludedCLs, ShouldResemble, expected)
-		}
 
 		ct.LogPhase(ctx, "CV submits the run and sends BQ event")
 		var finalRun *run.Run

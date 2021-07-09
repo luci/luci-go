@@ -82,7 +82,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 		verified := atomic.Value{}
 		verified.Store(false)
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun, cvInCharge bool) *migrationpb.ReportedRun {
+			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
 				r = proto.Clone(r).(*migrationpb.ReportedRun)
 				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
 				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
