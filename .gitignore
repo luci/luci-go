@@ -1,3 +1,0 @@
-# TODO(crbug.com/1057067): ignore belows until enabling go modules.
-go.mod
-go.sum

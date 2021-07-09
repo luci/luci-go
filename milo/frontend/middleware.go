@@ -28,8 +28,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/russross/blackfriday/v2"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	blackfriday "gopkg.in/russross/blackfriday.v2"
 
 	"go.chromium.org/luci/gae/service/info"
 
