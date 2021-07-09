@@ -20,11 +20,14 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 )
@@ -47,12 +50,27 @@ import (
 // When the number of notifications is large, Mutator may chose to
 // transactionally enqueue a TQ task, which will send notifications in turn.
 type Mutator struct {
-	pm pmNotifier
-	rm rmNotifier
+	tqd *tq.Dispatcher
+	pm  pmNotifier
+	rm  rmNotifier
 }
 
-func NewMutator(pm pmNotifier, rm rmNotifier) *Mutator {
-	return &Mutator{pm, rm}
+func NewMutator(tqd *tq.Dispatcher, pm pmNotifier, rm rmNotifier) *Mutator {
+	m := &Mutator{tqd, pm, rm}
+	tqd.RegisterTaskClass(tq.TaskClass{
+		ID:           "batch-notify-on-cl-updated",
+		Queue:        "notify-on-cl-updated",
+		Prototype:    &BatchOnCLUpdatedTask{},
+		Kind:         tq.Transactional,
+		Quiet:        true,
+		QuietOnError: true,
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			task := payload.(*BatchOnCLUpdatedTask)
+			err := m.handleBatchOnCLUpdatedTask(ctx, task)
+			return common.TQifyError(ctx, err)
+		},
+	})
+	return m
 }
 
 // pmNotifier encapsulates interaction with Project Manager.
@@ -320,11 +338,40 @@ func (clm *CLMutation) finalize(ctx context.Context) {
 }
 
 func (m *Mutator) BeginBatch(ctx context.Context, project string, ids common.CLIDs) ([]*CLMutation, error) {
-	panic("not implemented")
+	trans := datastore.CurrentTransaction(ctx)
+	if trans == nil {
+		panic(fmt.Errorf("changelist.Mutator.BeginBatch must be called inside an existing Datastore transaction"))
+	}
+	cls, err := LoadCLs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	muts := make([]*CLMutation, len(ids))
+	for i, cl := range cls {
+		muts[i] = &CLMutation{
+			CL:      cl,
+			m:       m,
+			trans:   trans,
+			project: project,
+		}
+		muts[i].backup()
+	}
+	return muts, nil
 }
 
 func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*CLMutation) ([]*CL, error) {
-	panic("not implemented")
+	cls := make([]*CL, len(muts))
+	for i, mut := range muts {
+		mut.finalize(ctx)
+		cls[i] = mut.CL
+	}
+	if err := datastore.Put(ctx, cls); err != nil {
+		return nil, errors.Annotate(err, "failed to put %d CLs", len(cls)).Tag(transient.Tag).Err()
+	}
+	if err := m.notifyMany(ctx, muts); err != nil {
+		return nil, err
+	}
+	return cls, nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -351,4 +398,72 @@ func (m *Mutator) notifyOne(ctx context.Context, clm *CLMutation) error {
 		eg.Go(func() error { return m.rm.NotifyCLUpdated(ctx, r, clm.CL.ID, clm.CL.EVersion) })
 	}
 	return eg.Wait()
+}
+
+func (m *Mutator) notifyMany(ctx context.Context, muts []*CLMutation) error {
+	if len(muts) == 1 {
+		// Common path optimization.
+		return m.notifyOne(ctx, muts[0])
+	}
+	batch := &BatchOnCLUpdatedTask{
+		// There are usually at most 2 Projects and 2 Runs being notified.
+		Projects: make(map[string]*CLUpdatedEvents, 2),
+		Runs:     make(map[string]*CLUpdatedEvents, 2),
+	}
+	for _, mut := range muts {
+		e := &CLUpdatedEvent{Clid: int64(mut.CL.ID), Eversion: int64(mut.CL.EVersion)}
+		for _, p := range mut.projects() {
+			batch.Projects[p] = batch.Projects[p].append(e)
+		}
+		for _, r := range mut.CL.IncompleteRuns {
+			batch.Runs[string(r)] = batch.Runs[string(r)].append(e)
+		}
+	}
+	err := m.tqd.AddTask(ctx, &tq.Task{
+		Title:   fmt.Sprintf("%s/%d-cls/%d-prjs/%d-runs", muts[0].project, len(muts), len(batch.GetProjects()), len(batch.GetRuns())),
+		Payload: batch,
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to add BatchOnCLUpdatedTask to TQ").Err()
+	}
+	return nil
+}
+
+func (m *Mutator) handleBatchOnCLUpdatedTask(ctx context.Context, batch *BatchOnCLUpdatedTask) error {
+	errs := parallel.WorkPool(min(16, len(batch.GetProjects())+len(batch.GetRuns())), func(work chan<- func() error) {
+		for project, events := range batch.GetProjects() {
+			// TODO(tandrii): replace by NotifyCLsUpdated (batch) version.
+			for _, e := range events.GetEvents() {
+				project := project
+				clid := common.CLID(e.GetClid())
+				ev := int(e.GetEversion())
+				work <- func() error { return m.pm.NotifyCLUpdated(ctx, project, clid, ev) }
+			}
+		}
+		for run, events := range batch.GetRuns() {
+			// In majority of cases, each Run gets exactly 1 CL event.
+			for _, e := range events.GetEvents() {
+				rid := common.RunID(run)
+				clid := common.CLID(e.GetClid())
+				ev := int(e.GetEversion())
+				work <- func() error { return m.rm.NotifyCLUpdated(ctx, rid, clid, ev) }
+			}
+		}
+	})
+	return common.MostSevereError(errs)
+}
+
+func (b *CLUpdatedEvents) append(e *CLUpdatedEvent) *CLUpdatedEvents {
+	if b == nil {
+		return &CLUpdatedEvents{Events: []*CLUpdatedEvent{e}}
+	}
+	b.Events = append(b.Events, e)
+	return b
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }
