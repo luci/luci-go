@@ -1676,7 +1676,11 @@ func (s *Server) initAuthFinish() error {
 
 	// Finish constructing `signer` and `actorTokens` that were waiting for
 	// an IAM client.
-	iamClient, err := credentials.NewIamCredentialsClient(s.Context, option.WithTokenSource(s.cloudTS))
+	iamClient, err := credentials.NewIamCredentialsClient(
+		s.Context,
+		option.WithTokenSource(s.cloudTS),
+		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+	)
 	if err != nil {
 		return errors.Annotate(err, "failed to construct IAM client").Err()
 	}
