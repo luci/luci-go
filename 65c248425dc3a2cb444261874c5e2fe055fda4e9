@@ -45,6 +45,54 @@
       },
       "revId": "65c248425dc3a2cb444261874c5e2fe055fda4e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bdd9d8c9_3f0c7dfc",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-10T09:19:19Z",
+      "side": 1,
+      "message": "correct. Removed.",
+      "parentUuid": "7de23b54_537fc116",
+      "range": {
+        "startLine": 161,
+        "startChar": 32,
+        "endLine": 161,
+        "endChar": 38
+      },
+      "revId": "65c248425dc3a2cb444261874c5e2fe055fda4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e1fc6e79_8accc4e2",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-10T09:19:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78f47fc9_7e4eb321",
+      "range": {
+        "startLine": 161,
+        "startChar": 20,
+        "endLine": 161,
+        "endChar": 23
+      },
+      "revId": "65c248425dc3a2cb444261874c5e2fe055fda4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
