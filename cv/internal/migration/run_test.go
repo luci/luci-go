@@ -240,23 +240,22 @@ func TestFetchActiveRuns(t *testing.T) {
 			putCL := func(gChange int64, depCLID common.CLID, runCL bool) common.CLID {
 				triggeredAt := ct.Clock.Now().Add(-time.Minute)
 				ci := gf.CI(int(gChange), gf.CQ(+1, triggeredAt, gf.U("user-1")), gf.Updated(triggeredAt))
-				cl, err := changelist.MustGobID(gHost, gChange).GetOrInsert(ctx, func(cl *changelist.CL) {
-					cl.Snapshot = &changelist.Snapshot{
-						Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
-							Host:  gHost,
-							Info:  ci,
-							Files: []string{"some/file"},
-						}},
-						Patchset:              1,
-						MinEquivalentPatchset: 1,
-						ExternalUpdateTime:    timestamppb.New(triggeredAt),
-						LuciProject:           "chromium",
-					}
-					if depCLID > 0 {
-						cl.Snapshot.Deps = []*changelist.Dep{{Clid: int64(depCLID), Kind: changelist.DepKind_HARD}}
-					}
-				})
-				So(err, ShouldBeNil)
+				cl := changelist.MustGobID(gHost, gChange).MustCreateIfNotExists(ctx)
+				cl.Snapshot = &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+						Host:  gHost,
+						Info:  ci,
+						Files: []string{"some/file"},
+					}},
+					Patchset:              1,
+					MinEquivalentPatchset: 1,
+					ExternalUpdateTime:    timestamppb.New(triggeredAt),
+					LuciProject:           "chromium",
+				}
+				if depCLID > 0 {
+					cl.Snapshot.Deps = []*changelist.Dep{{Clid: int64(depCLID), Kind: changelist.DepKind_HARD}}
+				}
+				So(datastore.Put(ctx, cl), ShouldBeNil)
 				if runCL {
 					err := datastore.Put(ctx, &run.RunCL{
 						ID:     cl.ID,

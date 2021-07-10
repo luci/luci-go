@@ -130,10 +130,9 @@ func TestRunBuilder(t *testing.T) {
 		}
 		writeCL := func(snapshot *changelist.Snapshot) *changelist.CL {
 			eid := changelist.MustGobID(snapshot.GetGerrit().GetHost(), snapshot.GetGerrit().GetInfo().GetNumber())
-			cl, err := eid.GetOrInsert(ctx, func(*changelist.CL) {})
-			So(err, ShouldBeNil)
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			cl := eid.MustCreateIfNotExists(ctx)
 			cl.Snapshot = snapshot
+			So(datastore.Put(ctx, cl), ShouldBeNil)
 			return cl
 		}
 		triggerOf := func(cl *changelist.CL) *run.Trigger {

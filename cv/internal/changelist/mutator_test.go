@@ -97,11 +97,10 @@ func TestMutatorSingleCL(t *testing.T) {
 
 			Convey("updates", func() {
 				s1 := makeSnapshot(lProject, ct.Clock.Now())
-				_, err := eid.GetOrInsert(ctx, func(cl *CL) {
-					cl.Snapshot = s1
-					cl.IncompleteRuns = common.MakeRunIDs(run1)
-				})
-				So(err, ShouldBeNil)
+				cl := eid.MustCreateIfNotExists(ctx)
+				cl.Snapshot = s1
+				cl.IncompleteRuns = common.MakeRunIDs(run1)
+				So(datastore.Put(ctx, cl), ShouldBeNil)
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
@@ -132,8 +131,7 @@ func TestMutatorSingleCL(t *testing.T) {
 			})
 
 			Convey("skips an update", func() {
-				priorCL, err := eid.GetOrInsert(ctx, func(cl *CL) {})
-				So(err, ShouldBeNil)
+				priorCL := eid.MustCreateIfNotExists(ctx)
 
 				ct.Clock.Add(time.Second)
 				cl, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
@@ -161,10 +159,9 @@ func TestMutatorSingleCL(t *testing.T) {
 		Convey("Update method", func() {
 			Convey("updates", func() {
 				s1 := makeSnapshot("prior-project", ct.Clock.Now())
-				priorCL, err := eid.GetOrInsert(ctx, func(cl *CL) {
-					cl.Snapshot = s1
-				})
-				So(err, ShouldBeNil)
+				priorCL := eid.MustCreateIfNotExists(ctx)
+				priorCL.Snapshot = s1
+				So(datastore.Put(ctx, priorCL), ShouldBeNil)
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
@@ -189,8 +186,7 @@ func TestMutatorSingleCL(t *testing.T) {
 			})
 
 			Convey("skips an actual update", func() {
-				priorCL, err := eid.GetOrInsert(ctx, func(cl *CL) {})
-				So(err, ShouldBeNil)
+				priorCL := eid.MustCreateIfNotExists(ctx)
 
 				ct.Clock.Add(time.Second)
 				cl, err := m.Update(ctx, lProject, priorCL.ID, func(cl *CL) error {
@@ -208,11 +204,10 @@ func TestMutatorSingleCL(t *testing.T) {
 			})
 
 			Convey("propagates error without wrapping", func() {
-				priorCL, err := eid.GetOrInsert(ctx, func(cl *CL) {})
-				So(err, ShouldBeNil)
+				priorCL := eid.MustCreateIfNotExists(ctx)
 
 				myErr := errors.New("my error")
-				_, err = m.Update(ctx, lProject, priorCL.ID, func(cl *CL) error {
+				_, err := m.Update(ctx, lProject, priorCL.ID, func(cl *CL) error {
 					return myErr
 				})
 				So(myErr, ShouldEqual, err)
@@ -244,8 +239,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				})
 			})
 			cases("Upsert update", func(bad badCallback) {
-				_, err := eid.GetOrInsert(ctx, func(cl *CL) {})
-				So(err, ShouldBeNil)
+				eid.MustCreateIfNotExists(ctx)
 				ct.Clock.Add(time.Second)
 				_, _ = m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					bad(cl)
@@ -253,8 +247,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				})
 			})
 			cases("Update", func(bad badCallback) {
-				cl, err := eid.GetOrInsert(ctx, func(cl *CL) {})
-				So(err, ShouldBeNil)
+				cl := eid.MustCreateIfNotExists(ctx)
 				ct.Clock.Add(time.Second)
 				_, _ = m.Update(ctx, lProject, cl.ID, func(cl *CL) error {
 					bad(cl)
@@ -290,8 +283,7 @@ func TestMutatorBatch(t *testing.T) {
 			var clids common.CLIDs
 			var expectedAltProject, expectedRun1, expectedRun2 common.CLIDs
 			for gChange := gChangeFirst; gChange < gChangeFirst+N; gChange++ {
-				cl, err := MustGobID(gHost, int64(gChange)).GetOrInsert(ctx, func(cl *CL) {})
-				So(err, ShouldBeNil)
+				cl := MustGobID(gHost, int64(gChange)).MustCreateIfNotExists(ctx)
 				clids = append(clids, cl.ID)
 				if gChange%2 == 0 {
 					cl.Snapshot = makeSnapshot(lProjectAlt, ct.Clock.Now())

@@ -500,7 +500,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				},
 			}
 			So(sortedRefreshTasks(ct), ShouldResembleProto, expectedTasks)
-			So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
+			So(pm.popNotifiedProjects(), ShouldContain, lProject)
 
 			// Simulate Gerrit change being updated with +1s timestamp.
 			ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
@@ -598,7 +598,7 @@ func TestUpdateCLWorks(t *testing.T) {
 							ClidHint:    int64(getCL(ctx, gHostInternal, 477).ID),
 						},
 					))
-					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
+					So(pm.popNotifiedProjects(), ShouldContain, lProject)
 				})
 			})
 
@@ -663,8 +663,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		Convey("Fetch dep after bare CL was created", func() {
 			eid, err := changelist.GobID(gHost, 101)
 			So(err, ShouldBeNil)
-			cl, err := eid.GetOrInsert(ctx, func(cl *changelist.CL) {})
-			So(err, ShouldBeNil)
+			cl := eid.MustCreateIfNotExists(ctx)
 			So(cl.EVersion, ShouldEqual, 1)
 
 			ci := gf.CI(101, gf.Project(gRepo), gf.Ref("refs/heads/main"))

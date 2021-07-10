@@ -186,9 +186,7 @@ func TestDiscoversCLs(t *testing.T) {
 			return st
 		}
 		ensureCLEntity := func(change int64) *changelist.CL {
-			cl, err := changelist.MustGobID(gHost, change).GetOrInsert(ctx, func(*changelist.CL) {})
-			So(err, ShouldBeNil)
-			return cl
+			return changelist.MustGobID(gHost, change).MustCreateIfNotExists(ctx)
 		}
 
 		pm := pmMock{}

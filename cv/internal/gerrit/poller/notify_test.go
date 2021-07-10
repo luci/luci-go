@@ -49,11 +49,9 @@ func TestNotifyOnUnmatchedCLs(t *testing.T) {
 			if i == notYetSaved {
 				continue
 			}
-			cl, err := changelist.MustGobID(gHost, i).GetOrInsert(ctx, func(cl *changelist.CL) {
-				// In practice, cl.Snapshot would be populated, but for this test it
-				// doesn't matter.
-			})
-			So(err, ShouldBeNil)
+			cl := changelist.MustGobID(gHost, i).MustCreateIfNotExists(ctx)
+			// In practice, cl.Snapshot would be populated, but for this test it
+			// doesn't matter.
 			knownIDs = append(knownIDs, cl.ID)
 		}
 		sort.Sort(knownIDs)

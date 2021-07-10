@@ -644,18 +644,19 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 		return nil
 	}
 
-	// TODO(tandrii): optimize for the typical case where each dep is already known
-	// to CV by sending just 1 multi-Get against CLMap before doing parallel
-	// GetOrInsert calls.
-
-	errs := parallel.WorkPool(10, func(work chan<- func() error) {
+	errs := parallel.WorkPool(min(10, len(eids)), func(work chan<- func() error) {
 		for eid, kind := range eids {
 			eid, kind := eid, kind
 			work <- func() error {
-				depCL, err := eid.GetOrInsert(ctx, func(*changelist.CL) {
+				depCL, err := f.clMutator.Upsert(ctx, f.luciProject, eid, func(cl *changelist.CL) error {
 					// TODO(tandrii): somehow record when CL was inserted,
 					// to put a boundary on how long ProjectManager should wait for
-					// dependency to be fetched.
+					// the dependency to be fetched.
+					if cl.EVersion > 0 {
+						// If CL already exists, we don't need to modify it % above comment.
+						return changelist.ErrStopMutation
+					}
+					return nil
 				})
 				if err != nil {
 					return err
