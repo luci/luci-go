@@ -208,6 +208,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3861ce3a_91942efb",
+        "filename": "server/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-07-10T01:25:28Z",
+      "side": 1,
+      "message": "How did you find IAM Credentials doesn\u0027t have gRPC APIs?\n\nI just compared the following two clients, and it wasn\u0027t obvious to determine one has gRPC API and the other one does not.\n\nhttps://github.com/googleapis/google-cloud-go/blob/v0.86.0/iam/credentials/apiv1/iam_credentials_client.go#L217\nhttps://github.com/googleapis/google-cloud-go/blob/v0.86.0/secretmanager/apiv1/secret_manager_client.go#L302",
+      "parentUuid": "6b8fd8e6_f12e7b80",
+      "range": {
+        "startLine": 1682,
+        "startChar": 2,
+        "endLine": 1682,
+        "endChar": 64
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4a1eee6e_15029f5d",
         "filename": "server/server.go",
         "patchSetId": 6
