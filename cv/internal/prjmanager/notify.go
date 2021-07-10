@@ -99,20 +99,14 @@ func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls
 //
 // The ultimate result of CL purge is the updated state of a CL itself, thus no
 // information is provided here.
-//
-// TODO(crbug/1224170): remove eta parameter once CV does all the purging.
-func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string, eta time.Time) error {
-	err := n.sendWithoutDispatch(ctx, luciProject, &prjpb.Event{
+func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string) error {
+	return n.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_PurgeCompleted{
 			PurgeCompleted: &prjpb.PurgeCompleted{
 				OperationId: operationID,
 			},
 		},
 	})
-	if err != nil {
-		return err
-	}
-	return n.TasksBinding.Dispatch(ctx, luciProject, eta)
 }
 
 // NotifyRunCreated is sent by Project Manager to itself within a Run creation
