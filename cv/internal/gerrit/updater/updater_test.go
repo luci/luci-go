@@ -353,7 +353,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		}
 		pm := pmMock{}
 		rm := rmMock{}
-		u := New(ct.TQDispatcher, ct.GFake.Factory(), changelist.NewMutator(&pm, &rm))
+		u := New(ct.TQDispatcher, ct.GFake.Factory(), changelist.NewMutator(ct.TQDispatcher, &pm, &rm))
 
 		Convey("No access or permission denied", func() {
 			Convey("after getting error from Gerrit", func() {

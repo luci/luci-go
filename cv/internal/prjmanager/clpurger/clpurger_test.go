@@ -51,7 +51,8 @@ func TestPurgeCL(t *testing.T) {
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), changelist.NewMutator(pmNotifier, nil))
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, nil)
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), clMutator)
 		purger := New(pmNotifier, ct.GFake.Factory(), clUpdater)
 
 		const lProject = "lprj"

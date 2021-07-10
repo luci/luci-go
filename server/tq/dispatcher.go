@@ -1076,7 +1076,7 @@ func (d *Dispatcher) attachToReminder(ctx context.Context, payload *reminder.Pay
 		return nil, errors.Annotate(err, "failed to get random bytes").Tag(transient.Tag).Err()
 	}
 
-	// Note: length of the generate ID here is different from length of IDs
+	// Note: length of the generated ID here is different from the length of IDs
 	// we generate when using DeduplicationKey, so there'll be no collisions
 	// between two different sorts of named tasks.
 	r := &reminder.Reminder{ID: hex.EncodeToString(buf)}
