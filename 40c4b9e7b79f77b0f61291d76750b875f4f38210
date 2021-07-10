@@ -16,6 +16,121 @@
       "message": "This adds ClientRPCStatsMonitor into the remaining gRPC clients in https://source.chromium.org/search?q\u003d-file:_test.go%20file:.go%20-file:pb.go%20%5C.New%5Ba-zA-Z%5D*Client%20(filepath:luci%2Fserver%20OR%20filepath:luci%2Fcommon)\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2F",
       "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aebd1111_48fd92c3",
+        "filename": "common/gcloud/gs/gs.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-10T00:31:17Z",
+      "side": 1,
+      "message": "Google Storage doesn\u0027t have gRPC API and this will be totally ignored.",
+      "range": {
+        "startLine": 231,
+        "startChar": 1,
+        "endLine": 234,
+        "endChar": 0
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62a72c77_f02b695e",
+        "filename": "common/spantest/spantest_common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-10T00:31:17Z",
+      "side": 1,
+      "message": "I\u0027m not sure install it in tests is a good idea, just like like unnecessary dependency.",
+      "range": {
+        "startLine": 143,
+        "startChar": 31,
+        "endLine": 143,
+        "endChar": 93
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae4106dc_4386ca13",
+        "filename": "server/secrets/module.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-10T00:31:17Z",
+      "side": 1,
+      "message": "I think this is the only effective change in this CL (since Cloud Secrets does indeed has gRPC API used here).",
+      "range": {
+        "startLine": 114,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 65
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "081f5131_39820a9f",
+        "filename": "server/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-10T00:31:17Z",
+      "side": 1,
+      "message": "IAM Credentials doesn\u0027t have gRPC API and this option will be ignored.",
+      "range": {
+        "startLine": 1682,
+        "startChar": 2,
+        "endLine": 1682,
+        "endChar": 64
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a1eee6e_15029f5d",
+        "filename": "server/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 2095,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-10T00:31:17Z",
+      "side": 1,
+      "message": "Cloud Error Reporting has no gRPC API and this option will be ignored.",
+      "range": {
+        "startLine": 2095,
+        "startChar": 39,
+        "endLine": 2095,
+        "endChar": 101
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
