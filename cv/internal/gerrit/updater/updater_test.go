@@ -773,7 +773,7 @@ type pmMock struct {
 	m        sync.Mutex
 }
 
-func (p *pmMock) NotifyCLUpdated(ctx context.Context, project string, cl common.CLID, eversion int) error {
+func (p *pmMock) NotifyCLsUpdated(ctx context.Context, project string, _ *changelist.CLUpdatedEvents) error {
 	p.m.Lock()
 	p.projects = append(p.projects, project)
 	p.m.Unlock()

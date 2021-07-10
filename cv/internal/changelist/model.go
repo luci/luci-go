@@ -17,6 +17,7 @@ package changelist
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -145,6 +146,34 @@ type CL struct {
 
 // URL returns URL of the CL.
 func (cl *CL) URL() (string, error) { return cl.ExternalID.URL() }
+
+// ToUpdatedEvent returns CLUpdatedEvent corresponding to the current CL
+// version.
+func (cl *CL) ToUpdatedEvent() *CLUpdatedEvent {
+	return &CLUpdatedEvent{
+		Clid:     int64(cl.ID),
+		Eversion: int64(cl.EVersion),
+	}
+}
+
+// ToUpdatedEvents returns CLUpdatedEvents from a slice of CLs.
+func ToUpdatedEvents(cls ...*CL) *CLUpdatedEvents {
+	events := make([]*CLUpdatedEvent, len(cls))
+	for i, cl := range cls {
+		if cl.ID == 0 || cl.EVersion == 0 {
+			panic(fmt.Errorf("ID %d and EVersion %d must not be 0", cl.ID, cl.EVersion))
+		}
+		events[i] = &CLUpdatedEvent{
+			Clid:     int64(cl.ID),
+			Eversion: int64(cl.EVersion),
+		}
+	}
+	sort.Slice(events, func(i, j int) bool {
+		// Assume unique CLIDs.
+		return events[i].GetClid() < events[j].GetClid()
+	})
+	return &CLUpdatedEvents{Events: events}
+}
 
 // Mutate mutates the CL by executing `mut`.
 //

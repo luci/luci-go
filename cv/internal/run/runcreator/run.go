@@ -116,7 +116,7 @@ type CL struct {
 // In production, implemented by prjmanager.Notifier.
 type pmNotifier interface {
 	NotifyRunCreated(ctx context.Context, runID common.RunID) error
-	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
+	NotifyCLsUpdated(ctx context.Context, luciProject string, cls *changelist.CLUpdatedEvents) error
 }
 
 // rmNotifier encapsulates interaction with Run Manager.
@@ -336,7 +336,7 @@ func (rb *Creator) save(ctx context.Context, pm pmNotifier, rm rmNotifier) error
 		return err
 	}
 	// TODO(cbrug/1215792): notify all relevant PM & RM from each modified CL has updated.
-	if err := pm.NotifyCLsUpdated(ctx, rb.LUCIProject, rb.cls); err != nil {
+	if err := pm.NotifyCLsUpdated(ctx, rb.LUCIProject, changelist.ToUpdatedEvents(rb.cls...)); err != nil {
 		return err
 	}
 	// In the future once Runs can be created via API requests, the PM has to be

@@ -147,7 +147,7 @@ func AssertReceivedRunFinished(ctx context.Context, runID common.RunID) {
 func AssertReceivedCLsNotified(ctx context.Context, project string, cls []*changelist.CL) {
 	AssertInEventbox(ctx, project, &prjpb.Event{
 		Event: &prjpb.Event_ClsUpdated{
-			ClsUpdated: prjpb.MakeCLsUpdated(cls),
+			ClsUpdated: changelist.ToUpdatedEvents(cls...),
 		},
 	})
 }

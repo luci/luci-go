@@ -423,7 +423,7 @@ func (d *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 		return nil, err
 	}
 
-	if err := d.PMNotifier.NotifyCLsUpdated(ctx, req.GetProject(), cls); err != nil {
+	if err := d.PMNotifier.NotifyCLsUpdated(ctx, req.GetProject(), changelist.ToUpdatedEvents(cls...)); err != nil {
 		return nil, err
 	}
 

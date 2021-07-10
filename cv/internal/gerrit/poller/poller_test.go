@@ -381,19 +381,12 @@ type pmMock struct {
 	projects map[string]common.CLIDs
 }
 
-// NotifyCLUpdated implements updater.PM.
-func (p *pmMock) NotifyCLUpdated(ctx context.Context, project string, cl common.CLID, eversion int) error {
+func (p *pmMock) NotifyCLsUpdated(ctx context.Context, project string, cls *changelist.CLUpdatedEvents) error {
 	if p.projects == nil {
-		p.projects = make(map[string]common.CLIDs, 1)
+		p.projects = make(map[string]common.CLIDs, len(cls.GetEvents()))
 	}
-	p.projects[project] = append(p.projects[project], cl)
-	return nil
-}
-
-// NotifyCLsUpdated implements PM.
-func (p *pmMock) NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
-	for _, cl := range cls {
-		p.NotifyCLUpdated(ctx, luciProject, cl.ID, cl.EVersion)
+	for _, e := range cls.GetEvents() {
+		p.projects[project] = append(p.projects[project], common.CLID(e.GetClid()))
 	}
 	return nil
 }

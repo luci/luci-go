@@ -554,7 +554,7 @@ type pmMock struct {
 	byProject map[string]map[common.CLID]int // latest max EVersion
 }
 
-func (p *pmMock) NotifyCLUpdated(ctx context.Context, project string, cl common.CLID, eversion int) error {
+func (p *pmMock) NotifyCLsUpdated(ctx context.Context, project string, events *CLUpdatedEvents) error {
 	p.m.Lock()
 	defer p.m.Unlock()
 	if p.byProject == nil {
@@ -562,10 +562,13 @@ func (p *pmMock) NotifyCLUpdated(ctx context.Context, project string, cl common.
 	}
 	m := p.byProject[project]
 	if m == nil {
-		m = make(map[common.CLID]int, 1)
+		m = make(map[common.CLID]int, len(events.GetEvents()))
 		p.byProject[project] = m
 	}
-	m[cl] = max(m[cl], eversion)
+	for _, e := range events.GetEvents() {
+		clid := common.CLID(e.GetClid())
+		m[clid] = max(m[clid], int(e.GetEversion()))
+	}
 	return nil
 }
 

@@ -125,7 +125,7 @@ func (p *Poller) notifyPMifKnown(ctx context.Context, luciProject, host string, 
 		if err := datastore.Get(ctx, cls); err != nil {
 			return errors.Annotate(common.MostSevereError(err), "failed to load CLs").Tag(transient.Tag).Err()
 		}
-		return p.pm.NotifyCLsUpdated(ctx, luciProject, cls)
+		return p.pm.NotifyCLsUpdated(ctx, luciProject, changelist.ToUpdatedEvents(cls...))
 	}
 
 	for _, clid := range clids {

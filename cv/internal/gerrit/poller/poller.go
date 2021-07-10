@@ -45,7 +45,7 @@ const TaskClassID = "poll-gerrit"
 //
 // In production, implemented by prjmanager.Notifier.
 type pmNotifier interface {
-	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
+	NotifyCLsUpdated(ctx context.Context, luciProject string, cls *changelist.CLUpdatedEvents) error
 }
 
 // CLUpdater encapsulates interaction with Gerrit CL Updater by the Poller.

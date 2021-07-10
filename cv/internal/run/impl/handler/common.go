@@ -95,7 +95,7 @@ func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clid
 	}
 	// TODO(crbug/1215792): refactor this to work well even when CLs belong to
 	// multiple projects and reference other Runs.
-	if err := impl.PM.NotifyCLsUpdated(ctx, runID.LUCIProject(), cls); err != nil {
+	if err := impl.PM.NotifyCLsUpdated(ctx, runID.LUCIProject(), changelist.ToUpdatedEvents(cls...)); err != nil {
 		return err
 	}
 	return impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), cls)

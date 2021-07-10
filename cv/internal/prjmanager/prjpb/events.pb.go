@@ -154,6 +154,8 @@ type Event_Poke struct {
 
 type Event_ClUpdated struct {
 	// Deprecated. Use batch version only.
+	// This remains only to be able to use old events already stored in
+	// Datastore.
 	ClUpdated *changelist.CLUpdatedEvent `protobuf:"bytes,3,opt,name=cl_updated,json=clUpdated,proto3,oneof"`
 }
 
