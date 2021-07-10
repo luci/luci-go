@@ -95,10 +95,6 @@ func (e ExternalID) MustURL() string {
 	return ret
 }
 
-// Notify is called with the updated CL in a transaction context after
-// CL is successfully created/updated.
-type Notify func(ctx context.Context, cl *CL) error
-
 // CL is a CL entity in Datastore.
 type CL struct {
 	_kind  string                `gae:"$kind,CL"`
@@ -175,22 +171,6 @@ func ToUpdatedEvents(cls ...*CL) *CLUpdatedEvents {
 	return &CLUpdatedEvents{Events: events}
 }
 
-// Mutate mutates the CL by executing `mut`.
-//
-// It does basic sanity checks and ensures EVersion and UpdateTime are
-// correctly updated if `mut` has changed the CL.
-func (cl *CL) Mutate(ctx context.Context, mut func(*CL) (updated bool)) (updated bool) {
-	prevEV := cl.EVersion
-	updated = mut(cl)
-	if !updated {
-		return false
-	}
-	cl.Snapshot.PanicIfNotValid()
-	cl.EVersion = prevEV + 1
-	cl.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
-	return true
-}
-
 // clMap is CLMap entity in Datastore which ensures strict 1:1 mapping
 // between internal and external IDs.
 type clMap struct {
@@ -258,7 +238,7 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 
 // Delete deletes CL and its CLMap entities transactionally.
 //
-// Thus, Delete and insertion (part of ExternalID.getOrInsert) are atomic with
+// Thus, deletion and insertion (part of ExternalID.getOrInsert) are atomic with
 // respect to one another.
 //
 // However, ExternalID.get and fast path of ExternalID.getOrInsert if called
