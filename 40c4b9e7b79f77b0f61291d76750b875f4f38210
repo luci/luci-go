@@ -254,6 +254,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "75ce942c_6a8b5702",
+        "filename": "server/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-07-10T05:05:48Z",
+      "side": 1,
+      "message": "\u003e\u003e Eh, ... Based on code it is using REST.\nIt\u0027s *not* using REST, right?\n\nhttps://cloud.google.com/go/docs/reference/cloud.google.com/go/latest/iam/credentials/apiv1#cloud_google_com_go_iam_credentials_apiv1_IamCredentialsClient_NewIamCredentialsClient\n\nI added grpcmon back to NewIamCredentialsClient().",
+      "parentUuid": "5dcbaa8f_72dbccb3",
+      "range": {
+        "startLine": 1682,
+        "startChar": 2,
+        "endLine": 1682,
+        "endChar": 64
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a1eee6e_15029f5d",
