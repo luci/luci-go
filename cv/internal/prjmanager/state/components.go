@@ -257,7 +257,7 @@ func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prj
 		err = errCaughtPanic
 	})
 
-	switch _, err = rc.Create(ctx, s.PMNotifier, s.RunNotifier); {
+	switch _, err = rc.Create(ctx, s.CLMutator, s.PMNotifier, s.RunNotifier); {
 	case err == nil:
 		return nil
 	case runcreator.StateChangedTag.In(err):

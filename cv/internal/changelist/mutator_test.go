@@ -368,7 +368,7 @@ func TestMutatorBatch(t *testing.T) {
 				verify(resCLs)
 			})
 
-			Convey("Manual begin + FinalizeBatch", func() {
+			Convey("Manual Adopt + FinalizeBatch", func() {
 				var resCLs []*CL
 				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					resCLs = nil // reset in case of retries
@@ -377,14 +377,13 @@ func TestMutatorBatch(t *testing.T) {
 					for i, id := range clids {
 						i, id := i, id
 						eg.Go(func() error {
-							switch mut, err := m.Begin(egCtx, lProject, id); {
-							case err != nil:
+							cl := &CL{ID: id}
+							if err := datastore.Get(egCtx, cl); err != nil {
 								return err
-							default:
-								mut.CL.IncompleteRuns = append(mut.CL.IncompleteRuns, run3)
-								muts[i] = mut
-								return nil
 							}
+							muts[i] = m.Adopt(ctx, lProject, cl)
+							muts[i].CL.IncompleteRuns = append(muts[i].CL.IncompleteRuns, run3)
+							return nil
 						})
 					}
 					So(eg.Wait(), ShouldBeNil)

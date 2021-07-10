@@ -73,7 +73,7 @@ func main() {
 		runNotifier := run.NewNotifier(&tq.Default)
 		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
 		clUpdater := updater.New(&tq.Default, gFactory, clMutator)
-		_ = pmimpl.New(pmNotifier, runNotifier, gFactory, clUpdater)
+		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {
 			return err
