@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5f43c34_7bc0909f",
+        "filename": "common/gcloud/gs/gs.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-07-10T00:59:55Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "aebd1111_48fd92c3",
+      "range": {
+        "startLine": 231,
+        "startChar": 1,
+        "endLine": 234,
+        "endChar": 0
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "62a72c77_f02b695e",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-07-10T00:31:17Z",
       "side": 1,
       "message": "I\u0027m not sure install it in tests is a good idea, just like like unnecessary dependency.",
+      "range": {
+        "startLine": 143,
+        "startChar": 31,
+        "endLine": 143,
+        "endChar": 93
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c3ffc66_343d9631",
+        "filename": "common/spantest/spantest_common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-07-10T00:59:55Z",
+      "side": 1,
+      "message": "We happened to receive SpanCPUUsageHigh alert on chops-spanner-testing, and I was highly suspect that it was due to tests hammering the Spanner instance by creating temp databases.\n\nThat said, I found that this wouldn\u0027t work because this code is executed by `go test` in bots and workstation. that was a stupid idea 😞; removed",
+      "parentUuid": "62a72c77_f02b695e",
       "range": {
         "startLine": 143,
         "startChar": 31,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c669889c_7e0a3161",
+        "filename": "server/secrets/module.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-07-10T00:59:55Z",
+      "side": 1,
+      "message": "Thanks for checking on all the client implementations. I just naively assumed that all Google Cloud clients use gRPC APIs.",
+      "parentUuid": "ae4106dc_4386ca13",
+      "range": {
+        "startLine": 114,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 65
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "081f5131_39820a9f",
@@ -110,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b8fd8e6_f12e7b80",
+        "filename": "server/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-07-10T00:59:55Z",
+      "side": 1,
+      "message": "removed",
+      "parentUuid": "081f5131_39820a9f",
+      "range": {
+        "startLine": 1682,
+        "startChar": 2,
+        "endLine": 1682,
+        "endChar": 64
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a1eee6e_15029f5d",
@@ -123,6 +219,30 @@
       "writtenOn": "2021-07-10T00:31:17Z",
       "side": 1,
       "message": "Cloud Error Reporting has no gRPC API and this option will be ignored.",
+      "range": {
+        "startLine": 2095,
+        "startChar": 39,
+        "endLine": 2095,
+        "endChar": 101
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47d90b3f_e69045dd",
+        "filename": "server/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 2095,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-07-10T00:59:55Z",
+      "side": 1,
+      "message": "removed",
+      "parentUuid": "4a1eee6e_15029f5d",
       "range": {
         "startLine": 2095,
         "startChar": 39,
