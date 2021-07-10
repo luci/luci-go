@@ -55,11 +55,7 @@ func TestOnCLUpdated(t *testing.T) {
 			},
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
-		h := &Impl{
-			CLUpdater: &clUpdaterMock{},
-			GFactory:  ct.GFake.Factory(),
-			RM:        run.NewNotifier(ct.TQDispatcher),
-		}
+		h, _, _, _ := makeTestImpl(&ct)
 
 		// initial state
 		triggerTime := clock.Now(ctx).UTC()

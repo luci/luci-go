@@ -132,12 +132,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 			), ShouldBeNil)
 		}
 
-		h := &Impl{
-			RM:         run.NewNotifier(ct.TQDispatcher),
-			TreeClient: ct.TreeFake.Client(),
-			GFactory:   ct.GFake.Factory(),
-			CLUpdater:  &clUpdaterMock{},
-		}
+		h, _, _, _ := makeTestImpl(&ct)
 
 		statuses := []run.Status{
 			run.Status_SUCCEEDED,

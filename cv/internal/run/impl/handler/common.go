@@ -22,10 +22,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/filter/txndefer"
-	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -74,28 +72,18 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 //   * schedules refresh of CL snapshot;
 //   * removes Run's ID from the list of CL's IncompleteRuns.
 func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) error {
-	if datastore.CurrentTransaction(ctx) == nil {
-		panic("must be called in a transaction")
-	}
-	cls, err := changelist.LoadCLs(ctx, clids)
+	muts, err := impl.CLMutator.BeginBatch(ctx, runID.LUCIProject(), clids)
 	if err != nil {
 		return err
 	}
-	for _, cl := range cls {
-		cl.Mutate(ctx, func(cl *changelist.CL) bool {
-			cl.IncompleteRuns.DelSorted(runID)
-			if cl.Snapshot != nil {
-				cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
-			}
-			return true
-		})
+	for _, mut := range muts {
+		mut.CL.IncompleteRuns.DelSorted(runID)
+		if mut.CL.Snapshot != nil {
+			mut.CL.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
+		}
 	}
-	if err := datastore.Put(ctx, cls); err != nil {
-		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
-	}
-	// TODO(crbug/1215792): refactor this to work well even when CLs belong to
-	// multiple projects and reference other Runs.
-	if err := impl.PM.NotifyCLsUpdated(ctx, runID.LUCIProject(), changelist.ToUpdatedEvents(cls...)); err != nil {
+	cls, err := impl.CLMutator.FinalizeBatch(ctx, muts)
+	if err != nil {
 		return err
 	}
 	return impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), cls)

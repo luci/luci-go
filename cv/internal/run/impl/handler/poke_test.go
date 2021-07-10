@@ -83,13 +83,7 @@ func TestPokeRecheckTree(t *testing.T) {
 			},
 		), ShouldBeNil)
 
-		clUpdater := &clUpdaterMock{}
-		h := &Impl{
-			RM:         run.NewNotifier(ct.TQDispatcher),
-			TreeClient: ct.TreeFake.Client(),
-			GFactory:   ct.GFake.Factory(),
-			CLUpdater:  clUpdater,
-		}
+		h, _, _, clUpdater := makeTestImpl(&ct)
 
 		now := ct.Clock.Now()
 		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
