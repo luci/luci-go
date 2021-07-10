@@ -679,7 +679,7 @@ type isSubmissionCompleted_FailureReason interface {
 type SubmissionCompleted_ClFailure struct {
 	// Deprecated. Use `cl_failures` instead.
 	//
-	// TODO(yiwzhang): delete after no event has this field set.
+	// TODO(crbug/1227523): delete after no event has this field set.
 	//
 	// Deprecated: Do not use.
 	ClFailure *SubmissionCompleted_CLSubmissionFailure `protobuf:"bytes,2,opt,name=cl_failure,json=clFailure,proto3,oneof"`

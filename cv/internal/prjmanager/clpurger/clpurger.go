@@ -95,11 +95,7 @@ func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 			return err
 		}
 	}
-	return p.notifyPM(ctx, task, time.Time{} /*wake up PM ASAP*/)
-}
-
-func (p *Purger) notifyPM(ctx context.Context, task *prjpb.PurgeCLTask, eta time.Time) error {
-	return p.pmNotifier.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl().GetOperationId(), eta)
+	return p.pmNotifier.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl().GetOperationId())
 }
 
 func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {

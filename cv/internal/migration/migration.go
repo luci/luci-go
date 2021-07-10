@@ -45,15 +45,14 @@ import (
 // migration API. It's hardcoded here because this code is temporary.
 const AllowGroup = "luci-cv-migration-crbug-1141880"
 
-// RunNotifier abstracts out dependency of MigrationServer on run.Notifier.
-type RunNotifier interface {
+// runNotifier abstracts out dependency of MigrationServer on run.Notifier.
+type runNotifier interface {
 	NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error
-	NotifyCQDFinished(ctx context.Context, runID common.RunID) error
 }
 
 // MigrationServer implements CQDaemon -> CV migration API.
 type MigrationServer struct {
-	RunNotifier RunNotifier
+	RunNotifier runNotifier
 	GFactory    gerrit.ClientFactory
 
 	migrationpb.UnimplementedMigrationServer

@@ -50,10 +50,6 @@ message KickManageProjectTask {
 //
 // Queue: "purge-project-cl".
 message PurgeCLTask {
-  // TODO(tandrii): delete it after deploying. This proto is never saved to
-  // datastore for long term storage -- it's stays only in DS/TQ temporarily.
-  reserved 4;
-
   string luci_project = 1;
   PurgingCL purging_cl = 2;
 
@@ -61,6 +57,6 @@ message PurgeCLTask {
 
   repeated cv.internal.changelist.CLError reasons = 5;
 
-  // TODO(crbug/1217685): Pass watching ConfigGroups so that votes on the
+  // TODO(crbug/1227544): Pass watching ConfigGroups so that votes on the
   // additional labels can be removed as well.
 }

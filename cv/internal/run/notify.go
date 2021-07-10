@@ -126,31 +126,13 @@ func (n *Notifier) UpdateConfig(ctx context.Context, runID common.RunID, hash st
 
 // Cancel tells RunManager to cancel the given Run.
 //
-// TODO(yiwzhang,tandrii): support reason.
+// TODO(crbug/1215612): support reason.
 func (n *Notifier) Cancel(ctx context.Context, runID common.RunID) error {
 	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Cancel{
 			Cancel: &eventpb.Cancel{},
 		},
 	})
-}
-
-// CancelAt tells RunManager to cancel the given Run at `eta`.
-//
-// TODO(crbug/1141880): Remove this API after migration. This is only needed
-// because CV need to delay the cancellation of a Run when waiting for CQD
-// report finished Run when CQD is in charge.
-func (n *Notifier) CancelAt(ctx context.Context, runID common.RunID, eta time.Time) error {
-	evt := &eventpb.Event{
-		Event: &eventpb.Event_Cancel{
-			Cancel: &eventpb.Cancel{},
-		},
-	}
-	if eta.After(clock.Now(ctx)) {
-		evt.ProcessAfter = timestamppb.New(eta)
-		return n.Send(ctx, runID, evt, eta)
-	}
-	return n.SendNow(ctx, runID, evt)
 }
 
 // NotifyCLUpdated informs RunManager that given CL has a new version available.
@@ -219,18 +201,6 @@ func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID com
 	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_CqdVerificationCompleted{
 			CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
-		},
-	})
-}
-
-// NotifyCQDFinished tells RunManager that CQDaemon has finished the provided
-// Run.
-//
-// TODO(crbug/1224170): Remove this event after migration.
-func (n *Notifier) NotifyCQDFinished(ctx context.Context, runID common.RunID) error {
-	return n.SendNow(ctx, runID, &eventpb.Event{
-		Event: &eventpb.Event_CqdFinished{
-			CqdFinished: &eventpb.CQDFinished{},
 		},
 	})
 }
