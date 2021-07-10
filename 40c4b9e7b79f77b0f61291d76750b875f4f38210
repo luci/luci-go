@@ -232,6 +232,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5dcbaa8f_72dbccb3",
+        "filename": "server/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-10T01:49:36Z",
+      "side": 1,
+      "message": "Eh, I lied about IAM Credentials API. Based on code it is using REST.\n\nI was looking at the https://cloud.google.com/iam/docs/apis and it mentions only REST API. Usually gRPC APIs are also mentioned (e.g. compare https://screenshot.googleplex.com/33Nz5JDAJfkzBpP with https://screenshot.googleplex.com/AvmawEvVWyD7tKm). They probably didn\u0027t update docks for IAM API.",
+      "parentUuid": "3861ce3a_91942efb",
+      "range": {
+        "startLine": 1682,
+        "startChar": 2,
+        "endLine": 1682,
+        "endChar": 64
+      },
+      "revId": "40c4b9e7b79f77b0f61291d76750b875f4f38210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4a1eee6e_15029f5d",
         "filename": "server/server.go",
         "patchSetId": 6
