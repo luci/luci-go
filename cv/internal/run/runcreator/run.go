@@ -93,7 +93,7 @@ type Creator struct {
 	// Since transactions are retried, these can be re-set multiple times.
 
 	// dsBatcher flattens multiple Datastore Get/Put calls into a single call.
-	dsBatcher dsBatcher
+	dsBatcher dsGetBatcher
 	// runID is computed runID at the time beginning of a transaction, since RunID
 	// depends on time.
 	runID common.RunID
@@ -313,28 +313,31 @@ func (rb *Creator) checkCLsUnchanged(ctx context.Context) {
 //
 // It may be retried multiple times on failure.
 func (rb *Creator) save(ctx context.Context, pm pmNotifier, rm rmNotifier) error {
-	rb.dsBatcher.reset()
+	// NOTE: within the Datastore transaction,
+	//  * NotifyRunCreated && run.Start put a Reminder entity in Datastore (see
+	//    server/tq/txn).
+	//  * Cloud Datastore client buffers all Puts in RAM, and sends all at once to
+	//    Datastore server at transaction's Commit().
+	// Therefore, there is no advantage in parallelizing calls below.
+
 	// Keep .CreateTime and .UpdateTime entities the same across all saved
 	// entities (except possibly Run, whose createTime can be overridden). Do
 	// pre-emptive rounding before Datastore layer does it, such that rb.run
 	// entity has the exact same fields' values as if entity was read from the
 	// Datastore.
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
-	rb.registerSaveRun(ctx, now)
-	for i := range rb.InputCLs {
-		rb.registerSaveRunCL(ctx, i)
-		rb.registerSaveCL(ctx, i, now)
-	}
-
-	// NOTE: within the Datastore transaction,
-	//  * NotifyRunCreated && run.Start put a Reminder entity in Datastore (see
-	//    server/tq/txn).
-	//  * Cloud Datastore client buffers all Puts in RAM, and sends all at once to
-	//    Datastore server at transaction's Commit().
-	// Therefore, there is no advantage in parallelizing 3 calls below.
-	if err := rb.dsBatcher.put(ctx); err != nil {
+	if err := rb.saveRun(ctx, now); err != nil {
 		return err
 	}
+	for i := range rb.InputCLs {
+		if err := rb.saveRunCL(ctx, i); err != nil {
+			return err
+		}
+		if err := rb.saveCL(ctx, i, now); err != nil {
+			return err
+		}
+	}
+
 	// TODO(cbrug/1215792): notify all relevant PM & RM from each modified CL has updated.
 	if err := pm.NotifyCLsUpdated(ctx, rb.LUCIProject, changelist.ToUpdatedEvents(rb.cls...)); err != nil {
 		return err
@@ -347,7 +350,7 @@ func (rb *Creator) save(ctx context.Context, pm pmNotifier, rm rmNotifier) error
 	return rm.Start(ctx, rb.runID)
 }
 
-func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
+func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 	ids := make(common.CLIDs, len(rb.InputCLs))
 	for i, cl := range rb.InputCLs {
 		ids[i] = cl.ID
@@ -368,12 +371,13 @@ func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
 		Owner:         rb.Owner,
 		Options:       rb.Options,
 	}
-	rb.dsBatcher.register(rb.run, func(err error) error {
+	if err := datastore.Put(ctx, rb.run); err != nil {
 		return errors.Annotate(err, "failed to save Run").Tag(transient.Tag).Err()
-	})
+	}
+	return nil
 }
 
-func (rb *Creator) registerSaveRunCL(ctx context.Context, index int) {
+func (rb *Creator) saveRunCL(ctx context.Context, index int) error {
 	inputCL := rb.InputCLs[index]
 	entity := &run.RunCL{
 		Run:        datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
@@ -383,19 +387,21 @@ func (rb *Creator) registerSaveRunCL(ctx context.Context, index int) {
 		Trigger:    inputCL.TriggerInfo,
 		Detail:     rb.cls[index].Snapshot,
 	}
-	rb.dsBatcher.register(entity, func(err error) error {
+	if err := datastore.Put(ctx, entity); err != nil {
 		return errors.Annotate(err, "failed to save RunCL %d", inputCL.ID).Tag(transient.Tag).Err()
-	})
+	}
+	return nil
 }
 
-func (rb *Creator) registerSaveCL(ctx context.Context, index int, now time.Time) {
+func (rb *Creator) saveCL(ctx context.Context, index int, now time.Time) error {
 	cl := rb.cls[index]
 	cl.EVersion++
 	cl.UpdateTime = now
 	cl.IncompleteRuns.InsertSorted(rb.runID)
-	rb.dsBatcher.register(cl, func(err error) error {
+	if err := datastore.Put(ctx, cl); err != nil {
 		return errors.Annotate(err, "failed to save CL %d", cl.ID).Tag(transient.Tag).Err()
-	})
+	}
+	return nil
 }
 
 // computeCLsDigest populates `.runIDBuilder` for use by computeRunID.
@@ -452,28 +458,24 @@ func (rb *Creator) computeRunID() {
 	rb.runID = common.MakeRunID(rb.LUCIProject, rb.CreateTime, b.version, b.digest)
 }
 
-// dsBatcher facilitates processing of many different kind of entities in a
-// single Get/Put operation while handling errors in entity-specific code.
-//
-// NOTE: all Put operations during Datastore transaction are buffered and
-// effectively batched by the Datastore client. However, here Puts are handled
-// the exact same way as Gets for consistency.
-type dsBatcher struct {
+// dsGetBatcher facilitates processing of many different kind of entities in a
+// single Get operation while handling errors in entity-specific code.
+type dsGetBatcher struct {
 	entities  []interface{}
 	callbacks []func(error) error
 }
 
-func (d *dsBatcher) reset() {
+func (d *dsGetBatcher) reset() {
 	d.entities = d.entities[:0]
 	d.callbacks = d.callbacks[:0]
 }
 
-// register registers an entity for future get/put and a callback to handle errors.
+// register registers an entity for future get and a callback to handle errors.
 //
 // entity must be a pointer to an entity object.
 // callback is called with entity specific error, possibly nil.
 // callback must not be nil.
-func (d *dsBatcher) register(entity interface{}, callback func(error) error) {
+func (d *dsGetBatcher) register(entity interface{}, callback func(error) error) {
 	d.entities = append(d.entities, entity)
 	d.callbacks = append(d.callbacks, callback)
 }
@@ -482,7 +484,7 @@ func (d *dsBatcher) register(entity interface{}, callback func(error) error) {
 //
 // Aborts and returns the first non-nil error returned by a callback.
 // Otherwise, returns nil.
-func (d *dsBatcher) get(ctx context.Context) error {
+func (d *dsGetBatcher) get(ctx context.Context) error {
 	err := datastore.Get(ctx, d.entities)
 	if err == nil {
 		return d.execCallbacks(nil)
@@ -497,26 +499,7 @@ func (d *dsBatcher) get(ctx context.Context) error {
 	}
 }
 
-// put saves entities to datastore and performs error handling.
-//
-// Aborts and returns the first non-nil error returned by a callback.
-// Otherwise, returns nil.
-func (d *dsBatcher) put(ctx context.Context) error {
-	err := datastore.Put(ctx, d.entities)
-	if err == nil {
-		return d.execCallbacks(nil)
-	}
-	switch errs, ok := err.(errors.MultiError); {
-	case !ok:
-		return errors.Annotate(err, "failed to put entities to Datastore").Tag(transient.Tag).Err()
-	case len(errs) != len(d.entities):
-		panic(fmt.Errorf("%d errors for %d entities", len(errs), len(d.entities)))
-	default:
-		return d.execCallbacks(errs)
-	}
-}
-
-func (d *dsBatcher) execCallbacks(errs errors.MultiError) error {
+func (d *dsGetBatcher) execCallbacks(errs errors.MultiError) error {
 	if errs == nil {
 		for _, f := range d.callbacks {
 			if err := f(nil); err != nil {
