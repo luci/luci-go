@@ -17,7 +17,6 @@ package updater
 import (
 	"context"
 	"sort"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -351,9 +350,19 @@ func TestUpdateCLWorks(t *testing.T) {
 			LuciProject: lProject,
 			Host:        gHost,
 		}
-		pm := pmMock{}
-		rm := rmMock{}
-		u := New(ct.TQDispatcher, ct.GFake.Factory(), changelist.NewMutator(ct.TQDispatcher, &pm, &rm))
+		u := New(ct.TQDispatcher, ct.GFake.Factory(), changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
+
+		assertScheduled := func(expected ...int) {
+			var actual []int
+			for _, p := range ct.TQ.Tasks().Payloads() {
+				if t, ok := p.(*RefreshGerritCL); ok {
+					actual = append(actual, int(t.GetChange()))
+				}
+			}
+			sort.Ints(actual)
+			sort.Ints(expected)
+			So(actual, ShouldResemble, expected)
+		}
 
 		Convey("No access or permission denied", func() {
 			Convey("after getting error from Gerrit", func() {
@@ -367,9 +376,7 @@ func TestUpdateCLWorks(t *testing.T) {
 						UpdateTime:   timestamppb.New(ct.Clock.Now()),
 					})
 					So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDeniedProbably)
-					tasks := ct.TQ.Tasks().Pending().Payloads()
-					So(tasks, ShouldHaveLength, 1)
-					So(tasks[0].(*RefreshGerritCL).GetChange(), ShouldEqual, change)
+					assertScheduled(change)
 				}
 				Convey("HTTP 404", func() {
 					task.Change = 404
@@ -500,26 +507,16 @@ func TestUpdateCLWorks(t *testing.T) {
 				},
 			}
 			So(sortedRefreshTasks(ct), ShouldResembleProto, expectedTasks)
-			So(pm.popNotifiedProjects(), ShouldContain, lProject)
 
 			// Simulate Gerrit change being updated with +1s timestamp.
 			ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 				c.Info.Updated.Seconds++
 			})
 
-			Convey("Notify IncompleteRuns", func() {
-				rid1 := common.RunID("chromium/111-1-dead")
-				rid2 := common.RunID("chromium/222-1-beef")
-				cl.IncompleteRuns = []common.RunID{rid1, rid2}
-				So(datastore.Put(ctx, cl), ShouldBeNil)
-				So(u.Refresh(ctx, task), ShouldBeNil)
-				So(rm.popNotifiedRuns(), ShouldResemble, common.RunIDs{rid1, rid2})
-			})
 			Convey("Skips update with updatedHint", func() {
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
-				So(pm.popNotifiedProjects(), ShouldBeEmpty)
 			})
 
 			Convey("Updates snapshots explicitly marked outdated", func() {
@@ -528,7 +525,6 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(datastore.Put(ctx, cl), ShouldBeNil)
 				So(u.Refresh(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion+1)
-				So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
 			})
 
 			Convey("Don't update iff fetched less recent than updatedHint ", func() {
@@ -540,7 +536,6 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(err, ShouldErrLike, "stale Gerrit data")
 				So(transient.Tag.In(err), ShouldBeTrue)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
-				So(pm.popNotifiedProjects(), ShouldBeEmpty)
 			})
 
 			Convey("Heeds updatedHint and updates the CL", func() {
@@ -560,7 +555,6 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				So(cl2.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble,
 					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Second))
-				So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
 
 				Convey("New revision doesn't re-use files & related changes", func() {
 					// Stay within the same blindRefreshInterval for de-duping refresh
@@ -598,7 +592,6 @@ func TestUpdateCLWorks(t *testing.T) {
 							ClidHint:    int64(getCL(ctx, gHostInternal, 477).ID),
 						},
 					))
-					So(pm.popNotifiedProjects(), ShouldContain, lProject)
 				})
 			})
 
@@ -612,8 +605,6 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				// Snapshot is preserved in case this is temporal misconfiguration.
 				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
-				// PM is still notified.
-				So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
 			})
 
 			Convey("Watched by a diff project", func() {
@@ -636,8 +627,6 @@ func TestUpdateCLWorks(t *testing.T) {
 					So(cl2.Snapshot.GetExternalUpdateTime(), ShouldResemble, ct.GFake.GetChange(gHost, 123).Info.GetUpdated())
 					So(cl2.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
 					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessGranted)
-					// Both PMs are notified.
-					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject, lProject2})
 				})
 
 				Convey("without access", func() {
@@ -654,8 +643,6 @@ func TestUpdateCLWorks(t *testing.T) {
 					// the first time (in a context of a specific LUCI project) is
 					// AccessDeniedProbably.
 					So(cl2.AccessKind(ctx, lProject2), ShouldEqual, changelist.AccessDenied)
-					// Both PMs are notified anyway.
-					So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject, lProject2})
 				})
 			})
 		})
@@ -676,7 +663,6 @@ func TestUpdateCLWorks(t *testing.T) {
 			So(cl2.EVersion, ShouldEqual, 2)
 			changelist.RemoveUnusedGerritInfo(ci)
 			So(cl2.Snapshot.GetGerrit().GetInfo(), ShouldResembleProto, ci)
-			So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
 		})
 
 		FocusConvey("Handles New -> Abandon -> Restored transitions correctly", func() {
@@ -808,41 +794,15 @@ func (l *RefreshGerritCL) less(r *RefreshGerritCL) bool {
 }
 
 type pmMock struct {
-	projects []string
-	m        sync.Mutex
 }
 
-func (p *pmMock) NotifyCLsUpdated(ctx context.Context, project string, _ *changelist.CLUpdatedEvents) error {
-	p.m.Lock()
-	p.projects = append(p.projects, project)
-	p.m.Unlock()
+func (p *pmMock) NotifyCLsUpdated(ctx context.Context, project string, cls *changelist.CLUpdatedEvents) error {
 	return nil
-}
-
-func (p *pmMock) popNotifiedProjects() (res []string) {
-	p.m.Lock()
-	res, p.projects = p.projects, nil
-	p.m.Unlock()
-	sort.Strings(res)
-	return
 }
 
 type rmMock struct {
-	runs common.RunIDs
-	m    sync.Mutex
 }
 
 func (r *rmMock) NotifyCLUpdated(ctx context.Context, rid common.RunID, cl common.CLID, eversion int) error {
-	r.m.Lock()
-	r.runs = append(r.runs, rid)
-	r.m.Unlock()
 	return nil
-}
-
-func (r *rmMock) popNotifiedRuns() (res common.RunIDs) {
-	r.m.Lock()
-	res, r.runs = r.runs, nil
-	r.m.Unlock()
-	sort.Sort(res)
-	return res
 }
