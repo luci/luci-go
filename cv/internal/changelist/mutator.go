@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
@@ -31,6 +30,10 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 )
+
+// BatchOnCLUpdatedTaskClass is the Task Class ID of the BatchOnCLUpdatedTask,
+// which is enqueued during CL mutations.
+const BatchOnCLUpdatedTaskClass = "batch-notify-on-cl-updated"
 
 // Mutator modifies CLs and guarantees at least once notification of relevant CV
 // components.
@@ -58,7 +61,7 @@ type Mutator struct {
 func NewMutator(tqd *tq.Dispatcher, pm pmNotifier, rm rmNotifier) *Mutator {
 	m := &Mutator{tqd, pm, rm}
 	tqd.RegisterTaskClass(tq.TaskClass{
-		ID:           "batch-notify-on-cl-updated",
+		ID:           BatchOnCLUpdatedTaskClass,
 		Queue:        "notify-on-cl-updated",
 		Prototype:    &BatchOnCLUpdatedTask{},
 		Kind:         tq.Transactional,
@@ -329,7 +332,7 @@ func (clm *CLMutation) Finalize(ctx context.Context) (*CL, error) {
 	if err := datastore.Put(ctx, clm.CL); err != nil {
 		return nil, errors.Annotate(err, "failed to put CL %d", clm.id).Tag(transient.Tag).Err()
 	}
-	if err := clm.m.notifyOne(ctx, clm); err != nil {
+	if err := clm.m.dispatchBatchNotify(ctx, clm); err != nil {
 		return nil, err
 	}
 	return clm.CL, nil
@@ -360,6 +363,8 @@ func (clm *CLMutation) finalize(ctx context.Context) {
 	clm.CL.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 }
 
+// BeginBatch starts a batch of CL mutations within the same Datastore
+// transaction.
 func (m *Mutator) BeginBatch(ctx context.Context, project string, ids common.CLIDs) ([]*CLMutation, error) {
 	trans := datastore.CurrentTransaction(ctx)
 	if trans == nil {
@@ -382,6 +387,12 @@ func (m *Mutator) BeginBatch(ctx context.Context, project string, ids common.CLI
 	return muts, nil
 }
 
+// FinalizeBatch finishes a batch of CL mutations within the same Datastore
+// transaction.
+//
+// The given mutations can originate from either Begin or BeginBatch calls.
+// The only requirement is that they must all originate within the current
+// Datastore transaction.
 func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*CLMutation) ([]*CL, error) {
 	cls := make([]*CL, len(muts))
 	for i, mut := range muts {
@@ -391,7 +402,7 @@ func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*CLMutation) ([]*CL,
 	if err := datastore.Put(ctx, cls); err != nil {
 		return nil, errors.Annotate(err, "failed to put %d CLs", len(cls)).Tag(transient.Tag).Err()
 	}
-	if err := m.notifyMany(ctx, muts); err != nil {
+	if err := m.dispatchBatchNotify(ctx, muts...); err != nil {
 		return nil, err
 	}
 	return cls, nil
@@ -408,30 +419,7 @@ func (clm *CLMutation) projects() []string {
 	return []string{clm.project}
 }
 
-func (m *Mutator) notifyOne(ctx context.Context, clm *CLMutation) error {
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, p := range clm.projects() {
-		p := p
-		eg.Go(func() error {
-			return m.pm.NotifyCLsUpdated(ctx, p, &CLUpdatedEvents{
-				Events: []*CLUpdatedEvent{clm.CL.ToUpdatedEvent()},
-			})
-		})
-	}
-	// One CL should have very few Runs, so it's fine to process each within the
-	// transaction in parallel.
-	for _, r := range clm.CL.IncompleteRuns {
-		r := r
-		eg.Go(func() error { return m.rm.NotifyCLUpdated(ctx, r, clm.CL.ID, clm.CL.EVersion) })
-	}
-	return eg.Wait()
-}
-
-func (m *Mutator) notifyMany(ctx context.Context, muts []*CLMutation) error {
-	if len(muts) == 1 {
-		// Common path optimization.
-		return m.notifyOne(ctx, muts[0])
-	}
+func (m *Mutator) dispatchBatchNotify(ctx context.Context, muts ...*CLMutation) error {
 	batch := &BatchOnCLUpdatedTask{
 		// There are usually at most 2 Projects and 2 Runs being notified.
 		Projects: make(map[string]*CLUpdatedEvents, 2),
