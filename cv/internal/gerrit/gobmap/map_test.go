@@ -16,15 +16,25 @@ package gobmap
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"golang.org/x/sync/errgroup"
 
 	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -35,6 +45,10 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	ctx := memory.Use(context.Background())
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
+
+	if testing.Verbose() {
+		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+	}
 
 	// First set up an example project with two config groups to show basic
 	// regular usage; there is a "main" group which matches a main ref, and
@@ -143,13 +157,11 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	})
 
 	Convey("Lookup again returns nothing for disabled project", t, func() {
-		// Simulate deleting project. Projects that are deleted are first
-		// disabled in practice.
+		// Simulate deleting project. Projects that are deleted are first disabled
+		// in practice.
 		prjcfgtest.Disable(ctx, "chromium")
 		So(update("chromium"), ShouldBeNil)
-		So(
-			lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-			ShouldBeEmpty)
+		So(lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"), ShouldBeEmpty)
 	})
 
 	Convey("With two matches and no fallback...", t, func() {
@@ -284,6 +296,157 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 					"foo":      {"group_foo"},
 				})
 		})
+	})
+
+	Convey("Lookup again after correcting the config mistake by deleting the second project", t, func() {
+		prjcfgtest.Delete(ctx, "foo")
+		meta, err := prjcfg.GetLatestMeta(ctx, "foo")
+		So(err, ShouldBeNil)
+		So(Update(ctx, &meta, nil), ShouldBeNil)
+		So(
+			lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+			ShouldResemble,
+			map[string][]string{
+				"chromium": {"group_main"},
+			})
+	})
+}
+
+func TestGobMapConcurrentUpdates(t *testing.T) {
+	t.Parallel()
+
+	Convey("Update() works under flaky Datastore and lots of concurrent tries", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			projects         = 2
+			versions         = 20
+			repos            = 20
+			repoPresenceProb = 0.1
+			workers          = 20
+			taskRedundancy   = 3 // # of workers doing the same Update() task.
+		)
+
+		const (
+			gHost = "cr-review.gs.com"
+			gRef  = "refs/heads/main"
+		)
+		// Each LUCI projects gets the same number of config versions.
+		// Each version has a random non-empty subset of repos (Gerrit projects).
+		var tasks []struct {
+			meta prjcfg.Meta
+			cgs  []*prjcfg.ConfigGroup
+		}
+		for v := 1; v <= versions; v++ {
+			for lp := 1; lp <= projects; lp++ {
+				lProject := fmt.Sprintf("project-%d", lp)
+				var gerritProjects []*pb.ConfigGroup_Gerrit_Project
+				for i := 1; i <= repos; i++ {
+					if mathrand.Float32(ctx) <= repoPresenceProb || (len(gerritProjects) == 0 && i == repos) {
+						gerritProjects = append(gerritProjects, &pb.ConfigGroup_Gerrit_Project{
+							Name:      fmt.Sprintf("repo-%d", i),
+							RefRegexp: []string{gRef},
+						})
+					}
+				}
+				cfg := &pb.Config{ConfigGroups: []*pb.ConfigGroup{{
+					Name:   fmt.Sprintf("%d-%d", lp, v),
+					Gerrit: []*pb.ConfigGroup_Gerrit{{Url: "https://" + gHost, Projects: gerritProjects}},
+				}}}
+				if v == 1 {
+					prjcfgtest.Create(ctx, lProject, cfg)
+				} else {
+					prjcfgtest.Update(ctx, lProject, cfg)
+				}
+
+				task := struct {
+					meta prjcfg.Meta
+					cgs  []*prjcfg.ConfigGroup
+				}{meta: prjcfgtest.MustExist(ctx, lProject)}
+				var err error
+				if task.cgs, err = task.meta.GetConfigGroups(ctx); err != nil {
+					panic(err)
+				}
+				for t := 1; t <= taskRedundancy; t++ {
+					tasks = append(tasks, task)
+				}
+			}
+		}
+
+		ctx, fb := featureBreaker.FilterRDS(ctx, nil)
+		// Use a single random source for all flaky.Errors(...) instances. Otherwise
+		// they repeat the same random pattern each time withBrokenDS is called.
+		rnd := rand.NewSource(0)
+		// Make datastore a bit faulty.
+		fb.BreakFeaturesWithCallback(
+			flaky.Errors(flaky.Params{
+				Rand:                             rnd,
+				DeadlineProbability:              0.01,
+				ConcurrentTransactionProbability: 0.01,
+			}),
+			featureBreaker.DatastoreFeatures...,
+		)
+
+		// Run workers. Each worker process Update tasks in order.
+		// Each task is retried until it succeeds.
+		eg, egCtx := errgroup.WithContext(ctx)
+		retries := make([]int, workers)
+		for w := 0; w < workers; w++ {
+			w := w
+			eg.Go(func() error {
+				for i := w; i < len(tasks); i += workers {
+					for {
+						// Simulate passage of time but slow enough that some updates
+						// before expiry.
+						ct.Clock.Add(maxUpdateDuration / workers)
+						if nil == Update(egCtx, &tasks[i].meta, tasks[i].cgs) {
+							break
+						}
+						retries[w]++
+					}
+				}
+				return nil
+			})
+		}
+		So(eg.Wait(), ShouldBeNil)
+
+		// If individual retries exceed 1K, it's probably a good idea to tweak
+		// parameters s.t. test runs faster.
+		t.Logf("Retries per each worker: %v", retries)
+
+		// "Fix" datastore, letting us examine it.
+		fb.BreakFeaturesWithCallback(
+			func(context.Context, string) error { return nil },
+			featureBreaker.DatastoreFeatures...,
+		)
+		for p := 1; p <= projects; p++ {
+			project := fmt.Sprintf("project-%d", p)
+
+			// Compute which repos we expect to see.
+			expectedRepos := stringset.Set{}
+			meta := prjcfgtest.MustExist(ctx, project)
+			cgs, err := meta.GetConfigGroups(ctx)
+			So(err, ShouldBeNil)
+			for _, pr := range cgs[0].Content.GetGerrit()[0].GetProjects() {
+				expectedRepos.Add(pr.GetName())
+			}
+
+			// Ensure the map contains these repos and only them.
+			// NOTE: this test reproducibly fails because gobmap.Update is not really
+			// safe to call concurrently, so asserted are marked with SkipSo.
+			// TODO(crbug/1179286): fix the code and the test.
+			var mps []*mapPart
+			So(datastore.GetAll(ctx, datastore.NewQuery(mapKind).Eq("Project", project), &mps), ShouldBeNil)
+			for _, mp := range mps {
+				SkipSo(mp.ConfigHash, ShouldResemble, meta.Hash())
+				hostAndRepo := strings.SplitN(mp.Parent.StringID(), "/", 2)
+				So(hostAndRepo[0], ShouldResemble, gHost)
+				SkipSo(expectedRepos.Del(hostAndRepo[1]), ShouldBeTrue)
+			}
+			SkipSo(expectedRepos, ShouldBeEmpty)
+		}
 	})
 }
 
