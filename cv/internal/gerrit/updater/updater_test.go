@@ -678,6 +678,52 @@ func TestUpdateCLWorks(t *testing.T) {
 			So(cl2.Snapshot.GetGerrit().GetInfo(), ShouldResembleProto, ci)
 			So(pm.popNotifiedProjects(), ShouldResemble, []string{lProject})
 		})
+
+		FocusConvey("Handles New -> Abandon -> Restored transitions correctly", func() {
+			task.Change = 123
+
+			// Start with a NEW Gerrit change.
+			ci := gf.CI(
+				123, gf.Project(gRepo), gf.Ref("refs/heads/main"),
+				gf.Files("a.cpp", "c/b.py"),
+				gf.Desc("T.\n\nCq-Depend: 101"))
+			ciParent := gf.CI(122)
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci, ciParent))
+			ct.GFake.SetDependsOn(gHost, ci, ciParent)
+
+			So(u.Refresh(ctx, task), ShouldBeNil)
+			v1 := getCL(ctx, gHost, 123)
+			So(v1.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+			So(v1.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "c/b.py"})
+			So(v1.Snapshot.GetGerrit().GetSoftDeps(), ShouldResembleProto,
+				[]*changelist.GerritSoftDep{{Change: 101, Host: gHost}})
+			So(v1.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto,
+				[]*changelist.GerritGitDep{{Change: 122, Immediate: true}})
+
+			// Abandon the Gerrit change.
+			ct.Clock.Add(time.Minute)
+			ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
+				c.Info.Status = gerritpb.ChangeStatus_ABANDONED
+				c.Info.Updated = timestamppb.New(ct.Clock.Now())
+			})
+			So(u.Refresh(ctx, task), ShouldBeNil)
+			v2 := getCL(ctx, gHost, 123)
+			So(v2.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_ABANDONED)
+			// Files and deps don't have to be set as CV doesn't work with abandoned such CLs.
+
+			// Restore the Gerrit change.
+			ct.Clock.Add(time.Minute)
+			ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
+				c.Info.Status = gerritpb.ChangeStatus_NEW
+				c.Info.Updated = timestamppb.New(ct.Clock.Now())
+			})
+			So(u.Refresh(ctx, task), ShouldBeNil)
+			v3 := getCL(ctx, gHost, 123)
+			So(v3.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+			So(v3.Snapshot.GetGerrit().GetFiles(), ShouldResemble, v1.Snapshot.GetGerrit().GetFiles())
+			So(v3.Snapshot.GetGerrit().GetSoftDeps(), ShouldResembleProto, v1.Snapshot.GetGerrit().GetSoftDeps())
+			So(v3.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, v1.Snapshot.GetGerrit().GetGitDeps())
+		})
 	})
 }
 
