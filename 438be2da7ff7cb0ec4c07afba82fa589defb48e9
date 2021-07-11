@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "317e1f67_e2fd0a48",
+        "filename": "grpc/cmd/cproto/main_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-07-11T01:35:16Z",
+      "side": 0,
+      "message": "I tried to stage a temp go module here, but the big problem is that such module needs to refer back to go.chromium.org/luci. I tried to use \"replace ...\" directive to point it back to the luci-go module on disk, but is still refuses to work correctly without populated \"go.sum\". Populating go.sum is scary and may be potentially slow.\n\nIn the end, I decided just to delete all this stuff... This test was just a constant source of annoyance when rolling protoc or protoc-gen-go (we always had to regenerate golden files).\n\nThe real test is running \"go generate ./...\" in the repo and observing the diff doesn\u0027t change much...",
+      "range": {
+        "startLine": 60,
+        "startChar": 35,
+        "endLine": 60,
+        "endChar": 57
+      },
+      "revId": "438be2da7ff7cb0ec4c07afba82fa589defb48e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
