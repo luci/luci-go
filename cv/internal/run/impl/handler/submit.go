@@ -808,12 +808,12 @@ func classifyErr(ctx context.Context, err error) *eventpb.SubmissionCompleted {
 			Result: eventpb.SubmissionResult_SUCCEEDED,
 		}
 	case transient.Tag.In(err):
-		errors.Log(ctx, err)
+		logging.Warningf(ctx, "Submission ended with FAILED_TRANSIENT: %s", err)
 		return &eventpb.SubmissionCompleted{
 			Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
 		}
 	default:
-		errors.Log(ctx, err)
+		logging.Warningf(ctx, "Submission ended with FAILED_PERMANENT: %s", err)
 		return &eventpb.SubmissionCompleted{
 			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 		}
