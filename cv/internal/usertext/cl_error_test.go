@@ -101,6 +101,21 @@ func TestFormatCLError(t *testing.T) {
 			`))
 				So(s, ShouldContainSubstring, `current CL target ref is "refs/heads/main"`)
 			})
+			Convey("Watched by many LUCI projects", func() {
+				reason.Kind = &changelist.CLError_WatchedByManyProjects_{
+					WatchedByManyProjects: &changelist.CLError_WatchedByManyProjects{
+						Projects: []string{"first", "second"},
+					},
+				}
+				s := mustFormat()
+				So(s, ShouldContainSubstring, text.Doc(`
+				it is watched by more than 1 LUCI project:
+				  * first
+				  * second
+
+				Please
+			`))
+			})
 			Convey("Invalid deps", func() {
 				// Save a CL snapshot for each dep.
 				deps := make(map[int]*changelist.Dep, 3)

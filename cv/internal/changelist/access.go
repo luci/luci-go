@@ -71,6 +71,22 @@ func (cl *CL) AccessKindFromCodeReviewSite(ctx context.Context, luciProject stri
 	return AccessGranted
 }
 
+// IsWatchedByThisAndOtherProjects checks if CL is watched by several projects,
+// one of which is given.
+// If so, returns the config applicable to the given project and true.
+// Else, returns nil, false.
+func (cl *CL) IsWatchedByThisAndOtherProjects(thisProject string) (*ApplicableConfig_Project, bool) {
+	if len(cl.ApplicableConfig.GetProjects()) <= 1 {
+		return nil, false
+	}
+	for _, p := range cl.ApplicableConfig.GetProjects() {
+		if p.GetName() == thisProject {
+			return p, true
+		}
+	}
+	return nil, false
+}
+
 // AccessKindWithReason returns AccessKind of a CL and a reason for it.
 func (cl *CL) AccessKindWithReason(ctx context.Context, luciProject string) (AccessKind, string) {
 	switch projects := cl.ApplicableConfig.GetProjects(); {
