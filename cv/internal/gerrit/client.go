@@ -73,5 +73,5 @@ func NewFactory(ctx context.Context) (ClientFactory, error) {
 	if err != nil {
 		return nil, err
 	}
-	return CachingFactory(64, InstrumentedFactory(f.makeClient)), nil
+	return CachingFactory(64, InstrumentedFactory(TimeLimitedFactory(f.makeClient))), nil
 }
