@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe3e5e9e_d1566fb1",
+        "filename": "grpc/cmd/cproto/discovery.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-07-12T19:54:03Z",
+      "side": 1,
+      "message": "I wonder if it\u0027s worth putting a version number in the generated file...",
+      "revId": "aa93ad871d651f495f95ad6c684113ce0df3a404",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
