@@ -73,6 +73,7 @@ func (f *Fake) Factory() gerrit.ClientFactory {
 			}
 			return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
 		}
+		f.factory = gerrit.TimeLimitedFactory(f.factory)
 		f.factory = gerrit.CachingFactory(5, f.factory)
 	}
 	f.m.Unlock()
