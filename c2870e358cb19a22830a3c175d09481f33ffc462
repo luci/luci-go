@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "14558f32_cd0da482",
+        "filename": "cv/internal/changelist/access.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-12T22:13:48Z",
+      "side": 1,
+      "message": "several",
+      "range": {
+        "startLine": 74,
+        "startChar": 62,
+        "endLine": 74,
+        "endChar": 69
+      },
+      "revId": "c2870e358cb19a22830a3c175d09481f33ffc462",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9dcc3cb8_8b76d558",
+        "filename": "cv/internal/prjmanager/state/evalcl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-12T22:13:48Z",
+      "side": 1,
+      "message": "nit nit: maybe not even double, could be triple :D So maybe rename it to watchedByMultiple?",
+      "range": {
+        "startLine": 217,
+        "startChar": 6,
+        "endLine": 217,
+        "endChar": 19
+      },
+      "revId": "c2870e358cb19a22830a3c175d09481f33ffc462",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b01ca90a_d25bd55d",
+        "filename": "cv/internal/usertext/cl_error.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-12T22:13:48Z",
+      "side": 1,
+      "message": "projects",
+      "range": {
+        "startLine": 109,
+        "startChar": 33,
+        "endLine": 109,
+        "endChar": 46
+      },
+      "revId": "c2870e358cb19a22830a3c175d09481f33ffc462",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
