@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -59,4 +60,8 @@ func recordPickupLatency(ctx context.Context, r *run.Run, cg *prjcfg.ConfigGroup
 		delay -= d.AsDuration()
 	}
 	metricPickupLatencyAdjustedS.Add(ctx, delay.Seconds(), r.ID.LUCIProject())
+
+	if delay >= 1*time.Minute {
+		logging.Warningf(ctx, "Too large adjusted pickup delay: %s", delay)
+	}
 }
