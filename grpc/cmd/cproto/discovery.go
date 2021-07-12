@@ -26,10 +26,9 @@ import (
 	"strings"
 	"text/template"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 )
 
 const (
@@ -76,27 +75,11 @@ func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 // genDiscoveryFile generates a Go discovery file that calls
 // discovery.RegisterDescriptorSetCompressed(serviceNames, compressedDescBytes)
 // in an init function.
-func genDiscoveryFile(target string, descFile string, protos []string) error {
-	descBytes, err := ioutil.ReadFile(descFile)
-	if err != nil {
-		return err
-	}
-
-	var desc descriptorpb.FileDescriptorSet
-	if err := proto.Unmarshal(descBytes, &desc); err != nil {
-		return fmt.Errorf("cannot parse generated descriptor file: %s", err)
-	}
-
-	protoSet := stringset.NewFromSlice(protos...)
-
+func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorProto, raw []byte) error {
 	var serviceNames []string
-	for _, f := range desc.File {
-		// Discover services only in *.proto files we generated code for, not in
-		// their dependencies.
-		if protoSet.Has(f.GetName()) {
-			for _, s := range f.Service {
-				serviceNames = append(serviceNames, fmt.Sprintf("%s.%s", f.GetPackage(), s.GetName()))
-			}
+	for _, f := range desc {
+		for _, s := range f.Service {
+			serviceNames = append(serviceNames, fmt.Sprintf("%s.%s", f.GetPackage(), s.GetName()))
 		}
 	}
 	if len(serviceNames) == 0 {
@@ -104,39 +87,37 @@ func genDiscoveryFile(target string, descFile string, protos []string) error {
 		return nil
 	}
 
-	compressedDescBytes, err := compress(descBytes)
+	// Get the package name for "package ..." statement: it may be different from
+	// the directory name. Note that pkg.ImportPath almost always end up "." here
+	// when running in Go Modules mode, so we still need to keep `goPkg` argument.
+	pkg, err := build.ImportDir(filepath.Dir(output), 0)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to figure out Go package name for %q", output).Err()
 	}
 
-	inDiscoveryPackage, err := isInPackage(target, discoveryPackagePath)
+	compressedDescBytes, err := compress(raw)
 	if err != nil {
-		return err
-	}
-
-	goPkg, err := build.ImportDir(filepath.Dir(target), 0)
-	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to compress the descriptor set proto").Err()
 	}
 
 	var buf bytes.Buffer
 	err = discoveryTmpl.Execute(&buf, map[string]interface{}{
-		"GoPkg":           goPkg.Name,
-		"ImportDiscovery": !inDiscoveryPackage,
+		"GoPkg":           pkg.Name,
+		"ImportDiscovery": goPkg != discoveryPackagePath,
 		"ServiceNames":    serviceNames,
 		"CompressedBytes": asByteArray(compressedDescBytes),
 	})
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to execute discovery file template").Err()
 	}
 
 	src := buf.Bytes()
 	formatted, err := gofmt(src)
 	if err != nil {
-		os.Stdout.Write(src)
-		return err
+		return errors.Annotate(err, "failed to gofmt the generated discovery file").Err()
 	}
-	return ioutil.WriteFile(target, formatted, 0666)
+
+	return ioutil.WriteFile(output, formatted, 0666)
 }
 
 // asByteArray converts blob to a valid []byte Go literal.
