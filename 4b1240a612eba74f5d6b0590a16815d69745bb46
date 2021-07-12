@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84c8a5ec_c5bbfcdb",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:41:19Z",
+      "side": 1,
+      "message": "btw, I forgot to make an honest disclosure: \n\nAfter coding lease version you see here, I thought \"hey, I can do better -- I can make it truly correct w/o changing existing gobmap structure\". So, I coded it -- took 150 LOC. Then I thought -- well, how about a test to prove my idea is great. So, I quickly wrote this test. Annnnnnndddddd .... it failed anyway.\n\nSo, I ate my pride and switched back to lease but kept the test as a reminder to smart ass me in the future to test my ideas, since most of them are garbage 😄",
+      "revId": "4b1240a612eba74f5d6b0590a16815d69745bb46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
