@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "630df7a5_080fc3e4",
+        "filename": "cv/internal/gerrit/mirror.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:51:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41e9d79a_09d08871",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "e9318965b912e404203f963b4bb915b236e23a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "06e41464_8b52683e",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2046e05_bb02ef93",
+        "filename": "cv/internal/gerrit/mirror.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:51:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06e41464_8b52683e",
+      "range": {
+        "startLine": 58,
+        "startChar": 11,
+        "endLine": 58,
+        "endChar": 27
+      },
+      "revId": "e9318965b912e404203f963b4bb915b236e23a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c2ebf585_6339a521",
@@ -60,6 +108,24 @@
       "writtenOn": "2021-07-12T21:37:37Z",
       "side": 1,
       "message": "why do we need a mutex here, I don\u0027t see multiple goroutines are using the same iterator?",
+      "revId": "e9318965b912e404203f963b4bb915b236e23a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f108a8f7_3fd26003",
+        "filename": "cv/internal/gerrit/mirror.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:51:49Z",
+      "side": 1,
+      "message": "glad you\u0027ve asked 😊\nI actually first made it without. But then I thought that in general grpc.CallOption should be goroutine safe, you just in case something down the line changes them.\nOne thing I can think of is change in gerrit.NewRestClient() to somehow send multiple RPCs concurrently instead of 1 (not saying it\u0027s a good thing, but it may happen)",
+      "parentUuid": "c2ebf585_6339a521",
       "revId": "e9318965b912e404203f963b4bb915b236e23a24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
