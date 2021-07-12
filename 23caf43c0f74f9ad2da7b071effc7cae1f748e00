@@ -110,6 +110,30 @@
       },
       "revId": "23caf43c0f74f9ad2da7b071effc7cae1f748e00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d15f1190_ad7b1060",
+        "filename": "cv/internal/gerrit/timeout.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:54:37Z",
+      "side": 1,
+      "message": "slightly rephrased to be clearer.",
+      "parentUuid": "d19a1c59_9e818d5c",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 14
+      },
+      "revId": "23caf43c0f74f9ad2da7b071effc7cae1f748e00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
