@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d76b43f6_2f0f8259",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:37:47Z",
+      "side": 1,
+      "message": "No, I didn\u0027t. Why? To force a retry if update is progress? My fear it that this will make things worse in practice w/o really guaranteeing correctness anyway.",
+      "parentUuid": "7394eb27_efc6d308",
+      "revId": "27d5075327c658c50d3c4d82985677a7d4e9f220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6e28d0ca_cb94f22f",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-07-12T18:41:38Z",
       "side": 1,
       "message": "nit nit: I think we can use the term repo(s) here and in all the comments later to disambiguate with the LUCI Project which we sometimes just refer as \"project\".",
+      "range": {
+        "startLine": 79,
+        "startChar": 32,
+        "endLine": 79,
+        "endChar": 40
+      },
+      "revId": "27d5075327c658c50d3c4d82985677a7d4e9f220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3b97482_0b47d434",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:37:47Z",
+      "side": 1,
+      "message": "Good idea. Done. PTAL!",
+      "parentUuid": "6e28d0ca_cb94f22f",
       "range": {
         "startLine": 79,
         "startChar": 32,
