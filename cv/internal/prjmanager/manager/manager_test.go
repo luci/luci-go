@@ -229,14 +229,6 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), clMutator)
 		pm := New(pmNotifier, &runNotifier, clMutator, ct.GFake.Factory(), clUpdater)
 
-		refreshCLAndNotifyPM := func(c int64) {
-			So(clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
-				LuciProject: lProject,
-				Host:        "host",
-				Change:      c,
-			}), ShouldBeNil) // this notifies PM once.
-		}
-
 		cfg := singleRepoConfig(gHost, gRepo)
 		cfg.ConfigGroups[0].CombineCls = &cfgpb.CombineCLs{
 			// Postpone creation of Runs, which isn't important in this test.
@@ -267,33 +259,44 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		}
 		So(datastore.Put(ctx, cl43), ShouldBeNil)
 
-		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), gf.CI(
-			44, gf.Project(gRepo), gf.Ref("refs/heads/main"),
-			gf.CQ(+2, ct.Clock.Now(), gf.U("user-1")))))
-		refreshCLAndNotifyPM(44)
-		cl44, err := changelist.MustGobID(gHost, 44).Get(ctx)
-		So(err, ShouldBeNil)
+		cl44 := changelist.MustGobID(gHost, 44).MustCreateIfNotExists(ctx)
+		cl44.Snapshot = &changelist.Snapshot{
+			ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
+			LuciProject:           lProject,
+			MinEquivalentPatchset: 1,
+			Patchset:              1,
+			Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+				Info: gf.CI(
+					44, gf.Project(gRepo), gf.Ref("refs/heads/main"),
+					gf.CQ(+2, ct.Clock.Now(), gf.U("user-1"))),
+			}},
+		}
+		cl44.ApplicableConfig = &changelist.ApplicableConfig{
+			Projects: []*changelist.ApplicableConfig_Project{
+				{Name: lProject, ConfigGroupIds: []string{string(meta.ConfigGroupIDs[0])}},
+			},
+		}
+		So(datastore.Put(ctx, cl44), ShouldBeNil)
 
 		// This event is the only event notifying PM about CL#43.
 		So(pmNotifier.NotifyCLsUpdated(ctx, lProject, changelist.ToUpdatedEvents(cl43, cl44)), ShouldBeNil)
 
-		const n = 10
+		const n = 20
 		for i := 0; i < n; i++ {
 			So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(pmNotifier.Poke(ctx, lProject), ShouldBeNil)
-
-			ct.Clock.Add(time.Second)
-			ct.GFake.MutateChange(gHost, 44, func(c *gf.Change) { gf.Updated(ct.Clock.Now())(c.Info) })
-			refreshCLAndNotifyPM(44)
+			// Simulate updating a CL.
+			cl44.EVersion++
+			So(datastore.Put(ctx, cl44), ShouldBeNil)
+			So(pmNotifier.NotifyCLsUpdated(ctx, lProject, changelist.ToUpdatedEvents(cl44)), ShouldBeNil)
 		}
-		// Get the latest cl44 from Datastore.
-		cl44, err = changelist.MustGobID(gHost, 44).Get(ctx)
-		So(err, ShouldBeNil)
 
 		events, err := eventbox.List(ctx, recipient)
 		So(err, ShouldBeNil)
-		// 1 refreshCLAndNotifyPM(44), 1 from NotifyCLsUpdated, 3*n from loop.
-		So(events, ShouldHaveLength, 3*n+2)
+		// Expect the following events:
+		// +1 from NotifyCLsUpdated on cl43 and cl44,
+		// +3*n from loop.
+		So(events, ShouldHaveLength, 3*n+1)
 
 		// Run `w` concurrent PMs.
 		const w = 20

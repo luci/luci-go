@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -78,6 +79,7 @@ func TestEndRun(t *testing.T) {
 			EVersion:       4,
 			UpdateTime:     ct.Clock.Now().UTC(),
 		})
+		ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
 		pmtest.AssertReceivedRunFinished(ctx, rid)
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
 		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))

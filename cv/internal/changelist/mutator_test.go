@@ -47,11 +47,6 @@ func TestMutatorSingleCL(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		// Truncate to seconds to reduce noise in diffs of proto timestamps.
-		// use Seconds with lots of 0s at the end for easy grasp of assertion
-		// failures since they are done on protos.
-		epoch := (&timestamppb.Timestamp{Seconds: 14500000000}).AsTime()
-		ct.Clock.Set(epoch)
 
 		const lProject = "infra"
 		const run1 = lProject + "/1"
@@ -63,6 +58,17 @@ func TestMutatorSingleCL(t *testing.T) {
 		pm := pmMock{}
 		rm := rmMock{}
 		m := NewMutator(ct.TQDispatcher, &pm, &rm)
+
+		execBatchOnCLUpdatedTask := func() {
+			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+			So(ct.TQ.Tasks()[0].Class, ShouldResemble, BatchOnCLUpdatedTaskClass)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchOnCLUpdatedTaskClass))
+		}
+		expectNoNotifications := func() {
+			So(ct.TQ.Tasks(), ShouldHaveLength, 0)
+			So(pm.byProject, ShouldBeEmpty)
+			So(rm.byRun, ShouldBeEmpty)
+		}
 
 		Convey("Upsert method", func() {
 			Convey("creates", func() {
@@ -77,6 +83,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
 				So(cl.Snapshot, ShouldResembleProto, s)
 
+				execBatchOnCLUpdatedTask()
 				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int{
 					lProject: {cl.ID: cl.EVersion},
 				})
@@ -91,8 +98,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(cl, ShouldBeNil)
-				So(pm.byProject, ShouldBeEmpty)
-				So(rm.byRun, ShouldBeEmpty)
+				expectNoNotifications()
 			})
 
 			Convey("updates", func() {
@@ -121,6 +127,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
 				So(cl.Snapshot, ShouldResembleProto, s2)
 
+				execBatchOnCLUpdatedTask()
 				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int{
 					lProject: {cl.ID: cl.EVersion},
 				})
@@ -177,6 +184,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
 				So(cl.Snapshot, ShouldResembleProto, s2)
 
+				execBatchOnCLUpdatedTask()
 				So(pm.byProject[lProject][cl.ID], ShouldEqual, cl.EVersion)
 				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int{
 					"prior-project": {cl.ID: cl.EVersion},
@@ -199,8 +207,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.EVersion, ShouldEqual, priorCL.EVersion)
 				So(cl.UpdateTime, ShouldEqual, priorCL.UpdateTime)
 
-				So(pm.byProject, ShouldBeEmpty)
-				So(rm.byRun, ShouldBeEmpty)
+				expectNoNotifications()
 			})
 
 			Convey("propagates error without wrapping", func() {
@@ -273,7 +280,7 @@ func TestMutatorBatch(t *testing.T) {
 		const run3 = lProject + "/3"
 		const gHost = "x-review.example.com"
 		const gChangeFirst = 100000
-		const N = 20
+		const N = 12
 
 		pm := pmMock{}
 		rm := rmMock{}
@@ -401,6 +408,7 @@ func TestMutatorBatch(t *testing.T) {
 			})
 
 			Convey("BeginBatch + manual finalization", func() {
+				// This is inefficient and really shouldn't be done in production.
 				var resCLs []*CL
 				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					resCLs = make([]*CL, len(clids)) // reset in case of retries
@@ -419,6 +427,13 @@ func TestMutatorBatch(t *testing.T) {
 					return eg.Wait()
 				}, nil)
 				So(transErr, ShouldBeNil)
+
+				tasks := ct.TQ.Tasks()
+				So(tasks, ShouldHaveLength, N)
+				for _, t := range tasks {
+					So(t.Class, ShouldResemble, BatchOnCLUpdatedTaskClass)
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchOnCLUpdatedTaskClass))
+				}
 
 				verify(resCLs)
 			})
