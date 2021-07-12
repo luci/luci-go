@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "749f12f1_49c85e12",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 593,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-12T20:35:30Z",
+      "side": 1,
+      "message": "nit: Can we do nil check?",
+      "range": {
+        "startLine": 593,
+        "startChar": 21,
+        "endLine": 593,
+        "endChar": 53
+      },
+      "revId": "4bfd2efabeafbfc83284052fee5debdce9fca6d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
