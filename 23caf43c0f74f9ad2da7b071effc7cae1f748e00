@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2766376_a55e5bc6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-12T20:19:49Z",
+      "side": 1,
+      "message": "lgtm % the question from Scott",
+      "revId": "23caf43c0f74f9ad2da7b071effc7cae1f748e00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0c3e84fd_951c4623",
@@ -19,6 +36,29 @@
         "startChar": 39,
         "endLine": 63,
         "endChar": 53
+      },
+      "revId": "23caf43c0f74f9ad2da7b071effc7cae1f748e00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6012f6f2_0c93fe0d",
+        "filename": "cv/internal/gerrit/timeout.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-12T20:19:49Z",
+      "side": 1,
+      "message": "are you talking about the case where submitting the top CL in a CL stack?",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 14
       },
       "revId": "23caf43c0f74f9ad2da7b071effc7cae1f748e00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
