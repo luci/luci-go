@@ -57,6 +57,11 @@ message PurgeCLTask {
 
   repeated cv.internal.changelist.CLError reasons = 5;
 
-  // TODO(crbug/1227544): Pass watching ConfigGroups so that votes on the
-  // additional labels can be removed as well.
+  message WatchedConfigGroups {
+    // LUCI project. It's usually the same as PurgeCLTask.luci_project,
+    // except when there are more than 1 LUCI project watching the same CL.
+    string luci_project = 1;
+    repeated string config_groups = 2;
+  }
+  repeated WatchedConfigGroups config_groups = 6;
 }

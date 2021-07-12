@@ -341,10 +341,24 @@ func (s *State) populatePurgeCLTasks(ctx context.Context, ts []*prjpb.PurgeCLTas
 	for _, t := range ts {
 		id := t.GetPurgingCl().GetClid()
 		pcl := s.PB.GetPcls()[s.pclIndex[common.CLID(id)]]
+
 		t.Trigger = pcl.GetTrigger()
 		t.LuciProject = s.PB.GetLuciProject()
 		t.PurgingCl.Deadline = deadline
 		t.PurgingCl.OperationId = fmt.Sprintf("%d-%d", opInt, id)
+
+		// TODO(crbug/1227796): support purging CL watched by this and another
+		// project.
+		t.ConfigGroups = []*prjpb.PurgeCLTask_WatchedConfigGroups{
+			{
+				LuciProject:  s.PB.GetLuciProject(),
+				ConfigGroups: make([]string, len(pcl.GetConfigGroupIndexes())),
+			},
+		}
+		for i, idx := range pcl.GetConfigGroupIndexes() {
+			id := prjcfg.MakeConfigGroupID(s.PB.GetConfigHash(), s.PB.ConfigGroupNames[idx])
+			t.ConfigGroups[0].ConfigGroups[i] = string(id)
+		}
 	}
 }
 
