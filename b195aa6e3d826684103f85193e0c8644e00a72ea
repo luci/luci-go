@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aa01ec63_2f52d579",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-07-12T20:32:03Z",
+      "side": 1,
+      "message": "nit: merge these functions?",
+      "range": {
+        "startLine": 123,
+        "startChar": 0,
+        "endLine": 139,
+        "endChar": 1
+      },
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0c17f08_85a0e25d",
+        "filename": "resultdb/proto/bq/test_result_row.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-07-12T20:32:03Z",
+      "side": 1,
+      "message": "Do we have a use case of querying failure reasons in BQ?",
+      "range": {
+        "startLine": 104,
+        "startChar": 33,
+        "endLine": 104,
+        "endChar": 47
+      },
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b3a921f_bdcbfe68",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-07-12T20:32:03Z",
+      "side": 1,
+      "message": "IIUC, stack trace will be added as a separate field to this proto in the future, is that right?",
+      "range": {
+        "startLine": 24,
+        "startChar": 65,
+        "endLine": 24,
+        "endChar": 77
+      },
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eeff0032_195224e2",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-07-12T20:32:03Z",
+      "side": 1,
+      "message": "nit:message?",
+      "range": {
+        "startLine": 35,
+        "startChar": 21,
+        "endLine": 35,
+        "endChar": 28
+      },
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "186b6aba_07c6369b",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-07-12T20:32:03Z",
+      "side": 1,
+      "message": "nit: add a new line",
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
