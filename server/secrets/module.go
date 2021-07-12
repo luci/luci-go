@@ -22,6 +22,7 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 )
@@ -107,7 +108,12 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to initialize the token source").Err()
 	}
-	client, err := secretmanager.NewClient(ctx, option.WithTokenSource(ts))
+	client, err := secretmanager.NewClient(
+		ctx,
+		option.WithTokenSource(ts),
+		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+	)
+
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to initialize the Secret Manager client").Err()
 	}
