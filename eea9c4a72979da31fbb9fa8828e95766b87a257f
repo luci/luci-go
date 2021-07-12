@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "364abc13_cf25376b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:46:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6447eeb7_74bca244",
+      "range": {
+        "startLine": 13,
+        "startChar": 34,
+        "endLine": 13,
+        "endChar": 35
+      },
+      "revId": "eea9c4a72979da31fbb9fa8828e95766b87a257f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "456b3e36_92309ea0",
         "filename": "/COMMIT_MSG",
         "patchSetId": 4
@@ -37,6 +61,30 @@
       "writtenOn": "2021-07-12T20:54:06Z",
       "side": 1,
       "message": "curious why? I mean why would tq care about what the real clock is if times are all mocked out?",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 18,
+        "endChar": 31
+      },
+      "revId": "eea9c4a72979da31fbb9fa8828e95766b87a257f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a235cbf_5783d722",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-12T21:46:37Z",
+      "side": 1,
+      "message": "tq doesn\u0027t care about the real clock.\n\nHowever, ctx.Deadline() can\u0027t be extended!\nSo, if cvtesting.Test.SetUp() put deadline at say 2021-07-11\nbut later testclock is moved to say 2022-mm-dd,\nthen ctx.Deadline() is still 2021-07-11!\n\nThus, when TQ checks whether it has time to enqueue task after the transaction,\nTQ decides it can\u0027t -- sweeper should do it instead.\n\nAnd this stuff is actually non-trivial to debug -- i had to add logging.Debugf(ctx, \"WTF\"...) statements inside TQ to figure it out, and this happened to 3 times since  December...",
+      "parentUuid": "456b3e36_92309ea0",
       "range": {
         "startLine": 17,
         "startChar": 2,
