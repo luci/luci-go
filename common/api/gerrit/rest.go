@@ -75,11 +75,11 @@ func NewRESTClient(httpClient *http.Client, host string, auth bool) (gerritpb.Ge
 	if strings.Contains(host, "/") {
 		return nil, errors.Reason("invalid host %q", host).Err()
 	}
-	baseURL := "https://" + host
-	if auth {
-		baseURL += "/a"
-	}
-	return &client{hClient: httpClient, baseURL: baseURL}, nil
+	return &client{
+		hClient: httpClient,
+		auth:    auth,
+		host:    host,
+	}, nil
 }
 
 // Implementation.
@@ -90,9 +90,11 @@ var jsonPrefix = []byte(")]}'")
 // client implements gerritpb.GerritClient.
 type client struct {
 	hClient *http.Client
-	// baseURL is the base URL for all API requests,
-	// for example "https://chromium-review.googlesource.com/a".
-	baseURL string
+
+	auth bool
+	host string
+	// testBaseURL overrides auth & host args in tests.
+	testBaseURL string
 }
 
 func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
@@ -476,12 +478,15 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 // callRaw returns HTTP status code and gRPC error.
 // If error happens before HTTP status code was determined, HTTP status code
 // will be -1.
-func (c *client) callRaw(ctx context.Context, method, urlPath string, params url.Values, headers map[string]string, data []byte, expectedHTTPCodes ...int) (int, []byte, error) {
-	url := c.baseURL + urlPath
-	if len(params) > 0 {
-		url += "?" + params.Encode()
-	}
-
+func (c *client) callRaw(
+	ctx context.Context,
+	method, urlPath string,
+	params url.Values,
+	headers map[string]string,
+	data []byte,
+	expectedHTTPCodes ...int,
+) (int, []byte, error) {
+	url := c.buildURL(urlPath, params)
 	var requestBody io.Reader
 	if data != nil {
 		requestBody = bytes.NewBuffer(data)
@@ -536,6 +541,27 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 			res.Header, body)
 		return res.StatusCode, body, status.Errorf(codes.Internal, "unexpected HTTP %d from Gerrit", res.StatusCode)
 	}
+}
+
+func (c *client) buildURL(path string, params url.Values) string {
+	var url strings.Builder
+
+	if c.testBaseURL != "" {
+		url.WriteString(c.testBaseURL)
+	} else {
+		url.WriteString("https://")
+		url.WriteString(c.host)
+		if c.auth {
+			url.WriteString("/a")
+		}
+	}
+
+	url.WriteString(path)
+	if len(params) > 0 {
+		url.WriteRune('?')
+		url.WriteString(params.Encode())
+	}
+	return url.String()
 }
 
 type validatable interface {

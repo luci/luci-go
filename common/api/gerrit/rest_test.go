@@ -35,6 +35,26 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestBuildURL(t *testing.T) {
+	t.Parallel()
+
+	Convey("buildURL works correctly", t, func() {
+		cPB, err := NewRESTClient(nil, "x-review.googlesource.com", true)
+		So(err, ShouldBeNil)
+		c, ok := cPB.(*client)
+		So(ok, ShouldBeTrue)
+
+		So(c.buildURL("/changes/project~123", nil), ShouldResemble,
+			"https://x-review.googlesource.com/a/changes/project~123")
+		So(c.buildURL("/changes/project~123", url.Values{"o": []string{"ONE", "TWO"}}), ShouldResemble,
+			"https://x-review.googlesource.com/a/changes/project~123?o=ONE&o=TWO")
+
+		c.auth = false
+		So(c.buildURL("/path", nil), ShouldResemble,
+			"https://x-review.googlesource.com/path")
+	})
+}
+
 func TestListChanges(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -1315,7 +1335,7 @@ func TestGerritError(t *testing.T) {
 func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gerritpb.GerritClient) {
 	// TODO(tandrii): rename this func once newMockClient name is no longer used in the same package.
 	srv := httptest.NewServer(http.HandlerFunc(handler))
-	return srv, &client{baseURL: srv.URL}
+	return srv, &client{testBaseURL: srv.URL}
 }
 
 // parseTime parses a RFC3339Nano formatted timestamp string.
