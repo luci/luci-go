@@ -49,6 +49,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -150,7 +151,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	t.PMNotifier = prjmanager.NewNotifier(t.TQDispatcher)
 	t.RunNotifier = run.NewNotifier(t.TQDispatcher)
 	clMutator := changelist.NewMutator(t.TQDispatcher, t.PMNotifier, t.RunNotifier)
-	clUpdater := updater.New(t.TQDispatcher, gFactory, clMutator)
+	clUpdater := updater.New(t.TQDispatcher, gFactory, &gerrit.MirrorIteratorFactory{}, clMutator)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
 	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clMutator, clUpdater, gFactory, t.TreeFake.Client(), t.BQFake)
 

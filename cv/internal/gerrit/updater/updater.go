@@ -60,13 +60,8 @@ type Updater struct {
 }
 
 // New creates a new Updater.
-func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, m *changelist.Mutator) *Updater {
-	u := &Updater{
-		g,
-		nil, // TODO(tandrii): use non-default gMirrorFactory in prod.
-		m,
-		tqd,
-	}
+func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, gm *gerrit.MirrorIteratorFactory, m *changelist.Mutator) *Updater {
+	u := &Updater{g, gm, m, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClass,
 		Prototype:    &RefreshGerritCL{},

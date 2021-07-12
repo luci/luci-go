@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 
@@ -61,7 +62,7 @@ func TestSchedule(t *testing.T) {
 		// messages.
 		const scheduleTimeIncrement = time.Nanosecond
 
-		u := New(ct.TQDispatcher, nil, nil)
+		u := New(ct.TQDispatcher, nil, nil, nil)
 
 		do := func(t *RefreshGerritCL) []proto.Message {
 			So(u.Schedule(ctx, t), ShouldBeNil)
@@ -353,7 +354,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		}
 		pm := pmMock{}
 		rm := rmMock{}
-		u := New(ct.TQDispatcher, ct.GFake.Factory(), changelist.NewMutator(ct.TQDispatcher, &pm, &rm))
+		u := New(ct.TQDispatcher, ct.GFake.Factory(), &gerrit.MirrorIteratorFactory{}, changelist.NewMutator(ct.TQDispatcher, &pm, &rm))
 
 		Convey("No access or permission denied", func() {
 			Convey("after getting error from Gerrit", func() {

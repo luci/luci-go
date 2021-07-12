@@ -67,7 +67,7 @@ func TestRunManager(t *testing.T) {
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier)
-		u := updater.New(ct.TQDispatcher, ct.GFake.Factory(), clMutator)
+		u := updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, clMutator)
 		_ = New(notifier, pm, clMutator, u, ct.GFake.Factory(), ct.TreeFake.Client(), ct.BQFake)
 
 		// sorted by the order of execution.
@@ -313,7 +313,7 @@ func TestRunManager(t *testing.T) {
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier)
-		u := updater.New(ct.TQDispatcher, ct.GFake.Factory(), clMutator)
+		u := updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, clMutator)
 		_ = New(notifier, pm, clMutator, u, ct.GFake.Factory(), ct.TreeFake.Client(), ct.BQFake)
 
 		Convey("Recursive", func() {
