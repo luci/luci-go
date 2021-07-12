@@ -95,28 +95,39 @@ type Test struct {
 	// Not installed into context by default.
 	migrationSettings *migrationpb.Settings
 
-	// cleanups are executed in reverse order in cleanup().
-	cleanups []func()
+	// cleanupFuncs are executed in reverse order in cleanup().
+	cleanupFuncs []func()
 }
 
-func (t *Test) SetUp() (ctx context.Context, deferme func()) {
+func (t *Test) SetUp() (context.Context, func()) {
 	t.setMaxDuration()
+	ctxShared := context.Background()
+	// Don't set the deadline (timeout) into the context given to the test,
+	// as it may interfere with test clock.
+	ctx, cancel := context.WithCancel(ctxShared)
+	ctxTimed, cancelTimed := context.WithTimeout(ctxShared, t.MaxDuration)
+	go func(ctx context.Context) {
+		// Instead, watch for expiry of ctxTimed and cancel test `ctx`.
+		select {
+		case <-ctxTimed.Done():
+			cancel()
+		case <-ctx.Done():
+			// Normal test termination.
+			cancelTimed()
+		}
+	}(ctx)
+	t.cleanupFuncs = append(t.cleanupFuncs, func() {
+		// Fail the test if the test has timed out.
+		So(ctxTimed.Err(), ShouldBeNil)
+		cancel()
+		cancelTimed()
+	})
 
-	ctx = context.Background()
+	ctx = t.setUpTestClock(ctx)
 	// TODO(tandrii): make this logger emit testclock-based timestamps.
 	if testing.Verbose() {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, t.MaxDuration)
-	topCtx := ctx
-	t.cleanups = append(t.cleanups, func() {
-		// Fail the test if the topCtx has timed out.
-		So(topCtx.Err(), ShouldBeNil)
-		cancel()
-	})
-
-	ctx = t.setUpTestClock(ctx)
 
 	if t.TQDispatcher != nil {
 		panic("TQDispatcher must not be set")
@@ -140,8 +151,8 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 }
 
 func (t *Test) cleanup() {
-	for i := len(t.cleanups) - 1; i >= 0; i-- {
-		t.cleanups[i]()
+	for i := len(t.cleanupFuncs) - 1; i >= 0; i-- {
+		t.cleanupFuncs[i]()
 	}
 }
 
@@ -249,7 +260,7 @@ func (t *Test) installDSEmulator(ctx context.Context) (context.Context, bool) {
 }
 
 func (t *Test) installDSshared(ctx context.Context, cloudProject string, client *nativeDatastore.Client) context.Context {
-	t.cleanups = append(t.cleanups, func() {
+	t.cleanupFuncs = append(t.cleanupFuncs, func() {
 		if err := client.Close(); err != nil {
 			logging.Errorf(ctx, "failed to close DS client: %s", err)
 		}
@@ -264,7 +275,7 @@ func (t *Test) installDSshared(ctx context.Context, cloudProject string, client 
 	// Failure to clear is hard before the test,
 	// ignored after the test.
 	So(clearDS(ctx), ShouldBeNil)
-	t.cleanups = append(t.cleanups, func() {
+	t.cleanupFuncs = append(t.cleanupFuncs, func() {
 		if err := clearDS(ctx); err != nil {
 			logging.Errorf(ctx, "failed to clean DS namespace %s: %s", ns, err)
 		}
