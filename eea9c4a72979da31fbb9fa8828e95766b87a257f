@@ -117,6 +117,30 @@
       },
       "revId": "eea9c4a72979da31fbb9fa8828e95766b87a257f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "552c0ae2_d0f83335",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-13T00:51:38Z",
+      "side": 1,
+      "message": "depends on test :) \n\ne2e tests w/o DS flakiness (ie w/o sweeping) just hang\n\nunit tests: usually fail, but in a weird way. \n\nLike you assert that \n  assert len(ct.TQ.Tasks()) \u003d\u003d 1\nand it fails with 0 !\u003d 1\n\nSo, you add explicit check right above:\n  So(tq.AddTask(ctx, ..), ShouldBeNil)\nand yet there are still no TQ tasks! WTF?! So, you go and check wtf tq.AddTask is actually doing....",
+      "parentUuid": "691a48f9_90120751",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 18,
+        "endChar": 31
+      },
+      "revId": "eea9c4a72979da31fbb9fa8828e95766b87a257f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
