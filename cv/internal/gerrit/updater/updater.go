@@ -48,8 +48,9 @@ const (
 	knownRefreshInterval = 15 * time.Minute
 )
 
-var errStaleData = errors.New("Fetched stale Gerrit data", transient.Tag)
-var errOutOfQuota = errors.New("Out of Gerrit Quota", transient.Tag)
+var errStaleData = errors.New("fetched stale Gerrit data", transient.Tag)
+var errGerritDeadlineExceeded = errors.New("Gerrit took too long to respond", transient.Tag)
+var errOutOfQuota = errors.New("out of Gerrit Quota", transient.Tag)
 
 // Updater fetches Gerrit Change details and stores them as CV CLs in Datastore.
 type Updater struct {
@@ -77,7 +78,7 @@ func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, gm *gerrit.MirrorIteratorFa
 			return common.TQIfy{
 				// Don't log the entire stack trace of stale data, which is sadly an
 				// hourly occurrence.
-				KnownRetry: []error{errStaleData, errOutOfQuota},
+				KnownRetry: []error{errStaleData, errOutOfQuota, errGerritDeadlineExceeded},
 			}.Error(ctx, err)
 		},
 	})
