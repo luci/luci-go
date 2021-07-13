@@ -98,6 +98,8 @@ func (ArchiveRequest_Format) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_rawDescGZIP(), []int{4, 0}
 }
 
+// TODO(tandrii) Remove the format field, text format is the only necessary
+// format
 type DownloadFileRequest_Format int32
 
 const (

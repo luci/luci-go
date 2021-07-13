@@ -181,6 +181,8 @@ message DownloadFileRequest {
     // Path relative to the project root to the file to download.
     string path = 3;
 
+    // TODO(tandrii) Remove the format field, text format is the only necessary
+    // format
     enum Format {
         FormatInvalid = 0;
         TEXT = 1;
