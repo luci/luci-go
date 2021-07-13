@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -234,6 +235,10 @@ func matchesErrorTags(err error, knownTags ...errors.BoolTag) bool {
 func IsDatastoreContention(err error) bool {
 	ret := false
 	errors.WalkLeaves(err, func(leaf error) bool {
+		if err == datastore.ErrConcurrentTransaction {
+			ret = true
+			return false //stop
+		}
 		s, ok := status.FromError(err)
 		if ok && s.Code() == codes.Aborted && !strings.HasPrefix(s.Message(), "Aborted due to cross-transaction contention") {
 			ret = true
