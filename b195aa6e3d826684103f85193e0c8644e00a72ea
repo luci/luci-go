@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f70d0c4_b7dd517d",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-07-13T07:51:21Z",
+      "side": 1,
+      "message": "Other fields have a function each, probably better to just keep to the existing style.",
+      "parentUuid": "aa01ec63_2f52d579",
+      "range": {
+        "startLine": 123,
+        "startChar": 0,
+        "endLine": 139,
+        "endChar": 1
+      },
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c0c17f08_85a0e25d",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-07-12T20:32:03Z",
       "side": 1,
       "message": "Do we have a use case of querying failure reasons in BQ?",
+      "range": {
+        "startLine": 104,
+        "startChar": 33,
+        "endLine": 104,
+        "endChar": 47
+      },
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "292e9ddf_b1a5fa79",
+        "filename": "resultdb/proto/bq/test_result_row.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-07-13T07:51:21Z",
+      "side": 1,
+      "message": "at the very least to experiment with clustering.  I have found this useful in ad hoc analysis before as well, eg showing the impact of uiauto library on reducing UI related failures in Crostini tests.",
+      "parentUuid": "c0c17f08_85a0e25d",
       "range": {
         "startLine": 104,
         "startChar": 33,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1bac975_791d79b3",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-07-13T07:51:21Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "5b3a921f_bdcbfe68",
+      "range": {
+        "startLine": 24,
+        "startChar": 65,
+        "endLine": 24,
+        "endChar": 77
+      },
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "eeff0032_195224e2",
@@ -93,6 +165,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7bca01c7_3f47f11e",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-07-13T07:51:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eeff0032_195224e2",
+      "range": {
+        "startLine": 35,
+        "startChar": 21,
+        "endLine": 35,
+        "endChar": 28
+      },
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "186b6aba_07c6369b",
@@ -106,6 +202,24 @@
       "writtenOn": "2021-07-12T20:32:03Z",
       "side": 1,
       "message": "nit: add a new line",
+      "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "722f36d1_d1108018",
+        "filename": "resultdb/proto/v1/failure_reason.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1370239
+      },
+      "writtenOn": "2021-07-13T07:51:21Z",
+      "side": 1,
+      "message": "the auto format won\u0027t let me :(",
+      "parentUuid": "186b6aba_07c6369b",
       "revId": "b195aa6e3d826684103f85193e0c8644e00a72ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
