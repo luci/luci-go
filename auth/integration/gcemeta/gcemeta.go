@@ -120,6 +120,15 @@ func (s *Server) installRoutes(mux *http.ServeMux) {
 			replyList(rw, []string{s.Email + "/", "default/"})
 		}
 	})
+	// These are used by cloud.google.com/go libraries, e.g. profiler.
+	// crbug.com/1219914
+	mux.HandleFunc("/computeMetadata/v1/instance/zone", func(rw http.ResponseWriter, r *http.Request) {
+		replyText(rw, "projects/0/zones/luci-emulated-zone")
+	})
+	mux.HandleFunc("/computeMetadata/v1/instance/name", func(rw http.ResponseWriter, r *http.Request) {
+		// Use os.Hostname?
+		replyText(rw, "luci-emulated")
+	})
 
 	for _, acc := range []string{s.Email, "default"} {
 		// Used by oauth2client to fetch the list of scopes.
