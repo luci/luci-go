@@ -16,19 +16,25 @@ package gobmap
 
 import (
 	"context"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 )
 
 const (
-	mapKind    = "MapPart"
-	parentKind = "MapPartParent"
+	mapKind           = "MapPart"
+	parentKind        = "MapPartParent"
+	maxUpdateDuration = 60 * time.Second
 )
 
 // mapPart contains config groups for a particular LUCI project and host/repo
@@ -42,6 +48,7 @@ const (
 // repo and ref maps to which config group; the map is updated when a project
 // config is updated.
 type mapPart struct {
+	// TODO(tandrii): s/MapPart/gobmap.MapPart, since "MapPart" is too generic.
 	_kind string `gae:"$kind,MapPart"`
 
 	// The ID of this MapPart, which is the LUCI project name.
@@ -69,10 +76,71 @@ type mapPart struct {
 //
 // This may include adding, removing and modifying entities, which is not done
 // atomically.
+// Changes to individual Gerrit repos are atomic.  This means that
+// IF Update() is in progress from config versions 1 to 2, identified by
+//   hashes h1 and h2, respectively,
+// AND both h1 and h2 watch specific Gerrit repo, possibly among many others,
+// THEN a concurrent Lookup(host,repo,...) is guaranteed to return either
+// based on @h1 or based on @h2.
 //
-// TODO(crbug.com/1179286): Handle possible race condition; There may be 2 or
-// more concurrent Update calls, which could lead to corrupted data.
+// However, there is no atomicity across entire project config. This means that
+// IF Update() is in progress from config versions 1 to 2, identified by
+//   hashes h1 and h2, respectively,
+// THEN two sequential calls to Lookup with diferent Gerrit repos may return
+// results based on @h2 at first and @h1 for the second, ie:
+//   Lookup(host1,repoA,...) -> @h2
+//   Lookup(host1,repoB,...) -> @h1
+//
+// Thus, a failed Update() may leave gobmap in a corrupted state, whereby some
+// Gerrit repos may represent old and some new config verisons. In such a
+// case it's important that Update() caller retries as soon as possible.
+//
+// TODO(crbug.com/1179286): make Update() incorruptible.
+// See TestGobMapConcurrentUpdates which reproduces corruption.
+//
+// Update is idempotent.
 func Update(ctx context.Context, meta *prjcfg.Meta, cgs []*prjcfg.ConfigGroup) error {
+	ctx, cleanup, err := leaseExclusive(ctx, meta)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	return update(ctx, meta, cgs)
+}
+
+// leaseExclusive obtains exclusive lease on the gob map for the LUCI project.
+//
+// Returns time-limited context for the duration of the lease and a cleanup
+// function.
+func leaseExclusive(ctx context.Context, meta *prjcfg.Meta) (context.Context, func(), error) {
+	taskID := "unknown"
+	if info := tq.TaskExecutionInfo(ctx); info != nil {
+		taskID = info.TaskID
+	}
+	l, err := lease.Apply(ctx, lease.Application{
+		ResourceID: lease.ResourceID("gobmap/" + meta.Project),
+		ExpireTime: clock.Now(ctx).Add(maxUpdateDuration),
+		Holder:     taskID, // Used for debugging, only.
+	})
+	switch {
+	case err == lease.ErrConflict:
+		return nil, nil, errors.Annotate(err, "gobmap for %s is already being updated", meta.Project).Tag(transient.Tag).Err()
+	case err != nil:
+		return nil, nil, err
+	}
+	limitedCtx, cancel := clock.WithDeadline(ctx, l.ExpireTime)
+	cleanup := func() {
+		cancel()
+		if err := l.Terminate(ctx); err != nil {
+			// Best-effort termination since lease will expire naturally.
+			logging.Warningf(ctx, "failed to cancel gobmap Update lease: %s", err)
+		}
+	}
+	return limitedCtx, cleanup, nil
+}
+
+// update updates gob map Datastore entities.
+func update(ctx context.Context, meta *prjcfg.Meta, cgs []*prjcfg.ConfigGroup) error {
 	var toPut, toDelete []*mapPart
 
 	// Fetch stored GWM entities.
