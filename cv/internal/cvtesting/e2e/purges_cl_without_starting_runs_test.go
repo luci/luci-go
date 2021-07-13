@@ -27,6 +27,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
@@ -71,6 +72,110 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		})
+	})
+}
+
+func TestPurgesCLWatchedByTwoConfigGroups(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges CLs watched by more than 1 Config Group of the same project", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject = "infra"
+			gHost    = "g-review"
+			gRepo    = "re/po"
+			gRef     = "refs/heads/main"
+			gChange  = 43
+		)
+
+		cfg := MakeCfgSingular("cg-ok", gHost, gRepo, gRef)
+		cfg.ConfigGroups = append(cfg.ConfigGroups, MakeCfgSingular("cg-dup", gHost, gRepo, gRef).GetConfigGroups()[0])
+		prjcfgtest.Create(ctx, lProject, cfg)
+
+		ci := gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Updated(ct.Now()), gf.CQ(+1, ct.Now(), gf.U("user-1")),
+			gf.Owner("user-1"),
+		)
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
+		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 1)
+
+		ct.LogPhase(ctx, "Run CV until CQ+1 vote is removed")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool {
+			return ct.MaxCQVote(ctx, gHost, gChange) == 0
+		})
+		msg := ct.LastMessage(gHost, gChange).GetMessage()
+		So(msg, ShouldContainSubstring, "it is watched by more than 1 config group")
+		So(msg, ShouldContainSubstring, "cg-ok")
+		So(msg, ShouldContainSubstring, "cg-dup")
+
+		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
+		ct.RunUntil(ctx, func() bool {
+			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		})
+	})
+}
+
+func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges CLs watched by more than 1 LUCI Projects", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject1 = "project-1"
+			lProject2 = "project-2"
+			gHost     = "g-review"
+			gRepo     = "re/po"
+			gRef      = "refs/heads/main"
+			gChange   = 43
+		)
+
+		ct.LogPhase(ctx, "Fully ingest overlapping configs")
+		prjcfgtest.Create(ctx, lProject1, MakeCfgSingular("cg1", gHost, gRepo, gRef))
+		prjcfgtest.Create(ctx, lProject2, MakeCfgSingular("cg2", gHost, gRepo, gRef))
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject1), ShouldBeNil)
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject2), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool {
+			res, err := gobmap.Lookup(ctx, gHost, gRepo, gRef)
+			if err != nil {
+				panic(err)
+			}
+			return len(res.GetProjects()) == 2
+		})
+
+		ct.LogPhase(ctx, "Add Gerrit CL watched by both projects")
+		ci := gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Updated(ct.Now()), gf.CQ(+1, ct.Now(), gf.U("user-1")),
+			gf.Owner("user-1"),
+		)
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject1, lProject2), ci))
+		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 1)
+
+		ct.LogPhase(ctx, "Run CV until CQ+1 vote is removed")
+		ct.RunUntil(ctx, func() bool {
+			return ct.MaxCQVote(ctx, gHost, gChange) == 0
+		})
+		// There is a race between projects, but due to CL leases, only one should
+		// succeed in posting a message.
+		msg := ct.LastMessage(gHost, gChange).GetMessage()
+		So(msg, ShouldContainSubstring, "is watched by more than 1 LUCI project")
+		So(msg, ShouldContainSubstring, "project-1")
+		So(msg, ShouldContainSubstring, "project-2")
+
+		ct.LogPhase(ctx, "Ensure both PMs no longer track the CL")
+		ct.RunUntil(ctx, func() bool {
+			return 0 == len(ct.LoadProject(ctx, lProject1).State.GetPcls())+len(ct.LoadProject(ctx, lProject2).State.GetPcls())
 		})
 	})
 }

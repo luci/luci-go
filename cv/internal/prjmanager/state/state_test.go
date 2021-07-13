@@ -477,7 +477,7 @@ func TestUpdateConfig(t *testing.T) {
 				})
 			})
 
-			Convey("CL watched by several projects is unwatched", func() {
+			Convey("CL watched by several projects is unwatched but with an error", func() {
 				cl101.ApplicableConfig.Projects = append(
 					cl101.ApplicableConfig.GetProjects(),
 					&changelist.ApplicableConfig_Project{
@@ -485,9 +485,25 @@ func TestUpdateConfig(t *testing.T) {
 						Name:           "another",
 					})
 				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
-					Clid:     int64(cl101.ID),
-					Eversion: int64(cl101.EVersion),
-					Status:   prjpb.PCL_UNWATCHED,
+					Clid:               int64(cl101.ID),
+					Eversion:           int64(cl101.EVersion),
+					Status:             prjpb.PCL_OK,
+					ConfigGroupIndexes: []int32{0}, // g0
+					Trigger: &run.Trigger{
+						Email:           "user-1@example.com",
+						GerritAccountId: 1,
+						Mode:            string(run.FullRun),
+						Time:            triggerTS,
+					},
+					Errors: []*changelist.CLError{
+						{
+							Kind: &changelist.CLError_WatchedByManyProjects_{
+								WatchedByManyProjects: &changelist.CLError_WatchedByManyProjects{
+									Projects: []string{s1.PB.GetLuciProject(), "another"},
+								},
+							},
+						},
+					},
 				})
 			})
 		})
