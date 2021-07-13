@@ -103,6 +103,15 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 			"TargetRef":    cl.Snapshot.GetGerrit().GetInfo().GetRef(),
 		})
 
+	case *changelist.CLError_WatchedByManyProjects_:
+		projects := v.WatchedByManyProjects.GetProjects()
+		if len(projects) < 2 {
+			return errors.New("at least 2 projects required")
+		}
+		return tmplWatchedByManyProjects.Execute(sb, map[string]interface{}{
+			"Projects": projects,
+		})
+
 	case *changelist.CLError_InvalidDeps_:
 		// Although it's possible for a CL to have several kinds of wrong deps,
 		// it's rare in practice, so simply error out on the most important kind.
@@ -200,6 +209,14 @@ var tmplWatchedByManyConfigGroups = tmplMust(`
 {{CONTACT_YOUR_INFRA}}. For their info:
   * current CL target ref is {{.TargetRef | printf "%q"}},
 	* relevant doc https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/lucicfg/doc/#luci.cq_group
+`)
+
+var tmplWatchedByManyProjects = tmplMust(`
+{{CQ_OR_CV}} can't process the CL because it is watched by more than 1 LUCI project:
+{{range $p := .Projects}}  * {{$p}}
+{{end}}
+{{CONTACT_YOUR_INFRA}}. Relevant doc for their info:
+https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/lucicfg/doc/#luci.cq_group
 `)
 
 var tmplUnwatchedDeps = tmplMust(`

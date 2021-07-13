@@ -311,9 +311,12 @@ message Access {
 // The primary goal of the CLError is to transport via CV guts sufficient
 // information to generate a clear user-friendly error message.
 message CLError {
+  // Next tag is 9.
+
   oneof kind {
     bool owner_lacks_email = 1;
     WatchedByManyConfigGroups watched_by_many_config_groups = 2;
+    WatchedByManyProjects watched_by_many_projects = 8;
     InvalidDeps invalid_deps = 3;
     string unsupported_mode = 4;
     bool self_cq_depend = 5;
@@ -321,9 +324,13 @@ message CLError {
     ReusedTrigger reused_trigger = 7;
   }
 
+
   message WatchedByManyConfigGroups {
     // Config group names without LUCI project prefix.
     repeated string config_groups = 1;
+  }
+  message WatchedByManyProjects {
+    repeated string projects = 1;
   }
 
   message InvalidDeps {

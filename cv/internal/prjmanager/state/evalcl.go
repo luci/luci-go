@@ -202,6 +202,7 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		Status:   prjpb.PCL_UNKNOWN,
 	}
 
+	var ap *changelist.ApplicableConfig_Project
 	switch kind, reason := cl.AccessKindWithReason(ctx, s.PB.GetLuciProject()); kind {
 	case changelist.AccessUnknown:
 		// Need more time to fetch this.
@@ -213,8 +214,15 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		fallthrough
 	case changelist.AccessDenied:
 		logging.Infof(ctx, "This project has no access to CL(%d %s): %s", cl.ID, cl.ExternalID, reason)
-		pcl.Status = prjpb.PCL_UNWATCHED
-		return pcl
+		var watchedByMultiple bool
+		ap, watchedByMultiple = cl.IsWatchedByThisAndOtherProjects(s.PB.GetLuciProject())
+		if !watchedByMultiple {
+			pcl.Status = prjpb.PCL_UNWATCHED
+			return pcl
+		}
+		// Special case if the CL is watched by more than one project.
+		pcl.Errors = append(pcl.Errors, newMultiProjectWatchError(cl))
+		pcl.Status = prjpb.PCL_OK
 	case changelist.AccessGranted:
 		switch {
 		case cl.Snapshot.GetOutdated() != nil:
@@ -223,16 +231,16 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 			return pcl
 		case cl.Snapshot.GetGerrit() == nil:
 			panic(fmt.Errorf("only Gerrit CLs supported for now"))
+		case len(cl.ApplicableConfig.GetProjects()) != 1:
+			panic(fmt.Errorf("AccessGranted but %d projects in ApplicableConfig", len(cl.ApplicableConfig.GetProjects())))
 		}
+		ap = cl.ApplicableConfig.GetProjects()[0]
+		pcl.Status = prjpb.PCL_OK
 	default:
 		panic(fmt.Errorf("Unknown access kind %d", kind))
 	}
 
-	// AccessGranted means only this project is watching the config.
-	ap := cl.ApplicableConfig.GetProjects()[0]
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
-	pcl.Status = prjpb.PCL_OK
-
 	pcl.Errors = append(pcl.Errors, cl.Snapshot.GetErrors()...)
 
 	pcl.Deps = cl.Snapshot.GetDeps()
@@ -364,5 +372,19 @@ func loadCLs(ctx context.Context, cls []*changelist.CL) ([]*changelist.CL, error
 		return cls, merr, nil
 	default:
 		return nil, nil, errors.Annotate(err, "failed to load %d CLs", len(cls)).Tag(transient.Tag).Err()
+	}
+}
+
+func newMultiProjectWatchError(cl *changelist.CL) *changelist.CLError {
+	projects := make([]string, len(cl.ApplicableConfig.GetProjects()))
+	for i, p := range cl.ApplicableConfig.GetProjects() {
+		projects[i] = p.GetName()
+	}
+	return &changelist.CLError{
+		Kind: &changelist.CLError_WatchedByManyProjects_{
+			WatchedByManyProjects: &changelist.CLError_WatchedByManyProjects{
+				Projects: projects,
+			},
+		},
 	}
 }
