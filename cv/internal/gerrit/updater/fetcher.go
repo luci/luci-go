@@ -47,10 +47,12 @@ import (
 const (
 	// noAccessGraceDuration works around eventually consistent Gerrit,
 	// whereby Gerrit can temporarily return 404 for a CL that actually exists.
-	noAccessGraceDuration = 10 * time.Minute
+	noAccessGraceDuration = 1 * time.Minute
 
-	// noAccessGraceRetryDelay determines when to schedule next retry task.
-	noAccessGraceRetryDelay = 1 * time.Minute
+	// noAccessGraceRetryDelay determines when to schedule the next retry task.
+	//
+	// Set it at approximately ~2 tries before noAccessGraceDuration expires.
+	noAccessGraceRetryDelay = noAccessGraceDuration / 3
 
 	// autoRefreshAfter makes CLs worthy of "blind" refresh.
 	//
@@ -353,6 +355,13 @@ mirrorLoop:
 			}
 		case codes.NotFound, codes.PermissionDenied:
 			// Either no access OR CL was deleted OR eventual consistency.
+			if !mirrorIterator.Empty() {
+				// Retry with another mirror to decrease the chance of mistakenely
+				// labeling CL as no access/deleted.
+				continue mirrorLoop
+			}
+			// Chances are it's not due to eventual consistency, but be conservative
+			// and retry later a few more times.
 			return nil, setNoAccess(true /* temporary */)
 
 		case codes.ResourceExhausted:
