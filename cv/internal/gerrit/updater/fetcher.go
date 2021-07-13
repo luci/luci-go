@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -75,8 +76,7 @@ type fetcher struct {
 	change      int64
 	updatedHint time.Time
 
-	gMirrorFactory *gerrit.MirrorIteratorFactory
-	g              gerrit.Client
+	g gerrit.Client
 
 	externalID changelist.ExternalID
 	priorCL    *changelist.CL
@@ -330,38 +330,25 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		return nil, setNoAccess(false /* permanent*/)
 	}
 
-	mirrorIterator := f.gMirrorFactory.Make(ctx)
-	var ci *gerritpb.ChangeInfo
-mirrorLoop:
-	for {
-		var err error
-		ci, err = f.g.GetChange(ctx, &gerritpb.GetChangeRequest{
-			Number:  f.change,
-			Project: f.gerritProjectIfKnown(),
-			Options: opts,
-		}, mirrorIterator)
-		switch grpcutil.Code(err) {
-		case codes.OK:
-			switch {
-			case !f.isStale(ctx, ci.GetUpdated()):
-				break mirrorLoop
-			case !mirrorIterator.Empty():
-				// Retry with another mirror.
-				continue mirrorLoop
-			default:
-				return nil, errStaleData
-			}
-		case codes.NotFound, codes.PermissionDenied:
-			// Either no access OR CL was deleted OR eventual consistency.
-			return nil, setNoAccess(true /* temporary */)
-		case codes.ResourceExhausted:
-			return nil, errOutOfQuota
-		default:
-			return nil, gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
+	ci, err := f.g.GetChange(ctx, &gerritpb.GetChangeRequest{
+		Number:  f.change,
+		Project: f.gerritProjectIfKnown(),
+		Options: opts,
+	})
+	switch grpcutil.Code(err) {
+	case codes.OK:
+		if err := f.ensureNotStale(ctx, ci.GetUpdated()); err != nil {
+			return nil, err
 		}
+	case codes.NotFound, codes.PermissionDenied:
+		// Either no access OR CL was deleted OR eventual consistency.
+		return nil, setNoAccess(true /* temporary */)
+	case codes.ResourceExhausted:
+		return nil, errOutOfQuota
+	default:
+		return nil, gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 	}
 
-	var err error
 	f.toUpdate.ApplicableConfig, err = gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef())
 	switch {
 	case err != nil:
@@ -376,30 +363,25 @@ mirrorLoop:
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
 func (f *fetcher) fetchRelated(ctx context.Context) error {
-	mirrorIterator := f.gMirrorFactory.Make(ctx)
-	for {
-		resp, err := f.g.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
-			Number:     f.change,
-			Project:    f.gerritProjectIfKnown(),
-			RevisionId: f.mustHaveCurrentRevision(),
-		}, mirrorIterator)
-		switch code := grpcutil.Code(err); code {
-		case codes.OK:
-			f.setGitDeps(ctx, resp.GetChanges())
-			return nil
-		case codes.PermissionDenied, codes.NotFound:
-			// Getting this right after successfully fetching ChangeInfo should
-			// typically be due to eventual consistency of Gerrit, and rarely due to
-			// change of ACLs.
-			if mirrorIterator.Empty() {
-				return errStaleData
-			}
-			// Else, retry with another mirror.
-		case codes.ResourceExhausted:
-			return errOutOfQuota
-		default:
-			return gerrit.UnhandledError(ctx, err, "failed to fetch related changes for %s", f)
-		}
+	resp, err := f.g.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
+		Number:     f.change,
+		Project:    f.gerritProjectIfKnown(),
+		RevisionId: f.mustHaveCurrentRevision(),
+	})
+	switch code := grpcutil.Code(err); code {
+	case codes.OK:
+		f.setGitDeps(ctx, resp.GetChanges())
+		return nil
+	case codes.PermissionDenied, codes.NotFound:
+		// Getting this right after successfully fetching ChangeInfo should
+		// typically be due to eventual consistency of Gerrit, and rarely due to
+		// change of ACLs. So, err transiently s.t. retry handles the same error
+		// when re-fetching ChangeInfo.
+		return errors.Annotate(err, "failed to fetch related changes for %s", f).Tag(transient.Tag).Err()
+	case codes.ResourceExhausted:
+		return errOutOfQuota
+	default:
+		return gerrit.UnhandledError(ctx, err, "failed to fetch related changes for %s", f)
 	}
 }
 
@@ -559,46 +541,42 @@ func (f *fetcher) countRelatedWhichAreParents(this *gerritpb.GetRelatedChangesRe
 
 // fetchFiles fetches files for the current revision of the new Snapshot.
 func (f *fetcher) fetchFiles(ctx context.Context) error {
-	mirrorIterator := f.gMirrorFactory.Make(ctx)
-	for {
-		resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
-			Number:     f.change,
-			Project:    f.gerritProjectIfKnown(),
-			RevisionId: f.mustHaveCurrentRevision(),
-			// For CLs with >1 parent commit (aka merge commits), this relies on Gerrit
-			// ensuring that such a CL always has first parent from the target branch.
-			Parent: 1, // Request a diff against the first parent.
-		})
-		switch code := grpcutil.Code(err); code {
-		case codes.OK:
-			// Iterate files map and take keys only. CV treats all files "touched" in a
-			// Change to be interesting, including chmods. Skip special /COMMIT_MSG and
-			// /MERGE_LIST entries, which aren't files. For example output, see
-			// https://chromium-review.googlesource.com/changes/1817639/revisions/1/files?parent=1
-			fs := make([]string, 0, len(resp.GetFiles()))
-			for f := range resp.GetFiles() {
-				if !strings.HasPrefix(f, "/") {
-					fs = append(fs, f)
-				}
+	resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
+		Number:     f.change,
+		Project:    f.gerritProjectIfKnown(),
+		RevisionId: f.mustHaveCurrentRevision(),
+		// For CLs with >1 parent commit (aka merge commits), this relies on Gerrit
+		// ensuring that such a CL always has first parent from the target branch.
+		Parent: 1, // Request a diff against the first parent.
+	})
+	switch code := grpcutil.Code(err); code {
+	case codes.OK:
+		// Iterate files map and take keys only. CV treats all files "touched" in a
+		// Change to be interesting, including chmods. Skip special /COMMIT_MSG and
+		// /MERGE_LIST entries, which aren't files. For example output, see
+		// https://chromium-review.googlesource.com/changes/1817639/revisions/1/files?parent=1
+		fs := make([]string, 0, len(resp.GetFiles()))
+		for f := range resp.GetFiles() {
+			if !strings.HasPrefix(f, "/") {
+				fs = append(fs, f)
 			}
-			sort.Strings(fs)
-			f.toUpdate.Snapshot.GetGerrit().Files = fs
-			return nil
-
-		case codes.PermissionDenied, codes.NotFound:
-			// Getting this right after successfully fetching ChangeInfo should
-			// typically be due to eventual consistency of Gerrit, and rarely due to
-			// change of ACLs.
-			if mirrorIterator.Empty() {
-				return errStaleData
-			}
-			// Else, retry with another mirror.
-		case codes.ResourceExhausted:
-			return errOutOfQuota
-
-		default:
-			return gerrit.UnhandledError(ctx, err, "failed to fetch files for %s", f)
 		}
+		sort.Strings(fs)
+		f.toUpdate.Snapshot.GetGerrit().Files = fs
+		return nil
+
+	case codes.PermissionDenied, codes.NotFound:
+		// Getting this right after successfully fetching ChangeInfo should
+		// typically be due to eventual consistency of Gerrit, and rarely due to
+		// change of ACLs. So, err transiently s.t. retry handles the same error
+		// when re-fetching ChangeInfo.
+		return errors.Annotate(err, "failed to fetch files for %s", f).Tag(transient.Tag).Err()
+
+	case codes.ResourceExhausted:
+		return errOutOfQuota
+
+	default:
+		return gerrit.UnhandledError(ctx, err, "failed to fetch files for %s", f)
 	}
 }
 
@@ -722,20 +700,21 @@ func (f *fetcher) depsToExternalIDs() (map[changelist.ExternalID]changelist.DepK
 	return eids, nil
 }
 
-// isStale returns true if given Gerrit updated timestamp is older than
-// the updateHint or the existing CL state.
-func (f *fetcher) isStale(ctx context.Context, externalUpdateTime *timestamppb.Timestamp) bool {
+// ensureNotStale returns error if given Gerrit updated timestamp is older than
+// the updateHint or existing CL state.
+func (f *fetcher) ensureNotStale(ctx context.Context, externalUpdateTime *timestamppb.Timestamp) error {
 	t := externalUpdateTime.AsTime()
 	storedTS := f.priorSnapshot().GetExternalUpdateTime()
+
 	switch {
 	case !f.updatedHint.IsZero() && f.updatedHint.After(t):
 		logging.Warningf(ctx, "Fetched last Gerrit update of %s, but %s expected (%s)", t, f.updatedHint, f)
 	case storedTS != nil && storedTS.AsTime().After(t):
 		logging.Warningf(ctx, "Fetched last Gerrit update of %s, but %s was already seen & stored (%s)", t, storedTS.AsTime(), f)
 	default:
-		return false
+		return nil
 	}
-	return true
+	return errStaleData
 }
 
 // Checks whether this LUCI project watches any repo on this Gerrit host.

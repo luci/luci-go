@@ -53,20 +53,14 @@ var errOutOfQuota = errors.New("Out of Gerrit Quota", transient.Tag)
 
 // Updater fetches Gerrit Change details and stores them as CV CLs in Datastore.
 type Updater struct {
-	gFactory       gerrit.ClientFactory
-	gMirrorFactory *gerrit.MirrorIteratorFactory
-	clMutator      *changelist.Mutator
-	tqd            *tq.Dispatcher
+	gFactory  gerrit.ClientFactory
+	clMutator *changelist.Mutator
+	tqd       *tq.Dispatcher
 }
 
 // New creates a new Updater.
 func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, m *changelist.Mutator) *Updater {
-	u := &Updater{
-		g,
-		nil, // TODO(tandrii): use non-default gMirrorFactory in prod.
-		m,
-		tqd,
-	}
+	u := &Updater{g, m, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClass,
 		Prototype:    &RefreshGerritCL{},
@@ -181,7 +175,6 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 // Prefer Schedule() instead of Refresh() in production.
 func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	f := fetcher{
-		gMirrorFactory:  u.gMirrorFactory,
 		clMutator:       u.clMutator,
 		scheduleRefresh: u.ScheduleDelayed,
 
