@@ -58,6 +58,7 @@ var _ gerrit.Client = (*Client)(nil)
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
 func (client *Client) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
+	client.maybeUseMirror(opts)
 	client.f.recordRequest(in)
 	if in.GetOffset() != 0 {
 		return nil, status.New(codes.Unimplemented, "Offset is not supported by GerritFake").Err()
@@ -106,6 +107,7 @@ func (client *Client) ListChanges(ctx context.Context, in *gerritpb.ListChangesR
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
 func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+	client.maybeUseMirror(opts)
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 	client.f.recordRequest(in)
@@ -124,6 +126,7 @@ func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeReque
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-related-changes
 func (client *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error) {
+	client.maybeUseMirror(opts)
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 	client.f.recordRequest(in)
@@ -185,6 +188,7 @@ func (client *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRel
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
 func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error) {
+	client.maybeUseMirror(opts)
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 	client.f.recordRequest(in)
@@ -216,6 +220,7 @@ func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesReque
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
 func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
+	client.maybeUseMirror(opts)
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 	client.f.recordRequest(in)
@@ -255,6 +260,7 @@ func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewReque
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
 func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error) {
+	client.maybeUseMirror(opts)
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 	client.f.recordRequest(in)
@@ -295,6 +301,15 @@ func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRev
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper methods
+
+func (client *Client) maybeUseMirror(opts []grpc.CallOption) {
+	for _, opt := range opts {
+		if m, ok := opt.(*gerrit.MirrorIterator); ok {
+			// TODO(tandrii): return the selected mirror host to the client.
+			m.Next(client.host)
+		}
+	}
+}
 
 // visitNodesDFS visits all nodes reachable from the current node via depth
 // first search.
