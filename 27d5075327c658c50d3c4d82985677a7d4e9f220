@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "93a50ef4_144b1161",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-13T00:45:11Z",
+      "side": 1,
+      "message": "because # of entities to be modified is O(repos), which can be \u003e500.\nSo, this atomicity via naive transaction isn\u0027t feasible.\n\nThe simple lock-based approach won\u0027t work because our writers can crash any time and something has to ensure lock won\u0027t be held forever (aka liveliness). This why our leases expire. However, once you add expiry, you don\u0027t have a real lock.\n\n\n\u003d\u003d\u003d 1 \u003d\u003d\u003d \nOne approach is adding more checks to reader, as you mentioned, but this is complexity + latency on read path, which is unfortunate. But doable.\nFor example, writer can just create new mapPart entities like \n  \"host/repo/project/prjcfg_eversion\".\nand after it\u0027s done, it creates a separate \"PSA\"-like entity of\n  \"project/prjcfg_eversion\"\nto signal success. If it fails, it can retry any time. Worst case there is garbage in Datastore.\n  \nNow, then reader will read all \"host/repo/*\" AND for each unique \"project/prjcfg_version\"\ncheck existence of the \"PSA\" entity, then choose max prjcfg_version for each project.\n\n++ This will scale easily to lots of projects \u0026 repos.\n-  It will increase latency by ~1 additional batch of lookups, in most cases all will be served by Redis anyway.\n+  each entity is immutable. So, neither writers nor readers need transactions\n-- removal of old entities is more difficult.\n\n\u003d\u003d\u003d 1 \u003d\u003d\u003d \n\n\n\u003d\u003d\u003d 2 \u003d\u003d\u003d\nA totally different approach is to reduce # of entities any given project may need to update and use transactions. Since amount of data per repo is tiny, we can probably put 1000 repos per entity.\nSo, instead of host/repo/project entities, use\n  hash(host/repo)/project entities\n  and keep hash in range of say 1..100\n\n+ This is good enough for CV, as we can probably support 100k repos this way.\n++ still very fast for readers, though a bit more CPU / RAM used\n++ very simple.\n\u003d\u003d\u003d 2 \u003d\u003d\u003d\n\n\nI actually dunno why we didn\u0027t do #2. I guess i didn\u0027t want to spend too much time on this.",
+      "parentUuid": "4aca7591_b3a328d8",
+      "revId": "27d5075327c658c50d3c4d82985677a7d4e9f220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6e28d0ca_cb94f22f",
