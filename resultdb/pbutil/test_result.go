@@ -32,8 +32,9 @@ import (
 )
 
 const (
-	resultIDPattern   = `[a-z0-9\-_.]{1,32}`
-	maxLenSummaryHTML = 4 * 1024
+	resultIDPattern           = `[a-z0-9\-_.]{1,32}`
+	maxLenSummaryHTML         = 4 * 1024
+	maxLenPrimaryErrorMessage = 1024
 	// clockSkew is the maxmium amount of time that clocks could have been out of sync for.
 	clockSkew = 10 * time.Minute
 )
@@ -126,6 +127,7 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
 	case msg.TestMetadata != nil && ec.isErr(ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
+	case msg.FailureReason != nil && ec.isErr(ValidateFailureReason(msg.FailureReason), "failure_reason"):
 	}
 	return err
 }
@@ -189,6 +191,14 @@ func validateFileName(name string) error {
 		return errors.Reason("ends with /").Err()
 	}
 	return ValidateFilePath(name)
+}
+
+// ValidateFailureReason returns a non-nil error if fr is invalid.
+func ValidateFailureReason(fr *pb.FailureReason) error {
+	if len(fr.PrimaryErrorMessage) > maxLenPrimaryErrorMessage {
+		return errors.Reason("primary_error_message exceeds the maximum size of %d bytes", maxLenPrimaryErrorMessage).Err()
+	}
+	return nil
 }
 
 // ParseTestResultName extracts the invocation ID, unescaped test id, and

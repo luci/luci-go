@@ -63,6 +63,9 @@ func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cre
 					FileName: "//a_test.go",
 					Line:     54,
 				}},
+			FailureReason: &pb.FailureReason{
+				PrimaryErrorMessage: "got 1, want 0",
+			},
 		},
 	}
 }

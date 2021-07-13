@@ -112,6 +112,11 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 			So(err, ShouldBeNil)
 			mutMap["TestMetadata"] = spanutil.Compressed(tmdBytes)
 		}
+		if tr.FailureReason != nil {
+			frBytes, err := proto.Marshal(tr.FailureReason)
+			So(err, ShouldBeNil)
+			mutMap["FailureReason"] = spanutil.Compressed(frBytes)
+		}
 
 		ms[i] = spanutil.InsertMap("TestResults", mutMap)
 	}
