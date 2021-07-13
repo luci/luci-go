@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -44,13 +45,17 @@ func TestBuildURL(t *testing.T) {
 		c, ok := cPB.(*client)
 		So(ok, ShouldBeTrue)
 
-		So(c.buildURL("/changes/project~123", nil), ShouldResemble,
+		So(c.buildURL("/changes/project~123", nil, nil), ShouldResemble,
 			"https://x-review.googlesource.com/a/changes/project~123")
-		So(c.buildURL("/changes/project~123", url.Values{"o": []string{"ONE", "TWO"}}), ShouldResemble,
+		So(c.buildURL("/changes/project~123", url.Values{"o": []string{"ONE", "TWO"}}, nil), ShouldResemble,
 			"https://x-review.googlesource.com/a/changes/project~123?o=ONE&o=TWO")
 
+		opt := UseGerritMirror(func(host string) string { return "mirror-" + host })
+		So(c.buildURL("/changes/project~123", nil, []grpc.CallOption{opt}), ShouldResemble,
+			"https://mirror-x-review.googlesource.com/a/changes/project~123")
+
 		c.auth = false
-		So(c.buildURL("/path", nil), ShouldResemble,
+		So(c.buildURL("/path", nil, nil), ShouldResemble,
 			"https://x-review.googlesource.com/path")
 	})
 }

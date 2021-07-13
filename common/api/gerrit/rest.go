@@ -119,7 +119,7 @@ func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesReque
 	params.Add("S", strconv.FormatInt(req.Offset, 10))
 
 	var changes []*changeInfo
-	if _, err := c.call(ctx, "GET", "/changes/", params, nil, &changes); err != nil {
+	if _, err := c.call(ctx, "GET", "/changes/", params, nil, &changes, opts); err != nil {
 		return nil, err
 	}
 
@@ -152,7 +152,7 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 	}
 
 	var resp changeInfo
-	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp, opts); err != nil {
 		return nil, err
 	}
 	return resp.ToProto()
@@ -174,7 +174,7 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 		BaseCommit: req.BaseCommit,
 	}
 
-	if _, err := c.call(ctx, "POST", "/changes/", url.Values{}, data, &resp, http.StatusCreated); err != nil {
+	if _, err := c.call(ctx, "POST", "/changes/", url.Values{}, data, &resp, opts, http.StatusCreated); err != nil {
 		return nil, errors.Annotate(err, "create empty change").Err()
 	}
 
@@ -190,7 +190,7 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 
 func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
-	if _, _, err := c.callRaw(ctx, "PUT", path, url.Values{}, textInputHeaders(), req.Content, http.StatusNoContent); err != nil {
+	if _, _, err := c.callRaw(ctx, "PUT", path, url.Values{}, textInputHeaders(), req.Content, opts, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "change edit file content").Err()
 	}
 	return &emptypb.Empty{}, nil
@@ -200,7 +200,7 @@ func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.Delete
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
 	var data struct{}
 	// The response cannot be JSON-deserialized.
-	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, nil, http.StatusNoContent); err != nil {
+	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, nil, opts, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete edit file content").Err()
 	}
 	return &emptypb.Empty{}, nil
@@ -208,7 +208,7 @@ func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.Delete
 
 func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit:publish", gerritChangeIDForRouting(req.Number, req.Project))
-	if _, _, err := c.callRaw(ctx, "POST", path, url.Values{}, textInputHeaders(), []byte{}, http.StatusNoContent); err != nil {
+	if _, _, err := c.callRaw(ctx, "POST", path, url.Values{}, textInputHeaders(), []byte{}, opts, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "change edit publish").Err()
 	}
 	return &emptypb.Empty{}, nil
@@ -223,7 +223,7 @@ func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerReque
 		Notify:    enumToString(int32(req.Notify.Number()), gerritpb.Notify_name),
 	}
 	path := fmt.Sprintf("/changes/%s/reviewers", gerritChangeIDForRouting(req.Number, req.Project))
-	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "add reviewers").Err()
 	}
 	rr, err := resp.ToProto()
@@ -235,7 +235,7 @@ func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerReque
 
 func (c *client) DeleteReviewer(ctx context.Context, req *gerritpb.DeleteReviewerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/reviewers/%s/delete", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.AccountId))
-	if _, err := c.call(ctx, "POST", path, url.Values{}, nil, nil, http.StatusNoContent); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, nil, nil, opts, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete reviewer").Err()
 	}
 	return &emptypb.Empty{}, nil
@@ -265,7 +265,7 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 		}
 	}
 	var resp gerritpb.ReviewResult
-	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "set review").Err()
 	}
 	return &resp, nil
@@ -278,7 +278,7 @@ func (c *client) AddToAttentionSet(ctx context.Context, req *gerritpb.AttentionS
 	path := fmt.Sprintf("/changes/%s/attention", gerritChangeIDForRouting(req.Number, req.Project))
 	data := toAttentionSetInput(req.GetInput())
 	var resp accountInfo
-	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "add to attention set").Err()
 	}
 	return resp.ToProto(), nil
@@ -288,7 +288,7 @@ func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeReq
 	var resp changeInfo
 	path := fmt.Sprintf("/changes/%s/submit", gerritChangeIDForRouting(req.Number, req.Project))
 	var data struct{}
-	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "submit change").Err()
 	}
 	return resp.ToProto()
@@ -300,7 +300,7 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 	data := map[string]string{
 		"message": req.Message,
 	}
-	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "abandon change").Err()
 	}
 	return resp.ToProto()
@@ -310,7 +310,7 @@ func (c *client) SubmitRevision(ctx context.Context, req *gerritpb.SubmitRevisio
 	var resp submitInfo
 	path := fmt.Sprintf("/changes/%s/revisions/%s/submit", gerritChangeIDForRouting(req.Number, req.Project), req.RevisionId)
 	var data struct{}
-	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "submit revision").Err()
 	}
 	return resp.ToProto(), nil
@@ -319,7 +319,7 @@ func (c *client) SubmitRevision(ctx context.Context, req *gerritpb.SubmitRevisio
 func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
 	var resp mergeableInfo
 	path := fmt.Sprintf("/changes/%s/revisions/%s/mergeable", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
-	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "get mergeable").Err()
 	}
 	return resp.ToProto()
@@ -338,7 +338,7 @@ func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, 
 		params.Add("base", req.Base)
 	}
 	path := fmt.Sprintf("/changes/%s/revisions/%s/files/", gerritChangeIDForRouting(req.Number, req.Project), req.RevisionId)
-	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "list files").Err()
 	}
 	lfr := &gerritpb.ListFilesResponse{
@@ -358,7 +358,7 @@ func (c *client) GetRelatedChanges(ctx context.Context, req *gerritpb.GetRelated
 	out := struct {
 		Changes []relatedChangeAndCommitInfo `json:"changes"`
 	}{}
-	if _, err := c.call(ctx, "GET", path, nil, nil, &out); err != nil {
+	if _, err := c.call(ctx, "GET", path, nil, nil, &out, opts); err != nil {
 		return nil, errors.Annotate(err, "related changes").Err()
 	}
 	changes := make([]*gerritpb.GetRelatedChangesResponse_ChangeAndCommit, len(out.Changes))
@@ -371,7 +371,7 @@ func (c *client) GetRelatedChanges(ctx context.Context, req *gerritpb.GetRelated
 func (c *client) GetPureRevert(ctx context.Context, req *gerritpb.GetPureRevertRequest, opts ...grpc.CallOption) (*gerritpb.PureRevertInfo, error) {
 	var resp gerritpb.PureRevertInfo
 	path := fmt.Sprintf("/changes/%s/pure_revert", gerritChangeIDForRouting(req.Number, req.Project))
-	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "pure revert").Err()
 	}
 	return &resp, nil
@@ -388,7 +388,7 @@ func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwner
 	}
 
 	path := fmt.Sprintf("/projects/%s/branches/%s/code_owners/%s", url.PathEscape(req.Project), url.PathEscape(req.Ref), url.PathEscape(req.Path))
-	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "list file owners").Err()
 	}
 	owners := make([]*gerritpb.OwnerInfo, len(resp))
@@ -406,7 +406,7 @@ func (c *client) ListProjects(ctx context.Context, req *gerritpb.ListProjectsReq
 	for _, ref := range req.Refs {
 		params.Add("b", ref)
 	}
-	if _, err := c.call(ctx, "GET", "/projects/", params, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", "/projects/", params, nil, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "list projects").Err()
 	}
 	projectProtos := make(map[string]*gerritpb.ProjectInfo, len(resp))
@@ -425,7 +425,7 @@ func (c *client) ListProjects(ctx context.Context, req *gerritpb.ListProjectsReq
 func (c *client) GetRefInfo(ctx context.Context, req *gerritpb.RefInfoRequest, opts ...grpc.CallOption) (*gerritpb.RefInfo, error) {
 	var resp gerritpb.RefInfo
 	path := fmt.Sprintf("/projects/%s/branches/%s", url.PathEscape(req.Project), url.PathEscape(req.Ref))
-	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "get branch info").Err()
 	}
 	resp.Ref = branchToRef(resp.Ref)
@@ -438,7 +438,14 @@ func (c *client) GetRefInfo(ctx context.Context, req *gerritpb.RefInfoRequest, o
 // call returns HTTP status code and gRPC error.
 // If error happens before HTTP status code was determined, HTTP status code
 // will be -1.
-func (c *client) call(ctx context.Context, method, urlPath string, params url.Values, data, dest interface{}, expectedHTTPCodes ...int) (int, error) {
+func (c *client) call(
+	ctx context.Context,
+	method, urlPath string,
+	params url.Values,
+	data, dest interface{},
+	opts []grpc.CallOption,
+	expectedHTTPCodes ...int,
+) (int, error) {
 	headers := make(map[string]string)
 
 	var rawData []byte
@@ -457,7 +464,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 		headers["Content-Type"] = contentTypeJSON
 	}
 
-	ret, body, err := c.callRaw(ctx, method, urlPath, params, headers, rawData, expectedHTTPCodes...)
+	ret, body, err := c.callRaw(ctx, method, urlPath, params, headers, rawData, opts, expectedHTTPCodes...)
 	body = bytes.TrimPrefix(body, jsonPrefix)
 	if err == nil && dest != nil {
 		if err = json.Unmarshal(body, dest); err != nil {
@@ -484,9 +491,10 @@ func (c *client) callRaw(
 	params url.Values,
 	headers map[string]string,
 	data []byte,
+	opts []grpc.CallOption,
 	expectedHTTPCodes ...int,
 ) (int, []byte, error) {
-	url := c.buildURL(urlPath, params)
+	url := c.buildURL(urlPath, params, opts)
 	var requestBody io.Reader
 	if data != nil {
 		requestBody = bytes.NewBuffer(data)
@@ -543,14 +551,21 @@ func (c *client) callRaw(
 	}
 }
 
-func (c *client) buildURL(path string, params url.Values) string {
+func (c *client) buildURL(path string, params url.Values, opts []grpc.CallOption) string {
 	var url strings.Builder
+
+	host := c.host
+	for _, opt := range opts {
+		if g, ok := opt.(*gerritMirrorOption); ok {
+			host = g.altHost(host)
+		}
+	}
 
 	if c.testBaseURL != "" {
 		url.WriteString(c.testBaseURL)
 	} else {
 		url.WriteString("https://")
-		url.WriteString(c.host)
+		url.WriteString(host)
 		if c.auth {
 			url.WriteString("/a")
 		}
@@ -568,9 +583,25 @@ type validatable interface {
 	Validate() error
 }
 
+type gerritMirrorOption struct {
+	grpc.EmptyCallOption // to implement a grpc.CallOption
+	altHost              func(host string) string
+}
+
+// UseGerritMirror can be passed as grpc.CallOption to Gerrit client to select
+// an alternative Gerrit host to the one configured in the client "on the fly".
+func UseGerritMirror(altHost func(host string) string) grpc.CallOption {
+	if altHost == nil {
+		panic(fmt.Errorf("altHost must be non-nil"))
+	}
+	return &gerritMirrorOption{altHost: altHost}
+}
+
 func checkArgs(opts []grpc.CallOption, req validatable) error {
-	if len(opts) > 0 {
-		return errors.New("gerrit.client does not support grpc options")
+	for _, opt := range opts {
+		if _, ok := opt.(*gerritMirrorOption); !ok {
+			return errors.New("gerrit.client supports only UseGerritMirror option")
+		}
 	}
 	if err := req.Validate(); err != nil {
 		return errors.Annotate(err, "request is invalid").Err()
