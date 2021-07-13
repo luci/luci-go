@@ -31,6 +31,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -107,11 +108,17 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		return nil
 	}
 
+	configGroups, err := loadConfigGroups(ctx, task)
+	if err != nil {
+		return nil
+	}
+
 	msg, err := usertext.SFormatCLErrors(ctx, task.GetReasons(), cl, run.Mode(task.GetTrigger().GetMode()))
 	if err != nil {
 		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
 	}
 	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
+
 	err = cancel.Cancel(ctx, p.gFactory, cancel.Input{
 		LUCIProject:      task.GetLuciProject(),
 		CL:               cl,
@@ -121,6 +128,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		Trigger:          task.GetTrigger(),
 		Message:          msg,
 		RunCLExternalIDs: nil, // there is no Run.
+		ConfigGroups:     configGroups,
 	})
 	switch {
 	case err == nil:
@@ -173,4 +181,17 @@ func needsPurging(ctx context.Context, cl *changelist.CL, task *prjpb.PurgeCLTas
 		return false
 	}
 	return true
+}
+
+func loadConfigGroups(ctx context.Context, task *prjpb.PurgeCLTask) ([]*prjcfg.ConfigGroup, error) {
+	// There is usually exactly 1 config group.
+	res := make([]*prjcfg.ConfigGroup, len(task.GetConfigGroups()))
+	for i, id := range task.GetConfigGroups() {
+		cg, err := prjcfg.GetConfigGroup(ctx, task.GetLuciProject(), prjcfg.ConfigGroupID(id))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to load a ConfigGroup").Tag(transient.Tag).Err()
+		}
+		res[i] = cg
+	}
+	return res, nil
 }

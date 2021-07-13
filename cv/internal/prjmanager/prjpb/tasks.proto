@@ -57,6 +57,6 @@ message PurgeCLTask {
 
   repeated cv.internal.changelist.CLError reasons = 5;
 
-  // TODO(crbug/1227544): Pass watching ConfigGroups so that votes on the
-  // additional labels can be removed as well.
+  // Applicable config groups of this CL within the given LUCI Project.
+  repeated string config_groups = 6;
 }
