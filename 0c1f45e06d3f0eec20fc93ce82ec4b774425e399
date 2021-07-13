@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64521f29_5710f356",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-07-13T00:55:05Z",
+      "side": 1,
+      "message": "PTAL again. Just a reland, now in the right order.",
+      "revId": "0c1f45e06d3f0eec20fc93ce82ec4b774425e399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
