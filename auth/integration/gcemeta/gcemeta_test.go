@@ -80,6 +80,14 @@ func TestServer(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pid, ShouldEqual, "none")
 
+			zone, err := cl.Zone()
+			So(err, ShouldBeNil)
+			So(zone, ShouldEqual, "luci-emulated-zone")
+
+			name, err := cl.InstanceName()
+			So(err, ShouldBeNil)
+			So(name, ShouldEqual, "luci-emulated")
+
 			accounts, err := cl.Get("instance/service-accounts/")
 			So(err, ShouldBeNil)
 			So(accounts, ShouldEqual, "fake@example.com/\ndefault/\n")
