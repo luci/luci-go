@@ -67,12 +67,18 @@ func main() {
 		if err != nil {
 			return err
 		}
+		gMirrorFactory := gerrit.MirrorIteratorFactory{
+			// 3 US mirrors should suffice, effectively replicating a "quorum".
+			// These can be moved to to the service config if they have to be changed
+			// frequently.
+			MirrorHostPrefixes: []string{"us1-mirror-", "us2-mirror-", "us3-mirror-"},
+		}
 
 		// Register TQ handlers.
 		pmNotifier := prjmanager.NewNotifier(&tq.Default)
 		runNotifier := run.NewNotifier(&tq.Default)
 		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
-		clUpdater := updater.New(&tq.Default, gFactory, clMutator)
+		clUpdater := updater.New(&tq.Default, gFactory, &gMirrorFactory, clMutator)
 		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {

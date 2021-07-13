@@ -59,7 +59,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), clMutator)
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, clMutator)
 		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFake.Factory(), clUpdater)
 
 		const lProject = "infra"
@@ -103,7 +103,7 @@ func TestProjectLifeCycle(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), clMutator)
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, clMutator)
 		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFake.Factory(), clUpdater)
 
 		const lProject = "infra"
@@ -226,7 +226,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), clMutator)
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, clMutator)
 		pm := New(pmNotifier, &runNotifier, clMutator, ct.GFake.Factory(), clUpdater)
 
 		cfg := singleRepoConfig(gHost, gRepo)
