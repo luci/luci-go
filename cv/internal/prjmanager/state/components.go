@@ -341,10 +341,16 @@ func (s *State) populatePurgeCLTasks(ctx context.Context, ts []*prjpb.PurgeCLTas
 	for _, t := range ts {
 		id := t.GetPurgingCl().GetClid()
 		pcl := s.PB.GetPcls()[s.pclIndex[common.CLID(id)]]
+
 		t.Trigger = pcl.GetTrigger()
 		t.LuciProject = s.PB.GetLuciProject()
 		t.PurgingCl.Deadline = deadline
 		t.PurgingCl.OperationId = fmt.Sprintf("%d-%d", opInt, id)
+		t.ConfigGroups = make([]string, len(pcl.GetConfigGroupIndexes()))
+		for i, idx := range pcl.GetConfigGroupIndexes() {
+			id := prjcfg.MakeConfigGroupID(s.PB.GetConfigHash(), s.PB.ConfigGroupNames[idx])
+			t.ConfigGroups[i] = string(id)
+		}
 	}
 }
 

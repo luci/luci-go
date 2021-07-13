@@ -18,6 +18,7 @@ package cancel
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -172,9 +173,11 @@ func Cancel(ctx context.Context, gFactory gerrit.ClientFactory, in Input) error 
 	case in.Trigger == nil:
 		panic("trigger must be non-nil")
 	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
-		panic(errors.Reason("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject()).Err())
+		panic(fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject()))
 	case in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted:
 		return errors.New("failed to cancel trigger because CV lost access to this CL", ErrPreconditionFailedTag)
+	case len(in.ConfigGroups) == 0:
+		panic(fmt.Errorf("ConfigGroups must be given"))
 	}
 	if err := in.Notify.validate(); err != nil {
 		panic(err)

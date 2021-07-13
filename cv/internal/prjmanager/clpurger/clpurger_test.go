@@ -25,10 +25,8 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
@@ -60,23 +58,9 @@ func TestPurgeCL(t *testing.T) {
 		const gRepo = "repo"
 		const change = 43
 
-		// Enable CV management of Runs for all projects.
-		settings := &migrationpb.Settings{
-			ApiHosts: []*migrationpb.Settings_ApiHost{
-				{
-					Host:          "cv.appspot.com",
-					Prod:          true,
-					ProjectRegexp: []string{".+"},
-				},
-			},
-			UseCvRuns: &migrationpb.Settings_UseCVRuns{
-				ProjectRegexp: []string{".+"},
-			},
-		}
-		So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
-
 		cfg := makeConfig(gHost, gRepo)
 		prjcfgtest.Create(ctx, lProject, cfg)
+		cfgMeta := prjcfgtest.MustExist(ctx, lProject)
 		gobmaptest.Update(ctx, lProject)
 
 		// Fake 1 CL in gerrit & import it to Datastore.
@@ -123,6 +107,7 @@ func TestPurgeCL(t *testing.T) {
 			Reasons: []*changelist.CLError{
 				{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 			},
+			ConfigGroups: []string{string(cfgMeta.ConfigGroupIDs[0])},
 		}
 		So(task.Trigger, ShouldNotBeNil)
 
