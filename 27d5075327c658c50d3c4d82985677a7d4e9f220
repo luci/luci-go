@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4aca7591_b3a328d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-13T00:09:28Z",
+      "side": 1,
+      "message": "\u003e No, I didn\u0027t. Why? To force a retry if update is progress?\nYes, Like check write lock before read.\n\n\u003e My fear it that this will make things worse in practice w/o really guaranteeing correctness anyway.\nTrue, actually, to take a step back, reminds me why \"In gobmap\u0027s current Datastore layout, we can\u0027t make updates atomic.\"?",
+      "parentUuid": "d76b43f6_2f0f8259",
+      "revId": "27d5075327c658c50d3c4d82985677a7d4e9f220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6e28d0ca_cb94f22f",
@@ -73,6 +91,30 @@
       "side": 1,
       "message": "Good idea. Done. PTAL!",
       "parentUuid": "6e28d0ca_cb94f22f",
+      "range": {
+        "startLine": 79,
+        "startChar": 32,
+        "endLine": 79,
+        "endChar": 40
+      },
+      "revId": "27d5075327c658c50d3c4d82985677a7d4e9f220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f513af3_987a2179",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-13T00:09:28Z",
+      "side": 1,
+      "message": "lgtm",
+      "parentUuid": "d3b97482_0b47d434",
       "range": {
         "startLine": 79,
         "startChar": 32,
