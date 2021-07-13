@@ -128,6 +128,24 @@
       "parentUuid": "c2ebf585_6339a521",
       "revId": "e9318965b912e404203f963b4bb915b236e23a24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a924955c_e1da8d05",
+        "filename": "cv/internal/gerrit/mirror.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-13T00:19:18Z",
+      "side": 1,
+      "message": "That makes sense as a general grpc.CallOption.",
+      "parentUuid": "f108a8f7_3fd26003",
+      "revId": "e9318965b912e404203f963b4bb915b236e23a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
