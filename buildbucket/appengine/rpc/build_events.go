@@ -134,17 +134,20 @@ func buildCreated(ctx context.Context, b *model.Build) {
 			break
 		}
 	}
-	buildCountCreated.Add(ctx, 1, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, ua)
+	buildCountCreated.Add(ctx, 1, legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, ua)
 }
 
 func buildStarted(ctx context.Context, b *model.Build) {
 	logging.Infof(ctx, "Build %d: started", b.ID)
-	buildCountStarted.Add(ctx, 1, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, b.Proto.Canary)
+	buildCountStarted.Add(
+		ctx, 1,
+		legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, b.Proto.Canary,
+	)
 	if b.Proto.GetStartTime() != nil {
 		startT := b.Proto.StartTime.AsTime()
 		buildDurationScheduling.Add(
 			ctx, startT.Sub(b.CreateTime).Seconds(),
-			b.Proto.Builder.Bucket, b.Proto.Builder.Builder, "", "", "", b.Proto.Canary,
+			legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, "", "", "", b.Proto.Canary,
 		)
 	}
 }
@@ -156,18 +159,20 @@ func buildStarting(ctx context.Context, b *model.Build) error {
 func buildCompleted(ctx context.Context, b *model.Build) {
 	r, fr, cr := getLegacyMetricFields(b)
 	logging.Infof(ctx, "Build %d: completed by %q with status %q", b.ID, auth.CurrentIdentity(ctx), r)
-	buildCountCompleted.Add(ctx, 1, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary)
+	buildCountCompleted.Add(
+		ctx, 1,
+		legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary)
 
 	endT := b.Proto.EndTime.AsTime()
 	buildDurationCycle.Add(
 		ctx, endT.Sub(b.CreateTime).Seconds(),
-		b.Proto.Builder.Bucket, b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,
+		legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,
 	)
 	if b.Proto.StartTime != nil {
 		startT := b.Proto.StartTime.AsTime()
 		buildDurationRun.Add(
 			ctx, endT.Sub(startT).Seconds(),
-			b.Proto.Builder.Bucket, b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,
+			legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,
 		)
 	}
 }
@@ -180,4 +185,10 @@ func buildCompleting(ctx context.Context, b *model.Build) error {
 		tks <- func() error { return tasks.ExportBigQuery(ctx, bqTask) }
 		tks <- func() error { return tasks.FinalizeResultDB(ctx, invTask) }
 	})
+}
+
+// legacyBucketName returns the V1 luci bucket name.
+// e.g., "luci.chromium.try".
+func legacyBucketName(bid *pb.BuilderID) string {
+	return fmt.Sprintf("luci.%s.%s", bid.Project, bid.Bucket)
 }

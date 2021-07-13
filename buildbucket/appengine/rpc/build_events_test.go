@@ -32,7 +32,7 @@ import (
 )
 
 func fv(vs ...interface{}) []interface{} {
-	ret := []interface{}{"bucket", "builder"}
+	ret := []interface{}{"luci.project.bucket", "builder"}
 	return append(ret, vs...)
 }
 
