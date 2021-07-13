@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -87,7 +88,8 @@ func (i instrumentedClient) start(ctx context.Context, method string) func(err e
 	return func(err error) error {
 		dur := clock.Since(ctx, tStart)
 
-		c := status.Code(err)
+		// gerrit client we use is known to sometimes wrap grpc errors.
+		c := status.Code(errors.Unwrap(err))
 		canonicalCode, ok := code.Code_name[int32(c)]
 		if !ok {
 			canonicalCode = c.String() // Code(%d)

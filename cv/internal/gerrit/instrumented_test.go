@@ -63,10 +63,9 @@ func TestInstrumentedFactory(t *testing.T) {
 		mockDelay := time.Millisecond
 		srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tclock.Add(mockDelay)
+			w.WriteHeader(mockHTTPCode)
 			if mockHTTPCode == http.StatusOK {
 				w.Write([]byte(mockResp))
-			} else {
-				w.WriteHeader(mockHTTPCode)
 			}
 		}))
 		defer srv.Close()
