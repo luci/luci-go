@@ -72,6 +72,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c6160bbd_0bce2a0f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-07-13T03:54:52Z",
+      "side": 1,
+      "message": "ah right, I forget the limitation is the # of entities updated in the transaction.\n\n#1 is also what I have in mind as well and it\u0027s kinda similar to how we handle ProjectConfig entity. I also love idea #2, I like how data is store in this sharded way. Maybe I will implement this if I have free cycle to spare :D\n\nThanks for raising those ideas!",
+      "parentUuid": "93a50ef4_144b1161",
+      "revId": "27d5075327c658c50d3c4d82985677a7d4e9f220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6e28d0ca_cb94f22f",
