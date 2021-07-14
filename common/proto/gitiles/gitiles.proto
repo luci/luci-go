@@ -34,8 +34,6 @@ service Gitiles {
     rpc Archive(ArchiveRequest) returns (ArchiveResponse) {};
     // DownloadFile retrieves a file from the project.
     rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {};
-    // DownloadDiff retrives a diff of a revision from the project.
-    rpc DownloadDiff(DownloadDiffRequest) returns (DownloadDiffResponse) {};
     // Projects retrieves list of available Gitiles projects
     rpc Projects(ProjectsRequest) returns (ProjectsResponse) {};
 }
@@ -196,27 +194,6 @@ message DownloadFileResponse {
     //
     // The underlying server RPC streams back the contents. This API simplifies
     // the RPC to a non-streaming response.
-    string contents = 1;
-}
-
-message DownloadDiffRequest {
-    // Gitiles project, e.g. "chromium/src" part in
-    // https://chromium.googlesource.com/chromium/src/+/master
-    // Required.
-    string project = 1;
-
-    // The git revision to get the diff at.
-    // The value can be:
-    //   - a git revision as 40-char string or its prefix so long as its unique in repo.
-    //   - a ref such as "refs/heads/branch"
-    //   - a ref defined as n-th parent of R in the form "R~n".
-    //     For example, "master~2" or "deadbeef~1".
-    // Required.
-    string committish = 2;
-}
-
-message DownloadDiffResponse {
-    // Decoded contents of the diff.
     string contents = 1;
 }
 
