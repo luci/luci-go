@@ -765,7 +765,9 @@ const (
 		"allowed to do so in your Gerrit project config. Contact your " +
 		"project admin or Chrome Operations team https://goo.gl/f3mzjN"
 	resourceExhaustedMsg = "CV failed to submit this CL because it is " +
-		"throttled by Gerrit"
+		"throttled by Gerrit."
+	gerritTimeoutMsg = "CV failed to submit this CL because Gerrit took too " +
+		"long to respond."
 	timeoutMsg = "CV timed out while trying to submit this CL. " +
 		// TODO(yiwzhang): Generally, time out means CV is doing something
 		// wrong and looping over internally, However, timeout could also
@@ -795,6 +797,8 @@ func classifyGerritErr(ctx context.Context, err error) (msg string, isTransient 
 		return resourceExhaustedMsg, true
 	case codes.Internal:
 		return fmt.Sprintf(unexpectedMsgFmt, msg), true
+	case codes.DeadlineExceeded:
+		return gerritTimeoutMsg, true
 	default:
 		logging.Warningf(ctx, "unclassified grpc code [%s] received from Gerrit. Full error: %s", code, err)
 		return fmt.Sprintf(unexpectedMsgFmt, msg), false

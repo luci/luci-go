@@ -461,6 +461,8 @@ func (c *change) annotateGerritErr(ctx context.Context, err error, action string
 		return errors.Reason("change %s/%d not found", c.Host, c.Number).Tag(ErrPermanentTag).Err()
 	case codes.FailedPrecondition:
 		return errors.Reason("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, err).Tag(ErrPermanentTag).Err()
+	case codes.DeadlineExceeded:
+		return errors.Reason("timeout when calling Gerrit to %s %s/%d", action, c.Host, c.Number).Tag(transient.Tag).Err()
 	default:
 		return gerrit.UnhandledError(ctx, err, "failed to %s %s/%d", action, c.Host, c.Number)
 	}
