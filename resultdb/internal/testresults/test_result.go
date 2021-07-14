@@ -74,6 +74,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	var micros spanner.NullInt64
 	var summaryHTML spanutil.Compressed
 	var tmd spanutil.Compressed
+	var fr spanutil.Compressed
 	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
 		"Variant":         &tr.Variant,
 		"VariantHash":     &tr.VariantHash,
@@ -84,6 +85,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		"RunDurationUsec": &micros,
 		"Tags":            &tr.Tags,
 		"TestMetadata":    &tmd,
+		"FailureReason":   &fr,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -98,6 +100,9 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	PopulateDurationField(tr, micros)
 	if err := populateTestMetadata(tr, tmd); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal test metadata").Err()
+	}
+	if err := populateFailureReason(tr, fr); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal failure reason").Err()
 	}
 	return tr, nil
 }
@@ -122,4 +127,13 @@ func populateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {
 
 	tr.TestMetadata = &pb.TestMetadata{}
 	return proto.Unmarshal(tmd, tr.TestMetadata)
+}
+
+func populateFailureReason(tr *pb.TestResult, fr spanutil.Compressed) error {
+	if len(fr) == 0 {
+		return nil
+	}
+
+	tr.FailureReason = &pb.FailureReason{}
+	return proto.Unmarshal(fr, tr.FailureReason)
 }

@@ -21,6 +21,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
@@ -33,7 +34,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // This message does not specify the test id.
 // It should be available in the message that embeds this message.
 message TestResult {
-  reserved 11; // test_location
+  reserved 11;  // test_location
 
   // Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
   // RPC.
@@ -66,7 +67,7 @@ message TestResult {
   //   the common prefix "a/b/e:".
   // This can be used in UI.
   // LUCI does not interpret test ids in any other way.
-  string test_id = 2 [ (google.api.field_behavior) = IMMUTABLE ];
+  string test_id = 2 [(google.api.field_behavior) = IMMUTABLE];
 
   // Identifies a test result in a given invocation and test id.
   // Regex: ^[a-z0-9\-_.]{1,32}$
@@ -77,8 +78,7 @@ message TestResult {
 
   // Description of one specific way of running the test,
   // e.g. a specific bucket, builder and a test suite.
-  Variant variant = 4
-      [ (google.api.field_behavior) = IMMUTABLE ];
+  Variant variant = 4 [(google.api.field_behavior) = IMMUTABLE];
 
   // Whether the result of test case execution is expected.
   // In a typical Chromium CL, 99%+ of test results are expected.
@@ -87,11 +87,11 @@ message TestResult {
   // An unexpected result != test case failure. There are test cases that are
   // expected to fail/skip/crash. The test harness compares the actual status
   // with the expected one(s) and this field is the result of the comparison.
-  bool expected = 5 [ (google.api.field_behavior) = IMMUTABLE ];
+  bool expected = 5 [(google.api.field_behavior) = IMMUTABLE];
 
   // Machine-readable status of the test case.
   // MUST NOT be STATUS_UNSPECIFIED.
-  TestStatus status = 6 [ (google.api.field_behavior) = IMMUTABLE ];
+  TestStatus status = 6 [(google.api.field_behavior) = IMMUTABLE];
 
   // Human-readable explanation of the result, in HTML.
   // MUST be sanitized before rendering in the browser.
@@ -102,36 +102,40 @@ message TestResult {
   // Supports artifact embedding using custom tags:
   // * <text-artifact> renders contents of an artifact as text.
   //   Usage:
-  //   * To embed result level artifact: <text-artifact artifact-id="<artifact_id>">
-  //   * To embed invocation level artifact: <text-artifact artifact-id="<artifact_id>" inv-level>
-  string summary_html = 7 [ (google.api.field_behavior) = IMMUTABLE ];
+  //   * To embed result level artifact: <text-artifact
+  //   artifact-id="<artifact_id>">
+  //   * To embed invocation level artifact: <text-artifact
+  //   artifact-id="<artifact_id>" inv-level>
+  string summary_html = 7 [(google.api.field_behavior) = IMMUTABLE];
 
   // The point in time when the test case started to execute.
   google.protobuf.Timestamp start_time = 8
-      [ (google.api.field_behavior) = IMMUTABLE ];
+      [(google.api.field_behavior) = IMMUTABLE];
 
   // Duration of the test case execution.
   // MUST be equal to or greater than 0.
   google.protobuf.Duration duration = 9
-      [ (google.api.field_behavior) = IMMUTABLE ];
+      [(google.api.field_behavior) = IMMUTABLE];
 
   // Metadata for this test result.
   // It might describe this particular execution or the test case.
   // A key can be repeated.
-  repeated StringPair tags = 10
-      [ (google.api.field_behavior) = IMMUTABLE ];
+  repeated StringPair tags = 10 [(google.api.field_behavior) = IMMUTABLE];
 
   // Hash of the variant.
   // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
   //
   // Output only.
   string variant_hash = 12 [
-      (google.api.field_behavior) = OUTPUT_ONLY,
-      (google.api.field_behavior) = IMMUTABLE
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
   ];
 
   // Information about the test at the time of its execution.
   TestMetadata test_metadata = 13;
+
+  // Information about the test failure. Only present if the test failed.
+  FailureReason failure_reason = 14;
 }
 
 // Machine-readable status of a test result.
@@ -203,9 +207,9 @@ message TestExoneration {
 
   // Reasoning behind the exoneration, in HTML.
   // MUST be sanitized before rendering in the browser.
-  string explanation_html = 5 [ (google.api.field_behavior) = IMMUTABLE ];
+  string explanation_html = 5 [(google.api.field_behavior) = IMMUTABLE];
 
   // Hash of the variant.
   // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
-  string variant_hash = 6 [ (google.api.field_behavior) = IMMUTABLE ];
+  string variant_hash = 6 [(google.api.field_behavior) = IMMUTABLE];
 }

@@ -153,11 +153,13 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	selectIfIncluded("TestMetadata", "test_metadata")
 	selectIfIncluded("Variant", "variant")
 	selectIfIncluded("VariantHash", "variant_hash")
+	selectIfIncluded("FailureReason", "failure_reason")
 
 	// Build a parser function.
 	var b spanutil.Buffer
 	var summaryHTML spanutil.Compressed
 	var tmd spanutil.Compressed
+	var fr spanutil.Compressed
 	parser = func(row *spanner.Row) (*pb.TestResult, error) {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
@@ -186,6 +188,9 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 				ptrs = append(ptrs, &tr.Variant)
 			case "VariantHash":
 				ptrs = append(ptrs, &tr.VariantHash)
+			case "FailureReason":
+				ptrs = append(ptrs, &fr)
+
 			default:
 				panic("impossible")
 			}
@@ -204,6 +209,9 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		PopulateDurationField(tr, micros)
 		if err := populateTestMetadata(tr, tmd); err != nil {
 			return nil, errors.Annotate(err, "error unmarshalling test_metadata for %s", trName).Err()
+		}
+		if err := populateFailureReason(tr, fr); err != nil {
+			return nil, errors.Annotate(err, "error unmarshalling failure_reason for %s", trName).Err()
 		}
 		if err := q.Mask.Trim(tr); err != nil {
 			return nil, errors.Annotate(err, "error trimming fields for %s", trName).Err()

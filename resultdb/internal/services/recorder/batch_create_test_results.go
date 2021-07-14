@@ -187,6 +187,13 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 			row["TestMetadata"] = spanutil.Compressed(tmd)
 		}
 	}
+	if ret.FailureReason != nil {
+		if fr, err := proto.Marshal(ret.FailureReason); err != nil {
+			panic(fmt.Sprintf("failed to marshal FailureReason to bytes: %q", err))
+		} else {
+			row["FailureReason"] = spanutil.Compressed(fr)
+		}
+	}
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
 	return ret, mutation
 }

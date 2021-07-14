@@ -1,0 +1,38 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+
+// Information about why a test failed. This information may be displayed
+// to developers in result viewing UIs and will also be used to cluster
+// similar failures together.
+// For example, this will contain assertion failure messages and stack traces.
+message FailureReason {
+  // The error message that ultimately caused the test to fail. This should
+  // only be the error message and should not include any stack traces.
+  // An example would be the message from an Exception in a Java test.
+  // In the case that a test failed due to multiple expectation failures, any
+  // immediately fatal failure should be chosen, or otherwise the first
+  // expectation failure.
+  // If this field is empty, other fields (including those from the TestResult)
+  // may be used to cluster the failure instead.
+  //
+  // The size of the message must be equal to or smaller than 1024 bytes in
+  // UTF-8.
+  string primary_error_message = 1;
+}

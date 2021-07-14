@@ -202,6 +202,11 @@ CREATE TABLE TestResults (
   -- See TestResult.test_metadata for details.
   TestMetadata BYTES(MAX),
 
+  -- In the case of a failure, information on how the test failed.
+  -- For example error messages, stack traces, etc.
+  -- See TestResult.failure_reason for details.
+  FailureReason BYTES(MAX),
+
 ) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
