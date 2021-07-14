@@ -121,8 +121,9 @@ func reportClientRPCMetrics(ctx context.Context, method string, err error, dur t
 		canon = code.String() // Code(%d)
 	}
 	grpcClientCount.Add(ctx, 1, method, canon)
-	// TODO(tandrii): use dur.Milliseconds() once all GAE apps are >go1.11.
-	grpcClientDuration.Add(ctx, dur.Seconds()*1e3, method, canon)
+	// dur.Milliseconds() is only available in go >=1.13, but not every chops apps are running
+	// with go >= 1.13.
+	grpcClientDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, canon)
 }
 
 // WithClientRPCStatsMonitor returns a DialOption that specifies a chain of
