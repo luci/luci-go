@@ -16,8 +16,13 @@ package starlarkproto
 
 import (
 	"bytes"
-	"errors"
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+
+	"go.chromium.org/luci/common/errors"
+	luciproto "go.chromium.org/luci/common/proto"
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -25,11 +30,87 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 
+	"github.com/protocolbuffers/txtpbfmt/ast"
 	"github.com/protocolbuffers/txtpbfmt/parser"
+	"github.com/protocolbuffers/txtpbfmt/unquote"
 )
+
+func isString(s string) bool {
+	return len(s) >= 2 &&
+		(s[0] == '"' || s[0] == '\'') &&
+		s[len(s)-1] == s[0]
+}
+
+func name(parentName string, node *ast.Node) string {
+	if parentName == "" {
+		return node.Name
+	}
+	return fmt.Sprintf("%s.%s", parentName, node.Name)
+}
+
+var quoteSwapper = strings.NewReplacer("'", "\"", "\"", "'")
+
+func jsonTransformTextPBNode(node *ast.Node, parentName string) error {
+	for _, value := range node.Values {
+		if !isString(value.Value) {
+			return nil
+		}
+	}
+	s, err := unquote.Unquote(node)
+	if err != nil {
+		return errors.Annotate(err, "internal error: could not parse value for '%s' as string", name(parentName, node)).Err()
+	}
+	buf := &bytes.Buffer{}
+	if err := json.Indent(buf, []byte(s), "", "  "); err != nil {
+		return errors.Annotate(err, "value for '%s' must be valid JSON, got value '%s'", name(parentName, node), s).Err()
+	}
+	lines := strings.Split(buf.String(), "\n")
+	values := make([]*ast.Value, 0, len(lines))
+	for _, line := range lines {
+		// Using single quotes for each string reduces the line noise by
+		// preventing the double quotes (of which there are many) from
+		// having to be escaped. There isn't a function to get a
+		// single-quoted string, so swap the single and double quotes,
+		// quote the string and then swap the quotes back
+		line = quoteSwapper.Replace(strconv.Quote(quoteSwapper.Replace(line)))
+		values = append(values, &ast.Value{Value: line})
+	}
+	node.Values = values
+	return nil
+}
+
+func transformTextPBNode(node *ast.Node, desc protoreflect.MessageDescriptor, parentName string) error {
+	fDesc := desc.Fields().ByName(protoreflect.Name(node.Name))
+	var format luciproto.TextPBFieldFormat
+	if opts, ok := fDesc.Options().(*descriptorpb.FieldOptions); ok {
+		format = proto.GetExtension(opts, luciproto.E_TextPbFormat).(luciproto.TextPBFieldFormat)
+	}
+	switch format {
+	case luciproto.TextPBFieldFormat_JSON:
+		if err := jsonTransformTextPBNode(node, parentName); err != nil {
+			return err
+		}
+	}
+	for _, child := range node.Children {
+		if err := transformTextPBNode(child, fDesc.Message(), name(parentName, node)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func transformTextPBAst(nodes []*ast.Node, desc protoreflect.MessageDescriptor) error {
+	for _, node := range nodes {
+		if err := transformTextPBNode(node, desc, ""); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // ToTextPB serializes a protobuf message to text proto.
 func ToTextPB(msg *Message) ([]byte, error) {
@@ -44,9 +125,16 @@ func ToTextPB(msg *Message) ([]byte, error) {
 	}
 	// prototext randomly injects spaces into the generate output. Pass it through
 	// a formatter to get rid of them.
-	return parser.FormatWithConfig(blob, parser.Config{
+	nodes, err := parser.ParseWithConfig(blob, parser.Config{
 		SkipAllColons: true,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if err := transformTextPBAst(nodes, msg.MessageType().Descriptor()); err != nil {
+		return nil, err
+	}
+	return []byte(parser.Pretty(nodes, 0)), nil
 }
 
 // ToJSONPB serializes a protobuf message to JSONPB string.

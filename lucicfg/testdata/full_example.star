@@ -682,7 +682,14 @@ lucicfg.emit(
 #         cipd_version: "refs/heads/master"
 #         cmd: "cmd"
 #       }
-#       properties: "{\"prop1\":\"val1\",\"prop2\":[\"val2\",123]}"
+#       properties:
+#         '{'
+#         '  "prop1": "val1",'
+#         '  "prop2": ['
+#         '    "val2",'
+#         '    123'
+#         '  ]'
+#         '}'
 #     }
 #     builders {
 #       name: "linux ci builder"
@@ -812,7 +819,7 @@ lucicfg.emit(
 #         cipd_package: "executable/bundles/inline"
 #         cipd_version: "refs/heads/master"
 #       }
-#       properties: "{}"
+#       properties: '{}'
 #       service_account: "builder@example.com"
 #     }
 #     builders {
@@ -858,7 +865,7 @@ lucicfg.emit(
 #         cipd_version: "refs/heads/master"
 #         cmd: "cmd"
 #       }
-#       properties: "{}"
+#       properties: '{}'
 #     }
 #     builders {
 #       name: "builder with experiment map"
@@ -868,7 +875,7 @@ lucicfg.emit(
 #         cipd_version: "refs/heads/master"
 #         cmd: "cmd"
 #       }
-#       properties: "{}"
+#       properties: '{}'
 #       experiments {
 #         key: "luci.enable_new_beta_feature"
 #         value: 32
