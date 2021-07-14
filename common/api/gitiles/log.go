@@ -38,7 +38,7 @@ const DefaultLimit = 1000
 //
 // Limit specifies the maximum number of commits to load.
 // 0 means use DefaultLimit.
-func PagingLog(ctx context.Context, client gitiles.GitilesClient, req *gitiles.LogRequest, limit int, opts ...grpc.CallOption) ([]*git.Commit, error) {
+func PagingLog(ctx context.Context, client pagingLogClient, req *gitiles.LogRequest, limit int, opts ...grpc.CallOption) ([]*git.Commit, error) {
 	// req needs to mutate, so clone it.
 	req = proto.Clone(req).(*gitiles.LogRequest)
 
@@ -75,4 +75,8 @@ func PagingLog(ctx context.Context, client gitiles.GitilesClient, req *gitiles.L
 		req.PageToken = res.NextPageToken
 	}
 	return combinedLog, nil
+}
+
+type pagingLogClient interface {
+	Log(context.Context, *gitiles.LogRequest, ...grpc.CallOption) (*gitiles.LogResponse, error)
 }
