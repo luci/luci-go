@@ -62,6 +62,7 @@ func EquivalentPatchsetRange(info *gerritpb.ChangeInfo) (minEquiPatchset, curren
 			return
 		case gerritpb.RevisionInfo_NO_CHANGE,
 			gerritpb.RevisionInfo_NO_CODE_CHANGE,
+			gerritpb.RevisionInfo_MERGE_FIRST_PARENT_UPDATE,
 			gerritpb.RevisionInfo_TRIVIAL_REBASE:
 			minEquiPatchset = int(revs[i+1].Number)
 		default:
