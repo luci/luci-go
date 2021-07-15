@@ -74,14 +74,10 @@ func (r *DownloadFileRequest) Validate() error {
 	if err := requireCommittish("committish", r.GetCommittish()); err != nil {
 		return err
 	}
-	switch {
-	case r.Format != DownloadFileRequest_TEXT:
-		return errors.Reason("format must be %s", DownloadFileRequest_TEXT).Err()
-	case strings.HasPrefix(r.Path, "/"):
+	if strings.HasPrefix(r.Path, "/") {
 		return errors.New("path must not start with /")
-	default:
-		return nil
 	}
+	return nil
 }
 
 // Validate returns an error if r is invalid.
