@@ -187,7 +187,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   connectedCallback() {
     super.connectedCallback();
-    if (!this.isShortLink) {
+    if (!this.isShortLink && !window.location.href.includes('javascript:')) {
       trackEvent(GA_CATEGORIES.NEW_BUILD_PAGE, GA_ACTIONS.PAGE_VISITED, window.location.href);
       trackEvent(GA_CATEGORIES.PROJECT_BUILD_PAGE, GA_ACTIONS.VISITED_NEW, this.builderIdParam!.project);
     }
