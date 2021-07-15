@@ -79,6 +79,21 @@ def source_file_filter(input_api):
       x, files_to_check=files_to_check, files_to_skip=files_to_skip)
 
 
+def CheckGoModTidy(input_api, output_api):
+  root = input_api.change.RepositoryRoot()
+  return input_api.RunTests([
+    input_api.Command(
+      name='go mod tidy',
+      cmd=[
+        input_api.python_executable,
+        os.path.join(root, 'scripts', 'check_go_mod_tidy.py'),
+        root,
+      ],
+      kwargs={},
+      message=output_api.PresubmitError)
+  ])
+
+
 def CommonChecks(input_api, output_api):
   results = []
   results.extend(
@@ -89,6 +104,8 @@ def CommonChecks(input_api, output_api):
     input_api.canned_checks.CheckLicense(
       input_api, output_api, header(input_api),
       source_file_filter=source_file_filter(input_api)))
+  if os.environ.get('GO111MODULE') != 'off':
+    results.extend(CheckGoModTidy(input_api, output_api))
   return results
 
 
