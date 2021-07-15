@@ -70,7 +70,6 @@ func (c *downloadFileRun) main(a subcommands.Application, args []string) error {
 		Project:    project,
 		Committish: committish,
 		Path:       path,
-		Format:     gitilespb.DownloadFileRequest_TEXT,
 	}
 
 	authCl, err := c.createAuthClient()
