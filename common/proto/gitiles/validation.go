@@ -80,3 +80,17 @@ func (r *DownloadFileRequest) Validate() error {
 		return nil
 	}
 }
+
+// Validate returns an error if r is invalid.
+func (r *DownloadDiffRequest) Validate() error {
+	switch {
+	case r.Project == "":
+		return errors.New("project is required")
+	case r.Committish == "":
+		return errors.New("committish is required")
+	case strings.HasPrefix(r.Committish, "/"):
+		return errors.New("committish must not start with /")
+	default:
+		return nil
+	}
+}

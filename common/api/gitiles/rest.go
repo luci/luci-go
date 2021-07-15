@@ -179,6 +179,29 @@ func (c *client) DownloadFile(ctx context.Context, req *gitiles.DownloadFileRequ
 	}, nil
 }
 
+func (c *client) DownloadDiff(ctx context.Context, req *gitiles.DownloadDiffRequest, opts ...grpc.CallOption) (*gitiles.DownloadDiffResponse, error) {
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
+	}
+	// Only TEXT format is supported so far.
+	query := make(url.Values, 1)
+	query.Set("format", "TEXT")
+	path := fmt.Sprintf("/%s/+/%s%s", url.PathEscape(req.Project), url.PathEscape(req.Committish), url.PathEscape("^!"))
+	_, b, err := c.getRaw(ctx, path, query)
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := base64.StdEncoding.DecodeString(string(b))
+	if err != nil {
+		return nil, errors.Annotate(err, "gitiles download diff").Err()
+	}
+
+	return &gitiles.DownloadDiffResponse{
+		Contents: string(d),
+	}, nil
+}
+
 var archiveExtensions = map[gitiles.ArchiveRequest_Format]string{
 	gitiles.ArchiveRequest_BZIP2: ".bzip2",
 	gitiles.ArchiveRequest_GZIP:  ".tar.gz",
