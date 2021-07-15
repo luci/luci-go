@@ -15,7 +15,6 @@
 package gitiles
 
 import (
-	"fmt"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -23,15 +22,17 @@ import (
 
 // Validate returns an error if r is invalid.
 func (r *LogRequest) Validate() error {
+	if err := requireProject(r.GetProject()); err != nil {
+		return err
+	}
+	if err := requireCommittish("committish", r.GetCommittish()); err != nil {
+		return err
+	}
 	switch {
-	case r.Project == "":
-		return errors.New("project is required")
-	case r.PageSize < 0:
-		return errors.New("page size must not be negative")
-	case r.Committish == "":
-		return errors.New("committish is required")
 	case strings.Contains(r.Committish, ".."):
 		return errors.New("committish cannot contain \"..\"; use Ancestor instead")
+	case r.PageSize < 0:
+		return errors.New("page size must not be negative")
 	default:
 		return nil
 	}
@@ -39,11 +40,12 @@ func (r *LogRequest) Validate() error {
 
 // Validate returns an error if r is invalid.
 func (r *RefsRequest) Validate() error {
+	if err := requireProject(r.GetProject()); err != nil {
+		return err
+	}
 	switch {
-	case r.Project == "":
-		return errors.New("project is required")
 	case r.RefsPath != "refs" && !strings.HasPrefix(r.RefsPath, "refs/"):
-		return fmt.Errorf(`refsPath must be "refs" or start with "refs/": %q`, r.RefsPath)
+		return errors.Reason(`refsPath must be "refs" or start with "refs/": %q`, r.RefsPath).Err()
 	default:
 		return nil
 	}
@@ -51,11 +53,12 @@ func (r *RefsRequest) Validate() error {
 
 // Validate returns an error if r is invalid.
 func (r *ArchiveRequest) Validate() error {
+	if err := requireProject(r.GetProject()); err != nil {
+		return err
+	}
 	switch {
 	case r.Format == ArchiveRequest_Invalid:
 		return errors.New("format must be valid")
-	case r.Project == "":
-		return errors.New("project is required")
 	case r.Ref == "":
 		return errors.New("ref is required")
 	default:
@@ -65,15 +68,15 @@ func (r *ArchiveRequest) Validate() error {
 
 // Validate returns an error if r is invalid.
 func (r *DownloadFileRequest) Validate() error {
+	if err := requireProject(r.GetProject()); err != nil {
+		return err
+	}
+	if err := requireCommittish("committish", r.GetCommittish()); err != nil {
+		return err
+	}
 	switch {
 	case r.Format != DownloadFileRequest_TEXT:
-		return errors.Reason("format must be %s", DownloadFileRequest_TEXT.String()).Err()
-	case r.Project == "":
-		return errors.New("project is required")
-	case r.Committish == "":
-		return errors.New("committish is required")
-	case strings.HasPrefix(r.Committish, "/"):
-		return errors.New("committish must not start with /")
+		return errors.Reason("format must be %s", DownloadFileRequest_TEXT).Err()
 	case strings.HasPrefix(r.Path, "/"):
 		return errors.New("path must not start with /")
 	default:
@@ -83,14 +86,28 @@ func (r *DownloadFileRequest) Validate() error {
 
 // Validate returns an error if r is invalid.
 func (r *DownloadDiffRequest) Validate() error {
-	switch {
-	case r.Project == "":
-		return errors.New("project is required")
-	case r.Committish == "":
-		return errors.New("committish is required")
-	case strings.HasPrefix(r.Committish, "/"):
-		return errors.New("committish must not start with /")
-	default:
-		return nil
+	if err := requireProject(r.GetProject()); err != nil {
+		return err
 	}
+	if err := requireCommittish("committish", r.GetCommittish()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func requireProject(val string) error {
+	if val == "" {
+		return errors.New("project is required")
+	}
+	return nil
+}
+
+func requireCommittish(field, val string) error {
+	switch {
+	case val == "":
+		return errors.Reason("%s is required", field).Err()
+	case strings.HasPrefix(val, "/"):
+		return errors.Reason("%s must not start with /", field).Err()
+	}
+	return nil
 }

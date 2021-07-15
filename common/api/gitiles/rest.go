@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/gitiles"
-	"go.chromium.org/luci/common/retry/transient"
 )
 
 // This file implements gitiles proto service client
@@ -111,7 +110,7 @@ func (c *client) Log(ctx context.Context, req *gitiles.LogRequest, opts ...grpc.
 		var err error
 		ret.Log[i], err = c.Proto()
 		if err != nil {
-			return nil, errors.Annotate(err, "could not parse commit %#v", c).Err()
+			return nil, status.Errorf(codes.Internal, "could not parse commit %#v: %s", c, err)
 		}
 	}
 	return ret, nil
@@ -159,7 +158,6 @@ func (c *client) DownloadFile(ctx context.Context, req *gitiles.DownloadFileRequ
 	if err := checkArgs(opts, req); err != nil {
 		return nil, err
 	}
-	// Only TEXT format is supported so far.
 	query := make(url.Values, 1)
 	query.Set("format", "TEXT")
 	ref := strings.TrimRight(req.Committish, "/")
@@ -171,19 +169,16 @@ func (c *client) DownloadFile(ctx context.Context, req *gitiles.DownloadFileRequ
 
 	d, err := base64.StdEncoding.DecodeString(string(b))
 	if err != nil {
-		return nil, errors.Annotate(err, "gitiles download file").Err()
+		return nil, status.Errorf(codes.Internal, "failed to decode response: %s", err)
 	}
 
-	return &gitiles.DownloadFileResponse{
-		Contents: string(d),
-	}, nil
+	return &gitiles.DownloadFileResponse{Contents: string(d)}, nil
 }
 
 func (c *client) DownloadDiff(ctx context.Context, req *gitiles.DownloadDiffRequest, opts ...grpc.CallOption) (*gitiles.DownloadDiffResponse, error) {
 	if err := checkArgs(opts, req); err != nil {
 		return nil, err
 	}
-	// Only TEXT format is supported so far.
 	query := make(url.Values, 1)
 	query.Set("format", "TEXT")
 	path := fmt.Sprintf("/%s/+/%s%s", url.PathEscape(req.Project), url.PathEscape(req.Committish), url.PathEscape("^!"))
@@ -194,12 +189,10 @@ func (c *client) DownloadDiff(ctx context.Context, req *gitiles.DownloadDiffRequ
 
 	d, err := base64.StdEncoding.DecodeString(string(b))
 	if err != nil {
-		return nil, errors.Annotate(err, "gitiles download diff").Err()
+		return nil, status.Errorf(codes.Internal, "failed to decode response: %s", err)
 	}
 
-	return &gitiles.DownloadDiffResponse{
-		Contents: string(d),
-	}, nil
+	return &gitiles.DownloadDiffResponse{Contents: string(d)}, nil
 }
 
 var archiveExtensions = map[gitiles.ArchiveRequest_Format]string{
@@ -229,7 +222,7 @@ func (c *client) Archive(ctx context.Context, req *gitiles.ArchiveRequest, opts 
 	case 1:
 		resp.Filename = filenames[0]
 	default:
-		return resp, fmt.Errorf("received %d filenames for archive", len(filenames))
+		return resp, status.Errorf(codes.Internal, "received too many (%d) filenames for archive", len(filenames))
 	}
 	return resp, nil
 }
@@ -260,7 +253,10 @@ func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(body, dest)
+	if err = json.Unmarshal(body, dest); err != nil {
+		return status.Errorf(codes.Internal, "could not deserialize response: %s", err)
+	}
+	return nil
 }
 
 // getRaw makes a raw HTTP get request and returns the header and body returned.
@@ -273,13 +269,13 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	}
 	r, err := ctxhttp.Get(ctx, c.Client, u)
 	if err != nil {
-		return http.Header{}, []byte{}, transient.Tag.Apply(err)
+		return http.Header{}, []byte{}, status.Errorf(codes.Unknown, err.Error())
 	}
 
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return r.Header, []byte{}, errors.Annotate(err, "could not read response body").Err()
+		return r.Header, []byte{}, status.Errorf(codes.Internal, "could not read response body: %s", err)
 	}
 
 	switch r.StatusCode {
@@ -287,17 +283,14 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 		return r.Header, bytes.TrimPrefix(body, jsonPrefix), nil
 
 	case http.StatusTooManyRequests:
-		logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v\nResponse body: %s",
-			r.Header, body)
+		logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v\nResponse body: %s", r.Header, body)
 		return r.Header, body, status.Errorf(codes.ResourceExhausted, "insufficient Gitiles quota")
 
 	case http.StatusNotFound:
 		return r.Header, body, status.Errorf(codes.NotFound, "not found")
 
 	default:
-		logging.Errorf(ctx, "gitiles: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s",
-			r.StatusCode,
-			r.Header, body)
+		logging.Errorf(ctx, "Gitiles: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s", r.StatusCode, r.Header, body)
 		return r.Header, body, status.Errorf(codes.Internal, "unexpected HTTP %d from Gitiles", r.StatusCode)
 	}
 }
@@ -308,10 +301,10 @@ type validatable interface {
 
 func checkArgs(opts []grpc.CallOption, req validatable) error {
 	if len(opts) > 0 {
-		return errors.New("gitiles.client does not support grpc options")
+		return status.Errorf(codes.Internal, "gitiles.client does not support grpc options")
 	}
 	if err := req.Validate(); err != nil {
-		return errors.Annotate(err, "request is invalid").Err()
+		return status.Errorf(codes.InvalidArgument, "request is invalid: %s", err)
 	}
 	return nil
 }
