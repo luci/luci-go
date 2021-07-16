@@ -58,6 +58,11 @@ func UnhandledError(ctx context.Context, err error, format string, args ...inter
 		logging.Errorf(ctx, "FIXME likely bug in CV: %s while %s", err, msg)
 		return ann.Err()
 
+	case codes.ResourceExhausted:
+		return errors.Annotate(ErrOutOfQuota, msg).Err()
+	case codes.DeadlineExceeded:
+		return errors.Annotate(ErrGerritDeadlineExceeded, msg).Err()
+
 	default:
 		// Assume transient. If this turns out non-transient, then its code must be
 		// handled explicitly above.

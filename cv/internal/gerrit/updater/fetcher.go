@@ -351,10 +351,6 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 			return nil
 		case codes.NotFound, codes.PermissionDenied:
 			return errStaleOrNoAccess
-		case codes.ResourceExhausted:
-			return gerrit.ErrOutOfQuota
-		case codes.DeadlineExceeded:
-			return gerrit.ErrGerritDeadlineExceeded
 		default:
 			return gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 		}
@@ -397,10 +393,6 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 			// typically be due to eventual consistency of Gerrit, and rarely due to
 			// change of ACLs.
 			return gerrit.ErrStaleData
-		case codes.ResourceExhausted:
-			return gerrit.ErrOutOfQuota
-		case codes.DeadlineExceeded:
-			return gerrit.ErrGerritDeadlineExceeded
 		default:
 			return gerrit.UnhandledError(ctx, err, "failed to fetch related changes for %s", f)
 		}
@@ -590,10 +582,6 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 
 		case codes.PermissionDenied, codes.NotFound:
 			return gerrit.ErrStaleData
-		case codes.ResourceExhausted:
-			return gerrit.ErrOutOfQuota
-		case codes.DeadlineExceeded:
-			return gerrit.ErrGerritDeadlineExceeded
 		default:
 			return gerrit.UnhandledError(ctx, err, "failed to fetch files for %s", f)
 		}
