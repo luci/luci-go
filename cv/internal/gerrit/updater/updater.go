@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -47,10 +46,6 @@ const (
 	// updatedHint is known.
 	knownRefreshInterval = 15 * time.Minute
 )
-
-var errStaleData = errors.New("fetched stale Gerrit data", transient.Tag)
-var errGerritDeadlineExceeded = errors.New("Gerrit took too long to respond", transient.Tag)
-var errOutOfQuota = errors.New("out of Gerrit Quota", transient.Tag)
 
 // Updater fetches Gerrit Change details and stores them as CV CLs in Datastore.
 type Updater struct {
@@ -78,7 +73,7 @@ func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, gm *gerrit.MirrorIteratorFa
 			return common.TQIfy{
 				// Don't log the entire stack trace of stale data, which is sadly an
 				// hourly occurrence.
-				KnownRetry: []error{errStaleData, errOutOfQuota, errGerritDeadlineExceeded},
+				KnownRetry: []error{gerrit.ErrStaleData, gerrit.ErrOutOfQuota, gerrit.ErrGerritDeadlineExceeded},
 			}.Error(ctx, err)
 		},
 	})

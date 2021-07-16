@@ -351,7 +351,7 @@ mirrorLoop:
 				// Retry with another mirror.
 				continue mirrorLoop
 			default:
-				return nil, errStaleData
+				return nil, gerrit.ErrStaleData
 			}
 		case codes.NotFound, codes.PermissionDenied:
 			// Either no access OR CL was deleted OR eventual consistency.
@@ -365,9 +365,9 @@ mirrorLoop:
 			return nil, setNoAccess(true /* temporary */)
 
 		case codes.ResourceExhausted:
-			return nil, errOutOfQuota
+			return nil, gerrit.ErrOutOfQuota
 		case codes.DeadlineExceeded:
-			return nil, errGerritDeadlineExceeded
+			return nil, gerrit.ErrGerritDeadlineExceeded
 		default:
 			return nil, gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 		}
@@ -404,14 +404,14 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 			// typically be due to eventual consistency of Gerrit, and rarely due to
 			// change of ACLs.
 			if mirrorIterator.Empty() {
-				return errStaleData
+				return gerrit.ErrStaleData
 			}
 			// Else, retry with another mirror.
 
 		case codes.ResourceExhausted:
-			return errOutOfQuota
+			return gerrit.ErrOutOfQuota
 		case codes.DeadlineExceeded:
-			return errGerritDeadlineExceeded
+			return gerrit.ErrGerritDeadlineExceeded
 		default:
 			return gerrit.UnhandledError(ctx, err, "failed to fetch related changes for %s", f)
 		}
@@ -605,14 +605,14 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 			// typically be due to eventual consistency of Gerrit, and rarely due to
 			// change of ACLs.
 			if mirrorIterator.Empty() {
-				return errStaleData
+				return gerrit.ErrStaleData
 			}
 			// Else, retry with another mirror.
 
 		case codes.ResourceExhausted:
-			return errOutOfQuota
+			return gerrit.ErrOutOfQuota
 		case codes.DeadlineExceeded:
-			return errGerritDeadlineExceeded
+			return gerrit.ErrGerritDeadlineExceeded
 		default:
 			return gerrit.UnhandledError(ctx, err, "failed to fetch files for %s", f)
 		}
