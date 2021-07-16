@@ -77,8 +77,8 @@ type fetcher struct {
 	change      int64
 	updatedHint time.Time
 
-	gMirrorFactory *gerrit.MirrorIteratorFactory
-	g              gerrit.Client
+	gFactory gerrit.Factory
+	g        gerrit.Client
 
 	externalID changelist.ExternalID
 	priorCL    *changelist.CL
@@ -332,7 +332,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		return nil, setNoAccess(false /* permanent*/)
 	}
 
-	mirrorIterator := f.gMirrorFactory.Make(ctx)
+	mirrorIterator := f.gFactory.MakeMirrorIterator(ctx)
 	var ci *gerritpb.ChangeInfo
 mirrorLoop:
 	for {
@@ -388,7 +388,7 @@ mirrorLoop:
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
 func (f *fetcher) fetchRelated(ctx context.Context) error {
-	mirrorIterator := f.gMirrorFactory.Make(ctx)
+	mirrorIterator := f.gFactory.MakeMirrorIterator(ctx)
 	for {
 		resp, err := f.g.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 			Number:     f.change,
@@ -574,7 +574,7 @@ func (f *fetcher) countRelatedWhichAreParents(this *gerritpb.GetRelatedChangesRe
 
 // fetchFiles fetches files for the current revision of the new Snapshot.
 func (f *fetcher) fetchFiles(ctx context.Context) error {
-	mirrorIterator := f.gMirrorFactory.Make(ctx)
+	mirrorIterator := f.gFactory.MakeMirrorIterator(ctx)
 	for {
 		resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
 			Number:     f.change,

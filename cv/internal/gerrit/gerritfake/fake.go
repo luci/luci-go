@@ -70,6 +70,11 @@ func (f *Fake) MakeClient(ctx context.Context, gerritHost, luciProject string) (
 	return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
 }
 
+// MakeMirrorIterator implemnents gerrit.Factory.
+func (f *Fake) MakeMirrorIterator(ctx context.Context) *gerrit.MirrorIterator {
+	return &gerrit.MirrorIterator{""}
+}
+
 // Requests returns a shallow copy of all incoming requests this fake has
 // received.
 func (f *Fake) Requests() []proto.Message {

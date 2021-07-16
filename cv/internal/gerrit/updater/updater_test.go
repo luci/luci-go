@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 
@@ -61,7 +60,7 @@ func TestSchedule(t *testing.T) {
 		// messages.
 		const scheduleTimeIncrement = time.Nanosecond
 
-		u := New(ct.TQDispatcher, nil, nil, nil)
+		u := New(ct.TQDispatcher, nil, nil)
 
 		do := func(t *RefreshGerritCL) []proto.Message {
 			So(u.Schedule(ctx, t), ShouldBeNil)
@@ -351,7 +350,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			LuciProject: lProject,
 			Host:        gHost,
 		}
-		u := New(ct.TQDispatcher, ct.GFactory(), &gerrit.MirrorIteratorFactory{}, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
+		u := New(ct.TQDispatcher, ct.GFactory(), changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
 
 		assertScheduled := func(expected ...int) {
 			var actual []int

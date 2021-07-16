@@ -49,15 +49,14 @@ const (
 
 // Updater fetches Gerrit Change details and stores them as CV CLs in Datastore.
 type Updater struct {
-	gFactory       gerrit.Factory
-	gMirrorFactory *gerrit.MirrorIteratorFactory
-	clMutator      *changelist.Mutator
-	tqd            *tq.Dispatcher
+	gFactory  gerrit.Factory
+	clMutator *changelist.Mutator
+	tqd       *tq.Dispatcher
 }
 
 // New creates a new Updater.
-func New(tqd *tq.Dispatcher, g gerrit.Factory, gm *gerrit.MirrorIteratorFactory, m *changelist.Mutator) *Updater {
-	u := &Updater{g, gm, m, tqd}
+func New(tqd *tq.Dispatcher, g gerrit.Factory, m *changelist.Mutator) *Updater {
+	u := &Updater{g, m, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClass,
 		Prototype:    &RefreshGerritCL{},
@@ -172,7 +171,7 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 // Prefer Schedule() instead of Refresh() in production.
 func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	f := fetcher{
-		gMirrorFactory:  u.gMirrorFactory,
+		gFactory:        u.gFactory,
 		clMutator:       u.clMutator,
 		scheduleRefresh: u.ScheduleDelayed,
 

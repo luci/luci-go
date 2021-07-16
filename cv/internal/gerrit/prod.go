@@ -32,7 +32,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// prodFactory knows how to construct Gerrit clients.
+// prodFactory knows how to construct Gerrit clients and hop over Gerrit
+// mirrors.
 //
 // CV must use project-scoped credentials, but not every project has configured
 // project-scoped service account (PSSA). The alternative and legacy
@@ -52,13 +53,14 @@ import (
 // defaults to auth.AsSelf if LUCI project doesn't have PSSA configured.
 // Thus CV can't rely on the above method as is.
 type prodFactory struct {
-	baseTransport http.RoundTripper
-	legacyCache   *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
+	baseTransport      http.RoundTripper
+	legacyCache        *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
+	mirrorHostPrefixes []string
 
 	mockMintProjectToken func(context.Context, auth.ProjectTokenParams) (*auth.Token, error)
 }
 
-func newProd(ctx context.Context) (*prodFactory, error) {
+func newProd(ctx context.Context, mirrorHostPrefixes ...string) (*prodFactory, error) {
 	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {
 		return nil, err
@@ -66,10 +68,17 @@ func newProd(ctx context.Context) (*prodFactory, error) {
 	return &prodFactory{
 		baseTransport: t,
 		// CV supports <20 legacy hosts. New ones shouldn't be added.
-		legacyCache: lru.New(20),
+		legacyCache:        lru.New(20),
+		mirrorHostPrefixes: mirrorHostPrefixes,
 	}, nil
 }
 
+// MakeMirrorIterator implements Factory.
+func (p *prodFactory) MakeMirrorIterator(ctx context.Context) *MirrorIterator {
+	return newMirrorIterator(ctx, p.mirrorHostPrefixes...)
+}
+
+// MakeClient implements Factory.
 func (f *prodFactory) MakeClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 	if strings.ContainsRune(luciProject, '.') {
 		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())

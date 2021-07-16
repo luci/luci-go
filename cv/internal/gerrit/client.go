@@ -67,11 +67,12 @@ type Client interface {
 // Gerrit host and LUCI project determine the authentication being used.
 type Factory interface {
 	MakeClient(ctx context.Context, gerritHost, luciProject string) (Client, error)
+	MakeMirrorIterator(ctx context.Context) *MirrorIterator
 }
 
-// NewFactory returns ClientFactory for use in production.
-func NewFactory(ctx context.Context) (Factory, error) {
-	f, err := newProd(ctx)
+// NewFactory returns Factory for use in production.
+func NewFactory(ctx context.Context, mirrorHostPrefixes ...string) (Factory, error) {
+	f, err := newProd(ctx, mirrorHostPrefixes...)
 	if err != nil {
 		return nil, err
 	}

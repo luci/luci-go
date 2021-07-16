@@ -30,8 +30,7 @@ func TestMirrorIterator(t *testing.T) {
 		ctx := context.Background()
 		const baseHost = "a.example.com"
 		Convey("No mirrors", func() {
-			f := MirrorIteratorFactory{}
-			it := f.Make(ctx)
+			it := newMirrorIterator(ctx)
 			So(it.Empty(), ShouldBeFalse)
 			So(it.next()(baseHost), ShouldResemble, baseHost)
 			So(it.Empty(), ShouldBeTrue)
@@ -40,8 +39,7 @@ func TestMirrorIterator(t *testing.T) {
 			So(it.next()(baseHost), ShouldResemble, baseHost)
 		})
 		Convey("One mirrors", func() {
-			f := MirrorIteratorFactory{MirrorHostPrefixes: []string{"m1-"}}
-			it := f.Make(ctx)
+			it := newMirrorIterator(ctx, "m1-")
 			So(it.Empty(), ShouldBeFalse)
 			So(it.next()(baseHost), ShouldResemble, baseHost)
 			So(it.Empty(), ShouldBeFalse)
@@ -50,21 +48,18 @@ func TestMirrorIterator(t *testing.T) {
 			So(it.next()(baseHost), ShouldResemble, baseHost)
 		})
 		Convey("Shuffles mirrors", func() {
-			expectedHosts := make([]string, 10)
-			f := MirrorIteratorFactory{MirrorHostPrefixes: make([]string, len(expectedHosts)-1)}
-			for i := range expectedHosts {
-				if i == 0 {
-					expectedHosts[i] = baseHost
-					continue
-				}
+			prefixes := make([]string, 10)
+			expectedHosts := make([]string, len(prefixes)+1)
+			expectedHosts[0] = baseHost
+			for i := range prefixes {
 				// use "m" prefix such that its lexicographically after baseHost itself.
 				p := fmt.Sprintf("m%d-", i)
-				expectedHosts[i] = p + baseHost
-				f.MirrorHostPrefixes[i-1] = p
+				prefixes[i] = p
+				expectedHosts[i+1] = p + baseHost
 			}
 			iterate := func() []string {
 				var actual []string
-				it := f.Make(ctx)
+				it := newMirrorIterator(ctx, prefixes...)
 				for !it.Empty() {
 					actual = append(actual, it.next()(baseHost))
 				}

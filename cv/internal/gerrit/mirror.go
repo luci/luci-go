@@ -23,36 +23,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-// MirrorIteratorFactory makes MirrorIterator to sequentially route request to
-// Gerrit virtual host at first and then to specific mirrors.
-//
-// Empty value and nil value are valid and mean that there are no mirrors.
-type MirrorIteratorFactory struct {
-	MirrorHostPrefixes []string
-}
-
-// Make makes a new MirrorIterator.
-func (f *MirrorIteratorFactory) Make(ctx context.Context) *MirrorIterator {
-	// First prefix "" means use host as is.
-	it := &MirrorIterator{""}
-	if f == nil {
-		return it
-	}
-	// Copied from the factory.
-	*it = append(*it, f.MirrorHostPrefixes...)
-	// Shuffle factory-provided prefixes.
-	nonEmpty := (*it)[1:]
-	_ = mathrand.WithGoRand(ctx, func(r *rand.Rand) error {
-		rand.Shuffle(len(nonEmpty), func(i, j int) { nonEmpty[i], nonEmpty[j] = nonEmpty[j], nonEmpty[i] })
-		return nil
-	})
-	return it
-}
-
 // MirrorIterator starts with the Gerrit host as is and then iterates over
 // mirrors.
-//
-// Must be constructed using its MirrorIteratorFactory.
 //
 // Fail-safe: if all mirrors have been used, uses the host as is. However,
 // users should use Empty() to detect this and if necessary should construct a
@@ -60,6 +32,19 @@ func (f *MirrorIteratorFactory) Make(ctx context.Context) *MirrorIterator {
 //
 // Not goroutine-safe.
 type MirrorIterator []string
+
+func newMirrorIterator(ctx context.Context, mirrorHostPrefixes ...string) *MirrorIterator {
+	// First prefix "" means use host as is.
+	it := &MirrorIterator{""}
+	*it = append(*it, mirrorHostPrefixes...) // copy
+	// Shuffle the provided prefixes.
+	provided := (*it)[1:]
+	_ = mathrand.WithGoRand(ctx, func(r *rand.Rand) error {
+		rand.Shuffle(len(provided), func(i, j int) { provided[i], provided[j] = provided[j], provided[i] })
+		return nil
+	})
+	return it
+}
 
 // Next returns a grpc.CallOption.
 func (it *MirrorIterator) Next() grpc.CallOption {
