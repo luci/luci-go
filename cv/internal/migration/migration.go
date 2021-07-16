@@ -193,7 +193,7 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 			return &migrationpb.PostGerritMessageResponse{}, nil
 		}
 	}
-	gc, err := m.GFactory(ctx, req.GetHost(), req.GetProject())
+	gc, err := m.GFactory.MakeClient(ctx, req.GetHost(), req.GetProject())
 	if err != nil {
 		return nil, appstatus.Errorf(codes.Internal, "failed to obtain Gerrit Client: %s", err)
 	}

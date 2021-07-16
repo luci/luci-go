@@ -96,7 +96,7 @@ func makeTestImpl(ct *cvtesting.Test) (*Impl, *prjmanager.Notifier, *run.Notifie
 		CLMutator:  changelist.NewMutator(ct.TQDispatcher, pm, rm),
 		CLUpdater:  clu,
 		TreeClient: ct.TreeFake.Client(),
-		GFactory:   ct.GFake.Factory(),
+		GFactory:   ct.GFactory(),
 		BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake),
 	}
 	return impl, pm, rm, clu

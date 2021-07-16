@@ -79,7 +79,7 @@ func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QuerySt
 		qs:          qs,
 	}
 	var err error
-	if q.client, err = p.gFactory(ctx, qs.GetHost(), luciProject); err != nil {
+	if q.client, err = p.gFactory.MakeClient(ctx, qs.GetHost(), luciProject); err != nil {
 		return err
 	}
 	if qs.GetLastFullTime() == nil {

@@ -764,7 +764,7 @@ func TestSubmitter(t *testing.T) {
 			deadline: now.Add(1 * time.Minute),
 			clids:    common.CLIDs{1, 2},
 			rm:       run.NewNotifier(ct.TQDispatcher),
-			gFactory: ct.GFake.Factory(),
+			gFactory: ct.GFactory(),
 		}
 		So(datastore.Put(ctx,
 			&run.Run{

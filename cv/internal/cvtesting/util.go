@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -158,6 +159,10 @@ func (t *Test) cleanup() {
 
 func (t *Test) RoundTestClock(multiple time.Duration) {
 	t.Clock.Set(t.Clock.Now().Add(multiple).Truncate(multiple))
+}
+
+func (t *Test) GFactory() gerrit.Factory {
+	return gerrit.CachingFactory(16, gerrit.TimeLimitedFactory(gerrit.InstrumentedFactory(t.GFake)))
 }
 
 func (t *Test) setMaxDuration() {

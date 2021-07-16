@@ -196,7 +196,7 @@ func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
 	}
 
 	var err error
-	if c.gc, err = gFactory(ctx, c.Host, c.LUCIProject); err != nil {
+	if c.gc, err = gFactory.MakeClient(ctx, c.Host, c.LUCIProject); err != nil {
 		return err
 	}
 

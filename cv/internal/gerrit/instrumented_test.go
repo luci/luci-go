@@ -83,10 +83,10 @@ func TestInstrumentedFactory(t *testing.T) {
 			}, nil
 		}
 
-		f := InstrumentedFactory(prod.makeClient)
-		c1, err := f(ctx, gHost, "prj1")
+		f := InstrumentedFactory(prod)
+		c1, err := f.MakeClient(ctx, gHost, "prj1")
 		So(err, ShouldBeNil)
-		c2, err := f(ctx, gHost, "prj2")
+		c2, err := f.MakeClient(ctx, gHost, "prj2")
 		So(err, ShouldBeNil)
 
 		mockDelay, mockHTTPCode, mockResp = time.Second, http.StatusOK, ")]}'\n[]" // no changes.

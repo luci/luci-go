@@ -40,8 +40,6 @@ type Fake struct {
 	// m protects all other members below.
 	m sync.Mutex
 
-	factory gerrit.Factory
-
 	// cs is a set of changes, indexed by (host, change number).
 	// See key() function.
 	cs map[string]*Change
@@ -63,21 +61,13 @@ type Fake struct {
 	requestsMu sync.RWMutex
 }
 
-func (f *Fake) Factory() gerrit.Factory {
-	f.m.Lock()
-	if f.factory == nil {
-		f.factory = func(ctx context.Context, gerritHost, luciProject string) (gerrit.Client, error) {
-			if strings.ContainsRune(luciProject, '.') {
-				// Quickly catch common mistake.
-				panic(fmt.Errorf("wrong gerritHost or luciProject: %q %q", gerritHost, luciProject))
-			}
-			return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
-		}
-		f.factory = gerrit.TimeLimitedFactory(f.factory)
-		f.factory = gerrit.CachingFactory(5, f.factory)
+// MakeClient implemnents gerrit.Factory.
+func (f *Fake) MakeClient(ctx context.Context, gerritHost, luciProject string) (gerrit.Client, error) {
+	if strings.ContainsRune(luciProject, '.') {
+		// Quickly catch common mistake.
+		panic(fmt.Errorf("wrong gerritHost or luciProject: %q %q", gerritHost, luciProject))
 	}
-	f.m.Unlock()
-	return f.factory
+	return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
 }
 
 // Requests returns a shallow copy of all incoming requests this fake has

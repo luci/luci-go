@@ -39,7 +39,7 @@ func TestNotifyOnUnmatchedCLs(t *testing.T) {
 
 		pm := pmMock{}
 		clUpdater := clUpdaterMock{}
-		p := New(ct.TQDispatcher, ct.GFake.Factory(), &clUpdater, &pm)
+		p := New(ct.TQDispatcher, ct.GFactory(), &clUpdater, &pm)
 
 		changes := []int64{1, 2, 3, 4, 5}
 		const notYetSaved = 4

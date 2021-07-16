@@ -26,15 +26,22 @@ import (
 
 // TimeLimitedFactory limits duration per each kind of Gerrit RPC.
 func TimeLimitedFactory(f Factory) Factory {
-	return func(ctx context.Context, gerritHost, luciProject string) (Client, error) {
-		c, err := f(ctx, gerritHost, luciProject)
-		if err != nil {
-			return nil, err
-		}
-		return timeLimitedClient{
-			actual: c,
-		}, nil
+	return timeLimitedFactory{Factory: f}
+}
+
+type timeLimitedFactory struct {
+	Factory
+}
+
+// MakeClient implements Factory.
+func (t timeLimitedFactory) MakeClient(ctx context.Context, gerritHost string, luciProject string) (Client, error) {
+	c, err := t.Factory.MakeClient(ctx, gerritHost, luciProject)
+	if err != nil {
+		return nil, err
 	}
+	return timeLimitedClient{
+		actual: c,
+	}, nil
 }
 
 type timeLimitedClient struct {

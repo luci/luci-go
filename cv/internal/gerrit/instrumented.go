@@ -63,17 +63,24 @@ var (
 
 // InstrumentedFactory instruments RPCs.
 func InstrumentedFactory(f Factory) Factory {
-	return func(ctx context.Context, gerritHost, luciProject string) (Client, error) {
-		c, err := f(ctx, gerritHost, luciProject)
-		if err != nil {
-			return nil, err
-		}
-		return instrumentedClient{
-			luciProject: luciProject,
-			gerritHost:  gerritHost,
-			actual:      c,
-		}, nil
+	return instrumentedFactory{Factory: f}
+}
+
+type instrumentedFactory struct {
+	Factory
+}
+
+// MakeClient implements Factory.
+func (i instrumentedFactory) MakeClient(ctx context.Context, gerritHost string, luciProject string) (Client, error) {
+	c, err := i.Factory.MakeClient(ctx, gerritHost, luciProject)
+	if err != nil {
+		return nil, err
 	}
+	return instrumentedClient{
+		luciProject: luciProject,
+		gerritHost:  gerritHost,
+		actual:      c,
+	}, nil
 }
 
 type instrumentedClient struct {

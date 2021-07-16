@@ -65,7 +65,9 @@ type Client interface {
 // Factory creates Client tied to Gerrit host and LUCI project.
 //
 // Gerrit host and LUCI project determine the authentication being used.
-type Factory func(ctx context.Context, gerritHost, luciProject string) (Client, error)
+type Factory interface {
+	MakeClient(ctx context.Context, gerritHost, luciProject string) (Client, error)
+}
 
 // NewFactory returns ClientFactory for use in production.
 func NewFactory(ctx context.Context) (Factory, error) {
@@ -73,5 +75,5 @@ func NewFactory(ctx context.Context) (Factory, error) {
 	if err != nil {
 		return nil, err
 	}
-	return CachingFactory(64, InstrumentedFactory(TimeLimitedFactory(f.makeClient))), nil
+	return CachingFactory(64, InstrumentedFactory(TimeLimitedFactory(f))), nil
 }

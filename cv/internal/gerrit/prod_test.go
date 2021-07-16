@@ -123,7 +123,7 @@ func TestMakeClient(t *testing.T) {
 					}, nil
 				}
 
-				c, err := f.makeClient(limitedCtx, u.Host, "modern")
+				c, err := f.MakeClient(limitedCtx, u.Host, "modern")
 				So(err, ShouldBeNil)
 				_, err = c.ListChanges(limitedCtx, &gerrit.ListChangesRequest{})
 				So(err, ShouldBeNil)
@@ -145,7 +145,7 @@ func TestMakeClient(t *testing.T) {
 				f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 					return nil, nil
 				}
-				c, err := f.makeClient(limitedCtx, u.Host, "not-migrated")
+				c, err := f.MakeClient(limitedCtx, u.Host, "not-migrated")
 				So(err, ShouldBeNil)
 				_, err = c.ListChanges(limitedCtx, &gerrit.ListChangesRequest{})
 				So(err, ShouldBeNil)

@@ -77,7 +77,7 @@ func TestPostGerritMessage(t *testing.T) {
 		defer cancel()
 
 		m := MigrationServer{
-			GFactory: ct.GFake.Factory(),
+			GFactory: ct.GFactory(),
 		}
 		req := &migrationpb.PostGerritMessageRequest{
 			AttemptKey: "deadbeef",

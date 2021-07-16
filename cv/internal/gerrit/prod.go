@@ -70,7 +70,7 @@ func newProd(ctx context.Context) (*prodFactory, error) {
 	}, nil
 }
 
-func (f *prodFactory) makeClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
+func (f *prodFactory) MakeClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 	if strings.ContainsRune(luciProject, '.') {
 		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())
 	}

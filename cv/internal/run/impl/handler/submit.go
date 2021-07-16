@@ -715,7 +715,7 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.Sub
 }
 
 func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
-	gc, err := s.gFactory(ctx, cl.Detail.GetGerrit().GetHost(), s.runID.LUCIProject())
+	gc, err := s.gFactory.MakeClient(ctx, cl.Detail.GetGerrit().GetHost(), s.runID.LUCIProject())
 	if err != nil {
 		return err
 	}

@@ -147,7 +147,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		}
 	}
 
-	gFactory := t.GFake.Factory()
+	gFactory := t.GFactory()
 	t.PMNotifier = prjmanager.NewNotifier(t.TQDispatcher)
 	t.RunNotifier = run.NewNotifier(t.TQDispatcher)
 	clMutator := changelist.NewMutator(t.TQDispatcher, t.PMNotifier, t.RunNotifier)

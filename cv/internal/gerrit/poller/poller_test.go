@@ -109,7 +109,7 @@ func TestObservesProjectLifetime(t *testing.T) {
 			return st
 		}
 
-		p := New(ct.TQDispatcher, ct.GFake.Factory(), &clUpdaterMock{}, &pmMock{})
+		p := New(ct.TQDispatcher, ct.GFactory(), &clUpdaterMock{}, &pmMock{})
 
 		Convey("Without project config, does nothing", func() {
 			So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
@@ -191,7 +191,7 @@ func TestDiscoversCLs(t *testing.T) {
 
 		pm := pmMock{}
 		clUpdater := clUpdaterMock{}
-		p := New(ct.TQDispatcher, ct.GFake.Factory(), &clUpdater, &pm)
+		p := New(ct.TQDispatcher, ct.GFactory(), &clUpdater, &pm)
 
 		prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 		// Initialize Poller state for ease of modifications in test later.

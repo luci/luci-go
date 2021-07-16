@@ -59,8 +59,8 @@ func TestProjectTQLateTasks(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, clMutator)
-		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFake.Factory(), clUpdater)
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFactory(), nil, clMutator)
+		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
 
 		const lProject = "infra"
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
@@ -103,8 +103,8 @@ func TestProjectLifeCycle(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, clMutator)
-		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFake.Factory(), clUpdater)
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFactory(), nil, clMutator)
+		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
 
 		const lProject = "infra"
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
@@ -226,8 +226,8 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFake.Factory(), nil, clMutator)
-		pm := New(pmNotifier, &runNotifier, clMutator, ct.GFake.Factory(), clUpdater)
+		clUpdater := updater.New(ct.TQDispatcher, ct.GFactory(), nil, clMutator)
+		pm := New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
 
 		cfg := singleRepoConfig(gHost, gRepo)
 		cfg.ConfigGroups[0].CombineCls = &cfgpb.CombineCLs{

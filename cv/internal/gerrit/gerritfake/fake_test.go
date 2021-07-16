@@ -59,10 +59,9 @@ func TestRelationship(t *testing.T) {
 		f.SetDependsOn("host", "4_3", "3_2")
 		f.SetDependsOn("host", "3_2", "2_1")
 		ctx := context.Background()
-		gFactory := f.Factory()
 
 		Convey("with allowed project", func() {
-			gc, err := gFactory(ctx, "host", "infra")
+			gc, err := f.MakeClient(ctx, "host", "infra")
 			So(err, ShouldBeNil)
 
 			Convey("No relations", func() {
@@ -220,7 +219,7 @@ func TestRelationship(t *testing.T) {
 		})
 
 		Convey("with disallowed project", func() {
-			gc, err := gFactory(ctx, "host", "spying-luci-project")
+			gc, err := f.MakeClient(ctx, "host", "spying-luci-project")
 			So(err, ShouldBeNil)
 			_, err = gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 				Number:     4,
@@ -259,7 +258,7 @@ func TestFiles(t *testing.T) {
 		f := WithCIs("host", ACLRestricted("infra"), ciDefault, ciCustom, ciNoFiles)
 
 		ctx := context.Background()
-		gc, err := f.Factory()(ctx, "host", "infra")
+		gc, err := f.MakeClient(ctx, "host", "infra")
 		So(err, ShouldBeNil)
 
 		Convey("change or revision NotFound", func() {
@@ -316,7 +315,7 @@ func TestGetChange(t *testing.T) {
 		f := WithCIs("host", ACLRestricted("infra"), ci)
 
 		ctx := context.Background()
-		gc, err := f.Factory()(ctx, "host", "infra")
+		gc, err := f.MakeClient(ctx, "host", "infra")
 		So(err, ShouldBeNil)
 
 		Convey("NotFound", func() {
@@ -363,11 +362,10 @@ func TestListChanges(t *testing.T) {
 
 	Convey("ListChanges works", t, func() {
 		f := WithCIs("empty", ACLRestricted("empty"))
-		gFactory := f.Factory()
 		ctx := context.Background()
 
 		mustCurrentClient := func(host, luciProject string) gerrit.Client {
-			cl, err := gFactory(ctx, host, luciProject)
+			cl, err := f.MakeClient(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl
 		}
@@ -480,7 +478,7 @@ func TestListChanges(t *testing.T) {
 
 		Convey("Bad queries", func() {
 			test := func(query string) error {
-				client, err := gFactory(ctx, "infra", "chromium")
+				client, err := f.MakeClient(ctx, "infra", "chromium")
 				So(err, ShouldBeNil)
 				_, err = client.ListChanges(ctx, &gerritpb.ListChangesRequest{Query: query})
 				So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
@@ -525,11 +523,10 @@ func TestSetReview(t *testing.T) {
 			ACLGrant(OpReview, codes.PermissionDenied, "chromium").Or(ACLGrant(OpAlterVotesOfOthers, codes.PermissionDenied, "chromium")),
 			ciBefore,
 		)
-		gFactory := f.Factory()
 		tc.Add(2 * time.Minute)
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
-			cl, err := gFactory(ctx, host, luciProject)
+			cl, err := f.MakeClient(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl
 		}
@@ -686,7 +683,7 @@ func TestSubmitRevision(t *testing.T) {
 		tc.Add(2 * time.Minute)
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
-			cl, err := f.Factory()(ctx, host, luciProject)
+			cl, err := f.MakeClient(ctx, host, luciProject)
 			So(err, ShouldBeNil)
 			return cl
 		}

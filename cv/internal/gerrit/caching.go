@@ -21,20 +21,27 @@ import (
 	"go.chromium.org/luci/common/data/caching/lru"
 )
 
-// CachingFactory caches clients produced by another ClientFactory.
+// CachingFactory caches clients produced by another Factory.
 func CachingFactory(lruSize int, f Factory) Factory {
-	cache := lru.New(lruSize)
-	return func(ctx context.Context, gerritHost, luciProject string) (Client, error) {
-		key := luciProject + "/" + gerritHost
-		client, err := cache.GetOrCreate(ctx, key, func() (value interface{}, ttl time.Duration, err error) {
-			// Default ttl of 0 means never expire. Note that specific authorization
-			// token is still loaded per each request (see transport() function).
-			value, err = f(ctx, gerritHost, luciProject)
-			return
-		})
-		if err != nil {
-			return nil, err
-		}
-		return client.(Client), nil
+	return &cachingFactory{Factory: f, cache: lru.New(lruSize)}
+}
+
+type cachingFactory struct {
+	Factory
+	cache *lru.Cache
+}
+
+// MakeClient implements Factory.
+func (c cachingFactory) MakeClient(ctx context.Context, gerritHost string, luciProject string) (Client, error) {
+	key := luciProject + "/" + gerritHost
+	client, err := c.cache.GetOrCreate(ctx, key, func() (value interface{}, ttl time.Duration, err error) {
+		// Default ttl of 0 means never expire. Note that specific authorization
+		// token is still loaded per each request (see transport() function).
+		value, err = c.Factory.MakeClient(ctx, gerritHost, luciProject)
+		return
+	})
+	if err != nil {
+		return nil, err
 	}
+	return client.(Client), nil
 }

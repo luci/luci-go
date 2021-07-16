@@ -49,7 +49,7 @@ func TestCancel(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		gFactory := ct.GFake.Factory()
+		gFactory := ct.GFactory()
 		user := gf.U("user-100")
 		const gHost = "x-review.example.com"
 		const lProject = "lProject"

@@ -351,7 +351,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			LuciProject: lProject,
 			Host:        gHost,
 		}
-		u := New(ct.TQDispatcher, ct.GFake.Factory(), &gerrit.MirrorIteratorFactory{}, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
+		u := New(ct.TQDispatcher, ct.GFactory(), &gerrit.MirrorIteratorFactory{}, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
 
 		assertScheduled := func(expected ...int) {
 			var actual []int
@@ -395,7 +395,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				// Add a CL readable to current LUCI project.
 				ci := gf.CI(1, gf.Project(gRepo), gf.Ref("refs/heads/main"))
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
-				client, err := ct.GFake.Factory()(ctx, gHost, lProject)
+				client, err := ct.GFactory().MakeClient(ctx, gHost, lProject)
 				So(err, ShouldBeNil)
 				_, err = client.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 1})
 				So(err, ShouldBeNil)

@@ -188,7 +188,7 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	if f.externalID, err = changelist.GobID(f.host, f.change); err != nil {
 		return err
 	}
-	if f.g, err = u.gFactory(ctx, f.host, f.luciProject); err != nil {
+	if f.g, err = u.gFactory.MakeClient(ctx, f.host, f.luciProject); err != nil {
 		return err
 	}
 
