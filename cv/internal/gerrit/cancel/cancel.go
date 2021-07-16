@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
@@ -193,6 +194,7 @@ func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
 		Project:     in.CL.Snapshot.GetGerrit().GetInfo().GetProject(),
 		Number:      in.CL.Snapshot.GetGerrit().GetInfo().GetNumber(),
 		Revision:    in.CL.Snapshot.GetGerrit().GetInfo().GetCurrentRevision(),
+		gf:          gFactory,
 	}
 
 	var err error
@@ -215,12 +217,10 @@ var failMessage = "CV failed to unset the " + trigger.CQLabelName +
 
 func cancelLeased(ctx context.Context, c *change, in *Input) error {
 	logging.Infof(ctx, "Canceling triggers on %s/%d", c.Host, c.Number)
-	ci, err := c.getLatest(ctx)
+	ci, err := c.getLatest(ctx, in.CL.Snapshot.GetGerrit().GetInfo().GetUpdated().AsTime())
 	switch {
 	case err != nil:
 		return err
-	case ci.GetUpdated().AsTime().Before(in.CL.Snapshot.GetGerrit().GetInfo().GetUpdated().AsTime()):
-		return errors.Reason("got stale change info from gerrit for %s/%d", c.Host, c.Number).Tag(transient.Tag).Err()
 	case ci.GetCurrentRevision() != c.Revision:
 		return errors.Reason("failed to cancel because ps %d is not current for %s/%d", in.CL.Snapshot.GetPatchset(), c.Host, c.Number).Tag(ErrPreconditionFailedTag).Err()
 	}
@@ -310,6 +310,7 @@ type change struct {
 	Number      int64
 	Revision    string
 
+	gf gerrit.Factory
 	gc gerrit.Client
 	// votesToRemove maps accountID to a set of labels.
 	//
@@ -317,16 +318,27 @@ type change struct {
 	votesToRemove map[int64]map[string]int32
 }
 
-func (c *change) getLatest(ctx context.Context) (*gerritpb.ChangeInfo, error) {
-	ci, err := c.gc.GetChange(ctx, &gerritpb.GetChangeRequest{
-		Number:  c.Number,
-		Project: c.Project,
-		Options: []gerritpb.QueryOption{
-			gerritpb.QueryOption_CURRENT_REVISION,
-			gerritpb.QueryOption_DETAILED_LABELS,
-			gerritpb.QueryOption_DETAILED_ACCOUNTS,
-			gerritpb.QueryOption_MESSAGES,
-		},
+func (c *change) getLatest(ctx context.Context, knownUpdatedTime time.Time) (*gerritpb.ChangeInfo, error) {
+	var ci *gerritpb.ChangeInfo
+	err := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
+		var err error
+		ci, err = c.gc.GetChange(ctx, &gerritpb.GetChangeRequest{
+			Number:  c.Number,
+			Project: c.Project,
+			Options: []gerritpb.QueryOption{
+				gerritpb.QueryOption_CURRENT_REVISION,
+				gerritpb.QueryOption_DETAILED_LABELS,
+				gerritpb.QueryOption_DETAILED_ACCOUNTS,
+				gerritpb.QueryOption_MESSAGES,
+			},
+		}, opt)
+		switch {
+		case err != nil:
+			return err
+		case ci.GetUpdated().AsTime().Before(knownUpdatedTime):
+			return gerrit.ErrStaleData
+		}
+		return nil
 	})
 
 	return ci, c.annotateGerritErr(ctx, err, "get")

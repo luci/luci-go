@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
@@ -166,7 +167,7 @@ func TestCancel(t *testing.T) {
 				gf.Updated(clock.Now(ctx).Add(-3 * time.Minute))(c.Info)
 			})
 			err := Cancel(ctx, gFactory, input)
-			So(err, ShouldErrLike, "got stale change info from gerrit for x-review.example.com/10001")
+			So(err, ShouldErrLike, gerrit.ErrStaleData)
 			So(transient.Tag.In(err), ShouldBeTrue)
 		})
 
