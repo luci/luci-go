@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
@@ -47,6 +48,7 @@ func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 		"remotebuildexecution.googleapis.com:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
+		grpcmon.WithClientRPCStatsMonitor(),
 	)
 }
 
