@@ -21,28 +21,40 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func tasksExpectErr(argv []string, errLike string) {
+	t := tasksRun{}
+	t.Init(&testAuthFlags{})
+	fullArgv := append([]string{"-server", "http://localhost:9050"}, argv...)
+	err := t.GetFlags().Parse(fullArgv)
+	So(err, ShouldBeNil)
+	So(t.Parse(), ShouldErrLike, errLike)
+}
+
 func TestTasksParse(t *testing.T) {
 	Convey(`Make sure that Parse fails with zero -limit.`, t, func() {
-		t := tasksRun{}
-		t.Init(&testAuthFlags{})
-		err := t.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-limit", "0"})
-		So(err, ShouldBeNil)
-		So(t.Parse(), ShouldErrLike, "must be positive")
+		tasksExpectErr([]string{"-limit", "0"}, "must be positive")
 	})
 
 	Convey(`Make sure that Parse fails with negative -limit.`, t, func() {
-		t := tasksRun{}
-		t.Init(&testAuthFlags{})
-		err := t.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-limit", "-1"})
-		So(err, ShouldBeNil)
-		So(t.Parse(), ShouldErrLike, "must be positive")
+		tasksExpectErr([]string{"-limit", "-1"}, "must be positive")
 	})
 
 	Convey(`Make sure that Parse fails with -quiet without -json.`, t, func() {
-		t := tasksRun{}
-		t.Init(&testAuthFlags{})
-		err := t.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-quiet"})
-		So(err, ShouldBeNil)
-		So(t.Parse(), ShouldErrLike, "specify -json")
+		tasksExpectErr([]string{"-quiet"}, "specify -json")
+	})
+
+	Convey(`Make sure that Parse requires positive -start with -count.`, t, func() {
+		tasksExpectErr([]string{"-count"}, "provide -start")
+		tasksExpectErr([]string{"-count", "-start", "0"}, "provide -start")
+		tasksExpectErr([]string{"-count", "-start", "-1"}, "provide -start")
+	})
+
+	Convey(`Make sure that Parse forbids -start without -count.`, t, func() {
+		tasksExpectErr([]string{"-start", "1337"}, "-start cannot")
+	})
+
+	Convey(`Make sure that Parse forbids -field or -limit to be used with -count.`, t, func() {
+		tasksExpectErr([]string{"-count", "-start", "1337", "-field", "items/task_id"}, "-field cannot")
+		tasksExpectErr([]string{"-count", "-start", "1337", "-limit", "100"}, "-limit cannot")
 	})
 }

@@ -44,6 +44,8 @@ func CmdTasks(authFlgas AuthFlags) *subcommands.Command {
 	}
 }
 
+const defaultLimit int64 = 200
+
 type tasksRun struct {
 	commonFlags
 	outfile string
@@ -51,15 +53,19 @@ type tasksRun struct {
 	state   string
 	tags    []string
 	fields  []googleapi.Field
+	count   bool
+	start   float64
 }
 
 func (t *tasksRun) Init(authFlgas AuthFlags) {
 	t.commonFlags.Init(authFlgas)
 	t.Flags.StringVar(&t.outfile, "json", "", "Path to output JSON results. Implies quiet.")
-	t.Flags.Int64Var(&t.limit, "limit", 200, "Maximum number of tasks to retrieve.")
+	t.Flags.Int64Var(&t.limit, "limit", defaultLimit, "Maximum number of tasks to retrieve.")
 	t.Flags.StringVar(&t.state, "state", "ALL", "Only include tasks in the specified state.")
 	t.Flags.Var(flag.StringSlice(&t.tags), "tag", "Tag attached to the task. May be repeated.")
 	t.Flags.Var(flag.FieldSlice(&t.fields), "field", "Fields to include in a partial response. May be repeated.")
+	t.Flags.BoolVar(&t.count, "count", false, "Report the count of tasks instead of listing them.")
+	t.Flags.Float64Var(&t.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
 }
 
 func (t *tasksRun) Parse() error {
@@ -75,6 +81,21 @@ func (t *tasksRun) Parse() error {
 	if t.outfile != "" {
 		t.defaultFlags.Quiet = true
 	}
+	if t.count {
+		if len(t.fields) > 0 {
+			return errors.Reason("-field cannot be used with -count").Err()
+		}
+		if t.limit != defaultLimit {
+			return errors.Reason("-limit cannot be used with -count").Err()
+		}
+		if t.start <= 0 {
+			return errors.Reason("with -count, must provide -start >0").Err()
+		}
+	} else {
+		if t.start != 0 {
+			return errors.Reason("-start cannot be used without -count").Err()
+		}
+	}
 	return nil
 }
 
@@ -85,23 +106,29 @@ func (t *tasksRun) main(_ subcommands.Application) error {
 	if err != nil {
 		return err
 	}
-	tasks, err := service.ListTasks(ctx, t.limit, t.state, t.tags, t.fields)
-	if err != nil {
-		return err
+	var data interface{}
+	if t.count {
+		if data, err = service.CountTasks(ctx, t.start, t.state, t.tags...); err != nil {
+			return err
+		}
+	} else {
+		if data, err = service.ListTasks(ctx, t.limit, t.state, t.tags, t.fields); err != nil {
+			return err
+		}
 	}
 	if !t.defaultFlags.Quiet {
-		j, err := json.MarshalIndent(tasks, "", " ")
+		j, err := json.MarshalIndent(data, "", " ")
 		if err != nil {
 			return err
 		}
 		fmt.Printf("%s\n", j)
 	}
 	if t.outfile != "" {
-		j, err := json.Marshal(tasks)
+		j, err := json.Marshal(data)
 		if err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile(t.outfile, j, 0644); err != nil {
+		if err = ioutil.WriteFile(t.outfile, j, 0644); err != nil {
 			return err
 		}
 	}
