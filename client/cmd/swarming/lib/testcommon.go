@@ -30,6 +30,7 @@ var _ swarmingService = (*testService)(nil)
 type testService struct {
 	newTask             func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
 	countTasks          func(context.Context, float64, string, ...string) (*swarming.SwarmingRpcsTasksCount, error)
+	countBots           func(context.Context, ...string) (*swarming.SwarmingRpcsBotsCount, error)
 	listTasks           func(context.Context, int64, string, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
 	cancelTask          func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
 	getTaskRequest      func(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error)
@@ -80,6 +81,10 @@ func (s testService) GetFilesFromIsolate(ctx context.Context, output string, iso
 
 func (s testService) GetFilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
 	return s.getFilesFromCAS(ctx, outdir, cascli, casRef)
+}
+
+func (s testService) CountBots(ctx context.Context, dimensions ...string) (*swarming.SwarmingRpcsBotsCount, error) {
+	return s.countBots(ctx, dimensions...)
 }
 
 func (s *testService) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {

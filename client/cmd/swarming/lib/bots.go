@@ -50,6 +50,7 @@ type botsRun struct {
 	outfile    string
 	dimensions stringmapflag.Value
 	fields     []googleapi.Field
+	count      bool
 }
 
 func (b *botsRun) Init(authFlags AuthFlags) {
@@ -57,6 +58,7 @@ func (b *botsRun) Init(authFlags AuthFlags) {
 	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
 	b.Flags.Var(&b.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	b.Flags.Var(flag.FieldSlice(&b.fields), "field", "Fields to include in a partial response. May be repeated.")
+	b.Flags.BoolVar(&b.count, "count", false, "Report the count of bots instead of listing them.")
 }
 
 func (b *botsRun) Parse() error {
@@ -68,6 +70,9 @@ func (b *botsRun) Parse() error {
 	}
 	if b.outfile != "" {
 		b.defaultFlags.Quiet = true
+	}
+	if b.count && len(b.fields) > 0 {
+		return errors.Reason("-field cannot be used with -count").Err()
 	}
 	return nil
 }
@@ -86,19 +91,28 @@ func (b *botsRun) main(_ subcommands.Application) error {
 		dims = append(dims, k+":"+v)
 	}
 
-	bots, err := service.ListBots(ctx, dims, b.fields)
-	if err != nil {
-		return err
+	var data interface{}
+	if b.count {
+		data, err = service.CountBots(ctx, dims...)
+		if err != nil {
+			return err
+		}
+	} else {
+		data, err = service.ListBots(ctx, dims, b.fields)
+		if err != nil {
+			return err
+		}
 	}
+
 	if !b.defaultFlags.Quiet {
-		j, err := json.MarshalIndent(bots, "", " ")
+		j, err := json.MarshalIndent(data, "", " ")
 		if err != nil {
 			return err
 		}
 		fmt.Printf("%s\n", j)
 	}
 	if b.outfile != "" {
-		j, err := json.Marshal(bots)
+		j, err := json.Marshal(data)
 		if err != nil {
 			return err
 		}

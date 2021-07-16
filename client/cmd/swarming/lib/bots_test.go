@@ -21,13 +21,21 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func botsExpectErr(argv []string, errLike string) {
+	b := botsRun{}
+	b.Init(&testAuthFlags{})
+	fullArgv := append([]string{"-server", "http://localhost:9050"}, argv...)
+	err := b.GetFlags().Parse(fullArgv)
+	So(err, ShouldBeNil)
+	So(b.Parse(), ShouldErrLike, errLike)
+}
+
 func TestBotsParse(t *testing.T) {
 	Convey(`Make sure that Parse fails with -quiet without -json.`, t, func() {
-		b := botsRun{}
-		b.Init(&testAuthFlags{})
-		err := b.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-quiet"})
-		So(err, ShouldBeNil)
-		err = b.Parse()
-		So(err, ShouldErrLike, "specify -json")
+		botsExpectErr([]string{"-quiet"}, "specify -json")
+	})
+
+	Convey(`Make sure that Parse fails with -count and -field.`, t, func() {
+		botsExpectErr([]string{"-count", "-field", "myField"}, "-field cannot")
 	})
 }

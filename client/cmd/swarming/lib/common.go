@@ -89,6 +89,7 @@ type swarmingService interface {
 	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
 	GetFilesFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error)
 	GetFilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
+	CountBots(ctx context.Context, dimensions ...string) (*swarming.SwarmingRpcsBotsCount, error)
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 	DeleteBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error)
 	TerminateBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsTerminateResponse, error)
@@ -229,6 +230,14 @@ func (s *swarmingServiceImpl) GetFilesFromCAS(ctx context.Context, outdir string
 		files = append(files, path)
 	}
 	return files, nil
+}
+
+func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions ...string) (res *swarming.SwarmingRpcsBotsCount, err error) {
+	err = retryGoogleRPC(ctx, "CountBots", func() (ierr error) {
+		res, ierr = s.service.Bots.Count().Context(ctx).Dimensions(dimensions...).Do()
+		return
+	})
+	return
 }
 
 func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {
