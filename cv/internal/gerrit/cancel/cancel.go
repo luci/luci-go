@@ -166,7 +166,7 @@ type Input struct {
 //   * reason for abnormality,
 //   * special `botdata.BotData` which ensures CV won't consider previously
 //     triggering votes as triggering in the future.
-func Cancel(ctx context.Context, gFactory gerrit.ClientFactory, in Input) error {
+func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
 	switch {
 	case in.CL.Snapshot == nil:
 		panic("cl.Snapshot must be non-nil")

@@ -49,14 +49,14 @@ const (
 
 // Updater fetches Gerrit Change details and stores them as CV CLs in Datastore.
 type Updater struct {
-	gFactory       gerrit.ClientFactory
+	gFactory       gerrit.Factory
 	gMirrorFactory *gerrit.MirrorIteratorFactory
 	clMutator      *changelist.Mutator
 	tqd            *tq.Dispatcher
 }
 
 // New creates a new Updater.
-func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, gm *gerrit.MirrorIteratorFactory, m *changelist.Mutator) *Updater {
+func New(tqd *tq.Dispatcher, g gerrit.Factory, gm *gerrit.MirrorIteratorFactory, m *changelist.Mutator) *Updater {
 	u := &Updater{g, gm, m, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClass,

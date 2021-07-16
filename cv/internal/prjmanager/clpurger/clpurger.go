@@ -45,13 +45,13 @@ import (
 // Purger purges CLs for Project Manager.
 type Purger struct {
 	pmNotifier *prjmanager.Notifier
-	gFactory   gerrit.ClientFactory
+	gFactory   gerrit.Factory
 	clUpdater  *updater.Updater
 }
 
 // New creates a Purger and registers it for handling tasks created by the given
 // PM Notifier.
-func New(n *prjmanager.Notifier, g gerrit.ClientFactory, u *updater.Updater) *Purger {
+func New(n *prjmanager.Notifier, g gerrit.Factory, u *updater.Updater) *Purger {
 	p := &Purger{n, g, u}
 	n.TasksBinding.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {

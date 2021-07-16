@@ -58,13 +58,13 @@ type CLUpdater interface {
 // ones.
 type Poller struct {
 	tqd       *tq.Dispatcher
-	gFactory  gerrit.ClientFactory
+	gFactory  gerrit.Factory
 	clUpdater CLUpdater
 	pm        pmNotifier
 }
 
 // New creates a new Poller, registering it in the given TQ dispatcher.
-func New(tqd *tq.Dispatcher, g gerrit.ClientFactory, clUpdater CLUpdater, pm pmNotifier) *Poller {
+func New(tqd *tq.Dispatcher, g gerrit.Factory, clUpdater CLUpdater, pm pmNotifier) *Poller {
 	p := &Poller{tqd, g, clUpdater, pm}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClassID,

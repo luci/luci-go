@@ -62,13 +62,13 @@ type Client interface {
 	SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error)
 }
 
-// ClientFactory creates Client tied to Gerrit host and LUCI project.
+// Factory creates Client tied to Gerrit host and LUCI project.
 //
 // Gerrit host and LUCI project determine the authentication being used.
-type ClientFactory func(ctx context.Context, gerritHost, luciProject string) (Client, error)
+type Factory func(ctx context.Context, gerritHost, luciProject string) (Client, error)
 
 // NewFactory returns ClientFactory for use in production.
-func NewFactory(ctx context.Context) (ClientFactory, error) {
+func NewFactory(ctx context.Context) (Factory, error) {
 	f, err := newProd(ctx)
 	if err != nil {
 		return nil, err

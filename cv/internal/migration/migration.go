@@ -53,7 +53,7 @@ type runNotifier interface {
 // MigrationServer implements CQDaemon -> CV migration API.
 type MigrationServer struct {
 	RunNotifier runNotifier
-	GFactory    gerrit.ClientFactory
+	GFactory    gerrit.Factory
 
 	migrationpb.UnimplementedMigrationServer
 }

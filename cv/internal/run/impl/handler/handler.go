@@ -110,7 +110,7 @@ type CLUpdater interface {
 type Impl struct {
 	PM         PM
 	RM         RM
-	GFactory   gerrit.ClientFactory
+	GFactory   gerrit.Factory
 	CLUpdater  CLUpdater
 	CLMutator  *changelist.Mutator
 	BQExporter *bq.Exporter

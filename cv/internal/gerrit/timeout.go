@@ -25,7 +25,7 @@ import (
 )
 
 // TimeLimitedFactory limits duration per each kind of Gerrit RPC.
-func TimeLimitedFactory(f ClientFactory) ClientFactory {
+func TimeLimitedFactory(f Factory) Factory {
 	return func(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 		c, err := f(ctx, gerritHost, luciProject)
 		if err != nil {

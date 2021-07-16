@@ -75,7 +75,7 @@ type ProjectManager struct {
 
 // New creates a new ProjectManager and registers it for handling tasks created
 // by the given TQ Notifier.
-func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g gerrit.ClientFactory, u *updater.Updater) *ProjectManager {
+func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g gerrit.Factory, u *updater.Updater) *ProjectManager {
 	pm := &ProjectManager{
 		pmNotifier:  n,
 		runNotifier: rn,

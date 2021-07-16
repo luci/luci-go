@@ -62,7 +62,7 @@ var (
 )
 
 // InstrumentedFactory instruments RPCs.
-func InstrumentedFactory(f ClientFactory) ClientFactory {
+func InstrumentedFactory(f Factory) Factory {
 	return func(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 		c, err := f(ctx, gerritHost, luciProject)
 		if err != nil {

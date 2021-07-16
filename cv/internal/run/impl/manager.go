@@ -65,7 +65,7 @@ func New(
 	pm *prjmanager.Notifier,
 	clm *changelist.Mutator,
 	u *updater.Updater,
-	g gerrit.ClientFactory,
+	g gerrit.Factory,
 	tc tree.Client,
 	bqc bq.Client,
 ) *RunManager {

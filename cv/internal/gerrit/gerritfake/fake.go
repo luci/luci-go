@@ -40,7 +40,7 @@ type Fake struct {
 	// m protects all other members below.
 	m sync.Mutex
 
-	factory gerrit.ClientFactory
+	factory gerrit.Factory
 
 	// cs is a set of changes, indexed by (host, change number).
 	// See key() function.
@@ -63,7 +63,7 @@ type Fake struct {
 	requestsMu sync.RWMutex
 }
 
-func (f *Fake) Factory() gerrit.ClientFactory {
+func (f *Fake) Factory() gerrit.Factory {
 	f.m.Lock()
 	if f.factory == nil {
 		f.factory = func(ctx context.Context, gerritHost, luciProject string) (gerrit.Client, error) {

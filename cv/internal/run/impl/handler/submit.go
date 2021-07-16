@@ -574,10 +574,10 @@ type submitter struct {
 	// rm is used to interact with Run Manager.
 	rm RM
 	// gFactory is used to interact with Gerrit.
-	gFactory gerrit.ClientFactory
+	gFactory gerrit.Factory
 }
 
-func newSubmitter(ctx context.Context, runID common.RunID, submission *run.Submission, rm RM, g gerrit.ClientFactory) *submitter {
+func newSubmitter(ctx context.Context, runID common.RunID, submission *run.Submission, rm RM, g gerrit.Factory) *submitter {
 	notSubmittedCLs := make(common.CLIDs, 0, len(submission.GetCls())-len(submission.GetSubmittedCls()))
 	submitted := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
 	for _, cl := range submission.GetCls() {

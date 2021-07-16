@@ -22,7 +22,7 @@ import (
 )
 
 // CachingFactory caches clients produced by another ClientFactory.
-func CachingFactory(lruSize int, f ClientFactory) ClientFactory {
+func CachingFactory(lruSize int, f Factory) Factory {
 	cache := lru.New(lruSize)
 	return func(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 		key := luciProject + "/" + gerritHost
