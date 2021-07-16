@@ -73,7 +73,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 	}
 	processedIsolate, err := processIsolate(content)
 	if err != nil {
-		return nil, fmt.Errorf("failed to process isolate (isolateDir: %s): %s", isolateDir, err)
+		return nil, errors.Annotate(err, "failed to process isolate (isolateDir: %s)", isolateDir).Err()
 	}
 	out := processedIsolate.toConfigs()
 	// Add global variables. The global variables are on the empty tuple key.
@@ -619,7 +619,7 @@ func parseIsolate(content []byte) (*isolate, error) {
 	// if err := json5.NewDecoder(json5src).Decode(isolate); err != nil {
 	var data interface{}
 	if err := json5.NewDecoder(convertIsolateToJSON5(content)).Decode(&data); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to decode json %s", string(content)).Err()
 	}
 	buf, _ := json.Marshal(&data)
 	if err := json.Unmarshal(buf, isolate); err != nil {
@@ -633,7 +633,7 @@ func parseIsolate(content []byte) (*isolate, error) {
 func processIsolate(content []byte) (*processedIsolate, error) {
 	isolate, err := parseIsolate(content)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to parse isolate").Err()
 	}
 	out := &processedIsolate{
 		isolate.Includes,
