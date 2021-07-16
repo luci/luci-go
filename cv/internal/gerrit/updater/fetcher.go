@@ -715,9 +715,9 @@ func (f *fetcher) isStale(ctx context.Context, externalUpdateTime *timestamppb.T
 	storedTS := f.priorSnapshot().GetExternalUpdateTime()
 	switch {
 	case !f.updatedHint.IsZero() && f.updatedHint.After(t):
-		logging.Warningf(ctx, "Fetched last Gerrit update of %s, but %s expected (%s)", t, f.updatedHint, f)
+		logging.Debugf(ctx, "Fetched last Gerrit update of %s, but %s expected (%s)", t, f.updatedHint, f)
 	case storedTS != nil && storedTS.AsTime().After(t):
-		logging.Warningf(ctx, "Fetched last Gerrit update of %s, but %s was already seen & stored (%s)", t, storedTS.AsTime(), f)
+		logging.Debugf(ctx, "Fetched last Gerrit update of %s, but %s was already seen & stored (%s)", t, storedTS.AsTime(), f)
 	default:
 		return false
 	}
