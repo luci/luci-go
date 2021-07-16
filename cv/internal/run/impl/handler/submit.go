@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -730,14 +731,29 @@ func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 	}
 	// Sometimes, Gerrit may return error but change is actually merged.
 	// Load the change again to check whether it is actually merged.
-	latest, getErr := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
-		Number:  ci.GetNumber(),
-		Project: ci.GetProject(),
+	merged := false
+	_ = s.gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
+		latest, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
+			Number:  ci.GetNumber(),
+			Project: ci.GetProject(),
+		})
+		switch {
+		case err != nil:
+			return err
+		case latest.GetStatus() == gerritpb.ChangeStatus_MERGED:
+			// It is possible that somebody else submitted the change, but this is
+			// unlikely enough that we presume CV did it. If necessary, it's possible
+			// to examine Change messages to see who actually did it.
+			merged = true
+			return nil
+		case latest.GetUpdated().AsTime().Before(ci.GetUpdated().AsTime()):
+			return gerrit.ErrStaleData
+		default:
+			merged = false
+			return nil
+		}
 	})
-	if getErr == nil && latest.Status == gerritpb.ChangeStatus_MERGED {
-		// It is possible that somebody else submitted the change, but this is
-		// unlikely enough that we presume CV did it. If necessary, it's possible
-		// to examine Change messages to see who actually did it.
+	if merged {
 		return nil
 	}
 	return submitErr
