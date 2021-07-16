@@ -20,7 +20,13 @@ import (
 	"sort"
 	"testing"
 
+	"google.golang.org/grpc"
+
+	"go.chromium.org/luci/common/errors"
+
 	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMirrorIterator(t *testing.T) {
@@ -75,6 +81,47 @@ func TestMirrorIterator(t *testing.T) {
 			So(act1, ShouldResemble, expectedHosts)
 			sort.Strings(act2)
 			So(act2, ShouldResemble, expectedHosts)
+		})
+		Convey("RetryIfStale works", func() {
+			it := &MirrorIterator{"", "m1", "m2"}
+
+			Convey("stops when mirrors are exhausted", func() {
+				tried := 0
+				err := it.RetryIfStale(func(grpc.CallOption) error {
+					tried += 1
+					return ErrStaleData
+				})
+				So(err, ShouldEqual, ErrStaleData)
+				So(tried, ShouldEqual, 3)
+			})
+
+			Convey("respects returned value, unwrapping if needed", func() {
+				tried := 0
+				err := it.RetryIfStale(func(grpc.CallOption) error {
+					tried += 1
+					if tried == 1 {
+						return errors.Annotate(ErrStaleData, "try #%d", tried).Err()
+					}
+					return errors.New("something else")
+				})
+				So(err, ShouldErrLike, "something else")
+				So(tried, ShouldEqual, 2)
+				So((*it)[0], ShouldResemble, "m2")
+			})
+
+			Convey("calls at least once even if empty", func() {
+				it.Next()
+				it.Next()
+				it.Next()
+				So(it.Empty(), ShouldBeTrue)
+				called := false
+				err := it.RetryIfStale(func(grpc.CallOption) error {
+					called = true
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(called, ShouldBeTrue)
+			})
 		})
 	})
 }

@@ -24,6 +24,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -60,6 +61,8 @@ const (
 	// the date to the best knowledge of CV.
 	autoRefreshAfter = 2 * time.Hour
 )
+
+var errStaleOrNoAccess = errors.Annotate(gerrit.ErrStaleData, "either no access or deleted or stale").Err()
 
 // fetcher efficiently computes new snapshot by fetching data from Gerrit.
 //
@@ -332,48 +335,39 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		return nil, setNoAccess(false /* permanent*/)
 	}
 
-	mirrorIterator := f.gFactory.MakeMirrorIterator(ctx)
 	var ci *gerritpb.ChangeInfo
-mirrorLoop:
-	for {
+	err := f.gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
 		var err error
 		ci, err = f.g.GetChange(ctx, &gerritpb.GetChangeRequest{
 			Number:  f.change,
 			Project: f.gerritProjectIfKnown(),
 			Options: opts,
-		}, mirrorIterator.Next())
+		}, opt)
 		switch grpcutil.Code(err) {
 		case codes.OK:
-			switch {
-			case !f.isStale(ctx, ci.GetUpdated()):
-				break mirrorLoop
-			case !mirrorIterator.Empty():
-				// Retry with another mirror.
-				continue mirrorLoop
-			default:
-				return nil, gerrit.ErrStaleData
+			if f.isStale(ctx, ci.GetUpdated()) {
+				return gerrit.ErrStaleData
 			}
+			return nil
 		case codes.NotFound, codes.PermissionDenied:
-			// Either no access OR CL was deleted OR eventual consistency.
-			if !mirrorIterator.Empty() {
-				// Retry with another mirror to decrease the chance of mistakenely
-				// labeling CL as no access/deleted.
-				continue mirrorLoop
-			}
-			// Chances are it's not due to eventual consistency, but be conservative
-			// and retry later a few more times.
-			return nil, setNoAccess(true /* temporary */)
-
+			return errStaleOrNoAccess
 		case codes.ResourceExhausted:
-			return nil, gerrit.ErrOutOfQuota
+			return gerrit.ErrOutOfQuota
 		case codes.DeadlineExceeded:
-			return nil, gerrit.ErrGerritDeadlineExceeded
+			return gerrit.ErrGerritDeadlineExceeded
 		default:
-			return nil, gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
+			return gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 		}
+	})
+	switch {
+	case err == errStaleOrNoAccess:
+		// Chances are it's not due to eventual consistency, but be conservative
+		// and retry later a few more times.
+		return nil, setNoAccess(true /* temporary */)
+	case err != nil:
+		return nil, err
 	}
 
-	var err error
 	f.toUpdate.ApplicableConfig, err = gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef())
 	switch {
 	case err != nil:
@@ -388,13 +382,12 @@ mirrorLoop:
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
 func (f *fetcher) fetchRelated(ctx context.Context) error {
-	mirrorIterator := f.gFactory.MakeMirrorIterator(ctx)
-	for {
+	return f.gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
 		resp, err := f.g.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 			Number:     f.change,
 			Project:    f.gerritProjectIfKnown(),
 			RevisionId: f.mustHaveCurrentRevision(),
-		}, mirrorIterator.Next())
+		}, opt)
 		switch code := grpcutil.Code(err); code {
 		case codes.OK:
 			f.setGitDeps(ctx, resp.GetChanges())
@@ -403,11 +396,7 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 			// Getting this right after successfully fetching ChangeInfo should
 			// typically be due to eventual consistency of Gerrit, and rarely due to
 			// change of ACLs.
-			if mirrorIterator.Empty() {
-				return gerrit.ErrStaleData
-			}
-			// Else, retry with another mirror.
-
+			return gerrit.ErrStaleData
 		case codes.ResourceExhausted:
 			return gerrit.ErrOutOfQuota
 		case codes.DeadlineExceeded:
@@ -415,7 +404,7 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 		default:
 			return gerrit.UnhandledError(ctx, err, "failed to fetch related changes for %s", f)
 		}
-	}
+	})
 }
 
 // setGitDeps sets GerritGitDeps based on list of related changes provided by
@@ -574,8 +563,7 @@ func (f *fetcher) countRelatedWhichAreParents(this *gerritpb.GetRelatedChangesRe
 
 // fetchFiles fetches files for the current revision of the new Snapshot.
 func (f *fetcher) fetchFiles(ctx context.Context) error {
-	mirrorIterator := f.gFactory.MakeMirrorIterator(ctx)
-	for {
+	return f.gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
 		resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
 			Number:     f.change,
 			Project:    f.gerritProjectIfKnown(),
@@ -583,7 +571,7 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 			// For CLs with >1 parent commit (aka merge commits), this relies on Gerrit
 			// ensuring that such a CL always has first parent from the target branch.
 			Parent: 1, // Request a diff against the first parent.
-		}, mirrorIterator.Next())
+		}, opt)
 		switch code := grpcutil.Code(err); code {
 		case codes.OK:
 			// Iterate files map and take keys only. CV treats all files "touched" in a
@@ -601,14 +589,7 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 			return nil
 
 		case codes.PermissionDenied, codes.NotFound:
-			// Getting this right after successfully fetching ChangeInfo should
-			// typically be due to eventual consistency of Gerrit, and rarely due to
-			// change of ACLs.
-			if mirrorIterator.Empty() {
-				return gerrit.ErrStaleData
-			}
-			// Else, retry with another mirror.
-
+			return gerrit.ErrStaleData
 		case codes.ResourceExhausted:
 			return gerrit.ErrOutOfQuota
 		case codes.DeadlineExceeded:
@@ -616,7 +597,7 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 		default:
 			return gerrit.UnhandledError(ctx, err, "failed to fetch files for %s", f)
 		}
-	}
+	})
 }
 
 // setSoftDeps parses CL description and sets soft deps.
