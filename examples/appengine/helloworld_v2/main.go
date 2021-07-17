@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/mailer/client/mailer"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -51,6 +52,7 @@ func main() {
 	modules := []module.Module{
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		mailer.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
@@ -175,6 +177,19 @@ func main() {
 		// To test redirects after login.
 		srv.Routes.GET("/test/*something", htmlPageMW, func(c *router.Context) {
 			templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
+		})
+
+		// Example of sending emails.
+		srv.Routes.GET("/send-mail", nil, func(c *router.Context) {
+			err := mailer.Send(c.Context, &mailer.Mail{
+				Sender:   "noreply@example.com",
+				To:       []string{"someone@example.com"},
+				Subject:  "Hi",
+				TextBody: "How are you doing?",
+			})
+			if err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+			}
 		})
 
 		return nil
