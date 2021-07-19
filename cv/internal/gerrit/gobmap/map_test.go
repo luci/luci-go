@@ -313,7 +313,6 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 }
 
 func TestGobMapConcurrentUpdates(t *testing.T) {
-	t.Skip("https://crbug.com/1230475")
 	t.Parallel()
 
 	Convey("Update() works under flaky Datastore and lots of concurrent tries", t, func() {
@@ -325,8 +324,8 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 			projects         = 2
 			versions         = 20
 			repos            = 20
-			repoPresenceProb = 0.1
-			workers          = 20
+			repoPresenceProb = 0.05
+			workers          = 10
 			taskRedundancy   = 3 // # of workers doing the same Update() task.
 		)
 
@@ -401,7 +400,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 				retryLoop:
 					for {
 						// Simulate passage of time but slow enough that some updates
-						// succeed before the expiry.
+						// succeed before the lease expiry.
 						ct.Clock.Add(maxUpdateDuration / workers)
 						switch err := Update(egCtx, &tasks[i].meta, tasks[i].cgs); {
 						case err == nil:
