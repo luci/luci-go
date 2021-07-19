@@ -103,9 +103,11 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 			svc.err = err
 			resp, rerr := client.Say(ctx, &SayRequest{Msg: msg})
 			if err == nil {
+				So(rerr, ShouldBeNil)
 				So(resp.GetMsg(), ShouldEqual, msg)
+			} else {
+				So(rerr.Error(), ShouldEqual, err.Error())
 			}
-			So(rerr, ShouldResemble, err)
 		}
 		Convey("Captures count and duration", func() {
 			count := func(code string) int64 {
