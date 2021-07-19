@@ -29,21 +29,23 @@ import (
 
 // addCreatedRuns adds previously unknown runs.
 func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{}) error {
-	// Each newly created Run relates to the State in one of 3 ways:
-	//   (0) Already tracked in State. This method assumes its caller,
+	// Each newly created Run relates to the State in one of 4 ways:
+	//   (0) Run has already finished.
+	//
+	//   (1) Already tracked in State. This method assumes its caller,
 	//   OnRunsCreated, has already filtered these Runs out.
 	//
-	//   (1) Most likely, there is already a fitting component s.t. all Run's CLs
+	//   (2) Most likely, there is already a fitting component s.t. all Run's CLs
 	//   are in the component. Then, we just append Run to the component's Runs.
 	//
-	//   (2) But, it's also possible that component doesn't yet exist, e.g. if Run
+	//   (3) But, it's also possible that component doesn't yet exist, e.g. if Run
 	//   was just created via API call. Then, we add their CLs to tracked CLs, but
 	//   store these Runs separately from components until components are
 	//   re-computed.
 
-	// Approach: after loading CL IDs for each Run, loop over all existing
-	// components and add all Runs of type (1). All remaining Runs are thus of
-	// type (2).
+	// Approach: load Runs and filter out already finished. Then, after loading CL
+	// IDs for each Run, loop over all existing components and add all Runs of
+	// type (2). All remaining Runs are thus of type (3).
 	runs, errs, err := loadRuns(ctx, ids)
 	if err != nil {
 		return err
@@ -51,15 +53,18 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 	// maps CL ID to index of Run(s) in runs slice.
 	// Allocate 2x runs, because most projects have 1..2 CLs per Run on average.
 	clToRunIndex := make(map[common.CLID][]int, 2*len(runs))
-	// added keeps track of added Runs.
-	added := make([]bool, len(runs))
+	// processed keeps track of already processed Runs.
+	processed := make([]bool, len(runs))
 	for i, r := range runs {
 		switch err := errs[i]; {
 		case err == datastore.ErrNoSuchEntity:
 			logging.Errorf(ctx, "Newly created Run %s not found", r.ID)
-			added[i] = true
+			processed[i] = true
 		case err != nil:
 			return errors.Annotate(err, "failed to load Run %s", r.ID).Tag(transient.Tag).Err()
+		case run.IsEnded(r.Status):
+			logging.Warningf(ctx, "Newly created Run %s is already finished %s", r.ID, r.Status)
+			processed[i] = true
 		default:
 			for _, clid := range r.CLs {
 				clToRunIndex[clid] = append(clToRunIndex[clid], i)
@@ -67,7 +72,7 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 		}
 	}
 
-	// Add Runs of type (1) to existing components.
+	// Add Runs of type (2) to existing components.
 	var modified bool
 	s.PB.Components, modified = s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
 		// Count CLs in this component which match a Run's index in `runs`.
@@ -81,7 +86,7 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 		var toAdd []*prjpb.PRun
 		for idx, count := range matchedRunIdx {
 			if count == len(runs[idx].CLs) {
-				added[idx] = true
+				processed[idx] = true
 				toAdd = append(toAdd, prjpb.MakePRun(runs[idx]))
 			}
 		}
@@ -102,10 +107,10 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 		s.PB.RepartitionRequired = true
 	}
 
-	// Add remaining Runs are of type (2) to CreatedPruns for later processing.
+	// Add remaining Runs are of type (3) to CreatedPruns for later processing.
 	var toAdd []*prjpb.PRun
 	for i, r := range runs {
-		if !added[i] {
+		if !processed[i] {
 			toAdd = append(toAdd, prjpb.MakePRun(r))
 		}
 	}
@@ -153,6 +158,23 @@ func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
 		s.PB.RepartitionRequired = true
 	}
 	return stillTrackedRuns
+}
+
+func incompleteRuns(ctx context.Context, ids map[common.RunID]struct{}) (common.RunIDs, error) {
+	runs, errs, err := loadRuns(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var incomplete common.RunIDs
+	for i, r := range runs {
+		switch {
+		case errs[i] != nil:
+			return nil, errors.Annotate(errs[i], "failed to load Run %s", r.ID).Tag(transient.Tag).Err()
+		case !run.IsEnded(r.Status):
+			incomplete = append(incomplete, r.ID)
+		}
+	}
+	return incomplete, err
 }
 
 // loadRuns loads Runs from Datastore corresponding to given Run IDs.

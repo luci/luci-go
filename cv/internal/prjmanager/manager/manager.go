@@ -416,8 +416,10 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	// Visit all non-empty fields of triageResult and emit Transitions.
 	// The order of visits matters.
 
-	// It's possible that the same Run will be in both runCreated & runFinished,
-	// so process created first.
+	// Even though OnRunCreated event is sent before OnRunFinished event,
+	// under rare conditions it's possible that OnRunsFinished will be read first,
+	// and OnRunsCreated will be read only in the next PM invocation
+	// (see https://crbug.com/1218681 for a concrete example).
 	if len(tr.runsCreated.runs) > 0 {
 		if s, se, err = s.OnRunsCreated(ctx, tr.runsCreated.runs); err != nil {
 			return nil, err
@@ -428,6 +430,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 			TransitionTo: s,
 		})
 	}
+
 	if len(tr.runsFinished.runs) > 0 {
 		if s, se, err = s.OnRunsFinished(ctx, tr.runsFinished.runs); err != nil {
 			return nil, err

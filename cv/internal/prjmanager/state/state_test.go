@@ -774,9 +774,11 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 
-		run1 := &run.Run{ID: common.RunID(ct.lProject + "/101-aaa"), CLs: common.CLIDs{101}}
+		run1 := &run.Run{ID: common.RunID(ct.lProject + "/101-new"), CLs: common.CLIDs{101}}
 		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: common.CLIDs{709, 707, 708}}
-		So(datastore.Put(ctx, run1, run789), ShouldBeNil)
+		run1finished := &run.Run{ID: common.RunID(ct.lProject + "/101-done"), CLs: common.CLIDs{101}, Status: run.Status_FAILED}
+		So(datastore.Put(ctx, run1finished, run1, run789), ShouldBeNil)
+		So(run.IsEnded(run1finished.Status), ShouldBeTrue)
 
 		s1 := &State{PB: &prjpb.PState{
 			LuciProject:      ct.lProject,
@@ -804,7 +806,14 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 
 		Convey("Noops", func() {
 			Convey("OnRunsFinished on not tracked Run", func() {
-				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.MakeRunIDs(ct.lProject+"/999-zzz"))
+				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.RunIDs{run1finished.ID})
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				// although s2 is cloned, it must be exact same as s1.
+				So(s2.PB, ShouldResembleProto, pb1)
+			})
+			Convey("OnRunsCreated on already finished run", func() {
+				s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{run1finished.ID})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// although s2 is cloned, it must be exact same as s1.
@@ -827,49 +836,64 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		})
 
 		Convey("OnRunsCreated", func() {
-			runX := &run.Run{ // Run involving all of CLs and more.
-				ID: common.RunID(ct.lProject + "/000-xxx"),
-				// The order doesn't have to and is intentionally not sorted here.
-				CLs: common.CLIDs{404, 101, 202, 204, 203},
-			}
-			run2 := &run.Run{ID: common.RunID(ct.lProject + "/202-bbb"), CLs: common.CLIDs{202}}
-			run3 := &run.Run{ID: common.RunID(ct.lProject + "/203-ccc"), CLs: common.CLIDs{203}}
-			run23 := &run.Run{ID: common.RunID(ct.lProject + "/232-bcb"), CLs: common.CLIDs{203, 202}}
-			run234 := &run.Run{ID: common.RunID(ct.lProject + "/234-bcd"), CLs: common.CLIDs{203, 204, 202}}
-			So(datastore.Put(ctx, run2, run3, run23, run234, runX), ShouldBeNil)
+			Convey("when PM is started", func() {
+				runX := &run.Run{ // Run involving all of CLs and more.
+					ID: common.RunID(ct.lProject + "/000-xxx"),
+					// The order doesn't have to and is intentionally not sorted here.
+					CLs: common.CLIDs{404, 101, 202, 204, 203},
+				}
+				run2 := &run.Run{ID: common.RunID(ct.lProject + "/202-bbb"), CLs: common.CLIDs{202}}
+				run3 := &run.Run{ID: common.RunID(ct.lProject + "/203-ccc"), CLs: common.CLIDs{203}}
+				run23 := &run.Run{ID: common.RunID(ct.lProject + "/232-bcb"), CLs: common.CLIDs{203, 202}}
+				run234 := &run.Run{ID: common.RunID(ct.lProject + "/234-bcd"), CLs: common.CLIDs{203, 204, 202}}
+				So(datastore.Put(ctx, run2, run3, run23, run234, runX), ShouldBeNil)
 
-			s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{
-				run2.ID, run3.ID, run23.ID, run234.ID, runX.ID,
-				// non-existing Run shouldn't derail others.
-				common.RunID(ct.lProject + "/404-nnn"),
-			})
-			So(err, ShouldBeNil)
-			So(pb1, ShouldResembleProto, s1.PB)
-			So(sideEffect, ShouldBeNil)
-			So(s2.PB, ShouldResembleProto, &prjpb.PState{
-				LuciProject:      ct.lProject,
-				Status:           prjpb.Status_STARTED,
-				ConfigHash:       meta.Hash(),
-				ConfigGroupNames: []string{"g0", "g1"},
-				Components: []*prjpb.Component{
-					s1.PB.GetComponents()[0], // 101 is unchanged
-					{
-						Clids: []int64{202, 203, 204},
-						Pruns: []*prjpb.PRun{
-							// Runs & CLs must be sorted by their respective IDs.
-							{Id: string(run2.ID), Clids: []int64{202}},
-							{Id: string(run3.ID), Clids: []int64{203}},
-							{Id: string(run23.ID), Clids: []int64{202, 203}},
-							{Id: string(run234.ID), Clids: []int64{202, 203, 204}},
+				s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{
+					run2.ID, run3.ID, run23.ID, run234.ID, runX.ID,
+					// non-existing Run shouldn't derail others.
+					common.RunID(ct.lProject + "/404-nnn"),
+				})
+				So(err, ShouldBeNil)
+				So(pb1, ShouldResembleProto, s1.PB)
+				So(sideEffect, ShouldBeNil)
+				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+					LuciProject:      ct.lProject,
+					Status:           prjpb.Status_STARTED,
+					ConfigHash:       meta.Hash(),
+					ConfigGroupNames: []string{"g0", "g1"},
+					Components: []*prjpb.Component{
+						s1.PB.GetComponents()[0], // 101 is unchanged
+						{
+							Clids: []int64{202, 203, 204},
+							Pruns: []*prjpb.PRun{
+								// Runs & CLs must be sorted by their respective IDs.
+								{Id: string(run2.ID), Clids: []int64{202}},
+								{Id: string(run3.ID), Clids: []int64{203}},
+								{Id: string(run23.ID), Clids: []int64{202, 203}},
+								{Id: string(run234.ID), Clids: []int64{202, 203, 204}},
+							},
+							TriageRequired: true,
 						},
-						TriageRequired: true,
 					},
-				},
-				RepartitionRequired: true,
-				CreatedPruns: []*prjpb.PRun{
-					{Id: string(runX.ID), Clids: []int64{101, 202, 203, 204, 404}},
-					{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}}, // unchanged
-				},
+					RepartitionRequired: true,
+					CreatedPruns: []*prjpb.PRun{
+						{Id: string(runX.ID), Clids: []int64{101, 202, 203, 204, 404}},
+						{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}}, // unchanged
+					},
+				})
+			})
+			Convey("when PM is stopping", func() {
+				s1.PB.Status = prjpb.Status_STOPPING
+				pb1 := backupPB(s1)
+				Convey("cancels incomplete Runs", func() {
+					s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{run1.ID, run1finished.ID})
+					So(err, ShouldBeNil)
+					So(pb1, ShouldResembleProto, s1.PB)
+					So(sideEffect, ShouldResemble, &CancelIncompleteRuns{
+						RunIDs: common.RunIDs{run1.ID},
+					})
+					So(s2, ShouldEqual, s1)
+				})
 			})
 		})
 

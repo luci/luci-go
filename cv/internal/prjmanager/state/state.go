@@ -214,18 +214,13 @@ func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 }
 
 // OnRunsCreated updates state after new Runs were created.
-//
-// For Runs created by PM itself, this should typically be a noop, since adding
-// newly created Run to its component should have been done right after Run
-// creation, unless PM couldn't save its state (e.g. crashed or collided with
-// concurrent PM invocation).
 func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsCreated")
 	defer func() { span.End(err) }()
 
-	// First, check if any action is necessary.
+	// Check if PM is already aware of these Runs.
 	remaining := created.Set()
 	s.PB.IterIncompleteRuns(func(r *prjpb.PRun, _ *prjpb.Component) (stop bool) {
 		id := common.RunID(r.GetId())
@@ -238,16 +233,29 @@ func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (_ *St
 		return s, nil, nil
 	}
 
-	if s.PB.GetStatus() == prjpb.Status_STOPPED {
-		// This must not happen. Log, but do nothing.
-		logging.Errorf(ctx, "CRITICAL: RunCreated %s events on STOPPED Project Manager", created)
+	switch s.PB.GetStatus() {
+	case prjpb.Status_STARTED:
+		s = s.cloneShallow()
+		if err := s.addCreatedRuns(ctx, remaining); err != nil {
+			return nil, nil, err
+		}
 		return s, nil, nil
+	case prjpb.Status_STOPPED, prjpb.Status_STOPPING:
+		// This should not normally happen, but may under rare conditons.
+		switch incomplete, err := incompleteRuns(ctx, remaining); {
+		case err != nil:
+			return nil, nil, err
+		case len(incomplete) == 0:
+			// All the Runs have actually already finished. Nothing to do, and this if
+			// fine.
+			return s, nil, nil
+		default:
+			logging.Errorf(ctx, "RunCreated events for %s on %s Project Manager", incomplete, s.PB.GetStatus())
+			return s, &CancelIncompleteRuns{RunNotifier: s.RunNotifier, RunIDs: incomplete}, nil
+		}
+	default:
+		panic(fmt.Errorf("unexpected project status: %d", s.PB.GetStatus()))
 	}
-	s = s.cloneShallow()
-	if err := s.addCreatedRuns(ctx, remaining); err != nil {
-		return nil, nil, err
-	}
-	return s, nil, nil
 }
 
 // OnRunsFinished updates state after Runs were finished.
