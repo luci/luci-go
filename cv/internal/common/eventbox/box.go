@@ -169,7 +169,7 @@ func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 		switch {
 		case err == nil:
 		case common.IsDatastoreContention(err):
-			return errors.Annotate(ErrContention, "failed to execute mutation").Err()
+			return errors.Annotate(ErrContention, "failed to start a mutation").Err()
 		case err != nil:
 			return err
 		}

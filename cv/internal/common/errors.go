@@ -235,11 +235,11 @@ func matchesErrorTags(err error, knownTags ...errors.BoolTag) bool {
 func IsDatastoreContention(err error) bool {
 	ret := false
 	errors.WalkLeaves(err, func(leaf error) bool {
-		if err == datastore.ErrConcurrentTransaction {
+		if leaf == datastore.ErrConcurrentTransaction {
 			ret = true
 			return false //stop
 		}
-		s, ok := status.FromError(err)
+		s, ok := status.FromError(leaf)
 		if ok && s.Code() == codes.Aborted && !strings.HasPrefix(s.Message(), "Aborted due to cross-transaction contention") {
 			ret = true
 			return false //stop
