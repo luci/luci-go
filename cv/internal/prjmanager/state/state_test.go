@@ -567,27 +567,22 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(s0.PB, ShouldResembleProto, pb0)
 			So(sideEffect, ShouldBeNil)
-			So(s1.PB, ShouldResembleProto, &prjpb.PState{
-				LuciProject:      ct.lProject,
-				Status:           prjpb.Status_STARTED,
-				ConfigHash:       meta.Hash(),
-				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*prjpb.PCL{
-					{
-						Clid:               int64(cl101.ID),
-						Eversion:           1,
-						ConfigGroupIndexes: []int32{0}, // g0
-						Status:             prjpb.PCL_OK,
-						Trigger: &run.Trigger{
-							Email:           "user-1@example.com",
-							GerritAccountId: 1,
-							Mode:            string(run.FullRun),
-							Time:            triggerTS,
-						},
+			So(s1.PB.Pcls, ShouldResembleProto, []*prjpb.PCL{
+				{
+					Clid:               int64(cl101.ID),
+					Eversion:           1,
+					ConfigGroupIndexes: []int32{0}, // g0
+					Status:             prjpb.PCL_OK,
+					Trigger: &run.Trigger{
+						Email:           "user-1@example.com",
+						GerritAccountId: 1,
+						Mode:            string(run.FullRun),
+						Time:            triggerTS,
 					},
 				},
-				RepartitionRequired: true,
 			})
+			So(s1.PB.RepartitionRequired, ShouldBeTrue)
+
 			Convey("Noop based on EVersion", func() {
 				s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
 					int64(cl101.ID): 1, // already known
@@ -595,6 +590,27 @@ func TestOnCLsUpdated(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				So(s1, ShouldEqual, s2) // pointer comparison only.
+			})
+
+			Convey("Marks affected components for triage", func() {
+				cl101.EVersion++
+				So(datastore.Put(ctx, cl101), ShouldBeNil)
+				// Add 2 components, one of which references cl101.
+				s1.PB.Components = []*prjpb.Component{
+					{Clids: []int64{int64(cl101.ID)}},
+					{Clids: []int64{int64(cl101.ID + 111111)}},
+				}
+				pb := backupPB(s1)
+				s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
+					int64(cl101.ID): int64(cl101.EVersion),
+				})
+				So(s1.PB, ShouldResembleProto, pb)
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				// The only expected changes are:
+				pb.Components[0].TriageRequired = true
+				pb.Pcls[0].Eversion = int64(cl101.EVersion)
+				So(s2.PB, ShouldResembleProto, pb)
 			})
 		})
 
@@ -626,6 +642,20 @@ func TestOnCLsUpdated(t *testing.T) {
 					},
 				},
 				RepartitionRequired: true,
+			})
+			Convey("unknown dep becomes known and marks a component for triage", func() {
+				// Add a component which has only 203.
+				s1.PB.Components = []*prjpb.Component{
+					{Clids: []int64{int64(cl203.ID)}},
+				}
+				pb := backupPB(s1)
+				s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
+					int64(cl202.ID): int64(cl202.EVersion),
+				})
+				So(s1.PB, ShouldResembleProto, pb)
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				So(s2.PB.Components[0].TriageRequired, ShouldBeTrue)
 			})
 		})
 

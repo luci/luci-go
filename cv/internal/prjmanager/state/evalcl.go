@@ -107,7 +107,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	// sorted in the same way PCLs and CLs slices in  O(len(PCLs) + len(cls)).
 	oldPCLs := s.PB.GetPcls()
 	newPCLs := make([]*prjpb.PCL, 0, len(oldPCLs)+len(cls))
-	changed := false
+	changed := clidsSet{}
 	for i, cl := range cls {
 		// Copy all old PCLs before this CL.
 		for len(oldPCLs) > 0 && common.CLID(oldPCLs[0].GetClid()) < cl.ID {
@@ -125,18 +125,18 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 		case err != nil:
 			return err
 		case pcl == nil && old != nil:
-			panic("makePCLFromDS is wrong")
+			panic(fmt.Errorf("makePCLFromDS is wrong"))
 		case pcl == nil:
 			// New CL, but not in datastore. Don't add anything to newPCLs.
 			// This weird case was logged by makePCLFromDS already.
 		case pcl != old:
-			changed = true
+			changed.add(cl.ID)
 			fallthrough
 		default:
 			newPCLs = append(newPCLs, pcl)
 		}
 	}
-	if !changed {
+	if len(changed) == 0 {
 		return nil
 	}
 	// Copy remaining oldPCLs.
@@ -146,6 +146,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	}
 	s.PB.Pcls = newPCLs
 	s.PB.RepartitionRequired = true
+	s.PB.Components = markForTriageOnChangedPCLs(s.PB.GetComponents(), s.PB.GetPcls(), changed)
 	s.pclIndex = nil
 	return nil
 }

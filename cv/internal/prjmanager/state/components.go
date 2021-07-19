@@ -417,6 +417,45 @@ func markForTriage(in []*prjpb.Component) []*prjpb.Component {
 	return out
 }
 
+func markForTriageOnChangedPCLs(in []*prjpb.Component, pcls []*prjpb.PCL, changed clidsSet) []*prjpb.Component {
+	// For each changed CL `A`, expand changed set to include all CLs `B` such
+	// that B depends on A.
+	reverseDeps := make(map[int64][]int64, len(pcls)) // `A` -> all such `B` CLs
+	for _, p := range pcls {
+		for _, dep := range p.GetDeps() {
+			reverseDeps[dep.GetClid()] = append(reverseDeps[dep.GetClid()], p.GetClid())
+		}
+	}
+	expanded := make(clidsSet, len(changed))
+	var expand func(int64)
+	expand = func(clid int64) {
+		if expanded.hasI64(clid) {
+			return
+		}
+		expanded.addI64(clid)
+		for _, revDep := range reverseDeps[clid] {
+			expand(revDep)
+		}
+	}
+	for clid := range changed {
+		expand(int64(clid))
+	}
+
+	out := make([]*prjpb.Component, len(in))
+	for i, c := range in {
+		if !c.GetTriageRequired() {
+			for _, clid := range c.GetClids() {
+				if expanded.hasI64(clid) {
+					c = c.CloneShallow()
+					c.TriageRequired = true
+				}
+			}
+		}
+		out[i] = c
+	}
+	return out
+}
+
 func earlierDeadline(ctx context.Context, reserve time.Duration) (context.Context, context.CancelFunc) {
 	deadline, ok := ctx.Deadline()
 	if !ok {
