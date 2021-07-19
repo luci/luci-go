@@ -18,8 +18,8 @@ require (
 	github.com/VividCortex/mysqlerr v1.0.0
 	github.com/aws/aws-sdk-go v1.39.3 // indirect
 	github.com/bazelbuild/buildtools v0.0.0-20210526150809-4890966c38b9
-	github.com/bazelbuild/remote-apis v0.0.0-20210520160108-3e385366f152
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20210707015316-d965bf95d0af
+	github.com/bazelbuild/remote-apis v0.0.0-20210718193713-0ecef08215cf
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20210719032003-1cec173a5bf7
 	github.com/danjacques/gofslock v0.0.0-20200623023034-5d0bd0fa6ef0
 	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/dustin/go-humanize v1.0.0
