@@ -37,6 +37,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/gopherjs/gopherjs v0.0.0-20210707094841-eea289f08d45 // indirect
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
+	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/klauspost/compress v1.13.1
 	github.com/kr/pretty v0.2.1

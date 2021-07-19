@@ -18,9 +18,15 @@ import (
 	"context"
 	"flag"
 	"net/http"
+	"time"
+
+	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
@@ -103,15 +109,24 @@ func (m *mailerModule) Initialize(ctx context.Context, host module.Host, opts mo
 		return nil, errors.Annotate(err, "failed to get a RPC transport").Err()
 	}
 
-	prpcClient := &prpc.Client{
-		C:       &http.Client{Transport: tr},
-		Host:    m.opts.MailerService,
-		Options: prpc.DefaultOptions(),
-	}
-	if m.opts.MailerInsecure {
-		prpcClient.Options.Insecure = true
-	}
-	mailerClient := mailer.NewMailerClient(prpcClient)
+	mailerClient := mailer.NewMailerClient(&prpc.Client{
+		C:                        &http.Client{Transport: tr},
+		Host:                     m.opts.MailerService,
+		EnableRequestCompression: true,
+		Options: &prpc.Options{
+			Insecure:      m.opts.MailerInsecure,
+			PerRPCTimeout: 10 * time.Second,
+			Retry: func() retry.Iterator {
+				return &retry.ExponentialBackoff{
+					Limited: retry.Limited{
+						Delay:    50 * time.Millisecond,
+						Retries:  -1,
+						MaxTotal: 20 * time.Second,
+					},
+				}
+			},
+		},
+	})
 
 	return Use(ctx, func(ctx context.Context, msg *Mail) error {
 		return sendMail(ctx, mailerClient, msg)
@@ -120,5 +135,24 @@ func (m *mailerModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 // sendMail sends the message through the mailer RPC client.
 func sendMail(ctx context.Context, cl mailer.MailerClient, msg *Mail) error {
-	panic("not implemented yet")
+	requestID, err := uuid.NewRandom()
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to generate request ID: %s", err)
+	}
+	resp, err := cl.SendMail(ctx, &mailer.SendMailRequest{
+		RequestId: requestID.String(),
+		Sender:    msg.Sender,
+		ReplyTo:   msg.ReplyTo,
+		To:        msg.To,
+		Cc:        msg.Cc,
+		Bcc:       msg.Bcc,
+		Subject:   msg.Subject,
+		TextBody:  msg.TextBody,
+		HtmlBody:  msg.HTMLBody,
+	})
+	if err != nil {
+		return err
+	}
+	logging.Infof(ctx, "Email enqueued as %q", resp.MessageId)
+	return nil
 }

@@ -48,6 +48,8 @@ type Mail struct {
 }
 
 // Mailer lives in the context and knows how to send Messages.
+//
+// Must return gRPC errors.
 type Mailer func(ctx context.Context, msg *Mail) error
 
 // Use replaces the mailer in the context.
@@ -59,7 +61,7 @@ func Use(ctx context.Context, m Mailer) context.Context {
 
 // Send sends the given message through a mailer client in the context.
 //
-// Panics if the context doesn't have a mailer.
+// Panics if the context doesn't have a mailer. Returns gRPC errors.
 func Send(ctx context.Context, msg *Mail) error {
 	m, _ := ctx.Value(&mailerCtxKey).(Mailer)
 	if m == nil {
