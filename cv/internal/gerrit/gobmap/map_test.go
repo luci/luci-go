@@ -397,14 +397,21 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 			w := w
 			eg.Go(func() error {
 				for i := w; i < len(tasks); i += workers {
+				retryLoop:
 					for {
 						// Simulate passage of time but slow enough that some updates
-						// before expiry.
+						// succeed before the expiry.
 						ct.Clock.Add(maxUpdateDuration / workers)
-						if nil == Update(egCtx, &tasks[i].meta, tasks[i].cgs) {
-							break
+						switch err := Update(egCtx, &tasks[i].meta, tasks[i].cgs); {
+						case err == nil:
+							break retryLoop
+						case ctx.Err() != nil:
+							// This test should be fast. If test context expired, fail
+							// quickly.
+							return err
+						default:
+							retries[w]++
 						}
-						retries[w]++
 					}
 				}
 				return nil
