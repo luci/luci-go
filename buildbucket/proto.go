@@ -38,12 +38,17 @@ const (
 	ExperimentNonProduction    = "luci.non_production"
 
 	ExperimentBBAgent   = "luci.buildbucket.use_bbagent"
+	ExperimentRecipePY3 = "luci.recipes.use_python3"
 	ExperimentUseRealms = "luci.use_realms"
 )
 
 // WellKnownExperiments is the list of all well-known experiments.
 var WellKnownExperiments = stringset.NewFromSlice(
-	ExperimentBBCanarySoftware, ExperimentNonProduction, ExperimentBBAgent, ExperimentUseRealms,
+	ExperimentBBCanarySoftware,
+	ExperimentNonProduction,
+	ExperimentBBAgent,
+	ExperimentRecipePY3,
+	ExperimentUseRealms,
 )
 
 var (
@@ -74,4 +79,3 @@ func StripDisallowedTagKeys(tags *[]*pb.StringPair) {
 
 	*tags = ts
 }
-

@@ -98,6 +98,7 @@ func cmdLS(p Params) *subcommands.Command {
 				  * `+bb.ExperimentNonProduction+`
 				  * `+bb.ExperimentBBCanarySoftware+`
 				  * `+bb.ExperimentBBAgent+`
+				  * `+bb.ExperimentRecipePY3+`
 				  * `+bb.ExperimentUseRealms+`
 			`))
 			r.Flags.Var(StatusFlag(&r.status), "status",

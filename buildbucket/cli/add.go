@@ -94,6 +94,7 @@ func cmdAdd(p Params) *subcommands.Command {
 				  * `+bb.ExperimentNonProduction+`
 				  * `+bb.ExperimentBBCanarySoftware+`
 				  * `+bb.ExperimentBBAgent+`
+				  * `+bb.ExperimentRecipePY3+`
 				  * `+bb.ExperimentUseRealms+`
 			`))
 			r.Flags.Var(PropertiesFlag(&r.properties), "p", doc(`
