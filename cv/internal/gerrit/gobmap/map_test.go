@@ -313,6 +313,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 }
 
 func TestGobMapConcurrentUpdates(t *testing.T) {
+	t.Skip("https://crbug.com/1230475")
 	t.Parallel()
 
 	Convey("Update() works under flaky Datastore and lots of concurrent tries", t, func() {
