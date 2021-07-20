@@ -17,13 +17,16 @@
 package config
 
 import (
+	"context"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/stringset"
 	lc "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
@@ -268,7 +271,7 @@ func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Pr
 	regexps := stringset.Set{}
 	for i, r := range gp.RefRegexp {
 		ctx.Enter("ref_regexp #%d", i+1)
-		if _, err := regexp.Compile(r); err != nil {
+		if _, err := regexpCompileCached(r); err != nil {
 			ctx.Error(err)
 		}
 		if !regexps.Add(r) {
@@ -278,7 +281,7 @@ func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Pr
 	}
 	for i, r := range gp.RefRegexpExclude {
 		ctx.Enter("ref_regexp_exclude #%d", i+1)
-		if _, err := regexp.Compile(r); err != nil {
+		if _, err := regexpCompileCached(r); err != nil {
 			ctx.Error(err)
 		}
 		if !regexps.Add(r) {
@@ -580,7 +583,7 @@ func validateRegexp(ctx *validation.Context, field string, values []string, extr
 			ctx.Errorf("duplicate %s: %q", field, v)
 			continue
 		}
-		r, err := regexp.Compile(v)
+		r, err := regexpCompileCached(v)
 		if err != nil {
 			ctx.Errorf("%s %q: %s", field, v, err)
 			continue
@@ -681,4 +684,26 @@ func validateMigrationSettings(ctx *validation.Context, configSet, path string, 
 		validateRegexp(ctx, "project_regexp_exclude", u.GetProjectRegexpExclude())
 	}
 	return nil
+}
+
+// regexpCompileCached is the caching version of regexp.Compile.
+//
+// Most config files use the same regexp many times.
+func regexpCompileCached(pattern string) (*regexp.Regexp, error) {
+	cached, err := regexpCache.GetOrCreate(context.Background(), pattern, func() (interface{}, time.Duration, error) {
+		r, err := regexp.Compile(pattern)
+		return regexpCacheValue{r, err}, 0, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	v := cached.(regexpCacheValue)
+	return v.r, v.err
+}
+
+var regexpCache = lru.New(1024)
+
+type regexpCacheValue struct {
+	r   *regexp.Regexp
+	err error
 }
