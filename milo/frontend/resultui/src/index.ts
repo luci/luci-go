@@ -28,7 +28,13 @@ window.SW_PROMISE = new Promise((resolve) => {
       console.log('UI SW registered: ', registration);
 
       // Reload the page after a new version is activated.
-      navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+      navigator.serviceWorker.addEventListener('controllerchange', function (this: ServiceWorkerContainer) {
+        if (this.controller!.state === 'activating') {
+          this.controller!.addEventListener('statechange', reloadOnceActivated);
+        } else {
+          reloadOnceActivated.bind(this.controller!)();
+        }
+      });
 
       if (registration?.waiting) {
         sendUpdateNotification();
@@ -71,4 +77,13 @@ function scheduleUpdateNotification(this: ServiceWorkerRegistration) {
   }
 
   this.installing?.addEventListener('statechange', onStateChange);
+}
+
+// If the service worker is activated, remove this listener and reload the page.
+function reloadOnceActivated(this: ServiceWorker) {
+  if (this.state !== 'activated') {
+    return;
+  }
+  this.removeEventListener('statechange', reloadOnceActivated);
+  window.location.reload();
 }
