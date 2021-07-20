@@ -1,5 +1,11 @@
 service: default
-runtime: go113
+runtime: go115
+
+instance_class: F2
+
+automatic_scaling:
+  max_concurrent_requests: 80
+  max_instances: 2
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
