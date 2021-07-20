@@ -193,4 +193,31 @@ describe('Build Page', () => {
     cy.wait('@request-after-refresh', { timeout: 4000 });
     cy.get('milo-signin').contains('Login');
   });
+
+  it('should not break browser back button after internal redirection', () => {
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252');
+    cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview');
+    cy.get('#summary-html'); // Ensure the overview tab is loaded.
+
+    // Navigate to a different page with a short build page URL.
+    // Add + "/overview" to avoid 301 redirect.
+    cy.visit('/b/8845863326460499505/overview');
+    cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15253/overview');
+    cy.get('#summary-html'); // Ensure the overview tab is loaded.
+
+    // Go to a different tab.
+    cy.get('milo-tab-bar').contains('Test Results').click();
+    cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15253/test-results');
+    cy.get('milo-test-variant-entry'); // Ensure the test results tab is loaded.
+
+    // Go back to the overview tab of this build.
+    cy.go('back');
+    cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15253/overview');
+    cy.get('#summary-html'); // Ensure the overview tab is loaded.
+
+    // Go back to the overview tab of the previous build.
+    cy.go('back');
+    cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview');
+    cy.get('#summary-html'); // Ensure the overview tab is loaded.
+  });
 });

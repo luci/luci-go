@@ -163,7 +163,7 @@ describe('Test Results Tab', () => {
       invocationState.dispose();
       configsStore.dispose();
       const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
-      window.history.replaceState({ path: url }, '', url);
+      window.history.replaceState(null, '', url);
       fixtureCleanup();
     });
 

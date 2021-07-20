@@ -103,7 +103,7 @@ export class TestResultsTabElement extends MiloBaseElement {
         (newQueryStr) => {
           const location = window.location;
           const newUrl = `${location.protocol}//${location.host}${location.pathname}${newQueryStr}`;
-          window.history.replaceState({ path: newUrl }, '', newUrl);
+          window.history.replaceState(null, '', newUrl);
         },
         { fireImmediately: true }
       )
