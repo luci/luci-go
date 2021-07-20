@@ -16,7 +16,7 @@ import { PrpcClient } from '@chopsui/prpc-client';
 import { assert } from '@open-wc/testing/index-no-side-effects';
 import * as sinon from 'sinon';
 
-import { genCacheKeyForPrpcRequest } from './prpc_utils';
+import { genCacheKeyForPrpcRequest, removeDefaultProps } from './prpc_utils';
 
 describe('genCacheKeyForPrpcRequest', () => {
   it('should generate identical keys for identical requests', async () => {
@@ -189,5 +189,28 @@ describe('genCacheKeyForPrpcRequest', () => {
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
     assert.strictEqual(key1, key2);
+  });
+});
+
+describe('removeDefaultProps', () => {
+  it('should remove false-ish properties', async () => {
+    const processed = removeDefaultProps({
+      prop: 1,
+      emptyString: '',
+      falseValue: false,
+      emptyArray: [],
+      emptyObj: {},
+      obj: {
+        deepEmptyString: '',
+      },
+      nonEmptyArray: [''],
+    });
+
+    assert.deepStrictEqual(processed, {
+      prop: 1,
+      emptyObj: {},
+      obj: {},
+      nonEmptyArray: [''],
+    });
   });
 });

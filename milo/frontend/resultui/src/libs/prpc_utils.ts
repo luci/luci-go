@@ -34,36 +34,37 @@ export async function genCacheKeyForPrpcRequest(
   // don't need to reuse the request body.
   const reqBody = await req.json();
 
-  // Remove properties that won't have any effect when the request hit the
-  // server. e.g. `{ "pageToken": "" }` is the same as `{}`.
-  removeDefaultProp(reqBody);
-
   return (
     prefix +
     stableStringify([
       req.url,
       CRITICAL_HEADERS.map((k) => req.headers.get(k)),
       additionalCriticalHeaderKeys.map((k) => req.headers.get(k)),
-      reqBody,
+      // Remove properties that won't have any effect when the request hit the
+      // server. e.g. `{ "pageToken": "" }` is the same as `{}`.
+      removeDefaultProps(reqBody),
     ])
   );
 }
 
 /**
  * Removes false-ish properties and empty arrays from the object.
+ *
+ * Returns the same object instance for convenience.
  */
-function removeDefaultProp(obj: object) {
+export function removeDefaultProps(obj: unknown): unknown {
   if (obj instanceof Array) {
     for (const item of obj) {
-      removeDefaultProp(item);
+      removeDefaultProps(item);
     }
   } else if (obj instanceof Object) {
     for (const [key, item] of Object.entries(obj)) {
       if (!item || (item instanceof Array && item.length === 0)) {
         delete (obj as { [key: string]: unknown })[key];
       } else {
-        removeDefaultProp(item);
+        removeDefaultProps(item);
       }
     }
   }
+  return obj;
 }
