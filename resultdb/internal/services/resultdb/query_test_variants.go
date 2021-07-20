@@ -25,12 +25,12 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
-	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// QueryTestVariants implements uipb.UIServer.
-func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVariantsRequest) (*uipb.QueryTestVariantsResponse, error) {
+// QueryTestVariants implements pb.ResultDBServer.
+func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
 	if err := permissions.VerifyInvNames(ctx, permListTestResults, in.Invocations...); err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVari
 		PageToken:     in.PageToken,
 	}
 
-	var tvs []*uipb.TestVariant
+	var tvs []*pb.TestVariant
 	var token string
 	for len(tvs) == 0 {
 		if tvs, token, err = q.Fetch(ctx); err != nil {
@@ -70,7 +70,7 @@ func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVari
 		q.PageToken = token
 	}
 
-	return &uipb.QueryTestVariantsResponse{
+	return &pb.QueryTestVariantsResponse{
 		TestVariants:  tvs,
 		NextPageToken: token,
 	}, nil

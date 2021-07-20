@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -53,25 +52,25 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestExonerations("inv0", "T1", nil, 1),
 		)...)
 
-		srv := &uiServer{}
+		srv := &resultDBServer{}
 
 		Convey(`Permission denied`, func() {
 			testutil.MustApply(ctx, insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "randomproject:testrealm"}))
-			_, err := srv.QueryTestVariants(ctx, &uipb.QueryTestVariantsRequest{
+			_, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/invx"},
 			})
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 		})
 
 		Convey(`Valid`, func() {
-			res, err := srv.QueryTestVariants(ctx, &uipb.QueryTestVariantsRequest{
+			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0", "invocations/inv1"},
 			})
 			So(err, ShouldBeNil)
 			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
 			So(len(res.TestVariants), ShouldEqual, 3)
-			getTVStrings := func(tvs []*uipb.TestVariant) []string {
+			getTVStrings := func(tvs []*pb.TestVariant) []string {
 				tvStrings := make([]string, len(tvs))
 				for i, tv := range tvs {
 					tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
@@ -86,7 +85,7 @@ func TestQueryTestVariants(t *testing.T) {
 		})
 
 		Convey(`Try next page`, func() {
-			res, err := srv.QueryTestVariants(ctx, &uipb.QueryTestVariantsRequest{
+			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0", "invocations/inv1"},
 				PageSize:    3,
 				PageToken:   pagination.Token("EXPECTED", "", ""),

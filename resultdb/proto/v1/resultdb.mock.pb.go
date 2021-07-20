@@ -309,6 +309,26 @@ func (mr *MockResultDBClientMockRecorder) GetTestResultHistory(ctx, in interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestResultHistory", reflect.TypeOf((*MockResultDBClient)(nil).GetTestResultHistory), varargs...)
 }
 
+// QueryTestVariants mocks base method.
+func (m *MockResultDBClient) QueryTestVariants(ctx context.Context, in *QueryTestVariantsRequest, opts ...grpc.CallOption) (*QueryTestVariantsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryTestVariants", varargs...)
+	ret0, _ := ret[0].(*QueryTestVariantsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestVariants indicates an expected call of QueryTestVariants.
+func (mr *MockResultDBClientMockRecorder) QueryTestVariants(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVariants", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestVariants), varargs...)
+}
+
 // MockResultDBServer is a mock of ResultDBServer interface.
 type MockResultDBServer struct {
 	ctrl     *gomock.Controller
@@ -510,4 +530,19 @@ func (m *MockResultDBServer) GetTestResultHistory(arg0 context.Context, arg1 *Ge
 func (mr *MockResultDBServerMockRecorder) GetTestResultHistory(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestResultHistory", reflect.TypeOf((*MockResultDBServer)(nil).GetTestResultHistory), arg0, arg1)
+}
+
+// QueryTestVariants mocks base method.
+func (m *MockResultDBServer) QueryTestVariants(arg0 context.Context, arg1 *QueryTestVariantsRequest) (*QueryTestVariantsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryTestVariants", arg0, arg1)
+	ret0, _ := ret[0].(*QueryTestVariantsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestVariants indicates an expected call of QueryTestVariants.
+func (mr *MockResultDBServerMockRecorder) QueryTestVariants(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVariants", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestVariants), arg0, arg1)
 }

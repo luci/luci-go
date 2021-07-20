@@ -39,13 +39,6 @@ type resultDBServer struct {
 	generateArtifactURL func(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error)
 }
 
-// uiServer implements uipb.UIServer.
-//
-// It does not return gRPC-native errors; use DecoratedUI with internal.CommonPostlude.
-type uiServer struct {
-	//TODO(crbug.com/1154385): Add generateArtifactURL when we need to return artifacts in response.
-}
-
 // Options is resultdb server configuration.
 type Options struct {
 	// InsecureSelfURLs is set to true to use http:// (not https://) for URLs
@@ -79,15 +72,16 @@ func InitServer(srv *server.Server, opts Options) error {
 		contentServer.InstallHandlers(srv.VirtualHost(host))
 	}
 
+	rdbSvr := &resultDBServer{
+		generateArtifactURL: contentServer.GenerateSignedURL,
+	}
 	pb.RegisterResultDBServer(srv.PRPC, &pb.DecoratedResultDB{
-		Service: &resultDBServer{
-			generateArtifactURL: contentServer.GenerateSignedURL,
-		},
+		Service: rdbSvr,
 		Postlude: internal.CommonPostlude,
 	})
 
 	uipb.RegisterUIServer(srv.PRPC, &uipb.DecoratedUI{
-		Service:  &uiServer{},
+		Service:  rdbSvr,
 		Postlude: internal.CommonPostlude,
 	})
 

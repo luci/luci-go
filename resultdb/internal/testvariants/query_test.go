@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -50,19 +49,19 @@ func TestQueryTestVariants(t *testing.T) {
 			PageSize:      100,
 		}
 
-		fetch := func(q *Query) (tvs []*uipb.TestVariant, token string, err error) {
+		fetch := func(q *Query) (tvs []*pb.TestVariant, token string, err error) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
 			return q.Fetch(ctx)
 		}
 
-		mustFetch := func(q *Query) (tvs []*uipb.TestVariant, token string) {
+		mustFetch := func(q *Query) (tvs []*pb.TestVariant, token string) {
 			tvs, token, err := fetch(q)
 			So(err, ShouldBeNil)
 			return
 		}
 
-		getTVStrings := func(tvs []*uipb.TestVariant) []string {
+		getTVStrings := func(tvs []*pb.TestVariant) []string {
 			tvStrings := make([]string, len(tvs))
 			for i, tv := range tvs {
 				tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
@@ -167,8 +166,8 @@ func TestQueryTestVariants(t *testing.T) {
 				"40/T1/e3b0c44298fc1c14",
 			})
 
-			So(tvs[0].Results, ShouldResemble, []*uipb.TestResultBundle{
-				&uipb.TestResultBundle{
+			So(tvs[0].Results, ShouldResemble, []*pb.TestResultBundle{
+				&pb.TestResultBundle{
 					Result: &pb.TestResult{
 						Name:        "invocations/inv1/tests/T4/results/0",
 						ResultId:    "0",
@@ -256,7 +255,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 		Convey(`status filter works`, func() {
 			Convey(`only unexpected`, func() {
-				q.Predicate = &uipb.TestVariantPredicate{Status: uipb.TestVariantStatus_UNEXPECTED}
+				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_UNEXPECTED}
 				tvs, token := mustFetch(q)
 				tvStrings := getTVStrings(tvs)
 				So(tvStrings, ShouldResemble, []string{
@@ -268,7 +267,7 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 
 			Convey(`only expected`, func() {
-				q.Predicate = &uipb.TestVariantPredicate{Status: uipb.TestVariantStatus_EXPECTED}
+				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_EXPECTED}
 				tvs, _ := mustFetch(q)
 				So(getTVStrings(tvs), ShouldResemble, []string{
 					"50/T3/e3b0c44298fc1c14",

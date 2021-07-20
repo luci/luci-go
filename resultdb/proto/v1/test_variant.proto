@@ -1,0 +1,87 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+
+// Represents a matching test variant with its outcomes.
+message TestVariant {
+  // A unique identifier of the test in a LUCI project.
+  // Regex: ^[[::print::]]{1,256}$
+  //
+  // Refer to TestResult.test_id for details.
+  string test_id = 1;
+
+  // Description of one specific way of running the test,
+  // e.g. a specific bucket, builder and a test suite.
+  Variant variant = 2;
+
+  // Hash of the variant.
+  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
+  string variant_hash = 3;
+
+  // Status of the test variant.
+  TestVariantStatus status = 4;
+
+  // Outcomes of the test variant.
+  repeated TestResultBundle results = 5;
+
+  // Test exonerations if any test variant is exonerated.
+  repeated TestExoneration exonerations = 6;
+
+  // Information about the test at the time of its execution.
+  //
+  // All test results of the same test variant should report the same test
+  // metadata. This RPC relies on this rule and returns test metadata from
+  // *arbitrary* result of the test variant.
+  TestMetadata test_metadata = 7;
+}
+
+// Outcomes of an execution of the test variant.
+message TestResultBundle {
+  // Result of the test variant execution.
+  TestResult result = 1;
+}
+
+// Status of a test variant.
+enum TestVariantStatus {
+  // a test variant must not have this status.
+  // This is only used when filtering variants.
+  TEST_VARIANT_STATUS_UNSPECIFIED = 0;
+  // The test variant has no exonerations, and all results are unexpected.
+  UNEXPECTED = 10;
+  // The test variant has no exonerations, and all results are unexpectedly skipped.
+  UNEXPECTEDLY_SKIPPED = 20;
+  // The test variant has no exonerations, and has both expected and unexpected
+  // results.
+  FLAKY = 30;
+  // The test variant has one or more test exonerations.
+  EXONERATED = 40;
+  // The test variant has no exonerations, and all results are expected.
+  EXPECTED = 50;
+}
+
+// Represents a function TestVariant -> bool.
+// Empty message matches all test variants.
+message TestVariantPredicate {
+  // A test variant must have this status.
+  TestVariantStatus status = 1;
+}

@@ -6,6 +6,8 @@ import (
 	"context"
 
 	proto "github.com/golang/protobuf/proto"
+
+	v1 "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 type DecoratedUI struct {
@@ -23,7 +25,7 @@ type DecoratedUI struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedUI) QueryTestVariants(ctx context.Context, req *QueryTestVariantsRequest) (rsp *QueryTestVariantsResponse, err error) {
+func (s *DecoratedUI) QueryTestVariants(ctx context.Context, req *v1.QueryTestVariantsRequest) (rsp *v1.QueryTestVariantsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "QueryTestVariants", req)

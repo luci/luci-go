@@ -52,7 +52,7 @@ type FailureReason struct {
 	// If this field is empty, other fields (including those from the TestResult)
 	// may be used to cluster the failure instead.
 	//
-	// The size of the summary must be equal to or smaller than 1024 bytes in
+	// The size of the message must be equal to or smaller than 1024 bytes in
 	// UTF-8.
 	PrimaryErrorMessage string `protobuf:"bytes,1,opt,name=primary_error_message,json=primaryErrorMessage,proto3" json:"primary_error_message,omitempty"`
 }

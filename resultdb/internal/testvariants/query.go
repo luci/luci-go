@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -39,7 +38,7 @@ const testResultLimit = 10
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
-	Predicate     *uipb.TestVariantPredicate
+	Predicate     *pb.TestVariantPredicate
 	PageSize      int // must be positive
 	// Consists of test variant status, test id and variant hash.
 	PageToken string
@@ -99,7 +98,7 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	return tr, nil
 }
 
-func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*uipb.TestVariant) error) (err error) {
+func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*pb.TestVariant) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.run")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
@@ -120,7 +119,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		tv := &uipb.TestVariant{}
+		tv := &pb.TestVariant{}
 		var tvStatus int64
 		var results []*tvResult
 		var exoExplanationHtmls [][]byte
@@ -129,8 +128,8 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 			return err
 		}
 
-		tv.Status = uipb.TestVariantStatus(tvStatus)
-		if tv.Status == uipb.TestVariantStatus_EXPECTED {
+		tv.Status = pb.TestVariantStatus(tvStatus)
+		if tv.Status == pb.TestVariantStatus_EXPECTED {
 			panic("query of test variants with unexpected results returned a test variant with only expected results.")
 		}
 
@@ -139,13 +138,13 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		}
 
 		// Populate tv.Results
-		tv.Results = make([]*uipb.TestResultBundle, len(results))
+		tv.Results = make([]*pb.TestResultBundle, len(results))
 		for i, r := range results {
 			tr, err := q.toTestResultProto(r, tv.TestId)
 			if err != nil {
 				return err
 			}
-			tv.Results[i] = &uipb.TestResultBundle{
+			tv.Results[i] = &pb.TestResultBundle{
 				Result: tr,
 			}
 		}
@@ -199,8 +198,8 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(*pb.Test
 	})
 }
 
-func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*uipb.TestVariant, nextPageToken string, err error) {
-	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
+func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
+	tvs = make([]*pb.TestVariant, 0, q.PageSize)
 	// Number of the total test results returned by the query.
 	trLen := 0
 
@@ -214,7 +213,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	// The test variant we're processing right now.
 	// It will be appended to tvs when all of its results are processed unless
 	// it has unexpected results.
-	var current *uipb.TestVariant
+	var current *pb.TestVariant
 	var currentOnlyExpected bool
 	// Query q.PageSize+1 test results for test variants with
 	// only expected results, so that in the case of all test results are
@@ -226,7 +225,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		if current != nil {
 			if current.TestId == tr.TestId && current.VariantHash == tr.VariantHash {
 				if len(current.Results) < testResultLimit {
-					current.Results = append(current.Results, &uipb.TestResultBundle{
+					current.Results = append(current.Results, &pb.TestResultBundle{
 						Result: tr,
 					})
 				}
@@ -244,12 +243,12 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		}
 
 		// New test variant.
-		current = &uipb.TestVariant{
+		current = &pb.TestVariant{
 			TestId:      tr.TestId,
 			VariantHash: tr.VariantHash,
 			Variant:     tr.Variant,
-			Status:      uipb.TestVariantStatus_EXPECTED,
-			Results: []*uipb.TestResultBundle{
+			Status:      pb.TestVariantStatus_EXPECTED,
+			Results: []*pb.TestResultBundle{
 				{
 					Result: tr,
 				},
@@ -271,11 +270,11 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	case trLen == pageSize && !currentOnlyExpected:
 		// Got page size of test results, need to return the next page token.
 		// And current has unexpected results, skip it in the next page.
-		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), current.TestId, current.VariantHash)
+		nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), current.TestId, current.VariantHash)
 	case trLen == pageSize:
 		// In this page current only has expected results, but we're not sure if
 		// we have exhausted its test results or not. Calculate the token using lastProcessedTV.
-		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), lastProcessedTV.TestId, lastProcessedTV.VariantHash)
+		nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), lastProcessedTV.TestId, lastProcessedTV.VariantHash)
 	}
 
 	return
@@ -283,7 +282,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 
 // Fetch returns a page of test variants matching q.
 // Returned test variants are ordered by test variant status, test ID and variant hash.
-func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageToken string, err error) {
+func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
@@ -291,11 +290,11 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 	q.params = map[string]interface{}{
 		"invIDs":              q.InvocationIDs,
 		"skipStatus":          int(pb.TestStatus_SKIP),
-		"unexpected":          int(uipb.TestVariantStatus_UNEXPECTED),
-		"unexpectedlySkipped": int(uipb.TestVariantStatus_UNEXPECTEDLY_SKIPPED),
-		"flaky":               int(uipb.TestVariantStatus_FLAKY),
-		"exonerated":          int(uipb.TestVariantStatus_EXONERATED),
-		"expected":            int(uipb.TestVariantStatus_EXPECTED),
+		"unexpected":          int(pb.TestVariantStatus_UNEXPECTED),
+		"unexpectedlySkipped": int(pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED),
+		"flaky":               int(pb.TestVariantStatus_FLAKY),
+		"exonerated":          int(pb.TestVariantStatus_EXONERATED),
+		"expected":            int(pb.TestVariantStatus_EXPECTED),
 		"status":              int(q.Predicate.GetStatus()),
 	}
 
@@ -311,17 +310,17 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 	case len(parts) != 3:
 		return nil, "", pagination.InvalidToken(errors.Reason("expected 3 components, got %q", parts).Err())
 	default:
-		status, ok := uipb.TestVariantStatus_value[parts[0]]
+		status, ok := pb.TestVariantStatus_value[parts[0]]
 		if !ok {
 			return nil, "", pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
 		}
-		expected = uipb.TestVariantStatus(status) == uipb.TestVariantStatus_EXPECTED
+		expected = pb.TestVariantStatus(status) == pb.TestVariantStatus_EXPECTED
 		q.params["afterTvStatus"] = int(status)
 		q.params["afterTestId"] = parts[1]
 		q.params["afterVariantHash"] = parts[2]
 	}
 
-	if q.Predicate.GetStatus() == uipb.TestVariantStatus_EXPECTED {
+	if q.Predicate.GetStatus() == pb.TestVariantStatus_EXPECTED {
 		expected = true
 	}
 
@@ -329,9 +328,9 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		return q.fetchTestVariantsWithOnlyExpectedResults(ctx)
 	}
 
-	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
+	tvs = make([]*pb.TestVariant, 0, q.PageSize)
 	// Fetch test variants with unexpected results.
-	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *uipb.TestVariant) error {
+	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
 		tvs = append(tvs, tv)
 		return nil
 	})
@@ -345,7 +344,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		// If we got less than one page of test variants with unexpected results,
 		// and the query is not for test variants with specific status,
 		// compute the nextPageToken for test variants with only expected results.
-		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), "", "")
+		nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), "", "")
 	default:
 		last := tvs[q.PageSize-1]
 		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
@@ -473,7 +472,7 @@ var allTestResultsSQL = `
 	LIMIT @limit
 `
 
-func populateTestMetadata(tv *uipb.TestVariant, tmd spanutil.Compressed) error {
+func populateTestMetadata(tv *pb.TestVariant, tmd spanutil.Compressed) error {
 	if len(tmd) == 0 {
 		return nil
 	}
