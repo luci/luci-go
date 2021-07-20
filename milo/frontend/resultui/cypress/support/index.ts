@@ -30,3 +30,8 @@ beforeEach(() => {
   // finished running. Ignore errors due to network requests being canceled.
   cy.on('uncaught:exception', (e) => !e.message.includes('> NetworkError when attempting to fetch resource.'));
 });
+
+afterEach(() => {
+  // Sometimes errors could happen in afterEach hooks. Ignore those errors.
+  cy.on('uncaught:exception', () => {});
+});

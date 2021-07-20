@@ -17,6 +17,7 @@ describe('Test Results Tab', () => {
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/test-results');
     cy.get('milo-tvt-config-widget').click();
     cy.wait(1000);
+    cy.scrollTo('topLeft');
     cy.matchImageSnapshot('config-table-modal', { capture: 'viewport' });
   });
 

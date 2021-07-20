@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { deepEqual } from 'fast-equals';
+
+import { StubRequestsOption } from './stub_requests';
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
@@ -26,9 +30,35 @@ declare global {
   }
 }
 
-export const STUB_REQUEST_OPTIONS = {
+export const STUB_REQUEST_OPTIONS: StubRequestsOption = {
   matchHeaders: ['host', 'accept', 'content-type', 'origin', 'authorization'],
+  matchRequest: (cached, incoming) =>
+    deepEqual(
+      { ...cached, body: normalizeValue(JSON.parse(cached.body)) },
+      { ...incoming, body: normalizeValue(JSON.parse(incoming.body)) }
+    ),
 };
+
+const DEFAULT_PRIMITIVES: readonly unknown[] = ['', false, 0];
+
+/**
+ * Removes properties with default values (0, '', false, []). Useful when
+ * comparing two pRPC message objects.
+ */
+function normalizeValue(source: unknown): unknown {
+  if (source instanceof Array) {
+    return source.map((v) => normalizeValue(v));
+  }
+
+  if (source instanceof Object) {
+    const filteredEntries = Object.entries(source)
+      .filter(([_, v]) => !(DEFAULT_PRIMITIVES.includes(v) || (v instanceof Array && v.length === 0)))
+      .map(([k, v]) => [k, normalizeValue(v)]);
+    return Object.fromEntries(filteredEntries);
+  }
+
+  return source;
+}
 
 /**
  * Stubs all pRPC requests to buildbucket, resultdb, and Milo.

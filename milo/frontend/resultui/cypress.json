@@ -1,4 +1,5 @@
 {
   "baseUrl": "https://localhost:8080",
+  "chromeWebSecurity": false,
   "includeShadowDom": true
 }

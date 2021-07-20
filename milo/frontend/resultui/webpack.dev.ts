@@ -65,7 +65,7 @@ export default merge(common, {
     before: (app) => {
       app.use((req, _res, next) => {
         // Host root-sw.js at root so it can have root scope.
-        if (/\/(root-sw\.js(\.map)?)$/.test(req.path)) {
+        if (/^\/(root-sw\.js(\.map)?)$/.test(req.path)) {
           req.url = req.url.slice(0, req.url.length - req.path.length) + '/ui' + req.path;
         }
         next();
