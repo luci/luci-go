@@ -311,28 +311,61 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 // fetchBuilderConfigs returns the Builder configs referenced by the given
 // requests in a map of Bucket ID -> Builder name -> *pb.Builder.
 func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]map[string]*pb.Builder, error) {
-	cfgs := map[string]map[string]*pb.Builder{}
+	var bcks []*model.Bucket
+	bckCfgs := map[string]*pb.Bucket{} // Bucket ID -> *pb.Bucket
 	var bldrs []*model.Builder
+	bldrCfgs := map[string]map[string]*pb.Builder{} // Bucket ID -> Builder name -> *pb.Builder
 	for _, req := range reqs {
-		bucket := fmt.Sprintf("%s/%s", req.Builder.Project, req.Builder.Bucket)
-		if _, ok := cfgs[bucket]; !ok {
-			cfgs[bucket] = make(map[string]*pb.Builder)
+		bucket := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
+		if _, ok := bldrCfgs[bucket]; !ok {
+			bldrCfgs[bucket] = make(map[string]*pb.Builder)
 		}
-		if _, ok := cfgs[bucket][req.Builder.Builder]; ok {
+		if _, ok := bldrCfgs[bucket][req.Builder.Builder]; ok {
 			continue
+		}
+		if _, ok := bckCfgs[bucket]; !ok {
+			b := &model.Bucket{
+				Parent: model.ProjectKey(ctx, req.Builder.Project),
+				ID:     req.Builder.Bucket,
+			}
+			// b.Proto is a non-pointer type filled in during datastore fetch,
+			// so take its address so the map can be filled in as well.
+			bckCfgs[bucket] = &b.Proto
+			bcks = append(bcks, b)
 		}
 		b := &model.Builder{
 			Parent: model.BucketKey(ctx, req.Builder.Project, req.Builder.Bucket),
 			ID:     req.Builder.Builder,
 		}
-		cfgs[bucket][req.Builder.Builder] = &b.Config
+		bldrCfgs[bucket][req.Builder.Builder] = &b.Config
 		bldrs = append(bldrs, b)
 	}
-	if err := datastore.Get(ctx, bldrs); err != nil {
-		// TODO(crbug/1042991): Return InvalidArgument if the error is "not found".
-		return nil, err
+	// Check buckets to see if they support dynamically scheduling builds for builders which are not pre-defined.
+	if err := model.GetIgnoreMissing(ctx, bcks, bldrs); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch entities").Err()
 	}
-	return cfgs, nil
+	for _, b := range bcks {
+		if b.Proto.Name == "" {
+			return nil, appstatus.Errorf(codes.NotFound, "bucket not found: %q", b.ID)
+		}
+	}
+	for _, b := range bldrs {
+		// Since b.Config isn't a pointer type it will always be non-nil. However, since name is validated
+		// as required, it can be used as a proxy for determining whether the builder config was found or
+		// not. If it's unspecified, the builder wasn't found. Builds for builders which aren't pre-configured
+		// can only be scheduled in buckets which support dynamic builders.
+		if b.Config.Name == "" {
+			bucket := protoutil.FormatBucketID(b.Parent.Parent().StringID(), b.Parent.StringID())
+			// TODO(crbug/1042991): Check if bucket is explicitly configured for dynamic builders.
+			// Currently buckets do not require pre-defined builders iff they have no Swarming config.
+			if cfg := bckCfgs[bucket]; cfg.Swarming == nil {
+				delete(bldrCfgs[bucket], b.ID)
+				continue
+			}
+			return nil, appstatus.Errorf(codes.NotFound, "builder not found: %q", b.ID)
+		}
+	}
+	return bldrCfgs, nil
 }
 
 // generateBuildNumbers mutates the given builds, setting build numbers and

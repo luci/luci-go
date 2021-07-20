@@ -64,27 +64,66 @@ func TestScheduleBuild(t *testing.T) {
 				Name: "builder 2",
 			},
 		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Builder{
-			Parent: model.BucketKey(ctx, "project", "bucket 2"),
-			ID:     "builder 1",
-			Config: pb.Builder{
-				Name: "builder 1",
+
+		So(datastore.Put(ctx, &model.Bucket{
+			Parent: model.ProjectKey(ctx, "project"),
+			ID:     "bucket 1",
+			Proto: pb.Bucket{
+				Name:     "bucket 1",
+				Swarming: &pb.Swarming{},
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Bucket{
+			Parent: model.ProjectKey(ctx, "project"),
+			ID:     "bucket 2",
+			Proto: pb.Bucket{
+				Name: "bucket 2",
 			},
 		}), ShouldBeNil)
 
-		Convey("not found", func() {
+		Convey("bucket not found", func() {
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
+						Bucket:  "bucket 3",
+						Builder: "builder 1",
 					},
 				},
 			}
 			bldrs, err := fetchBuilderConfigs(ctx, reqs)
-			So(err, ShouldErrLike, "no such entity")
+			So(err, ShouldErrLike, "bucket not found")
 			So(bldrs, ShouldBeNil)
+		})
+
+		Convey("builder not found", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket 1",
+						Builder: "builder 3",
+					},
+				},
+			}
+			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			So(err, ShouldErrLike, "builder not found")
+			So(bldrs, ShouldBeNil)
+		})
+
+		Convey("legacy", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket 2",
+						Builder: "builder 1",
+					},
+				},
+			}
+			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			So(err, ShouldBeNil)
+			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
 		})
 
 		Convey("one", func() {
@@ -136,9 +175,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(bldrs["project/bucket 1"]["builder 2"], ShouldResembleProto, &pb.Builder{
 				Name: "builder 2",
 			})
-			So(bldrs["project/bucket 2"]["builder 1"], ShouldResembleProto, &pb.Builder{
-				Name: "builder 1",
-			})
+			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
 		})
 	})
 
@@ -278,24 +315,109 @@ func TestScheduleBuild(t *testing.T) {
 		}
 
 		Convey("builder not found", func() {
-			req := &pb.ScheduleBuildRequest{
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-			}
+			Convey("error", func() {
+				req := &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				}
 
-			blds, err := scheduleBuilds(ctx, req)
-			So(err, ShouldErrLike, "error fetching builders")
-			So(blds, ShouldBeNil)
-			So(sch.Tasks(), ShouldBeEmpty)
+				blds, err := scheduleBuilds(ctx, req)
+				So(err, ShouldErrLike, "error fetching builders")
+				So(blds, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
+			})
+
+			Convey("legacy", func() {
+				So(datastore.Put(ctx, &model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket",
+					Proto: pb.Bucket{
+						Name: "bucket",
+					},
+				}), ShouldBeNil)
+				req := &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					DryRun: true,
+				}
+
+				blds, err := scheduleBuilds(ctx, req)
+				So(err, ShouldBeNil)
+				So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Exe: &pb.Executable{
+							Cmd: []string{"recipes"},
+						},
+						ExecutionTimeout: &durationpb.Duration{
+							Seconds: 10800,
+						},
+						GracePeriod: &durationpb.Duration{
+							Seconds: 30,
+						},
+						Infra: &pb.BuildInfra{
+							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Logdog: &pb.BuildInfra_LogDog{
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname: "rdbHost",
+							},
+							Swarming: &pb.BuildInfra_Swarming{
+								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+									{
+										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+										Path: "builder",
+										WaitForWarmCache: &durationpb.Duration{
+											Seconds: 240,
+										},
+									},
+								},
+								Priority: 30,
+							},
+						},
+						Input: &pb.Build_Input{
+							Properties: &structpb.Struct{},
+						},
+						SchedulingTimeout: &durationpb.Duration{
+							Seconds: 21600,
+						},
+						Tags: []*pb.StringPair{
+							{
+								Key:   "builder",
+								Value: "builder",
+							},
+						},
+					},
+				})
+				So(sch.Tasks(), ShouldBeEmpty)
+			})
 		})
 
 		Convey("dry run", func() {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
+				Config: pb.Builder{
+					Name: "builder",
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Bucket{
+				Parent: model.ProjectKey(ctx, "project"),
+				ID:     "bucket",
+				Proto: pb.Bucket{
+					Name: "bucket",
+				},
 			}), ShouldBeNil)
 
 			Convey("mixed", func() {
@@ -426,6 +548,16 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
+				Config: pb.Builder{
+					Name: "builder",
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Bucket{
+				Parent: model.ProjectKey(ctx, "project"),
+				ID:     "bucket",
+				Proto: pb.Bucket{
+					Name: "bucket",
+				},
 			}), ShouldBeNil)
 
 			blds, err := scheduleBuilds(ctx, req)
@@ -537,7 +669,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
-						Builder: "builder",
+						Builder: "static builder",
 					},
 					Critical: pb.Trinary_UNSET,
 				},
@@ -545,22 +677,40 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
-						Builder: "builder",
+						Builder: "static builder",
 					},
 					Critical: pb.Trinary_YES,
 				},
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
+						Bucket:  "legacy bucket",
+						Builder: "dynamic builder",
 					},
 					Critical: pb.Trinary_NO,
 				},
 			}
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
-				ID:     "builder",
+				ID:     "static builder",
+				Config: pb.Builder{
+					Name: "static builder",
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Bucket{
+				Parent: model.ProjectKey(ctx, "project"),
+				ID:     "bucket",
+				Proto: pb.Bucket{
+					Name:     "bucket",
+					Swarming: &pb.Swarming{},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Bucket{
+				Parent: model.ProjectKey(ctx, "project"),
+				ID:     "legacy bucket",
+				Proto: pb.Bucket{
+					Name: "legacy bucket",
+				},
 			}), ShouldBeNil)
 
 			blds, err := scheduleBuilds(ctx, reqs...)
@@ -570,7 +720,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
-						Builder: "builder",
+						Builder: "static builder",
 					},
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
@@ -596,7 +746,7 @@ func TestScheduleBuild(t *testing.T) {
 						Swarming: &pb.BuildInfra_Swarming{
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Name: "builder_adb2d526b654419696251c4ba2db6006a198aa7655fd4bffa4cc91593bfebcbd_v2",
 									Path: "builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
@@ -616,7 +766,7 @@ func TestScheduleBuild(t *testing.T) {
 					Tags: []*pb.StringPair{
 						{
 							Key:   "builder",
-							Value: "builder",
+							Value: "static builder",
 						},
 					},
 				},
@@ -624,7 +774,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
-						Builder: "builder",
+						Builder: "static builder",
 					},
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
@@ -651,7 +801,7 @@ func TestScheduleBuild(t *testing.T) {
 						Swarming: &pb.BuildInfra_Swarming{
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Name: "builder_adb2d526b654419696251c4ba2db6006a198aa7655fd4bffa4cc91593bfebcbd_v2",
 									Path: "builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
@@ -671,15 +821,15 @@ func TestScheduleBuild(t *testing.T) {
 					Tags: []*pb.StringPair{
 						{
 							Key:   "builder",
-							Value: "builder",
+							Value: "static builder",
 						},
 					},
 				},
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
+						Bucket:  "legacy bucket",
+						Builder: "dynamic builder",
 					},
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
@@ -706,7 +856,7 @@ func TestScheduleBuild(t *testing.T) {
 						Swarming: &pb.BuildInfra_Swarming{
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Name: "builder_b2f3fde9f0cc0b7f5c5c14e4466e7c060b91b9fa9c4817cef25f4ef6c65679b9_v2",
 									Path: "builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
@@ -726,7 +876,7 @@ func TestScheduleBuild(t *testing.T) {
 					Tags: []*pb.StringPair{
 						{
 							Key:   "builder",
-							Value: "builder",
+							Value: "dynamic builder",
 						},
 					},
 				},
@@ -735,7 +885,7 @@ func TestScheduleBuild(t *testing.T) {
 				{
 					ID:         9021868963221610337,
 					BucketID:   "project/bucket",
-					BuilderID:  "project/bucket/builder",
+					BuilderID:  "project/bucket/static builder",
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
@@ -748,14 +898,14 @@ func TestScheduleBuild(t *testing.T) {
 					IsLuci:     true,
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
-						"builder:builder",
+						"builder:static builder",
 					},
 					Project: "project",
 				},
 				{
 					ID:         9021868963221610321,
 					BucketID:   "project/bucket",
-					BuilderID:  "project/bucket/builder",
+					BuilderID:  "project/bucket/static builder",
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
@@ -768,14 +918,14 @@ func TestScheduleBuild(t *testing.T) {
 					IsLuci:     true,
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
-						"builder:builder",
+						"builder:static builder",
 					},
 					Project: "project",
 				},
 				{
 					ID:         9021868963221610305,
-					BucketID:   "project/bucket",
-					BuilderID:  "project/bucket/builder",
+					BucketID:   "project/legacy bucket",
+					BuilderID:  "project/legacy bucket/dynamic builder",
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
@@ -788,7 +938,7 @@ func TestScheduleBuild(t *testing.T) {
 					IsLuci:     true,
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
-						"builder:builder",
+						"builder:dynamic builder",
 					},
 					Project: "project",
 				},
@@ -3953,6 +4103,45 @@ func TestScheduleBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
+			Convey("legacy", func() {
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto: pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:caller@example.com",
+								Role:     pb.Acl_SCHEDULER,
+							},
+						},
+						Name: "bucket",
+					},
+				}), ShouldBeNil)
+				req := &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				}
+
+				rsp, err := srv.ScheduleBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResembleProto, &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "user:caller@example.com",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Id:         9021868963221667745,
+					Input:      &pb.Build_Input{},
+					Status:     pb.Status_SCHEDULED,
+				})
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+
 			Convey("ok", func() {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
@@ -3964,6 +4153,8 @@ func TestScheduleBuild(t *testing.T) {
 								Role:     pb.Acl_SCHEDULER,
 							},
 						},
+						Name:     "bucket",
+						Swarming: &pb.Swarming{},
 					},
 				}), ShouldBeNil)
 				req := &pb.ScheduleBuildRequest{
@@ -3985,6 +4176,9 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
+						Config: pb.Builder{
+							Name: "builder",
+						},
 					}), ShouldBeNil)
 					So(datastore.Put(ctx, &model.Build{
 						ID: 9021868963221667745,
@@ -4010,6 +4204,7 @@ func TestScheduleBuild(t *testing.T) {
 						ID:     "builder",
 						Config: pb.Builder{
 							BuildNumbers: pb.Toggle_YES,
+							Name:         "builder",
 						},
 					}), ShouldBeNil)
 
@@ -4043,6 +4238,9 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
+						Config: pb.Builder{
+							Name: "builder",
+						},
 					}), ShouldBeNil)
 
 					Convey("deduplication", func() {
@@ -4162,6 +4360,8 @@ func TestScheduleBuild(t *testing.T) {
 								Role:     pb.Acl_SCHEDULER,
 							},
 						},
+						Name:     "bucket",
+						Swarming: &pb.Swarming{},
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
@@ -4192,6 +4392,7 @@ func TestScheduleBuild(t *testing.T) {
 						ID:     "builder",
 						Config: pb.Builder{
 							BuildNumbers: pb.Toggle_YES,
+							Name:         "builder",
 						},
 					}), ShouldBeNil)
 
