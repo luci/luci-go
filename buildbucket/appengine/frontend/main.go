@@ -124,9 +124,12 @@ func main() {
 		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 		srv.PRPC.HackFixFieldMasksForJSON = true
 
-		// makeOverride(prod % -> Go, dev % -> Go).
-		// Does not affect batched ScheduleBuild requests (see rpc/batch.go).
-		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 100))
+		// Percentage of prod ScheduleBuild requests to serve from Go.
+		pct := 1
+		// Traffic split for unbatched ScheduleBuild requests. makeOverride(prod % -> Go, dev % -> Go).
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(pct, 100))
+		// Traffic split for batched ScheduleBuild requests in prod (see rpc/batch.go).
+		srv.Context = rpc.WithTrafficSplit(srv.Context, pct)
 
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		return nil
