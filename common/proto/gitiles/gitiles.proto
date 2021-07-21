@@ -207,6 +207,10 @@ message DownloadDiffRequest {
     //     For example, "master~2" or "deadbeef~1".
     // Required.
     string committish = 2;
+
+    // Path relative to the project root to the file to limit the diff to.
+    // Optional.
+    string path = 3;
 }
 
 message DownloadDiffResponse {

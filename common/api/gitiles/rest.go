@@ -181,7 +181,7 @@ func (c *client) DownloadDiff(ctx context.Context, req *gitiles.DownloadDiffRequ
 	}
 	query := make(url.Values, 1)
 	query.Set("format", "TEXT")
-	path := fmt.Sprintf("/%s/+/%s%s", url.PathEscape(req.Project), url.PathEscape(req.Committish), url.PathEscape("^!"))
+	path := fmt.Sprintf("/%s/+/%s%s/%s", url.PathEscape(req.Project), url.PathEscape(req.Committish), url.PathEscape("^!"), req.Path)
 	_, b, err := c.getRaw(ctx, path, query)
 	if err != nil {
 		return nil, err
