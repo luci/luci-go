@@ -373,7 +373,9 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 	// Upload the inputs.
 	var uploadRes *cas.UploadResult
 	eg.Go(func() (err error) {
-		uploadRes, err = cl.Upload(ctx, cas.UploadOptions{}, inputC)
+		uploadRes, err = cl.Upload(ctx, cas.UploadOptions{
+			PreserveSymlinks: true,
+		}, inputC)
 		return
 	})
 
