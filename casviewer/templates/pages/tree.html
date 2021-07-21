@@ -18,6 +18,13 @@
       <td><pre class="no-margin">{{.Digest.Hash}}/{{.Digest.SizeBytes}}</pre></td>
     </tr>
   {{end}}
+  {{range .Symlinks}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td></td>
+        <td>symlink target: {{.Target}}</td>
+    </tr>
+  {{end}}
   {{range .Files}}
     <tr>
       <td><a href="{{ getURL $.Instance . }}" target="_blank">{{.Name}}</a></td>
