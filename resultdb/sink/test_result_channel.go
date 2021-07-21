@@ -144,16 +144,17 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 			pbutil.SortStringPairs(tags)
 			reqs[i] = &pb.CreateTestResultRequest{
 				TestResult: &pb.TestResult{
-					TestId:       tr.GetTestId(),
-					ResultId:     tr.GetResultId(),
-					Variant:      c.cfg.BaseVariant,
-					Expected:     tr.GetExpected(),
-					Status:       tr.GetStatus(),
-					SummaryHtml:  tr.GetSummaryHtml(),
-					StartTime:    tr.GetStartTime(),
-					Duration:     tr.GetDuration(),
-					Tags:         tags,
-					TestMetadata: tr.GetTestMetadata(),
+					TestId:        tr.GetTestId(),
+					ResultId:      tr.GetResultId(),
+					Variant:       c.cfg.BaseVariant,
+					Expected:      tr.GetExpected(),
+					Status:        tr.GetStatus(),
+					SummaryHtml:   tr.GetSummaryHtml(),
+					StartTime:     tr.GetStartTime(),
+					Duration:      tr.GetDuration(),
+					Tags:          tags,
+					TestMetadata:  tr.GetTestMetadata(),
+					FailureReason: tr.GetFailureReason(),
 				},
 			}
 		}

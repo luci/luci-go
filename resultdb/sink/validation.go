@@ -39,6 +39,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 	case ec.isErr(pbutil.ValidateStringPairs(msg.Tags), "tags"):
 	case ec.isErr(validateArtifacts(msg.Artifacts), "artifacts"):
 	case msg.TestMetadata != nil && ec.isErr(pbutil.ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
+	case msg.FailureReason != nil && ec.isErr(pbutil.ValidateFailureReason(msg.FailureReason), "failure_reason"):
 	}
 	return err
 }

@@ -19,6 +19,7 @@ package luci.resultsink.v1;
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
@@ -63,6 +64,9 @@ message TestResult {
 
   // Equivalent of luci.resultdb.v1.TestResult.test_metadata.
   luci.resultdb.v1.TestMetadata test_metadata = 11;
+
+  // Equivalent of luci.resultdb.v1.TestResult.failure_reason.
+  luci.resultdb.v1.FailureReason failure_reason = 12;
 }
 
 // A local equivalent of luci.resultdb.Artifact message
