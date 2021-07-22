@@ -249,9 +249,9 @@ func (rb *Creator) checkRunExists(ctx context.Context) {
 			return errors.Annotate(err, "failed to load Run entity").Tag(transient.Tag).Err()
 
 		case rb.run.CreationOperationID == rb.OperationID:
-			// This is quite likely if prior transaction attempt actually succeeds
-			// succeeded on Datastore side, but CV failed to receive an ACK and is now
-			// retrying the transaction body.
+			// This is quite likely if prior transaction attempt actually succeeds on
+			// Datastore side, but CV failed to receive an ACK and is now retrying the
+			// transaction body.
 			logging.Debugf(ctx, "Run(ID:%s) already created by us", rb.runID)
 			return errAlreadyCreated
 		default:

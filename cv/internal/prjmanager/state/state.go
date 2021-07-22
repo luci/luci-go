@@ -413,7 +413,6 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 
 	switch t, tPB, asap := earliestDecisionTime(s.PB.GetComponents()); {
 	case asap:
-		logging.Warningf(ctx, "earliestDecisionTime is ASAP")
 		t = clock.Now(ctx)
 		tPB = timestamppb.New(t)
 		fallthrough
