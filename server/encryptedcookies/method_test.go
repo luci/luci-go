@@ -294,17 +294,16 @@ func TestMethod(t *testing.T) {
 				So(user, ShouldBeNil)
 				So(session, ShouldBeNil)
 
-				// The refresh token was revoked.
-				So(provider.Revoked, ShouldResemble, []string{provider.RefreshToken})
+				// The refresh token was not revoked.
+				So(provider.Revoked, ShouldBeNil)
 
-				// Hitting logout again (resending the cookie) succeeds, but doesn't
-				// revoke the token (it has already been revoked).
+				// Hitting logout again (resending the cookie) succeeds.
 				resp = call(method.logoutHandler, "primary.example.com", parsed, http.Header{
 					"Cookie": {cookie},
 				})
 				So(resp.StatusCode, ShouldEqual, http.StatusFound)
 				So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
-				So(provider.Revoked, ShouldResemble, []string{provider.RefreshToken})
+				So(provider.Revoked, ShouldBeNil)
 			})
 		})
 	})

@@ -369,16 +369,6 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 				return errors.Reason("the encryption key is not configured").Err()
 			}
 			if err := m.closeSession(ctx, aead, encryptedCookie, cfg, discovery); err != nil {
-				// Refresh tokens are usually observable through ID provider UI. There's
-				// a list of "Such and such services have your profile information". The
-				// expectation is that if the user finishes the logout flow, the service
-				// will disappear from the list of authorized services. To do that, we
-				// must successfully revoke the token.
-				//
-				// Since the logout is used *specifically* to achieve this, it is better
-				// to fail it if the revocation fails, unlike the best-effort revocation
-				// in /login (where the primary purpose is to get a new refresh token,
-				// not to revoke the previous one).
 				logging.Errorf(ctx, "An error closing the session: %s", err)
 				return errors.Reason("transient error when closing the session").Tag(transient.Tag).Err()
 			}
@@ -698,13 +688,20 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	return nil, nil, nil
 }
 
-// closeSession closes the session and revokes the refresh token.
+// closeSession closes the session and forgets the refresh token.
 //
 // Does nothing if the session is already closed or the cookie can't be
 // decrypted.
 //
 // Note that errors may contain sensitive details and should not be returned to
 // the caller as is.
+//
+// TODO(crbug/1226922): Since the refresh token is not revoked but simply
+// forgotten, the token is still observable through ID provider UI. We can't
+// revoke the refresh token because the associated access token cached in the
+// frontend will stop working. In the future, we can migrate to use ID tokens
+// instead of access tokens. After that, we can safely revoke the refresh token
+// (users will still need to sign in after the ID token expired).
 func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encryptedCookie *http.Cookie, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
 	cookie, err := internal.DecryptSessionCookie(aead, encryptedCookie)
 	if err != nil {
@@ -720,20 +717,6 @@ func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encrypted
 	case session == nil || session.State != sessionpb.State_STATE_OPEN:
 		logging.Infof(ctx, "The session is already closed")
 		return nil
-	}
-
-	// Unseal the private part of the session to get the refresh token to revoke
-	// it. Ignore encryption errors (they may happen if keys were replaced or
-	// there was a bug in the code). We should delete the session even if we can't
-	// get to its refresh token. Old refresh tokens are naturally evicted when
-	// new tokens are minted.
-	private, _, err := internal.UnsealPrivate(cookie, session)
-	if err != nil {
-		logging.Warningf(ctx, "Failed to unseal the private part of the session, ignoring the refresh token: %s", err)
-	} else {
-		if err := m.revokeRefreshToken(ctx, private.RefreshToken, cfg, discovery); err != nil {
-			return err
-		}
 	}
 
 	// Mark the session as closed in the storage.
@@ -757,16 +740,6 @@ func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encrypted
 	}
 
 	return nil
-}
-
-// revokeRefreshToken sends a request to the provider's revocation endpoint.
-func (m *AuthMethod) revokeRefreshToken(ctx context.Context, token string, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
-	return internal.HitRevocationEndpoint(ctx, discovery, map[string]string{
-		"client_id":       cfg.ClientID,
-		"client_secret":   cfg.ClientSecret,
-		"token":           token,
-		"token_type_hint": "refresh_token",
-	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
