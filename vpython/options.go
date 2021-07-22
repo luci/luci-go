@@ -130,8 +130,9 @@ func (o *Options) ResolveSpec(c context.Context) error {
 
 	o.EnvConfig.Spec = &o.DefaultSpec
 
-	// If there's no target, then we're dropping to an interactive shell
 	target := o.CommandLine.Target
+
+	// If there's no target, then we're dropping to an interactive shell
 	_, interactive := target.(python.NoTarget)
 
 	// Reading script from stdin is the same as no script in that we don't
@@ -139,9 +140,16 @@ func (o *Options) ResolveSpec(c context.Context) error {
 	script, isScriptTarget := target.(python.ScriptTarget)
 	loadFromStdin := isScriptTarget && (script.Path == "-")
 
-	// We're either dropping to interactive mode or reading a script from stdin,
-	// either way try to resolve the spec from the CWD
-	if interactive || loadFromStdin {
+	// If we're loading a module, then we could attempt to find the module and
+	// start the search there. But resolving the module path in full generality
+	// would be slow and/or complicated. Perhaps we'll revisit in the future,
+	// but for now let's just start the search in the CWD, as this is at least
+	// a subset of the paths we should search.
+	_, isModuleTarget := target.(python.ModuleTarget)
+
+	// We're either dropping to interactive mode, reading a script from stdin,
+	// or loading a module. Regardless, try to resolve the spec from the CWD.
+	if interactive || loadFromStdin || isModuleTarget {
 		spec, path, err := o.SpecLoader.LoadForScript(c, o.WorkDir, false)
 		if err != nil {
 			return errors.Annotate(err, "failed to load spec for script: %s", target).Err()
