@@ -25,6 +25,7 @@ import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/common/proto/gerrit/gerrit.proto";
 import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
 
 // Migration service is for INTERNAL LUCI CV USE ONLY.
@@ -77,6 +78,8 @@ service Migration {
   // CQDaemon.
   rpc ReportUsedNetrc(ReportUsedNetrcRequest) returns (google.protobuf.Empty);
 
+  // ReportTryjobs notifies CV of the tryjobs applicable to a Run.
+  rpc ReportTryjobs(ReportTryjobsRequest) returns (google.protobuf.Empty);
 }
 
 message ReportVerifiedRunRequest {
@@ -192,4 +195,17 @@ message FetchRunStatusResponse {
   // `send_patch_event(..., event, extra)`.
   string event = 1;
   string extra = 2;
+}
+
+message ReportTryjobsRequest {
+  string luci_project = 1;
+  string run_id = 2;
+  repeated Tryjob tryjobs = 3;
+}
+
+message Tryjob {
+  bigquery.Build build = 1;
+  // Buildbucket status, as seen by CQDaemon.
+  // Running implies that CQDaemon is waiting for this Run.
+  buildbucket.v2.Status bb_status = 2;
 }

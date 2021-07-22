@@ -61,6 +61,8 @@ type MigrationClient interface {
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
 	ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// ReportTryjobs notifies CV of the tryjobs applicable to a Run.
+	ReportTryjobs(ctx context.Context, in *ReportTryjobsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type migrationClient struct {
@@ -116,6 +118,15 @@ func (c *migrationClient) ReportUsedNetrc(ctx context.Context, in *ReportUsedNet
 	return out, nil
 }
 
+func (c *migrationClient) ReportTryjobs(ctx context.Context, in *ReportTryjobsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/migration.Migration/ReportTryjobs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MigrationServer is the server API for Migration service.
 // All implementations must embed UnimplementedMigrationServer
 // for forward compatibility
@@ -158,6 +169,8 @@ type MigrationServer interface {
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
 	ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*emptypb.Empty, error)
+	// ReportTryjobs notifies CV of the tryjobs applicable to a Run.
+	ReportTryjobs(context.Context, *ReportTryjobsRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedMigrationServer()
 }
 
@@ -179,6 +192,9 @@ func (UnimplementedMigrationServer) FetchActiveRuns(context.Context, *FetchActiv
 }
 func (UnimplementedMigrationServer) ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportUsedNetrc not implemented")
+}
+func (UnimplementedMigrationServer) ReportTryjobs(context.Context, *ReportTryjobsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportTryjobs not implemented")
 }
 func (UnimplementedMigrationServer) mustEmbedUnimplementedMigrationServer() {}
 
@@ -283,6 +299,24 @@ func _Migration_ReportUsedNetrc_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Migration_ReportTryjobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportTryjobsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigrationServer).ReportTryjobs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/migration.Migration/ReportTryjobs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigrationServer).ReportTryjobs(ctx, req.(*ReportTryjobsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Migration_ServiceDesc is the grpc.ServiceDesc for Migration service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -309,6 +343,10 @@ var Migration_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportUsedNetrc",
 			Handler:    _Migration_ReportUsedNetrc_Handler,
+		},
+		{
+			MethodName: "ReportTryjobs",
+			Handler:    _Migration_ReportTryjobs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
