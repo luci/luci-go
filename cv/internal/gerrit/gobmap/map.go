@@ -122,10 +122,10 @@ func leaseExclusive(ctx context.Context, meta *prjcfg.Meta) (context.Context, fu
 		ExpireTime: clock.Now(ctx).Add(maxUpdateDuration),
 		Holder:     taskID, // Used for debugging, only.
 	})
-	switch {
-	case err == lease.ErrConflict:
-		return nil, nil, errors.Annotate(err, "gobmap for %s is already being updated", meta.Project).Tag(transient.Tag).Err()
-	case err != nil:
+	if err != nil {
+		if _, ok := lease.IsAlreadyInLeaseErr(err); ok {
+			return nil, nil, errors.Annotate(err, "gobmap for %s is already being updated", meta.Project).Tag(transient.Tag).Err()
+		}
 		return nil, nil, err
 	}
 	limitedCtx, cancel := clock.WithDeadline(ctx, l.ExpireTime)

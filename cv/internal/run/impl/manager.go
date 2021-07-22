@@ -88,16 +88,20 @@ func New(
 			return common.TQIfy{
 				KnownRetry: []error{
 					handler.ErrTransientSubmissionFailure,
-					lease.ErrConflict,
 					eventbox.ErrContention,
 				},
 				KnownIgnoreTags: []errors.BoolTag{
 					cancel.ErrPreconditionFailedTag,
+					ignoreErrTag,
 				},
 			}.Error(ctx, err)
 		},
 	)
 	return rm
+}
+
+var ignoreErrTag = errors.BoolTag{
+	Key: errors.NewTagKey("intentionally ignored rm error"),
 }
 
 var pokeInterval = 5 * time.Minute
@@ -115,10 +119,19 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 		proc.handler = h
 	}
 	recipient := run.EventboxRecipient(ctx, runID)
-	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
-	if err != nil {
-		return err
+	postProcessFns, processErr := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
+	if processErr != nil {
+		if alreadyInLeaseErr, ok := lease.IsAlreadyInLeaseErr(processErr); ok {
+			expireTime := alreadyInLeaseErr.ExpireTime.UTC()
+			if err := rm.runNotifier.Invoke(ctx, runID, expireTime); err != nil {
+				return err
+			}
+			logging.Infof(ctx, "failed to acquire the lease for %q, revisit at %s", alreadyInLeaseErr.ResourceID, expireTime)
+			return ignoreErrTag.Apply(processErr)
+		}
+		return processErr
 	}
+
 	for _, postProcessFn := range postProcessFns {
 		if err := postProcessFn(ctx); err != nil {
 			return err

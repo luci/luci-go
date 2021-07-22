@@ -285,10 +285,7 @@ func applyLeaseForCL(ctx context.Context, clid common.CLID, duration time.Durati
 		Holder:     requester,
 		ExpireTime: leaseExpireTime,
 	})
-	switch {
-	case err == lease.ErrConflict:
-		return nil, nil, errors.Annotate(err, "CL is currently being mutated").Tag(transient.Tag).Err()
-	case err != nil:
+	if err != nil {
 		return nil, nil, err
 	}
 

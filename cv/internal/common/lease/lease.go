@@ -87,9 +87,33 @@ func (a *Application) validate(ctx context.Context) error {
 	return nil
 }
 
-// ErrConflict is returned when resource is currently in lease so that
-// operations like `Apply`, `Extend` can't proceed.
-var ErrConflict = errors.New("Resource is currently in lease")
+// AlreadyInLeaseErr is returned when resource is currently in lease.
+type AlreadyInLeaseErr struct {
+	// ResourceID is the ID of the target resource.
+	ResourceID ResourceID
+	// ExpireTime is the time the current lease on the target rescourse expires.
+	ExpireTime time.Time
+	// Holder is the holder of the current lease on the target rescourse.
+	Holder string
+}
+
+// Error implements `error`.
+func (e *AlreadyInLeaseErr) Error() string {
+	return fmt.Sprintf("Resource %q is currently leased by %s until %s", e.ResourceID, e.Holder, e.ExpireTime)
+}
+
+// IsAlreadyInLeaseErr detects and returns `AlreadyInLeaseErr` in the given err.
+func IsAlreadyInLeaseErr(err error) (*AlreadyInLeaseErr, bool) {
+	var ret *AlreadyInLeaseErr
+	errors.WalkLeaves(err, func(leaf error) bool {
+		if e, ok := leaf.(*AlreadyInLeaseErr); ok {
+			ret = e
+			return false
+		}
+		return true
+	})
+	return ret, ret != nil
+}
 
 const tokenLen = 8
 
@@ -124,7 +148,8 @@ func (l *Lease) Expired(ctx context.Context) bool {
 
 // Extend extends the Lease by additional duration.
 //
-// Returns ErrConflict if the Lease is not current for the resource.
+// Returns AlreadyInLeaseErr if this resource is not in the same lease as
+// provided.
 // The result expireTime will be truncated to millisecond.
 func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 	switch {
@@ -151,7 +176,11 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 		case cur == nil:
 			return errors.New("target lease doesn't exist in datastore")
 		case !bytes.Equal(cur.Token, l.Token):
-			return ErrConflict
+			return &AlreadyInLeaseErr{
+				ExpireTime: cur.ExpireTime,
+				Holder:     cur.Holder,
+				ResourceID: cur.ResourceID,
+			}
 		}
 		if err := datastore.Put(ctx, &extended); err != nil {
 			return errors.Annotate(err, "failed to put lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
@@ -171,7 +200,8 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 
 // Terminate terminates the lease.
 //
-// Returns ErrConflict if the lease is not current for the resource.
+// Returns AlreadyInLeaseErr if the provided lease doesn't currently hold the
+// resource.
 func (l *Lease) Terminate(ctx context.Context) error {
 	var innerErr error
 	finalErr := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
@@ -183,7 +213,11 @@ func (l *Lease) Terminate(ctx context.Context) error {
 		case cur == nil:
 			return nil // lease is already terminated
 		case !bytes.Equal(cur.Token, l.Token):
-			return ErrConflict
+			return &AlreadyInLeaseErr{
+				ExpireTime: cur.ExpireTime,
+				Holder:     cur.Holder,
+				ResourceID: cur.ResourceID,
+			}
 		}
 		if err := datastore.Delete(ctx, l); err != nil {
 			return errors.Annotate(err, "failed to delete lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
@@ -231,7 +265,11 @@ func TryApply(ctx context.Context, latestLease *Lease, app Application) (*Lease,
 		return nil, err
 	}
 	if !latestLease.Expired(ctx) {
-		return nil, ErrConflict
+		return nil, &AlreadyInLeaseErr{
+			ExpireTime: latestLease.ExpireTime,
+			Holder:     latestLease.Holder,
+			ResourceID: latestLease.ResourceID,
+		}
 	}
 	ret := &Lease{
 		ResourceID: app.ResourceID,
@@ -248,7 +286,7 @@ func TryApply(ctx context.Context, latestLease *Lease, app Application) (*Lease,
 
 // Apply applies for a new lease.
 //
-// Returns ErrConflict if the resource is already in lease.
+// Returns AlreadyInLeaseErr if the lease on this resource hasn't expired yet.
 func Apply(ctx context.Context, app Application) (*Lease, error) {
 	if err := app.validate(ctx); err != nil {
 		return nil, err

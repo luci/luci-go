@@ -59,10 +59,14 @@ func TestLease(t *testing.T) {
 			So(actual, ShouldResemble, expected)
 			So(mustLoadLease(ctx, rid), ShouldResemble, expected)
 
-			Convey("Returns ErrConflict if existing lease is still active", func() {
+			Convey("Returns AlreadyInLeaseErr if existing lease is still active", func() {
 				ct.Clock.Add(30 * time.Second) // lease expires after 1 minute
 				_, err := Apply(ctx, application)
-				So(err, ShouldEqual, ErrConflict)
+				So(err, ShouldErrLike, &AlreadyInLeaseErr{
+					ExpireTime: now.Add(1 * time.Minute), // original lease expiry time
+					Holder:     "holder",
+					ResourceID: rid,
+				})
 			})
 
 			Convey("Succeed if existing lease has expired", func() {
@@ -138,7 +142,11 @@ func TestLease(t *testing.T) {
 				ExpireTime: now.Add(1 * time.Minute),
 			})
 			So(err, ShouldBeNil)
-			So(l.Terminate(ctx), ShouldEqual, ErrConflict)
+			So(l.Terminate(ctx), ShouldResemble, &AlreadyInLeaseErr{
+				ExpireTime: now.Add(1 * time.Minute), // original lease expiry time
+				Holder:     "holder2",
+				ResourceID: rid,
+			})
 		})
 	})
 
@@ -208,7 +216,11 @@ func TestLease(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			err = l.Extend(ctx, 1*time.Minute)
-			So(err, ShouldEqual, ErrConflict)
+			So(err, ShouldResemble, &AlreadyInLeaseErr{
+				ExpireTime: now.Add(1 * time.Minute),
+				Holder:     "holder2",
+				ResourceID: rid,
+			})
 		})
 	})
 }
