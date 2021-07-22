@@ -3,12 +3,12 @@ module go.chromium.org/luci
 go 1.16
 
 require (
-	cloud.google.com/go v0.86.0
+	cloud.google.com/go v0.87.0
 	cloud.google.com/go/bigquery v1.19.0
 	cloud.google.com/go/bigtable v1.10.1
 	cloud.google.com/go/datastore v1.5.0
 	cloud.google.com/go/logging v1.4.2
-	cloud.google.com/go/pubsub v1.12.2
+	cloud.google.com/go/pubsub v1.13.0
 	cloud.google.com/go/spanner v1.23.0
 	cloud.google.com/go/storage v1.16.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.8
@@ -16,7 +16,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.0
 	github.com/Microsoft/go-winio v0.5.0
 	github.com/VividCortex/mysqlerr v1.0.0
-	github.com/aws/aws-sdk-go v1.39.3 // indirect
+	github.com/aws/aws-sdk-go v1.40.5 // indirect
 	github.com/bazelbuild/buildtools v0.0.0-20210526150809-4890966c38b9
 	github.com/bazelbuild/remote-apis v0.0.0-20210718193713-0ecef08215cf
 	github.com/bazelbuild/remote-apis-sdks v0.0.0-20210719032003-1cec173a5bf7
@@ -32,8 +32,9 @@ require (
 	github.com/gomodule/redigo v1.8.5
 	github.com/google/flatbuffers v2.0.0+incompatible // indirect
 	github.com/google/go-cmp v0.5.6
-	github.com/google/tink/go v1.6.0
-	github.com/google/uuid v1.2.0
+	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
+	github.com/google/tink/go v1.6.1
+	github.com/google/uuid v1.3.0
 	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/gopherjs/gopherjs v0.0.0-20210707094841-eea289f08d45 // indirect
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
@@ -61,19 +62,22 @@ require (
 	github.com/yosuke-furukawa/json5 v0.1.1
 	go.opencensus.io v0.23.0
 	go.starlark.net v0.0.0-20210602144842-1cdb82c9e17a
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6
-	golang.org/x/tools v0.1.4
+	golang.org/x/tools v0.1.5
 	google.golang.org/api v0.50.0
 	google.golang.org/appengine v1.6.7
-	google.golang.org/genproto v0.0.0-20210708141623-e76da96a951f
+	google.golang.org/genproto v0.0.0-20210721163202-f1cecdd8b78a
 	google.golang.org/grpc v1.39.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+// The next version uses errors.Is(...) and no longer works on GAE go113.
+replace golang.org/x/net => golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
