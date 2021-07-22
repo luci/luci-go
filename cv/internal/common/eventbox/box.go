@@ -171,7 +171,7 @@ func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 		case common.IsDatastoreContention(err):
 			return errors.Annotate(ErrContention, "failed to start a mutation").Err()
 		case err != nil:
-			return err
+			return errors.Annotate(err, "failed to BeginPop").Err()
 		}
 
 		var newState State

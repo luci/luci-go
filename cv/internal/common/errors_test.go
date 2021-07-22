@@ -18,6 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -209,5 +212,18 @@ func TestMostSevereError(t *testing.T) {
 		So(MostSevereError(multFatal), ShouldEqual, fatal1)
 		So(MostSevereError(multTrans), ShouldEqual, trans1)
 		So(MostSevereError(tensor), ShouldEqual, fatal1)
+	})
+}
+
+func TestIsDatastoreContention(t *testing.T) {
+	t.Parallel()
+
+	Convey("IsDatastoreContention works", t, func() {
+		// fatal means non-transient here.
+		So(IsDatastoreContention(errors.New("fatal1")), ShouldBeFalse)
+		// This is copied from what was actually observed in prod as of 2021-07-22.
+		err := status.Errorf(codes.Aborted, "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability")
+		So(IsDatastoreContention(err), ShouldBeTrue)
+		So(IsDatastoreContention(errors.Annotate(err, "wrapped").Err()), ShouldBeTrue)
 	})
 }

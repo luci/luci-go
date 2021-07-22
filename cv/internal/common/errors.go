@@ -240,7 +240,7 @@ func IsDatastoreContention(err error) bool {
 			return false //stop
 		}
 		s, ok := status.FromError(leaf)
-		if ok && s.Code() == codes.Aborted && !strings.HasPrefix(s.Message(), "Aborted due to cross-transaction contention") {
+		if ok && s.Code() == codes.Aborted && strings.Contains(s.Message(), "Aborted due to cross-transaction contention") {
 			ret = true
 			return false //stop
 		}
