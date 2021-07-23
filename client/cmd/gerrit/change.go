@@ -30,6 +30,7 @@ import (
 
 type apiCallInput struct {
 	ChangeID   string      `json:"change_id,omitempty"`
+	ProjectID  string      `json:"project_id,omitempty"`
 	RevisionID string      `json:"revision_id,omitempty"`
 	JSONInput  interface{} `json:"input,omitempty"`
 	QueryInput interface{} `json:"params,omitempty"`
@@ -38,7 +39,10 @@ type apiCallInput struct {
 type apiCall func(context.Context, *gerrit.Client, *apiCallInput) (interface{}, error)
 
 type changeRunOptions struct {
+	// These booleans indicate whether a value is required in a subcommand's JSON
+	// input.
 	changeID   bool
+	projectID  bool
 	revisionID bool
 	jsonInput  interface{}
 	queryInput interface{}
@@ -104,6 +108,11 @@ func (c *changeRun) Parse(a subcommands.Application, args []string) error {
 		return errors.New("change_id is required")
 	}
 
+	// Verify we have a project ID if the command requires one.
+	if c.projectID && len(c.input.ProjectID) == 0 {
+		return errors.New("project_id is required")
+	}
+
 	// Verify we have a revision ID if the command requires one.
 	if c.revisionID && len(c.input.RevisionID) == 0 {
 		return errors.New("revision_id is required")
@@ -163,6 +172,33 @@ func (c *changeRun) Run(a subcommands.Application, args []string, _ subcommands.
 		return 1
 	}
 	return 0
+}
+
+func cmdCreateBranch(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		bi := input.JSONInput.(*gerrit.BranchInput)
+		return client.CreateBranch(ctx, input.ProjectID, bi)
+	}
+	return &subcommands.Command{
+		UsageLine: "create-branch <options>",
+		ShortDesc: "creates a branch",
+		LongDesc: `Creates a branch.
+
+Input should contain a project ID and a JSON payload, e.g.
+{
+	"project_id": <project-id>,
+	"input": <JSON payload>
+}
+
+More information on creating branches may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#create-branch`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				projectID: true,
+				jsonInput: &gerrit.BranchInput{},
+			}, runner)
+		},
+	}
 }
 
 func cmdChangeAbandon(authOpts auth.Options) *subcommands.Command {

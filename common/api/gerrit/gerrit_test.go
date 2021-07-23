@@ -552,6 +552,63 @@ func TestRestoreChange(t *testing.T) {
 	})
 }
 
+func TestCreateBranch(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	bi := BranchInput{
+		Ref:      "branch",
+		Revision: "08a8326653eaa5f7aeea30348b63bf5e9595dc11",
+	}
+
+	Convey("CreateBranch", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var bi BranchInput
+			err := json.NewDecoder(r.Body).Decode(&bi)
+			c.So(err, ShouldBeNil)
+
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			info := BranchInfo{
+				Ref:      "branch",
+				Revision: "08a8326653eaa5f7aeea30348b63bf5e9595dc11",
+			}
+			var buffer bytes.Buffer
+			err = json.NewEncoder(&buffer).Encode(&info)
+			c.So(err, ShouldBeNil)
+			fmt.Fprintf(w, ")]}'\n%s\n", buffer.String())
+		})
+		defer srv.Close()
+		Convey("Basic", func() {
+			info, err := client.CreateBranch(ctx, "project", &bi)
+			So(err, ShouldBeNil)
+			So(info.Ref, ShouldEqual, "branch")
+			So(info.Revision, ShouldEqual, "08a8326653eaa5f7aeea30348b63bf5e9595dc11")
+		})
+	})
+
+	Convey("Not authorized", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var bi BranchInput
+			err := json.NewDecoder(r.Body).Decode(&bi)
+			c.So(err, ShouldBeNil)
+
+			w.WriteHeader(403)
+			w.Header().Set("Content-Type", "text/plain")
+			fmt.Fprintf(w, "Not authorized to create ref")
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			_, err := client.CreateBranch(ctx, "project", &bi)
+			So(err, ShouldNotBeNil)
+		})
+	})
+}
+
 func TestIsPureRevert(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

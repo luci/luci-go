@@ -237,6 +237,15 @@ type SubmittedTogetherInfo struct {
 	NonVisibleChanges int `json:"non_visible_changes,omitempty"`
 }
 
+// BranchInfo contains information about a branch.
+type BranchInfo struct {
+	// Ref is the ref of the branch.
+	Ref string `json:"ref"`
+
+	// Revision is the revision to which the branch points.
+	Revision string `json:"revision"`
+}
+
 // ValidateGerritURL validates Gerrit URL for use in this package.
 func ValidateGerritURL(gerritURL string) error {
 	_, err := NormalizeGerritURL(gerritURL)
@@ -857,6 +866,30 @@ func (c *Client) RestoreChange(ctx context.Context, changeID string, ri *Restore
 	var resp Change
 	path := fmt.Sprintf("a/changes/%s/restore", url.PathEscape(changeID))
 	if _, err := c.post(ctx, path, ri, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// BranchInput contains information for creating a branch.
+type BranchInput struct {
+	// Ref is the name of the branch.
+	Ref string `json:"ref,omitempty"`
+
+	// Revision is the base revision of the new branch.
+	Revision string `json:"revision,omitempty"`
+}
+
+// CreateBranch creates a branch.
+//
+// Returns BranchInfo, or an error if the branch could not be created.
+//
+// See the link below for API documentation.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#create-branch
+func (c *Client) CreateBranch(ctx context.Context, projectID string, bi *BranchInput) (*BranchInfo, error) {
+	var resp BranchInfo
+	path := fmt.Sprintf("a/projects/%s/branches/%s", url.PathEscape(projectID), url.PathEscape(bi.Ref))
+	if _, err := c.post(ctx, path, bi, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
