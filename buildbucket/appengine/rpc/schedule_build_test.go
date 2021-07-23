@@ -943,7 +943,7 @@ func TestScheduleBuild(t *testing.T) {
 					Project: "project",
 				},
 			})
-			So(sch.Tasks(), ShouldHaveLength, 3)
+			So(sch.Tasks(), ShouldHaveLength, 2)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
 	})
@@ -4139,7 +4139,7 @@ func TestScheduleBuild(t *testing.T) {
 					Input:      &pb.Build_Input{},
 					Status:     pb.Status_SCHEDULED,
 				})
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("ok", func() {

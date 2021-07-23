@@ -948,6 +948,8 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			b := b
 			// blds and reqs slices map 1:1.
 			reqID := reqs[i].RequestId
+			bucket := fmt.Sprintf("%s/%s", reqs[i].Builder.Project, reqs[i].Builder.Bucket)
+			cfg := cfgs[bucket][reqs[i].Builder.Builder]
 			work <- func() error {
 				toPut := []interface{}{
 					b,
@@ -994,6 +996,10 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 
 					if err := datastore.Put(ctx, toPut...); err != nil {
 						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
+					}
+
+					if cfg == nil {
+						return nil
 					}
 
 					if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
