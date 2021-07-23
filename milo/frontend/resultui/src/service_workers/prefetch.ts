@@ -19,13 +19,7 @@ import { genCacheKeyForPrpcRequest } from '../libs/prpc_utils';
 import { timeout } from '../libs/utils';
 import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from '../services/buildbucket';
 import { queryAuthState } from '../services/milo_internal';
-import {
-  constructArtifactName,
-  getInvIdFromBuildId,
-  getInvIdFromBuildNum,
-  ResultDb,
-  UISpecificService,
-} from '../services/resultdb';
+import { constructArtifactName, getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../services/resultdb';
 
 // TSC isn't able to determine the scope properly.
 // Perform manual casting to fix typing.
@@ -60,7 +54,7 @@ export class Prefetcher {
     `https://${this.configs.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
     `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
     `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-    `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants`,
+    `https://${this.configs.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
   ];
 
   private cachedFetch = cached(
@@ -77,7 +71,6 @@ export class Prefetcher {
 
   private prefetchBuildsService = new BuildsService(this.makePrpcClient(this.configs.BUILDBUCKET.HOST));
   private prefetchResultDBService = new ResultDb(this.makePrpcClient(this.configs.RESULT_DB.HOST));
-  private prefetchUISpecificService = new UISpecificService(this.makePrpcClient(this.configs.RESULT_DB.HOST));
 
   constructor(private readonly configs: typeof CONFIGS, private readonly fetchImpl: typeof fetch) {}
 
@@ -180,7 +173,7 @@ export class Prefetcher {
         .getInvocation({ name: invName }, CACHE_OPTION)
         // Ignore any error, let the consumer of the cache deal with it.
         .catch((_e) => {});
-      this.prefetchUISpecificService
+      this.prefetchResultDBService
         .queryTestVariants({ invocations: [invName] }, CACHE_OPTION)
         // Ignore any error, let the consumer of the cache deal with it.
         .catch((_e) => {});

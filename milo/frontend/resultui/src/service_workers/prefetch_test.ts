@@ -20,7 +20,7 @@ import { setAuthStateCache } from '../auth_state_cache';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { BUILD_FIELD_MASK, BuildsService } from '../services/buildbucket';
 import { queryAuthState } from '../services/milo_internal';
-import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb, UISpecificService } from '../services/resultdb';
+import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../services/resultdb';
 import { Prefetcher } from './prefetch';
 
 describe('prefetch', () => {
@@ -33,7 +33,6 @@ describe('prefetch', () => {
   let fetchInterceptor: sinon.SinonStub<[RequestInfo, RequestInit | undefined], Promise<Response>>;
   let buildsService: BuildsService;
   let resultdb: ResultDb;
-  let uiSpecifiedService: UISpecificService;
 
   beforeEach(async () => {
     await setAuthStateCache({ accessToken: 'access-token', identity: 'user:user-id' });
@@ -47,9 +46,6 @@ describe('prefetch', () => {
       new PrpcClientExt({ host: CONFIGS.BUILDBUCKET.HOST, fetchImpl: fetchInterceptor }, () => 'access-token')
     );
     resultdb = new ResultDb(
-      new PrpcClientExt({ host: CONFIGS.RESULT_DB.HOST, fetchImpl: fetchInterceptor }, () => 'access-token')
-    );
-    uiSpecifiedService = new UISpecificService(
       new PrpcClientExt({ host: CONFIGS.RESULT_DB.HOST, fetchImpl: fetchInterceptor }, () => 'access-token')
     );
   });
@@ -88,7 +84,7 @@ describe('prefetch', () => {
       `https://${self.location.host}/auth-state`,
       `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants`,
+      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
     ]);
 
     // Check whether the auth state was prefetched.
@@ -136,7 +132,7 @@ describe('prefetch', () => {
     assert.strictEqual(fetchStub.callCount, 4);
 
     // Check whether the test variants was prefetched.
-    uiSpecifiedService.queryTestVariants({ invocations: [invName] });
+    resultdb.queryTestVariants({ invocations: [invName] });
     cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(3).args),
       respondWith: respondWithStub,
@@ -171,7 +167,7 @@ describe('prefetch', () => {
       `https://${self.location.host}/auth-state`,
       `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants`,
+      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
     ]);
 
     // Check whether the auth state was prefetched.
@@ -214,7 +210,7 @@ describe('prefetch', () => {
     assert.strictEqual(fetchStub.callCount, 4);
 
     // Check whether the test variants was prefetched.
-    uiSpecifiedService.queryTestVariants({ invocations: [invName] });
+    resultdb.queryTestVariants({ invocations: [invName] });
     cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(3).args),
       respondWith: respondWithStub,

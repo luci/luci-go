@@ -21,12 +21,7 @@ import './test_count_indicator';
 import { AppState } from '../context/app_state';
 import { InvocationState, provideInvocationState } from '../context/invocation_state';
 import { provider } from '../libs/context';
-import {
-  QueryTestVariantsRequest,
-  QueryTestVariantsResponse,
-  TestVariantStatus,
-  UISpecificService,
-} from '../services/resultdb';
+import { QueryTestVariantsRequest, QueryTestVariantsResponse, ResultDb, TestVariantStatus } from '../services/resultdb';
 import { TestCountIndicatorElement } from './test_count_indicator';
 
 const variant1 = {
@@ -80,8 +75,8 @@ describe('Test Count Indicator', () => {
 
     const appState = {
       selectedTabId: '',
-      uiSpecificService: {
-        queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+      resultDb: {
+        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
       },
     } as AppState;
 

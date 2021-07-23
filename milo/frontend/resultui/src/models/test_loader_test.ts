@@ -15,7 +15,7 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 
-import { createTVPropGetter, TestVariantStatus, UISpecificService } from '../services/resultdb';
+import { createTVPropGetter, ResultDb, TestVariantStatus } from '../services/resultdb';
 import { LoadingStage, TestLoader } from './test_loader';
 
 const variant1 = {
@@ -115,7 +115,7 @@ describe('TestLoader', () => {
       stub.onCall(3).resolves({ testVariants: [variant12], nextPageToken: undefined });
       testLoader = new TestLoader(req, {
         queryTestVariants: stub,
-      } as Partial<UISpecificService> as UISpecificService);
+      } as Partial<ResultDb> as ResultDb);
     });
 
     it('should preserve loading progress', async () => {
@@ -379,7 +379,7 @@ describe('TestLoader', () => {
       stub.onCall(2).resolves({ testVariants: [variant9], nextPageToken: undefined });
       testLoader = new TestLoader(req, {
         queryTestVariants: stub,
-      } as Partial<UISpecificService> as UISpecificService);
+      } as Partial<ResultDb> as ResultDb);
     });
 
     it('should correctly handle a response with 0 variants', async () => {
@@ -403,7 +403,7 @@ describe('TestLoader', () => {
       stub.onCall(1).resolves({ testVariants: [variant8, variant9, variant10, variant11, variant12] });
       testLoader = new TestLoader(req, {
         queryTestVariants: stub,
-      } as Partial<UISpecificService> as UISpecificService);
+      } as Partial<ResultDb> as ResultDb);
     });
 
     it('should not return empty groups', async () => {

@@ -18,9 +18,9 @@ import sinon from 'sinon';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
+  ResultDb,
   TestVariant,
   TestVariantStatus,
-  UISpecificService,
 } from '../services/resultdb';
 import { AppState } from './app_state';
 import { InvocationState } from './invocation_state';
@@ -67,8 +67,8 @@ describe('InvocationState', () => {
 
     const appState = {
       selectedTabId: '',
-      uiSpecificService: {
-        queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+      resultDb: {
+        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
       },
     } as AppState;
 

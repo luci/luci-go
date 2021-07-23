@@ -280,19 +280,6 @@ export class ResultDb {
   async getArtifact(req: GetArtifactRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetArtifact', req)) as Artifact;
   }
-}
-
-export class UISpecificService {
-  private static SERVICE = 'luci.resultdb.internal.ui.UI';
-
-  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
-
-  constructor(client: PrpcClientExt) {
-    this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(UISpecificService.SERVICE, method, message),
-      { key: (method, message) => `${method}-${stableStringify(message)}` }
-    );
-  }
 
   async queryTestVariants(req: QueryTestVariantsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryTestVariants', req)) as QueryTestVariantsResponse;

@@ -164,10 +164,10 @@ export class InvocationState {
 
   @computed({ keepAlive: true })
   get testLoader(): TestLoader | null {
-    if (this.isDisposed || !this.invocationName || !this.appState.uiSpecificService) {
+    if (this.isDisposed || !this.invocationName || !this.appState.resultDb) {
       return null;
     }
-    return new TestLoader({ invocations: [this.invocationName] }, this.appState.uiSpecificService);
+    return new TestLoader({ invocations: [this.invocationName] }, this.appState.resultDb);
   }
 }
 

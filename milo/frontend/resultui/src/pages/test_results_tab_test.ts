@@ -22,12 +22,7 @@ import { AppState, provideAppState } from '../context/app_state';
 import { InvocationState, provideInvocationState } from '../context/invocation_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { provider } from '../libs/context';
-import {
-  QueryTestVariantsRequest,
-  QueryTestVariantsResponse,
-  TestVariantStatus,
-  UISpecificService,
-} from '../services/resultdb';
+import { QueryTestVariantsRequest, QueryTestVariantsResponse, ResultDb, TestVariantStatus } from '../services/resultdb';
 import { TestResultsTabElement } from './test_results_tab';
 
 const variant1 = {
@@ -89,8 +84,8 @@ describe('Test Results Tab', () => {
 
     const appState = {
       selectedTabId: '',
-      uiSpecificService: {
-        queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+      resultDb: {
+        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
       },
     } as AppState;
     const configsStore = new UserConfigsStore();
@@ -138,8 +133,8 @@ describe('Test Results Tab', () => {
       queryTestVariantsStub.onCall(4).resolves({ testVariants: [variant5] });
       appState = {
         selectedTabId: '',
-        uiSpecificService: {
-          queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+        resultDb: {
+          queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
         },
       } as AppState;
       configsStore = new UserConfigsStore();

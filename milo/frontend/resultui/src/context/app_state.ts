@@ -19,7 +19,7 @@ import { createContextLink } from '../libs/context';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { AccessService, BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
 import { AuthState, MiloInternal } from '../services/milo_internal';
-import { ResultDb, UISpecificService } from '../services/resultdb';
+import { ResultDb } from '../services/resultdb';
 
 /**
  * Records the app-level state.
@@ -89,14 +89,6 @@ export class AppState {
   }
 
   @computed({ keepAlive: true })
-  get uiSpecificService(): UISpecificService | null {
-    if (this.isDisposed || this.userIdentity === null) {
-      return null;
-    }
-    return new UISpecificService(this.makeClient(CONFIGS.RESULT_DB.HOST));
-  }
-
-  @computed({ keepAlive: true })
   get milo(): MiloInternal | null {
     if (this.isDisposed || this.userIdentity === null) {
       return null;
@@ -138,7 +130,6 @@ export class AppState {
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
     this.resultDb;
-    this.uiSpecificService;
     this.milo;
     this.buildsService;
     this.buildersService;

@@ -1,7 +1,7 @@
 [
   {
     "req": {
-      "url": "https://staging.results.api.cr.dev/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants",
+      "url": "https://staging.results.api.cr.dev/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants",
       "method": "POST",
       "headers": {
         "host": "staging.results.api.cr.dev",
@@ -73,7 +73,7 @@
   },
   {
     "req": {
-      "url": "https://staging.results.api.cr.dev/prpc/luci.resultdb.internal.ui.UI/QueryTestVariants",
+      "url": "https://staging.results.api.cr.dev/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants",
       "method": "POST",
       "headers": {
         "host": "staging.results.api.cr.dev",

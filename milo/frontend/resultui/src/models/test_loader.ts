@@ -23,9 +23,9 @@ import { action, computed, observable } from 'mobx';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
+  ResultDb,
   TestVariant,
   TestVariantStatus,
-  UISpecificService,
 } from '../services/resultdb';
 
 /**
@@ -159,7 +159,7 @@ export class TestLoader {
   // empty string is the token for the first page.
   private nextPageToken: string | undefined = '';
 
-  constructor(private readonly req: QueryTestVariantsRequest, private readonly uiSpecificService: UISpecificService) {}
+  constructor(private readonly req: QueryTestVariantsRequest, private readonly resultDb: ResultDb) {}
 
   private loadPromise = Promise.resolve();
   private firstLoadPromise?: Promise<void>;
@@ -218,7 +218,7 @@ export class TestLoader {
     const req = { ...this.req, pageToken: this.nextPageToken };
     let res: QueryTestVariantsResponse;
     try {
-      res = await this.uiSpecificService.queryTestVariants(req);
+      res = await this.resultDb.queryTestVariants(req);
     } catch (e) {
       throw new LoadTestVariantsError(req, e);
     }
