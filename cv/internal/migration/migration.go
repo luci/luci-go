@@ -96,6 +96,26 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 	return &emptypb.Empty{}, nil
 }
 
+// ReportTryjobs notifies CV of the tryjobs which CQDaemon considers
+// relevant to a Run.
+func (m *MigrationServer) ReportedTryjobs(ctx context.Context, req *migrationpb.ReportTryjobsRequest) (resp *emptypb.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if ctx, err = m.checkAllowed(ctx); err != nil {
+		return nil, err
+	}
+	if req.GetRunId() != "" {
+		return nil, appstatus.Error(codes.InvalidArgument, "run_id required")
+	}
+	err = saveReportedTryjobs(ctx, req, func(ctx context.Context, id string) error {
+		// TODO(crbug/1231118): notify Run Manager.
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if ctx, err = m.checkAllowed(ctx); err != nil {
