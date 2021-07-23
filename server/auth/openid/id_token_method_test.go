@@ -77,6 +77,20 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 		So(user, ShouldBeNil)
 	})
 
+	Convey("Not JWT token and SkipNonJWT == false", t, func() {
+		user, err := call("Bearer " + "im-not-a-jwt")
+		So(err, ShouldErrLike, "bad ID token: bad JWT")
+		So(user, ShouldBeNil)
+	})
+
+	Convey("Not JWT token and SkipNonJWT == true", t, func() {
+		method.SkipNonJWT = true
+
+		user, err := call("Bearer " + "im-not-a-jwt")
+		So(err, ShouldBeNil)
+		So(user, ShouldBeNil)
+	})
+
 	Convey("Regular user", t, func() {
 		Convey("Happy path", func() {
 			user, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
@@ -112,7 +126,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 				Iat:           clock.Now(ctx).Add(-2 * time.Hour).Unix(),
 				Exp:           clock.Now(ctx).Add(-1 * time.Hour).Unix(),
 			}))
-			So(err, ShouldErrLike, "bad ID token - expired")
+			So(err, ShouldErrLike, "bad ID token: expired")
 		})
 	})
 

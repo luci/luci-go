@@ -49,6 +49,20 @@ type GoogleIDTokenAuthMethod struct {
 	// used only for tokens that identify service accounts.
 	AudienceCheck func(ctx context.Context, r *http.Request, aud string) (valid bool, err error)
 
+	// SkipNonJWT indicates to ignore tokens that don't look like JWTs.
+	//
+	// This is useful when chaining together multiple auth methods that all search
+	// for tokens in the `Authorization` header.
+	//
+	// If the `Authorization` header contains a malformed JWT and SkipNonJWT is
+	// false, Authenticate would return an error, which eventually would result in
+	// Unauthenticated response code (e.g. HTTP 401). But If SkipNonJWT is true,
+	// Authenticate would return (nil, nil, nil) instead, which (per auth.Method
+	// API) instructs the auth stack to try the next registered authentication
+	// method (or treat the request as anonymous if there are no more methods to
+	// try).
+	SkipNonJWT bool
+
 	// discoveryURL is used in tests to override GoogleDiscoveryURL.
 	discoveryURL string
 }
@@ -90,6 +104,9 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Requ
 	// Validate token's signature and expiration. Extract user info from it.
 	tok, user, err := UserFromIDToken(ctx, token, doc)
 	if err != nil {
+		if m.SkipNonJWT && NotJWT.In(err) {
+			return nil, nil, nil
+		}
 		return nil, nil, err
 	}
 

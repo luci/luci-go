@@ -86,6 +86,7 @@ func main() {
 				// The primary authentication method.
 				&openid.GoogleIDTokenAuthMethod{
 					AudienceCheck: openid.AudienceMatchesHost,
+					SkipNonJWT:    true, // pass OAuth2 access tokens through
 				},
 				// Backward compatibility for RPC Explorer and old clients.
 				&auth.GoogleOAuth2Method{

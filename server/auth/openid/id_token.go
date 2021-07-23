@@ -59,11 +59,11 @@ func VerifyIDToken(ctx context.Context, token string, keys *JSONWebKeySet, issue
 
 	body, err := keys.VerifyJWT(token)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "bad ID token").Err()
 	}
 	tok := &IDToken{}
 	if err := json.Unmarshal(body, tok); err != nil {
-		return nil, errors.Annotate(err, "bad ID token - not JSON").Err()
+		return nil, errors.Annotate(err, "bad ID token: not JSON").Err()
 	}
 
 	exp := time.Unix(tok.Exp, 0)
@@ -71,15 +71,15 @@ func VerifyIDToken(ctx context.Context, token string, keys *JSONWebKeySet, issue
 
 	switch {
 	case tok.Iss != issuer && "https://"+tok.Iss != issuer:
-		return nil, errors.Reason("bad ID token - expecting issuer %q, got %q", issuer, tok.Iss).Err()
+		return nil, errors.Reason("bad ID token: expecting issuer %q, got %q", issuer, tok.Iss).Err()
 	case exp.Add(allowedClockSkew).Before(now):
-		return nil, errors.Reason("bad ID token - expired %s ago", now.Sub(exp)).Err()
+		return nil, errors.Reason("bad ID token: expired %s ago", now.Sub(exp)).Err()
 	case !tok.EmailVerified:
-		return nil, errors.Reason("bad ID token - the email %q is not verified", tok.Email).Err()
+		return nil, errors.Reason("bad ID token: the email %q is not verified", tok.Email).Err()
 	case tok.Aud == "":
-		return nil, errors.Reason("bad ID token - the audience is missing").Err()
+		return nil, errors.Reason("bad ID token: the audience is missing").Err()
 	case tok.Sub == "":
-		return nil, errors.Reason("bad ID token - the subject is missing").Err()
+		return nil, errors.Reason("bad ID token: the subject is missing").Err()
 	}
 
 	return tok, nil

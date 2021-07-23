@@ -146,42 +146,50 @@ func TestVerifyJWT(t *testing.T) {
 	Convey("Malformed JWT", t, func() {
 		_, err := keys.VerifyJWT("wat")
 		So(err, ShouldErrLike, "expected 3 components")
+		So(NotJWT.In(err), ShouldBeTrue)
 	})
 
 	Convey("Bad header format (not b64)", t, func() {
 		_, err := keys.VerifyJWT("???.aaaa.aaaa")
-		So(err, ShouldErrLike, "bad JWT header - not base64")
+		So(err, ShouldErrLike, "bad JWT header: not base64")
+		So(NotJWT.In(err), ShouldBeTrue)
 	})
 
 	Convey("Bad header format (not json)", t, func() {
 		_, err := keys.VerifyJWT("aaaa.aaaa.aaaa")
-		So(err, ShouldErrLike, "bad JWT header - not JSON")
+		So(err, ShouldErrLike, "bad JWT header: not JSON")
+		So(NotJWT.In(err), ShouldBeTrue)
 	})
 
 	Convey("Bad algo", t, func() {
 		_, err := keys.VerifyJWT(prepareJWT("bad-algo", "key-1", []byte("body")))
 		So(err, ShouldErrLike, "only RS256 alg is supported")
+		So(NotJWT.In(err), ShouldBeFalse)
 	})
 
 	Convey("Missing key ID", t, func() {
 		_, err := keys.VerifyJWT(prepareJWT("RS256", "", []byte("body")))
 		So(err, ShouldErrLike, "missing the signing key ID in the header")
+		So(NotJWT.In(err), ShouldBeFalse)
 	})
 
 	Convey("Unknown key", t, func() {
 		_, err := keys.VerifyJWT(prepareJWT("RS256", "unknown-key", []byte("body")))
 		So(err, ShouldErrLike, "unknown signing key")
+		So(NotJWT.In(err), ShouldBeFalse)
 	})
 
 	Convey("Bad signature encoding", t, func() {
 		jwt := prepareJWT("RS256", "key-1", []byte("body"))
 		_, err := keys.VerifyJWT(jwt + "???")
 		So(err, ShouldErrLike, "can't base64 decode the signature")
+		So(NotJWT.In(err), ShouldBeFalse)
 	})
 
 	Convey("Bad signature", t, func() {
 		jwt := prepareJWT("RS256", "key-1", []byte("body"))
 		_, err := keys.VerifyJWT(jwt[:len(jwt)-2])
 		So(err, ShouldErrLike, "bad signature")
+		So(NotJWT.In(err), ShouldBeFalse)
 	})
 }
