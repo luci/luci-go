@@ -198,9 +198,10 @@ message FetchRunStatusResponse {
 }
 
 message ReportTryjobsRequest {
-  string luci_project = 1;
-  string run_id = 2;
-  repeated Tryjob tryjobs = 3;
+  // RunID identifies which Run these tryjobs belong to,
+  // and implicitly identifies the LUCI project.
+  string run_id = 1;
+  repeated Tryjob tryjobs = 2;
 }
 
 message Tryjob {
