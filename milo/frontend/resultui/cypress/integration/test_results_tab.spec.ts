@@ -14,9 +14,16 @@
 
 describe('Test Results Tab', () => {
   it('config table modal should not be overlapped by other elements', () => {
+    cy.intercept('https://cr-buildbucket-dev.appspot.com/prpc/buildbucket.v2.Builds/GetBuild').as('get-build-rpc');
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/test-results');
+
+    // Wait for the test presentation config to return.
+    cy.wait('@get-build-rpc');
     cy.get('milo-tvt-config-widget').click();
+
+    // Wait until the animation finishes.
     cy.wait(1000);
+
     cy.scrollTo('topLeft');
     cy.matchImageSnapshot('config-table-modal', { capture: 'viewport' });
   });
