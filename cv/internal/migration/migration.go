@@ -98,7 +98,7 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 
 // ReportTryjobs notifies CV of the tryjobs which CQDaemon considers
 // relevant to a Run.
-func (m *MigrationServer) ReportedTryjobs(ctx context.Context, req *migrationpb.ReportTryjobsRequest) (resp *emptypb.Empty, err error) {
+func (m *MigrationServer) ReportTryjobs(ctx context.Context, req *migrationpb.ReportTryjobsRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
