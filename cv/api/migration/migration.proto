@@ -25,7 +25,6 @@ import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/common/proto/gerrit/gerrit.proto";
 import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
-import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
 
 // Migration service is for INTERNAL LUCI CV USE ONLY.
@@ -206,7 +205,16 @@ message ReportTryjobsRequest {
 
 message Tryjob {
   bigquery.Build build = 1;
-  // Buildbucket status, as seen by CQDaemon.
-  // Running implies that CQDaemon is waiting for this Run.
-  buildbucket.v2.Status bb_status = 2;
+  TryjobStatus status = 2;
+}
+
+// TryjobStatus mirrors CQDaemon's verification.tryjob_utils.Job.Status.
+enum TryjobStatus {
+  TRYJOB_STATUS_UNSPECIFIED = 0;
+  NOT_TRIGGERED = 1;
+  PENDING = 2;
+  RUNNING = 3;
+  SUCCEEDED = 4;
+  FAILED = 5;
+  TIMED_OUT = 6;
 }

@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -71,14 +70,14 @@ func TestReportedTryjobs(t *testing.T) {
 			var idStarted, idFailed string
 			err := saveReportedTryjobs(ctx, &migrationpb.ReportTryjobsRequest{
 				RunId:   string(runInfra),
-				Tryjobs: []*migrationpb.Tryjob{{BbStatus: buildbucketpb.Status_STARTED}},
+				Tryjobs: []*migrationpb.Tryjob{{Status: migrationpb.TryjobStatus_RUNNING}},
 			}, func(_ context.Context, id string) error { idStarted = id; return nil })
 			So(err, ShouldBeNil)
 
 			ct.Clock.Add(time.Minute)
 			err = saveReportedTryjobs(ctx, &migrationpb.ReportTryjobsRequest{
 				RunId:   string(runInfra),
-				Tryjobs: []*migrationpb.Tryjob{{BbStatus: buildbucketpb.Status_FAILURE}},
+				Tryjobs: []*migrationpb.Tryjob{{Status: migrationpb.TryjobStatus_FAILED}},
 			}, func(_ context.Context, id string) error { idFailed = id; return nil })
 			So(err, ShouldBeNil)
 			So(datastore.Get(ctx, &ReportedTryjobs{ID: idStarted}), ShouldBeNil)
