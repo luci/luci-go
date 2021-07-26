@@ -47,25 +47,18 @@ type NotifyCallback func(context.Context) error
 // UpdateProject imports the latest CV Config for a given LUCI Project
 // from LUCI Config if the config in CV is outdated.
 func UpdateProject(ctx context.Context, project string, notify NotifyCallback) error {
-	meta, err := getConfigMeta(ctx, project)
-	if err != nil {
+	need, existingPC, err := needsUpdate(ctx, project)
+	switch {
+	case err != nil:
 		return err
-	}
-	existingPC := ProjectConfig{Project: project}
-	switch err := datastore.Get(ctx, &existingPC); {
-	case err != nil && err != datastore.ErrNoSuchEntity:
-		return errors.Annotate(err, "failed to get ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
-	case !existingPC.Enabled:
-		// Go through update process to ensure all configs are present.
-	case existingPC.ExternalHash == meta.ContentHash:
-		return nil // Already up-to-date.
+	case !need:
+		return nil
 	}
 
 	cfg, meta, err := fetchCfg(ctx, project)
 	if err != nil {
 		return err
 	}
-
 	// Write out ConfigHashInfo if missing and all ConfigGroups.
 	localHash := computeHash(cfg)
 	cgNames := make([]string, len(cfg.GetConfigGroups()))
@@ -136,18 +129,35 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	return nil
 }
 
-// getConfigMeta fetches the Meta for a project config.
+// needsUpdate checks if there is a new config version.
 //
-// Returns an error in the case of an empty content hash or fetch failure.
-func getConfigMeta(ctx context.Context, project string) (*config.Meta, error) {
+// Loads and returns the ProjectConfig stored in Datastore.
+func needsUpdate(ctx context.Context, project string) (bool, ProjectConfig, error) {
+	pc := ProjectConfig{Project: project}
 	var meta config.Meta
+	// NOTE: config metadata fetched here can't be used later to fetch actual
+	// contents (see https://crrev.com/c/3050832), so it is only used
+	// to check if fetching config contents is even necessary.
 	switch err := cfgclient.Get(ctx, config.ProjectSet(project), ConfigFileName, nil, &meta); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
+		return false, pc, errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
 	case meta.ContentHash == "":
-		return nil, errors.Reason("LUCI Config returns empty content hash for project %q", project).Err()
+		return false, pc, errors.Reason("LUCI Config returns empty content hash for project %q", project).Err()
+	}
+	switch err := datastore.Get(ctx, &pc); {
+	case err == datastore.ErrNoSuchEntity:
+		// ProjectConfig's zero value is a good sentinel for non yet saved case.
+		return true, pc, nil
+	case err != nil:
+		return false, pc, errors.Annotate(err, "failed to get ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
+	case !pc.Enabled:
+		// Go through update process to ensure all configs are present.
+		return true, pc, nil
+	case pc.ExternalHash != meta.ContentHash:
+		return true, pc, nil
 	default:
-		return &meta, nil
+		// Already up-to-date.
+		return false, pc, nil
 	}
 }
 
@@ -156,7 +166,8 @@ func fetchCfg(ctx context.Context, project string) (*pb.Config, *config.Meta, er
 	meta := &config.Meta{}
 	ret := &pb.Config{}
 	err := cfgclient.Get(
-		ctx, config.ProjectSet(project),
+		ctx,
+		config.ProjectSet(project),
 		ConfigFileName,
 		cfgclient.ProtoText(ret),
 		meta,
