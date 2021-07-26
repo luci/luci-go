@@ -197,6 +197,10 @@ type T struct {
 	T time.Time
 }
 
+type TSlice struct {
+	TSlice []time.Time
+}
+
 type X0 struct {
 	S string
 	I int
@@ -869,6 +873,25 @@ var testCases = []testCase{
 		src:  &T{T: time.Unix(1e9, 0).UTC()},
 		want: PropertyMap{
 			"T": mp(time.Unix(1e9, 0).UTC()),
+		},
+	},
+	{
+		desc: "time as props rounds to microseconds",
+		src:  &T{T: time.Unix(1e9, 111333555).UTC()},
+		want: &T{T: time.Unix(1e9, 111334000).UTC()},
+	},
+	{
+		desc: "time slice",
+		src: &TSlice{TSlice: []time.Time{
+			time.Unix(1e9, 0).UTC(),
+			time.Unix(2e9, 0).UTC(),
+		},
+		},
+		want: PropertyMap{
+			"TSlice": PropertySlice{
+				mp(time.Unix(1e9, 0).UTC()),
+				mp(time.Unix(2e9, 0).UTC()),
+			},
 		},
 	},
 	{

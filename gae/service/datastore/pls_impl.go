@@ -685,7 +685,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			case reflect.Slice:
 				if reflect.PtrTo(ft.Elem()).Implements(typeOfPropertyConverter) {
 					st.convertMethod = convertProp
-				} else if ft.Elem().Kind() == reflect.Struct {
+				} else if ft.Elem().Kind() == reflect.Struct && ft.Elem() != typeOfTime && ft.Elem() != typeOfGeoPoint {
 					substructType = ft.Elem()
 				}
 				st.isSlice = ft.Elem().Kind() != reflect.Uint8

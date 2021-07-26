@@ -277,7 +277,7 @@ func RoundTime(t time.Time) time.Time {
 	return t.Round(time.Microsecond)
 }
 
-// TimeToInt converts a time value to a datastore-appropraite integer value.
+// TimeToInt converts a time value to a datastore-appropriate integer value.
 //
 // This method truncates the time to microseconds and drops the timezone,
 // because that's the (undocumented) way that the appengine SDK does it.
@@ -646,6 +646,16 @@ func (p *Property) Compare(other *Property) int {
 			return cmp
 		}
 		return cmpFloat(a.Lng, b.Lng)
+
+	case PTTime:
+		a, b := av.(time.Time), bv.(time.Time)
+		if a.Equal(b) {
+			return 0
+		}
+		if a.Before(b) {
+			return 1
+		}
+		return -1
 
 	case PTKey:
 		a, b := av.(*Key), bv.(*Key)
