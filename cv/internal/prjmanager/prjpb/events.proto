@@ -27,16 +27,15 @@ message Event {
 
     Poke poke = 2;
 
-    // Deprecated. Use batch version only.
-    // This remains only to be able to use old events already stored in
-    // Datastore.
-    cv.internal.changelist.CLUpdatedEvent cl_updated = 3;
     cv.internal.changelist.CLUpdatedEvents cls_updated = 7;
 
     RunCreated run_created = 4;
     RunFinished run_finished = 5;
 
     PurgeCompleted purge_completed = 6;
+
+    // TODO(1227523): wipe out all events with it and delete from here.
+    cv.internal.changelist.CLUpdatedEvent cl_updated = 3;
   }
 }
 
