@@ -179,9 +179,9 @@ func (t *Test) setMaxDuration() {
 		// TODO(tandrii): remove the possibility to override this per test in favor
 		// of CV_TEST_TIMEOUT_SEC env var.
 	case raceDetectionEnabled:
-		t.MaxDuration = 60 * time.Second
+		t.MaxDuration = 90 * time.Second
 	default:
-		t.MaxDuration = 10 * time.Second
+		t.MaxDuration = 20 * time.Second
 	}
 }
 
