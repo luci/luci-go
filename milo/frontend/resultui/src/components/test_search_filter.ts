@@ -25,12 +25,6 @@ import { consumer } from '../libs/context';
 import { suggestSearchQuery } from '../libs/search_query';
 import { SuggestionEntry } from './auto_complete';
 
-export interface TestFilter {
-  showExpected: boolean;
-  showExonerated: boolean;
-  showFlaky: boolean;
-}
-
 /**
  * An element that let the user search tests with DSL.
  */
