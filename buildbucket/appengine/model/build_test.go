@@ -70,16 +70,17 @@ func TestBuild(t *testing.T) {
 			}
 			So(datastore.Get(ctx, b), ShouldBeNil)
 			So(b, ShouldResemble, &Build{
-				ID:           1,
-				Proto:        b.Proto, // assert protobufs separately
-				BucketID:     "project/bucket",
-				BuilderID:    "project/bucket/builder",
-				Canary:       false,
-				CreateTime:   datastore.RoundTime(testclock.TestRecentTimeUTC),
-				Experimental: false,
-				Incomplete:   false,
-				Status:       pb.Status_SUCCESS,
-				Project:      "project",
+				ID:               1,
+				Proto:            b.Proto, // assert protobufs separately
+				BucketID:         "project/bucket",
+				BuilderID:        "project/bucket/builder",
+				Canary:           false,
+				CreateTime:       datastore.RoundTime(testclock.TestRecentTimeUTC),
+				Experimental:     false,
+				Incomplete:       false,
+				Status:           pb.Status_SUCCESS,
+				Project:          "project",
+				LegacyProperties: LegacyProperties{Status: Completed},
 			})
 			So(&b.Proto, ShouldResembleProto, &pb.Build{
 				Id: 1,

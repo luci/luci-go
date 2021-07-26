@@ -647,6 +647,9 @@ func TestScheduleBuild(t *testing.T) {
 						Topic:    "topic",
 						UserData: []byte("data"),
 					},
+					LegacyProperties: model.LegacyProperties{
+						Status: model.Scheduled,
+					},
 				},
 			})
 			So(sch.Tasks(), ShouldHaveLength, 1)
@@ -901,6 +904,9 @@ func TestScheduleBuild(t *testing.T) {
 						"builder:static builder",
 					},
 					Project: "project",
+					LegacyProperties: model.LegacyProperties{
+						Status: model.Scheduled,
+					},
 				},
 				{
 					ID:         9021868963221610321,
@@ -921,6 +927,9 @@ func TestScheduleBuild(t *testing.T) {
 						"builder:static builder",
 					},
 					Project: "project",
+					LegacyProperties: model.LegacyProperties{
+						Status: model.Scheduled,
+					},
 				},
 				{
 					ID:         9021868963221610305,
@@ -941,6 +950,9 @@ func TestScheduleBuild(t *testing.T) {
 						"builder:dynamic builder",
 					},
 					Project: "project",
+					LegacyProperties: model.LegacyProperties{
+						Status: model.Scheduled,
+					},
 				},
 			})
 			So(sch.Tasks(), ShouldHaveLength, 2)

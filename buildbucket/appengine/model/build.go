@@ -234,6 +234,20 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	if c := buildUpdateTimeClock; c != nil {
 		b.Proto.UpdateTime = timestamppb.New(c.Now())
 	}
+
+	// Some v1 queries still look at the legacy status field to find builds, but
+	// these builds can have their status changed via v2 APIs (e.g. CancelBuild).
+	// We just set the legacy status based on the real status here to let those
+	// datastore queries more or less work.
+	switch b.Status {
+	case pb.Status_SCHEDULED:
+		b.LegacyProperties.Status = Scheduled
+	case pb.Status_STARTED:
+		b.LegacyProperties.Status = Started
+	default:
+		b.LegacyProperties.Status = Completed
+	}
+
 	p, err := datastore.GetPLS(b).Save(withMeta)
 	if err != nil {
 		return nil, err
