@@ -52,12 +52,6 @@ export class TestSearchFilterElement extends MobxLitElement {
     return suggestSearchQuery(this.invocationState.searchText);
   }
 
-  protected firstUpdated() {
-    if (this.invocationState.searchText) {
-      this.style.setProperty('animation', 'highlight 2s');
-    }
-  }
-
   protected render() {
     return html`
       <milo-hotkey
@@ -69,6 +63,7 @@ export class TestSearchFilterElement extends MobxLitElement {
       >
         <milo-auto-complete
           id="search-box"
+          highlight=${true}
           .value=${this.invocationState.searchText}
           .placeHolder=${'Press / to search test results...'}
           .suggestions=${this.suggestions}

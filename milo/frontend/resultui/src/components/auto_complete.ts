@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html, TemplateResult } from 'lit-element';
+import { css, customElement, html, property, TemplateResult } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
@@ -45,6 +45,13 @@ export class AutoCompleteElement extends MiloBaseElement {
   @observable.ref placeHolder = '';
   @observable.ref suggestions: readonly Suggestion[] = [];
 
+  /**
+   * Highlight the input box for a short period of time when
+   * 1. this.highlight is true when first rendered, and
+   * 2. this.value is not empty when first rendered.
+   */
+  @property() highlight = false;
+
   onValueUpdate = (_newVal: string) => {};
   onSuggestionSelected = (_suggestion: SuggestionEntry) => {};
 
@@ -76,6 +83,12 @@ export class AutoCompleteElement extends MiloBaseElement {
 
   protected updated() {
     this.shadowRoot!.querySelector('.dropdown-item.selected')?.scrollIntoView({ block: 'nearest' });
+  }
+
+  protected firstUpdated() {
+    if (this.highlight && this.value) {
+      this.style.setProperty('animation', 'highlight 2s');
+    }
   }
 
   connectedCallback() {
@@ -203,6 +216,11 @@ export class AutoCompleteElement extends MiloBaseElement {
   }
 
   static styles = css`
+    :host {
+      display: inline-block;
+      width: 100%;
+    }
+
     :host > div {
       display: inline-grid;
       grid-template-columns: auto 1fr auto;
