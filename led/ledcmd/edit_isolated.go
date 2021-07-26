@@ -127,13 +127,7 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 		return err
 	}
 
-	casInstance := current.GetCasInstance()
-	if casInstance == "" {
-		if casInstance, err = jd.CasInstance(); err != nil {
-			return err
-		}
-	}
-	casClient, err := casclient.NewLegacy(ctx, casInstance, authOpts, false)
+	casClient, err := newCASClient(ctx, authOpts, jd)
 	if err != nil {
 		return err
 	}
@@ -151,20 +145,28 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 	}
 
 	logging.Infof(ctx, "uploading new isolated to RBE-CAS")
-	digest, err := uploadToCas(ctx, casClient, tdir)
+	casRef, err := uploadToCas(ctx, casClient, tdir)
 	if err != nil {
 		return errors.Annotate(err, "errors in uploadToCas").Err()
 	}
 	logging.Infof(ctx, "isolated upload: done")
-	jd.CasUserPayload = &apipb.CASReference{
-		CasInstance: casInstance,
-		Digest: &apipb.Digest{
-			Hash:      digest.Hash,
-			SizeBytes: digest.Size,
-		},
-	}
+	jd.CasUserPayload = casRef
 	jd.UserPayload = nil
 	return nil
+}
+
+func newCASClient(ctx context.Context, authOpts auth.Options, jd *job.Definition) (*client.Client, error) {
+	current, err := jd.Info().CurrentIsolated()
+	if err != nil {
+		return nil, err
+	}
+	casInstance := current.GetCasInstance()
+	if casInstance == "" {
+		if casInstance, err = jd.CasInstance(); err != nil {
+			return nil, err
+		}
+	}
+	return casclient.NewLegacy(ctx, casInstance, authOpts, false)
 }
 
 func downloadFromCas(ctx context.Context, casRef *apipb.CASReference, casClient *client.Client, tdir string) error {
@@ -210,7 +212,7 @@ func downloadFromIso(ctx context.Context, iso *apipb.CASTree, authClient *http.C
 	return nil
 }
 
-func uploadToCas(ctx context.Context, client *client.Client, dir string) (*digest.Digest, error) {
+func uploadToCas(ctx context.Context, client *client.Client, dir string) (*apipb.CASReference, error) {
 	is := command.InputSpec{
 		Inputs: []string{"."}, // entire dir
 	}
@@ -223,5 +225,11 @@ func uploadToCas(ctx context.Context, client *client.Client, dir string) (*diges
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to upload items").Err()
 	}
-	return &rootDg, nil
+	return &apipb.CASReference{
+		CasInstance: client.InstanceName,
+		Digest: &apipb.Digest{
+			Hash:      rootDg.Hash,
+			SizeBytes: rootDg.Size,
+		},
+	}, nil
 }

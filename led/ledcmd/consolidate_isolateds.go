@@ -182,14 +182,11 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 		if err := downloadFromCas(ctx, jd.CasUserPayload, casClient, subDir); err != nil {
 			return errors.Annotate(err, "consolidation").Err()
 		}
-		digest, err := uploadToCas(ctx, casClient, subDir)
+		casRef, err := uploadToCas(ctx, casClient, subDir)
 		if err != nil {
 			return errors.Annotate(err, "consolidation").Err()
 		}
-		props.CasInputRoot.Digest = &api.Digest{
-			Hash:      digest.Hash,
-			SizeBytes: digest.Size,
-		}
+		props.CasInputRoot.Digest = casRef.GetDigest()
 	}
 	if jd.CasUserPayload != nil {
 		jd.CasUserPayload.Digest = nil

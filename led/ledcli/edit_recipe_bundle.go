@@ -16,6 +16,7 @@ package ledcli
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -56,6 +57,8 @@ type cmdEditRecipeBundle struct {
 
 	debugSleep time.Duration
 
+	propertyOnly bool
+
 	overrides stringmapflag.Value
 }
 
@@ -68,6 +71,14 @@ func (c *cmdEditRecipeBundle) initFlags(opts cmdBaseOptions) {
 			"designated amount of time after the recipe completes to allow SSH "+
 			"debugging of failed recipe state. This accepts a duration like `2h`. "+
 			"Valid units are 's', 'm', or 'h'.")
+
+	c.Flags.BoolVar(&c.propertyOnly, "property-only", false,
+		fmt.Sprintf("Pass the CAS blob information as JSON via the %q property and "+
+			"preserve the executable of the input job rather than overwriting it. This "+
+			"is useful for when `exe` is actually a bootstrap program that you don't "+
+			"want to change.",
+			ledcmd.CASRecipeBundleProperty))
+
 	c.cmdBase.initFlags(opts)
 }
 
@@ -116,8 +127,9 @@ func (c *cmdEditRecipeBundle) validateFlags(ctx context.Context, _ []string, _ s
 
 func (c *cmdEditRecipeBundle) execute(ctx context.Context, authClient *http.Client, authOpts auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	return inJob, ledcmd.EditRecipeBundle(ctx, authClient, authOpts, inJob, &ledcmd.EditRecipeBundleOpts{
-		Overrides:  c.overrides,
-		DebugSleep: c.debugSleep,
+		Overrides:    c.overrides,
+		DebugSleep:   c.debugSleep,
+		PropertyOnly: c.propertyOnly,
 	})
 }
 

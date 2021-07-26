@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -25,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -55,32 +57,44 @@ type EditRecipeBundleOpts struct {
 	// recipe bundle as a 'sleep X' command after the invocation of the recipe
 	// itself.
 	DebugSleep time.Duration
+
+	// PropertyOnly determines whether to pass the recipe bundle's CAS reference
+	// as a property and preserve the executable and payload of the input job
+	// rather than overwriting it.
+	PropertyOnly bool
 }
 
-// RecipeDirectory is a very unfortunate constant which is here for
-// a combination of reasons:
-//   1) swarming doesn't allow you to 'checkout' an isolate relative to any path
-//      in the task (other than the task root). This means that whatever value
-//      we pick for EditRecipeBundle must be used EVERYWHERE the isolated hash
-//      is used.
-//   2) Currently the 'recipe_engine/led' module will blindly take the isolated
-//      input and 'inject' it into further uses of led. This module currently
-//      doesn't specify the checkout dir, relying on kitchen's default value of
-//      (you guessed it) "kitchen-checkout".
-//
-// In order to fix this (and it will need to be fixed for bbagent support):
-//   * The 'recipe_engine/led' module needs to accept 'checkout-dir' as
-//     a parameter in its input properties.
-//   * led needs to start passing the checkout dir to the led module's input
-//     properties.
-//   * `led edit` needs a way to manipulate the checkout directory in a job
-//   * The 'recipe_engine/led' module needs to set this in the job
-//     alongside the isolate hash when it's doing the injection.
-//
-// For now, we just hard-code it.
-//
-// TODO(crbug.com/1072117): Fix this, it's weird.
-const RecipeDirectory = "kitchen-checkout"
+const (
+	// RecipeDirectory is a very unfortunate constant which is here for
+	// a combination of reasons:
+	//   1) swarming doesn't allow you to 'checkout' an isolate relative to any
+	//      path in the task (other than the task root). This means that
+	//      whatever value we pick for EditRecipeBundle must be used EVERYWHERE
+	//      the isolated hash is used.
+	//   2) Currently the 'recipe_engine/led' module will blindly take the
+	//      isolated input and 'inject' it into further uses of led. This module
+	//      currently doesn't specify the checkout dir, relying on kitchen's
+	//      default value of (you guessed it) "kitchen-checkout".
+	//
+	// In order to fix this (and it will need to be fixed for bbagent support):
+	//   * The 'recipe_engine/led' module needs to accept 'checkout-dir' as
+	//     a parameter in its input properties.
+	//   * led needs to start passing the checkout dir to the led module's input
+	//     properties.
+	//   * `led edit` needs a way to manipulate the checkout directory in a job
+	//   * The 'recipe_engine/led' module needs to set this in the job
+	//     alongside the isolate hash when it's doing the injection.
+	//
+	// For now, we just hard-code it.
+	//
+	// TODO(crbug.com/1072117): Fix this, it's weird.
+	RecipeDirectory = "kitchen-checkout"
+
+	// In PropertyOnly mode led will set this property (nested under
+	// $recipe_engine/led) to indicate to the executable where to download the
+	// recipe bundle from.
+	CASRecipeBundleProperty = "led_cas_recipe_bundle"
+)
 
 // EditRecipeBundle overrides the recipe bundle in the given job with one
 // located on disk.
@@ -103,24 +117,53 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, authOpts aut
 	}
 	logging.Debugf(ctx, "using recipes.py: %q", recipesPy)
 
-	err = EditIsolated(ctx, authClient, authOpts, jd, func(ctx context.Context, dir string) error {
-		logging.Infof(ctx, "bundling recipes")
-		bundlePath := filepath.Join(dir, RecipeDirectory)
-		// Remove existing bundled recipes, if any. Ignore the error.
-		os.RemoveAll(bundlePath)
-		if err := opts.prepBundle(ctx, opts.RepoDir, recipesPy, bundlePath); err != nil {
+	extraProperties := make(map[string]string)
+	if opts.PropertyOnly {
+		// In property-only mode, we want to leave the original payload as is
+		// and just upload the recipe bundle as a brand new independent CAS
+		// archive for the job's executable to download.
+		bundlePath, err := ioutil.TempDir("", "led-recipe-bundle")
+		if err != nil {
+			return errors.Annotate(err, "creating temporary recipe bundle directory").Err()
+		}
+		opts.prepBundle(ctx, opts.RepoDir, recipesPy, bundlePath)
+		logging.Infof(ctx, "isolating recipes")
+		casClient, err := newCASClient(ctx, authOpts, jd)
+		if err != nil {
 			return err
 		}
-		logging.Infof(ctx, "isolating recipes")
-		return nil
-	})
-	if err != nil {
-		return err
+		casRef, err := uploadToCas(ctx, casClient, bundlePath)
+		if err != nil {
+			return err
+		}
+		m := &jsonpb.Marshaler{OrigName: true}
+		jsonCASRef, err := m.MarshalToString(casRef)
+		if err != nil {
+			return errors.Annotate(err, "encoding CAS user payload").Err()
+		}
+		extraProperties[CASRecipeBundleProperty] = jsonCASRef
+	} else {
+		if err := EditIsolated(ctx, authClient, authOpts, jd, func(ctx context.Context, dir string) error {
+			bundlePath := filepath.Join(dir, RecipeDirectory)
+			// Remove existing bundled recipes, if any. Ignore the error.
+			os.RemoveAll(bundlePath)
+			if err := opts.prepBundle(ctx, opts.RepoDir, recipesPy, bundlePath); err != nil {
+				return err
+			}
+			logging.Infof(ctx, "isolating recipes")
+			return nil
+		}); err != nil {
+			return err
+		}
 	}
 
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
-		je.TaskPayloadSource("", "")
-		je.TaskPayloadPath(RecipeDirectory)
+		if opts.PropertyOnly {
+			je.Properties(extraProperties, false)
+		} else {
+			je.TaskPayloadSource("", "")
+			je.TaskPayloadPath(RecipeDirectory)
+		}
 		if opts.DebugSleep != 0 {
 			je.Env(map[string]string{
 				"RECIPES_DEBUG_SLEEP": fmt.Sprintf("%f", opts.DebugSleep.Seconds()),
@@ -161,7 +204,8 @@ func appendText(path, fmtStr string, items ...interface{}) error {
 	return err
 }
 
-func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipesPy, toDirectory string) (err error) {
+func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipesPy, toDirectory string) error {
+	logging.Infof(ctx, "bundling recipes")
 	args := []string{
 		recipesPy,
 	}
@@ -177,10 +221,7 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
-	if err = cmdErr(cmd, cmd.Run(), "creating bundle"); err != nil {
-		return
-	}
-	return
+	return cmdErr(cmd, cmd.Run(), "creating bundle")
 }
 
 // findRecipesPy locates the current repo's `recipes.py`. It does this by:
