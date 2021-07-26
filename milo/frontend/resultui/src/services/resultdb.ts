@@ -246,6 +246,46 @@ export interface TestResultBundle {
   readonly result: TestResult;
 }
 
+export interface CommitPosition {
+  readonly host: string;
+  readonly project: string;
+  readonly ref: string;
+  readonly position: number;
+}
+
+export interface CommitPositionRange {
+  readonly earliest: CommitPosition;
+  readonly latest: CommitPosition;
+}
+
+export interface TimeRange {
+  readonly earliest: string;
+  readonly latest: string;
+}
+
+type GetTestResultHistoryRequestRange = { commitPositionRange: CommitPositionRange } | { timeRange: TimeRange };
+
+interface GetTestResultHistoryRequestMain {
+  readonly realm: string;
+  readonly testIdRegexp: string;
+  readonly variantPredicate?: VariantPredicate;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export type GetTestResultHistoryRequest = GetTestResultHistoryRequestMain & GetTestResultHistoryRequestRange;
+
+export interface GetTestResultHistoryResponseEntry {
+  readonly commitPosition: CommitPosition;
+  readonly invocationTimestamp: string;
+  readonly result: TestResult;
+}
+
+export interface GetTestResultHistoryResponse {
+  readonly entries: readonly GetTestResultHistoryResponseEntry[];
+  readonly nextPageToken: string;
+}
+
 export class ResultDb {
   private static SERVICE = 'luci.resultdb.v1.ResultDB';
 
@@ -283,6 +323,10 @@ export class ResultDb {
 
   async queryTestVariants(req: QueryTestVariantsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryTestVariants', req)) as QueryTestVariantsResponse;
+  }
+
+  async getTestResultHistory(req: GetTestResultHistoryRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'GetTestResultHistory', req)) as GetTestResultHistoryResponse;
   }
 }
 
