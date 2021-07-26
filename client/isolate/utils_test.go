@@ -15,7 +15,6 @@
 package isolate
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -63,78 +62,5 @@ func TestAssert(t *testing.T) {
 		So(wasPanic(func() { assert(false) }), ShouldBeTrue)
 		So(wasPanic(func() { assert(false, "format") }), ShouldBeTrue)
 		So(wasPanic(func() { assert(false, "format") }), ShouldBeTrue)
-		So(wasPanic(func() { assertNoError(errors.New("error")) }), ShouldBeTrue)
 	})
-}
-
-// Copy-pasted from Go's lib path/filepath/path_test.go .
-//
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-type RelTests struct {
-	root, path, want string
-}
-
-var reltests = []RelTests{
-	{"a/b", "a/b", "."},
-	{"a/b/.", "a/b", "."},
-	{"a/b", "a/b/.", "."},
-	{"./a/b", "a/b", "."},
-	{"a/b", "./a/b", "."},
-	{"ab/cd", "ab/cde", "../cde"},
-	{"ab/cd", "ab/c", "../c"},
-	{"a/b", "a/b/c/d", "c/d"},
-	{"a/b", "a/b/../c", "../c"},
-	{"a/b/../c", "a/b", "../b"},
-	{"a/b/c", "a/c/d", "../../c/d"},
-	{"a/b", "c/d", "../../c/d"},
-	{"a/b/c/d", "a/b", "../.."},
-	{"a/b/c/d", "a/b/", "../.."},
-	{"a/b/c/d/", "a/b", "../.."},
-	{"a/b/c/d/", "a/b/", "../.."},
-	{"../../a/b", "../../a/b/c/d", "c/d"},
-	{"/a/b", "/a/b", "."},
-	{"/a/b/.", "/a/b", "."},
-	{"/a/b", "/a/b/.", "."},
-	{"/ab/cd", "/ab/cde", "../cde"},
-	{"/ab/cd", "/ab/c", "../c"},
-	{"/a/b", "/a/b/c/d", "c/d"},
-	{"/a/b", "/a/b/../c", "../c"},
-	{"/a/b/../c", "/a/b", "../b"},
-	{"/a/b/c", "/a/c/d", "../../c/d"},
-	{"/a/b", "/c/d", "../../c/d"},
-	{"/a/b/c/d", "/a/b", "../.."},
-	{"/a/b/c/d", "/a/b/", "../.."},
-	{"/a/b/c/d/", "/a/b", "../.."},
-	{"/a/b/c/d/", "/a/b/", "../.."},
-	{"/../../a/b", "/../../a/b/c/d", "c/d"},
-	{".", "a/b", "a/b"},
-	{".", "..", ".."},
-
-	// can't do purely lexically
-	{"..", ".", "err"},
-	{"..", "a", "err"},
-	{"../..", "..", "err"},
-	{"a", "/a", "err"},
-	{"/a", "a", "err"},
-}
-
-func TestPosixRel(t *testing.T) {
-	t.Parallel()
-	for _, test := range reltests {
-		got, err := posixRel(test.root, test.path)
-		if test.want == "err" {
-			if err == nil {
-				t.Errorf("Rel(%q, %q)=%q, want error", test.root, test.path, got)
-			}
-			continue
-		}
-		if err != nil {
-			t.Errorf("Rel(%q, %q): want %q, got error: %s", test.root, test.path, test.want, err)
-		}
-		if got != test.want {
-			t.Errorf("Rel(%q, %q)=%q, want %q", test.root, test.path, got, test.want)
-		}
-	}
 }

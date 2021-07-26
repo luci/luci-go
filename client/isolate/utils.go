@@ -16,20 +16,9 @@ package isolate
 
 import (
 	"log"
-	"path"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
 )
-
-// TODO(tandrii): Remove this hacky stuff.
-// hacky stuff for faster debugging.
-func assertNoError(err error) {
-	if err == nil {
-		return
-	}
-	log.Panic(errors.RenderStack(errors.Annotate(err, "assertion failed").Err()))
-}
 
 func assert(condition bool, info ...interface{}) {
 	if condition {
@@ -66,79 +55,4 @@ func uniqueMergeSortedStrings(ls, rs []string) []string {
 			ls, rs = ls[1:], rs[1:]
 		}
 	}
-}
-
-// posixRel returns a relative path that is lexically equivalent to targpath when
-// joined to basepath with an intervening separator.
-//
-// That is, Join(basepath, Rel(basepath, targpath)) is equivalent to targpath itself.
-// On success, the returned path will always be relative to basepath,
-// even if basepath and targpath share no elements.
-// An error is returned if targpath can't be made relative to basepath or if
-// knowing the current working directory would be necessary to compute it.
-//
-// Copy-pasted & slightly edited from Go's lib path/filepath/path.go .
-//
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-func posixRel(basepath, targpath string) (string, error) {
-	base := path.Clean(basepath)
-	targ := path.Clean(targpath)
-	if targ == base {
-		return ".", nil
-	}
-	if base == "." {
-		base = ""
-	}
-	if path.IsAbs(base) != path.IsAbs(targ) {
-		return "", errors.New("Rel: can't make " + targ + " relative to " + base)
-	}
-	// Position base[b0:bi] and targ[t0:ti] at the first differing elements.
-	bl := len(base)
-	tl := len(targ)
-	var b0, bi, t0, ti int
-	for {
-		for bi < bl && base[bi] != '/' {
-			bi++
-		}
-		for ti < tl && targ[ti] != '/' {
-			ti++
-		}
-		if targ[t0:ti] != base[b0:bi] {
-			break
-		}
-		if bi < bl {
-			bi++
-		}
-		if ti < tl {
-			ti++
-		}
-		b0 = bi
-		t0 = ti
-	}
-	if base[b0:bi] == ".." {
-		return "", errors.New("Rel: can't make " + targ + " relative to " + base)
-	}
-	if b0 != bl {
-		// Base elements left. Must go up before going down.
-		seps := strings.Count(base[b0:bl], string('/'))
-		size := 2 + seps*3
-		if tl != t0 {
-			size += 1 + tl - t0
-		}
-		buf := make([]byte, size)
-		n := copy(buf, "..")
-		for i := 0; i < seps; i++ {
-			buf[n] = '/'
-			copy(buf[n+1:], "..")
-			n += 3
-		}
-		if t0 != tl {
-			buf[n] = '/'
-			copy(buf[n+1:], targ[t0:])
-		}
-		return string(buf), nil
-	}
-	return targ[t0:], nil
 }
