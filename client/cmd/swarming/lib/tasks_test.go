@@ -49,10 +49,6 @@ func TestTasksParse(t *testing.T) {
 		tasksExpectErr([]string{"-count", "-start", "-1"}, "provide -start")
 	})
 
-	Convey(`Make sure that Parse forbids -start without -count.`, t, func() {
-		tasksExpectErr([]string{"-start", "1337"}, "-start cannot")
-	})
-
 	Convey(`Make sure that Parse forbids -field or -limit to be used with -count.`, t, func() {
 		tasksExpectErr([]string{"-count", "-start", "1337", "-field", "items/task_id"}, "-field cannot")
 		tasksExpectErr([]string{"-count", "-start", "1337", "-limit", "100"}, "-limit cannot")

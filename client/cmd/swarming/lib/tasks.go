@@ -91,10 +91,6 @@ func (t *tasksRun) Parse() error {
 		if t.start <= 0 {
 			return errors.Reason("with -count, must provide -start >0").Err()
 		}
-	} else {
-		if t.start != 0 {
-			return errors.Reason("-start cannot be used without -count").Err()
-		}
 	}
 	return nil
 }
@@ -112,7 +108,7 @@ func (t *tasksRun) main(_ subcommands.Application) error {
 			return err
 		}
 	} else {
-		if data, err = service.ListTasks(ctx, t.limit, t.state, t.tags, t.fields); err != nil {
+		if data, err = service.ListTasks(ctx, t.limit, t.start, t.state, t.tags, t.fields); err != nil {
 			return err
 		}
 	}
