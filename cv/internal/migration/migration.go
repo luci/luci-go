@@ -103,7 +103,7 @@ func (m *MigrationServer) ReportTryjobs(ctx context.Context, req *migrationpb.Re
 	if ctx, err = m.checkAllowed(ctx); err != nil {
 		return nil, err
 	}
-	if req.GetRunId() != "" {
+	if req.GetRunId() == "" {
 		return nil, appstatus.Error(codes.InvalidArgument, "run_id required")
 	}
 	err = saveReportedTryjobs(ctx, req, func(ctx context.Context, id string) error {
