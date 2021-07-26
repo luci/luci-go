@@ -25,13 +25,11 @@ addStubPrpcServicesCommand();
 
 beforeEach(() => {
   cy.stubPrpcServices();
-
-  // Cypress cancels all the pending network requests when a test case
-  // finished running. Ignore errors due to network requests being canceled.
-  cy.on('uncaught:exception', (e) => !e.message.includes('> NetworkError when attempting to fetch resource.'));
 });
 
 afterEach(() => {
-  // Sometimes errors could happen in afterEach hooks. Ignore those errors.
-  cy.on('uncaught:exception', () => {});
+  // Cypress cancels all the pending network requests when a test case finished
+  // running, which may cause errors. Those errors may in turn cause other tests
+  // to fail. Add a small buffer after each test to avoid this.
+  cy.wait(1000);
 });
