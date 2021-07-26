@@ -17,7 +17,6 @@ package remote
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
@@ -157,46 +156,6 @@ func (r *remoteImpl) GetConfigByHash(ctx context.Context, configSet string) (str
 	}
 
 	return string(decoded), nil
-}
-
-func (r *remoteImpl) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
-	if configSet == "" {
-		return nil, fmt.Errorf("configSet must be a non-empty string")
-	}
-
-	srv, err := r.service(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := srv.GetConfigSets().ConfigSet(string(configSet)).Context(ctx).Do()
-	if err != nil {
-		return nil, apiErr(err)
-	}
-
-	urlString, has := "", false
-	for _, cset := range resp.ConfigSets {
-		if cset.ConfigSet == string(configSet) {
-			if has {
-				return nil, fmt.Errorf(
-					"duplicate entries %q and %q for location of config set %s",
-					urlString, cset.Location, configSet)
-			}
-
-			urlString, has = cset.Location, true
-		}
-	}
-
-	if !has {
-		return nil, config.ErrNoConfig
-	}
-
-	url, err := url.Parse(urlString)
-	if err != nil {
-		return nil, err
-	}
-
-	return url, nil
 }
 
 func (r *remoteImpl) GetProjects(ctx context.Context) ([]config.Project, error) {

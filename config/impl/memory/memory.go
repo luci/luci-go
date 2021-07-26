@@ -23,7 +23,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"net/url"
 	"sort"
 	"strings"
 
@@ -95,16 +94,6 @@ func (m *memoryImpl) GetConfigByHash(ctx context.Context, contentHash string) (s
 		}
 	}
 	return "", config.ErrNoConfig
-}
-
-func (m *memoryImpl) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
-	if err := m.err; err != nil {
-		return nil, err
-	}
-	if _, ok := m.sets[configSet]; ok {
-		return url.Parse("https://example.com/fake-config/" + string(configSet))
-	}
-	return nil, config.ErrNoConfig
 }
 
 func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {

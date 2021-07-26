@@ -18,7 +18,6 @@ package erroring
 
 import (
 	"context"
-	"net/url"
 
 	"go.chromium.org/luci/config"
 )
@@ -44,10 +43,6 @@ func (i erroringInterface) GetConfig(ctx context.Context, configSet config.Set, 
 
 func (i erroringInterface) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
 	return "", i.err
-}
-
-func (i erroringInterface) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
-	return nil, i.err
 }
 
 func (i erroringInterface) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {

@@ -19,7 +19,6 @@ package resolving
 
 import (
 	"context"
-	"net/url"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"
@@ -67,14 +66,6 @@ func (r *resolvingInterface) GetConfig(ctx context.Context, configSet config.Set
 
 func (r *resolvingInterface) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
 	return r.next.GetConfigByHash(ctx, contentHash)
-}
-
-func (r *resolvingInterface) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
-	configSet, err := r.configSet(ctx, configSet)
-	if err != nil {
-		return nil, err
-	}
-	return r.next.GetConfigSetLocation(ctx, configSet)
 }
 
 func (r *resolvingInterface) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {

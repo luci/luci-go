@@ -101,9 +101,6 @@ type Interface interface {
 	// content hash, or ErrNoConfig if missing.
 	GetConfigByHash(ctx context.Context, contentHash string) (string, error)
 
-	// GetConfigSetLocation returns the URL location of a config set.
-	GetConfigSetLocation(ctx context.Context, configSet Set) (*url.URL, error)
-
 	// GetProjectConfigs returns all the configs at the given path in all
 	// projects that have such config. If metaOnly is true, returned Config
 	// structs have only Meta set (and the call is faster).

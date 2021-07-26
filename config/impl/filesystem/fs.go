@@ -464,22 +464,6 @@ func (fs *filesystemImpl) GetConfigByHash(ctx context.Context, contentHash strin
 	return "", config.ErrNoConfig
 }
 
-func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet config.Set) (*url.URL, error) {
-	cs := configSet{luciPath(cfgSet)}
-
-	if err := cs.validate(); err != nil {
-		return nil, err
-	}
-	realPath, _, err := fs.resolveBasePath()
-	if err != nil {
-		return nil, err
-	}
-	return &url.URL{
-		Scheme: "file",
-		Path:   realPath.toLUCI().s() + "/" + cs.s(),
-	}, nil
-}
-
 func (fs *filesystemImpl) iterContentRevPath(fn func(lk lookupKey, cfg *config.Config)) error {
 	revision, err := fs.scanHeadRevision()
 	if err != nil {
