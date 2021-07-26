@@ -87,15 +87,3 @@ func (r *resolvingInterface) ListFiles(ctx context.Context, configSet config.Set
 	}
 	return r.next.ListFiles(ctx, configSet)
 }
-
-func (r *resolvingInterface) GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
-	path, err := r.path(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	return r.next.GetRefConfigs(ctx, path, metaOnly)
-}
-
-func (r *resolvingInterface) GetRefs(ctx context.Context, projectID string) ([]string, error) {
-	return r.next.GetRefs(ctx, projectID)
-}

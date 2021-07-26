@@ -26,38 +26,17 @@ func TestConfigSet(t *testing.T) {
 	Convey(`Testing config set utility methods`, t, func() {
 		So(ServiceSet("my-service"), ShouldEqual, "services/my-service")
 		So(ProjectSet("my-project"), ShouldEqual, "projects/my-project")
-		So(RefSet("my-project", "refs/heads/master"), ShouldEqual, "projects/my-project/refs/heads/master")
 
 		s := Set("services/foo")
 		So(s.Service(), ShouldEqual, "foo")
 		So(s.Project(), ShouldEqual, "")
-		So(s.Ref(), ShouldEqual, "")
-		project, ref := s.ProjectAndRef()
-		So(project, ShouldEqual, "")
-		So(ref, ShouldEqual, "")
 
 		s = Set("projects/foo")
 		So(s.Service(), ShouldEqual, "")
 		So(s.Project(), ShouldEqual, "foo")
-		So(s.Ref(), ShouldEqual, "")
-		project, ref = s.ProjectAndRef()
-		So(project, ShouldEqual, "foo")
-		So(ref, ShouldEqual, "")
-
-		s = Set("projects/foo/refs/heads/master")
-		So(s.Service(), ShouldEqual, "")
-		So(s.Project(), ShouldEqual, "foo")
-		So(s.Ref(), ShouldEqual, "refs/heads/master")
-		project, ref = s.ProjectAndRef()
-		So(project, ShouldEqual, "foo")
-		So(ref, ShouldEqual, "refs/heads/master")
 
 		s = Set("malformed/set/abc/def")
 		So(s.Service(), ShouldEqual, "")
 		So(s.Project(), ShouldEqual, "")
-		So(s.Ref(), ShouldEqual, "")
-		project, ref = s.ProjectAndRef()
-		So(project, ShouldEqual, "")
-		So(ref, ShouldEqual, "")
 	})
 }

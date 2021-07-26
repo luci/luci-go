@@ -49,11 +49,6 @@ func (c configSet) isProject() bool {
 	return strings.Count(c.s(), "/") == 1 && c.hasPrefix("projects/")
 }
 
-func (c configSet) isProjectRef() bool {
-	toks := c.explode()
-	return len(toks) > 3 && toks[0] == "projects" && toks[2] == "refs"
-}
-
 func (c configSet) hasPrefix(prefix luciPath) bool {
 	return strings.HasPrefix(c.s(), prefix.s())
 }

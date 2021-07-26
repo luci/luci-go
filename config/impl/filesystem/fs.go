@@ -22,11 +22,10 @@
 //   - ./services/<servicename>/...
 //   - ./projects/<projectname>.json
 //   - ./projects/<projectname>/...
-//   - ./projects/<projectname>/refs/<refname>/...
 //
 // Where `...` indicates any arbitrary path-to-a-file, and <brackets> indicate
 // a single non-slash-containing filesystem path token. "services", "projects",
-// ".json", and "refs" and slashes are all literal text.
+// ".json", and slashes are all literal text.
 //
 // This package allows two modes of operation
 //
@@ -157,7 +156,6 @@ func deriveRevision(c *scannedConfigs) string {
 //     ./services/servicename/...               # service confinguations
 //     ./projects/projectname.json              # project information configuration
 //     ./projects/projectname/...               # project configurations
-//     ./projects/projectname/refs/refname/...  # project ref configurations
 //   * A symlink to a folder as organized above:
 //     -> /path/to/revision/folder
 //
@@ -228,15 +226,7 @@ func parsePath(rel nativePath) (cs configSet, path luciPath, ok bool) {
 		ok = true
 	} else if toks[0] == "projects" {
 		ok = true
-		if len(toks) > 2 && toks[2] == "refs" { // projects/p/refs/r/...
-			if len(toks) > 4 {
-				cs = newConfigSet(toks[:4]...)
-				path = newLUCIPath(toks[4:]...)
-			} else {
-				// otherwise it's invalid /projects/p/refs or /projects/p/refs/somefile
-				ok = false
-			}
-		} else if len(toks) == 2 && strings.HasSuffix(toks[1], jsonExt) {
+		if len(toks) == 2 && strings.HasSuffix(toks[1], jsonExt) {
 			cs = newConfigSet(toks[0], toks[1][:len(toks[1])-len(jsonExt)])
 		} else {
 			cs = newConfigSet(toks[:2]...)
@@ -516,37 +506,4 @@ func (fs *filesystemImpl) GetProjects(ctx context.Context) ([]config.Project, er
 	fs.RUnlock()
 	sort.Sort(ret)
 	return ret, nil
-}
-
-func (fs *filesystemImpl) GetRefConfigs(ctx context.Context, cfgPath string, metaOnly bool) ([]config.Config, error) {
-	path := luciPath(cfgPath)
-
-	ret := make(configList, 0, 10)
-	err := fs.iterContentRevPath(func(lk lookupKey, cfg *config.Config) {
-		if lk.path != path {
-			return
-		}
-		if lk.configSet.isProjectRef() {
-			c := *cfg
-			if metaOnly {
-				c.Content = ""
-			}
-			ret = append(ret, c)
-		}
-	})
-	sort.Sort(ret)
-	return ret, err
-}
-
-func (fs *filesystemImpl) GetRefs(ctx context.Context, projectID string) ([]string, error) {
-	pfx := luciPath("projects/" + projectID + "/refs")
-	ret := stringset.New(0)
-	err := fs.iterContentRevPath(func(lk lookupKey, cfg *config.Config) {
-		if lk.configSet.hasPrefix(pfx) {
-			ret.Add(newConfigSet(lk.configSet.explode()[2:]...).s())
-		}
-	})
-	retSlc := ret.ToSlice()
-	sort.Strings(retSlc)
-	return retSlc, err
 }

@@ -204,39 +204,6 @@ func (r *remoteImpl) GetProjectConfigs(ctx context.Context, path string, metaOnl
 	return convertMultiWireConfigs(c, path, resp, metaOnly)
 }
 
-func (r *remoteImpl) GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
-	srv, err := r.service(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := srv.GetRefConfigs(path).HashesOnly(metaOnly).Context(ctx).Do()
-	if err != nil {
-		return nil, apiErr(err)
-	}
-
-	c := logging.SetField(ctx, "path", path)
-	return convertMultiWireConfigs(c, path, resp, metaOnly)
-}
-
-func (r *remoteImpl) GetRefs(ctx context.Context, projectID string) ([]string, error) {
-	srv, err := r.service(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := srv.GetRefs(projectID).Context(ctx).Do()
-	if err != nil {
-		return nil, apiErr(err)
-	}
-
-	refs := make([]string, len(resp.Refs))
-	for i, ref := range resp.Refs {
-		refs[i] = ref.Name
-	}
-	return refs, err
-}
-
 // convertMultiWireConfigs is a utility to convert what we get over the wire
 // into the structs we use in the config package.
 func convertMultiWireConfigs(ctx context.Context, path string, wireConfigs *configApi.LuciConfigGetConfigMultiResponseMessage, metaOnly bool) ([]config.Config, error) {

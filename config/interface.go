@@ -49,7 +49,7 @@ type Config struct {
 
 	// Error is not nil if there where troubles fetching this config. Used only
 	// by functions that operate with multiple configs at once, such as
-	// GetProjectConfigs and GetRefConfigs.
+	// GetProjectConfigs.
 	Error error `json:"error,omitempty"`
 
 	// Content is the actual body of the config file.
@@ -109,14 +109,6 @@ type Interface interface {
 	// GetProjects returns all the registered projects in the configuration
 	// service.
 	GetProjects(ctx context.Context) ([]Project, error)
-
-	// GetRefConfigs returns the config at the given path in all refs of all
-	// projects that have such config. If metaOnly is true, returned Config
-	// structs have only Meta set (and the call is faster).
-	GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]Config, error)
-
-	// GetRefs returns the list of refs for a project.
-	GetRefs(ctx context.Context, projectID string) ([]string, error)
 
 	// ListFiles returns the list of files for a config set.
 	ListFiles(ctx context.Context, configSet Set) ([]string, error)

@@ -25,9 +25,9 @@ import (
 )
 
 // LoadFile loads a File by configSet and path.
-func LoadFile(c context.Context, project, ref string) (file *File, vers string, err error) {
+func LoadFile(c context.Context, project string) (file *File, vers string, err error) {
 	// If ref is "", this will be a standard project config set.
-	cfgSet := config.RefSet(project, ref)
+	cfgSet := config.ProjectSet(project)
 
 	file = &File{}
 	var meta config.Meta

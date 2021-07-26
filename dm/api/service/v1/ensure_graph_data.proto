@@ -20,6 +20,8 @@ message TemplateInstantiation {
   // this will use the template definition from the project-wide configuration
   // and not the configuration located on a particular ref (like
   // 'refs/heads/master').
+  //
+  // UNUSED.
   string ref = 2;
 
   // reserve 3 for luci-config version

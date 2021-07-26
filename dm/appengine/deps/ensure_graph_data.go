@@ -245,27 +245,22 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 	return err
 }
 
-type templateFileKey struct {
-	project, ref string
-}
-
 type templateFile struct {
 	file    *dmTemplate.File
 	version string
 }
 
-type templateFileCache map[templateFileKey]templateFile
+type templateFileCache map[string]templateFile // project => templateFile
 
 func (cache templateFileCache) render(c context.Context, inst *dm.TemplateInstantiation) (desc *dm.Quest_Desc, vers string, err error) {
-	key := templateFileKey{inst.Project, inst.Ref}
-	f, ok := cache[key]
+	f, ok := cache[inst.Project]
 	if !ok {
-		f.file, f.version, err = dmTemplate.LoadFile(c, inst.Project, inst.Ref)
+		f.file, f.version, err = dmTemplate.LoadFile(c, inst.Project)
 		if err != nil {
-			err = fmt.Errorf("failed to load templates %#v: %s", key, err)
+			err = fmt.Errorf("failed to load templates %q: %s", inst.Project, err)
 			return
 		}
-		cache[key] = f
+		cache[inst.Project] = f
 	}
 	vers = f.version
 	desc, err = f.file.Render(inst.Specifier)

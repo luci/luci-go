@@ -194,72 +194,6 @@ func TestRemoteCalls(t *testing.T) {
 				RepoURL:  URL,
 			})
 		})
-		Convey("GetRefConfigs", func() {
-			server, remoteImpl := testTools(200, map[string]interface{}{
-				"configs": [...]interface{}{map[string]string{
-					"config_set":   "a",
-					"content":      encodeToB("hi"),
-					"content_hash": "bar",
-					"revision":     "3",
-				}},
-			})
-			defer server.Close()
-
-			res, err := remoteImpl.GetRefConfigs(ctx, "b", false)
-
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeEmpty)
-			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldResemble, config.Config{
-				Meta: config.Meta{
-					ConfigSet:   "a",
-					Path:        "b",
-					ContentHash: "bar",
-					Revision:    "3",
-				},
-				Content: "hi",
-			})
-		})
-		Convey("GetRefConfigs metaOnly", func() {
-			server, remoteImpl := testTools(200, map[string]interface{}{
-				"configs": [...]interface{}{map[string]string{
-					"config_set":   "a",
-					"content_hash": "bar",
-					"revision":     "3",
-				}},
-			})
-			defer server.Close()
-
-			res, err := remoteImpl.GetRefConfigs(ctx, "b", true)
-
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeEmpty)
-			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldResemble, config.Config{
-				Meta: config.Meta{
-					ConfigSet:   "a",
-					Path:        "b",
-					ContentHash: "bar",
-					Revision:    "3",
-				},
-			})
-		})
-		Convey("GetRefs", func() {
-			ref := "refs/heads/master"
-			server, remoteImpl := testTools(200, map[string]interface{}{
-				"refs": [...]interface{}{map[string]string{
-					"name": ref,
-				}},
-			})
-			defer server.Close()
-
-			res, err := remoteImpl.GetRefs(ctx, "a")
-
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeEmpty)
-			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldEqual, ref)
-		})
 	})
 
 	Convey("Should handle errors well", t, func() {
@@ -277,10 +211,6 @@ func TestRemoteCalls(t *testing.T) {
 			_, err = remoteImpl.GetProjectConfigs(ctx, "a", false)
 			So(err, ShouldNotBeNil)
 			_, err = remoteImpl.GetProjects(ctx)
-			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetRefConfigs(ctx, "a", false)
-			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetRefs(ctx, "a")
 			So(err, ShouldNotBeNil)
 		})
 	})

@@ -138,43 +138,6 @@ func (m *memoryImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 	return out, nil
 }
 
-func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
-	if err := m.err; err != nil {
-		return nil, err
-	}
-
-	var sets []config.Set
-	for configSet := range m.sets {
-		if configSet.Ref() != "" {
-			sets = append(sets, configSet)
-		}
-	}
-	sort.Slice(sets, func(i, j int) bool { return sets[i] < sets[j] })
-
-	out := []config.Config{}
-	for _, configSet := range sets {
-		if cfg, err := m.GetConfig(ctx, configSet, path, metaOnly); err == nil {
-			out = append(out, *cfg)
-		}
-	}
-	return out, nil
-}
-
-func (m *memoryImpl) GetRefs(ctx context.Context, projectID string) ([]string, error) {
-	if err := m.err; err != nil {
-		return nil, err
-	}
-
-	var out []string
-	for configSet := range m.sets {
-		if project, ref := configSet.ProjectAndRef(); project == projectID && ref != "" {
-			out = append(out, ref)
-		}
-	}
-	sort.Strings(out)
-	return out, nil
-}
-
 // configMaybe returns config.Config if such config is in the set, else nil.
 func (b Files) configMaybe(configSet config.Set, path string, metaOnly bool) *config.Config {
 	if body, ok := b[path]; ok {

@@ -38,18 +38,6 @@ func TestMemoryImpl(t *testing.T) {
 				"file":         "project2 file",
 				"another/file": "project2 another file",
 			},
-			"projects/proj1/refs/heads/master": {
-				"file": "project1 master ref",
-			},
-			"projects/proj1/refs/heads/other": {
-				"file": "project1 other ref",
-			},
-			"projects/proj2/refs/heads/master": {
-				"file": "project2 master ref",
-			},
-			"projects/proj3/refs/heads/blah": {
-				"filezzz": "project2 blah ref",
-			},
 		})
 
 		Convey("GetConfig works", func() {
@@ -199,105 +187,7 @@ func TestMemoryImpl(t *testing.T) {
 					Name:     "Proj2",
 					RepoType: config.GitilesRepo,
 				},
-				{
-					ID:       "proj3",
-					Name:     "Proj3",
-					RepoType: config.GitilesRepo,
-				},
 			})
-		})
-
-		Convey("GetRefConfigs works", func() {
-			cfg, err := impl.GetRefConfigs(ctx, "file", false)
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, []config.Config{
-				{
-					Meta: config.Meta{
-						ConfigSet:   "projects/proj1/refs/heads/master",
-						Path:        "file",
-						ContentHash: "v2:de383bc97e0b10fa2b0b42453ba6c0cefcc515673531bd7991924927c190741a",
-						Revision:    "90cefed10b2934dd8c7ac7520c7316ab556869df",
-						ViewURL:     "https://example.com/view/here/file",
-					},
-					Content: "project1 master ref",
-				},
-				{
-					Meta: config.Meta{
-						ConfigSet:   "projects/proj1/refs/heads/other",
-						Path:        "file",
-						ContentHash: "v2:f2dab8c4bfe3454e72a6ca7cfe92328757982a7e58534a6db2cf7dd5a83e71d6",
-						Revision:    "7bbd45f8551410eadc234c449dd7a0b0097b83a2",
-						ViewURL:     "https://example.com/view/here/file",
-					},
-					Content: "project1 other ref",
-				},
-				{
-					Meta: config.Meta{
-						ConfigSet:   "projects/proj2/refs/heads/master",
-						Path:        "file",
-						ContentHash: "v2:cb4e59fc6a8b77f236e06dfa0d5ac4f4d50963dd2e8e6289a0976a992564b0ce",
-						Revision:    "ea7efe2c57bd89a74b8961b239d709e4f9983a93",
-						ViewURL:     "https://example.com/view/here/file",
-					},
-					Content: "project2 master ref",
-				},
-			})
-		})
-
-		Convey("GetRefConfigs metaOnly works", func() {
-			cfg, err := impl.GetRefConfigs(ctx, "file", true)
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, []config.Config{
-				{
-					Meta: config.Meta{
-						ConfigSet:   "projects/proj1/refs/heads/master",
-						Path:        "file",
-						ContentHash: "v2:de383bc97e0b10fa2b0b42453ba6c0cefcc515673531bd7991924927c190741a",
-						Revision:    "90cefed10b2934dd8c7ac7520c7316ab556869df",
-						ViewURL:     "https://example.com/view/here/file",
-					},
-				},
-				{
-					Meta: config.Meta{
-						ConfigSet:   "projects/proj1/refs/heads/other",
-						Path:        "file",
-						ContentHash: "v2:f2dab8c4bfe3454e72a6ca7cfe92328757982a7e58534a6db2cf7dd5a83e71d6",
-						Revision:    "7bbd45f8551410eadc234c449dd7a0b0097b83a2",
-						ViewURL:     "https://example.com/view/here/file",
-					},
-				},
-				{
-					Meta: config.Meta{
-						ConfigSet:   "projects/proj2/refs/heads/master",
-						Path:        "file",
-						ContentHash: "v2:cb4e59fc6a8b77f236e06dfa0d5ac4f4d50963dd2e8e6289a0976a992564b0ce",
-						Revision:    "ea7efe2c57bd89a74b8961b239d709e4f9983a93",
-						ViewURL:     "https://example.com/view/here/file",
-					},
-				},
-			})
-		})
-
-		Convey("GetRefConfigs no configs", func() {
-			cfg, err := impl.GetRefConfigs(ctx, "unknown file", false)
-			So(err, ShouldBeNil)
-			So(len(cfg), ShouldEqual, 0)
-		})
-
-		Convey("GetRefs works", func() {
-			refs, err := impl.GetRefs(ctx, "proj1")
-			So(err, ShouldBeNil)
-			So(refs, ShouldResemble, []string{"refs/heads/master", "refs/heads/other"})
-
-			refs, err = impl.GetRefs(ctx, "proj2")
-			So(err, ShouldBeNil)
-			So(refs, ShouldResemble, []string{"refs/heads/master"})
-		})
-
-		Convey("GetRefs unknown project", func() {
-			refs, err := impl.GetRefs(ctx, "unknown project")
-			So(err, ShouldBeNil)
-			So(len(refs), ShouldEqual, 0)
 		})
 	})
 }
