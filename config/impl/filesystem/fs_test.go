@@ -122,12 +122,6 @@ func TestFSImpl(t *testing.T) {
 				So(cfg, ShouldResemble, []string{"something/file.cfg"})
 			})
 
-			Convey("GetConfigByHash", func() {
-				cont, err := client.GetConfigByHash(ctx, "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8")
-				So(err, ShouldBeNil)
-				So(cont, ShouldEqual, "projects/foobar/something/file.cfg")
-			})
-
 			Convey("GetProjectConfigs", func() {
 				cfgs, err := client.GetProjectConfigs(ctx, "something/file.cfg", false)
 				So(err, ShouldBeNil)

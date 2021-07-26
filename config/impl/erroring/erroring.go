@@ -41,10 +41,6 @@ func (i erroringInterface) GetConfig(ctx context.Context, configSet config.Set, 
 	return nil, i.err
 }
 
-func (i erroringInterface) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
-	return "", i.err
-}
-
 func (i erroringInterface) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	return nil, i.err
 }

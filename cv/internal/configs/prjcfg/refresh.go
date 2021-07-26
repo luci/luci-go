@@ -61,7 +61,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 		return nil // Already up-to-date.
 	}
 
-	cfg, err := fetchCfg(ctx, meta.ContentHash)
+	cfg, meta, err := fetchCfg(ctx, project)
 	if err != nil {
 		return err
 	}
@@ -139,32 +139,35 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 // getConfigMeta fetches the Meta for a project config.
 //
 // Returns an error in the case of an empty content hash or fetch failure.
-func getConfigMeta(ctx context.Context, project string) (config.Meta, error) {
+func getConfigMeta(ctx context.Context, project string) (*config.Meta, error) {
 	var meta config.Meta
 	switch err := cfgclient.Get(ctx, config.ProjectSet(project), ConfigFileName, nil, &meta); {
 	case err != nil:
-		return meta, errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
+		return nil, errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
 	case meta.ContentHash == "":
-		return meta, errors.Reason("LUCI Config returns empty content hash for project %q", project).Err()
+		return nil, errors.Reason("LUCI Config returns empty content hash for project %q", project).Err()
 	default:
-		return meta, nil
+		return &meta, nil
 	}
 }
 
-// fetchCfg a config contents from luci-config using the content hash.
-func fetchCfg(ctx context.Context, contentHash string) (*pb.Config, error) {
-	content, err := cfgclient.Client(ctx).GetConfigByHash(ctx, contentHash)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get config by content hash").Tag(transient.Tag).Err()
-	}
+// fetchCfg a project config contents from luci-config.
+func fetchCfg(ctx context.Context, project string) (*pb.Config, *config.Meta, error) {
+	meta := &config.Meta{}
 	ret := &pb.Config{}
-	if err := cfgclient.ProtoText(ret)(content); err != nil {
-		return nil, errors.Annotate(err, "failed to deserialize config content").Err()
+	err := cfgclient.Get(
+		ctx, config.ProjectSet(project),
+		ConfigFileName,
+		cfgclient.ProtoText(ret),
+		meta,
+	)
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "failed to get the project config").Err()
 	}
 	// TODO(yiwzhang): validate the config here again to prevent ingesting a
 	// bad version of config that accidentally slips into LUCI Config.
 	// See: go.chromium.org/luci/cq/appengine/config
-	return ret, nil
+	return ret, meta, nil
 }
 
 // DisableProject disables the given LUCI Project if it is currently enabled.

@@ -64,10 +64,6 @@ func (r *resolvingInterface) GetConfig(ctx context.Context, configSet config.Set
 	return r.next.GetConfig(ctx, configSet, path, metaOnly)
 }
 
-func (r *resolvingInterface) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
-	return r.next.GetConfigByHash(ctx, contentHash)
-}
-
 func (r *resolvingInterface) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	path, err := r.path(ctx, path)
 	if err != nil {

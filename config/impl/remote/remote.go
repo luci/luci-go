@@ -139,25 +139,6 @@ func (r *remoteImpl) ListFiles(ctx context.Context, configSet config.Set) ([]str
 	return files, nil
 }
 
-func (r *remoteImpl) GetConfigByHash(ctx context.Context, configSet string) (string, error) {
-	srv, err := r.service(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	resp, err := srv.GetConfigByHash(configSet).Context(ctx).Do()
-	if err != nil {
-		return "", apiErr(err)
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(resp.Content)
-	if err != nil {
-		return "", err
-	}
-
-	return string(decoded), nil
-}
-
 func (r *remoteImpl) GetProjects(ctx context.Context) ([]config.Project, error) {
 	srv, err := r.service(ctx)
 	if err != nil {

@@ -81,21 +81,6 @@ func (m *memoryImpl) ListFiles(ctx context.Context, configSet config.Set) ([]str
 	return files, nil
 }
 
-func (m *memoryImpl) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
-	if err := m.err; err != nil {
-		return "", err
-	}
-
-	for _, set := range m.sets {
-		for _, body := range set {
-			if hash(body) == contentHash {
-				return body, nil
-			}
-		}
-	}
-	return "", config.ErrNoConfig
-}
-
 func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	if err := m.err; err != nil {
 		return nil, err

@@ -97,10 +97,6 @@ type Interface interface {
 	// (and the call is faster).
 	GetConfig(ctx context.Context, configSet Set, path string, metaOnly bool) (*Config, error)
 
-	// GetConfigByHash returns the contents of a config, as identified by its
-	// content hash, or ErrNoConfig if missing.
-	GetConfigByHash(ctx context.Context, contentHash string) (string, error)
-
 	// GetProjectConfigs returns all the configs at the given path in all
 	// projects that have such config. If metaOnly is true, returned Config
 	// structs have only Meta set (and the call is faster).

@@ -440,20 +440,6 @@ func (fs *filesystemImpl) ListFiles(ctx context.Context, cfgSet config.Set) ([]s
 	return files, err
 }
 
-func (fs *filesystemImpl) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
-	if _, err := fs.scanHeadRevision(); err != nil {
-		return "", err
-	}
-
-	fs.RLock()
-	content, ok := fs.contentHashMap[contentHash]
-	fs.RUnlock()
-	if ok {
-		return content, nil
-	}
-	return "", config.ErrNoConfig
-}
-
 func (fs *filesystemImpl) iterContentRevPath(fn func(lk lookupKey, cfg *config.Config)) error {
 	revision, err := fs.scanHeadRevision()
 	if err != nil {

@@ -103,17 +103,6 @@ func TestRemoteCalls(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res, ShouldResemble, []string{"first.template", "second.template"})
 		})
-		Convey("GetConfigByHash", func() {
-			server, remoteImpl := testTools(200, map[string]string{
-				"content": encodeToB("content"),
-			})
-			defer server.Close()
-
-			res, err := remoteImpl.GetConfigByHash(ctx, "a")
-
-			So(err, ShouldBeNil)
-			So(res, ShouldResemble, "content")
-		})
 		Convey("GetProjectConfigs", func() {
 			server, remoteImpl := testTools(200, map[string]interface{}{
 				"configs": [...]interface{}{map[string]string{
@@ -205,8 +194,6 @@ func TestRemoteCalls(t *testing.T) {
 			})
 
 			_, err := remoteImpl.GetConfig(ctx, "a", "b", false)
-			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetConfigByHash(ctx, "a")
 			So(err, ShouldNotBeNil)
 			_, err = remoteImpl.GetProjectConfigs(ctx, "a", false)
 			So(err, ShouldNotBeNil)

@@ -103,18 +103,6 @@ func TestMemoryImpl(t *testing.T) {
 			So(err, ShouldEqual, config.ErrNoConfig)
 		})
 
-		Convey("GetConfigByHash works", func() {
-			body, err := impl.GetConfigByHash(ctx, "v2:ace00670121e87a8e442ea9c1b74c16e95564f9d9ffcdb503a0b44db763c220a")
-			So(err, ShouldBeNil)
-			So(body, ShouldEqual, "body")
-		})
-
-		Convey("GetConfigByHash missing hash", func() {
-			body, err := impl.GetConfigByHash(ctx, "v1:blarg")
-			So(err, ShouldEqual, config.ErrNoConfig)
-			So(body, ShouldEqual, "")
-		})
-
 		Convey("GetProjectConfigs works", func() {
 			cfgs, err := impl.GetProjectConfigs(ctx, "file", false)
 			So(err, ShouldBeNil)
