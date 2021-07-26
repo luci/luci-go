@@ -41,13 +41,11 @@ message Event {
     // Sent by Project Manager, which guarantees these events are sent in order
     // of config updates. See also its `eversion` field.
     NewConfig new_config = 4;
-    // On CLUpdated event, Run Manager will decide whether to cancel the Run
-    // based on the current CL state.
-    //
-    // Sent by Gerrit Updater if Run is inside the `IncompleteRuns` list of
-    // a CL.
-    // TODO(tandrii): deprecate this and transition to a batch version.
+    // TODO(tandrii): deprecate this and transition to a batch version below.
     cv.internal.changelist.CLUpdatedEvent cl_updated = 5;
+    // On cls_updated event, Run Manager will decide whether to cancel the Run
+    // based on the current CL state.
+    cv.internal.changelist.CLUpdatedEvents cls_updated = 9;
     // On ReadyForSubmission event, Run Manager will try to submit CLs in
     // this Run.
     ReadyForSubmission ready_for_submission = 6;
