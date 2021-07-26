@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -100,6 +101,8 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 	}
 
 	luciProject := runID.LUCIProject()
+	var forceRefresh []*changelist.CL
+	var lock sync.Mutex
 	err = parallel.WorkPool(min(len(toCancel), 10), func(work chan<- func() error) {
 		for i := range toCancel {
 			i := i
@@ -115,10 +118,25 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 					ConfigGroups:     []*prjcfg.ConfigGroup{cg},
 					RunCLExternalIDs: runCLExternalIDs,
 				})
-				return errors.Annotate(err, "failed to cancel triggers for cl %d", cls[i].ID).Err()
+				switch {
+				case err == nil:
+					return nil
+				case cancel.ErrPreconditionFailedTag.In(err) || cancel.ErrPermanentTag.In(err):
+					lock.Lock()
+					forceRefresh = append(forceRefresh, cls[i])
+					lock.Unlock()
+					fallthrough
+				default:
+					return errors.Annotate(err, "failed to cancel triggers for cl %d", cls[i].ID).Err()
+				}
 			}
 		}
 	})
+	if len(forceRefresh) != 0 {
+		if ferr := impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), forceRefresh); ferr != nil {
+			logging.Warningf(ctx, "Failed to schedule best-effort force refresh of %d CLs: %s", len(forceRefresh), ferr)
+		}
+	}
 	if err != nil {
 		switch merr, ok := err.(errors.MultiError); {
 		case !ok:

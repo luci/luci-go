@@ -23,10 +23,16 @@ import (
 
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gcancel "go.chromium.org/luci/cv/internal/gerrit/cancel"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
@@ -82,6 +88,76 @@ func TestEndRun(t *testing.T) {
 		ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
 		pmtest.AssertReceivedRunFinished(ctx, rid)
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
+		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
+	})
+}
+
+func TestCancelTriggers(t *testing.T) {
+	t.Parallel()
+
+	Convey("CancelTriggers on a CL just deleted by its owner force-updates CL", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const gHost = "x-review.example.com"
+		const gRepo = "luci-go"
+		const gChange = 123
+		const lProject = "infra"
+		const clid = 1
+
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{{
+						Url: "https://" + gHost,
+						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
+							{Name: gRepo, RefRegexp: []string{"refs/heads/.+"}},
+						},
+					}},
+				},
+			},
+		})
+		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
+		So(err, ShouldBeNil)
+		cg := cgs[0]
+
+		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
+		ci := gf.CI(gChange, gf.CQ(+2))
+		cl := changelist.CL{
+			ID:             clid,
+			ExternalID:     changelist.MustGobID(gHost, gChange),
+			IncompleteRuns: common.RunIDs{rid},
+			EVersion:       3,
+			UpdateTime:     ct.Clock.Now().UTC(),
+			Snapshot: &changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+					Host: gHost,
+					Info: ci,
+				}},
+				LuciProject:        lProject,
+				ExternalUpdateTime: timestamppb.New(ct.Clock.Now()),
+			},
+		}
+		rcl := run.RunCL{
+			ID:         clid,
+			Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
+			ExternalID: cl.ExternalID,
+			Detail:     cl.Snapshot,
+			Trigger:    trigger.Find(ci, cg.Content),
+		}
+		So(datastore.Put(ctx, &cl, &rcl), ShouldBeNil)
+
+		// Simulate CL no longer existing in Gerrit (e.g. ct.GFake) 1 minute later,
+		// just as Run Manager decides to cancel the CL triggers.
+		ct.Clock.Add(time.Minute)
+		h, _, _, clUpdater := makeTestImpl(&ct)
+		err = h.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, []changelist.ExternalID{cl.ExternalID}, "Dry Run OK", cg)
+		// The cancelation errors out, but the CL refresh is scheduled.
+		// TODO(crbug/1227369): fail transiently or better yet schedule another
+		// retry in the future and fail with tq.Ignore.
+		So(gcancel.ErrPermanentTag.In(err), ShouldBeTrue)
 		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 	})
 }
