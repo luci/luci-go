@@ -57,6 +57,13 @@ export class RawArtifactPageElement extends MiloBaseElement {
   connectedCallback() {
     super.connectedCallback();
 
+    /**
+     * TODO(crbug/1206109): artifact.fetchUrl has an expire time. Ideally, we
+     * want to handle the request on the server side, so we can avoid
+     * redirecting to a temporary URL (users may save the URL). However, due to
+     * a bug in golang http/net, we can't handle this on server side before
+     * migrating to GAE v2.
+     */
     this.addDisposer(
       autorun(
         reportError(this, () => {

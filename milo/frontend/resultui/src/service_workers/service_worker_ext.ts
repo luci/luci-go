@@ -15,6 +15,10 @@
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
 import './force_update';
+import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from '../auth_state_cache';
+import { PrpcClientExt } from '../libs/prpc_client_ext';
+import { queryAuthState } from '../services/milo_internal';
+import { ResultDb } from '../services/resultdb';
 import { Prefetcher } from './prefetch';
 
 importScripts('/configs.js');
@@ -37,7 +41,35 @@ _self.addEventListener('fetch', async (e) => {
     const res = new Response(`const CONFIGS=${JSON.stringify(CONFIGS)};`);
     res.headers.set('content-type', 'application/javascript');
     e.respondWith(res);
+    return;
+  }
+
+  const rawArtifactMatch = /^\/ui\/artifact\/raw\/(.*)$/i.exec(url.pathname);
+  if (rawArtifactMatch) {
+    const artifactName = rawArtifactMatch[1];
+    e.respondWith(handleRawArtifact(artifactName));
+    return;
   }
 
   prefetcher.prefetchResources(url);
 });
+
+const resultDb = new ResultDb(
+  new PrpcClientExt(
+    { host: CONFIGS.RESULT_DB.HOST, fetchImpl: _self.fetch.bind(_self) },
+    () => getAuthStateCacheSync()?.accessToken || ''
+  )
+);
+
+/**
+ * Handles raw artifact requests.
+ */
+async function handleRawArtifact(artifactName: string): Promise<Response> {
+  const authState = await getAuthStateCache();
+  if (!authState) {
+    await setAuthStateCache(await queryAuthState());
+  }
+
+  const artifact = await resultDb.getArtifact({ name: artifactName });
+  return fetch(artifact.fetchUrl);
+}
