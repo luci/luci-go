@@ -114,8 +114,7 @@ func TestUploadToCAS(t *testing.T) {
 		barDg := digest.NewFromBlob(barContent)
 		bazDg := digest.NewFromBlob(bazContent)
 		fakeFlags := casclient.Flags{
-			Instance:  "foo",
-			UseNewLib: true,
+			Instance: "foo",
 		}
 		var opts auth.Options
 

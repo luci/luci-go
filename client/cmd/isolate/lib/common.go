@@ -24,18 +24,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/uploadinfo"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 
@@ -106,16 +102,6 @@ func (c *baseCommandRun) newClient(ctx context.Context, instance string, opts au
 	factory := c.clientFactory
 	if factory == nil {
 		factory = casclient.New
-	}
-	return factory(ctx, instance, opts, readOnly)
-}
-
-// TODO(crbug.com/1225524): remove this function.
-
-func (c *baseCommandRun) newClientLegacy(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
-	factory := c.clientFactoryLegacy
-	if factory == nil {
-		factory = casclient.NewLegacy
 	}
 	return factory(ctx, instance, opts, readOnly)
 }
@@ -297,13 +283,7 @@ func (al *archiveLogger) printSummary(summary tarring.IsolatedSummary) {
 }
 
 func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *casclient.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
-	var rootDgs []digest.Digest
-	var err error
-	if fl.UseNewLib {
-		rootDgs, err = r.uploadToCASNew(ctx, authOpts, fl, al, opts...)
-	} else {
-		rootDgs, err = r.uploadToCASLegacy(ctx, authOpts, fl, al, opts...)
-	}
+	rootDgs, err := r.uploadToCASNew(ctx, authOpts, fl, al, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -428,125 +408,6 @@ func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec
 	}
 
 	return execRoot, inputSpec, nil
-}
-
-// TODO(crbug.com/1193375): remove this func after migrating to RBE's cas package.
-func (r *baseCommandRun) uploadToCASLegacy(ctx context.Context, authOpts auth.Options, fl *casclient.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
-
-	// To cancel |uploadEg| when there is error in |digestEg|.
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	cl, err := r.newClientLegacy(ctx, fl.Instance, authOpts, false)
-	if err != nil {
-		return nil, err
-	}
-	defer cl.Close()
-
-	start := time.Now()
-	fmCache := filemetadata.NewSingleFlightCache()
-
-	rootDgs := make([]digest.Digest, len(opts))
-	type entries struct {
-		isolate string
-		entries []*uploadinfo.Entry
-	}
-	entriesC := make(chan entries)
-
-	digestEg, _ := errgroup.WithContext(ctx)
-
-	// limit the number of concurrent hash calculations and I/O operations.
-	ch := make(chan struct{}, runtime.NumCPU())
-	logger := logging.Get(ctx)
-
-	for i, o := range opts {
-		i, o := i, o
-		digestEg.Go(func() error {
-			ch <- struct{}{}
-			defer func() { <-ch }()
-
-			execRoot, is, err := buildCASInputSpec(o)
-			if err != nil {
-				return errors.Annotate(err, "failed to call buildCASInputSpec").Err()
-			}
-
-			start := time.Now()
-			rootDg, entrs, stats, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
-			if err != nil {
-				return errors.Annotate(err, "failed to call ComputeMerkleTree for %s", o.Isolate).Err()
-			}
-			logger.Infof("ComputeMerkleTree returns %d entries with total size %d for %s, took %s",
-				len(entrs), stats.TotalInputBytes, o.Isolate, time.Since(start))
-			rootDgs[i] = rootDg
-			entriesC <- entries{o.Isolate, entrs}
-
-			return nil
-		})
-	}
-
-	var entryCount int
-	var entrySize int64
-	var uploadEntryCount int64
-	var uploadEntrySize int64
-	var uploadedBytes int64
-
-	uploadEg, uctx := errgroup.WithContext(ctx)
-	uploadEg.Go(func() error {
-		uploaded := make(map[digest.Digest]struct{})
-		for entrs := range entriesC {
-			entrs := entrs
-			entryCount += len(entrs.entries)
-			toUpload := make([]*uploadinfo.Entry, 0, len(entrs.entries))
-			for _, e := range entrs.entries {
-				entrySize += e.Digest.Size
-				if _, ok := uploaded[e.Digest]; ok {
-					continue
-				}
-				uploaded[e.Digest] = struct{}{}
-				toUpload = append(toUpload, e)
-			}
-
-			uploadEg.Go(func() error {
-				start := time.Now()
-				uploaded, bytes, err := cl.UploadIfMissing(uctx, toUpload...)
-				if err != nil {
-					return errors.Annotate(err, "failed to upload: %s", entrs.isolate).Err()
-				}
-
-				logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
-					len(toUpload), len(uploaded), bytes, time.Since(start))
-
-				uploadSizeSum := int64(0)
-				for _, d := range uploaded {
-					uploadSizeSum += d.Size
-				}
-				atomic.AddInt64(&uploadEntryCount, int64(len(uploaded)))
-				atomic.AddInt64(&uploadEntrySize, uploadSizeSum)
-				atomic.AddInt64(&uploadedBytes, bytes)
-				return nil
-			})
-		}
-		return nil
-	})
-
-	if err := digestEg.Wait(); err != nil {
-		close(entriesC)
-		return nil, err
-	}
-
-	close(entriesC)
-	if err := uploadEg.Wait(); err != nil {
-		return nil, err
-	}
-
-	logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
-		entryCount, uploadEntryCount, uploadedBytes, time.Since(start))
-
-	if al != nil {
-		al.LogSummary(ctx, entryCount-int(uploadEntryCount), int(uploadEntryCount), units.Size(entrySize-uploadEntrySize), units.Size(uploadEntrySize))
-	}
-
-	return rootDgs, nil
 }
 
 type regexpCache map[string]*regexp.Regexp
