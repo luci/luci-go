@@ -16,12 +16,14 @@ import { addMatchImageSnapshotCommand } from 'cypress-image-snapshot/command';
 
 import { addStubPrpcServicesCommand } from './stub_prpc_services';
 import { addStubRequestsCommand } from './stub_requests';
+import { addUnregisterServiceWorkersCommands } from './unregister_service_workers';
 
 addMatchImageSnapshotCommand({
   failureThreshold: 0.01,
 });
 addStubRequestsCommand();
 addStubPrpcServicesCommand();
+addUnregisterServiceWorkersCommands();
 
 beforeEach(() => {
   cy.stubPrpcServices();
