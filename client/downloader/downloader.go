@@ -559,6 +559,12 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 				continue
 			}
 
+			if strings.HasPrefix(name, "..") {
+				d.addError(tarType, string(hash)+":"+name,
+					errors.New("relative path traversal"))
+				continue
+			}
+
 			filename := filepath.Join(d.outputDir, name)
 
 			// Igonre mode other than executable bit.
