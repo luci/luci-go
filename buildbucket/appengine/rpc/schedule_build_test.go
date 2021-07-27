@@ -944,7 +944,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
-					IsLuci:     true,
+					IsLuci:     false,
 					Status:     pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:dynamic builder",

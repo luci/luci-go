@@ -904,7 +904,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		}
 
 		setExperimentsFromProto(reqs[i], cfg, blds[i])
-		blds[i].IsLuci = true
+		blds[i].IsLuci = cfg != nil
 		blds[i].PubSubCallback.Topic = reqs[i].GetNotify().GetPubsubTopic()
 		blds[i].PubSubCallback.UserData = reqs[i].GetNotify().GetUserData()
 		// Tags are stored in the outer struct (see model/build.go).
