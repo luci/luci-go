@@ -41,8 +41,6 @@ message Event {
     // Sent by Project Manager, which guarantees these events are sent in order
     // of config updates. See also its `eversion` field.
     NewConfig new_config = 4;
-    // TODO(tandrii): deprecate this and transition to a batch version below.
-    cv.internal.changelist.CLUpdatedEvent cl_updated = 5;
     // On cls_updated event, Run Manager will decide whether to cancel the Run
     // based on the current CL state.
     cv.internal.changelist.CLUpdatedEvents cls_updated = 9;
@@ -66,8 +64,14 @@ message Event {
     //
     // TODO(crbug/1141880): Remove this event after migration.
     CQDVerificationCompleted cqd_verification_completed = 30;
-    // TODO(crbug/1227523): Remove this event after migration.
+
+
+    // TODO(crbug/1227523): wipe out all outstanding events of this kind
+    // and delete it from here.
     CQDFinished cqd_finished = 31;
+    // TODO(crbug/1227523): wipe out all outstanding events of this kind
+    // and delete it from here.
+    cv.internal.changelist.CLUpdatedEvent cl_updated = 5;
   }
 
   // Instructs Run Manager that this event can only be processed after

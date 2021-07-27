@@ -135,14 +135,12 @@ func (n *Notifier) Cancel(ctx context.Context, runID common.RunID) error {
 	})
 }
 
-// NotifyCLUpdated informs RunManager that given CL has a new version available.
-func (n *Notifier) NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
+// NotifyCLsUpdated informs RunManager that given CLs have new versions
+// available.
+func (n *Notifier) NotifyCLsUpdated(ctx context.Context, runID common.RunID, cls *changelist.CLUpdatedEvents) error {
 	return n.SendNow(ctx, runID, &eventpb.Event{
-		Event: &eventpb.Event_ClUpdated{
-			ClUpdated: &changelist.CLUpdatedEvent{
-				Clid:     int64(clid),
-				Eversion: int64(eVersion),
-			},
+		Event: &eventpb.Event_ClsUpdated{
+			ClsUpdated: cls,
 		},
 	})
 }

@@ -40,8 +40,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestOnCLUpdated(t *testing.T) {
-	Convey("OnCLUpdated", t, func() {
+func TestOnCLsUpdated(t *testing.T) {
+	Convey("OnCLsUpdated", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -108,7 +108,7 @@ func TestOnCLUpdated(t *testing.T) {
 		So(datastore.Put(ctx, &rcl), ShouldBeNil)
 
 		ensureNoop := func() {
-			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -145,7 +145,7 @@ func TestOnCLUpdated(t *testing.T) {
 		})
 		Convey("Preserve events for SUBMITTING Run", func() {
 			rs.Run.Status = run.Status_SUBMITTING
-			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -153,7 +153,7 @@ func TestOnCLUpdated(t *testing.T) {
 		})
 
 		runAndVerifyCancelled := func() {
-			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
 			So(res.SideEffectFn, ShouldNotBeNil)
@@ -200,7 +200,7 @@ func TestOnCLUpdated(t *testing.T) {
 					lProject: {NoAccessTime: timestamppb.New(noAccessAt)},
 				}}
 				updateCL(ci, aplConfigOK, acc)
-				res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				So(err, ShouldBeNil)
 				So(res.State, ShouldEqual, rs)
 				So(res.SideEffectFn, ShouldBeNil)

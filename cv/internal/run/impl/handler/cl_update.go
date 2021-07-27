@@ -33,8 +33,8 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-// OnCLUpdated implements Handler interface.
-func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
+// OnCLsUpdated implements Handler interface.
+func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: Received CLUpdated events but Run is in unspecified status").Err()

@@ -329,7 +329,7 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		rs, transitions = applyResult(res, tr.newConfigEvents.events, transitions)
 	}
 	if len(tr.clUpdatedEvents.events) > 0 {
-		res, err := rp.handler.OnCLUpdated(ctx, rs, tr.clUpdatedEvents.cls)
+		res, err := rp.handler.OnCLsUpdated(ctx, rs, tr.clUpdatedEvents.cls)
 		if err != nil {
 			return nil, err
 		}

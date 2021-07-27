@@ -412,7 +412,7 @@ type runNotifierMock struct {
 	updateConfig common.RunIDs
 }
 
-func (r *runNotifierMock) NotifyCLUpdated(ctx context.Context, rid common.RunID, cl common.CLID, eversion int) error {
+func (r *runNotifierMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, cls *changelist.CLUpdatedEvents) error {
 	panic("not implemented")
 }
 

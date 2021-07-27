@@ -87,7 +87,7 @@ type pmNotifier interface {
 //
 // In production, implemented by run.Notifier.
 type rmNotifier interface {
-	NotifyCLUpdated(ctx context.Context, rid common.RunID, cl common.CLID, eversion int) error
+	NotifyCLsUpdated(ctx context.Context, rid common.RunID, events *CLUpdatedEvents) error
 }
 
 // ErrStopMutation is a special error used by MutateCallback to signal that no
@@ -451,13 +451,8 @@ func (m *Mutator) handleBatchOnCLUpdatedTask(ctx context.Context, batch *BatchOn
 			work <- func() error { return m.pm.NotifyCLsUpdated(ctx, project, events) }
 		}
 		for run, events := range batch.GetRuns() {
-			// In majority of cases, each Run gets exactly 1 CL event.
-			for _, e := range events.GetEvents() {
-				rid := common.RunID(run)
-				clid := common.CLID(e.GetClid())
-				ev := int(e.GetEversion())
-				work <- func() error { return m.rm.NotifyCLUpdated(ctx, rid, clid, ev) }
-			}
+			run, events := run, events
+			work <- func() error { return m.rm.NotifyCLsUpdated(ctx, common.RunID(run), events) }
 		}
 	})
 	return common.MostSevereError(errs)

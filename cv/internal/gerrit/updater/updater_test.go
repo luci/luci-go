@@ -796,13 +796,13 @@ func (l *RefreshGerritCL) less(r *RefreshGerritCL) bool {
 type pmMock struct {
 }
 
-func (p *pmMock) NotifyCLsUpdated(ctx context.Context, project string, cls *changelist.CLUpdatedEvents) error {
+func (*pmMock) NotifyCLsUpdated(ctx context.Context, project string, cls *changelist.CLUpdatedEvents) error {
 	return nil
 }
 
 type rmMock struct {
 }
 
-func (r *rmMock) NotifyCLUpdated(ctx context.Context, rid common.RunID, cl common.CLID, eversion int) error {
+func (*rmMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, cls *changelist.CLUpdatedEvents) error {
 	return nil
 }

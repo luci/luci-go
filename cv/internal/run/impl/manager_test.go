@@ -114,17 +114,28 @@ func TestRunManager(t *testing.T) {
 			},
 			{
 				&eventpb.Event{
-					Event: &eventpb.Event_ClUpdated{
-						ClUpdated: &changelist.CLUpdatedEvent{
-							Clid:     int64(1),
-							Eversion: int64(2),
+					Event: &eventpb.Event_ClsUpdated{
+						ClsUpdated: &changelist.CLUpdatedEvents{
+							Events: []*changelist.CLUpdatedEvent{
+								{
+									Clid:     int64(1),
+									Eversion: int64(2),
+								},
+							},
 						},
 					},
 				},
 				func(ctx context.Context) error {
-					return notifier.NotifyCLUpdated(ctx, runID, 1, 2)
+					return notifier.NotifyCLsUpdated(ctx, runID, &changelist.CLUpdatedEvents{
+						Events: []*changelist.CLUpdatedEvent{
+							{
+								Clid:     int64(1),
+								Eversion: int64(2),
+							},
+						},
+					})
 				},
-				"OnCLUpdated",
+				"OnCLsUpdated",
 			},
 			{
 				&eventpb.Event{
@@ -390,8 +401,8 @@ func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState) (*handler
 	}, nil
 }
 
-func (fh *fakeHandler) OnCLUpdated(ctx context.Context, rs *state.RunState, _ common.CLIDs) (*handler.Result, error) {
-	fh.addInvocation("OnCLUpdated")
+func (fh *fakeHandler) OnCLsUpdated(ctx context.Context, rs *state.RunState, _ common.CLIDs) (*handler.Result, error) {
+	fh.addInvocation("OnCLsUpdated")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

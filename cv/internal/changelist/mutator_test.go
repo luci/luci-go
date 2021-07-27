@@ -583,18 +583,21 @@ type rmMock struct {
 	byRun map[common.RunID]map[common.CLID]int // latest max EVersion
 }
 
-func (r *rmMock) NotifyCLUpdated(ctx context.Context, run common.RunID, cl common.CLID, eversion int) error {
+func (r *rmMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, events *CLUpdatedEvents) error {
 	r.m.Lock()
 	defer r.m.Unlock()
 	if r.byRun == nil {
 		r.byRun = make(map[common.RunID]map[common.CLID]int, 1)
 	}
-	m := r.byRun[run]
+	m := r.byRun[rid]
 	if m == nil {
 		m = make(map[common.CLID]int, 1)
-		r.byRun[run] = m
+		r.byRun[rid] = m
 	}
-	m[cl] = max(m[cl], eversion)
+	for _, e := range events.GetEvents() {
+		clid := common.CLID(e.GetClid())
+		m[clid] = max(m[clid], int(e.GetEversion()))
+	}
 	return nil
 }
 
