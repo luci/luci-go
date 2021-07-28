@@ -294,37 +294,6 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 //
 // Returns nil ChangeInfo if no further fetching should proceed.
 func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOption) (*gerritpb.ChangeInfo, error) {
-	setNoAccess := func(temporary bool) error {
-		now := clock.Now(ctx)
-		noAccessAt := now
-		if temporary {
-			noAccessAt = now.Add(noAccessGraceDuration)
-			t := &RefreshGerritCL{
-				LuciProject: f.luciProject,
-				Host:        f.host,
-				Change:      f.change,
-				ClidHint:    int64(f.clidIfKnown()),
-			}
-			if !f.updatedHint.IsZero() {
-				t.UpdatedHint = timestamppb.New(f.updatedHint)
-			}
-			err := f.scheduleRefresh(ctx, t, noAccessGraceRetryDelay)
-			if err != nil {
-				return err
-			}
-		}
-		f.toUpdate.AddDependentMeta = &changelist.Access{
-			ByProject: map[string]*changelist.Access_Project{
-				f.luciProject: {
-					UpdateTime:   timestamppb.New(now),
-					NoAccessTime: timestamppb.New(noAccessAt),
-					NoAccess:     true,
-				},
-			},
-		}
-		return nil
-	}
-
 	// Avoid querying Gerrit iff the current project doesn't watch the given host,
 	// which should be treated as PermissionDenied.
 	switch watched, err := f.isHostWatched(ctx); {
@@ -332,7 +301,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		return nil, err
 	case !watched:
 		logging.Warningf(ctx, "Gerrit host %q is not watched by project %q [%s]", f.host, f.luciProject, f)
-		return nil, setNoAccess(false /* permanent*/)
+		return nil, f.setCertainNoAccess(ctx)
 	}
 
 	var ci *gerritpb.ChangeInfo
@@ -357,9 +326,8 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 	})
 	switch {
 	case err == errStaleOrNoAccess:
-		// Chances are it's not due to eventual consistency, but be conservative
-		// and retry later a few more times.
-		return nil, setNoAccess(true /* temporary */)
+		// Chances are it's not due to eventual consistency, but be conservative.
+		return nil, f.setLikelyNoAccess(ctx)
 	case err != nil:
 		return nil, err
 	}
@@ -374,6 +342,64 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 	}
 
 	return ci, nil
+}
+
+func (f *fetcher) setCertainNoAccess(ctx context.Context) error {
+	now := clock.Now(ctx)
+	noAccessAt := now
+	if prior := f.priorNoAccessTime(); !prior.IsZero() && prior.Before(now) {
+		// Keep noAccessAt as is.
+		noAccessAt = prior
+	}
+	f.setNoAccessAt(now, noAccessAt)
+	return nil
+}
+
+func (f *fetcher) setLikelyNoAccess(ctx context.Context) error {
+	now := clock.Now(ctx)
+	var noAccessAt time.Time
+	var err error
+	switch prior := f.priorNoAccessTime(); {
+	case prior.IsZero():
+		// This is the first time CL.
+		noAccessAt = now.Add(noAccessGraceDuration)
+		err = f.recheckAccessLater(ctx, noAccessGraceRetryDelay)
+	case prior.Before(now):
+		// Keep noAccessAt as is, it's now considered certain.
+		noAccessAt = prior
+	default:
+		// Keep noAccessAt as is, but schedule yet another refresh.
+		noAccessAt = prior
+		err = f.recheckAccessLater(ctx, noAccessGraceRetryDelay)
+	}
+	f.setNoAccessAt(now, noAccessAt)
+	return err
+}
+
+func (f *fetcher) setNoAccessAt(now, noAccessAt time.Time) {
+	f.toUpdate.AddDependentMeta = &changelist.Access{
+		ByProject: map[string]*changelist.Access_Project{
+			f.luciProject: {
+				UpdateTime:   timestamppb.New(now),
+				NoAccessTime: timestamppb.New(noAccessAt),
+				NoAccess:     true,
+			},
+		},
+	}
+}
+
+// rescheduleLater schedules the same task with a delay.
+func (f *fetcher) recheckAccessLater(ctx context.Context, delay time.Duration) error {
+	t := &RefreshGerritCL{
+		LuciProject: f.luciProject,
+		Host:        f.host,
+		Change:      f.change,
+		ClidHint:    int64(f.clidIfKnown()),
+	}
+	if !f.updatedHint.IsZero() {
+		t.UpdatedHint = timestamppb.New(f.updatedHint)
+	}
+	return f.scheduleRefresh(ctx, t, delay)
 }
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
@@ -766,6 +792,17 @@ func (f *fetcher) priorSnapshot() *changelist.Snapshot {
 		return f.priorCL.Snapshot
 	}
 	return nil
+}
+
+func (f *fetcher) priorNoAccessTime() time.Time {
+	if f.priorCL == nil {
+		return time.Time{}
+	}
+	t := f.priorCL.Access.GetByProject()[f.luciProject].GetNoAccessTime()
+	if t == nil {
+		return time.Time{}
+	}
+	return t.AsTime()
 }
 
 func (f *fetcher) mustHaveCurrentRevision() string {

@@ -377,6 +377,20 @@ func TestUpdateCLWorks(t *testing.T) {
 					})
 					So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDeniedProbably)
 					assertScheduled(change)
+
+					Convey("finalizes status after the grace duration", func() {
+						ct.Clock.Add(noAccessGraceDuration + time.Second)
+						So(u.Refresh(ctx, task), ShouldBeNil)
+
+						clAfter := getCL(ctx, gHost, change)
+						// NoAccessTime must remain unchanged.
+						So(clAfter.Access.GetByProject()[lProject].GetNoAccessTime(), ShouldResembleProto,
+							cl.Access.GetByProject()[lProject].GetNoAccessTime())
+						// Hence, AccessDenied is now certain.
+						So(clAfter.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
+						// No new refresh tasks should be scheduled.
+						assertScheduled(change) // same as before.
+					})
 				}
 				Convey("HTTP 404", func() {
 					task.Change = 404
@@ -665,7 +679,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			So(cl2.Snapshot.GetGerrit().GetInfo(), ShouldResembleProto, ci)
 		})
 
-		FocusConvey("Handles New -> Abandon -> Restored transitions correctly", func() {
+		Convey("Handles New -> Abandon -> Restored transitions correctly", func() {
 			task.Change = 123
 
 			// Start with a NEW Gerrit change.
