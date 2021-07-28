@@ -60,6 +60,7 @@ func New(ctx context.Context, instance string, opts auth.Options, readOnly bool)
 func DefaultConfig() cas.ClientConfig {
 	cfg := cas.DefaultClientConfig()
 	cfg.CompressedBytestreamThreshold = 0 // compress always
+	cfg.FSLargeConcurrency = runtime.NumCPU()
 	return cfg
 }
 
