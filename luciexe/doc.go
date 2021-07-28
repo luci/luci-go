@@ -190,17 +190,23 @@
 // The state of the build is defined as the last Build message sent on this
 // stream. There's no implicit accumulation between sent Build messages.
 //
-// All Step.Log.Url fields in the emitted Build messages MUST be relative to
-// the $LOGDOG_NAMESPACE of the build.proto stream. For example, if the host
-// application is parsing a Build.proto in a stream named
+// The Step.Log.Url field in the emitted Build messages can be either absolute
+// (has supported logdog URL scheme) or relative. If an absolute `Url` is
+// provided, the luciexe is also responsible for supplying corresponding
+// `ViewUrl` and the host application won't validate or make any adjustments to
+// those urls. This allows luciexe to include logs from other sources into this
+// build. If a relative `Url` is provided, the host application will
+// namespace the `Url` with $LOGDOG_NAMESPACE of the build.proto stream. For
+// example, if the host application is parsing a Build.proto in a stream named
 // "logdog://host/project/prefix/+/something/build.proto", then a Log with a Url
 // of "hello/world/stdout" will be transformed into:
 //
 //   Url:     logdog://host/project/prefix/+/something/hello/world/stdout
 //   ViewUrl: <implementation defined>
 //
-// The `ViewUrl` field SHOULD be left empty, and will be filled in by the
-// host running the luciexe (if supplied it will be overwritten).
+// The `ViewUrl` field in this case SHOULD be left empty, and will be filled in
+// by the host application running the luciexe (if supplied it will be
+// overwritten).
 //
 // The following Build fields will be read from the luciexe-controlled
 // build.proto stream:

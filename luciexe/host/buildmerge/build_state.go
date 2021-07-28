@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"sync"
 
@@ -113,18 +112,21 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 
 		for _, step := range parsedBuild.Steps {
 			for _, log := range step.Logs {
-				url := types.StreamName(log.Url)
-				if err := url.Validate(); err != nil {
+				var err error
+				log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, t.ldNamespace, t.merger.calculateURLs)
+				if err != nil {
 					step.Status = bbpb.Status_INFRA_FAILURE
-					step.SummaryMarkdown += fmt.Sprintf("bad log url: %q", log.Url)
-					return errors.Annotate(
-						err, "step[%q].logs[%q].Url = %q", step.Name, log.Name, log.Url).Err()
+					step.SummaryMarkdown += err.Error()
+					return errors.Annotate(err, "step[%q].logs[%q]", step.Name, log.Name).Err()
 				}
-				log.Url, log.ViewUrl = t.merger.calculateURLs(t.ldNamespace, url)
 			}
 		}
 		for _, log := range parsedBuild.GetOutput().GetLogs() {
-			log.Url, log.ViewUrl = t.merger.calculateURLs(t.ldNamespace, types.StreamName(log.Url))
+			var err error
+			log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, t.ldNamespace, t.merger.calculateURLs)
+			if err != nil {
+				return errors.Annotate(err, "build.output.logs[%q]", log.Name).Err()
+			}
 		}
 		return nil
 	}()

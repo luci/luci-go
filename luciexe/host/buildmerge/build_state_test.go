@@ -76,9 +76,10 @@ func TestBuildState(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		merger := New(ctx, "u/", &bbpb.Build{}, func(ns, stream types.StreamName) (url, viewURL string) {
+		merger, err := New(ctx, "u/", &bbpb.Build{}, func(ns, stream types.StreamName) (url, viewURL string) {
 			return fmt.Sprintf("url://%s%s", ns, stream), fmt.Sprintf("view://%s%s", ns, stream)
 		})
+		So(err, ShouldBeNil)
 		defer merger.Close()
 
 		informChan := make(chan struct{}, 1)
@@ -353,44 +354,153 @@ func TestBuildState(t *testing.T) {
 				})
 			})
 
-			Convey(`bad log url`, func() {
+			Convey(`accept absolute url`, func() {
 				bs.handleNewData(mkDgram(&bbpb.Build{
 					Steps: []*bbpb.Step{
 						{
 							Name: "hi",
 							Logs: []*bbpb.Log{{
-								Name: "log",
-								Url:  "!!badnews!!",
+								Name: "foo",
+								Url:  "log/foo",
 							}},
+						},
+						{
+							Name: "heyo",
+							Logs: []*bbpb.Log{{
+								Name:    "bar",
+								Url:     "url://another_ns/log/bar", // absolute url populated
+								ViewUrl: "view://another_ns/log/bar",
+							}},
+						},
+					},
+					Output: &bbpb.Build_Output{
+						Logs: []*bbpb.Log{
+							{
+								Name: "stderr",
+								Url:  "stderr",
+							},
+							{
+								Name:    "another stderr",
+								Url:     "url://another_ns/stderr", // absolute url populated
+								ViewUrl: "view://another_ns/stderr",
+							},
 						},
 					},
 				}))
 				wait()
-				wait() // for final build
-				assertStateEqual(bs.GetFinal(), &buildState{
-					closed:  true,
-					final:   true,
-					invalid: true,
+
+				assertStateEqual(bs.getLatest(), &buildState{
 					build: &bbpb.Build{
-						SummaryMarkdown: ("\n\nError in build protocol: " +
-							"step[\"hi\"].logs[\"log\"].Url = \"!!badnews!!\": " +
-							"segment (at 0) must begin with alphanumeric character"),
 						Steps: []*bbpb.Step{
 							{
-								Name:            "hi",
-								Status:          bbpb.Status_INFRA_FAILURE,
-								EndTime:         now,
-								SummaryMarkdown: "bad log url: \"!!badnews!!\"",
+								Name: "hi",
+								Logs: []*bbpb.Log{{
+									Name:    "foo",
+									Url:     "url://ns/log/foo",
+									ViewUrl: "view://ns/log/foo",
+								}},
+							},
+							{
+								Name: "heyo",
+								Logs: []*bbpb.Log{{
+									Name:    "bar",
+									Url:     "url://another_ns/log/bar",
+									ViewUrl: "view://another_ns/log/bar",
+								}},
+							},
+						},
+						UpdateTime: now,
+						Output: &bbpb.Build_Output{
+							Logs: []*bbpb.Log{
+								{
+									Name:    "stderr",
+									Url:     "url://ns/stderr",
+									ViewUrl: "view://ns/stderr",
+								},
+								{
+									Name:    "another stderr",
+									Url:     "url://another_ns/stderr",
+									ViewUrl: "view://another_ns/stderr",
+								},
+							},
+						},
+					},
+				})
+			})
+
+			Convey(`bad log url`, func() {
+				Convey(`step log`, func() {
+					bs.handleNewData(mkDgram(&bbpb.Build{
+						Steps: []*bbpb.Step{
+							{
+								Name: "hi",
 								Logs: []*bbpb.Log{{
 									Name: "log",
 									Url:  "!!badnews!!",
 								}},
 							},
 						},
-						Status:     bbpb.Status_INFRA_FAILURE,
-						UpdateTime: now,
-						EndTime:    now,
-					},
+					}))
+					wait()
+					wait() // for final build
+					assertStateEqual(bs.GetFinal(), &buildState{
+						closed:  true,
+						final:   true,
+						invalid: true,
+						build: &bbpb.Build{
+							SummaryMarkdown: ("\n\nError in build protocol: " +
+								"step[\"hi\"].logs[\"log\"]: bad log url \"!!badnews!!\": " +
+								"segment (at 0) must begin with alphanumeric character"),
+							Steps: []*bbpb.Step{
+								{
+									Name:    "hi",
+									Status:  bbpb.Status_INFRA_FAILURE,
+									EndTime: now,
+									SummaryMarkdown: ("bad log url \"!!badnews!!\": " +
+										"segment (at 0) must begin with alphanumeric character"),
+									Logs: []*bbpb.Log{{
+										Name: "log",
+										Url:  "!!badnews!!",
+									}},
+								},
+							},
+							Status:     bbpb.Status_INFRA_FAILURE,
+							UpdateTime: now,
+							EndTime:    now,
+						},
+					})
+				})
+
+				Convey(`build log`, func() {
+					bs.handleNewData(mkDgram(&bbpb.Build{
+						Output: &bbpb.Build_Output{
+							Logs: []*bbpb.Log{{
+								Name: "log",
+								Url:  "!!badnews!!",
+							}},
+						},
+					}))
+					wait()
+					wait() // for final build
+					assertStateEqual(bs.GetFinal(), &buildState{
+						closed:  true,
+						final:   true,
+						invalid: true,
+						build: &bbpb.Build{
+							SummaryMarkdown: ("\n\nError in build protocol: " +
+								"build.output.logs[\"log\"]: bad log url \"!!badnews!!\": " +
+								"segment (at 0) must begin with alphanumeric character"),
+							Output: &bbpb.Build_Output{
+								Logs: []*bbpb.Log{{
+									Name: "log",
+									Url:  "!!badnews!!",
+								}},
+							},
+							Status:     bbpb.Status_INFRA_FAILURE,
+							UpdateTime: now,
+							EndTime:    now,
+						},
+					})
 				})
 			})
 		})
