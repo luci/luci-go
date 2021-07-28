@@ -136,12 +136,19 @@ func With(c context.Context, cfg Config, fn func(context.Context, *Env) error) e
 	// Track which VirtualEnv we use so we can exempt them from pruning.
 	usedEnvs := stringset.New(2)
 
+	// Initialized python runtime outside makeEnv to avoid the expense of
+	// finding interpreter twice.
+	e := &vpython.Environment{}
+	e.Spec = &vpython.Spec{}
+	if err := cfg.resolveRuntime(c, e); err != nil {
+		return errors.Annotate(err, "failed to resolve python runtime").Err()
+	}
+
 	// Start with an empty VirtualEnv. We will use this to probe the local
 	// system.
 	//
 	// If our configured VirtualEnv is, itself, an empty then we can
 	// skip this.
-	var e *vpython.Environment
 	if cfg.HasWheels() {
 		// Use an empty VirtualEnv to probe the runtime environment.
 		//

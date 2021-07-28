@@ -149,6 +149,26 @@ func (cfg *Config) HasWheels() bool {
 	return cfg.Spec != nil && len(cfg.Spec.Wheel) > 0
 }
 
+// resolveRuntime find the python interpreter in ine vpython environment, and
+// update the environment runtime.
+func (cfg *Config) resolveRuntime(c context.Context, e *vpython.Environment) error {
+	if cfg.si != nil && e.Runtime != nil {
+		return nil
+	}
+	if err := cfg.resolvePythonInterpreter(c, e.Spec); err != nil {
+		return errors.Annotate(err, "failed to resolve system Python interpreter").Err()
+	}
+
+	e.Runtime = &vpython.Runtime{
+		Version: e.Spec.PythonVersion,
+	}
+	if err := fillRuntime(c, cfg.si, e.Runtime); err != nil {
+		return err
+	}
+	logging.Debugf(c, "Resolved system Python runtime: %#s", e.Runtime)
+	return nil
+}
+
 // makeEnv processes the config, validating and, where appropriate, populating
 // any components. Upon success, it returns a configured Env instance.
 //
@@ -192,17 +212,9 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 		return nil, errors.Annotate(err, "failed to resolve packages").Err()
 	}
 
-	if err := cfg.resolvePythonInterpreter(c, e.Spec); err != nil {
-		return nil, errors.Annotate(err, "failed to resolve system Python interpreter").Err()
-	}
-
-	e.Runtime = &vpython.Runtime{
-		Version: e.Spec.PythonVersion,
-	}
-	if err := fillRuntime(c, cfg.si, e.Runtime); err != nil {
+	if err := cfg.resolveRuntime(c, e); err != nil {
 		return nil, err
 	}
-	logging.Debugf(c, "Resolved system Python runtime: %#s", e.Runtime)
 
 	// Ensure that our base directory exists.
 	if err := filesystem.MakeDirs(cfg.BaseDir); err != nil {
