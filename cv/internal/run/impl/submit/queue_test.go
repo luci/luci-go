@@ -47,44 +47,38 @@ func TestQueue(t *testing.T) {
 		run1 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("deaddead"))
 		run2 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("beefbeef"))
 		run3 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("cafecafe"))
-		submitOpts := &cfgpb.SubmitOptions{
-			MaxBurst:   2,
-			BurstDelay: durationpb.New(1 * time.Minute),
-		}
 		mustLoadQueue := func() *queue {
 			q, err := loadQueue(ctx, lProject)
 			So(err, ShouldBeNil)
 			return q
 		}
+		mustTryAcquire := func(ctx context.Context, runID common.RunID, opts *cfgpb.SubmitOptions) bool {
+			var waitlisted bool
+			var innerErr error
+			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				waitlisted, innerErr = TryAcquire(ctx, notifier.notify, runID, opts)
+				return innerErr
+			}, nil)
+			So(innerErr, ShouldBeNil)
+			So(err, ShouldBeNil)
+			return waitlisted
+		}
 
 		Convey("TryAcquire", func() {
-			mustTryAcquire := func(ctx context.Context, runID common.RunID, opts *cfgpb.SubmitOptions) bool {
-				var waitlisted bool
-				var innerErr error
-				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, innerErr = TryAcquire(ctx, notifier.notify, runID, opts)
-					return innerErr
-				}, nil)
-				So(innerErr, ShouldBeNil)
-				So(err, ShouldBeNil)
-				return waitlisted
-			}
 			Convey("When queue is empty", func() {
-				waitlisted := mustTryAcquire(ctx, run1, submitOpts)
+				waitlisted := mustTryAcquire(ctx, run1, nil)
 				So(waitlisted, ShouldBeFalse)
 				So(mustLoadQueue(), shouldResembleQueue, &queue{
 					ID:      lProject,
 					Current: run1,
-					Opts:    submitOpts,
 				})
 
 				Convey("And acquire same Run again", func() {
-					waitlisted := mustTryAcquire(ctx, run1, submitOpts)
+					waitlisted := mustTryAcquire(ctx, run1, nil)
 					So(waitlisted, ShouldBeFalse)
 					So(mustLoadQueue(), shouldResembleQueue, &queue{
 						ID:      lProject,
 						Current: run1,
-						Opts:    submitOpts,
 					})
 				})
 			})
@@ -93,34 +87,31 @@ func TestQueue(t *testing.T) {
 				So(datastore.Put(ctx, &queue{
 					ID:      lProject,
 					Current: run1,
-					Opts:    submitOpts,
+					Opts:    nil,
 				}), ShouldBeNil)
-				waitlisted := mustTryAcquire(ctx, run2, submitOpts)
+				waitlisted := mustTryAcquire(ctx, run2, nil)
 				So(waitlisted, ShouldBeTrue)
 				So(mustLoadQueue(), shouldResembleQueue, &queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2},
-					Opts:     submitOpts,
 				})
-				waitlisted = mustTryAcquire(ctx, run3, submitOpts)
+				waitlisted = mustTryAcquire(ctx, run3, nil)
 				So(waitlisted, ShouldBeTrue)
 				So(mustLoadQueue(), shouldResembleQueue, &queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
-					Opts:     submitOpts,
 				})
 
 				Convey("And acquire same Run in waitlist again", func() {
 					for _, r := range []common.RunID{run2, run3} {
-						waitlisted := mustTryAcquire(ctx, r, submitOpts)
+						waitlisted := mustTryAcquire(ctx, r, nil)
 						So(waitlisted, ShouldBeTrue)
 						So(mustLoadQueue(), shouldResembleQueue, &queue{
 							ID:       lProject,
 							Current:  run1,
 							Waitlist: common.RunIDs{run2, run3},
-							Opts:     submitOpts,
 						})
 					}
 				})
@@ -130,15 +121,14 @@ func TestQueue(t *testing.T) {
 				So(datastore.Put(ctx, &queue{
 					ID:       lProject,
 					Waitlist: common.RunIDs{run2, run3},
-					Opts:     submitOpts,
+					Opts:     nil,
 				}), ShouldBeNil)
-				waitlisted := mustTryAcquire(ctx, run2, submitOpts)
+				waitlisted := mustTryAcquire(ctx, run2, nil)
 				So(waitlisted, ShouldBeFalse)
 				So(mustLoadQueue(), shouldResembleQueue, &queue{
 					ID:       lProject,
 					Current:  run2,
 					Waitlist: common.RunIDs{run3},
-					Opts:     submitOpts,
 				})
 			})
 		})
@@ -157,16 +147,14 @@ func TestQueue(t *testing.T) {
 				ID:       lProject,
 				Current:  run1,
 				Waitlist: common.RunIDs{run2, run3},
-				Opts:     submitOpts,
 			}), ShouldBeNil)
 			Convey("Current slot", func() {
 				mustRelease(ctx, run1)
 				So(mustLoadQueue(), shouldResembleQueue, &queue{
 					ID:       lProject,
 					Waitlist: common.RunIDs{run2, run3},
-					Opts:     submitOpts,
 				})
-				So(notifier.notifyETAs(ctx, run2), ShouldResemble, []time.Time{{}})
+				So(notifier.notifyETAs(ctx, run2), ShouldResemble, []time.Time{ct.Clock.Now()})
 				for _, r := range []common.RunID{run1, run3} {
 					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
 				}
@@ -178,7 +166,6 @@ func TestQueue(t *testing.T) {
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run3},
-					Opts:     submitOpts,
 				})
 				for _, r := range []common.RunID{run1, run2, run3} {
 					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
@@ -192,11 +179,112 @@ func TestQueue(t *testing.T) {
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
-					Opts:     submitOpts,
 				})
 				for _, r := range []common.RunID{run1, run2, run3} {
 					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
 				}
+			})
+		})
+
+		submitOpts := &cfgpb.SubmitOptions{
+			MaxBurst:   2,
+			BurstDelay: durationpb.New(1 * time.Minute),
+		}
+		now := datastore.RoundTime(ct.Clock.Now()).UTC()
+		Convey("With SubmitOpts", func() {
+			Convey("ReleaseOnSuccess", func() {
+				mustReleaseOnSuccess := func(ctx context.Context, runID common.RunID, submittedAt time.Time) {
+					var innerErr error
+					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						innerErr = ReleaseOnSuccess(ctx, notifier.notify, runID, submittedAt)
+						return innerErr
+					}, nil)
+					So(innerErr, ShouldBeNil)
+					So(err, ShouldBeNil)
+				}
+				q := &queue{
+					ID:       lProject,
+					Current:  run1,
+					Waitlist: common.RunIDs{run2},
+					Opts:     submitOpts,
+				}
+				So(datastore.Put(ctx, q), ShouldBeNil)
+
+				Convey("Records submitted timestamp", func() {
+					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
+					So(mustLoadQueue().History, ShouldResemble, []time.Time{now.Add(-1 * time.Second)})
+				})
+
+				Convey("Cleanup old history", func() {
+					q.History = []time.Time{
+						now.Add(-1 * time.Hour),   // removed
+						now.Add(-1 * time.Minute), // kept
+					}
+					So(datastore.Put(ctx, q), ShouldBeNil)
+					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
+					So(mustLoadQueue().History, ShouldResemble, []time.Time{
+						now.Add(-1 * time.Minute),
+						now.Add(-1 * time.Second),
+					})
+				})
+
+				Convey("Ensure order", func() {
+					q.History = []time.Time{now.Add(-100 * time.Millisecond)}
+					So(datastore.Put(ctx, q), ShouldBeNil)
+					mustReleaseOnSuccess(ctx, run1, now.Add(-200*time.Millisecond))
+					So(mustLoadQueue().History, ShouldResemble, []time.Time{
+						now.Add(-200 * time.Millisecond),
+						now.Add(-100 * time.Millisecond),
+					})
+				})
+
+				Convey("Notify the next Run immediately if below max burst", func() {
+					q.History = []time.Time{now.Add(-2 * time.Minute)}
+					So(datastore.Put(ctx, q), ShouldBeNil)
+					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
+					So(notifier.notifyETAs(ctx, run2), ShouldResemble, []time.Time{ct.Clock.Now()})
+				})
+
+				Convey("Notify the next Run with later ETA if quota has been exhausted", func() {
+					q.History = []time.Time{
+						now.Add(-45 * time.Second),
+						now.Add(-30 * time.Second),
+						// next submit should happen on (now - 30s) + 1min = now + 30s
+					}
+					So(datastore.Put(ctx, q), ShouldBeNil)
+					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
+					So(notifier.notifyETAs(ctx, run2), ShouldResemble, []time.Time{now.Add(30 * time.Second)})
+				})
+			})
+
+			Convey("TryAcquire", func() {
+				q := &queue{
+					ID:   lProject,
+					Opts: submitOpts,
+				}
+				So(datastore.Put(ctx, q), ShouldBeNil)
+
+				Convey("Succeeds if below max burst", func() {
+					q.History = []time.Time{
+						now.Add(-2 * time.Minute),
+						now.Add(-30 * time.Second),
+					}
+					So(datastore.Put(ctx, q), ShouldBeNil)
+					So(mustTryAcquire(ctx, run1, submitOpts), ShouldBeFalse)
+					So(notifier.notifyETAs(ctx, run1), ShouldBeNil)
+				})
+
+				Convey("Waitlist the Run and notify it with later ETA if quota has been exhausted", func() {
+					q.History = []time.Time{
+						now.Add(-2 * time.Minute),
+						now.Add(-45 * time.Second),
+						now.Add(-30 * time.Second),
+						// next submit should happen on (now - 45s) + 1min = now + 15s
+					}
+					So(datastore.Put(ctx, q), ShouldBeNil)
+					So(mustTryAcquire(ctx, run1, submitOpts), ShouldBeTrue)
+					So(notifier.notifyETAs(ctx, run1), ShouldResemble, []time.Time{now.Add(15 * time.Second)})
+				})
 			})
 		})
 	})

@@ -632,9 +632,16 @@ func (s submitter) endSubmission(ctx context.Context, sc *eventpb.SubmissionComp
 		return ErrTransientSubmissionFailure
 	}
 	var innerErr error
+	now := clock.Now(ctx)
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		if innerErr = submit.Release(ctx, s.rm.NotifyReadyForSubmission, s.runID); innerErr != nil {
-			return innerErr
+		if sc.Result == eventpb.SubmissionResult_SUCCEEDED {
+			if innerErr = submit.ReleaseOnSuccess(ctx, s.rm.NotifyReadyForSubmission, s.runID, now); innerErr != nil {
+				return innerErr
+			}
+		} else {
+			if innerErr = submit.Release(ctx, s.rm.NotifyReadyForSubmission, s.runID); innerErr != nil {
+				return innerErr
+			}
 		}
 		if innerErr = s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, false); innerErr != nil {
 			return innerErr

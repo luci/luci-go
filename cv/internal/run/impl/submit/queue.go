@@ -16,11 +16,14 @@ package submit
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -42,17 +45,28 @@ type queue struct {
 	Waitlist common.RunIDs `gae:",noindex"`
 	// Opts controls the rate of submission. Nil means no rate limiting.
 	Opts *cfgpb.SubmitOptions
-	// History records the timestamps of all submissions that happened within
-	// `Opts.BurstDelay` if supplied.
+	// History records the timestamps of all successful submissions that happened
+	// within `Opts.BurstDelay` if supplied.
+	//
+	// Sorted in ascending order.
 	History []time.Time `gae:",noindex"`
 }
 
 // nextSubmissionETA computes the eta of when next submission can happen based
-// on SubmitOptions and submission history. A zero time means the Run can be
-// submitted immediately.
-func (q *queue) nextSubmissionETA() time.Time {
-	// TODO: implement
-	return time.Time{}
+// on SubmitOptions and submission history.
+//
+// `now` will be returned verbatim if submission can happen immediately.
+func (q *queue) nextSubmissionETA(now time.Time) time.Time {
+	switch maxBurst, burstDelay := int(q.Opts.GetMaxBurst()), q.Opts.GetBurstDelay().AsDuration(); {
+	case maxBurst <= 0 || burstDelay <= 0:
+		return now
+	case len(q.History) < maxBurst:
+		return now
+	case q.History[len(q.History)-maxBurst].After(now.Add(-1 * burstDelay)):
+		return q.History[len(q.History)-maxBurst].Add(burstDelay)
+	default:
+		return now
+	}
 }
 
 // DeleteQueue deletes the submit queue of the provided LUCI Project.
@@ -136,15 +150,16 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 		// Requested Run is the first in the waitlist and the current slot is empty.
 		// If the next submission can happen immediately, remove this Run from the
 		// waitlist and promote it to Current. Otherwise, keep it in the waitlist.
-		if eta := q.nextSubmissionETA(); eta.IsZero() {
-			q.Current, q.Waitlist = q.Waitlist[0], q.Waitlist[1:]
-			shouldSave = true
-			waitlisted = false
-		} else {
+		now := clock.Now(ctx)
+		if eta := q.nextSubmissionETA(now); eta.After(now) {
 			if err := notifyFn(ctx, runID, eta); err != nil {
 				return false, err
 			}
 			waitlisted = true
+		} else {
+			q.Current, q.Waitlist = q.Waitlist[0], q.Waitlist[1:]
+			shouldSave = true
+			waitlisted = false
 		}
 	default:
 		q.Waitlist = append(q.Waitlist, runID)
@@ -172,10 +187,28 @@ func Release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("Release must be called in a datastore transaction")
 	}
-	return release(ctx, notifyFn, runID)
+	return release(ctx, notifyFn, runID, time.Time{})
 }
 
-func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
+// ReleaseOnSuccess, in addition to releasing the slot like `Release`, also
+// records the timestamp of a successful submission.
+//
+// Note that the submitted time will only be recorded if the provided Run takes
+// the current slot. It is used to support rate limiting based on the
+// `SubmitOptions` defined in the ProjectConfig.
+//
+// MUST be called in a datastore transaction.
+func ReleaseOnSuccess(ctx context.Context, notifyFn NotifyFn, runID common.RunID, submittedAt time.Time) error {
+	switch {
+	case datastore.CurrentTransaction(ctx) == nil:
+		panic("Release must be called in a datastore transaction")
+	case submittedAt.IsZero():
+		panic("zero submittedAt timestamp")
+	}
+	return release(ctx, notifyFn, runID, submittedAt)
+}
+
+func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID, submittedAt time.Time) error {
 	q, err := loadQueue(ctx, runID.LUCIProject())
 	if err != nil {
 		return err
@@ -184,9 +217,26 @@ func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
 	switch waitlistIdx := q.Waitlist.Index(runID); {
 	case waitlistIdx != -1:
 		q.Waitlist = append(q.Waitlist[:waitlistIdx], q.Waitlist[waitlistIdx+1:]...)
+		if !submittedAt.IsZero() {
+			logging.Warningf(ctx, "%q has submitted at %s, but it's no longer current (%q)", runID, submittedAt, q.Current)
+		}
 	case q.Current == runID:
 		q.Current = ""
+		if !submittedAt.IsZero() && q.Opts.GetBurstDelay().AsDuration() > 0 {
+			q.History = append(q.History, submittedAt.UTC())
+			// Make sure the newly added ts is at the right position s.t. history is
+			// sorted.
+			sort.Slice(q.History, func(i, j int) bool { return q.History[i].Before(q.History[j]) })
+			// Cleanup early timestamps that are no longer relevant.
+			cutoff := clock.Now(ctx).Add(-1 * q.Opts.GetBurstDelay().AsDuration())
+			for len(q.History) > 0 && q.History[0].Before(cutoff) {
+				q.History = q.History[1:]
+			}
+		}
 	default:
+		if !submittedAt.IsZero() {
+			logging.Warningf(ctx, "%q has submitted at %s, but it's no longer current (%q)", runID, submittedAt, q.Current)
+		}
 		return nil
 	}
 
@@ -195,7 +245,7 @@ func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
 	}
 
 	if q.Current == "" && len(q.Waitlist) > 0 {
-		if err := notifyFn(ctx, q.Waitlist[0], q.nextSubmissionETA()); err != nil {
+		if err := notifyFn(ctx, q.Waitlist[0], q.nextSubmissionETA(clock.Now(ctx))); err != nil {
 			return err
 		}
 	}
