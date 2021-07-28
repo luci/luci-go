@@ -48,6 +48,7 @@ export class TextArtifactElement extends MobxLitElement {
   @computed
   private get fetchUrl(): string {
     const artifact = this.artifacts.get((this.isInvLevelArtifact ? 'inv-level/' : '') + this.artifactID);
+    // TODO(crbug/1206109): use permanent raw artifact URL.
     return artifact ? artifact.fetchUrl : '';
   }
 

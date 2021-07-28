@@ -27,6 +27,7 @@ import { reportRenderError } from '../../libs/error_handler';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { urlSetSearchQueryParam } from '../../libs/utils';
+import { getRawArtifactUrl } from '../../routes';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 import { consumeArtifactIdent } from './artifact_page_layout';
@@ -61,8 +62,8 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
     if (!this.appState.resultDb || !this.artifact) {
       return fromPromise(Promise.race([]));
     }
-    // TODO(weiweilin): handle refresh.
     return fromPromise(
+      // TODO(crbug/1206109): use permanent raw artifact URL.
       fetch(urlSetSearchQueryParam(this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => res.text())
     );
   }
@@ -71,13 +72,13 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
   }
 
   protected render = reportRenderError(this, () => {
-    if (!this.content) {
+    if (!this.artifact || !this.content) {
       return html`<div id="content" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
     }
 
     return html`
       <div id="details">
-        ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
+        <a href=${getRawArtifactUrl(this.artifact.name)}>View Raw Content</a>
       </div>
       <div id="content">
         <link

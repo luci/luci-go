@@ -255,3 +255,10 @@ router.setRoutes({
     },
   ],
 });
+
+/**
+ * Generates the URL to a raw artifact page.
+ */
+export function getRawArtifactUrl(artifactName: string) {
+  return router.urlForName('artifact') + '/raw/' + artifactName;
+}

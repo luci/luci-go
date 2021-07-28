@@ -25,7 +25,7 @@ import { reportRenderError } from '../../../libs/error_handler';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { unwrapObservable } from '../../../libs/unwrap_observable';
 import { urlSetSearchQueryParam } from '../../../libs/utils';
-import { router } from '../../../routes';
+import { getRawArtifactUrl, router } from '../../../routes';
 import { Artifact } from '../../../services/resultdb';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -38,8 +38,8 @@ export class TextDiffArtifactElement extends MobxLitElement {
 
   @computed
   private get content$(): IPromiseBasedObservable<string> {
-    // TODO(weiweilin): handle refresh.
     return fromPromise(
+      // TODO(crbug/1206109): use permanent raw artifact URL.
       fetch(urlSetSearchQueryParam(this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => res.text())
     );
   }
@@ -62,7 +62,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
           <a href="${router.urlForName('artifact')}/text-diff/${this.artifact.name}" target="_blank">
             ${this.artifact.artifactId}
           </a>
-          (<a href=${this.artifact.fetchUrl} target="_blank">view raw</a>)
+          (<a href=${getRawArtifactUrl(this.artifact.name)} target="_blank">view raw</a>)
         </span>
         <div id="content" slot="content">
           ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false }))}

@@ -16,6 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
+import { getRawArtifactUrl } from '../routes';
 import { Artifact } from '../services/resultdb';
 import commonStyle from '../styles/common_style.css';
 
@@ -94,16 +95,16 @@ export class ImageDiffViewerElement extends MobxLitElement {
       </div>
       <div id="content" class=${VIEW_OPTION_CLASS_MAP[this.viewOption]}>
         <div id="expected-image" class="image">
-          <div>Expected (<a href=${this.expected.fetchUrl} target="_blank">view raw</a>)</div>
-          <img src=${this.expected.fetchUrl} />
+          <div>Expected (<a href=${getRawArtifactUrl(this.expected.name)} target="_blank">view raw</a>)</div>
+          <img src=${getRawArtifactUrl(this.expected.name)} />
         </div>
         <div id="actual-image" class="image">
-          <div>Actual (<a href=${this.actual.fetchUrl} target="_blank">view raw</a>)</div>
-          <img src=${this.actual.fetchUrl} />
+          <div>Actual (<a href=${getRawArtifactUrl(this.actual.name)} target="_blank">view raw</a>)</div>
+          <img src=${getRawArtifactUrl(this.actual.name)} />
         </div>
         <div id="diff-image" class="image">
-          <div>Diff (<a href=${this.diff.fetchUrl} target="_blank">view raw</a>)</div>
-          <img src=${this.diff.fetchUrl} />
+          <div>Diff (<a href=${getRawArtifactUrl(this.diff.name)} target="_blank">view raw</a>)</div>
+          <img src=${getRawArtifactUrl(this.diff.name)} />
         </div>
       </div>
     `;

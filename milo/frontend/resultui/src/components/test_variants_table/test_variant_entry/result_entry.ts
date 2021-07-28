@@ -32,7 +32,7 @@ import { reportRenderError } from '../../../libs/error_handler';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { displayCompactDuration, parseProtoDuration } from '../../../libs/time_utils';
 import { unwrapObservable } from '../../../libs/unwrap_observable';
-import { router } from '../../../routes';
+import { getRawArtifactUrl, router } from '../../../routes';
 import { Artifact, ListArtifactsResponse, TestResult } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
@@ -202,9 +202,8 @@ export class ResultEntryElement extends MobxLitElement {
       <ul>
         ${this.invArtifacts.map(
           (artifact) => html`
-            <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
             <li>
-              <a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a>
+              <a href=${getRawArtifactUrl(artifact.name)} target="_blank">${artifact.artifactId}</a>
             </li>
           `
         )}
@@ -225,8 +224,9 @@ export class ResultEntryElement extends MobxLitElement {
           <ul>
             ${this.resultArtifacts.map(
               (artifact) => html`
-                <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-                <li><a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a></li>
+                <li>
+                  <a href=${getRawArtifactUrl(artifact.name)} target="_blank">${artifact.artifactId}</a>
+                </li>
               `
             )}
           </ul>
