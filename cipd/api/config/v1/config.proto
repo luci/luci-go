@@ -29,11 +29,36 @@ message ClientMonitoringConfig {
   string label = 2;
 }
 
-// Defines a list of clients whose requests should be monitored.
+
+// A schema for the monitoring.cfg config file.
+//
+// It defines a list of clients whose requests should be monitored.
 message ClientMonitoringWhitelist {
   // A list of configurations for clients to monitor. When a request is
   // received, the list is traversed in order and the first match is the
   // monitoring config to use. If none of the configs match the request is
   // unmonitored.
   repeated ClientMonitoringConfig client_monitoring_config = 1;
+}
+
+
+// A schema for the bootstrap.cfg config file.
+//
+// It defines a list of packages that contain executables that should be
+// accessible via direct download URLs.
+message BootstrapConfigFile {
+  // A list of all known bootstrap packages, will be scanned in order.
+  repeated BootstrapConfig bootstrap_config = 1;
+}
+
+
+// BootstrapConfig defines a set of bootstrap packages under a single prefix.
+//
+// Each package should contain exactly one file (presumable an executable). It
+// will be extracted and put into the storage, to allow the CIPD backend to
+// generate direct download URLs to it. This is useful to allow clients to
+// directly download such binaries.
+message BootstrapConfig {
+  // The package prefix of matching packages e.g. "infra/tools/my-tool".
+  string prefix = 1;
 }
