@@ -154,7 +154,7 @@ func With(c context.Context, cfg Config, fn func(context.Context, *Env) error) e
 		//
 		// Disable pruning for this step since we'll be doing that later with the
 		// full environment initialization.
-		emptyEnv, err := cfg.WithoutWheels().makeEnv(c, nil)
+		emptyEnv, err := cfg.WithoutWheels().makeEnv(c, e)
 		if err != nil {
 			return errors.Annotate(err, "failed to initialize empty probe environment").Err()
 		}
