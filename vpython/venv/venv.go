@@ -139,7 +139,7 @@ func With(c context.Context, cfg Config, fn func(context.Context, *Env) error) e
 	// Initialized python runtime outside makeEnv to avoid the expense of
 	// finding interpreter twice.
 	e := &vpython.Environment{}
-	e.Spec = &vpython.Spec{}
+	e.Spec = cfg.Spec.Clone()
 	if err := cfg.resolveRuntime(c, e); err != nil {
 		return errors.Annotate(err, "failed to resolve python runtime").Err()
 	}
