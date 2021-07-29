@@ -15,6 +15,7 @@
 package cache
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"encoding/json"
@@ -50,6 +51,9 @@ type Cache struct {
 	// Lock protected.
 	mu  sync.Mutex // This protects modification of cached entries under |path| too.
 	lru lruDict    // Implements LRU based eviction.
+
+	// TODO(crbug.com/1231726): remove after debug.
+	log bytes.Buffer
 
 	statsMu sync.Mutex // Protects the stats below
 	// TODO(tikuta): Add stats about: # removed.
@@ -147,6 +151,13 @@ func New(policies Policies, path string, h crypto.Hash) (*Cache, error) {
 
 		d.lru = makeLRUDict(h)
 	}
+
+	if json, err := d.lru.MarshalJSON(); err != nil {
+		return nil, err
+	} else {
+		d.log.WriteString(fmt.Sprintf("initial json: %s\n", string(json)))
+	}
+
 	return d, err
 }
 
@@ -421,7 +432,7 @@ func (d *Cache) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os
 			// In Windows, os.Link may fail with access denied error even if |src| isn't there.
 			// And this is to normalize returned error in such case.
 			// https://crbug.com/1098265
-			err = errors.Annotate(serr, "%s doesn't exist and os.Link failed: %v", src, err).Err()
+			err = errors.Annotate(serr, "%s doesn't exist and os.Link failed: %v\nlogs:\n%s", src, err, d.log.String()).Err()
 		}
 		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid())
 		return errors.Annotate(err, "failed to call os.Link(%s, %s)\n%s", src, dest, debugInfo).Err()
