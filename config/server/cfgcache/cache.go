@@ -31,6 +31,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -149,6 +150,9 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 		}
 	}
 
+	// Drop out of any namespaces or transactions.
+	ctx = cleanContext(ctx)
+
 	// Quick check if we have it in the datastore already. Useful to skip some
 	// transactions if Update is called concurrently by many processes (perhaps
 	// through attemptEagerUpdate).
@@ -215,7 +219,7 @@ func (e *Entry) Set(ctx context.Context, cfg proto.Message, meta *config.Meta) e
 		m = *meta
 	}
 
-	return datastore.Put(ctx, &cachedConfig{
+	return datastore.Put(cleanContext(ctx), &cachedConfig{
 		ID:     e.entityID(),
 		Config: blob,
 		Meta:   m,
@@ -284,6 +288,8 @@ func (e *Entry) Get(ctx context.Context, meta *config.Meta) (proto.Message, erro
 //
 // If `meta` is non-nil, it will receive the config metadata.
 func (e *Entry) Fetch(ctx context.Context, meta *config.Meta) (proto.Message, error) {
+	ctx = cleanContext(ctx)
+
 	cached := cachedConfig{ID: e.entityID()}
 
 	err := datastore.Get(ctx, &cached)
@@ -308,6 +314,12 @@ func (e *Entry) Fetch(ctx context.Context, meta *config.Meta) (proto.Message, er
 ////////////////////////////////////////////////////////////////////////////////
 
 const defaultServiceConfigSet = "services/${appid}"
+
+// cleanContext returns a context with datastore using the default namespace
+// and not using transactions.
+func cleanContext(ctx context.Context) context.Context {
+	return datastore.WithoutTransaction(info.MustNamespace(ctx, ""))
+}
 
 // cachedConfig holds binary-serialized config and its metadata.
 type cachedConfig struct {
