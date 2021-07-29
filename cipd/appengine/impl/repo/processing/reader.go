@@ -15,9 +15,10 @@
 package processing
 
 import (
-	"archive/zip"
 	"io"
 	"math"
+
+	"github.com/klauspost/compress/zip"
 
 	"go.chromium.org/luci/common/errors"
 )
