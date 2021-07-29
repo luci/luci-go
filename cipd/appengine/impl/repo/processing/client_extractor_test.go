@@ -37,13 +37,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func packageReader(data map[string]string) *PackageReader {
-	buf := bytes.NewReader(testutil.MakeZip(data))
-	size := int64(buf.Len())
-	r, _ := NewPackageReader(buf, size)
-	return r
-}
-
 func phonyHexDigest(algo api.HashAlgo, letter string) string {
 	return strings.Repeat(letter, map[api.HashAlgo]int{
 		api.HashAlgo_SHA1:   40,
@@ -312,18 +305,4 @@ func TestGetResult(t *testing.T) {
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 	})
-}
-
-type trackingWriter struct {
-	w     io.Writer
-	calls []int // sizes of each pushed chunk
-	err   error // err to return from Write
-}
-
-func (w *trackingWriter) Write(p []byte) (int, error) {
-	if w.err != nil {
-		return 0, w.err
-	}
-	w.calls = append(w.calls, len(p))
-	return w.w.Write(p)
 }

@@ -17,20 +17,16 @@ package processing
 import (
 	"context"
 	"fmt"
-	"hash"
 	"io"
-	"net/http"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
-	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -201,124 +197,40 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 	// We also always calculate all other hashes we know about at the same time,
 	// for old bootstrap scripts that may not understand the most recent hash
 	// algo.
-	hashes := make(map[api.HashAlgo]hash.Hash, len(api.HashAlgo_name))
+	hashes := make([]api.HashAlgo, 0, len(api.HashAlgo_name))
 	for algo := range api.HashAlgo_name {
 		if a := api.HashAlgo(algo); a != api.HashAlgo_HASH_ALGO_UNSPECIFIED {
-			hashes[a] = common.MustNewHash(a)
+			hashes = append(hashes, a)
 		}
 	}
-	if hashes[instRef.HashAlgo] == nil {
-		panic("impossible, inst.InstanceID has already been validated")
-	}
 
-	// Start extracting the file.
-	reader, size, err := pkg.Open(GetClientBinaryName(inst.Package.StringID()))
+	// Execute the extraction.
+	result, err := (&Extractor{
+		Reader:            pkg,
+		CAS:               e.CAS,
+		PrimaryHash:       instRef.HashAlgo,
+		AlternativeHashes: hashes,
+		Uploader:          e.uploader,
+		BufferSize:        e.bufferSize,
+	}).Run(ctx, GetClientBinaryName(inst.Package.StringID()))
 	if err != nil {
-		err = errors.Annotate(err, "failed to open the file for reading").Err()
-		return
-	}
-	defer reader.Close() // we don't care about errors here
-
-	// Start writing the result to CAS.
-	op, err := e.CAS.BeginUpload(ctx, &api.BeginUploadRequest{
-		HashAlgo: instRef.HashAlgo,
-	})
-	if err != nil {
-		err = errors.Annotate(err, "failed to open a CAS upload").Tag(transient.Tag).Err()
 		return
 	}
 
-	// Grab an io.Writer that uploads to Google Storage.
-	factory := e.uploader
-	if factory == nil {
-		factory = gsUploader
-	}
-	uploader := factory(ctx, size, op.UploadUrl)
-
-	// Copy in 2 Mb chunks by default.
-	bufferSize := e.bufferSize
-	if bufferSize == 0 {
-		bufferSize = 2 * 1024 * 1024
-	}
-
-	// Copy, calculating digests on the fly.
-	//
-	// We use fullReader to make sure we write full 2 Mb chunks to GS. Otherwise
-	// 'reader' uses 32 Kb buffers and they are flushed as 32 Kb buffers to Google
-	// Storage too (which doesn't work). Remember, in Go an io.Reader can choose
-	// to read less than asked and zip readers use 32 Kb buffers. CopyBuffer just
-	// sends them to the writer right away.
-	//
-	// Note that reads from Google Storage are already properly buffered by
-	// PackageReader implementation, so it's OK if the zip reader reads small
-	// chunks from the underlying file reader. We basically read 512 Kb buffer
-	// from GS, then unzip it in memory via small 32 Kb chunks into 2 Mb output
-	// buffer, and then flush it to GS.
-	writeTo := make([]io.Writer, 0, 1+len(hashes))
-	writeTo = append(writeTo, uploader)
-	for _, hash := range hashes {
-		writeTo = append(writeTo, hash)
-	}
-	copied, err := io.CopyBuffer(
-		io.MultiWriter(writeTo...),
-		fullReader{reader},
-		make([]byte, bufferSize))
-	if err == nil && copied != size {
-		err = fmt.Errorf("unexpected file size - expecting %d bytes, read %d bytes", size, copied)
-	}
-
-	// If asked to rewind to a faraway offset (should be rare), just restart the
-	// whole process from scratch by returning a transient error.
-	if _, ok := err.(*gs.RestartUploadError); ok {
-		err = errors.Annotate(err, "asked to restart the upload from faraway offset").Tag(transient.Tag).Err()
-	}
-
-	if err != nil {
-		// Best effort cleanup of the upload session. It's not a big deal if this
-		// fails and the upload stays as garbage.
-		_, cancelErr := e.CAS.CancelUpload(ctx, &api.CancelUploadRequest{
-			UploadOperationId: op.OperationId,
-		})
-		if cancelErr != nil {
-			logging.WithError(cancelErr).Errorf(ctx, "Failed to cancel the upload")
-		}
-		return
-	}
-
-	// Skip the hash calculation in CAS by enforcing the hash, we've just
-	// calculated it.
-	extractedRef := &api.ObjectRef{
-		HashAlgo:  instRef.HashAlgo,
-		HexDigest: common.HexDigest(hashes[instRef.HashAlgo]),
-	}
-	op, err = e.CAS.FinishUpload(ctx, &api.FinishUploadRequest{
-		UploadOperationId: op.OperationId,
-		ForceHash:         extractedRef,
-	})
-
-	// CAS should publish the object right away.
-	switch {
-	case err != nil:
-		err = errors.Annotate(err, "failed to finalize the CAS upload").Tag(transient.Tag).Err()
-		return
-	case op.Status != api.UploadStatus_PUBLISHED:
-		err = errors.Reason("unexpected upload status from CAS %s: %s", op.Status, op.ErrorMessage).Err()
-		return
-	}
-
-	hexDigests := make(map[string]string, len(hashes))
-	for algo, hash := range hashes {
+	// Store the results in the appropriate format.
+	hexDigests := make(map[string]string, len(result.Hashes))
+	for algo, hash := range result.Hashes {
 		hexDigests[algo.String()] = common.HexDigest(hash)
 	}
 
 	r := ClientExtractorResult{}
-	r.ClientBinary.Size = size
-	r.ClientBinary.HashAlgo = extractedRef.HashAlgo.String()
-	r.ClientBinary.HashDigest = extractedRef.HexDigest
+	r.ClientBinary.Size = result.Size
+	r.ClientBinary.HashAlgo = result.Ref.HashAlgo.String()
+	r.ClientBinary.HashDigest = result.Ref.HexDigest
 	r.ClientBinary.AllHashDigests = hexDigests
 
 	logging.Infof(ctx, "Uploaded CIPD client binary %s with %s %s (%d bytes)",
-		inst.Package.StringID(), extractedRef.HashAlgo, extractedRef.HexDigest, size)
+		inst.Package.StringID(), result.Ref.HashAlgo, result.Ref.HexDigest, result.Size)
 
 	res.Result = r
 	return
@@ -352,34 +264,4 @@ func GetClientExtractorResult(c context.Context, inst *api.Instance) (*ClientExt
 		return nil, errors.Annotate(err, "failed to parse the client extractor status").Err()
 	}
 	return out, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-func gsUploader(ctx context.Context, size int64, uploadURL string) io.Writer {
-	// Authentication is handled through the tokens in the upload session URL.
-	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		panic(errors.Annotate(err, "failed to get the RPC transport").Err())
-	}
-	return &gs.Uploader{
-		Context:   ctx,
-		Client:    &http.Client{Transport: tr},
-		UploadURL: uploadURL,
-		FileSize:  size,
-	}
-}
-
-// fullReader is io.Reader that fills the buffer completely using the data from
-// the underlying reader.
-type fullReader struct {
-	r io.ReadCloser
-}
-
-func (r fullReader) Read(buf []byte) (n int, err error) {
-	n, err = io.ReadFull(r.r, buf)
-	if err == io.ErrUnexpectedEOF {
-		err = nil // this is fine, we are just reading the last chunk
-	}
-	return
 }
