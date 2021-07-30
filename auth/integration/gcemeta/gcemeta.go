@@ -33,6 +33,7 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/errors"
@@ -52,6 +53,14 @@ type TokenGenerator interface {
 	GenerateIDToken(ctx context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error)
 }
 
+// serverMetadata represents GCE metadata returned by the fake GCE metadata server.
+type serverMetadata struct {
+	// zone is the VM's zone, such as "us-central1-b".
+	zone string
+	// name is the VM's instance ID string.
+	name string
+}
+
 // Server runs a local fake GCE metadata server.
 type Server struct {
 	// Generator is used to obtain OAuth2 and ID tokens.
@@ -66,6 +75,34 @@ type Server struct {
 	Port int
 
 	srv localsrv.Server
+	md  *serverMetadata
+}
+
+func (s *Server) setupMetadata(ctx context.Context) {
+	if s.md != nil {
+		// This path might be usd for the test.
+		// We do not configure metadata again if it has already been
+		// configured.
+		return
+	}
+	if !metadata.OnGCE() {
+		// We did not decide what to do for non GCE LUCI bots.
+		return
+	}
+	zone, err := metadata.Zone()
+	if err != nil {
+		logging.Warningf(ctx, "Failed to get zone: %v", err)
+		return
+	}
+	name, err := metadata.InstanceName()
+	if err != nil {
+		logging.Warningf(ctx, "Failed to get instance name: %v", err)
+		return
+	}
+	s.md = &serverMetadata{
+		zone: zone,
+		name: name,
+	}
 }
 
 // Start launches background goroutine with the serving loop.
@@ -75,6 +112,7 @@ type Server struct {
 //
 // Returns "host:port" address of the launched metadata server.
 func (s *Server) Start(ctx context.Context) (string, error) {
+	s.setupMetadata(ctx)
 	mux := http.NewServeMux()
 	s.installRoutes(mux)
 	addr, err := s.srv.Start(ctx, "gcemeta", s.Port, func(c context.Context, l net.Listener, wg *sync.WaitGroup) error {
@@ -122,13 +160,14 @@ func (s *Server) installRoutes(mux *http.ServeMux) {
 	})
 	// These are used by cloud.google.com/go libraries, e.g. profiler.
 	// crbug.com/1219914
-	mux.HandleFunc("/computeMetadata/v1/instance/zone", func(rw http.ResponseWriter, r *http.Request) {
-		replyText(rw, "projects/0/zones/luci-emulated-zone")
-	})
-	mux.HandleFunc("/computeMetadata/v1/instance/name", func(rw http.ResponseWriter, r *http.Request) {
-		// Use os.Hostname?
-		replyText(rw, "luci-emulated")
-	})
+	if s.md != nil {
+		mux.HandleFunc("/computeMetadata/v1/instance/zone", func(rw http.ResponseWriter, r *http.Request) {
+			replyText(rw, fmt.Sprintf("projects/0/zones/%s", s.md.zone))
+		})
+		mux.HandleFunc("/computeMetadata/v1/instance/name", func(rw http.ResponseWriter, r *http.Request) {
+			replyText(rw, s.md.name)
+		})
+	}
 
 	for _, acc := range []string{s.Email, "default"} {
 		// Used by oauth2client to fetch the list of scopes.

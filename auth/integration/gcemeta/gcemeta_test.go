@@ -54,6 +54,11 @@ func TestServer(t *testing.T) {
 		Email:            "fake@example.com",
 		Scopes:           []string{"scope1", "scope2"},
 		MinTokenLifetime: 2 * time.Minute,
+
+		md: &serverMetadata{
+			zone: "luci-emulated-zone",
+			name: "luci-emulated",
+		},
 	}
 
 	// Need to set GCE_METADATA_HOST once before all tests because 'metadata'
