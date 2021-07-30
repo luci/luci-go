@@ -125,7 +125,7 @@ func main() {
 		srv.PRPC.HackFixFieldMasksForJSON = true
 
 		// Percentage of prod ScheduleBuild requests to serve from Go.
-		pct := 10
+		pct := 25
 		// Traffic split for unbatched ScheduleBuild requests. makeOverride(prod % -> Go, dev % -> Go).
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(pct, 100))
 		// Traffic split for batched ScheduleBuild requests in prod (see rpc/batch.go).
