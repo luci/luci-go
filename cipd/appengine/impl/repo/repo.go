@@ -638,7 +638,10 @@ func (impl *repoImpl) onInstanceRegistration(c context.Context, inst *model.Inst
 	// Collect IDs of applicable processors.
 	var procs []string
 	for _, p := range impl.procs {
-		if p.Applicable(inst) {
+		switch yes, err := p.Applicable(c, inst); {
+		case err != nil:
+			return errors.Annotate(err, "failed to check applicability of processor %q", p.ID()).Tag(transient.Tag).Err()
+		case yes:
 			procs = append(procs, p.ID())
 		}
 	}

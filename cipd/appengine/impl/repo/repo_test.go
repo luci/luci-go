@@ -1173,8 +1173,8 @@ func (m *mockedProcessor) ID() string {
 	return m.ProcID
 }
 
-func (m *mockedProcessor) Applicable(inst *model.Instance) bool {
-	return inst.Package.StringID() == m.AppliesTo
+func (m *mockedProcessor) Applicable(ctx context.Context, inst *model.Instance) (bool, error) {
+	return inst.Package.StringID() == m.AppliesTo, nil
 }
 
 func (m *mockedProcessor) Run(_ context.Context, i *model.Instance, r *processing.PackageReader) (processing.Result, error) {

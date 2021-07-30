@@ -206,8 +206,14 @@ func TestClientExtractor(t *testing.T) {
 
 	Convey("Applicable works", t, func() {
 		ce := ClientExtractor{}
-		So(ce.Applicable(instance(ctx, "infra/tools/cipd/linux", api.HashAlgo_SHA256)), ShouldBeTrue)
-		So(ce.Applicable(instance(ctx, "infra/tools/stuff/linux", api.HashAlgo_SHA256)), ShouldBeFalse)
+
+		res, err := ce.Applicable(ctx, instance(ctx, "infra/tools/cipd/linux", api.HashAlgo_SHA256))
+		So(err, ShouldBeNil)
+		So(res, ShouldBeTrue)
+
+		res, err = ce.Applicable(ctx, instance(ctx, "infra/tools/stuff/linux", api.HashAlgo_SHA256))
+		So(err, ShouldBeNil)
+		So(res, ShouldBeFalse)
 	})
 }
 

@@ -28,7 +28,11 @@ type Processor interface {
 	ID() string
 
 	// Applicable returns true if this processor should be applied to an instance.
-	Applicable(inst *model.Instance) bool
+	//
+	// Called as a part of the instance registration datastore transaction.
+	// Returns an error if the decision can't be made. It will result in
+	// a transient instance registration error.
+	Applicable(ctx context.Context, inst *model.Instance) (bool, error)
 
 	// Run executes the processing on the package instance.
 	//

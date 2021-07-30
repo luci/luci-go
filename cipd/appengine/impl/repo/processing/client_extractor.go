@@ -171,8 +171,8 @@ func (e *ClientExtractor) ID() string {
 }
 
 // Applicable is part of Processor interface.
-func (e *ClientExtractor) Applicable(inst *model.Instance) bool {
-	return IsClientPackage(inst.Package.StringID())
+func (e *ClientExtractor) Applicable(ctx context.Context, inst *model.Instance) (bool, error) {
+	return IsClientPackage(inst.Package.StringID()), nil
 }
 
 // Run is part of Processor interface.
