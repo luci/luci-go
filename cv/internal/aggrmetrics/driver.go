@@ -39,7 +39,9 @@ const reportTTL = 2 * time.Minute
 // New creates a new Driver for metrics aggregation.
 func New(ctx context.Context, tqd *tq.Dispatcher) *Driver {
 	d := &Driver{
-		// TODO(tandrii): instantiate aggregators.
+		aggregators: []aggregator{
+			&runsAggregator{},
+		},
 	}
 	tsmon.RegisterCallbackIn(ctx, d.tsmonCallback)
 	return d
