@@ -229,7 +229,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
         top: 39px;
         border-bottom: 1px solid var(--divider-color);
         background-color: var(--block-background-color);
-        z-index: 1;
+        z-index: 2;
       }
 
       #no-invocation {

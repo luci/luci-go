@@ -175,7 +175,7 @@ export class TestResultsTabElement extends MiloBaseElement {
         top: 0px;
         background: white;
         border-bottom: 1px solid var(--divider-color);
-        z-index: 2;
+        z-index: 3;
       }
       milo-test-search-filter {
         max-width: 1000px;

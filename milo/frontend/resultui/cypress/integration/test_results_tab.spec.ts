@@ -28,6 +28,24 @@ describe('Test Results Tab', () => {
     cy.matchImageSnapshot('config-table-modal', { capture: 'viewport' });
   });
 
+  it('column header dropdown should not be overlapped by other elements', () => {
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/test-results');
+
+    // Clicks the Name column header.
+    // `cy.get('#prop-label').contains('Name').click();` causes the popup to be
+    // out of position for unknown reason.
+    cy.get('body').click(70, 170);
+
+    // Wait until the animation finishes.
+    cy.wait(1000);
+
+    cy.scrollTo('topLeft');
+    cy.matchImageSnapshot('column-header-dropdown', {
+      capture: 'viewport',
+      clip: { x: 60, y: 170, height: 150, width: 250 },
+    });
+  });
+
   it('should show a warning banner when the build or one of the steps infra failed', () => {
     cy.visit('p/chromium/builders/ci/win-rel-swarming/11864/test-results');
     cy.get('#test-results-tab-warning').contains('Test results displayed here are likely incomplete');
