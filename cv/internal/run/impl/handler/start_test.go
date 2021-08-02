@@ -69,6 +69,7 @@ func TestStart(t *testing.T) {
 		h, _, _, _ := makeTestImpl(&ct)
 
 		Convey("Starts when Run is PENDING", func() {
+			// TODO(tandrii): move this to cvtesting.Test setup.
 			ctx, _, _ = tsmon.WithFakes(ctx)
 			tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
 

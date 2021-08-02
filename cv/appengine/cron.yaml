@@ -5,3 +5,6 @@ cron:
 - description: Sweep transactionally created TQ tasks which would otherwise might be forgotten.
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
+- description: Aggregated metrics reporting.
+  url: /internal/cron/aggregate-metrics
+  schedule: every 1 minutes
