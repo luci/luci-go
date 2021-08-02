@@ -303,3 +303,11 @@ func (m *mockedRepoClient) DescribeClient(ctx context.Context, in *api.DescribeC
 	}
 	return out.(*api.DescribeClientResponse), nil
 }
+
+func (m *mockedRepoClient) DescribeBootstrapBundle(ctx context.Context, in *api.DescribeBootstrapBundleRequest, opts ...grpc.CallOption) (*api.DescribeBootstrapBundleResponse, error) {
+	out, err := m.call("DescribeBootstrapBundle", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.DescribeBootstrapBundleResponse), nil
+}

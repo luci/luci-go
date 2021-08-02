@@ -337,6 +337,28 @@ type RepositoryClient interface {
 	//   ABORTED if the instance has some failed processors associated with it,
 	//       such instance is effectively broken and should not be used.
 	DescribeClient(ctx context.Context, in *DescribeClientRequest, opts ...grpc.CallOption) (*DescribeClientResponse, error)
+	// Returns information about binaries extracted from bootstrap packages under
+	// some prefix.
+	//
+	// This is a niche functionality used by some LUCI systems.
+	//
+	// Unlike other RPC methods here, it operates with a bunch of packages at
+	// once. Errors that relate to a particular package instance (instead of the
+	// request as a whole) are returned as google.rpc.Status inside the
+	// corresponding BootstrapFile entry in DescribeBootstrapBundleResponse.
+	// Possible statuses communicated that way:
+	//   NOT_FOUND if the requested version of the package doesn't exist.
+	//   FAILED_PRECONDITION if the instance is still being processed or it is not
+	///      a bootstrap package at all.
+	//   ABORTED if the instance has failed processors associated with it,
+	//       such instance is effectively broken and should not be used.
+	//
+	// Returns:
+	//   OK if the request was accepted and (perhaps partially) processed.
+	//   NOT_FOUND if none of the requested instances exist.
+	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//   INVALID_ARGUMENT if the request is malformed.
+	DescribeBootstrapBundle(ctx context.Context, in *DescribeBootstrapBundleRequest, opts ...grpc.CallOption) (*DescribeBootstrapBundleResponse, error)
 }
 
 type repositoryClient struct {
@@ -548,6 +570,15 @@ func (c *repositoryClient) DescribeInstance(ctx context.Context, in *DescribeIns
 func (c *repositoryClient) DescribeClient(ctx context.Context, in *DescribeClientRequest, opts ...grpc.CallOption) (*DescribeClientResponse, error) {
 	out := new(DescribeClientResponse)
 	err := c.cc.Invoke(ctx, "/cipd.Repository/DescribeClient", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryClient) DescribeBootstrapBundle(ctx context.Context, in *DescribeBootstrapBundleRequest, opts ...grpc.CallOption) (*DescribeBootstrapBundleResponse, error) {
+	out := new(DescribeBootstrapBundleResponse)
+	err := c.cc.Invoke(ctx, "/cipd.Repository/DescribeBootstrapBundle", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -876,6 +907,28 @@ type RepositoryServer interface {
 	//   ABORTED if the instance has some failed processors associated with it,
 	//       such instance is effectively broken and should not be used.
 	DescribeClient(context.Context, *DescribeClientRequest) (*DescribeClientResponse, error)
+	// Returns information about binaries extracted from bootstrap packages under
+	// some prefix.
+	//
+	// This is a niche functionality used by some LUCI systems.
+	//
+	// Unlike other RPC methods here, it operates with a bunch of packages at
+	// once. Errors that relate to a particular package instance (instead of the
+	// request as a whole) are returned as google.rpc.Status inside the
+	// corresponding BootstrapFile entry in DescribeBootstrapBundleResponse.
+	// Possible statuses communicated that way:
+	//   NOT_FOUND if the requested version of the package doesn't exist.
+	//   FAILED_PRECONDITION if the instance is still being processed or it is not
+	///      a bootstrap package at all.
+	//   ABORTED if the instance has failed processors associated with it,
+	//       such instance is effectively broken and should not be used.
+	//
+	// Returns:
+	//   OK if the request was accepted and (perhaps partially) processed.
+	//   NOT_FOUND if none of the requested instances exist.
+	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//   INVALID_ARGUMENT if the request is malformed.
+	DescribeBootstrapBundle(context.Context, *DescribeBootstrapBundleRequest) (*DescribeBootstrapBundleResponse, error)
 	mustEmbedUnimplementedRepositoryServer()
 }
 
@@ -951,6 +1004,9 @@ func (UnimplementedRepositoryServer) DescribeInstance(context.Context, *Describe
 }
 func (UnimplementedRepositoryServer) DescribeClient(context.Context, *DescribeClientRequest) (*DescribeClientResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DescribeClient not implemented")
+}
+func (UnimplementedRepositoryServer) DescribeBootstrapBundle(context.Context, *DescribeBootstrapBundleRequest) (*DescribeBootstrapBundleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DescribeBootstrapBundle not implemented")
 }
 func (UnimplementedRepositoryServer) mustEmbedUnimplementedRepositoryServer() {}
 
@@ -1379,6 +1435,24 @@ func _Repository_DescribeClient_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Repository_DescribeBootstrapBundle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DescribeBootstrapBundleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServer).DescribeBootstrapBundle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Repository/DescribeBootstrapBundle",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServer).DescribeBootstrapBundle(ctx, req.(*DescribeBootstrapBundleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Repository_ServiceDesc is the grpc.ServiceDesc for Repository service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1477,6 +1551,10 @@ var Repository_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DescribeClient",
 			Handler:    _Repository_DescribeClient_Handler,
+		},
+		{
+			MethodName: "DescribeBootstrapBundle",
+			Handler:    _Repository_DescribeBootstrapBundle_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -21,6 +21,7 @@ option go_package = "go.chromium.org/luci/cipd/api/cipd/v1;api";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
 import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 
 
@@ -410,6 +411,29 @@ service Repository {
   //   ABORTED if the instance has some failed processors associated with it,
   //       such instance is effectively broken and should not be used.
   rpc DescribeClient(DescribeClientRequest) returns (DescribeClientResponse);
+
+  // Returns information about binaries extracted from bootstrap packages under
+  // some prefix.
+  //
+  // This is a niche functionality used by some LUCI systems.
+  //
+  // Unlike other RPC methods here, it operates with a bunch of packages at
+  // once. Errors that relate to a particular package instance (instead of the
+  // request as a whole) are returned as google.rpc.Status inside the
+  // corresponding BootstrapFile entry in DescribeBootstrapBundleResponse.
+  // Possible statuses communicated that way:
+  //   NOT_FOUND if the requested version of the package doesn't exist.
+  //   FAILED_PRECONDITION if the instance is still being processed or it is not
+  ///      a bootstrap package at all.
+  //   ABORTED if the instance has failed processors associated with it,
+  //       such instance is effectively broken and should not be used.
+  //
+  // Returns:
+  //   OK if the request was accepted and (perhaps partially) processed.
+  //   NOT_FOUND if none of the requested instances exist.
+  //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  rpc DescribeBootstrapBundle(DescribeBootstrapBundleRequest) returns (DescribeBootstrapBundleResponse);
 }
 
 
@@ -934,4 +958,48 @@ message DescribeClientResponse {
   // The list at least includes 'client_ref' itself and SHA1 hash (matching
   // legacy_sha1). The order is undefined.
   repeated ObjectRef client_ref_aliases = 6;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message DescribeBootstrapBundleRequest {
+  // The package prefix that contains the bootstrap packages being described.
+  string prefix = 1;
+
+  // If given, specifies exactly what packages to examine.
+  //
+  // Examined package names will be formed as "<prefix>/<variant>".
+  //
+  // Based on existing package naming conventions, `variants` usually would be
+  // an enumeration of platforms (e.g. ["linux-amd64", "mac-amd64", ...]).
+  //
+  // If empty, the CIPD backend will describe all packages directly under the
+  // prefix (if any). If there are no packages under the prefix, the request
+  // fails with NOT_FOUND.
+  repeated string variants = 2;
+
+  // The package version to describe, see ResolveVersion for details.
+  //
+  // Applies to all packages matching `prefix` + `variants`.
+  //
+  // If *all* packages lack this version, the request fails with NOT_FOUND.
+  //
+  // If only some packages lack this version, their corresponding BootstrapFile
+  // entries in DescribeBootstrapBundleRequest will have google.rpc.Status set
+  // to NOT_FOUND.
+  string version = 3;
+}
+
+
+message DescribeBootstrapBundleResponse {
+  message BootstrapFile {
+    string package = 1;           // the package the file was extracted from
+    google.rpc.Status status = 2; // not OK on errors related to this package
+    ObjectRef instance = 3;       // the resolved package instance
+    string name = 4;              // the extracted file name
+    int64 size = 5;               // its size in bytes
+  }
+  repeated BootstrapFile files = 1;
 }
