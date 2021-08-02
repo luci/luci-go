@@ -998,8 +998,9 @@ message DescribeBootstrapBundleResponse {
     string package = 1;           // the package the file was extracted from
     google.rpc.Status status = 2; // not OK on errors related to this package
     ObjectRef instance = 3;       // the resolved package instance
-    string name = 4;              // the extracted file name
-    int64 size = 5;               // its size in bytes
+    ObjectRef file = 4;           // the extracted file in the CAS
+    string name = 5;              // the name of the extracted file
+    int64 size = 6;               // its size in bytes
   }
   repeated BootstrapFile files = 1;
 }
