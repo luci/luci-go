@@ -45,6 +45,15 @@ func NewPackageReader(r io.ReaderAt, size int64) (*PackageReader, error) {
 	return &PackageReader{zr}, nil
 }
 
+// Files returns names of files inside the package.
+func (p *PackageReader) Files() []string {
+	files := make([]string, len(p.zr.File))
+	for i, f := range p.zr.File {
+		files[i] = f.Name
+	}
+	return files
+}
+
 // Open opens some file inside the package for reading.
 //
 // Returns the ReadCloser and the uncompressed file size.

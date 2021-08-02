@@ -69,6 +69,7 @@ func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) Server {
 	}
 	impl.registerTasks()
 	impl.registerProcessor(&processing.ClientExtractor{CAS: internalCAS})
+	impl.registerProcessor(&processing.BootstrapPackageExtractor{CAS: internalCAS})
 	return impl
 }
 

@@ -50,6 +50,8 @@ func TestPackageReader(t *testing.T) {
 		pkg, err := NewPackageReader(reader, size)
 		So(err, ShouldBeNil)
 
+		So(pkg.Files(), ShouldResemble, []string{"file1", "file2"})
+
 		fr, actualSize, err := pkg.Open("file2")
 		So(err, ShouldBeNil)
 		So(actualSize, ShouldEqual, 4)
