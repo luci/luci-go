@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
+	"runtime/trace"
 	"strings"
 	"time"
 
@@ -153,6 +154,9 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
 		cancel()
 	})()
+
+	ctx, task := trace.NewTask(ctx, "batcharchive")
+	defer task.End()
 
 	opts, err := toArchiveOptions(args)
 	if err != nil {

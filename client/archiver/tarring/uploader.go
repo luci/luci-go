@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"runtime/trace"
 	"sync"
 
 	"go.chromium.org/luci/common/isolatedclient"
@@ -113,8 +114,10 @@ func (u *ConcurrentUploader) upload(name string, src isolatedclient.Source, ps *
 		log.Printf("WARNING dropped %q from Uploader", name)
 		return
 	}
-
-	err := u.svc.Push(u.ctx, ps, src)
+	ctx, task := trace.NewTask(u.ctx, "ConcurrentUploader.upload")
+	defer task.End()
+	trace.Logf(ctx, "log", "pushing %s", name)
+	err := u.svc.Push(ctx, ps, src)
 	if err != nil {
 		u.setErr(fmt.Errorf("pushing %q: %v", name, err))
 	}
