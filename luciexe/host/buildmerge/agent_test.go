@@ -68,10 +68,9 @@ func TestAgent(t *testing.T) {
 			},
 		}
 		// we omit view url here to keep tests simpler
-		merger, err := New(ctx, "u/", base, func(ns, stream types.StreamName) (url, viewURL string) {
+		merger := New(ctx, "u/", base, func(ns, stream types.StreamName) (url, viewURL string) {
 			return fmt.Sprintf("url://%s%s", ns, stream), ""
 		})
-		So(err, ShouldBeNil)
 		defer merger.Close()
 		defer cancel()
 
@@ -341,7 +340,7 @@ func TestAgent(t *testing.T) {
 							Logs: []*bbpb.Log{{
 								Name: "$build.proto", Url: "url://u/sub/build.proto",
 							}},
-							SummaryMarkdown: "\n\nError in build protocol: step[\"Invalid_SubStep\"].logs[\"\"]: bad log url \"emoji 💩 is not a valid url\": illegal character ( ) at index 5",
+							SummaryMarkdown: "\n\nError in build protocol: step[\"Invalid_SubStep\"].logs[\"\"].Url = \"emoji 💩 is not a valid url\": illegal character ( ) at index 5",
 						},
 						&bbpb.Step{
 							Name:            "Merge|SubStep",
@@ -356,7 +355,7 @@ func TestAgent(t *testing.T) {
 							Logs: []*bbpb.Log{
 								{Url: "emoji 💩 is not a valid url"},
 							},
-							SummaryMarkdown: "bad log url \"emoji 💩 is not a valid url\": illegal character ( ) at index 5",
+							SummaryMarkdown: "bad log url: \"emoji 💩 is not a valid url\"",
 						},
 					)
 					So(getFinal(), ShouldResembleProto, &expect)
