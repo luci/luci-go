@@ -27,6 +27,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
+	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -2764,6 +2765,248 @@ func TestDescribeInstance(t *testing.T) {
 			})
 			So(grpc.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such instance")
+		})
+	})
+}
+
+func TestDescribeBootstrapBundle(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("reader@example.com")
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		putInst := func(pkg, extracted string) {
+			inst := &model.Instance{
+				InstanceID: common.ObjectRefToInstanceID(&api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: strings.Repeat("1", 64),
+				}),
+				Package:      model.PackageKey(ctx, pkg),
+				RegisteredBy: "user:1@example.com",
+			}
+			if extracted != "" {
+				r := &model.ProcessingResult{
+					ProcID:   processing.BootstrapPackageExtractorProcID,
+					Instance: datastore.KeyForObj(ctx, inst),
+				}
+				if extracted != "BROKEN" {
+					r.Success = true
+					r.WriteResult(processing.BootstrapExtractorResult{
+						File:       extracted,
+						HashAlgo:   "SHA256",
+						HashDigest: strings.Repeat("a", 64),
+						Size:       12345,
+					})
+					inst.ProcessorsSuccess = []string{processing.BootstrapPackageExtractorProcID}
+				} else {
+					r.Error = "Extraction broken"
+					inst.ProcessorsFailure = []string{processing.BootstrapPackageExtractorProcID}
+				}
+				So(datastore.Put(ctx, r), ShouldBeNil)
+			}
+			So(datastore.Put(ctx,
+				&model.Package{Name: pkg},
+				inst,
+				&model.Ref{Name: "latest", Package: inst.Package, InstanceID: inst.InstanceID},
+			), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+		}
+
+		expectedFile := func(pkg, extracted string) *api.DescribeBootstrapBundleResponse_BootstrapFile {
+			return &api.DescribeBootstrapBundleResponse_BootstrapFile{
+				Package: pkg,
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: strings.Repeat("1", 64),
+				},
+				File: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: strings.Repeat("a", 64),
+				},
+				Name: extracted,
+				Size: 12345,
+			}
+		}
+
+		expectedError := func(pkg string, code codes.Code, msg string) *api.DescribeBootstrapBundleResponse_BootstrapFile {
+			return &api.DescribeBootstrapBundleResponse_BootstrapFile{
+				Package: pkg,
+				Status: &statuspb.Status{
+					Code:    int32(code),
+					Message: msg,
+				},
+			}
+		}
+
+		Convey("Happy path", func() {
+			putInst("a/pkg/var-1", "file1")
+			putInst("a/pkg/var-2", "file2")
+			putInst("a/pkg/var-3", "file3")
+			putInst("a/pkg", "")             // will be ignored
+			putInst("a/pkg/sun/package", "") // will be ignored
+
+			Convey("With prefix listing", func() {
+				resp, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+					Prefix:  "a/pkg",
+					Version: "latest",
+				})
+				So(err, ShouldBeNil)
+				So(resp, ShouldResembleProto, &api.DescribeBootstrapBundleResponse{
+					Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
+						expectedFile("a/pkg/var-1", "file1"),
+						expectedFile("a/pkg/var-2", "file2"),
+						expectedFile("a/pkg/var-3", "file3"),
+					},
+				})
+			})
+
+			Convey("With variants", func() {
+				resp, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+					Prefix:   "a/pkg",
+					Variants: []string{"var-3", "var-1"},
+					Version:  "latest",
+				})
+				So(err, ShouldBeNil)
+				So(resp, ShouldResembleProto, &api.DescribeBootstrapBundleResponse{
+					Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
+						expectedFile("a/pkg/var-3", "file3"),
+						expectedFile("a/pkg/var-1", "file1"),
+					},
+				})
+			})
+		})
+
+		Convey("Partial failure", func() {
+			putInst("a/pkg/var-1", "file1")
+			putInst("a/pkg/var-2", "")
+
+			resp, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				Prefix:  "a/pkg",
+				Version: "latest",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.DescribeBootstrapBundleResponse{
+				Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
+					expectedFile("a/pkg/var-1", "file1"),
+					expectedError("a/pkg/var-2", codes.FailedPrecondition, `"a/pkg/var-2" is not a bootstrap package`),
+				},
+			})
+		})
+
+		Convey("Total failure", func() {
+			putInst("a/pkg/var-1", "")
+			putInst("a/pkg/var-2", "")
+			putInst("a/pkg/var-3", "")
+
+			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				Prefix:  "a/pkg",
+				Version: "latest",
+			})
+			So(err, ShouldHaveRPCCode, codes.FailedPrecondition,
+				`"a/pkg/var-1" is not a bootstrap package (and 2 other errors like this)`)
+		})
+
+		Convey("Empty prefix", func() {
+			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				Prefix:  "a/pkg",
+				Version: "latest",
+			})
+			So(err, ShouldHaveRPCCode, codes.NotFound, `no packages directly under prefix "a/pkg"`)
+		})
+
+		Convey("Missing version", func() {
+			putInst("a/pkg/var-1", "file1")
+			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				Prefix:  "a/pkg",
+				Version: "not-latest",
+			})
+			So(err, ShouldHaveRPCCode, codes.NotFound, `no such ref`)
+		})
+
+		Convey("Broken processor", func() {
+			putInst("a/pkg/var-1", "BROKEN")
+			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				Prefix:  "a/pkg",
+				Version: "latest",
+			})
+			So(err, ShouldHaveRPCCode, codes.Aborted, `some processors failed to process this instance`)
+		})
+
+		Convey("Request validation", func() {
+			putInst("a/pkg/var-1", "file1")
+
+			Convey("Bad prefix format", func() {
+				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+					Prefix:  "///",
+					Version: "latest",
+				})
+				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+			})
+
+			Convey("Variant with /", func() {
+				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+					Prefix:   "a/pkg",
+					Variants: []string{"some/thing"},
+					Version:  "latest",
+				})
+				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+			})
+
+			Convey("Empty variant", func() {
+				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+					Prefix:   "a/pkg",
+					Variants: []string{""},
+					Version:  "latest",
+				})
+				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+			})
+
+			Convey("Malformed variant name", func() {
+				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+					Prefix:   "a/pkg",
+					Variants: []string{"BAD"},
+					Version:  "latest",
+				})
+				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+			})
+
+			Convey("Duplicate variants", func() {
+				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+					Prefix:   "a/pkg",
+					Variants: []string{"var-1", "var-1"},
+					Version:  "latest",
+				})
+				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+			})
+
+			Convey("Bad version", func() {
+				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+					Prefix:  "a/pkg",
+					Version: "bad version ID",
+				})
+				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+			})
+
+			Convey("Not a reader", func() {
+				_, err := impl.DescribeBootstrapBundle(as("someone@example.com"), &api.DescribeBootstrapBundleRequest{
+					Prefix:  "a/pkg",
+					Version: "latest",
+				})
+				So(err, ShouldHaveRPCCode, codes.PermissionDenied)
+			})
 		})
 	})
 }

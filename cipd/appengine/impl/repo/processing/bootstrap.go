@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/bootstrap"
@@ -116,4 +117,31 @@ func (bs *BootstrapPackageExtractor) Run(ctx context.Context, inst *model.Instan
 		executable, inst.Package.StringID(), result.Ref.HashAlgo, result.Ref.HexDigest, result.Size)
 
 	return
+}
+
+// GetBootstrapExtractorResult returns results of BootstrapPackageExtractor.
+//
+// Returns:
+//   (result, nil) on success.
+//   (nil, datastore.ErrNoSuchEntity) if results are not available.
+//   (nil, transient-tagged error) on retrieval errors.
+//   (nil, non-transient-tagged error) if the extractor failed.
+func GetBootstrapExtractorResult(ctx context.Context, inst *model.Instance) (*BootstrapExtractorResult, error) {
+	r := &model.ProcessingResult{
+		ProcID:   BootstrapPackageExtractorProcID,
+		Instance: datastore.KeyForObj(ctx, inst),
+	}
+	switch err := datastore.Get(ctx, r); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	case err != nil:
+		return nil, transient.Tag.Apply(err)
+	case !r.Success:
+		return nil, errors.Reason("bootstrap extraction failed - %s", r.Error).Err()
+	}
+	out := &BootstrapExtractorResult{}
+	if err := r.ReadResult(out); err != nil {
+		return nil, errors.Annotate(err, "failed to parse the extractor status").Err()
+	}
+	return out, nil
 }

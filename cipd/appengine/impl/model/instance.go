@@ -83,6 +83,20 @@ func (e *Instance) FromProto(c context.Context, p *api.Instance) *Instance {
 	return e
 }
 
+// CheckReady returns an error if the instance has pending or failed processors.
+func (e *Instance) CheckReady() error {
+	switch {
+	case len(e.ProcessorsFailure) != 0:
+		return errors.Reason("some processors failed to process this instance: %s",
+			strings.Join(e.ProcessorsFailure, ", ")).Tag(grpcutil.AbortedTag).Err()
+	case len(e.ProcessorsPending) != 0:
+		return errors.Reason("the instance is not ready yet, pending processors: %s",
+			strings.Join(e.ProcessorsPending, ", ")).Tag(grpcutil.FailedPreconditionTag).Err()
+	default:
+		return nil
+	}
+}
+
 // RegisterInstance transactionally registers an instance (and the corresponding
 // package), if it isn't registered already.
 //
@@ -224,18 +238,10 @@ func CheckInstanceExists(c context.Context, inst *Instance) error {
 //    FailedPrecondition if some processors are still running.
 //    Aborted if some processors have failed.
 func CheckInstanceReady(c context.Context, inst *Instance) error {
-	switch err := CheckInstanceExists(c, inst); {
-	case err != nil:
+	if err := CheckInstanceExists(c, inst); err != nil {
 		return err
-	case len(inst.ProcessorsFailure) != 0:
-		return errors.Reason("some processors failed to process this instance: %s",
-			strings.Join(inst.ProcessorsFailure, ", ")).Tag(grpcutil.AbortedTag).Err()
-	case len(inst.ProcessorsPending) != 0:
-		return errors.Reason("the instance is not ready yet, pending processors: %s",
-			strings.Join(inst.ProcessorsPending, ", ")).Tag(grpcutil.FailedPreconditionTag).Err()
-	default:
-		return nil
 	}
+	return inst.CheckReady()
 }
 
 // FetchProcessors fetches results of all processors assigned to the instance

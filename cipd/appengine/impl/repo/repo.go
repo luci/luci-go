@@ -1471,6 +1471,164 @@ func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientReq
 	}, nil
 }
 
+func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.DescribeBootstrapBundleRequest) (resp *api.DescribeBootstrapBundleResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+
+	// Validate the request.
+	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
+	}
+	seen := stringset.New(len(r.Variants))
+	for _, v := range r.Variants {
+		if strings.Contains(v, "/") {
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'variant' - %q contains \"/\"", v)
+		}
+		if err := common.ValidatePackageName(r.Prefix + "/" + v); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'variant' - %s", err)
+		}
+		if !seen.Add(v) {
+			return nil, status.Errorf(codes.InvalidArgument, "variant %q was given more than once", v)
+		}
+	}
+	if err := common.ValidateInstanceVersion(r.Version); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'version' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(ctx, r.Prefix, api.Role_READER); err != nil {
+		return nil, err
+	}
+
+	// Auto-discover all available packages if necessary.
+	if len(r.Variants) == 0 {
+		// Note: ListPackages does recursive prefix listing.
+		listing, err := model.ListPackages(ctx, r.Prefix, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, pkg := range listing {
+			if !strings.HasPrefix(pkg, r.Prefix+"/") {
+				panic(fmt.Sprintf("ListPackages %q unexpected returned package %q", r.Prefix, pkg))
+			}
+			// `pkg` is either <prefix>/<variant> or <prefix>/<some>/<subpackage>.
+			// We are interested in the first case only.
+			if pkg = strings.TrimPrefix(pkg, r.Prefix+"/"); !strings.Contains(pkg, "/") {
+				r.Variants = append(r.Variants, pkg)
+			}
+		}
+		if len(r.Variants) == 0 {
+			return nil, status.Errorf(codes.NotFound, "no packages directly under prefix %q", r.Prefix)
+		}
+	}
+
+	mu := sync.Mutex{}
+	files := make(map[string]*api.DescribeBootstrapBundleResponse_BootstrapFile, len(r.Variants))
+
+	// Call describeBootstrapFile in parallel for each requested variant.
+	err = parallel.WorkPool(16, func(tasks chan<- func() error) {
+		for _, variant := range r.Variants {
+			variant := variant
+			tasks <- func() error {
+				bf, err := impl.describeBootstrapFile(ctx, r.Prefix+"/"+variant, r.Version)
+				mu.Lock()
+				files[variant] = bf
+				mu.Unlock()
+				return err
+			}
+		}
+	})
+	if err != nil {
+		// describeBootstrapFile returns only transient errors as `err`. Fatal
+		// error are returned via `status` field in BootstrapFile and handled below.
+		return nil, transient.Tag.Apply(err)
+	}
+
+	// Order the output based on r.Variants.
+	resp = &api.DescribeBootstrapBundleResponse{
+		Files: make([]*api.DescribeBootstrapBundleResponse_BootstrapFile, 0, len(files)),
+	}
+	for _, v := range r.Variants {
+		resp.Files = append(resp.Files, files[v])
+	}
+
+	// If *all* requests fatally failed with the same status code, use it as
+	// the overall status. Otherwise return OK status, with errors communicated
+	// via `status` fields in the response body.
+	curCode := resp.Files[0].Status.GetCode()
+	allAgree := true
+	for i := 1; i < len(resp.Files); i++ {
+		if resp.Files[i].Status.GetCode() != curCode {
+			allAgree = false
+			break
+		}
+	}
+	if allAgree && curCode != int32(codes.OK) {
+		extra := ""
+		if len(resp.Files) > 1 {
+			extra = fmt.Sprintf(" (and %d other errors like this)", len(resp.Files)-1)
+		}
+		return nil, status.Errorf(codes.Code(curCode), "%s%s", resp.Files[0].Status.GetMessage(), extra)
+	}
+
+	return
+}
+
+// describeBootstrapFile describes one extracted bootstrap file.
+//
+// Returns only transient errors as `err`. Fatal errors are communicated via
+// `status` field in the response.
+func (impl *repoImpl) describeBootstrapFile(ctx context.Context, pkg, ver string) (resp *api.DescribeBootstrapBundleResponse_BootstrapFile, err error) {
+	defer func() {
+		err = grpcutil.GRPCifyAndLogErr(ctx, err)
+		if err != nil && !grpcutil.IsTransientCode(status.Code(err)) {
+			resp = &api.DescribeBootstrapBundleResponse_BootstrapFile{
+				Package: pkg,
+				Status:  status.Convert(err).Proto(),
+			}
+			err = nil
+		}
+	}()
+
+	// Resolve the version and verify the instance exists and finished processing.
+	inst, err := model.ResolveVersion(ctx, pkg, ver)
+	if err != nil {
+		return nil, err
+	}
+	if err = inst.CheckReady(); err != nil {
+		return nil, err
+	}
+
+	// Fetch the result of the bootstrap file extractor, if any.
+	res, err := processing.GetBootstrapExtractorResult(ctx, inst)
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.FailedPrecondition, "%q is not a bootstrap package", pkg)
+	case transient.Tag.In(err):
+		return nil, err
+	case err != nil:
+		return nil, status.Errorf(codes.Aborted, "%q has broken bootstrap info: %s", pkg, err)
+	}
+
+	// Make sure the hash algo and hex digest are recognizable.
+	fileRef := &api.ObjectRef{
+		HashAlgo:  api.HashAlgo(api.HashAlgo_value[res.HashAlgo]),
+		HexDigest: res.HashDigest,
+	}
+	if err = common.ValidateObjectRef(fileRef, common.AnyHash); err != nil {
+		return nil, status.Errorf(codes.Aborted, "%q has broken bootstrap info: %s", pkg, err)
+	}
+
+	// Everything looks good.
+	return &api.DescribeBootstrapBundleResponse_BootstrapFile{
+		Package:  pkg,
+		Instance: common.InstanceIDToObjectRef(inst.InstanceID),
+		File:     fileRef,
+		Name:     res.File,
+		Size:     res.Size,
+	}, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Non-pRPC handlers for the client bootstrap and legacy API.
 
