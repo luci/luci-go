@@ -104,6 +104,46 @@ func (m *MockBuildsClient) EXPECT() *MockBuildsClientMockRecorder {
 	return m.recorder
 }
 
+// Batch mocks base method.
+func (m *MockBuildsClient) Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Batch", varargs...)
+	ret0, _ := ret[0].(*BatchResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Batch indicates an expected call of Batch.
+func (mr *MockBuildsClientMockRecorder) Batch(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Batch", reflect.TypeOf((*MockBuildsClient)(nil).Batch), varargs...)
+}
+
+// CancelBuild mocks base method.
+func (m *MockBuildsClient) CancelBuild(ctx context.Context, in *CancelBuildRequest, opts ...grpc.CallOption) (*Build, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CancelBuild", varargs...)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CancelBuild indicates an expected call of CancelBuild.
+func (mr *MockBuildsClientMockRecorder) CancelBuild(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsClient)(nil).CancelBuild), varargs...)
+}
+
 // GetBuild mocks base method.
 func (m *MockBuildsClient) GetBuild(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*Build, error) {
 	m.ctrl.T.Helper()
@@ -122,6 +162,26 @@ func (mr *MockBuildsClientMockRecorder) GetBuild(ctx, in interface{}, opts ...in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuild", reflect.TypeOf((*MockBuildsClient)(nil).GetBuild), varargs...)
+}
+
+// ScheduleBuild mocks base method.
+func (m *MockBuildsClient) ScheduleBuild(ctx context.Context, in *ScheduleBuildRequest, opts ...grpc.CallOption) (*Build, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ScheduleBuild", varargs...)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScheduleBuild indicates an expected call of ScheduleBuild.
+func (mr *MockBuildsClientMockRecorder) ScheduleBuild(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleBuild", reflect.TypeOf((*MockBuildsClient)(nil).ScheduleBuild), varargs...)
 }
 
 // SearchBuilds mocks base method.
@@ -164,66 +224,6 @@ func (mr *MockBuildsClientMockRecorder) UpdateBuild(ctx, in interface{}, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBuild", reflect.TypeOf((*MockBuildsClient)(nil).UpdateBuild), varargs...)
 }
 
-// ScheduleBuild mocks base method.
-func (m *MockBuildsClient) ScheduleBuild(ctx context.Context, in *ScheduleBuildRequest, opts ...grpc.CallOption) (*Build, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ScheduleBuild", varargs...)
-	ret0, _ := ret[0].(*Build)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ScheduleBuild indicates an expected call of ScheduleBuild.
-func (mr *MockBuildsClientMockRecorder) ScheduleBuild(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleBuild", reflect.TypeOf((*MockBuildsClient)(nil).ScheduleBuild), varargs...)
-}
-
-// CancelBuild mocks base method.
-func (m *MockBuildsClient) CancelBuild(ctx context.Context, in *CancelBuildRequest, opts ...grpc.CallOption) (*Build, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CancelBuild", varargs...)
-	ret0, _ := ret[0].(*Build)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CancelBuild indicates an expected call of CancelBuild.
-func (mr *MockBuildsClientMockRecorder) CancelBuild(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsClient)(nil).CancelBuild), varargs...)
-}
-
-// Batch mocks base method.
-func (m *MockBuildsClient) Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Batch", varargs...)
-	ret0, _ := ret[0].(*BatchResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Batch indicates an expected call of Batch.
-func (mr *MockBuildsClientMockRecorder) Batch(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Batch", reflect.TypeOf((*MockBuildsClient)(nil).Batch), varargs...)
-}
-
 // MockBuildsServer is a mock of BuildsServer interface.
 type MockBuildsServer struct {
 	ctrl     *gomock.Controller
@@ -247,6 +247,36 @@ func (m *MockBuildsServer) EXPECT() *MockBuildsServerMockRecorder {
 	return m.recorder
 }
 
+// Batch mocks base method.
+func (m *MockBuildsServer) Batch(arg0 context.Context, arg1 *BatchRequest) (*BatchResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Batch", arg0, arg1)
+	ret0, _ := ret[0].(*BatchResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Batch indicates an expected call of Batch.
+func (mr *MockBuildsServerMockRecorder) Batch(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Batch", reflect.TypeOf((*MockBuildsServer)(nil).Batch), arg0, arg1)
+}
+
+// CancelBuild mocks base method.
+func (m *MockBuildsServer) CancelBuild(arg0 context.Context, arg1 *CancelBuildRequest) (*Build, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelBuild", arg0, arg1)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CancelBuild indicates an expected call of CancelBuild.
+func (mr *MockBuildsServerMockRecorder) CancelBuild(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsServer)(nil).CancelBuild), arg0, arg1)
+}
+
 // GetBuild mocks base method.
 func (m *MockBuildsServer) GetBuild(arg0 context.Context, arg1 *GetBuildRequest) (*Build, error) {
 	m.ctrl.T.Helper()
@@ -260,6 +290,21 @@ func (m *MockBuildsServer) GetBuild(arg0 context.Context, arg1 *GetBuildRequest)
 func (mr *MockBuildsServerMockRecorder) GetBuild(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuild", reflect.TypeOf((*MockBuildsServer)(nil).GetBuild), arg0, arg1)
+}
+
+// ScheduleBuild mocks base method.
+func (m *MockBuildsServer) ScheduleBuild(arg0 context.Context, arg1 *ScheduleBuildRequest) (*Build, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ScheduleBuild", arg0, arg1)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScheduleBuild indicates an expected call of ScheduleBuild.
+func (mr *MockBuildsServerMockRecorder) ScheduleBuild(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleBuild", reflect.TypeOf((*MockBuildsServer)(nil).ScheduleBuild), arg0, arg1)
 }
 
 // SearchBuilds mocks base method.
@@ -290,49 +335,4 @@ func (m *MockBuildsServer) UpdateBuild(arg0 context.Context, arg1 *UpdateBuildRe
 func (mr *MockBuildsServerMockRecorder) UpdateBuild(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBuild", reflect.TypeOf((*MockBuildsServer)(nil).UpdateBuild), arg0, arg1)
-}
-
-// ScheduleBuild mocks base method.
-func (m *MockBuildsServer) ScheduleBuild(arg0 context.Context, arg1 *ScheduleBuildRequest) (*Build, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScheduleBuild", arg0, arg1)
-	ret0, _ := ret[0].(*Build)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ScheduleBuild indicates an expected call of ScheduleBuild.
-func (mr *MockBuildsServerMockRecorder) ScheduleBuild(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleBuild", reflect.TypeOf((*MockBuildsServer)(nil).ScheduleBuild), arg0, arg1)
-}
-
-// CancelBuild mocks base method.
-func (m *MockBuildsServer) CancelBuild(arg0 context.Context, arg1 *CancelBuildRequest) (*Build, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelBuild", arg0, arg1)
-	ret0, _ := ret[0].(*Build)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CancelBuild indicates an expected call of CancelBuild.
-func (mr *MockBuildsServerMockRecorder) CancelBuild(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsServer)(nil).CancelBuild), arg0, arg1)
-}
-
-// Batch mocks base method.
-func (m *MockBuildsServer) Batch(arg0 context.Context, arg1 *BatchRequest) (*BatchResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Batch", arg0, arg1)
-	ret0, _ := ret[0].(*BatchResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Batch indicates an expected call of Batch.
-func (mr *MockBuildsServerMockRecorder) Batch(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Batch", reflect.TypeOf((*MockBuildsServer)(nil).Batch), arg0, arg1)
 }
