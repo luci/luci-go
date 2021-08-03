@@ -587,18 +587,23 @@ func configuredCacheToTaskCache(builderCache *pb.Builder_CacheEntry) *pb.BuildIn
 // setting them in the proto. Mutates the given *pb.Build. build.Builder must be
 // set. Does not set build.Infra.Logdog.Prefix, which can only be determined at
 // creation time.
-func setInfra(logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, globalCaches []*pb.Builder_CacheEntry) {
+func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, globalCfg *pb.SettingsCfg) {
 	build.Infra = &pb.BuildInfra{
+		Bbagent: &pb.BuildInfra_BBAgent{
+			CacheDir:               "cache",
+			KnownPublicGerritHosts: globalCfg.GetKnownPublicGerritHosts(),
+			PayloadPath:            "kitchen-checkout",
+		},
 		Buildbucket: &pb.BuildInfra_Buildbucket{
 			RequestedDimensions: req.GetDimensions(),
 			RequestedProperties: req.GetProperties(),
 		},
 		Logdog: &pb.BuildInfra_LogDog{
-			Hostname: logdogHost,
+			Hostname: globalCfg.GetLogdog().GetHostname(),
 			Project:  build.Builder.GetProject(),
 		},
 		Resultdb: &pb.BuildInfra_ResultDB{
-			Hostname: rdbHost,
+			Hostname: globalCfg.GetResultdb().GetHostname(),
 		},
 		Swarming: &pb.BuildInfra_Swarming{
 			Hostname:           cfg.GetSwarmingHost(),
@@ -618,6 +623,7 @@ func setInfra(logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, cfg *pb.
 		}
 	}
 
+	globalCaches := globalCfg.GetSwarming().GetGlobalCaches()
 	taskCaches := make([]*pb.BuildInfra_Swarming_CacheEntry, len(cfg.GetCaches()), len(cfg.GetCaches())+len(globalCaches))
 	names := stringset.New(len(cfg.GetCaches()))
 	paths := stringset.New(len(cfg.GetCaches()))
@@ -785,9 +791,6 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build)
 // request and builder config. Sets fields except those which can only be
 // determined at creation time.
 func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg) *pb.Build {
-	caches := globalCfg.GetSwarming().GetGlobalCaches()
-	logdogHost := globalCfg.GetLogdog().GetHostname()
-	rdbHost := globalCfg.GetResultdb().GetHostname()
 	b := &pb.Build{
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
@@ -799,7 +802,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	}
 
 	setExecutable(req, cfg, b)
-	setInfra(logdogHost, rdbHost, req, cfg, b, caches)
+	setInfra(req, cfg, b, globalCfg)
 	setInput(req, cfg, b)
 	setTags(req, b)
 	setTimeouts(req, cfg, b)

@@ -366,6 +366,10 @@ func TestScheduleBuild(t *testing.T) {
 							Seconds: 30,
 						},
 						Infra: &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								CacheDir:    "cache",
+								PayloadPath: "kitchen-checkout",
+							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
@@ -482,6 +486,10 @@ func TestScheduleBuild(t *testing.T) {
 							Seconds: 30,
 						},
 						Infra: &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								CacheDir:    "cache",
+								PayloadPath: "kitchen-checkout",
+							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
@@ -582,6 +590,10 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Id: 9021868963221667745,
 					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221667745",
@@ -738,6 +750,10 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Id: 9021868963221610337,
 					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610337",
@@ -793,6 +809,10 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Id: 9021868963221610321,
 					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610321",
@@ -848,6 +868,10 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Id: 9021868963221610305,
 					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610305",
@@ -2847,8 +2871,55 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra("", "", nil, nil, b, nil)
+			setInfra(nil, nil, b, nil)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir:    "cache",
+					PayloadPath: "kitchen-checkout",
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Logdog: &pb.BuildInfra_LogDog{
+					Project: "project",
+				},
+				Resultdb: &pb.BuildInfra_ResultDB{},
+				Swarming: &pb.BuildInfra_Swarming{
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path: "builder",
+							WaitForWarmCache: &durationpb.Duration{
+								Seconds: 240,
+							},
+						},
+					},
+					Priority: 30,
+				},
+			})
+		})
+
+		Convey("bbagent", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			}
+			s := &pb.SettingsCfg{
+				KnownPublicGerritHosts: []string{
+					"host",
+				},
+			}
+
+			setInfra(nil, nil, b, s)
+			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir: "cache",
+					KnownPublicGerritHosts: []string{
+						"host",
+					},
+					PayloadPath: "kitchen-checkout",
+				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
 					Project: "project",
@@ -2877,9 +2948,18 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder",
 				},
 			}
+			s := &pb.SettingsCfg{
+				Logdog: &pb.LogDogSettings{
+					Hostname: "host",
+				},
+			}
 
-			setInfra("host", "", nil, nil, b, nil)
+			setInfra(nil, nil, b, s)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir:    "cache",
+					PayloadPath: "kitchen-checkout",
+				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
 					Hostname: "host",
@@ -2910,9 +2990,18 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Id: 1,
 			}
+			s := &pb.SettingsCfg{
+				Resultdb: &pb.ResultDBSettings{
+					Hostname: "host",
+				},
+			}
 
-			setInfra("", "host", nil, nil, b, nil)
+			setInfra(nil, nil, b, s)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir:    "cache",
+					PayloadPath: "kitchen-checkout",
+				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
 					Hostname: "",
@@ -2952,8 +3041,12 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra("", "", nil, cfg, b, nil)
+				setInfra(nil, cfg, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir:    "cache",
+						PayloadPath: "kitchen-checkout",
+					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
 						Project: "project",
@@ -2993,8 +3086,12 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInfra("", "", nil, cfg, b, nil)
+					setInfra(nil, cfg, b, nil)
 					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
 						Logdog: &pb.BuildInfra_LogDog{
 							Project: "project",
@@ -3027,8 +3124,12 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 
-						setInfra("", "", nil, nil, b, nil)
+						setInfra(nil, nil, b, nil)
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								CacheDir:    "cache",
+								PayloadPath: "kitchen-checkout",
+							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
@@ -3050,11 +3151,6 @@ func TestScheduleBuild(t *testing.T) {
 					})
 
 					Convey("global", func() {
-						set := []*pb.Builder_CacheEntry{
-							{
-								Path: "cache",
-							},
-						}
 						b := &pb.Build{
 							Builder: &pb.BuilderID{
 								Project: "project",
@@ -3062,9 +3158,22 @@ func TestScheduleBuild(t *testing.T) {
 								Builder: "builder",
 							},
 						}
+						s := &pb.SettingsCfg{
+							Swarming: &pb.SwarmingSettings{
+								GlobalCaches: []*pb.Builder_CacheEntry{
+									{
+										Path: "cache",
+									},
+								},
+							},
+						}
 
-						setInfra("", "", nil, nil, b, set)
+						setInfra(nil, nil, b, s)
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								CacheDir:    "cache",
+								PayloadPath: "kitchen-checkout",
+							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
@@ -3105,8 +3214,12 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 
-						setInfra("", "", nil, cfg, b, nil)
+						setInfra(nil, cfg, b, nil)
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								CacheDir:    "cache",
+								PayloadPath: "kitchen-checkout",
+							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
@@ -3152,24 +3265,6 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						}
-						set := []*pb.Builder_CacheEntry{
-							{
-								Name: "global only name",
-								Path: "global only path",
-							},
-							{
-								Name: "name",
-								Path: "global path",
-							},
-							{
-								Name: "global name",
-								Path: "path",
-							},
-							{
-								EnvVar: "global env",
-								Path:   "path",
-							},
-						}
 						b := &pb.Build{
 							Builder: &pb.BuilderID{
 								Project: "project",
@@ -3177,9 +3272,35 @@ func TestScheduleBuild(t *testing.T) {
 								Builder: "builder",
 							},
 						}
+						s := &pb.SettingsCfg{
+							Swarming: &pb.SwarmingSettings{
+								GlobalCaches: []*pb.Builder_CacheEntry{
+									{
+										Name: "global only name",
+										Path: "global only path",
+									},
+									{
+										Name: "name",
+										Path: "global path",
+									},
+									{
+										Name: "global name",
+										Path: "path",
+									},
+									{
+										EnvVar: "global env",
+										Path:   "path",
+									},
+								},
+							},
+						}
 
-						setInfra("", "", nil, cfg, b, set)
+						setInfra(nil, cfg, b, s)
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								CacheDir:    "cache",
+								PayloadPath: "kitchen-checkout",
+							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
@@ -3245,8 +3366,12 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra("", "", req, nil, b, nil)
+				setInfra(req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir:    "cache",
+						PayloadPath: "kitchen-checkout",
+					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						RequestedDimensions: []*pb.RequestedDimension{
 							{
@@ -3306,8 +3431,12 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra("", "", req, nil, b, nil)
+				setInfra(req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir:    "cache",
+						PayloadPath: "kitchen-checkout",
+					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						RequestedProperties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3352,8 +3481,12 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra("", "", req, nil, b, nil)
+				setInfra(req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir:    "cache",
+						PayloadPath: "kitchen-checkout",
+					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
 						Project: "project",
@@ -3387,8 +3520,12 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra("", "", req, nil, b, nil)
+				setInfra(req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir:    "cache",
+						PayloadPath: "kitchen-checkout",
+					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
 						Project: "project",
