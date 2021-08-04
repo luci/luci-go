@@ -48,6 +48,7 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common/bq"
+	"go.chromium.org/luci/cv/internal/common/pubsub"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -98,6 +99,9 @@ type Test struct {
 
 	// cleanupFuncs are executed in reverse order in cleanup().
 	cleanupFuncs []func()
+
+	// PSFake is a fake PS client.
+	PSFake *pubsub.Fake
 }
 
 func (t *Test) SetUp() (context.Context, func()) {
@@ -144,6 +148,9 @@ func (t *Test) SetUp() (context.Context, func()) {
 	}
 	if t.BQFake == nil {
 		t.BQFake = &bq.Fake{}
+	}
+	if t.PSFake == nil {
+		t.PSFake = &pubsub.Fake{}
 	}
 
 	ctx = t.installDS(ctx)
