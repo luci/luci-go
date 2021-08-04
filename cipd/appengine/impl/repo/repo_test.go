@@ -3518,3 +3518,54 @@ func TestLegacyHandlers(t *testing.T) {
 		})
 	})
 }
+
+func TestParseDownloadPath(t *testing.T) {
+	t.Parallel()
+
+	Convey("OK", t, func() {
+		pkg, ver, err := parseDownloadPath("/a/b/c/+/latest")
+		So(err, ShouldBeNil)
+		So(pkg, ShouldEqual, "a/b/c")
+		So(ver, ShouldEqual, "latest")
+
+		pkg, ver, err = parseDownloadPath("/a/b/c/+/repo:https://abc")
+		So(err, ShouldBeNil)
+		So(pkg, ShouldEqual, "a/b/c")
+		So(ver, ShouldEqual, "repo:https://abc")
+
+		pkg, ver, err = parseDownloadPath("/a/b/c/+/" + strings.Repeat("a", 40))
+		So(err, ShouldBeNil)
+		So(pkg, ShouldEqual, "a/b/c")
+		So(ver, ShouldEqual, strings.Repeat("a", 40))
+	})
+
+	Convey("Bad chunks", t, func() {
+		_, _, err := parseDownloadPath("/+/latest")
+		So(err, ShouldErrLike, `should have form`)
+
+		_, _, err = parseDownloadPath("latest")
+		So(err, ShouldErrLike, `should have form`)
+
+		_, _, err = parseDownloadPath("/a/b/c")
+		So(err, ShouldErrLike, `should have form`)
+	})
+
+	Convey("Bad package", t, func() {
+		_, _, err := parseDownloadPath("BAD/+/latest")
+		So(err, ShouldErrLike, `invalid package name`)
+
+		_, _, err = parseDownloadPath("/a//b/+/latest")
+		So(err, ShouldErrLike, `invalid package name`)
+
+		_, _, err = parseDownloadPath("//+/latest")
+		So(err, ShouldErrLike, `invalid package name`)
+	})
+
+	Convey("Bad version", t, func() {
+		_, _, err := parseDownloadPath("a/+/")
+		So(err, ShouldErrLike, `bad version`)
+
+		_, _, err = parseDownloadPath("a/+/!!!!")
+		So(err, ShouldErrLike, `bad version`)
+	})
+}

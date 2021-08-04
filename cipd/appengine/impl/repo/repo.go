@@ -1525,19 +1525,25 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.Descri
 	mu := sync.Mutex{}
 	files := make(map[string]*api.DescribeBootstrapBundleResponse_BootstrapFile, len(r.Variants))
 
-	// Call describeBootstrapFile in parallel for each requested variant.
-	err = parallel.WorkPool(16, func(tasks chan<- func() error) {
-		for _, variant := range r.Variants {
-			variant := variant
-			tasks <- func() error {
-				bf, err := impl.describeBootstrapFile(ctx, r.Prefix+"/"+variant, r.Version)
-				mu.Lock()
-				files[variant] = bf
-				mu.Unlock()
-				return err
+	if len(r.Variants) == 1 {
+		// A resolution of only one variant is a very common case (in particular it
+		// is used via handleBootstrapDownload). Avoid a work pool overhead.
+		files[r.Variants[0]], err = impl.describeBootstrapFile(ctx, r.Prefix+"/"+r.Variants[0], r.Version)
+	} else {
+		// Call describeBootstrapFile in parallel for each requested variant.
+		err = parallel.WorkPool(16, func(tasks chan<- func() error) {
+			for _, variant := range r.Variants {
+				variant := variant
+				tasks <- func() error {
+					bf, err := impl.describeBootstrapFile(ctx, r.Prefix+"/"+variant, r.Version)
+					mu.Lock()
+					files[variant] = bf
+					mu.Unlock()
+					return err
+				}
 			}
-		}
-	})
+		})
+	}
 	if err != nil {
 		// describeBootstrapFile returns only transient errors as `err`. Fatal
 		// error are returned via `status` field in BootstrapFile and handled below.
@@ -1632,9 +1638,13 @@ func (impl *repoImpl) describeBootstrapFile(ctx context.Context, pkg, ver string
 ////////////////////////////////////////////////////////////////////////////////
 // Non-pRPC handlers for the client bootstrap and legacy API.
 
-// Name of a header that contains resolved CIPD instance IDs in /client and /dl
-// responses.
-const cipdInstanceHeader = "X-Cipd-Instance"
+const (
+	// Name of a header that contains resolved CIPD instance IDs in /client, /dl
+	// and /bootstrap responses.
+	cipdInstanceHeader = "X-Cipd-Instance"
+	// Header that contains the file digest for /bootstrap responses.
+	cipdDigestHeader = "X-Cipd-File-Digest"
+)
 
 // legacyInstance is JSON representation of Instance in the legacy API.
 type legacyInstance struct {
@@ -1671,6 +1681,24 @@ func adaptGrpcErr(h func(*router.Context) error) router.Handler {
 	}
 }
 
+// parseDownloadPath splits "<package>/+/<version>" into components.
+//
+// Returns InvalidArgument gRPC errors.
+func parseDownloadPath(path string) (pkg, ver string, err error) {
+	chunks := strings.SplitN(strings.TrimPrefix(path, "/"), "/+/", 2)
+	if len(chunks) != 2 {
+		return "", "", status.Error(codes.InvalidArgument, "the URL should have form /.../<package>/+/<version>")
+	}
+	pkg, ver = chunks[0], chunks[1]
+	if err = common.ValidatePackageName(pkg); err != nil {
+		return "", "", status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err = common.ValidateInstanceVersion(ver); err != nil {
+		return "", "", status.Error(codes.InvalidArgument, err.Error())
+	}
+	return
+}
+
 // replyWithJSON sends StatusOK with JSON body.
 func replyWithJSON(w http.ResponseWriter, obj interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -1699,6 +1727,7 @@ func replyWithError(w http.ResponseWriter, status, message string, args ...inter
 func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/client", base, adaptGrpcErr(impl.handleClientBootstrap))
 	r.GET("/dl/*path", base, adaptGrpcErr(impl.handlePackageDownload))
+	r.GET("/bootstrap/*path", base, adaptGrpcErr(impl.handleBootstrapDownload))
 
 	r.GET("/_ah/api/repo/v1/client", base, adaptGrpcErr(impl.handleLegacyClientInfo))
 	r.GET("/_ah/api/repo/v1/instance", base, adaptGrpcErr(impl.handleLegacyInstance))
@@ -1801,14 +1830,11 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 
-	// Parse the path. The router is too simplistic to parse such paths. It also
-	// likes to prepend '/' to it.
-	path := strings.TrimPrefix(ctx.Params.ByName("path"), "/")
-	chunks := strings.SplitN(path, "/+/", 2)
-	if len(chunks) != 2 {
-		return status.Errorf(codes.InvalidArgument, "the URL should have form /dl/<package>/+/<version>")
+	// Parse the path. The router is too simplistic to parse such paths.
+	pkg, version, err := parseDownloadPath(ctx.Params.ByName("path"))
+	if err != nil {
+		return err
 	}
-	pkg, version := chunks[0], chunks[1]
 
 	// Resolve the version into a concrete instance. This also does rigorous
 	// argument validation, ACL checks and verifies the resulting instance exists.
@@ -1827,7 +1853,7 @@ func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 	// Generate a name for the file based on the last two components of the
 	// package name. This name is used by browsers when downloading the file.
 	name := ""
-	chunks = strings.Split(pkg, "/")
+	chunks := strings.Split(pkg, "/")
 	if len(chunks) > 1 {
 		name = fmt.Sprintf("%s-%s", chunks[len(chunks)-2], chunks[len(chunks)-1])
 	} else {
@@ -1838,6 +1864,72 @@ func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 	url, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
 		Object:           inst.Instance,
 		DownloadFilename: name + ".zip",
+	})
+	if err == nil {
+		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
+	}
+	return err
+}
+
+// handleBootstrapDownload redirects to an extracted bootstrap file in GCS.
+//
+// GET /bootstrap/<package>/+/<version>.
+//
+// Where:
+//    package: a CIPD package name (e.g. "a/b/c/linux-amd64").
+//    version: a package version identifier (instance ID, a ref or a tag).
+//
+// Works only with bootstrap packages (per bootstrap.cfg file). See also
+// DescribeBootstrapBundle.
+//
+// On success issues HTTP 302 redirect to the signed Google Storage URL.
+// On errors returns HTTP 4** with an error message.
+func (impl *repoImpl) handleBootstrapDownload(ctx *router.Context) error {
+	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+
+	// Parse the path. The router is too simplistic to parse such paths.
+	pkg, version, err := parseDownloadPath(ctx.Params.ByName("path"))
+	if err != nil {
+		return err
+	}
+
+	// Split the full package name into the prefix and variant.
+	prefix, variant := "", ""
+	if idx := strings.LastIndex(pkg, "/"); idx != -1 {
+		prefix, variant = pkg[:idx], pkg[idx+1:]
+	} else {
+		prefix, variant = "/", pkg
+	}
+
+	// Grab information about the bootstrap file. This does ACL checks, version
+	// resolution, etc.
+	bundle, err := impl.DescribeBootstrapBundle(c, &api.DescribeBootstrapBundleRequest{
+		Prefix:   prefix,
+		Variants: []string{variant},
+		Version:  version,
+	})
+	if err != nil {
+		return err
+	}
+
+	// If DescribeBootstrapBundle succeeded, it *must* have one valid entry.
+	if len(bundle.Files) != 1 {
+		panic(fmt.Sprintf("unexpected BootstrapFile entries: %v", bundle.Files))
+	}
+	bf := bundle.Files[0]
+	if bf.Status.GetCode() != 0 {
+		panic(fmt.Sprintf("unexpected non-OK code: %s", bf.Status))
+	}
+
+	// Put resolved instance ID and file hash into the response headers. This may
+	// be useful when debugging fetches.
+	w.Header().Set(cipdInstanceHeader, common.ObjectRefToInstanceID(bf.Instance))
+	w.Header().Set(cipdDigestHeader, fmt.Sprintf("%s:%s", bf.File.HashAlgo, bf.File.HexDigest))
+
+	// Ask CAS for a signed URL to the extracted file and redirect there.
+	url, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+		Object:           bf.File,
+		DownloadFilename: bf.Name,
 	})
 	if err == nil {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
