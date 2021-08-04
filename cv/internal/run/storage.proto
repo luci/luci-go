@@ -106,3 +106,41 @@ message Options {
 
   // TODO(tandrii): add CQ_INCLUDE_TRYBOTS / Cq-Include-Trybots.
 }
+
+// LogEntries contains 1+ LogEntry ordered from logically oldest to newest.
+message LogEntries {
+  repeated LogEntry entries = 1;
+}
+
+// LogEntry records what changed in a Run.
+message LogEntry {
+  // Next tag: 6.
+
+  // Time is when something was changed.
+  google.protobuf.Timestamp time = 1;
+  oneof kind {
+    // Run was created.
+    Created created = 2;
+    // Run updated to a new project config version.
+    ConfigChanged config_changed = 3;
+    // Tryjobs requirement was (re-)computed.
+    TryjobsRequirementUpdated tryjobs_requirement_updated = 4;
+    // Applicable tryjobs were updated.
+    TryjobsUpdated tryjobs_updated = 5;
+    // TODO(crbug/1232158): add & implement events related to Submission and
+    // ending of the Run.
+  }
+
+  message Created {
+    string config_group_id = 1;
+  }
+  message ConfigChanged {
+    string config_group_id = 1;
+  }
+  message TryjobsRequirementUpdated {
+    // TODO(crbug/1227363): expand as needed.
+  }
+  message TryjobsUpdated {
+    // TODO(crbug/1227363): expand as needed.
+  }
+}

@@ -82,6 +82,8 @@ type Run struct {
 	// notified that a new version of Config has been imported into CV.
 	ConfigGroupID prjcfg.ConfigGroupID `gae:",noindex"`
 	// CLs are IDs of all CLs involved in this Run.
+	//
+	// The index of Runs by CL is provided via RunCL's `IndexedID` field.
 	CLs common.CLIDs `gae:",noindex"`
 	// Options are Run-specific additions on top of LUCI project config.
 	Options *Options
@@ -100,9 +102,13 @@ type Run struct {
 	// CQAttemptKey is what CQDaemon exports to BigQuery as Attempt's key.
 	//
 	// In CQDaemon's source, it's equivalent to GerritAttempt.attempt_key_hash.
+	//
+	// TODO(crbug/1227523): delete this field.
 	CQDAttemptKey string
 	// FinalizedByCQD is true iff the Run was finalized by CQDaemon, which
 	// includes submitting CLs and/or removing CQ votes and sending BQ row.
+	//
+	// TODO(crbug/1227523): delete this field.
 	FinalizedByCQD bool `gae:",noindex"`
 }
 
@@ -150,4 +156,31 @@ type RunCL struct {
 
 	// TODO(tandrii): add field of (ExternalID + "/" + patchset) to support for
 	// direct searches for gerrit/host/change/patchset.
+}
+
+// RunLog is an immutable entry for meaningful changes to a Run's state.
+//
+// RunLog entity is written
+type RunLog struct {
+	_kind string `gae:"$kind,RunLog"`
+
+	// ID is the value Run.EVersion which was saved transactionally with the
+	// creation of the RunLog entity.
+	//
+	// Thus, ordering by ID (default Datastore ordering) will automatically
+	// provide semantically chronological order.
+	ID  int64          `gae:"$id"`
+	Run *datastore.Key `gae:"$parent"`
+	// Entries record what happened to the Run.
+	//
+	// There is always at least one.
+	// Ordered from logically oldest to newest.
+	//
+	// Entries are stored via opaque to Datastore protobuf type in order to
+	// expose it using Admin API with ease.
+	// This has a downside of inability to index or filter by kinds of LogEntry
+	// within the Datastore itself.  However, total number of LogEntries per Run
+	// should be <<1000 and the intended consumption are humans, therefore
+	// indexing isn't a deal breaker.
+	Entries *LogEntries
 }

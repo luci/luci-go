@@ -344,6 +344,346 @@ func (x *Options) GetSkipPresubmit() bool {
 	return false
 }
 
+// LogEntries contains 1+ LogEntry ordered from logically oldest to newest.
+type LogEntries struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Entries []*LogEntry `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+}
+
+func (x *LogEntries) Reset() {
+	*x = LogEntries{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LogEntries) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntries) ProtoMessage() {}
+
+func (x *LogEntries) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogEntries.ProtoReflect.Descriptor instead.
+func (*LogEntries) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *LogEntries) GetEntries() []*LogEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+// LogEntry records what changed in a Run.
+type LogEntry struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Time is when something was changed.
+	Time *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
+	// Types that are assignable to Kind:
+	//	*LogEntry_Created_
+	//	*LogEntry_ConfigChanged_
+	//	*LogEntry_TryjobsRequirementUpdated_
+	//	*LogEntry_TryjobsUpdated_
+	Kind isLogEntry_Kind `protobuf_oneof:"kind"`
+}
+
+func (x *LogEntry) Reset() {
+	*x = LogEntry{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LogEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntry) ProtoMessage() {}
+
+func (x *LogEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogEntry.ProtoReflect.Descriptor instead.
+func (*LogEntry) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *LogEntry) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Time
+	}
+	return nil
+}
+
+func (m *LogEntry) GetKind() isLogEntry_Kind {
+	if m != nil {
+		return m.Kind
+	}
+	return nil
+}
+
+func (x *LogEntry) GetCreated() *LogEntry_Created {
+	if x, ok := x.GetKind().(*LogEntry_Created_); ok {
+		return x.Created
+	}
+	return nil
+}
+
+func (x *LogEntry) GetConfigChanged() *LogEntry_ConfigChanged {
+	if x, ok := x.GetKind().(*LogEntry_ConfigChanged_); ok {
+		return x.ConfigChanged
+	}
+	return nil
+}
+
+func (x *LogEntry) GetTryjobsRequirementUpdated() *LogEntry_TryjobsRequirementUpdated {
+	if x, ok := x.GetKind().(*LogEntry_TryjobsRequirementUpdated_); ok {
+		return x.TryjobsRequirementUpdated
+	}
+	return nil
+}
+
+func (x *LogEntry) GetTryjobsUpdated() *LogEntry_TryjobsUpdated {
+	if x, ok := x.GetKind().(*LogEntry_TryjobsUpdated_); ok {
+		return x.TryjobsUpdated
+	}
+	return nil
+}
+
+type isLogEntry_Kind interface {
+	isLogEntry_Kind()
+}
+
+type LogEntry_Created_ struct {
+	// Run was created.
+	Created *LogEntry_Created `protobuf:"bytes,2,opt,name=created,proto3,oneof"`
+}
+
+type LogEntry_ConfigChanged_ struct {
+	// Run updated to a new project config version.
+	ConfigChanged *LogEntry_ConfigChanged `protobuf:"bytes,3,opt,name=config_changed,json=configChanged,proto3,oneof"`
+}
+
+type LogEntry_TryjobsRequirementUpdated_ struct {
+	// Tryjobs requirement was (re-)computed.
+	TryjobsRequirementUpdated *LogEntry_TryjobsRequirementUpdated `protobuf:"bytes,4,opt,name=tryjobs_requirement_updated,json=tryjobsRequirementUpdated,proto3,oneof"`
+}
+
+type LogEntry_TryjobsUpdated_ struct {
+	// Applicable tryjobs were updated.
+	TryjobsUpdated *LogEntry_TryjobsUpdated `protobuf:"bytes,5,opt,name=tryjobs_updated,json=tryjobsUpdated,proto3,oneof"`
+}
+
+func (*LogEntry_Created_) isLogEntry_Kind() {}
+
+func (*LogEntry_ConfigChanged_) isLogEntry_Kind() {}
+
+func (*LogEntry_TryjobsRequirementUpdated_) isLogEntry_Kind() {}
+
+func (*LogEntry_TryjobsUpdated_) isLogEntry_Kind() {}
+
+type LogEntry_Created struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ConfigGroupId string `protobuf:"bytes,1,opt,name=config_group_id,json=configGroupId,proto3" json:"config_group_id,omitempty"`
+}
+
+func (x *LogEntry_Created) Reset() {
+	*x = LogEntry_Created{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LogEntry_Created) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntry_Created) ProtoMessage() {}
+
+func (x *LogEntry_Created) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogEntry_Created.ProtoReflect.Descriptor instead.
+func (*LogEntry_Created) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *LogEntry_Created) GetConfigGroupId() string {
+	if x != nil {
+		return x.ConfigGroupId
+	}
+	return ""
+}
+
+type LogEntry_ConfigChanged struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ConfigGroupId string `protobuf:"bytes,1,opt,name=config_group_id,json=configGroupId,proto3" json:"config_group_id,omitempty"`
+}
+
+func (x *LogEntry_ConfigChanged) Reset() {
+	*x = LogEntry_ConfigChanged{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LogEntry_ConfigChanged) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntry_ConfigChanged) ProtoMessage() {}
+
+func (x *LogEntry_ConfigChanged) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogEntry_ConfigChanged.ProtoReflect.Descriptor instead.
+func (*LogEntry_ConfigChanged) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{4, 1}
+}
+
+func (x *LogEntry_ConfigChanged) GetConfigGroupId() string {
+	if x != nil {
+		return x.ConfigGroupId
+	}
+	return ""
+}
+
+type LogEntry_TryjobsRequirementUpdated struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *LogEntry_TryjobsRequirementUpdated) Reset() {
+	*x = LogEntry_TryjobsRequirementUpdated{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LogEntry_TryjobsRequirementUpdated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntry_TryjobsRequirementUpdated) ProtoMessage() {}
+
+func (x *LogEntry_TryjobsRequirementUpdated) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogEntry_TryjobsRequirementUpdated.ProtoReflect.Descriptor instead.
+func (*LogEntry_TryjobsRequirementUpdated) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{4, 2}
+}
+
+type LogEntry_TryjobsUpdated struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *LogEntry_TryjobsUpdated) Reset() {
+	*x = LogEntry_TryjobsUpdated{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LogEntry_TryjobsUpdated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntry_TryjobsUpdated) ProtoMessage() {}
+
+func (x *LogEntry_TryjobsUpdated) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogEntry_TryjobsUpdated.ProtoReflect.Descriptor instead.
+func (*LogEntry_TryjobsUpdated) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{4, 3}
+}
+
 var File_go_chromium_org_luci_cv_internal_run_storage_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = []byte{
@@ -398,7 +738,47 @@ var file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = []byte{
 	0x01, 0x28, 0x08, 0x52, 0x0b, 0x73, 0x6b, 0x69, 0x70, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73,
 	0x12, 0x25, 0x0a, 0x0e, 0x73, 0x6b, 0x69, 0x70, 0x5f, 0x70, 0x72, 0x65, 0x73, 0x75, 0x62, 0x6d,
 	0x69, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x73, 0x6b, 0x69, 0x70, 0x50, 0x72,
-	0x65, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68,
+	0x65, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x22, 0x41, 0x0a, 0x0a, 0x4c, 0x6f, 0x67, 0x45, 0x6e,
+	0x74, 0x72, 0x69, 0x65, 0x73, 0x12, 0x33, 0x0a, 0x07, 0x65, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65,
+	0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4c, 0x6f, 0x67, 0x45, 0x6e, 0x74, 0x72,
+	0x79, 0x52, 0x07, 0x65, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x22, 0xba, 0x04, 0x0a, 0x08, 0x4c,
+	0x6f, 0x67, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x2e, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d,
+	0x70, 0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x3d, 0x0a, 0x07, 0x63, 0x72, 0x65, 0x61, 0x74,
+	0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e,
+	0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4c, 0x6f, 0x67, 0x45, 0x6e,
+	0x74, 0x72, 0x79, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x48, 0x00, 0x52, 0x07, 0x63,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x12, 0x50, 0x0a, 0x0e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27,
+	0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e,
+	0x2e, 0x4c, 0x6f, 0x67, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x48, 0x00, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x12, 0x75, 0x0a, 0x1b, 0x74, 0x72, 0x79, 0x6a,
+	0x6f, 0x62, 0x73, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f,
+	0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x33, 0x2e,
+	0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e,
+	0x4c, 0x6f, 0x67, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x2e, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x64, 0x48, 0x00, 0x52, 0x19, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12,
+	0x53, 0x0a, 0x0f, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73, 0x5f, 0x75, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e,
+	0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4c, 0x6f, 0x67, 0x45, 0x6e,
+	0x74, 0x72, 0x79, 0x2e, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x64, 0x48, 0x00, 0x52, 0x0e, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x64, 0x1a, 0x31, 0x0a, 0x07, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x12,
+	0x26, 0x0a, 0x0f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f,
+	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x47, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x1a, 0x37, 0x0a, 0x0d, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x12, 0x26, 0x0a, 0x0f, 0x63, 0x6f, 0x6e, 0x66,
+	0x69, 0x67, 0x5f, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64,
+	0x1a, 0x1b, 0x0a, 0x19, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73, 0x52, 0x65, 0x71, 0x75, 0x69,
+	0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x1a, 0x10, 0x0a,
+	0x0e, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x42,
+	0x06, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68,
 	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
 	0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x72, 0x75, 0x6e, 0x3b,
 	0x72, 0x75, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
@@ -416,22 +796,34 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP() []byt
 	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_goTypes = []interface{}{
-	(*Trigger)(nil),               // 0: cv.internal.run.Trigger
-	(*Submission)(nil),            // 1: cv.internal.run.Submission
-	(*Options)(nil),               // 2: cv.internal.run.Options
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*Trigger)(nil),                            // 0: cv.internal.run.Trigger
+	(*Submission)(nil),                         // 1: cv.internal.run.Submission
+	(*Options)(nil),                            // 2: cv.internal.run.Options
+	(*LogEntries)(nil),                         // 3: cv.internal.run.LogEntries
+	(*LogEntry)(nil),                           // 4: cv.internal.run.LogEntry
+	(*LogEntry_Created)(nil),                   // 5: cv.internal.run.LogEntry.Created
+	(*LogEntry_ConfigChanged)(nil),             // 6: cv.internal.run.LogEntry.ConfigChanged
+	(*LogEntry_TryjobsRequirementUpdated)(nil), // 7: cv.internal.run.LogEntry.TryjobsRequirementUpdated
+	(*LogEntry_TryjobsUpdated)(nil),            // 8: cv.internal.run.LogEntry.TryjobsUpdated
+	(*timestamppb.Timestamp)(nil),              // 9: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_depIdxs = []int32{
-	3, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
-	3, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
-	3, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	9, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
+	9, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
+	9, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
+	4, // 3: cv.internal.run.LogEntries.entries:type_name -> cv.internal.run.LogEntry
+	9, // 4: cv.internal.run.LogEntry.time:type_name -> google.protobuf.Timestamp
+	5, // 5: cv.internal.run.LogEntry.created:type_name -> cv.internal.run.LogEntry.Created
+	6, // 6: cv.internal.run.LogEntry.config_changed:type_name -> cv.internal.run.LogEntry.ConfigChanged
+	7, // 7: cv.internal.run.LogEntry.tryjobs_requirement_updated:type_name -> cv.internal.run.LogEntry.TryjobsRequirementUpdated
+	8, // 8: cv.internal.run.LogEntry.tryjobs_updated:type_name -> cv.internal.run.LogEntry.TryjobsUpdated
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_internal_run_storage_proto_init() }
@@ -476,6 +868,84 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogEntries); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogEntry); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogEntry_Created); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogEntry_ConfigChanged); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogEntry_TryjobsRequirementUpdated); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogEntry_TryjobsUpdated); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
+	file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[4].OneofWrappers = []interface{}{
+		(*LogEntry_Created_)(nil),
+		(*LogEntry_ConfigChanged_)(nil),
+		(*LogEntry_TryjobsRequirementUpdated_)(nil),
+		(*LogEntry_TryjobsUpdated_)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -483,7 +953,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
