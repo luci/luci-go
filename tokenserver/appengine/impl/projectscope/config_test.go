@@ -33,9 +33,9 @@ import (
 const fakeConfig = `
 	projects {
 		id: "id1"
-		config_location {
-			url: "https://some/repo"
-			storage_type: GITILES
+		gitiles_location {
+			repo: "https://some/repo"
+			ref: "refs/heads/main"
 		}
 		identity_config {
 			service_account_email: "foo@bar.com"
@@ -43,9 +43,9 @@ const fakeConfig = `
 	}
 	projects {
 		id: "id2"
-		config_location {
-			url: "https://some/other/repo"
-			storage_type: GITILES
+		gitiles_location {
+			repo: "https://some/other/repo"
+			ref: "refs/heads/main"
 		}
 		identity_config {
 			service_account_email: "bar@bar.com"

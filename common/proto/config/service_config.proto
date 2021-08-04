@@ -15,24 +15,6 @@ option go_package = "go.chromium.org/luci/common/proto/config";
 
 package config;
 
-// DEPRECATED. DO NOT USE because the Gitiles URL is ambiguous due to lack of
-// separation between the Git's ref and the location within the Git repo.
-// Used to specify project/service configuration location.
-message ConfigSetLocation {
-  // Depending on repository type, config service imports configuration files
-  // differently.
-  enum StorageType {
-    // Will be used if storage_type is not set.
-    UNSET = 0;
-    // Gitiles REST API is used to fetch config files.
-    GITILES = 1;
-  }
-  // URL of the repository where project-wide configurations are stored.
-  string url = 1;
-  // Optional. Type of the configuration repository, e.g. GITILES.
-  StorageType storage_type = 2;
-}
-
 // Use to specify configuration stored in Git repository importable via Gitiles
 // API.
 message GitilesLocation {
@@ -97,34 +79,117 @@ message IdentityConfig {
 
 // A tenant of a service. Defined in projects.cfg.
 message Project {
+  reserved 2;
+  reserved 'config_location';
+
   // Globally unique id of the project.
   string id = 1;
 
   // Where to import "projects/<id>" config set from.
   oneof location {
-    // DEPRECATED. Use `gitiles_location` instead.
-    // Where to import "projects/<id>" config set from.
-    ConfigSetLocation config_location = 2;
-
     GitilesLocation gitiles_location = 4;
   }
 
   // IdentityConfig determines what identities are used when LUCI acts on
   // behalf of the project towards external services.
   IdentityConfig identity_config = 3;
+
+  // The Team `name` of the Team which owns this Project.
+  //
+  // Note that the same Team may be indicated for multiple different Projects.
+  string owned_by = 5;
 }
 
-// Schema of projects.cfg file. Represents luci tenants registry.
+// Represents a group of humans who are responsible for one or more LUCI
+// projects.
+//
+// LUCI system maintainers will use the contact addresses associated with
+// this Team in order to contact that group of humans about maintenance actions
+// which this Team needs to perform in order to keep current with LUCI.
+//
+// We recommend subscribing to the following mailing lists as well:
+//   * luci-announce@ - Announcements of new LUCI functionality.
+//   * luci-outages@ - Announcements of LUCI system outages/downtime.
+//   * luci-releases@ - (noisy) Announcements of new LUCI service deployments.
+//
+// We also recommend directing LUCI questions/discussion to:
+//   * go/luci-users-chat - Chatroom open to all users of LUCI. Good place to
+//     ask/answer questions about the use of LUCI services.
+//   * go/luci-dev-chat - Chatroom for developing LUCI services, or
+//     systems which tightly interact with LUCI services.
+//   * luci-eng@ - Email list for LUCI related questions.
+//
+// Bugs should be filed to:
+//   * go/bug-a-trooper - General bug reports related to the operation of
+//     specific builders/machines which happen to run in LUCI. This is a general
+//     Chrome-area bug and will be triaged (usually within 24h).
+//   * go/luci-bug - Bug reports/feature requests for LUCI services.
+//   * go/luci-trooper-bug - Bug reports against LUCI services which
+//     need quick attention from a trooper.
+//   * oncall/chrome-ops-foundation - Oncall rotation for ChOps Foundation
+//     (primary responders for LUCI service outages). It's a good idea to check
+//     go/luci-users-chat and luci-outages@ too.
+//
+// For some migrations, LUCI system maintainers may need to send CLs against
+// your project's configuration. The best way to enable this is to maintain an
+// OWNERS file in your project configuration repo, otherwise we'll have to start
+// guessing at reviewers :).
+//
+// To allow LUCI system maintainers to send CLs, please ensure that eng@ has the
+// ability to read+send CLs to your configuration repo. If we're unable to send
+// a CL (e.g. the repo is super-secret), we'll instead send an email for you to
+// apply the change yourself.
+message Team {
+  // The name of this team; Used for the Project.team field, but also may
+  // be used in e.g. email as the addressee for maintenance messages, like:
+  //
+  //   Hello ${Team.name} LUCI maintainers,
+  //
+  // Examples:
+  //   GOOD: "ChOps Foundation"
+  //   BAD:  "cft"
+  string name = 1;
+
+  // One or more contact emails for this team.
+  //
+  // ALL of these email addresses will be used by the LUCI system owners to
+  // contact the team with maintenance requests/deprecation notices. For
+  // example, if some LUCI functionality is deprecated and needs to be migrated,
+  // then an email would be sent to all contacts listed in this field.
+  //
+  // We recommend setting this to your team's dev-group email.
+  repeated string maintenance_contact = 2;
+
+  // One or more fallback emails for this team.
+  //
+  // If the LUCI system owners attempt to contact the team via
+  // `maintenance_contact` and there's no response, these emails will be
+  // CC'd in increasing order until we get in contact with someone.
+  //
+  // If the LUCI system owners cannot contact anyone in `maintenance_contact` or
+  // in `escalation_contact`, we may need to disable the associated LUCI
+  // project(s).
+  //
+  // We recommend setting this to one or two individual people who are
+  // responsible for your team's LUCI integration, and finally a
+  // wider email group (or groups) than those in maintenance_contact.
+  repeated string escalation_contact = 3;
+}
+
+// Schema of projects.cfg file. Represents LUCI tenants registry.
 message ProjectsCfg {
-  // All projects served by this instance of Luci.
+  // All projects served by this instance of LUCI.
   repeated Project projects = 1;
+
+  // All teams which own projects.
+  repeated Team teams = 2;
 }
 
 /******************************************************************************/
 /* Services                                                                   */
 /******************************************************************************/
 
-// Describes one luci service.
+// Describes one LUCI service.
 message Service {
   reserved 3;
   reserved 'config_location';
@@ -169,7 +234,7 @@ message ServiceDynamicMetadata {
 
 // Schema of services.cfg
 message ServicesCfg {
-  // A list of all luci services. Should be sorted by id.
+  // A list of all LUCI services. Should be sorted by id.
   repeated Service services = 1;
 }
 
