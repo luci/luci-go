@@ -60,7 +60,6 @@ func New(ctx context.Context, instance string, opts auth.Options, readOnly bool)
 func DefaultConfig() cas.ClientConfig {
 	cfg := cas.DefaultClientConfig()
 	cfg.CompressedBytestreamThreshold = 0 // compress always
-	cfg.FSLargeConcurrency = runtime.NumCPU()
 
 	// Do not read file less than 10MiB twice.
 	cfg.SmallFileThreshold = 10 * 1024 * 1024
