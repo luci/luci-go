@@ -34,7 +34,6 @@ import (
 // emulatorRelativePath is the relative path of the Cloud Spanner Emulator binary to gcloud root.
 const emulatorRelativePath = "bin/cloud_spanner_emulator/emulator_main"
 
-
 // findEmulatorPath finds the path to Cloud Spanner Emulator binary.
 //
 // Note that this should only work on Linux because only gcloud on Linux contains

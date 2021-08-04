@@ -21,10 +21,10 @@ import (
 // CloneShallow creates a new shallow clone.
 func (c *Component) CloneShallow() *Component {
 	return &Component{
-		Clids:        c.GetClids(),
-		Pruns:        c.GetPruns(),
-		DecisionTime: c.GetDecisionTime(),
-		TriageRequired:        c.GetTriageRequired(),
+		Clids:          c.GetClids(),
+		Pruns:          c.GetPruns(),
+		DecisionTime:   c.GetDecisionTime(),
+		TriageRequired: c.GetTriageRequired(),
 	}
 }
 

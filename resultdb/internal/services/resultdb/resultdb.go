@@ -76,7 +76,7 @@ func InitServer(srv *server.Server, opts Options) error {
 		generateArtifactURL: contentServer.GenerateSignedURL,
 	}
 	pb.RegisterResultDBServer(srv.PRPC, &pb.DecoratedResultDB{
-		Service: rdbSvr,
+		Service:  rdbSvr,
 		Postlude: internal.CommonPostlude,
 	})
 

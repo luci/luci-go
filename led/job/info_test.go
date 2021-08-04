@@ -42,10 +42,10 @@ func TestGetCurrentIsolated(t *testing.T) {
 
 		Convey(`CasUserPayload`, func() {
 			jd := testBBJob()
-			jd.CasUserPayload = &api.CASReference{Digest: &api.Digest{Hash:"hash"}}
+			jd.CasUserPayload = &api.CASReference{Digest: &api.Digest{Hash: "hash"}}
 			current, err := jd.Info().CurrentIsolated()
 			So(err, ShouldBeNil)
-			So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest: &api.Digest{Hash:"hash"}}})
+			So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
 		})
 
 		Convey(`Swarming`, func() {
@@ -107,41 +107,41 @@ func TestGetCurrentIsolated(t *testing.T) {
 						TaskSlices: []*api.TaskSlice{
 							{
 								Properties: &api.TaskProperties{CasInputRoot: &api.CASReference{
-									Digest: &api.Digest{Hash:"hash"},
+									Digest: &api.Digest{Hash: "hash"},
 								}},
 							},
 						},
 					}
 					current, err := jd.Info().CurrentIsolated()
 					So(err, ShouldBeNil)
-					So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest:&api.Digest{Hash:"hash"}}})
+					So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
 				})
 
 				Convey(`slice+CasUserPayload (match)`, func() {
 					jd := testSWJob()
-					jd.CasUserPayload = &api.CASReference{CasInstance: "instance",}
+					jd.CasUserPayload = &api.CASReference{CasInstance: "instance"}
 					jd.GetSwarming().Task = &api.TaskRequest{
 						TaskSlices: []*api.TaskSlice{
 							{
 								Properties: &api.TaskProperties{CasInputRoot: &api.CASReference{
-									Digest: &api.Digest{Hash:"hash"},
+									Digest: &api.Digest{Hash: "hash"},
 								}},
 							},
 						},
 					}
 					current, err := jd.Info().CurrentIsolated()
 					So(err, ShouldBeNil)
-					So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest:&api.Digest{Hash:"hash"}}})
+					So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
 				})
 
 				Convey(`slice+CasUserPayload (mismatch)`, func() {
 					jd := testSWJob()
-					jd.CasUserPayload = &api.CASReference{Digest:&api.Digest{Hash:"new hash"}}
+					jd.CasUserPayload = &api.CASReference{Digest: &api.Digest{Hash: "new hash"}}
 					jd.GetSwarming().Task = &api.TaskRequest{
 						TaskSlices: []*api.TaskSlice{
 							{
 								Properties: &api.TaskProperties{CasInputRoot: &api.CASReference{
-									Digest: &api.Digest{Hash:"hash"},
+									Digest: &api.Digest{Hash: "hash"},
 								}},
 							},
 						},

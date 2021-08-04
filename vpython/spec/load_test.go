@@ -79,7 +79,7 @@ func TestLoadForScript(t *testing.T) {
 				"foo/bar/__init__.py":     "",
 				"foo/bar.vpython":         badSpecData,
 			})
-			_, _, err :=  l.LoadForScript(c, makePath("foo/bar/baz"), true)
+			_, _, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
 		})
 
@@ -213,7 +213,7 @@ func TestLoadForScript(t *testing.T) {
 				}, "\n"),
 			})
 
-			_, _, err :=  l.LoadForScript(c, makePath("pants.py"), false)
+			_, _, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
 		})
 
@@ -233,7 +233,7 @@ func TestLoadForScript(t *testing.T) {
 				}, "\n"),
 			})
 
-			_, _, err :=  l.LoadForScript(c, makePath("pants.py"), false)
+			_, _, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldErrLike, "unterminated inline spec file")
 		})
 
@@ -315,7 +315,7 @@ func TestLoadForScript(t *testing.T) {
 				"common.vpython":      badSpecData,
 			})
 
-			_, _, err :=  l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
+			_, _, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
 		})
 	})

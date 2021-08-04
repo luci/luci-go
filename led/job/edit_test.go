@@ -65,7 +65,7 @@ func TestClearCurrentIsolated(t *testing.T) {
 				jd.CasUserPayload = &api.CASReference{
 					CasInstance: "instance",
 					Digest: &api.Digest{
-						Hash: "hash",
+						Hash:      "hash",
 						SizeBytes: 1,
 					},
 				}
