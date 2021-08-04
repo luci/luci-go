@@ -26,6 +26,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -61,7 +62,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 		rs := &state.RunState{
 			Run: run.Run{
 				ID:         rid,
-				Status:     run.Status_RUNNING,
+				Status:     commonpb.Run_RUNNING,
 				CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
 				StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
 				CLs:        common.CLIDs{1},
@@ -134,12 +135,12 @@ func TestOnVerificationCompleted(t *testing.T) {
 
 		h, _, _, _ := makeTestImpl(&ct)
 
-		statuses := []run.Status{
-			run.Status_SUCCEEDED,
-			run.Status_FAILED,
-			run.Status_CANCELLED,
-			run.Status_WAITING_FOR_SUBMISSION,
-			run.Status_SUBMITTING,
+		statuses := []commonpb.Run_Status{
+			commonpb.Run_SUCCEEDED,
+			commonpb.Run_FAILED,
+			commonpb.Run_CANCELLED,
+			commonpb.Run_WAITING_FOR_SUBMISSION,
+			commonpb.Run_SUBMITTING,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
@@ -179,7 +180,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldNotBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
+				So(res.State.Run.Status, ShouldEqual, commonpb.Run_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 					Deadline:          timestamppb.New(now.Add(submissionDuration)),
 					Cls:               []int64{1},
@@ -211,7 +212,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
 				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
+				So(res.State.Run.Status, ShouldEqual, commonpb.Run_SUCCEEDED)
 				ci := ct.GFake.GetChange(gHost, gChange).Info
 				So(gf.NonZeroVotes(ci, trigger.CQLabelName), ShouldBeEmpty)
 				So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, "Dry run: This CL passed the CQ dry run.")
@@ -249,7 +250,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
 				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+				So(res.State.Run.Status, ShouldEqual, commonpb.Run_FAILED)
 				ci := ct.GFake.GetChange(gHost, gChange).Info
 				So(gf.NonZeroVotes(ci, trigger.CQLabelName), ShouldBeEmpty)
 				So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, "builder abc failed")

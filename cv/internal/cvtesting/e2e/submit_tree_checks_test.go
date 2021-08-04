@@ -22,6 +22,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common/tree"
@@ -99,7 +100,7 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			rSubmit = ct.LoadRun(ctx, rSubmit.ID)
 			rWait = ct.LoadRun(ctx, rWait.ID)
-			return rWait.Status == run.Status_WAITING_FOR_SUBMISSION && rSubmit.Status == run.Status_SUCCEEDED
+			return rWait.Status == commonpb.Run_WAITING_FOR_SUBMISSION && rSubmit.Status == commonpb.Run_SUCCEEDED
 		})
 		So(ct.GFake.GetChange(gHost, gChangeWait).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 		So(ct.GFake.GetChange(gHost, gChangeSubmit).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)

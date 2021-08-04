@@ -1,0 +1,81 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.common.v1;
+
+option go_package = "go.chromium.org/luci/cv/api/common/v1;commonpb";
+
+// Run includes the high-level information about a CV Run.
+message Run {
+  // Status describes the status of a CV Run.
+  enum Status {
+    // Unspecified status.
+    STATUS_UNSPECIFIED = 0;
+    // Run is pending to start.
+    //
+    // It is either because Run Manager hasn't processed the StartEvent yet or
+    // the RunOwner has exhausted all the quota and waiting for new quota to
+    // be available.
+    PENDING = 1;
+    // Run is running.
+    RUNNING = 2;
+    // Run is waiting for submission.
+    //
+    // Run is in this status if one of the following scenario is true:
+    //   1. Tree is closed at the time Run attempts to submit.
+    //   2. There is another Run in the same LUCI Project that is currently
+    //      submitting.
+    //   3. The submission is rate limited according to the submit option in
+    //      Project Config.
+    //
+    // This status is cancellable.
+    WAITING_FOR_SUBMISSION = 4;
+    // Run is submitting.
+    //
+    // A Run can't be cancelled while submitting. A Run may transition from
+    // this status to either `WAITING_FOR_SUBMISSION` status or a non-cancelled
+    // terminal status.
+    SUBMITTING = 5;
+
+    // End of non-terminal status; MUST have value less than `ENDED_MASK`.
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Terminal Status
+
+    // ENDED_MASK can be used as a bitmask to check if a Run has ended.
+    // This MUST NOT be used as the status of a Run.
+    ENDED_MASK = 64;
+    // Run ends successfully.
+    SUCCEEDED = 65;
+    // Run ends unsuccessfully.
+    FAILED = 66;
+    // Run is cancelled.
+    CANCELLED = 67;
+  }
+
+  // The unqiue ID of the Run.
+  //
+  // The format of an ID is "projects/$luci-project/runs/$id", where
+  // - luci-project is the name of the LUCI project the Run belongs to
+  // - id is an opaque key unique in the LUCI project.
+  string id = 1;
+  // status of the Run.
+  Status status = 2;
+  // eversion is the entity version.
+  //
+  // It increments by one upon every successful modification.
+  int64 eversion = 3;
+}

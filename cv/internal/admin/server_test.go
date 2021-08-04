@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -289,7 +290,7 @@ func TestSearchRuns(t *testing.T) {
 				So(datastore.Put(ctx,
 					&run.Run{
 						ID:     earlierID,
-						Status: run.Status_CANCELLED,
+						Status: commonpb.Run_CANCELLED,
 						CLs:    common.MakeCLIDs(1, 2),
 					},
 					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, earlierID), ID: cl1.ID, IndexedID: cl1.ID},
@@ -297,7 +298,7 @@ func TestSearchRuns(t *testing.T) {
 
 					&run.Run{
 						ID:     laterID,
-						Status: run.Status_RUNNING,
+						Status: commonpb.Run_RUNNING,
 						CLs:    common.MakeCLIDs(1),
 					},
 					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, laterID), ID: cl1.ID, IndexedID: cl1.ID},
@@ -306,7 +307,7 @@ func TestSearchRuns(t *testing.T) {
 				Convey("exact", func() {
 					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
-						Status:  run.Status_CANCELLED,
+						Status:  commonpb.Run_CANCELLED,
 					})
 					So(err, ShouldBeNil)
 					So(resp.GetRuns(), ShouldHaveLength, 1)
@@ -316,7 +317,7 @@ func TestSearchRuns(t *testing.T) {
 				Convey("ended", func() {
 					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
-						Status:  run.Status_ENDED_MASK,
+						Status:  commonpb.Run_ENDED_MASK,
 					})
 					So(err, ShouldBeNil)
 					So(resp.GetRuns(), ShouldHaveLength, 1)
@@ -335,7 +336,7 @@ func TestSearchRuns(t *testing.T) {
 				Convey("with CL and run status", func() {
 					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Cl:     &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
-						Status: run.Status_ENDED_MASK,
+						Status: commonpb.Run_ENDED_MASK,
 					})
 					So(err, ShouldBeNil)
 					So(resp.GetRuns(), ShouldHaveLength, 1)

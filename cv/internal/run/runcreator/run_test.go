@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -294,7 +295,7 @@ func TestRunBuilder(t *testing.T) {
 				CreateTime:    datastore.RoundTime(ct.Clock.Now().UTC()),
 				UpdateTime:    datastore.RoundTime(ct.Clock.Now().UTC()),
 				CLs:           common.CLIDs{cl1.ID, cl2.ID},
-				Status:        run.Status_PENDING,
+				Status:        commonpb.Run_PENDING,
 
 				CreationOperationID: rb.run.CreationOperationID,
 				ConfigGroupID:       rb.ConfigGroupID,

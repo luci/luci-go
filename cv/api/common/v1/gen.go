@@ -12,29 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtest
+//go:generate cproto
 
-import (
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
-	"go.chromium.org/luci/cv/internal/run"
-)
-
-// AreRunning is true if all runs are non-nil and Running.
-func AreRunning(runs ...*run.Run) bool {
-	for _, r := range runs {
-		if r == nil || r.Status != commonpb.Run_RUNNING {
-			return false
-		}
-	}
-	return true
-}
-
-// AreEnded is true if all runs are not nil and have ended.
-func AreEnded(runs ...*run.Run) bool {
-	for _, r := range runs {
-		if r == nil || !run.IsEnded(r.Status) {
-			return false
-		}
-	}
-	return true
-}
+// Package commonpb defines the messages for common business objects modelled
+// in CV.
+package commonpb

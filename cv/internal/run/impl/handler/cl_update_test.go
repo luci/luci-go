@@ -26,6 +26,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -63,7 +64,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			Run: run.Run{
 				ID:            common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef")),
 				StartTime:     triggerTime.Add(1 * time.Minute),
-				Status:        run.Status_RUNNING,
+				Status:        commonpb.Run_RUNNING,
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			},
 		}
@@ -115,10 +116,10 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(res.PreserveEvents, ShouldBeFalse)
 		}
 		Convey("Noop", func() {
-			statuses := []run.Status{
-				run.Status_SUCCEEDED,
-				run.Status_FAILED,
-				run.Status_CANCELLED,
+			statuses := []commonpb.Run_Status{
+				commonpb.Run_SUCCEEDED,
+				commonpb.Run_FAILED,
+				commonpb.Run_CANCELLED,
 			}
 			for _, status := range statuses {
 				Convey(fmt.Sprintf("When Run is %s", status), func() {
@@ -144,7 +145,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			})
 		})
 		Convey("Preserve events for SUBMITTING Run", func() {
-			rs.Run.Status = run.Status_SUBMITTING
+			rs.Run.Status = commonpb.Run_SUBMITTING
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
@@ -155,7 +156,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		runAndVerifyCancelled := func() {
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.Run.Status, ShouldEqual, commonpb.Run_CANCELLED)
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		}

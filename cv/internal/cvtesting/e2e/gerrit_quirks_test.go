@@ -17,6 +17,7 @@ package e2e
 import (
 	"testing"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -52,7 +53,7 @@ func TestGerritCLDeleted(t *testing.T) {
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
-			return r != nil && r.Status == run.Status_RUNNING
+			return r != nil && r.Status == commonpb.Run_RUNNING
 		})
 
 		ct.LogPhase(ctx, "CL disappears")
@@ -73,6 +74,6 @@ func TestGerritCLDeleted(t *testing.T) {
 		})
 
 		r = ct.LoadRun(ctx, r.ID)
-		So(r.Status, ShouldEqual, run.Status_RUNNING)
+		So(r.Status, ShouldEqual, commonpb.Run_RUNNING)
 	})
 }

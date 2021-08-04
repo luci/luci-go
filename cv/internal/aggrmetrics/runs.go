@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -119,7 +120,7 @@ func (r *runsAggregator) prepare(ctx context.Context, activeProjects stringset.S
 }
 
 type projectStat struct {
-	byStatus      map[run.Status]int64
+	byStatus      map[commonpb.Run_Status]int64
 	sinceCreation *distribution.Distribution
 }
 
@@ -127,7 +128,7 @@ func newProjectStat() *projectStat {
 	return &projectStat{
 		// Always set Status_RUNNING to 0, as this way all projects will always be
 		// reported.
-		byStatus:      map[run.Status]int64{run.Status_RUNNING: 0},
+		byStatus:      map[commonpb.Run_Status]int64{commonpb.Run_RUNNING: 0},
 		sinceCreation: distribution.New(metricActiveRunsDurationsS.Bucketer()),
 	}
 }
@@ -151,7 +152,7 @@ func (p *projectStat) add(r *run.Run, now time.Time) {
 
 func (p *projectStat) report(ctx context.Context, project string) {
 	for code, cnt := range p.byStatus {
-		status := run.Status_name[int32(code)]
+		status := commonpb.Run_Status_name[int32(code)]
 		metricActiveRunsCount.Set(ctx, cnt, project, status)
 	}
 	metricActiveRunsDurationsS.Set(ctx, p.sinceCreation, project)
@@ -161,7 +162,7 @@ func (p *projectStat) report(ctx context.Context, project string) {
 //
 // This is a cheap query in Datastore, both in terms of time and $ cost.
 func loadActiveRuns(ctx context.Context, limit int32) ([]*datastore.Key, error) {
-	q := datastore.NewQuery(run.RunKind).Limit(limit).KeysOnly(true).Lt("Status", run.Status_ENDED_MASK)
+	q := datastore.NewQuery(run.RunKind).Limit(limit).KeysOnly(true).Lt("Status", commonpb.Run_ENDED_MASK)
 	var out []*datastore.Key
 	switch err := datastore.GetAll(ctx, q, &out); {
 	case ctx.Err() != nil:

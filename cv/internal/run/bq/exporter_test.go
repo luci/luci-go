@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -50,7 +51,7 @@ func TestExportRunToBQ(t *testing.T) {
 		runID := common.MakeRunID("lproject", epoch, 1, []byte("aaa"))
 		r := run.Run{
 			ID:            runID,
-			Status:        run.Status_SUCCEEDED,
+			Status:        commonpb.Run_SUCCEEDED,
 			ConfigGroupID: "sha256:deadbeefdeadbeef/cgroup",
 			CreateTime:    epoch,
 			StartTime:     epoch.Add(time.Minute * 2),

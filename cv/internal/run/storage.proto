@@ -20,52 +20,6 @@ option go_package = "go.chromium.org/luci/cv/internal/run;run";
 
 import "google/protobuf/timestamp.proto";
 
-// Status describes the status of a CV Run.
-enum Status {
-  // Unspecified status.
-  STATUS_UNSPECIFIED = 0;
-  // Run is pending to start.
-  //
-  // It is either because Run Manager hasn't processed the StartEvent yet or
-  // the RunOwner has exhausted all the quota and waiting for new quota to
-  // be available.
-  PENDING = 1;
-  // Run is running.
-  RUNNING = 2;
-  // Run is waiting for submission.
-  //
-  // Run is in this status if one of the following scenario is true:
-  //   1. Tree is closed at the time Run attempts to submit.
-  //   2. There is another Run in the same LUCI Project that is currently
-  //      submitting.
-  //   3. The submission is rate limited according to the submit option in
-  //      Project Config.
-  //
-  // This status is cancellable.
-  WAITING_FOR_SUBMISSION = 4;
-  // Run is submitting.
-  //
-  // A Run can't be cancelled while submitting. A Run may transition from
-  // this status to either `WAITING_FOR_SUBMISSION` status or a non-cancelled
-  // terminal status.
-  SUBMITTING = 5;
-
-  // End of non-terminal status; MUST have value less than `ENDED_MASK`.
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Terminal Status
-
-  // ENDED_MASK can be used as a bitmask to check if a Run has ended.
-  // This MUST NOT be used as the status of a Run.
-  ENDED_MASK = 64;
-  // Run ends successfully.
-  SUCCEEDED = 65;
-  // Run ends unsuccessfully.
-  FAILED = 66;
-  // Run is cancelled.
-  CANCELLED = 67;
-}
-
 // Trigger describes who/how CV was triggered on a specific CL.
 message Trigger {
   google.protobuf.Timestamp time = 1;

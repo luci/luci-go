@@ -35,101 +35,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Status describes the status of a CV Run.
-type Status int32
-
-const (
-	// Unspecified status.
-	Status_STATUS_UNSPECIFIED Status = 0
-	// Run is pending to start.
-	//
-	// It is either because Run Manager hasn't processed the StartEvent yet or
-	// the RunOwner has exhausted all the quota and waiting for new quota to
-	// be available.
-	Status_PENDING Status = 1
-	// Run is running.
-	Status_RUNNING Status = 2
-	// Run is waiting for submission.
-	//
-	// Run is in this status if one of the following scenario is true:
-	//   1. Tree is closed at the time Run attempts to submit.
-	//   2. There is another Run in the same LUCI Project that is currently
-	//      submitting.
-	//   3. The submission is rate limited according to the submit option in
-	//      Project Config.
-	//
-	// This status is cancellable.
-	Status_WAITING_FOR_SUBMISSION Status = 4
-	// Run is submitting.
-	//
-	// A Run can't be cancelled while submitting. A Run may transition from
-	// this status to either `WAITING_FOR_SUBMISSION` status or a non-cancelled
-	// terminal status.
-	Status_SUBMITTING Status = 5
-	// ENDED_MASK can be used as a bitmask to check if a Run has ended.
-	// This MUST NOT be used as the status of a Run.
-	Status_ENDED_MASK Status = 64
-	// Run ends successfully.
-	Status_SUCCEEDED Status = 65
-	// Run ends unsuccessfully.
-	Status_FAILED Status = 66
-	// Run is cancelled.
-	Status_CANCELLED Status = 67
-)
-
-// Enum value maps for Status.
-var (
-	Status_name = map[int32]string{
-		0:  "STATUS_UNSPECIFIED",
-		1:  "PENDING",
-		2:  "RUNNING",
-		4:  "WAITING_FOR_SUBMISSION",
-		5:  "SUBMITTING",
-		64: "ENDED_MASK",
-		65: "SUCCEEDED",
-		66: "FAILED",
-		67: "CANCELLED",
-	}
-	Status_value = map[string]int32{
-		"STATUS_UNSPECIFIED":     0,
-		"PENDING":                1,
-		"RUNNING":                2,
-		"WAITING_FOR_SUBMISSION": 4,
-		"SUBMITTING":             5,
-		"ENDED_MASK":             64,
-		"SUCCEEDED":              65,
-		"FAILED":                 66,
-		"CANCELLED":              67,
-	}
-)
-
-func (x Status) Enum() *Status {
-	p := new(Status)
-	*p = x
-	return p
-}
-
-func (x Status) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes[0].Descriptor()
-}
-
-func (Status) Type() protoreflect.EnumType {
-	return &file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes[0]
-}
-
-func (x Status) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use Status.Descriptor instead.
-func (Status) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{0}
-}
-
 // Trigger describes who/how CV was triggered on a specific CL.
 type Trigger struct {
 	state         protoimpl.MessageState
@@ -493,20 +398,10 @@ var file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = []byte{
 	0x01, 0x28, 0x08, 0x52, 0x0b, 0x73, 0x6b, 0x69, 0x70, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x73,
 	0x12, 0x25, 0x0a, 0x0e, 0x73, 0x6b, 0x69, 0x70, 0x5f, 0x70, 0x72, 0x65, 0x73, 0x75, 0x62, 0x6d,
 	0x69, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x73, 0x6b, 0x69, 0x70, 0x50, 0x72,
-	0x65, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x2a, 0xa0, 0x01, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74,
-	0x75, 0x73, 0x12, 0x16, 0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53,
-	0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x45,
-	0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e, 0x49,
-	0x4e, 0x47, 0x10, 0x02, 0x12, 0x1a, 0x0a, 0x16, 0x57, 0x41, 0x49, 0x54, 0x49, 0x4e, 0x47, 0x5f,
-	0x46, 0x4f, 0x52, 0x5f, 0x53, 0x55, 0x42, 0x4d, 0x49, 0x53, 0x53, 0x49, 0x4f, 0x4e, 0x10, 0x04,
-	0x12, 0x0e, 0x0a, 0x0a, 0x53, 0x55, 0x42, 0x4d, 0x49, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x10, 0x05,
-	0x12, 0x0e, 0x0a, 0x0a, 0x45, 0x4e, 0x44, 0x45, 0x44, 0x5f, 0x4d, 0x41, 0x53, 0x4b, 0x10, 0x40,
-	0x12, 0x0d, 0x0a, 0x09, 0x53, 0x55, 0x43, 0x43, 0x45, 0x45, 0x44, 0x45, 0x44, 0x10, 0x41, 0x12,
-	0x0a, 0x0a, 0x06, 0x46, 0x41, 0x49, 0x4c, 0x45, 0x44, 0x10, 0x42, 0x12, 0x0d, 0x0a, 0x09, 0x43,
-	0x41, 0x4e, 0x43, 0x45, 0x4c, 0x4c, 0x45, 0x44, 0x10, 0x43, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x72,
-	0x75, 0x6e, 0x3b, 0x72, 0x75, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68,
+	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
+	0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x72, 0x75, 0x6e, 0x3b,
+	0x72, 0x75, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -521,19 +416,17 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP() []byt
 	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_goTypes = []interface{}{
-	(Status)(0),                   // 0: cv.internal.run.Status
-	(*Trigger)(nil),               // 1: cv.internal.run.Trigger
-	(*Submission)(nil),            // 2: cv.internal.run.Submission
-	(*Options)(nil),               // 3: cv.internal.run.Options
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(*Trigger)(nil),               // 0: cv.internal.run.Trigger
+	(*Submission)(nil),            // 1: cv.internal.run.Submission
+	(*Options)(nil),               // 2: cv.internal.run.Options
+	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_depIdxs = []int32{
-	4, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
-	4, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
-	4, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
+	3, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
+	3, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
+	3, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -589,14 +482,13 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc,
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_go_chromium_org_luci_cv_internal_run_storage_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_cv_internal_run_storage_proto_depIdxs,
-		EnumInfos:         file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_cv_internal_run_storage_proto = out.File

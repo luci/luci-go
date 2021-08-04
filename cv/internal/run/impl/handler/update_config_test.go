@@ -25,6 +25,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -126,7 +127,7 @@ func TestUpdateConfig(t *testing.T) {
 				CLs:           common.MakeCLIDs(1, 2),
 				CreateTime:    triggerTime,
 				StartTime:     triggerTime.Add(1 * time.Minute),
-				Status:        run.Status_RUNNING,
+				Status:        commonpb.Run_RUNNING,
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0], // main
 			},
 		}
@@ -152,10 +153,10 @@ func TestUpdateConfig(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 			}
 
-			for _, status := range []run.Status{
-				run.Status_SUCCEEDED,
-				run.Status_FAILED,
-				run.Status_CANCELLED,
+			for _, status := range []commonpb.Run_Status{
+				commonpb.Run_SUCCEEDED,
+				commonpb.Run_FAILED,
+				commonpb.Run_CANCELLED,
 			} {
 				Convey(fmt.Sprintf("When Run is %s", status), func() {
 					rs.Run.Status = status
@@ -177,7 +178,7 @@ func TestUpdateConfig(t *testing.T) {
 		})
 
 		Convey("Preserve events for SUBMITTING Run", func() {
-			rs.Run.Status = run.Status_SUBMITTING
+			rs.Run.Status = commonpb.Run_SUBMITTING
 			res := updateConfig()
 			So(res.State, ShouldEqual, rs)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -189,7 +190,7 @@ func TestUpdateConfig(t *testing.T) {
 				res := updateConfig()
 				So(res.State.Run.ConfigGroupID.Hash(), ShouldNotEqual, metaCurrent.Hash())
 				So(res.State.Run.ConfigGroupID.Name(), ShouldEqual, expectedGroupName)
-				So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
+				So(res.State.Run.Status, ShouldEqual, commonpb.Run_RUNNING)
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 			}
@@ -222,7 +223,7 @@ func TestUpdateConfig(t *testing.T) {
 				res := updateConfig()
 				// Applicable ConfigGroupID should remain the same.
 				So(res.State.Run.ConfigGroupID, ShouldEqual, rs.Run.ConfigGroupID)
-				So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+				So(res.State.Run.Status, ShouldEqual, commonpb.Run_CANCELLED)
 				So(res.SideEffectFn, ShouldNotBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 			}

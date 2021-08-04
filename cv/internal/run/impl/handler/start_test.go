@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -61,7 +62,7 @@ func TestStart(t *testing.T) {
 		rs := &state.RunState{
 			Run: run.Run{
 				ID:            lProject + "/1111111111111-deadbeef",
-				Status:        run.Status_PENDING,
+				Status:        commonpb.Run_PENDING,
 				CreateTime:    clock.Now(ctx).UTC().Add(-startLatency),
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			},
@@ -73,10 +74,10 @@ func TestStart(t *testing.T) {
 			ctx, _, _ = tsmon.WithFakes(ctx)
 			tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
 
-			rs.Run.Status = run.Status_PENDING
+			rs.Run.Status = commonpb.Run_PENDING
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
+			So(res.State.Run.Status, ShouldEqual, commonpb.Run_RUNNING)
 			So(res.State.Run.StartTime, ShouldResemble, clock.Now(ctx).UTC())
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
@@ -87,13 +88,13 @@ func TestStart(t *testing.T) {
 				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
 		})
 
-		statuses := []run.Status{
-			run.Status_RUNNING,
-			run.Status_WAITING_FOR_SUBMISSION,
-			run.Status_SUBMITTING,
-			run.Status_SUCCEEDED,
-			run.Status_FAILED,
-			run.Status_CANCELLED,
+		statuses := []commonpb.Run_Status{
+			commonpb.Run_RUNNING,
+			commonpb.Run_WAITING_FOR_SUBMISSION,
+			commonpb.Run_SUBMITTING,
+			commonpb.Run_SUCCEEDED,
+			commonpb.Run_FAILED,
+			commonpb.Run_CANCELLED,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {

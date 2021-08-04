@@ -24,11 +24,11 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -83,7 +83,7 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 				return false
 			}
 			for _, r := range runs {
-				if r.Status != run.Status_SUCCEEDED {
+				if r.Status != commonpb.Run_SUCCEEDED {
 					return false
 				}
 			}

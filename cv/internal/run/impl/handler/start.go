@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
@@ -31,11 +32,11 @@ import (
 // Start implements Handler interface.
 func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
-	case status == run.Status_STATUS_UNSPECIFIED:
+	case status == commonpb.Run_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", rs.Run.ID).Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status != run.Status_PENDING:
+	case status != commonpb.Run_PENDING:
 		logging.Debugf(ctx, "Skip starting Run because this Run is %s", status)
 		return &Result{State: rs}, nil
 	}
@@ -46,7 +47,7 @@ func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 	}
 
 	res := &Result{State: rs.ShallowCopy()}
-	res.State.Run.Status = run.Status_RUNNING
+	res.State.Run.Status = commonpb.Run_RUNNING
 	res.State.Run.StartTime = clock.Now(ctx).UTC()
 	recordPickupLatency(ctx, &(res.State.Run), cg)
 	return res, nil

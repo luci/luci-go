@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -100,7 +101,7 @@ func TestPokeRecheckTree(t *testing.T) {
 
 		Convey("Tree checks", func() {
 			Convey("Check Tree if condition matches", func() {
-				rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
+				rs.Run.Status = commonpb.Run_WAITING_FOR_SUBMISSION
 				rs.Run.Submission = &run.Submission{
 					TreeOpen:          false,
 					LastTreeCheckTime: timestamppb.New(now.Add(-1 * time.Minute)),
@@ -130,7 +131,7 @@ func TestPokeRecheckTree(t *testing.T) {
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldNotBeNil)
 					// proceed to submission right away
-					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
+					So(res.State.Run.Status, ShouldEqual, commonpb.Run_SUBMITTING)
 					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 						Deadline:          timestamppb.New(now.Add(submissionDuration)),
 						Cls:               []int64{1},
@@ -147,7 +148,7 @@ func TestPokeRecheckTree(t *testing.T) {
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					So(res.State.Run.Status, ShouldEqual, commonpb.Run_WAITING_FOR_SUBMISSION)
 					// record the result and check again after 1 minute.
 					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 						TreeOpen:          false,
@@ -159,12 +160,12 @@ func TestPokeRecheckTree(t *testing.T) {
 
 			Convey("No-op if condition doesn't match", func() {
 				Convey("Not in WAITING_FOR_SUBMISSION status", func() {
-					rs.Run.Status = run.Status_RUNNING
+					rs.Run.Status = commonpb.Run_RUNNING
 					verifyNoOp()
 				})
 
 				Convey("Tree is open in the previous check", func() {
-					rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
+					rs.Run.Status = commonpb.Run_WAITING_FOR_SUBMISSION
 					rs.Run.Submission = &run.Submission{
 						TreeOpen:          true,
 						LastTreeCheckTime: timestamppb.New(now.Add(-2 * time.Minute)),
@@ -173,7 +174,7 @@ func TestPokeRecheckTree(t *testing.T) {
 				})
 
 				Convey("Last Tree check is too recent", func() {
-					rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
+					rs.Run.Status = commonpb.Run_WAITING_FOR_SUBMISSION
 					rs.Run.Submission = &run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now.Add(-1 * time.Second)),
@@ -185,7 +186,7 @@ func TestPokeRecheckTree(t *testing.T) {
 
 		Convey("CLs Refresh", func() {
 			Convey("No-op if finalized", func() {
-				rs.Run.Status = run.Status_CANCELLED
+				rs.Run.Status = commonpb.Run_CANCELLED
 				verifyNoOp()
 			})
 			Convey("No-op if recently created", func() {

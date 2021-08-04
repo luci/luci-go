@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -281,16 +282,16 @@ func (m *MigrationServer) FetchRunStatus(ctx context.Context, req *migrationpb.F
 		return nil, appstatus.Errorf(codes.FailedPrecondition, "Run %q is not final yet (%s)", r.ID, r.Status)
 	}
 	switch r.Status {
-	case run.Status_SUCCEEDED:
+	case commonpb.Run_SUCCEEDED:
 		if r.Mode == run.FullRun {
 			res.Event = "patch_committed"
 		} else {
 			res.Event = "patch_ready_to_commit"
 		}
-	case run.Status_FAILED:
+	case commonpb.Run_FAILED:
 		res.Event = "patch_failed"
 		// TODO(tandrii,yiwzhang): get actual failure message.
-	case run.Status_CANCELLED:
+	case commonpb.Run_CANCELLED:
 		res.Event = "patch_failed"
 		res.Extra = "CQ bit was unchecked."
 	default:

@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	cvbq "go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/migration"
@@ -229,9 +230,9 @@ func reconcileAttempts(a, cqda *cvbqpb.Attempt) *cvbqpb.Attempt {
 // attemptStatus converts a Run status to Attempt status.
 func attemptStatus(ctx context.Context, r *run.Run) cvbqpb.AttemptStatus {
 	switch r.Status {
-	case run.Status_SUCCEEDED:
+	case commonpb.Run_SUCCEEDED:
 		return cvbqpb.AttemptStatus_SUCCESS
-	case run.Status_FAILED:
+	case commonpb.Run_FAILED:
 		// In the case that the checks passed but not all CLs were submitted
 		// successfully, the Attempt will still have status set to SUCCESS for
 		// backwards compatibility. Note that r.Submission is expected to be
@@ -240,7 +241,7 @@ func attemptStatus(ctx context.Context, r *run.Run) cvbqpb.AttemptStatus {
 			return cvbqpb.AttemptStatus_SUCCESS
 		}
 		return cvbqpb.AttemptStatus_FAILURE
-	case run.Status_CANCELLED:
+	case commonpb.Run_CANCELLED:
 		return cvbqpb.AttemptStatus_ABORTED
 	default:
 		logging.Errorf(ctx, "Unexpected attempt status %q", r.Status)

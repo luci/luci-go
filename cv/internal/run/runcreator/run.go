@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -365,7 +366,7 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 		CLs:           ids,
 		ConfigGroupID: rb.ConfigGroupID,
 		Mode:          rb.Mode,
-		Status:        run.Status_PENDING,
+		Status:        commonpb.Run_PENDING,
 		Owner:         rb.Owner,
 		Options:       rb.Options,
 	}

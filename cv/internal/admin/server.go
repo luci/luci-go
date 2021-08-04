@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -267,10 +268,10 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
 		var queries []*datastore.Query
 		switch s := req.GetStatus(); s {
-		case run.Status_STATUS_UNSPECIFIED:
+		case commonpb.Run_STATUS_UNSPECIFIED:
 			queries = append(queries, baseQ)
-		case run.Status_ENDED_MASK:
-			for _, s := range []run.Status{run.Status_SUCCEEDED, run.Status_CANCELLED, run.Status_FAILED} {
+		case commonpb.Run_ENDED_MASK:
+			for _, s := range []commonpb.Run_Status{commonpb.Run_SUCCEEDED, commonpb.Run_CANCELLED, commonpb.Run_FAILED} {
 				queries = append(queries, baseQ.Eq("Status", s))
 			}
 		default:
@@ -298,8 +299,8 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 			return true
 		}
 		switch s := req.GetStatus(); s {
-		case run.Status_STATUS_UNSPECIFIED:
-		case run.Status_ENDED_MASK:
+		case commonpb.Run_STATUS_UNSPECIFIED:
+		case commonpb.Run_ENDED_MASK:
 			if !run.IsEnded(r.Status) {
 				return true
 			}

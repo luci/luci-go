@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
@@ -72,7 +73,7 @@ func TestCreatesSingularRun(t *testing.T) {
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
-			return r != nil && r.Status == run.Status_RUNNING
+			return r != nil && r.Status == commonpb.Run_RUNNING
 		})
 		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeTrue)
 
@@ -95,7 +96,7 @@ func TestCreatesSingularRun(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			r2 := ct.LoadRun(ctx, r.ID)
 			p := ct.LoadProject(ctx, lProject)
-			return r2.Status == run.Status_CANCELLED && len(p.State.GetComponents()) == 0
+			return r2.Status == commonpb.Run_CANCELLED && len(p.State.GetComponents()) == 0
 		})
 
 		/////////////////////////    Verify    ////////////////////////////////
@@ -151,7 +152,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
-			return r != nil && r.Status == run.Status_RUNNING
+			return r != nil && r.Status == commonpb.Run_RUNNING
 		})
 		So(r.Mode, ShouldEqual, run.QuickDryRun)
 
@@ -188,7 +189,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 
 		// Fail quickly iff PM created a new Run on stale CL data.
 		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 1)
-		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
+		So(finalRun.Status, ShouldEqual, commonpb.Run_SUCCEEDED)
 		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
 		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "Quick dry run: This CL passed")
@@ -242,7 +243,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		var qdr *run.Run
 		ct.RunUntil(ctx, func() bool {
 			qdr = ct.EarliestCreatedRunOf(ctx, lProject)
-			return qdr != nil && qdr.Status == run.Status_RUNNING
+			return qdr != nil && qdr.Status == commonpb.Run_RUNNING
 		})
 		So(qdr.Mode, ShouldEqual, run.QuickDryRun)
 
@@ -266,7 +267,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 					fr = r
 				}
 			}
-			return qdr.Status == run.Status_CANCELLED && (fr != nil && fr.Status == run.Status_RUNNING)
+			return qdr.Status == commonpb.Run_CANCELLED && (fr != nil && fr.Status == commonpb.Run_RUNNING)
 		})
 		So(fr.Mode, ShouldEqual, run.FullRun)
 
@@ -292,7 +293,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		})
 
 		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 2)
-		So(finalRun.Status, ShouldEqual, run.Status_FAILED)
+		So(finalRun.Status, ShouldEqual, commonpb.Run_FAILED)
 		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		// Removed the stale Quick-Run vote.
 		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
@@ -340,7 +341,7 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
-			return r != nil && r.Status == run.Status_RUNNING
+			return r != nil && r.Status == commonpb.Run_RUNNING
 		})
 		So(r.Mode, ShouldEqual, run.FullRun)
 
@@ -376,7 +377,7 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 				!cl.IncompleteRuns.ContainsSorted(r.ID)
 		})
 
-		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
+		So(finalRun.Status, ShouldEqual, commonpb.Run_SUCCEEDED)
 		ci := ct.GFake.GetChange(gHost, gChange).Info
 		So(ci.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 		So(ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), ShouldEqual, int32(gPatchSet+1))
@@ -422,7 +423,7 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
-			return r != nil && r.Status == run.Status_RUNNING
+			return r != nil && r.Status == commonpb.Run_RUNNING
 		})
 		So(r.Mode, ShouldEqual, run.DryRun)
 
@@ -449,7 +450,7 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 			r = ct.LoadRun(ctx, r.ID)
 			return run.IsEnded(r.Status)
 		})
-		So(r.Status, ShouldEqual, run.Status_CANCELLED)
+		So(r.Status, ShouldEqual, commonpb.Run_CANCELLED)
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
@@ -489,7 +490,7 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		var r13 *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r13 = ct.EarliestCreatedRunOf(ctx, lProject)
-			return r13 != nil && r13.Status == run.Status_RUNNING
+			return r13 != nil && r13.Status == commonpb.Run_RUNNING
 		})
 		So(r13.Mode, ShouldResemble, run.DryRun)
 		So(r13.CLs, ShouldResemble, common.CLIDs{ct.LoadGerritCL(ctx, gHost, 13).ID})
@@ -506,7 +507,7 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		r12 := ct.LoadRun(ctx, ct.LoadGerritCL(ctx, gHost, 12).IncompleteRuns[0])
 		So(r12.Mode, ShouldResemble, run.FullRun)
 		So(r12.CLs, ShouldResemble, common.CLIDs{ct.LoadGerritCL(ctx, gHost, 12).ID})
-		So(ct.LoadRun(ctx, r13.ID).Status, ShouldEqual, run.Status_RUNNING)
+		So(ct.LoadRun(ctx, r13.ID).Status, ShouldEqual, commonpb.Run_RUNNING)
 		So(r12.CreateTime, ShouldHappenAfter, r13.CreateTime)
 
 		ct.LogPhase(ctx, "User upgrades to CQ+2 on 13, which terminates old Run.\n"+
@@ -596,7 +597,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
-			return r != nil && r.Status == run.Status_RUNNING
+			return r != nil && r.Status == commonpb.Run_RUNNING
 		})
 		So(r.Mode, ShouldEqual, run.FullRun)
 		runCLIDs := r.CLs
@@ -648,7 +649,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			return true
 		})
 
-		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
+		So(finalRun.Status, ShouldEqual, commonpb.Run_SUCCEEDED)
 		ci1 = ct.GFake.GetChange(gHost, gChange1).Info
 		ci2 = ct.GFake.GetChange(gHost, gChange2).Info
 		ci3 = ct.GFake.GetChange(gHost, gChange3).Info

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -55,7 +56,7 @@ func TestEndRun(t *testing.T) {
 		rs := &state.RunState{
 			Run: run.Run{
 				ID:         rid,
-				Status:     run.Status_RUNNING,
+				Status:     commonpb.Run_RUNNING,
 				CreateTime: ct.Clock.Now().Add(-2 * time.Minute),
 				StartTime:  ct.Clock.Now().Add(-1 * time.Minute),
 				CLs:        common.CLIDs{1},
@@ -73,8 +74,8 @@ func TestEndRun(t *testing.T) {
 		So(datastore.Put(ctx, &cl), ShouldBeNil)
 
 		h, _, _, clUpdater := makeTestImpl(&ct)
-		se := h.endRun(ctx, rs, run.Status_FAILED)
-		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
+		se := h.endRun(ctx, rs, commonpb.Run_FAILED)
+		So(rs.Run.Status, ShouldEqual, commonpb.Run_FAILED)
 		So(rs.Run.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
 		cl = changelist.CL{ID: clid}

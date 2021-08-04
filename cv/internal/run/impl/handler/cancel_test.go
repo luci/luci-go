@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -62,10 +63,10 @@ func TestCancel(t *testing.T) {
 
 		now := ct.Clock.Now().UTC()
 		Convey("Backfill Start time", func() {
-			rs.Run.Status = run.Status_PENDING
+			rs.Run.Status = commonpb.Run_PENDING
 			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.Run.Status, ShouldEqual, commonpb.Run_CANCELLED)
 			So(res.State.Run.StartTime, ShouldResemble, now)
 			So(res.State.Run.EndTime, ShouldResemble, now)
 			So(res.SideEffectFn, ShouldNotBeNil)
@@ -73,11 +74,11 @@ func TestCancel(t *testing.T) {
 		})
 
 		Convey("Cancel works", func() {
-			rs.Run.Status = run.Status_RUNNING
+			rs.Run.Status = commonpb.Run_RUNNING
 			rs.Run.StartTime = now.Add(-1 * time.Minute)
 			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.Run.Status, ShouldEqual, commonpb.Run_CANCELLED)
 			So(res.State.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
 			So(res.State.Run.EndTime, ShouldResemble, now)
 			So(res.SideEffectFn, ShouldNotBeNil)
@@ -85,7 +86,7 @@ func TestCancel(t *testing.T) {
 		})
 
 		Convey("Cancels SUBMITTING Run", func() {
-			rs.Run.Status = run.Status_SUBMITTING
+			rs.Run.Status = commonpb.Run_SUBMITTING
 			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
@@ -93,10 +94,10 @@ func TestCancel(t *testing.T) {
 			So(res.PreserveEvents, ShouldBeTrue)
 		})
 
-		statuses := []run.Status{
-			run.Status_SUCCEEDED,
-			run.Status_FAILED,
-			run.Status_CANCELLED,
+		statuses := []commonpb.Run_Status{
+			commonpb.Run_SUCCEEDED,
+			commonpb.Run_FAILED,
+			commonpb.Run_CANCELLED,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {

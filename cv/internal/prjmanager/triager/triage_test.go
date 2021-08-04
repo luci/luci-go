@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/gae/service/datastore"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -210,7 +211,7 @@ func TestTriage(t *testing.T) {
 				const expectedRunID = "v8/9042327596854-1-690d9e2cc74b34aa"
 
 				Convey("wait a bit if Run is RUNNING", func() {
-					So(datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), ShouldBeNil)
+					So(datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: commonpb.Run_RUNNING}), ShouldBeNil)
 					res := mustTriage(oldC)
 					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(5*time.Second).UTC())
@@ -220,7 +221,7 @@ func TestTriage(t *testing.T) {
 
 				r := &run.Run{
 					ID:      expectedRunID,
-					Status:  run.Status_CANCELLED,
+					Status:  commonpb.Run_CANCELLED,
 					EndTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				}
 				So(datastore.Put(ctx, r), ShouldBeNil)

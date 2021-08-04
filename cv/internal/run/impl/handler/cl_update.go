@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -36,11 +37,11 @@ import (
 // OnCLsUpdated implements Handler interface.
 func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	switch status := rs.Run.Status; {
-	case status == run.Status_STATUS_UNSPECIFIED:
+	case status == commonpb.Run_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: Received CLUpdated events but Run is in unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == run.Status_SUBMITTING:
+	case status == commonpb.Run_SUBMITTING:
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "skipping OnCLUpdated because Run is %s", status)
