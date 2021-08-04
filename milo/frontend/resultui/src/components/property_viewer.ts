@@ -45,6 +45,8 @@ export class PropertyViewerElement extends MobxLitElement implements RenderPlace
     lineWrapping: true,
     foldGutter: true,
     lineNumbers: true,
+    // Ensures all nodes are rendered therefore searchable.
+    viewportMargin: Infinity,
     gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
     foldOptions: {
       widget: (from) => {
