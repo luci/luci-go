@@ -94,25 +94,27 @@ func (d *Driver) Cron(ctx context.Context) error {
 
 	// Save successfully produced reports regardless of errors.
 	if reports = removeNils(reports); len(reports) > 0 {
-		d.stageReports(ctx, reports, startTime.Add(reportTTL))
+		d.stageReports(ctx, reports, startTime)
 	}
 	return common.MostSevereError(errs.Get())
 }
 
-func (d *Driver) stageReports(ctx context.Context, reports []reportFunc, expireTime time.Time) {
+func (d *Driver) stageReports(ctx context.Context, reports []reportFunc, start time.Time) {
 	d.m.Lock()
 	defer d.m.Unlock()
+	expire := start.Add(reportTTL)
 	// Ensure we aren't overwriting newer report, just in case the prior cron
 	// invocation somehow got stuck, e.g. due to a buggy aggregator.
 	if !d.nextExpireTime.IsZero() {
-		if d.nextExpireTime.Before(expireTime) {
-			logging.Errorf(ctx, "aggrmetrics.MinuteCron was stuck since %s, newer report %s is already prepared", expireTime, d.nextExpireTime)
+		lastStagedStart := d.nextExpireTime.Add(-reportTTL)
+		if lastStagedStart.After(start) {
+			logging.Errorf(ctx, "aggrmetrics.MinuteCron was stuck since %s, newer report %s is already prepared", start, lastStagedStart)
 			return
 		}
-		logging.Errorf(ctx, "aggrmetrics.MinuteCron overwriting unsent report of %s with %s", d.nextExpireTime, expireTime)
+		logging.Errorf(ctx, "aggrmetrics.MinuteCron overwriting unsent report of %s with %s", lastStagedStart, start)
 	}
 	d.nextReports = reports
-	d.nextExpireTime = expireTime
+	d.nextExpireTime = expire
 }
 
 // tsmonCallback resets old data from registered metrics and possibly sets new
