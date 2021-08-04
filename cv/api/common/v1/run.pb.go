@@ -143,9 +143,7 @@ type Run struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// status of the Run.
 	Status Run_Status `protobuf:"varint,2,opt,name=status,proto3,enum=cv.common.v1.Run_Status" json:"status,omitempty"`
-	// eversion is the entity version.
-	//
-	// It increments by one upon every successful modification.
+	// eversion is the entity version, which is monotonically increasing.
 	Eversion int64 `protobuf:"varint,3,opt,name=eversion,proto3" json:"eversion,omitempty"`
 }
 

@@ -74,8 +74,6 @@ message Run {
   string id = 1;
   // status of the Run.
   Status status = 2;
-  // eversion is the entity version.
-  //
-  // It increments by one upon every successful modification.
+  // eversion is the entity version, which is monotonically increasing.
   int64 eversion = 3;
 }
