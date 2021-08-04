@@ -20,7 +20,7 @@ import (
 	"strconv"
 )
 
-var units = []string{"b", "Kib", "Mib", "Gib", "Tib", "Pib", "Eib", "Zib", "Yib"}
+var units = []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 
 // Size represents a size in bytes that knows how to print itself.
 //
