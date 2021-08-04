@@ -19,11 +19,17 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 )
 
 func main() {
-	server.Main(nil, nil, func(srv *server.Server) error {
+	modules := []module.Module{
+		gaeemulation.NewModuleFromFlags(),
+	}
+
+	server.Main(nil, modules, func(srv *server.Server) error {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(ctx *router.Context) {
 			logging.Infof(ctx.Context, "Hello")
 			fmt.Fprintf(ctx.Writer, "Hello from %s!", ctx.Request.URL.Path)
