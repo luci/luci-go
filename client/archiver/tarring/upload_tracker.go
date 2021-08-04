@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	humanize "github.com/dustin/go-humanize"
 	"go.chromium.org/luci/common/isolated"
@@ -172,8 +173,9 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 			ut.checker.PresumeExists(item)
 
 			log.Printf("QUEUED %q for upload", item.RelPath)
+			start := time.Now()
 			ut.uploader.Upload(item.RelPath, bundle.Contents, ps, func() {
-				log.Printf("UPLOADED %q", item.RelPath)
+				log.Printf("UPLOADED %q took %s", item.RelPath, time.Since(start))
 			})
 		})
 	}
@@ -184,10 +186,12 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 func (ut *UploadTracker) uploadFiles(files []*Item) error {
 	// Handle the large individually-uploaded files.
 	for _, item := range files {
+		start := time.Now()
 		d, err := ut.hashFile(item.Path)
 		if err != nil {
 			return err
 		}
+		log.Printf("HASHED %q took %s", item.RelPath, time.Since(start))
 		item.Digest = d
 		ut.isol.Files[item.RelPath] = isolated.BasicFile(item.Digest, int(item.Mode), item.Size)
 		ut.checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
@@ -201,8 +205,9 @@ func (ut *UploadTracker) uploadFiles(files []*Item) error {
 			ut.checker.PresumeExists(item)
 
 			log.Printf("QUEUED %q for upload", item.RelPath)
+			start := time.Now()
 			ut.uploader.UploadFile(item, ps, func() {
-				log.Printf("UPLOADED %q", item.RelPath)
+				log.Printf("UPLOADED %q took %s", item.RelPath, time.Since(start))
 			})
 		})
 	}
@@ -231,8 +236,9 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 			return
 		}
 		log.Printf("QUEUED %q for upload", item.RelPath)
+		start := time.Now()
 		ut.uploader.UploadBytes(item.RelPath, isolFile.contents(), ps, func() {
-			log.Printf("UPLOADED %q", item.RelPath)
+			log.Printf("UPLOADED %q took %s", item.RelPath, time.Since(start))
 		})
 	})
 
