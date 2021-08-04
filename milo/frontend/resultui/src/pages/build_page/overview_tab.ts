@@ -244,6 +244,10 @@ export class OverviewTabElement extends MobxLitElement {
                   <td>Bot:</td>
                   <td>${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</td>
                 </tr>
+                <tr>
+                  <td>Service Account:</td>
+                  <td>${build.infra.swarming.taskServiceAccount}</td>
+                </tr>
               `
             : ''
         }
