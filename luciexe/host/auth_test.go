@@ -16,6 +16,7 @@ package host
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,7 +25,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"cloud.google.com/go/compute/metadata"
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/integration/authtest"
 	"go.chromium.org/luci/auth/integration/localauth"
@@ -32,7 +35,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/lucictx"
-	"golang.org/x/oauth2/google"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // Use this instead of ShouldStartWith to avoid logging a real token if the
@@ -108,9 +112,24 @@ func TestAuth(t *testing.T) {
 				})
 
 				c.Convey("GCE metadata server is faked", func() {
-					ts := google.ComputeTokenSource("default")
-					tok, err := ts.Token()
+					// Note: metadata.OnGCE() and other top-level functions in `metadata`
+					// package are unreliable in this test since their values may be
+					// cached in the process global memory the first time they are called
+					// and luciexe call them prior to the test.
+					//
+					// metadata.NewClient doesn't use any process-global caches and picks
+					// up the GCE_METADATA_HOST env var change done by the test.
+					md := metadata.NewClient(nil)
+
+					email, err := md.Email("default")
 					So(err, ShouldBeNil)
+					So(email, ShouldEqual, "task@example.com")
+
+					tokBody, err := md.Get("instance/service-accounts/default/token")
+					So(err, ShouldBeNil)
+
+					tok := &oauth2.Token{}
+					So(json.Unmarshal([]byte(tokBody), &tok), ShouldBeNil)
 					So(tok.AccessToken, tokenShouldStartWith, "task_token_")
 				})
 
