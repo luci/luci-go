@@ -155,8 +155,6 @@ func TestSubprocess(t *testing.T) {
 				Status:          bbpb.Status_CANCELED,
 				StatusDetails:   &bbpb.StatusDetails{Timeout: &bbpb.StatusDetails_Timeout{}},
 				SummaryMarkdown: "Heyo!",
-				CreateTime:      timestamppb.New(time.Date(2020, time.January, 2, 3, 4, 5, 0, time.UTC)),
-				StartTime:       timestamppb.New(time.Date(2020, time.January, 2, 3, 4, 5, 1, time.UTC)),
 				EndTime:         timestamppb.New(time.Date(2020, time.January, 2, 3, 4, 5, 10, time.UTC)),
 				UpdateTime:      timestamppb.New(time.Date(2020, time.January, 2, 3, 4, 5, 11, time.UTC)),
 				Steps:           []*bbpb.Step{{Name: "Step cool"}},

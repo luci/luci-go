@@ -116,8 +116,7 @@
 //
 //   * Set the Status of initial buildbucket.v2.Build message to `STARTED`.
 //
-//   * Set the CreateTime and StartTime of initial buildbucket.v2.Build message
-//     to the current timestamp.
+//   * Set the CreateTime and StartTime of initial buildbucket.v2.Build message.
 //
 //   * Clear following fields in the initial buildbucket.v2.Build message.
 //      - EndTime

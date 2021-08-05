@@ -251,8 +251,13 @@ func mkInitialBuild(ctx context.Context, input *bbpb.Build) *bbpb.Build {
 		}
 		return true
 	})
-	ib.CreateTime = timestamppb.New(clock.Now(ctx))
-	ib.StartTime = timestamppb.New(clock.Now(ctx))
+	now := clock.Now(ctx)
+	if ib.CreateTime == nil {
+		ib.CreateTime = timestamppb.New(now)
+	}
+	if ib.StartTime == nil {
+		ib.StartTime = timestamppb.New(now)
+	}
 	ib.Status = bbpb.Status_STARTED
 	return ib
 }
