@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
@@ -59,6 +60,7 @@ func main() {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
