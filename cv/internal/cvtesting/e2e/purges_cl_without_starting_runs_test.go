@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -180,11 +181,58 @@ func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
 	})
 }
 
-func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
+func TestPurgesCLWithUnwatchedDeps_DiffGerritHost(t *testing.T) {
 	t.Parallel()
+	testPurgesCLWithUnwatchedDeps(t, "different Gerrit host", func(ctx context.Context, ct *Test) (string, int64) {
+		// Use case: user has a typo in the `Cq-Depend:`,
+		// which allows CV to detect the mistake w/o having to query Gerrit against a
+		// mis-typed host.
+		ct.GFake.AddFrom(gf.WithCIs("chrome-internal-typo-review.example.com", gf.ACLPublic(), gf.CI(
+			44, gf.Project("chrome/src"),
+			gf.Updated(ct.Now()), gf.CQ(+2, ct.Now(), gf.U("user-1")),
+			gf.Owner("user-1"),
+		)))
+		return "chrome-internal-typo", 44
+	})
+}
 
-	Convey("PM purges CL with dep outside the project after waiting stabilization_delay", t, func() {
-		/////////////////////////    Setup   ////////////////////////////////
+func TestPurgesCLWithUnwatchedDeps_DiffGerritRepo(t *testing.T) {
+	t.Skip("crbug/1234877")
+	t.Parallel()
+	testPurgesCLWithUnwatchedDeps(t, "different Gerrit repo", func(ctx context.Context, ct *Test) (string, int64) {
+		// Use case: typical project misconfiguration, whereby user expects a repo to
+		// be watched, but it isn't.
+		ct.GFake.AddFrom(gf.WithCIs("chromium-review.example.com", gf.ACLPublic(), gf.CI(
+			44, gf.Project("v8"),
+			gf.Updated(ct.Now()), gf.CQ(+2, ct.Now(), gf.U("user-1")),
+			gf.Owner("user-1"),
+		)))
+		return "chromium", 44
+	})
+}
+
+func TestPurgesCLWithUnwatchedDeps_DiffGerritRef(t *testing.T) {
+	t.Skip("crbug/1234877")
+	t.Parallel()
+	testPurgesCLWithUnwatchedDeps(t, "different Gerrit ref", func(ctx context.Context, ct *Test) (string, int64) {
+		// Use case: typical project misconfiguration, whereby user expects a ref to
+		// be watched, but it isn't, even though some other refs on the repo are
+		// watched.
+		ct.GFake.AddFrom(gf.WithCIs("chromium-review.example.com", gf.ACLPublic(), gf.CI(
+			44, gf.Project("chromium/src"), gf.Ref("refs/branch-heads/not-watched"),
+			gf.Updated(ct.Now()), gf.CQ(+2, ct.Now(), gf.U("user-1")),
+			gf.Owner("user-1"),
+		)))
+		return "chromium", 44
+	})
+}
+
+func testPurgesCLWithUnwatchedDeps(
+	t *testing.T,
+	name string,
+	setupDep func(ctx context.Context, ct *Test) (depSubHost string, depChange int64),
+) {
+	Convey("PM purges CL with dep outside the project after waiting stabilization_delay: "+name, t, func() {
 		ct := Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -195,33 +243,22 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 			gRepo    = "chromium/src"
 			gRef     = "refs/heads/main"
 			gChange  = 33
-
-			lProject2 = "webrtc"
-			gHost2    = "webrtc-review.example.com"
-			gRepo2    = "src"
-			gChange2  = 22
 		)
 
 		const stabilizationDelay = 2 * time.Minute
-		cfg1 := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		cfg1.GetConfigGroups()[0].CombineCls = &cfgpb.CombineCLs{
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg.GetConfigGroups()[0].CombineCls = &cfgpb.CombineCLs{
 			StabilizationDelay: durationpb.New(stabilizationDelay),
 		}
-		prjcfgtest.Create(ctx, lProject, cfg1)
-		prjcfgtest.Create(ctx, lProject2, MakeCfgSingular("cg0", gHost2, gRepo2, gRef))
+		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Now()
-
+		depSubHost, depChange := setupDep(ctx, &ct)
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 			gChange, gf.Project(gRepo), gf.Ref(gRef),
 			gf.Updated(tStart), gf.CQ(+2, tStart, gf.U("user-1")),
 			gf.Owner("user-1"),
-			gf.Desc(fmt.Sprintf("T\n\nCq-Depend: webrtc:%d", gChange2)),
-		)))
-		ct.GFake.AddFrom(gf.WithCIs(gHost2, gf.ACLRestricted(lProject2), gf.CI(
-			gChange2, gf.Project(gRepo2), gf.Ref(gRef),
-			gf.Updated(tStart), gf.CQ(+2, tStart, gf.U("user-1")),
-			gf.Owner("user-1"),
+			gf.Desc(fmt.Sprintf("T\n\nCq-Depend: %s:%d", depSubHost, depChange)),
 		)))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
@@ -233,7 +270,7 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 		So(m, ShouldNotBeNil)
 		So(m.GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
 		So(m.GetMessage(), ShouldContainSubstring, "its deps are not watched by the same LUCI project")
-		So(m.GetMessage(), ShouldContainSubstring, "https://webrtc-review.example.com/22")
+		So(m.GetMessage(), ShouldContainSubstring, fmt.Sprintf("https://%s-review.example.com/%d", depSubHost, depChange))
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
