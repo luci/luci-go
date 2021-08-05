@@ -534,11 +534,11 @@ func (c *client) callRaw(
 
 	switch res.StatusCode {
 	case http.StatusTooManyRequests:
-		logging.Warningf(ctx, "Gerrit quota error.\nResponse headers: %v\nResponse body: %s",
-			res.Header, body)
+		logging.Debugf(ctx, "Gerrit quota error.\nResponse headers: %v\nResponse body: %s", res.Header, body)
 		return res.StatusCode, body, status.Errorf(codes.ResourceExhausted, "insufficient Gerrit quota")
 
 	case http.StatusForbidden:
+		logging.Debugf(ctx, "Gerrit permission denied:\nResponse headers: %v\nResponse body: %s", res.Header, body)
 		return res.StatusCode, body, status.Errorf(codes.PermissionDenied, "permission denied")
 
 	case http.StatusNotFound:
