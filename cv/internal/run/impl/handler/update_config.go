@@ -20,7 +20,9 @@ import (
 	"strings"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -117,6 +119,16 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 		for cgid := range m { // extra first and only key from the map.
 			rs.Run.ConfigGroupID = cgid
 		}
+
+		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+			Time: timestamppb.New(clock.Now(ctx)),
+			Kind: &run.LogEntry_ConfigChanged_{
+				ConfigChanged: &run.LogEntry_ConfigChanged{
+					ConfigGroupId: string(rs.Run.ConfigGroupID),
+				},
+			},
+		})
+
 		logging.Infof(ctx, "Upgrading to new ConfigGroupID %q", rs.Run.ConfigGroupID)
 		return &Result{State: rs}, nil
 	}

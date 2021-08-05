@@ -191,6 +191,8 @@ func TestUpdateConfig(t *testing.T) {
 				So(res.State.Run.ConfigGroupID.Hash(), ShouldNotEqual, metaCurrent.Hash())
 				So(res.State.Run.ConfigGroupID.Name(), ShouldEqual, expectedGroupName)
 				So(res.State.Run.Status, ShouldEqual, commonpb.Run_RUNNING)
+				So(res.State.LogEntries, ShouldHaveLength, 1)
+				So(res.State.LogEntries[0].GetConfigChanged(), ShouldNotBeNil)
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 			}

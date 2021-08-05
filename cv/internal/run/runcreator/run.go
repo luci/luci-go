@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -330,6 +332,9 @@ func (rb *Creator) save(ctx context.Context, clMutator *changelist.Mutator, pm p
 	if err := rb.saveRun(ctx, now); err != nil {
 		return err
 	}
+	if err := rb.saveRunLog(ctx); err != nil {
+		return err
+	}
 	for i := range rb.InputCLs {
 		if err := rb.saveRunCL(ctx, i); err != nil {
 			return err
@@ -372,6 +377,29 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 	}
 	if err := datastore.Put(ctx, rb.run); err != nil {
 		return errors.Annotate(err, "failed to save Run").Tag(transient.Tag).Err()
+	}
+	return nil
+}
+
+func (rb *Creator) saveRunLog(ctx context.Context) error {
+	l := run.RunLog{
+		ID:  int64(rb.run.EVersion),
+		Run: datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
+		Entries: &run.LogEntries{
+			Entries: []*run.LogEntry{
+				{
+					Time: timestamppb.New(rb.CreateTime),
+					Kind: &run.LogEntry_Created_{
+						Created: &run.LogEntry_Created{
+							ConfigGroupId: string(rb.ConfigGroupID),
+						},
+					},
+				},
+			},
+		},
+	}
+	if err := datastore.Put(ctx, &l); err != nil {
+		return errors.Annotate(err, "failed to save RunLog").Tag(transient.Tag).Err()
 	}
 	return nil
 }

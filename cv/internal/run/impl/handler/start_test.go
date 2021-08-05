@@ -79,6 +79,8 @@ func TestStart(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.State.Run.Status, ShouldEqual, commonpb.Run_RUNNING)
 			So(res.State.Run.StartTime, ShouldResemble, clock.Now(ctx).UTC())
+			So(res.State.LogEntries, ShouldHaveLength, 1)
+			So(res.State.LogEntries[0].GetStarted(), ShouldNotBeNil)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 

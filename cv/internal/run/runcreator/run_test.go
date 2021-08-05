@@ -336,6 +336,12 @@ func TestRunBuilder(t *testing.T) {
 				})
 			}
 
+			// RunLog must contain the first entry for Creation.
+			entries, err := run.LoadRunLogEntries(ctx, expectedRun.ID)
+			So(err, ShouldBeNil)
+			So(entries, ShouldHaveLength, 1)
+			So(entries[0].GetCreated().GetConfigGroupId(), ShouldResemble, string(expectedRun.ConfigGroupID))
+
 			// Both PM and RM must be notified about new Run.
 			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
 				RunId: string(r.ID),

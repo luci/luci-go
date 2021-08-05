@@ -114,13 +114,15 @@ message LogEntries {
 
 // LogEntry records what changed in a Run.
 message LogEntry {
-  // Next tag: 6.
+  // Next tag: 7.
 
   // Time is when something was changed.
   google.protobuf.Timestamp time = 1;
   oneof kind {
     // Run was created.
     Created created = 2;
+    // Run was started.
+    Started started = 6;
     // Run updated to a new project config version.
     ConfigChanged config_changed = 3;
     // Tryjobs requirement was (re-)computed.
@@ -133,6 +135,8 @@ message LogEntry {
 
   message Created {
     string config_group_id = 1;
+  }
+  message Started {
   }
   message ConfigChanged {
     string config_group_id = 1;

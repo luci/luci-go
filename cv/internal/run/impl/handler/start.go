@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -49,6 +51,14 @@ func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 	res := &Result{State: rs.ShallowCopy()}
 	res.State.Run.Status = commonpb.Run_RUNNING
 	res.State.Run.StartTime = clock.Now(ctx).UTC()
+
+	res.State.LogEntries = append(res.State.LogEntries, &run.LogEntry{
+		Time: timestamppb.New(res.State.Run.CreateTime),
+		Kind: &run.LogEntry_Started_{
+			Started: &run.LogEntry_Started{},
+		},
+	})
+
 	recordPickupLatency(ctx, &(res.State.Run), cg)
 	return res, nil
 }
