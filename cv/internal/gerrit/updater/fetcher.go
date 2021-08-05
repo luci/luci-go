@@ -338,7 +338,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		return nil, err
 	case !f.toUpdate.ApplicableConfig.HasProject(f.luciProject):
 		logging.Debugf(ctx, "%s is not watched by the %q project", f, f.luciProject)
-		return nil, nil
+		return nil, f.setCertainNoAccess(ctx)
 	}
 
 	return ci, nil

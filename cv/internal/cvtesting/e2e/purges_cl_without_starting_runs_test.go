@@ -197,7 +197,6 @@ func TestPurgesCLWithUnwatchedDeps_DiffGerritHost(t *testing.T) {
 }
 
 func TestPurgesCLWithUnwatchedDeps_DiffGerritRepo(t *testing.T) {
-	t.Skip("crbug/1234877")
 	t.Parallel()
 	testPurgesCLWithUnwatchedDeps(t, "different Gerrit repo", func(ctx context.Context, ct *Test) (string, int64) {
 		// Use case: typical project misconfiguration, whereby user expects a repo to
@@ -212,7 +211,6 @@ func TestPurgesCLWithUnwatchedDeps_DiffGerritRepo(t *testing.T) {
 }
 
 func TestPurgesCLWithUnwatchedDeps_DiffGerritRef(t *testing.T) {
-	t.Skip("crbug/1234877")
 	t.Parallel()
 	testPurgesCLWithUnwatchedDeps(t, "different Gerrit ref", func(ctx context.Context, ct *Test) (string, int64) {
 		// Use case: typical project misconfiguration, whereby user expects a ref to

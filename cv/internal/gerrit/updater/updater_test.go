@@ -404,29 +404,49 @@ func TestUpdateCLWorks(t *testing.T) {
 				})
 			})
 
-			Convey("because Gerrit host isn't even watched by the LUCI project", func() {
-				// Add a CL readable to current LUCI project.
-				ci := gf.CI(1, gf.Project(gRepo), gf.Ref("refs/heads/main"))
-				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
-				client, err := ct.GFactory().MakeClient(ctx, gHost, lProject)
-				So(err, ShouldBeNil)
-				_, err = client.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 1})
-				So(err, ShouldBeNil)
+			Convey("because CL isn't watched by the LUCI project", func() {
+				verifyNoAccess := func() {
+					task.Change = 1
+					So(u.Refresh(ctx, task), ShouldBeNil)
+					cl := getCL(ctx, gHost, 1)
+					So(cl, ShouldNotBeNil)
+					So(cl.Snapshot, ShouldBeNil)
+					So(cl.ApplicableConfig, ShouldBeNil)
+					So(cl.Access.GetByProject()[lProject], ShouldResembleProto, &changelist.Access_Project{
+						NoAccess:     true,
+						NoAccessTime: timestamppb.New(ct.Clock.Now()),
+						UpdateTime:   timestamppb.New(ct.Clock.Now()),
+					})
+					So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
+				}
 
-				// But update LUCI project config to stop watching entire host.
-				prjcfgtest.Update(ctx, lProject, singleRepoConfig("other-"+gHost, gRepo))
-				gobmaptest.Update(ctx, lProject)
-				task.Change = 1
-				So(u.Refresh(ctx, task), ShouldBeNil)
-				cl := getCL(ctx, gHost, 1)
-				So(cl.Snapshot, ShouldBeNil)
-				So(cl.ApplicableConfig, ShouldBeNil)
-				So(cl.Access.GetByProject()[lProject], ShouldResembleProto, &changelist.Access_Project{
-					NoAccess:     true,
-					NoAccessTime: timestamppb.New(ct.Clock.Now()),
-					UpdateTime:   timestamppb.New(ct.Clock.Now()),
+				Convey("due to entirely unwatched Gerrit host", func() {
+					// Add a CL readable to current LUCI project.
+					ci := gf.CI(1, gf.Project(gRepo), gf.Ref("refs/heads/main"))
+					ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+					client, err := ct.GFactory().MakeClient(ctx, gHost, lProject)
+					So(err, ShouldBeNil)
+					_, err = client.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 1})
+					So(err, ShouldBeNil)
+
+					// But update LUCI project config to stop watching entire host.
+					prjcfgtest.Update(ctx, lProject, singleRepoConfig("other-"+gHost, gRepo))
+					gobmaptest.Update(ctx, lProject)
+
+					verifyNoAccess()
 				})
-				So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
+
+				Convey("due to unwatched repo", func() {
+					ci := gf.CI(1, gf.Project("unwatched"), gf.Ref("refs/heads/main"))
+					ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+					verifyNoAccess()
+				})
+
+				Convey("due to unwatched ref", func() {
+					ci := gf.CI(1, gf.Project(gRepo), gf.Ref("refs/other/unwatched"))
+					ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+					verifyNoAccess()
+				})
 			})
 		})
 
