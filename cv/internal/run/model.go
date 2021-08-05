@@ -28,11 +28,14 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
-// RunKind is the Datastore entity kind for Run.
-const RunKind = "Run"
-
-// RunKind is the Datastore entity kind for RunCL.
-const RunCLKind = "RunCL"
+const (
+	// RunKind is the Datastore entity kind for Run.
+	RunKind = "Run"
+	// RunKind is the Datastore entity kind for RunCL.
+	RunCLKind = "RunCL"
+	// RunLogKind is the Datastore entity kind for RunLog.
+	RunLogKind = "RunLog"
+)
 
 // Run is an entity that contains high-level information about a CV Run.
 //
@@ -176,11 +179,11 @@ type RunLog struct {
 	// There is always at least one.
 	// Ordered from logically oldest to newest.
 	//
-	// Entries are stored via opaque to Datastore protobuf type in order to
-	// expose it using Admin API with ease.
-	// This has a downside of inability to index or filter by kinds of LogEntry
-	// within the Datastore itself.  However, total number of LogEntries per Run
-	// should be <<1000 and the intended consumption are humans, therefore
-	// indexing isn't a deal breaker.
+	// Entries are stored as a protobuf in order to expose them using Admin API
+	// with ease.
+	// This is however opaque to Datastore, and so it has a downside of inability
+	// to index or filter by kinds of LogEntry within the Datastore itself.
+	// However, total number of LogEntries per Run should be <<1000 and the
+	// intended consumption are humans, therefore indexing isn't a deal breaker.
 	Entries *LogEntries
 }

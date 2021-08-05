@@ -29,7 +29,8 @@ import (
 
 // RunState represents the current state of a Run.
 type RunState struct {
-	Run run.Run
+	Run        run.Run
+	LogEntries []*run.LogEntry
 
 	// Helper fields used during state mutations.
 
@@ -47,6 +48,7 @@ func (rs *RunState) ShallowCopy() *RunState {
 	}
 	ret := &RunState{
 		Run:                 rs.Run,
+		LogEntries:          append(make([]*run.LogEntry, 0, len(rs.LogEntries)), rs.LogEntries...),
 		SubmissionScheduled: rs.SubmissionScheduled,
 
 		cg: rs.cg,

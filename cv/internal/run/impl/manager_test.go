@@ -293,6 +293,24 @@ func TestRunManager(t *testing.T) {
 			)
 		})
 
+		Convey("Can save RunLog", func() {
+			fh := &fakeHandler{startAddsLogEntries: []*run.LogEntry{
+				{
+					Time: timestamppb.New(clock.Now(ctx)),
+					Kind: &run.LogEntry_Created_{Created: &run.LogEntry_Created{
+						ConfigGroupId: "deadbeef/main",
+					}},
+				},
+			}}
+			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
+			So(notifier.Start(ctx, runID), ShouldBeNil)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
+			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
+			entries, err := run.LoadRunLogEntries(ctx, runID)
+			So(err, ShouldBeNil)
+			So(entries, ShouldResembleProto, fh.startAddsLogEntries)
+		})
+
 		Convey("Can run PostProcessFn", func() {
 			var postProcessFnExecuted bool
 			fh := &fakeHandler{
@@ -377,17 +395,22 @@ func TestRunManager(t *testing.T) {
 }
 
 type fakeHandler struct {
-	invocations    []string
-	preserveEvents bool
-	postProcessFn  eventbox.PostProcessFn
+	invocations         []string
+	preserveEvents      bool
+	postProcessFn       eventbox.PostProcessFn
+	startAddsLogEntries []*run.LogEntry
 }
 
 var _ handler.Handler = &fakeHandler{}
 
 func (fh *fakeHandler) Start(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
 	fh.addInvocation("Start")
+	rs = rs.ShallowCopy()
+	if len(fh.startAddsLogEntries) > 0 {
+		rs.LogEntries = append(rs.LogEntries, fh.startAddsLogEntries...)
+	}
 	return &handler.Result{
-		State:          rs.ShallowCopy(),
+		State:          rs,
 		PreserveEvents: fh.preserveEvents,
 		PostProcessFn:  fh.postProcessFn,
 	}, nil

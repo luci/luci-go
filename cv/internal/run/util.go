@@ -55,3 +55,40 @@ func LoadRunCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) ([]
 	}
 	return runCLs, nil
 }
+
+// LoadRunLogEntries loads all log entries of a given Run.
+//
+// Ordered from logically oldest to newest.
+func LoadRunLogEntries(ctx context.Context, runID common.RunID) ([]*LogEntry, error) {
+	// Since RunLog entities are immutable, it's cheapest to load them from
+	// DS cache. So, perform KeysOnly query first, which is cheap & fast, and then
+	// additional multi-Get which will go via DS cache.
+
+	var keys []*datastore.Key
+	runKey := datastore.MakeKey(ctx, RunKind, string(runID))
+	q := datastore.NewQuery(RunLogKind).KeysOnly(true).Ancestor(runKey)
+	if err := datastore.GetAll(ctx, q, &keys); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch keys of RunLog entities").Tag(transient.Tag).Err()
+	}
+
+	entities := make([]*RunLog, len(keys))
+	for i, key := range keys {
+		entities[i] = &RunLog{
+			Run: runKey,
+			ID:  key.IntID(),
+		}
+	}
+	if err := datastore.Get(ctx, entities); err != nil {
+		// It's possible to get EntityNotExists, it may only happen if data
+		// retention enforcement is deleting old entities at the same time.
+		// Thus, treat all errors as transient.
+		return nil, errors.Annotate(common.MostSevereError(err), "failed to fetch RunLog entities").Tag(transient.Tag).Err()
+	}
+
+	// Each RunLog entity contains at least 1 LogEntry.
+	out := make([]*LogEntry, 0, len(entities))
+	for _, e := range entities {
+		out = append(out, e.Entries.GetEntries()...)
+	}
+	return out, nil
+}
