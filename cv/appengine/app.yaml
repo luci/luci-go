@@ -18,6 +18,10 @@ luci_gae_vars:
     VPC_CONNECTOR: projects/luci-change-verifier-dev/locations/us-central1/connectors/connector
     REDIS_ADDR: 10.71.21.171:6379
     DS_CACHE: redis
+    OAUTH_CLIENT_ID: 339503751427-hcq50e5kdrfsokum5gh8l459h8p0n92q.apps.googleusercontent.com
+    OAUTH_CLIENT_SECRET: sm://oauth-client-secret
+    OAUTH_REDIRECT_URL: https://luci-change-verifier-dev.appspot.com/auth/openid/callback
+    TINK_AEAD_KEY: sm://tink-aead-primary
 
 vpc_access_connector:
   name: ${VPC_CONNECTOR}
@@ -36,3 +40,7 @@ entrypoint: >
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}
   -cloud-error-reporting
+  -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
+  -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
+  -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
+  -encrypted-cookies-tink-aead-key ${TINK_AEAD_KEY}

@@ -24,12 +24,16 @@ import (
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
+
+	// Using datastore for user sessions.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/admin"
@@ -55,6 +59,7 @@ func main() {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
+		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
