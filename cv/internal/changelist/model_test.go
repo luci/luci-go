@@ -104,34 +104,6 @@ func TestCL(t *testing.T) {
 	})
 }
 
-func TestExternalID(t *testing.T) {
-	t.Parallel()
-
-	Convey("ExternalID works", t, func() {
-
-		Convey("GobID", func() {
-			eid, err := GobID("x-review.example.com", 12)
-			So(err, ShouldBeNil)
-			So(eid, ShouldResemble, ExternalID("gerrit/x-review.example.com/12"))
-
-			host, change, err := eid.ParseGobID()
-			So(err, ShouldBeNil)
-			So(host, ShouldResemble, "x-review.example.com")
-			So(change, ShouldEqual, 12)
-
-		})
-
-		Convey("Invalid GobID", func() {
-			_, _, err := ExternalID("meh").ParseGobID()
-			So(err, ShouldErrLike, "is not a valid GobID")
-
-			_, _, err = ExternalID("gerrit/x/y").ParseGobID()
-			So(err, ShouldErrLike, "is not a valid GobID")
-		})
-
-	})
-}
-
 func TestLookup(t *testing.T) {
 	t.Parallel()
 
