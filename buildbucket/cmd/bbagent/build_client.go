@@ -40,17 +40,22 @@ import (
 )
 
 // BuildsClient is a trimmed version of `bbpb.BuildsClient` which only
-// contains the required RPC method for bbagent.
+// contains the required RPC methods for bbagent.
 //
 // The live implementation automatically binds the "X-Build-Token" key with
-// a token.
+// a token where necessary.
 type BuildsClient interface {
+	GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
 	UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
 }
 
 var _ BuildsClient = dummyBBClient{}
 
 type dummyBBClient struct{}
+
+func (dummyBBClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	return nil, nil
+}
 
 func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
 	return nil, nil
@@ -59,6 +64,10 @@ func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildReques
 type liveBBClient struct {
 	tok string
 	c   bbpb.BuildsClient
+}
+
+func (bb *liveBBClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	return bb.c.GetBuild(ctx, in, opts...)
 }
 
 func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
@@ -70,8 +79,7 @@ func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildReq
 // which can be used to update the build state.
 //
 // retryEnabled allows us to switch retries for this client on and off
-func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket, retryEnabled *bool) (BuildsClient, *bbpb.BuildSecrets, error) {
-	hostname := infraOpts.GetHostname()
+func newBuildsClient(ctx context.Context, hostname string, retryEnabled *bool) (BuildsClient, *bbpb.BuildSecrets, error) {
 	if hostname == "" {
 		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
 		return dummyBBClient{}, &bbpb.BuildSecrets{BuildToken: "dummy token"}, nil

@@ -78,16 +78,16 @@ func mainImpl() int {
 		}
 	}
 
+	hostname := flag.String("host", "", "Buildbucket server hostname")
+	buildID := flag.Int64("build-id", 0, "Buildbucket build ID")
 	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
 	flag.Parse()
 	args := flag.Args()
 
-	if len(args) != 1 {
-		check(errors.Reason("expected 1 argument: got %d", len(args)).Err())
-	}
-
-	input, err := bbinput.Parse(args[0])
-	check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
+	var input *bbpb.BBAgentArgs
+	var bbclient BuildsClient
+	var secrets *bbpb.BuildSecrets
+	var err error
 
 	// bbclientRetriesEnabled is a passed-py-pointer value which we use to turn
 	// retries on and off during the build.
@@ -101,8 +101,34 @@ func mainImpl() int {
 	//
 	// We enable them again after the user process has finished.
 	bbclientRetriesEnabled := true
-	bbclient, secrets, err := newBuildsClient(ctx, input.Build.Infra.Buildbucket, &bbclientRetriesEnabled)
-	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
+
+	switch {
+	case len(args) == 1:
+		// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
+		logging.Debugf(ctx, "parsing BBAgentArgs")
+		input, err = bbinput.Parse(args[0])
+		check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
+		bbclient, secrets, err = newBuildsClient(ctx, input.Build.Infra.Buildbucket.GetHostname(), &bbclientRetriesEnabled)
+		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
+	case *hostname != "" && *buildID > 0:
+		logging.Debugf(ctx, "fetching build %d", *buildID)
+		bbclient, secrets, err = newBuildsClient(ctx, *hostname, &bbclientRetriesEnabled)
+		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
+		build, err := bbclient.GetBuild(ctx, &bbpb.GetBuildRequest{
+			Id:     *buildID,
+			Fields: &fieldmaskpb.FieldMask{Paths: []string{"*"}},
+		})
+		check(errors.Annotate(err, "failed to fetch build").Err())
+		input = &bbpb.BBAgentArgs{
+			Build:                  build,
+			CacheDir:               build.Infra.Bbagent.CacheDir,
+			KnownPublicGerritHosts: build.Infra.Bbagent.KnownPublicGerritHosts,
+			PayloadPath:            build.Infra.Bbagent.PayloadPath,
+		}
+	default:
+		check(errors.Reason("-host and -build-id are required").Err())
+	}
+
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
 
