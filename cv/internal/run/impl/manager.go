@@ -353,7 +353,13 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		rs, transitions = applyResult(res, tr.clUpdatedEvents.events, transitions)
 	}
 
-	// TODO(crbug/1232158): handle cqdTryjobsUpdated.
+	if len(tr.cqdTryjobsUpdated) > 0 {
+		res, err := rp.handler.OnCQDTryjobsUpdated(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.cqdTryjobsUpdated, transitions)
+	}
 	if len(tr.cqdVerificationCompletedEvents) > 0 {
 		res, err := rp.handler.OnCQDVerificationCompleted(ctx, rs)
 		if err != nil {

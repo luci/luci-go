@@ -49,6 +49,7 @@ const AllowGroup = "luci-cv-migration-crbug-1141880"
 // runNotifier abstracts out dependency of MigrationServer on run.Notifier.
 type runNotifier interface {
 	NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error
+	NotifyCQDTryjobsUpdated(ctx context.Context, runID common.RunID) error
 }
 
 // MigrationServer implements CQDaemon -> CV migration API.
@@ -107,9 +108,9 @@ func (m *MigrationServer) ReportTryjobs(ctx context.Context, req *migrationpb.Re
 	if req.GetRunId() == "" {
 		return nil, appstatus.Error(codes.InvalidArgument, "run_id required")
 	}
+	logging.Debugf(ctx, "ReportTryjobs(%q @ config rev %q): %d tryjobs", req.GetRunId(), req.GetConfigRevision(), len(req.GetTryjobs()))
 	err = saveReportedTryjobs(ctx, req, func(ctx context.Context, id string) error {
-		// TODO(crbug/1231118): notify Run Manager.
-		return nil
+		return m.RunNotifier.NotifyCQDTryjobsUpdated(ctx, common.RunID(req.GetRunId()))
 	})
 	if err != nil {
 		return nil, err

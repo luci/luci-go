@@ -58,6 +58,9 @@ type Handler interface {
 	// If Run is no longer viable, cancels the Run.
 	UpdateConfig(context.Context, *state.RunState, string) (*Result, error)
 
+	// OnCQDTryjobsUpdated incorporates CQD's tryjob state into CV's Run state.
+	OnCQDTryjobsUpdated(context.Context, *state.RunState) (*Result, error)
+
 	// OnCQDVerificationCompleted finalizes the Run according to the verified
 	// Run reported by CQDaemon.
 	OnCQDVerificationCompleted(context.Context, *state.RunState) (*Result, error)

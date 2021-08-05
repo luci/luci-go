@@ -140,6 +140,17 @@ func TestRunManager(t *testing.T) {
 			},
 			{
 				&eventpb.Event{
+					Event: &eventpb.Event_CqdTryjobsUpdated{
+						CqdTryjobsUpdated: &eventpb.CQDTryjobsUpdated{},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.NotifyCQDTryjobsUpdated(ctx, runID)
+				},
+				"OnCQDTryjobsUpdated",
+			},
+			{
+				&eventpb.Event{
 					Event: &eventpb.Event_CqdVerificationCompleted{
 						CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
 					},
@@ -464,6 +475,15 @@ func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunS
 
 func (fh *fakeHandler) TryResumeSubmission(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
 	fh.addInvocation("TryResumeSubmission")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
+	}, nil
+}
+
+func (fh *fakeHandler) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
+	fh.addInvocation("OnCQDTryjobsUpdated")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

@@ -269,13 +269,70 @@ func TestReportVerifiedRun(t *testing.T) {
 	})
 }
 
+func TestReportTryjobs(t *testing.T) {
+	t.Parallel()
+
+	Convey("ReportTryjobs works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		rnMock := runNotifierMock{}
+		m := MigrationServer{RunNotifier: &rnMock}
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:             identity.Identity("project:infra"),
+			PeerIdentityOverride: "user:cqdaemon@example.com",
+		})
+
+		const runID = common.RunID("infra/111-1-deadbeef")
+		req := &migrationpb.ReportTryjobsRequest{
+			RunId: string(runID),
+			Tryjobs: []*migrationpb.Tryjob{
+				{
+					Status: migrationpb.TryjobStatus_PENDING,
+					Build:  &cvbqpb.Build{Id: 123, Origin: cvbqpb.Build_NOT_REUSED},
+				},
+				{
+					Status: migrationpb.TryjobStatus_RUNNING,
+					Build:  &cvbqpb.Build{Id: 124, Origin: cvbqpb.Build_REUSED},
+				},
+			},
+		}
+
+		_, err := m.ReportTryjobs(ctx, req)
+		So(err, ShouldBeNil)
+
+		ct.Clock.Add(time.Minute)
+		req.Tryjobs[0].Status = migrationpb.TryjobStatus_RUNNING
+		_, err = m.ReportTryjobs(ctx, req)
+		So(err, ShouldBeNil)
+
+		ct.Clock.Add(time.Minute)
+		req.Tryjobs[1].Status = migrationpb.TryjobStatus_SUCCEEDED
+		_, err = m.ReportTryjobs(ctx, req)
+		So(err, ShouldBeNil)
+
+		So(rnMock.tryjobsUpdated, ShouldResemble, common.RunIDs{runID, runID, runID})
+		all, err := ListReportedTryjobs(ctx, runID, ct.Clock.Now().Add(-time.Hour), 0 /*unlimited*/)
+		So(err, ShouldBeNil)
+		So(all, ShouldHaveLength, 3)
+	})
+}
+
 type runNotifierMock struct {
 	verificationCompleted common.RunIDs
+	tryjobsUpdated        common.RunIDs
 	finished              common.RunIDs
 }
 
 func (r *runNotifierMock) NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
 	r.verificationCompleted = append(r.verificationCompleted, runID)
+	return nil
+}
+
+func (r *runNotifierMock) NotifyCQDTryjobsUpdated(ctx context.Context, runID common.RunID) error {
+	r.tryjobsUpdated = append(r.tryjobsUpdated, runID)
 	return nil
 }
 
