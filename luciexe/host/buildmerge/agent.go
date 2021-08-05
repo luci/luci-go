@@ -35,7 +35,6 @@ package buildmerge
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -151,7 +150,7 @@ type Agent struct {
 //
 // The frequency of updates from this Agent is governed by how quickly the
 // caller consumes from Agent.MergedBuildC.
-func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, calculateURLs CalcURLFn) *Agent {
+func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, calculateURLs CalcURLFn) (*Agent, error) {
 	userNamespace = userNamespace.AsNamespace()
 
 	ch := make(chan *bbpb.Build)
@@ -170,10 +169,10 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 		baseBuild:     proto.Clone(base).(*bbpb.Build),
 	}
 	for _, log := range ret.baseBuild.GetOutput().GetLogs() {
-		u, err := url.Parse(log.Url)
-		if err == nil && u.Scheme == "" {
-			log.Url, log.ViewUrl = calculateURLs(
-				userNamespace, types.StreamName(log.Url))
+		var err error
+		log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, userNamespace, calculateURLs)
+		if err != nil {
+			return nil, errors.Annotate(err, "build.output.logs[%q]", log.Name).Err()
 		}
 	}
 
@@ -188,14 +187,14 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 		DrainedFn: ret.finalize,
 	}, ret.sendMerge)
 	if err != nil {
-		panic(err) // creating dispatcher with static config should never fail
+		return nil, err // creating dispatcher with static config should never fail
 	}
 	ret.informNewData = func() {
 		ret.mergeCh.C <- nil // content doesn't matter
 	}
 	ret.DrainC = ret.mergeCh.DrainC
 
-	return ret
+	return ret, nil
 }
 
 // Attach should be called once to attach this to a Butler.

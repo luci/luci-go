@@ -91,7 +91,10 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	})
 
 	logging.Infof(ctx, "starting build.proto merging agent")
-	agent := spyOn(ctx, butler, opts.BaseBuild)
+	agent, err := spyOn(ctx, butler, opts.BaseBuild)
+	if err != nil {
+		return nil, err
+	}
 	cleanup.add("buildmerge spy", func() error {
 		agent.Close()
 		logging.Infof(ctx, "waiting for buildmerge spy to finish")

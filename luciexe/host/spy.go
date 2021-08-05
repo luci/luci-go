@@ -86,7 +86,7 @@ type spy struct {
 //   to output merged Build messages.
 // Side-effect: Exports LOGDOG_NAMESPACE="$LOGDOG_NAMESPACE/u" to the
 //   environment.
-func spyOn(ctx context.Context, b *butler.Butler, base *bbpb.Build) *spy {
+func spyOn(ctx context.Context, b *butler.Butler, base *bbpb.Build) (*spy, error) {
 	curNamespace := types.StreamName(os.Getenv(luciexe.LogdogNamespaceEnv))
 
 	ldClient := streamclient.NewLoopback(b, types.StreamName(curNamespace))
@@ -98,7 +98,10 @@ func spyOn(ctx context.Context, b *butler.Butler, base *bbpb.Build) *spy {
 	if err := os.Setenv(luciexe.LogdogNamespaceEnv, string(userNamespace)); err != nil {
 		panic(err)
 	}
-	builds := buildmerge.New(ctx, userNamespace, base, mkURLCalcFn())
+	builds, err := buildmerge.New(ctx, userNamespace, base, mkURLCalcFn())
+	if err != nil {
+		return nil, err
+	}
 
 	fwdChan := teeLogdog(ctx, builds.MergedBuildC, ldClient)
 
@@ -108,7 +111,7 @@ func spyOn(ctx context.Context, b *butler.Butler, base *bbpb.Build) *spy {
 		DrainC:        builds.DrainC,
 		Close:         builds.Close,
 		UserNamespace: types.StreamName(userNamespace).AsNamespace(),
-	}
+	}, nil
 }
 
 // teeLogdog tees Build messages to a new "build.proto" datagram stream on the
