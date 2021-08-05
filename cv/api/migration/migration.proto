@@ -201,6 +201,9 @@ message ReportTryjobsRequest {
   // and implicitly identifies the LUCI project.
   string run_id = 1;
   repeated Tryjob tryjobs = 2;
+  // The Git revision of the LUCI project config under which CQDaemon is
+  // operating.
+  string config_revision = 3;
 }
 
 message Tryjob {
