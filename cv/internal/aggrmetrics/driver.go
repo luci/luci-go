@@ -42,6 +42,7 @@ func New(ctx context.Context, tqd *tq.Dispatcher) *Driver {
 		aggregators: []aggregator{
 			&runsAggregator{},
 		},
+		lastFlush: clock.Now(ctx),
 	}
 	tsmon.RegisterCallbackIn(ctx, d.tsmonCallback)
 	return d
@@ -56,6 +57,7 @@ type Driver struct {
 	m              sync.Mutex
 	nextReports    []reportFunc
 	nextExpireTime time.Time
+	lastFlush      time.Time
 }
 
 // Cron is expected to be called once per minute, e.g., by GAE cron.
@@ -111,7 +113,13 @@ func (d *Driver) stageReports(ctx context.Context, reports []reportFunc, start t
 			logging.Errorf(ctx, "aggrmetrics.MinuteCron was stuck since %s, newer report %s is already prepared", start, lastStagedStart)
 			return
 		}
-		logging.Errorf(ctx, "aggrmetrics.MinuteCron overwriting unsent report of %s with %s", lastStagedStart, start)
+		logging.Warningf(ctx, "aggrmetrics.MinuteCron overwriting unsent report of %s with %s", lastStagedStart, start)
+		// Overwriting report means that data points are lost. This is fine once in
+		// a while, but bad if this happens all the time on a GAE instance.
+		// Detect the latter by checking when the last Flush happened.
+		if delay := clock.Since(ctx, d.lastFlush); delay >= reportTTL {
+			logging.Errorf(ctx, "aggrmetrics weren't flushed for a long time: %s", delay)
+		}
 	}
 	d.nextReports = reports
 	d.nextExpireTime = expire
@@ -129,8 +137,10 @@ func (d *Driver) tsmonCallback(ctx context.Context) {
 	// In all cases, reset all metrics.
 	d.resetMetrics(ctx)
 
+	now := clock.Now(ctx)
+	d.lastFlush = now
 	// Decide if a report should be made.
-	switch now := clock.Now(ctx); {
+	switch {
 	case d.nextExpireTime.IsZero():
 		return
 	case d.nextExpireTime.Before(now):
