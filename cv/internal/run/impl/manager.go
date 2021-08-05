@@ -246,6 +246,7 @@ type triageResult struct {
 		sc    *eventpb.SubmissionCompleted
 	}
 	cqdVerificationCompletedEvents eventbox.Events
+	cqdTryjobsUpdated              eventbox.Events
 	nextReadyEventTime             time.Time
 	// These events can be deleted even before the transaction starts.
 	garbage eventbox.Events
@@ -300,6 +301,8 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.submissionCompletedEvent.sc = e.GetSubmissionCompleted()
 	case *eventpb.Event_CqdVerificationCompleted:
 		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
+	case *eventpb.Event_CqdTryjobsUpdated:
+		tr.cqdTryjobsUpdated = append(tr.cqdTryjobsUpdated, item)
 	case *eventpb.Event_CqdFinished:
 		// TODO(crbug/1227523): remove this after all such events are wiped out
 		// from datastore.
@@ -350,6 +353,7 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		rs, transitions = applyResult(res, tr.clUpdatedEvents.events, transitions)
 	}
 
+	// TODO(crbug/1232158): handle cqdTryjobsUpdated.
 	if len(tr.cqdVerificationCompletedEvents) > 0 {
 		res, err := rp.handler.OnCQDVerificationCompleted(ctx, rs)
 		if err != nil {

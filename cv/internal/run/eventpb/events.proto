@@ -65,6 +65,14 @@ message Event {
     // TODO(crbug/1141880): Remove this event after migration.
     CQDVerificationCompleted cqd_verification_completed = 30;
 
+    // On CQDTryjobsUpdated event, Run Manager will record newer tryjob state.
+    //
+    // This event is sent by the migration api when CQDaemon reports
+    // an updated state of Tryjobs.
+    //
+    // TODO(crbug/1141880): Remove this event after migration.
+    CQDTryjobsUpdated cqd_tryjobs_updated = 32;
+
 
     // TODO(crbug/1227523): wipe out all outstanding events of this kind
     // and delete it from here.
@@ -152,6 +160,9 @@ enum SubmissionResult {
 }
 
 message CQDVerificationCompleted {
+}
+
+message CQDTryjobsUpdated {
 }
 
 message CQDFinished {
