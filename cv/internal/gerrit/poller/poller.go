@@ -246,6 +246,7 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 		for i, qs := range stateBefore.QueryStates.GetStates() {
 			i, qs := i, qs
 			work <- func() error {
+				ctx := logging.SetField(ctx, "gHost", qs.GetHost())
 				err := p.doOneQuery(ctx, luciProject, qs)
 				errs[i] = errors.Annotate(err, "query %s", qs).Err()
 				return nil
