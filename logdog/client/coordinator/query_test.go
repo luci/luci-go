@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -120,6 +121,16 @@ func TestClientQuery(t *testing.T) {
 				results = append(results, s)
 				return true
 			}
+
+			Convey(`Zero timestamps turn into nil`, func() {
+				q.Before = time.Time{}
+				q.After = time.Time{}
+				_ = client.Query(c, project, path, q, func(*LogStream) bool {
+					return true
+				})
+				So(svc.LR.Newer, ShouldBeNil)
+				So(svc.LR.Older, ShouldBeNil)
+			})
 
 			Convey(`Can accumulate results across queries.`, func() {
 				// This handler will return a single query per request, as well as a
