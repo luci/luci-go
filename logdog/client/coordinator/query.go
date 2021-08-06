@@ -140,10 +140,14 @@ func (c *Client) Query(ctx context.Context, project string, path string, o Query
 		Project:     project,
 		Path:        path,
 		ContentType: o.ContentType,
-		Older:       timestamppb.New(o.Before),
-		Newer:       timestamppb.New(o.After),
 		Purged:      o.Purged.queryValue(),
 		State:       o.State,
+	}
+	if !o.Before.IsZero() {
+		req.Older = timestamppb.New(o.Before)
+	}
+	if !o.After.IsZero() {
+		req.Newer = timestamppb.New(o.After)
 	}
 	if st := o.StreamType.queryValue(); st >= 0 {
 		req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: st}
