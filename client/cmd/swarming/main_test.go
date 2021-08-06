@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main is a client to a Swarming server.
-//
-// The reference server python implementation documentation can be found at
-// https://github.com/luci/luci-py/tree/master/appengine/swarming/doc
 package main
 
 import (
@@ -38,6 +34,12 @@ import (
 // The value must be "1" for integration tests to run.
 const IntegrationTestEnvVar = "INTEGRATION_TESTS"
 
+func init() {
+	// Unset SWARMING_TASK_ID environment variable, otherwise task trigger may
+	// fail for parent task association.
+	os.Unsetenv(lib.TaskIDEnvVar)
+}
+
 // runIntegrationTests true if integration tests should run.
 func runIntegrationTests() bool {
 	return os.Getenv(IntegrationTestEnvVar) == "1"
@@ -55,6 +57,7 @@ func runCmd(t *testing.T, cmd string, args ...string) int {
 
 func TestBotsCommand(t *testing.T) {
 	t.Parallel()
+
 	Convey(`ok`, t, func() {
 		dir := t.TempDir()
 		jsonPath := filepath.Join(dir, "out.json")
@@ -65,25 +68,13 @@ func TestBotsCommand(t *testing.T) {
 
 func TestTasksCommand(t *testing.T) {
 	t.Parallel()
+
 	Convey(`ok`, t, func() {
 		dir := t.TempDir()
 		jsonPath := filepath.Join(dir, "out.json")
 
 		So(runCmd(t, "tasks", "-limit", "1", "-json", jsonPath), ShouldEqual, 0)
 	})
-}
-
-// triggerTaskWithIsolate triggers a task that uploads ouput to Isolate, and returns triggered TaskRequest.
-func triggerTaskWithIsolate(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetadata {
-	return triggerTask(t, []string{"-isolate-server", "isolateserver-dev.appspot.com"})
-}
-
-// triggerTaskWithCAS triggers a task that uploads ouput to CAS, and returns triggered TaskRequest.
-func triggerTaskWithCAS(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetadata {
-	// TODO(jwata): ensure the digest is uploaded on CAS.
-	// https://cas-viewer-dev.appspot.com/projects/chromium-swarm-dev/instances/default_instance/blobs/ad455795d66ac6d3bc0905f6a137dda1fb1d2de252a9f2a73329428fe1cf645a/77/tree
-	// Use the same digest with the output so that the content is kept on CAS (hopefully...)
-	return triggerTask(t, []string{"-digest", "ad455795d66ac6d3bc0905f6a137dda1fb1d2de252a9f2a73329428fe1cf645a/77"})
 }
 
 // triggerTask triggers a task and returns the triggered TaskRequest.
@@ -95,8 +86,9 @@ func triggerTask(t *testing.T, args []string) *swarming.SwarmingRpcsTaskRequestM
 	err := ioutil.WriteFile(sbPath, []byte("This is secret!"), 0600)
 	So(err, ShouldBeNil)
 	args = append(args, []string{
-		"-d", "pool=chromium.tests",
+		"-d", "pool=infra.tests",
 		"-d", "os=Linux",
+		"-realm", "infra:tests",
 		"-dump-json", jsonPath,
 		"-idempotent",
 		"-secret-bytes-path", sbPath,
@@ -125,25 +117,6 @@ func readTriggerResults(jsonPath string) *lib.TriggerResults {
 	return results
 }
 
-// unsetParentTaskID unset SWARMING_TASK_ID environment variable, otherwise task trigger may fail for parent task association.
-func unsetParentTaskID(t *testing.T) {
-	parentTaskID := os.Getenv(lib.TaskIDEnvVar)
-	os.Unsetenv(lib.TaskIDEnvVar)
-	t.Cleanup(func() {
-		os.Setenv(lib.TaskIDEnvVar, parentTaskID)
-	})
-}
-
-func TestTriggerCommand(t *testing.T) {
-	unsetParentTaskID(t)
-	Convey(`ok with Isolate server`, t, func() {
-		triggerTaskWithIsolate(t)
-	})
-	Convey(`ok with CAS`, t, func() {
-		triggerTaskWithCAS(t)
-	})
-}
-
 func testCollectCommand(t *testing.T, taskID string) {
 	dir := t.TempDir()
 	So(runCmd(t, "collect", "-output-dir", dir, taskID), ShouldEqual, 0)
@@ -152,31 +125,29 @@ func testCollectCommand(t *testing.T, taskID string) {
 	So(string(out), ShouldResemble, "hi\n")
 }
 
-func TestCollectCommand(t *testing.T) {
-	unsetParentTaskID(t)
+func runIntegrationTest(t *testing.T, triggerArgs []string) {
+	triggeredTask := triggerTask(t, triggerArgs)
+	So(runCmd(t, "request_show", triggeredTask.TaskId), ShouldEqual, 0)
+	testCollectCommand(t, triggeredTask.TaskId)
+}
 
-	Convey(`ok with Isolate server`, t, func() {
-		triggeredTask := triggerTaskWithIsolate(t)
-		testCollectCommand(t, triggeredTask.TaskId)
-	})
+func TestWithIsolate(t *testing.T) {
+	t.Parallel()
 
-	Convey(`ok with CAS`, t, func() {
-		triggeredTask := triggerTaskWithCAS(t)
-		testCollectCommand(t, triggeredTask.TaskId)
+	Convey(`ok`, t, func() {
+		runIntegrationTest(t, []string{"-isolate-server", "isolateserver-dev.appspot.com"})
 	})
 }
 
-func TestRequestShowCommand(t *testing.T) {
-	unsetParentTaskID(t)
+func TestWithCAS(t *testing.T) {
+	t.Parallel()
 
-	Convey(`ok with Isolate`, t, func() {
-		triggeredTask := triggerTaskWithIsolate(t)
-		So(runCmd(t, "request_show", triggeredTask.TaskId), ShouldEqual, 0)
-	})
-
-	Convey(`ok with CAS`, t, func() {
-		triggeredTask := triggerTaskWithCAS(t)
-		So(runCmd(t, "request_show", triggeredTask.TaskId), ShouldEqual, 0)
+	Convey(`ok`, t, func() {
+		// TODO(jwata): ensure the digest is uploaded on CAS.
+		// https://cas-viewer-dev.appspot.com/projects/chromium-swarm-dev/instances/default_instance/blobs/ad455795d66ac6d3bc0905f6a137dda1fb1d2de252a9f2a73329428fe1cf645a/77/tree
+		// Use the same digest with the output so that the content is kept on
+		// CAS (hopefully...)
+		runIntegrationTest(t, []string{"-digest", "ad455795d66ac6d3bc0905f6a137dda1fb1d2de252a9f2a73329428fe1cf645a/77"})
 	})
 }
 
@@ -185,13 +156,14 @@ const spawnTaskInputJSON = `
 	"requests": [
 		{
 			"name": "spawn-task test with Isolate server",
+			"realm": "infra:tests",
 			"priority": "200",
 			"task_slices": [
 				{
 					"expiration_secs": "21600",
 					"properties": {
 						"dimensions": [
-							{"key": "pool", "value": "chromium.tests"},
+							{"key": "pool", "value": "infra.tests"},
 							{"key": "os", "value": "Linux"}
 						],
 						"command": ["/bin/bash", "-c", "echo hi > ${ISOLATED_OUTDIR}/out"],
@@ -203,13 +175,14 @@ const spawnTaskInputJSON = `
 		},
 		{
 			"name": "spawn-task test with CAS",
+			"realm": "infra:tests",
 			"priority": "200",
 			"task_slices": [
 				{
 					"expiration_secs": "21600",
 					"properties": {
 						"dimensions": [
-							{"key": "pool", "value": "chromium.tests"},
+							{"key": "pool", "value": "infra.tests"},
 							{"key": "os", "value": "Linux"}
 						],
 						"cas_input_root": {
@@ -231,7 +204,8 @@ const spawnTaskInputJSON = `
 `
 
 func TestSpawnTasksCommand(t *testing.T) {
-	unsetParentTaskID(t)
+	t.Parallel()
+
 	Convey(`ok`, t, func() {
 		// prepare input file.
 		dir := t.TempDir()
