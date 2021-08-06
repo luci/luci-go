@@ -32,10 +32,21 @@ import { InvocationState, provideInvocationState, QueryInvocationError } from '.
 import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getLegacyURLPathForBuild, getURLPathForBuilder, getURLPathForProject } from '../../libs/build_utils';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  BUILD_STATUS_COLOR_MAP,
+  BUILD_STATUS_DISPLAY_MAP,
+  POTENTIALLY_EXPIRED,
+} from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
-import { attachTags } from '../../libs/tag';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  renderErrorInPre,
+  reportError,
+  reportRenderError,
+} from '../../libs/error_handler';
+import { attachTags, hasTags } from '../../libs/tag';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
@@ -104,6 +115,19 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
   return forwardWithoutMsg(err, ele);
 }
 
+function renderError(err: ErrorEvent, ele: BuildPageElement) {
+  if (err.error instanceof GetBuildError && hasTags(err.error, POTENTIALLY_EXPIRED)) {
+    return html`
+      <div id="build-not-found-error">
+        Build Not Found: if you are trying to view an old build, it could have been wiped from the server already.
+      </div>
+      ${renderErrorInPre(err, ele)}
+    `;
+  }
+
+  return renderErrorInPre(err, ele);
+}
+
 /**
  * Main build page.
  * Reads project, bucket, builder and build from URL params.
@@ -111,7 +135,7 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
  * If build is not a number, shows an error.
  */
 @customElement('milo-build-page')
-@errorHandler(retryWithoutComputedInvId)
+@errorHandler(retryWithoutComputedInvId, renderError)
 @provider
 @consumer
 export class BuildPageElement extends MiloBaseElement implements BeforeEnterObserver {
@@ -550,6 +574,13 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         border: 1px solid var(--divider-color);
         border-radius: 0.25rem;
         transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+
+      #build-not-found-error {
+        background-color: var(--warning-color);
+        font-weight: 500;
+        padding: 5px;
+        margin: 8px 16px;
       }
     `,
   ];

@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { autorun, computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
+import { POTENTIALLY_EXPIRED } from '../libs/constants';
 import { createContextLink } from '../libs/context';
 import * as iter from '../libs/iter_utils';
-import { InnerTag, TAG_SOURCE } from '../libs/tag';
+import { attachTags, InnerTag, TAG_SOURCE } from '../libs/tag';
 import { unwrapObservable } from '../libs/unwrap_observable';
 import { BuildExt } from '../models/build_ext';
 import {
@@ -185,6 +187,9 @@ export class BuildState {
       this.appState.buildsService
         .getBuild(req, cacheOpt)
         .catch((e) => {
+          if (e instanceof GrpcError && e.code === RpcCode.NOT_FOUND) {
+            attachTags(e, POTENTIALLY_EXPIRED);
+          }
           throw new GetBuildError(e);
         })
         .then((b) => new BuildExt(b))

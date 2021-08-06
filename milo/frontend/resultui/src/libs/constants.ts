@@ -107,3 +107,10 @@ export const BUILD_STATUS_COLOR_MAP = Object.freeze({
 });
 
 export const ARTIFACT_LENGTH_LIMIT = 50000;
+
+/**
+ * Some resources are purged from the server after certain period (e.g. builds
+ * are removed from buildbucket server after 1.5 years). 404 errors that ocurred
+ * when querying those resources should have this tag attached to them.
+ */
+export const POTENTIALLY_EXPIRED = Symbol('POTENTIALLY_EXPIRED');
