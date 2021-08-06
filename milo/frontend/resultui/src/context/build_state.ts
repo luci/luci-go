@@ -18,6 +18,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
 import { createContextLink } from '../libs/context';
 import * as iter from '../libs/iter_utils';
+import { InnerTag, TAG_SOURCE } from '../libs/tag';
 import { unwrapObservable } from '../libs/unwrap_observable';
 import { BuildExt } from '../models/build_ext';
 import {
@@ -32,6 +33,15 @@ import {
 import { Project, QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
 import { AppState } from './app_state';
+
+export class GetBuildError extends Error implements InnerTag {
+  readonly [TAG_SOURCE]: Error;
+
+  constructor(source: Error) {
+    super(source.message);
+    this[TAG_SOURCE] = source;
+  }
+}
 
 /**
  * Records state of a build.
@@ -171,7 +181,14 @@ export class BuildState {
       ? { id: this.buildId, fields: BUILD_FIELD_MASK }
       : { builder: this.builderIdParam, buildNumber: this.buildNum!, fields: BUILD_FIELD_MASK };
 
-    return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt).then((b) => new BuildExt(b)));
+    return fromPromise(
+      this.appState.buildsService
+        .getBuild(req, cacheOpt)
+        .catch((e) => {
+          throw new GetBuildError(e);
+        })
+        .then((b) => new BuildExt(b))
+    );
   }
 
   @computed

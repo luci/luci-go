@@ -12,15 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PrpcClient, PrpcClientOptions } from '@chopsui/prpc-client';
+import { GrpcError, PrpcClient, PrpcClientOptions } from '@chopsui/prpc-client';
+
+const DEFAULT_ON_ERROR_FN = (e: GrpcError) => {
+  throw e;
+};
 
 /**
- * Extends the PrpcClient to support updating accessToken.
+ * Extends the PrpcClient to support updating accessToken and wrapping errors.
  */
 export class PrpcClientExt {
   private client: PrpcClient;
 
-  constructor(opts: PrpcClientOptions, private getAccessToken: () => string) {
+  constructor(
+    opts: PrpcClientOptions,
+    private readonly getAccessToken: () => string,
+    private readonly onError = DEFAULT_ON_ERROR_FN
+  ) {
     this.client = new PrpcClient({
       ...opts,
       accessToken: undefined,
@@ -35,6 +43,6 @@ export class PrpcClientExt {
         ...additionalHeaders,
       };
     }
-    return this.client.call(service, method, message, additionalHeaders);
+    return this.client.call(service, method, message, additionalHeaders).catch((e) => this.onError(e));
   }
 }

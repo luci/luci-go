@@ -20,6 +20,7 @@
 import { groupBy } from 'lodash-es';
 import { action, computed, observable } from 'mobx';
 
+import { InnerTag, TAG_SOURCE } from '../libs/tag';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
@@ -42,9 +43,13 @@ export const enum LoadingStage {
   Done = 5,
 }
 
-export class LoadTestVariantsError extends Error {
-  constructor(readonly req: QueryTestVariantsRequest, readonly source: Error) {
+export class LoadTestVariantsError extends Error implements InnerTag {
+  readonly [TAG_SOURCE]: Error;
+
+  constructor(readonly req: QueryTestVariantsRequest, source: Error) {
     super(source.message);
+
+    this[TAG_SOURCE] = source;
   }
 }
 

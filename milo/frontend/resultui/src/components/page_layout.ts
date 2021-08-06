@@ -15,7 +15,6 @@
 import '@material/mwc-icon';
 import '@material/mwc-icon-button';
 import '@material/mwc-snackbar';
-import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html } from 'lit-element';
@@ -25,12 +24,14 @@ import { observable, reaction } from 'mobx';
 import './signin';
 import './tooltip';
 import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
+import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../common_tags';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { NEW_MILO_VERSION_EVENT_TYPE } from '../libs/constants';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
+import { hasTags } from '../libs/tag';
 import { genFeedbackUrl, timeout } from '../libs/utils';
 import { router } from '../routes';
 import { ANONYMOUS_IDENTITY, queryAuthState } from '../services/milo_internal';
@@ -40,15 +41,13 @@ import { MiloBaseElement } from './milo_base';
 export const refreshAuthChannel = new BroadcastChannel('refresh-auth-channel');
 
 function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
-  // TODO(weiweilin): add integration tests to ensure redirection works properly.
-  if (err.error instanceof GrpcError) {
-    const mayRequireSignin = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(
-      err.error.code
-    );
-    if (mayRequireSignin && ele.appState.authState?.identity === ANONYMOUS_IDENTITY) {
-      Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
-      return false;
-    }
+  if (
+    ele.appState.authState?.identity === ANONYMOUS_IDENTITY &&
+    hasTags(err.error, MAY_REQUIRE_SIGNIN) &&
+    !hasTags(err.error, OPTIONAL_RESOURCE)
+  ) {
+    Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
+    return false;
   }
   return handleLocally(err, ele);
 }

@@ -12,14 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
 import { computed, observable, untracked } from 'mobx';
 
+import { MAY_REQUIRE_SIGNIN } from '../common_tags';
 import { createContextLink } from '../libs/context';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
+import { attachTags } from '../libs/tag';
 import { AccessService, BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
 import { AuthState, MiloInternal } from '../services/milo_internal';
 import { ResultDb } from '../services/resultdb';
+
+const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED];
 
 /**
  * Records the app-level state.
@@ -139,7 +144,16 @@ export class AppState {
   private makeClient(host: string) {
     // Don't track the access token so services won't be refreshed when the
     // access token is updated.
-    return new PrpcClientExt({ host }, () => untracked(() => this.authState?.accessToken || ''));
+    return new PrpcClientExt(
+      { host },
+      () => untracked(() => this.authState?.accessToken || ''),
+      (e) => {
+        if (MAY_REQUIRE_SIGNIN_ERROR_CODE.includes(e.code)) {
+          attachTags(e, MAY_REQUIRE_SIGNIN);
+        }
+        throw e;
+      }
+    );
   }
 
   // Refresh all data that depends on the timestamp.

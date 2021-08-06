@@ -12,18 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-describe('Invocation Page', () => {
-  it('should get invocation ID from URL', () => {
-    cy.visit('/inv/build-8845866669318458401');
-    cy.get('milo-invocation-page')
-      .invoke('prop', 'invocationState')
-      .its('invocationId')
-      .should('eq', 'build-8845866669318458401');
-  });
+export const MAY_REQUIRE_SIGNIN = Symbol('may-require-signin');
 
-  it('should initiate the signin flow if the page is 404 and the user is not logged in', () => {
-    cy.visit('/inv/not-found-8845866669318458401');
-    cy.on('uncaught:exception', () => false);
-    cy.location('pathname').should('equal', '/ui/login');
-  });
-});
+export const OPTIONAL_RESOURCE = Symbol('optional-resource');

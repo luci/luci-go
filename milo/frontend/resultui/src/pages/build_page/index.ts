@@ -23,10 +23,11 @@ import { autorun, computed, observable, reaction, when } from 'mobx';
 import '../../components/test_count_indicator';
 import '../../components/status_bar';
 import '../../components/tab_bar';
+import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { BuildState, provideBuildState } from '../../context/build_state';
+import { BuildState, GetBuildError, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
 import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
@@ -34,6 +35,7 @@ import { getLegacyURLPathForBuild, getURLPathForBuilder, getURLPathForProject } 
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
+import { attachTags } from '../../libs/tag';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
@@ -93,6 +95,10 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
     err.stopImmediatePropagation();
     err.preventDefault();
     return false;
+  }
+
+  if (!(err.error instanceof GetBuildError)) {
+    attachTags(err.error, OPTIONAL_RESOURCE);
   }
 
   return forwardWithoutMsg(err, ele);
