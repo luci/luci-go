@@ -20,10 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
-	"go.chromium.org/luci/common/tsmon/store"
-	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
 
@@ -43,25 +40,15 @@ func TestRunAggregator(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		ctx = caching.WithEmptyProcessCache(ctx)
 		// Truncate current time to seconds to deal with integer delays.
 		ct.Clock.Set(ct.Clock.Now().UTC().Add(time.Second).Truncate(time.Second))
 
-		ctx = caching.WithEmptyProcessCache(ctx)
-
-		// TODO(tandrii): move this to cvtesting.Test.SetUp().
-		ctx, _, _ = tsmon.WithFakes(ctx)
-		tstore := store.NewInMemory(&target.Task{})
-		tsmon.GetState(ctx).SetStore(tstore)
-
 		runsSent := func(project, status string) interface{} {
-			return tstore.Get(ctx, metricActiveRunsCount, time.Time{}, []interface{}{project, status})
+			return ct.TSMonSentValue(ctx, metricActiveRunsCount, project, status)
 		}
 		durationsSent := func(project string) *distribution.Distribution {
-			d := tstore.Get(ctx, metricActiveRunsDurationsS, time.Time{}, []interface{}{project})
-			if d == nil {
-				return nil
-			}
-			return d.(*distribution.Distribution)
+			return ct.TSMonSentDistr(ctx, metricActiveRunsDurationsS, project)
 		}
 
 		putRun := func(i byte, p string, s commonpb.Run_Status, ct time.Time) {
@@ -86,7 +73,7 @@ func TestRunAggregator(t *testing.T) {
 			prepareAndReport("v8")
 			So(runsSent("v8", "RUNNING"), ShouldEqual, 0)
 			So(durationsSent("v8").Count(), ShouldEqual, 0)
-			So(tstore.GetAll(ctx), ShouldHaveLength, 2)
+			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 2)
 		})
 
 		Convey("Active projects with various run kinds", func() {
@@ -107,7 +94,7 @@ func TestRunAggregator(t *testing.T) {
 			So(durationsSent("fuchsia").Sum(), ShouldEqual, 2)
 			So(durationsSent("fuchsia").Count(), ShouldEqual, 2)
 
-			So(tstore.GetAll(ctx), ShouldHaveLength, 6)
+			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 6)
 		})
 
 		putManyRuns := func(n int) map[string]int {
@@ -148,7 +135,7 @@ func TestRunAggregator(t *testing.T) {
 			ra := runsAggregator{}
 			_, err := ra.prepare(ctx, stringset.Set{})
 			So(err, ShouldErrLike, "too many active Runs")
-			So(tstore.GetAll(ctx), ShouldBeEmpty)
+			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 		})
 	})
 }

@@ -36,6 +36,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -72,6 +77,8 @@ type Test struct {
 	TreeFake *treetest.Fake
 	// BQFake is a fake BQ client.
 	BQFake *bq.Fake
+	// PSFake is a fake PS client.
+	PSFake *pubsub.Fake
 	// TQDispatcher is a dispatcher with which task classes must be registered.
 	//
 	// Must not be set.
@@ -81,6 +88,8 @@ type Test struct {
 	// Clock allows to move time forward.
 	// By default, the time is moved automatically is something waits on it.
 	Clock testclock.TestClock
+	// TSMonStore store keeps all metrics in memory and allows examination.
+	TSMonStore store.Store
 
 	// MaxDuration limits how long a test can run as a fail safe.
 	//
@@ -99,9 +108,6 @@ type Test struct {
 
 	// cleanupFuncs are executed in reverse order in cleanup().
 	cleanupFuncs []func()
-
-	// PSFake is a fake PS client.
-	PSFake *pubsub.Fake
 }
 
 func (t *Test) SetUp() (context.Context, func()) {
@@ -155,6 +161,11 @@ func (t *Test) SetUp() (context.Context, func()) {
 
 	ctx = t.installDS(ctx)
 	ctx = txndefer.FilterRDS(ctx)
+
+	ctx, _, _ = tsmon.WithFakes(ctx)
+	t.TSMonStore = store.NewInMemory(&target.Task{})
+	tsmon.GetState(ctx).SetStore(t.TSMonStore)
+
 	return ctx, t.cleanup
 }
 
@@ -170,6 +181,30 @@ func (t *Test) RoundTestClock(multiple time.Duration) {
 
 func (t *Test) GFactory() gerrit.Factory {
 	return gerrit.CachingFactory(16, gerrit.TimeLimitedFactory(gerrit.InstrumentedFactory(t.GFake)))
+}
+
+// TSMonSentValue returns the latest value of the given metric.
+//
+// If not set, returns nil.
+func (t *Test) TSMonSentValue(ctx context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
+	resetTime := time.Time{}
+	return t.TSMonStore.Get(ctx, m, resetTime, fieldVals)
+}
+
+// TSMonSentDistr returns the latest distr value of the given metric.
+//
+// If not set, returns nil.
+// Panics if metric's value is not a distribution.
+func (t *Test) TSMonSentDistr(ctx context.Context, m types.Metric, fieldVals ...interface{}) *distribution.Distribution {
+	v := t.TSMonSentValue(ctx, m, fieldVals...)
+	if v == nil {
+		return nil
+	}
+	d, ok := v.(*distribution.Distribution)
+	if !ok {
+		panic(fmt.Errorf("metric %q value is not a %T, but %T", m.Info().Name, d, v))
+	}
+	return d
 }
 
 func (t *Test) setMaxDuration() {

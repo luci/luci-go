@@ -15,17 +15,11 @@
 package handler
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/distribution"
-	"go.chromium.org/luci/common/tsmon/store"
-	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/common/tsmon/types"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
@@ -70,10 +64,6 @@ func TestStart(t *testing.T) {
 		h, _, _, _ := makeTestImpl(&ct)
 
 		Convey("Starts when Run is PENDING", func() {
-			// TODO(tandrii): move this to cvtesting.Test setup.
-			ctx, _, _ = tsmon.WithFakes(ctx)
-			tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
-
 			rs.Run.Status = commonpb.Run_PENDING
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
@@ -84,9 +74,9 @@ func TestStart(t *testing.T) {
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 
-			So(tsmonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
+			So(ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
 				ShouldAlmostEqual, startLatency.Seconds())
-			So(tsmonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
+			So(ct.TSMonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
 				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
 		})
 
@@ -109,9 +99,4 @@ func TestStart(t *testing.T) {
 			})
 		}
 	})
-}
-
-func tsmonSentDistr(ctx context.Context, m types.Metric, fieldVals ...interface{}) *distribution.Distribution {
-	resetTime := time.Time{}
-	return tsmon.GetState(ctx).Store().Get(ctx, m, resetTime, fieldVals).(*distribution.Distribution)
 }

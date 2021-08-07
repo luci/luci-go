@@ -26,8 +26,6 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/common/tsmon/store"
-	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server/caching"
 
@@ -56,17 +54,8 @@ func TestDriver(t *testing.T) {
 
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		// TODO(tandrii): move this to cvtesting.Test.SetUp().
-		ctx, _, _ = tsmon.WithFakes(ctx)
-		tstore := store.NewInMemory(&target.Task{})
-		tsmon.GetState(ctx).SetStore(tstore)
-
-		mSent := func(fields ...string) interface{} {
-			ifields := make([]interface{}, len(fields))
-			for i, f := range fields {
-				ifields[i] = f
-			}
-			return tstore.Get(ctx, testMetric, time.Time{}, ifields)
+		mSent := func(fields ...interface{}) interface{} {
+			return ct.TSMonSentValue(ctx, testMetric, fields...)
 		}
 
 		d := Driver{
@@ -75,29 +64,29 @@ func TestDriver(t *testing.T) {
 			},
 		}
 		tsmon.RegisterCallbackIn(ctx, d.tsmonCallback)
-		tsmon.Flush(ctx)
-		So(tstore.GetAll(ctx), ShouldBeEmpty)
+		So(tsmon.Flush(ctx), ShouldBeNil)
+		So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 
 		Convey("No projects", func() {
 			So(d.Cron(ctx), ShouldBeNil)
-			tsmon.Flush(ctx)
-			So(tstore.GetAll(ctx), ShouldBeEmpty)
+			So(tsmon.Flush(ctx), ShouldBeNil)
+			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 		})
 
 		Convey("With one project", func() {
 			prjcfgtest.Create(ctx, "first", &cfgpb.Config{})
 			So(d.Cron(ctx), ShouldBeNil)
-			tsmon.Flush(ctx)
+			So(tsmon.Flush(ctx), ShouldBeNil)
 
 			Convey("Reports new data", func() {
-				So(tstore.GetAll(ctx), ShouldHaveLength, 1)
+				So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 1)
 				So(mSent("first", "agg"), ShouldEqual, 1001)
 			})
 
 			Convey("Next flush doesn't send the old data", func() {
 				ct.Clock.Add(time.Minute)
-				tsmon.Flush(ctx)
-				So(tstore.GetAll(ctx), ShouldBeEmpty)
+				So(tsmon.Flush(ctx), ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 			})
 
 			Convey("Does not report old data", func() {
@@ -105,8 +94,8 @@ func TestDriver(t *testing.T) {
 				So(d.Cron(ctx), ShouldBeNil)
 				// Simulate very delayed flush.
 				ct.Clock.Add(reportTTL + time.Second)
-				tsmon.Flush(ctx)
-				So(tstore.GetAll(ctx), ShouldBeEmpty)
+				So(tsmon.Flush(ctx), ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 			})
 
 			Convey("Reports only the newest data if a flush was delayed", func() {
@@ -116,8 +105,8 @@ func TestDriver(t *testing.T) {
 				ct.Clock.Add(time.Minute)
 				So(d.Cron(ctx), ShouldBeNil)
 				// Finally, flush.
-				tsmon.Flush(ctx)
-				So(tstore.GetAll(ctx), ShouldHaveLength, 1)
+				So(tsmon.Flush(ctx), ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 1)
 				So(mSent("first", "latest"), ShouldEqual, 1001)
 				So(mSent("first", "agg"), ShouldBeNil)
 			})
@@ -128,8 +117,8 @@ func TestDriver(t *testing.T) {
 				So(d.Cron(ctx), ShouldBeNil)
 
 				Convey("Reports data for both projects", func() {
-					tsmon.Flush(ctx)
-					So(tstore.GetAll(ctx), ShouldHaveLength, 2)
+					So(tsmon.Flush(ctx), ShouldBeNil)
+					So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 2)
 					So(mSent("first", "agg"), ShouldEqual, 1001)
 					So(mSent("second", "agg"), ShouldEqual, 1002)
 
@@ -137,8 +126,8 @@ func TestDriver(t *testing.T) {
 						ct.Clock.Add(activeProjectsTTL)
 						prjcfgtest.Disable(ctx, "second")
 						So(d.Cron(ctx), ShouldBeNil)
-						tsmon.Flush(ctx)
-						So(tstore.GetAll(ctx), ShouldHaveLength, 1)
+						So(tsmon.Flush(ctx), ShouldBeNil)
+						So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 1)
 						So(mSent("first", "agg"), ShouldEqual, 1001)
 					})
 				})
@@ -148,8 +137,8 @@ func TestDriver(t *testing.T) {
 				d.aggregators = append(d.aggregators, &testAggregator{name: "err", err: errors.New("oops")})
 				ct.Clock.Add(time.Minute)
 				So(d.Cron(ctx), ShouldErrLike, "oops")
-				tsmon.Flush(ctx)
-				So(tstore.GetAll(ctx), ShouldHaveLength, 1)
+				So(tsmon.Flush(ctx), ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 1)
 				So(mSent("first", "agg"), ShouldEqual, 1001)
 				So(mSent("first", "err"), ShouldBeNil)
 			})
@@ -158,8 +147,8 @@ func TestDriver(t *testing.T) {
 				d.aggregators = append(d.aggregators, &testAggregator{name: "xxz"})
 				ct.Clock.Add(time.Minute)
 				So(d.Cron(ctx), ShouldBeNil)
-				tsmon.Flush(ctx)
-				So(tstore.GetAll(ctx), ShouldHaveLength, 2)
+				So(tsmon.Flush(ctx), ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 2)
 				So(mSent("first", "agg"), ShouldEqual, 1001)
 				So(mSent("first", "xxz"), ShouldEqual, 1001)
 			})
