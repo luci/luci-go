@@ -35,6 +35,18 @@ const (
 	RunCLKind = "RunCL"
 	// RunLogKind is the Datastore entity kind for RunLog.
 	RunLogKind = "RunLog"
+
+	// MaxTryjobs limits maximum number of tryjobs that a single Run can track.
+	//
+	// Because all Run's tryjobs' results are kept in a Run.Tryjobs,
+	// a single Datastore entity size limit of 1 MiB applies.
+	//
+	// 1024 is chosen because:
+	//   * it is a magnitude above what was observed in practice before;
+	//   * although stored tryjob results are user-influenced,
+	//     they should be highly compressible, so even at 1KiB each,
+	//     1024 tryjob results should amount to much less than 1 MiB.
+	MaxTryjobs = 1024
 )
 
 // Run is an entity that contains high-level information about a CV Run.
@@ -90,17 +102,17 @@ type Run struct {
 	CLs common.CLIDs `gae:",noindex"`
 	// Options are Run-specific additions on top of LUCI project config.
 	Options *Options
-	// Submission is the current state of Run Submission.
+	// Submission is the state of Run Submission.
 	//
 	// If set, Submission is in progress or has completed.
 	Submission *Submission
 
+	// Tryjobs is the state of the Run tryjobs.
+	Tryjobs *Tryjobs
+
 	// LatestCLsRefresh is the latest time when Run Manager scheduled async
 	// refresh of CLs.
 	LatestCLsRefresh time.Time `gae:",noindex"`
-
-	// TODO(yiwzhang): Define
-	//  * RemainingTryjobQuota: Run-level Tryjob quota.
 
 	// CQAttemptKey is what CQDaemon exports to BigQuery as Attempt's key.
 	//

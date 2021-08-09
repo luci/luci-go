@@ -20,6 +20,8 @@ option go_package = "go.chromium.org/luci/cv/internal/run;run";
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/cv/internal/tryjob/storage.proto";
+
 // Trigger describes who/how CV was triggered on a specific CL.
 message Trigger {
   google.protobuf.Timestamp time = 1;
@@ -41,7 +43,7 @@ message Trigger {
   int64 gerrit_account_id = 4;
 }
 
-// Submission describes the current state of Run submission.
+// Submission describes the state of Run submission.
 message Submission {
   // The deadline of this submission.
   //
@@ -142,9 +144,67 @@ message LogEntry {
     string config_group_id = 1;
   }
   message TryjobsRequirementUpdated {
-    // TODO(crbug/1227363): expand as needed.
+    // TODO(crbug/1227363): define a Tryjobs.Requirement diff.
   }
   message TryjobsUpdated {
-    // TODO(crbug/1227363): expand as needed.
+    // Which tryjobs had a meaningful change (e.g. change of status).
+    repeated Tryjob tryjobs = 2;
   }
+}
+
+// Tryjobs is the state of Run's tryjobs.
+message Tryjobs {
+
+  // Requirement is what has to happen to verify a given Run.
+  Requirement requirement = 1;
+
+  // Tryjobs tracks tryjobs of a Run.
+  //
+  // It may contain Tryjobs which are no longer required.
+  // It does contain all Tryjobs which weren't reused even if no longer required.
+  repeated Tryjob tryjobs = 2;
+
+  // TODO(crbug/1227363): add quota.
+
+
+  // Requirement is what has to happen to verify a given Run,
+  // computed based on LUCI project config and specifics of the Run.
+  message Requirement {
+    // TODO(crbug/1227363): define.
+  }
+}
+
+// Tryjob represents a Run's view of a tryjob.
+message Tryjob {
+  cv.internal.tryjob.Definition definition = 1;
+
+  // ID is a CV internal Tryjob ID, correponding to a Datastore entity.
+  //
+  // During migration from CQDaemon, the ID may be not set but then ExternalID
+  // is set.
+  // TODO(crbug/1227523): make this field required.
+  int64 id = 2;
+
+  // EVersion of the Tryjob entity last observed by this Run.
+  int64 eversion = 3;
+
+  // ExternalID is the external job ID.
+  //
+  // It's kept here for ease of URL generation and to ease migration from
+  // CQDaemon.
+  // TODO(crbug/1227523): update comment above after CQDaemon migration.
+  string external_id = 4;
+
+  // Status of the Tryjob.
+  cv.internal.tryjob.Status status = 5;
+
+  // Reused is true, if this tryjob wasn't triggered by CV for this Run.
+  //
+  // In other words, either:
+  //  * tryjob was triggered by CV for a previous Run
+  //  * tryjob was triggered by non-CV.
+  bool reused = 6;
+
+  // Result of the tryjob.
+  cv.internal.tryjob.Result result = 7;
 }
