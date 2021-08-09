@@ -1,0 +1,137 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.internal.tryjob;
+
+option go_package = "go.chromium.org/luci/cv/internal/tryjob;tryjob";
+
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/buildbucket/proto/builder.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+import "go.chromium.org/luci/cv/api/recipe/v1/cq.proto";
+
+// Definition defines what a Tryjob should do.
+//
+// It must be sufficient to trigger a new tryjob.
+message Definition {
+  oneof backend {
+    // For buildbucket, it's just a builder.
+    Buildbucket buildbucket = 1;
+  }
+
+  message Buildbucket {
+    string host = 1;
+    buildbucket.v2.BuilderID builder = 2;
+  }
+}
+
+// Status is a high level status of a Tryjob from CV implementation PoV.
+enum Status {
+  // STATUS_UNSPECIFIED is never used.
+  STATUS_UNSPECIFIED = 0;
+
+  // PENDING means TryJob is being triggered by CV.
+  //
+  // *may* not yet have an external ID.
+  // *must* have no Result.
+  PENDING = 1;
+
+  // TRIGGERED means tryjob was triggered.
+  //
+  // *must* have an External ID.
+  // *may* have been triggered by not CV but another user, service, etc.
+  // *may* have a Result, which *may* still change.
+  TRIGGERED = 2;
+
+  // ENDED is a completed tryjob. Final status.
+  //
+  // *must* have an External ID.
+  // *must* have a Result, whose Status is not UNKNOWN.
+  ENDED = 3;
+  // CANCELLED is Tryjob cancelled by CV. Final status.
+  //
+  // *must* have an External ID.
+  // *must* have no Result.
+  CANCELLED = 4;
+  // UNTRIGGERED is tryjob which didn't actually happen. Final state.
+  //
+  // *must* have no External ID.
+  // *must* have no Result.
+  //
+  // This status is an implementation detail of CV, used for Tryjobs which
+  // weren't actually triggered.
+  //
+  // TODO(cbrug/1227363): add a field to the Tryjob model to record reason for
+  // this status, notably to record permission denied errors.
+  UNTRIGGERED = 5;
+}
+
+// Result of a Tryjob.
+//
+// It's interpreted by the Run Manager.
+message Result {
+  // Next tag: 6.
+
+  // Status of the Result.
+  //
+  // This is the verdict of verification of Run's CLs by this Tryjob.
+  Status status = 1;
+  enum Status {
+    // RESULT_STATUS_UNSPECIFIED is never used.
+    RESULT_STATUS_UNSPECIFIED = 0;
+    // UNKNOWN means Tryjob didn't reach a conclusion.
+    //
+    // *must* be used only if Tryjob.Status is TRIGGERED and the Tryjob
+    // hasn't made a decision yet.
+    UNKNOWN = 1;
+    // SUCCEEDED means that Run's CLs are considered OK by this Tryjob.
+    SUCCEEDED = 2;
+    // FAILED_PERMANENTLY means that Run's CLs are most likely not good.
+    FAILED_PERMANENTLY = 3;
+    // FAILED_TRANSIENTLY means that Run's CLs are most likely not to blame
+    // for the failure.
+    // TODO(crbug/1227363): consider removing transiency aspect if possible.
+    FAILED_TRANSIENTLY = 4;
+  }
+
+  // When the tryjob was created in the backend.
+  //
+  // This is used by CV to determine if tryjob is fresh enough to be used to
+  // verify a Run.
+  google.protobuf.Timestamp create_time = 2;
+  // When the tryjob was last updated in the backend.
+  //
+  // This is used by CV to determine if it needs to refresh Tryjob's Result
+  // by querying its backend.
+  google.protobuf.Timestamp update_time = 3;
+
+  // Output is a rich result of a tryjob.
+  //
+  // It's typically set by LUCI recipes.
+  cq.recipe.Output output = 4;
+
+  // Backend houses backend-specific output.
+  oneof backend {
+    Buildbucket buildbucket = 5;
+  }
+
+  message Buildbucket {
+    int64 id = 1;
+    buildbucket.v2.Status status = 2;
+  }
+}
