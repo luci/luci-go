@@ -23,6 +23,7 @@ option go_package = "go.chromium.org/luci/cv/api/migration;migrationpb";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/common/proto/gerrit/gerrit.proto";
 import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
 
@@ -209,6 +210,8 @@ message ReportTryjobsRequest {
 message Tryjob {
   bigquery.Build build = 1;
   TryjobStatus status = 2;
+  google.protobuf.Timestamp create_time = 3;
+  buildbucket.v2.BuilderID builder = 4;
 }
 
 // TryjobStatus mirrors CQDaemon's verification.tryjob_utils.Job.Status.
