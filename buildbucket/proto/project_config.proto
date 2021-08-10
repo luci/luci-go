@@ -542,6 +542,11 @@ message Builder {
   // Builds with this experiment will default to the new 'luciexe'-based
   // protocol, rather than the deprecated '@@@annotation@@@' protocol.
   //
+  // # "luci.buildbucket.bbagent_getbuild" (default currently 0%)
+  // Builds with this experiment and the above luci.buildbucket.use_bbagent will
+  // invoke bbagent with fixed-length CLI instead of the default which is
+  // O(build proto size). No-op if luci.buildbucket.use_bbagent isn't also set.
+  //
   // Over time we'll be moving the default up from 0%. Ideally we'll be removing
   // the @@@annotation@@@ protocol entirely in 2021Q3.
   //

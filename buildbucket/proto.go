@@ -38,6 +38,7 @@ const (
 	ExperimentNonProduction    = "luci.non_production"
 
 	ExperimentBBAgent   = "luci.buildbucket.use_bbagent"
+	ExperimentBBAgentGetBuild = "luci.buildbucket.bbagent_getbuild"
 	ExperimentRecipePY3 = "luci.recipes.use_python3"
 	ExperimentUseRealms = "luci.use_realms"
 )
@@ -47,6 +48,7 @@ var WellKnownExperiments = stringset.NewFromSlice(
 	ExperimentBBCanarySoftware,
 	ExperimentNonProduction,
 	ExperimentBBAgent,
+	ExperimentBBAgentGetBuild,
 	ExperimentRecipePY3,
 	ExperimentUseRealms,
 )
