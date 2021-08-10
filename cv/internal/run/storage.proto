@@ -162,7 +162,15 @@ message Tryjobs {
   //
   // It may contain Tryjobs which are no longer required.
   // It does contain all Tryjobs which weren't reused even if no longer required.
+  //
+  // TODO(crbug/1227523): delete ExternalID from sorted order.
+  // Sorted by ID, then by ExternalID (for migration from CQD purpose).
   repeated Tryjob tryjobs = 2;
+
+  // The timestamp of the CQDaemon report last incorporated into `tryjobs`.
+  //
+  // TODO(crbug/1227523): delete this field.
+  google.protobuf.Timestamp cqd_update_time = 3;
 
   // TODO(crbug/1227363): add quota.
 
@@ -207,4 +215,9 @@ message Tryjob {
 
   // Result of the tryjob.
   cv.internal.tryjob.Result result = 7;
+
+  // If true, this Tryjob was computed based on CQDaemon's input.
+  //
+  // TODO(crbug/1227523): delete after CQDaemon migration.
+  bool cqd_derived = 8;
 }
