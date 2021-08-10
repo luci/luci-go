@@ -111,7 +111,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(bldrs, ShouldBeNil)
 		})
 
-		Convey("legacy", func() {
+		Convey("dynamic", func() {
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					Builder: &pb.BuilderID{
@@ -330,7 +330,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
-			Convey("legacy", func() {
+			Convey("dynamic", func() {
 				So(datastore.Put(ctx, &model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
 					ID:     "bucket",
@@ -684,7 +684,7 @@ func TestScheduleBuild(t *testing.T) {
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
+						Bucket:  "static bucket",
 						Builder: "static builder",
 					},
 					Critical: pb.Trinary_UNSET,
@@ -692,7 +692,7 @@ func TestScheduleBuild(t *testing.T) {
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
+						Bucket:  "static bucket",
 						Builder: "static builder",
 					},
 					Critical: pb.Trinary_YES,
@@ -700,14 +700,14 @@ func TestScheduleBuild(t *testing.T) {
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "legacy bucket",
+						Bucket:  "dynamic bucket",
 						Builder: "dynamic builder",
 					},
 					Critical: pb.Trinary_NO,
 				},
 			}
 			So(datastore.Put(ctx, &model.Builder{
-				Parent: model.BucketKey(ctx, "project", "bucket"),
+				Parent: model.BucketKey(ctx, "project", "static bucket"),
 				ID:     "static builder",
 				Config: pb.Builder{
 					Name: "static builder",
@@ -715,17 +715,17 @@ func TestScheduleBuild(t *testing.T) {
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Bucket{
 				Parent: model.ProjectKey(ctx, "project"),
-				ID:     "bucket",
+				ID:     "static bucket",
 				Proto: pb.Bucket{
-					Name:     "bucket",
+					Name:     "static bucket",
 					Swarming: &pb.Swarming{},
 				},
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Bucket{
 				Parent: model.ProjectKey(ctx, "project"),
-				ID:     "legacy bucket",
+				ID:     "dynamic bucket",
 				Proto: pb.Bucket{
-					Name: "legacy bucket",
+					Name: "dynamic bucket",
 				},
 			}), ShouldBeNil)
 
@@ -735,7 +735,7 @@ func TestScheduleBuild(t *testing.T) {
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
+						Bucket:  "static bucket",
 						Builder: "static builder",
 					},
 					CreatedBy:  "anonymous:anonymous",
@@ -766,7 +766,7 @@ func TestScheduleBuild(t *testing.T) {
 						Swarming: &pb.BuildInfra_Swarming{
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
-									Name: "builder_adb2d526b654419696251c4ba2db6006a198aa7655fd4bffa4cc91593bfebcbd_v2",
+									Name: "builder_943d53aa636f1497a9367662af111471018b08dcd116ae5405ff9fab3b2d5682_v2",
 									Path: "builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
@@ -793,7 +793,7 @@ func TestScheduleBuild(t *testing.T) {
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
+						Bucket:  "static bucket",
 						Builder: "static builder",
 					},
 					CreatedBy:  "anonymous:anonymous",
@@ -825,7 +825,7 @@ func TestScheduleBuild(t *testing.T) {
 						Swarming: &pb.BuildInfra_Swarming{
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
-									Name: "builder_adb2d526b654419696251c4ba2db6006a198aa7655fd4bffa4cc91593bfebcbd_v2",
+									Name: "builder_943d53aa636f1497a9367662af111471018b08dcd116ae5405ff9fab3b2d5682_v2",
 									Path: "builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
@@ -852,7 +852,7 @@ func TestScheduleBuild(t *testing.T) {
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "legacy bucket",
+						Bucket:  "dynamic bucket",
 						Builder: "dynamic builder",
 					},
 					CreatedBy:  "anonymous:anonymous",
@@ -884,7 +884,7 @@ func TestScheduleBuild(t *testing.T) {
 						Swarming: &pb.BuildInfra_Swarming{
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
-									Name: "builder_b2f3fde9f0cc0b7f5c5c14e4466e7c060b91b9fa9c4817cef25f4ef6c65679b9_v2",
+									Name: "builder_e229fa0169afaeb5fa8340560ffb3c5fe529169e0207f7378bd115cd74977bd2_v2",
 									Path: "builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
@@ -912,8 +912,8 @@ func TestScheduleBuild(t *testing.T) {
 			So(blds, ShouldResemble, []*model.Build{
 				{
 					ID:         9021868963221610337,
-					BucketID:   "project/bucket",
-					BuilderID:  "project/bucket/static builder",
+					BucketID:   "project/static bucket",
+					BuilderID:  "project/static bucket/static builder",
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
@@ -936,8 +936,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				{
 					ID:         9021868963221610321,
-					BucketID:   "project/bucket",
-					BuilderID:  "project/bucket/static builder",
+					BucketID:   "project/static bucket",
+					BuilderID:  "project/static bucket/static builder",
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
@@ -960,8 +960,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				{
 					ID:         9021868963221610305,
-					BucketID:   "project/legacy bucket",
-					BuilderID:  "project/legacy bucket/dynamic builder",
+					BucketID:   "project/dynamic bucket",
+					BuilderID:  "project/dynamic bucket/dynamic builder",
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
@@ -4264,7 +4264,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
-			Convey("legacy", func() {
+			Convey("dynamic", func() {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
@@ -4303,7 +4303,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
-			Convey("ok", func() {
+			Convey("static", func() {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
