@@ -63,12 +63,21 @@ func MakeRunID(luciProject string, createTime time.Time, digestVersion int, clsD
 
 // LUCIProject this Run belongs to.
 func (id RunID) LUCIProject() string {
-	for i, c := range id {
-		if c == '/' {
-			return string(id[:i])
-		}
+	pos := strings.IndexRune(string(id), '/')
+	if pos == -1 {
+		panic(fmt.Errorf("invalid run ID %q", id))
 	}
-	panic(fmt.Errorf("invalid run ID %q", id))
+	return string(id[:pos])
+}
+
+// PublicID returns the public representation of the RunID.
+//
+// The format of a public ID is `projects/$luci-project/runs/$id`, where
+// - luci-project is the name of the LUCI project the Run belongs to
+// - id is an opaque key unique in the LUCI project.
+func (id RunID) PublicID() string {
+	prj := id.LUCIProject()
+	return fmt.Sprintf("projects/%s/runs/%s", prj, string(id[len(prj)+1:]))
 }
 
 // AttemptKey returns CQDaemon attempt key.

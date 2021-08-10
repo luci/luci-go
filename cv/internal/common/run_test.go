@@ -58,6 +58,14 @@ func TestID(t *testing.T) {
 				MakeRunID("infra", time.Date(1955, time.November, 5, 6, 15, 0, 0, la), 1, []byte{31, 44})
 			}, ShouldPanic)
 		})
+
+		Convey("PublicID", func() {
+			So(id.PublicID(), ShouldEqual, "projects/infra/runs/0000000060000-1-410f")
+
+			Convey("panics if invalid", func() {
+				So(func() { RunID("something good").PublicID() }, ShouldPanic)
+			})
+		})
 	})
 }
 
