@@ -130,13 +130,13 @@ func updateTagIndex(ctx context.Context, tag string, shard int, ents []TagIndexE
 	if len(ents) == 0 {
 		return nil
 	}
-	shd := &TagIndex{
-		ID: tag,
-	}
-	if shard > 0 {
-		shd.ID = fmt.Sprintf(":%d:%s", shard, tag)
-	}
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		shd := &TagIndex{
+			ID: tag,
+		}
+		if shard > 0 {
+			shd.ID = fmt.Sprintf(":%d:%s", shard, tag)
+		}
 		switch err := datastore.Get(ctx, shd); {
 		case err == datastore.ErrNoSuchEntity:
 		case err != nil:
