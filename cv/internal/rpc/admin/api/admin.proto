@@ -15,9 +15,9 @@
 
 syntax = "proto3";
 
-package cv.internal.admin.api;
+package cv.internal.rpc.admin.api;
 
-option go_package = "go.chromium.org/luci/cv/internal/admin/api;adminpb";
+option go_package = "go.chromium.org/luci/cv/internal/rpc/admin/api;adminpb";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";

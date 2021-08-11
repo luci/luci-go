@@ -43,8 +43,6 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
-	"go.chromium.org/luci/cv/internal/admin"
-	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -56,6 +54,8 @@ import (
 	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
+	"go.chromium.org/luci/cv/internal/rpc/admin"
+	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"

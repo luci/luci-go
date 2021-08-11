@@ -38,8 +38,6 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	rpcpb "go.chromium.org/luci/cv/api/rpc/v0"
-	"go.chromium.org/luci/cv/internal/admin"
-	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/aggrmetrics"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -53,6 +51,8 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
+	"go.chromium.org/luci/cv/internal/rpc/admin"
+	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	rpcv0 "go.chromium.org/luci/cv/internal/rpc/v0"
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"

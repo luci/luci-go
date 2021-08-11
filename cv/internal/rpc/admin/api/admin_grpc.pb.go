@@ -81,7 +81,7 @@ func NewAdminClient(cc grpc.ClientConnInterface) AdminClient {
 
 func (c *adminClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
 	out := new(GetProjectResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/GetProject", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/GetProject", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (c *adminClient) GetProject(ctx context.Context, in *GetProjectRequest, opt
 
 func (c *adminClient) GetProjectLogs(ctx context.Context, in *GetProjectLogsRequest, opts ...grpc.CallOption) (*GetProjectLogsResponse, error) {
 	out := new(GetProjectLogsResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/GetProjectLogs", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/GetProjectLogs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (c *adminClient) GetProjectLogs(ctx context.Context, in *GetProjectLogsRequ
 
 func (c *adminClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*GetRunResponse, error) {
 	out := new(GetRunResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/GetRun", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/GetRun", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (c *adminClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grp
 
 func (c *adminClient) GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error) {
 	out := new(GetCLResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/GetCL", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/GetCL", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (c *adminClient) GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.
 
 func (c *adminClient) GetPoller(ctx context.Context, in *GetPollerRequest, opts ...grpc.CallOption) (*GetPollerResponse, error) {
 	out := new(GetPollerResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/GetPoller", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/GetPoller", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (c *adminClient) GetPoller(ctx context.Context, in *GetPollerRequest, opts 
 
 func (c *adminClient) SearchRuns(ctx context.Context, in *SearchRunsRequest, opts ...grpc.CallOption) (*RunsResponse, error) {
 	out := new(RunsResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/SearchRuns", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/SearchRuns", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (c *adminClient) SearchRuns(ctx context.Context, in *SearchRunsRequest, opt
 
 func (c *adminClient) RefreshProjectCLs(ctx context.Context, in *RefreshProjectCLsRequest, opts ...grpc.CallOption) (*RefreshProjectCLsResponse, error) {
 	out := new(RefreshProjectCLsResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/RefreshProjectCLs", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/RefreshProjectCLs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (c *adminClient) RefreshProjectCLs(ctx context.Context, in *RefreshProjectC
 
 func (c *adminClient) DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error) {
 	out := new(DeleteProjectEventsResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/DeleteProjectEvents", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/DeleteProjectEvents", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (c *adminClient) DeleteProjectEvents(ctx context.Context, in *DeleteProject
 
 func (c *adminClient) SendProjectEvent(ctx context.Context, in *SendProjectEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/SendProjectEvent", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/SendProjectEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (c *adminClient) SendProjectEvent(ctx context.Context, in *SendProjectEvent
 
 func (c *adminClient) SendRunEvent(ctx context.Context, in *SendRunEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/SendRunEvent", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/SendRunEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (c *adminClient) SendRunEvent(ctx context.Context, in *SendRunEventRequest,
 
 func (c *adminClient) ScheduleTask(ctx context.Context, in *ScheduleTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/ScheduleTask", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/ScheduleTask", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func _Admin_GetProject_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/GetProject",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/GetProject",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).GetProject(ctx, req.(*GetProjectRequest))
@@ -313,7 +313,7 @@ func _Admin_GetProjectLogs_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/GetProjectLogs",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/GetProjectLogs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).GetProjectLogs(ctx, req.(*GetProjectLogsRequest))
@@ -331,7 +331,7 @@ func _Admin_GetRun_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/GetRun",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/GetRun",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).GetRun(ctx, req.(*GetRunRequest))
@@ -349,7 +349,7 @@ func _Admin_GetCL_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/GetCL",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/GetCL",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).GetCL(ctx, req.(*GetCLRequest))
@@ -367,7 +367,7 @@ func _Admin_GetPoller_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/GetPoller",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/GetPoller",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).GetPoller(ctx, req.(*GetPollerRequest))
@@ -385,7 +385,7 @@ func _Admin_SearchRuns_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/SearchRuns",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/SearchRuns",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).SearchRuns(ctx, req.(*SearchRunsRequest))
@@ -403,7 +403,7 @@ func _Admin_RefreshProjectCLs_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/RefreshProjectCLs",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/RefreshProjectCLs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).RefreshProjectCLs(ctx, req.(*RefreshProjectCLsRequest))
@@ -421,7 +421,7 @@ func _Admin_DeleteProjectEvents_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/DeleteProjectEvents",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/DeleteProjectEvents",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).DeleteProjectEvents(ctx, req.(*DeleteProjectEventsRequest))
@@ -439,7 +439,7 @@ func _Admin_SendProjectEvent_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/SendProjectEvent",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/SendProjectEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).SendProjectEvent(ctx, req.(*SendProjectEventRequest))
@@ -457,7 +457,7 @@ func _Admin_SendRunEvent_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/SendRunEvent",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/SendRunEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).SendRunEvent(ctx, req.(*SendRunEventRequest))
@@ -475,7 +475,7 @@ func _Admin_ScheduleTask_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/ScheduleTask",
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/ScheduleTask",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).ScheduleTask(ctx, req.(*ScheduleTaskRequest))
@@ -487,7 +487,7 @@ func _Admin_ScheduleTask_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Admin_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cv.internal.admin.api.Admin",
+	ServiceName: "cv.internal.rpc.admin.api.Admin",
 	HandlerType: (*AdminServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -536,5 +536,5 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "go.chromium.org/luci/cv/internal/admin/api/admin.proto",
+	Metadata: "go.chromium.org/luci/cv/internal/rpc/admin/api/admin.proto",
 }

@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
-	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -37,6 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 
