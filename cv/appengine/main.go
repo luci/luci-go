@@ -37,6 +37,7 @@ import (
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	rpcpb "go.chromium.org/luci/cv/api/rpc/v0"
 	"go.chromium.org/luci/cv/internal/admin"
 	adminpb "go.chromium.org/luci/cv/internal/admin/api"
 	"go.chromium.org/luci/cv/internal/aggrmetrics"
@@ -52,6 +53,7 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
+	rpcv0 "go.chromium.org/luci/cv/internal/rpc/v0"
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 )
@@ -114,6 +116,7 @@ func main() {
 			PMNotifier:    pmNotifier,
 			RunNotifier:   runNotifier,
 		})
+		rpcpb.RegisterRunsServer(srv.PRPC, &rpcv0.RunsServer{})
 
 		// Register cron.
 		pcr := prjcfg.NewRefresher(&tq.Default, pmNotifier)

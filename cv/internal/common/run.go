@@ -20,6 +20,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // RunID is an unique RunID to identify a Run in CV.
@@ -78,6 +80,15 @@ func (id RunID) LUCIProject() string {
 func (id RunID) PublicID() string {
 	prj := id.LUCIProject()
 	return fmt.Sprintf("projects/%s/runs/%s", prj, string(id[len(prj)+1:]))
+}
+
+// FromPublicRunID is the inverse of RunID.PublicID().
+func FromPublicRunID(id string) (RunID, error) {
+	parts := strings.Split(id, "/")
+	if len(parts) == 4 && parts[0] == "projects" && parts[2] == "runs" {
+		return RunID(parts[1] + "/" + parts[3]), nil
+	}
+	return "", errors.Reason(`Run ID must be in the form "projects/$luci-project/runs/$id", but %q given"`, id).Err()
 }
 
 // AttemptKey returns CQDaemon attempt key.

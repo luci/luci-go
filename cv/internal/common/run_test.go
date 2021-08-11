@@ -21,6 +21,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestID(t *testing.T) {
@@ -60,10 +61,25 @@ func TestID(t *testing.T) {
 		})
 
 		Convey("PublicID", func() {
-			So(id.PublicID(), ShouldEqual, "projects/infra/runs/0000000060000-1-410f")
+			publicID := id.PublicID()
+			So(publicID, ShouldEqual, "projects/infra/runs/0000000060000-1-410f")
+			id2, err := FromPublicRunID(publicID)
+			So(err, ShouldBeNil)
+			So(id2, ShouldResemble, id)
 
-			Convey("panics if invalid", func() {
+			Convey("panics if ID is invalid", func() {
 				So(func() { RunID("something good").PublicID() }, ShouldPanic)
+			})
+
+			Convey("errors if Public ID is invalid", func() {
+				_, err := FromPublicRunID("0000000060000-1-410f")
+				So(err, ShouldErrLike, "must be in the form")
+				_, err = FromPublicRunID("infra/0000000060000-1-410f")
+				So(err, ShouldErrLike, "must be in the form")
+				_, err = FromPublicRunID("pRoJeCtS/infra/runs/0000000060000-1-410f")
+				So(err, ShouldErrLike, "must be in the form")
+				_, err = FromPublicRunID("projects/infra/RuNs/0000000060000-1-410f")
+				So(err, ShouldErrLike, "must be in the form")
 			})
 		})
 	})
