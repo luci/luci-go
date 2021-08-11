@@ -1015,8 +1015,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 				if err != nil {
 					return err
 				}
-
-				// TODO(crbug/1042991): Update build creation metric.
+				buildCreated(ctx, b)
 				return nil
 			}
 		}

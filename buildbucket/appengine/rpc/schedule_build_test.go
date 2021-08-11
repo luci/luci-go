@@ -18,6 +18,7 @@ import (
 	"context"
 	"math/rand"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -25,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -298,7 +300,10 @@ func TestScheduleBuild(t *testing.T) {
 		ctx, sch := tq.TestingContext(ctx, nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-		config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}})
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		store := tsmon.Store(ctx)
+		So(config.SetTestSettingsCfg(ctx,
+			&pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}}), ShouldBeNil)
 
 		// stripProtos strips the Proto field from each of the given *model.Builds,
 		// returning a slice whose ith index is the stripped *pb.Build value.
@@ -328,6 +333,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(err, ShouldErrLike, "error fetching builders")
 				So(blds, ShouldBeNil)
 				So(sch.Tasks(), ShouldBeEmpty)
+				So(store.Get(ctx, buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
 			})
 
 			Convey("dynamic", func() {
@@ -455,6 +461,9 @@ func TestScheduleBuild(t *testing.T) {
 				So(err, ShouldErrLike, "all requests must have the same dry_run value")
 				So(blds, ShouldBeNil)
 				So(sch.Tasks(), ShouldBeEmpty)
+
+				// dry-run should not increase the build creation counter metric.
+				So(store.Get(ctx, buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
 			})
 
 			Convey("one", func() {
@@ -551,6 +560,10 @@ func TestScheduleBuild(t *testing.T) {
 						Key:   "buildset",
 						Value: "buildset",
 					},
+					{
+						Key:   "user_agent",
+						Value: "gerrit",
+					},
 				},
 			}
 			So(datastore.Put(ctx, &model.Builder{
@@ -570,6 +583,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			blds, err := scheduleBuilds(ctx, req)
 			So(err, ShouldBeNil)
+			So(store.Get(ctx, buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 				{
 					Builder: &pb.BuilderID{
@@ -631,6 +645,10 @@ func TestScheduleBuild(t *testing.T) {
 							Key:   "buildset",
 							Value: "buildset",
 						},
+						{
+							Key:   "user_agent",
+							Value: "gerrit",
+						},
 					},
 				},
 			})
@@ -654,6 +672,7 @@ func TestScheduleBuild(t *testing.T) {
 					Tags: []string{
 						"builder:builder",
 						"buildset:buildset",
+						"user_agent:gerrit",
 					},
 					Project: "project",
 					PubSubCallback: model.PubSubCallback{
@@ -731,6 +750,12 @@ func TestScheduleBuild(t *testing.T) {
 
 			blds, err := scheduleBuilds(ctx, reqs...)
 			So(err, ShouldBeNil)
+
+			fvs := []interface{}{"luci.project.static bucket", "static builder", ""}
+			So(store.Get(ctx, buildCountCreated, time.Time{}, fvs), ShouldEqual, 2)
+			fvs = []interface{}{"luci.project.dynamic bucket", "dynamic builder", ""}
+			So(store.Get(ctx, buildCountCreated, time.Time{}, fvs), ShouldEqual, 1)
+
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 				{
 					Builder: &pb.BuilderID{
