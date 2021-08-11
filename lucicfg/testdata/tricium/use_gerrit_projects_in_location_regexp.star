@@ -7,9 +7,9 @@ luci.cq_group(
     name = "main",
     watch = [
         cq.refset("https://example.googlesource.com/proj/repo1"),
-        cq.refset("https://example.googlesource.com/proj/repo2"),
+        cq.refset("https://example-internal.googlesource.com/proj/repo2"),
         cq.refset("https://example.googlesource.com/proj/repo3"),
-        cq.refset("https://example.googlesource.com/proj/repo4"),
+        cq.refset("https://example-internal.googlesource.com/proj/repo4"),
     ],
     acls = [
         acl.entry(acl.CQ_COMMITTER, groups = ["committer"]),
@@ -20,7 +20,7 @@ luci.cq_group(
             owner_whitelist = ["project-contributor"],
             location_regexp = [
                 r"https://example-review.googlesource.com/proj/repo1/[+]/.+\.go",
-                r"https://example-review.googlesource.com/proj/repo2/[+]/.+\.go",
+                r"https://example-internal-review.googlesource.com/proj/repo2/[+]/.+\.go",
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
@@ -29,7 +29,7 @@ luci.cq_group(
             owner_whitelist = ["project-contributor"],
             location_regexp = [
                 r"https://example-review.googlesource.com/proj/repo1/[+]/.+",
-                r"https://example-review.googlesource.com/proj/repo2/[+]/.+",
+                r"https://example-internal-review.googlesource.com/proj/repo2/[+]/.+",
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
@@ -48,11 +48,14 @@ luci.cq_group(
 #       ref_regexp: "refs/heads/master"
 #     }
 #     projects {
-#       name: "proj/repo2"
+#       name: "proj/repo3"
 #       ref_regexp: "refs/heads/master"
 #     }
+#   }
+#   gerrit {
+#     url: "https://example-internal-review.googlesource.com"
 #     projects {
-#       name: "proj/repo3"
+#       name: "proj/repo2"
 #       ref_regexp: "refs/heads/master"
 #     }
 #     projects {
@@ -68,14 +71,14 @@ luci.cq_group(
 #       builders {
 #         name: "infra/analyzer/go-linter"
 #         location_regexp: "https://example-review.googlesource.com/proj/repo1/[+]/.+\\.go"
-#         location_regexp: "https://example-review.googlesource.com/proj/repo2/[+]/.+\\.go"
+#         location_regexp: "https://example-internal-review.googlesource.com/proj/repo2/[+]/.+\\.go"
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
 #       }
 #       builders {
 #         name: "infra/analyzer/spell-checker"
 #         location_regexp: "https://example-review.googlesource.com/proj/repo1/[+]/.+"
-#         location_regexp: "https://example-review.googlesource.com/proj/repo2/[+]/.+"
+#         location_regexp: "https://example-internal-review.googlesource.com/proj/repo2/[+]/.+"
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
 #       }
@@ -145,9 +148,9 @@ luci.cq_group(
 # }
 # repos {
 #   gerrit_project {
-#     host: "example-review.googlesource.com"
+#     host: "example-internal-review.googlesource.com"
 #     project: "proj/repo2"
-#     git_url: "https://example.googlesource.com/proj/repo2"
+#     git_url: "https://example-internal.googlesource.com/proj/repo2"
 #   }
 #   whitelisted_group: "project-contributor"
 # }

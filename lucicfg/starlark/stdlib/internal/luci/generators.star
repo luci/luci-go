@@ -1348,7 +1348,7 @@ def _parse_location_regexp_from_tricium(location_regexps):
     host_and_projs = []
     exts = []
     for r in location_regexps:
-        gerrit_url_re = r"https://([a-z]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
+        gerrit_url_re = r"https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
         extension_re = r"\\\.[a-z]+"
         re_for_location_re = r"^(%s)?\.\+(%s)?$" % (gerrit_url_re, extension_re)
         groups = re.submatches(re_for_location_re, r)

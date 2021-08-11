@@ -347,7 +347,7 @@ def _cq_tryjob_verifier(
         if len(mode_allowlist) > 1:
             fail('"ANALYZER_RUN" must be the only mode in "mode_allowlist"')
         if location_regexp:
-            re_for_gerrit_url_re = r"https://([a-z]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
+            re_for_gerrit_url_re = r"https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
             re_for_extension_re = r"\\\.[a-z]+"
             re_for_location_re = r"^(%s)?\.\+(%s)?$" % (re_for_gerrit_url_re, re_for_extension_re)
             ext_to_gerrit_urls = {}
