@@ -626,6 +626,16 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		}
 	})
 
+	var logEntries []*run.LogEntry
+	eg.Go(func() error {
+		var err error
+		logEntries, err = run.LoadRunLogEntries(ctx, r.ID)
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to fetch RunLogs: %s", err)
+		}
+		return nil
+	})
+
 	var events []*eventpb.Event
 	eg.Go(func() error {
 		list, err := eventbox.List(ctx, run.EventboxRecipient(ctx, rid))
@@ -647,22 +657,26 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 	}
 
 	return &adminpb.GetRunResponse{
-		Id:             string(rid),
-		Eversion:       int64(r.EVersion),
-		Mode:           string(r.Mode),
-		Status:         r.Status,
-		CreateTime:     tspbNillable(r.CreateTime),
-		StartTime:      tspbNillable(r.StartTime),
-		UpdateTime:     tspbNillable(r.UpdateTime),
-		EndTime:        tspbNillable(r.EndTime),
-		Owner:          string(r.Owner),
-		ConfigGroupId:  string(r.ConfigGroupID),
-		Cls:            common.CLIDsAsInt64s(r.CLs),
-		ExternalCls:    externalIDs,
-		Submission:     r.Submission,
-		FinalizedByCqd: r.FinalizedByCQD,
+		Id:               string(rid),
+		Eversion:         int64(r.EVersion),
+		Mode:             string(r.Mode),
+		Status:           r.Status,
+		CreateTime:       tspbNillable(r.CreateTime),
+		StartTime:        tspbNillable(r.StartTime),
+		UpdateTime:       tspbNillable(r.UpdateTime),
+		EndTime:          tspbNillable(r.EndTime),
+		Owner:            string(r.Owner),
+		ConfigGroupId:    string(r.ConfigGroupID),
+		Cls:              common.CLIDsAsInt64s(r.CLs),
+		ExternalCls:      externalIDs,
+		Options:          r.Options,
+		Tryjobs:          r.Tryjobs,
+		Submission:       r.Submission,
+		FinalizedByCqd:   r.FinalizedByCQD,
+		LatestClsRefresh: tspbNillable(r.LatestCLsRefresh),
 
-		Events: events,
+		LogEntries: logEntries,
+		Events:     events,
 	}, nil
 }
 
