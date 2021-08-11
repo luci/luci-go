@@ -20,6 +20,8 @@ option go_package = "go.chromium.org/luci/cv/api/common/v1;commonpb";
 
 // Run includes the high-level information about a CV Run.
 message Run {
+  // Next tag: 4.
+
   // Status describes the status of a CV Run.
   enum Status {
     // Unspecified status.
