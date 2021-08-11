@@ -102,10 +102,75 @@ const variant12 = {
   status: TestVariantStatus.EXPECTED,
 };
 
+const variantWithTestResults = {
+  testId: '',
+  status: TestVariantStatus.UNEXPECTED,
+  results: [{
+    result: { status: TestVariantStatus.UNEXPECTED }
+  },{
+    result: { status: TestVariantStatus.UNEXPECTED }
+  },{
+    result: { status: TestVariantStatus.UNEXPECTED }
+  }]
+}
+
+const variantWithTestResultFailureReasons = {
+  testId: '',
+  status: TestVariantStatus.UNEXPECTED,
+  results: [{
+    result: {
+      status: TestVariantStatus.UNEXPECTED,
+      failureReason: {
+        primaryErrorMessage: 'failureReason1'
+      }
+    }
+  },
+  {
+    result: {
+      status: TestVariantStatus.UNEXPECTED,
+      failureReason: {
+        primaryErrorMessage: 'failureReason2'
+      }
+    }
+  },
+  {
+    result: {
+      status: TestVariantStatus.UNEXPECTED,
+      failureReason: {
+        primaryErrorMessage: 'failureReason1'
+      }
+    }
+  }]
+}
+
 describe('TestLoader', () => {
   let testLoader: TestLoader;
   let stub = sinon.stub();
   const req = { invocations: ['invocation'], pageSize: 4 };
+
+  it('should populate TestVariant.failureReasons', async() => {
+    stub = sinon.stub();
+    stub.onCall(0).resolves({ testVariants: [variantWithTestResultFailureReasons]});
+    testLoader = new TestLoader(req, {
+      queryTestVariants: stub,
+    } as Partial<UISpecificService> as UISpecificService);
+
+    await testLoader.loadNextTestVariants();
+    assert.strictEqual(variantWithTestResultFailureReasons.failureReasons,
+      'failureReason1,failureReason2');
+  })
+
+  it('TestVariant.failureReasons empty if no TestResult has failureReason', async() => {
+    stub = sinon.stub();
+    stub.onCall(0).resolves({ testVariants: [variantWithTestResults]});
+    testLoader = new TestLoader(req, {
+      queryTestVariants: stub,
+    } as Partial<UISpecificService> as UISpecificService);
+
+    await testLoader.loadNextTestVariants();
+    assert.strictEqual(variantWithTestResults.failureReasons, '');
+  })
+
   describe('when first page contains variants', () => {
     beforeEach(() => {
       stub = sinon.stub();

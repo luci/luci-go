@@ -60,6 +60,27 @@ const variant5: TestVariant = {
   status: TestVariantStatus.EXPECTED,
 };
 
+const variantWithTestResults = {
+  testId: '',
+  status: TestVariantStatus.UNEXPECTED,
+  results: [{
+    result: { status: TestVariantStatus.UNEXPECTED }
+  }]
+}
+
+const variantWithTestResultFailureReasons = {
+  testId: '',
+  status: TestVariantStatus.UNEXPECTED,
+  results: [{
+    result: {
+      status: TestVariantStatus.UNEXPECTED,
+      failureReason: {
+        primaryErrorMessage: 'failureReason1'
+      }
+    }
+  }]
+}
+
 describe('InvocationState', () => {
   describe('filterVariant', () => {
     const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
@@ -103,5 +124,37 @@ describe('InvocationState', () => {
       assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
       assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
+  });
+
+  it('failure_reasons default column', () => async() {
+    const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
+    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variantWithTestResultFailureReasons, variantWithTestResults] });
+
+    const appState = {
+      selectedTabId: '',
+      uiSpecificService: {
+        queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+      },
+    } as AppState;
+    const invocationState = new InvocationState(appState);
+    invocationState.invocationId = 'invocation-id';
+    await invocationState.testLoader.loadNextTestVariants();
+    assert.strictEqual(invocationState.defaultColumns, ['failure_reasons']);
+  });
+
+  it('no failure_reasons default column', () => async() {
+    const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
+    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variantWithTestResults] });
+
+    const appState = {
+      selectedTabId: '',
+      uiSpecificService: {
+        queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+      },
+    } as AppState;
+    const invocationState = new InvocationState(appState);
+    invocationState.invocationId = 'invocation-id';
+    await invocationState.testLoader.loadNextTestVariants();
+    assert.strictEqual(invocationState.defaultColumns, []);
   });
 });

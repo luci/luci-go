@@ -66,6 +66,7 @@ export interface TestResult {
   readonly startTime: string;
   readonly duration: string;
   readonly tags?: Tag[];
+  readonly failureReason?: FailureReason;
 }
 
 export interface TestLocation {
@@ -99,6 +100,10 @@ export interface Variant {
 export interface Tag {
   readonly key: string;
   readonly value: string;
+}
+
+export interface FailureReason {
+  readonly primaryErrorMessage: string;
 }
 
 export interface GetInvocationRequest {
@@ -201,6 +206,7 @@ export interface TestVariant {
   readonly results?: readonly TestResultBundle[];
   readonly exonerations?: readonly TestExoneration[];
   readonly testMetadata?: TestMetadata;
+  failureReasons?: string;
 }
 
 export const enum TestVariantStatus {
@@ -382,7 +388,8 @@ export async function getInvIdFromBuildNum(builder: BuilderID, buildNum: number)
  * A property key must be one of the following:
  * 1. 'status': status of the test variant.
  * 2. 'name': test_metadata.name of the test variant.
- * 3. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
+ * 3. 'failure_reasons': concatenated unique failureReason.primaryErrorMessage of the test results.
+ * 4. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
  * v.gpu).
  */
 export function createTVPropGetter(propKey: string): (v: TestVariant) => { toString(): string } {
@@ -392,10 +399,12 @@ export function createTVPropGetter(propKey: string): (v: TestVariant) => { toStr
   }
   propKey = propKey.toLowerCase();
   switch (propKey) {
-    case 'status':
-      return (v) => v.status;
+    case 'failure_reasons':
+      return (v) => v.failureReasons || '';
     case 'name':
       return (v) => v.testMetadata?.name || v.testId;
+    case 'status':
+      return (v) => v.status;
     default:
       console.warn('invalid property key', propKey);
       return () => '';

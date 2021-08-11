@@ -61,6 +61,7 @@ export class TestLoader {
   @observable.ref filter = (_v: TestVariant) => true;
   @observable.ref groupers: Array<[string, (v: TestVariant) => unknown]> = [];
   @observable.ref cmpFn = (_v1: TestVariant, _v2: TestVariant) => 0;
+  @observable.ref hasFailureReasons = false;
 
   @computed get isLoading() {
     return !this.loadedAllVariants && this.loadingReqCount !== 0;
@@ -309,6 +310,18 @@ export class TestLoader {
           break;
         default:
           break;
+      }
+
+      if (testVariant.status !== TestVariantStatus.EXPECTED) {
+        testVariant.failureReasons =
+          Array.from(new Set(
+            testVariant.results
+                ?.map((r) => r.result.failureReason?.primaryErrorMessage)
+                .filter((reason) => reason !== undefined)
+          )).join(',');
+        if (testVariant.failureReasons !== '') {
+          this.hasFailureReasons = true;
+        }
       }
     }
   }
