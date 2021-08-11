@@ -53,7 +53,7 @@ func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 	res.State.Run.StartTime = clock.Now(ctx).UTC()
 
 	res.State.LogEntries = append(res.State.LogEntries, &run.LogEntry{
-		Time: timestamppb.New(res.State.Run.CreateTime),
+		Time: timestamppb.New(res.State.Run.StartTime),
 		Kind: &run.LogEntry_Started_{
 			Started: &run.LogEntry_Started{},
 		},
