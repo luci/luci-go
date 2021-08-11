@@ -18,6 +18,7 @@ load("@stdlib//internal/error.star", "error")
 load("@stdlib//internal/experiments.star", "experiments")
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
+load("@stdlib//internal/re.star", "re")
 load("@stdlib//internal/time.star", "time")
 load("@stdlib//internal/luci/common.star", "builder_ref", "keys", "kinds", "triggerer")
 load("@stdlib//internal/luci/lib/acl.star", "acl", "aclimpl")
@@ -1249,20 +1250,30 @@ def _tricium_config(verifiers, cq_group, project):
     """
     ret = tricium_pb.ProjectConfig()
     whitelisted_group = None
+    watching_gerrit_projects = None
     for verifier in verifiers:
         if cq.MODE_ANALYZER_RUN not in verifier.props.mode_allowlist:
             continue
         recipe = _tricium_recipe(verifier, project)
         func_name = _compute_func_name(recipe)
+        gerrit_projs, exts = _parse_location_regexp_from_tricium(verifier.props.location_regexp)
+        if watching_gerrit_projects == None:
+            watching_gerrit_projects = gerrit_projs
+        elif watching_gerrit_projects != gerrit_projs:
+            error(
+                "The location_regexp of analyzer %s sepcifies different set of gerrit repos from the other anaylzer; got: %s other: %s" % (
+                    verifier,
+                    ["%s-review.googlesource.com/%s" % (host, proj) for host, proj in gerrit_projs],
+                    ["%s-review.googlesource.com/%s" % (host, proj) for host, proj in watching_gerrit_projects],
+                ),
+                trace = verifier.trace,
+            )
         ret.functions.append(tricium_pb.Function(
             type = tricium_pb.Function.ANALYZER,
             name = func_name,
             needs = tricium_pb.GIT_FILE_DETAILS,
             provides = tricium_pb.RESULTS,
-            path_filters = [
-                "*.%s" % location_regexp.lstrip(r".+\.")
-                for location_regexp in verifier.props.location_regexp
-            ] if verifier.props.location_regexp else [],
+            path_filters = ["*.%s" % ext for ext in exts],
             impls = [
                 tricium_pb.Impl(
                     provides_for_platform = tricium_pb.LINUX,
@@ -1289,7 +1300,7 @@ def _tricium_config(verifiers, cq_group, project):
 
     ret.functions = sorted(ret.functions, key = lambda f: f.name)
     ret.selections = sorted(ret.selections, key = lambda f: f.function)
-    watched_gerrit_projects = sorted(set([
+    watching_gerrit_projects = watching_gerrit_projects or sorted(set([
         (w.__gob_host, w.__gob_proj)
         for w in cq_group.props.watch
     ]))
@@ -1302,7 +1313,7 @@ def _tricium_config(verifiers, cq_group, project):
             ),
             whitelisted_group = whitelisted_group,
         )
-        for host, proj in watched_gerrit_projects
+        for host, proj in watching_gerrit_projects
     ]
     return ret
 
@@ -1316,7 +1327,7 @@ def _tricium_recipe(verifier, project):
     )
 
 def _compute_func_name(recipe):
-    """ Returns an alphanumeric function name."""
+    """Returns an alphanumeric function name."""
 
     def normalize(s):
         return "".join([ch for ch in s.title().elems() if ch.isalnum()])
@@ -1326,3 +1337,25 @@ def _compute_func_name(recipe):
         normalize(recipe.bucket),
         normalize(recipe.builder),
     ])
+
+def _parse_location_regexp_from_tricium(location_regexps):
+    """Returns the Gerrit projects and extensions the location_regexps watches.
+
+    This SHOULD ONLY be used for generating config only which extracts watching
+    Gerrit reposfrom location_regexp. The result watching projects and/or
+    extensions may be empty.
+    """
+    host_and_projs = []
+    exts = []
+    for r in location_regexps:
+        gerrit_url_re = r"https://([a-z]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
+        extension_re = r"\\\.[a-z]+"
+        re_for_location_re = r"^(%s)?\.\+(%s)?$" % (gerrit_url_re, extension_re)
+        groups = re.submatches(re_for_location_re, r)
+        host, proj, ext = groups[2], groups[3], groups[4].lstrip(r'\.')
+        if host and proj:
+            host_and_projs.append((host, proj))
+        if ext:
+            exts.append(ext)
+    return sorted(set(host_and_projs)), sorted(set(exts))
+

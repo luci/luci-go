@@ -2466,14 +2466,20 @@ However, the following restrictions apply until CV takes on Tricium:
 
 * Most CQ features are not supported except for `location_regexp` and
 `owner_whitelist`. If provided, they must meet the following conditions:
-    * `location_regexp` must start with `.+\.` and followed by a
-    file extension name. It instructs Tricium to run this analyzer
-    only on certain type of files.
+    * `location_regexp` must either start with `.+\.` or
+    `https://{HOST}-review.googlesource.com/{PROJECT}/[+]/.+\.`.
+    They can optionally be followed by a file extension name which
+    instructs Tricium to run this analyzer only on certain type of files.
+        * If the gerrit url one is used, the generated Tricium config will
+        watch the repos specified in location_regexp instead of the one
+        watched by the containing cq_group. Note that, the exact same set
+        of Gerrit repos should be sepcified across all analyzers in this
+        cq_group and across each unique file extension.
     * `owner_whitelist` must be the same for all analyzers declared
     in this cq_group.
 * Analyzer will run on changes targeting **all refs** of the Gerrit repos
-watched by the containing cq_group even though refs or refs_exclude
-may be provided.
+watched by the containing cq_group (or repos derived from location_regexp,
+see above) even though refs or refs_exclude may be provided.
 * All analyzers must be declared in a single [luci.cq_group(...)](#luci.cq_group).
 
 For example:

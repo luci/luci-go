@@ -16,6 +16,7 @@
 
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
+load("@stdlib//internal/re.star", "re")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys", "kinds")
 load("@stdlib//internal/luci/lib/cq.star", "cq")
@@ -169,14 +170,20 @@ def _cq_tryjob_verifier(
 
     * Most CQ features are not supported except for `location_regexp` and
     `owner_whitelist`. If provided, they must meet the following conditions:
-        * `location_regexp` must start with `.+\\.` and followed by a
-        file extension name. It instructs Tricium to run this analyzer
-        only on certain type of files.
+        * `location_regexp` must either start with `.+\\.` or
+        `https://{HOST}-review.googlesource.com/{PROJECT}/[+]/.+\\.`.
+        They can optionally be followed by a file extension name which
+        instructs Tricium to run this analyzer only on certain type of files.
+            * If the gerrit url one is used, the generated Tricium config will
+            watch the repos specified in location_regexp instead of the one
+            watched by the containing cq_group. Note that, the exact same set
+            of Gerrit repos should be sepcified across all analyzers in this
+            cq_group and across each unique file extension.
         * `owner_whitelist` must be the same for all analyzers declared
         in this cq_group.
     * Analyzer will run on changes targeting **all refs** of the Gerrit repos
-    watched by the containing cq_group even though refs or refs_exclude
-    may be provided.
+    watched by the containing cq_group (or repos derived from location_regexp,
+    see above) even though refs or refs_exclude may be provided.
     * All analyzers must be declared in a single luci.cq_group(...).
 
     For example:
@@ -335,16 +342,59 @@ def _cq_tryjob_verifier(
         validate.string("mode_allowlist", m)
 
     if cq.MODE_ANALYZER_RUN in mode_allowlist:
+        # TODO(crbug/1202952): Remove all following restrictions after tricium
+        # is folded into CV.
         if len(mode_allowlist) > 1:
             fail('"ANALYZER_RUN" must be the only mode in "mode_allowlist"')
         if location_regexp:
-            prefix = r".+\."
+            re_for_gerrit_url_re = r"https://([a-z]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
+            re_for_extension_re = r"\\\.[a-z]+"
+            re_for_location_re = r"^(%s)?\.\+(%s)?$" % (re_for_gerrit_url_re, re_for_extension_re)
+            ext_to_gerrit_urls = {}
+            all_gerrit_urls = []
             for r in location_regexp:
-                if not r.startswith(prefix):
-                    fail(r'"location_regexp" of an analyzer MUST start with ".+\." and followed by file extension')
+                groups = re.submatches(re_for_location_re, r)
+                if not groups:
+                    fail(r'"location_regexp" of an analyzer MUST either be in '+
+                    r'the format of ".+\.extension" (e.g. ".+\.py) '+
+                    r'or "https://host-review.googlesource.com/project/[+]/.+\.extension" '+
+                    r'(e.g. "https://chromium-review.googlesource.com/infra/infra/[+]/.+\.py"). Extension is optional.')
+                gerrit_url, ext = groups[1].rstrip('[+]'), groups[4].lstrip(r'\.')
+                if ext not in ext_to_gerrit_urls:
+                    ext_to_gerrit_urls[ext] = []
+                if ((gerrit_url and "" in all_gerrit_urls) or (
+                    gerrit_url == "" and any(all_gerrit_urls))):
+                    fail(r'"location_regexp" of an analyzer MUST NOT mix '+
+                    r'two different formats (i.e. ".+\.extension" '+
+                    r'and "https://host-review.googlesource.com/project/[+]/.+\.extension"). Got %s.' % location_regexp)
+                ext_to_gerrit_urls[ext].append(gerrit_url)
+                all_gerrit_urls.append(gerrit_url)
+
+            # Since all analyzers in Tricium config are watching the same set of
+            # Gerrit repos, we need to make sure that for each extension this
+            # analyzer is watching, it MUST specify the same set of Gerrit
+            # repos it is watching. It allows lucicfg to derive a homogeneous
+            # set of watching Gerrit repos when generating Tricium config later.
+            #
+            # For example, location_exgep like
+            #   https://example-review.googlesource.com/repo1/[+]/.+\.go
+            #   https://example-review.googlesource.com/repo2/[+]/.+\.go
+            #   https://example-review.googlesource.com/repo1/[+]/.+\.py
+            # is not allowed, because the generated Tricium config has to
+            # watch both repo1 and repo2. If we allow it, Tricium will
+            # implicitly run for python files in repo2 which is not what
+            # user intended. Therefore, user MUST provide
+            # https://example-review.googlesource.com/repo2/[+]/.+\.py here
+            # as well.
+            ref_ext, ref_gerrit_urls = ext_to_gerrit_urls.popitem()
+            ref_gerrit_urls = sorted(ref_gerrit_urls)
+            for ext, gerrit_urls in ext_to_gerrit_urls.items():
+                if sorted(gerrit_urls) != ref_gerrit_urls:
+                    fail('each extension specified in "location_regexp" of an '+
+                    'analyzer MUST have the same set of gerrit URLs; got '+
+                    '%s for extension %s, but %s for extension %s.' % (
+                        sorted(gerrit_urls), ext, ref_gerrit_urls, ref_ext))
         if location_regexp_exclude:
-            # (TODO:crbug/1202952): Remove this restriction after tricium is
-            # folded into CV.
             fail('"analyzer currently can not be used together with  "location_regexp_exclude"')
 
     if not equivalent_builder:

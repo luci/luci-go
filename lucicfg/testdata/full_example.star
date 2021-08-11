@@ -1244,8 +1244,8 @@ lucicfg.emit(
 #   name: "AnotherProjectAnalyzerFormatChecker"
 #   needs: GIT_FILE_DETAILS
 #   provides: RESULTS
-#   path_filters: "*.py"
 #   path_filters: "*.go"
+#   path_filters: "*.py"
 #   impls {
 #     provides_for_platform: LINUX
 #     runtime_platform: LINUX
