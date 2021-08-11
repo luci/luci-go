@@ -356,11 +356,11 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 		uploadRes, err = cl.Upload(ctx, cas.UploadOptions{
 			PreserveSymlinks: true,
 		}, inputC)
-		return
+		return errors.Annotate(err, "failed to call Upload").Err()
 	})
 
 	if err := eg.Wait(); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to call Wait").Err()
 	}
 
 	// Collect digests.
