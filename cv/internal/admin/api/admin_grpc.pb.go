@@ -31,17 +31,43 @@ type AdminClient interface {
 	GetPoller(ctx context.Context, in *GetPollerRequest, opts ...grpc.CallOption) (*GetPollerResponse, error)
 	// SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
 	SearchRuns(ctx context.Context, in *SearchRunsRequest, opts ...grpc.CallOption) (*RunsResponse, error)
-	// DeleteProjectEvents deletes all outstanding project events.
-	// Must be called with stopped TQs.
-	// TODO(tandrii): delete this Temporary API.
-	DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error)
 	// RefreshProjectCLs refreshes all CLs currently tracked by PM.
+	//
+	// This is generally safe to call, but it may consume Gerrit Quota of the
+	// given project, so use with care.
 	RefreshProjectCLs(ctx context.Context, in *RefreshProjectCLsRequest, opts ...grpc.CallOption) (*RefreshProjectCLsResponse, error)
+	// DeleteProjectEvents deletes all outstanding project events.
+	//
+	// DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+	//
+	// Useful in case of severe emergency where a Project Manager gets stuck
+	// with too many bogus events and/or an incorrect event. Usually, it's better
+	// to figure out which event is incorrect and delete just that event in the
+	// Cloud Datastore UI. However, in a time crunch, it may be OK to unblock a
+	// busy project with this API, and manually resend important events (e.g. Run
+	// Finished) via SendProjectEvent at a later time.
+	//
+	// Must be called with stopped manage-run task queue.
+	DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error)
 	// SendProjectEvent sends event to a PM.
+	//
+	// DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+	//
+	// The implications vary depending on the event kind.
 	SendProjectEvent(ctx context.Context, in *SendProjectEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// SendRunEvent sends event to a RM.
+	//
+	// DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+	//
+	// The implications vary depending on the event kind.
 	SendRunEvent(ctx context.Context, in *SendRunEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ScheduleTask schedules an arbitrary CV TQ task.
+	//
+	// DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+	//
+	// Some TQ tasks have external side effect, e.g. exporting BQ rows, which
+	// shouldn't be scheduled willy-nilly. However, this API is indispensable when
+	// a bunch of BQ rows failed to be exported, say due to a misconfiguration.
 	ScheduleTask(ctx context.Context, in *ScheduleTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -107,18 +133,18 @@ func (c *adminClient) SearchRuns(ctx context.Context, in *SearchRunsRequest, opt
 	return out, nil
 }
 
-func (c *adminClient) DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error) {
-	out := new(DeleteProjectEventsResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/DeleteProjectEvents", in, out, opts...)
+func (c *adminClient) RefreshProjectCLs(ctx context.Context, in *RefreshProjectCLsRequest, opts ...grpc.CallOption) (*RefreshProjectCLsResponse, error) {
+	out := new(RefreshProjectCLsResponse)
+	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/RefreshProjectCLs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *adminClient) RefreshProjectCLs(ctx context.Context, in *RefreshProjectCLsRequest, opts ...grpc.CallOption) (*RefreshProjectCLsResponse, error) {
-	out := new(RefreshProjectCLsResponse)
-	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/RefreshProjectCLs", in, out, opts...)
+func (c *adminClient) DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error) {
+	out := new(DeleteProjectEventsResponse)
+	err := c.cc.Invoke(ctx, "/cv.internal.admin.api.Admin/DeleteProjectEvents", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -168,17 +194,43 @@ type AdminServer interface {
 	GetPoller(context.Context, *GetPollerRequest) (*GetPollerResponse, error)
 	// SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
 	SearchRuns(context.Context, *SearchRunsRequest) (*RunsResponse, error)
-	// DeleteProjectEvents deletes all outstanding project events.
-	// Must be called with stopped TQs.
-	// TODO(tandrii): delete this Temporary API.
-	DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error)
 	// RefreshProjectCLs refreshes all CLs currently tracked by PM.
+	//
+	// This is generally safe to call, but it may consume Gerrit Quota of the
+	// given project, so use with care.
 	RefreshProjectCLs(context.Context, *RefreshProjectCLsRequest) (*RefreshProjectCLsResponse, error)
+	// DeleteProjectEvents deletes all outstanding project events.
+	//
+	// DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+	//
+	// Useful in case of severe emergency where a Project Manager gets stuck
+	// with too many bogus events and/or an incorrect event. Usually, it's better
+	// to figure out which event is incorrect and delete just that event in the
+	// Cloud Datastore UI. However, in a time crunch, it may be OK to unblock a
+	// busy project with this API, and manually resend important events (e.g. Run
+	// Finished) via SendProjectEvent at a later time.
+	//
+	// Must be called with stopped manage-run task queue.
+	DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error)
 	// SendProjectEvent sends event to a PM.
+	//
+	// DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+	//
+	// The implications vary depending on the event kind.
 	SendProjectEvent(context.Context, *SendProjectEventRequest) (*emptypb.Empty, error)
 	// SendRunEvent sends event to a RM.
+	//
+	// DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+	//
+	// The implications vary depending on the event kind.
 	SendRunEvent(context.Context, *SendRunEventRequest) (*emptypb.Empty, error)
 	// ScheduleTask schedules an arbitrary CV TQ task.
+	//
+	// DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+	//
+	// Some TQ tasks have external side effect, e.g. exporting BQ rows, which
+	// shouldn't be scheduled willy-nilly. However, this API is indispensable when
+	// a bunch of BQ rows failed to be exported, say due to a misconfiguration.
 	ScheduleTask(context.Context, *ScheduleTaskRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServer()
 }
@@ -205,11 +257,11 @@ func (UnimplementedAdminServer) GetPoller(context.Context, *GetPollerRequest) (*
 func (UnimplementedAdminServer) SearchRuns(context.Context, *SearchRunsRequest) (*RunsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchRuns not implemented")
 }
-func (UnimplementedAdminServer) DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectEvents not implemented")
-}
 func (UnimplementedAdminServer) RefreshProjectCLs(context.Context, *RefreshProjectCLsRequest) (*RefreshProjectCLsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshProjectCLs not implemented")
+}
+func (UnimplementedAdminServer) DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectEvents not implemented")
 }
 func (UnimplementedAdminServer) SendProjectEvent(context.Context, *SendProjectEventRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendProjectEvent not implemented")
@@ -341,24 +393,6 @@ func _Admin_SearchRuns_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Admin_DeleteProjectEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteProjectEventsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServer).DeleteProjectEvents(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/cv.internal.admin.api.Admin/DeleteProjectEvents",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServer).DeleteProjectEvents(ctx, req.(*DeleteProjectEventsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Admin_RefreshProjectCLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshProjectCLsRequest)
 	if err := dec(in); err != nil {
@@ -373,6 +407,24 @@ func _Admin_RefreshProjectCLs_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).RefreshProjectCLs(ctx, req.(*RefreshProjectCLsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admin_DeleteProjectEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteProjectEventsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).DeleteProjectEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cv.internal.admin.api.Admin/DeleteProjectEvents",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).DeleteProjectEvents(ctx, req.(*DeleteProjectEventsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -463,12 +515,12 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Admin_SearchRuns_Handler,
 		},
 		{
-			MethodName: "DeleteProjectEvents",
-			Handler:    _Admin_DeleteProjectEvents_Handler,
-		},
-		{
 			MethodName: "RefreshProjectCLs",
 			Handler:    _Admin_RefreshProjectCLs_Handler,
+		},
+		{
+			MethodName: "DeleteProjectEvents",
+			Handler:    _Admin_DeleteProjectEvents_Handler,
 		},
 		{
 			MethodName: "SendProjectEvent",

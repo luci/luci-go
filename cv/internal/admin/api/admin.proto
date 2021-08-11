@@ -60,20 +60,51 @@ service Admin {
   // SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
   rpc SearchRuns(SearchRunsRequest) returns (RunsResponse);
 
-  // DeleteProjectEvents deletes all outstanding project events.
-  // Must be called with stopped TQs.
-  // TODO(tandrii): delete this Temporary API.
-  rpc DeleteProjectEvents(DeleteProjectEventsRequest) returns (DeleteProjectEventsResponse);
+  /////////////////////////////////////////////////////////////////////////////
+  // Advanced APIs with side effects.
+  // These APIs are for extraordinary situations only.
+  /////////////////////////////////////////////////////////////////////////////
 
   // RefreshProjectCLs refreshes all CLs currently tracked by PM.
+  //
+  // This is generally safe to call, but it may consume Gerrit Quota of the
+  // given project, so use with care.
   rpc RefreshProjectCLs(RefreshProjectCLsRequest) returns (RefreshProjectCLsResponse);
 
+  // DeleteProjectEvents deletes all outstanding project events.
+  //
+  // DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+  //
+  // Useful in case of severe emergency where a Project Manager gets stuck
+  // with too many bogus events and/or an incorrect event. Usually, it's better
+  // to figure out which event is incorrect and delete just that event in the
+  // Cloud Datastore UI. However, in a time crunch, it may be OK to unblock a
+  // busy project with this API, and manually resend important events (e.g. Run
+  // Finished) via SendProjectEvent at a later time.
+  //
+  // Must be called with stopped manage-run task queue.
+  rpc DeleteProjectEvents(DeleteProjectEventsRequest) returns (DeleteProjectEventsResponse);
+
   // SendProjectEvent sends event to a PM.
+  //
+  // DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+  //
+  // The implications vary depending on the event kind.
   rpc SendProjectEvent(SendProjectEventRequest) returns (google.protobuf.Empty);
   // SendRunEvent sends event to a RM.
+  //
+  // DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+  //
+  // The implications vary depending on the event kind.
   rpc SendRunEvent(SendRunEventRequest) returns (google.protobuf.Empty);
 
   // ScheduleTask schedules an arbitrary CV TQ task.
+  //
+  // DANGER ZONE. DO NOT USE UNLESS YOU UNDERSTAND THE IMPLICATIONS WELL.
+  //
+  // Some TQ tasks have external side effect, e.g. exporting BQ rows, which
+  // shouldn't be scheduled willy-nilly. However, this API is indispensable when
+  // a bunch of BQ rows failed to be exported, say due to a misconfiguration.
   rpc ScheduleTask(ScheduleTaskRequest) returns (google.protobuf.Empty);
 }
 
