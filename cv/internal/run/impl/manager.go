@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/common/lease"
-	"go.chromium.org/luci/cv/internal/common/pubsub"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
@@ -71,7 +70,6 @@ func New(
 	g gerrit.Factory,
 	tc tree.Client,
 	bqc bq.Client,
-	psc pubsub.Client,
 ) *RunManager {
 	rm := &RunManager{n, pm, &handler.Impl{
 		PM:         pm,

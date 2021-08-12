@@ -53,7 +53,6 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common/bq"
-	"go.chromium.org/luci/cv/internal/common/pubsub"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -77,8 +76,6 @@ type Test struct {
 	TreeFake *treetest.Fake
 	// BQFake is a fake BQ client.
 	BQFake *bq.Fake
-	// PSFake is a fake PS client.
-	PSFake *pubsub.Fake
 	// TQDispatcher is a dispatcher with which task classes must be registered.
 	//
 	// Must not be set.
@@ -154,9 +151,6 @@ func (t *Test) SetUp() (context.Context, func()) {
 	}
 	if t.BQFake == nil {
 		t.BQFake = &bq.Fake{}
-	}
-	if t.PSFake == nil {
-		t.PSFake = &pubsub.Fake{}
 	}
 
 	ctx = t.installDS(ctx)

@@ -69,7 +69,7 @@ func TestRunManager(t *testing.T) {
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier)
 		u := updater.New(ct.TQDispatcher, ct.GFactory(), clMutator)
-		_ = New(notifier, pm, clMutator, u, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake, ct.PSFake)
+		_ = New(notifier, pm, clMutator, u, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake)
 
 		// sorted by the order of execution.
 		eventTestcases := []struct {
@@ -355,7 +355,7 @@ func TestRunManager(t *testing.T) {
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier)
 		u := updater.New(ct.TQDispatcher, ct.GFactory(), clMutator)
-		_ = New(notifier, pm, clMutator, u, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake, ct.PSFake)
+		_ = New(notifier, pm, clMutator, u, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake)
 
 		Convey("Recursive", func() {
 			So(notifier.PokeNow(ctx, runID), ShouldBeNil)
