@@ -116,10 +116,11 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 }
 
 var (
-	configGroupNameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
-	modeNameRegexp        = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
-	analyzerRun           = "ANALYZER_RUN"
-	standardModes         = stringset.NewFromSlice(analyzerRun, "DRY_RUN", "FULL_RUN")
+	configGroupNameRegexp    = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
+	modeNameRegexp           = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
+	analyzerRun              = "ANALYZER_RUN"
+	standardModes            = stringset.NewFromSlice(analyzerRun, "DRY_RUN", "FULL_RUN")
+	analyzerLocationReRegexp = regexp.MustCompile(`^(https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/)?\.\+(\\\.[a-z]+)?$`)
 )
 
 func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNames stringset.Set) {
@@ -455,9 +456,11 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 					ctx.Errorf("%s must be the only element in mode_allowlist", analyzerRun)
 				}
 				for i, r := range b.LocationRegexp {
-					if !strings.HasPrefix(r, `.+\.`) {
+					// TODO(crbug/1202952): Remove this check after tricium is folded
+					// into CV.
+					if !analyzerLocationReRegexp.MatchString(r) {
 						ctx.Enter("location_regexp #%d", i+1)
-						ctx.Errorf(`location_regexp must start with ".+\." for tryjob run in %s mode`, analyzerRun)
+						ctx.Errorf(`location_regexp of an analyzer MUST either be in the format of ".+\.extension" (e.g. ".+\.py) or "https://host-review.googlesource.com/project/[+]/.+\.extension" (e.g. "https://chromium-review.googlesource.com/infra/infra/[+]/.+\.py"). Extension is optional.`)
 						ctx.Exit()
 					}
 				}

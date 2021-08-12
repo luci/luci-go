@@ -665,10 +665,17 @@ func TestTryjobValidation(t *testing.T) {
 				So(validate(`
 					builders {
 						name: "a/b/c"
-						location_regexp: ".+"
+						location_regexp: ".*"
 						mode_allowlist: "ANALYZER_RUN"
 					}`), ShouldErrLike,
-					`location_regexp must start with ".+\." for tryjob run in ANALYZER_RUN mode`)
+					`location_regexp of an analyzer MUST either be in the format of`)
+				So(validate(`
+					builders {
+						name: "a/b/c"
+						location_regexp: "chromium-review.googlesource.com/proj/.+\\.go"
+						mode_allowlist: "ANALYZER_RUN"
+					}`), ShouldErrLike,
+					`location_regexp of an analyzer MUST either be in the format of`)
 				So(validate(`
 					builders {
 						name: "a/b/c"
@@ -689,6 +696,24 @@ func TestTryjobValidation(t *testing.T) {
 				builders {
 					name: "a/b/c"
 					mode_allowlist: "ANALYZER_RUN"
+				}`), ShouldBeNil)
+				So(validate(`
+				builders {
+					name: "x/y/z"
+				}
+				builders {
+					name: "a/b/c"
+					mode_allowlist: "ANALYZER_RUN"
+					location_regexp: ".+\\.go"
+				}`), ShouldBeNil)
+				So(validate(`
+				builders {
+					name: "x/y/z"
+				}
+				builders {
+					name: "a/b/c"
+					mode_allowlist: "ANALYZER_RUN"
+					location_regexp: "https://chromium-review.googlesource.com/infra/[+]/.+\\.go"
 				}`), ShouldBeNil)
 			})
 		})
