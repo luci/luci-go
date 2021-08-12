@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	dpb "google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -89,7 +89,7 @@ func ValidateSummaryHTML(summary string) error {
 }
 
 // ValidateStartTimeWithDuration returns a non-nil error if startTime and duration are invalid.
-func ValidateStartTimeWithDuration(now time.Time, startTime *timestamppb.Timestamp, duration *dpb.Duration) error {
+func ValidateStartTimeWithDuration(now time.Time, startTime *timestamppb.Timestamp, duration *durationpb.Duration) error {
 	if err := startTime.CheckValid(); err != nil && startTime != nil {
 		return err
 	}
