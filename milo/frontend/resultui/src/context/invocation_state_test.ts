@@ -19,6 +19,8 @@ import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
   ResultDb,
+  TestResultBundle,
+  TestStatus,
   TestVariant,
   TestVariantStatus,
 } from '../services/resultdb';
@@ -60,26 +62,32 @@ const variant5: TestVariant = {
   status: TestVariantStatus.EXPECTED,
 };
 
-const variantWithTestResults = {
+const variantWithTestResults: TestVariant = {
   testId: '',
+  variantHash: '',
   status: TestVariantStatus.UNEXPECTED,
-  results: [{
-    result: { status: TestVariantStatus.UNEXPECTED }
-  }]
-}
+  results: [
+    {
+      result: { status: TestStatus.Fail },
+    },
+  ] as TestResultBundle[],
+};
 
-const variantWithTestResultFailureReasons = {
+const variantWithTestResultFailureReasons: TestVariant = {
   testId: '',
+  variantHash: '',
   status: TestVariantStatus.UNEXPECTED,
-  results: [{
-    result: {
-      status: TestVariantStatus.UNEXPECTED,
-      failureReason: {
-        primaryErrorMessage: 'failureReason1'
-      }
-    }
-  }]
-}
+  results: [
+    {
+      result: {
+        status: TestStatus.Fail,
+        failureReason: {
+          primaryErrorMessage: 'failureReason1',
+        },
+      },
+    },
+  ] as TestResultBundle[],
+};
 
 describe('InvocationState', () => {
   describe('filterVariant', () => {
@@ -126,35 +134,37 @@ describe('InvocationState', () => {
     });
   });
 
-  it('failure_reasons default column', () => async() {
+  it('should have failure_reasons in the default columns when there are failure reasons', async () => {
     const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
-    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variantWithTestResultFailureReasons, variantWithTestResults] });
+    queryTestVariantsStub
+      .onCall(0)
+      .resolves({ testVariants: [variantWithTestResultFailureReasons, variantWithTestResults] });
 
     const appState = {
       selectedTabId: '',
-      uiSpecificService: {
-        queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+      resultDb: {
+        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
       },
     } as AppState;
     const invocationState = new InvocationState(appState);
     invocationState.invocationId = 'invocation-id';
-    await invocationState.testLoader.loadNextTestVariants();
-    assert.strictEqual(invocationState.defaultColumns, ['failure_reasons']);
+    await invocationState.testLoader!.loadNextTestVariants();
+    assert.deepEqual(invocationState.defaultColumns, ['failure_reasons']);
   });
 
-  it('no failure_reasons default column', () => async() {
+  it('should not have failure_reasons in the default columns when there are no failure reasons', async () => {
     const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variantWithTestResults] });
 
     const appState = {
       selectedTabId: '',
-      uiSpecificService: {
-        queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+      resultDb: {
+        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
       },
     } as AppState;
     const invocationState = new InvocationState(appState);
     invocationState.invocationId = 'invocation-id';
-    await invocationState.testLoader.loadNextTestVariants();
-    assert.strictEqual(invocationState.defaultColumns, []);
+    await invocationState.testLoader!.loadNextTestVariants();
+    assert.deepEqual(invocationState.defaultColumns, []);
   });
 });
