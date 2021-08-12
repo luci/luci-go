@@ -1,0 +1,39 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.pubsub.v1;
+
+import "go.chromium.org/luci/cv/api/common/v1/run.proto";
+
+option go_package = "go.chromium.org/luci/cv/api/pubsub/v1;pubsubpb";
+
+// Run includes the high-level information about the CV Run of which event was
+// published.
+//
+// This includes a subset of the fields defined in cv.common.v1.Run.
+// Use cv.rpc.Runs.GetRun to retrieve the full field set of Runs.
+message Run {
+  // The unqiue ID of the Run.
+  //
+  // The format of an ID is "projects/$luci-project/runs/$id", where
+  // - luci-project is the name of the LUCI project the Run belongs to
+  // - id is an opaque key unique in the LUCI project.
+  string id = 1;
+  // status of the Run.
+  cv.common.v1.Run.Status status = 2;
+  // eversion is the entity version, which is monotonically increasing.
+  int64 eversion = 3;
+}
