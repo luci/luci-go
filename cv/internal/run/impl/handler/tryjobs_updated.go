@@ -59,7 +59,7 @@ func (impl *Impl) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to load latest reported Tryjobs").Err()
 	case len(latest) == 0:
-		logging.Errorf(ctx, "received CQDTryjobsUpdated event, but couldn't find any new reports")
+		logging.Warningf(ctx, "received CQDTryjobsUpdated event, but couldn't find any new reports")
 		return &Result{State: rs}, nil
 	default:
 		logging.Debugf(ctx, "received CQDTryjobsUpdated event, read %d latest tryjob reports", len(latest))
