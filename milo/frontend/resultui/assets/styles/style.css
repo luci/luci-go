@@ -46,6 +46,7 @@ html {
   --canceled-bg-color: #c5ecff;
 
   --block-background-color: #f5f5f5;
+  --dark-background-color: #555555;
   --highlight-background-color: var(--warning-color);
 
   --divider-color: #dddddd;

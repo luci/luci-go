@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, customElement, html } from 'lit-element';
-import { observable } from 'mobx';
+import { css, customElement, html, property } from 'lit-element';
+import { styleMap } from 'lit-html/directives/style-map';
+import { computed, observable } from 'mobx';
 
+import './hotkey';
+import './pixel_viewer';
+import { provider } from '../libs/context';
 import { getRawArtifactUrl } from '../routes';
 import { Artifact } from '../services/resultdb';
 import commonStyle from '../styles/common_style.css';
+import { MiloBaseElement } from './milo_base';
+import { Coordinate, provideCoord } from './pixel_viewer';
 
 const enum ViewOption {
   Expected,
@@ -42,15 +47,61 @@ const VIEW_OPTION_CLASS_MAP = Object.freeze({
  */
 // TODO(weiweilin): improve error handling.
 @customElement('milo-image-diff-viewer')
-export class ImageDiffViewerElement extends MobxLitElement {
+@provider
+export class ImageDiffViewerElement extends MiloBaseElement {
   @observable.ref expected!: Artifact;
   @observable.ref actual!: Artifact;
   @observable.ref diff!: Artifact;
 
+  @observable.ref private showPixelViewers = false;
+  @provideCoord() @property() coord: Coordinate = { x: 0, y: 0 };
+
+  @computed private get expectedImgUrl() {
+    return getRawArtifactUrl(this.expected.name);
+  }
+  @computed private get actualImgUrl() {
+    return getRawArtifactUrl(this.actual.name);
+  }
+  @computed private get diffImgUrl() {
+    return getRawArtifactUrl(this.diff.name);
+  }
   @observable.ref private viewOption = ViewOption.Animated;
+
+  private readonly updateCoord = (e: MouseEvent) => {
+    if (!this.showPixelViewers) {
+      return;
+    }
+
+    const rect = (e.target as HTMLImageElement).getBoundingClientRect();
+    const x = Math.max(Math.round(e.clientX - rect.left), 0);
+    const y = Math.max(Math.round(e.clientY - rect.top), 0);
+    this.coord = { x, y };
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    const hidePixelViewers = () => (this.showPixelViewers = false);
+    window.addEventListener('click', hidePixelViewers);
+    this.addDisposer(() => window.removeEventListener('click', hidePixelViewers));
+  }
 
   protected render() {
     return html`
+      <div id="pixel-viewers" style=${styleMap({ display: this.showPixelViewers ? '' : 'none' })}>
+        <milo-hotkey
+          id="close-viewers-instruction"
+          key="esc"
+          .handler=${() => (this.showPixelViewers = false)}
+          @click=${() => (this.showPixelViewers = false)}
+        >
+          Click again or press ESC to close the pixel viewers.
+        </milo-hotkey>
+        <div id="pixel-viewer-grid">
+          <milo-pixel-viewer .label=${'expected:'} .imgUrl=${this.expectedImgUrl}></milo-pixel-viewer>
+          <milo-pixel-viewer .label=${'actual:'} .imgUrl=${this.actualImgUrl}></milo-pixel-viewer>
+          <milo-pixel-viewer .label=${'diff:'} .imgUrl=${this.diffImgUrl}></milo-pixel-viewer>
+        </div>
+      </div>
       <div id="options">
         <input
           type="radio"
@@ -94,18 +145,26 @@ export class ImageDiffViewerElement extends MobxLitElement {
         <label for="side-by-side">Side by side</label>
       </div>
       <div id="content" class=${VIEW_OPTION_CLASS_MAP[this.viewOption]}>
-        <div id="expected-image" class="image">
-          <div>Expected (<a href=${getRawArtifactUrl(this.expected.name)} target="_blank">view raw</a>)</div>
-          <img src=${getRawArtifactUrl(this.expected.name)} />
-        </div>
-        <div id="actual-image" class="image">
-          <div>Actual (<a href=${getRawArtifactUrl(this.actual.name)} target="_blank">view raw</a>)</div>
-          <img src=${getRawArtifactUrl(this.actual.name)} />
-        </div>
-        <div id="diff-image" class="image">
-          <div>Diff (<a href=${getRawArtifactUrl(this.diff.name)} target="_blank">view raw</a>)</div>
-          <img src=${getRawArtifactUrl(this.diff.name)} />
-        </div>
+        ${this.renderImage('expected-image', 'expected', this.expectedImgUrl)}
+        ${this.renderImage('actual-image', 'actual', this.actualImgUrl)}
+        ${this.renderImage('diff-image', 'diff', this.diffImgUrl)}
+      </div>
+    `;
+  }
+
+  private renderImage(id: string, label: string, url: string) {
+    return html`
+      <div id=${id} class="image">
+        <div>${label} (view raw <a href=${url} target="_blank">here</a> or click on the image to zoom in.)</div>
+        <img
+          src=${url}
+          @mousemove=${this.updateCoord}
+          @click=${(e: MouseEvent) => {
+            e.stopPropagation();
+            this.showPixelViewers = !this.showPixelViewers;
+            this.updateCoord(e);
+          }}
+        />
       </div>
     `;
   }
@@ -115,10 +174,36 @@ export class ImageDiffViewerElement extends MobxLitElement {
     css`
       :host {
         display: block;
+        overflow: hidden;
+      }
+
+      #pixel-viewers {
+        width: 100%;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 999;
+        background-color: var(--dark-background-color);
+      }
+      #close-viewers-instruction {
+        color: white;
+        padding: 5px;
+      }
+      #pixel-viewer-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-gap: 5px;
+        padding: 5px;
+        height: 300px;
+        width: 100%;
+      }
+      #pixel-viewer-grid > * {
+        width: 100%;
+        height: 100%;
       }
 
       #options {
-        margin: 10px;
+        margin: 5px;
       }
       #options > label {
         margin-right: 5px;
@@ -130,7 +215,7 @@ export class ImageDiffViewerElement extends MobxLitElement {
       #content {
         white-space: nowrap;
         overflow-x: auto;
-        padding: 20px;
+        margin: 15px;
         position: relative;
         top: 0;
         left: 0;
