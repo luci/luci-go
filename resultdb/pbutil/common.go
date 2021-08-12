@@ -19,9 +19,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/durationpb"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -50,19 +49,19 @@ func validateWithRe(re *regexp.Regexp, value string) error {
 	return nil
 }
 
-// MustTimestampProto converts a time.Time to a *tspb.Timestamp and panics
+// MustTimestampProto converts a time.Time to a *timestamppb.Timestamp and panics
 // on failure.
-func MustTimestampProto(t time.Time) *tspb.Timestamp {
-	ts, err := ptypes.TimestampProto(t)
-	if err != nil {
+func MustTimestampProto(t time.Time) *timestamppb.Timestamp {
+	ts := timestamppb.New(t)
+	if err := ts.CheckValid(); err != nil {
 		panic(err)
 	}
 	return ts
 }
 
-// MustTimestamp converts a *tspb.Timestamp to a time.Time and panics
+// MustTimestamp converts a *timestamppb.Timestamp to a time.Time and panics
 // on failure.
-func MustTimestamp(ts *tspb.Timestamp) time.Time {
+func MustTimestamp(ts *timestamppb.Timestamp) time.Time {
 	if err := ts.CheckValid(); err != nil {
 		panic(err)
 	}

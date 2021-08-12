@@ -27,7 +27,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -276,7 +275,7 @@ func builderToV2(msg *v1.LegacyApiCommonBuildMessage, tags strpair.Map, params *
 	return
 }
 
-func timestampToV2(ts int64) *tspb.Timestamp {
+func timestampToV2(ts int64) *timestamppb.Timestamp {
 	if ts == 0 {
 		return nil
 	}

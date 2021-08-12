@@ -20,7 +20,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -50,7 +50,7 @@ type Ptr interface {
 // Supported types:
 //   - Value and Ptr
 //   - string
-//   - tspb.Timestamp
+//   - timestamppb.Timestamp
 //   - pb.InvocationState
 //   - pb.TestStatus
 //   - pb.Variant
@@ -97,7 +97,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = goPtr.SpannerPtr(b)
 	case *string:
 		spanPtr = &b.NullString
-	case **tspb.Timestamp:
+	case **timestamppb.Timestamp:
 		spanPtr = &b.NullTime
 	case *pb.TestStatus:
 		spanPtr = &b.Int64
@@ -134,7 +134,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			*goPtr = b.NullString.StringVal
 		}
 
-	case **tspb.Timestamp:
+	case **timestamppb.Timestamp:
 		*goPtr = nil
 		if b.NullTime.Valid {
 			*goPtr = pbutil.MustTimestampProto(b.NullTime.Time)
@@ -184,7 +184,7 @@ func ToSpanner(v interface{}) interface{} {
 	case Value:
 		return v.ToSpanner()
 
-	case *tspb.Timestamp:
+	case *timestamppb.Timestamp:
 		if v == nil {
 			return spanner.NullTime{}
 		}

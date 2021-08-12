@@ -21,14 +21,12 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
-
-	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestTypeConversion(t *testing.T) {
@@ -56,7 +54,7 @@ func TestTypeConversion(t *testing.T) {
 
 	Convey(`*timestamppb.Timestamp`, t, func() {
 		test(
-			&tspb.Timestamp{Seconds: 1000, Nanos: 1234},
+			&timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
 			spanner.NullTime{Valid: true, Time: time.Unix(1000, 1234).UTC()},
 		)
 	})

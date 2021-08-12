@@ -22,7 +22,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -56,7 +56,7 @@ func isValidCreateState(s pb.Invocation_State) bool {
 }
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
-func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
+func validateInvocationDeadline(deadline *timestamppb.Timestamp, now time.Time) error {
 	internal.AssertUTC(now)
 	switch d, err := ptypes.Timestamp(deadline); {
 	case err != nil:
