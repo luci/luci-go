@@ -1028,16 +1028,13 @@ func TestGetFileOwners(t *testing.T) {
 				w.WriteHeader(200)
 				w.Header().Set("Content-Type", "application/json")
 				fmt.Fprint(w, `)]}'
-				[
-					{
-						"account": {
-							"_account_id": 1000096,
-							"name": "User Name",
-							"email": "user@test.com",
-							"username": "username"
-						}
-					}
-				]`)
+				{"code_owners":[{
+					"account":{
+						"_account_id":1000096,
+						"name":"User Name",
+						"email":"user@test.com",
+						"avatars":[{"url":"https://test.com/photo.jpg","height":32}]
+					}}]}`)
 			})
 			defer srv.Close()
 
@@ -1059,7 +1056,6 @@ func TestGetFileOwners(t *testing.T) {
 							AccountId: 1000096,
 							Name:      "User Name",
 							Email:     "user@test.com",
-							Username:  "username",
 						},
 					},
 				},
@@ -1072,15 +1068,12 @@ func TestGetFileOwners(t *testing.T) {
 				w.WriteHeader(200)
 				w.Header().Set("Content-Type", "application/json")
 				fmt.Fprint(w, `)]}'
-				[
-					{
-						"account": {
-							"_account_id": 1000096,
-							"email": "test@test.com",
-							"secondary_emails": ["alt@test.com"]
-						}
-					}
-				]`)
+				{"code_owners": [{
+					"account": {
+						"_account_id": 1000096,
+						"email": "test@test.com",
+						"secondary_emails": ["alt@test.com"]
+					}}]}`)
 			})
 			defer srv.Close()
 

@@ -378,7 +378,9 @@ func (c *client) GetPureRevert(ctx context.Context, req *gerritpb.GetPureRevertR
 }
 
 func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwnersRequest, opts ...grpc.CallOption) (*gerritpb.ListOwnersResponse, error) {
-	var resp []ownerInfo
+	resp := struct {
+		CodeOwners []ownerInfo `json:"code_owners"`
+	}{}
 	params := url.Values{}
 	if req.Options.Details {
 		params.Add("o", "DETAILS")
@@ -391,8 +393,8 @@ func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwner
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "list file owners").Err()
 	}
-	owners := make([]*gerritpb.OwnerInfo, len(resp))
-	for i, owner := range resp {
+	owners := make([]*gerritpb.OwnerInfo, len(resp.CodeOwners))
+	for i, owner := range resp.CodeOwners {
 		owners[i] = &gerritpb.OwnerInfo{Account: owner.Account.ToProto()}
 	}
 	return &gerritpb.ListOwnersResponse{
