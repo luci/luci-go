@@ -1,0 +1,256 @@
+{{define "title"}}
+Project {{index (SplitSlash .Run.Id) 0}}
+Run {{index (SplitSlash .Run.Id) 1}}
+- LUCI Change Verifier
+{{end}}
+
+{{define "head"}}
+<style type="text/css">
+table {
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+table td{
+  padding: 2px 8px;
+}
+table td.long {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collapsible{
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+
+.active, .clickable:hover {
+  background-color: #ccc;
+}
+
+div.clickable {
+  padding: 10px;
+  border: 2px;
+  border-color: black;
+  font-weight: bold;
+}
+
+#full-details-panel{
+  margin-left: 50px;
+}
+
+#run-details {
+   margin: 25px;
+}
+.tryjob-chips ul li{
+  padding: 2px 4px;
+  margin: 2px 4px;
+}
+.tryjob-chip {
+  color: black;
+  font-size: 90%;
+  border: solid 1px rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+.tryjob-chip.highlight {
+  box-shadow: gray 1.5px 1.5px 1px;
+  text-decoration: underline;
+  color: blue;
+}
+.tryjob-chip.highlight:visited {
+  color: purple;
+}
+.tryjob-chip.unexpected {
+  background: #f0f;
+}
+.tryjob-chip.not-started {
+  background: #eee;
+}
+.tryjob-chip.running {
+  background: #ff7;
+}
+.tryjob-chip.passed {
+  background: #9e6;
+}
+.tryjob-chip.failed {
+  background: #e88;
+}
+
+.log-entry, .log-entry-top, .log-entry-bottom, .run-details {
+  color: black;
+  background: #e0e0e0;
+  padding: 2px 4px;
+  border-right: solid 1px #000;
+  border-left: solid 1px #000;
+}
+.log-entry-top, .log-entry {
+  border-top: solid 1px #000;
+}
+.log-entry-bottom, .log-entry {
+  border-bottom: solid 1px #000;
+}
+
+.cl-list {
+  padding-right: 50px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+</style>
+
+{{end}}
+
+{{define "content"}}
+{{$TJProgression := .TJProgression}}
+{{$RelTime := .RelTime}}
+{{$AllTryjobs := .AllTryjobs}}
+<div class="container">
+  <div>
+      <h3>Run details</h3>
+        {{template "runDetails" .Run}}
+        {{$Created := .Run.CreateTime.AsTime}}
+  </div>
+
+  <div style="width: fit-content;">
+    <h3>CLs</h3>
+  <div class="cl-list">
+    <ul>
+    {{range .Cls}}
+      {{if .Detail.GetGerrit}}
+        <li>
+          ({{- .Detail.GetGerrit.Host -}}/{{- .Detail.GetGerrit.Info.Number -}}/{{- .Detail.Patchset -}})
+          <a href="{{.ExternalID.URL}}">
+            <!-- Use the first line of the commit message as link text. -->
+            {{with .Detail.GetGerrit}}
+              {{(index (Split (index .Info.Revisions .Info.CurrentRevision).Commit.Message) 0)}}
+            {{end}}
+          </a>
+        </li>
+      {{end}}
+    {{end}}
+    </ul>
+  </div>
+  </div>
+
+
+  <div>
+    <h3>Tryjobs</h3>
+    <div>
+      <p>
+        {{range $AllTryjobs}}
+          {{with UITryjob .}}
+            <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
+            <span> </span>
+          {{end}}
+        {{end}}
+        </p>
+      </div>
+    {{if .Logs}}
+      <h3>Logs</h3>
+      <table>
+        <thead>
+          <th style="width: 150px;">Event</th>
+          <th style="width: 300px;">Time</th>
+          <th>&nbsp;</th>
+        </thead> <tbody>
+          {{range .Logs}}
+            <tr class="log-entry{{if .GetTryjobsUpdated}}-top{{end}}">
+              <td><em>{{LogTypeString .}}</em></td>
+              <td>{{FmTime .GetTime.AsTime}} </td>
+              <td>{{call $RelTime .GetTime.AsTime}} </td>
+            </tr>
+            {{if .GetTryjobsUpdated}}
+              <tr class="log-entry-bottom">
+                {{with .GetTryjobsUpdated}}
+                  <td class="tryjob-chips" colspan="3">
+                    <ul>
+                    {{range $label, $jobs := ByTryjobStatus .GetTryjobs}}
+                      <li>{{$label}}:
+                      {{range $jobs}}
+                        {{with UITryjob .}}
+                        <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
+                        <span> </span>
+                        {{end}}
+                      {{end}}
+                      </li>
+                    {{end}}
+                    </ul>
+                  </td>
+                {{end}}
+              </tr>
+            {{end}}
+          {{end}}
+        </tbody>
+    </table>
+  {{end}}
+  </div>
+
+
+</div>
+{{end}}
+
+{{define "runDetails"}}
+<div>
+  <table class="run-details">
+    <thead>
+      <tr>
+        <th>Project</th>
+        <th>Id</th>
+        <th>Mode</th>
+        <th>Status</th>
+        <th>&nbsp;</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td>{{index (SplitSlash .Id) 0}}</td>
+      <td><b>{{index (SplitSlash .Id) 1}}</b></td>
+      <td>{{.Mode}}</td>
+      <td>{{.Status}}</td>
+      <td>
+        <div id="run-details-expander" class="clickable"> (+) Show details</div>
+        <div id="run-details-collapser" class="collapsible">(-) Hide details</div>
+      </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div id="full-details-panel" class="collapsible">
+  <table>
+  <tr><td>Id:</td><td> {{.Id}}</td></tr>
+  <tr><td>Eversion:</td><td> {{.Eversion}}</td></tr>
+  <tr><td>Mode:</td><td> {{.Mode}}</td></tr>
+  <tr><td>Status:</td><td> {{.Status}}</td></tr>
+  <tr><td>CreateTime:</td><td> {{FmTime .CreateTime.AsTime}}</td></tr>
+  <tr><td>StartTime:</td><td> {{FmTime .StartTime.AsTime}}</td></tr>
+  <tr><td>UpdateTime:</td><td> {{FmTime .UpdateTime.AsTime}}</td></tr>
+  <tr><td>EndTime:</td><td> {{FmTime .EndTime.AsTime}}</td></tr>
+  <tr><td>Owner:</td><td> {{.Owner}}</td></tr>
+  <tr><td>ConfigGroupId:</td><td> {{.ConfigGroupId}}</td></tr>
+  </table>
+  </div>
+</div>
+{{template "collapserScript"}}
+{{end}}
+
+{{define "collapserScript"}}
+  <script>
+  var expander = document.getElementById("run-details-expander");
+  var collapser = document.getElementById("run-details-collapser");
+  var collapsible = document.getElementById("full-details-panel");
+
+  function toggler(){
+    collapsible.classList.toggle("collapsible");
+    collapser.classList.toggle("collapsible")
+    collapser.classList.toggle("clickable");
+    expander.classList.toggle("collapsible")
+    expander.classList.toggle("clickable");
+  }
+
+  expander.addEventListener("click", toggler);
+  collapser.addEventListener("click", toggler);
+  </script>
+{{end}}

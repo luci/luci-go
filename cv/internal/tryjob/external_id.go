@@ -57,7 +57,7 @@ func (e ExternalID) ParseBuildbucketID() (host string, build int64, err error) {
 		return
 	}
 	host = parts[1]
-	build, err = strconv.ParseInt(parts[2], 10, 63)
+	build, err = strconv.ParseInt(parts[2], 10, 64)
 	if err != nil {
 		err = errors.Annotate(err, "%q is not a valid BuildbucketID", e).Err()
 	}

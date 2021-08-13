@@ -1,0 +1,46 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<!-- Copyright 2021 The LUCI Authors. All rights reserved.
+Use of this source code is governed under the Apache License, Version 2.0
+that can be found in the LICENSE file. -->
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+  <title>{{block "title" .}}default{{end}}</title>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+    a {
+      text-decoration: none!important;
+    }
+  </style>
+  {{block "head" .}}{{end}}
+</head>
+
+<body>
+  <div>
+    <a href="/">LUCI Change Verifier</a>
+    <span>
+    {{if .IsAnonymous}}
+      <a href="{{.LoginURL}}">Login</a>
+    {{else}}
+      {{.User.Email}} | <a href="{{.LogoutURL}}">Logout</a>
+    {{end}}
+    </span>
+  </div>
+  <div id="content-box">
+    {{block "content" .}}{{end}}
+  </div>
+
+  <footer style="color: #cccccc;">
+    <hr>
+    <p>
+      Handled in {{call .HandlerDuration}}
+      <span>Version: {{.AppVersion}}</span>
+    </p>
+  </footer>
+</body>
+</html>
+{{end}}

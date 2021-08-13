@@ -1,0 +1,7 @@
+{{define "title"}}An error has occurred{{end}}
+
+{{define "content"}}
+  <h1> {{.Code}} - An error has occurred &#x1F61F;</h1>
+  <p>{{.Error}}</p>
+  <a href="https://bugs.chromium.org/p/chromium/issues/entry?summary=CV%20Status%20Code%20{{.Code}}&description={{.Error}}&components=Infra%3EPlatform%3ECQ&labels=Type-Bug,Pri-2">File a bug</a>
+{{end}}

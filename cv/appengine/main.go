@@ -55,6 +55,7 @@ import (
 	rpcv0 "go.chromium.org/luci/cv/internal/rpc/v0"
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
+	"go.chromium.org/luci/cv/internal/userhtml"
 )
 
 func main() {
@@ -127,6 +128,8 @@ func main() {
 		srv.Routes.GET("/", nil, func(c *router.Context) {
 			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 		})
+
+		userhtml.InstallHandlers(srv)
 
 		return nil
 	})

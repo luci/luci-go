@@ -1,0 +1,75 @@
+{{define "title"}}{{.Project}} Recent Runs - LUCI Change Verifier{{end}}
+
+{{define "head"}}
+  <style type="text/css">
+    #runs-table {
+      table-layout: fixed;
+    }
+    #runs-table td{
+
+    }
+    .tall-cell {
+    padding: 0px 5px;
+      overflow-y: auto;
+      max-height: 100px;
+      border: #eee;
+      border-style: solid;
+      border-width: thin;
+    }
+  </style>
+{{end}}
+
+{{define "content"}}
+  {{$Prev := .Prev}}
+  {{$Next := .Next}}
+  <h2>Recent runs for LUCI Project "{{.Project}}"</h2>
+  <div class="container">
+    <table class="table" id="runs-table">
+      <thead>
+        <tr>
+          <th style="width: 320px;">ID</th>
+          <th style="width: 120px;">MODE</th>
+          <th style="width: 120px;">STATUS</th>
+          <th style="width: 240px;">CREATE_TIME</th>
+          <th style="width: 500px;">CLs</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Runs}}
+          <tr>
+            <td><a href="/ui/run/{{.Id}}">{{index (SplitSlash .Id) 1}}</a></td>
+            <td>{{.Mode}}</td>
+            <td>{{.Status}}</td>
+            <td>{{FmTime .CreateTime.AsTime}}</td>
+            <td>
+              {{if (gt (len .ExternalCls) 5)}}
+              <div class="tall-cell">
+              <p>{{ len .ExternalCls }} total CLs</p>
+              {{else}}
+              <div>
+              {{end}}
+              <ul>
+              {{range .ExternalCls}}
+                <li><a href="{{LinkifyExternalID .}}">{{LinkifyExternalID .}}</a></li>
+              {{end}}
+              </ul>
+              </div>
+            </td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+
+    <div class="pager">
+      {{if $Prev}}
+        {{if (eq $Prev " ")}}
+          {{$Prev = ""}}
+        {{end}}
+        <span><a href="?page={{$Prev}}">&#10094;Previous</a></span>
+      {{end}}
+      {{if $Next}}
+        <span><a href="?page={{$Next}}">Next&#10095;</a></span>
+      {{end}}
+    </div>
+  </div>
+{{end}}
