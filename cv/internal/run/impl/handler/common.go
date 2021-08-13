@@ -63,6 +63,9 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st commonpb.Ru
 		func(ctx context.Context) error {
 			return impl.BQExporter.Schedule(ctx, rid)
 		},
+		func(ctx context.Context) error {
+			return impl.Publisher.RunEnded(ctx, &rs.Run)
+		},
 	)
 }
 

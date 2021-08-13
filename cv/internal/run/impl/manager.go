@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/pubsub"
 )
 
 // maxEventsPerBatch limits the number of incoming events the PM will process at
@@ -79,6 +80,7 @@ func New(
 		BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc),
 		GFactory:   g,
 		TreeClient: tc,
+		Publisher:  pubsub.NewPublisher(n.TasksBinding.TQDispatcher),
 	}}
 	n.TasksBinding.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/pubsub"
 )
 
 // Result is the result of handling the events.
@@ -118,6 +119,7 @@ type Impl struct {
 	CLMutator  *changelist.Mutator
 	BQExporter *bq.Exporter
 	TreeClient tree.Client
+	Publisher  *pubsub.Publisher
 }
 
 var _ Handler = (*Impl)(nil)

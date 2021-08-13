@@ -211,6 +211,9 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 				return false
 			}
 		}),
+		// TODO(crbug.com/1239766): remove this option when tqtesting supports
+		// executing PubSub tasks.
+		tqtesting.SkipPubSubTask(),
 	}
 	if *tqParallelFlag {
 		tqOpts = append(tqOpts, tqtesting.ParallelExecute())

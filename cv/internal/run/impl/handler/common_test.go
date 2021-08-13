@@ -39,8 +39,10 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/pubsub"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestEndRun(t *testing.T) {
@@ -90,6 +92,22 @@ func TestEndRun(t *testing.T) {
 		pmtest.AssertReceivedRunFinished(ctx, rid)
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
 		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
+
+		Convey("Publish RunEnded event", func() {
+			var task *pubsub.PublishRunEndedTask
+			for _, t := range ct.TQ.Tasks() {
+				if p, ok := t.Payload.(*pubsub.PublishRunEndedTask); ok {
+					task = p
+					break
+				}
+			}
+			So(task, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+				PublicId:    rs.Run.ID.PublicID(),
+				LuciProject: rs.Run.ID.LUCIProject(),
+				Status:      rs.Run.Status,
+				Eversion:    int64(rs.Run.EVersion),
+			})
+		})
 	})
 }
 
@@ -175,6 +193,7 @@ func makeTestImpl(ct *cvtesting.Test) (*Impl, *prjmanager.Notifier, *run.Notifie
 		TreeClient: ct.TreeFake.Client(),
 		GFactory:   ct.GFactory(),
 		BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake),
+		Publisher:  pubsub.NewPublisher(ct.TQDispatcher),
 	}
 	return impl, pm, rm, clu
 }
