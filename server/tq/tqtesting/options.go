@@ -92,6 +92,9 @@ type parallelExecute struct{}
 func (parallelExecute) isOption() {}
 
 // SkipPubSubTask instructs the schedule to skip executing PubSub tasks.
+//
+// TODO(crbug.com/1239766): remove this option when tqtesting supports executing
+// PubSub tasks.
 func SkipPubSubTask() RunOption {
 	return skipPubSubTask{}
 }
