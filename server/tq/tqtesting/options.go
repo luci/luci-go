@@ -90,3 +90,12 @@ func ParallelExecute() RunOption {
 type parallelExecute struct{}
 
 func (parallelExecute) isOption() {}
+
+// SkipPubSubTask instructs the schedule to skip executing PubSub tasks.
+func SkipPubSubTask() RunOption {
+	return skipPubSubTask{}
+}
+
+type skipPubSubTask struct{}
+
+func (skipPubSubTask) isOption() {}

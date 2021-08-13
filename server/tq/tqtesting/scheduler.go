@@ -348,10 +348,13 @@ func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
 	defer s.wg.Wait()
 
 	parallelExec := false
+	skipPubSub := false
 	for _, opt := range opts {
-		if _, ok := opt.(parallelExecute); ok {
+		switch opt.(type) {
+		case parallelExecute:
 			parallelExec = true
-			break
+		case skipPubSubTask:
+			skipPubSub = true
 		}
 	}
 
@@ -361,6 +364,10 @@ func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
 		}
 		switch task, nextETA, taskDone := s.tryDequeueTask(ctx); {
 		case task != nil:
+			if skipPubSub && task.Message != nil {
+				taskDone(false)
+				continue
+			}
 			// Pass the task to the executor. It may either execute it right away
 			// or asynchronously later. Either way, when it is done it will call
 			// the finalization callback.
