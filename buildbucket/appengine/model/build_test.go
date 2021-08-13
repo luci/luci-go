@@ -69,20 +69,25 @@ func TestBuild(t *testing.T) {
 				ID: 1,
 			}
 			So(datastore.Get(ctx, b), ShouldBeNil)
+			p := proto.Clone(&b.Proto).(*pb.Build)
+			b.Proto = pb.Build{}
 			So(b, ShouldResemble, &Build{
-				ID:               1,
-				Proto:            b.Proto, // assert protobufs separately
-				BucketID:         "project/bucket",
-				BuilderID:        "project/bucket/builder",
-				Canary:           false,
-				CreateTime:       datastore.RoundTime(testclock.TestRecentTimeUTC),
-				Experimental:     false,
-				Incomplete:       false,
-				Status:           pb.Status_SUCCESS,
-				Project:          "project",
-				LegacyProperties: LegacyProperties{Status: Completed},
+				ID:           1,
+				Proto:        pb.Build{},
+				BucketID:     "project/bucket",
+				BuilderID:    "project/bucket/builder",
+				Canary:       false,
+				CreateTime:   datastore.RoundTime(testclock.TestRecentTimeUTC),
+				Experimental: false,
+				Incomplete:   false,
+				Status:       pb.Status_SUCCESS,
+				Project:      "project",
+				LegacyProperties: LegacyProperties{
+					Result: Success,
+					Status: Completed,
+				},
 			})
-			So(&b.Proto, ShouldResembleProto, &pb.Build{
+			So(p, ShouldResembleProto, &pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -91,6 +96,164 @@ func TestBuild(t *testing.T) {
 				},
 				Status:     pb.Status_SUCCESS,
 				UpdateTime: t0pb,
+			})
+		})
+
+		Convey("legacy", func() {
+			Convey("infra failure", func() {
+				So(datastore.Put(ctx, &Build{
+					ID: 1,
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Status: pb.Status_INFRA_FAILURE,
+					},
+					CreateTime: testclock.TestRecentTimeUTC,
+				}), ShouldBeNil)
+
+				b := &Build{
+					ID: 1,
+				}
+				So(datastore.Get(ctx, b), ShouldBeNil)
+				p := proto.Clone(&b.Proto).(*pb.Build)
+				b.Proto = pb.Build{}
+				So(b, ShouldResemble, &Build{
+					ID:           1,
+					Proto:        pb.Build{},
+					BucketID:     "project/bucket",
+					BuilderID:    "project/bucket/builder",
+					Canary:       false,
+					CreateTime:   datastore.RoundTime(testclock.TestRecentTimeUTC),
+					Experimental: false,
+					Incomplete:   false,
+					Status:       pb.Status_INFRA_FAILURE,
+					Project:      "project",
+					LegacyProperties: LegacyProperties{
+						FailureReason: InfraFailure,
+						Result:        Failure,
+						Status:        Completed,
+					},
+				})
+				So(p, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status:     pb.Status_INFRA_FAILURE,
+					UpdateTime: t0pb,
+				})
+			})
+
+			Convey("timeout", func() {
+				So(datastore.Put(ctx, &Build{
+					ID: 1,
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Status: pb.Status_INFRA_FAILURE,
+						StatusDetails: &pb.StatusDetails{
+							Timeout: &pb.StatusDetails_Timeout{},
+						},
+					},
+					CreateTime: testclock.TestRecentTimeUTC,
+				}), ShouldBeNil)
+
+				b := &Build{
+					ID: 1,
+				}
+				So(datastore.Get(ctx, b), ShouldBeNil)
+				p := proto.Clone(&b.Proto).(*pb.Build)
+				b.Proto = pb.Build{}
+				So(b, ShouldResemble, &Build{
+					ID:           1,
+					Proto:        pb.Build{},
+					BucketID:     "project/bucket",
+					BuilderID:    "project/bucket/builder",
+					Canary:       false,
+					CreateTime:   datastore.RoundTime(testclock.TestRecentTimeUTC),
+					Experimental: false,
+					Incomplete:   false,
+					Status:       pb.Status_INFRA_FAILURE,
+					Project:      "project",
+					LegacyProperties: LegacyProperties{
+						CancelationReason: TimeoutCanceled,
+						Result:            Canceled,
+						Status:            Completed,
+					},
+				})
+				So(p, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status: pb.Status_INFRA_FAILURE,
+					StatusDetails: &pb.StatusDetails{
+						Timeout: &pb.StatusDetails_Timeout{},
+					},
+					UpdateTime: t0pb,
+				})
+			})
+
+			Convey("canceled", func() {
+				So(datastore.Put(ctx, &Build{
+					ID: 1,
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Status: pb.Status_CANCELED,
+					},
+					CreateTime: testclock.TestRecentTimeUTC,
+				}), ShouldBeNil)
+
+				b := &Build{
+					ID: 1,
+				}
+				So(datastore.Get(ctx, b), ShouldBeNil)
+				p := proto.Clone(&b.Proto).(*pb.Build)
+				b.Proto = pb.Build{}
+				So(b, ShouldResemble, &Build{
+					ID:           1,
+					Proto:        pb.Build{},
+					BucketID:     "project/bucket",
+					BuilderID:    "project/bucket/builder",
+					Canary:       false,
+					CreateTime:   datastore.RoundTime(testclock.TestRecentTimeUTC),
+					Experimental: false,
+					Incomplete:   false,
+					Status:       pb.Status_CANCELED,
+					Project:      "project",
+					LegacyProperties: LegacyProperties{
+						CancelationReason: ExplicitlyCanceled,
+						Result:            Canceled,
+						Status:            Completed,
+					},
+				})
+				So(p, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status:     pb.Status_CANCELED,
+					UpdateTime: t0pb,
+				})
 			})
 		})
 

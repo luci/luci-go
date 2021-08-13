@@ -235,16 +235,33 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 		b.Proto.UpdateTime = timestamppb.New(c.Now())
 	}
 
-	// Some v1 queries still look at the legacy status field to find builds, but
-	// these builds can have their status changed via v2 APIs (e.g. CancelBuild).
-	// We just set the legacy status based on the real status here to let those
-	// datastore queries more or less work.
+	// Set legacy values used by Python.
 	switch b.Status {
 	case pb.Status_SCHEDULED:
+		b.LegacyProperties.Result = 0
 		b.LegacyProperties.Status = Scheduled
 	case pb.Status_STARTED:
+		b.LegacyProperties.Result = 0
 		b.LegacyProperties.Status = Started
-	default:
+	case pb.Status_SUCCESS:
+		b.LegacyProperties.Result = Success
+		b.LegacyProperties.Status = Completed
+	case pb.Status_FAILURE:
+		b.LegacyProperties.FailureReason = BuildFailure
+		b.LegacyProperties.Result = Failure
+		b.LegacyProperties.Status = Completed
+	case pb.Status_INFRA_FAILURE:
+		if b.Proto.StatusDetails.GetTimeout() != nil {
+			b.LegacyProperties.CancelationReason = TimeoutCanceled
+			b.LegacyProperties.Result = Canceled
+		} else {
+			b.LegacyProperties.FailureReason = InfraFailure
+			b.LegacyProperties.Result = Failure
+		}
+		b.LegacyProperties.Status = Completed
+	case pb.Status_CANCELED:
+		b.LegacyProperties.CancelationReason = ExplicitlyCanceled
+		b.LegacyProperties.Result = Canceled
 		b.LegacyProperties.Status = Completed
 	}
 
