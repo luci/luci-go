@@ -46,7 +46,7 @@ func InstallHandlers(srv *server.Server) {
 			c.Context = context.WithValue(c.Context, startTimeContextKey(0), clock.Now(c.Context))
 			next(c)
 		},
-		templates.WithTemplates(prepareTemplates(&srv.Options, "../internal/userhtml/templates")),
+		templates.WithTemplates(prepareTemplates(&srv.Options, "templates")),
 		auth.Authenticate(srv.CookieAuth),
 	)
 
