@@ -14,9 +14,11 @@
 
 import * as chai from 'chai';
 import { assert } from 'chai';
+import { DateTime } from 'luxon';
+import { observable } from 'mobx';
 
 import { chaiDeepIncludeProperties } from '../libs/test_utils/chai_deep_include_properties';
-import { Build, Step } from '../services/buildbucket';
+import { Build, BuildStatus, Step } from '../services/buildbucket';
 import { BuildExt } from './build_ext';
 import { StepExt } from './step_ext';
 
@@ -118,22 +120,195 @@ describe('BuildExt', () => {
     ] as StepExt[]);
   });
 
-  describe('should calculate pending time correctly', () => {
-    it('when build started', () => {
-      const build = new BuildExt({
-        createTime: '2020-01-01T00:00:10Z',
-        startTime: '2020-01-01T00:00:20Z',
-        endTime: '2020-01-01T00:00:30Z',
-      } as Build);
+  describe('should calculate pending/execution time/status correctly', () => {
+    it("when the build hasn't started", () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Scheduled,
+          createTime: '2020-01-01T00:00:10Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:00:20Z'))
+      );
+
       assert.strictEqual(build.pendingDuration.toISO(), 'PT10S');
+      assert.isTrue(build.isPending);
+      assert.isFalse(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration, null);
+      assert.isFalse(build.isExecuting);
+      assert.isFalse(build.exceededExecutionTimeout);
     });
 
-    it('when build was canceled before it started', () => {
-      const build = new BuildExt({
-        createTime: '2020-01-01T00:00:10Z',
-        endTime: '2020-01-01T00:00:30Z',
-      } as Build);
+    it('when the build was canceled before exceeding the scheduling timeout', () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Canceled,
+          createTime: '2020-01-01T00:00:10Z',
+          endTime: '2020-01-01T00:00:20Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:00:50Z'))
+      );
+
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT10S');
+      assert.isFalse(build.isPending);
+      assert.isFalse(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration, null);
+      assert.isFalse(build.isExecuting);
+      assert.isFalse(build.exceededExecutionTimeout);
+    });
+
+    it('when the build was canceled after exceeding the scheduling timeout', () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Canceled,
+          createTime: '2020-01-01T00:00:10Z',
+          endTime: '2020-01-01T00:00:30Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:00:50Z'))
+      );
+
       assert.strictEqual(build.pendingDuration.toISO(), 'PT20S');
+      assert.isFalse(build.isPending);
+      assert.isTrue(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration, null);
+      assert.isFalse(build.isExecuting);
+      assert.isFalse(build.exceededExecutionTimeout);
+    });
+
+    it('when the build was started', () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Started,
+          createTime: '2020-01-01T00:00:10Z',
+          startTime: '2020-01-01T00:00:20Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:00:30Z'))
+      );
+
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT10S');
+      assert.isFalse(build.isPending);
+      assert.isFalse(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration?.toISO(), 'PT10S');
+      assert.isTrue(build.isExecuting);
+      assert.isFalse(build.exceededExecutionTimeout);
+    });
+
+    it('when the build was started and canceled before exceeding the execution timeout', () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Canceled,
+          createTime: '2020-01-01T00:00:10Z',
+          startTime: '2020-01-01T00:00:20Z',
+          endTime: '2020-01-01T00:00:30Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:00:40Z'))
+      );
+
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT10S');
+      assert.isFalse(build.isPending);
+      assert.isFalse(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration?.toISO(), 'PT10S');
+      assert.isFalse(build.isExecuting);
+      assert.isFalse(build.exceededExecutionTimeout);
+    });
+
+    it('when the build started and ended after exceeding the execution timeout', () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Canceled,
+          createTime: '2020-01-01T00:00:10Z',
+          startTime: '2020-01-01T00:00:20Z',
+          endTime: '2020-01-01T00:00:40Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:00:50Z'))
+      );
+
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT10S');
+      assert.isFalse(build.isPending);
+      assert.isFalse(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration?.toISO(), 'PT20S');
+      assert.isFalse(build.isExecuting);
+      assert.isTrue(build.exceededExecutionTimeout);
+    });
+
+    it("when the build wasn't started or canceled after the scheduling timeout", () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Scheduled,
+          createTime: '2020-01-01T00:00:10Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:00:50Z'))
+      );
+
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT40S');
+      assert.isTrue(build.isPending);
+      assert.isFalse(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration, null);
+      assert.isFalse(build.isExecuting);
+      assert.isFalse(build.exceededExecutionTimeout);
+    });
+
+    it('when the build was started after the scheduling timeout', () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Started,
+          createTime: '2020-01-01T00:00:10Z',
+          startTime: '2020-01-01T00:00:40Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:00:50Z'))
+      );
+
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT30S');
+      assert.isFalse(build.isPending);
+      assert.isFalse(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration?.toISO(), 'PT10S');
+      assert.isTrue(build.isExecuting);
+      assert.isFalse(build.exceededExecutionTimeout);
+    });
+
+    it('when the build was not canceled after the execution timeout', () => {
+      const build = new BuildExt(
+        {
+          status: BuildStatus.Success,
+          createTime: '2020-01-01T00:00:10Z',
+          startTime: '2020-01-01T00:00:40Z',
+          endTime: '2020-01-01T00:01:10Z',
+          schedulingTimeout: '20s',
+          executionTimeout: '20s',
+        } as Build,
+        observable.box(DateTime.fromISO('2020-01-01T00:01:10Z'))
+      );
+
+      assert.strictEqual(build.pendingDuration.toISO(), 'PT30S');
+      assert.isFalse(build.isPending);
+      assert.isFalse(build.exceededSchedulingTimeout);
+
+      assert.strictEqual(build.executionDuration?.toISO(), 'PT30S');
+      assert.isFalse(build.isExecuting);
+      assert.isFalse(build.exceededExecutionTimeout);
     });
   });
 });

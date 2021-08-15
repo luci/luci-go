@@ -117,7 +117,7 @@ export class OverviewTabElement extends MobxLitElement {
       return html``;
     }
     return html`
-      <div id="canary-warning">
+      <div id="canary-warning" class="warning">
         WARNING: This build ran on a canary version of LUCI. If you suspect it failed due to infra, retry the build.
         Next time it may use the non-canary version.
       </div>
@@ -393,15 +393,30 @@ export class OverviewTabElement extends MobxLitElement {
         <tr>
           <td>Pending:</td>
           <td>
-            ${(build.pendingDuration && displayDuration(build.pendingDuration)) || 'N/A'}
-            ${!build.startTime && !build.endTime ? '(and counting)' : ''}
+            ${displayDuration(build.pendingDuration)} ${build.isPending ? '(and counting)' : ''}
+            ${build.exceededSchedulingTimeout ? html`<span class="warning">(exceeded timeout)</span>` : ''}
+            <mwc-icon
+              class="inline-icon"
+              title="Maximum pending duration: ${build.schedulingTimeout
+                ? displayDuration(build.schedulingTimeout)
+                : 'N/A'}"
+              >info</mwc-icon
+            >
           </td>
         </tr>
         <tr>
           <td>Execution:</td>
           <td>
-            ${(build.executionDuration && displayDuration(build.executionDuration)) || 'N/A'}
-            ${build.startTime && !build.endTime ? '(and counting)' : ''}
+            ${build.executionDuration ? displayDuration(build.executionDuration) : 'N/A'}
+            ${build.isExecuting ? '(and counting)' : ''}
+            ${build.exceededExecutionTimeout ? html`<span class="warning">(exceeded timeout)</span>` : ''}
+            <mwc-icon
+              class="inline-icon"
+              title="Maximum execution duration: ${build.executionTimeout
+                ? displayDuration(build.executionTimeout)
+                : 'N/A'}"
+              >info</mwc-icon
+            >
           </td>
         </tr>
       </table>
@@ -564,9 +579,11 @@ export class OverviewTabElement extends MobxLitElement {
       }
 
       #canary-warning {
+        padding: 5px;
+      }
+      .warning {
         background-color: var(--warning-color);
         font-weight: 500;
-        padding: 5px;
       }
 
       td:nth-child(2) {
@@ -612,6 +629,13 @@ export class OverviewTabElement extends MobxLitElement {
 
       mwc-button {
         width: 155px;
+      }
+
+      .inline-icon {
+        --mdc-icon-size: 1.2em;
+        vertical-align: bottom;
+        width: 16px;
+        height: 16px;
       }
     `,
   ];

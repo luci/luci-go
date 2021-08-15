@@ -15,6 +15,7 @@
 import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
+import { parseProtoDuration } from '../libs/time_utils';
 import {
   BLAMELIST_PIN_KEY,
   Build,
@@ -50,6 +51,8 @@ export class BuildExt {
   readonly infra?: BuildInfra | undefined;
   readonly tags: readonly StringPair[];
   readonly exe: Executable;
+  readonly schedulingTimeout: Duration | null;
+  readonly executionTimeout: Duration | null;
 
   readonly rootSteps: readonly StepExt[];
   private readonly renderTime: IObservableValue<DateTime>;
@@ -71,6 +74,12 @@ export class BuildExt {
     this.infra = build.infra;
     this.tags = build.tags;
     this.exe = build.exe;
+    this.schedulingTimeout = build.schedulingTimeout
+      ? Duration.fromMillis(parseProtoDuration(build.schedulingTimeout))
+      : null;
+    this.executionTimeout = build.executionTimeout
+      ? Duration.fromMillis(parseProtoDuration(build.executionTimeout))
+      : null;
 
     // Build the step-tree.
     const steps: StepExt[] = [];
@@ -151,8 +160,48 @@ export class BuildExt {
     return (this.startTime || this.endTime || this.renderTime.get()).diff(this.createTime);
   }
 
+  @computed get isPending(): boolean {
+    return !this.startTime && !this.endTime;
+  }
+
+  /**
+   * A build exceeded it's scheduling timeout when
+   * * the build is canceled, AND
+   * * the build did not enter the execution phase, AND
+   * * the scheduling timeout is specified, AND
+   * * the pending duration is no less than the scheduling timeout.
+   */
+  @computed get exceededSchedulingTimeout(): boolean {
+    return (
+      !this.startTime &&
+      !this.isPending &&
+      this.schedulingTimeout !== null &&
+      this.pendingDuration >= this.schedulingTimeout
+    );
+  }
+
   @computed get executionDuration(): Duration | null {
     return this.startTime ? (this.endTime || this.renderTime.get()).diff(this.startTime) : null;
+  }
+
+  @computed get isExecuting(): boolean {
+    return this.startTime !== null && !this.endTime;
+  }
+
+  /**
+   * A build exceeded it's execution timeout when
+   * * the build is canceled, AND
+   * * the build had entered the execution phase, AND
+   * * the execution timeout is specified, AND
+   * * the execution duration is no less than the execution timeout.
+   */
+  @computed get exceededExecutionTimeout(): boolean {
+    return (
+      this.status === BuildStatus.Canceled &&
+      this.executionDuration !== null &&
+      this.executionTimeout !== null &&
+      this.executionDuration >= this.executionTimeout
+    );
   }
 
   @computed get timeSinceCreated(): Duration {
