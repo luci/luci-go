@@ -86,3 +86,14 @@ message Commit {
   }
   repeated TreeDiff tree_diff = 7;
 }
+
+// File is a single file as represented in a git tree.
+message File {
+  // ID is sha1 hash of the file contents
+  string id = 1;
+  // Path is the path to file, without leading "/".
+  string path = 2;
+  // Mode is file mode, e.g. 0100644 (octal, often shows up 33188 in decimal).
+  uint32 mode = 3;
+  // TODO: add type, perhaps as a enum if needed.
+}

@@ -243,6 +243,37 @@ func (c *client) Projects(ctx context.Context, req *gitiles.ProjectsRequest, opt
 	return ret, nil
 }
 
+func (c *client) ListFiles(ctx context.Context, req *gitiles.ListFilesRequest, opts ...grpc.CallOption) (*gitiles.ListFilesResponse, error) {
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
+	}
+	path := fmt.Sprintf("/%s/+show/%s/%s", url.PathEscape(req.Project), url.PathEscape(req.Committish), req.Path)
+	type file struct {
+		Mode uint32 `json:"mode"`
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+	var data struct {
+		Files []file `json:"entries"`
+	}
+	err := c.get(ctx, path, nil, &data)
+	if err != nil {
+		return nil, err
+	}
+	resp := &gitiles.ListFilesResponse{
+		Files: make([]*git.File, len(data.Files)),
+	}
+	for i, f := range data.Files {
+		resp.Files[i] = &git.File{
+			Mode: f.Mode,
+			Id:   f.ID,
+			Path: f.Name,
+		}
+	}
+
+	return resp, nil
+}
+
 func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest interface{}) error {
 	if query == nil {
 		query = make(url.Values, 1)

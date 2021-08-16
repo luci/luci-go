@@ -36,14 +36,16 @@ service Gitiles {
     rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {};
     // DownloadDiff retrives a diff of a revision from the project.
     rpc DownloadDiff(DownloadDiffRequest) returns (DownloadDiffResponse) {};
-    // Projects retrieves list of available Gitiles projects
+    // Projects retrieves list of available Gitiles projects.
     rpc Projects(ProjectsRequest) returns (ProjectsResponse) {};
+    // ListFiles retrieves a list of files at the given revision.
+    rpc ListFiles(ListFilesRequest) returns (ListFilesResponse) {};
 }
 
 // LogRequest is request message for Gitiles.Log rpc.
 message LogRequest {
     // Gitiles project, e.g. "chromium/src" part in
-    // https://chromium.googlesource.com/chromium/src/+/master
+    // https://chromium.googlesource.com/chromium/src/+/main
     // Required.
     string project = 1;
     // The commit where to start the listing from.
@@ -51,7 +53,7 @@ message LogRequest {
     //   - a git revision as 40-char string or its prefix so long as its unique in repo.
     //   - a ref such as "refs/heads/branch"
     //   - a ref defined as n-th parent of R in the form "R~n".
-    //     For example, "master~2" or "deadbeef~1".
+    //     For example, "main~2" or "deadbeef~1".
     // Required.
     string committish = 3;
     // If specified, only commits not reachable from this commit (inclusive)
@@ -65,12 +67,12 @@ message LogRequest {
     //
     // For example, given this repo
     //
-    //     base -> A -> B -> C == refs/heads/master
+    //     base -> A -> B -> C == refs/heads/main
     //        \
     //         X -> Y -> Z  == refs/heads/release
     //
     // calling Log(committish='refs/heads/release',
-    //             exclude_ancestors_of='refs/heads/master')
+    //             exclude_ancestors_of='refs/heads/main')
     // will return ['Z', Y', 'X'].
     string exclude_ancestors_of = 2;
     // If true, include tree diff in commits.
@@ -93,7 +95,7 @@ message LogResponse {
 // RefsRequest is a request message of Gitiles.Refs RPC.
 message RefsRequest {
     // Gitiles project, e.g. "chromium/src" part in
-    // https://chromium.googlesource.com/chromium/src/+/master
+    // https://chromium.googlesource.com/chromium/src/+/main
     // Required.
     string project = 1;
     // Limits which refs to resolve to only those matching {refsPath}/*.
@@ -108,7 +110,7 @@ message RefsRequest {
     //    associated with the repo.
     //  * returned map will contain special "HEAD" ref whose value in resulting map
     //    will be name of the actual ref to which "HEAD" points, which is typically
-    //    "refs/heads/master".
+    //    "refs/heads/main".
     //
     // Thus, if you are looking for all tags and all branches of repo, it's
     // recommended to issue two Refs calls limited to "refs/tags" and "refs/heads"
@@ -130,7 +132,7 @@ message RefsResponse {
 // ArchiveRequest is a request message of the Gitiles.Archive RPC.
 message ArchiveRequest {
     // Gitiles project, e.g. "chromium/src" part in
-    // https://chromium.googlesource.com/chromium/src/+/master
+    // https://chromium.googlesource.com/chromium/src/+/main
     // Required.
     string project = 1;
 
@@ -165,7 +167,7 @@ message ArchiveResponse {
 
 message DownloadFileRequest {
     // Gitiles project, e.g. "chromium/src" part in
-    // https://chromium.googlesource.com/chromium/src/+/master
+    // https://chromium.googlesource.com/chromium/src/+/main
     // Required.
     string project = 1;
 
@@ -174,7 +176,7 @@ message DownloadFileRequest {
     //   - a git revision as 40-char string or its prefix so long as its unique in repo.
     //   - a ref such as "refs/heads/branch"
     //   - a ref defined as n-th parent of R in the form "R~n".
-    //     For example, "master~2" or "deadbeef~1".
+    //     For example, "main~2" or "deadbeef~1".
     // Required.
     string committish = 2;
 
@@ -195,7 +197,7 @@ message DownloadFileResponse {
 
 message DownloadDiffRequest {
     // Gitiles project, e.g. "chromium/src" part in
-    // https://chromium.googlesource.com/chromium/src/+/master
+    // https://chromium.googlesource.com/chromium/src/+/main
     // Required.
     string project = 1;
 
@@ -204,7 +206,7 @@ message DownloadDiffRequest {
     //   - a git revision as 40-char string or its prefix so long as its unique in repo.
     //   - a ref such as "refs/heads/branch"
     //   - a ref defined as n-th parent of R in the form "R~n".
-    //     For example, "master~2" or "deadbeef~1".
+    //     For example, "main~2" or "deadbeef~1".
     // Required.
     string committish = 2;
 
@@ -224,4 +226,31 @@ message ProjectsRequest {
 message ProjectsResponse {
     // List of available Gitiles projects
   repeated string projects = 1;
+}
+
+message ListFilesRequest {
+    // Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/main
+    // Required.
+    string project = 1;
+
+    // The git revision to list files at.
+    // The value can be:
+    //   - a git revision as 40-char string or its prefix so long as its unique in repo.
+    //   - a ref such as "refs/heads/branch"
+    //   - a ref defined as n-th parent of R in the form "R~n".
+    //     For example, "main~2" or "deadbeef~1".
+    // Required.
+    string committish = 2;
+
+    // Path relative to the project root to limit the list to. Only direct
+    // children will be returned -- the request does not recursively process
+    // child directories.
+    // Optional.
+    string path = 3;
+}
+
+message ListFilesResponse {
+    // List of files.
+  repeated git.File files = 1;
 }

@@ -22,6 +22,7 @@ import (
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/gitiles"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -174,6 +175,56 @@ func TestProjects(t *testing.T) {
 		So(res.Projects, ShouldResemble, []string{
 			"All-Projects",
 			"bar",
+		})
+	})
+}
+func TestList(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("ListFiles", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintln(w, `)]}'
+				{
+					"id": "860c9c8901a8de14bf9f6210257f2400ac19d11e",
+					"entries": [
+					{
+						"mode": 33188,
+						"type": "blob",
+						"id": "7e5b457d492b50762386611fc7f1302f23b313cf",
+						"name": "foo.txt"
+					},
+					{
+						"mode": 33188,
+						"type": "blob",
+						"id": "a07e845539145d1fb697c20b75689b25e266d6d6",
+						"name": "bar.txt"
+					}
+					]
+				}
+			`)
+		})
+		defer srv.Close()
+
+		res, err := c.ListFiles(ctx, &gitiles.ListFilesRequest{
+			Project:    "project",
+			Committish: "main",
+			Path:       "path/to/dir",
+		})
+		So(err, ShouldBeNil)
+		So(res.Files, ShouldResemble, []*git.File{
+			&git.File{
+				Mode: 33188,
+				Id:   "7e5b457d492b50762386611fc7f1302f23b313cf",
+				Path: "foo.txt",
+			},
+			&git.File{
+				Mode: 33188,
+				Id:   "a07e845539145d1fb697c20b75689b25e266d6d6",
+				Path: "bar.txt",
+			},
 		})
 	})
 }

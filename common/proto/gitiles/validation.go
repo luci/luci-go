@@ -94,6 +94,23 @@ func (r *DownloadDiffRequest) Validate() error {
 	return nil
 }
 
+// Validate returns an error if r is invalid.
+func (r *ListFilesRequest) Validate() error {
+	if err := requireProject(r.GetProject()); err != nil {
+		return err
+	}
+	if err := requireCommittish("committish", r.GetCommittish()); err != nil {
+		return err
+	}
+	if strings.HasSuffix(r.GetCommittish(), "/") {
+		return errors.New("committish must not end with /")
+	}
+	if strings.HasPrefix(r.Path, "/") {
+		return errors.New("path must not start with /")
+	}
+	return nil
+}
+
 func requireProject(val string) error {
 	if val == "" {
 		return errors.New("project is required")
