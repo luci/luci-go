@@ -515,6 +515,10 @@ func (c *client) callRaw(
 	case err == context.DeadlineExceeded:
 		return -1, []byte{}, status.Errorf(codes.DeadlineExceeded, "deadline exceeded")
 	case err == context.Canceled:
+		// TODO(crbug/1240360): Dump the stacktrace to investigate why the error is
+		// context.Canceled while context.DeadlineExceeded is expected. Remove
+		// after the investigation is done.
+		errors.Log(ctx, errors.Annotate(err, "crbug/1240360: gerrit call failed because of canceled context").Err())
 		return -1, []byte{}, status.Errorf(codes.Canceled, "context is cancelled")
 	case err != nil:
 		return -1, []byte{}, status.Errorf(codes.Internal, "failed to execute %s HTTP request: %s", method, err)
