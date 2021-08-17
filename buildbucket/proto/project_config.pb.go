@@ -620,8 +620,13 @@ type Builder struct {
 	// invoke bbagent with fixed-length CLI instead of the default which is
 	// O(build proto size). No-op if luci.buildbucket.use_bbagent isn't also set.
 	//
-	// Over time we'll be moving the default up from 0%. Ideally we'll be removing
-	// the @@@annotation@@@ protocol entirely in 2021Q3.
+	// Over time we'll be moving the default on both of these up from 0%. Ideally
+	// we'll be removing the @@@annotation@@@ protocol entirely in 2021Q3.
+	//
+	// # "luci.recipes.use_python3"  (default 0%)
+	// Opts the build into using python3 to run the recipes. This is achieved by
+	// bbagent setting the $RECIPES_USE_PY3 environment variable. Only works for
+	// builds with bbagent enabled.
 	//
 	// # "luci.use_realms"  (default 0%)
 	// Opts the build into using LUCI realms for ACLs when communicating with
