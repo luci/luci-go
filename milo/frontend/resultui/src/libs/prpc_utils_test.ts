@@ -194,17 +194,21 @@ describe('genCacheKeyForPrpcRequest', () => {
 
 describe('removeDefaultProps', () => {
   it('should remove false-ish properties', async () => {
-    const processed = removeDefaultProps({
+    const original = {
       prop: 1,
       emptyString: '',
       falseValue: false,
+      nullValue: null,
       emptyArray: [],
       emptyObj: {},
       obj: {
         deepEmptyString: '',
       },
       nonEmptyArray: [''],
-    });
+    };
+    const originalStr = JSON.stringify(original);
+
+    const processed = removeDefaultProps(original);
 
     assert.deepStrictEqual(processed, {
       prop: 1,
@@ -212,5 +216,8 @@ describe('removeDefaultProps', () => {
       obj: {},
       nonEmptyArray: [''],
     });
+
+    // The original object should not be modified.
+    assert.strictEqual(JSON.stringify(original), originalStr);
   });
 });

@@ -48,23 +48,30 @@ export async function genCacheKeyForPrpcRequest(
 }
 
 /**
- * Removes false-ish properties and empty arrays from the object.
- *
- * Returns the same object instance for convenience.
+ * Returns a new object where false-ish properties and empty arrays from the
+ * original object are removed.
  */
 export function removeDefaultProps(obj: unknown): unknown {
-  if (obj instanceof Array) {
-    for (const item of obj) {
-      removeDefaultProps(item);
-    }
-  } else if (obj instanceof Object) {
-    for (const [key, item] of Object.entries(obj)) {
-      if (!item || (item instanceof Array && item.length === 0)) {
-        delete (obj as { [key: string]: unknown })[key];
-      } else {
-        removeDefaultProps(item);
-      }
-    }
+  // Do not use `instanceof Array` because it may not work with cross frame
+  // objects.
+  if (Array.isArray(obj)) {
+    return obj.map((ele) => removeDefaultProps(ele));
+  }
+
+  // Do not use `instanceof Object` because
+  // 1. it may not work with cross frame objects, and
+  // 2. functions might be classified as objects.
+  // Also check `&& obj` because `typeof null === 'object'`.
+  if (typeof obj === 'object' && obj) {
+    return Object.fromEntries(
+      Object.entries(obj).flatMap(([key, item]) => {
+        if (!item || (Array.isArray(item) && item.length === 0)) {
+          return [] as Array<[string, unknown]>;
+        } else {
+          return [[key, removeDefaultProps(item)]] as Array<[string, unknown]>;
+        }
+      })
+    );
   }
   return obj;
 }
