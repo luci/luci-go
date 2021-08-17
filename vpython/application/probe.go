@@ -109,6 +109,12 @@ func (lp *lookPath) look(c context.Context, target string, filter python.LookPat
 // in lp.lastOutput. The "look" function can pass this value on to
 // the LookPathResult.
 func (lp *lookPath) checkWrapper(c context.Context, path string, env environ.Env) (isWrapper bool, err error) {
+	// If a version cache exists, current python binary has passed the wrapper
+	// check before.
+	if ok, _ := python.CheckVersionCachedExist(path); ok {
+		return false, nil
+	}
+
 	env.Set(checkWrapperENV, "1")
 
 	// We use 'sys.write' instead of 'print' so this will work for both py2 and

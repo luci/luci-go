@@ -227,6 +227,7 @@ func TestParseCommandLine(t *testing.T) {
 				// Round-trip!
 				roundTripBuiltArgs := cmd.BuildArgs()
 				cmd, err = ParseCommandLine(builtArgs)
+				So(err, ShouldBeNil)
 				So(cmd, ShouldResemble, &tc.cmd)
 				So(roundTripBuiltArgs, ShouldResemble, tc.build)
 				So(roundTripBuiltArgs, ShouldResemble, builtArgs)

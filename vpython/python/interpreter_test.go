@@ -99,6 +99,7 @@ func TestInterpreterGetVersion(t *testing.T) {
 		i := Interpreter{
 			Python: self,
 
+			fileCacheDisabled: true,
 			testCommandHook: func(cmd *exec.Cmd) {
 				env := environ.New(nil)
 				env.Set(testGetVersionENV, versionString)

@@ -15,11 +15,9 @@
 package venv
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -332,28 +330,9 @@ func (cfg *Config) systemInterpreter() *python.Interpreter { return cfg.si }
 // fillRuntime returns the runtime information of the specified interpreter.
 //
 // Identifying this information requires the interpreter to be run.
-func fillRuntime(c context.Context, i *python.Interpreter, r *vpython.Runtime) error {
-	// JSON fields correspond to "vpython.Runtime" fields.
-	const script = `` +
-		`import json, sys;` +
-		`json.dump({` +
-		`'path': sys.executable,` +
-		`'prefix': sys.prefix,` +
-		`}, sys.stdout)`
-
-	// Probe the runtime information.
-	var stdout, stderr bytes.Buffer
-	cmd := i.MkIsolatedCommand(c, python.CommandTarget{Command: script})
-	defer cmd.Cleanup()
-
-	cmd.Stdout = &stdout
-	if err := cmd.Run(); err != nil {
-		logging.WithError(err).Errorf(c, "Failed to get runtime information:\n%s", stderr.Bytes())
-		return errors.Annotate(err, "failed to get runtime information").Err()
-	}
-
-	if err := json.Unmarshal(stdout.Bytes(), r); err != nil {
-		return errors.Annotate(err, "could not unmarshal output: %q", stdout.Bytes()).Err()
+func fillRuntime(c context.Context, i *python.Interpreter, r *vpython.Runtime) (err error) {
+	if *r, err = i.GetRuntime(c); err != nil {
+		return err
 	}
 
 	// "sys.executable" is allowed to be None. If it is, use the Python
@@ -368,8 +347,7 @@ func fillRuntime(c context.Context, i *python.Interpreter, r *vpython.Runtime) e
 		return err
 	}
 
-	var err error
-	if r.Hash, err = hashPath(r.Path); err != nil {
+	if r.Hash, err = i.GetHash(); err != nil {
 		return err
 	}
 
