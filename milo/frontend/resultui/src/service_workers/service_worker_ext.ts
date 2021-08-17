@@ -70,6 +70,8 @@ async function handleRawArtifact(artifactName: string): Promise<Response> {
     await setAuthStateCache(await queryAuthState());
   }
 
-  const artifact = await resultDb.getArtifact({ name: artifactName });
+  // TODO(weiweilin): if needed, we can cache Artifact until
+  // Artifact.urlExpiration.
+  const artifact = await resultDb.getArtifact({ name: artifactName }, { acceptCache: false, skipUpdate: true });
   return fetch(artifact.fetchUrl);
 }
