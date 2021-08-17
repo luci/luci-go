@@ -82,17 +82,19 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	// schedule and cancel requests are sent to Py service for now.
 	pyBatchReq := &pb.BatchRequest{}
 	var goBatchReq []*pb.BatchRequest_Request
+	var schBatchReq []*pb.ScheduleBuildRequest
 
-	// record the mapping of indices in py/goBatchReq to indices in original req.
+	// record the mapping of indices in to indices in original req.
 	pyIndices := make([]int, 0, len(req.Requests))
 	goIndices := make([]int, 0, len(req.Requests))
+	schIndices := make([]int, 0, len(req.Requests))
 	for i, r := range req.Requests {
 		switch r.Request.(type) {
 		case *pb.BatchRequest_Request_ScheduleBuild:
 			if mathrand.Intn(ctx, 100) < pct {
-				logDetails(ctx, "Batch (ScheduleBuild)", r)
-				goIndices = append(goIndices, i)
-				goBatchReq = append(goBatchReq, r)
+				_, _ = logDetails(ctx, "Batch (ScheduleBuild)", r)
+				schIndices = append(schIndices, i)
+				schBatchReq = append(schBatchReq, r.GetScheduleBuild())
 			} else {
 				pyIndices = append(pyIndices, i)
 				pyBatchReq.Requests = append(pyBatchReq.Requests, r)
@@ -114,6 +116,9 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	if len(goBatchReq) > readReqsSizeLimit {
 		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed read request count in Batch is %d.", readReqsSizeLimit).Err())
 	}
+	if len(schBatchReq) > writeReqsSizeLimit {
+		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed write request count in Batch is %d.", writeReqsSizeLimit).Err())
+	}
 
 	// TODO(crbug.com/1144958): remove calling py after ScheduleBuild is done.
 	pyResC := make(chan *pyBatchResponse)
@@ -131,6 +136,27 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	}
 
 	err := parallel.WorkPool(64, func(c chan<- func() error) {
+		c <- func() error {
+			// Batch schedule requests. An error means all requests failed.
+			ret, err := b.scheduleBuilds(ctx, schBatchReq)
+			if err != nil {
+				merr := err.(errors.MultiError)
+				for i, e := range merr {
+					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
+						Response: toBatchResponseError(ctx, e),
+					}
+				}
+				return nil
+			}
+			for i, r := range ret {
+				res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
+					Response: &pb.BatchResponse_Response_ScheduleBuild{
+						ScheduleBuild: r,
+					},
+				}
+			}
+			return nil
+		}
 		for i, r := range goBatchReq {
 			i, r := i, r
 			c <- func() error {
@@ -148,10 +174,6 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 				case *pb.BatchRequest_Request_CancelBuild:
 					ret, e := b.CancelBuild(ctx, r.GetCancelBuild())
 					response.Response = &pb.BatchResponse_Response_CancelBuild{CancelBuild: ret}
-					err = e
-				case *pb.BatchRequest_Request_ScheduleBuild:
-					ret, e := b.ScheduleBuild(ctx, r.GetScheduleBuild())
-					response.Response = &pb.BatchResponse_Response_ScheduleBuild{ScheduleBuild: ret}
 					err = e
 				default:
 					panic(fmt.Sprintf("attempted to handle unexpected request type %T", r.Request))

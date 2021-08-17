@@ -20,6 +20,7 @@ import (
 	"math/rand"
 	"time"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -80,13 +81,17 @@ type BuilderStat struct {
 
 // UpdateBuilderStat updates or creates datastore BuilderStat entities.
 func UpdateBuilderStat(ctx context.Context, builds []*Build, scheduledTime time.Time) error {
-	builderStats := make([]*BuilderStat, len(builds))
-	for i, b := range builds {
+	seen := stringset.New(len(builds))
+	builderStats := make([]*BuilderStat, 0, len(builds))
+	for _, b := range builds {
 		if b.Proto.Builder == nil {
 			panic("Build.Proto.Builder isn't initialized")
 		}
-		builderStats[i] = &BuilderStat{
-			ID: fmt.Sprintf("%s:%s:%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket, b.Proto.Builder.Builder),
+		id := fmt.Sprintf("%s:%s:%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket, b.Proto.Builder.Builder)
+		if seen.Add(id) {
+			builderStats = append(builderStats, &BuilderStat{
+				ID: id,
+			})
 		}
 	}
 
@@ -110,10 +115,11 @@ func UpdateBuilderStat(ctx context.Context, builds []*Build, scheduledTime time.
 			}
 		}
 	}
-	if len(toPut) > 0 {
-		if err := datastore.Put(ctx, toPut); err != nil {
-			return errors.Annotate(err, "error putting BuilderStat").Err()
-		}
+	if len(toPut) == 0 {
+		return nil
+	}
+	if err := datastore.Put(ctx, toPut); err != nil {
+		return errors.Annotate(err, "error putting BuilderStat").Err()
 	}
 	return nil
 }

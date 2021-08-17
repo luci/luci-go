@@ -64,6 +64,16 @@ func TestBuilderStat(t *testing.T) {
 						},
 					},
 				},
+				{
+					ID: 3,
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "proj",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+					},
+				},
 			}
 			now := t.Add(3600 * time.Second)
 			err := UpdateBuilderStat(ctx, builds, now)

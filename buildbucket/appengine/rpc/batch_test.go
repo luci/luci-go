@@ -302,6 +302,57 @@ func TestBatch(t *testing.T) {
 			So(res, ShouldResembleProto, expectedRes)
 		})
 
+		Convey("schedule batch", func() {
+			ctx = WithTrafficSplit(ctx, 100)
+			req := &pb.BatchRequest{
+				Requests: []*pb.BatchRequest_Request{
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{},
+					}},
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+							},
+						},
+					}},
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+							},
+						},
+					}},
+				},
+			}
+			res, err := srv.Batch(ctx, req)
+			expectedRes := &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    3,
+							Message: "bad request: builder or template_build_id is required",
+						},
+					}},
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    3,
+							Message: "bad request: builder: bucket is required",
+						},
+					}},
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    3,
+							Message: "bad request: builder: builder is required",
+						},
+					}},
+				},
+			}
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, expectedRes)
+		})
+
 		Convey("cancel req", func() {
 			now := testclock.TestRecentTimeLocal
 			ctx, _ = testclock.UseTime(ctx, now)

@@ -57,6 +57,13 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
+}
+
 // validateExpirationDuration validates the given expiration duration.
 func validateExpirationDuration(d *durationpb.Duration) error {
 	switch {
@@ -376,7 +383,7 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 		name := protoutil.FormatBuilderID(b.Proto.Builder)
 		seq[name] = append(seq[name], b)
 	}
-	return parallel.WorkPool(64, func(work chan<- func() error) {
+	return parallel.WorkPool(min(64, len(builds)), func(work chan<- func() error) {
 		for name, blds := range seq {
 			name := name
 			blds := blds
@@ -946,7 +953,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	// This parallel work isn't combined with the above parallel work to ensure build entities and Swarming
 	// task creation tasks are only created if everything else has succeeded (since everything can't be done
 	// in one transaction).
-	err = parallel.WorkPool(64, func(work chan<- func() error) {
+	err = parallel.WorkPool(min(64, len(blds)), func(work chan<- func() error) {
 		for i, b := range blds {
 			b := b
 			// blds and reqs slices map 1:1.
@@ -1055,24 +1062,33 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 	}
 }
 
-// ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
-func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
+// validateScheduleBuild validates and authorizes the given request, returning
+// a normalized version of the request and field mask.
+func validateScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *mask.Mask, error) {
 	var err error
 	if err = validateSchedule(req); err != nil {
-		return nil, appstatus.BadRequest(err)
+		return nil, nil, appstatus.BadRequest(err)
 	}
-
 	normalizeSchedule(req)
 
 	m, err := getFieldMask(req.Fields)
 	if err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
+		return nil, nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
 
 	if req, err = scheduleRequestFromTemplate(ctx, req); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err = perm.HasInBucket(ctx, perm.BuildsAdd, req.Builder.Project, req.Builder.Bucket); err != nil {
+		return nil, nil, err
+	}
+	return req, m, nil
+}
+
+// ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
+func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
+	req, m, err := validateScheduleBuild(ctx, req)
+	if err != nil {
 		return nil, err
 	}
 
@@ -1081,4 +1097,62 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 		return nil, err
 	}
 	return blds[0].ToProto(ctx, m)
+}
+
+// scheduleBuilds handles requests to schedule builds.
+func (*Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, error) {
+	// The ith error is the error associated with the ith request.
+	merr := make(errors.MultiError, len(reqs))
+	// The ith mask is the field mask derived from the ith request.
+	masks := make([]*mask.Mask, len(reqs))
+
+	errorInBatch := func() {
+		for i, e := range merr {
+			if e == nil {
+				merr[i] = appstatus.BadRequest(errors.Reason("error in schedule batch").Err())
+			}
+		}
+	}
+
+	err := parallel.WorkPool(min(64, len(reqs)), func(work chan<- func() error) {
+		for i, req := range reqs {
+			i := i
+			req := req
+			work <- func() error {
+				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, req)
+				return merr[i]
+			}
+		}
+	})
+	if err != nil {
+		errorInBatch()
+		return nil, merr
+	}
+
+	// Any error fails all requests.
+	blds, err := scheduleBuilds(ctx, reqs...)
+	if err != nil {
+		for i := range merr {
+			merr[i] = err
+		}
+		return nil, merr
+	}
+
+	ret := make([]*pb.Build, len(blds))
+	err = parallel.WorkPool(min(64, len(blds)), func(work chan<- func() error) {
+		for i, bld := range blds {
+			i := i
+			bld := bld
+			work <- func() error {
+				// TODO(crbug/1042991): Don't re-read freshly written entities (see ToProto).
+				ret[i], merr[i] = bld.ToProto(ctx, masks[i])
+				return merr[i]
+			}
+		}
+	})
+	if err != nil {
+		errorInBatch()
+		return nil, merr
+	}
+	return ret, nil
 }

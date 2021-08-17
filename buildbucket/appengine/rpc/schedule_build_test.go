@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -302,8 +303,7 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
-		So(config.SetTestSettingsCfg(ctx,
-			&pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}}), ShouldBeNil)
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}}), ShouldBeNil)
 
 		// stripProtos strips the Proto field from each of the given *model.Builds,
 		// returning a slice whose ith index is the stripped *pb.Build value.
@@ -4248,7 +4248,7 @@ func TestScheduleBuild(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:caller@example.com",
 		})
-		config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}})
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}}), ShouldBeNil)
 
 		Convey("builder", func() {
 			Convey("not found", func() {
@@ -4598,6 +4598,202 @@ func TestScheduleBuild(t *testing.T) {
 						Status:     pb.Status_SCHEDULED,
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
+				})
+			})
+		})
+	})
+
+	Convey("scheduleBuilds", t, func() {
+		srv := &Builds{}
+		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx, sch := tq.TestingContext(ctx, nil)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:caller@example.com",
+		})
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}}), ShouldBeNil)
+
+		So(datastore.Put(ctx, &model.Bucket{
+			ID:     "bucket",
+			Parent: model.ProjectKey(ctx, "project"),
+			Proto: pb.Bucket{
+				Acls: []*pb.Acl{
+					{
+						Identity: "user:caller@example.com",
+						Role:     pb.Acl_SCHEDULER,
+					},
+				},
+				Name:     "bucket",
+				Swarming: &pb.Swarming{},
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Build{
+			ID: 1000,
+			Proto: pb.Build{
+				Id: 1000,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Builder{
+			Parent: model.BucketKey(ctx, "project", "bucket"),
+			ID:     "builder",
+			Config: pb.Builder{
+				BuildNumbers: pb.Toggle_YES,
+				Name:         "builder",
+			},
+		}), ShouldBeNil)
+
+		Convey("one", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					TemplateBuildId: 1000,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "buildset",
+							Value: "buildset",
+						},
+					},
+				},
+			}
+
+			rsp, err := srv.scheduleBuilds(ctx, reqs)
+			So(err, ShouldBeNil)
+			So(rsp, ShouldHaveLength, 1)
+			So(rsp[0], ShouldResembleProto, &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				CreatedBy:  "user:caller@example.com",
+				CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				Id:         9021868963221667745,
+				Input:      &pb.Build_Input{},
+				Number:     1,
+				Status:     pb.Status_SCHEDULED,
+			})
+			So(sch.Tasks(), ShouldHaveLength, 1)
+
+			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
+			So(err, ShouldBeNil)
+			So(ind, ShouldResemble, []*model.TagIndexEntry{
+				{
+					BuildID:     9021868963221667745,
+					BucketID:    "project/bucket",
+					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+				},
+			})
+		})
+
+		Convey("many", func() {
+			Convey("not found", func() {
+				reqs := []*pb.ScheduleBuildRequest{
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+					{
+						TemplateBuildId: 1001,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+				}
+
+				rsp, err := srv.scheduleBuilds(ctx, reqs)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
+				So(err.(errors.MultiError)[0], ShouldErrLike, "error in schedule batch")
+				So(err.(errors.MultiError)[1], ShouldErrLike, "not found")
+				So(rsp, ShouldBeEmpty)
+				So(sch.Tasks(), ShouldBeEmpty)
+
+				ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
+				So(err, ShouldBeNil)
+				So(ind, ShouldBeEmpty)
+			})
+
+			Convey("ok", func() {
+				reqs := []*pb.ScheduleBuildRequest{
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+				}
+
+				rsp, err := srv.scheduleBuilds(ctx, reqs)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldHaveLength, 2)
+				So(rsp[0], ShouldResembleProto, &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "user:caller@example.com",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Id:         9021868963222163313,
+					Input:      &pb.Build_Input{},
+					Number:     1,
+					Status:     pb.Status_SCHEDULED,
+				})
+				So(rsp[1], ShouldResembleProto, &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "user:caller@example.com",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Id:         9021868963222163297,
+					Input:      &pb.Build_Input{},
+					Number:     2,
+					Status:     pb.Status_SCHEDULED,
+				})
+				So(sch.Tasks(), ShouldHaveLength, 2)
+
+				ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
+				So(err, ShouldBeNil)
+				So(ind, ShouldResemble, []*model.TagIndexEntry{
+					{
+						BuildID:     9021868963222163313,
+						BucketID:    "project/bucket",
+						CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+					},
+					{
+						BuildID:     9021868963222163297,
+						BucketID:    "project/bucket",
+						CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+					},
 				})
 			})
 		})
