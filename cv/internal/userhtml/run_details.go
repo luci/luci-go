@@ -119,8 +119,19 @@ func logTypeString(rle *run.LogEntry) (string, error) {
 		return "Started", nil
 	case *run.LogEntry_Created_:
 		return "Created", nil
+	case *run.LogEntry_Info_:
+		return v.Info.Label, nil
 	default:
 		return "", fmt.Errorf("unknown kind of LogEntry %T", v)
+	}
+}
+
+func logMessage(rle *run.LogEntry) string {
+	switch v := rle.GetKind().(type) {
+	case *run.LogEntry_Info_:
+		return v.Info.Message
+	default:
+		return ""
 	}
 }
 

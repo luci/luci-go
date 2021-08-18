@@ -133,6 +133,9 @@ message LogEntry {
     TryjobsUpdated tryjobs_updated = 5;
     // TODO(crbug/1232158): add & implement events related to Submission and
     // ending of the Run.
+
+    // Intended for informational logs (E.g. temporary/during migration)
+    Info info = 7;
   }
 
   message Created {
@@ -145,6 +148,12 @@ message LogEntry {
   }
   message TryjobsRequirementUpdated {
     // TODO(crbug/1227363): define a Tryjobs.Requirement diff.
+  }
+  message Info {
+    // If you have the need to add fields here, consider instead adding a new
+    // dedicated kind
+    string label = 1;
+    string message = 2;
   }
   message TryjobsUpdated {
     // Which tryjobs had a meaningful change (e.g. change of status).

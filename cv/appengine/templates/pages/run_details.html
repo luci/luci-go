@@ -155,17 +155,19 @@ div.clickable {
           <th style="width: 150px;">Event</th>
           <th style="width: 300px;">Time</th>
           <th>&nbsp;</th>
+          <th>&nbsp;</th>
         </thead> <tbody>
           {{range .Logs}}
             <tr class="log-entry{{if .GetTryjobsUpdated}}-top{{end}}">
               <td><em>{{LogTypeString .}}</em></td>
               <td>{{FmTime .GetTime.AsTime}} </td>
               <td>{{call $RelTime .GetTime.AsTime}} </td>
+              <td>{{LogMessage .}}</td>
             </tr>
             {{if .GetTryjobsUpdated}}
               <tr class="log-entry-bottom">
                 {{with .GetTryjobsUpdated}}
-                  <td class="tryjob-chips" colspan="3">
+                  <td class="tryjob-chips" colspan="4">
                     <ul>
                     {{range $label, $jobs := ByTryjobStatus .GetTryjobs}}
                       <li>{{$label}}:

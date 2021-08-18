@@ -17,10 +17,12 @@ package handler
 import (
 	"context"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
@@ -29,6 +31,11 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/usertext"
+)
+
+const (
+	cqdVerifiedLabel           = "CQD Verified"
+	cqdVerificationFailedLabel = "CQD Verification Failed"
 )
 
 // OnCQDVerificationCompleted implements Handler interface.
@@ -59,18 +66,45 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	switch vr.Payload.Action {
 	case migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT:
 		rs.Run.Status = commonpb.Run_WAITING_FOR_SUBMISSION
+		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+			Time: timestamppb.New(clock.Now(ctx)),
+			Kind: &run.LogEntry_Info_{
+				Info: &run.LogEntry_Info{
+					Label:   cqdVerifiedLabel,
+					Message: usertext.OnFullRunSucceeded(rs.Run.Mode),
+				},
+			},
+		})
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
 		msg := usertext.OnRunSucceeded(rs.Run.Mode)
 		if err := impl.cancelTriggers(ctx, rs, msg); err != nil {
 			return nil, err
 		}
+		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+			Time: timestamppb.New(clock.Now(ctx)),
+			Kind: &run.LogEntry_Info_{
+				Info: &run.LogEntry_Info{
+					Label:   cqdVerifiedLabel,
+					Message: msg,
+				},
+			},
+		})
 		se := impl.endRun(ctx, rs, commonpb.Run_SUCCEEDED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
 		if err := impl.cancelTriggers(ctx, rs, vr.Payload.FinalMessage); err != nil {
 			return nil, err
 		}
+		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+			Time: timestamppb.New(clock.Now(ctx)),
+			Kind: &run.LogEntry_Info_{
+				Info: &run.LogEntry_Info{
+					Label:   cqdVerificationFailedLabel,
+					Message: vr.Payload.FinalMessage,
+				},
+			},
+		})
 		se := impl.endRun(ctx, rs, commonpb.Run_FAILED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	default:

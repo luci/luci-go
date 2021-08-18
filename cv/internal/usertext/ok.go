@@ -30,3 +30,12 @@ func OnRunSucceeded(mode run.Mode) string {
 		panic(fmt.Sprintf("impossible Run mode %q", mode))
 	}
 }
+
+func OnFullRunSucceeded(mode run.Mode) string {
+	switch mode {
+	case run.FullRun:
+		return "Full run: This CL passed CQ and is ready for submission."
+	default:
+		panic(fmt.Sprintf("impossible Run mode %q", mode))
+	}
+}

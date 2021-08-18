@@ -82,6 +82,7 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 			},
 			// Runlog specific, see run_details.go.
 			"LogTypeString":  logTypeString,
+			"LogMessage":     logMessage,
 			"UITryjob":       makeUITryjob,
 			"ByTryjobStatus": groupTryjobsByStatus,
 		},
