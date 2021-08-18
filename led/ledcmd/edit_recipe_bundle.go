@@ -90,9 +90,14 @@ const (
 	// TODO(crbug.com/1072117): Fix this, it's weird.
 	RecipeDirectory = "kitchen-checkout"
 
-	// In PropertyOnly mode led will set this property (nested under
-	// $recipe_engine/led) to indicate to the executable where to download the
-	// recipe bundle from.
+	// A property that should be set to a boolean value. If true,
+	// edit-recipe-bundle will set the "led_cas_recipe_bundle" property
+	// instead of overwriting the build's payload.
+	LEDBuilderIsBootstrappedProperty = "led_builder_is_bootstrapped"
+
+	// In PropertyOnly mode or if the "led_builder_is_bootstrapped" property
+	// of the build is true, this property will be set with the CAS digest
+	// of the executable of the recipe bundle.
 	CASRecipeBundleProperty = "led_cas_recipe_bundle"
 )
 
@@ -103,7 +108,7 @@ const (
 // into the UserPayload under the directory "kitchen-checkout/". If there's an
 // existing directory in the UserPayload at that location, it will be removed.
 func EditRecipeBundle(ctx context.Context, authClient *http.Client, authOpts auth.Options, jd *job.Definition, opts *EditRecipeBundleOpts) error {
-	if jd.GetSwarming() != nil {
+	if jd.GetBuildbucket() == nil {
 		return errors.New("ledcmd.EditRecipeBundle is only available for Buildbucket tasks")
 	}
 
@@ -118,7 +123,8 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, authOpts aut
 	logging.Debugf(ctx, "using recipes.py: %q", recipesPy)
 
 	extraProperties := make(map[string]string)
-	if opts.PropertyOnly {
+	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[LEDBuilderIsBootstrappedProperty].GetBoolValue()
+	if setRecipeBundleProperty {
 		// In property-only mode, we want to leave the original payload as is
 		// and just upload the recipe bundle as a brand new independent CAS
 		// archive for the job's executable to download.
@@ -158,7 +164,7 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, authOpts aut
 	}
 
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
-		if opts.PropertyOnly {
+		if setRecipeBundleProperty {
 			je.Properties(extraProperties, false)
 		} else {
 			je.TaskPayloadSource("", "")

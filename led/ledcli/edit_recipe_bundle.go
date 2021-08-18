@@ -37,8 +37,11 @@ func editRecipeBundleCmd(opts cmdBaseOptions) *subcommands.Command {
 		UsageLine: "edit-recipe-bundle [-O project_id=/path/to/local/repo]*",
 		ShortDesc: "isolates recipes and adds them to a JobDefinition",
 		LongDesc: `Takes recipes from the current repo (based on cwd), along with
-any supplied overrides, and pushes them to the isolate service. The isolated
-hash for the recipes will be added to the JobDefinition.
+any supplied overrides, and pushes them to the isolate service. The CAS digest
+for the recipes will be added to the JobDefinition. If the -property-only flag
+is passed or the builder has the "led_builder_is_bootstrapped" property set to
+true, the "led_cas_recipe_bundle" will be set with the CAS digest so that the
+build's bootstrapper executable can launch the bundled recipes.
 
 Isolating recipes takes a bit of time, so you may want to save the result
 of this command (stdout) to an intermediate file for quick edits.
@@ -76,7 +79,8 @@ func (c *cmdEditRecipeBundle) initFlags(opts cmdBaseOptions) {
 		fmt.Sprintf("Pass the CAS blob information as JSON via the %q property and "+
 			"preserve the executable of the input job rather than overwriting it. This "+
 			"is useful for when `exe` is actually a bootstrap program that you don't "+
-			"want to change.",
+			"want to change. The same behavior can be enabled for a build without this "+
+			"flag by setting the \"led_builder_is_bootstrapped\" property to true.",
 			ledcmd.CASRecipeBundleProperty))
 
 	c.cmdBase.initFlags(opts)
