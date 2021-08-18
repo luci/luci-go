@@ -8,7 +8,7 @@
         "connection": "keep-alive",
         "content-length": "235",
         "accept": "application/json",
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_4_0) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/7.5.0 Chrome/89.0.4328.0 Electron/12.0.0-beta.14 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/8.2.0 Chrome/89.0.4328.0 Electron/12.0.0-beta.14 Safari/537.36",
         "content-type": "application/json",
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
@@ -17,7 +17,12 @@
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
-      "body": "{\"name\":\"invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/ninja%3A%2F%2Fchrome%2Ftest%3Ainteractive_ui_tests%2FMediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet\"}"
+      "body": {
+        "type": "json",
+        "data": {
+          "name": "invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/ninja%3A%2F%2Fchrome%2Ftest%3Ainteractive_ui_tests%2FMediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet"
+        }
+      }
     },
     "res": {
       "statusCode": 200,
@@ -26,13 +31,16 @@
         "x-content-type-options": "nosniff",
         "x-prpc-grpc-code": "0",
         "content-length": "746",
-        "x-envoy-upstream-service-time": "35",
-        "date": "Tue, 27 Jul 2021 06:32:15 GMT",
+        "x-envoy-upstream-service-time": "17",
+        "date": "Mon, 16 Aug 2021 15:52:44 GMT",
         "via": "1.1 google",
         "alt-svc": "clear",
         "content-encoding": ""
       },
-      "body": ")]}'\n{\"name\":\"invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/ninja%3A%2F%2Fchrome%2Ftest%3Ainteractive_ui_tests%2FMediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet\",\"artifactId\":\"snippet\",\"fetchUrl\":\"https://staging.results.usercontent.cr.dev/invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/ninja%3A%2F%2Fchrome%2Ftest%3Ainteractive_ui_tests%2FMediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet?token=AXsiX2kiOiIxNjI3MzY3NTM1MTI3IiwiX3giOiIzNjAwMDAwIn18cSCAZ1xzjnJDtlGCldfKZ4hBRqrnNbj-Lk43dAB9MA\",\"fetchUrlExpiration\":\"2021-07-27T07:32:15.127305036Z\",\"contentType\":\"text/plain\",\"sizeBytes\":\"6291\"}\n"
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"name\":\"invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/ninja%3A%2F%2Fchrome%2Ftest%3Ainteractive_ui_tests%2FMediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet\",\"artifactId\":\"snippet\",\"fetchUrl\":\"https://staging.results.usercontent.cr.dev/invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/ninja%3A%2F%2Fchrome%2Ftest%3Ainteractive_ui_tests%2FMediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet?token=AXsiX2kiOiIxNjI5MTI5MTY0OTk0IiwiX3giOiIzNjAwMDAwIn2aPgDjKnCTJS5sSWhBYIxHlcXV6Ule4-Q7FIxN-kO-0g\",\"fetchUrlExpiration\":\"2021-08-16T16:52:44.994766209Z\",\"contentType\":\"text/plain\",\"sizeBytes\":\"6291\"}\n"
+      }
     }
   }
 ]

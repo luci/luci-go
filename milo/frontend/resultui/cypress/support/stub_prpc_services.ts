@@ -35,8 +35,8 @@ export const STUB_REQUEST_OPTIONS: StubRequestsOption = {
   matchHeaders: ['host', 'accept', 'content-type', 'origin', 'authorization'],
   matchRequest: (cached, incoming) =>
     deepEqual(
-      { ...cached, body: removeDefaultProps(JSON.parse(cached.body)) },
-      { ...incoming, body: removeDefaultProps(JSON.parse(incoming.body)) }
+      { ...cached, body: removeDefaultProps(cached.body) },
+      { ...incoming, body: removeDefaultProps(incoming.body) }
     ),
 };
 

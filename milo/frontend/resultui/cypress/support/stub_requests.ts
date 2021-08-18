@@ -16,6 +16,8 @@ import { RouteMatcher } from 'cypress/types/net-stubbing';
 import { deepEqual } from 'fast-equals';
 import * as path from 'path';
 
+import { BodyRepresentation, fromBodyRep, toBodyRep } from './serde';
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
@@ -52,29 +54,37 @@ export interface StubRequestsOption {
    * Defaults to deepEqual from 'fast-equals'.
    */
   readonly matchRequest?: (
-    cached: CachedRequest,
-    incoming: CachedRequest,
+    cached: CachedRequest<BodyRepresentation>,
+    incoming: CachedRequest<BodyRepresentation>,
     cachedHeaders: { readonly [key: string]: string },
     incomingHeaders: { readonly [key: string]: string }
   ) => boolean;
 }
 
-interface CachedRequest {
+interface CachedRequest<Body> {
   readonly url: string;
   readonly method: string;
   readonly headers: { readonly [key: string]: string };
-  readonly body: string;
+  readonly body: Body;
 }
 
 interface CachedResponse {
   readonly statusCode: number;
   readonly headers: { readonly [key: string]: string };
-  readonly body: string;
+  readonly body: BodyRepresentation;
 }
 
 interface CacheEntry {
-  readonly req: CachedRequest;
+  readonly req: CachedRequest<BodyRepresentation>;
   readonly res: CachedResponse;
+}
+
+/**
+ * Converts header keys with multiple values from using array representation to
+ * using string representation.
+ */
+function normalizeHeaders(headers: { [key: string]: string | string[] }): { [key: string]: string } {
+  return Object.fromEntries(Object.entries(headers).map(([k, v]) => [k, Array.isArray(v) ? v.sort().join(', ') : v]));
 }
 
 /**
@@ -85,13 +95,6 @@ interface CacheEntry {
 let cacheMap: Map<string, CacheEntry[]>;
 
 /**
- * Converts a request/response body to a string.
- */
-function serializeBody(body: unknown): string {
-  return body instanceof Buffer || typeof body === 'string' ? body.toString() : JSON.stringify(body);
-}
-
-/**
  * Stubs all requests matched the routeMatcher.
  */
 function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRequestsOption = {}) {
@@ -99,7 +102,8 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
   // invalid) when first created.
   const filename = path.join('cypress', 'http_cache', Cypress.spec.name, cacheName + '.txt');
   const matchHeaders = opt.matchHeaders?.map((key) => key.toLowerCase());
-  const stripIgnoredHeaders = (req: CachedRequest): CachedRequest => {
+
+  function stripIgnoredHeaders<T>(req: CachedRequest<T>): CachedRequest<T> {
     if (!matchHeaders) {
       return req;
     }
@@ -107,7 +111,7 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
       ...req,
       headers: Object.fromEntries(matchHeaders.map((key) => [key, req.headers[key]])),
     };
-  };
+  }
 
   const matchRequest = opt.matchRequest || deepEqual;
 
@@ -121,20 +125,19 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
       // 1. we need to strip away ignored headers to perform cache matching.
       // 2. we need to store the full request in the cache in case the caller
       // decides to change the matched header.
-      const fullReq: CachedRequest = {
+      const fullReq: CachedRequest<BodyRepresentation> = {
         url: incomingReq.url,
         method: incomingReq.method,
-        headers: incomingReq.headers,
-        body: serializeBody(incomingReq.body),
+        headers: normalizeHeaders(incomingReq.headers),
+        body: toBodyRep(incomingReq.body),
       };
-      const reqForComparison = stripIgnoredHeaders(fullReq);
 
       const res = cache.find((entry) =>
-        matchRequest(stripIgnoredHeaders(entry.req), reqForComparison, entry.req.headers, fullReq.headers)
+        matchRequest(stripIgnoredHeaders(entry.req), stripIgnoredHeaders(fullReq), entry.req.headers, fullReq.headers)
       )?.res;
 
       if (res) {
-        incomingReq.reply(res.statusCode, res.body, res.headers);
+        incomingReq.reply(res.statusCode, fromBodyRep(res.body), res.headers);
       } else {
         incomingReq.on('after:response', (incomingRes) => {
           cache.push({
@@ -143,7 +146,7 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
               statusCode: incomingRes.statusCode,
               // Content is already decoded when it hits Cypress.
               headers: { ...incomingRes.headers, 'content-encoding': '' },
-              body: serializeBody(incomingRes.body),
+              body: toBodyRep(incomingRes.body),
             },
           });
           cacheMap.set(filename, cache);

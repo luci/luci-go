@@ -8,7 +8,7 @@
         "connection": "keep-alive",
         "content-length": "22",
         "accept": "application/json",
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_4_0) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/7.5.0 Chrome/89.0.4328.0 Electron/12.0.0-beta.14 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/8.2.0 Chrome/89.0.4328.0 Electron/12.0.0-beta.14 Safari/537.36",
         "content-type": "application/json",
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
@@ -17,7 +17,12 @@
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
-      "body": "{\"project\":\"chromium\"}"
+      "body": {
+        "type": "json",
+        "data": {
+          "project": "chromium"
+        }
+      }
     },
     "res": {
       "statusCode": 200,
@@ -29,15 +34,18 @@
         "x-content-type-options": "nosniff",
         "x-prpc-grpc-code": "0",
         "content-encoding": "",
-        "x-cloud-trace-context": "be92442ae5cb5daad7b4a6fa14ec3108;o=1",
-        "date": "Mon, 19 Jul 2021 11:52:30 GMT",
+        "x-cloud-trace-context": "74f6a13c80dad6d5d7f27aa2112f41b5",
+        "date": "Mon, 16 Aug 2021 15:50:27 GMT",
         "server": "Google Frontend",
         "cache-control": "private",
         "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-T051=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
         "connection": "close",
         "transfer-encoding": "chunked"
       },
-      "body": ")]}'\n{\"logoUrl\":\"https://storage.googleapis.com/chrome-infra-public/logo/chromium.svg\",\"buildBugTemplate\":{}}\n"
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"logoUrl\":\"https://storage.googleapis.com/chrome-infra-public/logo/chromium.svg\",\"buildBugTemplate\":{}}\n"
+      }
     }
   },
   {
@@ -49,7 +57,7 @@
         "connection": "keep-alive",
         "content-length": "31",
         "accept": "application/json",
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_4_0) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/7.5.0 Chrome/89.0.4328.0 Electron/12.0.0-beta.14 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/8.2.0 Chrome/89.0.4328.0 Electron/12.0.0-beta.14 Safari/537.36",
         "content-type": "application/json",
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
@@ -58,7 +66,12 @@
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
-      "body": "{\"project\":\"not-bound-project\"}"
+      "body": {
+        "type": "json",
+        "data": {
+          "project": "not-bound-project"
+        }
+      }
     },
     "res": {
       "statusCode": 401,
@@ -68,15 +81,18 @@
         "x-appengine-log-flush-count": "1",
         "x-content-type-options": "nosniff",
         "x-prpc-grpc-code": "16",
-        "x-cloud-trace-context": "8f9b87d7f402021694aa785ae5a41a6e;o=1",
-        "date": "Mon, 19 Jul 2021 11:52:34 GMT",
+        "x-cloud-trace-context": "4587abad5623138943a8a1bc4aaee42d;o=1",
+        "date": "Mon, 16 Aug 2021 15:50:34 GMT",
         "server": "Google Frontend",
         "content-length": "15",
         "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-T051=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
         "connection": "close",
         "content-encoding": ""
       },
-      "body": "not logged in \n"
+      "body": {
+        "type": "string",
+        "data": "not logged in \n"
+      }
     }
   }
 ]
