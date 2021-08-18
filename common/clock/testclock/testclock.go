@@ -104,18 +104,18 @@ func (c *testClock) setTimeLocked(t time.Time) {
 	c.now = t
 
 	// Unblock any blocking timers that are waiting on our lock.
-	c.triggerTimersLocked()
+	triggerTimersLocked(c.now, &c.pendingTimers)
 }
 
-func (c *testClock) triggerTimersLocked() {
-	for len(c.pendingTimers) > 0 {
-		e := c.pendingTimers[0]
-		if c.now.Before(e.deadline) {
+func triggerTimersLocked(now time.Time, pendingTimers *pendingTimerHeap) {
+	for len(*pendingTimers) > 0 {
+		e := (*pendingTimers)[0]
+		if now.Before(e.deadline) {
 			break
 		}
 
-		heap.Pop(&c.pendingTimers)
-		e.triggerC <- c.now
+		heap.Pop(pendingTimers)
+		e.triggerC <- now
 		close(e.triggerC)
 	}
 }
@@ -134,7 +134,7 @@ func (c *testClock) addPendingTimer(t *timer, d time.Duration, triggerC chan<- t
 		deadline: deadline,
 		triggerC: triggerC,
 	})
-	c.triggerTimersLocked()
+	triggerTimersLocked(c.now, &c.pendingTimers)
 }
 
 func (c *testClock) clearPendingTimer(t *timer) {

@@ -21,6 +21,13 @@ import (
 	"go.chromium.org/luci/common/clock"
 )
 
+// timerClock encapsulates clock implementation for use by the `timer` type.
+type timerClock interface {
+	Now() time.Time
+	addPendingTimer(t *timer, d time.Duration, triggerC chan<- time.Time)
+	clearPendingTimer(t *timer)
+}
+
 // timer is an implementation of clock.TestTimer that uses a channel
 // to signal the timer to fire.
 //
@@ -28,7 +35,7 @@ import (
 // signalling goroutine.
 type timer struct {
 	ctx   context.Context
-	clock *testClock
+	clock timerClock
 
 	// tags is the set of tags in the Context when this timer was created.
 	tags []string
@@ -45,7 +52,7 @@ type timer struct {
 var _ clock.Timer = (*timer)(nil)
 
 // NewTimer returns a new, instantiated timer.
-func newTimer(ctx context.Context, clk *testClock) *timer {
+func newTimer(ctx context.Context, clk timerClock) *timer {
 	return &timer{
 		ctx:    ctx,
 		clock:  clk,
