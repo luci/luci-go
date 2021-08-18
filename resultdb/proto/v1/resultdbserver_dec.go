@@ -243,3 +243,20 @@ func (s *DecoratedResultDB) QueryTestVariants(ctx context.Context, req *QueryTes
 	}
 	return
 }
+
+func (s *DecoratedResultDB) BatchGetTestVariants(ctx context.Context, req *BatchGetTestVariantsRequest) (rsp *BatchGetTestVariantsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchGetTestVariants", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchGetTestVariants(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchGetTestVariants", rsp, err)
+	}
+	return
+}

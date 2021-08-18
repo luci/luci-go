@@ -103,6 +103,10 @@ service ResultDB {
   // Retrieves test variants from an invocation, recursively.
   // Supports invocation inclusions.
   rpc QueryTestVariants(QueryTestVariantsRequest) returns (QueryTestVariantsResponse) {};
+
+  // Retrieves test variants from a single invocation, matching the specified
+  // test IDs and hashes.
+  rpc BatchGetTestVariants(BatchGetTestVariantsRequest) returns (BatchGetTestVariantsResponse) {};
 }
 
 // A request message for GetInvocation RPC.
@@ -479,4 +483,33 @@ message QueryTestVariantsResponse {
   // If this field is omitted, there were no subsequent pages at the time of
   // request.
   string next_page_token = 2;
+}
+
+// A request message for BatchGetTestVariants RPC.
+message BatchGetTestVariantsRequest {
+  message TestVariantIdentifier {
+    // The unique identifier of the test in a LUCI project. See the comment on
+    // TestResult.test_id for full documentation.
+    string test_id = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+    // Hash of the variant. See the comment on TestResult.variant_hash for full
+    // documentation.
+    string variant_hash = 2 [ (google.api.field_behavior) = REQUIRED ];
+  }
+
+ // Name of the invocation that the test variants are in.
+ string invocation = 1;
+
+ // A list of test IDs and variant hashes, identifying the requested test
+ // variants. Size is limited to 500. Any request for more than 500 variants
+ // will return an error.
+ repeated TestVariantIdentifier test_variants = 2;
+}
+
+// A response message for BatchGetTestVariants RPC.
+message BatchGetTestVariantsResponse {
+  // Test variants matching the requests. Any variants that weren't found are
+  // omitted from the response. Clients shouldn't rely on the ordering of this
+  // field, as no particular order is guaranteed.
+  repeated TestVariant test_variants = 1;
 }
