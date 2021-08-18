@@ -1,0 +1,51 @@
+[
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/GetProjectCfg",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "22",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/8.2.0 Chrome/89.0.4328.0 Electron/12.0.0-beta.14 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders/try/linux_layout_tests_composite_after_paint/51472/test-results?q=highlight-es",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "project": "chromium"
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-appengine-log-flush-count": "1",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "56073ae0e2426e7c07c108e36bba20a5",
+        "date": "Mon, 16 Aug 2021 16:21:12 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-T051=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"logoUrl\":\"https://storage.googleapis.com/chrome-infra-public/logo/chromium.svg\",\"buildBugTemplate\":{}}\n"
+      }
+    }
+  }
+]
