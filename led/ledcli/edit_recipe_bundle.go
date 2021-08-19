@@ -40,8 +40,8 @@ func editRecipeBundleCmd(opts cmdBaseOptions) *subcommands.Command {
 any supplied overrides, and pushes them to the isolate service. The CAS digest
 for the recipes will be added to the JobDefinition. If the -property-only flag
 is passed or the builder has the "led_builder_is_bootstrapped" property set to
-true, the "led_cas_recipe_bundle" will be set with the CAS digest so that the
-build's bootstrapper executable can launch the bundled recipes.
+true, the "led_cas_recipe_bundle" property will be set with the CAS digest so
+that the build's bootstrapper executable can launch the bundled recipes.
 
 Isolating recipes takes a bit of time, so you may want to save the result
 of this command (stdout) to an intermediate file for quick edits.
