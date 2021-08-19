@@ -77,9 +77,11 @@ func TestFastClock(t *testing.T) {
 				So(wall1.Sub(wall0), ShouldBeLessThan, time.Minute)
 			})
 
-			Convey(`Will panic if going backwards in time.`, func() {
+			Convey(`Will panic if going backwards in time via Add().`, func() {
 				So(func() { fc.Add(-1 * time.Second) }, ShouldPanic)
-				So(func() { fc.Set(fc.Now().Add(-1 * time.Second)) }, ShouldPanic)
+			})
+			Convey(`Will not panic if going backwards in time via Set().`, func() {
+				So(func() { fc.Set(fc.Now().Add(-1 * time.Second)) }, ShouldNotPanic)
 			})
 
 			Convey(`When sleeping, awakens if canceled.`, func() {

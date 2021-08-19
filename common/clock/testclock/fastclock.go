@@ -119,14 +119,17 @@ func (f *FastClock) NewTimer(ctx context.Context) clock.Timer {
 	return newTimer(ctx, f)
 }
 
-// Set sets the test clock's time.
+// Set sets the test clock's time to at least the given time.
+//
+// Noop if Now() is already after the given time.
 func (f *FastClock) Set(fNew time.Time) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
 	sNow, fBefore := f.now()
-	if fNew.Before(fBefore) {
-		panic(fmt.Errorf("cannot go backwards in time. You're not Doc Brown.\nNow: %s\nTarget:%s", fBefore, fNew))
+	if fBefore.After(fNew) {
+		// fNew is already in the past.
+		return
 	}
 	f.initSysTime = sNow
 	f.initFastTime = fNew
@@ -136,13 +139,14 @@ func (f *FastClock) Set(fNew time.Time) {
 
 // Add advances the test clock's time.
 func (f *FastClock) Add(d time.Duration) {
+	if d < 0 {
+		panic(fmt.Errorf("cannot go backwards in time. You're not Doc Brown.\nDelta: %s", d))
+	}
+
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
 	sNow, fBefore := f.now()
-	if d < 0 {
-		panic(fmt.Errorf("cannot go backwards in time. You're not Doc Brown.\nDelta: %s", d))
-	}
 	f.initSysTime = sNow
 	f.initFastTime = fBefore.Add(d)
 	triggerTimersLocked(f.initFastTime, &f.pendingTimers)
