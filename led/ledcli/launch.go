@@ -60,11 +60,13 @@ type cmdLaunch struct {
 
 	modernize bool
 	dump      bool
+	noLEDTag  bool
 	resultdb  job.RDBEnablement
 }
 
 func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
 	c.Flags.BoolVar(&c.modernize, "modernize", false, "Update the launched task to modern LUCI standards.")
+	c.Flags.BoolVar(&c.noLEDTag, "no-led-tag", false, "Don't add user_agent:led tag")
 	c.Flags.BoolVar(&c.dump, "dump", false, "Dump swarming task to stdout instead of running it.")
 	c.resultdb = ""
 	c.Flags.Var(&c.resultdb, "resultdb", text.Doc(`
@@ -100,6 +102,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 		KitchenSupport:  c.kitchenSupport,
 		ParentTaskId:    os.Getenv(swarminglib.TaskIDEnvVar),
 		ResultDB:        c.resultdb,
+		NoLEDTag:        c.noLEDTag,
 	})
 	if err != nil {
 		return nil, err

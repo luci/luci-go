@@ -28,6 +28,9 @@ import (
 	"go.chromium.org/luci/led/job/jobexport"
 )
 
+// UserAgentTag is added by default to all Swarming tasks launched by LED.
+const UserAgentTag = "user_agent:led"
+
 // LaunchSwarmingOpts are the options for LaunchSwarming.
 type LaunchSwarmingOpts struct {
 	// If true, just generates the NewTaskRequest but does not send it to swarming
@@ -55,6 +58,10 @@ type LaunchSwarmingOpts struct {
 
 	// A flag for swarming/ResultDB integration on the launched task.
 	ResultDB job.RDBEnablement
+
+	// If true, `user_agent:led` tag will not be added to the launched task tags,
+	// which is otherwise added by default.
+	NoLEDTag bool
 }
 
 // GetUID derives a user id string from the Authenticator for use with
@@ -99,6 +106,9 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 	if err != nil {
 		return nil, nil, err
 	}
+	if !opts.NoLEDTag {
+		addUserAgentTag(st)
+	}
 	logging.Infof(ctx, "building swarming task: done")
 
 	if opts.DryRun {
@@ -115,4 +125,13 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 	logging.Infof(ctx, "launching swarming task: done")
 
 	return st, req, nil
+}
+
+func addUserAgentTag(req *swarming.SwarmingRpcsNewTaskRequest) {
+	for _, t := range req.Tags {
+		if t == UserAgentTag {
+			return
+		}
+	}
+	req.Tags = append(req.Tags, UserAgentTag)
 }
