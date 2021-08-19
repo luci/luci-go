@@ -96,10 +96,15 @@ func TestFastClock(t *testing.T) {
 				t0 := fc.Now()
 				afterC := clock.After(ctx, time.Second)
 				t1 := fc.Now()
-				fc.Set(t0.Add(time.Second)) // too early
-				fc.Set(t1.Add(time.Second)) // more than enough
+				for i := 0; i < 1000 && fc.Now().Sub(t1) < time.Second; i++ {
+					fc.Add(time.Millisecond)
+				}
 				res := <-afterC
-				So(res.Time, ShouldHappenOnOrBetween, t0.Add(time.Second), t1.Add(time.Second))
+				// The timer must not wake up earlier than necessary.
+				So(res.Time.Sub(t0), ShouldBeGreaterThanOrEqualTo, time.Second)
+				// The timer may wake a bit later than possible, especially if the
+				// process is starving of CPU, so give it 1 hour of (fake) grace time.
+				So(res.Time.Sub(t1), ShouldBeLessThan, time.Second+time.Hour)
 			})
 
 			Convey(`Awakens quickly without being manipulated due to passage of wall clock time.`, func() {
