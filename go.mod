@@ -19,7 +19,7 @@ require (
 	github.com/aws/aws-sdk-go v1.40.15 // indirect
 	github.com/bazelbuild/buildtools v0.0.0-20210804161516-27a6414354c1
 	github.com/bazelbuild/remote-apis v0.0.0-20210718193713-0ecef08215cf
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20210811083801-29944c168d49
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20210812020539-d52cee3e4fe0
 	github.com/danjacques/gofslock v0.0.0-20200623023034-5d0bd0fa6ef0
 	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/dustin/go-humanize v1.0.0

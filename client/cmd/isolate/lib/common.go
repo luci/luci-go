@@ -356,6 +356,10 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 		uploadRes, err = cl.Upload(ctx, cas.UploadOptions{
 			PreserveSymlinks: true,
 		}, inputC)
+		if err != nil {
+			// log for stacktrace.
+			logging.Errorf(ctx, "failed to call Upload: %+v", err)
+		}
 		return errors.Annotate(err, "failed to call Upload").Err()
 	})
 
@@ -368,6 +372,8 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 	rootDgs := make([]digest.Digest, len(inputs))
 	for i, in := range inputs {
 		if rootDgs[i], err = in.Digest("."); err != nil {
+			// log for stacktrace.
+			logging.Errorf(ctx, "failed to call Digest, %s: %+v", in.Path, err)
 			return nil, errors.Annotate(err, "failed to retrieve digest for %q", in.Path).Err()
 		}
 	}
