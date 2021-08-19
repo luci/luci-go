@@ -394,6 +394,9 @@ func maybeCleanupOldDSNamespaces(ctx context.Context) {
 //
 // Moving test time forward if something we recognize waits for it.
 func (t *Test) setUpTestClock(ctx context.Context) context.Context {
+	if t.Clock != nil {
+		return clock.Set(ctx, t.Clock)
+	}
 	// Use a date-time that is easy to eyeball in logs.
 	utc := time.Date(2020, time.February, 2, 10, 30, 00, 0, time.UTC)
 	// But set it up in a clock as a local time to expose incorrect assumptions of UTC.

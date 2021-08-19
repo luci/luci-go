@@ -27,6 +27,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -61,13 +62,19 @@ import (
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
-const dsFlakinessFlagName = "cv.dsflakiness"
-const tqConcurrentFlagName = "cv.tqparallel"
-const extraVerboseFlagName = "cv.verbose"
+const (
+	dsFlakinessFlagName  = "cv.dsflakiness"
+	tqConcurrentFlagName = "cv.tqparallel"
+	extraVerboseFlagName = "cv.verbose"
+	fastClockFlagName    = "cv.fastclock"
+)
 
-var dsFlakinessFlag = flag.Float64(dsFlakinessFlagName, 0, "DS flakiness probability between 0(default) and 1.0 (always fails)")
-var tqParallelFlag = flag.Bool(tqConcurrentFlagName, false, "Runs TQ tasks in parallel")
-var extraVerbosityFlag = flag.Bool(extraVerboseFlagName, false, "Extra verbose mode. Use in combination with -v")
+var (
+	dsFlakinessFlag    = flag.Float64(dsFlakinessFlagName, 0, "DS flakiness probability between 0(default) and 1.0 (always fails)")
+	tqParallelFlag     = flag.Bool(tqConcurrentFlagName, false, "Runs TQ tasks in parallel")
+	extraVerbosityFlag = flag.Bool(extraVerboseFlagName, false, "Extra verbose mode. Use in combination with -v")
+	fastClockFlag      = flag.Int(fastClockFlagName, 0, "Use FastClock running at this multipler over physical clock")
+)
 
 func init() {
 	// HACK: Bump up greatly eventbox tombstone delay, especially useful in case
@@ -128,6 +135,17 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		t.Test.AppID = "cv"
 	}
 
+	switch speedUp := *fastClockFlag; {
+	case speedUp < 0:
+		panic(fmt.Errorf("invalid %s %d: must be >= 0", fastClockFlagName, speedUp))
+	case speedUp > 0:
+		t.Clock = testclock.NewFastClock(
+			time.Date(2020, time.February, 2, 13, 30, 00, 0, time.FixedZone("Fake local", 3*60*60)),
+			speedUp)
+	default:
+		// Use default testclock.
+	}
+
 	// Delegate most setup to cvtesting.Test.
 	ctx, ctxCancel := t.Test.SetUp()
 	deferme = ctxCancel
@@ -174,11 +192,29 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 //
 // Not goroutine safe.
 func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
-	maxTasks := 1000.0
+	t.RunUntilT(ctx, 100, stopIf)
+}
+
+// RunUntilT is the same as RunUntil but with custom approximate number of tasks
+// if ran in serial mode.
+//
+// Depending on command line test options, allows different number of tasks
+// executions.
+func (t *Test) RunUntilT(ctx context.Context, targetTasksCount int, stopIf func() bool) {
+	// Default to 10x targetTasksCount tasks s.t. test writers don't need to
+	// calculate exactly how many tasks they need and also to be more robust
+	// against future changes in CV impl which may slightly increase number of TQ
+	// tasks.
+	maxTasks := 10 * float64(targetTasksCount)
 	taskCtx := ctx
 	if t.dsFlakiness > 0 {
 		maxTasks *= math.Max(1.0, math.Round(1000*t.dsFlakiness))
 		taskCtx = t.flakifyDS(ctx)
+	}
+	if *tqParallelFlag {
+		// Executing tasks concurrently usually leads to Datastore and other
+		// contention, so allow more retries.
+		maxTasks *= 10
 	}
 	i := 0
 	tooLong := false
