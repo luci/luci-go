@@ -38,3 +38,20 @@ func AreEnded(runs ...*run.Run) bool {
 	}
 	return true
 }
+
+// FilterNot returns non-nil Runs whose status differs from the given one.
+//
+// If given ENDED_MASK status, returns all Runs which haven't ended yet.
+func FilterNot(status commonpb.Run_Status, runs ...*run.Run) []*run.Run {
+	var left []*run.Run
+	for _, r := range runs {
+		switch {
+		case r == nil:
+		case r.Status == status:
+		case status == commonpb.Run_ENDED_MASK && run.IsEnded(r.Status):
+		default:
+			left = append(left, r)
+		}
+	}
+	return left
+}

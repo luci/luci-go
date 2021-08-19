@@ -29,6 +29,8 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/run/runtest"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -49,7 +51,7 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 		maxBurst := 2
-		burstDelay := 1 * time.Minute
+		burstDelay := 10 * time.Second
 		cfg.SubmitOptions = &cfgpb.SubmitOptions{
 			MaxBurst:   int32(maxBurst),
 			BurstDelay: durationpb.New(burstDelay),
@@ -76,18 +78,21 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 			},
 		)
 
-		ct.LogPhase(ctx, fmt.Sprintf("CV starts and successfully submitted %d Runs", burstN))
-		ct.RunUntil(ctx, func() bool {
-			runs := ct.LoadRunsOf(ctx, lProject)
-			if len(runs) != burstN {
-				return false
+		ct.LogPhase(ctx, fmt.Sprintf("CV starts and creates %d Runs", burstN))
+		ct.RunUntilT(ctx, burstN*5 /* ~5 tasks per Run */, func() bool {
+			return len(ct.LoadRunsOf(ctx, lProject)) == burstN
+		})
+
+		ct.LogPhase(ctx, fmt.Sprintf("CV successfully submitts %d Runs", burstN))
+		remaining := ct.LoadRunsOf(ctx, lProject)
+		ct.RunUntilT(ctx, burstN*25 /* ~25 tasks per Run */, func() bool {
+			switch err := datastore.Get(ctx, remaining); {
+			case err != nil:
+				panic(err)
+			default:
+				remaining = runtest.FilterNot(commonpb.Run_SUCCEEDED, remaining...)
+				return len(remaining) == 0
 			}
-			for _, r := range runs {
-				if r.Status != commonpb.Run_SUCCEEDED {
-					return false
-				}
-			}
-			return true
 		})
 
 		var submittedTimes []time.Time
