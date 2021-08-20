@@ -455,8 +455,6 @@ func TestMutatorConcurrent(t *testing.T) {
 		ct.Clock.Set(epoch)
 
 		const lProject = "infra"
-		const run1 = lProject + "/1"
-		const run2 = lProject + "/2"
 		const gHost = "x-review.example.com"
 		const gChange = 44
 		eid := MustGobID(gHost, gChange)
@@ -481,7 +479,7 @@ func TestMutatorConcurrent(t *testing.T) {
 		)
 		// Number of tries per worker.
 		// With probabilities above, it typically takes <60 tries.
-		const R = 200
+		const R = 300
 		// Number of workers.
 		const N = 20
 
