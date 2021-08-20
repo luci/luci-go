@@ -354,7 +354,8 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 	var uploadRes *cas.UploadResult
 	eg.Go(func() (err error) {
 		uploadRes, err = cl.Upload(ctx, cas.UploadOptions{
-			PreserveSymlinks: true,
+			PreserveSymlinks:      true,
+			AllowDanglingSymlinks: true,
 		}, inputC)
 		if err != nil {
 			// log for stacktrace.
