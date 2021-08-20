@@ -137,7 +137,7 @@ func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
 		return transient.Tag.In(err)
 	})
 	opts := &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(1, 1),
+		QPSLimit: rate.NewLimiter(rate.Every(3*time.Second), 1),
 		Buffer: buffer.Options{
 			MaxLeases:     1,
 			BatchItemsMax: 1,
@@ -154,7 +154,7 @@ func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
 				}
 			},
 		},
-		DropFn:  dispatcher.DropFnSummarized(ctx, rate.NewLimiter(.1, 1)),
+		DropFn:  dispatcher.DropFnSummarized(ctx, rate.NewLimiter(rate.Every(10*time.Second), 1)),
 		ErrorFn: errorFn,
 	}
 	return opts, errCh
