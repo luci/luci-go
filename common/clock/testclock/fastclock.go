@@ -38,11 +38,14 @@ type FastClock struct {
 	initSysTime    time.Time
 	initFastTime   time.Time
 	fastToSysRatio int
-	sysTimerSleep  time.Duration
-	done           chan struct{}
 	pendingTimers  pendingTimerHeap
 	timerCallback  TimerCallback
-	systemNow      func() time.Time // mocked in tests.
+	// pendingTimersChanged pipes "true" to the worker
+	// whenever pending timers change.
+	//
+	// In Close(), this channel is closed and thus pipes "false" indefinitely.
+	pendingTimersChanged chan bool
+	systemNow            func() time.Time // mocked in tests.
 }
 
 // NewFastClock creates a new FastClock running faster than a system clock.
@@ -50,42 +53,69 @@ type FastClock struct {
 // You SHOULD call .Close() on the returned object after use to avoid leaks.
 func NewFastClock(now time.Time, ratio int) *FastClock {
 	f := &FastClock{
-		initFastTime:   now,
-		initSysTime:    time.Now(),
-		fastToSysRatio: ratio,
-		sysTimerSleep:  10 * time.Microsecond,
-		done:           make(chan struct{}),
-		systemNow:      time.Now,
+		initFastTime:         now,
+		initSysTime:          time.Now(),
+		fastToSysRatio:       ratio,
+		pendingTimersChanged: make(chan bool, 1), // holds at most one "poke"
+		systemNow:            time.Now,
 	}
-	go f.periodicTimerNotify()
+	go f.worker()
 	return f
+}
+
+// onTimersChangedLocked wakes up the worker() func if it hasn't been poked
+// already.
+func (f *FastClock) onTimersChangedLocked() {
+	select {
+	case f.pendingTimersChanged <- true:
+	default:
+		// Already notified.
+	}
 }
 
 // periodicTimerNotify follows system (wall) clock and wakes us timers as
 // necessary.
-func (f *FastClock) periodicTimerNotify() {
-	notify := func() {
-		f.mutex.Lock()
-		defer f.mutex.Unlock()
-		triggerTimersLocked(f.Now(), &f.pendingTimers)
+func (f *FastClock) worker() {
+	const maxSysWait = time.Hour
+	// Create system timer to wait on.
+	sysTimer := time.NewTimer(maxSysWait)
+	// Make the timer ready for Reset.
+	if !sysTimer.Stop() {
+		<-sysTimer.C
 	}
 
-	// TODO(tandrii): wait until the earliest timer for efficiency.
-	sysTimer := time.NewTimer(f.sysTimerSleep)
+	notifyAndResetSysTimer := func() {
+		f.mutex.Lock()
+		defer f.mutex.Unlock()
+		fNow := f.Now()
+		triggerTimersLocked(fNow, &f.pendingTimers)
+		wait := maxSysWait
+		if len(f.pendingTimers) > 0 {
+			// Due to triggerTimersLocked() before, `wait` must be >0.
+			wait = f.pendingTimers[0].deadline.Sub(fNow) / time.Duration(f.fastToSysRatio)
+		}
+		sysTimer.Reset(wait)
+	}
+
 	for {
+		notifyAndResetSysTimer()
 		select {
-		case <-f.done:
-			return
 		case <-sysTimer.C:
-			notify()
-			sysTimer.Reset(f.sysTimerSleep)
+		case changed := <-f.pendingTimersChanged:
+			if !sysTimer.Stop() {
+				<-sysTimer.C
+			}
+			if !changed {
+				// The pendingTimersChanged channel was closed by Close().
+				return
+			}
 		}
 	}
 }
 
 // Close frees clock resources.
 func (f *FastClock) Close() {
-	close(f.done)
+	close(f.pendingTimersChanged)
 }
 
 // Now returns the current time (see time.Now).
@@ -135,6 +165,7 @@ func (f *FastClock) Set(fNew time.Time) {
 	f.initFastTime = fNew
 
 	triggerTimersLocked(fNew, &f.pendingTimers)
+	f.onTimersChangedLocked()
 }
 
 // Add advances the test clock's time.
@@ -150,6 +181,7 @@ func (f *FastClock) Add(d time.Duration) {
 	f.initSysTime = sNow
 	f.initFastTime = fBefore.Add(d)
 	triggerTimersLocked(f.initFastTime, &f.pendingTimers)
+	f.onTimersChangedLocked()
 }
 
 // SetTimerCallback is a goroutine-safe method to set an instance-wide
@@ -176,6 +208,7 @@ func (f *FastClock) addPendingTimer(t *timer, d time.Duration, triggerC chan<- t
 	})
 	_, now := f.now()
 	triggerTimersLocked(now, &f.pendingTimers)
+	f.onTimersChangedLocked()
 }
 
 func (f *FastClock) clearPendingTimer(t *timer) {
@@ -190,4 +223,5 @@ func (f *FastClock) clearPendingTimer(t *timer) {
 			i++
 		}
 	}
+	f.onTimersChangedLocked()
 }
