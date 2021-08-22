@@ -692,7 +692,7 @@ func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, err
 		eid = changelist.ExternalID(req.GetExternalId())
 		cl, err = eid.Get(ctx)
 	case req.GetGerritUrl() != "":
-		eid, err = parseGerritURL(req.GetExternalId())
+		eid, err = parseGerritURL(req.GetGerritUrl())
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
 		}
