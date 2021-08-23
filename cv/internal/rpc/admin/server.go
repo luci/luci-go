@@ -26,7 +26,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -36,7 +35,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 
@@ -67,12 +66,12 @@ type AdminServer struct {
 }
 
 func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectRequest) (resp *adminpb.GetProjectResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetProject"); err != nil {
 		return
 	}
 	if req.GetProject() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "project is required")
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -87,7 +86,7 @@ func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectReq
 	eg.Go(func() error {
 		list, err := eventbox.List(ctx, prjmanager.EventboxRecipient(ctx, req.GetProject()))
 		if err != nil {
-			return err
+			return errors.Annotate(err, "failed to fetch Project Events").Err()
 		}
 		events := make([]*prjpb.Event, len(list))
 		for i, item := range list {
@@ -104,7 +103,7 @@ func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectReq
 	case err != nil:
 		return nil, err
 	case p == nil:
-		return nil, status.Errorf(codes.NotFound, "project not found")
+		return nil, appstatus.Error(codes.NotFound, "project not found")
 	default:
 		resp.State = p.State
 		resp.State.LuciProject = req.GetProject()
@@ -113,21 +112,21 @@ func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectReq
 }
 
 func (d *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjectLogsRequest) (resp *adminpb.GetProjectLogsResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetProjectLogs"); err != nil {
 		return
 	}
 	switch {
 	case req.GetPageToken() != "":
-		return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+		return nil, appstatus.Error(codes.Unimplemented, "not implemented yet")
 	case req.GetPageSize() < 0:
-		return nil, status.Errorf(codes.InvalidArgument, "negative page size not allowed")
+		return nil, appstatus.Error(codes.InvalidArgument, "negative page size not allowed")
 	case req.GetProject() == "":
-		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "project is required")
 	case req.GetEversionMin() < 0:
-		return nil, status.Errorf(codes.InvalidArgument, "eversion_min must be non-negative")
+		return nil, appstatus.Error(codes.InvalidArgument, "eversion_min must be non-negative")
 	case req.GetEversionMax() < 0:
-		return nil, status.Errorf(codes.InvalidArgument, "eversion_max must be non-negative")
+		return nil, appstatus.Error(codes.InvalidArgument, "eversion_max must be non-negative")
 	}
 
 	q := datastore.NewQuery(prjmanager.ProjectLogKind)
@@ -166,18 +165,18 @@ func (d *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjec
 }
 
 func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (resp *adminpb.GetRunResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetRun"); err != nil {
 		return
 	}
 	if req.GetRun() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "run ID is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "run ID is required")
 	}
 	return loadRunAndEvents(ctx, common.RunID(req.GetRun()), nil)
 }
 
 func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (resp *adminpb.GetCLResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetCL"); err != nil {
 		return
 	}
@@ -204,20 +203,20 @@ func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (res
 }
 
 func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerRequest) (resp *adminpb.GetPollerResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetPoller"); err != nil {
 		return
 	}
 	if req.GetProject() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "project is required")
 	}
 
 	s := poller.State{LuciProject: req.GetProject()}
 	switch err := datastore.Get(ctx, &s); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, status.Errorf(codes.NotFound, "poller not found")
+		return nil, appstatus.Error(codes.NotFound, "poller not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "failed to fetch poller state")
+		return nil, errors.Annotate(err, "failed to fetch Poller state").Tag(transient.Tag).Err()
 	}
 	resp = &adminpb.GetPollerResponse{
 		Project:     s.LuciProject,
@@ -230,15 +229,15 @@ func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerReque
 }
 
 func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsRequest) (resp *adminpb.RunsResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "SearchRuns"); err != nil {
 		return
 	}
 	switch {
 	case req.GetPageToken() != "":
-		return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+		return nil, appstatus.Error(codes.Unimplemented, "not implemented yet")
 	case req.GetPageSize() < 0:
-		return nil, status.Errorf(codes.InvalidArgument, "negative page size not allowed")
+		return nil, appstatus.Error(codes.InvalidArgument, "negative page size not allowed")
 	}
 	if req.GetPageSize() == 0 {
 		req.PageSize = 16
@@ -255,7 +254,7 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		var runCLKeys []*datastore.Key
 		q := datastore.NewQuery(run.RunCLKind).Eq("IndexedID", cl.ID).Limit(req.GetPageSize()).KeysOnly(true)
 		if err := datastore.GetAll(ctx, q, &runCLKeys); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to fetch Runs: %s", err)
+			return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
 		}
 		runKeys = make([]*datastore.Key, len(runCLKeys))
 		for i, k := range runCLKeys {
@@ -263,7 +262,7 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		}
 	} else { // Without CL.
 		if req.GetProject() == "" {
-			return nil, status.Errorf(codes.Unimplemented, "search across projects is not implemented")
+			return nil, appstatus.Error(codes.Unimplemented, "search across projects is not implemented")
 		}
 		baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
 		var queries []*datastore.Query
@@ -286,7 +285,7 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 			return nil
 		})
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to fetch Runs: %s", err)
+			return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
 		}
 	}
 
@@ -345,16 +344,16 @@ type itemEntity struct {
 }
 
 func (d *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.DeleteProjectEventsRequest) (resp *adminpb.DeleteProjectEventsResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "DeleteProjectEvents"); err != nil {
 		return
 	}
 
 	switch {
 	case req.GetProject() == "":
-		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "project is required")
 	case req.GetLimit() <= 0:
-		return nil, status.Errorf(codes.InvalidArgument, "limit must be >0")
+		return nil, appstatus.Error(codes.InvalidArgument, "limit must be >0")
 	}
 
 	parent := datastore.MakeKey(ctx, prjmanager.ProjectKind, req.GetProject())
@@ -380,12 +379,12 @@ func (d *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.Dele
 }
 
 func (d *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.RefreshProjectCLsRequest) (resp *adminpb.RefreshProjectCLsResponse, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "RefreshProjectCLs"); err != nil {
 		return
 	}
 	if req.GetProject() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "project is required")
 	}
 
 	p, err := prjmanager.Load(ctx, req.GetProject())
@@ -436,57 +435,57 @@ func (d *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 }
 
 func (d *AdminServer) SendProjectEvent(ctx context.Context, req *adminpb.SendProjectEventRequest) (_ *emptypb.Empty, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "SendProjectEvent"); err != nil {
 		return
 	}
 	switch {
 	case req.GetProject() == "":
-		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "project is required")
 	case req.GetEvent().GetEvent() == nil:
-		return nil, status.Errorf(codes.InvalidArgument, "event with a specific inner event is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "event with a specific inner event is required")
 	}
 
 	switch p, err := prjmanager.Load(ctx, req.GetProject()); {
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "failed to fetch Project")
+		return nil, errors.Annotate(err, "failed to fetch Project").Err()
 	case p == nil:
-		return nil, status.Errorf(codes.NotFound, "project not found")
+		return nil, appstatus.Error(codes.NotFound, "project not found")
 	}
 
 	if err := d.PMNotifier.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
+		return nil, errors.Annotate(err, "failed to send event").Err()
 	}
 	return &emptypb.Empty{}, nil
 }
 
 func (d *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEventRequest) (_ *emptypb.Empty, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "SendRunEvent"); err != nil {
 		return
 	}
 	switch {
 	case req.GetRun() == "":
-		return nil, status.Errorf(codes.InvalidArgument, "Run is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "Run is required")
 	case req.GetEvent().GetEvent() == nil:
-		return nil, status.Errorf(codes.InvalidArgument, "event with a specific inner event is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "event with a specific inner event is required")
 	}
 
 	switch err := datastore.Get(ctx, &run.Run{ID: common.RunID(req.GetRun())}); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, status.Errorf(codes.NotFound, "Run not found")
+		return nil, appstatus.Error(codes.NotFound, "Run not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "failed to fetch Run")
+		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
 	}
 
 	if err := d.RunNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
+		return nil, errors.Annotate(err, "failed to send event").Err()
 	}
 	return &emptypb.Empty{}, nil
 }
 
 func (d *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTaskRequest) (_ *emptypb.Empty, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "ScheduleTask"); err != nil {
 		return
 	}
@@ -513,18 +512,18 @@ func (d *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 		switch {
 		case reflect.ValueOf(another.payload).IsNil():
 		case !reflect.ValueOf(chosen.payload).IsNil():
-			return nil, status.Errorf(codes.InvalidArgument, "exactly one task payload required, but 2+ given")
+			return nil, appstatus.Error(codes.InvalidArgument, "exactly one task payload required, but 2+ given")
 		default:
 			chosen = another
 		}
 	}
 
 	if reflect.ValueOf(chosen.payload).IsNil() {
-		return nil, status.Errorf(codes.InvalidArgument, "exactly one task payload required, but none given")
+		return nil, appstatus.Error(codes.InvalidArgument, "exactly one task payload required, but none given")
 	}
 	kind := chosen.payload.ProtoReflect().Type().Descriptor().Name()
 	if chosen.inTransaction && req.GetDeduplicationKey() != "" {
-		return nil, status.Errorf(codes.InvalidArgument, "task %q is transactional, so the deduplication_key is not allowed", kind)
+		return nil, appstatus.Errorf(codes.InvalidArgument, "task %q is transactional, so the deduplication_key is not allowed", kind)
 	}
 
 	t := &tq.Task{
@@ -542,7 +541,7 @@ func (d *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 	}
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to schedule task: %s", err)
+		return nil, errors.Annotate(err, "failed to schedule task").Err()
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -550,9 +549,9 @@ func (d *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 func checkAllowed(ctx context.Context, name string) error {
 	switch yes, err := auth.IsMember(ctx, allowGroup); {
 	case err != nil:
-		return status.Errorf(codes.Internal, "failed to check ACL")
+		return errors.Annotate(err, "failed to check ACL").Err()
 	case !yes:
-		return status.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
+		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
 	default:
 		logging.Warningf(ctx, "%s is calling admin.%s", auth.CurrentIdentity(ctx), name)
 		return nil
@@ -604,9 +603,9 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 	r := &run.Run{ID: rid}
 	switch err := datastore.Get(ctx, r); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, status.Errorf(codes.NotFound, "run not found")
+		return nil, appstatus.Error(codes.NotFound, "run not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "failed to fetch Run: %s", err)
+		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
 	case shouldSkip != nil && shouldSkip(r):
 		return nil, nil
 	}
@@ -616,7 +615,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 	eg.Go(func() error {
 		switch rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs); {
 		case err != nil:
-			return status.Errorf(codes.Internal, "failed to fetch RunCLs: %s", err)
+			return errors.Annotate(err, "failed to fetch RunCLs").Err()
 		default:
 			externalIDs = make([]string, len(rcls))
 			for i, rcl := range rcls {
@@ -631,7 +630,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		var err error
 		logEntries, err = run.LoadRunLogEntries(ctx, r.ID)
 		if err != nil {
-			return status.Errorf(codes.Internal, "failed to fetch RunLogs: %s", err)
+			return errors.Annotate(err, "failed to fetch RunCLs").Err()
 		}
 		return nil
 	})
@@ -640,7 +639,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 	eg.Go(func() error {
 		list, err := eventbox.List(ctx, run.EventboxRecipient(ctx, rid))
 		if err != nil {
-			return err
+			return errors.Annotate(err, "failed to fetch Run Events").Err()
 		}
 		events = make([]*eventpb.Event, len(list))
 		for i, item := range list {
@@ -694,19 +693,19 @@ func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, err
 	case req.GetGerritUrl() != "":
 		eid, err = parseGerritURL(req.GetGerritUrl())
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
+			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
 		}
 		cl, err = eid.Get(ctx)
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "id or external_id or gerrit_url is required")
+		return nil, appstatus.Error(codes.InvalidArgument, "id or external_id or gerrit_url is required")
 	}
 
 	switch {
 	case err == datastore.ErrNoSuchEntity:
 		if req.GetId() == 0 {
-			return nil, status.Errorf(codes.NotFound, "CL %d not found", req.GetId())
+			return nil, appstatus.Errorf(codes.NotFound, "CL %d not found", req.GetId())
 		}
-		return nil, status.Errorf(codes.NotFound, "CL %s not found", eid)
+		return nil, appstatus.Errorf(codes.NotFound, "CL %s not found", eid)
 	case err != nil:
 		return nil, err
 	}
