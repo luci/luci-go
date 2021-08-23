@@ -758,6 +758,7 @@ func (*WithProtoIndirectSlice) embedsProtos() {}
 type testCase struct {
 	desc       string
 	src        interface{}
+	loadInto   interface{} // if set, used for loading instead a newly created object.
 	want       interface{}
 	plsErr     string
 	saveErr    string
@@ -1940,6 +1941,53 @@ var testCases = []testCase{
 			{Msg: &testprotos.Msg{Str: "xyz"}},
 		}},
 	},
+	{
+		desc: "resets structs before loading",
+		src: &N0{
+			X0: X0{S: "one", I: 2},
+		},
+		loadInto: &N0{
+			X0:       X0{S: "one", I: 2, i: 3},
+			Nonymous: X0{S: "four", I: 5, i: 6}, // must be reset
+			Ignore:   "ignore",
+			Other:    "other", // must be reset
+		},
+		want: &N0{
+			X0:       X0{S: "one", I: 2, i: 3},
+			Nonymous: X0{i: 6},
+			Ignore:   "ignore",
+		},
+	},
+	{
+		desc: "structs with slices of structs are reset on load",
+		src: &N1{
+			X0: X0{S: "rouge"},
+			Nonymous: []X0{
+				{S: "first"},
+				{S: "second"},
+			},
+		},
+		loadInto: &N1{
+			X0: X0{S: "bleu"},
+			Nonymous: []X0{
+				{S: "garbage"},
+			},
+		},
+		want: &N1{ // exact same as `src`
+			X0: X0{S: "rouge"},
+			Nonymous: []X0{
+				{S: "first"},
+				{S: "second"},
+			},
+		},
+	},
+	{
+		desc:     "structs with slices of base type are reset on load",
+		src:      &B1{B: []int8{1, 2}},
+		loadInto: &B1{B: []int8{4}},
+		// TODO(crbug/1189937): fix s.t. only {1,2} is produced.
+		want: &B1{B: []int8{4, 1, 2}},
+	},
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -1983,7 +2031,11 @@ func TestRoundTrip(t *testing.T) {
 					pls = PropertyMap{}
 					got = pls
 				} else {
-					got = reflect.New(reflect.TypeOf(tc.want).Elem()).Interface()
+					if tc.loadInto != nil {
+						got = tc.loadInto
+					} else {
+						got = reflect.New(reflect.TypeOf(tc.want).Elem()).Interface()
+					}
 					if pls, ok = got.(PropertyLoadSaver); !ok {
 						var err error
 						pls, err = getPLSErr(got)
