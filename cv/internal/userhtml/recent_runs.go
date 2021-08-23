@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"strings"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
@@ -35,6 +36,11 @@ func recentsPage(c *router.Context) {
 
 	if project == "" {
 		http.Redirect(c.Writer, c.Request, c.HandlerPath+"/infra", http.StatusFound)
+		return
+	}
+
+	if err := c.Request.ParseForm(); err != nil {
+		errPage(c, errors.Annotate(err, "failed to parse form").Err())
 		return
 	}
 	pageToken := c.Request.Form.Get("page")
@@ -82,6 +88,7 @@ func pageTokens(ctx context.Context, namespace, pageToken, nextPageToken string)
 	next = nextPageToken
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
+		err = errors.Annotate(err, "failed to connect to Redis").Err()
 		return
 	}
 	defer conn.Close()
@@ -90,12 +97,21 @@ func pageTokens(ctx context.Context, namespace, pageToken, nextPageToken string)
 	if pageToken != "" {
 		val, err = conn.Do("GET", key(pageToken))
 		if err != nil {
+			err = errors.Annotate(err, "failed to GET previous page token").Err()
 			return
 		}
 		if val != nil {
-			if val.(string) != "NULL" {
-				prev = val.(string)
-			} else {
+			switch v := val.(type) {
+			case string:
+				// TODO(robertocn): delete if this case is never useful.
+				prev = v
+			case []byte:
+				prev = string(v)
+			default:
+				err = errors.Annotate(err, "failed to decode previous page token: %v", val).Err()
+				return
+			}
+			if prev == "NULL" {
 				// Hack to get the second page to correctly show a previous
 				// page link with no page token.
 				prev = " "
@@ -107,8 +123,9 @@ func pageTokens(ctx context.Context, namespace, pageToken, nextPageToken string)
 			pageToken = "NULL"
 		}
 		// Keep the previous token for 24 hours.
-		_, err = conn.Do("SET", key(next), pageToken, 24*60*60)
+		_, err = conn.Do("SET", key(next), pageToken, "EX", 24*60*60)
 		if err != nil {
+			err = errors.Annotate(err, "failed to SET current page token").Err()
 			return
 		}
 	}
