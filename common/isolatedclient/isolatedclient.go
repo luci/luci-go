@@ -238,7 +238,7 @@ func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Wri
 	if out.Content != "" {
 		decoded, err := base64.StdEncoding.DecodeString(out.Content)
 		if err != nil {
-			return err
+			return errors.Annotate(err, "failed to decode content").Err()
 		}
 		decompressor, err := isolated.GetDecompressor(i.namespace, bytes.NewReader(decoded))
 		if err != nil {
@@ -249,7 +249,7 @@ func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Wri
 		if err != nil {
 			return errors.Annotate(err, "io.Copy failed").Tag(transient.Tag).Err()
 		}
-		return err
+		return nil
 	}
 
 	// Handle GCS items.

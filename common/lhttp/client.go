@@ -147,7 +147,7 @@ func NewRequestJSON(ctx context.Context, c *http.Client, rFn retry.Factory, url,
 	if in != nil {
 		var err error
 		if encoded, err = json.Marshal(in); err != nil {
-			return nil, err
+			return nil, errors.Annotate(err, "failed to marshal").Err()
 		}
 	}
 
@@ -174,7 +174,7 @@ func NewRequestJSON(ctx context.Context, c *http.Client, rFn retry.Factory, url,
 		defer resp.Body.Close()
 		if ct := strings.ToLower(resp.Header.Get("Content-Type")); !strings.HasPrefix(ct, jsonContentType) {
 			// Non-retriable.
-			return fmt.Errorf("unexpected Content-Type, expected \"%s\", got \"%s\"", jsonContentType, ct)
+			return errors.Reason("unexpected Content-Type, expected \"%s\", got \"%s\"", jsonContentType, ct).Err()
 		}
 		if out == nil {
 			// The client doesn't care about the response. Still ensure the response

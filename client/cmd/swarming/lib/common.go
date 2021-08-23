@@ -410,7 +410,13 @@ func tagTransientGoogleAPIError(err error) error {
 	if gerr, _ := err.(*googleapi.Error); gerr != nil && gerr.Code < 500 {
 		return err
 	}
-	// Everything else (HTTP code >= 500, timeouts, DNS issues, etc) is considered
+
+	// HTTP error already has transient.Tag if it is retryable.
+	if _, ok := lhttp.IsHTTPError(err); ok {
+		return err
+	}
+
+	// Everything else (timeouts, DNS issues, etc) is considered
 	// a transient error.
 	return transient.Tag.Apply(err)
 }

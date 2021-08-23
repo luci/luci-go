@@ -246,7 +246,7 @@ func (d *Downloader) addError(ty downloadType, name string, err error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if len(d.err) >= 10 {
-		logging.WithError(err).Errorf(d.ctx, "more than 10 errors happened")
+		errors.Log(d.ctx, err)
 		return
 	}
 	d.err = append(d.err, err)
