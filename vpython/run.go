@@ -51,6 +51,10 @@ func Run(c context.Context, opts Options) error {
 		return errors.Annotate(err, "could not resolve options").Err()
 	}
 
+	if opts.EnvConfig.Spec.PythonVersion == "" {
+		opts.EnvConfig.Spec.PythonVersion = opts.DefaultSpec.PythonVersion
+	}
+
 	// Create our virtual environment root directory.
 	opts.EnvConfig.FailIfLocked = !opts.WaitForEnv
 	err := venv.With(c, opts.EnvConfig, func(c context.Context, ve *venv.Env) error {
