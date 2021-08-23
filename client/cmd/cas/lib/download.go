@@ -43,7 +43,7 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-const smallFileThreshold = 128 * 1024 // 128KiB
+const smallFileThreshold = 16 * 1024 // 16KiB
 
 // CmdDownload returns an object for the `download` subcommand.
 func CmdDownload(authFlags AuthFlags) *subcommands.Command {
