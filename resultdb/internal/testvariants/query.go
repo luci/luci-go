@@ -42,6 +42,7 @@ type Query struct {
 	PageSize      int // must be positive
 	// Consists of test variant status, test id and variant hash.
 	PageToken string
+	TestIDs   []string
 
 	decompressBuf []byte                 // buffer for decompressing blobs
 	params        map[string]interface{} // query parameters
@@ -108,6 +109,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	}
 
 	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]interface{}{
+		"HasTestIds":   len(q.TestIDs) > 0,
 		"StatusFilter": q.Predicate.GetStatus() != 0,
 	})
 	if err != nil {
@@ -169,7 +171,10 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(*pb.Test
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
-	st := spanner.Statement{SQL: allTestResultsSQL, Params: q.params}
+	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]interface{}{
+		"HasTestIds": len(q.TestIDs) > 0,
+	})
+	st.Params = q.params
 	st.Params["limit"] = limit
 
 	var b spanutil.Buffer
@@ -289,6 +294,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 
 	q.params = map[string]interface{}{
 		"invIDs":              q.InvocationIDs,
+		"testIDs":             q.TestIDs,
 		"skipStatus":          int(pb.TestStatus_SKIP),
 		"unexpected":          int(pb.TestVariantStatus_UNEXPECTED),
 		"unexpectedlySkipped": int(pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED),
@@ -431,23 +437,23 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 		results,
 		exonerationExplanations,
 	FROM testVariantsWithUnexpectedResults
+	WHERE
+	{{if .HasTestIds}}
+		TestId in UNNEST(@testIDs) AND
+	{{end}}
 	{{if .StatusFilter}}
-		WHERE (
-			(TvStatus = @status AND TestId > @afterTestId) OR
-			(TvStatus = @status AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
-		)
+		(TvStatus = @status AND TestId > @afterTestId) OR
+		(TvStatus = @status AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
 	{{else}}
-		WHERE (
-			(TvStatus > @afterTvStatus) OR
-			(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
-			(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
-		)
+		(TvStatus > @afterTvStatus) OR
+		(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
+		(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
 	{{end}}
 	ORDER BY TvStatus, TestId, VariantHash
 	LIMIT @limit
 `))
 
-var allTestResultsSQL = `
+var allTestResultsSQLTmpl = template.Must(template.New("allTestResultsSQL").Parse(`
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
 	SELECT
 		TestId,
@@ -464,13 +470,16 @@ var allTestResultsSQL = `
 		Tags,
 	FROM TestResults
 	WHERE InvocationId in UNNEST(@invIDs)
+	{{if .HasTestIds}}
+		AND TestId in UNNEST(@testIDs)
+	{{end}}
 	AND (
 		(TestId > @afterTestId) OR
 		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
 	)
 	ORDER BY TestId, VariantHash
 	LIMIT @limit
-`
+`))
 
 func populateTestMetadata(tv *pb.TestVariant, tmd spanutil.Compressed) error {
 	if len(tmd) == 0 {
