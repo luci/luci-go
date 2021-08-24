@@ -70,8 +70,6 @@ func TestGetSettingsLoader(t *testing.T) {
 				IndexStreamRange: 3,
 				IndexPrefixRange: 2,
 				IndexByteRange:   1,
-
-				CloudLoggingWithProjectScope: true, // the default value is true.
 			})
 		})
 
@@ -79,13 +77,11 @@ func TestGetSettingsLoader(t *testing.T) {
 			buf.WriteString(`
 				cloud_logging_config: {
 					destination: "foo",
-					use_global_logdog_account: true,
 				},
 			`)
 			So(getSettings(ctx, buf.String()), ShouldResemble, &archivist.Settings{
-				GSBase:                       gs.Path("gs://a"),
-				CloudLoggingProjectID:        "foo",
-				CloudLoggingWithProjectScope: false,
+				GSBase:                gs.Path("gs://a"),
+				CloudLoggingProjectID: "foo",
 			})
 		})
 	})

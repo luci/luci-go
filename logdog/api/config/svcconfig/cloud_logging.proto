@@ -13,14 +13,4 @@ option go_package = "go.chromium.org/luci/logdog/api/config/svcconfig";
 message CloudLoggingConfig {
   // The name of the project, where Logdog logs are exported.
   string destination = 1;
-
-  // If true, Logdog uses its default credential for log exports
-  // to the destination project. If false, it uses the project-scoped account.
-  //
-  // NOTE: Using the global logdog account is insecure from a client-isolation
-  // point of view, and means that any LUCI client could send their logs to
-  // your project. This likely wouldn't happen maliciously, but if someone
-  // copy-pasted your configuration into their own project, you may end up
-  // paying to index and store their logs.
-  bool use_global_logdog_account = 2;
 }

@@ -204,10 +204,9 @@ type testCLClient struct {
 	pingFn   func(context.Context) error
 	loggerFn func(string, ...cl.LoggerOption) *cl.Logger
 
-	isClosed            bool
-	clProject           string
-	luciProject         string
-	projectScopeEnabled bool
+	isClosed    bool
+	clProject   string
+	luciProject string
 }
 
 func (c *testCLClient) Close() error {
@@ -252,18 +251,16 @@ func TestHandleArchive(t *testing.T) {
 		}
 
 		var clc *testCLClient
-		clcFactory := func(ctx context.Context, luciProject, clProject string, projectScopeEnabled bool) (CLClient, error) {
+		clcFactory := func(ctx context.Context, luciProject, clProject string) (CLClient, error) {
 			clc = &testCLClient{
-				clProject:           clProject,
-				luciProject:         luciProject,
-				projectScopeEnabled: projectScopeEnabled,
+				clProject:   clProject,
+				luciProject: luciProject,
 			}
 			return clc, nil
 		}
 		// Set up our test log stream.
 		project := "test-project"
 		clProject := "test-cloud-project"
-		projectScopeEnabled := true
 
 		desc := logpb.LogStreamDescriptor{
 			Prefix: "testing",
@@ -370,7 +367,6 @@ func TestHandleArchive(t *testing.T) {
 				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", project))
 				st.GSStagingBase = gs.Path(fmt.Sprintf("gs://archival-staging/%s/path/to/archive/", project))
 				st.CloudLoggingProjectID = func() string { return clProject }()
-				st.CloudLoggingWithProjectScope = func() bool { return projectScopeEnabled }()
 				return &st, nil
 			},
 			Storage:         &st,
@@ -744,27 +740,16 @@ func TestHandleArchive(t *testing.T) {
 			reloadDesc()
 
 			Convey(`w/ projectScope`, func() {
-				projectScopeEnabled = true
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 				So(clc, ShouldNotBeNil)
 				So(clc.clProject, ShouldEqual, clProject)
 				So(clc.luciProject, ShouldEqual, project)
-				So(clc.projectScopeEnabled, ShouldBeTrue)
-			})
-
-			Convey(`w/o projectScope`, func() {
-				projectScopeEnabled = false
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(clc, ShouldNotBeNil)
-				So(clc.clProject, ShouldEqual, clProject)
-				So(clc.luciProject, ShouldEqual, project)
-				So(clc.projectScopeEnabled, ShouldBeFalse)
 			})
 
 			Convey(`w/ CommonLabels`, func() {
 				var opts []cl.LoggerOption
-				ar.CLClientFactory = func(ctx context.Context, lp, cp string, s bool) (CLClient, error) {
-					clc, err := clcFactory(c, lp, cp, s)
+				ar.CLClientFactory = func(ctx context.Context, lp, cp string) (CLClient, error) {
+					clc, err := clcFactory(c, lp, cp)
 					clc.(*testCLClient).loggerFn = func(n string, los ...cl.LoggerOption) *cl.Logger {
 						opts = los
 						return &cl.Logger{}
@@ -832,8 +817,8 @@ func TestHandleArchive(t *testing.T) {
 		})
 
 		Convey("Will ping", func() {
-			ar.CLClientFactory = func(ctx context.Context, lp, cp string, s bool) (CLClient, error) {
-				clc, err := clcFactory(c, lp, cp, s)
+			ar.CLClientFactory = func(ctx context.Context, lp, cp string) (CLClient, error) {
+				clc, err := clcFactory(c, lp, cp)
 				clc.(*testCLClient).pingFn = func(context.Context) error {
 					return errors.New("Permission Denied")
 				}
@@ -846,8 +831,8 @@ func TestHandleArchive(t *testing.T) {
 			// override the loggerFn to hook the params for the logger constructor.
 			var logID string
 			var opts []cl.LoggerOption
-			ar.CLClientFactory = func(ctx context.Context, lp, cp string, s bool) (CLClient, error) {
-				clc, err := clcFactory(c, lp, cp, s)
+			ar.CLClientFactory = func(ctx context.Context, lp, cp string) (CLClient, error) {
+				clc, err := clcFactory(c, lp, cp)
 				clc.(*testCLClient).loggerFn = func(l string, os ...cl.LoggerOption) *cl.Logger {
 					logID, opts = l, os
 					return &cl.Logger{}
