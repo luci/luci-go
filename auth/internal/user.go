@@ -139,7 +139,7 @@ func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) 
 	// ID token has the freshest email.
 	if claims != nil && claims.EmailVerified && claims.Email != "" {
 		email = claims.Email
-	} else if email != "" {
+	} else if email == "" {
 		// If we still don't know the email associated with the credentials, make
 		// an RPC to the token info endpoint to get it.
 		if email, err = grabEmail(ctx, tok); err != nil {
