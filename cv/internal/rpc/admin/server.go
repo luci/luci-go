@@ -245,56 +245,18 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	// Compute potentially interesting run keys using the most efficient query.
 	var runKeys []*datastore.Key
 	var cl *changelist.CL
-	if req.GetCl() != nil {
-		cl, err = loadCL(ctx, req.GetCl())
-		if err != nil {
-			return nil, err
-		}
-		var runCLKeys []*datastore.Key
-		q := datastore.NewQuery(run.RunCLKind).Eq("IndexedID", cl.ID).Limit(req.GetPageSize()).KeysOnly(true)
-		if excl := cursor.GetRun(); excl != "" {
-			q = q.Gt("__key__", datastore.MakeKey(ctx, run.RunKind, excl, run.RunCLKind, int64(cl.ID)))
-		}
-		if err := datastore.GetAll(ctx, q, &runCLKeys); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
-		}
-		runKeys = make([]*datastore.Key, len(runCLKeys))
-		for i, k := range runCLKeys {
-			runKeys[i] = k.Parent()
-		}
-	} else { // Without CL.
-		if req.GetProject() == "" {
-			return nil, appstatus.Error(codes.Unimplemented, "search across projects is not implemented")
-		}
-		baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
-		var queries []*datastore.Query
-		switch s := req.GetStatus(); s {
-		case commonpb.Run_STATUS_UNSPECIFIED:
-			queries = append(queries, baseQ)
-		case commonpb.Run_ENDED_MASK:
-			for _, s := range []commonpb.Run_Status{commonpb.Run_SUCCEEDED, commonpb.Run_CANCELLED, commonpb.Run_FAILED} {
-				queries = append(queries, baseQ.Eq("Status", s))
-			}
-		default:
-			queries = append(queries, baseQ.Eq("Status", s))
-		}
-		if excl := cursor.GetRun(); excl != "" {
-			for i, q := range queries {
-				queries[i] = q.Gt("__key__", datastore.MakeKey(ctx, run.RunKind, excl))
-			}
-		}
-
-		err = datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
-			runKeys = append(runKeys, k)
-			if len(runKeys) == int(req.GetPageSize()) {
-				return datastore.Stop
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
-		}
+	switch {
+	case req.GetCl() != nil:
+		cl, runKeys, err = searchRunsByCL(ctx, req, cursor)
+	case req.GetProject() != "":
+		runKeys, err = searchRunsByProject(ctx, req, cursor)
+	default:
+		return nil, appstatus.Error(codes.Unimplemented, "search across projects is not implemented")
 	}
+	if err != nil {
+		return nil, err
+	}
+
 	var nextCursor *run.Cursor
 	if l := len(runKeys); int32(l) == req.GetPageSize() {
 		// For Admin API, it's OK to return StringID as is, as Admins can see any
@@ -352,6 +314,68 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		return nil, err
 	}
 	return resp, nil
+}
+
+// searchRunsByCL returns CL & Run IDs as Datastore keys, using CL to limit
+// results.
+func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.Cursor) (*changelist.CL, []*datastore.Key, error) {
+	cl, err := loadCL(ctx, req.GetCl())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	q := datastore.NewQuery(run.RunCLKind).Eq("IndexedID", cl.ID).Limit(req.GetPageSize()).KeysOnly(true)
+	if excl := cursor.GetRun(); excl != "" {
+		q = q.Gt("__key__", datastore.MakeKey(ctx, run.RunKind, excl, run.RunCLKind, int64(cl.ID)))
+	}
+	// TODO(tandrii): if req.GetProject() is given, restrict __key__ here.
+	var runCLKeys []*datastore.Key
+	if err := datastore.GetAll(ctx, q, &runCLKeys); err != nil {
+		return nil, nil, errors.Annotate(err, "failed to fetch Runs IDs").Tag(transient.Tag).Err()
+	}
+
+	runKeys := make([]*datastore.Key, len(runCLKeys))
+	for i, k := range runCLKeys {
+		runKeys[i] = k.Parent()
+	}
+	return cl, runKeys, nil
+}
+
+// searchRunsByProject returns Run IDs as Datastore keys, using LUCI Project to
+// limit results.
+func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.Cursor) ([]*datastore.Key, error) {
+	// Prepare queries.
+	baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
+	var queries []*datastore.Query
+	switch s := req.GetStatus(); s {
+	case commonpb.Run_STATUS_UNSPECIFIED:
+		queries = append(queries, baseQ)
+	case commonpb.Run_ENDED_MASK:
+		for _, s := range []commonpb.Run_Status{commonpb.Run_SUCCEEDED, commonpb.Run_CANCELLED, commonpb.Run_FAILED} {
+			queries = append(queries, baseQ.Eq("Status", s))
+		}
+	default:
+		queries = append(queries, baseQ.Eq("Status", s))
+	}
+	if excl := cursor.GetRun(); excl != "" {
+		for i, q := range queries {
+			queries[i] = q.Gt("__key__", datastore.MakeKey(ctx, run.RunKind, excl))
+		}
+	}
+
+	// Run all queries at once.
+	var runKeys []*datastore.Key
+	err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+		runKeys = append(runKeys, k)
+		if len(runKeys) == int(req.GetPageSize()) {
+			return datastore.Stop
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
+	}
+	return runKeys, nil
 }
 
 // Copy from dsset.
