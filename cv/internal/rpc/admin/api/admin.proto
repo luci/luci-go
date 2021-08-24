@@ -255,6 +255,8 @@ message SearchRunsRequest {
   cv.common.v1.Run.Status status = 4;
   // Optional. Limits Runs referencing the given CL.
   GetCLRequest cl = 5;
+  // Optional. Limits Runs by mode.
+  string mode = 6;
 }
 
 message RunsResponse {

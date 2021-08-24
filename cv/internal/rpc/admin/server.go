@@ -283,6 +283,9 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 				return true
 			}
 		}
+		if m := req.GetMode(); m != "" && run.Mode(m) != r.Mode {
+			return true
+		}
 		return false
 	}
 	runs := make([]*adminpb.GetRunResponse, len(runKeys))
