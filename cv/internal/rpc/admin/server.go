@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
+	"go.chromium.org/luci/cv/internal/rpc/pagination"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
@@ -233,14 +234,12 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	if err = checkAllowed(ctx, "SearchRuns"); err != nil {
 		return
 	}
-	switch {
-	case req.GetPageToken() != "":
-		return nil, appstatus.Error(codes.Unimplemented, "not implemented yet")
-	case req.GetPageSize() < 0:
-		return nil, appstatus.Error(codes.InvalidArgument, "negative page size not allowed")
+	if req.PageSize, err = pagination.ValidatePageSize(req, 16, 128); err != nil {
+		return nil, err
 	}
-	if req.GetPageSize() == 0 {
-		req.PageSize = 16
+	cursor := &run.Cursor{}
+	if err := pagination.ValidatePageToken(req, cursor); err != nil {
+		return nil, err
 	}
 
 	// Compute potentially interesting run keys using the most efficient query.
@@ -253,6 +252,9 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		}
 		var runCLKeys []*datastore.Key
 		q := datastore.NewQuery(run.RunCLKind).Eq("IndexedID", cl.ID).Limit(req.GetPageSize()).KeysOnly(true)
+		if excl := cursor.GetRun(); excl != "" {
+			q = q.Gt("__key__", datastore.MakeKey(ctx, run.RunKind, excl, run.RunCLKind, int64(cl.ID)))
+		}
 		if err := datastore.GetAll(ctx, q, &runCLKeys); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
 		}
@@ -276,6 +278,11 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		default:
 			queries = append(queries, baseQ.Eq("Status", s))
 		}
+		if excl := cursor.GetRun(); excl != "" {
+			for i, q := range queries {
+				queries[i] = q.Gt("__key__", datastore.MakeKey(ctx, run.RunKind, excl))
+			}
+		}
 
 		err = datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
 			runKeys = append(runKeys, k)
@@ -287,6 +294,12 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
 		}
+	}
+	var nextCursor *run.Cursor
+	if l := len(runKeys); int32(l) == req.GetPageSize() {
+		// For Admin API, it's OK to return StringID as is, as Admins can see any
+		// LUCI project.
+		nextCursor = &run.Cursor{Run: runKeys[l-1].StringID()}
 	}
 
 	// Fetch individual runs in parallel and apply final filtering.
@@ -324,12 +337,19 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		return nil, common.MostSevereError(errs)
 	}
 
+	resp = &adminpb.RunsResponse{}
+
 	// Remove nil runs, which were skipped above.
-	resp = &adminpb.RunsResponse{Runs: runs[:0]}
+	resp.Runs = runs[:0]
 	for _, r := range runs {
 		if r != nil {
 			resp.Runs = append(resp.Runs, r)
 		}
+	}
+
+	resp.NextPageToken, err = pagination.TokenString(nextCursor)
+	if err != nil {
+		return nil, err
 	}
 	return resp, nil
 }

@@ -254,6 +254,16 @@ func TestSearchRuns(t *testing.T) {
 		const lProject = "proj"
 		const earlierID = lProject + "/124-earlier-has-higher-number"
 		const laterID = lProject + "/123-later-has-lower-number"
+		const diffProjectID = "diff/333-foo-bar"
+
+		idsOf := func(resp *adminpb.RunsResponse) []string {
+			out := make([]string, len(resp.GetRuns()))
+			for i, r := range resp.GetRuns() {
+				out[i] = r.GetId()
+			}
+			return out
+		}
+
 		d := AdminServer{}
 
 		Convey("without access", func() {
@@ -274,13 +284,41 @@ func TestSearchRuns(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(resp.GetRuns(), ShouldHaveLength, 0)
 			})
-			Convey("one run", func() {
+			Convey("two runs", func() {
 				So(datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}), ShouldBeNil)
 				resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
 				So(err, ShouldBeNil)
-				So(resp.GetRuns(), ShouldHaveLength, 2)
-				So(resp.GetRuns()[0].GetId(), ShouldResemble, laterID)
-				So(resp.GetRuns()[1].GetId(), ShouldResemble, earlierID)
+				So(idsOf(resp), ShouldResemble, []string{laterID, earlierID})
+
+				Convey("with page size exactly 2", func() {
+					req := &adminpb.SearchRunsRequest{Project: lProject, PageSize: 2}
+					resp1, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp1), ShouldResemble, []string{laterID, earlierID})
+
+					req.PageToken = resp1.GetNextPageToken()
+					resp2, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp2), ShouldBeEmpty)
+				})
+
+				Convey("with page size of 1", func() {
+					req := &adminpb.SearchRunsRequest{Project: lProject, PageSize: 1}
+					resp1, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp1), ShouldResemble, []string{laterID})
+
+					req.PageToken = resp1.GetNextPageToken()
+					resp2, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp2), ShouldResemble, []string{earlierID})
+
+					req.PageToken = resp2.GetNextPageToken()
+					resp3, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp3), ShouldBeEmpty)
+					So(resp3.GetNextPageToken(), ShouldBeEmpty)
+				})
 			})
 			Convey("filtering", func() {
 				const gHost = "r-review.example.com"
@@ -310,8 +348,7 @@ func TestSearchRuns(t *testing.T) {
 						Status:  commonpb.Run_CANCELLED,
 					})
 					So(err, ShouldBeNil)
-					So(resp.GetRuns(), ShouldHaveLength, 1)
-					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+					So(idsOf(resp), ShouldResemble, []string{earlierID})
 				})
 
 				Convey("ended", func() {
@@ -320,8 +357,7 @@ func TestSearchRuns(t *testing.T) {
 						Status:  commonpb.Run_ENDED_MASK,
 					})
 					So(err, ShouldBeNil)
-					So(resp.GetRuns(), ShouldHaveLength, 1)
-					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+					So(idsOf(resp), ShouldResemble, []string{earlierID})
 				})
 
 				Convey("with CL", func() {
@@ -329,8 +365,7 @@ func TestSearchRuns(t *testing.T) {
 						Cl: &adminpb.GetCLRequest{ExternalId: string(cl2.ExternalID)},
 					})
 					So(err, ShouldBeNil)
-					So(resp.GetRuns(), ShouldHaveLength, 1)
-					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+					So(idsOf(resp), ShouldResemble, []string{earlierID})
 				})
 
 				Convey("with CL and run status", func() {
@@ -339,8 +374,54 @@ func TestSearchRuns(t *testing.T) {
 						Status: commonpb.Run_ENDED_MASK,
 					})
 					So(err, ShouldBeNil)
-					So(resp.GetRuns(), ShouldHaveLength, 1)
-					So(resp.GetRuns()[0].GetId(), ShouldResemble, earlierID)
+					So(idsOf(resp), ShouldResemble, []string{earlierID})
+				})
+
+				Convey("with CL + paging", func() {
+					req := &adminpb.SearchRunsRequest{
+						Cl:       &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
+						PageSize: 1,
+					}
+					resp1, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp1), ShouldResemble, []string{laterID})
+
+					req.PageToken = resp1.GetNextPageToken()
+					resp2, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp2), ShouldResemble, []string{earlierID})
+
+					req.PageToken = resp2.GetNextPageToken()
+					resp3, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp3), ShouldBeEmpty)
+					So(resp3.GetNextPageToken(), ShouldBeEmpty)
+				})
+
+				Convey("with CL across projects and paging", func() {
+					// Make CL1 included in 3 runs: diffProjectID, laterID, earlierID.
+					So(datastore.Put(ctx,
+						&run.Run{
+							ID:     diffProjectID,
+							Status: commonpb.Run_RUNNING,
+							CLs:    common.MakeCLIDs(1),
+						},
+						&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},
+					), ShouldBeNil)
+
+					req := &adminpb.SearchRunsRequest{
+						Cl:       &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
+						PageSize: 2,
+					}
+					resp1, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp1), ShouldResemble, []string{diffProjectID, laterID})
+
+					req.PageToken = resp1.GetNextPageToken()
+					resp2, err := d.SearchRuns(ctx, req)
+					So(err, ShouldBeNil)
+					So(idsOf(resp2), ShouldResemble, []string{earlierID})
+					So(resp2.GetNextPageToken(), ShouldBeEmpty)
 				})
 			})
 		})
