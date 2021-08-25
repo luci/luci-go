@@ -78,6 +78,10 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				return strings.Split(s, "/")
 			},
 			"LinkifyExternalID": func(eid string) string {
+				if eid == "" {
+					// Very old RunCL entities don't have ExternalID set.
+					return ""
+				}
 				return changelist.ExternalID(eid).MustURL()
 			},
 			// Runlog specific, see run_details.go.

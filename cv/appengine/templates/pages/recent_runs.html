@@ -20,8 +20,6 @@
 {{end}}
 
 {{define "content"}}
-  {{$Prev := .Prev}}
-  {{$Next := .Next}}
   <h2>Recent runs for LUCI Project "{{.Project}}"</h2>
   <div class="container">
     <table class="table" id="runs-table">
@@ -35,11 +33,12 @@
         </tr>
       </thead>
       <tbody>
+        {{$Project := .Project}}
         {{range .Runs}}
           <tr>
             <td><a href="/ui/run/{{.Id}}">{{index (SplitSlash .Id) 1}}</a></td>
-            <td>{{.Mode}}</td>
-            <td>{{.Status}}</td>
+            <td><a href="/ui/recents/{{$Project}}?mode={{.Mode}}">{{.Mode}}</a></td>
+            <td><a href="/ui/recents/{{$Project}}?status={{.Status}}">{{.Status}}</a></td>
             <td>{{FmTime .CreateTime.AsTime}}</td>
             <td>
               {{if (gt (len .ExternalCls) 5)}}
@@ -61,14 +60,11 @@
     </table>
 
     <div class="pager">
-      {{if $Prev}}
-        {{if (eq $Prev " ")}}
-          {{$Prev = ""}}
-        {{end}}
-        <span><a href="?page={{$Prev}}">&#10094;Previous</a></span>
+      {{if .PrevPage}}
+      <span><a href="?page={{.PrevPage}}&mode={{.FilterMode}}&status={{.FilterStatus}}">&#10094;Previous</a></span>
       {{end}}
-      {{if $Next}}
-        <span><a href="?page={{$Next}}">Next&#10095;</a></span>
+      {{if .NextPage}}
+      <span><a href="?page={{.NextPage}}&mode={{.FilterMode}}&status={{.FilterStatus}}">Next&#10095;</a></span>
       {{end}}
     </div>
   </div>

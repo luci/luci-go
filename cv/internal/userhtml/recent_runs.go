@@ -26,9 +26,11 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 func recentsPage(c *router.Context) {
@@ -39,23 +41,30 @@ func recentsPage(c *router.Context) {
 		return
 	}
 
-	if err := c.Request.ParseForm(); err != nil {
-		errPage(c, errors.Annotate(err, "failed to parse form").Err())
+	params, err := parseFormParams(c)
+	if err != nil {
+		errPage(c, err)
 		return
 	}
-	pageToken := c.Request.Form.Get("page")
 
 	// TODO(crbug/1233963): check if user has permission to search this specific project.
+	req := &adminpb.SearchRunsRequest{
+		Project:   project,
+		PageToken: params.pageToken,
+		PageSize:  50,
+		Status:    params.status,
+		Mode:      string(params.mode),
+	}
 
 	adminServer := &admin.AdminServer{}
-	resp, err := adminServer.SearchRuns(c.Context, &adminpb.SearchRunsRequest{Project: project, PageToken: pageToken})
+	resp, err := adminServer.SearchRuns(c.Context, req)
 	if err != nil {
 		errPage(c, err)
 		return
 	}
 	logging.Debugf(c.Context, "%d runs retrieved", len(resp.Runs))
 
-	prev, next, err := pageTokens(c.Context, "recent-runs", pageToken, resp.NextPageToken)
+	prev, next, err := pageTokens(c.Context, "recent-runs", params.pageToken, resp.NextPageToken)
 	if err != nil {
 		if common.IsDev(c.Context) {
 			logging.Warningf(c.Context, "Could not connect to Redis, paging back disabled. %s", err.Error())
@@ -67,11 +76,57 @@ func recentsPage(c *router.Context) {
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/recent_runs.html", map[string]interface{}{
-		"Runs":    resp.Runs,
-		"Prev":    prev,
-		"Next":    next,
-		"Project": project,
+		"Runs":         resp.Runs,
+		"Project":      project,
+		"PrevPage":     prev,
+		"NextPage":     next,
+		"FilterStatus": params.statusString(),
+		"FilterMode":   params.modeString(),
 	})
+}
+
+type recentRunsParams struct {
+	status    commonpb.Run_Status
+	mode      run.Mode
+	pageToken string
+}
+
+func parseFormParams(c *router.Context) (recentRunsParams, error) {
+	params := recentRunsParams{}
+	if err := c.Request.ParseForm(); err != nil {
+		return params, errors.Annotate(err, "failed to parse form").Err()
+	}
+
+	s := c.Request.Form.Get("status")
+	switch val, ok := commonpb.Run_Status_value[strings.ToUpper(s)]; {
+	case s == "":
+	case ok:
+		params.status = commonpb.Run_Status(val)
+	default:
+		return params, fmt.Errorf("invalid Run status %q", s)
+	}
+
+	switch m := run.Mode(c.Request.Form.Get("mode")); {
+	case m == "":
+	case m.Valid():
+		params.mode = m
+	default:
+		return params, fmt.Errorf("invalid Run mode %q", params.mode)
+	}
+
+	params.pageToken = strings.TrimSpace(c.Request.Form.Get("page"))
+	return params, nil
+}
+
+func (r *recentRunsParams) statusString() string {
+	if r.status == commonpb.Run_STATUS_UNSPECIFIED {
+		return ""
+	}
+	return r.status.String()
+}
+
+func (r *recentRunsParams) modeString() string {
+	return string(r.mode)
 }
 
 // pageTokens caches the current pageToken associated to the next,

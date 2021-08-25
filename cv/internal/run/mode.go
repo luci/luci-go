@@ -37,6 +37,15 @@ const (
 	QuickDryRun Mode = "QUICK_DRY_RUN"
 )
 
+func (m Mode) Valid() bool {
+	switch m {
+	case DryRun, FullRun, QuickDryRun:
+		return true
+	default:
+		return false
+	}
+}
+
 // BQAttemptMode returns corresponding value for legacy CQ BQ export.
 func (m Mode) BQAttemptMode() bqpb.Mode {
 	switch m {
