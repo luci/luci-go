@@ -19,13 +19,21 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit/botdata"
+	"go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
@@ -98,5 +106,60 @@ func TestStart(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 			})
 		}
+	})
+}
+
+func TestStartMessageFactory(t *testing.T) {
+	t.Parallel()
+
+	Convey("startMessageFactory works", t, func() {
+		epoch := testclock.TestRecentTimeUTC.Truncate(time.Second)
+		makeCL := func(id common.CLID, gHost string, gNumber int, triggerDelay time.Duration) *run.RunCL {
+			return &run.RunCL{
+				ID: id,
+				Detail: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+					Host: gHost,
+					Info: gerritfake.CI(gNumber),
+				}}},
+				Trigger: &run.Trigger{
+					Time: timestamppb.New(epoch.Add(triggerDelay)),
+				},
+			}
+		}
+		r := &run.Run{Mode: run.FullRun, CLs: common.CLIDs{1, 2, 3}}
+		cls := []*run.RunCL{
+			makeCL(1, "x-review.example.com", 24, 10*time.Second),
+			makeCL(2, "y-review.example.com", 25, 20*time.Second),
+			makeCL(3, "z-review.example.com", 26, 30*time.Second),
+		}
+		factory := startMessageFactory(r, cls)
+
+		expCLs := []botdata.ChangeID{
+			{Host: "x-review.example.com", Number: 24},
+			{Host: "y-review.example.com", Number: 25},
+			{Host: "z-review.example.com", Number: 26},
+		}
+
+		test := func(clid common.CLID) botdata.BotData {
+			s, err := factory(clid)
+			So(err, ShouldBeNil)
+			bd, ok := botdata.Parse(&gerritpb.ChangeMessageInfo{Message: s})
+			So(ok, ShouldBeTrue)
+			So(bd.Action, ShouldEqual, botdata.Start)
+			So(bd.CLs, ShouldResemble, expCLs)
+			return bd
+		}
+
+		Convey("panics on unknown CLID", func() {
+			So(func() { _, _ = factory(42) }, ShouldPanic)
+		})
+		Convey("sets CL-specific triggeredAt", func() {
+			So(test(1).TriggeredAt, ShouldResemble, epoch.Add(10*time.Second))
+			So(test(2).TriggeredAt, ShouldResemble, epoch.Add(20*time.Second))
+		})
+		Convey("sets CL-specific revision", func() {
+			So(test(2).Revision, ShouldResemble, "rev-000025-001")
+			So(test(3).Revision, ShouldResemble, "rev-000026-001")
+		})
 	})
 }

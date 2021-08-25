@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -27,8 +28,10 @@ import (
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/usertext"
 )
 
 // Start implements Handler interface.
@@ -74,5 +77,41 @@ func recordPickupLatency(ctx context.Context, r *run.Run, cg *prjcfg.ConfigGroup
 
 	if delay >= 1*time.Minute {
 		logging.Warningf(ctx, "Too large adjusted pickup delay: %s", delay)
+	}
+}
+
+type startMessageMaker func(clid common.CLID) (string, error)
+
+func startMessageFactory(r *run.Run, cls []*run.RunCL) startMessageMaker {
+	clidToIndex := make(map[common.CLID]int, len(cls))
+	botdataCLs := make([]botdata.ChangeID, len(cls))
+	for i, cl := range cls {
+		if r.CLs[i] != cl.ID {
+			panic(fmt.Errorf("run entity CLs don't correspond to RunCLs entities at index %d: %d vs %d", i, r.CLs[i], cl.ID))
+		}
+		clidToIndex[cl.ID] = i
+		g := cl.Detail.GetGerrit()
+		if g == nil {
+			panic(fmt.Errorf("CL %d isn't a Gerrit CL and/or corrutped RunCL", cl.ID))
+		}
+		botdataCLs[i] = botdata.ChangeID{
+			Host:   g.GetHost(),
+			Number: g.GetInfo().GetNumber(),
+		}
+	}
+	humanMsg := usertext.OnRunStarted(r.Mode)
+	return func(clid common.CLID) (string, error) {
+		index, ok := clidToIndex[clid]
+		if !ok {
+			panic(fmt.Errorf("CL %d doesn't belong to Run %q", clid, r.ID))
+		}
+		g := cls[index].Detail.GetGerrit()
+		bd := botdata.BotData{
+			Action:      botdata.Start,
+			CLs:         botdataCLs,
+			Revision:    g.GetInfo().GetCurrentRevision(),
+			TriggeredAt: cls[index].Trigger.GetTime().AsTime(),
+		}
+		return botdata.Append(humanMsg, bd)
 	}
 }
