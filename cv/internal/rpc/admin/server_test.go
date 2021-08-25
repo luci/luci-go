@@ -15,6 +15,9 @@
 package admin
 
 import (
+	"context"
+	"encoding/hex"
+	"fmt"
 	"testing"
 	"time"
 
@@ -28,8 +31,10 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
@@ -42,6 +47,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -264,7 +271,53 @@ func TestSearchRuns(t *testing.T) {
 			return out
 		}
 
+		assertOrdered := func(resp *adminpb.RunsResponse) {
+			for i := 1; i < len(resp.GetRuns()); i++ {
+				curr := resp.GetRuns()[i]
+				prev := resp.GetRuns()[i-1]
+
+				currID := common.RunID(curr.GetId())
+				prevID := common.RunID(prev.GetId())
+				So(prevID, ShouldNotResemble, currID)
+
+				currTS := curr.GetCreateTime().AsTime()
+				prevTS := prev.GetCreateTime().AsTime()
+				if !prevTS.Equal(currTS) {
+					So(prevTS, ShouldHappenAfter, currTS)
+					continue
+				}
+				// Same TS.
+
+				if prevID.LUCIProject() != currID.LUCIProject() {
+					So(prevID.LUCIProject(), ShouldBeLessThan, currID.LUCIProject())
+					continue
+				}
+				// Same LUCI project.
+				So(prevID, ShouldBeLessThan, currID)
+			}
+		}
+
 		d := AdminServer{}
+
+		fetchAll := func(ctx context.Context, origReq *adminpb.SearchRunsRequest) *adminpb.RunsResponse {
+			var out *adminpb.RunsResponse
+			// Allow orig request to have page token already.
+			nextPageToken := origReq.GetPageToken()
+			for out == nil || nextPageToken != "" {
+				req := proto.Clone(origReq).(*adminpb.SearchRunsRequest)
+				req.PageToken = nextPageToken
+				resp, err := d.SearchRuns(ctx, req)
+				So(err, ShouldBeNil)
+				assertOrdered(resp)
+				if out == nil {
+					out = resp
+				} else {
+					out.Runs = append(out.Runs, resp.GetRuns()...)
+				}
+				nextPageToken = resp.GetNextPageToken()
+			}
+			return out
+		}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -284,7 +337,7 @@ func TestSearchRuns(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(resp.GetRuns(), ShouldHaveLength, 0)
 			})
-			Convey("two runs", func() {
+			Convey("two runs of the same project", func() {
 				So(datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}), ShouldBeNil)
 				resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
 				So(err, ShouldBeNil)
@@ -320,6 +373,7 @@ func TestSearchRuns(t *testing.T) {
 					So(resp3.GetNextPageToken(), ShouldBeEmpty)
 				})
 			})
+
 			Convey("filtering", func() {
 				const gHost = "r-review.example.com"
 				cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
@@ -382,20 +436,8 @@ func TestSearchRuns(t *testing.T) {
 						Cl:       &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
 						PageSize: 1,
 					}
-					resp1, err := d.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp1), ShouldResemble, []string{laterID})
-
-					req.PageToken = resp1.GetNextPageToken()
-					resp2, err := d.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp2), ShouldResemble, []string{earlierID})
-
-					req.PageToken = resp2.GetNextPageToken()
-					resp3, err := d.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp3), ShouldBeEmpty)
-					So(resp3.GetNextPageToken(), ShouldBeEmpty)
+					total := fetchAll(ctx, req)
+					So(idsOf(total), ShouldResemble, []string{laterID, earlierID})
 				})
 
 				Convey("with CL across projects and paging", func() {
@@ -413,15 +455,117 @@ func TestSearchRuns(t *testing.T) {
 						Cl:       &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
 						PageSize: 2,
 					}
-					resp1, err := d.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp1), ShouldResemble, []string{diffProjectID, laterID})
+					total := fetchAll(ctx, req)
+					So(idsOf(total), ShouldResemble, []string{diffProjectID, laterID, earlierID})
+				})
+			})
 
-					req.PageToken = resp1.GetNextPageToken()
-					resp2, err := d.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp2), ShouldResemble, []string{earlierID})
-					So(resp2.GetNextPageToken(), ShouldBeEmpty)
+			Convey("runs aross all projects", func() {
+				// Choose epoch such that inverseTS of Run ID has zeros at the end for
+				// ease of debugging.
+				epoch := testclock.TestRecentTimeUTC.Truncate(time.Millisecond).Add(498490844 * time.Millisecond)
+
+				makeRun := func(project, createdAfter, remainder int) *run.Run {
+					remBytes, err := hex.DecodeString(fmt.Sprintf("%02d", remainder))
+					if err != nil {
+						panic(err)
+					}
+					createTime := epoch.Add(time.Duration(createdAfter) * time.Millisecond)
+					id := common.MakeRunID(
+						fmt.Sprintf("p%02d", project),
+						createTime,
+						1,
+						remBytes,
+					)
+					return &run.Run{ID: id, CreateTime: createTime}
+				}
+
+				placeRuns := func(runs ...*run.Run) []string {
+					ids := make([]string, len(runs))
+					So(datastore.Put(ctx, runs), ShouldBeNil)
+					projects := stringset.New(10)
+					for i, r := range runs {
+						projects.Add(r.ID.LUCIProject())
+						ids[i] = string(r.ID)
+					}
+					for p := range projects {
+						prjcfgtest.Create(ctx, p, &cfgpb.Config{})
+					}
+					return ids
+				}
+
+				Convey("just one project", func() {
+					expIDs := placeRuns(
+						// project, creationDelay, hash.
+						makeRun(1, 90, 11),
+						makeRun(1, 80, 12),
+						makeRun(1, 70, 13),
+						makeRun(1, 70, 14),
+						makeRun(1, 70, 15),
+						makeRun(1, 60, 11),
+						makeRun(1, 60, 12),
+					)
+					Convey("without paging", func() {
+						resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
+						So(err, ShouldBeNil)
+						assertOrdered(resp)
+						So(idsOf(resp), ShouldResemble, expIDs)
+					})
+					Convey("with paging", func() {
+						total := fetchAll(ctx, &adminpb.SearchRunsRequest{PageSize: 2})
+						assertOrdered(total)
+						So(idsOf(total), ShouldResemble, expIDs)
+					})
+				})
+
+				Convey("two projects with overlapping timestaps", func() {
+					expIDs := placeRuns(
+						// project, creationDelay, hash.
+						makeRun(1, 90, 11),
+						makeRun(1, 80, 12), // same creationDelay, but smaller project
+						makeRun(2, 80, 12),
+						makeRun(2, 80, 13), // later hash
+						makeRun(2, 70, 13),
+						makeRun(1, 60, 12),
+					)
+					Convey("without paging", func() {
+						resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
+						So(err, ShouldBeNil)
+						assertOrdered(resp)
+						So(idsOf(resp), ShouldResemble, expIDs)
+					})
+					Convey("with paging", func() {
+						total := fetchAll(ctx, &adminpb.SearchRunsRequest{PageSize: 1})
+						assertOrdered(total)
+						So(idsOf(total), ShouldResemble, expIDs)
+					})
+				})
+
+				Convey("large scale", func() {
+					var runs []*run.Run
+					for p := 50; p < 60; p++ {
+						// Distribute # of Runs unevenly across projects.
+						for c := p - 49; c > 0; c-- {
+							// Create some Runs with the same start timestamp.
+							for r := 90; r <= 90+c%3; r++ {
+								runs = append(runs, makeRun(p, c, r))
+							}
+						}
+					}
+					placeRuns(runs...)
+
+					Convey("without paging", func() {
+						So(len(runs), ShouldBeLessThan, 128)
+						resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
+						So(err, ShouldBeNil)
+						assertOrdered(resp)
+						So(resp.GetRuns(), ShouldHaveLength, len(runs))
+					})
+					Convey("with paging", func() {
+						total := fetchAll(ctx, &adminpb.SearchRunsRequest{PageSize: 8})
+						assertOrdered(total)
+						So(total.GetRuns(), ShouldHaveLength, len(runs))
+					})
 				})
 			})
 		})

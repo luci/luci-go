@@ -20,13 +20,14 @@
 {{end}}
 
 {{define "content"}}
-  <h2>Recent runs for LUCI Project "{{.Project}}"</h2>
+  <h2>Recent runs {{if .Project}} for LUCI Project "{{.Project}}" {{end}}</h2>
   <div class="container">
     <table class="table" id="runs-table">
       <thead>
         <tr>
+          <th style="width: 60px;">PROJECT</th>
           <th style="width: 320px;">ID</th>
-          <th style="width: 120px;">MODE</th>
+          <th style="width: 60px;">MODE</th>
           <th style="width: 120px;">STATUS</th>
           <th style="width: 240px;">CREATE_TIME</th>
           <th style="width: 500px;">CLs</th>
@@ -36,6 +37,7 @@
         {{$Project := .Project}}
         {{range .Runs}}
           <tr>
+            <td><a href="/ui/recents/{{index (SplitSlash .Id) 0}}">{{index (SplitSlash .Id) 0}}</a></td>
             <td><a href="/ui/run/{{.Id}}">{{index (SplitSlash .Id) 1}}</a></td>
             <td><a href="/ui/recents/{{$Project}}?mode={{.Mode}}">{{.Mode}}</a></td>
             <td><a href="/ui/recents/{{$Project}}?status={{.Status}}">{{.Status}}</a></td>

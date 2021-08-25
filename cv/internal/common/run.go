@@ -26,13 +26,13 @@ import (
 
 // RunID is an unique RunID to identify a Run in CV.
 //
-// RunID is string like `luciProject/timeComponent-1-hexHashDigest` consisting of
+// RunID is string like `luciProject/inverseTS-1-hexHashDigest` consisting of
 // 7 parts:
 //   1. The LUCI Project that this Run belongs to.
 //      Purpose: separates load on Datastore from different projects.
 //   2. `/` separator.
-//   3. (`endOfTheWorld` - CreateTime) in ms precision, left-padded with zeros
-//      to 13 digits. See `Run.CreateTime` Doc.
+//   3. InverseTS, defined as (`endOfTheWorld` - CreateTime) in ms precision,
+//      left-padded with zeros to 13 digits. See `Run.CreateTime` Doc.
 //      Purpose: ensures queries by default orders runs of the same project by
 //      most recent first.
 //   4. `-` separator.
@@ -70,6 +70,18 @@ func (id RunID) LUCIProject() string {
 		panic(fmt.Errorf("invalid run ID %q", id))
 	}
 	return string(id[:pos])
+}
+
+// InverseTS of this Run. See RunID doc.
+func (id RunID) InverseTS() string {
+	s := string(id)
+	posSlash := strings.IndexRune(s, '/')
+	if posSlash == -1 {
+		panic(fmt.Errorf("invalid run ID %q", id))
+	}
+	s = s[posSlash+1:]
+	posDash := strings.IndexRune(s, '-')
+	return s[:posDash]
 }
 
 // PublicID returns the public representation of the RunID.

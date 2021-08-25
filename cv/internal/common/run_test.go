@@ -16,7 +16,6 @@ package common
 
 import (
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -30,8 +29,12 @@ func TestID(t *testing.T) {
 	Convey("ID works", t, func() {
 		id := MakeRunID("infra", endOfTheWorld.Add(-time.Minute), 1, []byte{65, 15})
 		So(id, ShouldEqual, "infra/0000000060000-1-410f")
-		digits := id[strings.IndexRune(string(id), '/')+1 : strings.IndexRune(string(id), '-')]
-		So(len(digits), ShouldEqual, 13)
+		// Assert separately to ensure # of digits doesn't change,
+		// as this will break sorting order with IDs makde before.
+		So(id.InverseTS(), ShouldHaveLength, 13)
+		So(id.InverseTS(), ShouldResemble, "0000000060000")
+		So(id.LUCIProject(), ShouldResemble, "infra")
+		So(id.AttemptKey(), ShouldResemble, "410f")
 
 		Convey("lexical ordering is oldest last", func() {
 			earlierId := MakeRunID("infra", endOfTheWorld.Add(-time.Hour), 2, []byte{31, 44})

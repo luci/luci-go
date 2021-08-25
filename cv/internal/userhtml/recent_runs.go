@@ -17,7 +17,6 @@ package userhtml
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -35,11 +34,6 @@ import (
 
 func recentsPage(c *router.Context) {
 	project := c.Params.ByName("Project")
-
-	if project == "" {
-		http.Redirect(c.Writer, c.Request, c.HandlerPath+"/infra", http.StatusFound)
-		return
-	}
 
 	params, err := parseFormParams(c)
 	if err != nil {
