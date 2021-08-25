@@ -61,6 +61,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func init() {
+	// TODO(crbug/1242998): delete this once it becomes default.
+	datastore.EnableSafeGet()
+}
+
 // TODO(tandrii): add fake config generation facilities.
 
 // Test encapsulates typical setup for CV test.

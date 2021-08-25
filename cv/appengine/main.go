@@ -19,9 +19,10 @@ import (
 	"net/http"
 	"time"
 
-	"go.chromium.org/luci/config/server/cfgmodule"
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -57,6 +58,11 @@ import (
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	"go.chromium.org/luci/cv/internal/userhtml"
 )
+
+func init() {
+	// TODO(crbug/1242998): delete this once it becomes default.
+	datastore.EnableSafeGet()
+}
 
 func main() {
 	modules := []module.Module{
