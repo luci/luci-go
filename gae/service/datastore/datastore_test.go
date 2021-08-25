@@ -1047,7 +1047,7 @@ func TestGet(t *testing.T) {
 				})
 
 				Convey("get with nil inside a struct slice is an error", func() {
-					So(func() { Get(c, []*CommonStruct{&CommonStruct{}, nil}) }, ShouldPanicLike,
+					So(func() { _ = Get(c, []*CommonStruct{{}, nil}) }, ShouldPanicLike,
 						"invalid input slice: has nil at index 1")
 				})
 
@@ -1548,7 +1548,7 @@ func TestSchemaChange(t *testing.T) {
 			}
 			tv := &Val{ID: 10, TwoVal: 2}
 			So(Get(c, tv), ShouldBeNil)
-			So(tv, ShouldResemble, &Val{ID: 10, Val: 100, TwoVal: 2})
+			So(tv, ShouldResemble, &Val{ID: 10, Val: 100, TwoVal: 0 /*was reset*/})
 		})
 
 		Convey("Removing fields", func() {
@@ -1657,9 +1657,9 @@ func TestSchemaChange(t *testing.T) {
 				NewStuff  string
 				blackHole PropertyMap `gae:"-,extra"`
 			}
-			b := &BlackHole{ID: 10, NewStuff: "(╯°□°)╯︵ ┻━┻"}
+			b := &BlackHole{ID: 10}
 			So(Get(c, b), ShouldBeNil)
-			So(b, ShouldResemble, &BlackHole{ID: 10, NewStuff: "(╯°□°)╯︵ ┻━┻"})
+			So(b, ShouldResemble, &BlackHole{ID: 10})
 		})
 
 		Convey("Can change field types", func() {

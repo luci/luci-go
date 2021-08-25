@@ -84,6 +84,10 @@ func typeMismatchReason(val interface{}, v reflect.Value) string {
 func (p *structPLS) Load(propMap PropertyMap) error {
 	convFailures := errors.MultiError(nil)
 
+	if getSafeGetEnabled() {
+		p.resetBeforeLoad()
+	}
+
 	useExtra := false
 	extra := (*PropertyMap)(nil)
 	if i, ok := p.c.bySpecial["extra"]; ok {
@@ -126,6 +130,30 @@ func (p *structPLS) Load(propMap PropertyMap) error {
 	}
 
 	return nil
+}
+
+// resetBeforeLoad resets exported to Datastore fields of the struct,
+// recursively.
+func (p *structPLS) resetBeforeLoad() {
+	var reset func(codec *structCodec, structValue reflect.Value)
+	reset = func(codec *structCodec, structValue reflect.Value) {
+		for fieldIndex, tag := range codec.byIndex {
+			field := structValue.Field(fieldIndex)
+			switch {
+			case !tag.canSet || tag.name == "-":
+				// Either not exported field of a struct,
+				// or not exported to Datastore (e.g. `gae:"-"`),
+				// or special $id or $parent, whose codec's tag.name is also "-".
+			case tag.substructCodec != nil && !tag.isSlice:
+				// Recurse.
+				reset(tag.substructCodec, field)
+			default:
+				field.Set(reflect.Zero(field.Type()))
+			}
+		}
+	}
+
+	reset(p.c, p.o)
 }
 
 func loadInner(codec *structCodec, structValue reflect.Value, index int, name string, p Property, requireSlice bool) string {

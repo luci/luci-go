@@ -708,6 +708,25 @@ type IDEmbedder struct {
 
 type Simple struct{}
 
+type SubStructForReset struct {
+	SubSlice   []string
+	subPrivate int
+}
+
+type StructForReset struct {
+	ID     string      `gae:"$id"`
+	Parent *Key        `gae:"$parent"`
+	Extra  PropertyMap `gae:",extra"`
+	Field  string      `gae:"NoIndexIsAlsoReset,noindex"`
+	Struct SubStructForReset
+	Slice  []string
+
+	Skip          string `gae:"-"`
+	private       int
+	privateStruct SubStructForReset
+	privateSlice  []int
+}
+
 // protoEmbedder should be implemented by all proto-containing structs to
 // specific comparison in TestRoundTrip.
 type protoEmbedder interface {
@@ -1985,8 +2004,71 @@ var testCases = []testCase{
 		desc:     "structs with slices of base type are reset on load",
 		src:      &B1{B: []int8{1, 2}},
 		loadInto: &B1{B: []int8{4}},
-		// TODO(crbug/1189937): fix s.t. only {1,2} is produced.
-		want: &B1{B: []int8{4, 1, 2}},
+		want:     &B1{B: []int8{1, 2}},
+	},
+	{
+		desc: "structs are reset excluding $id and $parent",
+		src: &StructForReset{
+			ID:     "saved ID",
+			Parent: testKey1a,
+		},
+		loadInto: &StructForReset{
+			// These fields are reset.
+			Field:  "pre-field",
+			Struct: SubStructForReset{SubSlice: []string{"to", "be", "reset"}},
+			Slice:  []string{"pre", "slice"},
+			Extra:  PropertyMap{"should": mpNI("be reset")},
+			// $id and $parent preserved as is.
+			ID:     "not reset ID",
+			Parent: testKey2a,
+		},
+		want: &StructForReset{
+			ID:     "not reset ID",
+			Parent: testKey2a,
+		},
+	},
+	{
+		desc: "structs are reset, recursively, but excluding private and non-GAE exported fields",
+		src: &StructForReset{
+			ID:     "ID",
+			Parent: testKey1a,
+			Slice:  []string{"slice", "of", "strings"},
+			Extra:  PropertyMap{"saved": mpNI("value")},
+		},
+		loadInto: &StructForReset{
+			ID:     "ID",
+			Parent: testKey1a,
+			Field:  "pre-field",
+			Struct: SubStructForReset{
+				subPrivate: 42,
+				SubSlice:   []string{"to", "be", "reset"},
+			},
+			Slice: []string{"pre", "slice"},
+			Extra: PropertyMap{"should": mpNI("be reset")},
+
+			Skip:          "must be preserved",
+			private:       42,
+			privateSlice:  []int{42},
+			privateStruct: SubStructForReset{SubSlice: []string{"preserved", "private in parent"}, subPrivate: 42},
+		},
+		want: &StructForReset{
+			// The only two fields which are read from `src` is Slice & Extra.
+			Slice: []string{"slice", "of", "strings"},
+			// Note that `extra` PropertyMap is generalized to field -> slice.
+			Extra: PropertyMap{"saved": PropertySlice{mpNI("value")}},
+
+			// These were reset in `loadInto`, except private field inside `Struct`.
+			Field:  "",
+			Struct: SubStructForReset{subPrivate: 42},
+
+			// The rest is the same as in `loadInto`.
+			ID:            "ID",
+			Parent:        testKey1a,
+			Skip:          "must be preserved",
+			private:       42,
+			privateSlice:  []int{42},
+			privateStruct: SubStructForReset{SubSlice: []string{"preserved", "private in parent"}, subPrivate: 42},
+		},
 	},
 }
 
@@ -2015,6 +2097,7 @@ func TestRoundTrip(t *testing.T) {
 						So(err, ShouldErrLike, tc.plsErr)
 						return
 					}
+					So(err, ShouldBeNil)
 				}
 				So(pls, ShouldNotBeNil)
 
@@ -2053,6 +2136,8 @@ func TestRoundTrip(t *testing.T) {
 					So(err, ShouldErrLike, tc.loadErr)
 					return
 				}
+				// Second load should not change anything.
+				So(pls.Load(savedProps), ShouldBeNil)
 				if tc.want == nil {
 					return
 				}

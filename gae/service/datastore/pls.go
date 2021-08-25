@@ -139,7 +139,7 @@ import (
 //     // "kind" is automatically implied by the struct name: "User"
 //     // "parent" is nil... Users are root entities
 //
-//     // 'Name' will serialized to the datastore in the field 'Name'
+//     // 'Name' will be serialized to the datastore in the field 'Name'
 //     Name string
 //   }
 //
