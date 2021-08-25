@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	helloworld "go.chromium.org/luci/examples/appengine/helloworld_standard/proto"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
@@ -102,6 +103,10 @@ func checkAPIAccess(c context.Context, methodName string, req proto.Message) (co
 }
 
 func init() {
+	// Temporary fix for Datastore behavior.
+	// TODO(crbug/1242998): remove after it is default.
+	datastore.EnableSafeGet()
+
 	server.SwitchToEncryptedCookies()
 
 	r := router.New()
