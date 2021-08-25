@@ -145,7 +145,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.1"
+	UserAgent = "cipd 2.6.2"
 )
 
 func init() {
@@ -698,7 +698,6 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 // closed with Close() when done working with it.
 func (client *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache, error) {
 	var cacheDir string
-	var err error
 	var tmp bool
 
 	if client.CacheDir != "" {
@@ -718,17 +717,16 @@ func (client *clientImpl) instanceCache(ctx context.Context) (*internal.Instance
 			// Multiple temp caches must not reuse the same directory or they'll
 			// interfere with one another when deleting instances or cleaning them up
 			// when closing.
-			cacheDir, err = ioutil.TempDir(tmpDir, "dl_")
-			if err != nil {
+			if cacheDir, err = ioutil.TempDir(tmpDir, "dl_"); err != nil {
 				return nil, err
 			}
 		} else {
 			// When not using a site root, just create the directory in /tmp.
-			cacheDir, err = ioutil.TempDir("", "cipd_dl_")
+			var err error
+			if cacheDir, err = ioutil.TempDir("", "cipd_dl_"); err != nil {
+				return nil, err
+			}
 		}
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	// Since 0 is used as "use defaults" indicator, we have to use negatives to
