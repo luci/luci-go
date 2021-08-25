@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/triager"
+	"go.chromium.org/luci/cv/internal/run/runcreator"
 )
 
 const (
@@ -89,7 +90,8 @@ func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g 
 			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			err := pm.manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{
-				KnownIgnore: []error{errTaskArrivedTooLate, eventbox.ErrContention},
+				KnownIgnore:    []error{errTaskArrivedTooLate, eventbox.ErrContention},
+				KnownRetryTags: []errors.BoolTag{runcreator.StateChangedTag},
 			}.Error(ctx, err)
 		},
 	)
