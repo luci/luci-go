@@ -57,7 +57,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/ui"
 )
 
-//// Global state. See init().
+//// Global state. See main().
 
 const adminGroup = "administrators"
 
