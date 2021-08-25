@@ -37,14 +37,13 @@ import (
 // it's recommended that you scan through all datastore.Get() calls in your
 // codebase.
 //
-// So, you should call this in init() of in your main package. You probably
-// ought to also call it in your tests, e.g. by adding crbug1242998_test.go
-// file. For example,
+// So, you should either call this directly from your main package init(),
+// or use a one liner:
 //
-//     func init(){
-//       // TODO(crbug/1242998): delete this once it becomes default.
-//       datastore.EnableSafeGet()
-//     }
+//  import _ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
+//
+// You may also want to import it in your test which run against in-memory
+// Datastore.
 //
 // NOTE: this switch is global, so if you use a shared library, which performs
 // Datastore operations, this switch will also affect the library.

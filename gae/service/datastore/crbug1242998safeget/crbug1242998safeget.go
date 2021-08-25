@@ -12,11 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+// Package crbug1242998safeget enables easy to use safe Datastore Get behavior.
+//
+// Just import it, e.g.:
+//
+//     import _ go.chromium.org/luci/gae/service/datastore/crbug1242998safeget
+//
+// For more information, see
+// https://pkg.go.dev/go.chromium.org/luci/gae/service/datastore#EnableSafeGet
+package crbug1242998safeget
 
-import "go.chromium.org/luci/gae/service/datastore"
+import (
+	"go.chromium.org/luci/gae/service/datastore"
+)
 
 func init() {
-	// TODO(crbug/1242998): delete this once it becomes default.
 	datastore.EnableSafeGet()
 }

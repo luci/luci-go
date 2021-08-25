@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/gae/service/info"
 	serverauth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
@@ -60,11 +61,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func init() {
-	// TODO(crbug/1242998): delete this once it becomes default.
-	datastore.EnableSafeGet()
-}
 
 // TODO(tandrii): add fake config generation facilities.
 
