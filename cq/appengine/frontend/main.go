@@ -17,6 +17,7 @@ package main
 
 import (
 	"go.chromium.org/luci/config/server/cfgmodule"
+	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/module"
 
