@@ -76,6 +76,30 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 			}, true)
 			So(err, ShouldBeNil)
 		})
+
+		Convey(`Mismatching variant hashes`, func() {
+			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
+				Invocation: "invocations/inv",
+				TestExoneration: &pb.TestExoneration{
+					TestId:      "a",
+					Variant:     pbutil.Variant("a", "b"),
+					VariantHash: "doesn't match",
+				},
+			}, true)
+			So(err, ShouldErrLike, `computed and supplied variant hash don't match`)
+		})
+
+		Convey(`Matching variant hashes`, func() {
+			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
+				Invocation: "invocations/inv",
+				TestExoneration: &pb.TestExoneration{
+					TestId:      "a",
+					Variant:     pbutil.Variant("a", "b"),
+					VariantHash: "c467ccce5a16dc72",
+				},
+			}, true)
+			So(err, ShouldBeNil)
+		})
 	})
 }
 
@@ -114,31 +138,21 @@ func TestCreateTestExoneration(t *testing.T) {
 		// Insert the invocation.
 		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
-		e2eTest := func(withRequestID bool) {
-			req := &pb.CreateTestExonerationRequest{
-				Invocation: "invocations/inv",
-				TestExoneration: &pb.TestExoneration{
-					TestId:  "a",
-					Variant: pbutil.Variant("a", "1", "b", "2"),
-				},
-			}
-
-			if withRequestID {
-				req.RequestId = "request id"
-			}
-
+		e2eTest := func(req *pb.CreateTestExonerationRequest, expectedVariantHash, expectedId string) {
 			res, err := recorder.CreateTestExoneration(ctx, req)
 			So(err, ShouldBeNil)
 
-			So(res.ExonerationId, ShouldStartWith, "6408fdc5c36df5df:") // hash of the variant
-			if withRequestID {
-				So(res.ExonerationId, ShouldEqual, "6408fdc5c36df5df:d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
+			if expectedId == "" {
+				So(res.ExonerationId, ShouldStartWith, expectedVariantHash+":")
+			} else {
+				So(res.ExonerationId, ShouldEqual, expectedVariantHash+":"+expectedId)
 			}
 
 			expected := proto.Clone(req.TestExoneration).(*pb.TestExoneration)
 			proto.Merge(expected, &pb.TestExoneration{
 				Name:          pbutil.TestExonerationName("inv", "a", res.ExonerationId),
 				ExonerationId: res.ExonerationId,
+				VariantHash:   expectedVariantHash,
 			})
 			So(res, ShouldResembleProto, expected)
 
@@ -154,9 +168,9 @@ func TestCreateTestExoneration(t *testing.T) {
 			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
 				"VariantHash": &variantHash,
 			})
-			So(variantHash, ShouldEqual, pbutil.VariantHash(res.Variant))
+			So(variantHash, ShouldEqual, expectedVariantHash)
 
-			if withRequestID {
+			if req.RequestId != "" {
 				// Test idempotency.
 				res2, err := recorder.CreateTestExoneration(ctx, req)
 				So(err, ShouldBeNil)
@@ -165,10 +179,35 @@ func TestCreateTestExoneration(t *testing.T) {
 		}
 
 		Convey(`Without request id, e2e`, func() {
-			e2eTest(false)
+			e2eTest(&pb.CreateTestExonerationRequest{
+				Invocation: "invocations/inv",
+				TestExoneration: &pb.TestExoneration{
+					TestId:  "a",
+					Variant: pbutil.Variant("a", "1", "b", "2"),
+				},
+			}, "6408fdc5c36df5df", "")
 		})
+
 		Convey(`With request id, e2e`, func() {
-			e2eTest(true)
+			e2eTest(&pb.CreateTestExonerationRequest{
+				RequestId:  "request id",
+				Invocation: "invocations/inv",
+				TestExoneration: &pb.TestExoneration{
+					TestId:  "a",
+					Variant: pbutil.Variant("a", "1", "b", "2"),
+				},
+			}, "6408fdc5c36df5df", "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
+		})
+
+		Convey(`With hash but no variant, e2e`, func() {
+			e2eTest(&pb.CreateTestExonerationRequest{
+				RequestId:  "request id",
+				Invocation: "invocations/inv",
+				TestExoneration: &pb.TestExoneration{
+					TestId:      "a",
+					VariantHash: "deadbeefdeadbeef",
+				},
+			}, "deadbeefdeadbeef", "")
 		})
 	})
 }

@@ -50,6 +50,15 @@ func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest, 
 		return errors.Annotate(err, "test_exoneration: variant").Err()
 	}
 
+	hasVariant := len(ex.GetVariant().GetDef()) != 0
+	hasVariantHash := ex.VariantHash != ""
+	if hasVariant && hasVariantHash {
+		computedHash := pbutil.VariantHash(ex.GetVariant())
+		if computedHash != ex.VariantHash {
+			return errors.Reason("computed and supplied variant hash don't match").Err()
+		}
+	}
+
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
 		return errors.Annotate(err, "request_id").Err()
 	}
@@ -87,20 +96,30 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 		mutFn = spanner.InsertOrUpdateMap
 	}
 
-	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantHash(body.Variant), exonerationIDSuffix)
+	// Use the given variant hash, or the hash of the given variant, whichever
+	// is present. If both are present then validation guarantees they'll
+	// match, so we can just use whichever.
+	variantHash := body.VariantHash
+	if variantHash == "" {
+		variantHash = pbutil.VariantHash(body.Variant)
+	}
+
+	exonerationID := fmt.Sprintf("%s:%s", variantHash, exonerationIDSuffix)
 	ret = &pb.TestExoneration{
 		Name:            pbutil.TestExonerationName(string(invID), body.TestId, exonerationID),
 		TestId:          body.TestId,
 		Variant:         body.Variant,
+		VariantHash:     variantHash,
 		ExonerationId:   exonerationID,
 		ExplanationHtml: body.ExplanationHtml,
 	}
+
 	mutation = mutFn("TestExonerations", spanutil.ToSpannerMap(map[string]interface{}{
 		"InvocationId":    invID,
 		"TestId":          ret.TestId,
 		"ExonerationId":   exonerationID,
 		"Variant":         ret.Variant,
-		"VariantHash":     pbutil.VariantHash(ret.Variant),
+		"VariantHash":     ret.VariantHash,
 		"ExplanationHTML": spanutil.Compressed(ret.ExplanationHtml),
 	}))
 	return

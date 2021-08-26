@@ -195,6 +195,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				proto.Merge(expected, &pb.TestExoneration{
 					Name:          pbutil.TestExonerationName("inv", expected.TestId, actual.ExonerationId),
 					ExonerationId: actual.ExonerationId,
+					VariantHash:   pbutil.VariantHash(expected.Variant),
 				})
 
 				So(actual, ShouldResembleProto, expected)
