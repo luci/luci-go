@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build !copybara
+
 // Package main is a client to a Swarming server.
 //
 // The reference server python implementation documentation can be found at
