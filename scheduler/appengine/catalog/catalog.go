@@ -407,11 +407,7 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 // It also extracts a task definition from it (e.g. SwarmingTask proto).
 // Errors are returned via validation.Context.
 func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job, realmID string) proto.Message {
-	if j.Id == "" {
-		ctx.Errorf("missing 'id' field'")
-	} else if !jobIDRe.MatchString(j.Id) {
-		ctx.Errorf("%q is not valid value for 'id' field", j.Id)
-	}
+	validateJobID(ctx, j.Id)
 	if j.Schedule != "" {
 		if _, err := schedule.Parse(j.Schedule, 0); err != nil {
 			ctx.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
@@ -432,11 +428,7 @@ func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job, r
 //
 // Errors are returned via validation.Context.
 func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Trigger, realmID string, jobIDs stringset.Set, failOnMissing bool) proto.Message {
-	if t.Id == "" {
-		ctx.Errorf("missing 'id' field'")
-	} else if !jobIDRe.MatchString(t.Id) {
-		ctx.Errorf("%q is not valid value for 'id' field", t.Id)
-	}
+	validateJobID(ctx, t.Id)
 	if t.Schedule != "" {
 		if _, err := schedule.Parse(t.Schedule, 0); err != nil {
 			ctx.Errorf("%s is not valid value for 'schedule' field - %s", t.Schedule, err)
@@ -457,6 +449,14 @@ func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Tr
 	t.Triggers = filtered
 	cat.validateTriggeringPolicy(ctx, t.TriggeringPolicy)
 	return cat.validateTaskProto(ctx, t, realmID)
+}
+
+func validateJobID(ctx *validation.Context, id string) {
+	if id == "" {
+		ctx.Errorf("missing 'id' field'")
+	} else if !jobIDRe.MatchString(id) {
+		ctx.Errorf("%q is not valid value for 'id' field, must match %q regexp", id, jobIDRe)
+	}
 }
 
 // validateTaskProto visits all fields of a proto and sniffs ones that correspond
