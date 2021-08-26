@@ -20,7 +20,22 @@
 {{end}}
 
 {{define "content"}}
-  <h2>Recent runs {{if .Project}} for LUCI Project "{{.Project}}" {{end}}</h2>
+  <h2>Recent
+    {{if .FilterMode}}
+      {{Title .FilterMode -}}s
+    {{else}}
+      Runs
+    {{end}}
+
+    {{if .FilterStatus}}
+      with Status "{{Title .FilterStatus}}"
+    {{end}}
+
+    {{if .Project}}
+      for LUCI Project "{{.Project}}"
+    {{end}}
+  </h2>
+
   <div class="container">
     <table class="table" id="runs-table">
       <thead>

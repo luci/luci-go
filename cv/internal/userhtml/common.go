@@ -77,6 +77,9 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 			"SplitSlash": func(s string) []string {
 				return strings.Split(s, "/")
 			},
+			"Title": func(s string) string {
+				return strings.Title(strings.ToLower(strings.Replace(s, "_", " ", -1)))
+			},
 			"LinkifyExternalID": func(eid string) string {
 				if eid == "" {
 					// Very old RunCL entities don't have ExternalID set.
