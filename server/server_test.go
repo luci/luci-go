@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/auth/integration/localauth"
 
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/experiments"
@@ -653,7 +654,9 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.testStdout = &srv.stdout
 	opts.testStderr = &srv.stderr
 	if opts.AuthDBPath == "" {
-		opts.testAuthDB = fakeAuthDB
+		opts.AuthDBProvider = func(context.Context) (authdb.DB, error) {
+			return fakeAuthDB, nil
+		}
 	}
 	opts.testDisableTracing = true
 

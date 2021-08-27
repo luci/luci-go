@@ -336,6 +336,7 @@ type Options struct {
 
 	ClientAuth       clientauth.Options // base settings for client auth options
 	TokenCacheDir    string             // where to cache auth tokens (optional)
+	AuthDBProvider   auth.DBProvider    // source of the AuthDB: if set all Auth* options below are ignored
 	AuthDBPath       string             // if set, load AuthDB from a file
 	AuthServiceHost  string             // hostname of an Auth Service to use
 	AuthDBDump       string             // Google Storage path to fetch AuthDB dumps from
@@ -364,7 +365,6 @@ type Options struct {
 	testStdout         sdlogger.LogEntryWriter // mocks stdout in tests
 	testStderr         sdlogger.LogEntryWriter // mocks stderr in tests
 	testListeners      map[string]net.Listener // addr => net.Listener, for tests
-	testAuthDB         authdb.DB               // AuthDB to use in tests
 	testDisableTracing bool                    // don't install a tracing backend
 }
 
@@ -690,7 +690,7 @@ type Server struct {
 	cloudTS     oauth2.TokenSource // source of cloud-scoped tokens for Cloud APIs
 	signer      *signerImpl        // the signer used by the auth system
 	actorTokens *actorTokensImpl   // for impersonating service accounts
-	authDB      atomic.Value       // last known good authdb.DB instance
+	authDB      atomic.Value       // if not using AuthDBProvider, the last known good authdb.DB instance
 
 	runningAs string // email of an account the server runs as
 }
@@ -1604,13 +1604,20 @@ func (s *Server) initAuthStart() error {
 	s.signer = &signerImpl{srv: s}
 	s.actorTokens = &actorTokensImpl{}
 
-	// Initialize the state in the context.
-	s.Context = auth.Initialize(s.Context, &auth.Config{
-		DBProvider: func(context.Context) (authdb.DB, error) {
+	// Either use the explicitly passed AuthDB provider or the one initialized
+	// by initAuthDB.
+	provider := s.Options.AuthDBProvider
+	if provider == nil {
+		provider = func(context.Context) (authdb.DB, error) {
 			db, _ := s.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
 			return db, nil
-		},
-		Signer: s.signer,
+		}
+	}
+
+	// Initialize the state in the context.
+	s.Context = auth.Initialize(s.Context, &auth.Config{
+		DBProvider: provider,
+		Signer:     s.signer,
 		AccessTokenProvider: func(ctx context.Context, scopes []string) (*oauth2.Token, error) {
 			return tokens.GenerateOAuthToken(ctx, scopes, 0)
 		},
@@ -1688,10 +1695,13 @@ func (s *Server) initAuthFinish() error {
 	s.signer.iamClient = iamClient
 	s.actorTokens.iamClient = iamClient
 
-	// Now initialize the AuthDB (a database with groups and auth config) and
-	// start a goroutine to periodically refresh it.
-	if err := s.initAuthDB(); err != nil {
-		return errors.Annotate(err, "failed to initialize AuthDB").Err()
+	// If not using a custom AuthDB provider, initialize the standard one that
+	// fetches AuthDB (a database with groups and auth config) from a central
+	// place. This also starts a goroutine to periodically refresh it.
+	if s.Options.AuthDBProvider == nil {
+		if err := s.initAuthDB(); err != nil {
+			return errors.Annotate(err, "failed to initialize AuthDB").Err()
+		}
 	}
 
 	return nil
@@ -1758,13 +1768,11 @@ func (s *Server) refreshAuthDB(c context.Context) error {
 
 // fetchAuthDB fetches the most recent copy of AuthDB from the external source.
 //
+// Used only if Options.AuthDBProvider is nil.
+//
 // 'cur' is the currently used AuthDB or nil if fetching it for the first time.
 // Returns 'cur' as is if it's already fresh.
 func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error) {
-	if s.Options.testAuthDB != nil {
-		return s.Options.testAuthDB, nil
-	}
-
 	// Loading from a local file (useful in integration tests).
 	if s.Options.AuthDBPath != "" {
 		r, err := os.Open(s.Options.AuthDBPath)
