@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
 
@@ -33,7 +34,7 @@ func TestSerializeDistribution(t *testing.T) {
 		d := distribution.New(distribution.FixedWidthBucketer(10, 20))
 		dpb := serializeDistribution(d)
 
-		So(*dpb, ShouldResemble, pb.MetricsData_Distribution{
+		So(dpb, ShouldResembleProto, &pb.MetricsData_Distribution{
 			Count: proto.Int64(0),
 			BucketOptions: &pb.MetricsData_Distribution_LinearBuckets{
 				LinearBuckets: &pb.MetricsData_Distribution_LinearOptions{
@@ -45,12 +46,18 @@ func TestSerializeDistribution(t *testing.T) {
 		})
 	})
 
-	Convey("Geometric params", t, func() {
+	Convey("Exponential buckets", t, func() {
 		d := distribution.New(distribution.GeometricBucketer(2, 20))
-		dpb := serializeDistribution(d)
+		d.Add(0)
+		d.Add(4)
+		d.Add(1024)
+		d.Add(1536)
+		d.Add(1048576)
 
-		So(*dpb, ShouldResemble, pb.MetricsData_Distribution{
-			Count: proto.Int64(0),
+		dpb := serializeDistribution(d)
+		So(dpb, ShouldResembleProto, &pb.MetricsData_Distribution{
+			Count: proto.Int64(5),
+			Mean:  proto.Float64(210228),
 			BucketOptions: &pb.MetricsData_Distribution_ExponentialBuckets{
 				ExponentialBuckets: &pb.MetricsData_Distribution_ExponentialOptions{
 					NumFiniteBuckets: proto.Int32(20),
@@ -58,10 +65,12 @@ func TestSerializeDistribution(t *testing.T) {
 					Scale:            proto.Float64(1),
 				},
 			},
+			BucketCount: []int64{1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 1},
 		})
 	})
 
-	Convey("Populates buckets", t, func() {
+	Convey("Linear buckets", t, func() {
 		d := distribution.New(distribution.FixedWidthBucketer(10, 2))
 		d.Add(0)
 		d.Add(1)
@@ -69,7 +78,7 @@ func TestSerializeDistribution(t *testing.T) {
 		d.Add(20)
 
 		dpb := serializeDistribution(d)
-		So(*dpb, ShouldResemble, pb.MetricsData_Distribution{
+		So(dpb, ShouldResembleProto, &pb.MetricsData_Distribution{
 			Count: proto.Int64(4),
 			Mean:  proto.Float64(5.75),
 			BucketOptions: &pb.MetricsData_Distribution_LinearBuckets{
