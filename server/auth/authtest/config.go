@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 )
 
 // MockAuthConfig configures the auth library for unit tests environment.
@@ -31,8 +32,12 @@ import (
 // auth.GetRPCTransport(...). If your tests only check groups or permissions
 // (for example when testing bodies of request handlers), use FakeState instead.
 // See its docs for some examples.
-func MockAuthConfig(ctx context.Context) context.Context {
+func MockAuthConfig(ctx context.Context, mocks ...MockedDatum) context.Context {
 	return auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
+		fakeDB := NewFakeDB(mocks...)
+		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
+			return fakeDB, nil
+		}
 		cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
 			return http.DefaultTransport
 		}
