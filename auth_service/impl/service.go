@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/secrets"
 )
 
 const fakeAuthDBProto = `
@@ -62,6 +63,7 @@ func Main(modules []module.Module, cb func(srv *server.Server) error) {
 
 	modules = append([]module.Module{
 		gaeemulation.NewModuleFromFlags(), // for accessing Datastore
+		secrets.NewModuleFromFlags(),      // for accessing Cloud Secret Manager
 	}, modules...)
 
 	server.Main(opts, modules, cb)

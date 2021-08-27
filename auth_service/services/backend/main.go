@@ -12,24 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main is the main point of entry for the backend module.
+//
+// It handles task queue tasks and cron jobs.
 package main
 
 import (
-	"fmt"
-
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth_service/impl"
 )
 
 func main() {
 	impl.Main(nil, func(srv *server.Server) error {
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(ctx *router.Context) {
-			logging.Infof(ctx.Context, "Hello")
-			fmt.Fprintf(ctx.Writer, "Hello from backend %s", ctx.Request.URL.Path)
-		})
+		// Nothing here for now.
 		return nil
 	})
 }

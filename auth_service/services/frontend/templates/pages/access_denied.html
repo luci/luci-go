@@ -1,0 +1,17 @@
+{{define "title"}}Access denied{{end}}
+
+{{define "content"}}
+
+<h3>Access denied</h2>
+
+<p>
+Looks like you do not have access to this page. You are logged in
+as <b>{{.User.Email}}</b>. Try to logout and then login under a different
+account.
+</p>
+
+<p>
+  <a id="logout-btn" class="btn btn-primary" href="{{.LogoutURL}}">Logout</a>
+</p>
+
+{{end}}

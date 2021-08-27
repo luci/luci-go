@@ -1,2 +1,34 @@
 runtime: go115
 service: defaultv2
+
+# luci_gae_vars is interpreted by gae.py, for apps deployed manually.
+# It maps the app ID being deployed to values of vars used below.
+luci_gae_vars:
+  chrome-infra-auth-dev:
+    OAUTH_CLIENT_ID: 502071599212-d623foidam4v1pgcjqeala1puafovh1c.apps.googleusercontent.com
+    OAUTH_CLIENT_SECRET: sm://oauth-client-secret
+    OAUTH_REDIRECT_URL: https://defaultv2-dot-chrome-infra-auth-dev.appspot.com/auth/openid/callback
+    ROOT_SECRET: sm://root-secret
+    TINK_AEAD_KEY: sm://tink-aead-primary
+    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+
+inbound_services:
+- warmup
+
+handlers:
+- url: /static
+  static_dir: static
+  secure: always
+- url: /.*
+  script: auto
+  secure: always
+
+entrypoint: >
+  main
+  -cloud-error-reporting
+  -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
+  -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
+  -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
+  -encrypted-cookies-tink-aead-key ${TINK_AEAD_KEY}
+  -root-secret ${ROOT_SECRET}
+  -ts-mon-account ${TS_MON_ACCOUNT}

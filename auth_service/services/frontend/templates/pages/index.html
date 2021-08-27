@@ -1,0 +1,17 @@
+{{define "title"}}CrIA v2{{end}}
+
+{{define "content"}}
+<h3>Welcome to CrIA v2!</h3>
+<p>This will replace Chrome infra auth
+  <ul>
+    <li>
+      <a href="https://chrome-infra-auth.appspot.com/auth/api">
+        CrIA v1
+      </a>
+    </li>
+  </ul>
+</p>
+<p>
+  <a id="logout-btn" class="btn btn-primary" href="{{.LogoutURL}}">Logout</a>
+</p>
+{{end}}
