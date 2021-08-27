@@ -91,11 +91,11 @@ message TriggeringPolicy {
     // wait for a full batch, nor tries to batch evenly.
     GREEDY_BATCHING = 1;
 
-    // A logarithmic triggering function that takes log_k N pending triggers (up
-    // to max_batch_size limit) and collapses them into one new incovation,
-    // deriving its properties from the most recent trigger alone, where N is
-    // the total number of pending triggers and k is specified by the log_base
-    // field below.
+    // A logarithmic triggering function that takes floor(log(base,N)) pending
+    // triggers (at least 1 and up to max_batch_size limit) and collapses them
+    // into one new invocation, deriving its properties from the most recent
+    // trigger alone, where N is the total number of pending triggers and k is
+    // specified by the log_base field below.
     LOGARITHMIC_BATCHING = 2;
   }
 

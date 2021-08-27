@@ -15,6 +15,7 @@
 package policy
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -28,17 +29,33 @@ func TestLogarithmicBatching(t *testing.T) {
 	t.Parallel()
 
 	Convey("With simulator", t, func(c C) {
-		var err error
+		const invocationDuration = time.Minute
 		s := Simulator{
 			OnRequest: func(s *Simulator, r task.Request) time.Duration {
-				return time.Minute
+				return invocationDuration
 			},
 			OnDebugLog: func(format string, args ...interface{}) {
 				c.Printf(format+"\n", args...)
 			},
 		}
 
-		Convey("Logarithm base must be at least 2", func() {
+		const noDelay = time.Duration(0)
+		lastAddedTrigger := 0
+		addTriggers := func(delay time.Duration, n int) {
+			ts := make([]internal.Trigger, n)
+			for i := range ts {
+				lastAddedTrigger++
+				ts[i] = internal.NoopTrigger(
+					fmt.Sprintf("t-%03d", lastAddedTrigger),
+					fmt.Sprintf("data-%03d", lastAddedTrigger),
+				)
+			}
+			s.AddTrigger(delay, ts...)
+		}
+
+		var err error
+
+		Convey("Logarithm base must be at least 1.0001", func() {
 			s.Policy, err = LogarithmicBatchingPolicy(2, 1000, 1.0)
 			So(err, ShouldNotBeNil)
 		})
@@ -46,49 +63,54 @@ func TestLogarithmicBatching(t *testing.T) {
 		Convey("Logarithmic batching works", func() {
 			// A policy that allows 1 concurrent invocation with effectively unlimited
 			// batch size and logarithm base of 2.
-			s.Policy, err = LogarithmicBatchingPolicy(1, 1000, 2.0)
+			const maxBatchSize = 5
+			s.Policy, err = LogarithmicBatchingPolicy(1, maxBatchSize, 2.0)
 			So(err, ShouldBeNil)
 
-			Convey("for 1 trigger", func() {
-				// Add a single trigger. It should cause an invocation to be scheduled.
-				s.AddTrigger(0, internal.NoopTrigger("t1", "t1_data"))
-
-				// Yep, 0 pending triggers and one invocation with one trigger ID.
+			Convey("at least 1 trigger", func() {
+				// Add exactly one trigger; log(2,1) == 0.
+				addTriggers(noDelay, 1)
+				So(s.Invocations, ShouldHaveLength, 1)
+				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t-001"})
+				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, "data-001")
 				So(s.PendingTriggers, ShouldHaveLength, 0)
-				So(s.Invocations, ShouldHaveLength, 1)
-				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t1"})
-				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, "t1_data")
 			})
 
-			Convey("for 2 triggers", func() {
-				// Add 3 triggers at once, but only first one should be part of the
-				// invocation (Log2(3) == 1).
-				s.AddTrigger(0,
-					internal.NoopTrigger("t2", "t2_data"),
-					internal.NoopTrigger("t3", "t3_data"))
-
-				// Yep, 2 pending triggers and one invocation.
-				So(s.PendingTriggers, ShouldHaveLength, 1)
+			Convey("rounds down number of consumed triggers", func() {
+				addTriggers(noDelay, 3)
 				So(s.Invocations, ShouldHaveLength, 1)
-				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t2"})
-				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, "t2_data")
+				// log(2,3) = 1.584
+				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t-001"})
+				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, "data-001")
+				So(s.PendingTriggers, ShouldHaveLength, 2)
 			})
 
-			Convey("for 5 triggers", func() {
-				// Add more triggers to cause two of them be collapsed into a single
-				// invocation.
-				s.AddTrigger(0,
-					internal.NoopTrigger("t5", "t5_data"),
-					internal.NoopTrigger("t6", "t6_data"),
-					internal.NoopTrigger("t7", "t7_data"),
-					internal.NoopTrigger("t8", "t8_data"),
-					internal.NoopTrigger("t9", "t9_data"))
+			Convey("respects maxBatchSize", func() {
+				N := 1 << (maxBatchSize + 2)
+				addTriggers(noDelay, N)
+				So(s.Invocations, ShouldHaveLength, 1)
+				So(s.Last().Request.TriggerIDs(), ShouldHaveLength, maxBatchSize)
+				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, fmt.Sprintf("data-%03d", maxBatchSize))
+				So(s.PendingTriggers, ShouldHaveLength, N-maxBatchSize)
+			})
 
-				// Yep, 2 pending triggers and 1 invocation.
+			Convey("Many triggers", func() {
+				// Add 5 triggers.
+				addTriggers(noDelay, 5)
+				So(s.Invocations, ShouldHaveLength, 1)
+				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t-001", "t-002"})
+				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, "data-002")
 				So(s.PendingTriggers, ShouldHaveLength, 3)
-				So(s.Invocations, ShouldHaveLength, 1)
-				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t5", "t6"})
-				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, "t6_data")
+
+				// Add a few triggers while the invocation is running.
+				addTriggers(invocationDuration/4, 2)
+				addTriggers(invocationDuration/4, 2)
+				addTriggers(invocationDuration/4, 2)
+				addTriggers(invocationDuration/4, 2)
+				// Invocation is finsihed now, we have 11 = (3 old + 4*2 new triggers).
+				So(s.Invocations, ShouldHaveLength, 2) // new invocation created.
+				// log(2,11) = 3.459
+				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t-003", "t-004", "t-005"})
 			})
 		})
 	})

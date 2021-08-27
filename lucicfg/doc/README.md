@@ -3081,10 +3081,10 @@ The following batching strategies are supported:
     collapses them into one new build. It doesn't wait for a full batch, nor
     tries to batch evenly.
   * `scheduler.LOGARITHMIC_BATCHING_KIND`: use a logarithmic batching
-    function that takes log(N) pending triggers (up to `max_batch_size`
-    limit) and collapses them into one new build, where N is the total
-    number of pending triggers. The base of the logarithm is defined by
-    `log_base`.
+    function that takes `floor(log(base,N))` pending triggers (at least 1
+    and up to `max_batch_size` limit) and collapses them into one new build,
+    where N is the total number of pending triggers. The base of the
+    logarithm is defined by `log_base`.
 
 #### Arguments {#scheduler.policy-args}
 

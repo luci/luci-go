@@ -24,8 +24,9 @@ import (
 // LogarithmicBatchingPolicy instantiates new LOGARITHMIC_BATCHING policy
 // function.
 //
-// It takes all pending triggers and collapses log_k N of them into one new
-// invocation, deriving its properties from the most recent trigger alone.
+// It takes all pending triggers and collapses floor(log(base,N)) of them into
+// one new invocation, deriving its properties from the most recent trigger
+// alone.
 func LogarithmicBatchingPolicy(maxConcurrentInvs, maxBatchSize int, logBase float64) (Func, error) {
 	// We use 1.0001 to ensure that operation below returns a value small enough
 	// to fit into int and to avoid numerical stability issues resulting from
@@ -37,6 +38,8 @@ func LogarithmicBatchingPolicy(maxConcurrentInvs, maxBatchSize int, logBase floa
 
 	log := math.Log(logBase)
 	return basePolicy(maxConcurrentInvs, maxBatchSize, func(triggers []*internal.Trigger) int {
-		return int(math.Max(math.Log(float64(len(triggers)))/log, 1.0))
+		n := float64(len(triggers))
+		target := math.Floor(math.Log(n) / log)
+		return int(math.Min(math.Max(target, 1.0), n))
 	})
 }
