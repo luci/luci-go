@@ -1410,7 +1410,10 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 		return nil, nil, err
 	}
 
-	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, dryRun)
+	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, &cipd.EnsureOptions{
+		Paranoia: resolved.ParanoidMode,
+		DryRun:   dryRun,
+	})
 	if err != nil {
 		return nil, actions, err
 	}
@@ -3239,7 +3242,16 @@ func checkDeployment(ctx context.Context, clientOpts clientOptions) (cipd.Action
 	}
 	defer client.Close(ctx)
 
-	actions, err := client.CheckDeployment(ctx, cipd.CheckIntegrity)
+	currentDeployment, err := client.FindDeployed(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	actions, err := client.EnsurePackages(ctx, currentDeployment, &cipd.EnsureOptions{
+		Paranoia: cipd.CheckIntegrity,
+		DryRun:   true,
+		Silent:   true,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3288,7 +3300,14 @@ func repairDeployment(ctx context.Context, clientOpts clientOptions) (cipd.Actio
 	}
 	defer client.Close(ctx)
 
-	return client.RepairDeployment(ctx, cipd.CheckIntegrity)
+	currentDeployment, err := client.FindDeployed(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.EnsurePackages(ctx, currentDeployment, &cipd.EnsureOptions{
+		Paranoia: cipd.CheckIntegrity,
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////

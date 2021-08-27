@@ -317,7 +317,9 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 		deployed[""] = append(deployed[""], resolved) // install a new one
 	}
 
-	actions, err := site.client.EnsurePackages(ctx, deployed, paranoid, false)
+	actions, err := site.client.EnsurePackages(ctx, deployed, &cipd.EnsureOptions{
+		Paranoia: paranoid,
+	})
 	if err != nil {
 		return nil, err
 	}

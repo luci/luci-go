@@ -285,7 +285,9 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 	}
 
 	// Download packages.
-	if _, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, false); err != nil {
+	if _, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, &cipd.EnsureOptions{
+		Paranoia: resolved.ParanoidMode,
+	}); err != nil {
 		return errors.Annotate(err, "failed to install or update CIPD packages").Err()
 	}
 	return nil

@@ -145,7 +145,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.2"
+	UserAgent = "cipd 2.6.3"
 )
 
 func init() {
@@ -300,28 +300,34 @@ type Client interface {
 	// will do all necessary actions to bring the state of the site root to the
 	// desired one.
 	//
-	// Depending on the paranoia mode, will optionally verify that all installed
-	// packages are installed correctly and will attempt to fix ones that are not.
-	// See the enum for more info.
-	//
-	// If dryRun is true, will just check for changes and return them in Actions
-	// struct, but won't actually perform them.
-	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error)
-
-	// CheckDeployment looks at what is supposed to be installed and compares it
-	// to what is really installed.
 	//
-	// Returns an error if it can't even detect what is supposed to be installed.
-	// Inconsistencies are returned through the ActionMap.
-	CheckDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error)
+	// NOTE: You can repair the current deployment by passing in the output of
+	// FindDeployed, plus an opts.Paranoia. Doing this with opts.DryRun=true
+	// will check the integrity of the current deployment.
+	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, opts *EnsureOptions) (ActionMap, error)
+}
 
-	// RepairDeployment attempts to repair a deployment in the site root if it
-	// appears to be broken (per given paranoia mode).
+// EnsureOptions is passed to Client.EnsurePackages.
+//
+// This can be used to control HOW Ensure does its actions.
+type EnsureOptions struct {
+	// Paranoia controls how much verification EnsurePackages does to verify that
+	// the currently-installed packages are, in fact, correctly installed.
 	//
-	// Returns an action map of what it did.
-	RepairDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error)
+	// If EnsurePackages determines that packages are NOT correctly installed, it
+	// will attempt to fix them.
+	//
+	// Defaults to NotParanoid.
+	// See the enum for more info.
+	Paranoia ParanoidMode
+
+	// DryRun, if true, will only check for changes and return them in the
+	// ActionMap, but won't actually perform them.
+	DryRun bool
+
+	// Silent, if true, suppresses all logging output from EnsurePackages.
+	Silent bool
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -1616,15 +1622,18 @@ func (client *clientImpl) FindDeployed(ctx context.Context) (common.PinSliceBySu
 	return client.deployer.FindDeployed(ctx)
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error) {
-	return client.ensurePackagesImpl(ctx, allPins, paranoia, dryRun, false)
-}
-
-func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun, silent bool) (aMap ActionMap, err error) {
+func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, opts *EnsureOptions) (aMap ActionMap, err error) {
 	if err = allPins.Validate(common.AnyHash); err != nil {
 		return
 	}
-	if err = paranoia.Validate(); err != nil {
+
+	realOpts := EnsureOptions{}
+	if opts != nil {
+		realOpts = *opts
+	}
+	if realOpts.Paranoia == "" {
+		realOpts.Paranoia = NotParanoid
+	} else if err = realOpts.Paranoia.Validate(); err != nil {
 		return
 	}
 
@@ -1638,20 +1647,20 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	}
 
 	// Figure out what needs to be updated and deleted, log it.
-	aMap = buildActionPlan(allPins, existing, client.makeRepairChecker(ctx, paranoia))
+	aMap = buildActionPlan(allPins, existing, client.makeRepairChecker(ctx, realOpts.Paranoia))
 	if len(aMap) == 0 {
-		if !silent {
+		if !realOpts.Silent {
 			logging.Debugf(ctx, "Everything is up-to-date.")
 		}
 		return
 	}
 
 	// TODO(iannucci): ensure that no packages cross root boundaries
-	if !silent {
+	if !realOpts.Silent {
 		aMap.Log(ctx, false)
 	}
-	if dryRun {
-		if !silent {
+	if realOpts.DryRun {
+		if !realOpts.Silent {
 			logging.Infof(ctx, "Dry run, not actually doing anything.")
 		}
 		return
@@ -1853,26 +1862,6 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 		err = ErrEnsurePackagesFailed
 	}
 	return
-}
-
-func (client *clientImpl) CheckDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error) {
-	// This is essentially a dry run of EnsurePackages(already installed pkgs),
-	// but with some paranoia mode, so it detects breakages.
-	existing, err := client.deployer.FindDeployed(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return client.ensurePackagesImpl(ctx, existing, paranoia, true, true)
-}
-
-func (client *clientImpl) RepairDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error) {
-	// And this is a real run of EnsurePackages(already installed pkgs), so it
-	// can do repairs, if necessary.
-	existing, err := client.deployer.FindDeployed(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return client.EnsurePackages(ctx, existing, paranoia, false)
 }
 
 // makeRepairChecker returns a function that decided whether we should attempt
