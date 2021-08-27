@@ -19,17 +19,13 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/gaeemulation"
-	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/auth_service/impl"
 )
 
 func main() {
-	modules := []module.Module{
-		gaeemulation.NewModuleFromFlags(),
-	}
-
-	server.Main(nil, modules, func(srv *server.Server) error {
+	impl.Main(nil, func(srv *server.Server) error {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(ctx *router.Context) {
 			logging.Infof(ctx.Context, "Hello")
 			fmt.Fprintf(ctx.Writer, "Hello from backend %s", ctx.Request.URL.Path)
