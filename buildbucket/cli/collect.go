@@ -79,7 +79,7 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		req.Fields = fields
 
 		for {
-			build, err := r.client.GetBuild(ctx, req)
+			build, err := r.buildsClient.GetBuild(ctx, req)
 			switch code := grpcutil.Code(err); {
 			case grpcutil.IsTransientCode(code):
 				logging.Warningf(ctx, "transient error: %s", err)

@@ -41,6 +41,8 @@ import (
 var expectedCodeRPCOption = prpc.ExpectedCode(
 	codes.InvalidArgument, codes.NotFound, codes.PermissionDenied)
 
+const defaultPageSize = 100
+
 func doc(doc string) string {
 	return text.Doc(doc)
 }
@@ -54,8 +56,9 @@ type baseCommandRun struct {
 	json      bool
 	noColor   bool
 
-	httpClient *http.Client
-	client     pb.BuildsClient
+	httpClient     *http.Client
+	buildsClient   pb.BuildsClient
+	buildersClient pb.BuildersClient
 }
 
 func (r *baseCommandRun) RegisterDefaultFlags(p Params) {
@@ -76,7 +79,8 @@ func (r *baseCommandRun) RegisterJSONFlag() {
 	`))
 }
 
-// initClients validates -host flag and initializes r.httpClient and r.client.
+// initClients validates -host flag and initializes r.httpClient,
+// r.buildsClient, and r.buildersClient.
 func (r *baseCommandRun) initClients(ctx context.Context) error {
 	// Create HTTP Client.
 	authOpts, err := r.authFlags.Options()
@@ -99,7 +103,7 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return fmt.Errorf("invalid host %q", r.host)
 	}
 
-	// Create Buildbucket client.
+	// Create Buildbucket clients.
 	rpcOpts := prpc.DefaultOptions()
 	rpcOpts.Insecure = lhttp.IsLocalHost(r.host)
 	info, err := version.GetCurrentVersion()
@@ -118,7 +122,12 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 			MaxDelay:   5 * time.Minute,
 		}
 	}
-	r.client = pb.NewBuildsPRPCClient(&prpc.Client{
+	r.buildsClient = pb.NewBuildsPRPCClient(&prpc.Client{
+		C:       r.httpClient,
+		Host:    r.host,
+		Options: rpcOpts,
+	})
+	r.buildersClient = pb.NewBuildersPRPCClient(&prpc.Client{
 		C:       r.httpClient,
 		Host:    r.host,
 		Options: rpcOpts,
@@ -146,7 +155,7 @@ func (r *baseCommandRun) retrieveBuildID(ctx context.Context, build string) (int
 		return getBuild.Id, nil
 	}
 
-	res, err := r.client.GetBuild(ctx, getBuild)
+	res, err := r.buildsClient.GetBuild(ctx, getBuild)
 	if err != nil {
 		return 0, err
 	}

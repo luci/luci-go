@@ -57,6 +57,9 @@ func application(p Params) *cli.Application {
 			cmdCollect(p),
 
 			{},
+			cmdBuilders(p),
+
+			{},
 			authcli.SubcommandLogin(p.Auth, "auth-login", false),
 			authcli.SubcommandLogout(p.Auth, "auth-logout", false),
 			authcli.SubcommandInfo(p.Auth, "auth-info", false),

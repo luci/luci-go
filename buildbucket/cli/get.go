@@ -68,6 +68,6 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 			return nil, err
 		}
 		req.Fields = fields
-		return r.client.GetBuild(ctx, req, expectedCodeRPCOption)
+		return r.buildsClient.GetBuild(ctx, req, expectedCodeRPCOption)
 	})
 }

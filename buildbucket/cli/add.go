@@ -182,7 +182,7 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		if err != nil {
 			return nil, err
 		}
-		return r.client.ScheduleBuild(ctx, req, expectedCodeRPCOption)
+		return r.buildsClient.ScheduleBuild(ctx, req, expectedCodeRPCOption)
 	})
 }
 

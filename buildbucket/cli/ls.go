@@ -135,8 +135,6 @@ func cmdLS(p Params) *subcommands.Command {
 // flagsMEWithPredicate defines a set of flags that are mutually exclusive with predicate flag
 var flagsMEWithPredicate = stringset.NewFromSlice("cl", "exp", "status", "t")
 
-const defaultPageSize = 100
-
 type lsRun struct {
 	printRun
 	clsFlag
@@ -173,7 +171,7 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		buildC := make(chan *pb.Build)
 		errC := make(chan error)
 		go func() {
-			err := protoutil.Search(ctx, buildC, r.client, reqs...)
+			err := protoutil.Search(ctx, buildC, r.buildsClient, reqs...)
 			close(buildC)
 			errC <- err
 		}()

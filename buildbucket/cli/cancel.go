@@ -83,6 +83,6 @@ func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommand
 			SummaryMarkdown: r.reason,
 			Fields:          fields,
 		}
-		return r.client.CancelBuild(ctx, req, expectedCodeRPCOption)
+		return r.buildsClient.CancelBuild(ctx, req, expectedCodeRPCOption)
 	})
 }

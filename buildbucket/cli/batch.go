@@ -79,7 +79,7 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
 
-	res, err := r.client.Batch(ctx, req)
+	res, err := r.buildsClient.Batch(ctx, req)
 	if err != nil {
 		return r.done(ctx, err)
 	}

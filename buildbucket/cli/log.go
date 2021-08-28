@@ -160,7 +160,7 @@ func (r *logRun) defaultLogs(available map[string]*pb.Log) []*pb.Log {
 // getSteps fetches steps of the build.
 func (r *logRun) getSteps(ctx context.Context) ([]*pb.Step, error) {
 	r.getBuild.Fields = &field_mask.FieldMask{Paths: []string{"steps"}}
-	build, err := r.client.GetBuild(ctx, r.getBuild, prpc.ExpectedCode(codes.NotFound))
+	build, err := r.buildsClient.GetBuild(ctx, r.getBuild, prpc.ExpectedCode(codes.NotFound))
 	switch status.Code(err) {
 	case codes.OK:
 		return build.Steps, nil
