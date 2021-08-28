@@ -136,6 +136,12 @@ message LogEntry {
 
     // Intended for informational logs (E.g. temporary/during migration)
     Info info = 7;
+    // The tree is configured and was checked.
+    TreeChecked tree_checked = 8;
+    // The run has been added to the submit queue's waitlist.
+    Waitlisted waitlisted = 9;
+    // The run is current on the queue.
+    AcquiredSubmitQueue acquired_submit_queue = 10;
   }
 
   message Created {
@@ -158,6 +164,13 @@ message LogEntry {
   message TryjobsUpdated {
     // Which tryjobs had a meaningful change (e.g. change of status).
     repeated Tryjob tryjobs = 2;
+  }
+  message TreeChecked{
+    bool open = 1;
+  }
+  message Waitlisted{
+  }
+  message AcquiredSubmitQueue{
   }
 }
 

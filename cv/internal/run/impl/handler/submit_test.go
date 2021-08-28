@@ -189,6 +189,9 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(res.PostProcessFn, ShouldNotBeNil)
 					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, rid)
 					runtest.AssertReceivedReadyForSubmission(ctx, rid, now.Add(10*time.Second))
+					So(res.State.LogEntries, ShouldHaveLength, 2)
+					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
+					So(res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, ShouldBeTrue)
 				})
 
 				Convey("Add Run to waitlist when Submit Queue is occupied", func() {
@@ -209,6 +212,8 @@ func TestOnReadyForSubmission(t *testing.T) {
 					_, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rid)
 					So(err, ShouldBeNil)
 					So(waitlist.Index(rid), ShouldEqual, 0)
+					So(res.State.LogEntries, ShouldHaveLength, 1)
+					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_Waitlisted_{})
 				})
 
 				Convey("Revisit after 1 mintues if tree is closed", func() {
@@ -226,6 +231,10 @@ func TestOnReadyForSubmission(t *testing.T) {
 					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
 					// Must not occupy the Submit Queue
 					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rid)
+					So(res.State.LogEntries, ShouldHaveLength, 2)
+					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
+					So(res.State.LogEntries[1].Kind, ShouldHaveSameTypeAs, &run.LogEntry_TreeChecked_{})
+					So(res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, ShouldBeFalse)
 				})
 			})
 		}

@@ -89,6 +89,14 @@ func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error)
 				return false, err
 			}
 			treeOpen = status.State == tree.Open || status.State == tree.Throttled
+			rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+				Time: timestamppb.New(clock.Now(ctx)),
+				Kind: &run.LogEntry_TreeChecked_{
+					TreeChecked: &run.LogEntry_TreeChecked{
+						Open: treeOpen,
+					},
+				},
+			})
 		}
 	}
 	rs.Run.Submission.TreeOpen = treeOpen

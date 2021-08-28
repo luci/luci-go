@@ -334,9 +334,21 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 	case err != nil:
 		return false, errors.Annotate(err, "failed to run the transaction to acquire submit queue").Tag(transient.Tag).Err()
 	case waitlisted:
+		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+			Time: timestamppb.New(clock.Now(ctx)),
+			Kind: &run.LogEntry_Waitlisted_{
+				Waitlisted: &run.LogEntry_Waitlisted{},
+			},
+		})
 		logging.Debugf(ctx, "Waitlisted in Submit Queue")
 		return true, nil
 	default:
+		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+			Time: timestamppb.New(clock.Now(ctx)),
+			Kind: &run.LogEntry_AcquiredSubmitQueue_{
+				AcquiredSubmitQueue: &run.LogEntry_AcquiredSubmitQueue{},
+			},
+		})
 		logging.Debugf(ctx, "Acquired Submit Queue")
 		return false, nil
 	}

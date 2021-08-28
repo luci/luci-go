@@ -119,6 +119,11 @@ func logTypeString(rle *run.LogEntry) (string, error) {
 		return "Started", nil
 	case *run.LogEntry_Created_:
 		return "Created", nil
+	case *run.LogEntry_TreeChecked_:
+		if v.TreeChecked.Open {
+			return "Tree Found Open", nil
+		}
+		return "Tree Found Closed", nil
 	case *run.LogEntry_Info_:
 		return v.Info.Label, nil
 	default:
