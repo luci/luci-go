@@ -33,7 +33,10 @@ func New(b *Bucketer) *Distribution {
 	if b == nil {
 		b = DefaultBucketer
 	}
-	return &Distribution{b: b, lastNonZeroBucket: -1}
+	return &Distribution{
+		b: b,
+		buckets: make([]int64, 0),
+		lastNonZeroBucket: -1}
 }
 
 // Add adds the sample to the distribution and updates the statistics.
@@ -66,3 +69,15 @@ func (d *Distribution) Sum() float64 { return d.sum }
 // LastNonZeroBucket returns the index into Buckets() of the last bucket that
 // is set (non-zero).  Returns -1 if Count() == 0.
 func (d *Distribution) LastNonZeroBucket() int { return d.lastNonZeroBucket }
+
+// Clone creates deep copy of this distribution.
+func (d *Distribution) Clone() *Distribution {
+	return &Distribution{
+		// Bucketer is read-only after init(), and doesn't have a mutable state.
+		// No reason to clone Bucketer.
+		b:                 d.b,
+		buckets:           append(make([]int64, 0, len(d.buckets)), d.buckets...),
+		count:             d.count,
+		sum:               d.sum,
+		lastNonZeroBucket: d.lastNonZeroBucket}
+}

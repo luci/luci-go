@@ -45,3 +45,23 @@ func TestAdd(t *testing.T) {
 		So(d.Count(), ShouldEqual, 4)
 	})
 }
+
+func TestClone(t *testing.T) {
+	Convey("Clone empty", t, func() {
+		d := New(FixedWidthBucketer(10, 2))
+		So(d, ShouldResemble, d.Clone())
+	})
+
+	Convey("Clone populated", t, func() {
+		d := New(FixedWidthBucketer(10, 2))
+		d.Add(1)
+		d.Add(10)
+		d.Add(20)
+
+		clone := d.Clone()
+		So(d, ShouldResemble, clone)
+
+		d.Add(30)
+		So(d, ShouldNotResemble, clone)
+	})
+}

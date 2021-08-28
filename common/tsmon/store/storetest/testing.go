@@ -558,6 +558,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		baz := &FakeMetric{
 			types.MetricInfo{"baz", "", []field.Field{field.String("f")}, types.NonCumulativeFloatType, target.NilType},
 			types.MetricMetadata{}}
+		qux := &FakeMetric{
+			types.MetricInfo{"qux", "", []field.Field{field.String("f")}, types.CumulativeDistributionType, target.NilType},
+			types.MetricMetadata{}}
 		opts.RegistrationFinished(s)
 
 		// Add test records. We increment the test clock each time so that the added
@@ -572,12 +575,18 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			{bar, makeInterfaceSlice("two"), "world"},
 			{baz, makeInterfaceSlice("three"), 1.23},
 			{baz, makeInterfaceSlice("four"), 4.56},
+			{qux, makeInterfaceSlice("five"), distribution.New(nil)},
 		} {
 			s.Set(ctx, m.metric, time.Time{}, m.fieldvals, m.value)
 			tc.Add(time.Second)
 		}
 
 		got := s.GetAll(ctx)
+
+		// Store operations made after GetAll should not be visible in the snapshot.
+		s.Set(ctx, baz, time.Time{}, makeInterfaceSlice("four"), 3.14)
+		s.Incr(ctx, qux, time.Time{}, makeInterfaceSlice("five"), float64(10.0))
+
 		sort.Sort(sortableCellSlice(got))
 		want := []types.Cell{
 			{
@@ -645,6 +654,19 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					Value:     4.56,
 				},
 			},
+			{
+				types.MetricInfo{
+					Name:       "qux",
+					Fields:     []field.Field{field.String("f")},
+					ValueType:  types.CumulativeDistributionType,
+					TargetType: target.NilType,
+				},
+				types.MetricMetadata{},
+				types.CellData{
+					FieldVals: makeInterfaceSlice("five"),
+					Value:     distribution.New(nil),
+				},
+			},
 		}
 		So(len(got), ShouldEqual, len(want))
 
@@ -656,7 +678,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				So(len(g.Fields), ShouldEqual, len(w.Fields))
 				So(g.ValueType, ShouldEqual, w.ValueType)
 				So(g.FieldVals, ShouldResemble, w.FieldVals)
-				So(g.Value, ShouldEqual, w.Value)
+				So(g.Value, ShouldResemble, w.Value)
 			})
 		}
 	})

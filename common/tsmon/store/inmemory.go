@@ -313,17 +313,30 @@ func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 	defer s.dataLock.Unlock()
 
 	defaultTarget := s.DefaultTarget()
-	ret := []types.Cell{}
+
+	var ret []types.Cell
 	for _, m := range s.data {
 		m.lock.Lock()
-		for _, cells := range m.cells {
-			for _, cell := range cells {
-				// Add the default target to the cell if it doesn't have one set.
-				cellCopy := *cell
-				if cellCopy.Target == nil {
-					cellCopy.Target = defaultTarget
+		for _, ds := range m.cells {
+			for _, d := range ds {
+				dCopy := *d
+
+				// Distribution has a slice field. Hence, use Clone() to make a deep copy.
+				if d, ok := dCopy.Value.(*distribution.Distribution); ok {
+					dCopy.Value = d.Clone()
 				}
-				ret = append(ret, types.Cell{m.MetricInfo, m.MetricMetadata, cellCopy})
+
+				// Add the default target to the cell if it doesn't have one set.
+				if dCopy.Target == nil {
+					dCopy.Target = defaultTarget
+				}
+
+				cell := types.Cell{
+					MetricInfo:     m.MetricInfo,
+					MetricMetadata: m.MetricMetadata,
+					CellData:       dCopy}
+
+				ret = append(ret, cell)
 			}
 		}
 		m.lock.Unlock()
