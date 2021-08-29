@@ -55,9 +55,6 @@ type Distributed struct {
 // fresh sweep. For that reason the implementation is careful not to return
 // errors marked with transient.Tag.
 func (d *Distributed) ExecSweepTask(ctx context.Context, task *tqpb.SweepTask) error {
-	logging.Infof(ctx, "Sweeping %s (level %d, %d/%d): %s",
-		task.Db, task.Level, task.ShardIndex, task.ShardCount, task.Partition)
-
 	// The corresponding DB must be registered in the process, otherwise we won't
 	// know how to enumerate reminders.
 	db := db.NonTxnDB(ctx, task.Db)
