@@ -16,6 +16,7 @@ import { html, TemplateResult } from 'lit-html';
 
 import { Suggestion } from '../components/auto_complete';
 import { TestVariant } from '../services/resultdb';
+import { parseProtoDuration } from './time_utils';
 
 const SPECIAL_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 
@@ -92,6 +93,26 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
           return (v: TestVariant) => negate === !v.results?.some((r) => r.result.tags?.some((t) => t.key === tKey));
         }
       }
+      // Whether the test has at least one run with a duration in the specified
+      // range.
+      case 'DURATION': {
+        const match = value.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)?$/);
+        if (!match) {
+          throw new Error(`invalid duration range: ${value}`);
+        }
+        const [, minDurationStr, maxDurationStr] = match;
+        const minDuration = Number(minDurationStr) * 1000;
+        const maxDuration = maxDurationStr ? Number(maxDurationStr || '0') * 1000 : Infinity;
+        return (v: TestVariant) =>
+          negate ===
+          !v.results?.some((r) => {
+            if (!r.result.duration) {
+              return false;
+            }
+            const durationMs = parseProtoDuration(r.result.duration);
+            return durationMs >= minDuration && durationMs <= maxDuration;
+          });
+      }
       default: {
         throw new Error(`invalid query type: ${type}`);
       }
@@ -147,6 +168,9 @@ const QUERY_TYPE_SUGGESTIONS = [
 
   { type: 'ExactID:', explanation: 'Include only tests with the specified ID (case sensitive)' },
   { type: '-ExactID:', explanation: 'Exclude tests with the specified ID (case sensitive)' },
+
+  { type: 'Duration:', explanation: 'Include only tests with a run that has a duration in the specified range' },
+  { type: '-Duration:', explanation: 'Exclude tests with a run that has a duration in the specified range' },
 
   { type: 'ExactName:', explanation: 'Include only tests with the specified name (case sensitive)' },
   { type: '-ExactName:', explanation: 'Exclude tests with the specified name (case sensitive)' },
@@ -225,6 +249,14 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
       {
         value: 'Name:test-name-substr',
         explanation: 'Include only tests with the specified substring in their name (case insensitive)',
+      },
+      {
+        value: 'Duration:0.05-15',
+        explanation: 'Include only tests with a run that has a duration in the specified range (in seconds)',
+      },
+      {
+        value: 'Duration:0.05-',
+        explanation: 'Max duration can be omitted',
       },
       {
         value: 'ExactID:test-id',

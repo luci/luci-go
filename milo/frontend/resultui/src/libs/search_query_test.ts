@@ -30,18 +30,21 @@ const variant1: TestVariant = {
       result: {
         status: TestStatus.Fail,
         tags: [{ key: 'tag-key-1', value: 'tag-val-1' }],
+        duration: '10s',
       } as TestResult,
     },
     {
       result: {
         status: TestStatus.Fail,
         tags: [{ key: 'tag-key-1', value: 'tag-val-1=1' }],
+        duration: '15s',
       } as TestResult,
     },
     {
       result: {
         status: TestStatus.Skip,
         tags: [{ key: 'tag-key-2', value: 'tag-val-2' }],
+        duration: '20s',
       } as TestResult,
     },
   ],
@@ -60,6 +63,7 @@ const variant2: TestVariant = {
       result: {
         tags: [{ key: 'tag-key-1', value: 'unknown-val' }],
         status: TestStatus.Fail,
+        duration: '30s',
       } as TestResult,
     },
     {
@@ -312,6 +316,32 @@ describe('parseSearchQuery', () => {
 
     it('should work with negation', () => {
       const filter = parseSearchQuery('-Name:test-name-1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
+    });
+  });
+
+  describe('Duration query', () => {
+    it('should filter out variants with no run that has the specified duration', () => {
+      const filter = parseSearchQuery('Duration:5-10');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1]);
+    });
+
+    it('should support decimals', () => {
+      const filter = parseSearchQuery('Duration:5.5-10.5');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1]);
+    });
+
+    it('should support omitting max duration', () => {
+      const filter = parseSearchQuery('Duration:5-');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1, variant2]);
+    });
+
+    it('should work with negation', () => {
+      const filter = parseSearchQuery('-Duration:5-10');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
     });
@@ -737,6 +767,29 @@ describe('suggestSearchQuery', () => {
     );
     assert.notStrictEqual(
       suggestions2.find((s) => s.value === '-Tag:tag_key'),
+      undefined
+    );
+  });
+
+  it('should suggest Duration query when the query prefix is Duration:', () => {
+    const suggestions1 = suggestSearchQuery('Duration:10');
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'Duration:10'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-Duration:10'),
+      undefined
+    );
+
+    const suggestions2 = suggestSearchQuery('-Duration:10');
+    // When user explicitly typed negative query, don't suggest positive query.
+    assert.strictEqual(
+      suggestions2.find((s) => s.value === 'Duration:10'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-Duration:10'),
       undefined
     );
   });

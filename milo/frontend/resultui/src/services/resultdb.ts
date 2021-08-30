@@ -64,7 +64,7 @@ export interface TestResult {
   readonly status: TestStatus;
   readonly summaryHtml: string;
   readonly startTime: string;
-  readonly duration: string;
+  readonly duration?: string;
   readonly tags?: Tag[];
   readonly failureReason?: FailureReason;
 }
