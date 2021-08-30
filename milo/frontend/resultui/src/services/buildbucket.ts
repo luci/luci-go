@@ -138,8 +138,7 @@ export interface TestPresentationConfig {
    * A key must be one of the following:
    * 1. 'status': status of the test variant.
    * 2. 'name': test_metadata.name of the test variant.
-   * 3. 'failure_reasons': all unique failure reasons of the test variant.
-   * 4. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
+   * 3. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
    * v.gpu).
    *
    * Caveat: test variants with only expected results are not affected by this

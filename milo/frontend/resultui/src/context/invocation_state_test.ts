@@ -19,8 +19,6 @@ import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
   ResultDb,
-  TestResultBundle,
-  TestStatus,
   TestVariant,
   TestVariantStatus,
 } from '../services/resultdb';
@@ -60,33 +58,6 @@ const variant5: TestVariant = {
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
   status: TestVariantStatus.EXPECTED,
-};
-
-const variantWithTestResults: TestVariant = {
-  testId: '',
-  variantHash: '',
-  status: TestVariantStatus.UNEXPECTED,
-  results: [
-    {
-      result: { status: TestStatus.Fail },
-    },
-  ] as TestResultBundle[],
-};
-
-const variantWithTestResultFailureReasons: TestVariant = {
-  testId: '',
-  variantHash: '',
-  status: TestVariantStatus.UNEXPECTED,
-  results: [
-    {
-      result: {
-        status: TestStatus.Fail,
-        failureReason: {
-          primaryErrorMessage: 'failureReason1',
-        },
-      },
-    },
-  ] as TestResultBundle[],
 };
 
 describe('InvocationState', () => {
@@ -132,39 +103,5 @@ describe('InvocationState', () => {
       assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
       assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
-  });
-
-  it('should have failure_reasons in the default columns when there are failure reasons', async () => {
-    const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
-    queryTestVariantsStub
-      .onCall(0)
-      .resolves({ testVariants: [variantWithTestResultFailureReasons, variantWithTestResults] });
-
-    const appState = {
-      selectedTabId: '',
-      resultDb: {
-        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
-      },
-    } as AppState;
-    const invocationState = new InvocationState(appState);
-    invocationState.invocationId = 'invocation-id';
-    await invocationState.testLoader!.loadNextTestVariants();
-    assert.deepEqual(invocationState.defaultColumns, ['failure_reasons']);
-  });
-
-  it('should not have failure_reasons in the default columns when there are no failure reasons', async () => {
-    const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
-    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variantWithTestResults] });
-
-    const appState = {
-      selectedTabId: '',
-      resultDb: {
-        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
-      },
-    } as AppState;
-    const invocationState = new InvocationState(appState);
-    invocationState.invocationId = 'invocation-id';
-    await invocationState.testLoader!.loadNextTestVariants();
-    assert.deepEqual(invocationState.defaultColumns, []);
   });
 });

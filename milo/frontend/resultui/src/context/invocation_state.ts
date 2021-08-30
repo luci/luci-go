@@ -53,11 +53,7 @@ export class InvocationState {
   @observable.ref presentationConfig: TestPresentationConfig = {};
   @observable.ref columnsParam?: string[];
   @computed({ equals: comparer.shallow }) get defaultColumns() {
-    let columns = this.presentationConfig.column_keys || [];
-    if (this.testLoader?.hasFailureReasons) {
-      columns = columns.concat('failure_reasons');
-    }
-    return columns;
+    return this.presentationConfig.column_keys || [];
   }
   @computed({ equals: comparer.shallow }) get displayedColumns() {
     return this.columnsParam || this.defaultColumns;

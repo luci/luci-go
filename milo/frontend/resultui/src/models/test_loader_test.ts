@@ -15,14 +15,7 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 
-import {
-  createTVPropGetter,
-  ResultDb,
-  TestResultBundle,
-  TestStatus,
-  TestVariant,
-  TestVariantStatus,
-} from '../services/resultdb';
+import { createTVPropGetter, ResultDb, TestVariantStatus } from '../services/resultdb';
 import { LoadingStage, TestLoader } from './test_loader';
 
 const variant1 = {
@@ -109,81 +102,10 @@ const variant12 = {
   status: TestVariantStatus.EXPECTED,
 };
 
-const variantWithTestResults: TestVariant = {
-  testId: '',
-  variantHash: '',
-  status: TestVariantStatus.UNEXPECTED,
-  results: [
-    {
-      result: { status: TestStatus.Fail },
-    },
-    {
-      result: { status: TestStatus.Fail },
-    },
-    {
-      result: { status: TestStatus.Fail },
-    },
-  ] as TestResultBundle[],
-};
-
-const variantWithTestResultFailureReasons: TestVariant = {
-  testId: '',
-  variantHash: '',
-  status: TestVariantStatus.UNEXPECTED,
-  results: [
-    {
-      result: {
-        status: TestStatus.Fail,
-        failureReason: {
-          primaryErrorMessage: 'failureReason1',
-        },
-      },
-    },
-    {
-      result: {
-        status: TestStatus.Fail,
-        failureReason: {
-          primaryErrorMessage: 'failureReason2',
-        },
-      },
-    },
-    {
-      result: {
-        status: TestStatus.Fail,
-        failureReason: {
-          primaryErrorMessage: 'failureReason1',
-        },
-      },
-    },
-  ] as TestResultBundle[],
-};
-
 describe('TestLoader', () => {
   let testLoader: TestLoader;
   let stub = sinon.stub();
   const req = { invocations: ['invocation'], pageSize: 4 };
-
-  it('should populate TestVariant.failureReasons', async () => {
-    stub = sinon.stub();
-    stub.onCall(0).resolves({ testVariants: [variantWithTestResultFailureReasons] });
-    testLoader = new TestLoader(req, {
-      queryTestVariants: stub,
-    } as Partial<ResultDb> as ResultDb);
-
-    await testLoader.loadNextTestVariants();
-    assert.strictEqual(variantWithTestResultFailureReasons.failureReasons, 'failureReason1,failureReason2');
-  });
-
-  it('TestVariant.failureReasons empty if no TestResult has failureReason', async () => {
-    stub = sinon.stub();
-    stub.onCall(0).resolves({ testVariants: [variantWithTestResults] });
-    testLoader = new TestLoader(req, {
-      queryTestVariants: stub,
-    } as Partial<ResultDb> as ResultDb);
-
-    await testLoader.loadNextTestVariants();
-    assert.strictEqual(variantWithTestResults.failureReasons, '');
-  });
 
   describe('when first page contains variants', () => {
     beforeEach(() => {
