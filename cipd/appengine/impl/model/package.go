@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	// TODO(crbug/1242998): enable safe Get in Datastore.
+	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
