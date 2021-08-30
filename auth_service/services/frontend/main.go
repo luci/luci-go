@@ -54,6 +54,9 @@ func main() {
 			srv.Routes.Static("/static", nil, http.Dir("./static"))
 		}
 
+		// Cookie auth and pRPC have some rough edges, see prpcCookieAuth comment.
+		prpcAuth := &prpcCookieAuth{cookieAuth: srv.CookieAuth}
+
 		// Authentication methods for pRPC APIs.
 		srv.PRPC.Authenticator = &auth.Authenticator{
 			Methods: []auth.Method{
@@ -69,13 +72,13 @@ func main() {
 				// Cookie auth is used by the Web UI. When this method is used, we also
 				// check the XSRF token to be really sure it is the Web UI that called
 				// the method. See xsrf.Interceptor below.
-				srv.CookieAuth,
+				prpcAuth,
 			},
 		}
 
 		// Interceptors applying to all pRPC APIs.
 		srv.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(
-			xsrf.Interceptor(srv.CookieAuth),
+			xsrf.Interceptor(prpcAuth),
 			// TODO: add "auth-service-access" ACL check for restricted APIs.
 		)
 
@@ -95,6 +98,31 @@ func main() {
 		})
 		return nil
 	})
+}
+
+// prpcCookieAuth authenticates pRPC calls using the given method, but only
+// if they have `X-Xsrf-Token` header. Otherwise it ignores cookies completely.
+//
+// This is primarily needed to allow the RPC Explorer to keep sending cookies
+// without XSRF tokens, since it is unaware of XSRF tokens (or cookies for that
+// matter) and just uses XMLHttpRequest, which **always** sends cookies with
+// same origin requests. There's no way to disable it. Such requests are
+// rejected by xsrf.Interceptor, because they don't have XSRF tokens.
+//
+// The best solution would be to change the RPC Explorer to use `fetch` API with
+// 'credentials: omit' policy. But this is non-trivial. So instead we just
+// ignore any cookies sent by the RPC Explorer and let it authenticate calls
+// using OAuth2 access tokens (as it was designed to do).
+type prpcCookieAuth struct {
+	cookieAuth auth.Method
+}
+
+// Authenticate is a part of auth.Method interface.
+func (m *prpcCookieAuth) Authenticate(ctx context.Context, req *http.Request) (*auth.User, auth.Session, error) {
+	if req.Header.Get(xsrf.XSRFTokenMetadataKey) != "" {
+		return m.cookieAuth.Authenticate(ctx, req)
+	}
+	return nil, nil, nil // skip this method
 }
 
 func prepareTemplates(opts *server.Options) *templates.Bundle {
