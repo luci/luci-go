@@ -1,8 +1,8 @@
 diff --git a/node_modules/workbox-webpack-plugin/build/lib/get-manifest-entries-from-compilation.js b/node_modules/workbox-webpack-plugin/build/lib/get-manifest-entries-from-compilation.js
-index c420128..b8af268 100644
+index 158b3f0..581d4ce 100644
 --- a/node_modules/workbox-webpack-plugin/build/lib/get-manifest-entries-from-compilation.js
 +++ b/node_modules/workbox-webpack-plugin/build/lib/get-manifest-entries-from-compilation.js
-@@ -195,7 +195,10 @@ module.exports = async (compilation, config) => {
+@@ -197,7 +197,10 @@ module.exports = async (compilation, config) => {
    } = compilation.options.output;
    const fileDetails = Array.from(filteredAssets).map(asset => {
      return {

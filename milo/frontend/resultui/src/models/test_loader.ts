@@ -21,6 +21,7 @@ import { groupBy } from 'lodash-es';
 import { action, computed, observable } from 'mobx';
 
 import { InnerTag, TAG_SOURCE } from '../libs/tag';
+import { toError } from '../libs/utils';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
@@ -226,7 +227,7 @@ export class TestLoader {
     try {
       res = await this.resultDb.queryTestVariants(req);
     } catch (e) {
-      throw new LoadTestVariantsError(req, e);
+      throw new LoadTestVariantsError(req, toError(e));
     }
 
     this.nextPageToken = res.nextPageToken;
@@ -313,12 +314,13 @@ export class TestLoader {
       }
 
       if (testVariant.status !== TestVariantStatus.EXPECTED) {
-        testVariant.failureReasons =
-          Array.from(new Set(
+        testVariant.failureReasons = Array.from(
+          new Set(
             testVariant.results
-                ?.map((r) => r.result.failureReason?.primaryErrorMessage)
-                .filter((reason) => reason !== undefined)
-          )).join(',');
+              ?.map((r) => r.result.failureReason?.primaryErrorMessage)
+              .filter((reason) => reason !== undefined)
+          )
+        ).join(',');
         if (testVariant.failureReasons !== '') {
           this.hasFailureReasons = true;
         }

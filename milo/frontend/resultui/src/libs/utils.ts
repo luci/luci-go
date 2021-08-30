@@ -54,3 +54,10 @@ export function urlSetSearchQueryParam(url: string, key: string, value: { toStri
   urlObj.searchParams.set(key, value.toString());
   return urlObj.toString();
 }
+
+/**
+ * Convert a value to an Error if it's not an Error.
+ */
+export function toError(from: unknown): Error {
+  return from instanceof Error ? from : new Error(`${from}`);
+}

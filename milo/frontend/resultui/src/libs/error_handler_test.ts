@@ -103,7 +103,7 @@ describe('reportError', () => {
     assert.isTrue(event.bubbles);
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
-    assert.strictEqual((event as ErrorEvent).message, 'Error: err msg');
+    assert.strictEqual((event as ErrorEvent).message, 'err msg');
   });
 
   it('should not throw the error when fallbackFn is provided', async () => {
@@ -125,7 +125,7 @@ describe('reportError', () => {
     assert.isTrue(event.bubbles);
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
-    assert.strictEqual((event as ErrorEvent).message, 'Error: err msg');
+    assert.strictEqual((event as ErrorEvent).message, 'err msg');
   });
 
   it('should still dispatch the original error event when fallbackFn throws', async () => {
@@ -154,7 +154,7 @@ describe('reportError', () => {
     assert.isTrue(event.bubbles);
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
-    assert.strictEqual((event as ErrorEvent).message, 'Error: err msg');
+    assert.strictEqual((event as ErrorEvent).message, 'err msg');
   });
 });
 
@@ -182,7 +182,7 @@ describe('reportErrorAsync', () => {
     assert.isTrue(event.bubbles);
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
-    assert.strictEqual((event as ErrorEvent).message, 'Error: err msg');
+    assert.strictEqual((event as ErrorEvent).message, 'err msg');
   });
 
   it('should dispatch an error event when the fn throws immediately', async () => {
@@ -208,7 +208,7 @@ describe('reportErrorAsync', () => {
     assert.isTrue(event.bubbles);
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
-    assert.strictEqual((event as ErrorEvent).message, 'Error: err msg');
+    assert.strictEqual((event as ErrorEvent).message, 'err msg');
   });
 
   it('should not throw the error when fallbackFn is provided', async () => {
@@ -230,7 +230,7 @@ describe('reportErrorAsync', () => {
     assert.isTrue(event.bubbles);
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
-    assert.strictEqual((event as ErrorEvent).message, 'Error: err msg');
+    assert.strictEqual((event as ErrorEvent).message, 'err msg');
   });
 
   it('should still dispatch the original error event when fallbackFn throws', async () => {
@@ -265,7 +265,7 @@ describe('reportErrorAsync', () => {
     assert.isTrue(event.bubbles);
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
-    assert.strictEqual((event as ErrorEvent).message, 'Error: err msg');
+    assert.strictEqual((event as ErrorEvent).message, 'err msg');
   });
 
   it('should still dispatch the original error event when fallbackFn throws immediately', async () => {
@@ -300,7 +300,7 @@ describe('reportErrorAsync', () => {
     assert.isTrue(event.bubbles);
     assert.isTrue(event.composed);
     assert.strictEqual((event as ErrorEvent).error, err);
-    assert.strictEqual((event as ErrorEvent).message, 'Error: err msg');
+    assert.strictEqual((event as ErrorEvent).message, 'err msg');
   });
 });
 

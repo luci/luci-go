@@ -20,6 +20,7 @@ import { addUnregisterServiceWorkersCommands } from './unregister_service_worker
 
 addMatchImageSnapshotCommand({
   failureThreshold: 0.01,
+  failureThresholdType: 'percent',
 });
 addStubRequestsCommand();
 addStubPrpcServicesCommand();

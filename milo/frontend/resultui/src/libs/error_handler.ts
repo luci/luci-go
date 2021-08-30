@@ -45,6 +45,8 @@
 
 import { html, LitElement } from 'lit-element';
 
+import { toError } from './utils';
+
 /**
  * Wraps the specified fn. Whenever fn throws an error, dispatches an error
  * event from the element.
@@ -67,10 +69,11 @@ export function reportError<T extends unknown[], V>(
     try {
       return fn(...params);
     } catch (e) {
+      const err = toError(e);
       ele.dispatchEvent(
         new ErrorEvent('error', {
-          error: e,
-          message: e.toString(),
+          error: err,
+          message: err.message,
           composed: true,
           bubbles: true,
           cancelable: true,
@@ -113,10 +116,11 @@ export function reportErrorAsync<T extends unknown[], V>(
       // Don't elide await here or non-immediate errors won't be cached.
       return await fn(...params);
     } catch (e) {
+      const err = toError(e);
       ele.dispatchEvent(
         new ErrorEvent('error', {
-          error: e,
-          message: e.toString(),
+          error: err,
+          message: err.message,
           composed: true,
           bubbles: true,
           cancelable: true,
