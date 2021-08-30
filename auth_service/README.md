@@ -17,7 +17,7 @@ go run main.go -cloud-project chrome-infra-auth-dev
 
 ```
 
-The server will be available at http://127.0.0.1:8800.
+The server will be available at http://localhost:8800.
 
 
 Uploading to GAE for adhoc testing

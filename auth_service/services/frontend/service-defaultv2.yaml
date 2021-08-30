@@ -30,5 +30,6 @@ entrypoint: >
   -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
   -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
   -encrypted-cookies-tink-aead-key ${TINK_AEAD_KEY}
+  -frontend-client-id ${OAUTH_CLIENT_ID}
   -root-secret ${ROOT_SECRET}
   -ts-mon-account ${TS_MON_ACCOUNT}

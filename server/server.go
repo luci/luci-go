@@ -371,10 +371,10 @@ type Options struct {
 // Register registers the command line flags.
 func (o *Options) Register(f *flag.FlagSet) {
 	if o.HTTPAddr == "" {
-		o.HTTPAddr = "127.0.0.1:8800"
+		o.HTTPAddr = "localhost:8800"
 	}
 	if o.AdminAddr == "" {
-		o.AdminAddr = "127.0.0.1:8900"
+		o.AdminAddr = "localhost:8900"
 	}
 	if o.DefaultRequestTimeout == 0 {
 		o.DefaultRequestTimeout = time.Minute

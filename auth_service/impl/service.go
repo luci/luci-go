@@ -38,6 +38,8 @@ groups {
 
 # prpc CLI tool client ID.
 oauth_additional_client_ids: "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
+# Default RPC Explorer client ID.
+oauth_additional_client_ids: "446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com"
 `
 
 // Main launches a server with some default modules and configuration installed.
