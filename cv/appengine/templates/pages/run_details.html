@@ -48,6 +48,9 @@ div.clickable {
   padding: 2px 4px;
   margin: 2px 4px;
 }
+.tryjob-chips {
+  line-height: 2;
+}
 .tryjob-chip {
   color: black;
   font-size: 90%;
@@ -91,6 +94,12 @@ div.clickable {
 }
 .log-entry-bottom, .log-entry {
   border-bottom: solid 1px #000;
+}
+.message {
+  overflow: auto;
+  max-height: 250px;
+  background-color: white;
+  padding: 10px 50px;
 }
 
 .cl-list {
@@ -139,7 +148,7 @@ div.clickable {
   <div>
     <h3>Tryjobs</h3>
     <div>
-      <p>
+      <p class="tryjob-chips">
         {{range $AllTryjobs}}
           {{with UITryjob .}}
             <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
@@ -152,9 +161,9 @@ div.clickable {
       <h3>Logs</h3>
       <table>
         <thead>
-          <th style="width: 150px;">Event</th>
-          <th style="width: 300px;">Time</th>
-          <th>&nbsp;</th>
+          <th style="width: 200px;">Event</th>
+          <th style="width: 250px;">Time</th>
+          <th style="width: 100px;">&nbsp;</th>
           <th>&nbsp;</th>
         </thead> <tbody>
           {{range .Logs}}
@@ -162,7 +171,11 @@ div.clickable {
               <td><em>{{LogTypeString .}}</em></td>
               <td>{{FmTime .GetTime.AsTime}} </td>
               <td>{{call $RelTime .GetTime.AsTime}} </td>
-              <td>{{LogMessage .}}</td>
+              <td>
+                {{if (LogMessage .)}}
+                  <div class="message"><pre>{{LogMessage .}}</pre></div>
+                {{end}}
+              </td>
             </tr>
             {{if .GetTryjobsUpdated}}
               <tr class="log-entry-bottom">
