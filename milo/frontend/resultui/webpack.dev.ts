@@ -49,11 +49,15 @@ export default merge(common, {
     : [new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(false) })],
 
   devServer: {
-    // In inline mode, webpack-dev-server injects code to service worker
-    // scripts, making them unable to bootstrap.
-    // Disabling inline will break hot module replacement.
-    inline: !DEBUG_SW,
-    contentBase: path.join(__dirname, './out/'),
+    hot: false,
+    // Live reload causes the page to enter refresh loop when debugging SW.
+    liveReload: !DEBUG_SW,
+    client: {
+      overlay: false,
+    },
+    static: {
+      directory: path.join(__dirname, './out/'),
+    },
     historyApiFallback: {
       index: '/ui/index.html',
     },
@@ -62,8 +66,8 @@ export default merge(common, {
       key: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.key')),
       cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
     },
-    before: (app) => {
-      app.use((req, _res, next) => {
+    onBeforeSetupMiddleware: (devServer) => {
+      devServer.app.use((req, _res, next) => {
         // Host root-sw.js at root so it can have root scope.
         if (/^\/(root-sw\.js(\.map)?)$/.test(req.path)) {
           req.url = req.url.slice(0, req.url.length - req.path.length) + '/ui' + req.path;
@@ -71,7 +75,7 @@ export default merge(common, {
         next();
       });
 
-      app.get('/configs.js', async (_req, res) => {
+      devServer.app.get('/configs.js', async (_req, res) => {
         res.set('content-type', 'application/javascript');
         const appConfigs = JSON.parse(fs.readFileSync(path.join(__dirname, 'dev-configs/configs.json'), 'utf8'));
         const configsTemplate = fs.readFileSync(path.join(__dirname, 'assets/configs.template.js'), 'utf8');
@@ -82,7 +86,7 @@ export default merge(common, {
         res.send(config);
       });
 
-      app.use(
+      devServer.app.use(
         /^(?!\/ui\/).*/,
         createProxyMiddleware({
           // This attribute is required. However the value will be overridden by

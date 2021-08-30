@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "webpack --config webpack.prod.ts",
-    "dev": "webpack-dev-server --config webpack.dev.ts",
+    "dev": "webpack serve --config webpack.dev.ts",
     "dev:sw": "DEBUG_SW=true npm run dev",
     "test": "karma start --single-run",
     "cypress:open": "CYPRESS_CRASH_REPORTS=0 cypress open",
@@ -69,9 +69,10 @@
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.7.5",
     "@types/sinon": "^10.0.2",
-    "@types/webpack-dev-server": "^3.11.6",
+    "@types/webpack-dev-server": "^4.0.3",
     "@types/webpack-env": "^1.16.2",
     "@types/workbox-webpack-plugin": "^5.1.8",
+    "@webpack-cli/serve": "^1.5.2",
     "chai": "^4.3.4",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^9.0.1",
@@ -101,8 +102,8 @@
     "util": "^0.12.4",
     "webpack": "=5.47.1",
     "webpack-bundle-analyzer": "^4.4.2",
-    "webpack-cli": "^3.3.12",
-    "webpack-dev-server": "^3.11.2",
+    "webpack-cli": "^4.8.0",
+    "webpack-dev-server": "^4.0.0",
     "webpack-merge": "^5.8.0",
     "workbox-webpack-plugin": "^6.2.4"
   }
