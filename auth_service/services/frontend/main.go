@@ -24,14 +24,19 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl"
+	"go.chromium.org/luci/auth_service/impl/servers/accounts"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -48,6 +53,34 @@ func main() {
 		if !srv.Options.Prod {
 			srv.Routes.Static("/static", nil, http.Dir("./static"))
 		}
+
+		// Authentication methods for pRPC APIs.
+		srv.PRPC.Authenticator = &auth.Authenticator{
+			Methods: []auth.Method{
+				// The preferred authentication method.
+				&openid.GoogleIDTokenAuthMethod{
+					AudienceCheck: openid.AudienceMatchesHost,
+					SkipNonJWT:    true, // pass OAuth2 access tokens through
+				},
+				// Backward compatibility for the RPC Explorer and old clients.
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+				// Cookie auth is used by the Web UI. When this method is used, we also
+				// check the XSRF token to be really sure it is the Web UI that called
+				// the method. See xsrf.Interceptor below.
+				srv.CookieAuth,
+			},
+		}
+
+		// Interceptors applying to all pRPC APIs.
+		srv.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(
+			xsrf.Interceptor(srv.CookieAuth),
+			// TODO: add "auth-service-access" ACL check for restricted APIs.
+		)
+
+		// Register all pRPC servers.
+		rpcpb.RegisterAccountsServer(srv.PRPC, &accounts.Server{})
 
 		// The middleware chain applied to all plain HTTP routes.
 		mw := router.MiddlewareChain{
@@ -78,10 +111,15 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 			if err != nil {
 				return nil, err
 			}
+			token, err := xsrf.Token(ctx)
+			if err != nil {
+				return nil, err
+			}
 			return templates.Args{
 				"AppVersion": versionID,
 				"User":       auth.CurrentUser(ctx),
 				"LogoutURL":  logoutURL,
+				"XSRFToken":  token,
 			}, nil
 		},
 	}

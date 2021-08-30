@@ -1,3 +1,4 @@
+{{define "script"}}{{end}}
 {{define "base"}}
 <!DOCTYPE html>
 <!-- Copyright 2021 The LUCI Authors. All rights reserved.
@@ -21,6 +22,11 @@ that can be found in the LICENSE file. -->
         color: #cccccc;
       }
     </style>
+    <script src="/static/js/api.js"></script>
+    <script type="text/javascript">
+      api.setXSRFToken("{{.XSRFToken}}");
+      api.setXSRFTokenAutoupdate(true);
+    </script>
   </head>
 
   <body>
@@ -50,5 +56,7 @@ that can be found in the LICENSE file. -->
       </div>
     </div>
   </body>
+
+  {{template "script" .}}
 </html>
 {{end}}
