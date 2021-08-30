@@ -29,16 +29,19 @@ const variant1: TestVariant = {
     {
       result: {
         status: TestStatus.Fail,
+        tags: [{ key: 'tag-key-1', value: 'tag-val-1' }],
       } as TestResult,
     },
     {
       result: {
         status: TestStatus.Fail,
+        tags: [{ key: 'tag-key-1', value: 'tag-val-1=1' }],
       } as TestResult,
     },
     {
       result: {
         status: TestStatus.Skip,
+        tags: [{ key: 'tag-key-2', value: 'tag-val-2' }],
       } as TestResult,
     },
   ],
@@ -55,12 +58,17 @@ const variant2: TestVariant = {
   results: [
     {
       result: {
+        tags: [{ key: 'tag-key-1', value: 'unknown-val' }],
         status: TestStatus.Fail,
       } as TestResult,
     },
     {
       result: {
         status: TestStatus.Fail,
+        tags: [
+          { key: 'duplicated-tag-key', value: 'first-tag-val' },
+          { key: 'duplicated-tag-key', value: 'second-tag-val' },
+        ],
       } as TestResult,
     },
   ],
@@ -254,6 +262,38 @@ describe('parseSearchQuery', () => {
       const filter = parseSearchQuery('-vhash:key1:val1');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
+    });
+  });
+
+  describe('Tag query', () => {
+    it('should filter out variants with no matching tag key-value pair', () => {
+      const filter = parseSearchQuery('tag:tag-key-1=tag-val-1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1]);
+    });
+
+    it("should support tag value with '=' in it", () => {
+      const filter = parseSearchQuery('tag:tag-key-1=tag-val-1=1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1]);
+    });
+
+    it('should support filter with only tag key', () => {
+      const filter = parseSearchQuery('tag:tag-key-1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1, variant2]);
+    });
+
+    it('should work with negation', () => {
+      const filter = parseSearchQuery('-tag:tag-key-1=tag-val-1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
+    });
+
+    it('should support duplicated tag key', () => {
+      const filter = parseSearchQuery('-tag:duplicated-tag-key=second-tag-val');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1, variant3, variant4, variant5, variant6, variant7]);
     });
   });
 
@@ -674,6 +714,29 @@ describe('suggestSearchQuery', () => {
     );
     assert.notStrictEqual(
       suggestions2.find((s) => s.value === '-V:test_suite'),
+      undefined
+    );
+  });
+
+  it('should suggest Tag query when the query prefix is Tag:', () => {
+    const suggestions1 = suggestSearchQuery('Tag:tag_key');
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'Tag:tag_key'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-Tag:tag_key'),
+      undefined
+    );
+
+    const suggestions2 = suggestSearchQuery('-Tag:tag_key');
+    // When user explicitly typed negative query, don't suggest positive query.
+    assert.strictEqual(
+      suggestions2.find((s) => s.value === 'Tag:tag_key'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-Tag:tag_key'),
       undefined
     );
   });

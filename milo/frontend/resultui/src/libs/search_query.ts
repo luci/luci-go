@@ -60,7 +60,7 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
       // Whether the test variant has a matching variant key-value pair.
       case 'V': {
         // Don't use String.split here because then vValue can't contain '='.
-        const [, vKey, , vValue] = value.match(/^([^=]*)(=(.*))?$/)!;
+        const [, vKey, vValue] = value.match(/^([^=]*)(?:=(.*))?$/)!;
 
         // If the variant value is unspecified, accept any value.
         // Otherwise, the value must match the specified value (case sensitive).
@@ -80,6 +80,17 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
       // Whether the test name matches the specified name (case sensitive).
       case 'EXACTNAME': {
         return (v: TestVariant) => negate !== (v.testMetadata?.name === value);
+      }
+      // Whether the test has a run with a matching tag (case sensitive).
+      case 'TAG': {
+        // Don't use String.split here because then vValue can't contain '='.
+        const [, tKey, tValue] = value.match(/^([^=]*)(?:=(.*))?$/)!;
+        if (tValue) {
+          return (v: TestVariant) =>
+            negate === !v.results?.some((r) => r.result.tags?.some((t) => t.key === tKey && t.value === tValue));
+        } else {
+          return (v: TestVariant) => negate === !v.results?.some((r) => r.result.tags?.some((t) => t.key === tKey));
+        }
       }
       default: {
         throw new Error(`invalid query type: ${type}`);
@@ -118,6 +129,15 @@ const QUERY_SUGGESTIONS = [
 const QUERY_TYPE_SUGGESTIONS = [
   { type: 'V:', explanation: 'Include only tests with a matching variant key-value pair (case sensitive)' },
   { type: '-V:', explanation: 'Exclude tests with a matching variant key-value pair (case sensitive)' },
+
+  {
+    type: 'Tag:',
+    explanation: 'Include only tests with a run that has a matching tag key-value pair (case sensitive)',
+  },
+  {
+    type: '-Tag:',
+    explanation: 'Exclude tests with a run that has a matching tag key-value pair (case sensitive)',
+  },
 
   { type: 'ID:', explanation: 'Include only tests with the specified substring in their ID (case insensitive)' },
   { type: '-ID:', explanation: 'Exclude tests with the specified substring in their ID (case insensitive)' },
@@ -175,12 +195,20 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
         explanation: 'Include only tests with the specified substring in their ID or name (case insensitive)',
       },
       {
-        value: 'V:variant-key=value-value',
+        value: 'V:variant-key=variant-value',
         explanation: 'Include only tests with a matching test variant key-value pair (case sensitive)',
       },
       {
         value: 'V:variant-key',
         explanation: 'Include only tests with the specified variant key (case sensitive)',
+      },
+      {
+        value: 'Tag:tag-key=tag-value',
+        explanation: 'Include only tests with a run that has a matching tag key-value pair (case sensitive)',
+      },
+      {
+        value: 'Tag:tag-key',
+        explanation: 'Include only tests with a run that has the specified tag key (case sensitive)',
       },
       {
         value: 'ID:test-id-substr',
