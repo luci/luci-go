@@ -160,7 +160,7 @@ export class ResultEntryElement extends MobxLitElement {
 
     return html`
       <milo-expandable-entry
-        .hideContentRuler=${true}
+        contentRuler="invisible"
         .onToggle=${(expanded: boolean) => {
           this.tagExpanded = expanded;
         }}
@@ -218,7 +218,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <milo-expandable-entry .hideContentRuler=${true}>
+      <milo-expandable-entry contentRuler="invisible">
         <span slot="header"> Artifacts: <span class="greyed-out">${artifactCount}</span> </span>
         <div slot="content">
           <ul>

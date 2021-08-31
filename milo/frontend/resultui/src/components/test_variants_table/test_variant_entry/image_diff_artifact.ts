@@ -40,7 +40,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <milo-expandable-entry .expanded=${true} .hideContentRuler=${true}>
+      <milo-expandable-entry .expanded=${true} contentRuler="invisible">
         <span id="header" slot="header">
           Unexpected image output from
           <a href=${this.artifactPageUrl} target="_blank">${this.diff.artifactId}</a>

@@ -21,7 +21,14 @@ import { styleMap } from 'lit-html/directives/style-map';
  */
 @customElement('milo-expandable-entry')
 export class ExpandableEntry extends LitElement {
-  @property() hideContentRuler = false;
+  /**
+   * Configure whether the content ruler should be rendered.
+   * * visible: the default option. Renders the content ruler.
+   * * invisible: hide the content ruler but keep the indentation.
+   * * none: hide the content ruler and don't keep the indentation.
+   */
+  @property() contentRuler: 'visible' | 'invisible' | 'none' = 'visible';
+
   onToggle = (_isExpanded: boolean) => {};
 
   @property() private _expanded = false;
@@ -42,8 +49,19 @@ export class ExpandableEntry extends LitElement {
         <mwc-icon>${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
         <slot name="header"></slot>
       </div>
-      <div id="body">
-        <div id="content-ruler" style=${styleMap({ visibility: this.hideContentRuler ? 'hidden' : '' })}></div>
+      <div
+        id="body"
+        style=${styleMap({
+          'grid-template-columns': this.contentRuler === 'none' ? '1fr' : '24px 1fr',
+        })}
+      >
+        <div
+          id="content-ruler"
+          style=${styleMap({
+            display: this.contentRuler === 'none' ? 'none' : '',
+            visibility: this.contentRuler === 'invisible' ? 'hidden' : '',
+          })}
+        ></div>
         <slot name="content" style=${styleMap({ display: this.expanded ? '' : 'none' })}></slot>
       </div>
     `;
