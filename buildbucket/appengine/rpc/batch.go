@@ -17,21 +17,14 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -41,98 +34,46 @@ const (
 	writeReqsSizeLimit = 200
 )
 
-var testFakeTransportError = "used in tests only to mock the transport error"
-
-// pyBatchResponse captures the BatchResponse from Py service.
-type pyBatchResponse struct {
-	res *pb.BatchResponse
-	err error
-}
-
-// pctKey is the key to a traffic split percentage in [0, 100] in the context.
-var pctKey = "pct"
-
-// WithTrafficSplit returns a new context with the given traffic split.
-func WithTrafficSplit(c context.Context, pct int) context.Context {
-	return context.WithValue(c, &pctKey, pct)
-}
-
-// getTrafficSplit returns the traffic split percentage in the given context.
-func getTrafficSplit(c context.Context) int {
-	pct := c.Value(&pctKey)
-	if pct == nil {
-		return 0
-	}
-	return pct.(int)
-}
-
 // Batch handles a batch request. Implements pb.BuildsServer.
 func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
-	pct := getTrafficSplit(ctx)
-	isDev := strings.Contains(info.AppID(ctx), "cr-buildbucket-dev")
-	if isDev {
-		pct = 100
-	}
 	res := &pb.BatchResponse{}
 	if len(req.GetRequests()) == 0 {
 		return res, nil
 	}
 	res.Responses = make([]*pb.BatchResponse_Response, len(req.Requests))
 
-	// schedule and cancel requests are sent to Py service for now.
-	pyBatchReq := &pb.BatchRequest{}
 	var goBatchReq []*pb.BatchRequest_Request
 	var schBatchReq []*pb.ScheduleBuildRequest
+	readReqs := 0
+	writeReqs := 0
 
 	// record the mapping of indices in to indices in original req.
-	pyIndices := make([]int, 0, len(req.Requests))
 	goIndices := make([]int, 0, len(req.Requests))
 	schIndices := make([]int, 0, len(req.Requests))
 	for i, r := range req.Requests {
 		switch r.Request.(type) {
 		case *pb.BatchRequest_Request_ScheduleBuild:
-			if mathrand.Intn(ctx, 100) < pct {
-				_, _ = logDetails(ctx, "Batch (ScheduleBuild)", r)
-				schIndices = append(schIndices, i)
-				schBatchReq = append(schBatchReq, r.GetScheduleBuild())
-			} else {
-				pyIndices = append(pyIndices, i)
-				pyBatchReq.Requests = append(pyBatchReq.Requests, r)
-			}
-		case *pb.BatchRequest_Request_GetBuild, *pb.BatchRequest_Request_SearchBuilds, *pb.BatchRequest_Request_CancelBuild:
+			schIndices = append(schIndices, i)
+			schBatchReq = append(schBatchReq, r.GetScheduleBuild())
+			writeReqs++
+		case *pb.BatchRequest_Request_CancelBuild:
 			goIndices = append(goIndices, i)
 			goBatchReq = append(goBatchReq, r)
+			writeReqs++
+		case *pb.BatchRequest_Request_GetBuild, *pb.BatchRequest_Request_SearchBuilds:
+			goIndices = append(goIndices, i)
+			goBatchReq = append(goBatchReq, r)
+			readReqs++
 		default:
 			return nil, appstatus.BadRequest(errors.New("request includes an unsupported type"))
 		}
 	}
 
-	// validate request count
-	// TODO(crbug.com/1144958): refactor code to correctly calculate read and write req count after ScheduleBuild is done.
-	// pyBatchReq current only contains ScheduleBuild requests.
-	if len(pyBatchReq.Requests) > writeReqsSizeLimit {
-		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed write request count in Batch is %d.", writeReqsSizeLimit).Err())
-	}
-	if len(goBatchReq) > readReqsSizeLimit {
+	if readReqs > readReqsSizeLimit {
 		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed read request count in Batch is %d.", readReqsSizeLimit).Err())
 	}
-	if len(schBatchReq) > writeReqsSizeLimit {
+	if writeReqs > writeReqsSizeLimit {
 		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed write request count in Batch is %d.", writeReqsSizeLimit).Err())
-	}
-
-	// TODO(crbug.com/1144958): remove calling py after ScheduleBuild is done.
-	pyResC := make(chan *pyBatchResponse)
-	if len(pyBatchReq.Requests) != 0 {
-		go func() {
-			pyClient, err := b.newPyBBClient(ctx, isDev)
-			if err != nil {
-				pyResC <- &pyBatchResponse{res: nil, err: err}
-				return
-			}
-			logging.Debugf(ctx, "Batch: calling python service")
-			res, err := pyClient.Batch(ctx, pyBatchReq)
-			pyResC <- &pyBatchResponse{res: res, err: err}
-		}()
 	}
 
 	err := parallel.WorkPool(64, func(c chan<- func() error) {
@@ -193,22 +134,6 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	if err != nil {
 		return nil, err
 	}
-
-	if len(pyBatchReq.Requests) == 0 {
-		return res, nil
-	}
-
-	pyRes := <-pyResC
-	if pyRes.err != nil {
-		logging.Warningf(ctx, "Error from Python service: %s", pyRes.err)
-		gStatus, _ := convertGRPCError(pyRes.err)
-		return nil, appstatus.Error(gStatus.Code(), gStatus.Message())
-	}
-
-	for i, idx := range pyIndices {
-		res.Responses[idx] = pyRes.res.Responses[i]
-	}
-
 	return res, nil
 }
 
@@ -238,33 +163,4 @@ func toBatchResponseError(ctx context.Context, err error) *pb.BatchResponse_Resp
 		return &pb.BatchResponse_Response_Error{Error: grpcStatus.New(codes.Internal, "Internal server error").Proto()}
 	}
 	return &pb.BatchResponse_Response_Error{Error: st.Proto()}
-}
-
-// newPyBBClient constructs a BuildBucket python client.
-func (b *Builds) newPyBBClient(ctx context.Context, isDev bool) (pb.BuildsClient, error) {
-	switch fakeErr, ok := ctx.Value(&testFakeTransportError).(error); {
-	case ok:
-		return nil, fakeErr
-	case b.testPyBuildsClient != nil:
-		return b.testPyBuildsClient, nil
-	}
-
-	pyHost := "default-dot-cr-buildbucket.appspot.com"
-	if isDev {
-		pyHost = "default-dot-cr-buildbucket-dev.appspot.com"
-	}
-	t, err := auth.GetRPCTransport(ctx, auth.AsCredentialsForwarder)
-	if err != nil {
-		logging.Errorf(ctx, "failed to get Py BB RPC transport: %s", err)
-		return nil, grpcStatus.Error(codes.Internal, "failed to get Py BB RPC transport")
-	}
-	pClient := &prpc.Client{
-		C:          &http.Client{Transport: t},
-		Host:       pyHost,
-		PathPrefix: "/python/prpc",
-		Options: &prpc.Options{
-			Retry: retry.None,
-		},
-	}
-	return pb.NewBuildsPRPCClient(pClient), nil
 }

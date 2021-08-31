@@ -21,14 +21,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/grpc/codes"
-	grpcStatus "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/common/testing/mock"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -50,8 +47,7 @@ func TestBatch(t *testing.T) {
 	Convey("Batch", t, func() {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
-		mockPyBBClient := pb.NewMockBuildsClient(ctl)
-		srv := &Builds{testPyBuildsClient: mockPyBBClient}
+		srv := &Builds{}
 		ctx, _ := tq.TestingContext(txndefer.FilterRDS(memory.Use(context.Background())), nil)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -106,7 +102,6 @@ func TestBatch(t *testing.T) {
 			req = &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{{}},
 			}
-			mockPyBBClient.EXPECT().Batch(ctx, gomock.Any()).Times(0)
 			res, err = srv.Batch(ctx, req)
 			So(err, ShouldNotBeNil)
 			So(res, ShouldBeNil)
@@ -217,7 +212,6 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			mockPyBBClient.EXPECT().Batch(ctx, gomock.Any()).Times(0)
 			res, err := srv.Batch(ctx, req)
 			build1 := &pb.Build{
 				Id: 1,
@@ -256,30 +250,7 @@ func TestBatch(t *testing.T) {
 			So(res, ShouldResembleProto, expectedRes)
 		})
 
-		Convey("schedule req py", func() {
-			ctx = WithTrafficSplit(ctx, 0)
-			req := &pb.BatchRequest{}
-			err := protojson.Unmarshal([]byte(`{
-				"requests": [
-					{"scheduleBuild": {}}
-				]
-			}`), req)
-			So(err, ShouldBeNil)
-			mockRes := &pb.BatchResponse{
-				Responses: []*pb.BatchResponse_Response{
-					{Response: &pb.BatchResponse_Response_ScheduleBuild{
-						ScheduleBuild: &pb.Build{Id: 1},
-					}},
-				},
-			}
-			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(mockRes, nil)
-			actualRes, err := srv.Batch(ctx, req)
-			So(err, ShouldBeNil)
-			So(actualRes, ShouldResembleProto, mockRes)
-		})
-
 		Convey("schedule req", func() {
-			ctx = WithTrafficSplit(ctx, 100)
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -303,7 +274,6 @@ func TestBatch(t *testing.T) {
 		})
 
 		Convey("schedule batch", func() {
-			ctx = WithTrafficSplit(ctx, 100)
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -404,14 +374,6 @@ func TestBatch(t *testing.T) {
 					{"scheduleBuild": {}}
 				]}`), expectedPyReq)
 			So(err, ShouldBeNil)
-			mockRes := &pb.BatchResponse{
-				Responses: []*pb.BatchResponse_Response{
-					{Response: &pb.BatchResponse_Response_ScheduleBuild{
-						ScheduleBuild: &pb.Build{Id: 1},
-					}},
-				},
-			}
-			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(expectedPyReq)).Return(mockRes, nil)
 			actualRes, err := srv.Batch(ctx, req)
 			build1 := &pb.Build{
 				Id: 1,
@@ -436,7 +398,12 @@ func TestBatch(t *testing.T) {
 					{Response: &pb.BatchResponse_Response_GetBuild{
 						GetBuild: build1,
 					}},
-					mockRes.Responses[0],
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    3,
+							Message: "bad request: builder or template_build_id is required",
+						},
+					}},
 					{Response: &pb.BatchResponse_Response_SearchBuilds{
 						SearchBuilds: &pb.SearchBuildsResponse{
 							Builds: []*pb.Build{build1, build2},
@@ -452,50 +419,6 @@ func TestBatch(t *testing.T) {
 			}
 			So(err, ShouldBeNil)
 			So(actualRes, ShouldResembleProto, expectedRes)
-		})
-
-		Convey("py service error", func() {
-			req := &pb.BatchRequest{}
-			err := protojson.Unmarshal([]byte(`{
-				"requests": [
-					{"scheduleBuild": {}}
-				]
-			}`), req)
-			So(err, ShouldBeNil)
-			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.Unavailable, "unavailable"))
-			actualRes, err := srv.Batch(ctx, req)
-			So(actualRes, ShouldBeNil)
-			So(err, ShouldErrLike, "rpc error: code = Unavailable desc = unavailable")
-		})
-
-		Convey("py timeout error", func() {
-			req := &pb.BatchRequest{}
-			err := protojson.Unmarshal([]byte(`{
-				"requests": [
-					{"scheduleBuild": {}}
-				]
-			}`), req)
-			So(err, ShouldBeNil)
-			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.DeadlineExceeded, "timeout"))
-			actualRes, err := srv.Batch(ctx, req)
-			So(actualRes, ShouldBeNil)
-			So(err, ShouldErrLike, "rpc error: code = Internal desc = timeout")
-		})
-
-		Convey("transport error", func() {
-			ctx := memory.Use(context.Background())
-			ctx = context.WithValue(ctx, &testFakeTransportError, grpcStatus.Error(codes.Internal, "failed to get Py BB RPC transport"))
-			srv := &Builds{}
-			req := &pb.BatchRequest{}
-			err := protojson.Unmarshal([]byte(`{
-				"requests": [
-					{"scheduleBuild": {}}
-				]
-			}`), req)
-			So(err, ShouldBeNil)
-			actualRes, err := srv.Batch(ctx, req)
-			So(actualRes, ShouldBeNil)
-			So(err, ShouldErrLike, "code = Internal desc = failed to get Py BB RPC transport")
 		})
 
 		Convey("exceed max read reqs amount", func() {
