@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -97,8 +98,8 @@ func TestSerializeCell(t *testing.T) {
 	now := time.Date(2001, 1, 2, 3, 4, 5, 6, time.UTC)
 	reset := time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)
 
-	nowTS := &pb.Timestamp{Seconds: proto.Int64(978404645), Nanos: proto.Int32(6)}
-	resetTS := &pb.Timestamp{Seconds: proto.Int64(946782245), Nanos: proto.Int32(6)}
+	nowTS := timestamppb.New(now)
+	resetTS := timestamppb.New(reset)
 
 	emptyTask := &pb.MetricsCollection_Task{&pb.Task{
 		ServiceName: proto.String(""),

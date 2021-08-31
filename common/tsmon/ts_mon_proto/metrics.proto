@@ -7,8 +7,8 @@ option go_package = "go.chromium.org/luci/common/tsmon/ts_mon_proto";
 
 package ts_mon.proto;
 
-import "go.chromium.org/luci/common/tsmon/ts_mon_proto/any.proto";
-import "go.chromium.org/luci/common/tsmon/ts_mon_proto/timestamp.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_network_device.proto";
 import "go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_task.proto";
 
@@ -75,8 +75,8 @@ message MetricsData {
     }
   }
 
-  optional Timestamp start_timestamp = 7;
-  optional Timestamp end_timestamp = 8;
+  optional google.protobuf.Timestamp start_timestamp = 7;
+  optional google.protobuf.Timestamp end_timestamp = 8;
 
   message Distribution {
     optional int64 count = 1;
@@ -113,8 +113,8 @@ message MetricsData {
 
     message Exemplar {
       optional double value = 1;
-      optional Timestamp timestamp = 2;
-      repeated Any attachment = 3;
+      optional google.protobuf.Timestamp timestamp = 2;
+      repeated google.protobuf.Any attachment = 3;
     }
   }
 }
@@ -123,7 +123,7 @@ message Annotations {
   optional string unit = 1;
   optional bool timestamp = 2;
   optional string deprecation = 3;
-  repeated Any annotation = 4;
+  repeated google.protobuf.Any annotation = 4;
 }
 
 enum StreamKind {

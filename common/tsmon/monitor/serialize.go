@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
@@ -102,24 +103,17 @@ func SerializeDataSet(c types.Cell) *pb.MetricsDataSet {
 	return &d
 }
 
-func toTimestamp(t time.Time) *pb.Timestamp {
-	return &pb.Timestamp{
-		Seconds: proto.Int64(t.Unix()),
-		Nanos:   proto.Int32(int32(t.Nanosecond())),
-	}
-}
-
 // SerializeValue creates a new MetricsData representing this cell's value.
 func SerializeValue(c types.Cell, now time.Time) *pb.MetricsData {
 	d := pb.MetricsData{}
 	d.Field = field.Serialize(c.Fields, c.FieldVals)
 
 	if c.ValueType.IsCumulative() {
-		d.StartTimestamp = toTimestamp(c.ResetTime)
+		d.StartTimestamp = timestamppb.New(c.ResetTime)
 	} else {
-		d.StartTimestamp = toTimestamp(now)
+		d.StartTimestamp = timestamppb.New(now)
 	}
-	d.EndTimestamp = toTimestamp(now)
+	d.EndTimestamp = timestamppb.New(now)
 
 	switch c.ValueType {
 	case types.NonCumulativeIntType, types.CumulativeIntType:
