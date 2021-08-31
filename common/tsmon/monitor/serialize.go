@@ -105,7 +105,7 @@ func SerializeDataSet(c types.Cell) *pb.MetricsDataSet {
 func toTimestamp(t time.Time) *pb.Timestamp {
 	return &pb.Timestamp{
 		Seconds: proto.Int64(t.Unix()),
-		Nanos:   proto.Int32(int32(t.UnixNano() % int64(time.Second))),
+		Nanos:   proto.Int32(int32(t.Nanosecond())),
 	}
 }
 
