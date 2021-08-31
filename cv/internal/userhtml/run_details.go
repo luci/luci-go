@@ -107,27 +107,31 @@ func toCSSClass(t *run.Tryjob) string {
 	}
 }
 
-func logTypeString(rle *run.LogEntry) (string, error) {
+func logTypeString(rle *run.LogEntry) string {
 	switch v := rle.GetKind().(type) {
 	case *run.LogEntry_TryjobsUpdated_:
-		return "Tryjob Updated", nil
+		return "Tryjob Updated"
 	case *run.LogEntry_TryjobsRequirementUpdated_:
-		return "Tryjob Requirements Updated", nil
+		return "Tryjob Requirements Updated"
 	case *run.LogEntry_ConfigChanged_:
-		return "Config Changed", nil
+		return "Config Changed"
 	case *run.LogEntry_Started_:
-		return "Started", nil
+		return "Started"
 	case *run.LogEntry_Created_:
-		return "Created", nil
+		return "Created"
 	case *run.LogEntry_TreeChecked_:
 		if v.TreeChecked.Open {
-			return "Tree Found Open", nil
+			return "Tree Found Open"
 		}
-		return "Tree Found Closed", nil
+		return "Tree Found Closed"
 	case *run.LogEntry_Info_:
-		return v.Info.Label, nil
+		return v.Info.Label
+	case *run.LogEntry_AcquiredSubmitQueue_:
+		return "Acquired Submit Queue"
+	case *run.LogEntry_Waitlisted_:
+		return "Waitlisted for Submit Queue"
 	default:
-		return "", fmt.Errorf("unknown kind of LogEntry %T", v)
+		return fmt.Sprintf("FIXME: Unknown Kind of LogEntry %T", v)
 	}
 }
 
