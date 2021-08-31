@@ -27,14 +27,20 @@ import (
 	"go.chromium.org/luci/server/tq"
 )
 
-// reportTTL limits for how long the data remains valid.
-//
-// If tsmon doesn't flush for this much time since the report is prepared,
-// the report will be discarded.
-//
-// It should be longer than a typical tsmon flush interval and should account
-// the fact that Driver.MinuteCron() and tsmon flush aren't synchronized.
-const reportTTL = 2 * time.Minute
+const (
+	// reportTTL limits for how long the data remains valid.
+	//
+	// If tsmon doesn't flush for this much time since the report is prepared,
+	// the report will be discarded.
+	//
+	// It should be longer than a typical tsmon flush interval and should account
+	// the fact that Driver.MinuteCron() and tsmon flush aren't synchronized.
+	reportTTL = 2 * time.Minute
+
+	// noFlushForTooLong defines threshold for emiting error to logs on unusually
+	// long durations without a tsmon flush.
+	noFlushForTooLong = 4 * time.Minute
+)
 
 // New creates a new Driver for metrics aggregation.
 func New(ctx context.Context, tqd *tq.Dispatcher) *Driver {
@@ -117,7 +123,7 @@ func (d *Driver) stageReports(ctx context.Context, reports []reportFunc, start t
 		// Overwriting report means that data points are lost. This is fine once in
 		// a while, but bad if this happens all the time on a GAE instance.
 		// Detect the latter by checking when the last Flush happened.
-		if delay := clock.Since(ctx, d.lastFlush); delay >= reportTTL {
+		if delay := clock.Since(ctx, d.lastFlush); delay > noFlushForTooLong {
 			logging.Errorf(ctx, "aggrmetrics weren't flushed for a long time: %s", delay)
 		}
 	}
