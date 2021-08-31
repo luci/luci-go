@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 
+	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"

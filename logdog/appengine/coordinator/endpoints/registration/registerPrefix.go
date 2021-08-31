@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
+	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"

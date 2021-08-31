@@ -53,6 +53,7 @@ import (
 
 	gaeMemory "go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
+	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
 	"github.com/golang/protobuf/proto"
 )
