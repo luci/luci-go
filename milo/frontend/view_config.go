@@ -17,34 +17,13 @@ package frontend
 import (
 	"net/http"
 
-	"cloud.google.com/go/datastore"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/templates"
 )
-
-// ConfigsHandler renders the page showing the currently loaded set of luci-configs.
-func ConfigsHandler(c *router.Context) {
-	consoles, err := common.GetAllConsoles(c.Context, "")
-	if err != nil {
-		ErrorHandler(c, errors.Annotate(err, "Error while getting projects").Err())
-		return
-	}
-	sc, err := common.GetCurrentServiceConfig(c.Context)
-	if err != nil && err != datastore.ErrNoSuchEntity {
-		ErrorHandler(c, errors.Annotate(err, "Error while getting service config").Err())
-		return
-	}
-
-	templates.MustRender(c.Context, c.Writer, "pages/configs.html", templates.Args{
-		"Consoles":      consoles,
-		"ServiceConfig": sc,
-	})
-}
 
 // UpdateConfigHandler is an HTTP handler that handles configuration update
 // requests.

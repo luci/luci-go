@@ -80,9 +80,6 @@ func Run(templatePath string) {
 	r.GET("/search", htmlMW, searchHandler)
 	r.GET("/opensearch.xml", baseMW, searchXMLHandler)
 
-	// Admin and cron endpoints.
-	r.GET("/admin/configs", htmlMW, ConfigsHandler)
-
 	// Cron endpoints
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))

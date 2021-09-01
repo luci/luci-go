@@ -21,12 +21,6 @@ handlers:
   secure: always
   static_dir: static
 
-# For admin resources.
-- url: /admin/.*
-  script: auto
-  secure: always
-  login: admin
-
 # All internal handlers, such as cron.
 - url: /internal/.*
   script: auto
