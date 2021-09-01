@@ -39,7 +39,7 @@ func TestGetAuthGroup(t *testing.T) {
 
 		authGroup := &AuthGroup{
 			ID:                       "test-auth-group-1",
-			Parent:                   authGlobalConfigKey(ctx),
+			Parent:                   RootKey(ctx),
 			AuthVersionedEntityMixin: *authVersionedEntityMixin,
 			Members: []string{
 				"member1",
@@ -86,7 +86,7 @@ func TestGetAllAuthGroups(t *testing.T) {
 			{
 				Kind:                     "AuthGroup",
 				ID:                       "test-auth-group-1",
-				Parent:                   authGlobalConfigKey(ctx),
+				Parent:                   RootKey(ctx),
 				AuthVersionedEntityMixin: *authVersionedEntityMixin,
 				Members: []string{
 					"member1",
@@ -106,7 +106,7 @@ func TestGetAllAuthGroups(t *testing.T) {
 			}, {
 				Kind:                     "AuthGroup",
 				ID:                       "test-auth-group-2",
-				Parent:                   authGlobalConfigKey(ctx),
+				Parent:                   RootKey(ctx),
 				AuthVersionedEntityMixin: *authVersionedEntityMixin,
 				Members: []string{
 					"member3",
@@ -124,7 +124,7 @@ func TestGetAllAuthGroups(t *testing.T) {
 			}, {
 				Kind:                     "AuthGroup",
 				ID:                       "test-auth-group-3",
-				Parent:                   authGlobalConfigKey(ctx),
+				Parent:                   RootKey(ctx),
 				AuthVersionedEntityMixin: *authVersionedEntityMixin,
 				Members: []string{
 					"member4",
@@ -144,7 +144,7 @@ func TestGetAllAuthGroups(t *testing.T) {
 			}, {
 				Kind:                     "AuthGroup",
 				ID:                       "test-auth-group-4",
-				Parent:                   authGlobalConfigKey(ctx),
+				Parent:                   RootKey(ctx),
 				AuthVersionedEntityMixin: *authVersionedEntityMixin,
 				Members: []string{
 					"member4",

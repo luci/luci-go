@@ -104,7 +104,8 @@ type AuthGroup struct {
 	CreatedBy string `gae:"created_by"`
 }
 
-func authGlobalConfigKey(ctx context.Context) *datastore.Key {
+// RootKey gets the root key for the AuthGroup entity.
+func RootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthGlobalConfig", "root", 0, nil)
 }
 
@@ -115,7 +116,7 @@ func authGlobalConfigKey(ctx context.Context) *datastore.Key {
 func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 	authGroup := &AuthGroup{
 		ID:     groupName,
-		Parent: authGlobalConfigKey(ctx),
+		Parent: RootKey(ctx),
 	}
 
 	switch err := datastore.Get(ctx, authGroup); {
@@ -132,7 +133,7 @@ func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 //
 // Returns an annotated error.
 func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
-	query := datastore.NewQuery("AuthGroup").Ancestor(authGlobalConfigKey(ctx))
+	query := datastore.NewQuery("AuthGroup").Ancestor(RootKey(ctx))
 	var authGroups []*AuthGroup
 	err := datastore.GetAll(ctx, query, &authGroups)
 	if err != nil {
