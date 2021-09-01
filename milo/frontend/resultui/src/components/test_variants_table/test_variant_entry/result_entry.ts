@@ -321,6 +321,10 @@ export class ResultEntryElement extends MobxLitElement {
         overflow-wrap: break-word;
       }
 
+      #tag-table {
+        width: fit-content;
+      }
+
       .kv-key::after {
         content: ':';
       }
