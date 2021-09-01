@@ -26,9 +26,6 @@ declare const CONFIGS: {
   readonly BUILDBUCKET: {
     readonly HOST: string;
   };
-  readonly OAUTH2: {
-    readonly CLIENT_ID: string;
-  };
 };
 
 /**

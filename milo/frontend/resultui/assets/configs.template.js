@@ -19,7 +19,4 @@ const CONFIGS = {
   BUILDBUCKET: {
     HOST: "{{.Buildbucket.Host}}",
   },
-  OAUTH2: {
-    CLIENT_ID: "{{.OAuth2.ClientID}}",
-  },
 };

@@ -81,8 +81,7 @@ export default merge(common, {
         const configsTemplate = fs.readFileSync(path.join(__dirname, 'assets/configs.template.js'), 'utf8');
         const config = configsTemplate
           .replace('{{.ResultDB.Host}}', appConfigs.RESULT_DB.HOST)
-          .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST)
-          .replace('{{.OAuth2.ClientID}}', appConfigs.OAUTH2.CLIENT_ID);
+          .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST);
         res.send(config);
       });
 

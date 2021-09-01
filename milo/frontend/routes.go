@@ -310,11 +310,6 @@ func configsJSHandler(c *router.Context) error {
 
 	settings := common.GetSettings(c.Context)
 
-	clientID, err := auth.GetFrontendClientID(c.Context)
-	if err != nil {
-		return err
-	}
-
 	header := c.Writer.Header()
 	header.Set("content-type", "application/javascript")
 
@@ -328,9 +323,6 @@ func configsJSHandler(c *router.Context) error {
 		},
 		"Buildbucket": map[string]string{
 			"Host": settings.GetBuildbucket().GetHost(),
-		},
-		"OAuth2": map[string]string{
-			"ClientID": clientID,
 		},
 	})
 

@@ -11,13 +11,9 @@ Follow the steps below to run a local instance.
     },
     "BUILDBUCKET": {
         "HOST": "<Buildbucket Host Name>" // e.g. "cr-buildbucket-dev.appspot.com"
-    },
-    "OAUTH2": {
-        "CLIENT_ID": "<OAuth2 Client ID>"
     }
 }
 ```
-Replace `<OAuth2 Client ID>` with the OAuth 2.0 client ID you get from the [luci-milo-dev GCP console](https://pantheon.corp.google.com/apis/credentials?project=luci-milo-dev).
 
 ### 2. Create ${PROJECT_ROOT}/dev-configs/local-dev-configs.json
 ```javascript
