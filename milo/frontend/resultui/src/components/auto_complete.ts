@@ -255,6 +255,7 @@ export class AutoCompleteElement extends MiloBaseElement {
     #dropdown-container {
       position: absolute;
       top: 30px;
+      width: 100%;
       border: 1px solid var(--divider-color);
       border-radius: 0.25rem;
       background: white;
@@ -266,17 +267,19 @@ export class AutoCompleteElement extends MiloBaseElement {
     }
     #dropdown {
       border-spacing: 0 1px;
+      table-layout: fixed;
+      width: 100%;
+      word-break: break-word;
     }
 
     .dropdown-item.header {
       color: var(--default-text-color);
     }
     .dropdown-item > td {
-      white-space: nowrap;
       overflow: hidden;
     }
     .dropdown-item > td:first-child {
-      padding-right: 50px;
+      padding-right: 10px;
     }
     .dropdown-item.selected {
       border-color: var(--light-active-color);
