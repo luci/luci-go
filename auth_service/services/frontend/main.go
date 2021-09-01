@@ -83,7 +83,7 @@ func main() {
 		// Interceptors applying to all pRPC APIs.
 		srv.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(
 			xsrf.Interceptor(prpcAuth),
-			// TODO: add "auth-service-access" ACL check for restricted APIs.
+			impl.AuthorizeRPCAccess,
 		)
 
 		// Register all pRPC servers.
@@ -175,7 +175,7 @@ func requireLogin(ctx *router.Context, next router.Handler) {
 
 // authorizeUIAccess checks the user is allowed to access the web UI.
 func authorizeUIAccess(ctx *router.Context, next router.Handler) {
-	switch yes, err := auth.IsMember(ctx.Context, "auth-service-access"); {
+	switch yes, err := auth.IsMember(ctx.Context, impl.ServiceAccessGroup); {
 	case err != nil:
 		replyError(ctx, err, "Failed to check group membership", http.StatusInternalServerError)
 	case !yes:
