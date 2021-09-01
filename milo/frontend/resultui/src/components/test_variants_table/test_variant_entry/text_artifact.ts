@@ -92,6 +92,8 @@ export class TextArtifactElement extends MobxLitElement {
         color: var(--active-text-color);
       }
       pre {
+        margin: 0;
+        font-size: 12px;
         white-space: pre-wrap;
         overflow-wrap: break-word;
       }

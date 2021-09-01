@@ -136,20 +136,36 @@ export class ResultEntryElement extends MobxLitElement {
     };
   }
 
+  private renderFailureReason() {
+    const errMsg = this.testResult.failureReason?.primaryErrorMessage;
+    if (!errMsg) {
+      return html``;
+    }
+    return html`
+      <milo-expandable-entry contentRuler="none" .expanded=${true}>
+        <span slot="header">Failure Reason:</span>
+        <pre id="failure-reason" class="info-block" slot="content">${errMsg}</pre>
+      </milo-expandable-entry>
+    `;
+  }
+
   private renderSummaryHtml() {
     if (!this.testResult.summaryHtml) {
       return html``;
     }
 
     return html`
-      <div id="summary-html">
-        <milo-artifact-provider
-          .artifacts=${this.artifactsMapping}
-          .finalized=${this.invArtifacts$.state !== PENDING && this.resultArtifacts$.state !== PENDING}
-        >
-          ${sanitizeHTML(this.testResult.summaryHtml)}
-        </milo-artifact-provider>
-      </div>
+      <milo-expandable-entry contentRuler="none" .expanded=${true}>
+        <span slot="header">Summary:</span>
+        <div id="summary-html" class="info-block" slot="content">
+          <milo-artifact-provider
+            .artifacts=${this.artifactsMapping}
+            .finalized=${this.invArtifacts$.state !== PENDING && this.resultArtifacts$.state !== PENDING}
+          >
+            ${sanitizeHTML(this.testResult.summaryHtml)}
+          </milo-artifact-provider>
+        </div>
+      </milo-expandable-entry>
     `;
   }
 
@@ -240,8 +256,9 @@ export class ResultEntryElement extends MobxLitElement {
     if (!this.shouldRenderContent) {
       return html``;
     }
+
     return html`
-      ${this.renderSummaryHtml()}
+      ${this.renderFailureReason()}${this.renderSummaryHtml()}
       ${this.textDiffArtifact &&
       html` <milo-text-diff-artifact .artifact=${this.textDiffArtifact}> </milo-text-diff-artifact> `}
       ${this.imageDiffArtifactGroup.diff &&
@@ -310,15 +327,23 @@ export class ResultEntryElement extends MobxLitElement {
         overflow: hidden;
       }
 
-      #summary-html {
+      .info-block {
         background-color: var(--block-background-color);
         padding: 5px;
       }
-      #summary-html pre {
+
+      pre {
         margin: 0;
         font-size: 12px;
         white-space: pre-wrap;
         overflow-wrap: break-word;
+      }
+
+      #summary-html p:first-child {
+        margin-top: 0;
+      }
+      #summary-html p:last-child {
+        margin-bottom: 0;
       }
 
       #tag-table {
