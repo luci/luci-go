@@ -1,0 +1,52 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package structmask;
+
+option go_package = "go.chromium.org/luci/common/proto/structmask";
+
+// StructMask selects a subset of a google.protobuf.Struct.
+//
+// Usually used as a repeated field, to allow specifying a union of different
+// subsets.
+message StructMask {
+  // A field path inside the struct to select.
+  //
+  // Each item can be:
+  //   * `some_value` - a concrete dict key to follow (unless it is a number or
+  //     includes `*`, use quotes in this case).
+  //   * `"some_value"` - same, but quoted. Useful for selecting `*` or numbers
+  //     literally. See https://pkg.go.dev/strconv#Unquote for syntax.
+  //   * `<number>` (e.g. `0`) - a zero-based list index to follow.
+  //     **Not implemented**.
+  //   *  `*` - follow all dict keys and all list elements. Applies **only** to
+  //     dicts and lists. Trying to recurse into a number or a string results
+  //     in an empty match.
+  //
+  // When examining a value the following exceptional conditions result in
+  // an empty match, which is represented by `null` for list elements or
+  // omissions of the field for dicts:
+  //   * Trying to follow a dict key while examining a list.
+  //   * Trying to follow a key which is not present in the dict.
+  //   * Trying to use `*` mask with values that aren't dicts or lists.
+  //
+  // When using `*`, the result is always a subset of the input. In particular
+  // this is important when filtering lists: if a list of size N is selected by
+  // the mask, then the filtered result will also always be a list of size N,
+  // with elements filtered further according to the rest of the mask (perhaps
+  // resulting in `null` elements on type mismatches, as explained above).
+  repeated string path = 1;
+}
