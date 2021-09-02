@@ -22,6 +22,9 @@ import (
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
+	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
+	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
