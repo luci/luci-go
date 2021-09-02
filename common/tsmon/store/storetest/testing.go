@@ -23,15 +23,18 @@ import (
 	"testing"
 	"time"
 
+	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
-	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // Store is a store under test.
@@ -322,14 +325,32 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(len(all), ShouldEqual, 2)
 
 					coll := monitor.SerializeCells(all, testclock.TestRecentTimeUTC)
-					s0 := coll[0].TargetSchema.(*pb.MetricsCollection_Task).Task.GetServiceName()
-					s1 := coll[1].TargetSchema.(*pb.MetricsCollection_Task).Task.GetServiceName()
-					switch {
-					case s0 == foo.ServiceName:
-						So(s1, ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
-					case s1 == foo.ServiceName:
-						So(s0, ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
-					default:
+
+					// TargetSchema is deprecated.
+					So(coll[0].TargetSchema, ShouldBeNil)
+					So(coll[1].TargetSchema, ShouldBeNil)
+
+					s0 := coll[0].RootLabels[0]
+					s1 := coll[1].RootLabels[0]
+
+					serviceName := &pb.MetricsCollection_RootLabels{
+						Key: proto.String("service_name"),
+						Value: &pb.MetricsCollection_RootLabels_StringValue{
+							StringValue: foo.ServiceName,
+						},
+					}
+					defaultServiceName := &pb.MetricsCollection_RootLabels{
+						Key: proto.String("service_name"),
+						Value: &pb.MetricsCollection_RootLabels_StringValue{
+							StringValue: s.DefaultTarget().(*target.Task).ServiceName,
+						},
+					}
+
+					if proto.Equal(s0, serviceName) {
+						So(s1, ShouldResembleProto, defaultServiceName)
+					} else if proto.Equal(s1, serviceName) {
+						So(s0, ShouldResembleProto, defaultServiceName)
+					} else {
 						t.Fail()
 					}
 				})
@@ -530,14 +551,32 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(len(all), ShouldEqual, 2)
 
 					coll := monitor.SerializeCells(all, testclock.TestRecentTimeUTC)
-					s0 := coll[0].TargetSchema.(*pb.MetricsCollection_Task).Task.GetServiceName()
-					s1 := coll[1].TargetSchema.(*pb.MetricsCollection_Task).Task.GetServiceName()
-					switch {
-					case s0 == foo.ServiceName:
-						So(s1, ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
-					case s1 == foo.ServiceName:
-						So(s0, ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
-					default:
+
+					// TargetSchema is deprecated.
+					So(coll[0].TargetSchema, ShouldBeNil)
+					So(coll[1].TargetSchema, ShouldBeNil)
+
+					s0 := coll[0].RootLabels[0]
+					s1 := coll[1].RootLabels[0]
+
+					serviceName := &pb.MetricsCollection_RootLabels{
+						Key: proto.String("service_name"),
+						Value: &pb.MetricsCollection_RootLabels_StringValue{
+							StringValue: foo.ServiceName,
+						},
+					}
+					defaultServiceName := &pb.MetricsCollection_RootLabels{
+						Key: proto.String("service_name"),
+						Value: &pb.MetricsCollection_RootLabels_StringValue{
+							StringValue: s.DefaultTarget().(*target.Task).ServiceName,
+						},
+					}
+
+					if proto.Equal(s0, serviceName) {
+						So(s1, ShouldResembleProto, defaultServiceName)
+					} else if proto.Equal(s1, serviceName) {
+						So(s0, ShouldResembleProto, defaultServiceName)
+					} else {
 						t.Fail()
 					}
 				})

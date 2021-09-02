@@ -101,13 +101,13 @@ func TestSerializeCell(t *testing.T) {
 	nowTS := timestamppb.New(now)
 	resetTS := timestamppb.New(reset)
 
-	emptyTask := &pb.MetricsCollection_Task{&pb.Task{
-		ServiceName: proto.String(""),
-		JobName:     proto.String(""),
-		DataCenter:  proto.String(""),
-		HostName:    proto.String(""),
-		TaskNum:     proto.Int(0),
-	}}
+	emptyTaskRootLabels := []*pb.MetricsCollection_RootLabels{
+		target.RootLabel("service_name", ""),
+		target.RootLabel("job_name", ""),
+		target.RootLabel("data_center", ""),
+		target.RootLabel("host_name", ""),
+		target.RootLabel("task_num", int64(0)),
+	}
 
 	Convey("Int", t, func() {
 		ret := SerializeCells([]types.Cell{{
@@ -126,7 +126,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 		}}, now)
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
-			TargetSchema: emptyTask,
+			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
 				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
@@ -160,7 +160,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 		}}, now)
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
-			TargetSchema: emptyTask,
+			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
 				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
@@ -194,7 +194,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 		}}, now)
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
-			TargetSchema: emptyTask,
+			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
 				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
@@ -228,7 +228,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 		}}, now)
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
-			TargetSchema: emptyTask,
+			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
 				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
@@ -262,7 +262,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 		}}, now)
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
-			TargetSchema: emptyTask,
+			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
 				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
@@ -296,7 +296,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 		}}, now)
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
-			TargetSchema: emptyTask,
+			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
 				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
@@ -314,7 +314,7 @@ func TestSerializeCell(t *testing.T) {
 	})
 
 	Convey("NonDefaultTarget", t, func() {
-		target := target.Task{
+		taskTarget := target.Task{
 			ServiceName: "hello",
 			JobName:     "world",
 		}
@@ -329,19 +329,19 @@ func TestSerializeCell(t *testing.T) {
 			types.MetricMetadata{},
 			types.CellData{
 				FieldVals: []interface{}{},
-				Target:    &target,
+				Target:    &taskTarget,
 				ResetTime: reset,
 				Value:     int64(42),
 			},
 		}}, now)
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
-			TargetSchema: &pb.MetricsCollection_Task{&pb.Task{
-				ServiceName: proto.String("hello"),
-				JobName:     proto.String("world"),
-				DataCenter:  proto.String(""),
-				HostName:    proto.String(""),
-				TaskNum:     proto.Int(0),
-			}},
+			RootLabels: []*pb.MetricsCollection_RootLabels{
+				target.RootLabel("service_name", "hello"),
+				target.RootLabel("job_name", "world"),
+				target.RootLabel("data_center", ""),
+				target.RootLabel("host_name", ""),
+				target.RootLabel("task_num", int64(0)),
+			},
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
 				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},

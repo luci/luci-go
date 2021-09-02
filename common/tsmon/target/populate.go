@@ -24,29 +24,27 @@ import (
 
 // PopulateProto implements Target.
 func (t *Task) PopulateProto(d *pb.MetricsCollection) {
-	d.TargetSchema = &pb.MetricsCollection_Task{
-		&pb.Task{
-			ServiceName: &t.ServiceName,
-			JobName:     &t.JobName,
-			DataCenter:  &t.DataCenter,
-			HostName:    &t.HostName,
-			TaskNum:     &t.TaskNum,
-		},
-	}
+	d.RootLabels = append(
+		d.RootLabels,
+		RootLabel("service_name", t.ServiceName),
+		RootLabel("job_name", t.JobName),
+		RootLabel("data_center", t.DataCenter),
+		RootLabel("host_name", t.HostName),
+		RootLabel("task_num", int64(t.TaskNum)),
+	)
 }
 
 // PopulateProto implements Target.
 func (t *NetworkDevice) PopulateProto(d *pb.MetricsCollection) {
-	d.TargetSchema = &pb.MetricsCollection_NetworkDevice{
-		&pb.NetworkDevice{
-			Alertable: proto.Bool(true),
-			Realm:     proto.String("ACQ_CHROME"),
-			Metro:     &t.Metro,
-			Role:      &t.Role,
-			Hostname:  &t.Hostname,
-			Hostgroup: &t.Hostgroup,
-		},
-	}
+	d.RootLabels = append(
+		d.RootLabels,
+		RootLabel("alertable", true),
+		RootLabel("realm", "ACQ_CHROME"),
+		RootLabel("metro", t.Metro),
+		RootLabel("role", t.Role),
+		RootLabel("hostname", t.Hostname),
+		RootLabel("hostgroup", t.Hostgroup),
+	)
 }
 
 func RootLabel(key string, value interface{}) *pb.MetricsCollection_RootLabels {
