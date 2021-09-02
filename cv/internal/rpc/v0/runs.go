@@ -27,17 +27,18 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	rpcpb "go.chromium.org/luci/cv/api/rpc/v0"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
+// RunsServer implements rpc v0 APIs.
 type RunsServer struct {
 	rpcpb.UnimplementedRunsServer
 }
 
-func (s *RunsServer) GetRun(ctx context.Context, req *rpcpb.GetRunRequest) (resp *commonpb.Run, err error) {
+// GetRun returns the Run.
+func (s *RunsServer) GetRun(ctx context.Context, req *rpcpb.GetRunRequest) (resp *rpcpb.Run, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "Runs.GetRun"); err != nil {
 		return
@@ -58,7 +59,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *rpcpb.GetRunRequest) (resp
 
 	// TODO(crbug/1233963): check if user has access to this specific Run.
 
-	return &commonpb.Run{
+	return &rpcpb.Run{
 		Id:       r.ID.PublicID(),
 		Eversion: int64(r.EVersion),
 		Status:   r.Status,

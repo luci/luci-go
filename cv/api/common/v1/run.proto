@@ -68,7 +68,7 @@ message Run {
     CANCELLED = 67;
   }
 
-  // The unqiue ID of the Run.
+  // ID of the Run.
   //
   // The format of an ID is "projects/$luci-project/runs/$id", where
   // - luci-project is the name of the LUCI project the Run belongs to

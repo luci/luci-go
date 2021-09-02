@@ -20,6 +20,7 @@ package cv.rpc.v0;
 option go_package = "go.chromium.org/luci/cv/api/rpc/v0;rpcpb";
 
 import "go.chromium.org/luci/cv/api/common/v1/run.proto";
+import "google/protobuf/timestamp.proto";
 
 
 // Runs service exposes CV Runs and their sub-resources.
@@ -33,11 +34,79 @@ import "go.chromium.org/luci/cv/api/common/v1/run.proto";
 service Runs {
 
   // GetRun returns Run details.
-  rpc GetRun(GetRunRequest) returns (cv.common.v1.Run);
-
+  rpc GetRun(GetRunRequest) returns (Run);
 }
 
 message GetRunRequest {
   // ID is CV Run ID, e.g. "projects/chromium/runs/9991234120-1-badcafe"
   string id = 1;
+}
+
+// Run includes the high-level information about a CV Run.
+//
+// WARNING: this message is EXPERIMENTAL
+// - The field definitions can change w/o notice.
+// - No backward compatibility guaranteed.
+// - Please contact CV maintainers at luci-eng@ before using this message.
+message Run {
+  // ID of the Run.
+  //
+  // The format of an ID is "projects/$luci-project/runs/$id", where
+  // - luci-project is the name of the LUCI project the Run belongs to
+  // - id is an opaque key unique in the LUCI project.
+  string id = 1;
+  // status of the Run.
+  cv.common.v1.Run.Status status = 2;
+  // eversion is the entity version, which is monotonically increasing.
+  int64 eversion = 3;
+
+  // Mode dictates the behavior of the Run.
+  //
+  // The possible values include
+  // - FULL_RUN
+  // - DRY_RUN
+  // - QUICK_DRY_RUN
+  //
+  // If the mode is FULL_RUN, the Run triggers TryJobs and then submits the CL
+  // if they succeeded.
+  // If the mode is DRY_RUN, the Run trigger TryJobs w/o submission.
+  // If the mode is QUICK_DRY_RUN, the Run triggers a different, usually
+  // smaller/faster, set of TryJobs.
+  string mode = 4;
+
+  // Time when the Run was created.
+  //
+  // This is the timestamp of the vote, on a Gerrit CL, that triggered the Run.
+  google.protobuf.Timestamp create_time = 5;
+  // The time when the Run was started.
+  google.protobuf.Timestamp start_time = 6;
+  // The time when the Run was last updated.
+  google.protobuf.Timestamp update_time = 7;
+  // The time when the Run was ended.
+  google.protobuf.Timestamp end_time = 8;
+
+  // Owner of the Run.
+  //
+  // For a single-CL Run, this is the preferred email of the owner of
+  // the Gerrit CL (whoever authenticated to Gerrit to upload the first
+  // patchset of the CL). Note that Gerrit CL owner may differ from author and
+  // committer encoded in the Git commit. Also, depending on Gerrit
+  // configuration, later patchsets could be uploaded by different accounts to
+  // that of the CL owner.
+  //
+  // For a multi-CL Run, this is the owner of the Gerrit CL which has the latest
+  // triggering timestamp (e.g. latest CQ+2 vote).
+  string owner = 9;
+  // The Gerrit changes involved in this Run.
+  repeated GerritChange cls = 10;
+}
+
+// A Gerrit patchset.
+message GerritChange {
+  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+  string host = 1;
+  // Change number, e.g. 12345.
+  int64 change = 2;
+  // Patch set number, e.g. 1.
+  int64 patchset = 3;
 }

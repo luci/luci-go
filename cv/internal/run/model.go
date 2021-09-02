@@ -75,9 +75,7 @@ type Run struct {
 	EVersion int `gae:",noindex"`
 	// CreateTime is the timestamp when this Run was created.
 	//
-	// For API triggered Run, the CreateTime is when CV processes the request.
-	// For non-API triggered Run, the CreateTime is the timestamp of the last
-	// vote on a Gerrit CL that triggers this Run.
+	// This is the timestamp of the last vote, on a Gerrit CL, that triggers this Run.
 	CreateTime time.Time `gae:",noindex"`
 	// StartTime is the timestamp when this Run was started.
 	StartTime time.Time `gae:",noindex"`

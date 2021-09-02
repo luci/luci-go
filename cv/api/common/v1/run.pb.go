@@ -21,10 +21,11 @@
 package commonpb
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -135,7 +136,7 @@ type Run struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The unqiue ID of the Run.
+	// ID of the Run.
 	//
 	// The format of an ID is "projects/$luci-project/runs/$id", where
 	// - luci-project is the name of the LUCI project the Run belongs to
