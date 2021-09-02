@@ -67,7 +67,7 @@ func (af *authFlags) NewHTTPClient(ctx context.Context) (*http.Client, error) {
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, *af.parsedOpts).Client()
 }
 
-func (af *authFlags) NewCASClient(ctx context.Context, instance string) (*client.Client, error) {
+func (af *authFlags) NewRBEClient(ctx context.Context, instance string) (*client.Client, error) {
 	if af.parsedOpts == nil {
 		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
 	}

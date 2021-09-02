@@ -342,8 +342,8 @@ type AuthFlags interface {
 	// NewHTTPClient creates an authroised http.Client.
 	NewHTTPClient(ctx context.Context) (*http.Client, error)
 
-	// NewCASClient creates an authroised RBE Client.
-	NewCASClient(ctx context.Context, instance string) (*rbeclient.Client, error)
+	// NewRBEClient creates an authroised RBE Client.
+	NewRBEClient(ctx context.Context, instance string) (*rbeclient.Client, error)
 }
 
 type commonFlags struct {

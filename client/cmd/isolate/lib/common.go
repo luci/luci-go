@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/maruel/subcommands"
@@ -60,8 +59,7 @@ type baseCommandRun struct {
 
 	// Overriden in tests.
 
-	clientFactory       func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error)
-	clientFactoryLegacy func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error)
+	clientFactory func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error)
 }
 
 var _ cli.ContextModificator = (*baseCommandRun)(nil)

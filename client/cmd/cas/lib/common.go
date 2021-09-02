@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
@@ -37,11 +36,8 @@ type AuthFlags interface {
 	// Parse parses auth flags.
 	Parse() error
 
-	// NewClient creates an authorised RBE-CAS Client.
-	NewClient(ctx context.Context, instance string, readOnly bool) (*cas.Client, error)
-
-	// NewClientLegacy creates an authorised RBE Client.
-	NewClientLegacy(ctx context.Context, instance string, readOnly bool) (*client.Client, error)
+	// NewRBEClient creates an authorised RBE Client.
+	NewRBEClient(ctx context.Context, instance string, readOnly bool) (*client.Client, error)
 }
 
 var _ cli.ContextModificator = (*commonFlags)(nil)

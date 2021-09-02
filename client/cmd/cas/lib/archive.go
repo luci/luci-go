@@ -124,7 +124,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		is.Inputs = append(is.Inputs, path)
 	}
 
-	client, err := c.authFlags.NewClientLegacy(ctx, c.casFlags.Instance, false)
+	client, err := c.authFlags.NewRBEClient(ctx, c.casFlags.Instance, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to create cas client").Err()
 	}

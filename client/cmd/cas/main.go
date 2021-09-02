@@ -24,7 +24,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
@@ -61,14 +60,7 @@ func (af *authFlags) Parse() error {
 	return nil
 }
 
-func (af *authFlags) NewClient(ctx context.Context, instance string, readOnly bool) (*cas.Client, error) {
-	if af.parsedOpts == nil {
-		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
-	}
-	return casclient.New(ctx, instance, *af.parsedOpts, readOnly)
-}
-
-func (af *authFlags) NewClientLegacy(ctx context.Context, instance string, readOnly bool) (*client.Client, error) {
+func (af *authFlags) NewRBEClient(ctx context.Context, instance string, readOnly bool) (*client.Client, error) {
 	if af.parsedOpts == nil {
 		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
 	}

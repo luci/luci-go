@@ -276,7 +276,7 @@ func (c *collectRun) fetchTaskResults(
 				}
 			}
 			if result.CasOutputRoot != nil {
-				cascli, err := c.authFlags.NewCASClient(ctx, result.CasOutputRoot.CasInstance)
+				cascli, err := c.authFlags.NewRBEClient(ctx, result.CasOutputRoot.CasInstance)
 				if err != nil {
 					return err
 				}

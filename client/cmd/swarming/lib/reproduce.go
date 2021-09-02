@@ -215,7 +215,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 
 	// Support RBE-CAS input in task request.
 	if properties.CasInputRoot != nil {
-		cascli, err := c.authFlags.NewCASClient(ctx, properties.CasInputRoot.CasInstance)
+		cascli, err := c.authFlags.NewRBEClient(ctx, properties.CasInputRoot.CasInstance)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
 		}
