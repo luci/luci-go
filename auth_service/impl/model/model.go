@@ -19,6 +19,9 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -140,4 +143,19 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 		return nil, errors.Annotate(err, "error getting all AuthGroup entities").Err()
 	}
 	return authGroups, nil
+}
+
+// ToProto converts the AuthGroup entity to the protobuffer
+// equivalent.
+func (group *AuthGroup) ToProto() *rpcpb.AuthGroup {
+	return &rpcpb.AuthGroup{
+		Name:        group.ID,
+		Members:     group.Members,
+		Globs:       group.Globs,
+		Nested:      group.Nested,
+		Description: group.Description,
+		Owners:      group.Owners,
+		CreatedTs:   timestamppb.New(group.CreatedTS),
+		CreatedBy:   group.CreatedBy,
+	}
 }
