@@ -897,7 +897,7 @@ func TestMigrationConfigValidation(t *testing.T) {
 				  project_regexp_exclude: "cq-test.+"
 				}
 
-				use_cv_runs {
+				use_cv_status {
 				  project_regexp: "cq-test.+"
 				  project_regexp_exclude: "cq-test-bad"
 				}
@@ -912,6 +912,13 @@ func TestMigrationConfigValidation(t *testing.T) {
 				So(validateMigrationSettings(vctx, configSet, path, []byte{}), ShouldBeNil)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
+		})
+		Convey("use_cv_runs is deprecated", func() {
+			badConfig := okConfig + `
+					use_cv_runs { project_regexp: ".+" }
+			`
+			So(validateMigrationSettings(vctx, configSet, path, []byte(badConfig)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "use_cv_runs is no longer allowed")
 		})
 
 		Convey("Catches regexp bugs", func() {
