@@ -160,6 +160,8 @@ func TestGetRun(t *testing.T) {
 		defer cancel()
 
 		const rid = "proj/123-deadbeef"
+		So(datastore.Put(ctx, &run.Run{ID: rid}), ShouldBeNil)
+
 		d := AdminServer{}
 
 		Convey("without access", func() {
@@ -168,6 +170,13 @@ func TestGetRun(t *testing.T) {
 			})
 			_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+
+			Convey("HACK(crbug/1245864): loading `infra` Runs is allowed to everyone", func() {
+				const infraID = "infra/123-deadbeef"
+				So(datastore.Put(ctx, &run.Run{ID: infraID}), ShouldBeNil)
+				_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: infraID})
+				So(grpcutil.Code(err), ShouldEqual, codes.OK)
+			})
 		})
 
 		Convey("with access", func() {
@@ -176,8 +185,12 @@ func TestGetRun(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
+				_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid + "cafe"})
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			})
+			Convey("exists", func() {
+				_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
+				So(grpcutil.Code(err), ShouldEqual, codes.OK)
 			})
 		})
 	})
