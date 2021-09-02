@@ -667,9 +667,6 @@ func validateMigrationSettings(ctx *validation.Context, configSet, path string, 
 		ctx.Error(err)
 		return nil
 	}
-	if cfg.GetPssaMigration() != nil {
-		ctx.Errorf("pssa_migration not allowed")
-	}
 	for i, a := range cfg.GetApiHosts() {
 		ctx.Enter("api_hosts #%d", i+1)
 		switch h := a.GetHost(); h {

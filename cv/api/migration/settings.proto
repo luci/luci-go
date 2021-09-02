@@ -52,12 +52,4 @@ message Settings {
     repeated string project_regexp_exclude = 2;
   }
   UseCVRuns use_cv_runs = 3;
-
-  // TODO(1210686): delete after 2021-05-31, at which point nothing should refer
-  // to it.
-  PSSAMigration pssa_migration = 2 [deprecated = true];
-}
-
-message PSSAMigration {
-  repeated string projects_blocklist = 1 [deprecated = true];
 }
