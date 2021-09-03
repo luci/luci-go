@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // Server implements Groups server.
@@ -47,4 +48,16 @@ func (*Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGro
 	return &rpcpb.ListGroupsResponse{
 		Groups: groupList,
 	}, nil
+}
+
+// GetGroup implements the corresponding RPC method.
+func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*rpcpb.AuthGroup, error) {
+	switch group, err := model.GetAuthGroup(ctx, request.Name); {
+	case err == nil:
+		return group.ToProto(), nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.NotFound, "no such group %q", request.Name)
+	default:
+		return nil, status.Errorf(codes.Internal, "failed to fetch group %q: %s", request.Name, err)
+	}
 }

@@ -27,12 +27,20 @@ service Groups {
   // datastore. The groups will be returned in alphabetical order based on their
   // ID.
   rpc ListGroups(google.protobuf.Empty) returns (ListGroupsResponse);
+
+  // GetGroup returns information about an individual group, given the name.
+  rpc GetGroup(GetGroupRequest) returns (AuthGroup);
 }
 
 // ListGroupsResponse is all the groups listed in LUCI Auth Service.
 message ListGroupsResponse {
   // List of all groups.
   repeated AuthGroup groups = 1;
+}
+
+// GetGroupRequest is to specify an individual group.
+message GetGroupRequest {
+  string name = 1;  // e.g: "administrators"
 }
 
 // AuthGroup defines an individual group.
