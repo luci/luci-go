@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpcv0
+package rpc
 
 import (
 	"context"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -31,6 +30,9 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
+
+// TODO: change this group to a v0 API dedicated group, like "v0-api-allowed-users".
+const allowGroup = "service-luci-change-verifier-admins"
 
 // RunsServer implements rpc v0 APIs.
 type RunsServer struct {
@@ -52,29 +54,51 @@ func (s *RunsServer) GetRun(ctx context.Context, req *rpcpb.GetRunRequest) (resp
 	r := run.Run{ID: id}
 	switch err := datastore.Get(ctx, &r); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, status.Errorf(codes.NotFound, "run not found")
+		return nil, appstatus.Errorf(codes.NotFound, "run not found")
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
 	}
 
-	// TODO(crbug/1233963): check if user has access to this specific Run.
+	rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
+	if err != nil {
+		return nil, err
+	}
+	gcls := make([]*rpcpb.GerritChange, len(rcls))
+	for i, rcl := range rcls {
+		host, change, err := rcl.ExternalID.ParseGobID()
+		if err != nil {
+			// As of Sep 2, 2021, CV works only with Gerrit (GoB) CL.
+			panic(errors.Annotate(err, "ParseGobID").Err())
+		}
+		gcls[i] = &rpcpb.GerritChange{
+			Host:     host,
+			Change:   change,
+			Patchset: rcl.Detail.GetPatchset(),
+		}
+	}
 
+	// TODO(crbug/1233963): check if user has access to this specific Run.
 	return &rpcpb.Run{
-		Id:       r.ID.PublicID(),
-		Eversion: int64(r.EVersion),
-		Status:   r.Status,
+		Id:         r.ID.PublicID(),
+		Eversion:   int64(r.EVersion),
+		Status:     r.Status,
+		Mode:       string(r.Mode),
+		CreateTime: common.TspbNillable(r.CreateTime),
+		StartTime:  common.TspbNillable(r.StartTime),
+		UpdateTime: common.TspbNillable(r.UpdateTime),
+		EndTime:    common.TspbNillable(r.EndTime),
+		Owner:      string(r.Owner),
+		Cls:        gcls,
 	}, nil
 }
 
 func checkAllowed(ctx context.Context, name string) error {
 	// TODO(crbug/1233963): delete this after proper Run ACLs are implemented.
-	const allowGroup = "service-luci-change-verifier-admins"
-
 	switch yes, err := auth.IsMember(ctx, allowGroup); {
 	case err != nil:
-		return status.Errorf(codes.Internal, "failed to check ACL")
+		return appstatus.Errorf(codes.Internal, "failed to check ACL")
 	case !yes:
-		return status.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
+		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
 	default:
 		logging.Warningf(ctx, "%s is calling %s", auth.CurrentIdentity(ctx), name)
 		return nil
@@ -83,11 +107,11 @@ func checkAllowed(ctx context.Context, name string) error {
 
 func toInternalRunID(id string) (common.RunID, error) {
 	if id == "" {
-		return "", status.Errorf(codes.InvalidArgument, "Run ID is required")
+		return "", appstatus.Errorf(codes.InvalidArgument, "Run ID is required")
 	}
 	internalID, err := common.FromPublicRunID(id)
 	if err != nil {
-		return "", status.Errorf(codes.InvalidArgument, err.Error())
+		return "", appstatus.Errorf(codes.InvalidArgument, err.Error())
 	}
 	return internalID, nil
 }

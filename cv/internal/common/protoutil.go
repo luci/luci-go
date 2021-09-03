@@ -12,5 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package rpc implements CV V0 pRPC APIs.
-package rpc
+package common
+
+import (
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+// TspbNillable returns a timestamppb.Timestamp from a given Time or
+// nil if Time is zero.
+func TspbNillable(t time.Time) *timestamppb.Timestamp {
+	if t.IsZero() {
+		return nil
+	}
+	return timestamppb.New(t)
+}

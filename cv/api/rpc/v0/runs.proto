@@ -108,5 +108,5 @@ message GerritChange {
   // Change number, e.g. 12345.
   int64 change = 2;
   // Patch set number, e.g. 1.
-  int64 patchset = 3;
+  int32 patchset = 3;
 }

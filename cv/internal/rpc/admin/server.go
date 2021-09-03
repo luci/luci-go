@@ -24,7 +24,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"golang.org/x/sync/errgroup"
 
@@ -162,7 +161,7 @@ func (d *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjec
 		resp.Logs[i] = &adminpb.ProjectLog{
 			Eversion:   l.EVersion,
 			State:      l.State,
-			UpdateTime: tspbNillable(l.UpdateTime),
+			UpdateTime: common.TspbNillable(l.UpdateTime),
 			Reasons:    &prjpb.LogReasons{Reasons: l.Reasons},
 		}
 	}
@@ -876,10 +875,10 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		Eversion:         int64(r.EVersion),
 		Mode:             string(r.Mode),
 		Status:           r.Status,
-		CreateTime:       tspbNillable(r.CreateTime),
-		StartTime:        tspbNillable(r.StartTime),
-		UpdateTime:       tspbNillable(r.UpdateTime),
-		EndTime:          tspbNillable(r.EndTime),
+		CreateTime:       common.TspbNillable(r.CreateTime),
+		StartTime:        common.TspbNillable(r.StartTime),
+		UpdateTime:       common.TspbNillable(r.UpdateTime),
+		EndTime:          common.TspbNillable(r.EndTime),
 		Owner:            string(r.Owner),
 		ConfigGroupId:    string(r.ConfigGroupID),
 		Cls:              common.CLIDsAsInt64s(r.CLs),
@@ -888,7 +887,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		Tryjobs:          r.Tryjobs,
 		Submission:       r.Submission,
 		FinalizedByCqd:   r.FinalizedByCQD,
-		LatestClsRefresh: tspbNillable(r.LatestCLsRefresh),
+		LatestClsRefresh: common.TspbNillable(r.LatestCLsRefresh),
 
 		LogEntries: logEntries,
 		Events:     events,
@@ -926,13 +925,6 @@ func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, err
 		return nil, err
 	}
 	return cl, nil
-}
-
-func tspbNillable(t time.Time) *timestamppb.Timestamp {
-	if t.IsZero() {
-		return nil
-	}
-	return timestamppb.New(t)
 }
 
 func min(i, j int) int {
