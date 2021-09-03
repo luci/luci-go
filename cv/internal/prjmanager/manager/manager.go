@@ -406,6 +406,14 @@ func (tr *triageResult) removeCLUpdateNoops() {
 }
 
 func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.State) ([]eventbox.Transition, error) {
+	h := state.Handler{
+		CLMutator:       proc.clMutator,
+		PMNotifier:      proc.pmNotifier,
+		RunNotifier:     proc.runNotifier,
+		CLPurger:        proc.clPurger,
+		CLPoller:        proc.clPoller,
+		ComponentTriage: triager.Triage,
+	}
 	var err error
 	var se state.SideEffect
 	ret := make([]eventbox.Transition, 0, 7)
@@ -423,7 +431,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	// and OnRunsCreated will be read only in the next PM invocation
 	// (see https://crbug.com/1218681 for a concrete example).
 	if len(tr.runsCreated.runs) > 0 {
-		if s, se, err = s.OnRunsCreated(ctx, tr.runsCreated.runs); err != nil {
+		if s, se, err = h.OnRunsCreated(ctx, s, tr.runsCreated.runs); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -434,7 +442,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	if len(tr.runsFinished.runs) > 0 {
-		if s, se, err = s.OnRunsFinished(ctx, tr.runsFinished.runs); err != nil {
+		if s, se, err = h.OnRunsFinished(ctx, s, tr.runsFinished.runs); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -448,7 +456,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	// each of the incomplete Runs to stop. Thus, runsCreated must be processed
 	// before to ensure no Run will be missed.
 	if len(tr.newConfig) > 0 {
-		if s, se, err = s.UpdateConfig(ctx); err != nil {
+		if s, se, err = h.UpdateConfig(ctx, s); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -459,7 +467,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	if len(tr.poke) > 0 {
-		if s, se, err = s.Poke(ctx); err != nil {
+		if s, se, err = h.Poke(ctx, s); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -470,7 +478,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	if len(tr.clsUpdated.clEVersions) > 0 {
-		if s, se, err = s.OnCLsUpdated(ctx, tr.clsUpdated.clEVersions); err != nil {
+		if s, se, err = h.OnCLsUpdated(ctx, s, tr.clsUpdated.clEVersions); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -481,7 +489,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	// OnPurgesCompleted may expire purges even without incoming event.
-	if s, se, err = s.OnPurgesCompleted(ctx, tr.purgesCompleted.purges); err != nil {
+	if s, se, err = h.OnPurgesCompleted(ctx, s, tr.purgesCompleted.purges); err != nil {
 		return nil, err
 	}
 	ret = append(ret, eventbox.Transition{
@@ -490,7 +498,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 		TransitionTo: s,
 	})
 
-	if s, se, err = s.ExecDeferred(ctx); err != nil {
+	if s, se, err = h.ExecDeferred(ctx, s); err != nil {
 		return nil, err
 	}
 	return append(ret, eventbox.Transition{

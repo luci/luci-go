@@ -107,6 +107,11 @@ func TestComponentsActions(t *testing.T) {
 		meta := prjcfgtest.MustExist(ctx, lProject)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
+		h := Handler{
+			PMNotifier:  pmNotifier,
+			RunNotifier: runNotifier,
+			CLMutator:   changelist.NewMutator(ct.TQDispatcher, pmNotifier, runNotifier),
+		}
 		state := &State{
 			PB: &prjpb.PState{
 				LuciProject: lProject,
@@ -128,7 +133,7 @@ func TestComponentsActions(t *testing.T) {
 			},
 			PMNotifier:  pmNotifier,
 			RunNotifier: runNotifier,
-			CLMutator:   changelist.NewMutator(ct.TQDispatcher, pmNotifier, runNotifier),
+			CLMutator:   h.CLMutator,
 		}
 
 		pb := backupPB(state)
@@ -178,7 +183,7 @@ func TestComponentsActions(t *testing.T) {
 			So(collectCalledOn(), ShouldBeEmpty)
 
 			Convey("ExecDeferred", func() {
-				state2, sideEffect, err := state.ExecDeferred(ctx)
+				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				So(state.PB, ShouldResembleProto, pb)
 				So(state2, ShouldEqual, state) // pointer comparison
@@ -211,7 +216,7 @@ func TestComponentsActions(t *testing.T) {
 			So(collectCalledOn(), ShouldResemble, []int{1, 3})
 
 			Convey("ExecDeferred", func() {
-				state2, sideEffect, err := state.ExecDeferred(ctx)
+				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				pb.NextEvalTime = timestamppb.New(now.Add(2 * time.Minute))
@@ -247,7 +252,7 @@ func TestComponentsActions(t *testing.T) {
 			So(state.PB, ShouldResembleProto, pb)
 
 			Convey("ExecDeferred", func() {
-				state2, sideEffect, err := state.ExecDeferred(ctx)
+				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				expectedDeadline := timestamppb.New(now.Add(maxPurgingCLDuration))
 				So(state2.PB.GetPurgingCls(), ShouldResembleProto, []*prjpb.PurgingCL{
@@ -287,7 +292,7 @@ func TestComponentsActions(t *testing.T) {
 			Convey("ExecDeferred", func() {
 				// Execute slightly after #1 component decision time.
 				ct.Clock.Set(pb.Components[1].DecisionTime.AsTime().Add(time.Microsecond))
-				state2, sideEffect, err := state.ExecDeferred(ctx)
+				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				pb.Components[2].TriageRequired = false
@@ -317,7 +322,7 @@ func TestComponentsActions(t *testing.T) {
 			So(state.PB, ShouldResembleProto, pb)
 
 			Convey("ExecDeferred", func() {
-				state2, sideEffect, err := state.ExecDeferred(ctx)
+				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				pb.Components[2].TriageRequired = false
@@ -339,7 +344,7 @@ func TestComponentsActions(t *testing.T) {
 			So(state.PB, ShouldResembleProto, pb)
 
 			Convey("ExecDeferred", func() {
-				state2, sideEffect, err := state.ExecDeferred(ctx)
+				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldNotBeNil)
 				So(sideEffect, ShouldBeNil)
 				So(state2, ShouldBeNil)
@@ -351,7 +356,7 @@ func TestComponentsActions(t *testing.T) {
 			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				panic(errors.New("oops"))
 			}
-			_, _, err := state.ExecDeferred(ctx)
+			_, _, err := h.ExecDeferred(ctx, state)
 			So(err, ShouldErrLike, errCaughtPanic)
 			So(state.PB, ShouldResembleProto, pb)
 		})
@@ -422,7 +427,7 @@ func TestComponentsActions(t *testing.T) {
 					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
 				}
 
-				state2, sideEffect, err := state.ExecDeferred(ctx)
+				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				pb.Components[1].TriageRequired = false // must be saved, since Run Creation succeeded.
@@ -437,7 +442,7 @@ func TestComponentsActions(t *testing.T) {
 					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
 				}
 
-				_, sideEffect, err := state.ExecDeferred(ctx)
+				_, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldErrLike, "failed to actOnComponents")
 				So(sideEffect, ShouldBeNil)
 				So(findRunOf(1), ShouldBeNil)
@@ -469,7 +474,7 @@ func TestComponentsActions(t *testing.T) {
 					return res, nil
 				}
 
-				state2, sideEffect, err := state.ExecDeferred(ctx)
+				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				// Only #3 component purge must be a SideEffect.
 				So(sideEffect, ShouldHaveSameTypeAs, &TriggerPurgeCLTasks{})
@@ -500,7 +505,7 @@ func TestComponentsActions(t *testing.T) {
 					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
 				}
 
-				_, _, err := state.ExecDeferred(ctx)
+				_, _, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldErrLike, errCaughtPanic)
 				So(state.PB, ShouldResembleProto, pb)
 			})

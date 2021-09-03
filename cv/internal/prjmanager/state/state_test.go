@@ -159,6 +159,7 @@ func TestUpdateConfig(t *testing.T) {
 		gobmaptest.Update(ctx, ct.lProject)
 
 		clPoller := poller.New(ct.TQDispatcher, nil, nil, nil)
+		h := Handler{CLPoller: clPoller}
 
 		Convey("initializes newly started project", func() {
 			// Newly started project doesn't have any CLs, yet, regardless of what CL
@@ -168,7 +169,7 @@ func TestUpdateConfig(t *testing.T) {
 				CLPoller: clPoller,
 			}
 			pb0 := backupPB(s0)
-			s1, sideEffect, err := s0.UpdateConfig(ctx)
+			s1, sideEffect, err := h.UpdateConfig(ctx, s0)
 			So(err, ShouldBeNil)
 			So(s0.PB, ShouldResembleProto, pb0) // s0 must not change.
 			So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
@@ -275,7 +276,7 @@ func TestUpdateConfig(t *testing.T) {
 		pb1 := backupPB(s1)
 
 		Convey("noop update is quick", func() {
-			s2, sideEffect, err := s1.UpdateConfig(ctx)
+			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
 			So(err, ShouldBeNil)
 			So(s2, ShouldEqual, s1) // pointer comparison only.
 			So(sideEffect, ShouldBeNil)
@@ -284,7 +285,7 @@ func TestUpdateConfig(t *testing.T) {
 		Convey("existing project", func() {
 			Convey("updated without touching components", func() {
 				meta2 := updateConfigToNoFallabck(ctx, &ct)
-				s2, sideEffect, err := s1.UpdateConfig(ctx)
+				s2, sideEffect, err := h.UpdateConfig(ctx, s1)
 				So(err, ShouldBeNil)
 				So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
 				So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
@@ -321,7 +322,7 @@ func TestUpdateConfig(t *testing.T) {
 
 			Convey("If PCLs stay same, RepartitionRequired must be false", func() {
 				meta2 := updateConfigRenameG1toG11(ctx, &ct)
-				s2, sideEffect, err := s1.UpdateConfig(ctx)
+				s2, sideEffect, err := h.UpdateConfig(ctx, s1)
 				So(err, ShouldBeNil)
 				So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
 				So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
@@ -350,7 +351,7 @@ func TestUpdateConfig(t *testing.T) {
 			changelist.Delete(ctx, cl101.ID)
 
 			meta2 := updateConfigToNoFallabck(ctx, &ct)
-			s2, sideEffect, err := s1.UpdateConfig(ctx)
+			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
 			So(err, ShouldBeNil)
 			So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
 			So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
@@ -380,7 +381,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		Convey("disabled project waits for incomplete Runs", func() {
 			prjcfgtest.Disable(ctx, ct.lProject)
-			s2, sideEffect, err := s1.UpdateConfig(ctx)
+			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
 			So(err, ShouldBeNil)
 			pb := backupPB(s1)
 			pb.Status = prjpb.Status_STOPPING
@@ -396,7 +397,7 @@ func TestUpdateConfig(t *testing.T) {
 				c.Pruns = nil
 			}
 			prjcfgtest.Disable(ctx, ct.lProject)
-			s2, sideEffect, err := s1.UpdateConfig(ctx)
+			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
 			So(err, ShouldBeNil)
 			So(sideEffect, ShouldBeNil)
 			pb := backupPB(s1)
@@ -551,6 +552,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		cl202 := ct.runCLUpdater(ctx, 202)
 		cl203 := ct.runCLUpdater(ctx, 203)
 
+		h := Handler{}
 		s0 := &State{PB: &prjpb.PState{
 			LuciProject:      ct.lProject,
 			Status:           prjpb.Status_STARTED,
@@ -562,7 +564,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		// NOTE: conversion of individual CL to PCL is in TestUpdateConfig.
 
 		Convey("One simple CL", func() {
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
+			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl101.ID): int64(cl101.EVersion),
 			})
 			So(err, ShouldBeNil)
@@ -585,7 +587,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(s1.PB.RepartitionRequired, ShouldBeTrue)
 
 			Convey("Noop based on EVersion", func() {
-				s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
+				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 					int64(cl101.ID): 1, // already known
 				})
 				So(err, ShouldBeNil)
@@ -602,7 +604,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					{Clids: []int64{int64(cl101.ID + 111111)}},
 				}
 				pb := backupPB(s1)
-				s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
+				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 					int64(cl101.ID): int64(cl101.EVersion),
 				})
 				So(s1.PB, ShouldResembleProto, pb)
@@ -616,7 +618,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		})
 
 		Convey("One CL with a yet unknown dep", func() {
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
+			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl203.ID): 1,
 			})
 			So(err, ShouldBeNil)
@@ -650,7 +652,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					{Clids: []int64{int64(cl203.ID)}},
 				}
 				pb := backupPB(s1)
-				s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
+				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 					int64(cl202.ID): int64(cl202.EVersion),
 				})
 				So(s1.PB, ShouldResembleProto, pb)
@@ -697,7 +699,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			}}
 			pb1 := backupPB(s1)
 			bumpEVersion(ctx, cl203, 3)
-			s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
+			s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 				404:             404,                   // doesn't even exist
 				int64(cl202.ID): int64(cl202.EVersion), // new
 				int64(cl101.ID): int64(cl101.EVersion), // unchanged
@@ -760,7 +762,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(cl404.Snapshot, ShouldBeNil)
 			So(cl404.ApplicableConfig, ShouldBeNil)
 			So(cl404.Access.GetByProject(), ShouldContainKey, ct.lProject)
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
+			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl404.ID): 1,
 			})
 			So(err, ShouldBeNil)
@@ -779,7 +781,7 @@ func TestOnCLsUpdated(t *testing.T) {
 
 		Convey("non-STARTED project ignores all CL events", func() {
 			s0.PB.Status = prjpb.Status_STOPPING
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
+			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl101.ID): int64(cl101.EVersion),
 			})
 			So(err, ShouldBeNil)
@@ -811,6 +813,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		So(datastore.Put(ctx, run1finished, run1, run789), ShouldBeNil)
 		So(run.IsEnded(run1finished.Status), ShouldBeTrue)
 
+		h := Handler{}
 		s1 := &State{PB: &prjpb.PState{
 			LuciProject:      ct.lProject,
 			Status:           prjpb.Status_STARTED,
@@ -837,28 +840,28 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 
 		Convey("Noops", func() {
 			Convey("OnRunsFinished on not tracked Run", func() {
-				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.RunIDs{run1finished.ID})
+				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, common.RunIDs{run1finished.ID})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// although s2 is cloned, it must be exact same as s1.
 				So(s2.PB, ShouldResembleProto, pb1)
 			})
 			Convey("OnRunsCreated on already finished run", func() {
-				s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{run1finished.ID})
+				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{run1finished.ID})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// although s2 is cloned, it must be exact same as s1.
 				So(s2.PB, ShouldResembleProto, pb1)
 			})
 			Convey("OnRunsCreated on already tracked Run", func() {
-				s2, sideEffect, err := s1.OnRunsCreated(ctx, common.MakeRunIDs(ct.lProject+"/101-aaa"))
+				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.MakeRunIDs(ct.lProject+"/101-aaa"))
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				So(s2, ShouldEqual, s1)
 				So(pb1, ShouldResembleProto, s1.PB)
 			})
 			Convey("OnRunsCreated on somehow already deleted run", func() {
-				s2, sideEffect, err := s1.OnRunsCreated(ctx, common.MakeRunIDs(ct.lProject+"/404-nnn"))
+				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.MakeRunIDs(ct.lProject+"/404-nnn"))
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// although s2 is cloned, it must be exact same as s1.
@@ -879,7 +882,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				run234 := &run.Run{ID: common.RunID(ct.lProject + "/234-bcd"), CLs: common.CLIDs{203, 204, 202}}
 				So(datastore.Put(ctx, run2, run3, run23, run234, runX), ShouldBeNil)
 
-				s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{
+				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{
 					run2.ID, run3.ID, run23.ID, run234.ID, runX.ID,
 					// non-existing Run shouldn't derail others.
 					common.RunID(ct.lProject + "/404-nnn"),
@@ -917,7 +920,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				s1.PB.Status = prjpb.Status_STOPPING
 				pb1 := backupPB(s1)
 				Convey("cancels incomplete Runs", func() {
-					s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{run1.ID, run1finished.ID})
+					s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{run1.ID, run1finished.ID})
 					So(err, ShouldBeNil)
 					So(pb1, ShouldResembleProto, s1.PB)
 					So(sideEffect, ShouldResemble, &CancelIncompleteRuns{
@@ -934,7 +937,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 
 			Convey("deletes from Components", func() {
 				pb1 := backupPB(s1)
-				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.MakeRunIDs(ct.lProject+"/101-aaa"))
+				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, common.MakeRunIDs(ct.lProject+"/101-aaa"))
 				So(err, ShouldBeNil)
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
@@ -957,7 +960,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			})
 
 			Convey("deletes from CreatedPruns", func() {
-				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.MakeRunIDs(ct.lProject+"/789-efg"))
+				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, common.MakeRunIDs(ct.lProject+"/789-efg"))
 				So(err, ShouldBeNil)
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
@@ -972,7 +975,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			})
 
 			Convey("stops PM iff all runs finished", func() {
-				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.MakeRunIDs(
+				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, common.MakeRunIDs(
 					ct.lProject+"/101-aaa",
 					ct.lProject+"/789-efg",
 				))
@@ -1006,9 +1009,11 @@ func TestOnPurgesCompleted(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
+		h := Handler{}
+
 		Convey("Empty", func() {
 			s1 := &State{PB: &prjpb.PState{}}
-			s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{{OperationId: "op1"}})
+			s2, sideEffect, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{{OperationId: "op1"}})
 			So(err, ShouldBeNil)
 			So(sideEffect, ShouldBeNil)
 			So(s1, ShouldEqual, s2)
@@ -1037,7 +1042,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 			pb := backupPB(s1)
 
 			Convey("Expires and removed", func() {
-				s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{{OperationId: "1"}})
+				s2, sideEffect, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{{OperationId: "1"}})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				So(s1.PB, ShouldResembleProto, pb)
@@ -1055,7 +1060,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 			})
 
 			Convey("All removed", func() {
-				s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{
+				s2, sideEffect, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
 					{OperationId: "3"},
 					{OperationId: "1"},
 					{OperationId: "5"},
@@ -1078,7 +1083,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 			Convey("Doesn't modify components if they are due re-repartition anyway", func() {
 				s1.PB.RepartitionRequired = true
 				pb := backupPB(s1)
-				s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{
+				s2, sideEffect, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
 					{OperationId: "1"},
 					{OperationId: "2"},
 					{OperationId: "3"},

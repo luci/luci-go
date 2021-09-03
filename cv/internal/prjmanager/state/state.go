@@ -129,8 +129,18 @@ type RunNotifier interface {
 	UpdateConfig(ctx context.Context, id common.RunID, hash string, eversion int64) error
 }
 
+// Handler handles state transitions of a project.
+type Handler struct {
+	CLMutator       *changelist.Mutator
+	PMNotifier      *prjmanager.Notifier
+	RunNotifier     RunNotifier
+	CLPurger        *clpurger.Purger
+	CLPoller        *poller.Poller
+	ComponentTriage itriager.Triage
+}
+
 // UpdateConfig updates PM to the latest config version.
-func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
+func (h *Handler) UpdateConfig(ctx context.Context, s *State) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
 	meta, err := prjcfg.GetLatestMeta(ctx, s.PB.GetLuciProject())
@@ -146,7 +156,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 
 		// Tell poller to update ASAP. It doesn't need to wait for a transaction as
 		// it's OK for poller to be temporarily more up-to-date than PM.
-		if err := s.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
+		if err := h.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 			return nil, nil, err
 		}
 
@@ -177,7 +187,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 		// complete finalization, send us OnRunFinished event and then we'll remove
 		// them from the state anyway.
 		return s, &UpdateIncompleteRunsConfig{
-			RunNotifier: s.RunNotifier,
+			RunNotifier: h.RunNotifier,
 			EVersion:    meta.EVersion,
 			Hash:        meta.Hash(),
 			RunIDs:      s.PB.IncompleteRuns(),
@@ -207,7 +217,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 				return s, nil, nil
 			}
 			return s, &CancelIncompleteRuns{
-				RunNotifier: s.RunNotifier,
+				RunNotifier: h.RunNotifier,
 				RunIDs:      s.PB.IncompleteRuns(),
 			}, nil
 		default:
@@ -219,11 +229,11 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 }
 
 // Poke propagates "the poke" downstream to Poller & Runs.
-func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
+func (h *Handler) Poke(ctx context.Context, s *State) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
 	// First, check if UpdateConfig if necessary.
-	switch newState, sideEffect, err := s.UpdateConfig(ctx); {
+	switch newState, sideEffect, err := h.UpdateConfig(ctx, s); {
 	case err != nil:
 		return nil, nil, err
 	case newState != s:
@@ -233,7 +243,7 @@ func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 	}
 
 	// Propagate downstream directly.
-	if err := s.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
+	if err := h.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 		return nil, nil, err
 	}
 	if err := s.pokeRuns(ctx); err != nil {
@@ -246,7 +256,7 @@ func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 }
 
 // OnRunsCreated updates state after new Runs were created.
-func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (_ *State, __ SideEffect, err error) {
+func (h *Handler) OnRunsCreated(ctx context.Context, s *State, created common.RunIDs) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsCreated")
@@ -283,7 +293,7 @@ func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (_ *St
 			return s, nil, nil
 		default:
 			logging.Errorf(ctx, "RunCreated events for %s on %s Project Manager", incomplete, s.PB.GetStatus())
-			return s, &CancelIncompleteRuns{RunNotifier: s.RunNotifier, RunIDs: incomplete}, nil
+			return s, &CancelIncompleteRuns{RunNotifier: h.RunNotifier, RunIDs: incomplete}, nil
 		}
 	default:
 		panic(fmt.Errorf("unexpected project status: %d", s.PB.GetStatus()))
@@ -291,7 +301,7 @@ func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (_ *St
 }
 
 // OnRunsFinished updates state after Runs were finished.
-func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (_ *State, __ SideEffect, err error) {
+func (h *Handler) OnRunsFinished(ctx context.Context, s *State, finished common.RunIDs) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsFinished")
@@ -312,7 +322,7 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (_ *
 //
 // clEVersions must map CL's ID to CL's EVersion.
 // clEVersions is mutated.
-func (s *State) OnCLsUpdated(ctx context.Context, clEVersions map[int64]int64) (_ *State, __ SideEffect, err error) {
+func (h *Handler) OnCLsUpdated(ctx context.Context, s *State, clEVersions map[int64]int64) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnCLsUpdated")
@@ -341,7 +351,7 @@ func (s *State) OnCLsUpdated(ctx context.Context, clEVersions map[int64]int64) (
 }
 
 // OnPurgesCompleted updates state as a result of completed purge operations.
-func (s *State) OnPurgesCompleted(ctx context.Context, events []*prjpb.PurgeCompleted) (_ *State, __ SideEffect, err error) {
+func (h *Handler) OnPurgesCompleted(ctx context.Context, s *State, events []*prjpb.PurgeCompleted) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnPurgesCompleted")
@@ -399,7 +409,7 @@ func (s *State) OnPurgesCompleted(ctx context.Context, events []*prjpb.PurgeComp
 }
 
 // ExecDeferred performs previously postponed actions, notably creating Runs.
-func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err error) {
+func (h *Handler) ExecDeferred(ctx context.Context, s *State) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/ExecDeferred")
@@ -457,7 +467,7 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	case tPB != nil:
 		// Always create a new task if there is NextEvalTime. If it is in the
 		// future, it'll be deduplicated as needed.
-		if err := s.PMNotifier.TasksBinding.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
+		if err := h.PMNotifier.TasksBinding.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
 			return nil, nil, err
 		}
 	}
