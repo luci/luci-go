@@ -30,15 +30,14 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 )
 
-// IsCVInChargeOfSomething returns true if CV is incharge of something.
-//
-// TODO(crbug/1225047): either use it or remove with CQDaemon.
-func IsCVInChargeOfSomething(ctx context.Context, luciProject string) (bool, error) {
+// IsCVInChargeOfStatus returns true if CV is in charge of displaying Run
+// status.
+func IsCVInChargeOfStatus(ctx context.Context, luciProject string) (bool, error) {
 	cfg, err := srvcfg.GetMigrationConfig(ctx)
 	if err != nil {
 		return false, err
 	}
-	u := cfg.GetUseCvRuns()
+	u := cfg.GetUseCvStatus()
 	if !matches(ctx, luciProject, u.GetProjectRegexp(), u.GetProjectRegexpExclude(), "use_cv_runs") {
 		return false, nil
 	}

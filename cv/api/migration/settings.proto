@@ -42,20 +42,6 @@ message Settings {
   // any more.
   repeated ApiHost api_hosts = 1;
 
-  // Determines which projects should start relying on CV for computing
-  // Runs to work on.
-  //
-  // The project is using CV Runs if and only if all 3 hold:
-  //  * project matches at least one project_regexp.
-  //  * project matches no project_regexp_exclude.
-  //  * project matches exactly one ApiHost overall OR exactly one with
-  //    prod=true.
-  message UseCVRuns {
-    repeated string project_regexp = 1;
-    repeated string project_regexp_exclude = 2;
-  }
-  UseCVRuns use_cv_runs = 3 [deprecated = true];
-
   // Post link to CV status instead of legacy CQ status app
   // when starting the Run.
   //

@@ -679,9 +679,6 @@ func validateMigrationSettings(ctx *validation.Context, configSet, path string, 
 		validateRegexp(ctx, "project_regexp_exclude", a.GetProjectRegexpExclude())
 		ctx.Exit()
 	}
-	if u := cfg.GetUseCvRuns(); u != nil {
-		ctx.Errorf("use_cv_runs is no longer allowed")
-	}
 	if u := cfg.GetUseCvStatus(); u != nil {
 		ctx.Enter("use_cv_status")
 		validateRegexp(ctx, "project_regexp", u.GetProjectRegexp())

@@ -28,7 +28,7 @@ import (
 func TestIsCVInCharge(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsCVInChargeOfSomething works", t, func() {
+	Convey("IsCVInChargeOfStatus works", t, func() {
 		run := func(project string, settings *migrationpb.Settings, appID string) bool {
 			ct := cvtesting.Test{AppID: appID}
 			ctx, cancel := ct.SetUp()
@@ -36,7 +36,7 @@ func TestIsCVInCharge(t *testing.T) {
 
 			So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-			res, err := IsCVInChargeOfSomething(ctx, project)
+			res, err := IsCVInChargeOfStatus(ctx, project)
 			So(err, ShouldBeNil)
 			return res
 		}
@@ -67,7 +67,7 @@ func TestIsCVInCharge(t *testing.T) {
 						ProjectRegexpExclude: []string{"dev-not-2"},
 					},
 				},
-				UseCvRuns: &migrationpb.Settings_UseCVRuns{
+				UseCvStatus: &migrationpb.Settings_UseCVStatus{
 					ProjectRegexp:        []string{"prod-enabled-.+", "dev-.+"},
 					ProjectRegexpExclude: []string{".+-404"},
 				},
@@ -108,7 +108,7 @@ func TestIsCVInCharge(t *testing.T) {
 						ProjectRegexpExclude: []string{"ex.+"},
 					},
 				},
-				UseCvRuns: &migrationpb.Settings_UseCVRuns{
+				UseCvStatus: &migrationpb.Settings_UseCVStatus{
 					ProjectRegexp:        []string{`invalid\Z`, "incl.+"},
 					ProjectRegexpExclude: []string{"ex.+"},
 				},
@@ -127,7 +127,7 @@ func TestIsCVInCharge(t *testing.T) {
 						ProjectRegexpExclude: []string{`bad\K`, "exc.+"},
 					},
 				},
-				UseCvRuns: &migrationpb.Settings_UseCVRuns{
+				UseCvStatus: &migrationpb.Settings_UseCVStatus{
 					ProjectRegexp:        []string{"incl.+"},
 					ProjectRegexpExclude: []string{`bad\K`, "exc.+"},
 				},
