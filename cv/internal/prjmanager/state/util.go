@@ -27,12 +27,12 @@ import (
 // pokeRuns pokes run manager of each of IncompleteRuns.
 //
 // Doesn't have to be called in a transaction.
-func (s *State) pokeRuns(ctx context.Context) error {
+func (h *Handler) pokeRuns(ctx context.Context, s *State) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
 		for _, id := range s.PB.IncompleteRuns() {
 			id := id
 			work <- func() error {
-				return s.RunNotifier.PokeNow(ctx, id)
+				return h.RunNotifier.PokeNow(ctx, id)
 			}
 		}
 	})

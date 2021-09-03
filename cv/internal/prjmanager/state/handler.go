@@ -123,7 +123,7 @@ func (h *Handler) UpdateConfig(ctx context.Context, s *State) (*State, SideEffec
 			s.PB.Status = prjpb.Status_STOPPING
 			fallthrough
 		case prjpb.Status_STOPPING:
-			if err := s.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
+			if err := h.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 				return nil, nil, err
 			}
 			runs := s.PB.IncompleteRuns()
@@ -162,7 +162,7 @@ func (h *Handler) Poke(ctx context.Context, s *State) (*State, SideEffect, error
 	if err := h.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 		return nil, nil, err
 	}
-	if err := s.pokeRuns(ctx); err != nil {
+	if err := h.pokeRuns(ctx, s); err != nil {
 		return nil, nil, err
 	}
 	// Force re-triage of all components.

@@ -17,9 +17,6 @@ package state
 import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
-	"go.chromium.org/luci/cv/internal/gerrit/poller"
-	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -51,12 +48,6 @@ type State struct {
 	// LogReasons is append-only accumulation of reasons to record this state for
 	// posterity.
 	LogReasons []prjpb.LogReason
-
-	// Dependencies used to prepare state transitions.
-	PMNotifier  *prjmanager.Notifier
-	RunNotifier RunNotifier
-	CLPurger    *clpurger.Purger
-	CLPoller    *poller.Poller
 
 	// Helper private fields used during mutations.
 

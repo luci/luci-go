@@ -131,8 +131,6 @@ func TestComponentsActions(t *testing.T) {
 				},
 				NextEvalTime: timestamppb.New(now.Add(1 * time.Minute)),
 			},
-			PMNotifier:  pmNotifier,
-			RunNotifier: runNotifier,
 		}
 
 		pb := backupPB(state)

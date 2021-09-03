@@ -20,6 +20,6 @@ func (s *State) needUpgrade() bool {
 	return false
 }
 
-// upgrade upgrades in place via copy-on-write.
+// upgrade upgrades State in place via copy-on-write.
 func (s *State) upgrade() {
 }

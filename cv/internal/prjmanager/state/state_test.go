@@ -164,10 +164,7 @@ func TestUpdateConfig(t *testing.T) {
 		Convey("initializes newly started project", func() {
 			// Newly started project doesn't have any CLs, yet, regardless of what CL
 			// snapshots are stored in Datastore.
-			s0 := &State{
-				PB:       &prjpb.PState{LuciProject: ct.lProject},
-				CLPoller: clPoller,
-			}
+			s0 := &State{PB: &prjpb.PState{LuciProject: ct.lProject}}
 			pb0 := backupPB(s0)
 			s1, sideEffect, err := h.UpdateConfig(ctx, s0)
 			So(err, ShouldBeNil)
@@ -271,7 +268,6 @@ func TestUpdateConfig(t *testing.T) {
 					},
 				},
 			},
-			CLPoller: clPoller,
 		}
 		pb1 := backupPB(s1)
 

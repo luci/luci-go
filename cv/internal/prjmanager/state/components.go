@@ -227,7 +227,7 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 	}
 	var sideEffect SideEffect
 	if len(clsToPurge) > 0 {
-		sideEffect = s.addCLsToPurge(ctx, clsToPurge)
+		sideEffect = h.addCLsToPurge(ctx, s, clsToPurge)
 	}
 	proceedMsg := fmt.Sprintf("proceeding to save %d components and purge %d CLs", componentsUpdated, len(clsToPurge))
 
@@ -314,7 +314,7 @@ func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask
 // tasks to do actual purge.
 //
 // Expects given tasks to be correct (see validatePurgeCLTasks).
-func (s *State) addCLsToPurge(ctx context.Context, ts []*prjpb.PurgeCLTask) SideEffect {
+func (h *Handler) addCLsToPurge(ctx context.Context, s *State, ts []*prjpb.PurgeCLTask) SideEffect {
 	if len(ts) == 0 {
 		return nil
 	}
@@ -324,7 +324,7 @@ func (s *State) addCLsToPurge(ctx context.Context, ts []*prjpb.PurgeCLTask) Side
 		purgingCLs[i] = t.GetPurgingCl()
 	}
 	s.PB.PurgingCls, _ = s.PB.COWPurgingCLs(nil, purgingCLs)
-	return &TriggerPurgeCLTasks{payloads: ts, clPurger: s.CLPurger}
+	return &TriggerPurgeCLTasks{payloads: ts, clPurger: h.CLPurger}
 }
 
 // maxPurgingCLDuration limits the time that a TQ task has to execute
