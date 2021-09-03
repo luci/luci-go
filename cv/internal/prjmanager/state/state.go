@@ -90,6 +90,38 @@ type State struct {
 	pclIndex pclIndex // CLID => index in PB.Pcls slice.
 }
 
+// cloneShallow returns cloned state ready for in-place mutation.
+func (s *State) cloneShallow(reasons ...prjpb.LogReason) *State {
+	ret := &State{}
+	*ret = *s
+	if len(reasons) > 0 {
+		ret.LogReasons = append(ret.LogReasons, reasons...)
+	}
+
+	// Don't use proto.merge to avoid deep copy.
+	ret.PB = &prjpb.PState{
+		LuciProject:         s.PB.GetLuciProject(),
+		Status:              s.PB.GetStatus(),
+		ConfigHash:          s.PB.GetConfigHash(),
+		ConfigGroupNames:    s.PB.GetConfigGroupNames(),
+		Pcls:                s.PB.GetPcls(),
+		Components:          s.PB.GetComponents(),
+		RepartitionRequired: s.PB.GetRepartitionRequired(),
+		CreatedPruns:        s.PB.GetCreatedPruns(),
+		NextEvalTime:        s.PB.GetNextEvalTime(),
+		PurgingCls:          s.PB.GetPurgingCls(),
+	}
+
+	s.alreadyCloned = true
+	return ret
+}
+
+func (s *State) ensureNotYetCloned() {
+	if s.alreadyCloned {
+		panic("Incorrect use. This State object has already been cloned. See State doc")
+	}
+}
+
 type RunNotifier interface {
 	Start(ctx context.Context, id common.RunID) error
 	PokeNow(ctx context.Context, id common.RunID) error
