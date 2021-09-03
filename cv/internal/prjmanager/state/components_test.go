@@ -170,11 +170,11 @@ func TestComponentsActions(t *testing.T) {
 		}
 
 		Convey("noop at triage", func() {
-			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				calledOn <- c
 				return itriager.Result{}, nil
 			}
-			actions, saveForDebug, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := h.triageComponents(ctx, state)
 			So(err, ShouldBeNil)
 			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldBeNil)
@@ -196,7 +196,7 @@ func TestComponentsActions(t *testing.T) {
 			ct.Clock.Set(state.PB.Components[1].DecisionTime.AsTime())
 			c1next := state.PB.Components[1].DecisionTime.AsTime().Add(time.Hour)
 			markComponentsForTriage(3)
-			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				calledOn <- c
 				switch c.GetClids()[0] {
 				case 1:
@@ -208,7 +208,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 				panic("unreachable")
 			}
-			actions, saveForDebug, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := h.triageComponents(ctx, state)
 			So(err, ShouldBeNil)
 			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldHaveLength, 2)
@@ -228,7 +228,7 @@ func TestComponentsActions(t *testing.T) {
 
 		Convey("purges CLs", func() {
 			markComponentsForTriage(1, 2, 3)
-			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch clid := c.GetClids()[0]; clid {
 				case 1, 3:
 					return itriager.Result{CLsToPurge: []*prjpb.PurgeCLTask{
@@ -244,7 +244,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 				panic("unreachable")
 			}
-			actions, saveForDebug, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := h.triageComponents(ctx, state)
 			So(err, ShouldBeNil)
 			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldHaveLength, 3)
@@ -273,7 +273,7 @@ func TestComponentsActions(t *testing.T) {
 
 		Convey("partial failure in triage", func() {
 			markComponentsForTriage(1, 2, 3)
-			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch c.GetClids()[0] {
 				case 1:
 					return itriager.Result{}, errors.New("oops1")
@@ -282,7 +282,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 				panic("unreachable")
 			}
-			actions, saveForDebug, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := h.triageComponents(ctx, state)
 			So(err, ShouldBeNil)
 			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldHaveLength, 2)
@@ -305,7 +305,7 @@ func TestComponentsActions(t *testing.T) {
 
 		Convey("outdated PMState detected during triage", func() {
 			markComponentsForTriage(1, 2, 3)
-			state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch c.GetClids()[0] {
 				case 1:
 					return itriager.Result{}, errors.Annotate(itriager.ErrOutdatedPMState, "smth changed").Err()
@@ -314,7 +314,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 				panic("unreachable")
 			}
-			actions, saveForDebug, err := state.triageComponents(ctx)
+			actions, saveForDebug, err := h.triageComponents(ctx, state)
 			So(err, ShouldBeNil)
 			So(saveForDebug, ShouldBeFalse)
 			So(actions, ShouldHaveLength, 2)
@@ -335,10 +335,10 @@ func TestComponentsActions(t *testing.T) {
 
 		Convey("100% failure in triage", func() {
 			markComponentsForTriage(1, 2)
-			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+			h.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				return itriager.Result{}, errors.New("oops")
 			}
-			_, _, err := state.triageComponents(ctx)
+			_, _, err := h.triageComponents(ctx, state)
 			So(err, ShouldErrLike, "failed to triage 2 components")
 			So(state.PB, ShouldResembleProto, pb)
 
@@ -352,7 +352,7 @@ func TestComponentsActions(t *testing.T) {
 
 		Convey("Catches panic in triage", func() {
 			markComponentsForTriage(1)
-			state.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+			h.ComponentTriage = func(_ context.Context, _ *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				panic(errors.New("oops"))
 			}
 			_, _, err := h.ExecDeferred(ctx, state)
@@ -421,7 +421,7 @@ func TestComponentsActions(t *testing.T) {
 
 			Convey("100% success", func() {
 				markComponentsForTriage(1)
-				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, false /* succeed */)
 					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
 				}
@@ -436,7 +436,7 @@ func TestComponentsActions(t *testing.T) {
 
 			Convey("100% failure", func() {
 				markComponentsForTriage(1)
-				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, true /* fail */)
 					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil
 				}
@@ -449,7 +449,7 @@ func TestComponentsActions(t *testing.T) {
 
 			Convey("Partial failure", func() {
 				markComponentsForTriage(1, 2, 3)
-				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					clid := c.GetClids()[0]
 					// Set up each component trying to create a Run,
 					// and #2 and #3 additionally purging a CL,
@@ -498,7 +498,7 @@ func TestComponentsActions(t *testing.T) {
 
 			Convey("Catches panic", func() {
 				markComponentsForTriage(1)
-				state.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 					rc := makeRunCreator(1, false)
 					rc.LUCIProject = "" // causes panic because of incorrect usage.
 					return itriager.Result{NewValue: markTriaged(c), RunsToCreate: []*runcreator.Creator{rc}}, nil

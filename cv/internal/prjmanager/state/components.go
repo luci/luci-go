@@ -86,7 +86,7 @@ type cAction struct {
 //  * an action per each component that needs acting upon;
 //  * indication whether the state should be stored for debugging purpose;
 //  * error, if any.
-func (s *State) triageComponents(ctx context.Context) ([]*cAction, bool, error) {
+func (h *Handler) triageComponents(ctx context.Context, s *State) ([]*cAction, bool, error) {
 	var sup itriager.PMState
 	sup, err := s.makeTriageSupporter(ctx)
 	if err != nil {
@@ -105,7 +105,7 @@ func (s *State) triageComponents(ctx context.Context) ([]*cAction, bool, error) 
 				continue
 			}
 			work <- func() error {
-				switch res, err := s.triageOneComponent(ctx, oldC, sup); {
+				switch res, err := h.triageOneComponent(ctx, s, oldC, sup); {
 				case itriager.IsErrOutdatedPMState(err):
 					return nil
 				case err != nil:
@@ -156,7 +156,7 @@ func needsTriage(c *prjpb.Component, now time.Time) bool {
 	return true
 }
 
-func (s *State) triageOneComponent(ctx context.Context, oldC *prjpb.Component, sup itriager.PMState) (res itriager.Result, err error) {
+func (h *Handler) triageOneComponent(ctx context.Context, s *State, oldC *prjpb.Component, sup itriager.PMState) (res itriager.Result, err error) {
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 		logging.Errorf(ctx, "caught panic %s:\n\n%s", p.Reason, p.Stack)
 		// Log as a separate message under debug level to avoid sending it to Cloud
@@ -164,7 +164,7 @@ func (s *State) triageOneComponent(ctx context.Context, oldC *prjpb.Component, s
 		logging.Debugf(ctx, "caught panic current state:\n%s", protojson.Format(s.PB))
 		err = errCaughtPanic
 	})
-	res, err = s.ComponentTriage(ctx, oldC, sup)
+	res, err = h.ComponentTriage(ctx, oldC, sup)
 	if err != nil {
 		return
 	}

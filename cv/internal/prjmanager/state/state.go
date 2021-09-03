@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
-	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -54,11 +53,10 @@ type State struct {
 	LogReasons []prjpb.LogReason
 
 	// Dependencies used to prepare state transitions.
-	PMNotifier      *prjmanager.Notifier
-	RunNotifier     RunNotifier
-	CLPurger        *clpurger.Purger
-	CLPoller        *poller.Poller
-	ComponentTriage itriager.Triage
+	PMNotifier  *prjmanager.Notifier
+	RunNotifier RunNotifier
+	CLPurger    *clpurger.Purger
+	CLPoller    *poller.Poller
 
 	// Helper private fields used during mutations.
 

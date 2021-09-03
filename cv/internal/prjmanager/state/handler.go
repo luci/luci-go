@@ -347,7 +347,7 @@ func (h *Handler) ExecDeferred(ctx context.Context, s *State) (_ *State, __ Side
 	}
 
 	var sideEffect SideEffect
-	switch actions, saveForDebug, err := s.triageComponents(ctx); {
+	switch actions, saveForDebug, err := h.triageComponents(ctx, s); {
 	case err != nil:
 		if !mutated {
 			return nil, nil, err
