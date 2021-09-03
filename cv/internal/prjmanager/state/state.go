@@ -15,7 +15,6 @@
 package state
 
 import (
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
@@ -55,7 +54,6 @@ type State struct {
 	LogReasons []prjpb.LogReason
 
 	// Dependencies used to prepare state transitions.
-	CLMutator       *changelist.Mutator
 	PMNotifier      *prjmanager.Notifier
 	RunNotifier     RunNotifier
 	CLPurger        *clpurger.Purger

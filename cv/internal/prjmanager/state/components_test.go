@@ -133,7 +133,6 @@ func TestComponentsActions(t *testing.T) {
 			},
 			PMNotifier:  pmNotifier,
 			RunNotifier: runNotifier,
-			CLMutator:   h.CLMutator,
 		}
 
 		pb := backupPB(state)

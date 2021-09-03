@@ -173,7 +173,6 @@ type pmProcessor struct {
 // LoadState is called to load the state before a transaction.
 func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
 	s := &state.State{
-		CLMutator:       proc.clMutator,
 		PMNotifier:      proc.pmNotifier,
 		RunNotifier:     proc.runNotifier,
 		CLPurger:        proc.clPurger,

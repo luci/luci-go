@@ -180,7 +180,7 @@ func (s *State) triageOneComponent(ctx context.Context, oldC *prjpb.Component, s
 // actOnComponents executes actions on components produced by triageComponents.
 //
 // Expects the state to already be shallow cloned.
-func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEffect, error) {
+func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAction) (SideEffect, error) {
 	// First, create Runs in parallel.
 	// As Run creation may take considerable time, use an earlier deadline to have
 	// enough time to save state for other components.
@@ -193,7 +193,7 @@ func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEf
 				action, rc := action, rc
 				c := s.PB.GetComponents()[action.componentIndex]
 				work <- func() error {
-					err := s.createOneRun(ctxRunCreation, rc, c)
+					err := h.createOneRun(ctxRunCreation, rc, c)
 					if err != nil {
 						atomic.AddInt32(&action.runsFailed, 1)
 						// Log error here since only total errs count will be propagated up
@@ -251,13 +251,13 @@ func (s *State) actOnComponents(ctx context.Context, actions []*cAction) (SideEf
 	}
 }
 
-func (s *State) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prjpb.Component) (err error) {
+func (h *Handler) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prjpb.Component) (err error) {
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 		logging.Errorf(ctx, "caught panic while creating a Run %s\n\n%s", p.Reason, p.Stack)
 		err = errCaughtPanic
 	})
 
-	switch _, err = rc.Create(ctx, s.CLMutator, s.PMNotifier, s.RunNotifier); {
+	switch _, err = rc.Create(ctx, h.CLMutator, h.PMNotifier, h.RunNotifier); {
 	case err == nil:
 		return nil
 	case runcreator.StateChangedTag.In(err):

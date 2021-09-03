@@ -363,7 +363,7 @@ func (h *Handler) ExecDeferred(ctx context.Context, s *State) (_ *State, __ Side
 			}
 			mutated = true
 		}
-		sideEffect, err = s.actOnComponents(ctx, actions)
+		sideEffect, err = h.actOnComponents(ctx, s, actions)
 		if err != nil {
 			return nil, nil, err
 		}
