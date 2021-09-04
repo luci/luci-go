@@ -64,25 +64,23 @@ var errTaskArrivedTooLate = errors.New("task arrived too late")
 
 // ProjectManager implements managing projects.
 type ProjectManager struct {
-	// pmNotifier notifies itself and invokes itself via async TQ tasks.
-	pmNotifier *prjmanager.Notifier
-	// runNotifier notifies Run Manager.
-	runNotifier state.RunNotifier
-
-	clMutator *changelist.Mutator
-	clPurger  *clpurger.Purger
-	clPoller  *poller.Poller
+	tasksBinding prjpb.TasksBinding
+	handler      state.Handler
 }
 
 // New creates a new ProjectManager and registers it for handling tasks created
 // by the given TQ Notifier.
 func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g gerrit.Factory, u *updater.Updater) *ProjectManager {
 	pm := &ProjectManager{
-		pmNotifier:  n,
-		runNotifier: rn,
-		clMutator:   c,
-		clPurger:    clpurger.New(n, g, u),
-		clPoller:    poller.New(n.TasksBinding.TQDispatcher, g, u, n),
+		tasksBinding: n.TasksBinding,
+		handler: state.Handler{
+			CLMutator:       c,
+			PMNotifier:      n,
+			RunNotifier:     rn,
+			CLPurger:        clpurger.New(n, g, u),
+			CLPoller:        poller.New(n.TasksBinding.TQDispatcher, g, u, n),
+			ComponentTriage: triager.Triage,
+		},
 	}
 	n.TasksBinding.ManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
@@ -128,7 +126,7 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 	if retryViaNewTask {
 		// Scheduling new task reduces probability of concurrent tasks in extreme
 		// events.
-		if err := pm.pmNotifier.TasksBinding.Dispatch(ctx, luciProject, time.Time{}); err != nil {
+		if err := pm.tasksBinding.Dispatch(ctx, luciProject, time.Time{}); err != nil {
 			// This should be rare and retry is the best we can do.
 			return err
 		}
@@ -139,11 +137,7 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) error {
 	proc := &pmProcessor{
 		luciProject: luciProject,
-		pmNotifier:  pm.pmNotifier,
-		runNotifier: pm.runNotifier,
-		clMutator:   pm.clMutator,
-		clPurger:    pm.clPurger,
-		clPoller:    pm.clPoller,
+		handler:     &pm.handler,
 	}
 	recipient := prjmanager.EventboxRecipient(ctx, luciProject)
 	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
@@ -159,13 +153,7 @@ func (pm *ProjectManager) processBatch(ctx context.Context, luciProject string) 
 // pmProcessor implements eventbox.Processor.
 type pmProcessor struct {
 	luciProject string
-
-	pmNotifier  *prjmanager.Notifier
-	runNotifier state.RunNotifier
-	clMutator   *changelist.Mutator
-	clPurger    *clpurger.Purger
-	clPoller    *poller.Poller
-
+	handler     *state.Handler
 	// loadedPState is set by LoadState and read by SaveState.
 	loadedPState *prjpb.PState
 }
@@ -399,14 +387,6 @@ func (tr *triageResult) removeCLUpdateNoops() {
 }
 
 func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.State) ([]eventbox.Transition, error) {
-	h := state.Handler{
-		CLMutator:       proc.clMutator,
-		PMNotifier:      proc.pmNotifier,
-		RunNotifier:     proc.runNotifier,
-		CLPurger:        proc.clPurger,
-		CLPoller:        proc.clPoller,
-		ComponentTriage: triager.Triage,
-	}
 	var err error
 	var se state.SideEffect
 	ret := make([]eventbox.Transition, 0, 7)
@@ -424,7 +404,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	// and OnRunsCreated will be read only in the next PM invocation
 	// (see https://crbug.com/1218681 for a concrete example).
 	if len(tr.runsCreated.runs) > 0 {
-		if s, se, err = h.OnRunsCreated(ctx, s, tr.runsCreated.runs); err != nil {
+		if s, se, err = proc.handler.OnRunsCreated(ctx, s, tr.runsCreated.runs); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -435,7 +415,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	if len(tr.runsFinished.runs) > 0 {
-		if s, se, err = h.OnRunsFinished(ctx, s, tr.runsFinished.runs); err != nil {
+		if s, se, err = proc.handler.OnRunsFinished(ctx, s, tr.runsFinished.runs); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -449,7 +429,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	// each of the incomplete Runs to stop. Thus, runsCreated must be processed
 	// before to ensure no Run will be missed.
 	if len(tr.newConfig) > 0 {
-		if s, se, err = h.UpdateConfig(ctx, s); err != nil {
+		if s, se, err = proc.handler.UpdateConfig(ctx, s); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -460,7 +440,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	if len(tr.poke) > 0 {
-		if s, se, err = h.Poke(ctx, s); err != nil {
+		if s, se, err = proc.handler.Poke(ctx, s); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -471,7 +451,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	if len(tr.clsUpdated.clEVersions) > 0 {
-		if s, se, err = h.OnCLsUpdated(ctx, s, tr.clsUpdated.clEVersions); err != nil {
+		if s, se, err = proc.handler.OnCLsUpdated(ctx, s, tr.clsUpdated.clEVersions); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{
@@ -482,7 +462,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	// OnPurgesCompleted may expire purges even without incoming event.
-	if s, se, err = h.OnPurgesCompleted(ctx, s, tr.purgesCompleted.purges); err != nil {
+	if s, se, err = proc.handler.OnPurgesCompleted(ctx, s, tr.purgesCompleted.purges); err != nil {
 		return nil, err
 	}
 	ret = append(ret, eventbox.Transition{
@@ -491,7 +471,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 		TransitionTo: s,
 	})
 
-	if s, se, err = h.ExecDeferred(ctx, s); err != nil {
+	if s, se, err = proc.handler.ExecDeferred(ctx, s); err != nil {
 		return nil, err
 	}
 	return append(ret, eventbox.Transition{
