@@ -548,25 +548,25 @@ func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID 
 }
 
 func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.SubmissionCompleted) (submitted, failed, pending []*run.RunCL) {
-	submittedSet := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
-	failedSet := make(map[common.CLID]struct{}, len(sc.GetClFailures().GetFailures()))
+	submittedSet := common.MakeCLIDsSet(submission.GetSubmittedCls()...)
+	failedSet := make(common.CLIDsSet, len(sc.GetClFailures().GetFailures()))
 	for _, f := range sc.GetClFailures().GetFailures() {
-		failedCLID := common.CLID(f.GetClid())
-		if _, ok := submittedSet[failedCLID]; ok {
-			panic(fmt.Errorf("impossible; cl %d is marked both submitted and failed", failedCLID))
+		if submittedSet.HasI64(f.GetClid()) {
+			panic(fmt.Errorf("impossible; cl %d is marked both submitted and failed", f.GetClid()))
 		}
-		failedSet[failedCLID] = struct{}{}
+		failedSet.AddI64(f.GetClid())
 	}
 
 	submitted = make([]*run.RunCL, 0, len(submittedSet))
 	failed = make([]*run.RunCL, 0, len(failedSet))
 	pending = make([]*run.RunCL, 0, len(cls)-len(submittedSet)-len(failedSet))
 	for _, cl := range cls {
-		if _, ok := submittedSet[cl.ID]; ok {
+		switch {
+		case submittedSet.Has(cl.ID):
 			submitted = append(submitted, cl)
-		} else if _, ok := failedSet[cl.ID]; ok {
+		case failedSet.Has(cl.ID):
 			failed = append(failed, cl)
-		} else {
+		default:
 			pending = append(pending, cl)
 		}
 	}

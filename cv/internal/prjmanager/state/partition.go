@@ -41,7 +41,7 @@ func (s *State) repartition(cat *categorizedCLs) {
 	pcls := make([]*prjpb.PCL, 0, len(s.PB.GetPcls())-len(cat.unused))
 	for _, pcl := range s.PB.GetPcls() {
 		id := common.CLID(pcl.GetClid())
-		if cat.unused.has(id) {
+		if cat.unused.Has(id) {
 			delete(s.pclIndex, id)
 		} else {
 			s.pclIndex[id] = len(pcls)
@@ -69,10 +69,10 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 	})
 	// Active deps of an active CL must be in the same set as the CL.
 	for i, pcl := range s.PB.GetPcls() {
-		if cat.active.hasI64(pcl.GetClid()) {
+		if cat.active.HasI64(pcl.GetClid()) {
 			for _, dep := range pcl.GetDeps() {
 				id := dep.GetClid()
-				if j, exists := s.pclIndex[common.CLID(id)]; exists && cat.active.hasI64(id) {
+				if j, exists := s.pclIndex[common.CLID(id)]; exists && cat.active.HasI64(id) {
 					d.Merge(i, j)
 				}
 			}
@@ -107,7 +107,7 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 		// Check (2) and (3).
 		hasActive := false
 		for _, clid := range clids {
-			if cat.unused.hasI64(clid) {
+			if cat.unused.HasI64(clid) {
 				if len(clids) != 1 {
 					// Note that 2+ CL component which satisfies (1) can't have an unused CL.
 					// Unused CL don't have relation to other CLs, and so wouldn't be grouped
@@ -116,7 +116,7 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 				}
 				return -1, false
 			}
-			if cat.active.hasI64(clid) {
+			if cat.active.HasI64(clid) {
 				hasActive = true
 			}
 		}
@@ -142,7 +142,7 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 	created := make(map[int]*prjpb.Component, d.Count()-len(reused))
 	for index, pcl := range s.PB.GetPcls() {
 		id := pcl.GetClid()
-		if !cat.active.hasI64(id) {
+		if !cat.active.HasI64(id) {
 			if size := d.SizeOf(index); size != 1 {
 				panic(fmt.Errorf("inactive CLs must end up in a disjoint set of their own: %d => %d", id, size))
 			}

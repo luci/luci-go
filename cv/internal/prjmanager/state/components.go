@@ -275,13 +275,13 @@ func (h *Handler) createOneRun(ctx context.Context, rc *runcreator.Creator, c *p
 // Panics in case of problems.
 func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask) {
 	// First, verify individual tasks have expected fields set.
-	m := make(clidsSet, len(ts))
+	m := make(common.CLIDsSet, len(ts))
 	for _, t := range ts {
 		id := t.GetPurgingCl().GetClid()
 		switch {
 		case id == 0:
 			panic(fmt.Errorf("clid must be set"))
-		case m.hasI64(id):
+		case m.HasI64(id):
 			panic(fmt.Errorf("duplicated clid %d", id))
 		case t.GetReasons() == nil:
 			panic(fmt.Errorf("at least 1 reason must be given"))
@@ -291,19 +291,19 @@ func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask
 				panic(fmt.Errorf("Reason #%d is nil", i))
 			}
 		}
-		m.addI64(id)
+		m.AddI64(id)
 	}
 	// Verify only CLs not yet purged are being purged.
 	// NOTE: This iterates all CLs currently being purged, but there should be
 	// very few such CLs compared to the total number of tracked CLs.
 	for _, p := range s.PB.GetPurgingCls() {
-		if m.hasI64(p.GetClid()) {
+		if m.HasI64(p.GetClid()) {
 			panic(fmt.Errorf("can't purge %d CL which is already being purged", p.GetClid()))
 		}
 	}
 	// Verify only CLs from the component are being purged.
 	for _, clid := range c.GetClids() {
-		m.delI64(clid)
+		m.DelI64(clid)
 	}
 	if len(m) > 0 {
 		panic(fmt.Errorf("purging %v CLs outside the component", m))
@@ -417,7 +417,7 @@ func markForTriage(in []*prjpb.Component) []*prjpb.Component {
 	return out
 }
 
-func markForTriageOnChangedPCLs(in []*prjpb.Component, pcls []*prjpb.PCL, changed clidsSet) []*prjpb.Component {
+func markForTriageOnChangedPCLs(in []*prjpb.Component, pcls []*prjpb.PCL, changed common.CLIDsSet) []*prjpb.Component {
 	// For each changed CL `A`, expand changed set to include all CLs `B` such
 	// that B depends on A.
 	reverseDeps := make(map[int64][]int64, len(pcls)) // `A` -> all such `B` CLs
@@ -426,13 +426,13 @@ func markForTriageOnChangedPCLs(in []*prjpb.Component, pcls []*prjpb.PCL, change
 			reverseDeps[dep.GetClid()] = append(reverseDeps[dep.GetClid()], p.GetClid())
 		}
 	}
-	expanded := make(clidsSet, len(changed))
+	expanded := make(common.CLIDsSet, len(changed))
 	var expand func(int64)
 	expand = func(clid int64) {
-		if expanded.hasI64(clid) {
+		if expanded.HasI64(clid) {
 			return
 		}
-		expanded.addI64(clid)
+		expanded.AddI64(clid)
 		for _, revDep := range reverseDeps[clid] {
 			expand(revDep)
 		}
@@ -445,7 +445,7 @@ func markForTriageOnChangedPCLs(in []*prjpb.Component, pcls []*prjpb.PCL, change
 	for i, c := range in {
 		if !c.GetTriageRequired() {
 			for _, clid := range c.GetClids() {
-				if expanded.hasI64(clid) {
+				if expanded.HasI64(clid) {
 					c = c.CloneShallow()
 					c.TriageRequired = true
 				}

@@ -38,22 +38,22 @@ type categorizedCLs struct {
 	//     in project's config.  Eventually Run Manager will cancel the Run,
 	//     resulting in removal of the Run from the PM's State and hence removal
 	//     of the CL from the active set.
-	active clidsSet
+	active common.CLIDsSet
 	// deps CLs are non-active CLs which should be tracked in PCLs because they
 	// are deps of active CLs.
 	//
 	// Similar to active CLs of incomplete Run, these CLs may not even be watched
 	// by this project or be with status=DELETED, but such state should be
 	// temporary.
-	deps clidsSet
+	deps common.CLIDsSet
 	// unused CLs are CLs in PCLs that are neither active nor deps and should be
 	// deleted from PCLs.
-	unused clidsSet
+	unused common.CLIDsSet
 	// unloaded are CLs that are either active or deps but not present in PCLs.
 	//
 	// NOTE: if this is not empty, it means `deps` and `unused` aren't yet final
 	// and may be changed after the `unloaded` CLs are loaded.
-	unloaded clidsSet
+	unloaded common.CLIDsSet
 }
 
 // isActiveStandalonePCL returns true if PCL is active on its own.
@@ -86,44 +86,44 @@ func (s *State) categorizeCLs(ctx context.Context) *categorizedCLs {
 		// Allocate the maps guessing initial size:
 		//  * most PCLs must be active, with very few being pure deps or unused,
 		//  * unloaded come from CreatedRuns, assume 2 CL per Run.
-		active:   make(clidsSet, len(pcls)),
-		deps:     make(clidsSet, 16),
-		unused:   make(clidsSet, 16),
-		unloaded: make(clidsSet, len(s.PB.GetCreatedPruns())*2),
+		active:   make(common.CLIDsSet, len(pcls)),
+		deps:     make(common.CLIDsSet, 16),
+		unused:   make(common.CLIDsSet, 16),
+		unloaded: make(common.CLIDsSet, len(s.PB.GetCreatedPruns())*2),
 	}
 
 	// First, compute all active CLs and if any of them are unloaded.
 	for _, r := range s.PB.GetCreatedPruns() {
 		for _, id := range r.GetClids() {
-			res.active.addI64(id)
+			res.active.AddI64(id)
 			if !s.pclIndex.hasI64(id) {
-				res.unloaded.addI64(id)
+				res.unloaded.AddI64(id)
 			}
 		}
 	}
 	for _, c := range s.PB.GetComponents() {
 		for _, r := range c.GetPruns() {
 			for _, id := range r.GetClids() {
-				res.active.addI64(id)
+				res.active.AddI64(id)
 			}
 		}
 	}
 	for _, pcl := range pcls {
 		id := pcl.GetClid()
 		if isActiveStandalonePCL(pcl, now) {
-			res.active.addI64(id)
+			res.active.AddI64(id)
 		}
 	}
 
 	// Second, compute `deps` and if any of them are unloaded.
 	for _, pcl := range pcls {
-		if res.active.hasI64(pcl.GetClid()) {
+		if res.active.HasI64(pcl.GetClid()) {
 			for _, dep := range pcl.GetDeps() {
 				id := dep.GetClid()
-				if !res.active.hasI64(id) {
-					res.deps.addI64(id)
+				if !res.active.HasI64(id) {
+					res.deps.AddI64(id)
 					if !s.pclIndex.hasI64(id) {
-						res.unloaded.addI64(id)
+						res.unloaded.AddI64(id)
 					}
 				}
 			}
@@ -132,8 +132,8 @@ func (s *State) categorizeCLs(ctx context.Context) *categorizedCLs {
 	// Third, compute `unused` as all unreferenced CLs in PCLs.
 	for _, pcl := range s.PB.GetPcls() {
 		id := pcl.GetClid()
-		if !res.active.hasI64(id) && !res.deps.hasI64(id) {
-			res.unused.addI64(id)
+		if !res.active.HasI64(id) && !res.deps.HasI64(id) {
+			res.unused.AddI64(id)
 		}
 	}
 	return res
@@ -173,7 +173,7 @@ func (s *State) loadActiveIntoPCLs(ctx context.Context, cat *categorizedCLs) err
 		return err
 	}
 	for u := range cat.unloaded {
-		if cat.active.has(u) {
+		if cat.active.Has(u) {
 			panic(fmt.Errorf("%d CL is not loaded but active", u))
 		}
 	}
@@ -198,29 +198,29 @@ func (s *State) loadUnloadedCLsOnce(ctx context.Context, cat *categorizedCLs) er
 	// Consider adding callback to the evalCLsFromDS.
 	for _, pcl := range s.PB.GetPcls() {
 		id := pcl.GetClid()
-		if !cat.unloaded.hasI64(id) {
+		if !cat.unloaded.HasI64(id) {
 			continue
 		}
-		cat.unloaded.delI64(id)
-		if !cat.active.hasI64(id) {
+		cat.unloaded.DelI64(id)
+		if !cat.active.HasI64(id) {
 			// CL was a mere dep before, but its details weren't known.
 			if !isActiveStandalonePCL(pcl, now) {
 				continue // pcl was and remains just a dep.
 			} else {
 				// Promote CL to active.
-				cat.deps.delI64(id)
-				cat.active.addI64(id)
+				cat.deps.DelI64(id)
+				cat.active.AddI64(id)
 			}
 		}
 		// Recurse into deps of a just loaded active CLs.
 		for _, dep := range pcl.GetDeps() {
 			id := dep.GetClid()
-			if !cat.active.hasI64(id) && !cat.deps.hasI64(id) {
-				cat.deps.addI64(id)
-				if cat.unused.hasI64(id) {
-					cat.unused.delI64(id)
+			if !cat.active.HasI64(id) && !cat.deps.HasI64(id) {
+				cat.deps.AddI64(id)
+				if cat.unused.HasI64(id) {
+					cat.unused.DelI64(id)
 				} else {
-					cat.unloaded.addI64(id)
+					cat.unloaded.AddI64(id)
 				}
 			}
 		}

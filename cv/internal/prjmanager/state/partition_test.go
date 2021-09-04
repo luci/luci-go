@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -36,10 +37,10 @@ func TestRepartition(t *testing.T) {
 			RepartitionRequired: true,
 		}}
 		cat := &categorizedCLs{
-			active:   clidsSet{},
-			deps:     clidsSet{},
-			unused:   clidsSet{},
-			unloaded: clidsSet{},
+			active:   common.CLIDsSet{},
+			deps:     common.CLIDsSet{},
+			unused:   common.CLIDsSet{},
+			unloaded: common.CLIDsSet{},
 		}
 
 		defer func() {
@@ -58,7 +59,7 @@ func TestRepartition(t *testing.T) {
 				So(state.PB, ShouldResembleProto, &prjpb.PState{})
 			})
 			Convey("1 active CL in 1 component", func() {
-				cat.active.resetI64(1)
+				cat.active.ResetI64(1)
 				state.PB.Components = []*prjpb.Component{{Clids: []int64{1}}}
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 				pb := backupPB(state)
@@ -68,7 +69,7 @@ func TestRepartition(t *testing.T) {
 				So(state.PB, ShouldResembleProto, pb)
 			})
 			Convey("1 active CL in 1 component needing triage with 1 Run", func() {
-				cat.active.resetI64(1)
+				cat.active.ResetI64(1)
 				state.PB.Components = []*prjpb.Component{{
 					Clids:          []int64{1},
 					Pruns:          []*prjpb.PRun{{Clids: []int64{1}, Id: "id"}},
@@ -85,8 +86,8 @@ func TestRepartition(t *testing.T) {
 
 		Convey("Compacts out unused PCLs", func() {
 			Convey("no existing components", func() {
-				cat.active.resetI64(1, 3)
-				cat.unused.resetI64(2)
+				cat.active.ResetI64(1, 3)
+				cat.unused.ResetI64(2)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
@@ -106,7 +107,7 @@ func TestRepartition(t *testing.T) {
 				})
 			})
 			Convey("wipes out existing component, too", func() {
-				cat.unused.resetI64(1, 2, 3)
+				cat.unused.ResetI64(1, 2, 3)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
@@ -123,8 +124,8 @@ func TestRepartition(t *testing.T) {
 				})
 			})
 			Convey("shrinks existing component, too", func() {
-				cat.active.resetI64(1)
-				cat.unused.resetI64(2)
+				cat.active.ResetI64(1)
+				cat.unused.ResetI64(2)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
@@ -147,7 +148,7 @@ func TestRepartition(t *testing.T) {
 
 		Convey("Creates new components", func() {
 			Convey("1 active CL converted into 1 new component needing triage", func() {
-				cat.active.resetI64(1)
+				cat.active.ResetI64(1)
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 
 				state.repartition(cat)
@@ -160,7 +161,7 @@ func TestRepartition(t *testing.T) {
 				})
 			})
 			Convey("Deps respected during conversion", func() {
-				cat.active.resetI64(1, 2, 3)
+				cat.active.ResetI64(1, 2, 3)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
@@ -188,7 +189,7 @@ func TestRepartition(t *testing.T) {
 
 		Convey("Components splitting works", func() {
 			Convey("Crossing-over 12, 34 => 13, 24", func() {
-				cat.active.resetI64(1, 2, 3, 4)
+				cat.active.ResetI64(1, 2, 3, 4)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
@@ -212,9 +213,9 @@ func TestRepartition(t *testing.T) {
 				})
 			})
 			Convey("Loaded and unloaded deps can be shared by several components", func() {
-				cat.active.resetI64(1, 2, 3)
-				cat.deps.resetI64(4, 5)
-				cat.unloaded.resetI64(5)
+				cat.active.ResetI64(1, 2, 3)
+				cat.deps.ResetI64(4, 5)
+				cat.unloaded.ResetI64(5)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1, Deps: []*changelist.Dep{{Clid: 3}, {Clid: 4}, {Clid: 5}}},
 					{Clid: 2, Deps: []*changelist.Dep{{Clid: 4}, {Clid: 5}}},
@@ -237,7 +238,7 @@ func TestRepartition(t *testing.T) {
 
 		Convey("CreatedRuns are moved into components", func() {
 			Convey("Simple", func() {
-				cat.active.resetI64(1, 2)
+				cat.active.ResetI64(1, 2)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
@@ -259,7 +260,7 @@ func TestRepartition(t *testing.T) {
 				})
 			})
 			Convey("Force-merge 2 existing components", func() {
-				cat.active.resetI64(1, 2)
+				cat.active.ResetI64(1, 2)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
@@ -295,10 +296,10 @@ func TestRepartition(t *testing.T) {
 			// This test adds more test coverage for a busy project where components
 			// are created, split, merged, and CreatedRuns are incorporated during
 			// repartition(), especially likely after a config update.
-			cat.active.resetI64(1, 2, 4, 5, 6)
-			cat.deps.resetI64(7)
-			cat.unused.resetI64(3)
-			cat.unloaded.resetI64(7)
+			cat.active.ResetI64(1, 2, 4, 5, 6)
+			cat.deps.ResetI64(7)
+			cat.unused.ResetI64(3)
+			cat.unloaded.ResetI64(7)
 			state.PB.Pcls = []*prjpb.PCL{
 				{Clid: 1},
 				{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
@@ -404,8 +405,8 @@ func TestPartitionSpecialCases(t *testing.T) {
 			}}
 
 			cat := s0.categorizeCLs(ctx)
-			So(cat.active, ShouldResemble, clidsSet{10: {}, 12: {}})
-			So(cat.deps, ShouldResemble, clidsSet{11: {}})
+			So(cat.active, ShouldResemble, common.CLIDsSet{10: {}, 12: {}})
+			So(cat.deps, ShouldResemble, common.CLIDsSet{11: {}})
 			So(cat.unused, ShouldBeEmpty)
 			So(cat.unloaded, ShouldBeEmpty)
 

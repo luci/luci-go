@@ -107,7 +107,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	// sorted in the same way PCLs and CLs slices in  O(len(PCLs) + len(cls)).
 	oldPCLs := s.PB.GetPcls()
 	newPCLs := make([]*prjpb.PCL, 0, len(oldPCLs)+len(cls))
-	changed := clidsSet{}
+	changed := common.CLIDsSet{}
 	for i, cl := range cls {
 		// Copy all old PCLs before this CL.
 		for len(oldPCLs) > 0 && common.CLID(oldPCLs[0].GetClid()) < cl.ID {
@@ -130,7 +130,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 			// New CL, but not in datastore. Don't add anything to newPCLs.
 			// This weird case was logged by makePCLFromDS already.
 		case pcl != old:
-			changed.add(cl.ID)
+			changed.Add(cl.ID)
 			fallthrough
 		default:
 			newPCLs = append(newPCLs, pcl)

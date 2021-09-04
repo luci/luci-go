@@ -112,8 +112,8 @@ func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
 	if err != nil {
 		return nil, err
 	}
-	submittedSet := common.MakeCLIDs(r.Submission.GetSubmittedCls()...).Set()
-	failedSet := common.MakeCLIDs(r.Submission.GetFailedCls()...).Set()
+	submittedSet := common.MakeCLIDsSet(r.Submission.GetSubmittedCls()...)
+	failedSet := common.MakeCLIDsSet(r.Submission.GetFailedCls()...)
 	gerritChanges := make([]*cvbqpb.GerritChange, len(runCLs))
 	for i, cl := range runCLs {
 		gerritChanges[i] = toGerritChange(cl, submittedSet, failedSet, r.Mode)
@@ -150,7 +150,7 @@ func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
 // toGerritChange creates a GerritChange for the given RunCL.
 //
 // This includes the submit status of the CL.
-func toGerritChange(cl *run.RunCL, submitted, failed map[common.CLID]struct{}, mode run.Mode) *cvbqpb.GerritChange {
+func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.Mode) *cvbqpb.GerritChange {
 	detail := cl.Detail
 	ci := detail.GetGerrit().GetInfo()
 	gc := &cvbqpb.GerritChange{
@@ -169,7 +169,7 @@ func toGerritChange(cl *run.RunCL, submitted, failed map[common.CLID]struct{}, m
 		// list, and failure if it does not.
 		if _, ok := submitted[cl.ID]; ok {
 			gc.SubmitStatus = cvbqpb.GerritChange_SUCCESS
-		} else if _, ok := failed[cl.ID]; ok {
+		} else if failed.Has(cl.ID) {
 			gc.SubmitStatus = cvbqpb.GerritChange_FAILURE
 		} else {
 			gc.SubmitStatus = cvbqpb.GerritChange_PENDING

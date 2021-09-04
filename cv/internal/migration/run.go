@@ -112,11 +112,11 @@ func makeActiveRun(ctx context.Context, r *run.Run) (*migrationpb.ActiveRun, err
 	if err != nil {
 		return nil, err
 	}
-	known := make(map[common.CLID]struct{}, len(r.CLs))
-	allDeps := map[common.CLID]struct{}{}
+	known := make(common.CLIDsSet, len(r.CLs))
+	allDeps := common.CLIDsSet{}
 	mcls := make([]*migrationpb.RunCL, len(runCLs))
 	for i, cl := range runCLs {
-		known[cl.ID] = struct{}{}
+		known.Add(cl.ID)
 		trigger := &migrationpb.RunCL_Trigger{
 			Email:     cl.Trigger.GetEmail(),
 			Time:      cl.Trigger.GetTime(),
@@ -138,7 +138,7 @@ func makeActiveRun(ctx context.Context, r *run.Run) (*migrationpb.ActiveRun, err
 			Deps:    make([]*migrationpb.RunCL_Dep, len(cl.Detail.GetDeps())),
 		}
 		for i, dep := range cl.Detail.GetDeps() {
-			allDeps[common.CLID(dep.GetClid())] = struct{}{}
+			allDeps.AddI64(dep.GetClid())
 			mcl.Deps[i] = &migrationpb.RunCL_Dep{
 				Id: dep.GetClid(),
 			}
@@ -150,7 +150,7 @@ func makeActiveRun(ctx context.Context, r *run.Run) (*migrationpb.ActiveRun, err
 	}
 	var fyiDeps []*migrationpb.RunCL
 	for clid := range allDeps {
-		if _, yes := known[clid]; yes {
+		if known.Has(clid) {
 			continue
 		}
 		fyiDeps = append(fyiDeps, &migrationpb.RunCL{Id: int64(clid)})

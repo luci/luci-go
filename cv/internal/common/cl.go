@@ -77,13 +77,13 @@ func (ids CLIDs) Swap(i int, j int) {
 }
 
 // Set returns a new set of CLIDs.
-func (ids CLIDs) Set() map[CLID]struct{} {
-	if ids == nil {
+func (ids CLIDs) Set() CLIDsSet {
+	if len(ids) == 0 {
 		return nil
 	}
-	ret := make(map[CLID]struct{}, len(ids))
+	ret := make(CLIDsSet, len(ids))
 	for _, id := range ids {
-		ret[id] = struct{}{}
+		ret.Add(id)
 	}
 	return ret
 }
@@ -108,4 +108,51 @@ func MakeCLIDs(ids ...int64) CLIDs {
 		ret[i] = CLID(id)
 	}
 	return ret
+}
+
+// CLIDsSet is convinience type to reduce the boilerplate.
+type CLIDsSet map[CLID]struct{}
+
+// MakeCLIDsSet returns new CLIDsSet from list of clids in int64.
+func MakeCLIDsSet(ids ...int64) CLIDsSet {
+	if len(ids) == 0 {
+		return nil
+	}
+	ret := make(CLIDsSet, len(ids))
+	for _, id := range ids {
+		ret.AddI64(id)
+	}
+	return ret
+}
+
+// Reset resets the set to contain just the given IDs.
+func (s CLIDsSet) Reset(ids ...CLID) {
+	for id := range s {
+		delete(s, CLID(id))
+	}
+	for _, id := range ids {
+		s.Add(id)
+	}
+}
+func (s CLIDsSet) Add(clid CLID) {
+	s[clid] = struct{}{}
+}
+func (s CLIDsSet) Has(clid CLID) bool {
+	_, exists := s[clid]
+	return exists
+}
+func (s CLIDsSet) Del(id CLID) {
+	delete(s, id)
+}
+
+func (s CLIDsSet) AddI64(id int64)      { s.Add(CLID(id)) }
+func (s CLIDsSet) HasI64(id int64) bool { return s.Has(CLID(id)) }
+func (s CLIDsSet) DelI64(id int64)      { s.Del(CLID(id)) }
+func (s CLIDsSet) ResetI64(ids ...int64) {
+	for id := range s {
+		delete(s, CLID(id))
+	}
+	for _, id := range ids {
+		s.AddI64(id)
+	}
 }

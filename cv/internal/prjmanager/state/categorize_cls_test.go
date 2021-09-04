@@ -185,9 +185,9 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   mkClidsSet(cls, 5, 6, 7, 8, 9),
-				deps:     clidsSet{},
+				deps:     common.CLIDsSet{},
 				unused:   mkClidsSet(cls, 12),
-				unloaded: clidsSet{},
+				unloaded: common.CLIDsSet{},
 			})
 			So(state.PB, ShouldResembleProto, pbBefore)
 		})
@@ -203,14 +203,14 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   mkClidsSet(cls, 3, 5, 6),
 				deps:     mkClidsSet(cls, 2),
-				unused:   clidsSet{},
+				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 2, 5, 6),
 			})
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   mkClidsSet(cls, 3, 2, 5, 6),
 				deps:     mkClidsSet(cls, 1),
-				unused:   clidsSet{},
+				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 1),
 			})
 			pb.Pcls = sortPCLs([]*prjpb.PCL{
@@ -239,8 +239,8 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			cat := state.categorizeCLs(ctx)
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   mkClidsSet(cls, 11, 13),
-				deps:     clidsSet{},
-				unused:   clidsSet{},
+				deps:     common.CLIDsSet{},
+				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 11, 13),
 			})
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
@@ -248,7 +248,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				active: mkClidsSet(cls, 11, 13),
 				// 10 isn't in deps because this project has no visibility into CL 11.
 				deps:     mkClidsSet(cls, 12),
-				unused:   clidsSet{},
+				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 12),
 			})
 			pb.Pcls = sortPCLs([]*prjpb.PCL{
@@ -278,17 +278,17 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 
 			cat := state.categorizeCLs(ctx)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active:   clidsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
-				deps:     clidsSet{},
-				unused:   clidsSet{},
-				unloaded: clidsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
+				active:   common.CLIDsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
+				deps:     common.CLIDsSet{},
+				unused:   common.CLIDsSet{},
+				unloaded: common.CLIDsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
 			})
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active:   clidsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
-				deps:     clidsSet{},
-				unused:   clidsSet{},
-				unloaded: clidsSet{},
+				active:   common.CLIDsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
+				deps:     common.CLIDsSet{},
+				unused:   common.CLIDsSet{},
+				unloaded: common.CLIDsSet{},
 			})
 			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[4]),
@@ -319,9 +319,9 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			Convey("standalone submitted CL without a Run is unused", func() {
 				cat := state.categorizeCLs(ctx)
 				exp := &categorizedCLs{
-					active:   clidsSet{},
-					deps:     clidsSet{},
-					unloaded: clidsSet{},
+					active:   common.CLIDsSet{},
+					deps:     common.CLIDsSet{},
+					unloaded: common.CLIDsSet{},
 					unused:   mkClidsSet(cls, 1),
 				}
 				So(cat, ShouldResemble, exp)
@@ -341,9 +341,9 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				cat := state.categorizeCLs(ctx)
 				exp := &categorizedCLs{
 					active:   mkClidsSet(cls, 1),
-					deps:     clidsSet{},
-					unloaded: clidsSet{},
-					unused:   clidsSet{},
+					deps:     common.CLIDsSet{},
+					unloaded: common.CLIDsSet{},
+					unused:   common.CLIDsSet{},
 				}
 				So(cat, ShouldResemble, exp)
 				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
@@ -365,8 +365,8 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				exp := &categorizedCLs{
 					active:   mkClidsSet(cls, 2),
 					deps:     mkClidsSet(cls, 1),
-					unloaded: clidsSet{},
-					unused:   clidsSet{},
+					unloaded: common.CLIDsSet{},
+					unused:   common.CLIDsSet{},
 				}
 				So(cat, ShouldResemble, exp)
 				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
@@ -412,7 +412,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				So(cat, ShouldResemble, &categorizedCLs{
 					active:   mkClidsSet(cls, 1, 2),
 					deps:     mkClidsSet(cls, 4),
-					unloaded: clidsSet{},
+					unloaded: common.CLIDsSet{},
 					unused:   mkClidsSet(cls, 3),
 				})
 			})
@@ -422,10 +422,10 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			cat := state.categorizeCLs(ctx)
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active:   clidsSet{},
-				deps:     clidsSet{},
-				unused:   clidsSet{},
-				unloaded: clidsSet{},
+				active:   common.CLIDsSet{},
+				deps:     common.CLIDsSet{},
+				unused:   common.CLIDsSet{},
+				unloaded: common.CLIDsSet{},
 			})
 		})
 	})

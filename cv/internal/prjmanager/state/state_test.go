@@ -1154,8 +1154,8 @@ func sortPCLs(vs []*prjpb.PCL) []*prjpb.PCL {
 	return vs
 }
 
-func mkClidsSet(cls map[int]*changelist.CL, ids ...int) clidsSet {
-	res := make(clidsSet, len(ids))
+func mkClidsSet(cls map[int]*changelist.CL, ids ...int) common.CLIDsSet {
+	res := make(common.CLIDsSet, len(ids))
 	for _, id := range ids {
 		res[cls[id].ID] = struct{}{}
 	}

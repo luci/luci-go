@@ -74,7 +74,7 @@ func compute(cls []*run.RunCL) ([]*run.RunCL, int, error) {
 		remainingCLs[cl.ID] = cl
 	}
 	brokenDeps := map[brokenDep]struct{}{}
-	cycleDetector := map[common.CLID]struct{}{}
+	cycleDetector := common.CLIDsSet{}
 
 	// visit returns whether a cycle was detected that can't be resolved yet.
 	var visit func(cl *run.RunCL) bool
@@ -82,10 +82,10 @@ func compute(cls []*run.RunCL) ([]*run.RunCL, int, error) {
 		if _, ok := remainingCLs[cl.ID]; !ok {
 			return false
 		}
-		if _, ok := cycleDetector[cl.ID]; ok {
+		if cycleDetector.Has(cl.ID) {
 			return true
 		}
-		cycleDetector[cl.ID] = struct{}{}
+		cycleDetector.Add(cl.ID)
 
 		for _, dep := range cl.Detail.GetDeps() {
 			// TODO(yiwzhang): Strictly speaking, the time complexity for hashtable
@@ -111,7 +111,7 @@ func compute(cls []*run.RunCL) ([]*run.RunCL, int, error) {
 				case changelist.DepKind_SOFT:
 				case changelist.DepKind_HARD:
 					// Can't break it at this level either, backtrack.
-					delete(cycleDetector, cl.ID)
+					cycleDetector.Del(cl.ID)
 					return true
 				default:
 					panic(fmt.Errorf("unknown dep kind %s", dep.GetKind()))
@@ -122,7 +122,7 @@ func compute(cls []*run.RunCL) ([]*run.RunCL, int, error) {
 				break
 			}
 		}
-		delete(cycleDetector, cl.ID)
+		cycleDetector.Del(cl.ID)
 		delete(remainingCLs, cl.ID)
 		ret = append(ret, cl)
 		return false
