@@ -181,10 +181,7 @@ func (h *Handler) OnRunsCreated(ctx context.Context, s *State, created common.Ru
 	// Check if PM is already aware of these Runs.
 	remaining := created.Set()
 	s.PB.IterIncompleteRuns(func(r *prjpb.PRun, _ *prjpb.Component) (stop bool) {
-		id := common.RunID(r.GetId())
-		if _, ok := remaining[id]; ok {
-			delete(remaining, id)
-		}
+		delete(remaining, common.RunID(r.GetId()))
 		return len(remaining) == 0 // stop if nothing left
 	})
 	if len(remaining) == 0 {
