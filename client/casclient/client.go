@@ -108,6 +108,7 @@ func NewLegacy(ctx context.Context, instance string, opts auth.Options, readOnly
 
 	cl, err := client.NewClient(ctx, instance, dialParams, Options(creds)...)
 	if err != nil {
+		logging.Errorf(ctx, "failed to create casclient: %+v", err)
 		return nil, errors.Annotate(err, "failed to create client").Err()
 	}
 	return cl, nil
