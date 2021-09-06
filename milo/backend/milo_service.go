@@ -14,5 +14,14 @@
 
 package backend
 
+import (
+	"context"
+
+	"go.chromium.org/luci/milo/git"
+)
+
 // MiloInternalService implements milopb.MiloInternal
-type MiloInternalService struct{}
+type MiloInternalService struct {
+	// GetGitClient returns a git client for the given context.
+	GetGitClient func(c context.Context) (git.Client, error)
+}

@@ -15,6 +15,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -138,11 +139,14 @@ func TestQueryBlamelist(t *testing.T) {
 	Convey(`TestQueryBlamelist`, t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		datastore.GetTestable(c).Consistent(true)
-		srv := &MiloInternalService{}
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		gitMock := git.NewMockClient(ctrl)
-		c = git.Use(c, gitMock)
+		srv := &MiloInternalService{
+			GetGitClient: func(c context.Context) (git.Client, error) {
+				return gitMock, nil
+			},
+		}
 		c = auth.WithState(c, &authtest.FakeState{Identity: "user"})
 
 		builder1 := &buildbucketpb.BuilderID{

@@ -61,7 +61,11 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	// Fetch one more commit to check whether there are more commits in the
 	// blamelist.
 	opts := &git.LogOptions{Limit: pageSize + 1, WithFiles: true}
-	commits, err := git.Get(ctx).Log(ctx, req.GitilesCommit.Host, req.GitilesCommit.Project, startRev, opts)
+	gitClient, err := s.GetGitClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	commits, err := gitClient.Log(ctx, req.GitilesCommit.Host, req.GitilesCommit.Project, startRev, opts)
 	if err != nil {
 		return nil, err
 	}

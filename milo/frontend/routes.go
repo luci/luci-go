@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/backend"
+	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/middleware"
@@ -161,8 +163,7 @@ func Run(templatePath string) {
 
 	r.GET("/auth-state", baseAuthMW, handleError(getAuthState))
 
-	apiMW := baseMW.Extend(withGitMiddleware)
-	installAPIRoutes(r, apiMW)
+	installAPIRoutes(r, baseMW)
 
 	http.DefaultServeMux.Handle("/", r)
 }
@@ -181,7 +182,15 @@ func installAPIRoutes(r *router.Router, base router.MiddlewareChain) {
 			},
 		},
 	}
-	milopb.RegisterMiloInternalServer(server, &backend.MiloInternalService{})
+	milopb.RegisterMiloInternalServer(server, &backend.MiloInternalService{
+		GetGitClient: func(c context.Context) (git.Client, error) {
+			acls, err := gitacls.FromConfig(c, common.GetSettings(c).SourceAcls)
+			if err != nil {
+				return nil, err
+			}
+			return git.NewClient(acls), nil
+		},
+	})
 
 	discovery.Enable(server)
 	rpcexplorer.Install(r)

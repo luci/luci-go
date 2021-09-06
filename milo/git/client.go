@@ -95,7 +95,12 @@ type Client interface {
 
 // UseACLs returns context with production implementation installed.
 func UseACLs(c context.Context, acls *gitacls.ACLs) context.Context {
-	return Use(c, &implementation{acls: acls})
+	return Use(c, NewClient(acls))
+}
+
+// NewClient returns a new production Client.
+func NewClient(acls *gitacls.ACLs) Client {
+	return &implementation{acls: acls}
 }
 
 // Use returns context with provided Client implementation.
