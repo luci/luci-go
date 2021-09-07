@@ -38,7 +38,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/proto/google/descutil"
+	"go.chromium.org/luci/common/proto/protoc"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -144,7 +147,9 @@ type flags struct {
 	protoDir    string
 	messageName string
 	force       bool
+	verbose     bool
 	importPaths stringlistflag.Flag
+	goModules   stringlistflag.Flag
 }
 
 func parseFlags() (*flags, error) {
@@ -154,9 +159,11 @@ func parseFlags() (*flags, error) {
 	flag.StringVar(&f.PartitioningField, "partitioning-field", "", "Name of a timestamp field to use for table partitioning (beta).")
 	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned.")
 	flag.DurationVar(&f.PartitioningExpiration, "partitioning-expiration", 0, "Expiration for partitions. 0 for no expiration.")
-	flag.Var(luciflag.StringSlice(&f.ClusteringFields), "clustering-field", "Optional, one or more clustering fields. Can be specified multiple times and order is signicant.")
+	flag.Var(luciflag.StringSlice(&f.ClusteringFields), "clustering-field", "Optional, one or more clustering fields. Can be specified multiple times and order is significant.")
 	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message.")
+	flag.Var(&f.goModules, "go-module", "make protos in the given module available in proto import path. Can be specified multiple times.")
 	flag.BoolVar(&f.force, "force", false, "proceed without a user confirmation.")
+	flag.BoolVar(&f.verbose, "verbose", false, "print more information in the log.")
 	// -I matches protoc's flag and its error message suggesting to pass -I.
 	flag.Var(&f.importPaths, "I", "path to directory with the imported .proto file; can be specified multiple times.")
 
@@ -194,9 +201,15 @@ func run(ctx context.Context) error {
 		return errors.Annotate(err, "failed to parse flags").Err()
 	}
 
+	if flags.verbose {
+		ctx = logging.SetLevel(ctx, logging.Debug)
+	} else {
+		ctx = logging.SetLevel(ctx, logging.Error)
+	}
+
 	td := flags.tableDef
 
-	desc, err := loadProtoDescription(flags.protoDir, flags.importPaths)
+	desc, err := loadProtoDescription(ctx, flags.protoDir, flags.goModules, flags.importPaths)
 	if err != nil {
 		return errors.Annotate(err, "failed to load proto descriptor").Err()
 	}
@@ -228,7 +241,8 @@ func run(ctx context.Context) error {
 }
 
 func main() {
-	switch err := run(context.Background()); {
+	ctx := gologger.StdConfig.Use(context.Background())
+	switch err := run(ctx); {
 	case canceledByUser.In(err):
 		os.Exit(1)
 	case err != nil:
@@ -252,69 +266,54 @@ func schemaFromMessage(desc *descriptorpb.FileDescriptorSet, messageName string)
 	return conv.Schema(messageName)
 }
 
-func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, error) {
-	// In Go mode, import paths are all $GOPATH/src directories because we like
-	// go-style absolute import paths,
-	// e.g. "go.chromium.org/luci/logdog/api/logpb/log.proto"
-	var goSources []string
-	inGopath := false
-	grpcProtoPath := ""
-	for _, p := range goPaths() {
-		src := filepath.Join(p, "src")
-		switch info, err := os.Stat(src); {
-		case os.IsNotExist(err):
+// checkGoMode returns true if `go` executable is in PATH and `dir` is in
+// a Go module.
+//
+// Note that GOPATH mode is not supported. Returns an error if it sees GOPATH
+// env var.
+func checkGoMode(dir string) (bool, error) {
+	cmd := exec.Command("go", "list", "-m")
+	cmd.Dir = dir
+	buf, err := cmd.CombinedOutput()
+	if err == nil {
+		// When `dir` is not a Go package, `go -list -m` returns
+		// "command-line-arguments". See https://github.com/golang/go/issues/36793.
+		return strings.TrimSpace(string(buf)) != "command-line-arguments", nil
+	}
+	if os.Getenv("GO111MODULE") != "off" && os.Getenv("GOPATH") != "" {
+		return false, errors.Reason("GOPATH mode is not supported").Err()
+	}
+	return false, nil
+}
 
-		case err != nil:
+// prepInputs prepares inputs for protoc depending on Go vs non-Go mode.
+func prepInputs(ctx context.Context, dir string, goModules, importPaths []string) (*protoc.StagedInputs, error) {
+	useGo := len(goModules) > 0
+	if !useGo {
+		var err error
+		if useGo, err = checkGoMode(dir); err != nil {
 			return nil, err
-
-		case !info.IsDir():
-
-		default:
-			goSources = append(goSources, src)
-			// note: does not respect case insensitive file systems (e.g. on windows)
-			inGopath = inGopath || strings.HasPrefix(dir, src)
-
-			grpcPath := filepath.Join(src, "go.chromium.org", "luci", "grpc", "proto")
-			if info, err := os.Stat(grpcPath); err == nil && info.IsDir() {
-				grpcProtoPath = grpcPath
-			}
 		}
 	}
-
-	switch {
-	case !inGopath:
-		// Python mode.
-
-		// loadProtoDescription passes absolute paths to .proto files,
-		// so unless we pass -I with a directory containing them,
-		// protoc will complain. Do that for the user.
-		return append([]string{dir}, userDefinedImportPaths...), nil
-
-	case len(userDefinedImportPaths) > 0:
-		return nil, fmt.Errorf(
-			"%q is in $GOPATH. "+
-				"Please do not use -I flag. "+
-				"Use go-style absolute paths to imported .proto files, "+
-				"e.g. github.com/user/repo/path/to/file.proto", dir)
-	default:
-		importPaths := goSources
-
-		// Include gRPC protos.
-		if grpcProtoPath != "" {
-			importPaths = append(importPaths, grpcProtoPath)
-		}
-		return importPaths, nil
+	if useGo {
+		logging.Infof(ctx, "Running in Go mode: importing *.proto from Go source tree")
+		return protoc.StageGoInputs(ctx, dir, goModules, importPaths)
 	}
+	logging.Infof(ctx, "Running in generic mode: importing *.proto from explicitly given paths only")
+	return protoc.StageGenericInputs(ctx, dir, importPaths)
 }
 
 // loadProtoDescription compiles .proto files in the dir
 // and returns their descriptor.
-func loadProtoDescription(dir string, importPaths []string) (*descriptorpb.FileDescriptorSet, error) {
-	dir, err := filepath.Abs(dir)
+func loadProtoDescription(ctx context.Context, dir string, goModules, importPaths []string) (*descriptorpb.FileDescriptorSet, error) {
+	// Stage all requested Go modules under a single root.
+	inputs, err := prepInputs(ctx, dir, goModules, importPaths)
 	if err != nil {
-		return nil, errors.Annotate(err, "could make path %q absolute", dir).Err()
+		return nil, err
 	}
+	defer inputs.Cleanup()
 
+	// Prep the temp directory for the resulting descriptor file.
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, err
@@ -322,34 +321,16 @@ func loadProtoDescription(dir string, importPaths []string) (*descriptorpb.FileD
 	defer os.RemoveAll(tempDir)
 	descFile := filepath.Join(tempDir, "desc")
 
-	importPaths, err = protoImportPaths(dir, importPaths)
+	// Compile protos to get the descriptor.
+	err = protoc.Compile(ctx, &protoc.CompileParams{
+		Inputs:              inputs,
+		OutputDescriptorSet: descFile,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	args := []string{
-		"--descriptor_set_out=" + descFile,
-		"--include_imports",
-		"--include_source_info",
-	}
-	for _, p := range importPaths {
-		args = append(args, "-I="+p)
-	}
-	protoFiles, err := filepath.Glob(filepath.Join(dir, "*.proto"))
-	if err != nil {
-		return nil, err
-	}
-	if len(protoFiles) == 0 {
-		return nil, fmt.Errorf("no .proto files found in directory %q", dir)
-	}
-	args = append(args, protoFiles...)
-
-	protoc := exec.Command("protoc", args...)
-	protoc.Stderr = os.Stderr
-	if err := protoc.Run(); err != nil {
-		return nil, errors.Annotate(err, "protoc run failed").Err()
-	}
-
+	// Read the resulting descriptor.
 	descBytes, err := ioutil.ReadFile(descFile)
 	if err != nil {
 		return nil, err
@@ -357,14 +338,6 @@ func loadProtoDescription(dir string, importPaths []string) (*descriptorpb.FileD
 	var desc descriptorpb.FileDescriptorSet
 	err = proto.Unmarshal(descBytes, &desc)
 	return &desc, err
-}
-
-func goPaths() []string {
-	gopath := strings.TrimSpace(os.Getenv("GOPATH"))
-	if gopath == "" {
-		return nil
-	}
-	return strings.Split(gopath, string(filepath.ListSeparator))
 }
 
 // confirm asks for a user confirmation for an action, with No as default.

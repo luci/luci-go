@@ -31,4 +31,5 @@ import (
 	_ "go.chromium.org/luci/grpc/cmd/svcmux"
 	_ "go.chromium.org/luci/tools/cmd/apigen"
 	_ "go.chromium.org/luci/tools/cmd/assets"
+	_ "go.chromium.org/luci/tools/cmd/bqschemaupdater"
 )
