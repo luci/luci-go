@@ -31,12 +31,12 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 //
 // RPC: see Builds service for build creation and retrieval.
 // Some Build fields are marked as excluded from responses by default.
-// Use build_fields request field to specify that a field must be included.
+// Use "mask" request field to specify that a field must be included.
 //
-// BigQuery: this message also defines schema of a BigQuery table of completed builds.
-// A BigQuery row is inserted soon after build ends, i.e. a row represents a state of
-// a build at completion time and does not change after that.
-// All fields are included.
+// BigQuery: this message also defines schema of a BigQuery table of completed
+// builds. A BigQuery row is inserted soon after build ends, i.e. a row
+// represents a state of a build at completion time and does not change after
+// that. All fields are included.
 //
 // Next id: 30.
 message Build {

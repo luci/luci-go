@@ -16,6 +16,7 @@ import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/notification.proto";
+import "go.chromium.org/luci/common/proto/structmask/structmask.proto";
 
 // Manages builds.
 //
@@ -28,7 +29,7 @@ service Builds {
   // Gets a build.
   //
   // By default the returned build does not include all fields.
-  // See GetBuildRequest.fields.
+  // See GetBuildRequest.mask.
   //
   // Buildbot: if the specified build is a buildbot build, converts it to Build
   // message with the following rules:
@@ -78,6 +79,9 @@ message GetBuildRequest {
   int32 build_number = 3;
 
   // Fields to include in the response.
+  //
+  // DEPRECATED: Use mask instead.
+  //
   // If not set, the default mask is used, see Build message comments for the
   // list of fields returned by default.
   //
@@ -85,7 +89,13 @@ message GetBuildRequest {
   // https://chromium.googlesource.com/infra/luci/luci-py/+/f9ae69a37c4bdd0e08a8b0f7e123f6e403e774eb/appengine/components/components/protoutil/field_masks.py#7
   // In particular, if the client needs only some output properties, they
   // can be requested with paths "output.properties.fields.foo".
-  google.protobuf.FieldMask fields = 100;
+  google.protobuf.FieldMask fields = 100 [deprecated = true];
+
+  // What portion of the Build message to return.
+  //
+  // If not set, the default mask is used, see Build message comments for the
+  // list of fields returned by default.
+  BuildMask mask = 101;
 }
 
 // A request message for SearchBuilds rpc.
@@ -94,9 +104,18 @@ message SearchBuildsRequest {
   BuildPredicate predicate = 1;
 
   // Fields to include in the response, see GetBuildRequest.fields.
+  //
+  // DEPRECATED: Use mask instead.
+  //
   // Note that this applies to the response, not each build, so e.g. steps must
   // be requested with a path "builds.*.steps".
-  google.protobuf.FieldMask fields = 100;
+  google.protobuf.FieldMask fields = 100 [deprecated = true];
+
+  // What portion of the Build message to return.
+  //
+  // If not set, the default mask is used, see Build message comments for the
+  // list of fields returned by default.
+  BuildMask mask = 103;
 
   // Number of builds to return.
   // Defaults to 100.
@@ -185,7 +204,15 @@ message UpdateBuildRequest {
   google.protobuf.FieldMask update_mask = 2;
 
   // Fields to include in the response. See also GetBuildRequest.fields.
-  google.protobuf.FieldMask fields = 100;
+  //
+  // DEPRECATED: Use mask instead.
+  google.protobuf.FieldMask fields = 100 [deprecated = true];
+
+  // What portion of the Build message to return.
+  //
+  // If not set, the default mask is used, see Build message comments for the
+  // list of fields returned by default.
+  BuildMask mask = 101;
 }
 
 // A request message for ScheduleBuild rpc.
@@ -299,7 +326,15 @@ message ScheduleBuildRequest {
   NotificationConfig notify = 12;
 
   // Fields to include in the response. See also GetBuildRequest.fields.
-  google.protobuf.FieldMask fields = 100;
+  //
+  // DEPRECATED: Use mask instead.
+  google.protobuf.FieldMask fields = 100 [deprecated = true];
+
+  // What portion of the Build message to return.
+  //
+  // If not set, the default mask is used, see Build message comments for the
+  // list of fields returned by default.
+  BuildMask mask = 101;
 
   // Value for Build.critical.
   Trinary critical = 13;
@@ -370,13 +405,48 @@ message CancelBuildRequest {
   string summary_markdown = 2;
 
   // Fields to include in the response. See also GetBuildRequest.fields.
-  google.protobuf.FieldMask fields = 100;
+  //
+  // DEPRECATED: Use mask instead.
+  google.protobuf.FieldMask fields = 100 [deprecated = true];
+
+  // What portion of the Build message to return.
+  //
+  // If not set, the default mask is used, see Build message comments for the
+  // list of fields returned by default.
+  BuildMask mask = 101;
+}
+
+// Defines a subset of Build fields and properties to return.
+message BuildMask {
+  // Fields of the Build proto to include.
+  //
+  // Follows the standard FieldMask semantics as documented at e.g.
+  // https://pkg.go.dev/google.golang.org/protobuf/types/known/fieldmaskpb.
+  //
+  // If not set, the default mask is used, see Build message comments for the
+  // list of fields returned by default.
+  google.protobuf.FieldMask fields = 1;
+
+  // Defines a subset of `input.properties` to return.
+  //
+  // When not empty, implicitly adds the corresponding field to `fields`.
+  repeated structmask.StructMask input_properties = 2;
+
+  // Defines a subset of `output.properties` to return.
+  //
+  // When not empty, implicitly adds the corresponding field to `fields`.
+  repeated structmask.StructMask output_properties = 3;
+
+  // Defines a subset of `infra.buildbucket.requested_properties` to return.
+  //
+  // When not empty, implicitly adds the corresponding field to `fields`.
+  repeated structmask.StructMask requested_properties = 4;
 }
 
 // A build predicate.
 //
 // At least one of the following fields is required: builder, gerrit_changes and
-// git_commits..
+// git_commits.
 // If a field value is empty, it is ignored, unless stated otherwise.
 message BuildPredicate {
   // A build must be in this builder.
