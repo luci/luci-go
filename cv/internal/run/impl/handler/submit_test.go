@@ -861,7 +861,8 @@ func TestSubmitter(t *testing.T) {
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)) // len(s.clids) SubmitRevision calls
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 				&submitpb.SubmissionCompleted{
-					Result: submitpb.SubmissionResult_SUCCEEDED,
+					Result:                submitpb.SubmissionResult_SUCCEEDED,
+					QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
 				},
 			)
 		})
@@ -881,7 +882,8 @@ func TestSubmitter(t *testing.T) {
 				So(s.submit(ctx), ShouldBeNil)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&submitpb.SubmissionCompleted{
-						Result: submitpb.SubmissionResult_FAILED_PERMANENT,
+						Result:                submitpb.SubmissionResult_FAILED_PERMANENT,
+						QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
 					},
 				)
 				So(log, memlogger.ShouldHaveLog, logging.Error, "BUG: run no longer holds submit queue, currently held by")
@@ -909,6 +911,7 @@ func TestSubmitter(t *testing.T) {
 								},
 							},
 						},
+						QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
 					},
 				)
 			})
@@ -937,6 +940,7 @@ func TestSubmitter(t *testing.T) {
 								},
 							},
 						},
+						QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
 					},
 				)
 			})
@@ -958,7 +962,8 @@ func TestSubmitter(t *testing.T) {
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)+1) // 1 extra getChange call
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 				&submitpb.SubmissionCompleted{
-					Result: submitpb.SubmissionResult_SUCCEEDED,
+					Result:                submitpb.SubmissionResult_SUCCEEDED,
+					QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
 				},
 			)
 		})

@@ -181,15 +181,25 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		return &Result{State: rs}, nil
 	case status != commonpb.Run_SUBMITTING:
 		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
+	}
+
+	rs = rs.ShallowCopy()
+	if sc.GetQueueReleaseTimestamp() != nil {
+		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+			Time: sc.GetQueueReleaseTimestamp(),
+			Kind: &run.LogEntry_ReleasedSubmitQueue_{
+				ReleasedSubmitQueue: &run.LogEntry_ReleasedSubmitQueue{},
+			},
+		})
+	}
+	switch {
 	case sc.GetResult() == submitpb.SubmissionResult_SUCCEEDED:
-		rs = rs.ShallowCopy()
 		se := impl.endRun(ctx, rs, commonpb.Run_SUCCEEDED)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,
 		}, nil
 	case sc.GetResult() == submitpb.SubmissionResult_FAILED_TRANSIENT:
-		rs = rs.ShallowCopy()
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 			Time: timestamppb.New(clock.Now(ctx)),
 			Kind: &run.LogEntry_SubmissionFailure_{
@@ -200,7 +210,6 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		})
 		return impl.tryResumeSubmission(ctx, rs, sc)
 	case sc.GetResult() == submitpb.SubmissionResult_FAILED_PERMANENT:
-		rs = rs.ShallowCopy()
 		if clFailures := sc.GetClFailures(); clFailures != nil {
 			failedCLs := make([]int64, len(clFailures.GetFailures()))
 			for i, f := range clFailures.GetFailures() {
@@ -690,6 +699,7 @@ func (s submitter) endSubmission(ctx context.Context, sc *submitpb.SubmissionCom
 				return innerErr
 			}
 		}
+		sc.QueueReleaseTimestamp = timestamppb.New(now)
 		if innerErr = s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, false); innerErr != nil {
 			return innerErr
 		}

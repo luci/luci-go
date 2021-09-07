@@ -18,10 +18,12 @@ package cv.internal.run.commonpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/run/commonpb;commonpb";
 
+import "google/protobuf/timestamp.proto";
 
 message SubmissionCompleted {
     // Result of this submission.
     SubmissionResult result = 1;
+    google.protobuf.Timestamp queue_release_timestamp = 5;
 
     message CLSubmissionFailure {
       int64 clid = 1; // Required
