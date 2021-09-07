@@ -82,20 +82,6 @@ func List(ctx context.Context, r Recipient) (Events, error) {
 	}
 }
 
-// ErrContention indicates Datastore contention, usually on the mailbox
-// recipient entity itself.
-var ErrContention = errors.New("Datastore Contention")
-
-// IsErrContention checks if error, possibly wrapped, is ErrContention.
-func IsErrContention(err error) bool {
-	ret := false
-	errors.WalkLeaves(err, func(e error) bool {
-		ret = (e == ErrContention)
-		return !ret // return false means stop traversing.
-	})
-	return ret
-}
-
 // ProcessBatch reliably processes outstanding events, while transactionally modifying state
 // and performing arbitrary side effects.
 //
@@ -103,7 +89,7 @@ func IsErrContention(err error) bool {
 //  - a slice of non-nil post process functions which SHOULD be executed
 //    immediately after calling this function. Those are generally extra work
 //    that needs to be done as the result of state modification.
-//  - error while processing events. Returns wrapped ErrContention
+//  - error while processing events. Tags the error with common.DSContentionTag
 //    if entity's EVersion has changed or there is contention on Datastore
 //    entities involved in a transaction.
 func ProcessBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) ([]PostProcessFn, error) {
@@ -112,6 +98,9 @@ func ProcessBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 	span.Attribute("recipient", r.MonitoringString)
 	defer func() { span.End(err) }()
 	postProcessFn, err := processBatch(ctx, r, p, maxEvents)
+	if common.IsDatastoreContention(err) {
+		err = common.DSContentionTag.Apply(err)
+	}
 	return postProcessFn, err
 }
 
@@ -162,15 +151,13 @@ func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 		case err != nil:
 			return err
 		case latestEV != expectedEV:
-			return errors.Annotate(ErrContention, "EVersion read %d, but expected %d", latestEV, expectedEV).Tag(transient.Tag).Err()
+			return errors.Reason(
+				"Datastore contention: EVersion read %d, but expected %d", latestEV, expectedEV,
+			).Tag(transient.Tag).Tag(common.DSContentionTag).Err()
 		}
 
 		popOp, err := d.BeginPop(ctx, listing)
-		switch {
-		case err == nil:
-		case common.IsDatastoreContention(err):
-			return errors.Annotate(ErrContention, "failed to start a mutation").Err()
-		case err != nil:
+		if err != nil {
 			return errors.Annotate(err, "failed to BeginPop").Err()
 		}
 
@@ -193,11 +180,10 @@ func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 		}
 		return dsset.FinishPop(ctx, popOp)
 	}, nil)
+
 	switch {
 	case innerErr != nil:
 		return nil, innerErr
-	case common.IsDatastoreContention(err):
-		return nil, errors.Annotate(ErrContention, "failed to commit mutation: %s", err).Tag(transient.Tag).Err()
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to commit mutation").Tag(transient.Tag).Err()
 	default:

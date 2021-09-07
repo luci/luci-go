@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -379,7 +380,7 @@ func TestEventboxFails(t *testing.T) {
 				return 1, nil
 			}
 			ppfns, err = ProcessBatch(ctx, recipient, p, limit)
-			So(IsErrContention(err), ShouldBeTrue)
+			So(common.DSContentionTag.In(err), ShouldBeTrue)
 			So(ppfns, ShouldBeEmpty)
 			So(firstSideEffectCalled, ShouldBeFalse)
 		})

@@ -93,10 +93,10 @@ func New(
 			return common.TQIfy{
 				KnownRetry: []error{
 					handler.ErrTransientSubmissionFailure,
-					eventbox.ErrContention,
 				},
 				KnownIgnoreTags: []errors.BoolTag{
 					cancel.ErrPreconditionFailedTag,
+					common.DSContentionTag,
 					ignoreErrTag,
 				},
 			}.Error(ctx, err)

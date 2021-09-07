@@ -88,8 +88,9 @@ func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g 
 			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			err := pm.manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{
-				KnownIgnore:    []error{errTaskArrivedTooLate, eventbox.ErrContention},
-				KnownRetryTags: []errors.BoolTag{runcreator.StateChangedTag},
+				KnownIgnore:     []error{errTaskArrivedTooLate},
+				KnownIgnoreTags: []errors.BoolTag{common.DSContentionTag},
+				KnownRetryTags:  []errors.BoolTag{runcreator.StateChangedTag},
 			}.Error(ctx, err)
 		},
 	)
@@ -117,7 +118,7 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 		processErr = errTaskArrivedTooLate
 	} else {
 		processErr = pm.processBatch(ctx, luciProject)
-		if eventbox.IsErrContention(processErr) {
+		if common.DSContentionTag.In(processErr) {
 			logging.Warningf(ctx, "Datastore contention; scheduling next task instead")
 			retryViaNewTask = true
 		}

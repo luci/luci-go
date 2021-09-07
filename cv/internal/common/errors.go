@@ -227,12 +227,21 @@ func matchesErrorTags(err error, knownTags ...errors.BoolTag) bool {
 	return false
 }
 
+// DSContentionTag when set indicates Datastore contention.
+//
+// It's set on errors by parts of CV which are especially prone to DS contention
+// to reduce noise in logs and for more effective retries.
+var DSContentionTag = errors.BoolTag{Key: errors.NewTagKey("Datastore Contention")}
+
 // IsDatastoreContention is best-effort detection of transactions aborted due to
 // pessimistic concurrency control of Datastore backed by Firestore.
 //
 // This is fragile, because it relies on undocumented but likely rarely changed
 // English description of an error.
 func IsDatastoreContention(err error) bool {
+	if DSContentionTag.In(err) {
+		return true
+	}
 	ret := false
 	errors.WalkLeaves(err, func(leaf error) bool {
 		if leaf == datastore.ErrConcurrentTransaction {
