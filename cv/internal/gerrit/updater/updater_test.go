@@ -510,9 +510,9 @@ func TestUpdateCLWorks(t *testing.T) {
 				dep := getCL(ctx, gHost, gChange)
 				So(dep, ShouldNotBeNil)
 				So(dep.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessUnknown)
-				depKind := changelist.DepKind_SOFT
-				if gChange == 122 {
-					depKind = changelist.DepKind_HARD
+				depKind := changelist.DepKind_HARD
+				if gChange == 101 {
+					depKind = changelist.DepKind_SOFT
 				}
 				expectedDeps = append(expectedDeps, &changelist.Dep{Clid: int64(dep.ID), Kind: depKind})
 			}

@@ -440,9 +440,6 @@ type GerritGitDep struct {
 	//   In this case, Gerrit's related changes for D1 will still return A1,B1,C1,
 	//   which CV interprets as C must be landed before D, while B and A should
 	//   be landed before D.
-	//
-	// TODO(tandrii): this is replicating existing CQDaemon logic. I think
-	// it'd be reasonable to treat all (A,B,C) as MUST BE submitted before D.
 	Immediate bool `protobuf:"varint,2,opt,name=immediate,proto3" json:"immediate,omitempty"`
 }
 

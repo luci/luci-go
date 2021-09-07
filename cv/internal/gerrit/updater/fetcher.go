@@ -708,10 +708,9 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 func (f *fetcher) depsToExternalIDs() (map[changelist.ExternalID]changelist.DepKind, error) {
 	cqdeps := f.toUpdate.Snapshot.GetGerrit().GetSoftDeps()
 	gitdeps := f.toUpdate.Snapshot.GetGerrit().GetGitDeps()
-	// Git deps that are immediate parents of the current CL are HARD deps.
-	// Since arbitrary Cq-Depend deps may duplicate those of Git,
-	// avoid accidental downgrading from HARD to SOFT dep by processing Cq-Depend
-	// first and Git deps second.
+	// Git deps are HARD deps. Since arbitrary Cq-Depend deps may duplicate those
+	// of Git, avoid accidental downgrading from HARD to SOFT dep by processing
+	// Cq-Depend first and Git deps second.
 	eids := make(map[changelist.ExternalID]changelist.DepKind, len(cqdeps)+len(gitdeps))
 	for _, dep := range cqdeps {
 		eid, err := changelist.GobID(dep.Host, dep.Change)
@@ -725,11 +724,7 @@ func (f *fetcher) depsToExternalIDs() (map[changelist.ExternalID]changelist.DepK
 		if err != nil {
 			return nil, err
 		}
-		kind := changelist.DepKind_SOFT
-		if dep.Immediate {
-			kind = changelist.DepKind_HARD
-		}
-		eids[eid] = kind
+		eids[eid] = changelist.DepKind_HARD
 	}
 	return eids, nil
 }
