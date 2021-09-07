@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
+	submitpb "go.chromium.org/luci/cv/internal/run/commonpb"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -182,16 +183,16 @@ func TestRunManager(t *testing.T) {
 			{
 				&eventpb.Event{
 					Event: &eventpb.Event_SubmissionCompleted{
-						SubmissionCompleted: &eventpb.SubmissionCompleted{
-							Result: eventpb.SubmissionResult_SUCCEEDED,
+						SubmissionCompleted: &submitpb.SubmissionCompleted{
+							Result: submitpb.SubmissionResult_SUCCEEDED,
 						},
 					},
 				},
 				func(ctx context.Context) error {
 					return notifier.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_SubmissionCompleted{
-							SubmissionCompleted: &eventpb.SubmissionCompleted{
-								Result: eventpb.SubmissionResult_SUCCEEDED,
+							SubmissionCompleted: &submitpb.SubmissionCompleted{
+								Result: submitpb.SubmissionResult_SUCCEEDED,
 							},
 						},
 					})
@@ -464,7 +465,7 @@ func (fh *fakeHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, cl
 	}, nil
 }
 
-func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*handler.Result, error) {
+func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *submitpb.SubmissionCompleted) (*handler.Result, error) {
 	fh.addInvocation("OnSubmissionCompleted")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),

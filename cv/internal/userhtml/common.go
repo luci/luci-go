@@ -88,8 +88,8 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				return changelist.ExternalID(eid).MustURL()
 			},
 			// Runlog specific, see run_details.go.
-			"LogTypeString":  logTypeString,
-			"LogMessage":     logMessage,
+			"LogTypeString": logTypeString,
+
 			"UITryjob":       makeUITryjob,
 			"ByTryjobStatus": groupTryjobsByStatus,
 		},

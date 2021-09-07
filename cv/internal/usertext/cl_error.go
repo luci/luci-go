@@ -261,7 +261,7 @@ var tmplTooManyDeps = tmplMust(`
 var tmplReusedTrigger = tmplMust(`
 {{CQ_OR_CV}} can't process the CL because it has previously completed a Run ({{.Run | printf "%q"}}) triggered by the same vote(s).
 
-This may happens in rare circumstances such as moving a Gerrit Change to a new branch, abandoning & restoring the CL during an ongoing CQ Run, or when different users vote differently on a CQ label.
+This may happen in rare circumstances such as moving a Gerrit Change to a new branch, abandoning & restoring the CL during an ongoing CQ Run, or when different users vote differently on a CQ label.
 
 Please re-trigger the CQ if neccessary.
 `)

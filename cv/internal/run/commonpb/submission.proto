@@ -1,0 +1,65 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.internal.run.commonpb;
+
+option go_package = "go.chromium.org/luci/cv/internal/run/commonpb;commonpb";
+
+
+message SubmissionCompleted {
+    // Result of this submission.
+    SubmissionResult result = 1;
+
+    message CLSubmissionFailure {
+      int64 clid = 1; // Required
+      string message = 2; // Required
+    }
+
+    message CLSubmissionFailures {
+      repeated CLSubmissionFailure failures = 1;
+    }
+
+    oneof failure_reason {
+      // Deprecated. Use `cl_failures` instead.
+      //
+      // TODO(crbug/1227523): delete after no event has this field set.
+      CLSubmissionFailure cl_failure = 2 [deprecated = true];
+      // Submission deadline is exceeded. Must be permanent failure.
+      bool timeout = 3;
+      // CLs that fail to submit. Could be transient or permanent.
+      //
+      // As of June 2021, CLs are submitted serially and submitter returns
+      // immediately upon failure so `cl_failures` will have only one entry.
+      // However, submitter may report multiple CL submission failures in the
+      // future (e.g. CV supports parallel CL submission or CV submits a CL
+      // stack in one RPC).
+      CLSubmissionFailures cl_failures = 4;
+    }
+  }
+
+enum SubmissionResult {
+  SUBMISSION_RESULT_UNSPECIFIED = 0;
+  // All CLs have been submitted successfully.
+  SUCCEEDED = 1;
+  // Encountered transient failure.
+  //
+  // RM should retry if the deadline hasn't been exceeded.
+  FAILED_TRANSIENT = 2;
+  // Encountered permanent failure.
+  //
+  // For example, lack of submit permission or experienced merge conflict.
+  FAILED_PERMANENT = 3;
+}

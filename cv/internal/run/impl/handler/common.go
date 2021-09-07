@@ -20,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -47,7 +49,14 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st commonpb.Ru
 	}
 
 	rs.Run.Status = st
-	rs.Run.EndTime = clock.Now(ctx).UTC()
+	now := clock.Now(ctx)
+	rs.Run.EndTime = now.UTC()
+	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+		Time: timestamppb.New(now),
+		Kind: &run.LogEntry_RunEnded_{
+			RunEnded: &run.LogEntry_RunEnded{},
+		},
+	})
 	rid := rs.Run.ID
 
 	return eventbox.Chain(

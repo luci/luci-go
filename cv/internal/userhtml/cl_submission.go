@@ -1,0 +1,100 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package userhtml
+
+import (
+	"fmt"
+	"strings"
+
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/commonpb"
+)
+
+// StringifySubmissionSuccesses composes a message indicating the urls of the CLs
+// that were just submitted, and the number of pending CLs.
+func StringifySubmissionSuccesses(clidToURL map[common.CLID]string, v *run.LogEntry_CLSubmitted, all int64) string {
+	var sb strings.Builder
+	currentlySubmitted := common.MakeCLIDs(v.NewlySubmittedCls...)
+	switch len(currentlySubmitted) {
+	case 0:
+		sb.WriteString("No CLs were submitted successfully")
+	case 1:
+		if _, err := fmt.Fprintf(&sb, "CL %s was submitted successfully", clidToURL[currentlySubmitted[0]]); err != nil {
+			panic(err)
+		}
+	default:
+		urls := make([]string, 0, len(currentlySubmitted))
+		for _, clid := range currentlySubmitted {
+			urls = append(urls, clidToURL[clid])
+		}
+		if _, err := fmt.Fprintf(&sb, "CLs %s were submitted successfully", listify(urls)); err != nil {
+			panic(err)
+		}
+	}
+	if _, err := fmt.Fprintf(&sb, "\n%d out of %d pending", all-v.TotalSubmitted, all); err != nil {
+		panic(err)
+	}
+	return sb.String()
+}
+
+// StringifySubmissionFailureReason makes a human-readable message detailing
+// the reason for the failure of this submission.
+func StringifySubmissionFailureReason(clidToURL map[common.CLID]string, sc *commonpb.SubmissionCompleted) string {
+	var sb strings.Builder
+	if sc.GetFailureReason() != nil {
+		switch sc.GetFailureReason().(type) {
+		case *commonpb.SubmissionCompleted_Timeout:
+			return "Timeout"
+		case *commonpb.SubmissionCompleted_ClFailure:
+			return "" // deprecated.
+		case *commonpb.SubmissionCompleted_ClFailures:
+			msg, err := sFormatCLSubmissionFailures(clidToURL, sc.GetClFailures())
+			if err != nil {
+				panic(err)
+			}
+			sb.WriteString(msg)
+		}
+	}
+	return sb.String()
+}
+
+func listify(cls []string) string {
+	var sb strings.Builder
+	for i, v := range cls {
+		if i == len(cls)-1 && len(cls) > 1 {
+			sb.WriteString(" and ")
+		} else if i > 0 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(v)
+	}
+	sb.WriteString(" ")
+	return sb.String()
+}
+
+// sFormatCLSubmissionFailures returns a string with the messages for cl submission failures.
+func sFormatCLSubmissionFailures(clidToURL map[common.CLID]string, fs *commonpb.SubmissionCompleted_CLSubmissionFailures) (string, error) {
+	var sb strings.Builder
+	for i, f := range fs.GetFailures() {
+		if i > 0 {
+			sb.WriteRune('\n')
+		}
+		if _, err := fmt.Fprintf(&sb, "CL %s failed to be submitted due to '%s'", clidToURL[common.CLID(f.GetClid())], f.GetMessage()); err != nil {
+			return "", err
+		}
+	}
+	return sb.String(), nil
+}

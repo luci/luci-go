@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/commonpb"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -186,7 +187,7 @@ func AssertNotReceivedCLSubmitted(ctx context.Context, runID common.RunID, cl co
 
 // AssertReceivedSubmissionCompleted asserts Run has received the provided
 // SubmissionCompleted event.
-func AssertReceivedSubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted) {
+func AssertReceivedSubmissionCompleted(ctx context.Context, runID common.RunID, sc *commonpb.SubmissionCompleted) {
 	target := &eventpb.Event{
 		Event: &eventpb.Event_SubmissionCompleted{
 			SubmissionCompleted: sc,

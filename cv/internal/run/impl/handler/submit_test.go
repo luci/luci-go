@@ -40,7 +40,7 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/eventpb"
+	submitpb "go.chromium.org/luci/cv/internal/run/commonpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/runtest"
@@ -146,7 +146,15 @@ func TestOnReadyForSubmission(t *testing.T) {
 				rs.Run.Status = status
 				res, err := h.OnReadyForSubmission(ctx, rs)
 				So(err, ShouldBeNil)
-				So(res.State, ShouldEqual, rs)
+				So(res.State.LogEntries, ShouldResembleProto, []*run.LogEntry{
+					{
+						Time: timestamppb.New(clock.Now(ctx)),
+						Kind: &run.LogEntry_ReleasedSubmitQueue_{
+							ReleasedSubmitQueue: &run.LogEntry_ReleasedSubmitQueue{},
+						},
+					},
+				})
+				So(&res.State.Run, runtest.ShouldResembleRun, &rs.Run)
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
@@ -192,6 +200,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(res.State.LogEntries, ShouldHaveLength, 2)
 					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
 					So(res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, ShouldBeTrue)
+					// SubmitQueue not yet released.
 				})
 
 				Convey("Add Run to waitlist when Submit Queue is occupied", func() {
@@ -231,9 +240,10 @@ func TestOnReadyForSubmission(t *testing.T) {
 					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
 					// Must not occupy the Submit Queue
 					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rid)
-					So(res.State.LogEntries, ShouldHaveLength, 2)
+					So(res.State.LogEntries, ShouldHaveLength, 3)
 					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
 					So(res.State.LogEntries[1].Kind, ShouldHaveSameTypeAs, &run.LogEntry_TreeChecked_{})
+					So(res.State.LogEntries[2].Kind, ShouldHaveSameTypeAs, &run.LogEntry_ReleasedSubmitQueue_{})
 					So(res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, ShouldBeFalse)
 				})
 			})
@@ -361,7 +371,15 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				rs.Run.Status = status
 				res, err := h.OnSubmissionCompleted(ctx, rs, nil)
 				So(err, ShouldBeNil)
-				So(res.State, ShouldEqual, rs)
+				So(res.State.LogEntries, ShouldResembleProto, []*run.LogEntry{
+					{
+						Time: timestamppb.New(clock.Now(ctx)),
+						Kind: &run.LogEntry_ReleasedSubmitQueue_{
+							ReleasedSubmitQueue: &run.LogEntry_ReleasedSubmitQueue{},
+						},
+					},
+				})
+				So(&res.State.Run, runtest.ShouldResembleRun, &rs.Run)
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
@@ -374,8 +392,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 		Convey("Succeeded", func() {
-			sc := &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_SUCCEEDED,
+			sc := &submitpb.SubmissionCompleted{
+				Result: submitpb.SubmissionResult_SUCCEEDED,
 			}
 			res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 			So(err, ShouldBeNil)
@@ -387,8 +405,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		})
 
 		Convey("Transient failure", func() {
-			sc := &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
+			sc := &submitpb.SubmissionCompleted{
+				Result: submitpb.SubmissionResult_FAILED_TRANSIENT,
 			}
 			Convey("When deadline is not exceeded", func() {
 				rs.Run.Submission = &run.Submission{
@@ -415,7 +433,17 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					rs.Run.Submission.TaskId = "another-task"
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
-					So(res.State, ShouldEqual, rs)
+					So(res.State.LogEntries, ShouldResembleProto, []*run.LogEntry{
+						{
+							Time: timestamppb.New(clock.Now(ctx)),
+							Kind: &run.LogEntry_SubmissionFailure_{
+								SubmissionFailure: &run.LogEntry_SubmissionFailure{
+									Event: &submitpb.SubmissionCompleted{Result: submitpb.SubmissionResult_FAILED_TRANSIENT},
+								},
+							},
+						},
+					})
+					So(&res.State.Run, runtest.ShouldResembleRun, &rs.Run)
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeTrue)
 					So(res.PostProcessFn, ShouldBeNil)
@@ -456,9 +484,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
 						}
 						Convey("CL failure", func() {
-							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
-								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+							sc.FailureReason = &submitpb.SubmissionCompleted_ClFailures{
+								ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
+									Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
 										{Clid: 2, Message: "some transient failure"},
 									},
 								},
@@ -516,9 +544,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 					Convey("None of the CLs are submitted", func() {
 						Convey("CL failure", func() {
-							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
-								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+							sc.FailureReason = &submitpb.SubmissionCompleted_ClFailures{
+								ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
+									Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
 										{Clid: 2, Message: "some transient failure"},
 									},
 								},
@@ -553,9 +581,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						})
 
 						Convey("CL failure", func() {
-							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
-								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+							sc.FailureReason = &submitpb.SubmissionCompleted_ClFailures{
+								ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
+									Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
 										{Clid: 1, Message: "some transient failure"},
 									},
 								},
@@ -608,8 +636,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		})
 
 		Convey("Permanent failure", func() {
-			sc := &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+			sc := &submitpb.SubmissionCompleted{
+				Result: submitpb.SubmissionResult_FAILED_PERMANENT,
 			}
 			rs.Run.Submission = &run.Submission{
 				Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
@@ -637,9 +665,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				}
 
 				Convey("CL Submission failure", func() {
-					sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
-						ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-							Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+					sc.FailureReason = &submitpb.SubmissionCompleted_ClFailures{
+						ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
+							Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
 								{
 									Clid:    2,
 									Message: "CV failed to submit this CL because of merge conflict",
@@ -683,9 +711,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				}
 				Convey("None of the CLs are submitted", func() {
 					Convey("CL Submission failure", func() {
-						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
-							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+						sc.FailureReason = &submitpb.SubmissionCompleted_ClFailures{
+							ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
 									{
 										Clid:    2,
 										Message: "CV failed to submit this CL because of merge conflict",
@@ -722,9 +750,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					})
 
 					Convey("CL Submission failure", func() {
-						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
-							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+						sc.FailureReason = &submitpb.SubmissionCompleted_ClFailures{
+							ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
 									{
 										Clid:    1,
 										Message: "CV failed to submit this CL because of merge conflict",
@@ -832,8 +860,8 @@ func TestSubmitter(t *testing.T) {
 			So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)) // len(s.clids) SubmitRevision calls
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
-				&eventpb.SubmissionCompleted{
-					Result: eventpb.SubmissionResult_SUCCEEDED,
+				&submitpb.SubmissionCompleted{
+					Result: submitpb.SubmissionResult_SUCCEEDED,
 				},
 			)
 		})
@@ -852,8 +880,8 @@ func TestSubmitter(t *testing.T) {
 				}, nil), ShouldBeNil)
 				So(s.submit(ctx), ShouldBeNil)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
-					&eventpb.SubmissionCompleted{
-						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+					&submitpb.SubmissionCompleted{
+						Result: submitpb.SubmissionResult_FAILED_PERMANENT,
 					},
 				)
 				So(log, memlogger.ShouldHaveLog, logging.Error, "BUG: run no longer holds submit queue, currently held by")
@@ -872,11 +900,11 @@ func TestSubmitter(t *testing.T) {
 				runtest.AssertNotReceivedCLSubmitted(ctx, s.runID, 2)
 				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
-					&eventpb.SubmissionCompleted{
-						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-						FailureReason: &eventpb.SubmissionCompleted_ClFailures{
-							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+					&submitpb.SubmissionCompleted{
+						Result: submitpb.SubmissionResult_FAILED_PERMANENT,
+						FailureReason: &submitpb.SubmissionCompleted_ClFailures{
+							ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
 									{Clid: 2, Message: permDeniedMsg},
 								},
 							},
@@ -897,11 +925,11 @@ func TestSubmitter(t *testing.T) {
 				runtest.AssertNotReceivedCLSubmitted(ctx, s.runID, 2)
 				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
-					&eventpb.SubmissionCompleted{
-						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-						FailureReason: &eventpb.SubmissionCompleted_ClFailures{
-							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+					&submitpb.SubmissionCompleted{
+						Result: submitpb.SubmissionResult_FAILED_PERMANENT,
+						FailureReason: &submitpb.SubmissionCompleted_ClFailures{
+							ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
 									{
 										Clid:    2,
 										Message: fmt.Sprintf(failedPreconditionMsgFmt, fmt.Sprintf("revision %s is not current revision", ci2.GetCurrentRevision())),
@@ -929,8 +957,8 @@ func TestSubmitter(t *testing.T) {
 			So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)+1) // 1 extra getChange call
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
-				&eventpb.SubmissionCompleted{
-					Result: eventpb.SubmissionResult_SUCCEEDED,
+				&submitpb.SubmissionCompleted{
+					Result: submitpb.SubmissionResult_SUCCEEDED,
 				},
 			)
 		})

@@ -116,6 +116,7 @@ div.clickable {
 {{$TJProgression := .TJProgression}}
 {{$RelTime := .RelTime}}
 {{$AllTryjobs := .AllTryjobs}}
+{{$LogMessage := .LogMessage}}
 <div class="container">
   <div>
       <h3>Run details</h3>
@@ -172,8 +173,8 @@ div.clickable {
               <td>{{FmTime .GetTime.AsTime}} </td>
               <td>{{call $RelTime .GetTime.AsTime}} </td>
               <td>
-                {{if (LogMessage .)}}
-                  <div class="message"><pre>{{LogMessage .}}</pre></div>
+                {{if (call $LogMessage .)}}
+                  <div class="message"><pre>{{call $LogMessage .}}</pre></div>
                 {{end}}
               </td>
             </tr>

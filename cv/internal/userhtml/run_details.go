@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/commonpb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -54,6 +55,10 @@ func runDetails(c *router.Context) {
 		errPage(c, err)
 		return
 	}
+	clidToURL := make(map[common.CLID]string, len(cls))
+	for _, cl := range cls {
+		clidToURL[cl.ID] = cl.ExternalID.MustURL()
+	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/run_details.html", templates.Args{
 		"Run":  r,
@@ -61,6 +66,18 @@ func runDetails(c *router.Context) {
 		"Cls":  cls,
 		"RelTime": func(ts time.Time) string {
 			return humanize.RelTime(ts, startTime(c.Context), "ago", "from now")
+		},
+		"LogMessage": func(rle *run.LogEntry) string {
+			switch v := rle.GetKind().(type) {
+			case *run.LogEntry_Info_:
+				return v.Info.Message
+			case *run.LogEntry_ClSubmitted:
+				return StringifySubmissionSuccesses(clidToURL, v.ClSubmitted, int64(len(r.Cls)))
+			case *run.LogEntry_SubmissionFailure_:
+				return StringifySubmissionFailureReason(clidToURL, v.SubmissionFailure.Event)
+			default:
+				return ""
+			}
 		},
 		"AllTryjobs": r.Tryjobs.GetTryjobs(),
 	})
@@ -128,19 +145,21 @@ func logTypeString(rle *run.LogEntry) string {
 		return v.Info.Label
 	case *run.LogEntry_AcquiredSubmitQueue_:
 		return "Acquired Submit Queue"
+	case *run.LogEntry_ReleasedSubmitQueue_:
+		return "Released Submit Queue"
 	case *run.LogEntry_Waitlisted_:
 		return "Waitlisted for Submit Queue"
+	case *run.LogEntry_SubmissionFailure_:
+		if v.SubmissionFailure.Event.GetResult() == commonpb.SubmissionResult_FAILED_TRANSIENT {
+			return "Transient Submission Failure"
+		}
+		return "Final Submission Failure"
+	case *run.LogEntry_ClSubmitted:
+		return "CL Submission"
+	case *run.LogEntry_RunEnded_:
+		return "CV Finished Work on this Run"
 	default:
 		return fmt.Sprintf("FIXME: Unknown Kind of LogEntry %T", v)
-	}
-}
-
-func logMessage(rle *run.LogEntry) string {
-	switch v := rle.GetKind().(type) {
-	case *run.LogEntry_Info_:
-		return v.Info.Message
-	default:
-		return ""
 	}
 }
 

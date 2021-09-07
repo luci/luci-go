@@ -21,6 +21,7 @@ option go_package = "go.chromium.org/luci/cv/internal/run;run";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/internal/tryjob/storage.proto";
+import "go.chromium.org/luci/cv/internal/run/commonpb/submission.proto";
 
 // Trigger describes who/how CV was triggered on a specific CL.
 message Trigger {
@@ -142,6 +143,12 @@ message LogEntry {
     Waitlisted waitlisted = 9;
     // The run is current on the queue.
     AcquiredSubmitQueue acquired_submit_queue = 10;
+    ReleasedSubmitQueue released_submit_queue = 11;
+    // CL(s) submitted successfully.
+    CLSubmitted cl_submitted = 12;
+    // Submission failed.
+    SubmissionFailure submission_failure = 13;
+    RunEnded run_ended = 14;
   }
 
   message Created {
@@ -171,6 +178,19 @@ message LogEntry {
   message Waitlisted{
   }
   message AcquiredSubmitQueue{
+  }
+  message ReleasedSubmitQueue{
+  }
+  message CLSubmitted{
+    // The CLs that were submitted in this event.
+    repeated int64 newly_submitted_cls = 1;
+    // The number of CLs submitted for this run, so far.
+    int64 total_submitted = 2;
+  }
+  message SubmissionFailure{
+    cv.internal.run.commonpb.SubmissionCompleted event = 1;
+  }
+  message RunEnded{
   }
 }
 
