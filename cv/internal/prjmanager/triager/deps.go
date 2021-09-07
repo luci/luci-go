@@ -151,7 +151,7 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 	tr := pcl.GetTrigger()
 	dtr := dPCL.GetTrigger()
 	if cg.GetCombineCls() == nil {
-		t.categorizeSingle(tr, dtr, dep)
+		t.categorizeSingle(tr, dtr, dep, cg)
 	} else {
 		t.categorizeCombinable(tr, dtr, dep)
 	}
@@ -185,12 +185,17 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 	}
 }
 
-func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep) {
+func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep, cg *cfgpb.ConfigGroup) {
 	// dependent is guaranteed non-nil.
 	switch mode := run.Mode(tr.GetMode()); mode {
 	case run.DryRun, run.QuickDryRun:
 		return // OK.
 	case run.FullRun:
+		if cg.GetVerifiers().GetGerritCqAbility().GetAllowSubmitWithOpenDeps() && dep.GetKind() == changelist.DepKind_HARD {
+			// If configured, allow CV to submit the entire stack (HARD deps only) of
+			// changes.
+			return
+		}
 		// TODO(tandrii): find bug about better handling of stacks in single-CL Run case.
 		// TODO(tandrii): allow this if dep's mode is also FullRun.
 		t.ensureInvalidDeps()

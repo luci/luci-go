@@ -665,3 +665,117 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
 	})
 }
+
+func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV submits stack of 3 CLs in singular mode with allow_submit_with_open_deps=true", t, func() {
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "g-review"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange1 = 11
+		const gChange2 = 22
+		const gChange3 = 33
+		const gChange4 = 44
+		const gPatchSet = 1
+
+		// Start CQDaemon.
+		ct.MustCQD(ctx, lProject)
+
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg.GetConfigGroups()[0].Verifiers = &cfgpb.Verifiers{
+			GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+				AllowSubmitWithOpenDeps: true,
+			},
+		}
+		prjcfgtest.Create(ctx, lProject, cfg)
+
+		tStart := ct.Clock.Now()
+
+		// Git Relationship: <base> <- ci1 <- ci2 <- ci3 <- ci4
+		ci1 := gf.CI(
+			gChange1, gf.Project(gRepo), gf.Ref(gRef),
+			gf.PS(gPatchSet),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.Desc("This is the bottom of the stack"),
+		)
+		ci2 := gf.CI(
+			gChange2, gf.Project(gRepo), gf.Ref(gRef),
+			gf.PS(gPatchSet),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.Desc("This is the 2nd CL of the stack"),
+		)
+		ci3 := gf.CI(
+			gChange3, gf.Project(gRepo), gf.Ref(gRef),
+			gf.PS(gPatchSet),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.Desc("This is the 3nd CL of the stack, which was CQ-ed"),
+			gf.CQ(+2, tStart, gf.U("user-2")),
+		)
+		ci4 := gf.CI(
+			gChange4, gf.Project(gRepo), gf.Ref(gRef),
+			gf.PS(gPatchSet),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.Desc("This is the top of the stack, not CQ-ed"),
+		)
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci1, ci2, ci3, ci4))
+		ct.GFake.SetDependsOn(gHost, ci2, ci1)
+		ct.GFake.SetDependsOn(gHost, ci3, ci2)
+		ct.GFake.SetDependsOn(gHost, ci4, ci3)
+
+		/////////////////////////    Run CV   ////////////////////////////////
+		ct.LogPhase(ctx, "CV discovers the CQ-ed CL")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool { return ct.LoadGerritCL(ctx, gHost, gChange3) != nil })
+		ct.LogPhase(ctx, "CV loads deps of the CQ-ed CL")
+		ct.RunUntil(ctx, func() bool { return ct.LoadGerritCL(ctx, gHost, gChange2) != nil })
+		ct.RunUntil(ctx, func() bool { return ct.LoadGerritCL(ctx, gHost, gChange1) != nil })
+
+		ct.LogPhase(ctx, "CV starts a Run on the CQ-ed CL only")
+		var r *run.Run
+		ct.RunUntil(ctx, func() bool {
+			r = ct.EarliestCreatedRunOf(ctx, lProject)
+			return r != nil && r.Status == commonpb.Run_RUNNING
+		})
+		So(r.Mode, ShouldEqual, run.FullRun)
+		So(r.CLs, ShouldResemble, common.CLIDs{ct.LoadGerritCL(ctx, gHost, gChange3).ID})
+
+		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
+		ct.Clock.Add(time.Minute)
+		ct.MustCQD(ctx, lProject).SetVerifyClbk(
+			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
+				r = proto.Clone(r).(*migrationpb.ReportedRun)
+				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
+				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
+				return r
+			},
+		)
+		ct.RunUntil(ctx, func() bool {
+			res, err := datastore.Exists(ctx, &migration.VerifiedCQDRun{ID: r.ID})
+			return err == nil && res.All()
+		})
+
+		ct.LogPhase(ctx, "CV submits the Run, which results in 3 CLs actually landing")
+		ct.RunUntil(ctx, func() bool {
+			r = ct.LoadRun(ctx, r.ID)
+			return run.IsEnded(r.Status)
+		})
+		// CQ-ed was submitted directly.
+		So(ct.GFake.GetChange(gHost, gChange3).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+		// Its deps were submitted implicitly.
+		So(ct.GFake.GetChange(gHost, gChange1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+		So(ct.GFake.GetChange(gHost, gChange2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+
+		ct.LogPhase(ctx, "BQ export must complete")
+		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
+	})
+}

@@ -294,7 +294,7 @@ func TestDepsTriage(t *testing.T) {
 					lastTriggered: epoch.Add(3 * time.Second),
 				})
 			})
-			Convey("full run doesn't allow any dep", func() {
+			Convey("full run doesn't allow any dep by default", func() {
 				pcl32 := sup.PCL(32)
 				td := do(pcl32, singIdx)
 				So(td, shouldResembleTriagedDeps, &triagedDeps{
@@ -304,6 +304,33 @@ func TestDepsTriage(t *testing.T) {
 					},
 				})
 				So(td.OK(), ShouldBeFalse)
+
+				Convey("unless allow_submit_with_open_deps is true", func() {
+					sup.cgs[singIdx].Content.Verifiers = &cfgpb.Verifiers{
+						GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+							AllowSubmitWithOpenDeps: true,
+						},
+					}
+					td := do(pcl32, singIdx)
+					So(td, shouldResembleTriagedDeps, &triagedDeps{
+						lastTriggered: epoch.Add(3 * time.Second),
+					})
+					So(td.OK(), ShouldBeTrue)
+
+					Convey("but not if dep is soft", func() {
+						// Soft dependency (ie via Cq-Depend) won't be submitted as part a
+						// single Submit gerrit RPC, so it can't be allowed.
+						pcl32.GetDeps()[0].Kind = changelist.DepKind_SOFT
+						td := do(pcl32, singIdx)
+						So(td, shouldResembleTriagedDeps, &triagedDeps{
+							lastTriggered: epoch.Add(3 * time.Second),
+							invalidDeps: &changelist.CLError_InvalidDeps{
+								SingleFullDeps: pcl32.GetDeps(),
+							},
+						})
+						So(td.OK(), ShouldBeFalse)
+					})
+				})
 			})
 		})
 
