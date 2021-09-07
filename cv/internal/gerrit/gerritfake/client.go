@@ -274,23 +274,69 @@ func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRev
 	if rev != ch.Info.GetCurrentRevision() {
 		return nil, status.Errorf(codes.FailedPrecondition, "revision %s is not current revision", rev)
 	}
-
-	switch ch.Info.GetStatus() {
-	case gerritpb.ChangeStatus_NEW:
-		ch.Info.Status = gerritpb.ChangeStatus_MERGED
-		// Most projects use a submit strategy which always creates a new patchset.
-		// simulate the behavior here.
-		PS(int(ch.Info.GetRevisions()[rev].GetNumber() + 1))(ch.Info)
-		advanceTestClock(ctx, 500*time.Millisecond) // +500ms to simulate Gerrit latency
-		setUpdated(ch.Info, clock.Now(ctx))
-		return &gerritpb.SubmitInfo{Status: gerritpb.ChangeStatus_MERGED}, nil
-	case gerritpb.ChangeStatus_MERGED:
+	if ch.Info.GetStatus() == gerritpb.ChangeStatus_MERGED {
 		return nil, status.Errorf(codes.FailedPrecondition, "change is merged")
-	case gerritpb.ChangeStatus_ABANDONED:
-		return nil, status.Errorf(codes.FailedPrecondition, "change is abandoned")
-	default:
-		panic(fmt.Errorf("unrecognized status %s", ch.Info.GetStatus()))
 	}
+
+	// Recursively find all parents that have to be submitted and in correct
+	// order, while verifying their submittability.
+	changes := []*Change{}
+	visited := stringset.New(1)
+	var dfs func(ch *Change) error
+	dfs = func(ch *Change) error {
+		if !visited.Add(key(ch.Host, int(ch.Info.GetNumber()))) {
+			// Already visited.
+			return nil
+		}
+		// Check this CL itself.
+		if status := ch.ACLs(OpSubmit, client.luciProject); status.Code() != codes.OK {
+			return status.Err()
+		}
+		switch ch.Info.GetStatus() {
+		case gerritpb.ChangeStatus_MERGED:
+			// Ignore the dependency subtree.
+			return nil
+		case gerritpb.ChangeStatus_ABANDONED:
+			return status.Errorf(codes.FailedPrecondition, "change is abandoned")
+		case gerritpb.ChangeStatus_NEW:
+			// Proceed checking parents below.
+		default:
+			panic(fmt.Errorf("unrecognized status %s", ch.Info.GetStatus()))
+		}
+
+		// Recurse into parents.
+		ps := ch.Info.GetRevisions()[ch.Info.GetCurrentRevision()].GetNumber()
+		psKey := psKey(client.host, int(ch.Info.GetNumber()), int(ps))
+		for _, parentPSKey := range client.f.parentsOf[psKey] {
+			chParent, _, _, err := client.f.resolvePSKeyLocked(parentPSKey)
+			if err != nil {
+				panic(err)
+			}
+			if err := dfs(chParent); err != nil {
+				return err
+			}
+		}
+
+		// All immediate and transitive dependencies are already in the `changes`.
+		changes = append(changes, ch)
+		return nil
+	}
+	if err := dfs(ch); err != nil {
+		return nil, err
+	}
+
+	// Finally, submit all the CLs with the same timestamp.
+	advanceTestClock(ctx, 500*time.Millisecond) // +500ms to simulate Gerrit latency
+	tSubmitted := clock.Now(ctx)
+	for _, ch := range changes {
+		ch.Info.Status = gerritpb.ChangeStatus_MERGED
+		// Simulate the behavior of most projects, which use a submit strategy which
+		// always creates a new patchset,
+		PS(int(ch.Info.GetRevisions()[ch.Info.GetCurrentRevision()].GetNumber() + 1))(ch.Info)
+		setUpdated(ch.Info, tSubmitted)
+	}
+
+	return &gerritpb.SubmitInfo{Status: gerritpb.ChangeStatus_MERGED}, nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////

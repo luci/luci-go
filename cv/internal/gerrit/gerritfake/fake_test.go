@@ -673,14 +673,30 @@ func TestSubmitRevision(t *testing.T) {
 	t.Parallel()
 
 	Convey("SubmitRevision", t, func() {
+		const gHost = "example.com"
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-		ci := CI(10001, Updated(tc.Now()), PS(3), AllRevs())
+		var (
+			ciSingular  = CI(10001, Updated(tc.Now()), PS(3), AllRevs())
+			ciStackBase = CI(20001, Updated(tc.Now()), PS(1), AllRevs())
+			ciStackMid  = CI(20002, Updated(tc.Now()), PS(1), AllRevs())
+			ciStackTop  = CI(20003, Updated(tc.Now()), PS(1), AllRevs())
+		)
 		f := WithCIs(
 			"example.com",
 			ACLGrant(OpSubmit, codes.PermissionDenied, "chromium"),
-			ci,
+			ciSingular, ciStackBase, ciStackMid, ciStackTop,
 		)
+		f.SetDependsOn(gHost, ciStackMid, ciStackBase)
+		f.SetDependsOn(gHost, ciStackTop, ciStackMid)
+
 		tc.Add(2 * time.Minute)
+
+		assertStatus := func(s gerritpb.ChangeStatus, cis ...*gerritpb.ChangeInfo) {
+			for _, ci := range cis {
+				latestCI := f.GetChange(gHost, int(ci.GetNumber())).Info
+				So(latestCI.GetStatus(), ShouldEqual, s)
+			}
+		}
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
 			cl, err := f.MakeClient(ctx, host, luciProject)
@@ -689,81 +705,148 @@ func TestSubmitRevision(t *testing.T) {
 		}
 
 		Convey("ACLs enforced", func() {
-			client := mustWriterClient("example.com", "not-chromium")
-			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
-				Number:     10001,
-				RevisionId: ci.GetCurrentRevision(),
+			client := mustWriterClient(gHost, "not-chromium")
+			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     ciSingular.GetNumber(),
+				RevisionId: ciSingular.GetCurrentRevision(),
 			})
-			So(res, ShouldBeNil)
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assertStatus(gerritpb.ChangeStatus_NEW, ciSingular)
+		})
+
+		Convey("ACLs enforced with CL stack", func() {
+			f.MutateChange(gHost, int(ciStackBase.GetNumber()), func(c *Change) {
+				c.ACLs = ACLGrant(OpSubmit, codes.PermissionDenied, "pretty-much-denied-to-everyone")
+			})
+			client := mustWriterClient(gHost, "chromium")
+			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     ciStackTop.GetNumber(),
+				RevisionId: ciStackTop.GetCurrentRevision(),
+			})
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assertStatus(gerritpb.ChangeStatus_NEW, ciStackBase, ciStackMid, ciStackTop)
 		})
 
 		Convey("Non-existent revision", func() {
-			client := mustWriterClient("example.com", "chromium")
-			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
-				Number:     10001,
+			client := mustWriterClient(gHost, "chromium")
+			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     ciSingular.GetNumber(),
 				RevisionId: "non-existent",
 			})
-			So(res, ShouldBeNil)
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assertStatus(gerritpb.ChangeStatus_NEW, ciSingular)
 		})
 
 		Convey("Old revision", func() {
-			client := mustWriterClient("example.com", "chromium")
+			client := mustWriterClient(gHost, "chromium")
 			var oldRev string
-			for rev := range ci.GetRevisions() {
-				if rev != ci.GetCurrentRevision() {
+			for rev := range ciSingular.GetRevisions() {
+				if rev != ciSingular.GetCurrentRevision() {
 					oldRev = rev
 					break
 				}
 			}
 			So(oldRev, ShouldNotBeEmpty)
-			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
-				Number:     10001,
+			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     ciSingular.GetNumber(),
 				RevisionId: oldRev,
 			})
-			So(res, ShouldBeNil)
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "is not current")
 		})
 
 		Convey("Works", func() {
-			client := mustWriterClient("example.com", "chromium")
+			client := mustWriterClient(gHost, "chromium")
 			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
-				Number:     10001,
-				RevisionId: ci.GetCurrentRevision(),
+				Number:     ciSingular.GetNumber(),
+				RevisionId: ciSingular.GetCurrentRevision(),
 			})
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
 				Status: gerritpb.ChangeStatus_MERGED,
 			})
-			So(f.GetChange("example.com", 10001).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+			assertStatus(gerritpb.ChangeStatus_MERGED, ciSingular)
+		})
+
+		Convey("Works with CL stack", func() {
+			client := mustWriterClient(gHost, "chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     ciStackTop.GetNumber(),
+				RevisionId: ciStackTop.GetCurrentRevision(),
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+				Status: gerritpb.ChangeStatus_MERGED,
+			})
+			assertStatus(gerritpb.ChangeStatus_MERGED, ciStackBase, ciStackMid, ciStackTop)
 		})
 
 		Convey("Already Merged", func() {
-			f.MutateChange("example.com", 10001, func(c *Change) {
+			f.MutateChange(gHost, int(ciSingular.GetNumber()), func(c *Change) {
 				c.Info.Status = gerritpb.ChangeStatus_MERGED
 			})
-			client := mustWriterClient("example.com", "chromium")
-			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
-				Number:     10001,
-				RevisionId: ci.GetCurrentRevision(),
+			client := mustWriterClient(gHost, "chromium")
+			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     ciSingular.GetNumber(),
+				RevisionId: ciSingular.GetCurrentRevision(),
 			})
-			So(res, ShouldBeNil)
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "change is merged")
 		})
 
+		Convey("already merged ones are skipped inside a CL Stack", func() {
+			verify := func() {
+				client := mustWriterClient(gHost, "chromium")
+				res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+					Number:     ciStackTop.GetNumber(),
+					RevisionId: ciStackTop.GetCurrentRevision(),
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+					Status: gerritpb.ChangeStatus_MERGED,
+				})
+			}
+			Convey("base of stack", func() {
+				f.MutateChange(gHost, int(ciStackBase.GetNumber()), func(c *Change) {
+					c.Info.Status = gerritpb.ChangeStatus_MERGED
+				})
+				verify()
+				assertStatus(gerritpb.ChangeStatus_MERGED, ciStackBase, ciStackMid, ciStackTop)
+			})
+			Convey("mid-stack", func() {
+				// May happen if the mid-CL was at some point re-based on top of
+				// something other than ciStackBase and then submitted.
+				f.MutateChange(gHost, int(ciStackMid.GetNumber()), func(c *Change) {
+					c.Info.Status = gerritpb.ChangeStatus_MERGED
+					PS(int(c.Info.GetRevisions()[c.Info.GetCurrentRevision()].GetNumber() + 1))(c.Info)
+				})
+				verify()
+				assertStatus(gerritpb.ChangeStatus_MERGED, ciStackMid, ciStackTop)
+				assertStatus(gerritpb.ChangeStatus_NEW, ciStackBase)
+			})
+		})
+
 		Convey("Abandoned", func() {
-			f.MutateChange("example.com", 10001, func(c *Change) {
+			f.MutateChange(gHost, int(ciSingular.GetNumber()), func(c *Change) {
 				c.Info.Status = gerritpb.ChangeStatus_ABANDONED
 			})
-			client := mustWriterClient("example.com", "chromium")
-			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
-				Number:     10001,
-				RevisionId: ci.GetCurrentRevision(),
+			client := mustWriterClient(gHost, "chromium")
+			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     ciSingular.GetNumber(),
+				RevisionId: ciSingular.GetCurrentRevision(),
 			})
-			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(err, ShouldErrLike, "change is abandoned")
+		})
+		Convey("Abandoned inside CL stack", func() {
+			f.MutateChange(gHost, int(ciStackMid.GetNumber()), func(c *Change) {
+				c.Info.Status = gerritpb.ChangeStatus_ABANDONED
+			})
+			client := mustWriterClient(gHost, "chromium")
+			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     ciStackTop.GetNumber(),
+				RevisionId: ciStackTop.GetCurrentRevision(),
+			})
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "change is abandoned")
 		})
