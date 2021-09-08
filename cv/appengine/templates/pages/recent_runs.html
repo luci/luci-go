@@ -2,12 +2,7 @@
 
 {{define "head"}}
   <style type="text/css">
-    #runs-table {
-      table-layout: fixed;
-    }
-    #runs-table td{
 
-    }
     .tall-cell {
     padding: 0px 5px;
       overflow-y: auto;
@@ -37,15 +32,15 @@
   </h2>
 
   <div class="container">
-    <table class="table" id="runs-table">
+    <table class="table table-striped" id="runs-table">
       <thead>
         <tr>
-          <th style="width: 60px;">PROJECT</th>
-          <th style="width: 320px;">ID</th>
-          <th style="width: 60px;">MODE</th>
-          <th style="width: 120px;">STATUS</th>
-          <th style="width: 240px;">CREATE_TIME</th>
-          <th style="width: 500px;">CLs</th>
+          <th style="width: 10%;">PROJECT</th>
+          <th style="width: 25%;">ID</th>
+          <th style="width: 10%;">MODE</th>
+          <th style="width: 10%;">STATUS</th>
+          <th style="width: 22.5%;">CREATE_TIME</th>
+          <th style="width: *">CLs</th>
         </tr>
       </thead>
       <tbody>
@@ -66,7 +61,7 @@
               {{end}}
               <ul>
               {{range .ExternalCls}}
-                <li><a href="{{LinkifyExternalID .}}">{{LinkifyExternalID .}}</a></li>
+                <li><a href="{{LinkifyExternalID .}}">{{DisplayExternalID .}}</a></li>
               {{end}}
               </ul>
               </div>

@@ -41,9 +41,7 @@ div.clickable {
   margin-left: 50px;
 }
 
-#run-details {
-   margin: 25px;
-}
+
 .tryjob-chips ul li{
   padding: 2px 4px;
   margin: 2px 4px;
@@ -82,19 +80,7 @@ div.clickable {
   background: #e88;
 }
 
-.log-entry, .log-entry-top, .log-entry-bottom, .run-details {
-  color: black;
-  background: #e0e0e0;
-  padding: 2px 4px;
-  border-right: solid 1px #000;
-  border-left: solid 1px #000;
-}
-.log-entry-top, .log-entry {
-  border-top: solid 1px #000;
-}
-.log-entry-bottom, .log-entry {
-  border-bottom: solid 1px #000;
-}
+
 .message {
   overflow: auto;
   max-height: 250px;
@@ -160,7 +146,7 @@ div.clickable {
       </div>
     {{if .Logs}}
       <h3>Logs</h3>
-      <table>
+      <table class="table table-striped">
         <thead>
           <th style="width: 200px;">Event</th>
           <th style="width: 250px;">Time</th>
@@ -210,13 +196,13 @@ div.clickable {
 
 {{define "runDetails"}}
 <div>
-  <table class="run-details">
+  <table class="table run-details">
     <thead>
       <tr>
-        <th>Project</th>
-        <th>Id</th>
-        <th>Mode</th>
-        <th>Status</th>
+        <th style="width: 10%;">PROJECT</th>
+        <th style="width: 25%;">ID</th>
+        <th style="width: 10%;">MODE</th>
+        <th style="width: 10%;">STATUS</th>
         <th>&nbsp;</th>
       </tr>
     </thead>
@@ -234,19 +220,19 @@ div.clickable {
     </tbody>
   </table>
 
-  <div id="full-details-panel" class="collapsible">
-  <table>
-  <tr><td>Id:</td><td> {{.Id}}</td></tr>
-  <tr><td>Eversion:</td><td> {{.Eversion}}</td></tr>
-  <tr><td>Mode:</td><td> {{.Mode}}</td></tr>
-  <tr><td>Status:</td><td> {{.Status}}</td></tr>
-  <tr><td>CreateTime:</td><td> {{FmTime .CreateTime.AsTime}}</td></tr>
-  <tr><td>StartTime:</td><td> {{FmTime .StartTime.AsTime}}</td></tr>
-  <tr><td>UpdateTime:</td><td> {{FmTime .UpdateTime.AsTime}}</td></tr>
-  <tr><td>EndTime:</td><td> {{FmTime .EndTime.AsTime}}</td></tr>
-  <tr><td>Owner:</td><td> {{.Owner}}</td></tr>
-  <tr><td>ConfigGroupId:</td><td> {{.ConfigGroupId}}</td></tr>
-  </table>
+  <div id="full-details-panel" class="collapsible well">
+  <dl class="dl-horizontal">
+  <dt>Eversion:</dt><dd>{{.Eversion}}</dd>
+  <dt>Id:</dt><dd>{{.Id}}</dd>
+  <dt>Mode:</dt><dd>{{.Mode}}</dd>
+  <dt>Status:</dt><dd>{{.Status}}</dd>
+  <dt>CreateTime:</dt><dd>{{FmTime .CreateTime.AsTime}}</dd>
+  <dt>StartTime:</dt><dd>{{FmTime .StartTime.AsTime}}</dd>
+  <dt>UpdateTime:</dt><dd>{{FmTime .UpdateTime.AsTime}}</dd>
+  <dt>EndTime:</dt><dd>{{FmTime .EndTime.AsTime}}</dd>
+  <dt>Owner:</dt><dd>{{.Owner}}</dd>
+  <dt>ConfigGroupId:</dt><dd>{{.ConfigGroupId}}</dd>
+  </dl>
   </div>
 </div>
 {{template "collapserScript"}}

@@ -125,12 +125,17 @@ func main() {
 			return aggregator.Cron(ctx)
 		})
 
-		// The service has no UI, so just redirect to the RPC Explorer.
+		// The service has no general-use UI, so just redirect to the RPC Explorer.
 		srv.Routes.GET("/", nil, func(c *router.Context) {
 			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 		})
 
 		userhtml.InstallHandlers(srv)
+
+		// When running locally, serve static files ourselves as well.
+		if !srv.Options.Prod {
+			srv.Routes.Static("/static", nil, http.Dir("./static"))
+		}
 
 		return nil
 	})

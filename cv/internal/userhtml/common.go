@@ -16,6 +16,7 @@ package userhtml
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -86,6 +87,20 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 					return ""
 				}
 				return changelist.ExternalID(eid).MustURL()
+			},
+			// Shortens a cl id for display purposes.
+			"DisplayExternalID": func(eid string) string {
+				if eid == "" {
+					// Very old RunCL entities don't have ExternalID set.
+					return ""
+				}
+				cl := changelist.ExternalID(eid)
+				host, change, err := cl.ParseGobID()
+				if err != nil {
+					panic(err)
+				}
+				host = strings.Replace(host, "-review.googlesource.com", "", 1)
+				return fmt.Sprintf("%s/%d", host, change)
 			},
 			// Runlog specific, see run_details.go.
 			"LogTypeString": logTypeString,

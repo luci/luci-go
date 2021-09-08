@@ -6,6 +6,7 @@ Use of this source code is governed under the Apache License, Version 2.0
 that can be found in the LICENSE file. -->
 <head>
   <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+  <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <title>{{block "title" .}}default{{end}}</title>
   <style>
     body {
@@ -20,27 +21,36 @@ that can be found in the LICENSE file. -->
 </head>
 
 <body>
-  <div>
-    <a href="/">LUCI Change Verifier</a>
-    <span>
-    {{if .IsAnonymous}}
-      <a href="{{.LoginURL}}">Login</a>
-    {{else}}
-      {{.User.Email}} | <a href="{{.LogoutURL}}">Logout</a>
-    {{end}}
-    </span>
+  <div class="container">
+  <div class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
+      <div class="navbar-brand"><a href="/">LUCI Change Verifier</a></div>
+      <div class="collapse navbar-collapse">
+        <ul class="nav navbar-nav navbar-right">
+            {{if .IsAnonymous}}
+              <li><a class="nav-link" href="{{.LoginURL}}">Login</a></li>
+            {{else}}
+              <li><p class="navbar-text">{{.User.Email}}</p></li>
+              <li> <a class="nav-link" href="{{.LogoutURL}}">Logout</a></li>
+            {{end}}
+        </ul>
+      </div>
+    </div>
   </div>
-  <div id="content-box">
-    {{block "content" .}}{{end}}
-  </div>
+    <div id="content-box">
+      {{block "content" .}}{{end}}
+    </div>
 
-  <footer style="color: #cccccc;">
-    <hr>
-    <p>
-      Handled in {{call .HandlerDuration}}
-      <span>Version: {{.AppVersion}}</span>
-    </p>
-  </footer>
+    <footer style="color: #cccccc;">
+      <hr>
+      <p>
+        Handled in {{call .HandlerDuration}}
+        <span>Version: {{.AppVersion}}</span>
+      </p>
+    </footer>
+  </div>
+  <script src="/static/jquery/jquery.min.js"></script>
+  <script src="/static/bootstrap/js/bootstrap.min.js"></script>
 </body>
 </html>
 {{end}}
