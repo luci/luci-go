@@ -12,35 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 syntax = "proto3";
 
 package cv.v0;
 
 option go_package = "go.chromium.org/luci/cv/api/v0;cvpb";
 
-import "go.chromium.org/luci/cv/api/common/v1/run.proto";
 import "google/protobuf/timestamp.proto";
-
-
-// Runs service exposes CV Runs and their sub-resources.
-//
-// !!!!! WARNING !!!!!
-//   * Use at your own risk.
-//   * We will stop supporting this v0 API without notice.
-//   * No backwards compatibility guaranteed.
-//   * Please, contact CV maintainers at luci-eng@ before using this and
-//     we may provide additional guarantees to you/your service.
-service Runs {
-
-  // GetRun returns Run details.
-  rpc GetRun(GetRunRequest) returns (Run);
-}
-
-message GetRunRequest {
-  // ID is CV Run ID, e.g. "projects/chromium/runs/9991234120-1-badcafe"
-  string id = 1;
-}
 
 // Run includes the high-level information about a CV Run.
 //
@@ -49,14 +27,63 @@ message GetRunRequest {
 // - No backward compatibility guaranteed.
 // - Please contact CV maintainers at luci-eng@ before using this message.
 message Run {
+  // Next tag: 11.
+
   // ID of the Run.
   //
   // The format of an ID is "projects/$luci-project/runs/$id", where
   // - luci-project is the name of the LUCI project the Run belongs to
   // - id is an opaque key unique in the LUCI project.
   string id = 1;
-  // status of the Run.
-  cv.common.v1.Run.Status status = 2;
+
+  // Status describes the status of a CV Run.
+  enum Status {
+    // Unspecified status.
+    STATUS_UNSPECIFIED = 0;
+    // Run is pending to start.
+    //
+    // It is either because Run Manager hasn't processed the StartEvent yet or
+    // the RunOwner has exhausted all the quota and waiting for new quota to
+    // be available.
+    PENDING = 1;
+    // Run is running.
+    RUNNING = 2;
+    // Run is waiting for submission.
+    //
+    // Run is in this status if one of the following scenario is true:
+    //   1. Tree is closed at the time Run attempts to submit.
+    //   2. There is another Run in the same LUCI Project that is currently
+    //      submitting.
+    //   3. The submission is rate limited according to the submit option in
+    //      Project Config.
+    //
+    // This status is cancellable.
+    WAITING_FOR_SUBMISSION = 4;
+    // Run is submitting.
+    //
+    // A Run can't be cancelled while submitting. A Run may transition from
+    // this status to either `WAITING_FOR_SUBMISSION` status or a non-cancelled
+    // terminal status.
+    SUBMITTING = 5;
+
+    // End of non-terminal status; MUST have value less than `ENDED_MASK`.
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Terminal Status
+
+    // ENDED_MASK can be used as a bitmask to check if a Run has ended.
+    // This MUST NOT be used as the status of a Run.
+    ENDED_MASK = 64;
+    // Run ends successfully.
+    SUCCEEDED = 65;
+    // Run ends unsuccessfully.
+    FAILED = 66;
+    // Run is cancelled.
+    CANCELLED = 67;
+  }
+  // Status of the Run.
+  Status status = 2;
+
   // eversion is the entity version, which is monotonically increasing.
   int64 eversion = 3;
 

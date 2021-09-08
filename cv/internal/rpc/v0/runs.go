@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
@@ -82,7 +81,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 	return &apiv0pb.Run{
 		Id:         r.ID.PublicID(),
 		Eversion:   int64(r.EVersion),
-		Status:     commonpb.Run_Status(r.Status),
+		Status:     apiv0pb.Run_Status(r.Status),
 		Mode:       string(r.Mode),
 		CreateTime: common.TspbNillable(r.CreateTime),
 		StartTime:  common.TspbNillable(r.StartTime),

@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
+	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -29,21 +30,47 @@ func TestStatusV1(t *testing.T) {
 	Convey("Ensure CV API v1 Run Status matches the internal Status.", t, func() {
 		// v1 -> internal.
 		for name, val := range commonpb.Run_Status_value {
-			name, v1 := name, val
+			name, val := name, val
 			Convey("v1."+name, func() {
-				internal, exists := run.Status_value[name]
+				other, exists := run.Status_value[name]
 				So(exists, ShouldBeTrue)
-				So(internal, ShouldEqual, v1)
+				So(val, ShouldEqual, other)
 			})
 		}
 
 		// Internal -> v1.
 		for name, val := range run.Status_value {
-			name, v1 := name, val
+			name, val := name, val
 			Convey("internal."+name, func() {
-				internal, exists := commonpb.Run_Status_value[name]
+				other, exists := commonpb.Run_Status_value[name]
 				So(exists, ShouldBeTrue)
-				So(internal, ShouldEqual, v1)
+				So(val, ShouldEqual, other)
+			})
+		}
+	})
+}
+
+func TestStatusV0(t *testing.T) {
+	t.Parallel()
+
+	Convey("Ensure CV API v0 Run Status matches the internal Status.", t, func() {
+		// v0 -> internal.
+		for name, val := range apiv0pb.Run_Status_value {
+			name, val := name, val
+			Convey("v0."+name, func() {
+				other, exists := run.Status_value[name]
+				So(exists, ShouldBeTrue)
+				So(val, ShouldEqual, other)
+			})
+		}
+
+		// Internal -> v0.
+		for name, val := range run.Status_value {
+			name, val := name, val
+			Convey("internal."+name, func() {
+				other, exists := apiv0pb.Run_Status_value[name]
+				So(exists, ShouldBeTrue)
+				So(val, ShouldEqual, other)
 			})
 		}
 	})
