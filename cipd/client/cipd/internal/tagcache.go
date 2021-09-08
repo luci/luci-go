@@ -101,7 +101,7 @@ func (c *TagCache) lazyLoadLocked(ctx context.Context) (err error) {
 	if c.cache == nil {
 		c.cache, err = c.loadFromDisk(ctx, false)
 	}
-	return
+	return err
 }
 
 // ResolveTag returns cached tag or empty Pin{} if such tag is not in the cache.
@@ -109,10 +109,10 @@ func (c *TagCache) lazyLoadLocked(ctx context.Context) (err error) {
 // Returns error if the cache can't be read.
 func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.Pin, err error) {
 	if err = common.ValidatePackageName(pkg); err != nil {
-		return
+		return pin, err
 	}
 	if err = common.ValidateInstanceTag(tag); err != nil {
-		return
+		return pin, err
 	}
 
 	c.lock.Lock()
@@ -127,7 +127,7 @@ func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.
 	}
 
 	if err = c.lazyLoadLocked(ctx); err != nil {
-		return
+		return pin, err
 	}
 
 	// Most recently used tags are usually at the end, search in reverse as a
@@ -141,8 +141,7 @@ func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.
 			}, nil
 		}
 	}
-
-	return
+	return pin, err
 }
 
 // ResolveExtractedObjectRef returns ObjectRef or nil if that file is not in the
@@ -233,7 +232,7 @@ func (c *TagCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fi
 	defer c.lock.Unlock()
 
 	if c.addedFiles == nil {
-		c.addedFiles = make(map[fileKey]*messages.TagCache_FileEntry, 1)
+		c.addedFiles = make(map[fileKey]*messages.TagCache_FileEntry)
 	}
 	c.addedFiles[makeFileKey(pin.PackageName, pin.InstanceID, fileName)] = &messages.TagCache_FileEntry{
 		Service:    c.service,

@@ -159,8 +159,8 @@ type ClientDescription struct {
 	// Size of the client binary file in bytes.
 	Size int64 `json:"size"`
 
-	// SignedUrl is URL of the client binary.
-	SignedUrl string `json:"signed_url"`
+	// SignedURL is URL of the client binary.
+	SignedURL string `json:"signed_url"`
 
 	// Digest is the client binary digest using the best hash algo understood by
 	// the current process.
@@ -245,7 +245,7 @@ func apiClientDescToInfo(d *api.DescribeClientResponse) *ClientDescription {
 	desc := &ClientDescription{
 		InstanceInfo:       apiInstanceToInfo(d.Instance),
 		Size:               d.ClientSize,
-		SignedUrl:          d.ClientBinary.SignedUrl,
+		SignedURL:          d.ClientBinary.SignedUrl,
 		AlternativeDigests: make([]*api.ObjectRef, 0, len(d.ClientRefAliases)),
 	}
 

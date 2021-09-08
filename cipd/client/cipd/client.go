@@ -650,48 +650,48 @@ var batchAwareOps = map[batchAwareOp]func(*clientImpl, context.Context){
 	batchAwareOpClearAdmissionCache: (*clientImpl).clearAdmissionCache,
 }
 
-func (client *clientImpl) saveTagCache(ctx context.Context) {
-	if client.tagCache != nil {
-		if err := client.tagCache.Save(ctx); err != nil {
+func (c *clientImpl) saveTagCache(ctx context.Context) {
+	if c.tagCache != nil {
+		if err := c.tagCache.Save(ctx); err != nil {
 			logging.Warningf(ctx, "Failed to save tag cache: %s", err)
 		}
 	}
 }
 
-func (client *clientImpl) cleanupTrash(ctx context.Context) {
-	if f := client.deployer.FS(); f != nil {
+func (c *clientImpl) cleanupTrash(ctx context.Context) {
+	if f := c.deployer.FS(); f != nil {
 		f.EnsureDirectoryGone(ctx, filepath.Join(f.Root(), fs.SiteServiceDir, "tmp"))
 		f.CleanupTrash(ctx)
 	}
 }
 
-func (client *clientImpl) clearAdmissionCache(ctx context.Context) {
-	if client.pluginAdmission != nil {
-		client.pluginAdmission.ClearCache()
+func (c *clientImpl) clearAdmissionCache(ctx context.Context) {
+	if c.pluginAdmission != nil {
+		c.pluginAdmission.ClearCache()
 	}
 }
 
 // getTagCache lazy-initializes tagCache and returns it.
 //
 // May return nil if tag cache is disabled.
-func (client *clientImpl) getTagCache() *internal.TagCache {
-	client.tagCacheInit.Do(func() {
+func (c *clientImpl) getTagCache() *internal.TagCache {
+	c.tagCacheInit.Do(func() {
 		var dir string
 		switch {
-		case client.CacheDir != "":
-			dir = client.CacheDir
-		case client.Root != "":
-			dir = filepath.Join(client.Root, fs.SiteServiceDir)
+		case c.CacheDir != "":
+			dir = c.CacheDir
+		case c.Root != "":
+			dir = filepath.Join(c.Root, fs.SiteServiceDir)
 		default:
 			return
 		}
-		parsed, err := url.Parse(client.ServiceURL)
+		parsed, err := url.Parse(c.ServiceURL)
 		if err != nil {
 			panic(err) // the URL has been validated in NewClient already
 		}
-		client.tagCache = internal.NewTagCache(fs.NewFileSystem(dir, ""), parsed.Host)
+		c.tagCache = internal.NewTagCache(fs.NewFileSystem(dir, ""), parsed.Host)
 	})
-	return client.tagCache
+	return c.tagCache
 }
 
 // instanceCache returns an instance cache to download packages into.
@@ -702,20 +702,20 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 //
 // This is a heavy object that may spawn multiple goroutines inside. Must be
 // closed with Close() when done working with it.
-func (client *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache, error) {
+func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache, error) {
 	var cacheDir string
 	var tmp bool
 
-	if client.CacheDir != "" {
+	if c.CacheDir != "" {
 		// This is a persistent global cache (not a temp one).
-		cacheDir = filepath.Join(client.CacheDir, "instances")
+		cacheDir = filepath.Join(c.CacheDir, "instances")
 	} else {
 		// This is going to be a temporary cache that self-destructs.
 		tmp = true
 
-		if client.Root != "" {
+		if c.Root != "" {
 			// Create the root tmp directory in the site root guts.
-			tmpDir, err := client.deployer.FS().EnsureDirectory(ctx, filepath.Join(client.Root, fs.SiteServiceDir, "tmp"))
+			tmpDir, err := c.deployer.FS().EnsureDirectory(ctx, filepath.Join(c.Root, fs.SiteServiceDir, "tmp"))
 			if err != nil {
 				return nil, err
 			}
@@ -738,7 +738,7 @@ func (client *clientImpl) instanceCache(ctx context.Context) (*internal.Instance
 	// Since 0 is used as "use defaults" indicator, we have to use negatives to
 	// represent "do not do anything in parallel at all" (by passing 0 to
 	// the InstanceCache).
-	parallelDownloads := client.ParallelDownloads
+	parallelDownloads := c.ParallelDownloads
 	switch {
 	case parallelDownloads == 0:
 		parallelDownloads = DefaultParallelDownloads
@@ -749,83 +749,83 @@ func (client *clientImpl) instanceCache(ctx context.Context) (*internal.Instance
 	cache := &internal.InstanceCache{
 		FS:                fs.NewFileSystem(cacheDir, ""),
 		Tmp:               tmp,
-		Fetcher:           client.remoteFetchInstance,
+		Fetcher:           c.remoteFetchInstance,
 		ParallelDownloads: parallelDownloads,
 	}
 	cache.Launch(ctx) // start background download goroutines
 	return cache, nil
 }
 
-func (client *clientImpl) Close(ctx context.Context) {
-	if client.pluginAdmission != nil {
-		client.pluginAdmission.Close(ctx)
+func (c *clientImpl) Close(ctx context.Context) {
+	if c.pluginAdmission != nil {
+		c.pluginAdmission.Close(ctx)
 	}
-	if client.pluginHost != nil {
-		client.pluginHost.Close(ctx)
+	if c.pluginHost != nil {
+		c.pluginHost.Close(ctx)
 	}
 }
 
-func (client *clientImpl) BeginBatch(ctx context.Context) {
-	client.batchLock.Lock()
-	defer client.batchLock.Unlock()
-	client.batchNesting++
+func (c *clientImpl) BeginBatch(ctx context.Context) {
+	c.batchLock.Lock()
+	defer c.batchLock.Unlock()
+	c.batchNesting++
 }
 
-func (client *clientImpl) EndBatch(ctx context.Context) {
-	client.batchLock.Lock()
-	defer client.batchLock.Unlock()
-	if client.batchNesting <= 0 {
+func (c *clientImpl) EndBatch(ctx context.Context) {
+	c.batchLock.Lock()
+	defer c.batchLock.Unlock()
+	if c.batchNesting <= 0 {
 		panic("EndBatch called without corresponding BeginBatch")
 	}
-	if client.batchNesting--; client.batchNesting == 0 {
-		for op := range client.batchPending {
-			batchAwareOps[op](client, ctx)
+	if c.batchNesting--; c.batchNesting == 0 {
+		for op := range c.batchPending {
+			batchAwareOps[op](c, ctx)
 		}
-		client.batchPending = nil
+		c.batchPending = nil
 	}
 }
 
-func (client *clientImpl) doBatchAwareOp(ctx context.Context, op batchAwareOp) {
-	client.batchLock.Lock()
-	defer client.batchLock.Unlock()
-	if client.batchNesting == 0 {
+func (c *clientImpl) doBatchAwareOp(ctx context.Context, op batchAwareOp) {
+	c.batchLock.Lock()
+	defer c.batchLock.Unlock()
+	if c.batchNesting == 0 {
 		// Not inside a batch, execute right now.
-		batchAwareOps[op](client, ctx)
+		batchAwareOps[op](c, ctx)
 	} else {
 		// Schedule to execute when 'EndBatch' is called.
-		if client.batchPending == nil {
-			client.batchPending = make(map[batchAwareOp]struct{}, 1)
+		if c.batchPending == nil {
+			c.batchPending = make(map[batchAwareOp]struct{}, 1)
 		}
-		client.batchPending[op] = struct{}{}
+		c.batchPending[op] = struct{}{}
 	}
 }
 
-func (client *clientImpl) FetchACL(ctx context.Context, prefix string) ([]PackageACL, error) {
+func (c *clientImpl) FetchACL(ctx context.Context, prefix string) ([]PackageACL, error) {
 	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
 
-	resp, err := client.repo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
+	resp, err := c.repo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
 		Prefix: prefix,
 	}, expectedCodes)
 	if err != nil {
-		return nil, client.humanErr(err)
+		return nil, c.humanErr(err)
 	}
 
 	return prefixMetadataToACLs(resp), nil
 }
 
-func (client *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []PackageACLChange) error {
+func (c *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []PackageACLChange) error {
 	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return err
 	}
 
 	// Fetch existing metadata, if any.
-	meta, err := client.repo.GetPrefixMetadata(ctx, &api.PrefixRequest{
+	meta, err := c.repo.GetPrefixMetadata(ctx, &api.PrefixRequest{
 		Prefix: prefix,
 	}, expectedCodes)
 	if code := status.Code(err); code != codes.OK && code != codes.NotFound {
-		return client.humanErr(err)
+		return c.humanErr(err)
 	}
 
 	// Construct new empty metadata for codes.NotFound.
@@ -839,20 +839,20 @@ func (client *clientImpl) ModifyACL(ctx context.Context, prefix string, changes 
 	}
 
 	// Store the new metadata. This call will check meta.Fingerprint.
-	_, err = client.repo.UpdatePrefixMetadata(ctx, meta, expectedCodes)
-	return client.humanErr(err)
+	_, err = c.repo.UpdatePrefixMetadata(ctx, meta, expectedCodes)
+	return c.humanErr(err)
 }
 
-func (client *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]string, error) {
+func (c *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]string, error) {
 	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
 
-	resp, err := client.repo.GetRolesInPrefix(ctx, &api.PrefixRequest{
+	resp, err := c.repo.GetRolesInPrefix(ctx, &api.PrefixRequest{
 		Prefix: prefix,
 	}, expectedCodes)
 	if err != nil {
-		return nil, client.humanErr(err)
+		return nil, c.humanErr(err)
 	}
 
 	out := make([]string, len(resp.Roles))
@@ -862,18 +862,18 @@ func (client *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]stri
 	return out, nil
 }
 
-func (client *clientImpl) ListPackages(ctx context.Context, prefix string, recursive, includeHidden bool) ([]string, error) {
+func (c *clientImpl) ListPackages(ctx context.Context, prefix string, recursive, includeHidden bool) ([]string, error) {
 	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
 
-	resp, err := client.repo.ListPrefix(ctx, &api.ListPrefixRequest{
+	resp, err := c.repo.ListPrefix(ctx, &api.ListPrefixRequest{
 		Prefix:        prefix,
 		Recursive:     recursive,
 		IncludeHidden: includeHidden,
 	}, expectedCodes)
 	if err != nil {
-		return nil, client.humanErr(err)
+		return nil, c.humanErr(err)
 	}
 
 	listing := resp.Packages
@@ -884,7 +884,7 @@ func (client *clientImpl) ListPackages(ctx context.Context, prefix string, recur
 	return listing, nil
 }
 
-func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error) {
+func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error) {
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return common.Pin{}, err
 	}
@@ -899,15 +899,15 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 
 	// Use the preresolved version if configured to do so. Do NOT fallback to
 	// the backend calls. A missing version is an error.
-	if client.Versions != nil {
-		return client.Versions.ResolveVersion(packageName, version)
+	if c.Versions != nil {
+		return c.Versions.ResolveVersion(packageName, version)
 	}
 
 	// Use a local cache when resolving tags to avoid round trips to the backend
 	// when calling same 'cipd ensure' command again and again.
 	var cache *internal.TagCache
 	if common.ValidateInstanceTag(version) == nil {
-		cache = client.getTagCache() // note: may be nil if the cache is disabled
+		cache = c.getTagCache() // note: may be nil if the cache is disabled
 	}
 	if cache != nil {
 		cached, err := cache.ResolveTag(ctx, packageName, version)
@@ -921,12 +921,12 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	}
 
 	// Either resolving a ref, or a tag cache miss? Hit the backend.
-	resp, err := client.repo.ResolveVersion(ctx, &api.ResolveVersionRequest{
+	resp, err := c.repo.ResolveVersion(ctx, &api.ResolveVersionRequest{
 		Package: packageName,
 		Version: version,
 	}, expectedCodes)
 	if err != nil {
-		return common.Pin{}, client.humanErr(err)
+		return common.Pin{}, c.humanErr(err)
 	}
 	pin := common.Pin{
 		PackageName: packageName,
@@ -938,7 +938,7 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 		if err := cache.AddTag(ctx, pin, version); err != nil {
 			logging.Warningf(ctx, "Could not add tag to the cache")
 		}
-		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
+		c.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 	}
 
 	return pin, nil
@@ -946,7 +946,7 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 
 // ensureClientVersionInfo is called only with the specially constructed client,
 // see MaybeUpdateClient function.
-func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs fs.FileSystem, pin common.Pin, clientExe string) {
+func (c *clientImpl) ensureClientVersionInfo(ctx context.Context, fs fs.FileSystem, pin common.Pin, clientExe string) {
 	expect, err := json.Marshal(version.Info{
 		PackageName: pin.PackageName,
 		InstanceID:  pin.InstanceID,
@@ -976,7 +976,7 @@ func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs fs.Fil
 
 // maybeUpdateClient is called only with the specially constructed client, see
 // MaybeUpdateClient function.
-func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
+func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	targetVersion, clientExe string, digests *digests.ClientDigestsFile) (common.Pin, error) {
 
 	// currentHashMatches calculates the existing client binary hash and compares
@@ -997,8 +997,8 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 		return common.HexDigest(hash) == obj.HexDigest, nil
 	}
 
-	client.BeginBatch(ctx)
-	defer client.EndBatch(ctx)
+	c.BeginBatch(ctx)
+	defer c.EndBatch(ctx)
 
 	// Resolve the client version to a pin, to be able to later grab URL to the
 	// binary by querying info for that pin.
@@ -1007,7 +1007,7 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	if err != nil {
 		return common.Pin{}, err // shouldn't be happening in reality
 	}
-	if pin, err = client.ResolveVersion(ctx, clientPackage, targetVersion); err != nil {
+	if pin, err = c.ResolveVersion(ctx, clientPackage, targetVersion); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -1021,9 +1021,9 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 
 	// rememberClientRef populates the extracted refs cache.
 	rememberClientRef := func(pin common.Pin, ref *api.ObjectRef) {
-		if cache := client.getTagCache(); cache != nil {
+		if cache := c.getTagCache(); cache != nil {
 			cache.AddExtractedObjectRef(ctx, pin, clientFileName, ref)
-			client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
+			c.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 		}
 	}
 
@@ -1033,7 +1033,7 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	// allows skipping RPCs to the backend on a "happy path", when the client is
 	// already up-to-date.
 	var clientRef *api.ObjectRef
-	if cache := client.getTagCache(); cache != nil {
+	if cache := c.getTagCache(); cache != nil {
 		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, pin, clientFileName); err != nil {
 			return common.Pin{}, err
 		}
@@ -1045,7 +1045,7 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	// updating the client version file).
 	var info *ClientDescription
 	if clientRef == nil {
-		if info, err = client.DescribeClient(ctx, pin); err != nil {
+		if info, err = c.DescribeClient(ctx, pin); err != nil {
 			return common.Pin{}, err
 		}
 		clientRef = info.Digest
@@ -1094,7 +1094,7 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 
 	// Grab the signed URL of the client binary if we haven't done so already.
 	if info == nil {
-		if info, err = client.DescribeClient(ctx, pin); err != nil {
+		if info, err = c.DescribeClient(ctx, pin); err != nil {
 			return common.Pin{}, err
 		}
 	}
@@ -1102,10 +1102,10 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	// Here we know for sure that the current binary has wrong hash (most likely
 	// it is outdated). Fetch the new binary, verifying its hash matches the one
 	// we expect.
-	err = client.installClient(
+	err = c.installClient(
 		ctx, fs,
 		common.MustNewHash(clientRef.HashAlgo),
-		info.SignedUrl,
+		info.SignedURL,
 		clientExe,
 		clientRef.HexDigest)
 	if err != nil {
@@ -1118,7 +1118,7 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	return pin, nil
 }
 
-func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) (err error) {
+func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) (err error) {
 	if timeout == 0 {
 		timeout = CASFinalizationTimeout
 	}
@@ -1134,12 +1134,12 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 	// attemptToRegister calls RegisterInstance RPC and logs the result.
 	attemptToRegister := func() (*api.UploadOperation, error) {
 		logging.Infof(ctx, "Registering %s", pin)
-		resp, err := client.repo.RegisterInstance(ctx, &api.Instance{
+		resp, err := c.repo.RegisterInstance(ctx, &api.Instance{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 		}, expectedCodes)
 		if err != nil {
-			return nil, client.humanErr(err)
+			return nil, c.humanErr(err)
 		}
 		switch resp.Status {
 		case api.RegistrationStatus_REGISTERED:
@@ -1168,10 +1168,10 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 	}
 
 	// The backend asked us to upload the data to CAS. Do it.
-	if err := client.storage.upload(ctx, uploadOp.UploadUrl, io.NewSectionReader(src, 0, src.Size())); err != nil {
+	if err := c.storage.upload(ctx, uploadOp.UploadUrl, io.NewSectionReader(src, 0, src.Size())); err != nil {
 		return err
 	}
-	if err := client.finalizeUpload(ctx, uploadOp.OperationId, timeout); err != nil {
+	if err := c.finalizeUpload(ctx, uploadOp.OperationId, timeout); err != nil {
 		return err
 	}
 	logging.Infof(ctx, "Successfully uploaded and verified %s", pin)
@@ -1188,7 +1188,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 
 // finalizeUpload repeatedly calls FinishUpload RPC until server reports that
 // the uploaded file has been verified.
-func (client *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout time.Duration) error {
+func (c *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout time.Duration) error {
 	ctx, cancel := clock.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -1200,14 +1200,14 @@ func (client *clientImpl) finalizeUpload(ctx context.Context, opID string, timeo
 		default:
 		}
 
-		op, err := client.cas.FinishUpload(ctx, &api.FinishUploadRequest{
+		op, err := c.cas.FinishUpload(ctx, &api.FinishUploadRequest{
 			UploadOperationId: opID,
 		})
 		switch {
 		case status.Code(err) == codes.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
 		case err != nil:
-			return client.humanErr(err)
+			return c.humanErr(err)
 		case op.Status == api.UploadStatus_PUBLISHED:
 			return nil // verified!
 		case op.Status == api.UploadStatus_ERRORED:
@@ -1226,7 +1226,7 @@ func (client *clientImpl) finalizeUpload(ctx context.Context, opID string, timeo
 	}
 }
 
-func (client *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
+func (c *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
@@ -1234,36 +1234,36 @@ func (client *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, 
 		opts = &DescribeInstanceOpts{}
 	}
 
-	resp, err := client.repo.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+	resp, err := c.repo.DescribeInstance(ctx, &api.DescribeInstanceRequest{
 		Package:      pin.PackageName,
 		Instance:     common.InstanceIDToObjectRef(pin.InstanceID),
 		DescribeRefs: opts.DescribeRefs,
 		DescribeTags: opts.DescribeTags,
 	}, expectedCodes)
 	if err != nil {
-		return nil, client.humanErr(err)
+		return nil, c.humanErr(err)
 	}
 
 	return apiDescToInfo(resp), nil
 }
 
-func (client *clientImpl) DescribeClient(ctx context.Context, pin common.Pin) (*ClientDescription, error) {
+func (c *clientImpl) DescribeClient(ctx context.Context, pin common.Pin) (*ClientDescription, error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
 
-	resp, err := client.repo.DescribeClient(ctx, &api.DescribeClientRequest{
+	resp, err := c.repo.DescribeClient(ctx, &api.DescribeClientRequest{
 		Package:  pin.PackageName,
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 	}, expectedCodes)
 	if err != nil {
-		return nil, client.humanErr(err)
+		return nil, c.humanErr(err)
 	}
 
 	return apiClientDescToInfo(resp), nil
 }
 
-func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
+func (c *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
 	if err := common.ValidatePackageRef(ref); err != nil {
 		return err
 	}
@@ -1276,8 +1276,8 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 
 	logging.Infof(ctx, "Setting ref of %s: %q => %q", pin.PackageName, ref, pin.InstanceID)
 
-	err := client.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
-		_, err := client.repo.CreateRef(ctx, &api.Ref{
+	err := c.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
+		_, err := c.repo.CreateRef(ctx, &api.Ref{
 			Name:     ref,
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
@@ -1296,7 +1296,7 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 	return err
 }
 
-func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error {
+func (c *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -1324,8 +1324,8 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 		logging.Infof(ctx, "Attaching tags")
 	}
 
-	err := client.retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
-		_, err := client.repo.AttachTags(ctx, &api.AttachTagsRequest{
+	err := c.retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
+		_, err := c.repo.AttachTags(ctx, &api.AttachTagsRequest{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 			Tags:     apiTags,
@@ -1348,7 +1348,7 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 	return err
 }
 
-func (client *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin, md []Metadata) error {
+func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin, md []Metadata) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -1386,8 +1386,8 @@ func (client *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin commo
 		logging.Infof(ctx, "Attaching metadata")
 	}
 
-	err := client.retryUntilReady(ctx, MetadataAttachTimeout, func(ctx context.Context) error {
-		_, err := client.repo.AttachMetadata(ctx, &api.AttachMetadataRequest{
+	err := c.retryUntilReady(ctx, MetadataAttachTimeout, func(ctx context.Context) error {
+		_, err := c.repo.AttachMetadata(ctx, &api.AttachMetadataRequest{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 			Metadata: apiMD,
@@ -1416,7 +1416,7 @@ const retryDelay = 5 * time.Second
 // retryUntilReady calls the callback and retries on FailedPrecondition errors,
 // which indicate that the instance is not ready yet (still being processed by
 // the backend).
-func (client *clientImpl) retryUntilReady(ctx context.Context, timeout time.Duration, cb func(context.Context) error) error {
+func (c *clientImpl) retryUntilReady(ctx context.Context, timeout time.Duration, cb func(context.Context) error) error {
 	ctx, cancel := clock.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -1433,17 +1433,17 @@ func (client *clientImpl) retryUntilReady(ctx context.Context, timeout time.Dura
 		case status.Code(err) == codes.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
 		case status.Code(err) == codes.FailedPrecondition: // the instance is not ready
-			logging.Warningf(ctx, "Not ready: %s", client.humanErr(err))
+			logging.Warningf(ctx, "Not ready: %s", c.humanErr(err))
 			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay).Incomplete() {
 				return ErrProcessingTimeout
 			}
 		default:
-			return client.humanErr(err)
+			return c.humanErr(err)
 		}
 	}
 }
 
-func (client *clientImpl) SearchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error) {
+func (c *clientImpl) SearchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error) {
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return nil, err
 	}
@@ -1459,16 +1459,16 @@ func (client *clientImpl) SearchInstances(ctx context.Context, packageName strin
 		}
 	}
 
-	resp, err := client.repo.SearchInstances(ctx, &api.SearchInstancesRequest{
+	resp, err := c.repo.SearchInstances(ctx, &api.SearchInstancesRequest{
 		Package:  packageName,
 		Tags:     apiTags,
-		PageSize: 1000, // TODO(vadimsh): Support pagination on the client.
+		PageSize: 1000, // TODO(vadimsh): Support pagination on the c.
 	}, expectedCodes)
 	switch {
 	case status.Code(err) == codes.NotFound: // no such package => no instances
 		return nil, nil
 	case err != nil:
-		return nil, client.humanErr(err)
+		return nil, c.humanErr(err)
 	}
 
 	out := make(common.PinSlice, len(resp.Instances))
@@ -1481,19 +1481,19 @@ func (client *clientImpl) SearchInstances(ctx context.Context, packageName strin
 	return out, nil
 }
 
-func (client *clientImpl) ListInstances(ctx context.Context, packageName string) (InstanceEnumerator, error) {
+func (c *clientImpl) ListInstances(ctx context.Context, packageName string) (InstanceEnumerator, error) {
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return nil, err
 	}
 	return &instanceEnumeratorImpl{
 		fetch: func(ctx context.Context, limit int, cursor string) ([]InstanceInfo, string, error) {
-			resp, err := client.repo.ListInstances(ctx, &api.ListInstancesRequest{
+			resp, err := c.repo.ListInstances(ctx, &api.ListInstancesRequest{
 				Package:   packageName,
 				PageSize:  int32(limit),
 				PageToken: cursor,
 			}, expectedCodes)
 			if err != nil {
-				return nil, "", client.humanErr(err)
+				return nil, "", c.humanErr(err)
 			}
 			instances := make([]InstanceInfo, len(resp.Instances))
 			for i, inst := range resp.Instances {
@@ -1504,16 +1504,16 @@ func (client *clientImpl) ListInstances(ctx context.Context, packageName string)
 	}, nil
 }
 
-func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error) {
+func (c *clientImpl) FetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error) {
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return nil, err
 	}
 
-	resp, err := client.repo.ListRefs(ctx, &api.ListRefsRequest{
+	resp, err := c.repo.ListRefs(ctx, &api.ListRefsRequest{
 		Package: packageName,
 	}, expectedCodes)
 	if err != nil {
-		return nil, client.humanErr(err)
+		return nil, c.humanErr(err)
 	}
 
 	refs := make([]RefInfo, len(resp.Refs))
@@ -1523,7 +1523,7 @@ func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName stri
 	return refs, nil
 }
 
-func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pkg.Source, error) {
+func (c *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pkg.Source, error) {
 	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return nil, err
 	}
@@ -1531,7 +1531,7 @@ func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pk
 	ctx, done := ui.NewActivity(ctx, nil, "")
 	defer done()
 
-	cache, err := client.instanceCache(ctx)
+	cache, err := c.instanceCache(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1548,7 +1548,7 @@ func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pk
 	return res.Source, nil
 }
 
-func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
+func (c *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
 	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return err
 	}
@@ -1558,13 +1558,13 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 
 	// Deal with no-cache situation first, it is simple - just fetch the instance
 	// into the 'output'.
-	if client.CacheDir == "" {
-		return client.remoteFetchInstance(ctx, pin, output)
+	if c.CacheDir == "" {
+		return c.remoteFetchInstance(ctx, pin, output)
 	}
 
 	// If using the cache, always fetch into the cache first, and then copy data
 	// from the cache into the output.
-	input, err := client.FetchInstance(ctx, pin)
+	input, err := c.FetchInstance(ctx, pin)
 	if err != nil {
 		return err
 	}
@@ -1585,7 +1585,7 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 
 // remoteFetchInstance fetches the package file into 'output' and verifies its
 // hash along the way. Assumes 'pin' is already validated.
-func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) (err error) {
+func (c *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) (err error) {
 	startTS := clock.Now(ctx)
 	defer func() {
 		if err != nil {
@@ -1598,16 +1598,16 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	objRef := common.InstanceIDToObjectRef(pin.InstanceID)
 
 	logging.Infof(ctx, "Resolving fetch URL for %s", pin)
-	resp, err := client.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+	resp, err := c.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 		Package:  pin.PackageName,
 		Instance: objRef,
 	}, expectedCodes)
 	if err != nil {
-		return client.humanErr(err)
+		return c.humanErr(err)
 	}
 
 	hash := common.MustNewHash(objRef.HashAlgo)
-	if err = client.storage.download(ctx, resp.SignedUrl, output, hash); err != nil {
+	if err = c.storage.download(ctx, resp.SignedUrl, output, hash); err != nil {
 		return
 	}
 
@@ -1618,11 +1618,11 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	return
 }
 
-func (client *clientImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
-	return client.deployer.FindDeployed(ctx)
+func (c *clientImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
+	return c.deployer.FindDeployed(ctx)
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, opts *EnsureOptions) (aMap ActionMap, err error) {
+func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, opts *EnsureOptions) (aMap ActionMap, err error) {
 	if err = allPins.Validate(common.AnyHash); err != nil {
 		return
 	}
@@ -1637,17 +1637,17 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 		return
 	}
 
-	client.BeginBatch(ctx)
-	defer client.EndBatch(ctx)
+	c.BeginBatch(ctx)
+	defer c.EndBatch(ctx)
 
 	// Enumerate existing packages.
-	existing, err := client.deployer.FindDeployed(ctx)
+	existing, err := c.deployer.FindDeployed(ctx)
 	if err != nil {
 		return
 	}
 
 	// Figure out what needs to be updated and deleted, log it.
-	aMap = buildActionPlan(allPins, existing, client.makeRepairChecker(ctx, realOpts.Paranoia))
+	aMap = buildActionPlan(allPins, existing, c.makeRepairChecker(ctx, realOpts.Paranoia))
 	if len(aMap) == 0 {
 		if !realOpts.Silent {
 			logging.Debugf(ctx, "Everything is up-to-date.")
@@ -1682,7 +1682,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	}
 
 	// Need a cache to fetch packages into.
-	cache, err := client.instanceCache(ctx)
+	cache, err := c.instanceCache(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1695,10 +1695,10 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	// Enqueue deployment admission checks if have the plugin enabled. They will
 	// be consulted later before unzipping fetched instances. This is just an
 	// optimization to do checks in parallel with fetching and installing.
-	if client.pluginAdmission != nil {
-		defer client.doBatchAwareOp(ctx, batchAwareOpClearAdmissionCache)
+	if c.pluginAdmission != nil {
+		defer c.doBatchAwareOp(ctx, batchAwareOpClearAdmissionCache)
 		for _, a := range perPinActions.updates {
-			client.pluginAdmission.CheckAdmission(a.pin)
+			c.pluginAdmission.CheckAdmission(a.pin)
 		}
 	}
 
@@ -1743,9 +1743,9 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 			var err error
 			switch a.action {
 			case ActionRemove:
-				err = client.deployer.RemoveDeployed(ctx, a.subdir, a.pin.PackageName)
+				err = c.deployer.RemoveDeployed(ctx, a.subdir, a.pin.PackageName)
 			case ActionRelink:
-				err = client.deployer.RepairDeployed(ctx, a.subdir, a.pin, client.MaxThreads, deployer.RepairParams{
+				err = c.deployer.RepairDeployed(ctx, a.subdir, a.pin, c.MaxThreads, deployer.RepairParams{
 					ToRelink: a.repairPlan.ToRelink,
 				})
 			default:
@@ -1773,8 +1773,8 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 		// CheckAdmission results are cached internally and it is fine to call
 		// it multiple times with the same pin (which may happen if we are
 		// refetching a corrupted package).
-		if deployErr == nil && client.pluginAdmission != nil {
-			admErr := client.pluginAdmission.CheckAdmission(state.pin).Wait(unzipCtx)
+		if deployErr == nil && c.pluginAdmission != nil {
+			admErr := c.pluginAdmission.CheckAdmission(state.pin).Wait(unzipCtx)
 			if admErr != nil {
 				if status, ok := status.FromError(admErr); ok && status.Code() == codes.FailedPrecondition {
 					deployErr = errors.Reason("not admitted: %s", status.Message()).Err()
@@ -1789,9 +1789,9 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 		for deployErr == nil && actionIdx < len(state.updates) {
 			switch a := state.updates[actionIdx]; a.action {
 			case ActionInstall:
-				_, deployErr = client.deployer.DeployInstance(unzipCtx, a.subdir, res.Instance, client.MaxThreads)
+				_, deployErr = c.deployer.DeployInstance(unzipCtx, a.subdir, res.Instance, c.MaxThreads)
 			case ActionRepair:
-				deployErr = client.deployer.RepairDeployed(unzipCtx, a.subdir, state.pin, client.MaxThreads, deployer.RepairParams{
+				deployErr = c.deployer.RepairDeployed(unzipCtx, a.subdir, state.pin, c.MaxThreads, deployer.RepairParams{
 					Instance:   res.Instance,
 					ToRedeploy: a.repairPlan.ToRedeploy,
 					ToRelink:   a.repairPlan.ToRelink,
@@ -1854,7 +1854,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	}
 
 	// Opportunistically cleanup the trash left from previous installs.
-	client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
+	c.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 
 	if !hasErrors {
 		logging.Infof(ctx, "All changes applied.")
@@ -1868,13 +1868,13 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 // to repair an already installed package.
 //
 // The implementation depends on selected paranoia mode.
-func (client *clientImpl) makeRepairChecker(ctx context.Context, paranoia ParanoidMode) repairCB {
+func (c *clientImpl) makeRepairChecker(ctx context.Context, paranoia ParanoidMode) repairCB {
 	if paranoia == NotParanoid {
 		return func(string, common.Pin) *RepairPlan { return nil }
 	}
 
 	return func(subdir string, pin common.Pin) *RepairPlan {
-		switch state, err := client.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia, WithoutManifest); {
+		switch state, err := c.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia, WithoutManifest); {
 		case err != nil:
 			// This error is probably non-recoverable, but we'll try anyway and
 			// properly fail later.
@@ -1925,11 +1925,11 @@ var expectedCodes = prpc.ExpectedCode(
 // presented in the CLI.
 //
 // It basically strips scary looking gRPC framing around the error message.
-func (client *clientImpl) humanErr(err error) error {
+func (c *clientImpl) humanErr(err error) error {
 	if err != nil {
 		if status, ok := status.FromError(err); ok {
-			if status.Code() == codes.PermissionDenied && client.LoginInstructions != "" {
-				return errors.Reason("%s, %s", status.Message(), client.LoginInstructions).Err()
+			if status.Code() == codes.PermissionDenied && c.LoginInstructions != "" {
+				return errors.Reason("%s, %s", status.Message(), c.LoginInstructions).Err()
 			}
 			return errors.New(status.Message())
 		}

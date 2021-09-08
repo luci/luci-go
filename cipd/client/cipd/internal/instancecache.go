@@ -184,7 +184,7 @@ func (c *InstanceCache) Launch(ctx context.Context) {
 	if c.Tmp {
 		tmp = " temporary"
 	}
-	logging.Infof(ctx, "Using%s instance cache at %s", tmp, c.FS.Root())
+	logging.Infof(ctx, "Using %s instance cache at %s", tmp, c.FS.Root())
 
 	// This is an effectively an unlimited buffer. At very least it should be
 	// large enough to hold all requests submitted by RequestInstances(...) before
@@ -514,6 +514,7 @@ func (h *garbageHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
 	x := old[n-1]
+	old[n-1] = nil // For GC.
 	*h = old[0 : n-1]
 	return x
 }
@@ -569,7 +570,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 	garbage.Iter(func(instanceID string) bool {
 		path, err := c.FS.RootRelToAbs(instanceID)
 		if err != nil {
-			panic("impossible")
+			panic(fmt.Sprintf("failed to convert path %q: %v", instanceID, err))
 		}
 		// EnsureFileGone logs errors already.
 		if c.FS.EnsureFileGone(ctx, path) == nil {
@@ -589,7 +590,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceCache, now time.Time) {
 	statePath, err := c.FS.RootRelToAbs(instanceCacheStateFilename)
 	if err != nil {
-		panic("impossible")
+		panic(fmt.Sprintf("failed to convert path %q: %v", instanceCacheStateFilename, err))
 	}
 
 	stateBytes, err := ioutil.ReadFile(statePath)
@@ -685,7 +686,7 @@ func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceC
 
 	statePath, err := c.FS.RootRelToAbs(instanceCacheStateFilename)
 	if err != nil {
-		panic("impossible")
+		panic(fmt.Sprintf("failed to convert path %q: %v", instanceCacheStateFilename, err))
 	}
 
 	return fs.EnsureFile(ctx, c.FS, statePath, bytes.NewReader(stateBytes))

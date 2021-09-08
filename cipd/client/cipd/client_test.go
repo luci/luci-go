@@ -915,7 +915,7 @@ func TestDescribeClient(t *testing.T) {
 			So(desc, ShouldResemble, &ClientDescription{
 				InstanceInfo:       InstanceInfo{Pin: pin},
 				Size:               12345,
-				SignedUrl:          "http://example.com/client_binary",
+				SignedURL:          "http://example.com/client_binary",
 				Digest:             sha256Ref, // best supported
 				AlternativeDigests: []*api.ObjectRef{sha1Ref, futureRef},
 			})

@@ -162,9 +162,9 @@ func (d *ClientDigestsFile) Serialize(w io.Writer, version, versionFile string) 
 
 		for _, e := range d.entries {
 			algo := strings.ToLower(e.ref.HashAlgo.String())
-			fmt.Fprintf(w, "%s%s%s%s%s\n",
-				e.plat, strings.Repeat(" ", max[0]+2-len(e.plat)),
-				algo, strings.Repeat(" ", max[1]+2-len(algo)),
+			fmt.Fprintf(w, "%-*s%-*s%s\n",
+				max[0]+2, e.plat,
+				max[1]+2, algo,
 				e.ref.HexDigest,
 			)
 		}

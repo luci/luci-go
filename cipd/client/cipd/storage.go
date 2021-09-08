@@ -65,7 +65,7 @@ func isTemporaryNetError(err error) bool {
 // isTemporaryHTTPError returns true for HTTP status codes that indicate
 // a temporary error that may go away if request is retried.
 func isTemporaryHTTPError(statusCode int) bool {
-	return statusCode >= 500 || statusCode == 408 || statusCode == 429
+	return statusCode >= http.StatusInternalServerError || statusCode == http.StatusRequestTimeout || statusCode == http.StatusBadRequest
 }
 
 type storage interface {
@@ -150,7 +150,9 @@ func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker
 
 		// Upload the chunk.
 		reportProgress("Uploading", offset)
-		data.Seek(offset, os.SEEK_SET)
+		if _, err := data.Seek(offset, os.SEEK_SET); err != nil {
+			return err
+		}
 		r, err := http.NewRequest("PUT", url, io.LimitReader(data, chunk))
 		if err != nil {
 			return err
@@ -170,7 +172,7 @@ func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker
 		resp.Body.Close()
 
 		// Partially or fully uploaded.
-		if resp.StatusCode == 308 || resp.StatusCode == 200 {
+		if resp.StatusCode == http.StatusPermanentRedirect || resp.StatusCode == http.StatusOK {
 			offset += chunk
 			if offset == length {
 				reportProgress("Uploading", offset)
@@ -196,7 +198,7 @@ func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker
 func (s *storageImpl) getNextOffset(ctx context.Context, url string, length int64) (offset int64, err error) {
 	r, err := http.NewRequest("PUT", url, nil)
 	if err != nil {
-		return
+		return offset, err
 	}
 	r.Header.Set("Content-Range", fmt.Sprintf("bytes */%d", length))
 	r.Header.Set("Content-Length", "0")
@@ -206,14 +208,14 @@ func (s *storageImpl) getNextOffset(ctx context.Context, url string, length int6
 		if isTemporaryNetError(err) {
 			err = errTransientError
 		}
-		return
+		return offset, err
 	}
 	resp.Body.Close()
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		// Fully uploaded.
 		offset = length
-	} else if resp.StatusCode == 308 {
+	} else if resp.StatusCode == http.StatusPermanentRedirect {
 		// Partially uploaded, extract last uploaded offset from Range header.
 		rangeHeader := resp.Header.Get("Range")
 		if rangeHeader != "" {
@@ -228,7 +230,7 @@ func (s *storageImpl) getNextOffset(ctx context.Context, url string, length int6
 	} else {
 		err = fmt.Errorf("unexpected response (HTTP %d) when querying for uploaded offset", resp.StatusCode)
 	}
-	return
+	return offset, err
 }
 
 // TODO(vadimsh): Use resumable download protocol.
