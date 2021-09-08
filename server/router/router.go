@@ -83,37 +83,37 @@ func (r *Router) Subrouter(relativePath string) *Router {
 	return newRouter
 }
 
-// GET is a shortcut for router.Handle("GET", path, mc, h)
+// GET is a shortcut for router.Handle("GET", path, mc, h).
 func (r *Router) GET(path string, mc MiddlewareChain, h Handler) {
 	r.Handle("GET", path, mc, h)
 }
 
-// HEAD is a shortcut for router.Handle("HEAD", path, mc, h)
+// HEAD is a shortcut for router.Handle("HEAD", path, mc, h).
 func (r *Router) HEAD(path string, mc MiddlewareChain, h Handler) {
 	r.Handle("HEAD", path, mc, h)
 }
 
-// OPTIONS is a shortcut for router.Handle("OPTIONS", path, mc, h)
+// OPTIONS is a shortcut for router.Handle("OPTIONS", path, mc, h).
 func (r *Router) OPTIONS(path string, mc MiddlewareChain, h Handler) {
 	r.Handle("OPTIONS", path, mc, h)
 }
 
-// POST is a shortcut for router.Handle("POST", path, mc, h)
+// POST is a shortcut for router.Handle("POST", path, mc, h).
 func (r *Router) POST(path string, mc MiddlewareChain, h Handler) {
 	r.Handle("POST", path, mc, h)
 }
 
-// PUT is a shortcut for router.Handle("PUT", path, mc, h)
+// PUT is a shortcut for router.Handle("PUT", path, mc, h).
 func (r *Router) PUT(path string, mc MiddlewareChain, h Handler) {
 	r.Handle("PUT", path, mc, h)
 }
 
-// PATCH is a shortcut for router.Handle("PATCH", path, mc, h)
+// PATCH is a shortcut for router.Handle("PATCH", path, mc, h).
 func (r *Router) PATCH(path string, mc MiddlewareChain, h Handler) {
 	r.Handle("PATCH", path, mc, h)
 }
 
-// DELETE is a shortcut for router.Handle("DELETE", path, mc, h)
+// DELETE is a shortcut for router.Handle("DELETE", path, mc, h).
 func (r *Router) DELETE(path string, mc MiddlewareChain, h Handler) {
 	r.Handle("DELETE", path, mc, h)
 }
@@ -132,10 +132,10 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	r.hrouter.ServeHTTP(rw, req)
 }
 
-// GetParams parases the httprouter.Params from the supplied method and path.
+// Params parases the httprouter.Params from the supplied method and path.
 //
-// If nothing is registered for method/path, GetParams will return false.
-func (r *Router) GetParams(method, path string) (httprouter.Params, bool) {
+// If nothing is registered for method/path, Params will return false.
+func (r *Router) Params(method, path string) (httprouter.Params, bool) {
 	if h, p, _ := r.hrouter.Lookup(method, path); h != nil {
 		return p, true
 	}

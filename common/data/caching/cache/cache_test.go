@@ -225,11 +225,11 @@ func TestNew(t *testing.T) {
 		perm := os.ModePerm
 		So(ioutil.WriteFile(c.itemPath(onDiskDigest), onDiskContent, perm), ShouldBeNil)
 
-		So(c.GetUsed(), ShouldBeEmpty)
+		So(c.Used(), ShouldBeEmpty)
 		So(c.Hardlink(notOnDiskDigest, filepath.Join(dir, "not_on_disk"), perm), ShouldNotBeNil)
-		So(c.GetUsed(), ShouldBeEmpty)
+		So(c.Used(), ShouldBeEmpty)
 		So(c.Hardlink(onDiskDigest, filepath.Join(dir, "on_disk"), perm), ShouldBeNil)
-		So(c.GetUsed(), ShouldHaveLength, 1)
+		So(c.Used(), ShouldHaveLength, 1)
 	})
 
 	Convey(`AddFileWithoutValidation`, t, func() {

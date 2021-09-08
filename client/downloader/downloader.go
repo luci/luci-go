@@ -725,8 +725,8 @@ type Stats struct {
 // CacheStats returns packed stats for cache miss/hit.
 func CacheStats(cache *cache.Cache) ([]byte, []byte, error) {
 	// TODO(yyanagisawa): refactor this.
-	added := cache.GetAdded()
-	used := cache.GetUsed()
+	added := cache.Added()
+	used := cache.Used()
 
 	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
 	itemsCold, err := isolated.Pack(added)

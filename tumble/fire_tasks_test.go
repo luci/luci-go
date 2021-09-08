@@ -37,7 +37,7 @@ func TestShardCalculation(t *testing.T) {
 	Convey("shard calculation", t, func() {
 		tt := &Testing{}
 		ctx := tt.Context()
-		cfg := tt.GetConfig(ctx)
+		cfg := tt.Config(ctx)
 		cfg.NumShards = 11
 		tt.UpdateSettings(ctx, cfg)
 
@@ -78,17 +78,17 @@ func TestFireTasks(t *testing.T) {
 		ctx := tt.Context()
 
 		Convey("empty", func() {
-			So(fireTasks(ctx, tt.GetConfig(ctx), nil, true), ShouldBeTrue)
+			So(fireTasks(ctx, tt.Config(ctx), nil, true), ShouldBeTrue)
 			So(len(tq.GetTestable(ctx).GetScheduledTasks()[baseName]), ShouldEqual, 0)
 		})
 
 		Convey("basic", func() {
-			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
+			So(fireTasks(ctx, tt.Config(ctx), map[taskShard]struct{}{
 				{2, minTS}: {},
 				{7, minTS}: {},
 
 				// since DelayedMutations is false, this timew will be reset
-				{5, mkTimestamp(tt.GetConfig(ctx), testclock.TestTimeUTC.Add(time.Minute))}: {},
+				{5, mkTimestamp(tt.Config(ctx), testclock.TestTimeUTC.Add(time.Minute))}: {},
 			}, true), ShouldBeTrue)
 			So(tq.GetTestable(ctx).GetScheduledTasks()[baseName], ShouldResemble, map[string]*tq.Task{
 				"-62132730888__2": {
@@ -114,7 +114,7 @@ func TestFireTasks(t *testing.T) {
 
 		Convey("namespaced", func() {
 			ctx = info.MustNamespace(ctx, "foo.bar")
-			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
+			So(fireTasks(ctx, tt.Config(ctx), map[taskShard]struct{}{
 				{2, minTS}: {},
 			}, true), ShouldBeTrue)
 			So(tq.GetTestable(ctx).GetScheduledTasks()[baseName], ShouldResemble, map[string]*tq.Task{
@@ -131,7 +131,7 @@ func TestFireTasks(t *testing.T) {
 		})
 
 		Convey("delayed", func() {
-			cfg := tt.GetConfig(ctx)
+			cfg := tt.Config(ctx)
 			cfg.DelayedMutations = true
 			tt.UpdateSettings(ctx, cfg)
 			delayedTS := mkTimestamp(cfg, testclock.TestTimeUTC.Add(time.Minute*10))

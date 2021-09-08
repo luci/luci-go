@@ -324,15 +324,15 @@ func (d *Cache) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMod
 	return d.hardlinkUnlocked(digest, dest, perm)
 }
 
-// GetAdded returns a list of file size added to cache.
-func (d *Cache) GetAdded() []int64 {
+// Added returns a list of file size added to cache.
+func (d *Cache) Added() []int64 {
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
 	return append([]int64{}, d.added...)
 }
 
-// GetUsed returns a list of file size used from cache.
-func (d *Cache) GetUsed() []int64 {
+// Used returns a list of file size used from cache.
+func (d *Cache) Used() []int64 {
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
 	return append([]int64{}, d.used...)

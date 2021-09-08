@@ -427,7 +427,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 			Convey("delaying messages works", func() {
 				ds.GetTestable(gctx).Consistent(false)
-				cfg := testing.GetConfig(ctx)
+				cfg := testing.Config(ctx)
 				cfg.DelayedMutations = true
 				testing.UpdateSettings(ctx, cfg)
 

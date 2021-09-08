@@ -40,7 +40,7 @@ func TestTumbleFiddlyBits(t *testing.T) {
 			itm := mc.NewItem(ctx, fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(ds.Serialize.ToBytes(future))
 			So(mc.Set(ctx, itm), ShouldBeNil)
 
-			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
+			So(fireTasks(ctx, tt.Config(ctx), map[taskShard]struct{}{
 				{10, minTS}: {},
 			}, true), ShouldBeTrue)
 			tt.Drain(ctx)

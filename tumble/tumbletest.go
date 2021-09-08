@@ -54,8 +54,8 @@ func (t *Testing) UpdateSettings(c context.Context, cfg *Config) {
 	settings.Set(c, baseName, cfg, "tumble.Testing", "for testing")
 }
 
-// GetConfig retrieves the current tumble settings
-func (t *Testing) GetConfig(c context.Context) *Config {
+// Config retrieves the current tumble settings
+func (t *Testing) Config(c context.Context) *Config {
 	return getConfig(c)
 }
 
@@ -90,7 +90,7 @@ func (t *Testing) Context() context.Context {
 
 // EnableDelayedMutations turns on delayed mutations for this context.
 func (t *Testing) EnableDelayedMutations(c context.Context) {
-	cfg := t.GetConfig(c)
+	cfg := t.Config(c)
 	if !cfg.DelayedMutations {
 		cfg.DelayedMutations = true
 		ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
@@ -134,7 +134,7 @@ func (t *Testing) Iterate(c context.Context) int {
 		req.Header.Set("X-AppEngine-QueueName", baseName)
 
 		// Determine our parameters.
-		params, ok := r.GetParams("POST", req.URL.Path)
+		params, ok := r.Params("POST", req.URL.Path)
 		if !ok {
 			panic(fmt.Errorf("failed to lookup path: %s", req.URL.Path))
 		}
@@ -184,7 +184,7 @@ func (t *Testing) FireAllTasks(c context.Context) {
 // pick up tasks in the task queue.
 func (t *Testing) AdvanceTime(c context.Context) {
 	clk := clock.Get(c).(testclock.TestClock)
-	cfg := t.GetConfig(c)
+	cfg := t.Config(c)
 	toAdd := time.Duration(cfg.TemporalMinDelay) + time.Duration(cfg.TemporalRoundFactor) + time.Second
 	logging.Infof(c, "adding %s to %s", toAdd, clk.Now().UTC())
 	clk.Add(toAdd)
@@ -229,7 +229,7 @@ func (t *Testing) DumpLog(c context.Context) {
 //
 // If the namespace function returns an error, MustGetNamespaces will panic.
 func (t *Testing) MustGetNamespaces(c context.Context) []string {
-	namespaces, err := t.getNamespaces(c, t.GetConfig(c))
+	namespaces, err := t.getNamespaces(c, t.Config(c))
 	if err != nil {
 		panic(err)
 	}
