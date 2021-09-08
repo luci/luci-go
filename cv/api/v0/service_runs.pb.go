@@ -20,13 +20,7 @@
 
 package cvpb
 
-import prpc "go.chromium.org/luci/grpc/prpc"
-
 import (
-	context "context"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -173,102 +167,4 @@ func file_go_chromium_org_luci_cv_api_v0_service_runs_proto_init() {
 	file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDesc = nil
 	file_go_chromium_org_luci_cv_api_v0_service_runs_proto_goTypes = nil
 	file_go_chromium_org_luci_cv_api_v0_service_runs_proto_depIdxs = nil
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// RunsClient is the client API for Runs service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type RunsClient interface {
-	// GetRun returns Run details.
-	GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*Run, error)
-}
-type runsPRPCClient struct {
-	client *prpc.Client
-}
-
-func NewRunsPRPCClient(client *prpc.Client) RunsClient {
-	return &runsPRPCClient{client}
-}
-
-func (c *runsPRPCClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*Run, error) {
-	out := new(Run)
-	err := c.client.Call(ctx, "cv.v0.Runs", "GetRun", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-type runsClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewRunsClient(cc grpc.ClientConnInterface) RunsClient {
-	return &runsClient{cc}
-}
-
-func (c *runsClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*Run, error) {
-	out := new(Run)
-	err := c.cc.Invoke(ctx, "/cv.v0.Runs/GetRun", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// RunsServer is the server API for Runs service.
-type RunsServer interface {
-	// GetRun returns Run details.
-	GetRun(context.Context, *GetRunRequest) (*Run, error)
-}
-
-// UnimplementedRunsServer can be embedded to have forward compatible implementations.
-type UnimplementedRunsServer struct {
-}
-
-func (*UnimplementedRunsServer) GetRun(context.Context, *GetRunRequest) (*Run, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRun not implemented")
-}
-
-func RegisterRunsServer(s prpc.Registrar, srv RunsServer) {
-	s.RegisterService(&_Runs_serviceDesc, srv)
-}
-
-func _Runs_GetRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRunRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RunsServer).GetRun(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/cv.v0.Runs/GetRun",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RunsServer).GetRun(ctx, req.(*GetRunRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _Runs_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "cv.v0.Runs",
-	HandlerType: (*RunsServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetRun",
-			Handler:    _Runs_GetRun_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "go.chromium.org/luci/cv/api/v0/service_runs.proto",
 }

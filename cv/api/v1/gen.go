@@ -15,4 +15,4 @@
 // Package cvpb contains v1 version of CV API.
 package cvpb
 
-//go:generate cproto
+//go:generate cproto -use-grpc-plugin
