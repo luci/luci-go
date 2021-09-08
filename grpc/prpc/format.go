@@ -54,6 +54,18 @@ const (
 	FormatText
 )
 
+func (f Format) String() string {
+	switch f {
+	case FormatBinary:
+		return "FormatBinary"
+	case FormatJSONPB:
+		return "FormatJSONPB"
+	case FormatText:
+		return "FormatText"
+	}
+	return fmt.Sprintf("Unknown Format(%d)", int(f))
+}
+
 // FormatFromContentType converts Content-Type header value from a request to a
 // format.
 // Can return only FormatBinary, FormatJSONPB or FormatText.

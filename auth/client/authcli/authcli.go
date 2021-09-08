@@ -349,7 +349,7 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
 	if err := authenticator.Login(); err != nil {
-		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err)
 		return ExitCodeBadLogin
 	}
 	return checkToken(ctx, &opts, authenticator)
@@ -497,7 +497,7 @@ type tokenRun struct {
 	jsonOutput string
 }
 
-func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands.Env) (exitCode int) {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -533,7 +533,12 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 				fmt.Fprintln(os.Stderr, err)
 				return ExitCodeInvalidInput
 			}
-			defer out.Close()
+			defer func() {
+				if err := out.Close(); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					exitCode = ExitCodeInternalError
+				}
+			}()
 		}
 		data := struct {
 			Token  string `json:"token"`

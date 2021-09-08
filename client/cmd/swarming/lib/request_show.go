@@ -64,7 +64,7 @@ func (c *requestShowRun) main(_ subcommands.Application, taskID string) error {
 		return err
 	}
 
-	result, err := service.GetTaskRequest(ctx, taskID)
+	result, err := service.TaskRequest(ctx, taskID)
 
 	pretty.Println(result)
 

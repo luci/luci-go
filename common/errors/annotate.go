@@ -414,8 +414,8 @@ func (r *renderedStack) dumpTo(w io.Writer, excludePkgs ...string) (n int, err e
 
 // dropVersionSuffix takes "a/b@zzz" and returns "a/b".
 func dropVersionSuffix(pkg string) string {
-	if idx := strings.LastIndexAny(pkg, "@"); idx != -1 {
-		return pkg[:idx]
+	if i := strings.LastIndexAny(pkg, "@"); i != -1 {
+		return pkg[:i]
 	}
 	return pkg
 }
@@ -484,7 +484,7 @@ func renderStack(err error) *renderedError {
 	ret := &renderedError{}
 
 	lastAnnotatedFrame := 0
-	var wrappers = []lines{}
+	var wrappers []lines
 	getCurFrame := func(fi *stackFrameInfo) *renderedFrame {
 		if len(ret.stacks) == 0 || ret.stacks[len(ret.stacks)-1].goID != fi.forStack.id {
 			lastAnnotatedFrame = len(fi.forStack.frames) - 1

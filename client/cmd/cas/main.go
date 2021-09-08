@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main is a CAS client.
+// Binary main is a CAS client.
 //
 // This is a thin wrapper of remote-apis-sdks to upload/download files from CAS
 // efficiently.

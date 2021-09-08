@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -233,13 +234,11 @@ func (c *client) Projects(ctx context.Context, req *gitiles.ProjectsRequest, opt
 	if err := c.get(ctx, "/", url.Values{}, &resp); err != nil {
 		return nil, err
 	}
-	ret := &gitiles.ProjectsResponse{
-		Projects: []string{},
-	}
+	ret := &gitiles.ProjectsResponse{}
 	for name := range resp {
 		ret.Projects = append(ret.Projects, name)
 	}
-
+	sort.Strings(ret.Projects)
 	return ret, nil
 }
 
@@ -300,13 +299,13 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	}
 	r, err := ctxhttp.Get(ctx, c.Client, u)
 	if err != nil {
-		return http.Header{}, []byte{}, status.Errorf(codes.Unknown, err.Error())
+		return http.Header{}, nil, status.Errorf(codes.Unknown, err.Error())
 	}
 
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return r.Header, []byte{}, status.Errorf(codes.Internal, "could not read response body: %s", err)
+		return r.Header, nil, status.Errorf(codes.Internal, "could not read response body: %s", err)
 	}
 
 	switch r.StatusCode {

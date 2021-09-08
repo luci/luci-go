@@ -224,7 +224,7 @@ func (s *Server) accountTokenHandler(rw http.ResponseWriter, r *http.Request) {
 func (s *Server) accountIdentityHandler(rw http.ResponseWriter, r *http.Request) {
 	aud := r.URL.Query().Get("audience")
 	if aud == "" {
-		http.Error(rw, "`audience` is required", 400)
+		http.Error(rw, "`audience` is required", http.StatusBadRequest)
 		return
 	}
 
@@ -236,7 +236,7 @@ func (s *Server) accountIdentityHandler(rw http.ResponseWriter, r *http.Request)
 	// current "gcloud" calls from LUCI). This hack can be removed when all tasks
 	// that use "gcloud" are in the realms mode.
 	if aud == "32555940559.apps.googleusercontent.com" {
-		http.Error(rw, "Go away: crbug.com/1210747", 404)
+		http.Error(rw, "Go away: crbug.com/1210747", http.StatusNotFound)
 		return
 	}
 

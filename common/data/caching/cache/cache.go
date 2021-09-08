@@ -155,7 +155,7 @@ func New(policies Policies, path string, h crypto.Hash) (*Cache, error) {
 	if json, err := d.lru.MarshalJSON(); err != nil {
 		return nil, err
 	} else {
-		d.log.WriteString(fmt.Sprintf("initial json: %s\n", string(json)))
+		fmt.Fprintf(&d.log, "initial json: %s\n", string(json))
 	}
 
 	return d, err

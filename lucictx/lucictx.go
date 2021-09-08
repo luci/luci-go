@@ -86,7 +86,7 @@ func extractFromEnv(out io.Writer) *lctx {
 	}
 	f, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintf(out, "Could not open LUCI_CONTEXT file %q: %s", path, err)
+		fmt.Fprintf(out, "Could not open LUCI_CONTEXT file %q: %s\n", path, err)
 		return &lctx{}
 	}
 	defer f.Close()
@@ -95,17 +95,22 @@ func extractFromEnv(out io.Writer) *lctx {
 	dec.UseNumber()
 	tmp := map[string]interface{}{}
 	if err := dec.Decode(&tmp); err != nil {
-		fmt.Fprintf(out, "Could not decode LUCI_CONTEXT file %q: %s", path, err)
+		fmt.Fprintf(out, "Could not decode LUCI_CONTEXT file %q: %s\n", path, err)
 		return &lctx{}
 	}
 
 	ret := alloc(len(tmp))
 	for k, v := range tmp {
 		if reflect.TypeOf(v).Kind() != reflect.Map {
-			fmt.Fprintf(out, "Could not re-encode LUCI_CONTEXT file %q, section %q: Not a map.", path, k)
+			fmt.Fprintf(out, "Could not re-encode LUCI_CONTEXT file %q, section %q: Not a map.\n", path, k)
 			continue
 		}
-		item, _ := json.Marshal(v)
+		item, err := json.Marshal(v)
+		if err != nil {
+			fmt.Fprintf(out, "Could not marshal LUCI_CONTEXT %v: %s\n", v, err)
+			return &lctx{}
+		}
+
 		// This section just came from json.Unmarshal, so we know that json.Marshal
 		// will work on it.
 		raw := json.RawMessage(item)
@@ -276,6 +281,6 @@ func dropToDisk(sections map[string]*json.RawMessage, dir string) (string, error
 
 func removeFromDisk(path string) {
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "Could not remove LUCI_CONTEXT file %q: %s", path, err)
+		fmt.Fprintf(os.Stderr, "Could not remove LUCI_CONTEXT file %q: %s\n", path, err)
 	}
 }

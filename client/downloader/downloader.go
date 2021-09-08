@@ -29,7 +29,7 @@ import (
 	"sync"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/client/internal/common"
@@ -145,8 +145,7 @@ func normalizePathSeparator(p string) string {
 // The Client, hash and outputDir must be specified.
 //
 // If options is nil, this will use defaults as described in the Options struct.
-func New(ctx context.Context, c *isolatedclient.Client, hash isolated.HexDigest,
-	outputDir string, options *Options) *Downloader {
+func New(ctx context.Context, c *isolatedclient.Client, hash isolated.HexDigest, outputDir string, options *Options) *Downloader {
 
 	var opt Options
 	if options != nil {
@@ -162,7 +161,7 @@ func New(ctx context.Context, c *isolatedclient.Client, hash isolated.HexDigest,
 
 	}
 	if opt.MaxFileStatsInterval == 0 {
-		opt.MaxFileStatsInterval = time.Second * 5
+		opt.MaxFileStatsInterval = 5 * time.Second
 	}
 
 	interval := 100 * time.Millisecond
@@ -341,7 +340,7 @@ func (d *Downloader) ensureDir(dir string) error {
 	// them and add them to the cache.
 	d.muCache.Lock()
 	defer d.muCache.Unlock()
-	parents := make([]string, 0, 1)
+	var parents []string
 	for i := dir; i != "" && !d.dirCache.Has(i); i = filepath.Dir(i) {
 		if i == d.outputDir {
 			break
@@ -402,13 +401,17 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		}
 
 		if d.options.Cache == nil {
-			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
+			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() (rerr error) {
 				// no cache use case.
 				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
 				if err != nil {
 					return err
 				}
-				defer f.Close()
+				defer func() {
+					if cerr := f.Close(); rerr == nil {
+						rerr = cerr
+					}
+				}()
 
 				if err := d.c.Fetch(d.ctx, details.Digest, d.track(f)); err != nil {
 					f.Close()
@@ -582,7 +585,12 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 					d.addError(tarType, string(hash)+":"+filename, err)
 					return
 				}
-				defer f.Close()
+				defer func() {
+					if err := f.Close(); err != nil {
+						d.addError(tarType, string(hash)+":"+filename, err)
+					}
+				}()
+
 				n, err := io.Copy(f, tf)
 				if err != nil {
 					d.addError(tarType, string(hash)+":"+filename, errors.Annotate(err, "failed to call io.Copy()").Err())
@@ -706,7 +714,7 @@ func (d downloadType) String() string {
 	}
 }
 
-// Stats is stats for FetchAndMap
+// Stats is stats for FetchAndMap.
 type Stats struct {
 	Duration time.Duration `json:"duration"`
 
@@ -714,8 +722,8 @@ type Stats struct {
 	ItemsHot  []byte `json:"items_hot"`
 }
 
-// GetCacheStats returns packed stats for cache miss/hit.
-func GetCacheStats(cache *cache.Cache) ([]byte, []byte, error) {
+// CacheStats returns packed stats for cache miss/hit.
+func CacheStats(cache *cache.Cache) ([]byte, []byte, error) {
 	// TODO(yyanagisawa): refactor this.
 	added := cache.GetAdded()
 	used := cache.GetUsed()
@@ -760,9 +768,9 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 
 	waitErr := d.Wait()
 
-	itemsCold, itemsHot, err := GetCacheStats(cache)
+	itemsCold, itemsHot, err := CacheStats(cache)
 	if err != nil {
-		return nil, Stats{}, errors.Annotate(err, "failed to call GetCacheStats").Err()
+		return nil, Stats{}, errors.Annotate(err, "failed to call CacheStats").Err()
 	}
 
 	d.mu.Lock()

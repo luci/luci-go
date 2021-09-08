@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
@@ -265,7 +266,7 @@ func readDescription(r io.Reader) (desc *description, err error) {
 	if err == nil {
 		err = json.Unmarshal(blob, &desc)
 	}
-	return
+	return desc, err
 }
 
 // writeDescription encodes and writes description JSON to io.Writer.
@@ -575,9 +576,9 @@ func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName s
 func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin common.Pin, maxThreads int, params RepairParams) error {
 	switch {
 	case len(params.ToRedeploy) != 0 && params.Instance == nil:
-		panic("if ToRedeploy is not empty, Instance must be given too")
+		return errors.Reason("if ToRedeploy is not empty, Instance must be given too").Err()
 	case params.Instance != nil && params.Instance.Pin() != pin:
-		panic(fmt.Sprintf("expecting instance with pin %s, got %s", pin, params.Instance.Pin()))
+		return errors.Reason("expecting instance with pin %s, got %s", pin, params.Instance.Pin()).Err()
 	}
 
 	// Note that we can slightly optimize the repairs of packages in 'copy'
@@ -1041,7 +1042,7 @@ func (d *deployerImpl) setCurrentInstanceID(ctx context.Context, packageDir, ins
 //
 // Returns (nil, nil) if no description.json exists and there are no instance
 // folders present.
-func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc *description, err error) {
+func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (*description, error) {
 	descriptionPath := filepath.Join(pkgDir, descriptionName)
 	r, err := os.Open(descriptionPath)
 	switch {
@@ -1052,27 +1053,26 @@ func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc
 		defer r.Close()
 		return readDescription(r)
 	default:
-		return
+		return nil, err
 	}
 
 	// see if this is a pre 1.4 directory
 	currentID, err := d.getCurrentInstanceID(pkgDir)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	if currentID == "" {
 		logging.Warningf(ctx, "No current instance id in %s", pkgDir)
-		err = nil
-		return
+		return nil, nil
 	}
 
 	manifest, err := d.readManifest(ctx, filepath.Join(pkgDir, currentID))
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	desc = &description{
+	desc := &description{
 		PackageName: manifest.PackageName,
 	}
 	// To handle the case where some other user owns these directories, all errors
@@ -1082,9 +1082,8 @@ func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc
 	})
 	if err != nil {
 		logging.Warningf(ctx, "Unable to create description.json: %s", err)
-		err = nil
 	}
-	return
+	return desc, nil
 }
 
 // readManifest reads package manifest given a path to a package instance
@@ -1350,7 +1349,7 @@ func (d *deployerImpl) checkIntegrity(ctx context.Context, p *DeployedPackage, m
 		}
 	}
 
-	return
+	return redeploy, relink
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1485,7 +1484,7 @@ func parentDirs(rel string, cb func(p string) bool) {
 // and .cipd) since they contain package deployer gut files, not something that
 // needs to be deployed.
 func scanPackageDir(ctx context.Context, dir string) ([]pkg.FileInfo, error) {
-	out := []pkg.FileInfo{}
+	var out []pkg.FileInfo
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err

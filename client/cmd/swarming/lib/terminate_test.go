@@ -100,7 +100,7 @@ func TestTerminateBots(t *testing.T) {
 					TaskId: terminateTaskID,
 				}, nil
 			},
-			getTaskResult: func(ctx context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(ctx context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				givenTaskID = taskID
 				if taskID == stillRunningTaskID && countLoop < 2 {
 					countLoop += 1

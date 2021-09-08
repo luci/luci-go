@@ -104,9 +104,9 @@ func (c *downloadRun) outputResults(cache *cache.Cache, initStats initCacheStats
 		return nil
 	}
 
-	itemsCold, itemsHot, err := downloader.GetCacheStats(cache)
+	itemsCold, itemsHot, err := downloader.CacheStats(cache)
 	if err != nil {
-		return errors.Annotate(err, "failed to call GetCacheStats").Err()
+		return errors.Annotate(err, "failed to call CacheStats").Err()
 	}
 
 	root, err := dl.RootIsolated()

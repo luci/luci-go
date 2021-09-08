@@ -28,22 +28,22 @@ import (
 var _ swarmingService = (*testService)(nil)
 
 type testService struct {
-	newTask             func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
-	countTasks          func(context.Context, float64, string, ...string) (*swarming.SwarmingRpcsTasksCount, error)
-	countBots           func(context.Context, ...string) (*swarming.SwarmingRpcsBotsCount, error)
-	listTasks           func(context.Context, int64, float64, string, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
-	cancelTask          func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
-	getTaskRequest      func(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error)
-	getTaskResult       func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
-	getTaskOutput       func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
-	getFilesFromIsolate func(context.Context, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
-	getFilesFromCAS     func(context.Context, string, *rbeclient.Client, *swarming.SwarmingRpcsCASReference) ([]string, error)
-	listBots            func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
-	deleteBot           func(context.Context, string) (*swarming.SwarmingRpcsDeletedResponse, error)
-	terminateBot        func(context.Context, string) (*swarming.SwarmingRpcsTerminateResponse, error)
+	newTask          func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
+	countTasks       func(context.Context, float64, string, ...string) (*swarming.SwarmingRpcsTasksCount, error)
+	countBots        func(context.Context, ...string) (*swarming.SwarmingRpcsBotsCount, error)
+	listTasks        func(context.Context, int64, float64, string, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
+	cancelTask       func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
+	taskRequest      func(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error)
+	taskResult       func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
+	taskOutput       func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
+	filesFromIsolate func(context.Context, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	filesFromCAS     func(context.Context, string, *rbeclient.Client, *swarming.SwarmingRpcsCASReference) ([]string, error)
+	listBots         func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
+	deleteBot        func(context.Context, string) (*swarming.SwarmingRpcsDeletedResponse, error)
+	terminateBot     func(context.Context, string) (*swarming.SwarmingRpcsTerminateResponse, error)
 }
 
-func (s testService) Client() *http.Client {
+func (testService) Client() *http.Client {
 	return nil
 }
 
@@ -63,24 +63,24 @@ func (s testService) CancelTask(ctx context.Context, taskID string, req *swarmin
 	return s.cancelTask(ctx, taskID, req)
 }
 
-func (s testService) GetTaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
-	return s.getTaskRequest(ctx, taskID)
+func (s testService) TaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
+	return s.taskRequest(ctx, taskID)
 }
 
-func (s testService) GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
-	return s.getTaskResult(ctx, taskID, perf)
+func (s testService) TaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
+	return s.taskResult(ctx, taskID, perf)
 }
 
-func (s testService) GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
-	return s.getTaskOutput(ctx, taskID)
+func (s testService) TaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+	return s.taskOutput(ctx, taskID)
 }
 
-func (s testService) GetFilesFromIsolate(ctx context.Context, output string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error) {
-	return s.getFilesFromIsolate(ctx, output, isolateRef)
+func (s testService) FilesFromIsolate(ctx context.Context, output string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+	return s.filesFromIsolate(ctx, output, isolateRef)
 }
 
-func (s testService) GetFilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
-	return s.getFilesFromCAS(ctx, outdir, cascli, casRef)
+func (s testService) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+	return s.filesFromCAS(ctx, outdir, cascli, casRef)
 }
 
 func (s testService) CountBots(ctx context.Context, dimensions ...string) (*swarming.SwarmingRpcsBotsCount, error) {

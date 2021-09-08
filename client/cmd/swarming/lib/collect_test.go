@@ -119,7 +119,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 
 	Convey(`Test fatal response`, t, func() {
 		service := &testService{
-			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return nil, &googleapi.Error{Code: 404}
 			},
 		}
@@ -129,7 +129,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 
 	Convey(`Test timeout exceeded`, t, func() {
 		service := &testService{
-			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return nil, &googleapi.Error{Code: 502}
 			},
 		}
@@ -141,16 +141,16 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		var writtenTo string
 		var writtenIsolated string
 		service := &testService{
-			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return &swarming.SwarmingRpcsTaskResult{
 					State:      "COMPLETED",
 					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
 				}, nil
 			},
-			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
-			getFilesFromIsolate: func(c context.Context, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+			filesFromIsolate: func(c context.Context, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 				writtenTo = output
 				writtenIsolated = ref.Isolated
 				return []string{"hello"}, nil
@@ -175,7 +175,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		var writtenInstance string
 		var writtenDigest string
 		service := &testService{
-			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return &swarming.SwarmingRpcsTaskResult{
 					State: "COMPLETED",
 					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
@@ -184,10 +184,10 @@ func TestCollectPollForTaskResult(t *testing.T) {
 					},
 				}, nil
 			},
-			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
-			getFilesFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+			filesFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
 				writtenTo = outdir
 				writtenInstance = casRef.CasInstance
 				writtenDigest = fmt.Sprintf("%s/%d", casRef.Digest.Hash, casRef.Digest.SizeBytes)
@@ -214,7 +214,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		i := 0
 		maxTries := 5
 		service := &testService{
-			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				if i < maxTries {
 					i++
 					return nil, &googleapi.Error{Code: http.StatusBadGateway}
@@ -259,7 +259,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		outputFetched := sync.Map{}
 
 		service := &testService{
-			getTaskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				if taskID != firstID {
 					// Simulate the second task not finishing until the first
 					// task has already finished, downloaded its outputs, and
@@ -272,7 +272,7 @@ func TestCollectPollForTasks(t *testing.T) {
 					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
 				}, nil
 			},
-			getTaskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				outputFetched.Store(taskID, true)
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
@@ -307,13 +307,13 @@ func TestCollectPollForTasks(t *testing.T) {
 		firstTaskComplete := make(chan struct{})
 		lastTaskDownloading := make(chan struct{})
 		service := &testService{
-			getTaskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return &swarming.SwarmingRpcsTaskResult{
 					State:      "COMPLETED",
 					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
 				}, nil
 			},
-			getTaskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				// Make sure that the two tasks are downloading outputs at the
 				// same time, but have the second task wait for the first task's
 				// download to complete before continuing the download.
@@ -361,13 +361,13 @@ func TestCollectPollForTasks(t *testing.T) {
 		outputFetched := false
 
 		service := &testService{
-			getTaskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return &swarming.SwarmingRpcsTaskResult{
 					State:      "COMPLETED",
 					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
 				}, nil
 			},
-			getTaskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				outputFetched = true
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},

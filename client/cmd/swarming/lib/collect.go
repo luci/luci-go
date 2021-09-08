@@ -219,12 +219,7 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 	return 0
 }
 
-func (c *collectRun) fetchTaskResults(
-	ctx context.Context,
-	taskID string,
-	service swarmingService,
-	downloadSem weightedSemaphore,
-) taskResult {
+func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, service swarmingService, downloadSem weightedSemaphore) taskResult {
 	defer logging.Debugf(ctx, "Finished fetching task result: %s", taskID)
 	var result *swarming.SwarmingRpcsTaskResult
 	var output string
@@ -234,7 +229,7 @@ func (c *collectRun) fetchTaskResults(
 
 		// Fetch the result details.
 		logging.Debugf(ctx, "Fetching task result: %s", taskID)
-		result, err = service.GetTaskResult(ctx, taskID, c.perf)
+		result, err = service.TaskResult(ctx, taskID, c.perf)
 		if err != nil {
 			return tagTransientGoogleAPIError(err)
 		}
@@ -253,7 +248,7 @@ func (c *collectRun) fetchTaskResults(
 		// user asked for it.
 		if c.taskOutput != taskOutputNone {
 			logging.Debugf(ctx, "Fetching task output: %s", taskID)
-			taskOutput, err := service.GetTaskOutput(ctx, taskID)
+			taskOutput, err := service.TaskOutput(ctx, taskID)
 			if err != nil {
 				return tagTransientGoogleAPIError(err)
 			}
@@ -270,7 +265,7 @@ func (c *collectRun) fetchTaskResults(
 				return errors.Reason("Invalid TaskResult: both OutputsRef and CasOutputRoot exist").Err()
 			}
 			if result.OutputsRef != nil {
-				outputs, err = service.GetFilesFromIsolate(ctx, outdir, result.OutputsRef)
+				outputs, err = service.FilesFromIsolate(ctx, outdir, result.OutputsRef)
 				if err != nil {
 					return tagTransientGoogleAPIError(err)
 				}
@@ -280,7 +275,7 @@ func (c *collectRun) fetchTaskResults(
 				if err != nil {
 					return err
 				}
-				outputs, err = service.GetFilesFromCAS(ctx, outdir, cascli, result.CasOutputRoot)
+				outputs, err = service.FilesFromCAS(ctx, outdir, cascli, result.CasOutputRoot)
 				if err != nil {
 					return tagTransientGoogleAPIError(err)
 				}
@@ -320,12 +315,7 @@ func prepareOutputDir(outputDir, taskID string) (string, error) {
 	return dir, nil
 }
 
-func (c *collectRun) pollForTaskResult(
-	ctx context.Context,
-	taskID string,
-	service swarmingService,
-	downloadSem weightedSemaphore,
-) taskResult {
+func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, service swarmingService, downloadSem weightedSemaphore) taskResult {
 	var result taskResult
 	startedTime := clock.Now(ctx)
 	for {
@@ -424,12 +414,7 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 	return json.MarshalIndent(jsonResults, "", "  ")
 }
 
-func (c *collectRun) pollForTasks(
-	ctx context.Context,
-	taskIDs []string,
-	service swarmingService,
-	downloadSem weightedSemaphore,
-) []taskResult {
+func (c *collectRun) pollForTasks(ctx context.Context, taskIDs []string, service swarmingService, downloadSem weightedSemaphore) []taskResult {
 	if len(taskIDs) == 0 {
 		return nil
 	}
@@ -494,7 +479,7 @@ func (c *collectRun) main(_ subcommands.Application, taskIDs []string) error {
 		if err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile(c.taskSummaryJSON, jsonSummary, 0664); err != nil {
+		if err := ioutil.WriteFile(c.taskSummaryJSON, jsonSummary, 0644); err != nil {
 			return err
 		}
 	}

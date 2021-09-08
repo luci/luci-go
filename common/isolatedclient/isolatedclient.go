@@ -189,14 +189,14 @@ func (i *Client) Contains(c context.Context, items []*isolateservice.HandlersEnd
 }
 
 // Push pushed a missing item, as reported by Contains(), to the server.
-func (i *Client) Push(c context.Context, state *PushState, source Source) (err error) {
+func (i *Client) Push(c context.Context, state *PushState, source Source) error {
 	// This push operation may be a retry after failed finalization call below,
 	// no need to reupload contents in that case.
 	if !state.uploaded {
 		// PUT file to uploadURL.
-		if err = i.doPush(c, state, source); err != nil {
+		if err := i.doPush(c, state, source); err != nil {
 			log.Printf("doPush(%s) failed: %s\n%#v", state.digest, err, state)
-			return
+			return err
 		}
 		state.uploaded = true
 	}
@@ -209,13 +209,13 @@ func (i *Client) Push(c context.Context, state *PushState, source Source) (err e
 		// stored files).
 		in := isolateservice.HandlersEndpointsV1FinalizeRequest{UploadTicket: state.status.UploadTicket}
 		headers := map[string]string{"Cache-Control": "public, max-age=31536000"}
-		if err = i.postJSON(c, "/_ah/api/isolateservice/v1/finalize_gs_upload", headers, in, nil); err != nil {
+		if err := i.postJSON(c, "/_ah/api/isolateservice/v1/finalize_gs_upload", headers, in, nil); err != nil {
 			log.Printf("Push(%s) (finalize) failed: %s\n%#v", state.digest, err, state)
-			return
+			return err
 		}
 	}
 	state.finalized = true
-	return
+	return nil
 }
 
 // Fetch downloads an item from the server.
@@ -317,7 +317,7 @@ type defaultGCSHandler struct{}
 
 // Fetch uses the provided HandlersEndpointsV1RetrievedContent response to
 // download content from GCS to the provided dest.
-func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolateservice.HandlersEndpointsV1RetrievedContent, dest io.Writer) error {
+func (defaultGCSHandler) Fetch(c context.Context, i *Client, content isolateservice.HandlersEndpointsV1RetrievedContent, dest io.Writer) error {
 	rgen := func() (*http.Request, error) {
 		return http.NewRequest("GET", content.Url, nil)
 	}
@@ -344,7 +344,7 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 
 // Push uploads content from the provided source to the GCS path specified in
 // the HandlersEndpointsV1PreuploadStatus response.
-func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolateservice.HandlersEndpointsV1PreuploadStatus, source Source) error {
+func (defaultGCSHandler) Push(ctx context.Context, i *Client, status isolateservice.HandlersEndpointsV1PreuploadStatus, source Source) error {
 	// GsUploadUrl is signed Google Storage URL that doesn't require additional
 	// authentication. In fact, using authClient causes HTTP 403 because
 	// authClient's tokens don't have Cloud Storage OAuth scope. Use anonymous
@@ -388,7 +388,7 @@ func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolate
 		}
 
 		if !verified {
-			return errors.Reason("hash mismatch, x-goog-hash='%s' md5 hash='%s'",
+			return errors.Reason("hash mismatch, x-goog-hash=%q md5 hash=%q",
 				xGoogHash, base64MD5).Tag(transient.Tag).Err()
 		}
 

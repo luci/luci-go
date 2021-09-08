@@ -71,7 +71,7 @@ func (t *terminateRun) parse(botIDs []string) error {
 
 func pollTask(ctx context.Context, taskID string, service swarmingService) (*swarming.SwarmingRpcsTaskResult, error) {
 	for {
-		res, err := service.GetTaskResult(ctx, taskID, false)
+		res, err := service.TaskResult(ctx, taskID, false)
 		if err != nil {
 			return res, errors.Annotate(err, "failed to get task result").Err()
 		}

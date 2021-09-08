@@ -25,12 +25,12 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 var (
-	fieldMaskType    = reflect.TypeOf((*field_mask.FieldMask)(nil))
+	fieldMaskType    = reflect.TypeOf((*fieldmaskpb.FieldMask)(nil))
 	structType       = reflect.TypeOf((*structpb.Struct)(nil))
 	protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
 )

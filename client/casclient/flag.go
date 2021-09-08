@@ -45,16 +45,18 @@ func (c *Flags) Parse() error {
 	return nil
 }
 
-func parseCASInstance(ins string) (string, error) {
-	// GCP project ID format: https://cloud.google.com/resource-manager/docs/creating-managing-projects
-	// Not the most accurate regexp, but let's just assume most people know what they are doing...
-	projectRe := regexp.MustCompile(`^[a-z0-9\-]+$`)
-	instanceRe := regexp.MustCompile(`^projects/[a-z0-9\-]+/instances/[^/]+$`)
+// GCP project ID format: https://cloud.google.com/resource-manager/docs/creating-managing-projects
+// Not the most accurate regexp, but let's just assume most people know what they are doing...
+var (
+	projectRE  = regexp.MustCompile(`^[a-z0-9\-]+$`)
+	instanceRE = regexp.MustCompile(`^projects/[a-z0-9\-]+/instances/[^/]+$`)
+)
 
-	if projectRe.MatchString(ins) {
+func parseCASInstance(ins string) (string, error) {
+	if projectRE.MatchString(ins) {
 		return "projects/" + ins + "/instances/default_instance", nil
 	}
-	if instanceRe.MatchString(ins) {
+	if instanceRE.MatchString(ins) {
 		return ins, nil
 	}
 	return "", errors.Reason("invalid CAS instance: %s", ins).Err()

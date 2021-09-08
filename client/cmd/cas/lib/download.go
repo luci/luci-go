@@ -387,7 +387,14 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	smallFiles := make(map[string][]*client.TreeOutput)
 
-	for path, output := range outputs {
+	sortedPaths := make([]string, 0, len(outputs))
+	for path := range outputs {
+		sortedPaths = append(sortedPaths, path)
+	}
+	sort.Strings(sortedPaths)
+
+	for _, path := range sortedPaths {
+		output := outputs[path]
 		if output.IsEmptyDirectory {
 			continue
 		}

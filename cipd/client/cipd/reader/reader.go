@@ -50,16 +50,28 @@ type VerificationMode int
 const (
 	// VerifyHash instructs OpenPackage to calculate the hash of the package file
 	// and compare it to the given InstanceID.
-	VerifyHash VerificationMode = 0
+	VerifyHash VerificationMode = iota
 
 	// SkipHashVerification instructs OpenPackage to skip the hash verification
 	// and trust that the given InstanceID matches the package.
-	SkipHashVerification VerificationMode = 1
+	SkipHashVerification
 
 	// CalculateHash instructs OpenPackage to calculate the hash of the package
 	// file using the given hash algo, and use it as a new instance ID.
-	CalculateHash VerificationMode = 2
+	CalculateHash
 )
+
+func (v VerificationMode) String() string {
+	switch v {
+	case VerifyHash:
+		return "VerifyHash"
+	case SkipHashVerification:
+		return "SkipHashVerification"
+	case CalculateHash:
+		return "CalculateHash"
+	}
+	return fmt.Sprintf("Unknown VerificationMode(%d)", int(v))
+}
 
 // ErrHashMismatch is an error when package hash doesn't match.
 var ErrHashMismatch = errors.New("package hash mismatch")
@@ -298,13 +310,11 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 
 	switch {
 	case ctx.Err() != nil:
-		err = ctx.Err()
-		return
+		return extracted, ctx.Err()
 	case err != nil || bool(!withManifest):
-		return
+		return extracted, err
 	case manifestFile == nil:
-		err = fmt.Errorf("bad CIPD package: no %s file", pkg.ManifestName)
-		return
+		return extracted, fmt.Errorf("bad CIPD package: no %s file", pkg.ManifestName)
 	}
 
 	// Now grab the original manifest.json from inside the package and extend it
@@ -312,14 +322,14 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 	// extracting them.
 	manifest, err := readManifestFile(manifestFile)
 	if err != nil {
-		return
+		return extracted, err
 	}
 	manifest.Files = extracted
 
 	// And place it into the destination.
 	out, err := dest.CreateFile(ctx, pkg.ManifestName, fs.CreateFileOptions{})
 	if err != nil {
-		return
+		return extracted, err
 	}
 	defer func() {
 		if closeErr := out.Close(); err == nil {
@@ -328,7 +338,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 	}()
 	err = pkg.WriteManifest(&manifest, out)
 	progress.advance(manifestFile.Size())
-	return
+	return extracted, err
 }
 
 // ExtractFilesTxn is like ExtractFiles, but it also opens and closes

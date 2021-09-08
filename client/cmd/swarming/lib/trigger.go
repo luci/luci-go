@@ -285,7 +285,7 @@ func (c *triggerRun) Run(a subcommands.Application, args []string, env subcomman
 	return 0
 }
 
-func (c *triggerRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
+func (c *triggerRun) main(a subcommands.Application, args []string, env subcommands.Env) (rerr error) {
 	start := time.Now()
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	defer cancel()
@@ -311,7 +311,11 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 		if err != nil {
 			return err
 		}
-		defer dump.Close()
+		defer func() {
+			if err := dump.Close(); rerr == nil {
+				rerr = err
+			}
+		}()
 
 		data := TriggerResults{Tasks: []*swarming.SwarmingRpcsTaskRequestMetadata{result}}
 		b, err := json.MarshalIndent(&data, "", "  ")
@@ -448,7 +452,7 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 	}
 
 	if len(c.cipdPackage) > 0 {
-		pkgs := []*swarming.SwarmingRpcsCipdPackage{}
+		var pkgs []*swarming.SwarmingRpcsCipdPackage
 		for k, v := range c.cipdPackage {
 			s := strings.SplitN(k, ":", 2)
 			pkg := swarming.SwarmingRpcsCipdPackage{
@@ -460,6 +464,18 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 			}
 			pkgs = append(pkgs, &pkg)
 		}
+
+		sort.Slice(pkgs, func(i, j int) bool {
+			pi, pj := pkgs[i], pkgs[j]
+			if pi.PackageName != pj.PackageName {
+				return pi.PackageName < pj.PackageName
+			}
+			if pi.Version != pj.Version {
+				return pi.Version < pj.Version
+			}
+			return pi.Path < pj.Path
+		})
+
 		properties.CipdInput = &swarming.SwarmingRpcsCipdInput{Packages: pkgs}
 	}
 
@@ -471,6 +487,14 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 			},
 		)
 	}
+
+	sort.Slice(properties.Caches, func(i, j int) bool {
+		ci, cj := properties.Caches[i], properties.Caches[j]
+		if ci.Name != cj.Name {
+			return ci.Name < cj.Name
+		}
+		return ci.Path < cj.Path
+	})
 
 	randomUUID, err := uuid.NewRandom()
 	if err != nil {

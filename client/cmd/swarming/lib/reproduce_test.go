@@ -153,7 +153,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		}
 
 		service := &testService{
-			getFilesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarming.SwarmingRpcsCASReference) ([]string, error) {
+			filesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarming.SwarmingRpcsCASReference) ([]string, error) {
 				fetchedCASFiles = true
 				return []string{}, nil
 			},
@@ -231,7 +231,7 @@ func TestPrepareTaskRequestEnvironment_Isolate(t *testing.T) {
 		}
 
 		service := &testService{
-			getFilesFromIsolate: func(_ context.Context, _ string, _ *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+			filesFromIsolate: func(_ context.Context, _ string, _ *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 				fetchedIsolateFiles = true
 				return []string{}, nil
 			},

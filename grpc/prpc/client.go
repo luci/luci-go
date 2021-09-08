@@ -252,7 +252,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 		// recover from in a deployment scenario than breaking all callers.
 		err = (&jsonpb.Unmarshaler{AllowUnknownFields: true}).Unmarshal(bytes.NewReader(resp), out)
 	default:
-		panic("impossible")
+		err = errors.Reason("unsupported outFormat: %s", options.outFormat).Err()
 	}
 	if err != nil {
 		return status.Errorf(codes.Internal, "prpc: failed to unmarshal the response: %s", err)

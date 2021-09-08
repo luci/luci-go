@@ -70,6 +70,18 @@ const (
 	AccessAllowWithCredentials
 )
 
+func (a AccessControlDecision) String() string {
+	switch a {
+	case AccessDefault:
+		return "AccessDefault"
+	case AccessAllowWithoutCredentials:
+		return "AccessAllowWithoutCredentials"
+	case AccessAllowWithCredentials:
+		return "AccessAllowWithCredentials"
+	}
+	return fmt.Sprintf("Unknown AccessControlDecision(%d)", int(a))
+}
+
 // AllowOriginAll returns AccessAllowWithCredentials unconditionally.
 // It can be used as Server.AccessControl.
 // It must NOT be used in combination with cookie-based authentication.

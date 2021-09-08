@@ -122,7 +122,7 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 		return err
 	}
 
-	tr, err := service.GetTaskRequest(ctx, args[0])
+	tr, err := service.TaskRequest(ctx, args[0])
 	if err != nil {
 		return errors.Annotate(err, "failed to get task request: %s", args[0]).Err()
 	}
@@ -208,7 +208,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 
 	// Support isolated input in task request.
 	if properties.InputsRef != nil && properties.InputsRef.Isolated != "" {
-		if _, err := service.GetFilesFromIsolate(ctx, c.work, properties.InputsRef); err != nil {
+		if _, err := service.FilesFromIsolate(ctx, c.work, properties.InputsRef); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch files from isolate").Err()
 		}
 	}
@@ -219,7 +219,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
 		}
-		if _, err := service.GetFilesFromCAS(ctx, c.work, cascli, properties.CasInputRoot); err != nil {
+		if _, err := service.FilesFromCAS(ctx, c.work, cascli, properties.CasInputRoot); err != nil {
 			return nil, errors.Annotate(err, "failed to fetched friles from RBE-CAS").Err()
 		}
 	}
