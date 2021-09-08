@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -49,7 +48,7 @@ func TestMakeAttempt(t *testing.T) {
 			runID := common.MakeRunID("lproject", epoch, 1, []byte("aaa"))
 			r := &run.Run{
 				ID:            common.RunID(runID),
-				Status:        commonpb.Run_SUCCEEDED,
+				Status:        run.Status_SUCCEEDED,
 				ConfigGroupID: "sha256:deadbeefdeadbeef/cgroup",
 				CreateTime:    epoch,
 				StartTime:     epoch.Add(time.Minute * 2),
@@ -113,7 +112,7 @@ func TestMakeAttempt(t *testing.T) {
 			runID := common.MakeRunID("lproject", epoch, 1, []byte("f00"))
 			r := &run.Run{
 				ID:            runID,
-				Status:        commonpb.Run_FAILED,
+				Status:        run.Status_FAILED,
 				ConfigGroupID: "sha256:deadbeefdeadbeef/cgroup",
 				CreateTime:    epoch,
 				StartTime:     epoch.Add(time.Minute * 2),
@@ -255,7 +254,7 @@ func TestUsingAttemptInfoFromCQDaemon(t *testing.T) {
 		runID := common.MakeRunID("chromium", epoch, 1, []byte("cafecafe"))
 		r := &run.Run{
 			ID:            common.RunID(runID),
-			Status:        commonpb.Run_SUCCEEDED,
+			Status:        run.Status_SUCCEEDED,
 			ConfigGroupID: "sha256:deadbeefdeadbeef/cgroup",
 			CreateTime:    epoch,
 			StartTime:     epoch.Add(time.Minute * 2),

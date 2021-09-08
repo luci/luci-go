@@ -15,14 +15,13 @@
 package runtest
 
 import (
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
 // AreRunning is true if all runs are non-nil and Running.
 func AreRunning(runs ...*run.Run) bool {
 	for _, r := range runs {
-		if r == nil || r.Status != commonpb.Run_RUNNING {
+		if r == nil || r.Status != run.Status_RUNNING {
 			return false
 		}
 	}
@@ -42,13 +41,13 @@ func AreEnded(runs ...*run.Run) bool {
 // FilterNot returns non-nil Runs whose status differs from the given one.
 //
 // If given ENDED_MASK status, returns all Runs which haven't ended yet.
-func FilterNot(status commonpb.Run_Status, runs ...*run.Run) []*run.Run {
+func FilterNot(status run.Status, runs ...*run.Run) []*run.Run {
 	var left []*run.Run
 	for _, r := range runs {
 		switch {
 		case r == nil:
 		case r.Status == status:
-		case status == commonpb.Run_ENDED_MASK && run.IsEnded(r.Status):
+		case status == run.Status_ENDED_MASK && run.IsEnded(r.Status):
 		default:
 			left = append(left, r)
 		}

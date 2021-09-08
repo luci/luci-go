@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
@@ -80,7 +79,7 @@ func recentsPage(c *router.Context) {
 }
 
 type recentRunsParams struct {
-	status    commonpb.Run_Status
+	status    run.Status
 	mode      run.Mode
 	pageToken string
 }
@@ -92,10 +91,10 @@ func parseFormParams(c *router.Context) (recentRunsParams, error) {
 	}
 
 	s := c.Request.Form.Get("status")
-	switch val, ok := commonpb.Run_Status_value[strings.ToUpper(s)]; {
+	switch val, ok := run.Status_value[strings.ToUpper(s)]; {
 	case s == "":
 	case ok:
-		params.status = commonpb.Run_Status(val)
+		params.status = run.Status(val)
 	default:
 		return params, fmt.Errorf("invalid Run status %q", s)
 	}
@@ -113,7 +112,7 @@ func parseFormParams(c *router.Context) (recentRunsParams, error) {
 }
 
 func (r *recentRunsParams) statusString() string {
-	if r.status == commonpb.Run_STATUS_UNSPECIFIED {
+	if r.status == run.Status_STATUS_UNSPECIFIED {
 		return ""
 	}
 	return r.status.String()

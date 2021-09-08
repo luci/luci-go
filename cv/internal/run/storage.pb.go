@@ -37,6 +37,101 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Status describes the status of a CV Run.
+type Status int32
+
+const (
+	// Unspecified status.
+	Status_STATUS_UNSPECIFIED Status = 0
+	// Run is pending to start.
+	//
+	// It is either because Run Manager hasn't processed the StartEvent yet or
+	// the RunOwner has exhausted all the quota and waiting for new quota to
+	// be available.
+	Status_PENDING Status = 1
+	// Run is running.
+	Status_RUNNING Status = 2
+	// Run is waiting for submission.
+	//
+	// Run is in this status if one of the following scenario is true:
+	//   1. Tree is closed at the time Run attempts to submit.
+	//   2. There is another Run in the same LUCI Project that is currently
+	//      submitting.
+	//   3. The submission is rate limited according to the submit option in
+	//      Project Config.
+	//
+	// This status is cancellable.
+	Status_WAITING_FOR_SUBMISSION Status = 4
+	// Run is submitting.
+	//
+	// A Run can't be cancelled while submitting. A Run may transition from
+	// this status to either `WAITING_FOR_SUBMISSION` status or a non-cancelled
+	// terminal status.
+	Status_SUBMITTING Status = 5
+	// ENDED_MASK can be used as a bitmask to check if a Run has ended.
+	// This MUST NOT be used as the status of a Run.
+	Status_ENDED_MASK Status = 64
+	// Run ends successfully.
+	Status_SUCCEEDED Status = 65
+	// Run ends unsuccessfully.
+	Status_FAILED Status = 66
+	// Run is cancelled.
+	Status_CANCELLED Status = 67
+)
+
+// Enum value maps for Status.
+var (
+	Status_name = map[int32]string{
+		0:  "STATUS_UNSPECIFIED",
+		1:  "PENDING",
+		2:  "RUNNING",
+		4:  "WAITING_FOR_SUBMISSION",
+		5:  "SUBMITTING",
+		64: "ENDED_MASK",
+		65: "SUCCEEDED",
+		66: "FAILED",
+		67: "CANCELLED",
+	}
+	Status_value = map[string]int32{
+		"STATUS_UNSPECIFIED":     0,
+		"PENDING":                1,
+		"RUNNING":                2,
+		"WAITING_FOR_SUBMISSION": 4,
+		"SUBMITTING":             5,
+		"ENDED_MASK":             64,
+		"SUCCEEDED":              65,
+		"FAILED":                 66,
+		"CANCELLED":              67,
+	}
+)
+
+func (x Status) Enum() *Status {
+	p := new(Status)
+	*p = x
+	return p
+}
+
+func (x Status) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Status) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes[0].Descriptor()
+}
+
+func (Status) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes[0]
+}
+
+func (x Status) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Status.Descriptor instead.
+func (Status) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{0}
+}
+
 // Trigger describes who/how CV was triggered on a specific CL.
 type Trigger struct {
 	state         protoimpl.MessageState
@@ -1672,10 +1767,20 @@ var file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = []byte{
 	0x79, 0x6a, 0x6f, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x52, 0x06, 0x72, 0x65, 0x73,
 	0x75, 0x6c, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x71, 0x64, 0x5f, 0x64, 0x65, 0x72, 0x69, 0x76,
 	0x65, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x63, 0x71, 0x64, 0x44, 0x65, 0x72,
-	0x69, 0x76, 0x65, 0x64, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
-	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f,
-	0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x72, 0x75, 0x6e, 0x3b, 0x72, 0x75, 0x6e,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x69, 0x76, 0x65, 0x64, 0x2a, 0xa0, 0x01, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12,
+	0x16, 0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43,
+	0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x45, 0x4e, 0x44, 0x49,
+	0x4e, 0x47, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e, 0x49, 0x4e, 0x47, 0x10,
+	0x02, 0x12, 0x1a, 0x0a, 0x16, 0x57, 0x41, 0x49, 0x54, 0x49, 0x4e, 0x47, 0x5f, 0x46, 0x4f, 0x52,
+	0x5f, 0x53, 0x55, 0x42, 0x4d, 0x49, 0x53, 0x53, 0x49, 0x4f, 0x4e, 0x10, 0x04, 0x12, 0x0e, 0x0a,
+	0x0a, 0x53, 0x55, 0x42, 0x4d, 0x49, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x10, 0x05, 0x12, 0x0e, 0x0a,
+	0x0a, 0x45, 0x4e, 0x44, 0x45, 0x44, 0x5f, 0x4d, 0x41, 0x53, 0x4b, 0x10, 0x40, 0x12, 0x0d, 0x0a,
+	0x09, 0x53, 0x55, 0x43, 0x43, 0x45, 0x45, 0x44, 0x45, 0x44, 0x10, 0x41, 0x12, 0x0a, 0x0a, 0x06,
+	0x46, 0x41, 0x49, 0x4c, 0x45, 0x44, 0x10, 0x42, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x41, 0x4e, 0x43,
+	0x45, 0x4c, 0x4c, 0x45, 0x44, 0x10, 0x43, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68,
+	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
+	0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x72, 0x75, 0x6e, 0x3b,
+	0x72, 0x75, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1690,62 +1795,64 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP() []byt
 	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescData
 }
 
+var file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_goTypes = []interface{}{
-	(*Trigger)(nil),                            // 0: cv.internal.run.Trigger
-	(*Submission)(nil),                         // 1: cv.internal.run.Submission
-	(*Options)(nil),                            // 2: cv.internal.run.Options
-	(*LogEntries)(nil),                         // 3: cv.internal.run.LogEntries
-	(*LogEntry)(nil),                           // 4: cv.internal.run.LogEntry
-	(*Tryjobs)(nil),                            // 5: cv.internal.run.Tryjobs
-	(*Tryjob)(nil),                             // 6: cv.internal.run.Tryjob
-	(*LogEntry_Created)(nil),                   // 7: cv.internal.run.LogEntry.Created
-	(*LogEntry_Started)(nil),                   // 8: cv.internal.run.LogEntry.Started
-	(*LogEntry_ConfigChanged)(nil),             // 9: cv.internal.run.LogEntry.ConfigChanged
-	(*LogEntry_TryjobsRequirementUpdated)(nil), // 10: cv.internal.run.LogEntry.TryjobsRequirementUpdated
-	(*LogEntry_Info)(nil),                      // 11: cv.internal.run.LogEntry.Info
-	(*LogEntry_TryjobsUpdated)(nil),            // 12: cv.internal.run.LogEntry.TryjobsUpdated
-	(*LogEntry_TreeChecked)(nil),               // 13: cv.internal.run.LogEntry.TreeChecked
-	(*LogEntry_Waitlisted)(nil),                // 14: cv.internal.run.LogEntry.Waitlisted
-	(*LogEntry_AcquiredSubmitQueue)(nil),       // 15: cv.internal.run.LogEntry.AcquiredSubmitQueue
-	(*LogEntry_ReleasedSubmitQueue)(nil),       // 16: cv.internal.run.LogEntry.ReleasedSubmitQueue
-	(*LogEntry_CLSubmitted)(nil),               // 17: cv.internal.run.LogEntry.CLSubmitted
-	(*LogEntry_SubmissionFailure)(nil),         // 18: cv.internal.run.LogEntry.SubmissionFailure
-	(*LogEntry_RunEnded)(nil),                  // 19: cv.internal.run.LogEntry.RunEnded
-	(*Tryjobs_Requirement)(nil),                // 20: cv.internal.run.Tryjobs.Requirement
-	(*timestamppb.Timestamp)(nil),              // 21: google.protobuf.Timestamp
-	(*tryjob.Definition)(nil),                  // 22: cv.internal.tryjob.Definition
-	(tryjob.Status)(0),                         // 23: cv.internal.tryjob.Status
-	(*tryjob.Result)(nil),                      // 24: cv.internal.tryjob.Result
-	(*commonpb.SubmissionCompleted)(nil),       // 25: cv.internal.run.commonpb.SubmissionCompleted
+	(Status)(0),                                // 0: cv.internal.run.Status
+	(*Trigger)(nil),                            // 1: cv.internal.run.Trigger
+	(*Submission)(nil),                         // 2: cv.internal.run.Submission
+	(*Options)(nil),                            // 3: cv.internal.run.Options
+	(*LogEntries)(nil),                         // 4: cv.internal.run.LogEntries
+	(*LogEntry)(nil),                           // 5: cv.internal.run.LogEntry
+	(*Tryjobs)(nil),                            // 6: cv.internal.run.Tryjobs
+	(*Tryjob)(nil),                             // 7: cv.internal.run.Tryjob
+	(*LogEntry_Created)(nil),                   // 8: cv.internal.run.LogEntry.Created
+	(*LogEntry_Started)(nil),                   // 9: cv.internal.run.LogEntry.Started
+	(*LogEntry_ConfigChanged)(nil),             // 10: cv.internal.run.LogEntry.ConfigChanged
+	(*LogEntry_TryjobsRequirementUpdated)(nil), // 11: cv.internal.run.LogEntry.TryjobsRequirementUpdated
+	(*LogEntry_Info)(nil),                      // 12: cv.internal.run.LogEntry.Info
+	(*LogEntry_TryjobsUpdated)(nil),            // 13: cv.internal.run.LogEntry.TryjobsUpdated
+	(*LogEntry_TreeChecked)(nil),               // 14: cv.internal.run.LogEntry.TreeChecked
+	(*LogEntry_Waitlisted)(nil),                // 15: cv.internal.run.LogEntry.Waitlisted
+	(*LogEntry_AcquiredSubmitQueue)(nil),       // 16: cv.internal.run.LogEntry.AcquiredSubmitQueue
+	(*LogEntry_ReleasedSubmitQueue)(nil),       // 17: cv.internal.run.LogEntry.ReleasedSubmitQueue
+	(*LogEntry_CLSubmitted)(nil),               // 18: cv.internal.run.LogEntry.CLSubmitted
+	(*LogEntry_SubmissionFailure)(nil),         // 19: cv.internal.run.LogEntry.SubmissionFailure
+	(*LogEntry_RunEnded)(nil),                  // 20: cv.internal.run.LogEntry.RunEnded
+	(*Tryjobs_Requirement)(nil),                // 21: cv.internal.run.Tryjobs.Requirement
+	(*timestamppb.Timestamp)(nil),              // 22: google.protobuf.Timestamp
+	(*tryjob.Definition)(nil),                  // 23: cv.internal.tryjob.Definition
+	(tryjob.Status)(0),                         // 24: cv.internal.tryjob.Status
+	(*tryjob.Result)(nil),                      // 25: cv.internal.tryjob.Result
+	(*commonpb.SubmissionCompleted)(nil),       // 26: cv.internal.run.commonpb.SubmissionCompleted
 }
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_depIdxs = []int32{
-	21, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
-	21, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
-	21, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
-	4,  // 3: cv.internal.run.LogEntries.entries:type_name -> cv.internal.run.LogEntry
-	21, // 4: cv.internal.run.LogEntry.time:type_name -> google.protobuf.Timestamp
-	7,  // 5: cv.internal.run.LogEntry.created:type_name -> cv.internal.run.LogEntry.Created
-	8,  // 6: cv.internal.run.LogEntry.started:type_name -> cv.internal.run.LogEntry.Started
-	9,  // 7: cv.internal.run.LogEntry.config_changed:type_name -> cv.internal.run.LogEntry.ConfigChanged
-	10, // 8: cv.internal.run.LogEntry.tryjobs_requirement_updated:type_name -> cv.internal.run.LogEntry.TryjobsRequirementUpdated
-	12, // 9: cv.internal.run.LogEntry.tryjobs_updated:type_name -> cv.internal.run.LogEntry.TryjobsUpdated
-	11, // 10: cv.internal.run.LogEntry.info:type_name -> cv.internal.run.LogEntry.Info
-	13, // 11: cv.internal.run.LogEntry.tree_checked:type_name -> cv.internal.run.LogEntry.TreeChecked
-	14, // 12: cv.internal.run.LogEntry.waitlisted:type_name -> cv.internal.run.LogEntry.Waitlisted
-	15, // 13: cv.internal.run.LogEntry.acquired_submit_queue:type_name -> cv.internal.run.LogEntry.AcquiredSubmitQueue
-	16, // 14: cv.internal.run.LogEntry.released_submit_queue:type_name -> cv.internal.run.LogEntry.ReleasedSubmitQueue
-	17, // 15: cv.internal.run.LogEntry.cl_submitted:type_name -> cv.internal.run.LogEntry.CLSubmitted
-	18, // 16: cv.internal.run.LogEntry.submission_failure:type_name -> cv.internal.run.LogEntry.SubmissionFailure
-	19, // 17: cv.internal.run.LogEntry.run_ended:type_name -> cv.internal.run.LogEntry.RunEnded
-	20, // 18: cv.internal.run.Tryjobs.requirement:type_name -> cv.internal.run.Tryjobs.Requirement
-	6,  // 19: cv.internal.run.Tryjobs.tryjobs:type_name -> cv.internal.run.Tryjob
-	21, // 20: cv.internal.run.Tryjobs.cqd_update_time:type_name -> google.protobuf.Timestamp
-	22, // 21: cv.internal.run.Tryjob.definition:type_name -> cv.internal.tryjob.Definition
-	23, // 22: cv.internal.run.Tryjob.status:type_name -> cv.internal.tryjob.Status
-	24, // 23: cv.internal.run.Tryjob.result:type_name -> cv.internal.tryjob.Result
-	6,  // 24: cv.internal.run.LogEntry.TryjobsUpdated.tryjobs:type_name -> cv.internal.run.Tryjob
-	25, // 25: cv.internal.run.LogEntry.SubmissionFailure.event:type_name -> cv.internal.run.commonpb.SubmissionCompleted
+	22, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
+	22, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
+	22, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
+	5,  // 3: cv.internal.run.LogEntries.entries:type_name -> cv.internal.run.LogEntry
+	22, // 4: cv.internal.run.LogEntry.time:type_name -> google.protobuf.Timestamp
+	8,  // 5: cv.internal.run.LogEntry.created:type_name -> cv.internal.run.LogEntry.Created
+	9,  // 6: cv.internal.run.LogEntry.started:type_name -> cv.internal.run.LogEntry.Started
+	10, // 7: cv.internal.run.LogEntry.config_changed:type_name -> cv.internal.run.LogEntry.ConfigChanged
+	11, // 8: cv.internal.run.LogEntry.tryjobs_requirement_updated:type_name -> cv.internal.run.LogEntry.TryjobsRequirementUpdated
+	13, // 9: cv.internal.run.LogEntry.tryjobs_updated:type_name -> cv.internal.run.LogEntry.TryjobsUpdated
+	12, // 10: cv.internal.run.LogEntry.info:type_name -> cv.internal.run.LogEntry.Info
+	14, // 11: cv.internal.run.LogEntry.tree_checked:type_name -> cv.internal.run.LogEntry.TreeChecked
+	15, // 12: cv.internal.run.LogEntry.waitlisted:type_name -> cv.internal.run.LogEntry.Waitlisted
+	16, // 13: cv.internal.run.LogEntry.acquired_submit_queue:type_name -> cv.internal.run.LogEntry.AcquiredSubmitQueue
+	17, // 14: cv.internal.run.LogEntry.released_submit_queue:type_name -> cv.internal.run.LogEntry.ReleasedSubmitQueue
+	18, // 15: cv.internal.run.LogEntry.cl_submitted:type_name -> cv.internal.run.LogEntry.CLSubmitted
+	19, // 16: cv.internal.run.LogEntry.submission_failure:type_name -> cv.internal.run.LogEntry.SubmissionFailure
+	20, // 17: cv.internal.run.LogEntry.run_ended:type_name -> cv.internal.run.LogEntry.RunEnded
+	21, // 18: cv.internal.run.Tryjobs.requirement:type_name -> cv.internal.run.Tryjobs.Requirement
+	7,  // 19: cv.internal.run.Tryjobs.tryjobs:type_name -> cv.internal.run.Tryjob
+	22, // 20: cv.internal.run.Tryjobs.cqd_update_time:type_name -> google.protobuf.Timestamp
+	23, // 21: cv.internal.run.Tryjob.definition:type_name -> cv.internal.tryjob.Definition
+	24, // 22: cv.internal.run.Tryjob.status:type_name -> cv.internal.tryjob.Status
+	25, // 23: cv.internal.run.Tryjob.result:type_name -> cv.internal.tryjob.Result
+	7,  // 24: cv.internal.run.LogEntry.TryjobsUpdated.tryjobs:type_name -> cv.internal.run.Tryjob
+	26, // 25: cv.internal.run.LogEntry.SubmissionFailure.event:type_name -> cv.internal.run.commonpb.SubmissionCompleted
 	26, // [26:26] is the sub-list for method output_type
 	26, // [26:26] is the sub-list for method input_type
 	26, // [26:26] is the sub-list for extension type_name
@@ -2032,13 +2139,14 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc,
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_go_chromium_org_luci_cv_internal_run_storage_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_cv_internal_run_storage_proto_depIdxs,
+		EnumInfos:         file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_cv_internal_run_storage_proto = out.File

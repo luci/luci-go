@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -63,7 +62,7 @@ func TestConcurentRunsSingular(t *testing.T) {
 			mode        run.Mode
 			triggerTime time.Time // ever-increasing
 			finishTime  time.Time // pseudo-random
-			finalStatus commonpb.Run_Status
+			finalStatus run.Status
 		}, N)
 		var expectSubmitted, expectFinished, expectFailed []int
 		for i := range actions {
@@ -81,14 +80,14 @@ func TestConcurentRunsSingular(t *testing.T) {
 			a.triggerTime = ct.Clock.Now().Add(time.Duration(i*3) * time.Second)
 			a.finishTime = a.triggerTime.Add(time.Duration(i*13%5) * time.Minute)
 			if i%2 == 0 {
-				a.finalStatus = commonpb.Run_SUCCEEDED
+				a.finalStatus = run.Status_SUCCEEDED
 				if a.mode == run.FullRun {
 					expectSubmitted = append(expectSubmitted, a.gChange)
 				} else {
 					expectFinished = append(expectFinished, a.gChange)
 				}
 			} else {
-				a.finalStatus = commonpb.Run_FAILED
+				a.finalStatus = run.Status_FAILED
 				expectFailed = append(expectFailed, a.gChange)
 			}
 		}
@@ -110,7 +109,7 @@ func TestConcurentRunsSingular(t *testing.T) {
 					return r
 				}
 				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				if a.finalStatus == commonpb.Run_SUCCEEDED {
+				if a.finalStatus == run.Status_SUCCEEDED {
 					r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
 				} else {
 					r.Attempt.Status = cvbqpb.AttemptStatus_FAILURE
@@ -155,13 +154,13 @@ func TestConcurentRunsSingular(t *testing.T) {
 				return run.IsEnded(r.Status)
 			})
 			switch {
-			case r.Status == commonpb.Run_FAILED:
+			case r.Status == run.Status_FAILED:
 				actualFailed = append(actualFailed, a.gChange)
 				So(ct.MaxCQVote(ctx, gHost, int64(a.gChange)), ShouldEqual, 0)
-			case r.Status == commonpb.Run_SUCCEEDED && a.mode == run.DryRun:
+			case r.Status == run.Status_SUCCEEDED && a.mode == run.DryRun:
 				actualFinished = append(actualFinished, a.gChange)
 				So(ct.MaxCQVote(ctx, gHost, int64(a.gChange)), ShouldEqual, 0)
-			case r.Status == commonpb.Run_SUCCEEDED && a.mode == run.FullRun:
+			case r.Status == run.Status_SUCCEEDED && a.mode == run.FullRun:
 				actualSubmitted = append(actualSubmitted, a.gChange)
 				So(ct.GFake.GetChange(gHost, a.gChange).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 			default:

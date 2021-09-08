@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -115,7 +114,7 @@ func TestPostGerritMessage(t *testing.T) {
 				ID:            common.RunID(req.GetRunId()),
 				CQDAttemptKey: req.GetAttemptKey(),
 				Mode:          run.DryRun,
-				Status:        commonpb.Run_RUNNING,
+				Status:        run.Status_RUNNING,
 				CreateTime:    ct.Clock.Now().Add(-time.Hour).UTC(),
 			}
 			So(datastore.Put(ctx, r), ShouldBeNil)

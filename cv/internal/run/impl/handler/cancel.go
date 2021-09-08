@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -30,11 +29,11 @@ import (
 func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
 	// TODO(crbug/1215612): record the cause of cancellation inside Run.
 	switch status := rs.Run.Status; {
-	case status == commonpb.Run_STATUS_UNSPECIFIED:
+	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == commonpb.Run_SUBMITTING:
+	case status == run.Status_SUBMITTING:
 		// Can't cancel while submitting.
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
@@ -43,7 +42,7 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	}
 
 	rs = rs.ShallowCopy()
-	se := impl.endRun(ctx, rs, commonpb.Run_CANCELLED)
+	se := impl.endRun(ctx, rs, run.Status_CANCELLED)
 	if rs.Run.StartTime.IsZero() {
 		// This run has never started but already gets a cancelled event.
 		rs.Run.StartTime = rs.Run.EndTime

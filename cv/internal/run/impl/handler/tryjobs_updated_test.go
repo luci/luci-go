@@ -28,7 +28,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -76,7 +75,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 		rs := &state.RunState{
 			Run: run.Run{
 				ID:         rid,
-				Status:     commonpb.Run_RUNNING,
+				Status:     run.Status_RUNNING,
 				CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
 				StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
 				CLs:        common.CLIDs{1},
@@ -214,12 +213,12 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 			So(res.State.LogEntries, ShouldBeEmpty)
 		})
 
-		statuses := []commonpb.Run_Status{
-			commonpb.Run_SUCCEEDED,
-			commonpb.Run_FAILED,
-			commonpb.Run_CANCELLED,
-			commonpb.Run_WAITING_FOR_SUBMISSION,
-			commonpb.Run_SUBMITTING,
+		statuses := []run.Status{
+			run.Status_SUCCEEDED,
+			run.Status_FAILED,
+			run.Status_CANCELLED,
+			run.Status_WAITING_FOR_SUBMISSION,
+			run.Status_SUBMITTING,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {

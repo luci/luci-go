@@ -45,7 +45,7 @@ func TestExportRunToBQ(t *testing.T) {
 		epoch := ct.Clock.Now().UTC()
 		r := run.Run{
 			ID:            common.MakeRunID("lproject", epoch, 1, []byte("aaa")),
-			Status:        commonpb.Run_SUCCEEDED,
+			Status:        run.Status_SUCCEEDED,
 			ConfigGroupID: "sha256:deadbeefdeadbeef/cgroup",
 			CreateTime:    epoch,
 			StartTime:     epoch.Add(time.Minute * 2),
@@ -79,7 +79,7 @@ func TestExportRunToBQ(t *testing.T) {
 				So(protojson.Unmarshal(t.Message.GetData(), &msg), ShouldBeNil)
 				So(&msg, ShouldResembleProto, &pubsubpb.Run{
 					Id:       r.ID.PublicID(),
-					Status:   r.Status,
+					Status:   commonpb.Run_SUCCEEDED,
 					Eversion: int64(r.EVersion),
 				})
 			})

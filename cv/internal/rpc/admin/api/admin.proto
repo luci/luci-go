@@ -22,7 +22,6 @@ option go_package = "go.chromium.org/luci/cv/internal/rpc/admin/api;adminpb";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-import "go.chromium.org/luci/cv/api/common/v1/run.proto";
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 import "go.chromium.org/luci/cv/internal/configs/prjcfg/tasks.proto";
 import "go.chromium.org/luci/cv/internal/gerrit/poller/storage.proto";
@@ -156,7 +155,7 @@ message GetRunResponse {
   string id = 1;
   int64 eversion = 2;
   string mode = 3;
-  cv.common.v1.Run.Status status = 4;
+  cv.internal.run.Status status = 4;
   google.protobuf.Timestamp create_time = 5;
   google.protobuf.Timestamp start_time = 6;
   google.protobuf.Timestamp update_time = 7;
@@ -252,7 +251,7 @@ message SearchRunsRequest {
   // Optional. If omitted, scans across all active projects.
   string project = 3;
   // Optional. Returns Runs with the given status, only.
-  cv.common.v1.Run.Status status = 4;
+  cv.internal.run.Status status = 4;
   // Optional. Limits Runs referencing the given CL.
   GetCLRequest cl = 5;
   // Optional. Limits Runs by mode.

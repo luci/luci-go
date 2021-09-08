@@ -23,7 +23,6 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -97,7 +96,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 			return run.IsEnded(r.Status)
 		})
 
-		So(r.Status, ShouldEqual, commonpb.Run_SUCCEEDED)
+		So(r.Status, ShouldEqual, run.Status_SUCCEEDED)
 		So(r.Submission.GetCls(), ShouldHaveLength, N)
 		So(r.Submission.GetSubmittedCls(), ShouldHaveLength, N)
 		var actual, expected []int

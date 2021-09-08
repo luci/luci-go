@@ -58,7 +58,7 @@ func TestEndRun(t *testing.T) {
 		rs := &state.RunState{
 			Run: run.Run{
 				ID:         rid,
-				Status:     commonpb.Run_RUNNING,
+				Status:     run.Status_RUNNING,
 				CreateTime: ct.Clock.Now().Add(-2 * time.Minute),
 				StartTime:  ct.Clock.Now().Add(-1 * time.Minute),
 				CLs:        common.CLIDs{1},
@@ -76,8 +76,8 @@ func TestEndRun(t *testing.T) {
 		So(datastore.Put(ctx, &cl), ShouldBeNil)
 
 		h, _, _, clUpdater := makeTestImpl(&ct)
-		se := h.endRun(ctx, rs, commonpb.Run_FAILED)
-		So(rs.Run.Status, ShouldEqual, commonpb.Run_FAILED)
+		se := h.endRun(ctx, rs, run.Status_FAILED)
+		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.Run.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
 		cl = changelist.CL{ID: clid}
@@ -104,7 +104,7 @@ func TestEndRun(t *testing.T) {
 			So(task, ShouldResembleProto, &pubsub.PublishRunEndedTask{
 				PublicId:    rs.Run.ID.PublicID(),
 				LuciProject: rs.Run.ID.LUCIProject(),
-				Status:      rs.Run.Status,
+				Status:      commonpb.Run_Status(rs.Run.Status),
 				Eversion:    int64(rs.Run.EVersion),
 			})
 		})

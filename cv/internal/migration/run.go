@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -37,7 +36,7 @@ import (
 )
 
 func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.ActiveRun, error) {
-	runs, err := fetchRunsWithStatus(ctx, project, commonpb.Run_RUNNING)
+	runs, err := fetchRunsWithStatus(ctx, project, run.Status_RUNNING)
 	switch {
 	case err != nil:
 		return nil, err
@@ -162,7 +161,7 @@ func makeActiveRun(ctx context.Context, r *run.Run) (*migrationpb.ActiveRun, err
 	}, nil
 }
 
-func fetchRunsWithStatus(ctx context.Context, project string, status commonpb.Run_Status) ([]*run.Run, error) {
+func fetchRunsWithStatus(ctx context.Context, project string, status run.Status) ([]*run.Run, error) {
 	var runs []*run.Run
 	q := run.NewQueryWithLUCIProject(ctx, project).Eq("Status", status)
 	if err := datastore.GetAll(ctx, q, &runs); err != nil {

@@ -29,7 +29,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -63,7 +62,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		runCLs := common.CLIDs{1, 2}
 		r := run.Run{
 			ID:         rid,
-			Status:     commonpb.Run_RUNNING,
+			Status:     run.Status_RUNNING,
 			CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
 			StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
 			CLs:        runCLs,
@@ -131,10 +130,10 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 		h, _, _, _ := makeTestImpl(&ct)
 
-		statuses := []commonpb.Run_Status{
-			commonpb.Run_SUCCEEDED,
-			commonpb.Run_FAILED,
-			commonpb.Run_CANCELLED,
+		statuses := []run.Status{
+			run.Status_SUCCEEDED,
+			run.Status_FAILED,
+			run.Status_CANCELLED,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
@@ -166,7 +165,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		}
 
 		Convey("No-Op when status is SUBMITTING", func() {
-			rs.Run.Status = commonpb.Run_SUBMITTING
+			rs.Run.Status = run.Status_SUBMITTING
 			res, err := h.OnReadyForSubmission(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
@@ -175,7 +174,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 			So(res.PostProcessFn, ShouldBeNil)
 		})
 
-		for _, status := range []commonpb.Run_Status{commonpb.Run_RUNNING, commonpb.Run_WAITING_FOR_SUBMISSION} {
+		for _, status := range []run.Status{run.Status_RUNNING, run.Status_WAITING_FOR_SUBMISSION} {
 			now := ct.Clock.Now().UTC()
 			ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 			Convey(fmt.Sprintf("When status is %s", status), func() {
@@ -183,7 +182,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				Convey("Mark submitting if Submit Queue is acquired and tree is open", func() {
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, commonpb.Run_SUBMITTING)
+					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 						Deadline:          timestamppb.New(now.Add(submissionDuration)),
 						Cls:               []int64{2, 1}, // in submission order
@@ -214,7 +213,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, anotherRunID)
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, commonpb.Run_WAITING_FOR_SUBMISSION)
+					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
@@ -229,7 +228,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					ct.TreeFake.ModifyState(ctx, tree.Closed)
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, commonpb.Run_WAITING_FOR_SUBMISSION)
+					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
 					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
@@ -265,7 +264,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		runCLs := common.CLIDs{1, 2}
 		r := run.Run{
 			ID:         rid,
-			Status:     commonpb.Run_SUBMITTING,
+			Status:     run.Status_SUBMITTING,
 			CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
 			StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
 			CLs:        runCLs,
@@ -356,10 +355,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		rs := &state.RunState{Run: r}
 		h, _, _, _ := makeTestImpl(&ct)
 
-		statuses := []commonpb.Run_Status{
-			commonpb.Run_SUCCEEDED,
-			commonpb.Run_FAILED,
-			commonpb.Run_CANCELLED,
+		statuses := []run.Status{
+			run.Status_SUCCEEDED,
+			run.Status_FAILED,
+			run.Status_CANCELLED,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
@@ -397,7 +396,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			}
 			res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, commonpb.Run_SUCCEEDED)
+			So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
 			So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now().UTC())
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
@@ -417,7 +416,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					rs.Run.Submission.TaskId = "task-foo" // same task ID as the current task
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, commonpb.Run_SUBMITTING)
+					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 						Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 						TaskId:   "task-foo",
@@ -468,7 +467,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						runAndVerify := func(verifyMsgFn func(lastMsg string)) {
 							res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 							So(err, ShouldBeNil)
-							So(res.State.Run.Status, ShouldEqual, commonpb.Run_FAILED)
+							So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 							So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
 							for i, f := range sc.GetClFailures().GetFailures() {
 								So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
@@ -507,7 +506,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						rs.Run.Submission.SubmittedCls = []int64{2}
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 						So(err, ShouldBeNil)
-						So(res.State.Run.Status, ShouldEqual, commonpb.Run_SUCCEEDED)
+						So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
@@ -522,7 +521,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					runAndVerify := func(verifyMsgFn func(changeNum int64, lastMsg string)) {
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 						So(err, ShouldBeNil)
-						So(res.State.Run.Status, ShouldEqual, commonpb.Run_FAILED)
+						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
 						for i, f := range sc.GetClFailures().GetFailures() {
 							So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
@@ -621,7 +620,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						rs.Run.Submission.SubmittedCls = []int64{2, 1}
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 						So(err, ShouldBeNil)
-						So(res.State.Run.Status, ShouldEqual, commonpb.Run_SUCCEEDED)
+						So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
 						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
@@ -649,7 +648,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				runAndVerify := func(verifyMsgFn func(lastMsg string)) {
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, commonpb.Run_FAILED)
+					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
 					for i, f := range sc.GetClFailures().GetFailures() {
 						So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
@@ -694,7 +693,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				runAndVerify := func(verifyMsgFn func(changeNum int64, lastMsg string)) {
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, commonpb.Run_FAILED)
+					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
 					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
 					So(res.SideEffectFn, ShouldNotBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
@@ -807,7 +806,7 @@ func TestSubmitter(t *testing.T) {
 		So(datastore.Put(ctx,
 			&run.Run{
 				ID:         s.runID,
-				Status:     commonpb.Run_RUNNING,
+				Status:     run.Status_RUNNING,
 				CreateTime: now,
 				StartTime:  now,
 				CLs:        s.clids,
@@ -980,7 +979,7 @@ func TestOnCLSubmitted(t *testing.T) {
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		rs := &state.RunState{Run: run.Run{
 			ID:         rid,
-			Status:     commonpb.Run_SUBMITTING,
+			Status:     run.Status_SUBMITTING,
 			CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
 			StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
 			CLs:        common.CLIDs{1, 3, 5, 7},

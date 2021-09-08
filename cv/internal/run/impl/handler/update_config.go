@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
@@ -39,11 +38,11 @@ import (
 func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash string) (*Result, error) {
 	// First, check if config update is feasible given Run Status.
 	switch status := rs.Run.Status; {
-	case status == commonpb.Run_STATUS_UNSPECIFIED:
+	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: Received UpdateConfig event but Run is in unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == commonpb.Run_SUBMITTING:
+	case status == run.Status_SUBMITTING:
 		// Can't update config while submitting.
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):

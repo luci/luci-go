@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
@@ -427,7 +426,7 @@ func applyResult(res *handler.Result, events eventbox.Events, transitions []even
 	return res.State, append(transitions, t)
 }
 
-func (rp *runProcessor) enqueueNextPoke(ctx context.Context, startingStatus commonpb.Run_Status, nextReadyEventTime time.Time) error {
+func (rp *runProcessor) enqueueNextPoke(ctx context.Context, startingStatus run.Status, nextReadyEventTime time.Time) error {
 	switch now := clock.Now(ctx); {
 	case run.IsEnded(startingStatus):
 		// Do not enqueue the next poke if run is ended at the beginning of the

@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
@@ -51,7 +50,7 @@ func TestRunAggregator(t *testing.T) {
 			return ct.TSMonSentDistr(ctx, metricActiveRunsDurationsS, project)
 		}
 
-		putRun := func(i byte, p string, s commonpb.Run_Status, ct time.Time) {
+		putRun := func(i byte, p string, s run.Status, ct time.Time) {
 			err := datastore.Put(ctx, &run.Run{
 				ID:         common.MakeRunID(p, ct, 1, []byte{i}),
 				CreateTime: ct,
@@ -77,11 +76,11 @@ func TestRunAggregator(t *testing.T) {
 		})
 
 		Convey("Active projects with various run kinds", func() {
-			putRun(1, "v8", commonpb.Run_RUNNING, ct.Clock.Now().Add(-time.Second))
-			putRun(2, "v8", commonpb.Run_RUNNING, ct.Clock.Now().Add(-time.Minute))
-			putRun(3, "v8", commonpb.Run_SUBMITTING, ct.Clock.Now().Add(-time.Hour))
-			putRun(4, "fuchsia", commonpb.Run_WAITING_FOR_SUBMISSION, ct.Clock.Now().Add(-time.Second))
-			putRun(5, "fuchsia", commonpb.Run_WAITING_FOR_SUBMISSION, ct.Clock.Now().Add(-time.Second))
+			putRun(1, "v8", run.Status_RUNNING, ct.Clock.Now().Add(-time.Second))
+			putRun(2, "v8", run.Status_RUNNING, ct.Clock.Now().Add(-time.Minute))
+			putRun(3, "v8", run.Status_SUBMITTING, ct.Clock.Now().Add(-time.Hour))
+			putRun(4, "fuchsia", run.Status_WAITING_FOR_SUBMISSION, ct.Clock.Now().Add(-time.Second))
+			putRun(5, "fuchsia", run.Status_WAITING_FOR_SUBMISSION, ct.Clock.Now().Add(-time.Second))
 			prepareAndReport("v8", "fuchsia")
 
 			So(runsSent("v8", "RUNNING"), ShouldEqual, 2)
@@ -104,7 +103,7 @@ func TestRunAggregator(t *testing.T) {
 				project := fmt.Sprintf("p-%04d", i/128)
 				created := ct.Clock.Now().Add(-time.Duration(id) * time.Second)
 				projects[project]++
-				putRun(id, project, commonpb.Run_RUNNING, created)
+				putRun(id, project, run.Status_RUNNING, created)
 			}
 			return projects
 		}

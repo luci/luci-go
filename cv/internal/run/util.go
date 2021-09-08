@@ -21,13 +21,12 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/common"
 )
 
 // IsEnded returns true if the given status is final.
-func IsEnded(status commonpb.Run_Status) bool {
-	return status&commonpb.Run_ENDED_MASK == commonpb.Run_ENDED_MASK
+func IsEnded(status Status) bool {
+	return status&Status_ENDED_MASK == Status_ENDED_MASK
 }
 
 // LoadRunCLs loads `RunCL` entities of the provided cls in the Run.

@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
@@ -41,10 +40,10 @@ func (impl *Impl) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "Ignoring CQDTryjobsUpdated event because Run is %s", status)
 		return &Result{State: rs}, nil
-	case status == commonpb.Run_WAITING_FOR_SUBMISSION || status == commonpb.Run_SUBMITTING:
+	case status == run.Status_WAITING_FOR_SUBMISSION || status == run.Status_SUBMITTING:
 		// Delay processing this event until submission completes.
 		return &Result{State: rs, PreserveEvents: true}, nil
-	case status != commonpb.Run_RUNNING:
+	case status != run.Status_RUNNING:
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
 	}
 

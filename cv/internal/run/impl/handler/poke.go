@@ -21,7 +21,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -63,8 +62,8 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 	return &Result{State: rs}, nil
 }
 
-func shouldCheckTree(ctx context.Context, st commonpb.Run_Status, sub *run.Submission) bool {
-	return st == commonpb.Run_WAITING_FOR_SUBMISSION &&
+func shouldCheckTree(ctx context.Context, st run.Status, sub *run.Submission) bool {
+	return st == run.Status_WAITING_FOR_SUBMISSION &&
 		// Tree was closed during the last Tree check.
 		(sub.GetLastTreeCheckTime() != nil && !sub.GetTreeOpen()) &&
 		// Avoid too frequent refreshes of the Tree.

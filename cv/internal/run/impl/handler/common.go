@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/filter/txndefer"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -43,7 +42,7 @@ import (
 // Returns the side effect when Run is ended.
 //
 // Panics if the provided status is not ended status.
-func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st commonpb.Run_Status) eventbox.SideEffectFn {
+func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status) eventbox.SideEffectFn {
 	if !run.IsEnded(st) {
 		panic(fmt.Errorf("can't end run with non-final status %s", st))
 	}

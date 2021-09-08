@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/migration"
@@ -44,12 +43,12 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "Ignoring CQDVerificationCompleted event because Run is %s", status)
 		return &Result{State: rs}, nil
-	case status == commonpb.Run_WAITING_FOR_SUBMISSION || status == commonpb.Run_SUBMITTING:
+	case status == run.Status_WAITING_FOR_SUBMISSION || status == run.Status_SUBMITTING:
 		// Run probably entered submission phase due to previously received
 		// CQDVerificationCompleted event. Delay processing this event
 		// until submission completes.
 		return &Result{State: rs, PreserveEvents: true}, nil
-	case status != commonpb.Run_RUNNING:
+	case status != run.Status_RUNNING:
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
 	}
 
@@ -65,7 +64,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	rs = rs.ShallowCopy()
 	switch vr.Payload.Action {
 	case migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT:
-		rs.Run.Status = commonpb.Run_WAITING_FOR_SUBMISSION
+		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 			Time: timestamppb.New(clock.Now(ctx)),
 			Kind: &run.LogEntry_Info_{
@@ -90,7 +89,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 				},
 			},
 		})
-		se := impl.endRun(ctx, rs, commonpb.Run_SUCCEEDED)
+		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
 		if err := impl.cancelTriggers(ctx, rs, vr.Payload.FinalMessage); err != nil {
@@ -105,7 +104,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 				},
 			},
 		})
-		se := impl.endRun(ctx, rs, commonpb.Run_FAILED)
+		se := impl.endRun(ctx, rs, run.Status_FAILED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	default:
 		return nil, errors.Reason("unknown action %s", vr.Payload.Action).Err()

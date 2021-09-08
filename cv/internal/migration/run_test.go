@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -102,7 +101,7 @@ func TestFetchActiveRuns(t *testing.T) {
 			err := datastore.Put(ctx,
 				&run.Run{
 					ID:     rid,
-					Status: commonpb.Run_RUNNING,
+					Status: run.Status_RUNNING,
 					Mode:   run.DryRun,
 					CLs:    common.CLIDs{1, 2},
 				},
@@ -221,11 +220,11 @@ func TestFetchActiveRuns(t *testing.T) {
 			err := datastore.Put(ctx,
 				&run.Run{
 					ID:     "chromium/1111111111111-deadbeef",
-					Status: commonpb.Run_SUCCEEDED,
+					Status: run.Status_SUCCEEDED,
 				},
 				&run.Run{
 					ID:     "chromium/2222222222222-baaaaaad",
-					Status: commonpb.Run_FAILED,
+					Status: run.Status_FAILED,
 				},
 			)
 			So(err, ShouldBeNil)
@@ -277,7 +276,7 @@ func TestFetchActiveRuns(t *testing.T) {
 			runCLID := putCL(2, depCLID, true)
 			So(datastore.Put(ctx, &run.Run{
 				ID:     rid,
-				Status: commonpb.Run_RUNNING,
+				Status: run.Status_RUNNING,
 				Mode:   run.DryRun,
 				CLs:    common.CLIDs{runCLID},
 			}), ShouldBeNil)

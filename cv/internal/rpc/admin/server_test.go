@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -395,7 +394,7 @@ func TestSearchRuns(t *testing.T) {
 				So(datastore.Put(ctx,
 					&run.Run{
 						ID:     earlierID,
-						Status: commonpb.Run_CANCELLED,
+						Status: run.Status_CANCELLED,
 						CLs:    common.MakeCLIDs(1, 2),
 					},
 					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, earlierID), ID: cl1.ID, IndexedID: cl1.ID},
@@ -403,7 +402,7 @@ func TestSearchRuns(t *testing.T) {
 
 					&run.Run{
 						ID:     laterID,
-						Status: commonpb.Run_RUNNING,
+						Status: run.Status_RUNNING,
 						CLs:    common.MakeCLIDs(1),
 					},
 					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, laterID), ID: cl1.ID, IndexedID: cl1.ID},
@@ -412,7 +411,7 @@ func TestSearchRuns(t *testing.T) {
 				Convey("exact", func() {
 					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
-						Status:  commonpb.Run_CANCELLED,
+						Status:  run.Status_CANCELLED,
 					})
 					So(err, ShouldBeNil)
 					So(idsOf(resp), ShouldResemble, []string{earlierID})
@@ -421,7 +420,7 @@ func TestSearchRuns(t *testing.T) {
 				Convey("ended", func() {
 					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
-						Status:  commonpb.Run_ENDED_MASK,
+						Status:  run.Status_ENDED_MASK,
 					})
 					So(err, ShouldBeNil)
 					So(idsOf(resp), ShouldResemble, []string{earlierID})
@@ -438,7 +437,7 @@ func TestSearchRuns(t *testing.T) {
 				Convey("with CL and run status", func() {
 					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Cl:     &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
-						Status: commonpb.Run_ENDED_MASK,
+						Status: run.Status_ENDED_MASK,
 					})
 					So(err, ShouldBeNil)
 					So(idsOf(resp), ShouldResemble, []string{earlierID})
@@ -458,7 +457,7 @@ func TestSearchRuns(t *testing.T) {
 					So(datastore.Put(ctx,
 						&run.Run{
 							ID:     diffProjectID,
-							Status: commonpb.Run_RUNNING,
+							Status: run.Status_RUNNING,
 							CLs:    common.MakeCLIDs(1),
 						},
 						&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},

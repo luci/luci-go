@@ -24,11 +24,11 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -90,7 +90,7 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 			case err != nil:
 				panic(err)
 			default:
-				remaining = runtest.FilterNot(commonpb.Run_SUCCEEDED, remaining...)
+				remaining = runtest.FilterNot(run.Status_SUCCEEDED, remaining...)
 				return len(remaining) == 0
 			}
 		})

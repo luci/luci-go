@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -68,7 +67,7 @@ type Run struct {
 	// Mode dictates the behavior of this Run.
 	Mode Mode `gae:",noindex"`
 	// Status describes the status of this Run.
-	Status commonpb.Run_Status
+	Status Status
 	// EVersion is the entity version.
 	//
 	// It increments by one upon every successful modification.

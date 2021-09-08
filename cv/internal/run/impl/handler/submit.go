@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -65,22 +64,22 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			return nil, err
 		}
 		return &Result{State: rs}, nil
-	case status == commonpb.Run_SUBMITTING:
+	case status == run.Status_SUBMITTING:
 		// Discard this event if this Run is currently submitting. If submission
 		// is stopped and should be resumed (e.g. transient failure, app crashing),
 		// it should be handled in `OnSubmissionCompleted` or `TryResumeSubmission`.
 		logging.Debugf(ctx, "received ReadyForSubmission event when Run is submitting")
 		return &Result{State: rs}, nil
-	case status == commonpb.Run_RUNNING:
+	case status == run.Status_RUNNING:
 		// This may happen when this Run transitioned from RUNNING status to
 		// WAITING_FOR_SUBMISSION, prepared for submission but failed to
 		// save the state transition. This Run is receiving this event because
 		// of the fail-safe task sent while acquiring the Submit Queue. CV should
 		// treat this Run as WAITING_FOR_SUBMISSION status.
 		rs = rs.ShallowCopy()
-		rs.Run.Status = commonpb.Run_WAITING_FOR_SUBMISSION
+		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
 		fallthrough
-	case status == commonpb.Run_WAITING_FOR_SUBMISSION:
+	case status == run.Status_WAITING_FOR_SUBMISSION:
 		if len(rs.Run.Submission.GetSubmittedCls()) > 0 {
 			panic(fmt.Errorf("impossible; Run %q is in Status_WAITING_FOR_SUBMISSION status but has submitted CLs ", rs.Run.ID))
 		}
@@ -179,7 +178,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 			return nil, err
 		}
 		return &Result{State: rs}, nil
-	case status != commonpb.Run_SUBMITTING:
+	case status != run.Status_SUBMITTING:
 		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
 	}
 
@@ -194,7 +193,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 	}
 	switch {
 	case sc.GetResult() == submitpb.SubmissionResult_SUCCEEDED:
-		se := impl.endRun(ctx, rs, commonpb.Run_SUCCEEDED)
+		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,
@@ -232,7 +231,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		if err := impl.cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc, cg); err != nil {
 			return nil, err
 		}
-		se := impl.endRun(ctx, rs, commonpb.Run_FAILED)
+		se := impl.endRun(ctx, rs, run.Status_FAILED)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,
@@ -249,7 +248,7 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 
 func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, sc *submitpb.SubmissionCompleted) (*Result, error) {
 	switch {
-	case rs.Run.Status != commonpb.Run_SUBMITTING || rs.SubmissionScheduled:
+	case rs.Run.Status != run.Status_SUBMITTING || rs.SubmissionScheduled:
 		return &Result{State: rs}, nil
 	case sc != nil && sc.Result != submitpb.SubmissionResult_FAILED_TRANSIENT:
 		panic(fmt.Errorf("submission can only be resumed on nil submission completed event or event reporting transient failure; got %s", sc))
@@ -267,13 +266,13 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
 	case expired:
 		rs = rs.ShallowCopy()
-		var status commonpb.Run_Status
+		var status run.Status
 		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
 		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
 			// fully submitted
-			status = commonpb.Run_SUCCEEDED
+			status = run.Status_SUCCEEDED
 		default: // None submitted or partially submitted
-			status = commonpb.Run_FAILED
+			status = run.Status_FAILED
 			// synthesize submission completed event with permanent failure.
 			if clFailures := sc.GetClFailures(); clFailures != nil {
 				rs.Run.Submission.FailedCls = make([]int64, len(clFailures.GetFailures()))
@@ -434,7 +433,7 @@ func releaseSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) error {
 const submissionDuration = 20 * time.Minute
 
 func markSubmitting(ctx context.Context, rs *state.RunState) error {
-	rs.Run.Status = commonpb.Run_SUBMITTING
+	rs.Run.Status = run.Status_SUBMITTING
 	var err error
 	if rs.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.Run.CLs, rs.Run.ID, rs.Run.Submission); err != nil {
 		return err

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	rpcpb "go.chromium.org/luci/cv/api/rpc/v0"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -79,6 +80,7 @@ func TestGetRun(t *testing.T) {
 				ctx,
 				&run.Run{
 					ID:         rid,
+					Status:     run.Status_SUCCEEDED,
 					CreateTime: epoch,
 					StartTime:  epoch.Add(time.Second),
 					UpdateTime: epoch.Add(time.Minute),
@@ -108,6 +110,7 @@ func TestGetRun(t *testing.T) {
 			So(grpcutil.Code(err), ShouldEqual, codes.OK)
 			So(resp, ShouldResembleProto, &rpcpb.Run{
 				Id:         rid.PublicID(),
+				Status:     commonpb.Run_SUCCEEDED,
 				CreateTime: timestamppb.New(epoch),
 				StartTime:  timestamppb.New(epoch.Add(time.Second)),
 				UpdateTime: timestamppb.New(epoch.Add(time.Minute)),

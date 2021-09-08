@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -56,7 +55,7 @@ func TestRunManager(t *testing.T) {
 		const initialEVersion = 10
 		So(datastore.Put(ctx, &run.Run{
 			ID:       runID,
-			Status:   commonpb.Run_RUNNING,
+			Status:   run.Status_RUNNING,
 			EVersion: initialEVersion,
 		}), ShouldBeNil)
 
@@ -346,7 +345,7 @@ func TestRunManager(t *testing.T) {
 		tCreate := ct.Clock.Now().UTC().Add(-2 * time.Minute)
 		So(datastore.Put(ctx, &run.Run{
 			ID:         runID,
-			Status:     commonpb.Run_RUNNING,
+			Status:     run.Status_RUNNING,
 			CreateTime: tCreate,
 			StartTime:  tCreate.Add(1 * time.Minute),
 			EVersion:   10,
@@ -376,7 +375,7 @@ func TestRunManager(t *testing.T) {
 			Convey("Stops after Run is finalized", func() {
 				So(datastore.Put(ctx, &run.Run{
 					ID:         runID,
-					Status:     commonpb.Run_CANCELLED,
+					Status:     run.Status_CANCELLED,
 					CreateTime: tCreate,
 					StartTime:  tCreate.Add(1 * time.Minute),
 					EndTime:    ct.Clock.Now().UTC(),

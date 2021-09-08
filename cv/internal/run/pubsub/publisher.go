@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/server/tq"
 
+	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	pubsubpb "go.chromium.org/luci/cv/api/pubsub/v1"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -74,7 +75,7 @@ func (s *Publisher) RunEnded(ctx context.Context, run *run.Run) error {
 		Payload: &PublishRunEndedTask{
 			PublicId:    run.ID.PublicID(),
 			LuciProject: run.ID.LUCIProject(),
-			Status:      run.Status,
+			Status:      commonpb.Run_Status(run.Status),
 			Eversion:    int64(run.EVersion),
 		},
 	})

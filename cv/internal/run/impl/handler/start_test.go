@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -64,7 +63,7 @@ func TestStart(t *testing.T) {
 		rs := &state.RunState{
 			Run: run.Run{
 				ID:            lProject + "/1111111111111-deadbeef",
-				Status:        commonpb.Run_PENDING,
+				Status:        run.Status_PENDING,
 				CreateTime:    clock.Now(ctx).UTC().Add(-startLatency),
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			},
@@ -72,10 +71,10 @@ func TestStart(t *testing.T) {
 		h, _, _, _ := makeTestImpl(&ct)
 
 		Convey("Starts when Run is PENDING", func() {
-			rs.Run.Status = commonpb.Run_PENDING
+			rs.Run.Status = run.Status_PENDING
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, commonpb.Run_RUNNING)
+			So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
 			So(res.State.Run.StartTime, ShouldResemble, clock.Now(ctx).UTC())
 			So(res.State.LogEntries, ShouldHaveLength, 1)
 			So(res.State.LogEntries[0].GetStarted(), ShouldNotBeNil)
@@ -88,13 +87,13 @@ func TestStart(t *testing.T) {
 				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
 		})
 
-		statuses := []commonpb.Run_Status{
-			commonpb.Run_RUNNING,
-			commonpb.Run_WAITING_FOR_SUBMISSION,
-			commonpb.Run_SUBMITTING,
-			commonpb.Run_SUCCEEDED,
-			commonpb.Run_FAILED,
-			commonpb.Run_CANCELLED,
+		statuses := []run.Status{
+			run.Status_RUNNING,
+			run.Status_WAITING_FOR_SUBMISSION,
+			run.Status_SUBMITTING,
+			run.Status_SUCCEEDED,
+			run.Status_FAILED,
+			run.Status_CANCELLED,
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
