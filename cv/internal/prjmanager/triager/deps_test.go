@@ -16,7 +16,6 @@ package triager
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -28,68 +27,13 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-func shouldResembleTriagedDeps(actual interface{}, expected ...interface{}) string {
-	if len(expected) != 1 {
-		return fmt.Sprintf("expected 1 value, got %d", len(expected))
-	}
-	exp := expected[0] // this may be nil
-	a, ok := actual.(*triagedDeps)
-	if !ok {
-		return fmt.Sprintf("Wrong actual type %T, must be %T", actual, a)
-	}
-	if err := ShouldHaveSameTypeAs(actual, exp); err != "" {
-		return err
-	}
-	b := exp.(*triagedDeps)
-	switch {
-	case a == b:
-		return ""
-	case a == nil:
-		return "actual is nil, but non-nil was expected"
-	case b == nil:
-		return "actual is not-nil, but nil was expected"
-	}
-
-	buf := strings.Builder{}
-	for _, err := range []string{
-		ShouldResemble(a.lastTriggered, b.lastTriggered),
-		ShouldResembleProto(a.notYetLoaded, b.notYetLoaded),
-		ShouldResembleProto(a.submitted, b.submitted),
-		ShouldResembleProto(a.invalidDeps, b.invalidDeps),
-	} {
-		if err != "" {
-			buf.WriteRune(' ')
-			buf.WriteString(err)
-		}
-	}
-	return strings.TrimSuffix(buf.String(), " ")
-}
-
-func TestShouldResembleTriagedDeps(t *testing.T) {
-	t.Parallel()
-
-	Convey("shouldResembleTriagedDeps works", t, func() {
-		So(&triagedDeps{}, shouldResembleTriagedDeps, &triagedDeps{})
-		So(&triagedDeps{
-			invalidDeps: &changelist.CLError_InvalidDeps{
-				WrongConfigGroup: []*changelist.Dep{{Clid: 1}},
-			},
-			submitted: []*changelist.Dep{{Clid: 2}},
-		}, shouldResembleTriagedDeps, &triagedDeps{
-			invalidDeps: &changelist.CLError_InvalidDeps{
-				WrongConfigGroup: []*changelist.Dep{{Clid: 1}},
-			},
-			submitted: []*changelist.Dep{{Clid: 2}},
-		})
-	})
-}
 
 func TestDepsTriage(t *testing.T) {
 	t.Parallel()
@@ -132,7 +76,7 @@ func TestDepsTriage(t *testing.T) {
 							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}},
 						}
 						td := do(sup.pb.Pcls[0], cgIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{})
+						So(td, cvtesting.SafeShouldResemble, &triagedDeps{})
 						So(td.OK(), ShouldBeTrue)
 					})
 
@@ -147,7 +91,7 @@ func TestDepsTriage(t *testing.T) {
 								}},
 						}
 						td := do(sup.PCL(33), cgIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{
+						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 							lastTriggered: epoch.Add(3 * time.Second),
 						})
 						So(td.OK(), ShouldBeTrue)
@@ -165,7 +109,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{notYetLoaded: pcl33.GetDeps()})
+						So(td, cvtesting.SafeShouldResemble, &triagedDeps{notYetLoaded: pcl33.GetDeps()})
 						So(td.OK(), ShouldBeTrue)
 					})
 
@@ -181,7 +125,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{
+						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								Unwatched: pcl33.GetDeps(),
 							},
@@ -197,7 +141,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{submitted: pcl33.GetDeps()})
+						So(td, cvtesting.SafeShouldResemble, &triagedDeps{submitted: pcl33.GetDeps()})
 						So(td.OK(), ShouldBeTrue)
 					})
 
@@ -213,7 +157,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{
+						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 							lastTriggered: epoch.Add(3 * time.Second),
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								WrongConfigGroup: pcl33.GetDeps(),
@@ -242,7 +186,7 @@ func TestDepsTriage(t *testing.T) {
 							Deps:               deps,
 						})
 						td := do(sup.PCL(2000), cgIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{
+						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 							lastTriggered: epoch.Add(time.Second),
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								TooMany: &changelist.CLError_InvalidDeps_TooMany{
@@ -282,7 +226,7 @@ func TestDepsTriage(t *testing.T) {
 			Convey("dry run doesn't care about deps' triggers", func() {
 				pcl33 := sup.PCL(33)
 				td := do(pcl33, singIdx)
-				So(td, shouldResembleTriagedDeps, &triagedDeps{
+				So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 				})
 			})
@@ -290,14 +234,14 @@ func TestDepsTriage(t *testing.T) {
 				pcl33 := sup.PCL(33)
 				pcl33.Trigger.Mode = string(run.QuickDryRun)
 				td := do(pcl33, singIdx)
-				So(td, shouldResembleTriagedDeps, &triagedDeps{
+				So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 				})
 			})
 			Convey("full run doesn't allow any dep by default", func() {
 				pcl32 := sup.PCL(32)
 				td := do(pcl32, singIdx)
-				So(td, shouldResembleTriagedDeps, &triagedDeps{
+				So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 					invalidDeps: &changelist.CLError_InvalidDeps{
 						SingleFullDeps: pcl32.GetDeps(),
@@ -312,7 +256,7 @@ func TestDepsTriage(t *testing.T) {
 						},
 					}
 					td := do(pcl32, singIdx)
-					So(td, shouldResembleTriagedDeps, &triagedDeps{
+					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 					})
 					So(td.OK(), ShouldBeTrue)
@@ -322,7 +266,7 @@ func TestDepsTriage(t *testing.T) {
 						// single Submit gerrit RPC, so it can't be allowed.
 						pcl32.GetDeps()[0].Kind = changelist.DepKind_SOFT
 						td := do(pcl32, singIdx)
-						So(td, shouldResembleTriagedDeps, &triagedDeps{
+						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 							lastTriggered: epoch.Add(3 * time.Second),
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								SingleFullDeps: pcl32.GetDeps(),
@@ -359,14 +303,14 @@ func TestDepsTriage(t *testing.T) {
 				pcl32 := sup.PCL(32)
 				Convey("ok", func() {
 					td := do(pcl32, combIdx)
-					So(td, shouldResembleTriagedDeps, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
+					So(td, cvtesting.SafeShouldResemble, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
 				})
 
 				Convey("... not full runs", func() {
 					// TODO(tandrii): this can and should be supported.
 					sup.PCL(31).Trigger.Mode = string(run.FullRun)
 					td := do(pcl32, combIdx)
-					So(td, shouldResembleTriagedDeps, &triagedDeps{
+					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
 							CombinableMismatchedMode: pcl32.GetDeps(),
@@ -381,12 +325,12 @@ func TestDepsTriage(t *testing.T) {
 						pcl.Trigger.Mode = string(run.FullRun)
 					}
 					td := do(pcl33, combIdx)
-					So(td, shouldResembleTriagedDeps, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
+					So(td, cvtesting.SafeShouldResemble, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
 				})
 				Convey("... not dry runs", func() {
 					sup.PCL(32).Trigger.Mode = string(run.FullRun)
 					td := do(pcl33, combIdx)
-					So(td, shouldResembleTriagedDeps, &triagedDeps{
+					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
 							CombinableMismatchedMode: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},

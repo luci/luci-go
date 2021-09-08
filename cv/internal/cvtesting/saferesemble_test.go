@@ -186,6 +186,12 @@ func TestSafeShouldResemble(t *testing.T) {
 			e:             saferesembletest.NewWithPrivateProto(222, "BBB", ts66),
 			diffsContains: []string{"111", "BBB", "field .t differs:", "non-proto fields differ:"},
 		},
+		{
+			name:          "diff in 1 proto element of a slice",
+			a:             &tWithProtoSlice{TS: []*timestamppb.Timestamp{ts53duped, ts53}},
+			e:             &tWithProtoSlice{TS: []*timestamppb.Timestamp{ts53decoded, ts66}},
+			diffsContains: []string{"field .TS differs:"},
+		},
 
 		// With private fields.
 	}
@@ -227,4 +233,8 @@ type tWith2Protos struct {
 	b string
 	T *timestamppb.Timestamp
 	D *durationpb.Duration
+}
+
+type tWithProtoSlice struct {
+	TS []*timestamppb.Timestamp
 }

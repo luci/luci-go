@@ -78,10 +78,19 @@ func SafeShouldResemble(actual interface{}, expected ...interface{}) string {
 
 	buf := strings.Builder{}
 	protoMessageType := reflect.TypeOf((*proto.Message)(nil)).Elem()
+fieldsLoop:
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
-		if !field.Type.Implements(protoMessageType) {
-			continue
+		switch {
+		case field.Type.Implements(protoMessageType):
+			// ShouldResembleProto can handle this.
+		case field.Type.Kind() == reflect.Slice && field.Type.Elem().Implements(protoMessageType):
+			// ShouldResembleProto can also handle this.
+		default:
+			// Assume not a proto. In practice, this can be a struct or ptr to a
+			// struct with a proto inside. Detecting and bailing in such a case is
+			// left as future work if it becomes really necessary.
+			continue fieldsLoop
 		}
 
 		fA, fE := vA.Elem().Field(i), vE.Elem().Field(i)

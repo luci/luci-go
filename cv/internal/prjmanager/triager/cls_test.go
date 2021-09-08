@@ -28,6 +28,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -61,7 +62,7 @@ func shouldResembleTriagedCL(actual interface{}, expected ...interface{}) string
 	for _, err := range []string{
 		ShouldResemble(a.ready, b.ready),
 		ShouldResemble(a.runIndexes, b.runIndexes),
-		shouldResembleTriagedDeps(a.deps, b.deps),
+		cvtesting.SafeShouldResemble(a.deps, b.deps),
 		ShouldResembleProto(a.pcl, b.pcl),
 		ShouldResembleProto(a.purgingCL, b.purgingCL),
 		ShouldResembleProto(a.purgeReasons, b.purgeReasons),
@@ -318,7 +319,7 @@ func TestCLsTriage(t *testing.T) {
 					Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}}},
 				})
 				So(cls[2].ready, ShouldBeTrue)
-				So(cls[2].deps, shouldResembleTriagedDeps, &triagedDeps{
+				So(cls[2].deps, cvtesting.SafeShouldResemble, &triagedDeps{
 					submitted: []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_HARD}},
 				})
 				So(cls[3], shouldResembleTriagedCL, &clInfo{

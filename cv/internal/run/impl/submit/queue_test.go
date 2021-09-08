@@ -16,8 +16,6 @@ package submit
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -31,7 +29,6 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueue(t *testing.T) {
@@ -68,7 +65,7 @@ func TestQueue(t *testing.T) {
 			Convey("When queue is empty", func() {
 				waitlisted := mustTryAcquire(ctx, run1, nil)
 				So(waitlisted, ShouldBeFalse)
-				So(mustLoadQueue(), shouldResembleQueue, &queue{
+				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 					ID:      lProject,
 					Current: run1,
 				})
@@ -76,7 +73,7 @@ func TestQueue(t *testing.T) {
 				Convey("And acquire same Run again", func() {
 					waitlisted := mustTryAcquire(ctx, run1, nil)
 					So(waitlisted, ShouldBeFalse)
-					So(mustLoadQueue(), shouldResembleQueue, &queue{
+					So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 						ID:      lProject,
 						Current: run1,
 					})
@@ -91,14 +88,14 @@ func TestQueue(t *testing.T) {
 				}), ShouldBeNil)
 				waitlisted := mustTryAcquire(ctx, run2, nil)
 				So(waitlisted, ShouldBeTrue)
-				So(mustLoadQueue(), shouldResembleQueue, &queue{
+				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2},
 				})
 				waitlisted = mustTryAcquire(ctx, run3, nil)
 				So(waitlisted, ShouldBeTrue)
-				So(mustLoadQueue(), shouldResembleQueue, &queue{
+				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
@@ -108,7 +105,7 @@ func TestQueue(t *testing.T) {
 					for _, r := range []common.RunID{run2, run3} {
 						waitlisted := mustTryAcquire(ctx, r, nil)
 						So(waitlisted, ShouldBeTrue)
-						So(mustLoadQueue(), shouldResembleQueue, &queue{
+						So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 							ID:       lProject,
 							Current:  run1,
 							Waitlist: common.RunIDs{run2, run3},
@@ -125,7 +122,7 @@ func TestQueue(t *testing.T) {
 				}), ShouldBeNil)
 				waitlisted := mustTryAcquire(ctx, run2, nil)
 				So(waitlisted, ShouldBeFalse)
-				So(mustLoadQueue(), shouldResembleQueue, &queue{
+				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 					ID:       lProject,
 					Current:  run2,
 					Waitlist: common.RunIDs{run3},
@@ -150,7 +147,7 @@ func TestQueue(t *testing.T) {
 			}), ShouldBeNil)
 			Convey("Current slot", func() {
 				mustRelease(ctx, run1)
-				So(mustLoadQueue(), shouldResembleQueue, &queue{
+				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 					ID:       lProject,
 					Waitlist: common.RunIDs{run2, run3},
 				})
@@ -162,7 +159,7 @@ func TestQueue(t *testing.T) {
 
 			Convey("Run in waitlist", func() {
 				mustRelease(ctx, run2)
-				So(mustLoadQueue(), shouldResembleQueue, &queue{
+				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run3},
@@ -175,7 +172,7 @@ func TestQueue(t *testing.T) {
 			Convey("Non-existing run", func() {
 				nonExisting := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("badbadbad"))
 				mustRelease(ctx, nonExisting)
-				So(mustLoadQueue(), shouldResembleQueue, &queue{
+				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
@@ -288,43 +285,6 @@ func TestQueue(t *testing.T) {
 			})
 		})
 	})
-}
-
-func shouldResembleQueue(actual interface{}, expected ...interface{}) string {
-	if len(expected) != 1 {
-		return fmt.Sprintf("expected 1 value, got %d", len(expected))
-	}
-	exp := expected[0] // this may be nil
-	a, ok := actual.(*queue)
-	if !ok {
-		return fmt.Sprintf("Wrong actual type %T, must be %T", actual, a)
-	}
-	if err := ShouldHaveSameTypeAs(actual, exp); err != "" {
-		return err
-	}
-	b := exp.(*queue)
-	switch {
-	case a == b:
-		return ""
-	case a == nil:
-		return "actual is nil, but non-nil was expected"
-	case b == nil:
-		return "actual is not-nil, but nil was expected"
-	}
-
-	buf := strings.Builder{}
-	for _, err := range []string{
-		ShouldEqual(a.Current, b.Current),
-		ShouldResemble(a.Waitlist, b.Waitlist),
-		ShouldResembleProto(a.Opts, b.Opts),
-		ShouldResemble(a.History, b.History),
-	} {
-		if err != "" {
-			buf.WriteRune(' ')
-			buf.WriteString(err)
-		}
-	}
-	return strings.TrimSpace(buf.String())
 }
 
 type fakeNotifier struct {
