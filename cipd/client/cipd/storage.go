@@ -65,7 +65,9 @@ func isTemporaryNetError(err error) bool {
 // isTemporaryHTTPError returns true for HTTP status codes that indicate
 // a temporary error that may go away if request is retried.
 func isTemporaryHTTPError(statusCode int) bool {
-	return statusCode >= http.StatusInternalServerError || statusCode == http.StatusRequestTimeout || statusCode == http.StatusBadRequest
+	return statusCode >= http.StatusInternalServerError ||
+		statusCode == http.StatusRequestTimeout ||
+		statusCode == http.StatusTooManyRequests
 }
 
 type storage interface {

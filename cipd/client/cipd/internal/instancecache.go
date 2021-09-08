@@ -184,7 +184,7 @@ func (c *InstanceCache) Launch(ctx context.Context) {
 	if c.Tmp {
 		tmp = " temporary"
 	}
-	logging.Infof(ctx, "Using %s instance cache at %s", tmp, c.FS.Root())
+	logging.Infof(ctx, "Using%s instance cache at %s", tmp, c.FS.Root())
 
 	// This is an effectively an unlimited buffer. At very least it should be
 	// large enough to hold all requests submitted by RequestInstances(...) before
