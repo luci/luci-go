@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -104,7 +103,7 @@ func TestEndRun(t *testing.T) {
 			So(task, ShouldResembleProto, &pubsub.PublishRunEndedTask{
 				PublicId:    rs.Run.ID.PublicID(),
 				LuciProject: rs.Run.ID.LUCIProject(),
-				Status:      commonpb.Run_Status(rs.Run.Status),
+				Status:      rs.Run.Status,
 				Eversion:    int64(rs.Run.EVersion),
 			})
 		})

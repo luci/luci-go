@@ -17,8 +17,8 @@ package consistency
 import (
 	"testing"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
+	apiv1pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -29,7 +29,7 @@ func TestStatusV1(t *testing.T) {
 
 	Convey("Ensure CV API v1 Run Status matches the internal Status.", t, func() {
 		// v1 -> internal.
-		for name, val := range commonpb.Run_Status_value {
+		for name, val := range apiv1pb.Run_Status_value {
 			name, val := name, val
 			Convey("v1."+name, func() {
 				other, exists := run.Status_value[name]
@@ -42,7 +42,7 @@ func TestStatusV1(t *testing.T) {
 		for name, val := range run.Status_value {
 			name, val := name, val
 			Convey("internal."+name, func() {
-				other, exists := commonpb.Run_Status_value[name]
+				other, exists := apiv1pb.Run_Status_value[name]
 				So(exists, ShouldBeTrue)
 				So(val, ShouldEqual, other)
 			})

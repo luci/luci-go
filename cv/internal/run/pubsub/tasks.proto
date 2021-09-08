@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package cv.internal.run.pubsub;
 
-import "go.chromium.org/luci/cv/api/common/v1/run.proto";
+import "go.chromium.org/luci/cv/internal/run/storage.proto";
 
 option go_package = "go.chromium.org/luci/cv/internal/run/pubsub;pubsub";
 
@@ -25,6 +25,6 @@ option go_package = "go.chromium.org/luci/cv/internal/run/pubsub;pubsub";
 message PublishRunEndedTask {
   string public_id = 1;
   string luci_project = 2;
-  cv.common.v1.Run.Status  status = 3;
+  cv.internal.run.Status status = 3;
   int64 eversion = 4;
 }

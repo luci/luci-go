@@ -1,7 +1,7 @@
 # CV PubSub Messages
 
-This includes the proto messages of the PubSub topics, where CV publishes
-messages for CV run events.
+The `pubsub.proto` includes the proto messages of the PubSub topics, where CV
+publishes messages for CV run events.
 
 ## Subscribing to CV topics
 
@@ -26,7 +26,7 @@ the payload to avoid breakages.
 
 ### RunEnded
 - Topic: `projects/luci-change-verifier/topics/v1.run_ended`
-- Message Format: https://pkg.go.dev/go.chromium.org/luci/cv/api/pubsub/v1#Run
+- Message Format: https://pkg.go.dev/go.chromium.org/luci/cv/api/v1#PubSubRun
 - Attributes:
   - `luci_project`: the LUCI project the CV Run belongs to.
   - `status`: the terminal status of the CV Run. Visit [RunStatus] for a list of
@@ -35,7 +35,7 @@ the payload to avoid breakages.
   be published into this topic, and the status field tells the reason of the
   termination.
 
-[RunStatus]: https://pkg.go.dev/go.chromium.org/luci/cv/api/common/v1#Run_Status
+[RunStatus]: https://pkg.go.dev/go.chromium.org/luci/cv/api/v1#Run_Status
 
 ## Adding a new topic
 

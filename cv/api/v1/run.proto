@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package cv.common.v1;
+package cv.v1;
 
-option go_package = "go.chromium.org/luci/cv/api/common/v1;commonpb";
+option go_package = "go.chromium.org/luci/cv/api/v1;cvpb";
 
 // Run includes the high-level information about a CV Run.
 message Run {

@@ -23,8 +23,7 @@ import (
 
 	"go.chromium.org/luci/gae/service/datastore"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
-	pubsubpb "go.chromium.org/luci/cv/api/pubsub/v1"
+	cvpb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
@@ -75,11 +74,11 @@ func TestExportRunToBQ(t *testing.T) {
 			})
 
 			Convey("with JSONPB encoded message", func() {
-				var msg pubsubpb.Run
+				var msg cvpb.PubSubRun
 				So(protojson.Unmarshal(t.Message.GetData(), &msg), ShouldBeNil)
-				So(&msg, ShouldResembleProto, &pubsubpb.Run{
+				So(&msg, ShouldResembleProto, &cvpb.PubSubRun{
 					Id:       r.ID.PublicID(),
-					Status:   commonpb.Run_SUCCEEDED,
+					Status:   cvpb.Run_SUCCEEDED,
 					Eversion: int64(r.EVersion),
 				})
 			})

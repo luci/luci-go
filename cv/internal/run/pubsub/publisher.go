@@ -22,8 +22,7 @@ import (
 
 	"go.chromium.org/luci/server/tq"
 
-	commonpb "go.chromium.org/luci/cv/api/common/v1"
-	pubsubpb "go.chromium.org/luci/cv/api/pubsub/v1"
+	cvpb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -49,9 +48,9 @@ func NewPublisher(tqd *tq.Dispatcher) *Publisher {
 		Kind:      tq.Transactional,
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			t := m.(*PublishRunEndedTask)
-			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(&pubsubpb.Run{
+			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(&cvpb.PubSubRun{
 				Id:       t.PublicId,
-				Status:   t.Status,
+				Status:   cvpb.Run_Status(t.Status),
 				Eversion: t.Eversion,
 			})
 			if err != nil {
@@ -75,7 +74,7 @@ func (s *Publisher) RunEnded(ctx context.Context, run *run.Run) error {
 		Payload: &PublishRunEndedTask{
 			PublicId:    run.ID.PublicID(),
 			LuciProject: run.ID.LUCIProject(),
-			Status:      commonpb.Run_Status(run.Status),
+			Status:      run.Status,
 			Eversion:    int64(run.EVersion),
 		},
 	})

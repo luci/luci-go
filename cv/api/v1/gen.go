@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+// Package cvpb contains v1 version of CV API.
+package cvpb
 
-// Package commonpb defines the messages for common business objects modelled
-// in CV.
-package commonpb
+//go:generate cproto
