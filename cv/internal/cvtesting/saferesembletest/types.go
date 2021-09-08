@@ -12,15 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtest
+// Package saferesembletest exists to test better cvtesting.SafeShouldResemble
+package saferesembletest
 
 import (
-	"go.chromium.org/luci/cv/internal/cvtesting"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// ShouldResembleRun compares 2 Runs.
-//
-// Deprecated. Use cvtesting.SafeShouldResemble directly.
-func ShouldResembleRun(actual interface{}, expected ...interface{}) string {
-	return cvtesting.SafeShouldResemble(actual, expected...)
+type NoProtos struct {
+	a int
+	A time.Time
+}
+
+func NewNoProtos(a int, A time.Time) NoProtos {
+	return NoProtos{a: a, A: A}
+}
+
+type WithPrivateProto struct {
+	A int
+	b string
+	t *timestamppb.Timestamp
+}
+
+func NewWithPrivateProto(A int, b string, t *timestamppb.Timestamp) WithPrivateProto {
+	return WithPrivateProto{A: A, b: b, t: t}
 }
