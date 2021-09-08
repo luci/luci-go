@@ -310,7 +310,7 @@ func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRev
 		for _, parentPSKey := range client.f.parentsOf[psKey] {
 			chParent, _, _, err := client.f.resolvePSKeyLocked(parentPSKey)
 			if err != nil {
-				panic(err)
+				panic(fmt.Errorf("invalid setup of child->parent relationship in Gerrit fake: %s", err))
 			}
 			if err := dfs(chParent); err != nil {
 				return err
