@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package rpcpb contains v0 (preliminary) version of CV pRPC API.
+// Package cvpb contains v0 (preliminary) version of CV API.
 //
 // !!!!! WARNING !!!!!
 //   * Use at your own risk.
@@ -20,6 +20,6 @@
 //   * No backwards compatibility guaranteed.
 //   * Please, contact CV maintainers at luci-eng@ before using this and
 //     we may provide additional guarantees to you/your service.
-package rpcpb
+package cvpb
 
 //go:generate cproto

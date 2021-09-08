@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
-	rpcpb "go.chromium.org/luci/cv/api/rpc/v0"
+	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -37,11 +37,11 @@ const allowGroup = "service-luci-change-verifier-admins"
 
 // RunsServer implements rpc v0 APIs.
 type RunsServer struct {
-	rpcpb.UnimplementedRunsServer
+	apiv0pb.UnimplementedRunsServer
 }
 
 // GetRun returns the Run.
-func (s *RunsServer) GetRun(ctx context.Context, req *rpcpb.GetRunRequest) (resp *rpcpb.Run, err error) {
+func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (resp *apiv0pb.Run, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "Runs.GetRun"); err != nil {
 		return
@@ -64,14 +64,14 @@ func (s *RunsServer) GetRun(ctx context.Context, req *rpcpb.GetRunRequest) (resp
 	if err != nil {
 		return nil, err
 	}
-	gcls := make([]*rpcpb.GerritChange, len(rcls))
+	gcls := make([]*apiv0pb.GerritChange, len(rcls))
 	for i, rcl := range rcls {
 		host, change, err := rcl.ExternalID.ParseGobID()
 		if err != nil {
 			// As of Sep 2, 2021, CV works only with Gerrit (GoB) CL.
 			panic(errors.Annotate(err, "ParseGobID").Err())
 		}
-		gcls[i] = &rpcpb.GerritChange{
+		gcls[i] = &apiv0pb.GerritChange{
 			Host:     host,
 			Change:   change,
 			Patchset: rcl.Detail.GetPatchset(),
@@ -79,7 +79,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *rpcpb.GetRunRequest) (resp
 	}
 
 	// TODO(crbug/1233963): check if user has access to this specific Run.
-	return &rpcpb.Run{
+	return &apiv0pb.Run{
 		Id:         r.ID.PublicID(),
 		Eversion:   int64(r.EVersion),
 		Status:     commonpb.Run_Status(r.Status),

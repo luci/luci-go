@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	commonpb "go.chromium.org/luci/cv/api/common/v1"
-	rpcpb "go.chromium.org/luci/cv/api/rpc/v0"
+	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -57,17 +57,17 @@ func TestGetRun(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := rs.GetRun(ctx, &rpcpb.GetRunRequest{Id: rid.PublicID()})
+			_, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: rid.PublicID()})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
 		Convey("w/ an invalid public ID", func() {
-			_, err := rs.GetRun(ctx, &rpcpb.GetRunRequest{Id: "something valid"})
+			_, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: "something valid"})
 			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 		})
 
 		Convey("w/ an non-existing Run ID", func() {
-			_, err := rs.GetRun(ctx, &rpcpb.GetRunRequest{Id: rid.PublicID()})
+			_, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: rid.PublicID()})
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 		})
 
@@ -106,9 +106,9 @@ func TestGetRun(t *testing.T) {
 				},
 			), ShouldBeNil)
 
-			resp, err := rs.GetRun(ctx, &rpcpb.GetRunRequest{Id: rid.PublicID()})
+			resp, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: rid.PublicID()})
 			So(grpcutil.Code(err), ShouldEqual, codes.OK)
-			So(resp, ShouldResembleProto, &rpcpb.Run{
+			So(resp, ShouldResembleProto, &apiv0pb.Run{
 				Id:         rid.PublicID(),
 				Status:     commonpb.Run_SUCCEEDED,
 				CreateTime: timestamppb.New(epoch),
@@ -116,7 +116,7 @@ func TestGetRun(t *testing.T) {
 				UpdateTime: timestamppb.New(epoch.Add(time.Minute)),
 				EndTime:    timestamppb.New(epoch.Add(time.Hour)),
 				Owner:      "user:foo@example.org",
-				Cls: []*rpcpb.GerritChange{
+				Cls: []*apiv0pb.GerritChange{
 					{Host: gHost, Change: 1, Patchset: 39},
 					{Host: gHost, Change: 2, Patchset: 40},
 				},

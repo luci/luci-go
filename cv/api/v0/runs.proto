@@ -15,9 +15,9 @@
 
 syntax = "proto3";
 
-package cv.rpc.v0;
+package cv.v0;
 
-option go_package = "go.chromium.org/luci/cv/api/rpc/v0;rpcpb";
+option go_package = "go.chromium.org/luci/cv/api/v0;cvpb";
 
 import "go.chromium.org/luci/cv/api/common/v1/run.proto";
 import "google/protobuf/timestamp.proto";
