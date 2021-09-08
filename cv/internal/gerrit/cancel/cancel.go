@@ -294,7 +294,7 @@ func applyLeaseForCL(ctx context.Context, clid common.CLID, duration time.Durati
 		cancel()
 		if err := l.Terminate(ctx); err != nil {
 			// Best-effort termination since lease will expire naturally.
-			errors.Log(ctx, err)
+			common.LogError(ctx, err)
 		}
 	}
 	return dctx, close, nil

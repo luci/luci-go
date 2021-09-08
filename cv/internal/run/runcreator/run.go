@@ -161,15 +161,21 @@ func (rb *Creator) Create(ctx context.Context, clMutator *changelist.Mutator, pm
 		ret, innerErr = rb.createTransactionally(ctx, clMutator, pm, rm)
 		return innerErr
 	}, nil)
+
 	switch {
 	case innerErr != nil:
-		return nil, innerErr
+		err = innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to create run").Tag(transient.Tag).Err()
+		err = errors.Annotate(err, "failed to create a Run").Tag(transient.Tag).Err()
 	default:
 		logging.Debugf(ctx, "Created Run %q with %d CLs", ret.ID, len(ret.CLs))
 		return ret, nil
 	}
+
+	if common.IsDatastoreContention(err) {
+		err = common.DSContentionTag.Apply(err)
+	}
+	return nil, err
 }
 
 // ExpectedRunID returns RunID of the Run to be created.
@@ -252,9 +258,9 @@ func (rb *Creator) checkRunExists(ctx context.Context) {
 			return errors.Annotate(err, "failed to load Run entity").Tag(transient.Tag).Err()
 
 		case rb.run.CreationOperationID == rb.OperationID:
-			// This is quite likely if prior transaction attempt actually succeeds on
-			// Datastore side, but CV failed to receive an ACK and is now retrying the
-			// transaction body.
+			// This is quite likely if the prior transaction attempt actually succeeds
+			// on the Datastore side, but CV failed to receive an ACK and is now
+			// retrying the transaction body.
 			logging.Debugf(ctx, "Run(ID:%s) already created by us", rb.runID)
 			return errAlreadyCreated
 		default:

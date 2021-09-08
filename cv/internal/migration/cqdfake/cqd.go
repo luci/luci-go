@@ -170,7 +170,7 @@ func (cqd *CQDFake) serve(ctx context.Context) {
 			return
 		case <-timer.GetC():
 			if err := cqd.iteration(ctx); err != nil {
-				errors.Log(ctx, err)
+				common.LogError(ctx, err)
 			}
 		}
 	}

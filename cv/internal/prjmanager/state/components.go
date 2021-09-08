@@ -198,7 +198,11 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 						atomic.AddInt32(&action.runsFailed, 1)
 						// Log error here since only total errs count will be propagated up
 						// the stack.
-						logging.Errorf(ctx, "%s: %s", protojson.Format(c), err)
+						level := logging.Error
+						if transient.Tag.In(err) {
+							level = logging.Warning
+						}
+						logging.Logf(ctx, level, "Failed to create a Run in component\n%s\ndue to error: %s", protojson.Format(c), err)
 					}
 					return err
 				}

@@ -179,6 +179,10 @@ func LogError(ctx context.Context, err error, expectedErrors ...error) {
 		logging.Warningf(ctx, "%s", err)
 		return
 	}
+
+	// Annotate error to get full stack trace of the caller of the LogError.
+	err = errors.Annotate(err, "common.LogError").Err()
+
 	errors.Log(
 		ctx,
 		err,
@@ -186,9 +190,8 @@ func LogError(ctx context.Context, err error, expectedErrors ...error) {
 		"github.com/smartystreets/goconvey/convey",
 		"github.com/jtolds/gls",
 		// These packages are not useful in production:
-		// TODO(tandrii): undo this once all TQ-related CLs land and stick in prod.
-		// "go.chromium.org/luci/server",
-		// "go.chromium.org/luci/server/tq",
+		"go.chromium.org/luci/server",
+		"go.chromium.org/luci/server/tq",
 		"go.chromium.org/luci/server/router",
 	)
 }
