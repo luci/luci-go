@@ -75,6 +75,7 @@ message Spec {
   // By default, verification will be performed against a default set of
   // environment parameters. However, a given specification may offer its own
   // set of PEP425 tags representing the systems that it wants to be verified
-  // against.
+  // against. Verification will pass only if the spec is valid (i.e. all wheels
+  // exist) for _all_ given PEP425Tags.
   repeated vpython.PEP425Tag verify_pep425_tag = 4;
 }
