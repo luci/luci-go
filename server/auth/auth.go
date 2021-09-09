@@ -191,6 +191,13 @@ type User struct {
 	// be verified. Used only by authentication methods based on OAuth2.
 	// See https://developers.google.com/console/help/#generatingoauth2 for more.
 	ClientID string `json:"client_id,omitempty"`
+
+	// Extra is any additional information the authentication method produces.
+	//
+	// Its exact type depends on the authentication method used. Usually the
+	// authentication method will have an accompanying getter function that knows
+	// how to interpret this field.
+	Extra interface{} `json:"-"`
 }
 
 // Authenticator performs authentication of incoming requests.

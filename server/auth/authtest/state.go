@@ -100,6 +100,9 @@ type FakeState struct {
 	//
 	// By default UserCredentials() returns ErrNoForwardableCreds error.
 	UserCredentialsOverride *oauth2.Token
+
+	// UserExtra is returned as Extra field of User() return value.
+	UserExtra interface{}
 }
 
 // RealmPermission is used to populate IdentityPermissions in FakeState.
@@ -160,6 +163,7 @@ func (s *FakeState) User() *auth.User {
 	return &auth.User{
 		Identity: ident,
 		Email:    ident.Email(),
+		Extra:    s.UserExtra,
 	}
 }
 

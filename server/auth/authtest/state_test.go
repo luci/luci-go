@@ -50,12 +50,14 @@ func TestFakeState(t *testing.T) {
 			PeerIPWhitelists:     []string{"wl"},
 			PeerIdentityOverride: "bot:blah",
 			PeerIPOverride:       net.ParseIP("192.192.192.192"),
+			UserExtra:            "blah",
 		}
 
 		So(state.Method(), ShouldNotBeNil)
 		So(state.User(), ShouldResemble, &auth.User{
 			Identity: "user:abc@def.com",
 			Email:    "abc@def.com",
+			Extra:    "blah",
 		})
 		So(state.PeerIdentity(), ShouldEqual, "bot:blah")
 		So(state.PeerIP().String(), ShouldEqual, "192.192.192.192")
