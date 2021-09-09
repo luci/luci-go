@@ -168,7 +168,7 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
 		} else {
 			build := b.Data[0].Item.(*bbpb.Build)
-			buildbucket.StripDisallowedTagKeys(&build.Tags)
+			build.Tags = buildbucket.WithoutDisallowedTagKeys(build.Tags)
 			req = &bbpb.UpdateBuildRequest{
 				Build: build,
 				UpdateMask: &field_mask.FieldMask{

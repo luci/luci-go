@@ -37,10 +37,10 @@ const (
 	ExperimentBBCanarySoftware = "luci.buildbucket.canary_software"
 	ExperimentNonProduction    = "luci.non_production"
 
-	ExperimentBBAgent   = "luci.buildbucket.use_bbagent"
+	ExperimentBBAgent         = "luci.buildbucket.use_bbagent"
 	ExperimentBBAgentGetBuild = "luci.buildbucket.bbagent_getbuild"
-	ExperimentRecipePY3 = "luci.recipes.use_python3"
-	ExperimentUseRealms = "luci.use_realms"
+	ExperimentRecipePY3       = "luci.recipes.use_python3"
+	ExperimentUseRealms       = "luci.use_realms"
 )
 
 // WellKnownExperiments is the list of all well-known experiments.
@@ -60,24 +60,17 @@ var (
 	DisallowedAppendTagKeys = stringset.NewFromSlice("build_address", "buildset", "builder")
 )
 
-// StripDisallowedTagKeys modifies `tags` in-place to remove tags with
-// DisallowedAppendTagKeys keys.
-//
-// This does not preserve the order of `tags`.
-func StripDisallowedTagKeys(tags *[]*pb.StringPair) {
-	if tags == nil {
-		return
+// WithoutDisallowedTagKeys returns tags whose key are not in
+// `DisallowedAppendTagKeys`.
+func WithoutDisallowedTagKeys(tags []*pb.StringPair) []*pb.StringPair {
+	if len(tags) == 0 {
+		return tags
 	}
-
-	ts := *tags
-
-	for i := len(ts) - 1; i >= 0; i-- {
-		if DisallowedAppendTagKeys.Has(ts[i].Key) {
-			ts[i] = ts[len(ts)-1]
-			ts[len(ts)-1] = nil // allow pruned StringPair to be gc'd.
-			ts = ts[:len(ts)-1]
+	ret := make([]*pb.StringPair, 0, len(tags))
+	for _, tag := range tags {
+		if !DisallowedAppendTagKeys.Has(tag.Key) {
+			ret = append(ret, tag)
 		}
 	}
-
-	*tags = ts
+	return ret
 }
