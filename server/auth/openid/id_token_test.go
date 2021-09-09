@@ -81,7 +81,7 @@ func TestVerifyIDToken(t *testing.T) {
 
 	Convey("Bad body (not JSON)", t, func() {
 		_, err := verifyToken(jwtForTest(ctx, []byte("IAMNOTJSON"), signingKeyID, signer))
-		So(err, ShouldErrLike, "not JSON")
+		So(err, ShouldErrLike, "can't deserialize JSON")
 	})
 
 	Convey("Bad issuer", t, func() {

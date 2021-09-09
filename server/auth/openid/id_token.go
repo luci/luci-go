@@ -16,9 +16,9 @@ package openid
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
+	"go.chromium.org/luci/auth/jwt"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 )
@@ -57,13 +57,9 @@ const allowedClockSkew = 30 * time.Second
 func VerifyIDToken(ctx context.Context, token string, keys *JSONWebKeySet, issuer string) (*IDToken, error) {
 	// See https://developers.google.com/identity/protocols/OpenIDConnect#validatinganidtoken
 
-	body, err := keys.VerifyJWT(token)
-	if err != nil {
-		return nil, errors.Annotate(err, "bad ID token").Err()
-	}
 	tok := &IDToken{}
-	if err := json.Unmarshal(body, tok); err != nil {
-		return nil, errors.Annotate(err, "bad ID token: not JSON").Err()
+	if err := jwt.VerifyAndDecode(token, tok, keys); err != nil {
+		return nil, errors.Annotate(err, "bad ID token").Err()
 	}
 
 	exp := time.Unix(tok.Exp, 0)

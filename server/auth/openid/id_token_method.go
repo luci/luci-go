@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"strings"
 
+	"go.chromium.org/luci/auth/jwt"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
@@ -104,7 +105,7 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Requ
 	// Validate token's signature and expiration. Extract user info from it.
 	tok, user, err := UserFromIDToken(ctx, token, doc)
 	if err != nil {
-		if m.SkipNonJWT && NotJWT.In(err) {
+		if m.SkipNonJWT && jwt.NotJWT.In(err) {
 			return nil, nil, nil
 		}
 		return nil, nil, err

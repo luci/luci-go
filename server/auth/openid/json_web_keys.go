@@ -20,16 +20,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/json"
 	"math/big"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
 )
-
-// NotJWT is an error tag used to indicate that the string passed to VerifyJWT
-// is not in fact structurally a JWT.
-var NotJWT = errors.BoolTag{Key: errors.NewTagKey("not a JSON web token")}
 
 // JSONWebKeySet implements subset of functionality described in RFC7517.
 //
@@ -88,67 +82,15 @@ func NewJSONWebKeySet(parsed *JSONWebKeySetStruct) (*JSONWebKeySet, error) {
 	return &JSONWebKeySet{keys: keys}, nil
 }
 
-// VerifyJWT checks JWT signature and returns the token body.
-//
-// Supports only non-encrypted RS256-signed JWTs. See RFC7519.
-func (k *JSONWebKeySet) VerifyJWT(jwt string) (body []byte, err error) {
-	chunks := strings.Split(jwt, ".")
-	if len(chunks) != 3 {
-		return nil, errors.Reason("bad JWT: expected 3 components separated by '.'").Tag(NotJWT).Err()
-	}
-
-	// Check the header, grab the corresponding public key.
-	var hdr struct {
-		Alg string `json:"alg"`
-		Kid string `json:"kid"`
-	}
-	if err := unmarshalB64JSON(chunks[0], &hdr); err != nil {
-		return nil, errors.Annotate(err, "bad JWT header").Tag(NotJWT).Err()
-	}
-	if hdr.Alg != "RS256" {
-		return nil, errors.Reason("bad JWT: only RS256 alg is supported, not %q", hdr.Alg).Err()
-	}
-	if hdr.Kid == "" {
-		return nil, errors.Reason("bad JWT: missing the signing key ID in the header").Err()
-	}
-	pub, ok := k.keys[hdr.Kid]
+// CheckSignature returns nil if `signed` was indeed signed by the given key.
+func (k *JSONWebKeySet) CheckSignature(keyID string, signed, signature []byte) error {
+	pub, ok := k.keys[keyID]
 	if !ok {
-		return nil, errors.Reason("can't verify JWT: unknown signing key %q", hdr.Kid).Err()
+		return errors.Reason("unknown signing key %q", keyID).Err()
 	}
-
-	// Decode the signature.
-	sig, err := base64.RawURLEncoding.DecodeString(chunks[2])
-	if err != nil {
-		return nil, errors.Annotate(err, "bad JWT: can't base64 decode the signature").Err()
-	}
-
-	// Check the signature. The signed string is "b64(header).b64(body)".
-	hasher := sha256.New()
-	hasher.Write([]byte(chunks[0]))
-	hasher.Write([]byte{'.'})
-	hasher.Write([]byte(chunks[1]))
-	if err := rsa.VerifyPKCS1v15(&pub, crypto.SHA256, hasher.Sum(nil), sig); err != nil {
-		return nil, errors.Reason("bad JWT: bad signature").Err()
-	}
-
-	// Decode the body. There should be no errors here generally, the encoded body
-	// is signed and the signature was already verified.
-	body, err = base64.RawURLEncoding.DecodeString(chunks[1])
-	if err != nil {
-		return nil, errors.Annotate(err, "bad JWT: can't base64 decode the body").Err()
-	}
-	return body, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-func unmarshalB64JSON(blob string, out interface{}) error {
-	raw, err := base64.RawURLEncoding.DecodeString(blob)
-	if err != nil {
-		return errors.Annotate(err, "not base64").Err()
-	}
-	if err := json.Unmarshal(raw, out); err != nil {
-		return errors.Annotate(err, "not JSON").Err()
+	digest := sha256.Sum256(signed)
+	if err := rsa.VerifyPKCS1v15(&pub, crypto.SHA256, digest[:], signature); err != nil {
+		return errors.Reason("bad signature").Err()
 	}
 	return nil
 }

@@ -17,8 +17,6 @@ package openid
 import (
 	"context"
 	"crypto/rsa"
-	"encoding/base64"
-	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/server/auth/signing/signingtest"
@@ -115,81 +113,32 @@ func TestParseJSONWebKeySet(t *testing.T) {
 	})
 }
 
-func TestVerifyJWT(t *testing.T) {
+func TestCheckSignature(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	Convey("With signed blob", t, func() {
+		ctx := context.Background()
+		signer := signingtest.NewSigner(nil)
+		keys := JSONWebKeySet{
+			keys: map[string]rsa.PublicKey{
+				"key-1": signer.KeyForTest().PublicKey,
+			},
+		}
 
-	signer := signingtest.NewSigner(nil)
-	keys := JSONWebKeySet{
-		keys: map[string]rsa.PublicKey{
-			"key-1": signer.KeyForTest().PublicKey,
-		},
-	}
-
-	prepareJWT := func(alg, kid string, body []byte) string {
-		b64hdr := base64.RawURLEncoding.EncodeToString([]byte(
-			fmt.Sprintf(`{"alg": "%s","kid": "%s"}`, alg, kid)))
-		b64bdy := base64.RawURLEncoding.EncodeToString(body)
-		_, sig, err := signer.SignBytes(ctx, []byte(b64hdr+"."+b64bdy))
+		var blob = []byte("blah blah")
+		_, sig, err := signer.SignBytes(ctx, blob)
 		So(err, ShouldBeNil)
-		return b64hdr + "." + b64bdy + "." + base64.RawURLEncoding.EncodeToString(sig)
-	}
 
-	Convey("Happy path", t, func() {
-		body := []byte(`blah blah blah`)
-		verifiedBody, err := keys.VerifyJWT(prepareJWT("RS256", "key-1", body))
-		So(err, ShouldBeNil)
-		So(verifiedBody, ShouldResemble, body)
-	})
+		Convey("Good signature", func() {
+			So(keys.CheckSignature("key-1", blob, sig), ShouldBeNil)
+		})
 
-	Convey("Malformed JWT", t, func() {
-		_, err := keys.VerifyJWT("wat")
-		So(err, ShouldErrLike, "expected 3 components")
-		So(NotJWT.In(err), ShouldBeTrue)
-	})
+		Convey("Bad signature", func() {
+			So(keys.CheckSignature("key-1", []byte("something else"), sig), ShouldErrLike, "bad signature")
+		})
 
-	Convey("Bad header format (not b64)", t, func() {
-		_, err := keys.VerifyJWT("???.aaaa.aaaa")
-		So(err, ShouldErrLike, "bad JWT header: not base64")
-		So(NotJWT.In(err), ShouldBeTrue)
-	})
-
-	Convey("Bad header format (not json)", t, func() {
-		_, err := keys.VerifyJWT("aaaa.aaaa.aaaa")
-		So(err, ShouldErrLike, "bad JWT header: not JSON")
-		So(NotJWT.In(err), ShouldBeTrue)
-	})
-
-	Convey("Bad algo", t, func() {
-		_, err := keys.VerifyJWT(prepareJWT("bad-algo", "key-1", []byte("body")))
-		So(err, ShouldErrLike, "only RS256 alg is supported")
-		So(NotJWT.In(err), ShouldBeFalse)
-	})
-
-	Convey("Missing key ID", t, func() {
-		_, err := keys.VerifyJWT(prepareJWT("RS256", "", []byte("body")))
-		So(err, ShouldErrLike, "missing the signing key ID in the header")
-		So(NotJWT.In(err), ShouldBeFalse)
-	})
-
-	Convey("Unknown key", t, func() {
-		_, err := keys.VerifyJWT(prepareJWT("RS256", "unknown-key", []byte("body")))
-		So(err, ShouldErrLike, "unknown signing key")
-		So(NotJWT.In(err), ShouldBeFalse)
-	})
-
-	Convey("Bad signature encoding", t, func() {
-		jwt := prepareJWT("RS256", "key-1", []byte("body"))
-		_, err := keys.VerifyJWT(jwt + "???")
-		So(err, ShouldErrLike, "can't base64 decode the signature")
-		So(NotJWT.In(err), ShouldBeFalse)
-	})
-
-	Convey("Bad signature", t, func() {
-		jwt := prepareJWT("RS256", "key-1", []byte("body"))
-		_, err := keys.VerifyJWT(jwt[:len(jwt)-2])
-		So(err, ShouldErrLike, "bad signature")
-		So(NotJWT.In(err), ShouldBeFalse)
+		Convey("Unknown key", func() {
+			So(keys.CheckSignature("unknown", blob, sig), ShouldErrLike, "unknown signing key")
+		})
 	})
 }
