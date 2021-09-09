@@ -28,6 +28,7 @@ import (
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -81,7 +82,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 	return &apiv0pb.Run{
 		Id:         r.ID.PublicID(),
 		Eversion:   int64(r.EVersion),
-		Status:     apiv0pb.Run_Status(r.Status),
+		Status:     versioning.RunStatusV0(r.Status),
 		Mode:       string(r.Mode),
 		CreateTime: common.TspbNillable(r.CreateTime),
 		StartTime:  common.TspbNillable(r.StartTime),

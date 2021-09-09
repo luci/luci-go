@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	cvpb "go.chromium.org/luci/cv/api/v1"
+	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -49,9 +50,9 @@ func NewPublisher(tqd *tq.Dispatcher) *Publisher {
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			t := m.(*PublishRunEndedTask)
 			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(&cvpb.PubSubRun{
-				Id:       t.PublicId,
-				Status:   cvpb.Run_Status(t.Status),
-				Eversion: t.Eversion,
+				Id:       t.GetPublicId(),
+				Status:   versioning.RunStatusV1(t.GetStatus()),
+				Eversion: t.GetEversion(),
 			})
 			if err != nil {
 				return nil, err

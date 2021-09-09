@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package consistency
+package versioning
 
 import (
 	"testing"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
-	apiv1pb "go.chromium.org/luci/cv/api/v0"
+	apiv1pb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"

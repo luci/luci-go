@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package consistency holds tests to ensure CV correctly maps internal
-// definitions to public API.
-package consistency
+// Package versioning containts utilities to convert types to/from CV API
+// versions as well as tests to avoid regressions.
+package versioning
