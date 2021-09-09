@@ -32,8 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// TODO: change this group to a v0 API dedicated group, like "v0-api-allowed-users".
-const allowGroup = "service-luci-change-verifier-admins"
+const allowGroup = "service-luci-change-verifier-v0-api-users"
 
 // RunsServer implements rpc v0 APIs.
 type RunsServer struct {
