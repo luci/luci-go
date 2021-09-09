@@ -46,10 +46,10 @@ div.clickable {
   padding: 2px 4px;
   margin: 2px 4px;
 }
-.tryjob-chips {
-  line-height: 2;
-}
+
 .tryjob-chip {
+  line-height: 2;
+  white-space: nowrap;
   color: black;
   font-size: 90%;
   border: solid 1px rgba(0, 0, 0, 0.5);
@@ -135,8 +135,13 @@ div.clickable {
   <div>
     <h3>Tryjobs</h3>
     <div>
-      <p><b>NOTE</b> color codes represent how CV sees tryjobs (triggered | failed | succeeded),
-      which isn't as granular as Buildbucket's statuses.</p>
+      <p class ="well">
+        <b>NOTE</b> color codes represent how CV sees tryjobs, e.g.
+        <span class="tryjob-chip running"><i>triggered</i></span>
+        <span class="tryjob-chip failed"> <i>failed</i></span>
+        <span class="tryjob-chip passed"> <i>succeeded</i></span>
+        which isn't as granular as Buildbucket's statuses.
+      </p>
       <p class="tryjob-chips">
         {{range $AllTryjobs}}
           {{with UITryjob .}}
