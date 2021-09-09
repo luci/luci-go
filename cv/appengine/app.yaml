@@ -31,11 +31,9 @@ handlers:
 - url: /static/bootstrap
   static_dir: bootstrap
   secure: always
-
 - url: /static/jquery
   static_dir: jquery
   secure: always
-
 - url: /.*
   script: auto
   secure: always
