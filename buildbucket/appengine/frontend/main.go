@@ -20,8 +20,10 @@ import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/tq"
 
@@ -40,11 +42,23 @@ func main() {
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		gerritauth.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
 		srv.PRPC.AccessControl = prpc.AllowOriginAll
+		srv.PRPC.Authenticator = &auth.Authenticator{
+			Methods: []auth.Method{
+				// The default method used by majority of clients.
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+				// For authenticating calls from Gerrit plugins.
+				&gerritauth.Method,
+			},
+		}
+
 		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
 		pb.RegisterBuildsServer(srv.PRPC, rpc.NewBuilds())
 		pb.RegisterBuildersServer(srv.PRPC, rpc.NewBuilders())
