@@ -1,0 +1,110 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.v0;
+
+option go_package = "go.chromium.org/luci/cv/api/v0;cvpb";
+
+import "go.chromium.org/luci/buildbucket/proto/builder.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+// Tryjob represents a Run's view of a tryjob.
+message Tryjob {
+  // Definition defines what a Tryjob should do.
+  //
+  // It must be sufficient to trigger a new tryjob.
+  message Definition {
+    oneof backend {
+      // For buildbucket, it's just a builder.
+      Buildbucket buildbucket = 1;
+    }
+
+    message Buildbucket {
+      string host = 1;
+      buildbucket.v2.BuilderID builder = 2;
+    }
+  }
+
+  // Status is a high level status of a Tryjob.
+  enum Status {
+    // STATUS_UNSPECIFIED is never used.
+    STATUS_UNSPECIFIED = 0;
+
+    // PENDING means TryJob is being triggered by CV.
+    //
+    // *must* have no Result.
+    PENDING = 1;
+    // TRIGGERED means tryjob was triggered.
+    //
+    // *may* have been triggered by not CV but another user, service, etc.
+    // *may* have a Result, which *may* still change.
+    TRIGGERED = 2;
+    // ENDED is a completed tryjob. Final status.
+    //
+    // *must* have a Result, whose Status is not UNKNOWN.
+    ENDED = 3;
+    // CANCELLED is Tryjob cancelled by CV. Final status.
+    //
+    // *must* have no Result.
+    CANCELLED = 4;
+    // UNTRIGGERED means tryjob was not triggered. Final status.
+    //
+    // *must* have no Result.
+    UNTRIGGERED = 5;
+  }
+
+  // Result of a Tryjob.
+  message Result {
+    // Status of the Result.
+    //
+    // This is the verdict of verification of Run's CLs by this Tryjob.
+    Status status = 1;
+
+    enum Status {
+      // RESULT_STATUS_UNSPECIFIED is never used.
+      RESULT_STATUS_UNSPECIFIED = 0;
+      // UNKNOWN means Tryjob didn't reach a conclusion.
+      UNKNOWN = 1;
+      // SUCCEEDED means that Run's CLs are considered OK by this Tryjob.
+      SUCCEEDED = 2;
+      // FAILED_PERMANENTLY means that Run's CLs are most likely not good.
+      FAILED_PERMANENTLY = 3;
+      // FAILED_TRANSIENTLY means that Run's CLs are most likely not to blame
+      // for the failure.
+      // TODO(crbug/1227363): consider removing transiency aspect if possible.
+      FAILED_TRANSIENTLY = 4;
+    }
+
+    // Backend houses backend-specific output.
+    oneof backend {
+      Buildbucket buildbucket = 5;
+    }
+
+    message Buildbucket {
+      int64 id = 1;
+      buildbucket.v2.Status status = 2;
+    }
+  }
+
+  // Definition defines what a Tryjob should do.
+  Definition definition = 1;
+
+  // Status of the Tryjob.
+  Status status = 5;
+
+  // Result of the tryjob.
+  Result result = 7;
+}

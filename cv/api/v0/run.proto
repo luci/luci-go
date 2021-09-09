@@ -20,6 +20,8 @@ option go_package = "go.chromium.org/luci/cv/api/v0;cvpb";
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/cv/api/v0/tryjob.proto";
+
 // Run includes the high-level information about a CV Run.
 //
 // WARNING: this message is EXPERIMENTAL
@@ -126,6 +128,11 @@ message Run {
   string owner = 9;
   // The Gerrit changes involved in this Run.
   repeated GerritChange cls = 10;
+
+  // The tryjobs of the Run.
+  //
+  // This may contain Tryjobs that are no longer required.
+  repeated Tryjob tryjobs = 11;
 }
 
 // A Gerrit patchset.
