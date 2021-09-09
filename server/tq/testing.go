@@ -51,8 +51,13 @@ func (e *directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fu
 	retry := false
 	defer func() { done(retry) }()
 
-	if t.Message != nil {
-		panic("Executing PubSub tasks is not supported yet") // break tests loudly
+	switch {
+	case t.Message != nil && t.Task != nil:
+		panic("Both Task and Message are set") // break tests loudly
+	case t.Message != nil:
+		// Execute PubSub message by marking it done immediately.
+		logging.Debugf(ctx, "server/tq: sent a Pubsub message")
+		return
 	}
 
 	var body []byte
