@@ -72,7 +72,11 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 			return impl.BQExporter.Schedule(ctx, rid)
 		},
 		func(ctx context.Context) error {
-			return impl.Publisher.RunEnded(ctx, &rs.Run)
+			// If this Run is successfully ended (i.e. saved successfully to
+			// Datastore), the EVersion will be increased by 1 based on how
+			// eventbox works. If this eventbox behavior is changed in the future,
+			// this logic should be revisited.
+			return impl.Publisher.RunEnded(ctx, rid, rs.Run.Status, rs.Run.EVersion+1)
 		},
 	)
 }

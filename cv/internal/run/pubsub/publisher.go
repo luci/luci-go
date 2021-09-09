@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	cvpb "go.chromium.org/luci/cv/api/v1"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -70,13 +71,13 @@ func NewPublisher(tqd *tq.Dispatcher) *Publisher {
 }
 
 // RunEnded schedules a task to publish a RunEnded message.
-func (s *Publisher) RunEnded(ctx context.Context, run *run.Run) error {
+func (s *Publisher) RunEnded(ctx context.Context, rid common.RunID, status run.Status, eVersion int) error {
 	return s.tqd.AddTask(ctx, &tq.Task{
 		Payload: &PublishRunEndedTask{
-			PublicId:    run.ID.PublicID(),
-			LuciProject: run.ID.LUCIProject(),
-			Status:      run.Status,
-			Eversion:    int64(run.EVersion),
+			PublicId:    rid.PublicID(),
+			LuciProject: rid.LUCIProject(),
+			Status:      status,
+			Eversion:    int64(eVersion),
 		},
 	})
 }

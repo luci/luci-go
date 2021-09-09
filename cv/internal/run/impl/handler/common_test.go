@@ -104,7 +104,7 @@ func TestEndRun(t *testing.T) {
 				PublicId:    rs.Run.ID.PublicID(),
 				LuciProject: rs.Run.ID.LUCIProject(),
 				Status:      rs.Run.Status,
-				Eversion:    int64(rs.Run.EVersion),
+				Eversion:    int64(rs.Run.EVersion + 1),
 			})
 		})
 	})

@@ -59,7 +59,7 @@ func TestExportRunToBQ(t *testing.T) {
 			// A RunEnded task must be scheduled in a transaction.
 			runEnded := func() error {
 				return datastore.RunInTransaction(ctx, func(tCtx context.Context) error {
-					return publisher.RunEnded(tCtx, &r)
+					return publisher.RunEnded(tCtx, r.ID, r.Status, r.EVersion)
 				}, nil)
 			}
 			So(runEnded(), ShouldBeNil)
