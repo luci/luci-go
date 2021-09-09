@@ -109,6 +109,9 @@
 // Named so because because it enables migration of GAEv1 apps to GAEv2 without
 // touching datastore-related code.
 //
+// • go.chromium.org/luci/server/gerritauth: implements authentication using
+// Gerrit JWTs. Useful if a service is used by a Gerrit frontend plugin.
+//
 // • go.chromium.org/luci/server/limiter: a simple load shedding mechanism that
 // puts a limit on a number of concurrent gRPC/pRPC requests the server is
 // handling.

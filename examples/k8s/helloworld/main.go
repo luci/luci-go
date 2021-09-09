@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
@@ -47,6 +48,7 @@ func main() {
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
+		gerritauth.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -68,13 +70,20 @@ func main() {
 			logging.WithError(fmt.Errorf("boom")).Errorf(c.Context, "Hello error world")
 		})
 
-		// Authentication example (using Google OAuth2 access tokens).
-		mw := router.NewMiddlewareChain(auth.Authenticate(&auth.GoogleOAuth2Method{
-			Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-		}))
+		// Authentication example.
+		mw := router.NewMiddlewareChain(auth.Authenticate(
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+			},
+			&gerritauth.Method,
+		))
 		srv.Routes.GET("/who", mw, func(c *router.Context) {
 			logging.Infof(c.Context, "Authenticated as %s", auth.CurrentIdentity(c.Context))
 			fmt.Fprintf(c.Writer, "Authenticated as %s\n", auth.CurrentIdentity(c.Context))
+			if info := gerritauth.GetAssertedInfo(c.Context); info != nil {
+				fmt.Fprintf(c.Writer, "Gerrit user: %v\n", info.User)
+				fmt.Fprintf(c.Writer, "Gerrit CL: %v\n", info.Change)
+			}
 		})
 
 		// Redis example.
