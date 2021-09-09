@@ -29,10 +29,10 @@ vpc_access_connector:
 
 handlers:
 - url: /static/bootstrap
-  static_dir: bootstrap
+  static_dir: static/bootstrap
   secure: always
 - url: /static/jquery
-  static_dir: jquery
+  static_dir: static/jquery
   secure: always
 - url: /.*
   script: auto
