@@ -43,10 +43,21 @@ that can be found in the LICENSE file. -->
 
     <footer style="color: #cccccc;">
       <hr>
-      <p>
-        Handled in {{call .HandlerDuration}}
-        <span>Version: {{.AppVersion}}</span>
-      </p>
+      <div class="row">
+        <div class="col-md-6">
+        <p>
+            Handled in {{call .HandlerDuration}}
+        </p>
+        <p>
+            Version: {{.AppVersion}}
+        </p>
+      </div>
+      <div class="col-md-6 text-right">
+        <a target="_blank" href="https://bugs.chromium.org/p/chromium/issues/entry?summary=CV+UI+Issue+%3Cdescribe%3E&amp;description=screenshot%2C+url+and+description+of+the+issue&amp;components=Infra%3EPlatform%3ECQ&amp;labels=Type-Bug%2CPri-2">
+          <img src="https://storage.cloud.google.com/chops-feedback/icon.png" alt="feedback link"> Feedback
+        </a>
+        </div>
+      </div>
     </footer>
   </div>
   <script src="/static/jquery/jquery.min.js"></script>
