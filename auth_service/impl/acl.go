@@ -50,6 +50,9 @@ var rpcACL = map[serviceMethod]string{
 
 	// All methods to work with groups require authorization.
 	{"auth.service.Groups", "*"}: ServiceAccessGroup,
+
+	// Internals are used by the UI which is accessible only to authorized users.
+	{"auth.internals.Internals", "*"}: ServiceAccessGroup,
 }
 
 type serviceMethod struct {

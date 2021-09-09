@@ -35,10 +35,12 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/auth_service/api/internalspb"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl"
 	"go.chromium.org/luci/auth_service/impl/servers/accounts"
 	"go.chromium.org/luci/auth_service/impl/servers/groups"
+	"go.chromium.org/luci/auth_service/impl/servers/internals"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -88,6 +90,7 @@ func main() {
 		)
 
 		// Register all pRPC servers.
+		internalspb.RegisterInternalsServer(srv.PRPC, &internals.Server{})
 		rpcpb.RegisterAccountsServer(srv.PRPC, &accounts.Server{})
 		rpcpb.RegisterGroupsServer(srv.PRPC, &groups.Server{})
 

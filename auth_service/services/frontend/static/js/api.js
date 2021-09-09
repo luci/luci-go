@@ -75,7 +75,7 @@ var api = (function() {
   //
   // Throws:
   //   CallError (both on network issues and non-OK responses).
-  exports.call = async function(service, method, request) {
+  async function call(service, method, request) {
     try {
       // See https://pkg.go.dev/go.chromium.org/luci/grpc/prpc for definition of
       // the pRPC protocol (in particular its JSON encoding).
@@ -132,6 +132,7 @@ var api = (function() {
       }
     }
   };
+  exports.call = call;
 
 
   //// XSRF token utilities.
@@ -145,9 +146,15 @@ var api = (function() {
     xsrf_token = token;
   };
 
-  // Enables the XSRF token refresh timer.
-  exports.setXSRFTokenAutoupdate = function(autoUpdate) {
-    // TODO: implement.
+  // Enables the XSRF token refresh timer (firing once an hour).
+  exports.startXSRFTokenAutoupdate = function() {
+    setInterval(() => {
+      call('auth.internals.Internals', 'RefreshXSRFToken', {
+        'xsrfToken': xsrf_token,
+      }).then(resp => {
+        xsrf_token = resp.xsrfToken;
+      });
+    }, 3600*1000);
   };
 
   return exports;
