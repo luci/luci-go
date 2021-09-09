@@ -135,6 +135,8 @@ div.clickable {
   <div>
     <h3>Tryjobs</h3>
     <div>
+      <p><b>NOTE</b> color codes represent how CV sees tryjobs (triggered | failed | succeeded),
+      which isn't as granular as Buildbucket's statuses.</p>
       <p class="tryjob-chips">
         {{range $AllTryjobs}}
           {{with UITryjob .}}
