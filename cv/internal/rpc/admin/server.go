@@ -241,6 +241,14 @@ func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerReque
 func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsRequest) (resp *adminpb.RunsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "SearchRuns"); err != nil {
+		// HACK! Ignore access denied if Run being requested belongs to `infra`
+		// project.
+		// TODO(crbug/1245864): remove this hack once proper ACLs are done.
+		if req.GetProject() == "infra/" {
+			err = nil // for infra project, proceed searching the Runs.
+		} else {
+			return // for every other project, bail with Access Denied.
+		}
 		return
 	}
 	if req.PageSize, err = pagination.ValidatePageSize(req, 16, 128); err != nil {
