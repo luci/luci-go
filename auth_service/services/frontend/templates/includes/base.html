@@ -9,7 +9,7 @@ that can be found in the LICENSE file. -->
     <meta charset="utf-8">
     <title>{{ template "title" .}}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
     <style>
       body {
         padding-top: 10px;
@@ -30,7 +30,7 @@ that can be found in the LICENSE file. -->
   </head>
 
   <body>
-    <div class="container-fluid">
+    <div class="container">
       {{if .SimpleHeader}}
         <div class="row-fluid">
           <div class="col-md-10">
@@ -39,7 +39,45 @@ that can be found in the LICENSE file. -->
           </div>
         </div>
       {{else}}
-        {{/* render the navbar header */}}
+        <div class="col-md-10">
+          <nav class="navbar navbar-expand-md navbar-light bg-light">
+            <div class="container-fluid">
+              <a class="navbar-brand">Auth Service</a>
+              <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                  <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#">Groups</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="#">Changes</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="#">Lookup</a>
+                  </li> 
+                  <li class="nav-item">
+                    <a class="nav-link" href="#">Services</a>
+                  </li> 
+                  <li class="nav-item">
+                    <a class="nav-link" href="#">OAuth</a>
+                  </li> 
+                  <li class="nav-item">
+                    <a class="nav-link" href="#">IP Allowlists</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="#">Config</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="#">API</a>
+                  </li>
+                </ul>
+                <form class="d-flex" id="account-text-nav">
+                    <span class="navbar-text">{{ .User.Email }}</span>
+                    <a id="logout-btn" class="nav-link" href="{{ .LogoutURL }}">Logout</a>
+                </form>
+              </div>
+            </div>
+          </nav>
+        </div>
       {{end}}
 
       <div class="row-fluid">
