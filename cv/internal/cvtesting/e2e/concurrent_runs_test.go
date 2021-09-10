@@ -182,5 +182,8 @@ func TestConcurentRunsSingular(t *testing.T) {
 
 		ct.LogPhase(ctx, "Wait for all BQ exports to complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == len(actions) })
+
+		ct.LogPhase(ctx, "Wait for all PubSub messages are sent")
+		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == len(actions) })
 	})
 }

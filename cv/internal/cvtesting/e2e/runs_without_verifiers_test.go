@@ -36,8 +36,10 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/pubsub"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCreatesSingularRun(t *testing.T) {
@@ -175,7 +177,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 			return nil == datastore.Get(ctx, &migration.VerifiedCQDRun{ID: r.ID})
 		})
 
-		ct.LogPhase(ctx, "CV finalizes the run and sends BQ event")
+		ct.LogPhase(ctx, "CV finalizes the run and sends BQ and pubsub events")
 		var finalRun *run.Run
 		ct.RunUntil(ctx, func() bool {
 			finalRun = ct.LoadRun(ctx, r.ID)
@@ -195,6 +197,15 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
+
+		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
+		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
+		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+			PublicId:    r.ID.PublicID(),
+			LuciProject: lProject,
+			Status:      run.Status_SUCCEEDED,
+			Eversion:    int64(finalRun.EVersion),
+		})
 	})
 }
 
@@ -299,6 +310,23 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 2 })
+
+		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
+		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 2 })
+		// 1st message is for the dry-run cancelled.
+		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+			PublicId:    qdr.ID.PublicID(),
+			LuciProject: lProject,
+			Status:      run.Status_CANCELLED,
+			Eversion:    int64(ct.LoadRun(ctx, qdr.ID).EVersion),
+		})
+		// 2nd message is for the the full-run failed.
+		So(ct.RunEndedPubSubTasks()[1].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+			PublicId:    fr.ID.PublicID(),
+			LuciProject: lProject,
+			Status:      run.Status_FAILED,
+			Eversion:    int64(ct.LoadRun(ctx, fr.ID).EVersion),
+		})
 	})
 }
 
@@ -365,7 +393,7 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 			return err == nil && res.All()
 		})
 
-		ct.LogPhase(ctx, "CV submits the run and sends BQ event")
+		ct.LogPhase(ctx, "CV submits the run and sends BQ and Pubsub events")
 		var finalRun *run.Run
 		ct.RunUntil(ctx, func() bool {
 			finalRun = ct.LoadRun(ctx, r.ID)
@@ -383,6 +411,15 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
+
+		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
+		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
+		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+			PublicId:    r.ID.PublicID(),
+			LuciProject: lProject,
+			Status:      run.Status_SUCCEEDED,
+			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
+		})
 	})
 }
 
@@ -453,6 +490,15 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
+
+		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
+		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
+		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+			PublicId:    r.ID.PublicID(),
+			LuciProject: lProject,
+			Status:      run.Status_CANCELLED,
+			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
+		})
 	})
 }
 
@@ -629,7 +675,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			return err == nil && res.All()
 		})
 
-		ct.LogPhase(ctx, "CV submits the run and sends BQ event")
+		ct.LogPhase(ctx, "CV submits the run and sends BQ and pubsub events")
 		var finalRun *run.Run
 		ct.RunUntil(ctx, func() bool {
 			finalRun = ct.LoadRun(ctx, r.ID)
@@ -662,6 +708,15 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
+
+		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
+		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
+		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+			PublicId:    r.ID.PublicID(),
+			LuciProject: lProject,
+			Status:      run.Status_SUCCEEDED,
+			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
+		})
 	})
 }
 
@@ -776,5 +831,14 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
+
+		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
+		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
+		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+			PublicId:    r.ID.PublicID(),
+			LuciProject: lProject,
+			Status:      run.Status_SUCCEEDED,
+			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
+		})
 	})
 }

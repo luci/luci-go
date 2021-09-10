@@ -60,6 +60,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
+	"go.chromium.org/luci/cv/internal/run/pubsub"
 )
 
 const (
@@ -623,4 +624,13 @@ func (t *Test) enqueueTQSweep(ctx context.Context) {
 	if t.TQDispatcher.Sweeper != nil {
 		t.tqSweepChannel.C <- struct{}{}
 	}
+}
+
+// RunEndedPubSubTasks returns all the succeeded TQ tasks with RunEnded pubsub
+// events.
+func (t *Test) RunEndedPubSubTasks() tqtesting.TaskList {
+	return t.SucceededTQTasks.Filter(func(t *tqtesting.Task) bool {
+		_, ok := t.Payload.(*pubsub.PublishRunEndedTask)
+		return ok
+	})
 }
