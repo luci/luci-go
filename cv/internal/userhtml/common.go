@@ -89,7 +89,17 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				return changelist.ExternalID(eid).MustURL()
 			},
 			// Shortens a cl id for display purposes.
-			"DisplayExternalID": func(eid string) string {
+			// Accepts string or changelist.ExternalID.
+			"DisplayExternalID": func(arg interface{}) string {
+				var eid string
+				switch v := arg.(type) {
+				case string:
+					eid = v
+				case changelist.ExternalID:
+					eid = string(v)
+				default:
+					panic(fmt.Sprintf("DisplayExternalID called with unsupported type %t", v))
+				}
 				if eid == "" {
 					// Very old RunCL entities don't have ExternalID set.
 					return ""

@@ -6,10 +6,7 @@ Run {{index (SplitSlash .Run.Id) 1}}
 
 {{define "head"}}
 <style type="text/css">
-table {
-  table-layout: fixed;
-  border-collapse: collapse;
-}
+
 table td{
   padding: 2px 8px;
 }
@@ -26,7 +23,7 @@ table td.long {
   background-color: #f1f1f1;
 }
 
-.active, .clickable:hover {
+.clickable:hover {
   background-color: #ccc;
 }
 
@@ -40,7 +37,6 @@ div.clickable {
 #full-details-panel{
   margin-left: 50px;
 }
-
 
 .tryjob-chips ul li{
   padding: 2px 4px;
@@ -80,20 +76,12 @@ div.clickable {
   background: #e88;
 }
 
-
 .message {
   overflow: auto;
   max-height: 250px;
   background-color: white;
   padding: 10px 50px;
 }
-
-.cl-list {
-  padding-right: 50px;
-  max-height: 600px;
-  overflow-y: auto;
-}
-
 </style>
 
 {{end}}
@@ -110,61 +98,109 @@ div.clickable {
         {{$Created := .Run.CreateTime.AsTime}}
   </div>
 
-  <div style="width: fit-content;">
+  <div>
     <h3>CLs</h3>
-  <div class="cl-list">
-    <ul>
-    {{range .Cls}}
-      {{if .Detail.GetGerrit}}
-        <li>
-          ({{- .Detail.GetGerrit.Host -}}/{{- .Detail.GetGerrit.Info.Number -}}/{{- .Detail.Patchset -}})
-          <a href="{{.ExternalID.URL}}">
-            <!-- Use the first line of the commit message as link text. -->
-            {{with .Detail.GetGerrit}}
-              {{(index (Split (index .Info.Revisions .Info.CurrentRevision).Commit.Message) 0)}}
-            {{end}}
-          </a>
-        </li>
-      {{end}}
-    {{end}}
-    </ul>
+    <div class="container">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th style="width: 1%; white-space: nowrap;" class="text-center">
+              Previous CV Run
+            </th>
+            <th style="width: 1%; white-space: nowrap;" class="text-center">
+              CL
+            </th>
+            <th class="text-center">
+              Description
+            </th>
+            <th style="width: 1%; white-space: nowrap;" class="text-center">
+              Next CV Run
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Cls}}
+            <tr>
+              <td style="white-space: nowrap;" class="text-center">
+                {{with .Prev}}
+                  {{if (eq . "UNKNOWN")}}
+                    <span style="color: #ccc;"> UNKNOWN </span>
+                  {{else}}
+                    <a href="/ui/run/{{.}}">&lt; Previous</a>
+                  {{end}}
+                {{else}}
+                  <span style="color: #ccc;"> &mdash; </span>
+                {{end}}
+              </td>
+              <td style="white-space: nowrap;" class="text-center">
+                {{with .CL.ExternalID}}
+                  <a href="{{.URL}}">{{DisplayExternalID .}}</a>
+                {{end}}
+              </td>
+              <td class="text-center">
+                {{with .CL.Detail.GetGerrit}}
+                  {{(index (Split (index .Info.Revisions .Info.CurrentRevision).Commit.Message) 0)}}
+                {{end}}
+              </td>
+              <td style="white-space: nowrap;" class="text-center">
+                {{with .Next}}
+                  {{if (eq . "UNKNOWN")}}
+                    <span style="color: #ccc;"> UNKNOWN </span>
+                  {{else}}
+                    <a href="/ui/run/{{.}}">Next &gt;</a>
+                  {{end}}
+                {{else}}
+                  <span style="color: #ccc;"> &mdash; </span>
+                {{end}}
+              </td>
+            </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
   </div>
-  </div>
-
 
   <div>
     <h3>Tryjobs</h3>
-    <div>
-      <p class ="well">
-        <b>NOTE</b> color codes represent how CV sees tryjobs, e.g.
-        <span class="tryjob-chip running"><i>triggered</i></span>
-        <span class="tryjob-chip failed"> <i>failed</i></span>
-        <span class="tryjob-chip passed"> <i>succeeded</i></span>
-        which isn't as granular as Buildbucket's statuses.
-      </p>
-      <p class="tryjob-chips">
-        {{range $AllTryjobs}}
-          {{with UITryjob .}}
-            <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
-            <span> </span>
+    {{if $AllTryjobs}}
+      <div>
+        <p class ="well">
+          <b>NOTE</b> color codes represent how CV sees tryjobs, e.g.
+          <span class="tryjob-chip running"><i>triggered</i></span>
+          <span class="tryjob-chip failed"> <i>failed</i></span>
+          <span class="tryjob-chip passed"> <i>succeeded</i></span>
+          which isn't as granular as Buildbucket's statuses.
+        </p>
+        <p class="tryjob-chips">
+          {{range $AllTryjobs}}
+            {{with UITryjob .}}
+              <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
+              <span> </span>
+            {{end}}
           {{end}}
-        {{end}}
         </p>
       </div>
+    {{else}}
+      <span style="color: #ccc;">No tryjobs to show</span>
+    {{end}}
+  </div>
+
+  <div>
+    <h3>Logs</h3>
     {{if .Logs}}
-      <h3>Logs</h3>
       <table class="table table-striped">
         <thead>
           <th style="width: 200px;">Event</th>
           <th style="width: 250px;">Time</th>
           <th style="width: 100px;">&nbsp;</th>
           <th>&nbsp;</th>
-        </thead> <tbody>
+        </thead>
+        <tbody>
           {{range .Logs}}
             <tr class="log-entry{{if .GetTryjobsUpdated}}-top{{end}}">
               <td><em>{{LogTypeString .}}</em></td>
-              <td>{{FmTime .GetTime.AsTime}} </td>
-              <td>{{call $RelTime .GetTime.AsTime}} </td>
+              <td style="white-space: nowrap;">{{FmTime .GetTime.AsTime}} </td>
+              <td style="white-space: nowrap;">{{call $RelTime .GetTime.AsTime}} </td>
               <td>
                 {{if (call $LogMessage .)}}
                   <div class="message"><pre>{{call $LogMessage .}}</pre></div>
@@ -193,12 +229,11 @@ div.clickable {
             {{end}}
           {{end}}
         </tbody>
-    </table>
-  {{end}}
+      </table>
+    {{else}}
+      <span style="color: #ccc;">No logs to show</span>
+    {{end}}
   </div>
-
-
-</div>
 {{end}}
 
 {{define "runDetails"}}

@@ -15,11 +15,16 @@
 package userhtml
 
 import (
+	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"golang.org/x/sync/errgroup"
+
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -30,6 +35,11 @@ import (
 	"go.chromium.org/luci/cv/internal/run/commonpb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
+
+type clAndNeighborRuns struct {
+	Prev, Next common.RunID
+	CL         *run.RunCL
+}
 
 func runDetails(c *router.Context) {
 	rID := fmt.Sprintf("%s/%s", c.Params.ByName("Project"), c.Params.ByName("Run"))
@@ -55,15 +65,37 @@ func runDetails(c *router.Context) {
 		errPage(c, err)
 		return
 	}
-	clidToURL := make(map[common.CLID]string, len(cls))
-	for _, cl := range cls {
-		clidToURL[cl.ID] = cl.ExternalID.MustURL()
+
+	// Sort a stack of CLs by external ID.
+	sort.Slice(cls, func(i, j int) bool { return cls[i].ExternalID < cls[j].ExternalID })
+
+	// Compute next and previous runs for all cls in parallel.
+	clsAndLinks := make([]*clAndNeighborRuns, len(cls))
+	eg, ctx := errgroup.WithContext(c.Context)
+	for i, cl := range cls {
+		i, cl := i, cl
+		eg.Go(
+			func() error {
+				newer, older, err := getNeighborsByCL(ctx, adminServer, cls[i], common.RunID(r.Id))
+				clsAndLinks[i] = &clAndNeighborRuns{
+					Prev: older,
+					Next: newer,
+					CL:   cl,
+				}
+				return err
+			})
+
+	}
+	if err := eg.Wait(); err != nil {
+		errPage(c, err)
+		return
 	}
 
+	clidToURL := getURLMap(cls)
 	templates.MustRender(c.Context, c.Writer, "pages/run_details.html", templates.Args{
 		"Run":  r,
 		"Logs": logEntries,
-		"Cls":  cls,
+		"Cls":  clsAndLinks,
 		"RelTime": func(ts time.Time) string {
 			return humanize.RelTime(ts, startTime(c.Context), "ago", "from now")
 		},
@@ -86,6 +118,67 @@ func runDetails(c *router.Context) {
 // uiTryjob is fed to the template to draw tryjob chips.
 type uiTryjob struct {
 	Link, Class, Display string
+}
+
+// unknownRun is used to communicate that it is not known whether the run has a
+// next or previous run for the given CL rather than empty, which would imply
+// that there is no next or no previous.
+var unknownRun = common.RunID("UNKNOWN")
+
+func getNeighborsByCL(ctx context.Context, srv *admin.AdminServer, cl *run.RunCL, rID common.RunID) (common.RunID, common.RunID, error) {
+	var newer, older, last common.RunID
+	req := &adminpb.SearchRunsRequest{
+		Project: rID.LUCIProject(),
+		Cl:      &adminpb.GetCLRequest{Id: int64(cl.ID)},
+	}
+	for {
+		// Note that SearchRuns are returned in reverse chronological order
+		// i.e. Most recent first.
+		resp, err := srv.SearchRuns(ctx, req)
+		if err != nil {
+			logging.Errorf(ctx, "unable to get previous and next runs for cl %s, %s", cl.ExternalID, err)
+			return unknownRun, unknownRun, err
+		}
+
+		i := indexOf(resp.Runs, rID)
+		switch {
+		case i == -1:
+			if resp.GetNextPageToken() == "" {
+				return newer, older, nil
+			}
+			// There are more pages and we haven't found the run of interest.
+			// Save the last run of this page in case the first run in the next
+			// page is the one of interest.
+			last = common.RunID(resp.Runs[len(resp.Runs)-1].Id)
+			req.PageToken = resp.GetNextPageToken()
+			continue
+		case i > 0:
+			newer = common.RunID(resp.Runs[i-1].Id)
+		case last != common.RunID(""):
+			// This is not the first page, but the run of interest
+			// is the first in the page. Use the last run of the
+			// previous page.
+			newer = last
+		}
+
+		switch {
+		case i < len(resp.Runs)-1:
+			older = common.RunID(resp.Runs[i+1].Id)
+		case resp.GetNextPageToken() != "":
+			// The last run in the page is the one of interest,
+			// then the first run in the next page will be the next.
+			req.PageToken = resp.GetNextPageToken()
+			resp, err = srv.SearchRuns(ctx, req)
+			if err != nil {
+				logging.Errorf(ctx, "unable to get previous run for cl %s, %s", cl.ExternalID, err)
+				return newer, unknownRun, err
+			}
+			if len(resp.Runs) > 0 {
+				older = common.RunID(resp.Runs[0].Id)
+			}
+		}
+		return newer, older, nil
+	}
 }
 
 func makeUITryjob(t *run.Tryjob) *uiTryjob {
@@ -169,6 +262,23 @@ func groupTryjobsByStatus(tjs []*run.Tryjob) map[string][]*run.Tryjob {
 	for _, t := range tjs {
 		k := strings.Title(strings.ToLower(t.Status.String()))
 		ret[k] = append(ret[k], t)
+	}
+	return ret
+}
+
+func indexOf(runs []*adminpb.GetRunResponse, runID common.RunID) int {
+	for i := 0; i < len(runs); i++ {
+		if runs[i].Id == string(runID) {
+			return i
+		}
+	}
+	return -1
+}
+
+func getURLMap(cls []*run.RunCL) map[common.CLID]string {
+	ret := make(map[common.CLID]string, len(cls))
+	for _, cl := range cls {
+		ret[cl.ID] = cl.ExternalID.MustURL()
 	}
 	return ret
 }
