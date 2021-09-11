@@ -133,6 +133,21 @@ message Run {
   //
   // This may contain Tryjobs that are no longer required.
   repeated Tryjob tryjobs = 11;
+
+  // Submission represents the state of a Run Submission.
+  message Submission {
+    // Indexes of CLs in Run.CL IDs that have been submitted succeessfully.
+    repeated int32 submitted_cl_indexes = 2;
+    // Indexes of CLs in Run.CL IDs that failed to be submitted.
+    //
+    // CLs that are neither in this list nor in the `submitted_cl_indexes`
+    // should be treated as if CV has never attempted to submit them.
+    repeated int32 failed_cl_indexes = 3;
+  }
+  // The state of Run Submission.
+  //
+  // Unset if Submission hasn't started.
+  Submission submission = 12;
 }
 
 // A Gerrit patchset.
