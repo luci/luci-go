@@ -249,7 +249,6 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		} else {
 			return // for every other project, bail with Access Denied.
 		}
-		return
 	}
 	if req.PageSize, err = pagination.ValidatePageSize(req, 16, 128); err != nil {
 		return nil, err
