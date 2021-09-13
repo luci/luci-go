@@ -18,14 +18,20 @@ import (
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	apiv1pb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// RunStatusV0 converts internal CV status to public V0 status.
+// TryjobStatusV0 converts internal Tryjob status to an APIv0 equivalent.
+func TryjobStatusV0(s tryjob.Status) apiv0pb.Tryjob_Status {
+	return apiv0pb.Tryjob_Status(s)
+}
+
+// RunStatusV0 converts internal Run status to an APIv0 equivalent.
 func RunStatusV0(s run.Status) apiv0pb.Run_Status {
 	return apiv0pb.Run_Status(s)
 }
 
-// RunStatusV1 converts internal CV status to public V1 status.
+// RunStatusV1 converts internal Run status to an APIv1 equivalent.
 func RunStatusV1(s run.Status) apiv1pb.Run_Status {
 	return apiv1pb.Run_Status(s)
 }

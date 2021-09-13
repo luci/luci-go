@@ -20,6 +20,7 @@ import (
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	apiv1pb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -27,24 +28,18 @@ import (
 func TestStatusV1(t *testing.T) {
 	t.Parallel()
 
-	Convey("Ensure CV API v1 Run Status matches the internal Status.", t, func() {
-		// v1 -> internal.
-		for name, val := range apiv1pb.Run_Status_value {
-			name, val := name, val
-			Convey("v1."+name, func() {
-				other, exists := run.Status_value[name]
-				So(exists, ShouldBeTrue)
-				So(val, ShouldEqual, other)
-			})
-		}
-
-		// Internal -> v1.
+	Convey("RunStatusV1 returns a valid enum", t, func() {
 		for name, val := range run.Status_value {
 			name, val := name, val
-			Convey("internal."+name, func() {
-				other, exists := apiv1pb.Run_Status_value[name]
-				So(exists, ShouldBeTrue)
-				So(val, ShouldEqual, other)
+			Convey("for internal."+name, func() {
+				eq := RunStatusV1(run.Status(val))
+
+				// check if it's typed with the API enum.
+				So(eq.Descriptor().FullName(), ShouldEqual,
+					apiv1pb.Run_STATUS_UNSPECIFIED.Descriptor().FullName())
+				// check if it's one of the defined enum ints.
+				_, ok := apiv1pb.Run_Status_name[int32(eq)]
+				So(ok, ShouldBeTrue)
 			})
 		}
 	})
@@ -53,24 +48,34 @@ func TestStatusV1(t *testing.T) {
 func TestStatusV0(t *testing.T) {
 	t.Parallel()
 
-	Convey("Ensure CV API v0 Run Status matches the internal Status.", t, func() {
-		// v0 -> internal.
-		for name, val := range apiv0pb.Run_Status_value {
-			name, val := name, val
-			Convey("v0."+name, func() {
-				other, exists := run.Status_value[name]
-				So(exists, ShouldBeTrue)
-				So(val, ShouldEqual, other)
-			})
-		}
-
-		// Internal -> v0.
+	Convey("RunStatusV0 returns a valid enum", t, func() {
 		for name, val := range run.Status_value {
 			name, val := name, val
-			Convey("internal."+name, func() {
-				other, exists := apiv0pb.Run_Status_value[name]
-				So(exists, ShouldBeTrue)
-				So(val, ShouldEqual, other)
+			Convey("for internal."+name, func() {
+				eq := RunStatusV0(run.Status(val))
+
+				// check if it's typed with the API enum.
+				So(eq.Descriptor().FullName(), ShouldEqual,
+					apiv0pb.Run_STATUS_UNSPECIFIED.Descriptor().FullName())
+				// check if it's one of the defined enum ints.
+				_, ok := apiv0pb.Run_Status_name[int32(eq)]
+				So(ok, ShouldBeTrue)
+			})
+		}
+	})
+
+	Convey("TryjobStatusV0 returns a valid enum", t, func() {
+		for name, val := range tryjob.Status_value {
+			name, val := name, val
+			Convey("for internal."+name, func() {
+				eq := TryjobStatusV0(tryjob.Status(val))
+
+				// check if it's typed with the API enum.
+				So(eq.Descriptor().FullName(), ShouldEqual,
+					apiv0pb.Tryjob_STATUS_UNSPECIFIED.Descriptor().FullName())
+				// check if it's one of the defined enum ints.
+				_, ok := apiv0pb.Tryjob_Status_name[int32(eq)]
+				So(ok, ShouldBeTrue)
 			})
 		}
 	})
