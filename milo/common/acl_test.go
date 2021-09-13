@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -29,6 +30,8 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -46,6 +49,16 @@ func TestACL(t *testing.T) {
 	Convey("Test Environment", t, func() {
 		c := memory.Use(context.Background())
 		c = gologger.StdConfig.Use(c)
+
+		caches := make(map[string]caching.BlobCache)
+		c = caching.WithGlobalCache(c, func(namespace string) caching.BlobCache {
+			cache, ok := caches[namespace]
+			if !ok {
+				cache = &cachingtest.BlobCache{LRU: lru.New(0)}
+				caches[namespace] = cache
+			}
+			return cache
+		})
 
 		Convey("Set up projects", func() {
 			c = cfgclient.Use(c, memcfg.New(aclConfgs))

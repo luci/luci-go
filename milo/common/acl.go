@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/gae/service/memcache"
 
 	bbAccess "go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/errors"
@@ -29,6 +28,7 @@ import (
 	accessProto "go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
 )
 
 // Helper functions for ACL checking.
@@ -130,36 +130,26 @@ func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissio
 		return nil, err
 	}
 
-	// Create cache entries for each bucket.
-	entries := make([]memcache.Item, len(buckets))
-	identityString := string(auth.CurrentIdentity(c))
-	for i, bucket := range buckets {
-		entries[i] = memcache.NewItem(c, identityString+"|"+bucket)
-	}
-
-	// Check the cache.
-	if err := memcache.Get(c, entries...); err != nil && err != memcache.ErrCacheMiss {
-		if merr, ok := err.(errors.MultiError); ok {
-			for i, err := range merr {
-				if err != nil && err != memcache.ErrCacheMiss {
-					logging.WithError(err).Warningf(c, "memcache get %s", entries[i].Key())
-				}
-			}
-		} else {
-			logging.WithError(err).Warningf(c, "memcache get")
-		}
-	}
-
-	// Collect uncached buckets, if any. Also put cached buckets into perms.
 	var bucketsToCache []string
-	var itemsToUpdate []memcache.Item
-	for i, bucket := range buckets {
-		action := bbAccess.Action(0)
-		err := action.UnmarshalBinary(entries[i].Value())
+
+	cache := caching.GlobalCache(c, "bucket-permission")
+	if cache == nil {
+		panic("global cache not available in context")
+	}
+
+	// Create cache entries for each bucket.
+	identityString := string(auth.CurrentIdentity(c))
+	for _, bucket := range buckets {
+		blob, err := cache.Get(c, identityString+"|"+bucket)
 		if err != nil {
 			bucketsToCache = append(bucketsToCache, bucket)
-			itemsToUpdate = append(itemsToUpdate, entries[i])
 			continue
+		}
+
+		action := bbAccess.Action(0)
+		err = action.UnmarshalBinary(blob)
+		if err != nil {
+			return nil, err
 		}
 		perms[bucket] = action
 	}
@@ -176,7 +166,7 @@ func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissio
 	}
 
 	// Update items, collect them, and put their values into perms.
-	for i, bucket := range bucketsToCache {
+	for _, bucket := range bucketsToCache {
 		action, ok := newPerms[bucket]
 		if !ok {
 			continue
@@ -185,14 +175,11 @@ func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissio
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to marshal Action").Err()
 		}
-		itemsToUpdate[i].SetValue(bytes)
-		itemsToUpdate[i].SetExpiration(validTime)
+		err = cache.Set(c, identityString+"|"+bucket, bytes, validTime)
+		if err != nil {
+			logging.WithError(err).Warningf(c, "failed to cache permission for bucket: %s", bucket)
+		}
 		perms[bucket] = action
-	}
-
-	// Update the cache.
-	if err := memcache.Set(c, itemsToUpdate...); err != nil {
-		logging.WithError(err).Warningf(c, "memcache set")
 	}
 
 	return perms, nil
