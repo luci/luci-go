@@ -15,16 +15,12 @@
 package encryptedcookies
 
 import (
-	"bytes"
 	"context"
 	"flag"
 	"fmt"
 	"strings"
 	"sync/atomic"
 
-	"github.com/google/tink/go/aead"
-	"github.com/google/tink/go/insecurecleartextkeyset"
-	"github.com/google/tink/go/keyset"
 	"github.com/google/tink/go/tink"
 
 	"go.chromium.org/luci/common/errors"
@@ -188,7 +184,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	if err != nil {
 		return nil, err
 	}
-	aead, err := m.loadTinkAEAD(ctx)
+	aead, err := secrets.LoadTinkAEAD(ctx, m.opts.TinkAEADKey)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +192,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	// Have enough configuration to create the AuthMethod.
 	method := &AuthMethod{
 		OpenIDConfig: func(context.Context) (*OpenIDConfig, error) { return cfg.Load().(*OpenIDConfig), nil },
-		AEADProvider: func(context.Context) tink.AEAD { return aead.Load().(tink.AEAD) },
+		AEADProvider: func(context.Context) tink.AEAD { return aead.Unwrap() },
 		Sessions:     sessions,
 		Insecure:     !opts.Prod,
 	}
@@ -245,46 +241,6 @@ func (m *serverModule) initSessionStore(ctx context.Context) (session.Store, err
 	}
 
 	return impl.Factory(ctx, m.opts.SessionStoreNamespace)
-}
-
-// loadTinkAEAD loads the secret with Tink AEAD encryption key.
-//
-// Subscribes to its rotation. Returns an atomic with the current value of
-// the encryption primitive (as tink.AEAD). It will be updated when the key is
-// rotated.
-func (m *serverModule) loadTinkAEAD(ctx context.Context) (*atomic.Value, error) {
-	secret, err := secrets.StoredSecret(ctx, m.opts.TinkAEADKey)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to load Tink AEAD key").Err()
-	}
-
-	deserializeKeyset := func(s *secrets.Secret) (tink.AEAD, error) {
-		kh, err := insecurecleartextkeyset.Read(keyset.NewJSONReader(bytes.NewReader(s.Current)))
-		if err != nil {
-			return nil, err
-		}
-		return aead.New(kh)
-	}
-
-	aead, err := deserializeKeyset(&secret)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to deserialize Tink AEAD key %q", m.opts.TinkAEADKey).Err()
-	}
-
-	val := &atomic.Value{}
-	val.Store(aead)
-
-	secrets.AddRotationHandler(ctx, m.opts.TinkAEADKey, func(ctx context.Context, secret secrets.Secret) {
-		aead, err := deserializeKeyset(&secret)
-		if err != nil {
-			logging.Errorf(ctx, "Rotated Tink AEAD key is broken, ignoring it: %s", err)
-		} else {
-			logging.Infof(ctx, "Tink AEAD key was rotated")
-			val.Store(aead)
-		}
-	})
-
-	return val, nil
 }
 
 // loadOpenIDConfig loads the client secret and constructs OpenIDConfig with it.
