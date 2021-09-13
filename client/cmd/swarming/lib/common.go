@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -424,7 +425,7 @@ func tagTransientGoogleAPIError(err error) error {
 }
 
 func printError(a subcommands.Application, err error) {
-	fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+	fmt.Fprintf(a.GetErr(), "%s: %s\n%s\n", a.GetName(), err, strings.Join(errors.RenderStack(err), "\n"))
 }
 
 // retryGoogleRPC retries an RPC on transient errors, such as HTTP 500.
