@@ -123,11 +123,7 @@ div.clickable {
             <tr>
               <td style="white-space: nowrap;" class="text-center">
                 {{with .Prev}}
-                  {{if (eq . "UNKNOWN")}}
-                    <span style="color: #ccc;"> UNKNOWN </span>
-                  {{else}}
-                    <a href="/ui/run/{{.}}">&lt; Previous</a>
-                  {{end}}
+                  <a href="/ui/run/{{.}}">&lt; Previous</a>
                 {{else}}
                   <span style="color: #ccc;"> &mdash; </span>
                 {{end}}
@@ -144,11 +140,7 @@ div.clickable {
               </td>
               <td style="white-space: nowrap;" class="text-center">
                 {{with .Next}}
-                  {{if (eq . "UNKNOWN")}}
-                    <span style="color: #ccc;"> UNKNOWN </span>
-                  {{else}}
-                    <a href="/ui/run/{{.}}">Next &gt;</a>
-                  {{end}}
+                  <a href="/ui/run/{{.}}">Next &gt;</a>
                 {{else}}
                   <span style="color: #ccc;"> &mdash; </span>
                 {{end}}

@@ -24,7 +24,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -70,28 +70,13 @@ func runDetails(c *router.Context) {
 	sort.Slice(cls, func(i, j int) bool { return cls[i].ExternalID < cls[j].ExternalID })
 
 	// Compute next and previous runs for all cls in parallel.
-	clsAndLinks := make([]*clAndNeighborRuns, len(cls))
-	eg, ctx := errgroup.WithContext(c.Context)
-	for i, cl := range cls {
-		i, cl := i, cl
-		eg.Go(
-			func() error {
-				newer, older, err := getNeighborsByCL(ctx, adminServer, cls[i], common.RunID(r.Id))
-				clsAndLinks[i] = &clAndNeighborRuns{
-					Prev: older,
-					Next: newer,
-					CL:   cl,
-				}
-				return err
-			})
-
-	}
-	if err := eg.Wait(); err != nil {
+	clsAndLinks, err := computeCLsAndLinks(c.Context, adminServer, cls, common.RunID(r.Id))
+	if err != nil {
 		errPage(c, err)
 		return
 	}
+	clidToURL := makeURLMap(cls)
 
-	clidToURL := getURLMap(cls)
 	templates.MustRender(c.Context, c.Writer, "pages/run_details.html", templates.Args{
 		"Run":  r,
 		"Logs": logEntries,
@@ -115,17 +100,28 @@ func runDetails(c *router.Context) {
 	})
 }
 
-// uiTryjob is fed to the template to draw tryjob chips.
-type uiTryjob struct {
-	Link, Class, Display string
+func computeCLsAndLinks(ctx context.Context, srv adminpb.AdminServer, cls []*run.RunCL, rid common.RunID) ([]*clAndNeighborRuns, error) {
+	ret := make([]*clAndNeighborRuns, len(cls))
+	eg, ctx := errgroup.WithContext(ctx)
+	for i, cl := range cls {
+		i, cl := i, cl
+		eg.Go(func() error {
+			newer, older, err := getNeighborsByCL(ctx, srv, cls[i], rid)
+			if err != nil {
+				return errors.Annotate(err, "unable to get previous and next runs for cl %s", cl.ExternalID).Err()
+			}
+			ret[i] = &clAndNeighborRuns{
+				Prev: older,
+				Next: newer,
+				CL:   cl,
+			}
+			return nil
+		})
+	}
+	return ret, eg.Wait()
 }
 
-// unknownRun is used to communicate that it is not known whether the run has a
-// next or previous run for the given CL rather than empty, which would imply
-// that there is no next or no previous.
-var unknownRun = common.RunID("UNKNOWN")
-
-func getNeighborsByCL(ctx context.Context, srv *admin.AdminServer, cl *run.RunCL, rID common.RunID) (common.RunID, common.RunID, error) {
+func getNeighborsByCL(ctx context.Context, srv adminpb.AdminServer, cl *run.RunCL, rID common.RunID) (common.RunID, common.RunID, error) {
 	var newer, older, last common.RunID
 	req := &adminpb.SearchRunsRequest{
 		Project: rID.LUCIProject(),
@@ -136,8 +132,7 @@ func getNeighborsByCL(ctx context.Context, srv *admin.AdminServer, cl *run.RunCL
 		// i.e. Most recent first.
 		resp, err := srv.SearchRuns(ctx, req)
 		if err != nil {
-			logging.Errorf(ctx, "unable to get previous and next runs for cl %s, %s", cl.ExternalID, err)
-			return unknownRun, unknownRun, err
+			return "", "", err
 		}
 
 		i := indexOf(resp.Runs, rID)
@@ -170,8 +165,7 @@ func getNeighborsByCL(ctx context.Context, srv *admin.AdminServer, cl *run.RunCL
 			req.PageToken = resp.GetNextPageToken()
 			resp, err = srv.SearchRuns(ctx, req)
 			if err != nil {
-				logging.Errorf(ctx, "unable to get previous run for cl %s, %s", cl.ExternalID, err)
-				return newer, unknownRun, err
+				return "", "", err
 			}
 			if len(resp.Runs) > 0 {
 				older = common.RunID(resp.Runs[0].Id)
@@ -179,6 +173,11 @@ func getNeighborsByCL(ctx context.Context, srv *admin.AdminServer, cl *run.RunCL
 		}
 		return newer, older, nil
 	}
+}
+
+// uiTryjob is fed to the template to draw tryjob chips.
+type uiTryjob struct {
+	Link, Class, Display string
 }
 
 func makeUITryjob(t *run.Tryjob) *uiTryjob {
@@ -275,7 +274,7 @@ func indexOf(runs []*adminpb.GetRunResponse, runID common.RunID) int {
 	return -1
 }
 
-func getURLMap(cls []*run.RunCL) map[common.CLID]string {
+func makeURLMap(cls []*run.RunCL) map[common.CLID]string {
 	ret := make(map[common.CLID]string, len(cls))
 	for _, cl := range cls {
 		ret[cl.ID] = cl.ExternalID.MustURL()
