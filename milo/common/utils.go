@@ -15,7 +15,10 @@
 package common
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/url"
@@ -107,4 +110,30 @@ func ReadExactOneFromForm(form url.Values, key string) (string, error) {
 // It is used in the Milo datastore.
 func LegacyBuilderIDString(bid *buildbucketpb.BuilderID) string {
 	return fmt.Sprintf("buildbucket/luci.%s.%s/%s", bid.Project, bid.Bucket, bid.Builder)
+}
+
+// JSONMarshalCompressed converts a message into compressed JSON form, suitable for storing in memcache.
+func JSONMarshalCompressed(message interface{}) ([]byte, error) {
+	// Compress using zlib.
+	b := bytes.Buffer{}
+	w := zlib.NewWriter(&b)
+	enc := json.NewEncoder(w)
+
+	if err := enc.Encode(message); err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
+}
+
+// JSONUnmarshalCompressed converts a message back from compressed JSON form.
+func JSONUnmarshalCompressed(serialized []byte, out interface{}) error {
+	// Decompress using zlib.
+	r, err := zlib.NewReader(bytes.NewReader(serialized))
+	if err != nil {
+		return err
+	}
+
+	dec := json.NewDecoder(r)
+	return dec.Decode(out)
 }
