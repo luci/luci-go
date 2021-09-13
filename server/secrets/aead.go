@@ -30,11 +30,24 @@ import (
 	"go.chromium.org/luci/server/caching"
 )
 
+// ErrNoPrimaryAEAD indicates the context doesn't have a primary AEAD primitive
+// installed.
+//
+// For production code it usually happens if `-primary-tink-aead-key` flag
+// wasn't set.
+//
+// For test code, it happens if the test context wasn't prepared correctly. See
+// SetPrimaryTinkAEADForTest.
+var ErrNoPrimaryAEAD = errors.New("the primary AEAD primitive is not configured")
+
 // A never-shrinking, never-expiring cache of loaded *AEADHandle.
 //
 // It is essentially a map (living in the process memory cache) with some
 // synchronization around item instantiation.
 var handles = caching.RegisterLRUCache(0)
+
+// primaryAEADCtxKey is used to construct context key for PrimaryTinkAEAD.
+var primaryAEADCtxKey = "go.chromium.org/luci/secrets.PrimaryTinkAEAD"
 
 // AEADHandle implements tink.AEAD by delegating to an atomically updated
 // tink.AEAD primitive stored inside.
@@ -66,6 +79,65 @@ func (h *AEADHandle) Encrypt(plaintext, additionalData []byte) ([]byte, error) {
 // Decrypt is part of tink.AEAD interface.
 func (h *AEADHandle) Decrypt(ciphertext, additionalData []byte) ([]byte, error) {
 	return h.Unwrap().Decrypt(ciphertext, additionalData)
+}
+
+// PrimaryTinkAEAD returns a handle pointing to an AEAD primitive to use by
+// default in the process.
+//
+// See https://pkg.go.dev/github.com/google/tink/go/tink#AEAD for the
+// description of the AEAD primitive.
+//
+// Make sure to append a context string to `additionalData` when calling
+// Encrypt/Decrypt to guarantee that a cipher text generated in one context
+// isn't unexpectedly reused in another context. Failure to do so can lead to
+// compromises.
+//
+// In production the keyset behind PrimaryTinkAEAD is specified via
+// the `-primary-tink-aead-key` flag. This flag is optional. PrimaryTinkAEAD
+// will return nil if the `-primary-tink-aead-key` flag was omitted. Code that
+// depends on a presence of an AEAD implementation must check that the return
+// value of PrimaryTinkAEAD is not nil during startup.
+//
+// Tests can use SetPrimaryTinkAEADForTest to mock the return value of
+// PrimaryTinkAEAD.
+func PrimaryTinkAEAD(ctx context.Context) *AEADHandle {
+	val, _ := ctx.Value(&primaryAEADCtxKey).(*AEADHandle)
+	return val
+}
+
+// SetPrimaryTinkAEADForTest mocks the value returned by PrimaryTinkAEAD.
+//
+// Must be used only in tests.
+func SetPrimaryTinkAEADForTest(ctx context.Context, aead tink.AEAD) context.Context {
+	handle := &AEADHandle{}
+	handle.val.Store(aead)
+	return setPrimaryTinkAEAD(ctx, handle)
+}
+
+// Encrypt encrypts `plaintext` with `additionalData` as additional
+// authenticated data using the primary tink AEAD primitive in the context.
+//
+// See PrimaryTinkAEAD for caveats.
+//
+// Returns ErrNoPrimaryAEAD if there's no primary AEAD primitive in the context.
+func Encrypt(ctx context.Context, plaintext, additionalData []byte) ([]byte, error) {
+	if aead := PrimaryTinkAEAD(ctx); aead != nil {
+		return aead.Encrypt(plaintext, additionalData)
+	}
+	return nil, ErrNoPrimaryAEAD
+}
+
+// Decrypt decrypts `ciphertext` with `additionalData` as additional
+// authenticated data using the primary tink AEAD primitive in the context.
+//
+// See PrimaryTinkAEAD for caveats.
+//
+// Returns ErrNoPrimaryAEAD if there's no primary AEAD primitive in the context.
+func Decrypt(ctx context.Context, ciphertext, additionalData []byte) ([]byte, error) {
+	if aead := PrimaryTinkAEAD(ctx); aead != nil {
+		return aead.Decrypt(ciphertext, additionalData)
+	}
+	return nil, ErrNoPrimaryAEAD
 }
 
 // LoadTinkAEAD loads a tink AEAD key from the given secret, subscribing to
@@ -104,6 +176,10 @@ func LoadTinkAEAD(ctx context.Context, secretName string) (*AEADHandle, error) {
 		return nil, err
 	}
 	return handle.(*AEADHandle), nil
+}
+
+func setPrimaryTinkAEAD(ctx context.Context, val *AEADHandle) context.Context {
+	return context.WithValue(ctx, &primaryAEADCtxKey, val)
 }
 
 func loadTinkAEADLocked(ctx context.Context, secretName string, subscribe bool) (*AEADHandle, error) {

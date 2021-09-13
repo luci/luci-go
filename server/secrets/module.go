@@ -49,6 +49,14 @@ type ModuleOptions struct {
 	// previous version of the root secret. This allows graceful rotation of
 	// random secrets.
 	RootSecret string
+
+	// PrimaryTinkAEADKey is the secret name with the JSON-serialized clear text
+	// Tink AEAD keyset to use for AEAD operations by default via PrimaryTinkAEAD.
+	//
+	// It is optional. If unset, PrimaryTinkAEAD will return nil. Code that
+	// depends on a presence of an AEAD implementation must check that the return
+	// value of PrimaryTinkAEAD is not nil during startup.
+	PrimaryTinkAEADKey string
 }
 
 // Register registers the command line flags.
@@ -59,7 +67,15 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		o.RootSecret,
 		`Either "sm://<project>/<secret>" or "sm://<secret>" to use Google Secret Manager, `+
 			`or "devsecret://<base64-encoded value>" or "devsecret-text://<value>" `+
-			`for a static development secret`,
+			`for a static development secret.`,
+	)
+	f.StringVar(
+		&o.PrimaryTinkAEADKey,
+		"primary-tink-aead-key",
+		o.PrimaryTinkAEADKey,
+		`A "sm://..." reference to a clear text JSON Tink AEAD key set to use for `+
+			`AEAD operations by default. Optional, but some server modules may `+
+			`require it and will refuse to start if it is not set.`,
 	)
 }
 
@@ -123,12 +139,22 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		CloudProject:        opts.CloudProject,
 		AccessSecretVersion: client.AccessSecretVersion,
 	}
+	ctx = Use(ctx, store)
+
 	if m.opts.RootSecret != "" {
 		if err := store.LoadRootSecret(ctx, m.opts.RootSecret); err != nil {
 			return nil, errors.Annotate(err, "failed to initialize the secret store").Err()
 		}
 	}
 
+	if m.opts.PrimaryTinkAEADKey != "" {
+		aead, err := LoadTinkAEAD(ctx, m.opts.PrimaryTinkAEADKey)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to initialize the primary tink AEAD key").Err()
+		}
+		ctx = setPrimaryTinkAEAD(ctx, aead)
+	}
+
 	host.RunInBackground("luci.secrets", store.MaintenanceLoop)
-	return Use(ctx, store), nil
+	return ctx, nil
 }

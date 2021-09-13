@@ -25,7 +25,7 @@
 // One of the stored tokens is an OAuth2 refresh token. Periodically, during the
 // session validation process, it is used to refresh other stored tokens
 // (in particular an OAuth2 access token and an OpenID Connect ID token). This
-// procedure fails if the user revoked access to thier accounts via the ID
+// procedure fails if the user revoked access to their accounts via the ID
 // provider or if the user's account is not longer active (from the ID
 // provider's point of view). That way the state of the session is tied to the
 // state of the user account at the ID provider which fully offloads user
@@ -33,9 +33,12 @@
 //
 // Configuration
 //
-// To use this module you'll need to create the primary encryption key and to
-// register an OAuth2 client with the ID provider. Instructions below assume
-// you are using the Google Accounts ID provider.
+// To use this module you'll need to create an encryption key and to register
+// an OAuth2 client with the ID provider. Instructions below assume you are
+// using the Google Accounts ID provider and the created encryption key will be
+// used as the server primary encryption key (i.e. it will be used to encrypt
+// not only cookies but also any other secrets that the server may wish to
+// encrypt).
 //
 // Start by creating two Google Secret Manager secrets (with no values) named
 // `tink-aead-primary` and `oauth-client-secret` in the cloud project that
@@ -75,7 +78,7 @@
 //
 //   server \
 //       ...
-//       -encrypted-cookies-tink-aead-key sm://tink-aead-primary \
+//       -primary-tink-aead-key sm://tink-aead-primary \
 //       -encrypted-cookies-client-id <number>-<gibberish>.apps.googleusercontent.com \
 //       -encrypted-cookies-client-secret sm://oauth-client-secret \
 //       -encrypted-cookies-redirect-url https://<your-server-host>/auth/openid/callback
@@ -84,6 +87,10 @@
 // what you specified when creating the OAuth2 client (e.g. if you used some
 // custom DNS domain name there, specify it in the `-encrypted-cookies-redirect-url`
 // as well).
+//
+// If you want to use a dedicated key set for encrypting cookies specifically,
+// replace `-primary-tink-aead-key` with `-encrypted-cookies-tink-aead-key`
+// (and perhaps use some different name for the secret).
 //
 // Session store
 //

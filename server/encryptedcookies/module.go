@@ -40,18 +40,26 @@ var ModuleName = module.RegisterName("go.chromium.org/luci/server/encryptedcooki
 
 // ModuleOptions contain configuration of the encryptedcookies server module.
 type ModuleOptions struct {
-	// TinkAEADKey is a "sm://..." reference to a Tink AEAD keyset.
+	// TinkAEADKey is a "sm://..." reference to a Tink AEAD keyset to use.
+	//
+	// If empty, will use the primary keyset via secrets.PrimaryTinkAEAD().
 	TinkAEADKey string
+
 	// DiscoveryURL is an URL of the discovery document with provider's config.
 	DiscoveryURL string
+
 	// ClientID identifies OAuth2 Web client representing the application.
 	ClientID string
+
 	// ClientSecret is a "sm://..." reference to OAuth2 client secret.
 	ClientSecret string
+
 	// RedirectURL must be `https://<host>/auth/openid/callback`.
 	RedirectURL string
+
 	// SessionStoreKind can be used to pick a concrete implementation of a store.
 	SessionStoreKind string
+
 	// SessionStoreNamespace can be used to namespace sessions in the store.
 	SessionStoreNamespace string
 }
@@ -62,7 +70,8 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		&o.TinkAEADKey,
 		"encrypted-cookies-tink-aead-key",
 		o.TinkAEADKey,
-		`Reference (e.g. "sm://...") to a secret with Tink AEAD keyset used to encrypt cookies.`,
+		`An optional reference (e.g. "sm://...") to a secret with Tink AEAD keyset `+
+			`to use to encrypt cookies instead of the -primary-tink-aead-key.`,
 	)
 	f.StringVar(
 		&o.DiscoveryURL,
@@ -156,9 +165,6 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	}
 
 	// Check required flags.
-	if m.opts.TinkAEADKey == "" {
-		return nil, errors.Reason("tink AEAD key is required").Err()
-	}
 	if m.opts.ClientID == "" {
 		return nil, errors.Reason("client ID is required").Err()
 	}
@@ -172,6 +178,20 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		return nil, errors.Reason("redirect URL should end with %q", callbackURL).Err()
 	}
 
+	// Figure out what AEAD key to use.
+	var aead *secrets.AEADHandle
+	if m.opts.TinkAEADKey != "" {
+		var err error
+		if aead, err = secrets.LoadTinkAEAD(ctx, m.opts.TinkAEADKey); err != nil {
+			return nil, err
+		}
+	} else {
+		aead = secrets.PrimaryTinkAEAD(ctx)
+		if aead == nil {
+			return nil, errors.Reason("no AEAD key is configured, use either -primary-tink-aead-key or -encrypted-cookies-tink-aead-key").Err()
+		}
+	}
+
 	// Construct the session store based on a link time config and CLI flags.
 	sessions, err := m.initSessionStore(ctx)
 	if err != nil {
@@ -181,10 +201,6 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	// Load initial values of secrets to verify they are correct. This also
 	// subscribes to their rotations.
 	cfg, err := m.loadOpenIDConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-	aead, err := secrets.LoadTinkAEAD(ctx, m.opts.TinkAEADKey)
 	if err != nil {
 		return nil, err
 	}

@@ -51,6 +51,33 @@ func TestAEAD(t *testing.T) {
 			store.secret = Secret{Current: val}
 		}
 
+		Convey("PrimaryTinkAEADKey works", func() {
+			So(PrimaryTinkAEAD(ctx), ShouldBeNil)
+			_, err := Encrypt(ctx, []byte("ignored"), []byte("ignored"))
+			So(err, ShouldEqual, ErrNoPrimaryAEAD)
+			_, err = Decrypt(ctx, []byte("ignored"), []byte("ignored"))
+			So(err, ShouldEqual, ErrNoPrimaryAEAD)
+
+			aead, err := aead.New(kh)
+			So(err, ShouldBeNil)
+
+			ctx = SetPrimaryTinkAEADForTest(ctx, aead)
+			So(PrimaryTinkAEAD(ctx).Unwrap(), ShouldEqual, aead)
+
+			ciphertext, err := Encrypt(ctx,
+				[]byte("secret-to-be-encrypted"),
+				[]byte("authenticated-only-must-match-in-decrypt"),
+			)
+			So(err, ShouldBeNil)
+
+			cleartext, err := Decrypt(ctx,
+				ciphertext,
+				[]byte("authenticated-only-must-match-in-decrypt"),
+			)
+			So(err, ShouldBeNil)
+			So(string(cleartext), ShouldEqual, "secret-to-be-encrypted")
+		})
+
 		Convey("Without process cache", func() {
 			Convey("Good keyset", func() {
 				putSecret(goodKey)
