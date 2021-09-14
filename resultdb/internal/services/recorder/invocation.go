@@ -47,12 +47,6 @@ const (
 	defaultInvocationDeadlineDuration = 2 * day
 )
 
-// UpdateTokenMetadataKey is the metadata.MD key for the secret update token
-// required to mutate an invocation.
-// It is returned by CreateInvocation RPC in response header metadata,
-// and is required by all RPCs mutating an invocation.
-const UpdateTokenMetadataKey = "update-token"
-
 // invocationTokenKind generates and validates tokens issued to authorize
 // updating a given invocation.
 var invocationTokenKind = tokens.TokenKind{
@@ -110,13 +104,13 @@ func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Con
 
 func extractUpdateToken(ctx context.Context) (string, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
-	token := md.Get(UpdateTokenMetadataKey)
+	token := md.Get(pb.UpdateTokenMetadataKey)
 	switch {
 	case len(token) == 0:
-		return "", appstatus.Errorf(codes.Unauthenticated, "missing %s metadata value in the request", UpdateTokenMetadataKey)
+		return "", appstatus.Errorf(codes.Unauthenticated, "missing %s metadata value in the request", pb.UpdateTokenMetadataKey)
 
 	case len(token) > 1:
-		return "", appstatus.Errorf(codes.InvalidArgument, "expected exactly one %s metadata value, got %d", UpdateTokenMetadataKey, len(token))
+		return "", appstatus.Errorf(codes.InvalidArgument, "expected exactly one %s metadata value, got %d", pb.UpdateTokenMetadataKey, len(token))
 
 	default:
 		return token[0], nil

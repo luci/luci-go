@@ -99,7 +99,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 		token, err := generateInvocationToken(ctx, "including")
 		So(err, ShouldBeNil)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
 		assertIncluded := func(includedInvID invocations.ID) {
 			var throwAway invocations.ID

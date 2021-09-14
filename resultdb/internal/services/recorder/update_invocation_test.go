@@ -105,7 +105,7 @@ func TestUpdateInvocation(t *testing.T) {
 
 		token, err := generateInvocationToken(ctx, "inv")
 		So(err, ShouldBeNil)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
 		validDeadline := pbutil.MustTimestampProto(start.Add(day))
 		updateMask := &field_mask.FieldMask{

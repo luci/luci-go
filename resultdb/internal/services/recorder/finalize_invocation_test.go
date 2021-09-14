@@ -58,7 +58,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		token, err := generateInvocationToken(ctx, "inv")
 		So(err, ShouldBeNil)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
 		Convey(`Idempotent`, func() {
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))

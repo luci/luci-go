@@ -45,7 +45,6 @@ import (
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/auth/realms"
 
-	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/sink"
@@ -382,9 +381,9 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 		err = errors.Annotate(err, "failed to create an invocation").Err()
 		return
 	}
-	tks := md.Get(recorder.UpdateTokenMetadataKey)
+	tks := md.Get(pb.UpdateTokenMetadataKey)
 	if len(tks) == 0 {
-		err = errors.Reason("Missing header: update-token").Err()
+		err = errors.Reason("Missing header: %s", pb.UpdateTokenMetadataKey).Err()
 		return
 	}
 
@@ -393,7 +392,7 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 }
 
 func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucictx.ResultDBInvocation) error {
-	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, parent.UpdateToken)
+	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, parent.UpdateToken)
 	_, err := r.recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
 		IncludingInvocation: parent.Name,
 		AddInvocations:      []string{child.Name},
@@ -403,7 +402,7 @@ func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucict
 
 // finalizeInvocation finalizes the invocation.
 func (r *streamRun) finalizeInvocation(ctx context.Context) error {
-	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, r.invocation.UpdateToken)
+	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, r.invocation.UpdateToken)
 	_, err := r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
 		Name: r.invocation.Name,
 	})

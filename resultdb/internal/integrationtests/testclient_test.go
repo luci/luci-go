@@ -43,16 +43,16 @@ func (c *testClient) CreateInvocation(ctx context.Context, id string) {
 	req := &pb.CreateInvocationRequest{InvocationId: id, Invocation: &pb.Invocation{Realm: "testproject:testrealm"}}
 	inv, err := c.app.Recorder.CreateInvocation(ctx, req, grpc.Header(&md))
 	So(err, ShouldBeNil)
-	So(md.Get(recorder.UpdateTokenMetadataKey), ShouldHaveLength, 1)
+	So(md.Get(pb.UpdateTokenMetadataKey), ShouldHaveLength, 1)
 
 	if c.updateTokens == nil {
 		c.updateTokens = map[string]string{}
 	}
-	c.updateTokens[inv.Name] = md.Get(recorder.UpdateTokenMetadataKey)[0]
+	c.updateTokens[inv.Name] = md.Get(pb.UpdateTokenMetadataKey)[0]
 }
 
 func (c *testClient) withUpdateTokenFor(ctx context.Context, invocation string) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, c.updateTokens[invocation])
+	return metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, c.updateTokens[invocation])
 }
 
 func (c *testClient) GetState(ctx context.Context, name string) pb.Invocation_State {

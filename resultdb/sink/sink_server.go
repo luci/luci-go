@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -69,8 +68,7 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 		return nil, err
 	}
 
-	ctx = metadata.AppendToOutgoingContext(
-		ctx, recorder.UpdateTokenMetadataKey, cfg.UpdateToken)
+	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, cfg.UpdateToken)
 	ss := &sinkServer{
 		cfg:                   cfg,
 		ac:                    newArtifactChannel(ctx, &cfg),

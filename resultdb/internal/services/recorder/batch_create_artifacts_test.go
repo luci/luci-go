@@ -133,7 +133,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		token, err := generateInvocationToken(ctx, "inv")
 		So(err, ShouldBeNil)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
 
@@ -258,7 +258,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.Unauthenticated, `missing update-token`)
 			})
 			Convey("Wrong", func() {
-				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, "rong"))
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "rong"))
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
 			})

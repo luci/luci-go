@@ -210,7 +210,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		panic("createInvocations did not return either an error or a valid invocation/token pair")
 	}
 	md := metadata.MD{}
-	md.Set(UpdateTokenMetadataKey, tokens...)
+	md.Set(pb.UpdateTokenMetadataKey, tokens...)
 	prpc.SetHeader(ctx, md)
 	return invs[0], nil
 }

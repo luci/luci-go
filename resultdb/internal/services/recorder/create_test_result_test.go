@@ -149,7 +149,7 @@ func TestCreateTestResult(t *testing.T) {
 		// Insert a sample invocation
 		tok, err := generateInvocationToken(ctx, "u-build-1")
 		So(err, ShouldBeNil)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, tok))
 		invID := invocations.ID("u-build-1")
 		testutil.MustApply(ctx, insert.Invocation(invID, pb.Invocation_ACTIVE, nil))
 
@@ -180,7 +180,7 @@ func TestCreateTestResult(t *testing.T) {
 			Convey("with an non-existing invocation", func() {
 				tok, err = generateInvocationToken(ctx, "inv")
 				So(err, ShouldBeNil)
-				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, tok))
 				req.Invocation = "invocations/inv"
 				_, err := recorder.CreateTestResult(ctx, req)
 				So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv not found")
