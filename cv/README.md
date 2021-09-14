@@ -16,9 +16,35 @@ TODO(crbug.com/1225047): update this doc.
 
  - [api](./api): Protobuf files specifying the public API of CV,
    such as per-project config spec, PubSub messages and RPCs definitions.
+   APIs organization is a bit messy right now, but of note are 2 versions:
+     - [v0](./api/v0): experimental API under development. Request an approval
+       from CV owners before using it.
+     - [v1](./api/v1): stable API, which won't be broken unless absolutely
+       necessary. As of Sep 2021, it's under the development.
  - [appengine](./appengine): the entry point for a GAE app.
- - [internal](./internal): GAE-agnostic implementation details.
-
+     - [appengine/templates](./appengine/templates): HTML templates for
+       debug web-based UI of CV. These are rendered by
+       [internal/userhtml](./internal/userhtml) Go package.
+     - [appengine/static](./appengine/static): static resources loaded by web UI
+       directly.
+ - [internal](./internal): GAE-agnostic implementation details in Go. See
+   `godoc`-based overview
+   [here](https://pkg.go.dev/go.chromium.org/luci/cv/internal). Notably:
+     - [internal/cvtesting/e2e](./internal/cvtesting/e2e) high level end-to-end
+       level CV tests, which cover the most important business logic in a fairly
+       readable and concise way. The test are run against a [fake
+       Gerrit](./internal/gerrit/gerritfake).
+     - [internal/changelist](./internal/changelist): encapsulates a changelist
+       (a.k.a. CL, patch, Gerrit Change).
+     - [internal/tryjob](./internal/tryjob): manages tryjobs (i.e.
+       Buildbucket builds) which are used to verify a CL.
+     - [internal/prjmanager](./internal/prjmanager) and sub-packages: decides
+       when to start new Runs given the state of all CLs in an individual LUCI
+       project.
+     - [internal/run](./internal/run) and sub-packages: handles individual Run
+       from its creation to completion.
+     - [internal/rpc](./internal/rpc) pRPC handlers, including "admin" API not
+       exposed in public `api` dir.
 
 ## How does this code end up in production?
 
