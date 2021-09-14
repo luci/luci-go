@@ -17,5 +17,5 @@
 // Package doc generates starlark documentation.
 //
 // See
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/lucicfg/doc/README.md
+// https://chromium.googlesource.com/infra/luci/luci-go/+/main/lucicfg/doc/README.md
 package doc

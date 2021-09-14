@@ -61,7 +61,7 @@ one("builder-a")
 #     url: "https://example-review.googlesource.com"
 #     projects {
 #       name: "repo"
-#       ref_regexp: "refs/heads/master"
+#       ref_regexp: "refs/heads/main"
 #     }
 #   }
 #   verifiers {
@@ -124,7 +124,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -134,7 +134,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -144,7 +144,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -154,7 +154,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -164,7 +164,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -174,7 +174,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -184,7 +184,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -194,7 +194,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -204,7 +204,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -214,7 +214,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -224,7 +224,7 @@ one("builder-a")
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }

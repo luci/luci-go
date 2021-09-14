@@ -57,7 +57,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop1@example.com"
 #     }
@@ -67,7 +67,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop2@example.com"
 #     }
@@ -77,7 +77,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #   }
@@ -132,7 +132,7 @@ luci.builder(
 #   triggers: "b3"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #   }
 # }
 # trigger {
@@ -143,7 +143,7 @@ luci.builder(
 #   triggers: "b3"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #   }
 # }
 # acl_sets {

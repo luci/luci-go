@@ -23,7 +23,7 @@ def test_refset_ok():
         None,
         "example",
         "zzz/repo",
-        ["refs/heads/master"],
+        ["refs/heads/main"],
         [],
     )
     cmp(

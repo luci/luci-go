@@ -37,7 +37,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "noop@example.com"
 #     }
@@ -47,7 +47,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #   }

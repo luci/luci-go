@@ -55,7 +55,7 @@ func CQ(c context.Context, cfg *pb.Config) error {
 func normalizeGerrit(g *pb.ConfigGroup_Gerrit) {
 	for _, p := range g.Projects {
 		if len(p.RefRegexp) == 0 {
-			p.RefRegexp = []string{"refs/heads/master"}
+			p.RefRegexp = []string{"refs/heads/main"}
 		} else {
 			sort.Strings(p.RefRegexp)
 		}

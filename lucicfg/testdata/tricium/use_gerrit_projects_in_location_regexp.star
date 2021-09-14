@@ -45,22 +45,22 @@ luci.cq_group(
 #     url: "https://example-review.googlesource.com"
 #     projects {
 #       name: "proj/repo1"
-#       ref_regexp: "refs/heads/master"
+#       ref_regexp: "refs/heads/main"
 #     }
 #     projects {
 #       name: "proj/repo3"
-#       ref_regexp: "refs/heads/master"
+#       ref_regexp: "refs/heads/main"
 #     }
 #   }
 #   gerrit {
 #     url: "https://example-internal-review.googlesource.com"
 #     projects {
 #       name: "proj/repo2"
-#       ref_regexp: "refs/heads/master"
+#       ref_regexp: "refs/heads/main"
 #     }
 #     projects {
 #       name: "proj/repo4"
-#       ref_regexp: "refs/heads/master"
+#       ref_regexp: "refs/heads/main"
 #     }
 #   }
 #   verifiers {

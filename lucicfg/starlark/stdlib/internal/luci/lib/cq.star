@@ -55,7 +55,7 @@ def _refset(repo = None, *, refs = None, refs_exclude = None):
         Required.
       refs: a list of regular expressions that define the set of refs to watch
         for CLs, e.g. `refs/heads/.+`. If not set, defaults to
-        `refs/heads/master`.
+        `refs/heads/main`.
       refs_exclude: a list of regular expressions that define the set of refs
         to exclude from watching. Empty by default.
 
@@ -88,7 +88,7 @@ def _refset(repo = None, *, refs = None, refs_exclude = None):
 
     return _refset_ctor(
         __repo = repo,
-        __refs = refs or ["refs/heads/master"],
+        __refs = refs or ["refs/heads/main"],
         __refs_exclude = refs_exclude,
         __kind = "gob",
         __repo_key = ("gob", gob, proj),

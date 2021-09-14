@@ -117,7 +117,7 @@ def _notifier_template(
     [depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/).
 
     Command `preview_email` is available in
-    [infra Go env](https://chromium.googlesource.com/infra/infra/+/master/go/README.md)
+    [infra Go env](https://chromium.googlesource.com/infra/infra/+/main/go/README.md)
     and as a
     [CIPD package](https://chrome-infra-packages.appspot.com/p/infra/tools/preview_email).
 

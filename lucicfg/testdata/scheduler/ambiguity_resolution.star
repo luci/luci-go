@@ -69,7 +69,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #   }
@@ -83,7 +83,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -92,7 +92,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #   }
@@ -132,7 +132,7 @@ luci.builder(
 #   acl_sets: "b1"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #   }
 # }
 # trigger {
@@ -141,7 +141,7 @@ luci.builder(
 #   triggers: "b2-poller-builder"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #   }
 # }
 # trigger {
@@ -149,7 +149,7 @@ luci.builder(
 #   acl_sets: "b2"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #   }
 # }
 # trigger {
@@ -159,7 +159,7 @@ luci.builder(
 #   triggers: "b2-builder-builder"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #   }
 # }
 # acl_sets {

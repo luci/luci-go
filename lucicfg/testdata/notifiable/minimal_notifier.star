@@ -81,7 +81,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -90,7 +90,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -99,7 +99,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -108,7 +108,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -117,7 +117,7 @@ luci.builder(
 #       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #   }

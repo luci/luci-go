@@ -46,17 +46,17 @@ def _console_view(
     A console is associated with a single git repository it uses as a source of
     commits to display as rows. The watched ref set is defined via `refs` and
     optional `exclude_ref` fields. If `refs` are empty, the console defaults to
-    watching `refs/heads/master`.
+    watching `refs/heads/main`.
 
     `exclude_ref` is useful when watching for commits that landed specifically
     on a branch. For example, the config below allows to track commits from all
-    release branches, but ignore the commits from the master branch, from which
+    release branches, but ignore the commits from the main branch, from which
     these release branches are branched off:
 
         luci.console_view(
             ...
             refs = ['refs/branch-heads/\d+\.\d+'],
-            exclude_ref = 'refs/heads/master',
+            exclude_ref = 'refs/heads/main',
             ...
         )
 
@@ -139,7 +139,7 @@ def _console_view(
                 ...
             )
 
-    [project.proto]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/milo/api/config/project.proto
+    [project.proto]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/milo/api/config/project.proto
 
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).
@@ -157,7 +157,7 @@ def _console_view(
         `refs/release-\d+/foobar` is *not allowed*, because the literal prefix
         `refs/release-` contains only one slash. The regexp should not start
         with `^` or end with `$` as they will be added automatically. If empty,
-        defaults to `['refs/heads/master']`.
+        defaults to `['refs/heads/main']`.
       exclude_ref: a single ref, commits from which are ignored even when they
         are reachable from refs specified via `refs` and `refs_regexps`. Note
         that force pushes to this ref are not supported. Milo uses caching
@@ -178,7 +178,7 @@ def _console_view(
       entries: a list of luci.console_view_entry(...) entities specifying
         builders to show on the console.
     """
-    refs = validate.list("refs", refs) or ["refs/heads/master"]
+    refs = validate.list("refs", refs) or ["refs/heads/main"]
     for r in refs:
         validate.string("refs", r)
 

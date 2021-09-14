@@ -84,11 +84,11 @@ luci.bucket(
 )
 
 luci.gitiles_poller(
-    name = "master-poller",
+    name = "main-poller",
     bucket = "ci",
     repo = "https://noop.com",
     refs = [
-        "refs/heads/master",
+        "refs/heads/main",
         "refs/tags/blah",
         r"refs/branch-heads/\d+\.\d+",
     ],
@@ -105,7 +105,7 @@ luci.builder(
         name = "main/recipe",
         cipd_package = "recipe/bundles/main",
     ),
-    triggered_by = ["master-poller"],
+    triggered_by = ["main-poller"],
     triggers = [
         "ci/generically named builder",
         "ci/generically named executable builder",
@@ -179,7 +179,7 @@ luci.builder(
     name = "generically named builder",
     bucket = "ci",
     executable = "main/recipe",
-    triggered_by = ["master-poller"],
+    triggered_by = ["main-poller"],
 )
 
 luci.builder(
@@ -190,7 +190,7 @@ luci.builder(
         "prop2": ["val2", 123],
         "prop1": "val1",
     },
-    triggered_by = ["master-poller"],
+    triggered_by = ["main-poller"],
 )
 
 luci.builder(
@@ -277,7 +277,7 @@ def inline_poller():
         bucket = "inline",
         repo = "https://noop.com",
         refs = [
-            "refs/heads/master",
+            "refs/heads/main",
             "refs/tags/blah",
             r"refs/branch-heads/\d+\.\d+",
         ],
@@ -355,7 +355,7 @@ luci.console_view(
     },
     repo = "https://noop.com",
     refs = ["refs/tags/blah", r"refs/branch-heads/\d+\.\d+"],
-    exclude_ref = "refs/heads/master",
+    exclude_ref = "refs/heads/main",
     include_experimental_builds = True,
     entries = [
         luci.console_view_entry(
@@ -534,11 +534,11 @@ lucicfg.emit(
 #     url: "https://example-review.googlesource.com"
 #     projects {
 #       name: "repo"
-#       ref_regexp: "refs/heads/master"
+#       ref_regexp: "refs/heads/main"
 #     }
 #     projects {
 #       name: "another/repo"
-#       ref_regexp: "refs/heads/master"
+#       ref_regexp: "refs/heads/main"
 #       ref_regexp_exclude: "refs/heads/infra/config"
 #     }
 #   }
@@ -644,7 +644,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -653,7 +653,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -662,7 +662,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -671,7 +671,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -679,7 +679,7 @@ lucicfg.emit(
 #       swarming_host: "chromium-swarm.appspot.com"
 #       exe {
 #         cipd_package: "executable/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #         cmd: "cmd"
 #       }
 #       properties:
@@ -703,7 +703,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.gpu\"],\"grouping_keys\":[\"status\",\"v.test_suite\"]}"
 #         properties_j: "prop1:\"val1\""
 #         properties_j: "prop2:[\"val2\",123]"
@@ -787,7 +787,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #   }
@@ -808,7 +808,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "inline/recipe"
 #         cipd_package: "recipe/bundles/inline"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "builder@example.com"
 #     }
@@ -817,7 +817,7 @@ lucicfg.emit(
 #       swarming_host: "chromium-swarm.appspot.com"
 #       exe {
 #         cipd_package: "executable/bundles/inline"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       properties: '{}'
 #       service_account: "builder@example.com"
@@ -828,7 +828,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "inline/recipe"
 #         cipd_package: "recipe/bundles/inline"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -837,7 +837,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "inline/recipe"
 #         cipd_package: "recipe/bundles/inline"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "builder@example.com"
 #     }
@@ -862,7 +862,7 @@ lucicfg.emit(
 #       swarming_host: "chromium-swarm.appspot.com"
 #       exe {
 #         cipd_package: "executable/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #         cmd: "cmd"
 #       }
 #       properties: '{}'
@@ -872,7 +872,7 @@ lucicfg.emit(
 #       swarming_host: "chromium-swarm.appspot.com"
 #       exe {
 #         cipd_package: "executable/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #         cmd: "cmd"
 #       }
 #       properties: '{}'
@@ -887,7 +887,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -896,7 +896,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -905,7 +905,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -914,7 +914,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -923,7 +923,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #     builders {
@@ -932,7 +932,7 @@ lucicfg.emit(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #   }
@@ -976,7 +976,7 @@ lucicfg.emit(
 #   repo_url: "https://noop.com"
 #   refs: "regexp:refs/tags/blah"
 #   refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
-#   exclude_ref: "refs/heads/master"
+#   exclude_ref: "refs/heads/main"
 #   manifest_name: "REVISION"
 #   builders {
 #     name: "buildbucket/luci.infra.ci/linux ci builder"
@@ -1182,13 +1182,13 @@ lucicfg.emit(
 #   triggers: "triggerer builder"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #     refs: "regexp:refs/tags/blah"
 #     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
 #   }
 # }
 # trigger {
-#   id: "master-poller"
+#   id: "main-poller"
 #   schedule: "with 10s interval"
 #   acl_sets: "ci"
 #   triggers: "generically named builder"
@@ -1196,7 +1196,7 @@ lucicfg.emit(
 #   triggers: "linux ci builder"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #     refs: "regexp:refs/tags/blah"
 #     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
 #     path_regexps: ".*"

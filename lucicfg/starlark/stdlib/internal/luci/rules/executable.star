@@ -32,7 +32,7 @@ def _executable_props(
       cipd_package: a cipd package name with the executable. Supports the
         module-scoped default.
       cipd_version: a version of the executable package to fetch, default
-        is `refs/heads/master`. Supports the module-scoped default.
+        is `refs/heads/main`. Supports the module-scoped default.
       recipe: name of a recipe. Required if the executable is a recipe bundle.
       cmd: a list of strings to use as the executable command. If None
         (or empty), Buildbucket will fill this in on the server side to either
@@ -48,7 +48,7 @@ def _executable_props(
         "cipd_version": validate.string(
             "cipd_version",
             cipd_version,
-            default = ctx.defaults.cipd_version.get() or "refs/heads/master",
+            default = ctx.defaults.cipd_version.get() or "refs/heads/main",
             required = False,
         ),
         "recipe": validate.string(
@@ -78,7 +78,7 @@ def _executable(
     Executables must be available as cipd packages.
 
     The cipd version to fetch is usually a lower-cased git ref (like
-    `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
+    `refs/heads/main`), or it can be a cipd tag (like `git_revision:abc...`).
 
     A luci.executable(...) with some particular name can be redeclared many
     times as long as all fields in all declaration are identical. This is
@@ -92,7 +92,7 @@ def _executable(
       cipd_package: a cipd package name with the executable. Supports the
         module-scoped default.
       cipd_version: a version of the executable package to fetch, default
-        is `refs/heads/master`. Supports the module-scoped default.
+        is `refs/heads/main`. Supports the module-scoped default.
       cmd: a list of strings which are the command line to use for this
         executable. If omitted, either `('recipes',)` or `('luciexe',)` will be
         used by Buildbucket, according to its global configuration. The special
@@ -141,7 +141,7 @@ def _recipe(
     elsewhere.
 
     The cipd version to fetch is usually a lower-cased git ref (like
-    `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
+    `refs/heads/main`), or it can be a cipd tag (like `git_revision:abc...`).
 
     A luci.recipe(...) with some particular name can be redeclared many times as
     long as all fields in all declaration are identical. This is helpful when
@@ -156,7 +156,7 @@ def _recipe(
       cipd_package: a cipd package name with the recipe bundle. Supports the
         module-scoped default.
       cipd_version: a version of the recipe bundle package to fetch, default
-        is `refs/heads/master`. Supports the module-scoped default.
+        is `refs/heads/main`. Supports the module-scoped default.
       recipe: name of a recipe inside the recipe bundle if it differs from
         `name`. Useful if recipe names clash between different recipe bundles.
         When this happens, `name` can be used as a non-ambiguous alias, and

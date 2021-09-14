@@ -95,7 +95,7 @@ def _gitiles_poller(
         automatically. Each supplied regexp must match at least one ref in the
         gitiles output, e.g. specifying `refs/tags/v.+` for a repo that doesn't
         have tags starting with `v` causes a runtime error. If empty, defaults
-        to `['refs/heads/master']`.
+        to `['refs/heads/main']`.
       path_regexps: a list of regexps that define a set of files to watch for
         changes. `^` and `$` are implied and should not be specified manually.
         See the explanation above for all details.
@@ -112,7 +112,7 @@ def _gitiles_poller(
     name = validate.string("name", name)
     bucket_key = keys.bucket(bucket)
 
-    refs = validate.list("refs", refs) or ["refs/heads/master"]
+    refs = validate.list("refs", refs) or ["refs/heads/main"]
     for r in refs:
         validate.string("refs", r)
 

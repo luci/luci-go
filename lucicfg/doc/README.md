@@ -160,7 +160,7 @@ until old and new configs match:
 [Starlark]: https://github.com/google/starlark-go
 [depot_tools]: https://chromium.googlesource.com/chromium/tools/depot_tools/
 [infra/tools/luci/lucicfg/${platform}]: https://chrome-infra-packages.appspot.com/p/infra/tools/luci/lucicfg
-[CIPD manifest]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/master/cipd_manifest.txt
+[CIPD manifest]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/main/cipd_manifest.txt
 [canned check]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/39b0b8e32a4ed0675a38d97799e8a219cc549910/presubmit_canned_checks.py#1437
 
 
@@ -447,7 +447,7 @@ There are two ways to run lint checks:
 Checking that files are properly formatted is a special kind of a lint check
 called `formatting`.
 
-[buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
+[buildifier]: https://github.com/bazelbuild/buildtools/tree/HEAD/buildifier
 
 
 ### Specifying a set of linter checks to apply
@@ -475,7 +475,7 @@ verify formatting of Starlark files. It is part of the `default` set. Note that
 it is not a built-in buildifier check and thus it's not listed in the buildifier
 docs nor can it be disabled via `buildifier: disable=...`.
 
-[buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md
+[buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/HEAD/WARNINGS.md
 
 
 ### Examples {#linter_config}
@@ -1332,7 +1332,7 @@ Builders refer to such executables in their `executable` field, see
 Executables must be available as cipd packages.
 
 The cipd version to fetch is usually a lower-cased git ref (like
-`refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
+`refs/heads/main`), or it can be a cipd tag (like `git_revision:abc...`).
 
 A [luci.executable(...)](#luci.executable) with some particular name can be redeclared many
 times as long as all fields in all declaration are identical. This is
@@ -1343,7 +1343,7 @@ once declares a builder and an executable needed for this builder.
 
 * **name**: name of this executable entity, to refer to it from builders. Required.
 * **cipd_package**: a cipd package name with the executable. Supports the module-scoped default.
-* **cipd_version**: a version of the executable package to fetch, default is `refs/heads/master`. Supports the module-scoped default.
+* **cipd_version**: a version of the executable package to fetch, default is `refs/heads/main`. Supports the module-scoped default.
 * **cmd**: a list of strings which are the command line to use for this executable. If omitted, either `('recipes',)` or `('luciexe',)` will be used by Buildbucket, according to its global configuration. The special value of `('recipes',)` indicates that this executable should be run under the legacy kitchen runtime. All other values will be executed under the go.chromium.org/luci/luciexe protocol.
 
 
@@ -1388,7 +1388,7 @@ But if you're building your own recipe bundles, they could be located
 elsewhere.
 
 The cipd version to fetch is usually a lower-cased git ref (like
-`refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
+`refs/heads/main`), or it can be a cipd tag (like `git_revision:abc...`).
 
 A [luci.recipe(...)](#luci.recipe) with some particular name can be redeclared many times as
 long as all fields in all declaration are identical. This is helpful when
@@ -1399,7 +1399,7 @@ a builder and a recipe needed for this builder.
 
 * **name**: name of this recipe entity, to refer to it from builders. If `recipe` is None, also specifies the recipe name within the bundle. Required.
 * **cipd_package**: a cipd package name with the recipe bundle. Supports the module-scoped default.
-* **cipd_version**: a version of the recipe bundle package to fetch, default is `refs/heads/master`. Supports the module-scoped default.
+* **cipd_version**: a version of the recipe bundle package to fetch, default is `refs/heads/main`. Supports the module-scoped default.
 * **recipe**: name of a recipe inside the recipe bundle if it differs from `name`. Useful if recipe names clash between different recipe bundles. When this happens, `name` can be used as a non-ambiguous alias, and `recipe` can provide the actual recipe name. Defaults to `name`.
 * **use_bbagent**: a boolean to override Buildbucket's global configuration. If True, then builders with this recipe will always use bbagent. If False, then builders with this recipe will temporarily stop using bbagent (note that all builders are expected to use bbagent by ~2020Q3). Defaults to unspecified, which will cause Buildbucket to pick according to it's own global configuration. See [this bug](crbug.com/1015181) for the global bbagent rollout. Supports the module-scoped default.
 
@@ -1598,7 +1598,7 @@ at once declares a builder and a poller that triggers this builder.
 * **name**: name of the poller, to refer to it from other rules. Required.
 * **bucket**: a bucket the poller is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
 * **repo**: URL of a git repository to poll, starting with `https://`. Required.
-* **refs**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. Each supplied regexp must match at least one ref in the gitiles output, e.g. specifying `refs/tags/v.+` for a repo that doesn't have tags starting with `v` causes a runtime error. If empty, defaults to `['refs/heads/master']`.
+* **refs**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. Each supplied regexp must match at least one ref in the gitiles output, e.g. specifying `refs/tags/v.+` for a repo that doesn't have tags starting with `v` causes a runtime error. If empty, defaults to `['refs/heads/main']`.
 * **path_regexps**: a list of regexps that define a set of files to watch for changes. `^` and `$` are implied and should not be specified manually. See the explanation above for all details.
 * **path_regexps_exclude**: a list of regexps that define a set of files to *ignore* when watching for changes. `^` and `$` are implied and should not be specified manually. See the explanation above for all details.
 * **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules_doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
@@ -1789,17 +1789,17 @@ are triggered.
 A console is associated with a single git repository it uses as a source of
 commits to display as rows. The watched ref set is defined via `refs` and
 optional `exclude_ref` fields. If `refs` are empty, the console defaults to
-watching `refs/heads/master`.
+watching `refs/heads/main`.
 
 `exclude_ref` is useful when watching for commits that landed specifically
 on a branch. For example, the config below allows to track commits from all
-release branches, but ignore the commits from the master branch, from which
+release branches, but ignore the commits from the main branch, from which
 these release branches are branched off:
 
     luci.console_view(
         ...
         refs = ['refs/branch-heads/\d+\.\d+'],
-        exclude_ref = 'refs/heads/master',
+        exclude_ref = 'refs/heads/main',
         ...
     )
 
@@ -1882,14 +1882,14 @@ There are two way to supply this message via `header` field:
             ...
         )
 
-[project.proto]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/milo/api/config/project.proto
+[project.proto]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/milo/api/config/project.proto
 
 #### Arguments {#luci.console_view-args}
 
 * **name**: a name of this console, will show up in URLs. Note that names of [luci.console_view(...)](#luci.console_view) and [luci.list_view(...)](#luci.list_view) are in the same namespace i.e. defining a console view with the same name as some list view (and vice versa) causes an error. Required.
 * **title**: a title of this console, will show up in UI. Defaults to `name`.
 * **repo**: URL of a git repository whose commits are displayed as rows in the console. Must start with `https://`. Required.
-* **refs**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. If empty, defaults to `['refs/heads/master']`.
+* **refs**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. If empty, defaults to `['refs/heads/main']`.
 * **exclude_ref**: a single ref, commits from which are ignored even when they are reachable from refs specified via `refs` and `refs_regexps`. Note that force pushes to this ref are not supported. Milo uses caching assuming set of commits reachable from this ref may only grow, never lose some commits.
 * **header**: either a string with a path to the file with the header definition (see [io.read_file(...)](#io.read_file) for the acceptable path format), or a dict with the header definition.
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
@@ -2214,7 +2214,7 @@ This example uses bb tool, available in
 [depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/).
 
 Command `preview_email` is available in
-[infra Go env](https://chromium.googlesource.com/infra/infra/+/master/go/README.md)
+[infra Go env](https://chromium.googlesource.com/infra/infra/+/main/go/README.md)
 and as a
 [CIPD package](https://chrome-infra-packages.appspot.com/p/infra/tools/preview_email).
 
@@ -3215,7 +3215,7 @@ forever.
 #### Arguments {#cq.refset-args}
 
 * **repo**: URL of a git repository to watch, starting with `https://`. Only repositories hosted on `*.googlesource.com` are supported currently. Required.
-* **refs**: a list of regular expressions that define the set of refs to watch for CLs, e.g. `refs/heads/.+`. If not set, defaults to `refs/heads/master`.
+* **refs**: a list of regular expressions that define the set of refs to watch for CLs, e.g. `refs/heads/.+`. If not set, defaults to `refs/heads/main`.
 * **refs_exclude**: a list of regular expressions that define the set of refs to exclude from watching. Empty by default.
 
 

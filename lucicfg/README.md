@@ -43,9 +43,9 @@ binary via starlark/assets.gen.go file generated from the contents of
 
 [starlark/stdlib/internal]: ./starlark/stdlib/internal
 [starlark/stdlib/internal/luci]: ./starlark/stdlib/internal/luci
-[1]: https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/master/starlark/common/lib
-[2]: https://chrome-internal.googlesource.com/infradata/k8s/+/refs/heads/master/starlark/lib
-[3]: https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/master/starlark/lib
+[1]: https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/main/starlark/common/lib
+[2]: https://chrome-internal.googlesource.com/infradata/k8s/+/refs/heads/main/starlark/lib
+[3]: https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/main/starlark/lib
 
 
 ## Making changes to the Starlark portion of the code
@@ -147,7 +147,7 @@ steps 4 and 5.
 [CIPD package builders]: https://ci.chromium.org/p/infra-internal/g/infra-packagers/console
 [CIPD packages]: https://chrome-infra-packages.appspot.com/p/infra/tools/luci/lucicfg
 [this one]: https://chrome-infra-packages.appspot.com/p/infra/tools/luci/lucicfg/linux-amd64/+/git_revision:86afde8bddaefce47381b7cc4638b36717803d3a
-[cipd_manifest.txt]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/master/cipd_manifest.txt
+[cipd_manifest.txt]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/main/cipd_manifest.txt
 [like this]: https://chromium-review.googlesource.com/c/chromium/tools/depot_tools/+/2137983
-[cr-buildbucket/settings.cfg]: https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/master/configs/cr-buildbucket/settings.cfg
+[cr-buildbucket/settings.cfg]: https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/main/configs/cr-buildbucket/settings.cfg
 [so]: https://chrome-internal-review.googlesource.com/c/infradata/config/+/2849250

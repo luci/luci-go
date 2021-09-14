@@ -42,7 +42,7 @@ consoles {
   }
   manifest_name: "REVISION"
   refs: "regexp:z"
-  refs: "refs/heads/master"
+  refs: "refs/heads/main"
   refs: "y\\z"
 
   builders {
@@ -58,7 +58,7 @@ consoles {
   builder_view_only: true
   header_id: "h"
   repo_url: "repo"
-  refs: "refs/heads/master"
+  refs: "refs/heads/main"
   builders {
     name: "a"
     category: "cat-a",
@@ -74,7 +74,7 @@ consoles {
 
 const miloOut = `consoles: <
   id: "a"
-  refs: "regexp:refs/heads/master"
+  refs: "regexp:refs/heads/main"
   refs: "regexp:y\\\\z"
   refs: "regexp:z"
   builders: <

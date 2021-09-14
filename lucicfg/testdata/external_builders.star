@@ -43,7 +43,7 @@ luci.list_view_entry(
 #       recipe {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #     }
 #   }

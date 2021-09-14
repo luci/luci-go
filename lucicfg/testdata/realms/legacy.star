@@ -131,7 +131,7 @@ luci.gitiles_poller(
 #       recipe {
 #         name: "recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "builder@example.com"
 #     }
@@ -141,7 +141,7 @@ luci.gitiles_poller(
 #       recipe {
 #         name: "recipe"
 #         cipd_package: "recipe/bundles/main"
-#         cipd_version: "refs/heads/master"
+#         cipd_version: "refs/heads/main"
 #       }
 #       service_account: "builder@example.com"
 #     }

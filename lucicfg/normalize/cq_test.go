@@ -82,7 +82,7 @@ const cqOut = `config_groups: <
     url: "a"
     projects: <
       name: "z"
-      ref_regexp: "refs/heads/master"
+      ref_regexp: "refs/heads/main"
     >
   >
   verifiers: <
@@ -115,7 +115,7 @@ config_groups: <
     >
     projects: <
       name: "z"
-      ref_regexp: "refs/heads/master"
+      ref_regexp: "refs/heads/main"
     >
   >
   verifiers: <

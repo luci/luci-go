@@ -17,7 +17,7 @@ luci.cq_group(
 #     url: "https://example-review.googlesource.com"
 #     projects {
 #       name: "repo"
-#       ref_regexp: "refs/heads/master"
+#       ref_regexp: "refs/heads/main"
 #     }
 #   }
 #   verifiers {

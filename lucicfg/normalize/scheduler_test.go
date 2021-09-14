@@ -71,7 +71,7 @@ trigger {
   gitiles: {
     repo: "some-repo.git"
     refs: "regexp:z"
-    refs: "refs/heads/master"
+    refs: "refs/heads/main"
     refs: "y\\z"
   }
 }
@@ -103,7 +103,7 @@ trigger: <
   id: "a"
   gitiles: <
     repo: "some-repo"
-    refs: "regexp:refs/heads/master"
+    refs: "regexp:refs/heads/main"
     refs: "regexp:y\\\\z"
     refs: "regexp:z"
   >

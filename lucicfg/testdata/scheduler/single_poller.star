@@ -27,7 +27,7 @@ luci.gitiles_poller(
 #   acl_sets: "ci"
 #   gitiles {
 #     repo: "https://noop.com"
-#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/heads/main"
 #   }
 # }
 # acl_sets {
