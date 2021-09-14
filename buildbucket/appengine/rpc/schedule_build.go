@@ -404,6 +404,76 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 	})
 }
 
+// builderMatches returns whether or not the given builder matches the given
+// predicate. A match occurs if any regex matches and none of the exclusions
+// rule the builder out. If there are no regexes, a match always occurs unless
+// an exclusion rules the builder out. The predicate must be validated.
+func builderMatches(builder string, pred *pb.BuilderPredicate) bool {
+	// TODO(crbug/1042991): Cache compiled regexes (possibly in internal/config package).
+	for _, r := range pred.GetRegexExclude() {
+		if m, err := regexp.MatchString(fmt.Sprintf("^%s$", r), builder); err == nil && m {
+			return false
+		}
+	}
+
+	if len(pred.GetRegex()) == 0 {
+		return true
+	}
+	for _, r := range pred.Regex {
+		if m, err := regexp.MatchString(fmt.Sprintf("^%s$", r), builder); err == nil && m {
+			return true
+		}
+	}
+	return false
+}
+
+// setCIPDPackages computes the CIPD packages values from the given settings,
+// setting them in the proto. Mutates the given *pb.Build. build.Builder,
+// build.Canary, build.Exe.CipdPackage, and build.Infra.Bbagent.Input must be
+// set.
+func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
+	getVersion := func(p *pb.SwarmingSettings_Package, b *pb.Build) string {
+		if b.Canary && p.VersionCanary != "" {
+			return p.VersionCanary
+		}
+		return p.Version
+	}
+
+	// BBAgent + Kitchen + Exe + UserPackages.
+	// TODO(crbug/1042991): Set CIPD hostname for all packages.
+	packages := make([]*pb.BuildInfra_BBAgent_Input_CIPDPackage, 0, 3+len(globalCfg.Swarming.GetUserPackages()))
+	packages = append(packages, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
+		Name:    globalCfg.Swarming.BbagentPackage.PackageName,
+		Path:    ".",
+		Version: getVersion(globalCfg.Swarming.BbagentPackage, build),
+	}, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
+		Name:    globalCfg.Swarming.KitchenPackage.PackageName,
+		Path:    ".",
+		Version: getVersion(globalCfg.Swarming.KitchenPackage, build),
+	}, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
+		Name:    build.Exe.CipdPackage,
+		Path:    "kitchen-checkout",
+		Version: build.Exe.CipdVersion,
+	})
+
+	id := protoutil.FormatBuilderID(build.Builder)
+	for _, p := range globalCfg.Swarming.GetUserPackages() {
+		if !builderMatches(id, p.Builders) {
+			continue
+		}
+		path := "cipd_bin_packages"
+		if p.Subdir != "" {
+			path = fmt.Sprintf("%s/%s", path, p.Subdir)
+		}
+		packages = append(packages, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
+			Name:    p.PackageName,
+			Path:    path,
+			Version: getVersion(p, build),
+		})
+	}
+	build.Infra.Bbagent.Input.CipdPackages = packages
+}
+
 // setDimensions computes the dimensions from the given request and builder
 // config, setting them in the proto. Mutates the given *pb.Build.
 // build.Infra.Swarming must be set (see setInfra).
@@ -598,6 +668,7 @@ func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, gl
 	build.Infra = &pb.BuildInfra{
 		Bbagent: &pb.BuildInfra_BBAgent{
 			CacheDir:               "cache",
+			Input:                  &pb.BuildInfra_BBAgent_Input{},
 			KnownPublicGerritHosts: globalCfg.GetKnownPublicGerritHosts(),
 			PayloadPath:            "kitchen-checkout",
 		},
@@ -814,6 +885,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setTags(req, b)
 	setTimeouts(req, cfg, b)
 	setExperiments(ctx, req, cfg, b) // Requires setExecutable, setInfra, setInput.
+	setCIPDPackages(b, globalCfg)    // Requires setExecutable, setInfra, setExperiments.
 
 	return b
 }

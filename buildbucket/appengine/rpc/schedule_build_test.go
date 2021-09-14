@@ -51,6 +51,55 @@ import (
 func TestScheduleBuild(t *testing.T) {
 	t.Parallel()
 
+	Convey("builderMatches", t, func() {
+		Convey("nil", func() {
+			So(builderMatches("", nil), ShouldBeTrue)
+			So(builderMatches("project/bucket/builder", nil), ShouldBeTrue)
+		})
+
+		Convey("empty", func() {
+			p := &pb.BuilderPredicate{}
+			So(builderMatches("", p), ShouldBeTrue)
+			So(builderMatches("project/bucket/builder", p), ShouldBeTrue)
+		})
+
+		Convey("regex", func() {
+			p := &pb.BuilderPredicate{
+				Regex: []string{
+					"project/bucket/.+",
+				},
+			}
+			So(builderMatches("", p), ShouldBeFalse)
+			So(builderMatches("project/bucket/builder", p), ShouldBeTrue)
+			So(builderMatches("project/other/builder", p), ShouldBeFalse)
+		})
+
+		Convey("regex exclude", func() {
+			p := &pb.BuilderPredicate{
+				RegexExclude: []string{
+					"project/bucket/.+",
+				},
+			}
+			So(builderMatches("", p), ShouldBeTrue)
+			So(builderMatches("project/bucket/builder", p), ShouldBeFalse)
+			So(builderMatches("project/other/builder", p), ShouldBeTrue)
+		})
+
+		Convey("regex exclude > regex", func() {
+			p := &pb.BuilderPredicate{
+				Regex: []string{
+					"project/bucket/.+",
+				},
+				RegexExclude: []string{
+					"project/bucket/builder",
+				},
+			}
+			So(builderMatches("", p), ShouldBeFalse)
+			So(builderMatches("project/bucket/builder", p), ShouldBeFalse)
+			So(builderMatches("project/bucket/other", p), ShouldBeTrue)
+		})
+	})
+
 	Convey("fetchBuilderConfigs", t, func() {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -306,7 +355,21 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}}), ShouldBeNil)
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Resultdb: &pb.ResultDBSettings{
+				Hostname: "rdbHost",
+			},
+			Swarming: &pb.SwarmingSettings{
+				BbagentPackage: &pb.SwarmingSettings_Package{
+					PackageName: "bbagent",
+					Version:     "bbagent-version",
+				},
+				KitchenPackage: &pb.SwarmingSettings_Package{
+					PackageName: "kitchen",
+					Version:     "kitchen-version",
+				},
+			},
+		}), ShouldBeNil)
 
 		// stripProtos strips the Proto field from each of the given *model.Builds,
 		// returning a slice whose ith index is the stripped *pb.Build value.
@@ -376,7 +439,24 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
-								CacheDir:    "cache",
+								CacheDir: "cache",
+								Input: &pb.BuildInfra_BBAgent_Input{
+									CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+										{
+											Name:    "bbagent",
+											Path:    ".",
+											Version: "bbagent-version",
+										},
+										{
+											Name:    "kitchen",
+											Path:    ".",
+											Version: "kitchen-version",
+										},
+										{
+											Path: "kitchen-checkout",
+										},
+									},
+								},
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -499,7 +579,24 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
-								CacheDir:    "cache",
+								CacheDir: "cache",
+								Input: &pb.BuildInfra_BBAgent_Input{
+									CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+										{
+											Name:    "bbagent",
+											Path:    ".",
+											Version: "bbagent-version",
+										},
+										{
+											Name:    "kitchen",
+											Path:    ".",
+											Version: "kitchen-version",
+										},
+										{
+											Path: "kitchen-checkout",
+										},
+									},
+								},
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -608,7 +705,24 @@ func TestScheduleBuild(t *testing.T) {
 					Id: 9021868963221667745,
 					Infra: &pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
+							CacheDir: "cache",
+							Input: &pb.BuildInfra_BBAgent_Input{
+								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+									{
+										Name:    "bbagent",
+										Path:    ".",
+										Version: "bbagent-version",
+									},
+									{
+										Name:    "kitchen",
+										Path:    ".",
+										Version: "kitchen-version",
+									},
+									{
+										Path: "kitchen-checkout",
+									},
+								},
+							},
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -780,7 +894,24 @@ func TestScheduleBuild(t *testing.T) {
 					Id: 9021868963221610337,
 					Infra: &pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
+							CacheDir: "cache",
+							Input: &pb.BuildInfra_BBAgent_Input{
+								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+									{
+										Name:    "bbagent",
+										Path:    ".",
+										Version: "bbagent-version",
+									},
+									{
+										Name:    "kitchen",
+										Path:    ".",
+										Version: "kitchen-version",
+									},
+									{
+										Path: "kitchen-checkout",
+									},
+								},
+							},
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -839,7 +970,24 @@ func TestScheduleBuild(t *testing.T) {
 					Id: 9021868963221610321,
 					Infra: &pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
+							CacheDir: "cache",
+							Input: &pb.BuildInfra_BBAgent_Input{
+								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+									{
+										Name:    "bbagent",
+										Path:    ".",
+										Version: "bbagent-version",
+									},
+									{
+										Name:    "kitchen",
+										Path:    ".",
+										Version: "kitchen-version",
+									},
+									{
+										Path: "kitchen-checkout",
+									},
+								},
+							},
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -898,7 +1046,24 @@ func TestScheduleBuild(t *testing.T) {
 					Id: 9021868963221610305,
 					Infra: &pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
+							CacheDir: "cache",
+							Input: &pb.BuildInfra_BBAgent_Input{
+								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+									{
+										Name:    "bbagent",
+										Path:    ".",
+										Version: "bbagent-version",
+									},
+									{
+										Name:    "kitchen",
+										Path:    ".",
+										Version: "kitchen-version",
+									},
+									{
+										Path: "kitchen-checkout",
+									},
+								},
+							},
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -1949,6 +2114,184 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
+	Convey("setCIPDPackages", t, func() {
+		Convey("base packages", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Exe: &pb.Executable{
+					CipdPackage: "exe",
+					CipdVersion: "exe-version",
+				},
+				Infra: &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						Input: &pb.BuildInfra_BBAgent_Input{},
+					},
+				},
+			}
+			s := &pb.SettingsCfg{
+				Swarming: &pb.SwarmingSettings{
+					BbagentPackage: &pb.SwarmingSettings_Package{
+						PackageName: "bbagent",
+						Version:     "bbagent-version",
+					},
+					KitchenPackage: &pb.SwarmingSettings_Package{
+						PackageName: "kitchen",
+						Version:     "kitchen-version",
+					},
+				},
+			}
+
+			setCIPDPackages(b, s)
+			So(b, ShouldResemble, &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Exe: &pb.Executable{
+					CipdPackage: "exe",
+					CipdVersion: "exe-version",
+				},
+				Infra: &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						Input: &pb.BuildInfra_BBAgent_Input{
+							CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+								{
+									Name:    "bbagent",
+									Path:    ".",
+									Version: "bbagent-version",
+								},
+								{
+									Name:    "kitchen",
+									Path:    ".",
+									Version: "kitchen-version",
+								},
+								{
+									Name:    "exe",
+									Path:    "kitchen-checkout",
+									Version: "exe-version",
+								},
+							},
+						},
+					},
+				},
+			})
+		})
+
+		Convey("user packages", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Canary: true,
+				Exe: &pb.Executable{
+					CipdPackage: "exe",
+					CipdVersion: "exe-version",
+				},
+				Infra: &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						Input: &pb.BuildInfra_BBAgent_Input{},
+					},
+				},
+			}
+			s := &pb.SettingsCfg{
+				Swarming: &pb.SwarmingSettings{
+					BbagentPackage: &pb.SwarmingSettings_Package{
+						PackageName:   "bbagent",
+						Version:       "bbagent-version",
+						VersionCanary: "canary-version",
+					},
+					KitchenPackage: &pb.SwarmingSettings_Package{
+						PackageName:   "kitchen",
+						Version:       "kitchen-version",
+						VersionCanary: "canary-version",
+					},
+					UserPackages: []*pb.SwarmingSettings_Package{
+						{
+							PackageName:   "include",
+							Version:       "version",
+							VersionCanary: "canary-version",
+						},
+						{
+							Builders: &pb.BuilderPredicate{
+								RegexExclude: []string{
+									".*",
+								},
+							},
+							PackageName:   "exclude",
+							Version:       "version",
+							VersionCanary: "canary-version",
+						},
+						{
+							Builders: &pb.BuilderPredicate{
+								Regex: []string{
+									".*",
+								},
+							},
+							PackageName:   "subdir",
+							Subdir:        "subdir",
+							Version:       "version",
+							VersionCanary: "canary-version",
+						},
+					},
+				},
+			}
+
+			setCIPDPackages(b, s)
+			So(b, ShouldResemble, &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Canary: true,
+				Exe: &pb.Executable{
+					CipdPackage: "exe",
+					CipdVersion: "exe-version",
+				},
+				Infra: &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						Input: &pb.BuildInfra_BBAgent_Input{
+							CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+								{
+									Name:    "bbagent",
+									Path:    ".",
+									Version: "canary-version",
+								},
+								{
+									Name:    "kitchen",
+									Path:    ".",
+									Version: "canary-version",
+								},
+								{
+									Name:    "exe",
+									Path:    "kitchen-checkout",
+									Version: "exe-version",
+								},
+								{
+									Name:    "include",
+									Path:    "cipd_bin_packages",
+									Version: "canary-version",
+								},
+								{
+									Name:    "subdir",
+									Path:    "cipd_bin_packages/subdir",
+									Version: "canary-version",
+								},
+							},
+						},
+					},
+				},
+			})
+		})
+	})
+
 	Convey("setDimensions", t, func() {
 		Convey("config", func() {
 			Convey("omit", func() {
@@ -2495,6 +2838,8 @@ func TestScheduleBuild(t *testing.T) {
 				setExperiments(ctx, req, nil, &ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
+				So(ent.Proto.Input.Experimental, ShouldBeFalse)
+				So(ent.Experimental, ShouldBeFalse)
 			})
 
 			Convey("non-production", func() {
@@ -2519,6 +2864,8 @@ func TestScheduleBuild(t *testing.T) {
 				setExperiments(ctx, req, nil, &ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 255)
+				So(ent.Proto.Input.Experimental, ShouldBeTrue)
+				So(ent.Experimental, ShouldBeTrue)
 			})
 
 			Convey("req > experiment", func() {
@@ -2915,6 +3262,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
+					Input:       &pb.BuildInfra_BBAgent_Input{},
 					PayloadPath: "kitchen-checkout",
 				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -2955,6 +3303,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir: "cache",
+					Input:    &pb.BuildInfra_BBAgent_Input{},
 					KnownPublicGerritHosts: []string{
 						"host",
 					},
@@ -2998,6 +3347,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
+					Input:       &pb.BuildInfra_BBAgent_Input{},
 					PayloadPath: "kitchen-checkout",
 				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3040,6 +3390,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
+					Input:       &pb.BuildInfra_BBAgent_Input{},
 					PayloadPath: "kitchen-checkout",
 				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3085,6 +3436,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
+						Input:       &pb.BuildInfra_BBAgent_Input{},
 						PayloadPath: "kitchen-checkout",
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3130,6 +3482,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
 							CacheDir:    "cache",
+							Input:       &pb.BuildInfra_BBAgent_Input{},
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3168,6 +3521,7 @@ func TestScheduleBuild(t *testing.T) {
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
 								CacheDir:    "cache",
+								Input:       &pb.BuildInfra_BBAgent_Input{},
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3212,6 +3566,7 @@ func TestScheduleBuild(t *testing.T) {
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
 								CacheDir:    "cache",
+								Input:       &pb.BuildInfra_BBAgent_Input{},
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3258,6 +3613,7 @@ func TestScheduleBuild(t *testing.T) {
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
 								CacheDir:    "cache",
+								Input:       &pb.BuildInfra_BBAgent_Input{},
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3339,6 +3695,7 @@ func TestScheduleBuild(t *testing.T) {
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
 								CacheDir:    "cache",
+								Input:       &pb.BuildInfra_BBAgent_Input{},
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3410,6 +3767,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
+						Input:       &pb.BuildInfra_BBAgent_Input{},
 						PayloadPath: "kitchen-checkout",
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -3475,6 +3833,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
+						Input:       &pb.BuildInfra_BBAgent_Input{},
 						PayloadPath: "kitchen-checkout",
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -3525,6 +3884,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
+						Input:       &pb.BuildInfra_BBAgent_Input{},
 						PayloadPath: "kitchen-checkout",
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -3564,6 +3924,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
+						Input:       &pb.BuildInfra_BBAgent_Input{},
 						PayloadPath: "kitchen-checkout",
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
@@ -4251,7 +4612,21 @@ func TestScheduleBuild(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:caller@example.com",
 		})
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}}), ShouldBeNil)
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Resultdb: &pb.ResultDBSettings{
+				Hostname: "rdbHost",
+			},
+			Swarming: &pb.SwarmingSettings{
+				BbagentPackage: &pb.SwarmingSettings_Package{
+					PackageName: "bbagent",
+					Version:     "bbagent-version",
+				},
+				KitchenPackage: &pb.SwarmingSettings_Package{
+					PackageName: "kitchen",
+					Version:     "kitchen-version",
+				},
+			},
+		}), ShouldBeNil)
 
 		Convey("builder", func() {
 			Convey("not found", func() {
@@ -4617,7 +4992,21 @@ func TestScheduleBuild(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:caller@example.com",
 		})
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}}), ShouldBeNil)
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Resultdb: &pb.ResultDBSettings{
+				Hostname: "rdbHost",
+			},
+			Swarming: &pb.SwarmingSettings{
+				BbagentPackage: &pb.SwarmingSettings_Package{
+					PackageName: "bbagent",
+					Version:     "bbagent-version",
+				},
+				KitchenPackage: &pb.SwarmingSettings_Package{
+					PackageName: "kitchen",
+					Version:     "kitchen-version",
+				},
+			},
+		}), ShouldBeNil)
 
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",

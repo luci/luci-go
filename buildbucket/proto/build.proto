@@ -445,6 +445,34 @@ message BuildInfra {
   // All paths are relateive to bbagent's working directory, and must be delimited
   // with slashes ("/"), regardless of the host OS.
   message BBAgent {
+    // BBAgent-specific input.
+    message Input {
+      // CIPD Packages to make available for this build.
+      message CIPDPackage {
+        // Name of this CIPD package.
+        //
+        // Required.
+        string name = 1;
+
+        // CIPD package version.
+        //
+        // Required.
+        string version = 2;
+
+        // Hostname of the CIPD server to fetch this package from.
+        //
+        // Required.
+        string host = 3;
+
+        // Path where this CIPD package should be installed.
+        //
+        // Required.
+        string path = 4;
+      }
+
+      repeated CIPDPackage cipd_packages = 1;
+    }
+
     // Path to the base of the user executable package.
     //
     // Required.
@@ -461,6 +489,8 @@ message BuildInfra {
     // has very low quota. Context needs to know all such hostnames in advance to
     // be able to force authenticated access to them.
     repeated string known_public_gerrit_hosts = 3;
+
+    Input input = 4;
   }
 
   Buildbucket buildbucket = 1;
