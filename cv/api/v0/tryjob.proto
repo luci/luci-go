@@ -103,8 +103,8 @@ message Tryjob {
   Definition definition = 1;
 
   // Status of the Tryjob.
-  Status status = 5;
+  Status status = 2;
 
   // Result of the tryjob.
-  Result result = 7;
+  Result result = 3;
 }

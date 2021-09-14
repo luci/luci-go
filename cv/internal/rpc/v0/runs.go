@@ -77,6 +77,38 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		}
 	}
 
+	tryjobs := make([]*apiv0pb.Tryjob, len(r.Tryjobs.GetTryjobs()))
+	for i, tj := range r.Tryjobs.GetTryjobs() {
+		tryjobs[i] = &apiv0pb.Tryjob{
+			Status: versioning.TryjobStatusV0(tj.Status),
+		}
+		// result
+		if result := tj.GetResult(); result != nil {
+			tryjobs[i].Result = &apiv0pb.Tryjob_Result{
+				Status: versioning.TryjobResultStatusV0(result.Status),
+			}
+			if bb := result.GetBuildbucket(); bb != nil {
+				tryjobs[i].Result.Backend = &apiv0pb.Tryjob_Result_Buildbucket_{
+					Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{
+						Id:     bb.Id,
+						Status: bb.Status,
+					},
+				}
+			}
+		}
+		// definition
+		if bb := tj.GetDefinition().GetBuildbucket(); bb != nil {
+			tryjobs[i].Definition = &apiv0pb.Tryjob_Definition{
+				Backend: &apiv0pb.Tryjob_Definition_Buildbucket_{
+					Buildbucket: &apiv0pb.Tryjob_Definition_Buildbucket{
+						Host:    bb.Host,
+						Builder: bb.Builder,
+					},
+				},
+			}
+		}
+	}
+
 	// TODO(crbug/1233963): check if user has access to this specific Run.
 	return &apiv0pb.Run{
 		Id:         r.ID.PublicID(),
@@ -89,6 +121,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		EndTime:    common.TspbNillable(r.EndTime),
 		Owner:      string(r.Owner),
 		Cls:        gcls,
+		Tryjobs:    tryjobs,
 	}, nil
 }
 
