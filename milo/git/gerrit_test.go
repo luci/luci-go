@@ -22,11 +22,11 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -35,7 +35,7 @@ func TestCLEmail(t *testing.T) {
 	t.Parallel()
 
 	Convey("CLEmail", t, func() {
-		c := memory.Use(context.Background())
+		c := caching.WithEmptyProcessCache(context.Background())
 
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()

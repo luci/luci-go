@@ -16,15 +16,17 @@ package git
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 )
 
 // errGRPCNotFound is what gRPC API would have returned for NotFound error.
@@ -49,46 +51,53 @@ func (p *implementation) CLEmail(c context.Context, host string, changeNumber in
 	return
 }
 
+var gerritChangeInfoCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(4096),
+	GlobalNamespace: "gerrit-change-info",
+	Marshal:         json.Marshal,
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		changeInfo := &gerritpb.ChangeInfo{}
+		err := json.Unmarshal(blob, changeInfo)
+		return changeInfo, err
+	},
+}
+
 // clEmailAndProjectNoACLs fetches and caches change owner email and project.
 //
 // Gerrit change owner and project are deemed immutable.
 // Caveat: technically only owner's account id is immutable. Owner's email
 // associated with this account id may change, but this is rare.
 func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host string, changeNumber int64) (*gerritpb.ChangeInfo, error) {
-	cache := memcache.NewItem(c, fmt.Sprintf("gerrit-change-owner/%s/%d", host, changeNumber))
-	if err := memcache.Get(c, cache); err == nil {
-		val := &gerritpb.ChangeInfo{}
-		if err = proto.Unmarshal(cache.Value(), val); err == nil && val.Project != "" {
-			return val, nil
+	key := fmt.Sprintf("%s/%d", host, changeNumber)
+	changeInfo, err := gerritChangeInfoCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
+		client, err := p.gerritClient(c, host)
+		if err != nil {
+			return nil, 0, err
 		}
-	}
 
-	client, err := p.gerritClient(c, host)
-	if err != nil {
-		return nil, err
-	}
-	changeInfo, err := client.GetChange(c, &gerritpb.GetChangeRequest{
-		Number: changeNumber,
-		Options: []gerritpb.QueryOption{
-			gerritpb.QueryOption_DETAILED_ACCOUNTS,
-			gerritpb.QueryOption_SKIP_MERGEABLE,
-		},
+		info, err := client.GetChange(c, &gerritpb.GetChangeRequest{
+			Number: changeNumber,
+			Options: []gerritpb.QueryOption{
+				gerritpb.QueryOption_DETAILED_ACCOUNTS,
+				gerritpb.QueryOption_SKIP_MERGEABLE,
+			},
+		})
+		// We can't cache outcome of not found CL because
+		//  * Milo may not at first have access to a CL, say while CL was hidden or
+		//    because of bad ACLs.
+		//  * Gerrit is known to return 404 flakes.
+		if err != nil {
+			return nil, 0, err
+		}
+
+		// Cache and return only email and project.
+		ret := &gerritpb.ChangeInfo{
+			Project: info.Project,
+			Owner:   &gerritpb.AccountInfo{Email: info.GetOwner().GetEmail()},
+		}
+
+		return ret, 0, nil
 	})
-	// We can't cache outcome of not found CL because
-	//  * Milo may not at first have access to a CL, say while CL was hidden or
-	//    because of bad ACLs.
-	//  * Gerrit is known to return 404 flakes.
-	if err != nil {
-		return nil, err
-	}
-	// Cache and return only email and project.
-	ret := &gerritpb.ChangeInfo{
-		Project: changeInfo.Project,
-		Owner:   &gerritpb.AccountInfo{Email: changeInfo.GetOwner().GetEmail()},
-	}
-	if blob, err := proto.Marshal(ret); err == nil {
-		cache.SetValue(blob)
-		memcache.Set(c, cache)
-	}
-	return ret, nil
+
+	return changeInfo.(*gerritpb.ChangeInfo), err
 }
