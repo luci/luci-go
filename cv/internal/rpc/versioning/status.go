@@ -26,6 +26,11 @@ func TryjobStatusV0(s tryjob.Status) apiv0pb.Tryjob_Status {
 	return apiv0pb.Tryjob_Status(s)
 }
 
+// TryjobResultStatusV0 converts internal Tryjob Result status to an APIv0 equivalent.
+func TryjobResultStatusV0(s tryjob.Result_Status) apiv0pb.Tryjob_Result_Status {
+	return apiv0pb.Tryjob_Result_Status(s)
+}
+
 // RunStatusV0 converts internal Run status to an APIv0 equivalent.
 func RunStatusV0(s run.Status) apiv0pb.Run_Status {
 	return apiv0pb.Run_Status(s)

@@ -79,4 +79,20 @@ func TestStatusV0(t *testing.T) {
 			})
 		}
 	})
+
+	Convey("TryjobResultStatusV0 returns a valid enum", t, func() {
+		for name, val := range tryjob.Result_Status_value {
+			name, val := name, val
+			Convey("for internal."+name, func() {
+				eq := TryjobResultStatusV0(tryjob.Result_Status(val))
+
+				// check if it's typed with the API enum.
+				So(eq.Descriptor().FullName(), ShouldEqual,
+					apiv0pb.Tryjob_Result_RESULT_STATUS_UNSPECIFIED.Descriptor().FullName())
+				// check if it's one of the defined enum ints.
+				_, ok := apiv0pb.Tryjob_Result_Status_name[int32(eq)]
+				So(ok, ShouldBeTrue)
+			})
+		}
+	})
 }
