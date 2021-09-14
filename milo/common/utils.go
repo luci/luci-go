@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
@@ -135,5 +136,24 @@ func JSONUnmarshalCompressed(serialized []byte, out interface{}) error {
 	}
 
 	dec := json.NewDecoder(r)
+	return dec.Decode(out)
+}
+
+// GetJSONData fetches data from the given URL, parses the response body to `out`.
+// It follows redirection and returns an error if the status code is 4xx or 5xx.
+func GetJSONData(client *http.Client, url string, out interface{}) (err error) {
+	response, err := client.Get(url)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = errors.Flatten(errors.NewMultiError(response.Body.Close(), err))
+	}()
+
+	if response.StatusCode >= 400 && response.StatusCode <= 599 {
+		return fmt.Errorf("failed to fetch data: %q returned code %q", url, response.Status)
+	}
+
+	dec := json.NewDecoder(response.Body)
 	return dec.Decode(out)
 }

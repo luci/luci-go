@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,9 +32,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -275,48 +275,15 @@ func consolePreview(c context.Context, summaries *ui.BuilderSummaryGroup, def *c
 	}, nil
 }
 
-// getJSONData fetches data from the given URL into the target, caching it
-// for expiration seconds in memcache.
-func getJSONData(c context.Context, url string, expiration time.Duration, target interface{}) error {
-	// Try memcache first.
-	item := memcache.NewItem(c, "url:"+url)
-	if err := memcache.Get(c, item); err == nil {
-		if err = json.Unmarshal(item.Value(), target); err == nil {
-			return nil
-		}
-		logging.WithError(err).Warningf(c, "couldn't load stored item from datastore")
-	} else if err != memcache.ErrCacheMiss {
-		logging.WithError(err).Errorf(c, "memcache is having issues")
-	}
-
-	// Fetch it from the app.
-	transport := urlfetch.Get(c)
-	response, err := (&http.Client{Transport: transport}).Get(url)
-	if err != nil {
-		return errors.Annotate(err, "failed to get data from %q", url).Err()
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode >= 400 && response.StatusCode <= 599 {
-		return fmt.Errorf("Failed to fetch data: %q returned code %q", url, response.Status)
-	}
-	bytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return errors.Annotate(err, "failed to read response body from %q", url).Err()
-	}
-
-	// Parse JSON into target.
-	if err := json.Unmarshal(bytes, target); err != nil {
-		return errors.Annotate(
-			err, "failed to decode JSON %q from %q", bytes, url).Err()
-	}
-
-	// Save data into memcache on a best-effort basis.
-	item.SetValue(bytes).SetExpiration(expiration)
-	if err = memcache.Set(c, item); err != nil {
-		logging.WithError(err).Warningf(c, "could not save url data %q into memcache", url)
-	}
-	return nil
+var treeStatusCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(256),
+	GlobalNamespace: "tree-status",
+	Marshal:         json.Marshal,
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		treeStatus := &ui.TreeStatus{}
+		err := json.Unmarshal(blob, treeStatus)
+		return treeStatus, err
+	},
 }
 
 // getTreeStatus returns the current tree status from the chromium-status app.
@@ -324,15 +291,22 @@ func getJSONData(c context.Context, url string, expiration time.Duration, target
 func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 	q := url.Values{}
 	q.Add("format", "json")
-	url := url.URL{
+	url := (&url.URL{
 		Scheme:   "https",
 		Host:     host,
 		Path:     "current",
 		RawQuery: q.Encode(),
-	}
+	}).String()
+	status, err := treeStatusCache.GetOrCreate(c, url, func() (v interface{}, exp time.Duration, err error) {
+		client := &http.Client{Transport: urlfetch.Get(c)}
+		out := &ui.TreeStatus{}
+		if err := common.GetJSONData(client, url, out); err != nil {
+			return nil, 0, err
+		}
+		return out, 30 * time.Second, nil
+	})
 
-	status := &ui.TreeStatus{}
-	if err := getJSONData(c, url.String(), 30*time.Second, status); err != nil {
+	if err != nil {
 		// Generate a fake tree status.
 		logging.WithError(err).Errorf(c, "loading tree status")
 		status = &ui.TreeStatus{
@@ -341,16 +315,34 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 		}
 	}
 
-	return status
+	return status.(*ui.TreeStatus)
+}
+
+var oncallDataCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(256),
+	GlobalNamespace: "oncall-data",
+	Marshal:         json.Marshal,
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		oncall := &ui.Oncall{}
+		err := json.Unmarshal(blob, oncall)
+		return oncall, err
+	},
 }
 
 // getOncallData fetches oncall data and caches it for 10 minutes.
 func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {
-	result := ui.Oncall{}
-	err := getJSONData(c, config.Url, 10*time.Minute, &result)
+	oncall, err := oncallDataCache.GetOrCreate(c, config.Url, func() (v interface{}, exp time.Duration, err error) {
+		client := &http.Client{Transport: urlfetch.Get(c)}
+		out := &ui.Oncall{}
+		if err := common.GetJSONData(client, config.Url, out); err != nil {
+			return nil, 0, err
+		}
+		return out, 10 * time.Minute, nil
+	})
+
 	var renderedHTML template.HTML
 	if err == nil {
-		renderedHTML = renderOncallers(config, &result)
+		renderedHTML = renderOncallers(config, oncall.(*ui.Oncall))
 	} else {
 		renderedHTML = template.HTML("ERROR: Fetching oncall failed")
 	}
