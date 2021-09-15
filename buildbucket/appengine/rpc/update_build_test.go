@@ -606,13 +606,13 @@ func TestUpdateBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 
 				// no metric update, either.
-				So(store.Get(ctx, buildCountStarted, time.Time{}, fv(false)), ShouldEqual, nil)
+				So(store.Get(ctx, mV1.buildCountStarted, time.Time{}, fv(false)), ShouldEqual, nil)
 			})
 
 			Convey("Status_STARTED w/ status change", func() {
 				// create a sample task with SCHEDULED.
-				build.Proto.Id += 1
-				build.ID += 1
+				build.Proto.Id++
+				build.ID++
 				build.Proto.Status, build.Status = pb.Status_SCHEDULED, pb.Status_SCHEDULED
 				So(datastore.Put(ctx, build), ShouldBeNil)
 
@@ -628,7 +628,7 @@ func TestUpdateBuild(t *testing.T) {
 				So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, build.ID)
 
 				// BuildStarted metric should be set 1.
-				So(store.Get(ctx, buildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+				So(store.Get(ctx, mV1.buildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
 			})
 		})
 
@@ -645,7 +645,7 @@ func TestUpdateBuild(t *testing.T) {
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
 					case *taskdefs.NotifyPubSub:
-						sum += 1
+						sum++
 						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
 					case *taskdefs.ExportBigQuery:
 						sum += 2
@@ -661,7 +661,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
-				So(store.Get(ctx, buildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+				So(store.Get(ctx, mV1.buildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
 			})
 		})
 	})

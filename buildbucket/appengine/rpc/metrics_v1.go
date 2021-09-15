@@ -38,34 +38,42 @@ var (
 		"user_agent":         field.String("user_agent"),
 	}
 
-	buildCountCreated = metric.NewCounter(
-		"buildbucket/builds/created",
-		"Build creation", nil,
-		bFields("user_agent")...,
-	)
-	buildCountStarted = metric.NewCounter(
-		"buildbucket/builds/started",
-		"Build start", nil,
-		bFields("canary")...,
-	)
-	buildCountCompleted = metric.NewCounter(
-		"buildbucket/builds/completed",
-		"Build completion, including success, failure and cancellation", nil,
-		bFields("result", "failure_reason", "cancelation_reason", "canary")...,
-	)
-
-	buildDurationCycle = newbuildDurationMetric(
-		"buildbucket/builds/cycle_durations",
-		"Duration between build creation and completion",
-	)
-	buildDurationRun = newbuildDurationMetric(
-		"buildbucket/builds/run_durations",
-		"Duration between build start and completion",
-	)
-	buildDurationScheduling = newbuildDurationMetric(
-		"buildbucket/builds/scheduling_durations",
-		"Duration between build creation and start",
-	)
+	mV1 = struct {
+		buildCountCreated       metric.Counter
+		buildCountStarted       metric.Counter
+		buildCountCompleted     metric.Counter
+		buildDurationCycle      metric.CumulativeDistribution
+		buildDurationRun        metric.CumulativeDistribution
+		buildDurationScheduling metric.CumulativeDistribution
+	}{
+		buildCountCreated: metric.NewCounter(
+			"buildbucket/builds/created",
+			"Build creation", nil,
+			bFields("user_agent")...,
+		),
+		buildCountStarted: metric.NewCounter(
+			"buildbucket/builds/started",
+			"Build start", nil,
+			bFields("canary")...,
+		),
+		buildCountCompleted: metric.NewCounter(
+			"buildbucket/builds/completed",
+			"Build completion, including success, failure and cancellation", nil,
+			bFields("result", "failure_reason", "cancelation_reason", "canary")...,
+		),
+		buildDurationCycle: newbuildDurationMetric(
+			"buildbucket/builds/cycle_durations",
+			"Duration between build creation and completion",
+		),
+		buildDurationRun: newbuildDurationMetric(
+			"buildbucket/builds/run_durations",
+			"Duration between build start and completion",
+		),
+		buildDurationScheduling: newbuildDurationMetric(
+			"buildbucket/builds/scheduling_durations",
+			"Duration between build creation and start",
+		),
+	}
 )
 
 func bFields(extraFields ...string) []field.Field {

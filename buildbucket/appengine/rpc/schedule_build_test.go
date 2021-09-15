@@ -399,7 +399,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(err, ShouldErrLike, "error fetching builders")
 				So(blds, ShouldBeNil)
 				So(sch.Tasks(), ShouldBeEmpty)
-				So(store.Get(ctx, buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
+				So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
 			})
 
 			Convey("dynamic", func() {
@@ -546,7 +546,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 
 				// dry-run should not increase the build creation counter metric.
-				So(store.Get(ctx, buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
+				So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
 			})
 
 			Convey("one", func() {
@@ -683,7 +683,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			blds, err := scheduleBuilds(ctx, req)
 			So(err, ShouldBeNil)
-			So(store.Get(ctx, buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
+			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 				{
 					Builder: &pb.BuilderID{
@@ -871,9 +871,9 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			fvs := []interface{}{"luci.project.static bucket", "static builder", ""}
-			So(store.Get(ctx, buildCountCreated, time.Time{}, fvs), ShouldEqual, 2)
+			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fvs), ShouldEqual, 2)
 			fvs = []interface{}{"luci.project.dynamic bucket", "dynamic builder", ""}
-			So(store.Get(ctx, buildCountCreated, time.Time{}, fvs), ShouldEqual, 1)
+			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fvs), ShouldEqual, 1)
 
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 				{

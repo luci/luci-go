@@ -37,18 +37,18 @@ func buildCreated(ctx context.Context, b *model.Build) {
 			break
 		}
 	}
-	buildCountCreated.Add(ctx, 1, legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, ua)
+	mV1.buildCountCreated.Add(ctx, 1, legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, ua)
 }
 
 func buildStarted(ctx context.Context, b *model.Build) {
 	logging.Infof(ctx, "Build %d: started", b.ID)
-	buildCountStarted.Add(
+	mV1.buildCountStarted.Add(
 		ctx, 1,
 		legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, b.Proto.Canary,
 	)
 	if b.Proto.GetStartTime() != nil {
 		startT := b.Proto.StartTime.AsTime()
-		buildDurationScheduling.Add(
+		mV1.buildDurationScheduling.Add(
 			ctx, startT.Sub(b.CreateTime).Seconds(),
 			legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, "", "", "", b.Proto.Canary,
 		)
@@ -62,18 +62,18 @@ func buildStarting(ctx context.Context, b *model.Build) error {
 func buildCompleted(ctx context.Context, b *model.Build) {
 	r, fr, cr := getLegacyMetricFields(b)
 	logging.Infof(ctx, "Build %d: completed by %q with status %q", b.ID, auth.CurrentIdentity(ctx), r)
-	buildCountCompleted.Add(
+	mV1.buildCountCompleted.Add(
 		ctx, 1,
 		legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary)
 
 	endT := b.Proto.EndTime.AsTime()
-	buildDurationCycle.Add(
+	mV1.buildDurationCycle.Add(
 		ctx, endT.Sub(b.CreateTime).Seconds(),
 		legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,
 	)
 	if b.Proto.StartTime != nil {
 		startT := b.Proto.StartTime.AsTime()
-		buildDurationRun.Add(
+		mV1.buildDurationRun.Add(
 			ctx, endT.Sub(startT).Seconds(),
 			legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,
 		)
