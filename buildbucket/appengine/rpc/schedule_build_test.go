@@ -725,7 +725,9 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							PayloadPath: "kitchen-checkout",
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221667745",
 							Project: "project",
@@ -914,7 +916,9 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							PayloadPath: "kitchen-checkout",
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610337",
 							Project: "project",
@@ -990,7 +994,9 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							PayloadPath: "kitchen-checkout",
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610321",
 							Project: "project",
@@ -1066,7 +1072,9 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							PayloadPath: "kitchen-checkout",
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610305",
 							Project: "project",

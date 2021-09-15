@@ -662,8 +662,8 @@ func configuredCacheToTaskCache(builderCache *pb.Builder_CacheEntry) *pb.BuildIn
 
 // setInfra computes the infra values from the given request and builder config,
 // setting them in the proto. Mutates the given *pb.Build. build.Builder must be
-// set. Does not set build.Infra.Logdog.Prefix, which can only be determined at
-// creation time.
+// set. Does not set build.Infra.Buildbucket.Hostname or
+// build.Infra.Logdog.Prefix, which can only be determined at creation time.
 func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, globalCfg *pb.SettingsCfg) {
 	build.Infra = &pb.BuildInfra{
 		Bbagent: &pb.BuildInfra_BBAgent{
@@ -948,7 +948,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	if err != nil {
 		return nil, errors.Annotate(err, "error fetching service config").Err()
 	}
-	appID := info.AppID(ctx)
+	appID := info.AppID(ctx) // e.g. cr-buildbucket
 
 	// Bucket -> Builder -> *pb.Builder.
 	cfgs, err := fetchBuilderConfigs(ctx, reqs)
@@ -981,6 +981,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			blds[i].Proto.CreatedBy = string(user)
 			blds[i].Proto.CreateTime = timestamppb.New(now)
 			blds[i].Proto.Id = ids[i]
+			blds[i].Proto.Infra.Buildbucket.Hostname = fmt.Sprintf("%s.appspot.com", appID)
 			blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, blds[i].Proto.Id)
 			blds[i].Proto.Status = pb.Status_SCHEDULED
 		}
