@@ -256,7 +256,7 @@ func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest isolated.He
 
 	fi, err := os.Stat(src)
 	if err != nil {
-		return errors.Annotate(err, "failed to get stat").Err()
+		return errors.Annotate(err, "failed to get stat: %s", src).Err()
 	}
 
 	d.mu.Lock()
