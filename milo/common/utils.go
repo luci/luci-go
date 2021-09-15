@@ -124,6 +124,11 @@ func JSONMarshalCompressed(message interface{}) ([]byte, error) {
 		return nil, err
 	}
 
+	// Flush remaining bytes in the zlib writer.
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+
 	return b.Bytes(), nil
 }
 

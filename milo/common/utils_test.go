@@ -30,6 +30,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+type TestStruct struct {
+	Prop string
+}
+
 func TestTagGRPC(t *testing.T) {
 	t.Parallel()
 
@@ -62,5 +66,16 @@ func TestTagGRPC(t *testing.T) {
 			So(grpcutil.Code(TagGRPC(cAnon, errMulti)), ShouldEqual, codes.InvalidArgument)
 			So(grpcutil.Code(TagGRPC(cUser, errMulti)), ShouldEqual, codes.InvalidArgument)
 		})
+	})
+
+	Convey("JSON(Un)MarshalCompressed works", t, func() {
+		data := &TestStruct{Prop: "prop"}
+		bytes, err := JSONMarshalCompressed(data)
+		So(err, ShouldBeNil)
+
+		var parsed TestStruct
+		err = JSONUnmarshalCompressed(bytes, &parsed)
+		So(err, ShouldBeNil)
+		So(parsed.Prop, ShouldEqual, data.Prop)
 	})
 }
