@@ -64,11 +64,21 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		return nil, err
 	}
 	gcls := make([]*apiv0pb.GerritChange, len(rcls))
+	sCLSet := common.MakeCLIDsSet(r.Submission.GetSubmittedCls()...)
+	fCLSet := common.MakeCLIDsSet(r.Submission.GetFailedCls()...)
+	sCLIndexes := make([]int32, 0, len(fCLSet))
+	fCLIndexes := make([]int32, 0, len(sCLSet))
+
 	for i, rcl := range rcls {
 		host, change, err := rcl.ExternalID.ParseGobID()
-		if err != nil {
+		switch {
+		case err != nil:
 			// As of Sep 2, 2021, CV works only with Gerrit (GoB) CL.
 			panic(errors.Annotate(err, "ParseGobID").Err())
+		case sCLSet.Has(rcl.ID):
+			sCLIndexes = append(sCLIndexes, int32(i))
+		case fCLSet.Has(rcl.ID):
+			fCLIndexes = append(fCLIndexes, int32(i))
 		}
 		gcls[i] = &apiv0pb.GerritChange{
 			Host:     host,
@@ -109,6 +119,14 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		}
 	}
 
+	var submission *apiv0pb.Run_Submission
+	if len(sCLIndexes) > 0 || len(fCLIndexes) > 0 {
+		submission = &apiv0pb.Run_Submission{
+			SubmittedClIndexes: sCLIndexes,
+			FailedClIndexes:    fCLIndexes,
+		}
+	}
+
 	// TODO(crbug/1233963): check if user has access to this specific Run.
 	return &apiv0pb.Run{
 		Id:         r.ID.PublicID(),
@@ -122,6 +140,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		Owner:      string(r.Owner),
 		Cls:        gcls,
 		Tryjobs:    tryjobs,
+		Submission: submission,
 	}, nil
 }
 

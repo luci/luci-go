@@ -83,6 +83,7 @@ func TestGetRun(t *testing.T) {
 			const gHost = "r-review.example.com"
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
+			cl3 := changelist.MustGobID(gHost, 3).MustCreateIfNotExists(ctx)
 			epoch := testclock.TestRecentTimeUTC.Truncate(time.Millisecond)
 			r := &run.Run{
 				ID:         rid,
@@ -92,7 +93,7 @@ func TestGetRun(t *testing.T) {
 				UpdateTime: epoch.Add(time.Minute),
 				EndTime:    epoch.Add(time.Hour),
 				Owner:      "user:foo@example.org",
-				CLs:        common.MakeCLIDs(1, 2),
+				CLs:        common.MakeCLIDs(int64(cl1.ID), int64(cl2.ID), int64(cl3.ID)),
 			}
 			So(datastore.Put(
 				ctx,
@@ -112,6 +113,14 @@ func TestGetRun(t *testing.T) {
 						Patchset: 40,
 					},
 				},
+				&run.RunCL{
+					Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
+					ID:  cl3.ID, IndexedID: cl3.ID,
+					ExternalID: cl3.ExternalID,
+					Detail: &changelist.Snapshot{
+						Patchset: 41,
+					},
+				},
 			), ShouldBeNil)
 
 			So(saveAndGet(r), ShouldResembleProto, &apiv0pb.Run{
@@ -123,8 +132,9 @@ func TestGetRun(t *testing.T) {
 				EndTime:    timestamppb.New(epoch.Add(time.Hour)),
 				Owner:      "user:foo@example.org",
 				Cls: []*apiv0pb.GerritChange{
-					{Host: gHost, Change: 1, Patchset: 39},
-					{Host: gHost, Change: 2, Patchset: 40},
+					{Host: gHost, Change: int64(cl1.ID), Patchset: 39},
+					{Host: gHost, Change: int64(cl2.ID), Patchset: 40},
+					{Host: gHost, Change: int64(cl3.ID), Patchset: 41},
 				},
 			})
 
@@ -210,6 +220,17 @@ func TestGetRun(t *testing.T) {
 							},
 						},
 					},
+				})
+			})
+
+			Convey("w/ submission", func() {
+				r.Submission = &run.Submission{
+					SubmittedCls: []int64{int64(cl1.ID)},
+					FailedCls:    []int64{int64(cl3.ID)},
+				}
+				So(saveAndGet(r).Submission, ShouldResembleProto, &apiv0pb.Run_Submission{
+					SubmittedClIndexes: []int32{0},
+					FailedClIndexes:    []int32{2},
 				})
 			})
 		})
