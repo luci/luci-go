@@ -24,12 +24,14 @@ LUCI Scheduler{{range $crumb := .Breadcrumps}} :: {{$crumb}}{{end}}
   {{end}}
 </ol>
 
-<div class="container">
-  <b>{{.Message}}
-  {{if and .ReloginMayHelp .IsAnonymous}}
-  You may need to <a href="{{.LoginURL}}">login</a> first.
-  {{end}}
-  </b>
+<div class="row">
+  <div class="col-sm-12">
+    <b>{{.Message}}
+    {{if and .ReloginMayHelp .IsAnonymous}}
+    You may need to <a href="{{.LoginURL}}">login</a> first.
+    {{end}}
+    </b>
+  </div>
 </div>
 
 {{end}}

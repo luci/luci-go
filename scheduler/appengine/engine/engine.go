@@ -138,10 +138,10 @@ type Engine interface {
 	//
 	// Does nothing if the job is already paused. Any pending or running
 	// invocations are still executed.
-	PauseJob(c context.Context, job *Job) error
+	PauseJob(c context.Context, job *Job, reason string) error
 
 	// ResumeJob resumes paused job. Does nothing if the job is not paused.
-	ResumeJob(c context.Context, job *Job) error
+	ResumeJob(c context.Context, job *Job, reason string) error
 
 	// AbortJob aborts all currently pending or running invocations (if any).
 	AbortJob(c context.Context, job *Job) error
@@ -408,21 +408,21 @@ func (e *engineImpl) GetInvocation(c context.Context, job *Job, invID int64) (*I
 // PauseJob prevents new automatic invocations of a job.
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) PauseJob(c context.Context, job *Job) error {
+func (e *engineImpl) PauseJob(c context.Context, job *Job, reason string) error {
 	if err := checkPermission(c, job, permJobsPause); err != nil {
 		return err
 	}
-	return e.setJobPausedFlag(c, job, true, auth.CurrentIdentity(c))
+	return e.setJobPausedFlag(c, job, true, auth.CurrentIdentity(c), reason)
 }
 
 // ResumeJob resumes paused job. Does nothing if the job is not paused.
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) ResumeJob(c context.Context, job *Job) error {
+func (e *engineImpl) ResumeJob(c context.Context, job *Job, reason string) error {
 	if err := checkPermission(c, job, permJobsResume); err != nil {
 		return err
 	}
-	return e.setJobPausedFlag(c, job, false, auth.CurrentIdentity(c))
+	return e.setJobPausedFlag(c, job, false, auth.CurrentIdentity(c), reason)
 }
 
 // AbortJob aborts all currently pending or running invocations (if any).
@@ -881,7 +881,7 @@ func (e *engineImpl) filterByPerm(c context.Context, jobs []*Job, perm realms.Pe
 // setJobPausedFlag is implementation of PauseJob/ResumeJob.
 //
 // Doesn't check ACLs, assumes the check was done already.
-func (e *engineImpl) setJobPausedFlag(c context.Context, job *Job, paused bool, who identity.Identity) error {
+func (e *engineImpl) setJobPausedFlag(c context.Context, job *Job, paused bool, who identity.Identity, reason string) error {
 	return e.jobTxn(c, job.JobID, func(c context.Context, job *Job, isNew bool) error {
 		switch {
 		case isNew || !job.Enabled:
@@ -890,12 +890,19 @@ func (e *engineImpl) setJobPausedFlag(c context.Context, job *Job, paused bool, 
 			return errSkipPut
 		}
 
-		if paused {
-			logging.Warningf(c, "Job is paused by %s", who)
-		} else {
-			logging.Warningf(c, "Job is resumed by %s", who)
-		}
 		job.Paused = paused
+		job.PausedOrResumedWhen = clock.Now(c).UTC()
+		job.PausedOrResumedBy = who
+		job.PausedOrResumedReason = reason
+
+		if reason == "" {
+			reason = "no reason given"
+		}
+		if paused {
+			logging.Warningf(c, "Job is paused by %s - %s", who, reason)
+		} else {
+			logging.Warningf(c, "Job is resumed by %s - %s", who, reason)
+		}
 
 		// Reschedule the tick if necessary.
 		err := pokeCron(c, job, e.cfg.Dispatcher, func(m *cron.Machine) error {

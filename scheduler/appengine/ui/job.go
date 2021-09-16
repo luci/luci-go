@@ -228,13 +228,15 @@ func triggerJobAction(c *router.Context) {
 
 func pauseJobAction(c *router.Context) {
 	handleJobAction(c, func(job *engine.Job) error {
-		return config(c.Context).Engine.PauseJob(c.Context, job)
+		reason := c.Request.PostForm.Get("reason")
+		return config(c.Context).Engine.PauseJob(c.Context, job, reason)
 	})
 }
 
 func resumeJobAction(c *router.Context) {
 	handleJobAction(c, func(job *engine.Job) error {
-		return config(c.Context).Engine.ResumeJob(c.Context, job)
+		reason := c.Request.PostForm.Get("reason") // note: currently unset
+		return config(c.Context).Engine.ResumeJob(c.Context, job, reason)
 	})
 }
 

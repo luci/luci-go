@@ -11,7 +11,6 @@
   text-overflow: ellipsis;
 }
 </style>
-{{template "invocation-action-scripts" .}}
 {{end}}
 
 {{define "content"}}
@@ -23,90 +22,87 @@
   <li class="breadcrumb-item active">{{.Inv.InvID}}</li>
 </ol>
 
-<div class="container">
-  <div class="row">
-    <div class="col-sm-2"><b>Status:</b>
-      {{if .Inv.ViewURL}}
-        <a href="{{.Inv.ViewURL}}" target="_blank" class="underline label {{.Inv.LabelClass}}">{{.Inv.Status}}</a>
-      {{else}}
-        <span class="label {{.Inv.LabelClass}}">{{.Inv.Status}}</span>
-      {{end}}
-    </div>
-    <div class="col-sm-4 ellipsis-text" title="Triggered By: {{.Inv.TriggeredBy}}">
-      <b>Triggered by:</b> {{.Inv.TriggeredBy}}
-    </div>
-    <div class="col-sm-3"><b>Duration:</b> {{.Inv.Duration}}</div>
-    <div class="col-sm-3"><b>Actions:</b>{{template "invocation-action-buttons" .Inv}}</div>
+<div class="row">
+  <div class="col-sm-2"><b>Status:</b>
+    {{if .Inv.ViewURL}}
+      <a href="{{.Inv.ViewURL}}" target="_blank" class="underline label {{.Inv.LabelClass}}">{{.Inv.Status}}</a>
+    {{else}}
+      <span class="label {{.Inv.LabelClass}}">{{.Inv.Status}}</span>
+    {{end}}
   </div>
+  <div class="col-sm-4 ellipsis-text" title="Triggered By: {{.Inv.TriggeredBy}}">
+    <b>Triggered by:</b> {{.Inv.TriggeredBy}}
+  </div>
+  <div class="col-sm-3"><b>Duration:</b> {{.Inv.Duration}}</div>
+  <div class="col-sm-3"><b>Actions:</b>{{template "invocation-action-buttons" .Inv}}</div>
+</div>
 
+<div class="col-sm-12">
+  <hr>
+</div>
+
+{{if .Inv.Revision}}
+<h4>Definition
+{{if .Inv.RevisionURL}}
+  (rev <a href="{{.Inv.RevisionURL}}" target="_blank">{{.Inv.Revision}}</a>)
+{{else}}
+  (rev {{.Inv.Revision}})
+{{end}}
+</h4>
+<div class="row">
   <div class="col-sm-12">
-    <hr>
+    <pre>{{.Inv.Definition}}</pre>
   </div>
+</div>
+{{end}}
 
-  {{if .Inv.Revision}}
-  <h4>Definition
-  {{if .Inv.RevisionURL}}
-    (rev <a href="{{.Inv.RevisionURL}}" target="_blank">{{.Inv.Revision}}</a>)
-  {{else}}
-    (rev {{.Inv.Revision}})
-  {{end}}
-  </h4>
-  <div class="row">
-    <div class="col-sm-12">
-      <pre>{{.Inv.Definition}}</pre>
-    </div>
+{{if .Inv.IncomingTriggers}}
+<h4>Incoming triggers</h4>
+<div class="row">
+  <div class="col-sm-12">
+    {{template "triggers-list" .Inv.IncomingTriggers}}
   </div>
-  {{end}}
+</div>
+{{end}}
 
-  {{if .Inv.IncomingTriggers}}
-  <h4>Incoming triggers</h4>
-  <div class="row">
-    <div class="col-sm-12">
-      {{template "triggers-list" .Inv.IncomingTriggers}}
-    </div>
+{{if .Inv.Properties}}
+<h4>Incoming properties</h4>
+<div class="row">
+  <div class="col-sm-12">
+    <pre>{{.Inv.Properties}}</pre>
   </div>
-  {{end}}
+</div>
+{{end}}
 
-  {{if .Inv.Properties}}
-  <h4>Incoming properties</h4>
-  <div class="row">
-    <div class="col-sm-12">
-      <pre>{{.Inv.Properties}}</pre>
-    </div>
+{{if .Inv.Tags}}
+<h4>Incoming tags</h4>
+<div class="row">
+  <div class="col-sm-12">
+    <ul>
+      {{range .Inv.Tags}}
+      <li>
+        <span style="font-family:monospace;">{{.}}</span>
+      </li>
+      {{end}}
+    </ul>
   </div>
-  {{end}}
+</div>
+{{end}}
 
-  {{if .Inv.Tags}}
-  <h4>Incoming tags</h4>
-  <div class="row">
-    <div class="col-sm-12">
-      <ul>
-        {{range .Inv.Tags}}
-        <li>
-          <span style="font-family:monospace;">{{.}}</span>
-        </li>
-        {{end}}
-      </ul>
-    </div>
+{{if .Inv.OutgoingTriggers}}
+<h4>Outgoing triggers</h4>
+<div class="row">
+  <div class="col-sm-12">
+    {{template "triggers-list" .Inv.OutgoingTriggers}}
   </div>
-  {{end}}
+</div>
+{{end}}
 
-  {{if .Inv.OutgoingTriggers}}
-  <h4>Outgoing triggers</h4>
-  <div class="row">
-    <div class="col-sm-12">
-      {{template "triggers-list" .Inv.OutgoingTriggers}}
-    </div>
+<h4>Debug log (UTC)</h4>
+<div class="row">
+  <div class="col-sm-12">
+    <pre>{{.Inv.DebugLog}}</pre>
   </div>
-  {{end}}
-
-  <h4>Debug log (UTC)</h4>
-  <div class="row">
-    <div class="col-sm-12">
-      <pre>{{.Inv.DebugLog}}</pre>
-    </div>
-  </div>
-
 </div>
 
 {{end}}

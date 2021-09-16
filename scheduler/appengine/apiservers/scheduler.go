@@ -131,13 +131,13 @@ func (s *SchedulerServer) GetInvocation(ctx context.Context, in *scheduler.Invoc
 
 func (s *SchedulerServer) PauseJob(ctx context.Context, in *scheduler.JobRef) (*emptypb.Empty, error) {
 	return s.runAction(ctx, in, func(job *engine.Job) error {
-		return s.Engine.PauseJob(ctx, job)
+		return s.Engine.PauseJob(ctx, job, "paused through RPC API")
 	})
 }
 
 func (s *SchedulerServer) ResumeJob(ctx context.Context, in *scheduler.JobRef) (*emptypb.Empty, error) {
 	return s.runAction(ctx, in, func(job *engine.Job) error {
-		return s.Engine.ResumeJob(ctx, job)
+		return s.Engine.ResumeJob(ctx, job, "resumed through RPC API")
 	})
 }
 

@@ -25,6 +25,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -78,6 +79,15 @@ type Job struct {
 	// completely skipped (not even enqueued). Pausing a job clears the pending
 	// triggers set.
 	Paused bool `gae:",noindex"`
+
+	// PausedOrResumedWhen is when the job was paused or resumed.
+	PausedOrResumedWhen time.Time `gae:",noindex"`
+
+	// PausedOrResumedBy is who paused or resumed the job the last.
+	PausedOrResumedBy identity.Identity `gae:",noindex"`
+
+	// PausedOrResumedReason is the reason the job was paused or resumed.
+	PausedOrResumedReason string `gae:",noindex"`
 
 	// Revision is last seen job definition revision.
 	Revision string `gae:",noindex"`
@@ -215,6 +225,9 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.Flavor == other.Flavor &&
 		e.Enabled == other.Enabled &&
 		e.Paused == other.Paused &&
+		e.PausedOrResumedWhen.Equal(other.PausedOrResumedWhen) &&
+		e.PausedOrResumedBy == other.PausedOrResumedBy &&
+		e.PausedOrResumedReason == other.PausedOrResumedReason &&
 		e.Revision == other.Revision &&
 		e.RevisionURL == other.RevisionURL &&
 		e.Schedule == other.Schedule &&

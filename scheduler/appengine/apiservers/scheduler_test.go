@@ -505,11 +505,11 @@ func (f *fakeEngine) ListInvocations(c context.Context, job *engine.Job, opts en
 	return f.listInvocations(opts)
 }
 
-func (f *fakeEngine) PauseJob(c context.Context, job *engine.Job) error {
+func (f *fakeEngine) PauseJob(c context.Context, job *engine.Job, reason string) error {
 	return f.pauseJob(job.JobID)
 }
 
-func (f *fakeEngine) ResumeJob(c context.Context, job *engine.Job) error {
+func (f *fakeEngine) ResumeJob(c context.Context, job *engine.Job, reason string) error {
 	return f.resumeJob(job.JobID)
 }
 

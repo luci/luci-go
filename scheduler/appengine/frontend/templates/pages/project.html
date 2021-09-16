@@ -11,7 +11,6 @@
   text-overflow: ellipsis;
 }
 </style>
-{{template "job-action-scripts" .}}
 {{end}}
 
 {{define "content"}}
@@ -21,43 +20,54 @@
   <li class="breadcrumb-item active">{{.ProjectID}}{{if .Filter}} [{{.Filter}}]{{end}}</li>
 </ol>
 
-<div class="container">
-  <div class="row">
-    <div class="col-sm-12">
-      {{if .ProjectEmpty}}
-      <p>
-        No jobs in this project or no READER permission to view them.
-        {{if .IsAnonymous}}
-        You may need to <a href="{{.LoginURL}}">login</a> first.
-        {{end}}
-      </p>
-      {{else}}
-      <table class="table" id="jobs-table">
-        <thead>
-          <tr>
-            <th style="width: 350px;">Job</th>
-            <th style="width: 250px;">Schedule</th>
-            <th style="width: 120px;">State</th>
-            <th>Next run</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-        {{range .Jobs }}
-          <tr>
-            <td class="long">{{template "job-id-ref" .}}</td>
-            <td>{{.Schedule}}</td>
-            <td><span class="label {{.LabelClass}}">{{.State}}</span></td>
-            <td class="long">{{.NextRun}}</td>
-            <td>{{template "job-action-buttons" .}}</td>
-          </tr>
-        {{else}}
-          <tr><td colspan="5"><i>No {{.Filter}} jobs</i></td></tr>
-        {{end}}
-        </tbody>
-      </table>
+<div class="row">
+  <div class="col-sm-12">
+    {{if .ProjectEmpty}}
+    <p>
+      No jobs in this project or no READER permission to view them.
+      {{if .IsAnonymous}}
+      You may need to <a href="{{.LoginURL}}">login</a> first.
       {{end}}
-    </div>
+    </p>
+    {{else}}
+    <table class="table" id="jobs-table">
+      <thead>
+        <tr>
+          <th style="width: 350px;">Job</th>
+          <th style="width: 250px;">Schedule</th>
+          <th style="width: 120px;">State</th>
+          <th>Next run</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {{range .Jobs }}
+        <tr>
+          <td class="long">{{template "job-id-ref" .}}</td>
+          <td>{{.Schedule}}</td>
+          <td>
+            {{if .Paused}}
+              <span class="label {{.LabelClass}}"
+                    title="Paused by {{.PausedBy}} {{.PausedWhen}}"
+                    data-toggle="popover"
+                    data-trigger="hover focus"
+                    data-placement="left"
+                    data-content="{{.PausedReason}}">
+                {{.State}}
+              </span>
+            {{else}}
+              <span class="label {{.LabelClass}}">{{.State}}</span>
+            {{end}}
+          </td>
+          <td class="long">{{.NextRun}}</td>
+          <td>{{template "job-action-buttons" .}}</td>
+        </tr>
+      {{else}}
+        <tr><td colspan="5"><i>No {{.Filter}} jobs</i></td></tr>
+      {{end}}
+      </tbody>
+    </table>
+    {{end}}
   </div>
 </div>
 

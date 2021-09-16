@@ -1283,7 +1283,7 @@ func TestEmitTriggers(t *testing.T) {
 		Convey("paused job ignores triggers", func() {
 			job, err := e.getJob(c, testingJob)
 			So(err, ShouldBeNil)
-			So(e.setJobPausedFlag(c, job, true, ""), ShouldBeNil)
+			So(e.setJobPausedFlag(c, job, true, "", ""), ShouldBeNil)
 
 			// The pause emits a triage, get over it now.
 			tasks, _, err := tq.RunSimulation(c, nil)
@@ -1712,7 +1712,15 @@ func TestCron(t *testing.T) {
 				// At this point we pause the job.
 				j, err := e.getJob(c, testJobID)
 				So(err, ShouldBeNil)
-				So(e.setJobPausedFlag(c, j, true, ""), ShouldBeNil)
+				So(e.setJobPausedFlag(c, j, true, "user:someone@example.com", "pause reason"), ShouldBeNil)
+
+				// The information about the pause was recorded in the entity.
+				job, err := e.getJob(c, testJobID)
+				So(err, ShouldBeNil)
+				So(job.Paused, ShouldBeTrue)
+				So(job.PausedOrResumedWhen, ShouldEqual, clock.Now(c).UTC())
+				So(job.PausedOrResumedBy, ShouldEqual, identity.Identity("user:someone@example.com"))
+				So(job.PausedOrResumedReason, ShouldEqual, "pause reason")
 
 				// We let the TQ spin some more.
 				moreTasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
@@ -1736,7 +1744,7 @@ func TestCron(t *testing.T) {
 
 				// Some time later we unpause the job, it starts again immediately.
 				clock.Get(c).(testclock.TestClock).Set(epoch.Add(time.Hour))
-				So(e.setJobPausedFlag(c, j, false, ""), ShouldBeNil)
+				So(e.setJobPausedFlag(c, j, false, "user:someone@example.com", "resume reason"), ShouldBeNil)
 
 				tasks, _, err = tq.RunSimulation(c, &tqtesting.SimulationParams{
 					Deadline: epoch.Add(time.Hour + 10*time.Second),

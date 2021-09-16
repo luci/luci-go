@@ -32,6 +32,9 @@ that can be found in the LICENSE file. -->
       margin-left: 8px;
       margin-right: 0px;
     }
+    .popover{
+      max-width: 400px;
+    }
     footer hr {
       margin: 10px 0px;
     }
@@ -44,6 +47,31 @@ that can be found in the LICENSE file. -->
 {{else}}
 <body>
 {{end}}
+  <div class="modal fade" tabindex="-1" role="dialog" id="pause-job-modal">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title">Pausing</h4>
+        </div>
+        <div class="modal-body">
+          <form id="pause-job-prompt-form">
+            <div class="form-group">
+              <label for="pause-reason" class="control-label">
+                Provide a reason (it will be recorded):
+              </label>
+              <input type="text" class="form-control" id="pause-reason">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="pause-btn" form="pause-job-prompt-form">Pause</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="container">
     <div class="navbar navbar-default" role="navigation">
       <div class="navbar-header">
@@ -94,29 +122,90 @@ that can be found in the LICENSE file. -->
 
   <script src="/static/jquery/jquery.min.js"></script>
   <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+  <script>
+    var xsrfToken = "{{.XsrfToken}}";
+
+    function jobFromButton(btn) {
+      var form = $(btn).closest("form");
+      return {
+        project: $("input#projectID", form).val(),
+        job: $("input#jobName", form).val(),
+      };
+    };
+
+    function invocationFromButton(btn) {
+      var form = $(btn).closest("form");
+      return {
+        project: $("input#projectID", form).val(),
+        job: $("input#jobName", form).val(),
+        invocation: $("input#invID", form).val(),
+      };
+    };
+
+    function postJobAction(btn, action, reason) {
+      var form = $(btn).closest("form");
+      if (!form.attr("submitted")) {
+        var job = jobFromButton(btn);
+        var url = "/actions/" + action + "/" + job.project + "/" + job.job;
+        $("#xsrf_token", form).val(xsrfToken);
+        $("#reason", form).val(reason || "");
+        form.attr("action", url);
+        form.attr("submitted", "yes");
+        form.submit();
+      }
+    };
+
+    function postInvocationAction(btn, action) {
+      var form = $(btn).closest("form");
+      if (!form.attr("submitted")) {
+        var inv = invocationFromButton(btn);
+        var url = "/actions/" + action + "/" + inv.project + "/" + inv.job + "/" + inv.invocation;
+        $("#xsrf_token", form).val(xsrfToken);
+        form.attr("action", url);
+        form.attr("submitted", "yes");
+        form.submit();
+      }
+    };
+
+    $("#pause-job-modal").on("show.bs.modal", function(event) {
+      // The modal dialog itself.
+      var modal = $(this);
+      // The button that triggered the modal. Indirectly points to the job.
+      // Consumed by postJobAction.
+      var pauseBtn = $(event.relatedTarget);
+
+      // Indicate which job we are pausing.
+      $(".modal-title", modal).text("Pausing " + jobFromButton(pauseBtn).job);
+
+      // Actually pause the job when the prompt is closed affirmatively.
+      modal.unbind("submit");
+      modal.submit(function(event) {
+        // Disable form buttons and prevent the modal from closing, the page
+        // will reload after postJobAction call.
+        $("button", modal).prop("disabled", true);
+        $("input", modal).prop("disabled", true);
+        $("#pause-btn", modal).text("Pausing");
+        modal.off("keydown.dismiss.bs.modal");
+
+        // Initiate the action, this will reload the page eventually.
+        postJobAction(pauseBtn, "pauseJob", $("#pause-reason", modal).val());
+
+        // Prevent default form submission handler (GET request).
+        event.preventDefault();
+      });
+    });
+
+    // Auto-focus the input box when the modal is shown.
+    $("#pause-job-modal").on("shown.bs.modal", function() {
+      $("#pause-reason", $(this)).focus();
+    });
+
+    // Initialize all popovers.
+    $('[data-toggle="popover"]').popover();
+  </script>
 </body>
 
 </html>
-{{end}}
-
-
-{{define "job-action-scripts"}}
-<script>
-var xsrfToken = "{{.XsrfToken}}";
-
-var postJobAction = function(btn, action) {
-  var form = $(btn).closest("form");
-  var projectID = $("input#projectID", form).val();
-  var jobName = $("input#jobName", form).val();
-  var url = "/actions/" + action + "/" + projectID + "/" + jobName;
-  if (!form.attr("submitted")) {
-    $("input#xsrf_token", form).val(xsrfToken);
-    form.attr("action", url);
-    form.attr("submitted", "yes");
-    form.submit();
-  }
-};
-</script>
 {{end}}
 
 
@@ -125,13 +214,16 @@ var postJobAction = function(btn, action) {
   <input type="hidden" id="xsrf_token" name="xsrf_token" value="">
   <input type="hidden" id="projectID" value="{{.ProjectID}}">
   <input type="hidden" id="jobName" value="{{.JobName}}">
+  <input type="hidden" id="reason" name="reason" value="">
   <div class="btn-group btn-group-xs" style="width: 160px" role="group">
     {{if .Paused}}
       <button type="button" class="btn btn-primary" onclick="postJobAction(this, 'resumeJob')">
         Resume
       </button>
     {{else}}
-      <button type="button" class="btn btn-primary" onclick="postJobAction(this, 'pauseJob')">
+      <button type="button" class="btn btn-primary"
+              data-toggle="modal" data-backdrop="static"
+              data-target="#pause-job-modal">
         Pause
       </button>
     {{end}}
@@ -143,27 +235,6 @@ var postJobAction = function(btn, action) {
     </button>
   </div>
 </form>
-{{end}}
-
-
-{{define "invocation-action-scripts"}}
-<script>
-var xsrfToken = "{{.XsrfToken}}";
-
-var postInvocationAction = function(btn, action) {
-  var form = $(btn).closest("form");
-  var projectID = $("input#projectID", form).val();
-  var jobName = $("input#jobName", form).val();
-  var invID = $("input#invID", form).val();
-  var url = "/actions/" + action + "/" + projectID + "/" + jobName + "/" + invID;
-  if (!form.attr("submitted")) {
-    $("input#xsrf_token", form).val(xsrfToken);
-    form.attr("action", url);
-    form.attr("submitted", "yes");
-    form.submit();
-  }
-};
-</script>
 {{end}}
 
 

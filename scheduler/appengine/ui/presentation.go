@@ -27,6 +27,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
@@ -54,6 +55,9 @@ type schedulerJob struct {
 	State          presentation.PublicStateKind
 	NextRun        string
 	Paused         bool
+	PausedBy       string // an email or "unknown" for legacy entities
+	PausedWhen     string
+	PausedReason   string
 	LabelClass     string
 	JobFlavorIcon  string
 	JobFlavorTitle string
@@ -108,6 +112,25 @@ func makeJob(c context.Context, j *engine.Job, log *engine.JobTriageLog) *schedu
 		nextRun = "not scheduled yet"
 	}
 
+	pausedBy := "unknown"
+	if j.PausedOrResumedBy != "" {
+		if j.PausedOrResumedBy.Kind() == identity.User {
+			pausedBy = j.PausedOrResumedBy.Email()
+		} else {
+			pausedBy = string(j.PausedOrResumedBy)
+		}
+	}
+
+	pausedWhen := ""
+	if !j.PausedOrResumedWhen.IsZero() {
+		pausedWhen = humanize.RelTime(j.PausedOrResumedWhen, now, "ago", "from now")
+	}
+
+	pausedReason := "Unknown reason."
+	if j.PausedOrResumedReason != "" {
+		pausedReason = j.PausedOrResumedReason
+	}
+
 	// Internal state names aren't very user friendly. Introduce some aliases.
 	state := presentation.GetPublicStateKind(j, traits)
 	labelClass := stateToLabelClass[state]
@@ -129,6 +152,9 @@ func makeJob(c context.Context, j *engine.Job, log *engine.JobTriageLog) *schedu
 		State:          state,
 		NextRun:        nextRun,
 		Paused:         j.Paused,
+		PausedBy:       pausedBy,
+		PausedWhen:     pausedWhen,
+		PausedReason:   pausedReason,
 		LabelClass:     labelClass,
 		JobFlavorIcon:  flavorToIconClass[j.Flavor],
 		JobFlavorTitle: flavorToTitle[j.Flavor],
