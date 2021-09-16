@@ -105,6 +105,9 @@ func main() {
 		srv.Routes.GET("/", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", nil)
 		})
+		srv.Routes.GET("/auth/groups", mw, func(ctx *router.Context) {
+			templates.MustRender(ctx.Context, ctx.Writer, "pages/groups.html", nil)
+		})
 		return nil
 	})
 }

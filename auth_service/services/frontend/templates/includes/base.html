@@ -10,6 +10,7 @@ that can be found in the LICENSE file. -->
     <title>{{ template "title" .}}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/static/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" type="text/css">
     <style>
       body {
         padding-top: 10px;
@@ -39,14 +40,14 @@ that can be found in the LICENSE file. -->
           </div>
         </div>
       {{else}}
-        <div class="col-md-10">
+        <div class="col-md-10 border rounded">
           <nav class="navbar navbar-expand-md navbar-light bg-light">
             <div class="container-fluid">
               <a class="navbar-brand">Auth Service</a>
               <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                   <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#">Groups</a>
+                    <a class="nav-link active" aria-current="page" href="auth/groups">Groups</a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link" href="#">Changes</a>
