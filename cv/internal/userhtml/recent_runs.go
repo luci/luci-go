@@ -18,14 +18,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
@@ -57,22 +58,17 @@ func recentsPage(c *router.Context) {
 	}
 	logging.Debugf(c.Context, "%d runs retrieved", len(resp.Runs))
 
-	prev, next, err := pageTokens(c.Context, "recent-runs", params.pageToken, resp.NextPageToken)
+	prev, err := pageTokens(c.Context, params.pageToken, resp.NextPageToken)
 	if err != nil {
-		if common.IsDev(c.Context) {
-			logging.Warningf(c.Context, "Could not connect to Redis, paging back disabled. %s", err.Error())
-			next = resp.NextPageToken
-		} else {
-			errPage(c, err)
-			return
-		}
+		errPage(c, err)
+		return
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/recent_runs.html", map[string]interface{}{
 		"Runs":         resp.Runs,
 		"Project":      project,
 		"PrevPage":     prev,
-		"NextPage":     next,
+		"NextPage":     resp.NextPageToken,
 		"FilterStatus": params.statusString(),
 		"FilterMode":   params.modeString(),
 	})
@@ -122,60 +118,48 @@ func (r *recentRunsParams) modeString() string {
 	return string(r.mode)
 }
 
+var tokenCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(1024),
+	GlobalNamespace: "recent_cv_runs_page_token_cache",
+	Marshal: func(item interface{}) ([]byte, error) {
+		return []byte(item.(string)), nil
+	},
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		return string(blob), nil
+	},
+}
+
+var tokenExp = 24 * time.Hour
+
 // pageTokens caches the current pageToken associated to the next,
 // so as to populate the previous page link when rendering the next page.
-func pageTokens(ctx context.Context, namespace, pageToken, nextPageToken string) (prev, next string, err error) {
-	if strings.Contains(namespace, "/") {
-		panic(fmt.Errorf("namespace %q must not contain slashes", namespace))
-	}
+// Also returns a previously saved page token pointing to the previous page.
+func pageTokens(ctx context.Context, pageToken, nextPageToken string) (prev string, err error) {
 
-	key := func(token string) string {
-		return fmt.Sprintf("%s/%s", namespace, token)
-	}
+	// A whitespace will cause a 'Previous' link to render with no page token.
+	// i.e. going to the first page.
+	// An empty string will not render any 'Previous' link.
 
-	next = nextPageToken
-	conn, err := redisconn.Get(ctx)
-	if err != nil {
-		err = errors.Annotate(err, "failed to connect to Redis").Err()
-		return
-	}
-	defer conn.Close()
+	// TODO(crbug.com/1249253): Consider redirecting to the first page of the
+	// query when the given page token is valid, but we can't retrieve its
+	// previous page.
+	blankToken := " "
+	var cachedV interface{}
 
-	var val interface{}
-	if pageToken != "" {
-		val, err = conn.Do("GET", key(pageToken))
+	if pageToken == "" {
+		pageToken = blankToken
+	} else {
+		cachedV, err = tokenCache.GetOrCreate(ctx, pageToken, func() (v interface{}, exp time.Duration, err error) {
+			// We haven't seen this token yet, we don't know what its previous page is.
+			return "", 0, nil
+		})
 		if err != nil {
-			err = errors.Annotate(err, "failed to GET previous page token").Err()
 			return
 		}
-		if val != nil {
-			switch v := val.(type) {
-			case string:
-				// TODO(robertocn): delete if this case is never useful.
-				prev = v
-			case []byte:
-				prev = string(v)
-			default:
-				err = errors.Annotate(err, "failed to decode previous page token: %v", val).Err()
-				return
-			}
-			if prev == "NULL" {
-				// Hack to get the second page to correctly show a previous
-				// page link with no page token.
-				prev = " "
-			}
-		}
+		prev = cachedV.(string)
 	}
-	if next != "" {
-		if pageToken == "" {
-			pageToken = "NULL"
-		}
-		// Keep the previous token for 24 hours.
-		_, err = conn.Do("SET", key(next), pageToken, "EX", 24*60*60)
-		if err != nil {
-			err = errors.Annotate(err, "failed to SET current page token").Err()
-			return
-		}
-	}
+	_, err = tokenCache.GetOrCreate(ctx, nextPageToken, func() (v interface{}, exp time.Duration, err error) {
+		return pageToken, tokenExp, nil
+	})
 	return
 }
