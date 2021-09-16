@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
-	"go.chromium.org/luci/cv/internal/run/commonpb"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
@@ -180,7 +179,7 @@ func (n *Notifier) NotifyCLSubmitted(ctx context.Context, runID common.RunID, cl
 
 // NotifySubmissionCompleted informs RunManager that the submission of the
 // provided Run has completed.
-func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *commonpb.SubmissionCompleted, invokeRM bool) error {
+func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error {
 	evt := &eventpb.Event{
 		Event: &eventpb.Event_SubmissionCompleted{
 			SubmissionCompleted: sc,

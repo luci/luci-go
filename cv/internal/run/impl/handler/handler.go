@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run/bq"
-	"go.chromium.org/luci/cv/internal/run/commonpb"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 )
@@ -78,7 +78,7 @@ type Handler interface {
 	//
 	// If submission succeeds, mark run as `SUCCEEDED`. Otherwise, decides whether
 	// to retry submission or fail the run depending on the submission result.
-	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *commonpb.SubmissionCompleted) (*Result, error)
+	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error)
 
 	// TryResumeSubmission resumes not-yet-expired submission if the current task
 	// is a retry of the submission task.
@@ -102,7 +102,7 @@ type RM interface {
 	PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error
 	NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error
 	NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error
-	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *commonpb.SubmissionCompleted, invokeRM bool) error
+	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error
 }
 
 // CLUpdater encapsulates interaction with CL Updater by the Run events handler.

@@ -21,7 +21,7 @@ option go_package = "go.chromium.org/luci/cv/internal/run;run";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/internal/tryjob/storage.proto";
-import "go.chromium.org/luci/cv/internal/run/commonpb/submission.proto";
+import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
 
 // Status describes the status of a CV Run.
 enum Status {
@@ -234,7 +234,7 @@ message LogEntry {
     int64 total_submitted = 2;
   }
   message SubmissionFailure{
-    cv.internal.run.commonpb.SubmissionCompleted event = 1;
+    cv.internal.run.eventpb.SubmissionCompleted event = 1;
   }
   message RunEnded{
   }

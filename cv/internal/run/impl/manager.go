@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
-	submitpb "go.chromium.org/luci/cv/internal/run/commonpb"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -243,7 +242,7 @@ type triageResult struct {
 	}
 	submissionCompletedEvent struct {
 		event eventbox.Event
-		sc    *submitpb.SubmissionCompleted
+		sc    *eventpb.SubmissionCompleted
 	}
 	cqdVerificationCompletedEvents eventbox.Events
 	cqdTryjobsUpdated              eventbox.Events

@@ -19,8 +19,9 @@ package cv.internal.run.eventpb;
 option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 
 import "google/protobuf/timestamp.proto";
+
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
-import "go.chromium.org/luci/cv/internal/run/commonpb/submission.proto";
+import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
 
 // Event is a container for all kinds of events a Run Manager can receive.
 message Event {
@@ -53,7 +54,7 @@ message Event {
     // On SubmissionCompleted event, Run Manager will look at the submission
     // result and decide whether to retry this submission or succeed or fail
     // the Run.
-    cv.internal.run.commonpb.SubmissionCompleted submission_completed = 8;
+    SubmissionCompleted submission_completed = 8;
 
     // TODO(yiwzhang): Define following events that Run Manager may receive:
     //  * TryjobUpdated

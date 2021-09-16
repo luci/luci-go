@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/commonpb"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
 // StringifySubmissionSuccesses composes a message indicating the urls of the CLs
@@ -52,15 +52,15 @@ func StringifySubmissionSuccesses(clidToURL map[common.CLID]string, v *run.LogEn
 
 // StringifySubmissionFailureReason makes a human-readable message detailing
 // the reason for the failure of this submission.
-func StringifySubmissionFailureReason(clidToURL map[common.CLID]string, sc *commonpb.SubmissionCompleted) string {
+func StringifySubmissionFailureReason(clidToURL map[common.CLID]string, sc *eventpb.SubmissionCompleted) string {
 	var sb strings.Builder
 	if sc.GetFailureReason() != nil {
 		switch sc.GetFailureReason().(type) {
-		case *commonpb.SubmissionCompleted_Timeout:
+		case *eventpb.SubmissionCompleted_Timeout:
 			return "Timeout"
-		case *commonpb.SubmissionCompleted_ClFailure:
+		case *eventpb.SubmissionCompleted_ClFailure:
 			return "" // deprecated.
-		case *commonpb.SubmissionCompleted_ClFailures:
+		case *eventpb.SubmissionCompleted_ClFailures:
 			msg, err := sFormatCLSubmissionFailures(clidToURL, sc.GetClFailures())
 			if err != nil {
 				panic(err)
@@ -86,7 +86,7 @@ func listify(cls []string) string {
 }
 
 // sFormatCLSubmissionFailures returns a string with the messages for cl submission failures.
-func sFormatCLSubmissionFailures(clidToURL map[common.CLID]string, fs *commonpb.SubmissionCompleted_CLSubmissionFailures) (string, error) {
+func sFormatCLSubmissionFailures(clidToURL map[common.CLID]string, fs *eventpb.SubmissionCompleted_CLSubmissionFailures) (string, error) {
 	var sb strings.Builder
 	for i, f := range fs.GetFailures() {
 		if i > 0 {

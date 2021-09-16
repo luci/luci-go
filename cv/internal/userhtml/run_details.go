@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/commonpb"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -242,7 +242,7 @@ func logTypeString(rle *run.LogEntry) string {
 	case *run.LogEntry_Waitlisted_:
 		return "Waitlisted for Submit Queue"
 	case *run.LogEntry_SubmissionFailure_:
-		if v.SubmissionFailure.Event.GetResult() == commonpb.SubmissionResult_FAILED_TRANSIENT {
+		if v.SubmissionFailure.Event.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT {
 			return "Transient Submission Failure"
 		}
 		return "Final Submission Failure"

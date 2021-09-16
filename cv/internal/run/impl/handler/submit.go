@@ -42,7 +42,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
-	submitpb "go.chromium.org/luci/cv/internal/run/commonpb"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 )
@@ -169,7 +169,7 @@ func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common
 }
 
 // OnSubmissionCompleted implements Handler interface.
-func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *submitpb.SubmissionCompleted) (*Result, error) {
+func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case run.IsEnded(status):
 		logging.Warningf(ctx, "received SubmissionCompleted event when Run is %s", status)
@@ -192,13 +192,13 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		})
 	}
 	switch {
-	case sc.GetResult() == submitpb.SubmissionResult_SUCCEEDED:
+	case sc.GetResult() == eventpb.SubmissionResult_SUCCEEDED:
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,
 		}, nil
-	case sc.GetResult() == submitpb.SubmissionResult_FAILED_TRANSIENT:
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 			Time: timestamppb.New(clock.Now(ctx)),
 			Kind: &run.LogEntry_SubmissionFailure_{
@@ -208,7 +208,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 			},
 		})
 		return impl.tryResumeSubmission(ctx, rs, sc)
-	case sc.GetResult() == submitpb.SubmissionResult_FAILED_PERMANENT:
+	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
 		if clFailures := sc.GetClFailures(); clFailures != nil {
 			failedCLs := make([]int64, len(clFailures.GetFailures()))
 			for i, f := range clFailures.GetFailures() {
@@ -246,11 +246,11 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 	return impl.tryResumeSubmission(ctx, rs, nil)
 }
 
-func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, sc *submitpb.SubmissionCompleted) (*Result, error) {
+func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
 	switch {
 	case rs.Run.Status != run.Status_SUBMITTING || rs.SubmissionScheduled:
 		return &Result{State: rs}, nil
-	case sc != nil && sc.Result != submitpb.SubmissionResult_FAILED_TRANSIENT:
+	case sc != nil && sc.Result != eventpb.SubmissionResult_FAILED_TRANSIENT:
 		panic(fmt.Errorf("submission can only be resumed on nil submission completed event or event reporting transient failure; got %s", sc))
 	}
 
@@ -276,25 +276,25 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 			// synthesize submission completed event with permanent failure.
 			if clFailures := sc.GetClFailures(); clFailures != nil {
 				rs.Run.Submission.FailedCls = make([]int64, len(clFailures.GetFailures()))
-				sc = &submitpb.SubmissionCompleted{
-					Result: submitpb.SubmissionResult_FAILED_PERMANENT,
-					FailureReason: &submitpb.SubmissionCompleted_ClFailures{
-						ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
-							Failures: make([]*submitpb.SubmissionCompleted_CLSubmissionFailure, len(clFailures.GetFailures())),
+				sc = &eventpb.SubmissionCompleted{
+					Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+					FailureReason: &eventpb.SubmissionCompleted_ClFailures{
+						ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+							Failures: make([]*eventpb.SubmissionCompleted_CLSubmissionFailure, len(clFailures.GetFailures())),
 						},
 					},
 				}
 				for i, f := range clFailures.GetFailures() {
 					rs.Run.Submission.FailedCls[i] = f.GetClid()
-					sc.GetClFailures().Failures[i] = &submitpb.SubmissionCompleted_CLSubmissionFailure{
+					sc.GetClFailures().Failures[i] = &eventpb.SubmissionCompleted_CLSubmissionFailure{
 						Clid:    f.GetClid(),
 						Message: fmt.Sprintf("CL failed to submit because of transient failure: %s. However, CV is running out of time to retry.", f.GetMessage()),
 					}
 				}
 			} else {
-				sc = &submitpb.SubmissionCompleted{
-					Result: submitpb.SubmissionResult_FAILED_PERMANENT,
-					FailureReason: &submitpb.SubmissionCompleted_Timeout{
+				sc = &eventpb.SubmissionCompleted{
+					Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+					FailureReason: &eventpb.SubmissionCompleted_Timeout{
 						Timeout: true,
 					},
 				}
@@ -443,7 +443,7 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 	return nil
 }
 
-func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *submitpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
+func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
 	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
 	if err != nil {
@@ -589,7 +589,7 @@ func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID 
 	return ret, nil
 }
 
-func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *submitpb.SubmissionCompleted) (submitted, failed, pending []*run.RunCL) {
+func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.SubmissionCompleted) (submitted, failed, pending []*run.RunCL) {
 	submittedSet := common.MakeCLIDsSet(submission.GetSubmittedCls()...)
 	failedSet := make(common.CLIDsSet, len(sc.GetClFailures().GetFailures()))
 	for _, f := range sc.GetClFailures().GetFailures() {
@@ -661,8 +661,8 @@ func (s submitter) submit(ctx context.Context) error {
 		return s.endSubmission(ctx, classifyErr(ctx, err))
 	case cur != s.runID:
 		logging.Errorf(ctx, "BUG: run no longer holds submit queue, currently held by %q", cur)
-		return s.endSubmission(ctx, &submitpb.SubmissionCompleted{
-			Result: submitpb.SubmissionResult_FAILED_PERMANENT,
+		return s.endSubmission(ctx, &eventpb.SubmissionCompleted{
+			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 		})
 	}
 
@@ -678,8 +678,8 @@ func (s submitter) submit(ctx context.Context) error {
 
 // endSubmission notifies RM about submission result and release Submit Queue
 // if necessary.
-func (s submitter) endSubmission(ctx context.Context, sc *submitpb.SubmissionCompleted) error {
-	if sc.GetResult() == submitpb.SubmissionResult_FAILED_TRANSIENT {
+func (s submitter) endSubmission(ctx context.Context, sc *eventpb.SubmissionCompleted) error {
+	if sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT {
 		// Do not release queue for transient failure.
 		if err := s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, true); err != nil {
 			return err
@@ -689,7 +689,7 @@ func (s submitter) endSubmission(ctx context.Context, sc *submitpb.SubmissionCom
 	var innerErr error
 	now := clock.Now(ctx)
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		if sc.Result == submitpb.SubmissionResult_SUCCEEDED {
+		if sc.Result == eventpb.SubmissionResult_SUCCEEDED {
 			if innerErr = submit.ReleaseOnSuccess(ctx, s.rm.NotifyReadyForSubmission, s.runID, now); innerErr != nil {
 				return innerErr
 			}
@@ -729,12 +729,12 @@ var perCLRetryFactory retry.Factory = transient.Only(func() retry.Iterator {
 //
 // Retries on transient failure of submitting individual CL based on
 // `perCLRetryFactory`.
-func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *submitpb.SubmissionCompleted {
+func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.SubmissionCompleted {
 	for _, cl := range cls {
 		if clock.Now(ctx).After(s.deadline) {
-			return &submitpb.SubmissionCompleted{
-				Result: submitpb.SubmissionResult_FAILED_PERMANENT,
-				FailureReason: &submitpb.SubmissionCompleted_Timeout{
+			return &eventpb.SubmissionCompleted{
+				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+				FailureReason: &eventpb.SubmissionCompleted_Timeout{
 					Timeout: true,
 				},
 			}
@@ -762,9 +762,9 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *submitpb.Su
 		if err != nil {
 			evt := classifyErr(ctx, err)
 			if !submitted {
-				evt.FailureReason = &submitpb.SubmissionCompleted_ClFailures{
-					ClFailures: &submitpb.SubmissionCompleted_CLSubmissionFailures{
-						Failures: []*submitpb.SubmissionCompleted_CLSubmissionFailure{
+				evt.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
+					ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+						Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
 							{Clid: int64(cl.ID), Message: msg},
 						},
 					},
@@ -773,8 +773,8 @@ func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *submitpb.Su
 			return evt
 		}
 	}
-	return &submitpb.SubmissionCompleted{
-		Result: submitpb.SubmissionResult_SUCCEEDED,
+	return &eventpb.SubmissionCompleted{
+		Result: eventpb.SubmissionResult_SUCCEEDED,
 	}
 }
 
@@ -884,21 +884,21 @@ func classifyGerritErr(ctx context.Context, err error) (msg string, isTransient 
 	}
 }
 
-func classifyErr(ctx context.Context, err error) *submitpb.SubmissionCompleted {
+func classifyErr(ctx context.Context, err error) *eventpb.SubmissionCompleted {
 	switch {
 	case err == nil:
-		return &submitpb.SubmissionCompleted{
-			Result: submitpb.SubmissionResult_SUCCEEDED,
+		return &eventpb.SubmissionCompleted{
+			Result: eventpb.SubmissionResult_SUCCEEDED,
 		}
 	case transient.Tag.In(err):
 		logging.Warningf(ctx, "Submission ended with FAILED_TRANSIENT: %s", err)
-		return &submitpb.SubmissionCompleted{
-			Result: submitpb.SubmissionResult_FAILED_TRANSIENT,
+		return &eventpb.SubmissionCompleted{
+			Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
 		}
 	default:
 		logging.Warningf(ctx, "Submission ended with FAILED_PERMANENT: %s", err)
-		return &submitpb.SubmissionCompleted{
-			Result: submitpb.SubmissionResult_FAILED_PERMANENT,
+		return &eventpb.SubmissionCompleted{
+			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 		}
 	}
 }
