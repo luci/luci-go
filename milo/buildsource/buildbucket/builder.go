@@ -30,8 +30,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -62,29 +62,36 @@ var builderPageBuildFields = &field_mask.FieldMask{
 // backPageToken returns a previous page token given thisPageToken, and caches
 // thisPageToken as the previous pageToken of nextPageToken.
 func backPageToken(c context.Context, bid *buildbucketpb.BuilderID, pageSize int, thisPageToken, nextPageToken string) string {
-	memcacheKey := func(pageToken string) string {
+	cacheKey := func(pageToken string) string {
 		key := fmt.Sprintf("%s:%d:%s", protoutil.FormatBuilderID(bid), pageSize, pageToken)
 		blob := sha1.Sum([]byte(key))
-		encoded := base64.StdEncoding.EncodeToString(blob[:])
-		return "pageTokens:buildbucket_builders:" + encoded
+		return base64.StdEncoding.EncodeToString(blob[:])
+	}
+
+	cache := caching.GlobalCache(c, "builder-page-tokens")
+	if cache == nil {
+		logging.Errorf(c, "global cache not available in context")
+		return ""
 	}
 
 	prevPageToken := ""
 	if thisPageToken != "" {
-		if item, err := memcache.GetKey(c, memcacheKey(thisPageToken)); err == nil {
-			prevPageToken = string(item.Value())
+		bytes, err := cache.Get(c, cacheKey(thisPageToken))
+		if err == nil {
+			prevPageToken = string(bytes)
 		}
 	}
 	if nextPageToken != "" {
-		item := memcache.NewItem(c, memcacheKey(nextPageToken))
-		if thisPageToken == "" {
-			// TODO(iannucci): remove the magic.
-			item.SetValue([]byte("EMPTY"))
-		} else {
-			item.SetValue([]byte(thisPageToken))
+		cacheValue := thisPageToken
+		// TODO(weiweilin): this is required to let the page know there's
+		// a previous page token (with value ""). We can remove the magic
+		// once we switch to the chained page token implementation.
+		if cacheValue == "" {
+			cacheValue = "EMPTY"
 		}
-		item.SetExpiration(24 * time.Hour)
-		memcache.Set(c, item)
+		if err := cache.Set(c, cacheKey(nextPageToken), []byte(cacheValue), 24*time.Hour); err != nil {
+			logging.WithError(err).Errorf(c, "failed to cache the page token")
+		}
 	}
 	return prevPageToken
 }
