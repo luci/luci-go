@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/mailer/client/mailer"
 
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -63,6 +64,7 @@ func main() {
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		analytics.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -170,6 +172,7 @@ func main() {
 					"User":        auth.CurrentUser(ctx),
 					"LoginURL":    loginURL,
 					"LogoutURL":   logoutURL,
+					"GTagSnippet": analytics.GTagSnippet(ctx),
 				}, nil
 			},
 		}

@@ -12,29 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package analytics provides a standard way to store the Google Analytics
-// tracking ID.
+// Package analytics provides a way to generate google analytics snippets.
 //
-// Usage Example
+// Usage as a server module:
 //
-// This analytics package provides a convenient way to configure an analytics
-// ID for an app.  To use, just call analytics.ID(c) and inject that ID
-// into a template.
-//
-//   import (
-//		 ...
-//     "go.chromium.org/luci/server/analytics"
-//     ...
-//   )
-//
-//   func myHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-//     ...
-//     return templates.Args{
-//		   "Analytics": analytics.Snippet(c),
+//   func main() {
+//     modules := []module.Module{
+//       analytics.NewModuleFromFlags(),
 //     }
+//     server.Main(nil, modules, func(srv *server.Server) error {
+//       srv.Routes.GET("/", ..., func(c *router.Context) {
+//         templates.MustRender(c.Context, c.Writer, "page.html", templates.Args{
+//           "GTagSnippet": analytics.GTagSnippet(c.Context),
+//           ...
+//         })
+//       return nil
+//     })
+//     ...
 //   }
 //
-// And in the base html:
-//
-// {{ .Analytics }}
+// templates/page.html:
+//   <html>
+//     <head>
+//       {{.GTagSnippet}}
+//       ...
+//     </head>
+//     <body>
+//       ...
+//     </body>
+//   </html>
 package analytics

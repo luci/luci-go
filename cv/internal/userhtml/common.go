@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
@@ -136,6 +137,7 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				"HandlerDuration": func() time.Duration {
 					return clock.Now(ctx).Sub(startTime(ctx))
 				},
+				"AnalyticsSnippet": analytics.GTagSnippet(ctx),
 			}, nil
 		},
 	}

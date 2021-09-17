@@ -89,6 +89,9 @@
 // • go.chromium.org/luci/config/server/cfgmodule: provides LUCI Config client,
 // exposes config validation endpoints used by LUCI Config service.
 //
+// • go.chromium.org/luci/server/analytics: generates Google Analytics js
+// snippets for inclusion in a service's web pages.
+//
 // • go.chromium.org/luci/server/bqlog: implements best effort low-overhead
 // structured logging to BigQuery suitable for debug data like access logs.
 //

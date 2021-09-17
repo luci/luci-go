@@ -14,11 +14,15 @@
 
 package analytics
 
+// deprecated.go contains deprecated functionality that is usable in GAEv1
+// only.
+
 import (
 	"context"
 	"fmt"
 	"html/template"
-	"regexp"
+
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
@@ -60,7 +64,30 @@ func fetchCachedSettings(c context.Context) analyticsSettings {
 	}
 }
 
-var rAllowed = regexp.MustCompile("UA-\\d+-\\d+")
+// ID returns the Google Analytics ID if it's set, and "" otherwise.
+//
+// Deprecated: use this as a luci/server/module so that an analytics id is
+// parsed from flags and put into the context.
+func ID(c context.Context) string {
+	return fetchCachedSettings(c).AnalyticsID
+}
+
+// Snippet returns the html snippet for Google Analytics, including the
+// <script> tag and ID, if ID is set.
+//
+// Deprecated: use this package as a luci/server/module then use UASnippet or
+// GA4Snippet instead.
+func Snippet(c context.Context) template.HTML {
+	id := ID(c)
+	if id == "" {
+		return ""
+	}
+	if !rAllowed.MatchString(id) {
+		logging.Errorf(c, "Analytics ID %s does not match UA-\\d+-\\d+", id)
+		return ""
+	}
+	return makeUASnippet(id)
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // UI for GAE settings.
@@ -112,7 +139,7 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 	id := values["AnalyticsID"]
 	if id != "" {
 		if !rAllowed.MatchString(id) {
-			return fmt.Errorf("Analytics ID %s does not match format UA-\\d+-\\d+", id)
+			return fmt.Errorf("the Analytics ID %s does not match format UA-\\d+-\\d+", id)
 		}
 		modified.AnalyticsID = id
 	}

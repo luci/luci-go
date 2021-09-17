@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -68,6 +69,7 @@ func main() {
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		analytics.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {

@@ -5,8 +5,10 @@ runtime: go113
 luci_gae_vars:
   example-app-id-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    ANALYTICS_ID: G-D45KW5Q1CE
   example-app-id-prod:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+    ANALYTICS_ID: G-B1PDME7S99
 
 handlers:
 - url: /static
@@ -20,4 +22,4 @@ inbound_services:
 - warmup
 
 entrypoint: >
-  main -auth-service-host ${AUTH_SERVICE_HOST}
+  main -auth-service-host ${AUTH_SERVICE_HOST} -analytics-id ${ANALYTICS_ID}

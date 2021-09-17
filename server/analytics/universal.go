@@ -14,33 +14,17 @@
 
 package analytics
 
-// analytics.go is contains public functions for getting
-// the Google Analytics ID and javascript snippets out from the admin settings.
+// universal.go has logic for generating Google Universal Analytics snippets.
 
 import (
-	"context"
 	"fmt"
 	"html/template"
-
-	"go.chromium.org/luci/common/logging"
+	"regexp"
 )
 
-// ID returns the Google Analytics ID if it's set, and "" otherwise.
-func ID(c context.Context) string {
-	return fetchCachedSettings(c).AnalyticsID
-}
+var rAllowed = regexp.MustCompile(`UA-\d+-\d+`)
 
-// Snippet returns the html snippet for Google Analytics, including the
-// <script> tag and ID, if ID is set.
-func Snippet(c context.Context) template.HTML {
-	id := ID(c)
-	if id == "" {
-		return ""
-	}
-	if !rAllowed.MatchString(id) {
-		logging.Errorf(c, "Analytics ID %s does not match UA-\\d+-\\d+", id)
-		return ""
-	}
+func makeUASnippet(trackingID string) template.HTML {
 	return template.HTML(fmt.Sprintf(`
 <script>
 setTimeout(function() {
@@ -53,5 +37,5 @@ setTimeout(function() {
 	ga('send', 'pageview');
 }, 0);
 </script>
-`, template.JSEscapeString(id)))
+`, template.JSEscapeString(trackingID)))
 }
