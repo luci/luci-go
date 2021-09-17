@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -44,19 +44,19 @@ var testNow = testclock.TestTimeLocal.Round(1 * time.Millisecond)
 func TestUpdateProject(t *testing.T) {
 	Convey("Update Project", t, func() {
 		ctx, testClock, _ := mkTestingCtx()
-		chromiumConfig := &pb.Config{
+		chromiumConfig := &cfgpb.Config{
 			DrainingStartTime: "2017-12-23T15:47:58Z",
-			SubmitOptions: &pb.SubmitOptions{
+			SubmitOptions: &cfgpb.SubmitOptions{
 				MaxBurst:   100,
 				BurstDelay: durationpb.New(1 * time.Second),
 			},
-			ConfigGroups: []*pb.ConfigGroup{
+			ConfigGroups: []*cfgpb.ConfigGroup{
 				{
 					Name: "branch_m100",
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://chromium-review.googlesource.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "chromium/src",
 									RefRegexp: []string{"refs/heads/branch_m100"},
@@ -66,10 +66,10 @@ func TestUpdateProject(t *testing.T) {
 					},
 				},
 				{
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://chromium-review.googlesource.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "chromium/src",
 									RefRegexp: []string{"refs/heads/main"},
@@ -81,7 +81,7 @@ func TestUpdateProject(t *testing.T) {
 			},
 		}
 		verifyEntitiesInDatastore := func(ctx context.Context, expectedEVersion int64) {
-			cfg, meta := &pb.Config{}, &config.Meta{}
+			cfg, meta := &cfgpb.Config{}, &config.Meta{}
 			err := cfgclient.Get(ctx, config.ProjectSet("chromium"), ConfigFileName, cfgclient.ProtoText(cfg), meta)
 			So(err, ShouldBeNil)
 			localHash := computeHash(cfg)
@@ -166,13 +166,13 @@ func TestUpdateProject(t *testing.T) {
 			})
 
 			Convey("Update existing ProjectConfig", func() {
-				updatedConfig := proto.Clone(chromiumConfig).(*pb.Config)
-				updatedConfig.ConfigGroups = append(updatedConfig.ConfigGroups, &pb.ConfigGroup{
+				updatedConfig := proto.Clone(chromiumConfig).(*cfgpb.Config)
+				updatedConfig.ConfigGroups = append(updatedConfig.ConfigGroups, &cfgpb.ConfigGroup{
 					Name: "experimental",
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://chromium-review.googlesource.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "chromium/src/experimental",
 									RefRegexp: []string{"refs/heads/main"},

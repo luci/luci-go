@@ -26,7 +26,7 @@ import (
 	gaememory "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -49,14 +49,14 @@ func TestLoadingConfigs(t *testing.T) {
 			So(func() { m.Hash() }, ShouldPanic)
 		})
 
-		cfg := &pb.Config{
-			ConfigGroups: []*pb.ConfigGroup{
+		cfg := &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
 				{
 					Name: "branch_m100",
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://chromium-review.googlesource.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "chromium/src",
 									RefRegexp: []string{"refs/heads/branch_m100"},
@@ -66,11 +66,11 @@ func TestLoadingConfigs(t *testing.T) {
 					},
 				},
 				{
-					Fallback: pb.Toggle_YES,
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Fallback: cfgpb.Toggle_YES,
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://chromium-review.googlesource.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "chromium/src",
 									RefRegexp: []string{"refs/heads/main"},
@@ -110,12 +110,12 @@ func TestLoadingConfigs(t *testing.T) {
 			So(cgs[1].Content, ShouldResembleProto, cfg.ConfigGroups[1])
 		})
 
-		cfg.ConfigGroups = append(cfg.ConfigGroups, &pb.ConfigGroup{
+		cfg.ConfigGroups = append(cfg.ConfigGroups, &cfgpb.ConfigGroup{
 			Name: "branch_m200",
-			Gerrit: []*pb.ConfigGroup_Gerrit{
+			Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 				{
 					Url: "https://chromium-review.googlesource.com/",
-					Projects: []*pb.ConfigGroup_Gerrit_Project{
+					Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 						{
 							Name:      "chromium/src",
 							RefRegexp: []string{"refs/heads/branch_m200"},

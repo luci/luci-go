@@ -24,26 +24,27 @@ import (
 
 	gaememory "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-var testCfg = &pb.Config{
+var testCfg = &cfgpb.Config{
 	DrainingStartTime: "2014-05-11T14:37:57Z",
-	SubmitOptions: &pb.SubmitOptions{
+	SubmitOptions: &cfgpb.SubmitOptions{
 		MaxBurst:   50,
 		BurstDelay: durationpb.New(2 * time.Second),
 	},
-	ConfigGroups: []*pb.ConfigGroup{
+	ConfigGroups: []*cfgpb.ConfigGroup{
 		{
 			Name: "group_foo",
-			Gerrit: []*pb.ConfigGroup_Gerrit{
+			Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 				{
 					Url: "https://chromium-review.googlesource.com/",
-					Projects: []*pb.ConfigGroup_Gerrit_Project{
+					Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 						{
 							Name:      "chromium/src",
 							RefRegexp: []string{"refs/heads/main"},

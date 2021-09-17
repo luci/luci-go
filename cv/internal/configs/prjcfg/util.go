@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"net/url"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 )
 
 // GerritHost returns Gerrit host.
 //
 // Panics if config is not valid.
-func GerritHost(cfg *pb.ConfigGroup_Gerrit) string {
+func GerritHost(cfg *cfgpb.ConfigGroup_Gerrit) string {
 	u := cfg.GetUrl()
 	if u == "" {
 		panic("invalid config: missing Gerrit URL")

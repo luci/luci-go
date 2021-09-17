@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 )
 
 const ConfigFileName = "commit-queue.cfg"
@@ -170,9 +170,9 @@ func needsUpdate(ctx context.Context, project string) (bool, ProjectConfig, erro
 }
 
 // fetchCfg a project config contents from luci-config.
-func fetchCfg(ctx context.Context, project string) (*pb.Config, *config.Meta, error) {
+func fetchCfg(ctx context.Context, project string) (*cfgpb.Config, *config.Meta, error) {
 	meta := &config.Meta{}
-	ret := &pb.Config{}
+	ret := &cfgpb.Config{}
 	err := cfgclient.Get(
 		ctx,
 		config.ProjectSet(project),

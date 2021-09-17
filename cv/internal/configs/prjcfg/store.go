@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 )
 
 const projectConfigKind string = "ProjectConfig"
@@ -88,7 +88,7 @@ type ProjectConfig struct {
 // Therefore, in worst case scenario, when a newer version of proto lib is
 // deployed, CV may re-ingest functionally equivalent config.
 // See: https://godoc.org/google.golang.org/protobuf/proto#MarshalOptions
-func computeHash(cfg *pb.Config) string {
+func computeHash(cfg *cfgpb.Config) string {
 	b, err := proto.MarshalOptions{Deterministic: true}.Marshal(cfg)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal config: %s", err))
@@ -211,10 +211,10 @@ type ConfigGroup struct {
 	//
 	// Note that this is currently a project-level field. Therefore, all
 	// ConfigGroups in a single version of Config should have the same value.
-	SubmitOptions *pb.SubmitOptions
+	SubmitOptions *cfgpb.SubmitOptions
 	// Content represents a `pb.ConfigGroup` proto message defined in the CV
 	// config
-	Content *pb.ConfigGroup
+	Content *cfgpb.ConfigGroup
 }
 
 // ProjectString returns LUCI Project as a string.
@@ -227,7 +227,7 @@ func (c *ConfigGroup) ProjectString() string {
 // It checks for existence of each ConfigGroup first to avoid unnecessary puts.
 // It is also idempotent so it is safe to retry and can be called out of a
 // transactional context.
-func putConfigGroups(ctx context.Context, cfg *pb.Config, project, hash string) error {
+func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash string) error {
 	cgLen := len(cfg.GetConfigGroups())
 	if cgLen == 0 {
 		return nil
