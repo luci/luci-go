@@ -36,6 +36,7 @@ func TestExternalID(t *testing.T) {
 			So(host, ShouldResemble, "x-review.example.com")
 			So(change, ShouldEqual, 12)
 
+			So(eid.MustURL(), ShouldResemble, "https://x-review.example.com/c/12")
 		})
 
 		Convey("Invalid GobID", func() {

@@ -45,15 +45,6 @@ func TestCL(t *testing.T) {
 		eid, err := GobID("x-review.example.com", 12)
 		So(err, ShouldBeNil)
 
-		Convey("Gerrit ExternalID", func() {
-			u, err := eid.URL()
-			So(err, ShouldBeNil)
-			So(u, ShouldEqual, "https://x-review.example.com/12")
-
-			_, err = GobID("https://example.com", 12)
-			So(err, ShouldErrLike, "invalid host")
-		})
-
 		Convey("ExternalID.Get fails if CL doesn't exist", func() {
 			_, err := eid.Get(ctx)
 			So(err, ShouldResemble, datastore.ErrNoSuchEntity)

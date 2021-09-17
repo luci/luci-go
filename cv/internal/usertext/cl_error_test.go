@@ -144,7 +144,7 @@ func TestFormatCLError(t *testing.T) {
 					s := mustFormat()
 					So(s, ShouldContainSubstring, text.Doc(`
 				are not watched by the same LUCI project:
-				  * https://x-review.googlesource.com/101
+				  * https://x-review.googlesource.com/c/101
 
 				Please check Cq-Depend
 			`))
@@ -154,8 +154,8 @@ func TestFormatCLError(t *testing.T) {
 					s := mustFormat()
 					So(s, ShouldContainSubstring, text.Doc(`
 				its deps do not belong to the same config group:
-				  * https://x-review.googlesource.com/101
-				  * https://x-review.googlesource.com/102
+				  * https://x-review.googlesource.com/c/101
+				  * https://x-review.googlesource.com/c/102
 			`))
 				})
 				Convey("Singular Full Run with open dependencies", func() {
@@ -164,8 +164,8 @@ func TestFormatCLError(t *testing.T) {
 					s := mustFormat()
 					So(s, ShouldContainSubstring, text.Doc(`
 				in "FULL_RUN" mode because it has not yet submitted dependencies:
-				  * https://x-review.googlesource.com/101
-				  * https://x-review.googlesource.com/102
+				  * https://x-review.googlesource.com/c/101
+				  * https://x-review.googlesource.com/c/102
 			`))
 				})
 				Convey("Combinable not triggered deps", func() {
@@ -173,8 +173,8 @@ func TestFormatCLError(t *testing.T) {
 					s := mustFormat()
 					So(s, ShouldContainSubstring, text.Doc(`
 				its dependencies weren't CQ-ed at all:
-				  * https://x-review.googlesource.com/101
-				  * https://x-review.googlesource.com/102
+				  * https://x-review.googlesource.com/c/101
+				  * https://x-review.googlesource.com/c/102
 			`))
 				})
 				Convey("Combinable mode mismatch", func() {
@@ -183,8 +183,8 @@ func TestFormatCLError(t *testing.T) {
 					s := mustFormat()
 					So(s, ShouldContainSubstring, text.Doc(`
 				its mode "FULL_RUN" does not match mode on its dependencies:
-				  * https://x-review.googlesource.com/101
-				  * https://x-review.googlesource.com/102
+				  * https://x-review.googlesource.com/c/101
+				  * https://x-review.googlesource.com/c/102
 			`))
 				})
 				Convey("Too many", func() {

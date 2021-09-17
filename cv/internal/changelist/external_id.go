@@ -65,13 +65,13 @@ func (e ExternalID) ParseGobID() (host string, change int64, err error) {
 
 // URL returns URL of the CL.
 func (e ExternalID) URL() (string, error) {
-	parts := strings.SplitN(string(e), "/", 2)
-	if len(parts) != 2 {
+	parts := strings.Split(string(e), "/")
+	if len(parts) < 2 {
 		return "", errors.Reason("invalid ExternalID: %q", e).Err()
 	}
-	switch kind, remaining := parts[0], parts[1]; kind {
+	switch kind := parts[0]; kind {
 	case "gerrit":
-		return "https://" + remaining, nil
+		return fmt.Sprintf("https://%s/c/%s", parts[1], parts[2]), nil
 	default:
 		return "", errors.Reason("unrecognized ExternalID: %q", e).Err()
 	}

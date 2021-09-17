@@ -268,7 +268,7 @@ func testPurgesCLWithUnwatchedDeps(
 		So(m, ShouldNotBeNil)
 		So(m.GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
 		So(m.GetMessage(), ShouldContainSubstring, "its deps are not watched by the same LUCI project")
-		So(m.GetMessage(), ShouldContainSubstring, fmt.Sprintf("https://%s-review.example.com/%d", depSubHost, depChange))
+		So(m.GetMessage(), ShouldContainSubstring, fmt.Sprintf("https://%s-review.example.com/c/%d", depSubHost, depChange))
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {

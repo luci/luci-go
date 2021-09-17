@@ -553,21 +553,21 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							runAndVerify(func(changeNum int64, lastMsg string) {
 								switch changeNum {
 								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):\n  https://x-review.example.com/2222")
+									So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):\n  https://x-review.example.com/c/2222")
 								case ci2.GetNumber():
 									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
 								default:
 									panic(fmt.Errorf("unknown change: %d", changeNum))
 								}
 								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
-								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
 							})
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(_ int64, lastMsg string) {
 								So(lastMsg, ShouldContainSubstring, timeoutMsg)
 								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
-								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
 							})
 						})
 					})
@@ -592,8 +592,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								case ci1.GetNumber():
 									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
 									So(lastMsg, ShouldContainSubstring, "CV partially submitted the CLs in the Run")
-									So(lastMsg, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/1111]")
-									So(lastMsg, ShouldContainSubstring, "Submitted: [https://x-review.example.com/2222]")
+									So(lastMsg, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/c/1111]")
+									So(lastMsg, ShouldContainSubstring, "Submitted: [https://x-review.example.com/c/2222]")
 								case ci2.GetNumber():
 								default:
 									panic(fmt.Errorf("unknown change: %d", changeNum))
@@ -606,8 +606,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								case ci1.GetNumber():
 									So(lastMsg, ShouldContainSubstring, timeoutMsg)
 									So(lastMsg, ShouldContainSubstring, "CV partially submitted the CLs in the Run")
-									So(lastMsg, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/1111]")
-									So(lastMsg, ShouldContainSubstring, "Submitted: [https://x-review.example.com/2222]")
+									So(lastMsg, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/c/1111]")
+									So(lastMsg, ShouldContainSubstring, "Submitted: [https://x-review.example.com/c/2222]")
 								case ci2.GetNumber():
 								default:
 									panic(fmt.Errorf("unknown change: %d", changeNum))
@@ -723,12 +723,12 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						runAndVerify(func(changeNum int64, lastMsg string) {
 							switch changeNum {
 							case 1111:
-								So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):\n  https://x-review.example.com/2222")
+								So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):\n  https://x-review.example.com/c/2222")
 							case 2222:
 								So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
 							}
 							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
-							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
 						})
 					})
 
@@ -736,7 +736,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						runAndVerify(func(changeNum int64, lastMsg string) {
 							So(lastMsg, ShouldContainSubstring, defaultMsg)
 							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
-							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/2222, https://x-review.example.com/1111]")
+							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
 						})
 					})
 				})
