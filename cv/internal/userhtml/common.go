@@ -104,13 +104,7 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 					// Very old RunCL entities don't have ExternalID set.
 					return ""
 				}
-				cl := changelist.ExternalID(eid)
-				host, change, err := cl.ParseGobID()
-				if err != nil {
-					panic(err)
-				}
-				host = strings.Replace(host, "-review.googlesource.com", "", 1)
-				return fmt.Sprintf("%s/%d", host, change)
+				return displayCLExternalID(changelist.ExternalID(eid))
 			},
 			// Runlog specific, see run_details.go.
 			"LogTypeString": logTypeString,
@@ -153,6 +147,15 @@ func startTime(c context.Context) time.Time {
 		panic("impossible, startTimeContextKey is not set")
 	}
 	return ts
+}
+
+func displayCLExternalID(eid changelist.ExternalID) string {
+	host, change, err := eid.ParseGobID()
+	if err != nil {
+		panic(err)
+	}
+	host = strings.Replace(host, "-review.googlesource.com", "", 1)
+	return fmt.Sprintf("%s/%d", host, change)
 }
 
 func errPage(c *router.Context, err error) {

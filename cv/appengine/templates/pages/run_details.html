@@ -129,9 +129,7 @@ div.clickable {
                 {{end}}
               </td>
               <td style="white-space: nowrap;" class="text-center">
-                {{with .CL.ExternalID}}
-                  <a href="{{.URL}}">{{DisplayExternalID .}}</a>
-                {{end}}
+                <a href="{{.URLWithPatchset}}">{{.ShortWithPatchset}}</a>
               </td>
               <td class="text-center">
                 {{with .CL.Detail.GetGerrit}}

@@ -36,11 +36,6 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-type clAndNeighborRuns struct {
-	Prev, Next common.RunID
-	CL         *run.RunCL
-}
-
 func runDetails(c *router.Context) {
 	rID := fmt.Sprintf("%s/%s", c.Params.ByName("Project"), c.Params.ByName("Run"))
 
@@ -98,6 +93,19 @@ func runDetails(c *router.Context) {
 		},
 		"AllTryjobs": r.Tryjobs.GetTryjobs(),
 	})
+}
+
+type clAndNeighborRuns struct {
+	Prev, Next common.RunID
+	CL         *run.RunCL
+}
+
+func (cl *clAndNeighborRuns) URLWithPatchset() string {
+	return fmt.Sprintf("%s/%d", cl.CL.ExternalID.MustURL(), cl.CL.Detail.GetPatchset())
+}
+
+func (cl *clAndNeighborRuns) ShortWithPatchset() string {
+	return fmt.Sprintf("%s/%d", displayCLExternalID(cl.CL.ExternalID), cl.CL.Detail.GetPatchset())
 }
 
 func computeCLsAndLinks(ctx context.Context, srv adminpb.AdminServer, cls []*run.RunCL, rid common.RunID) ([]*clAndNeighborRuns, error) {
