@@ -471,6 +471,12 @@ func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
 			Version: getVersion(p, build),
 		})
 	}
+	sort.Slice(packages, func(i, j int) bool {
+		if packages[i].Path == packages[j].Path {
+			return packages[i].Name < packages[j].Name
+		}
+		return packages[i].Path < packages[j].Path
+	})
 	build.Infra.Bbagent.Input.CipdPackages = packages
 }
 

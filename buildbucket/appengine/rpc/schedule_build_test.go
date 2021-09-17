@@ -2278,11 +2278,6 @@ func TestScheduleBuild(t *testing.T) {
 									Version: "canary-version",
 								},
 								{
-									Name:    "exe",
-									Path:    "kitchen-checkout",
-									Version: "exe-version",
-								},
-								{
 									Name:    "include",
 									Path:    "cipd_bin_packages",
 									Version: "canary-version",
@@ -2291,6 +2286,11 @@ func TestScheduleBuild(t *testing.T) {
 									Name:    "subdir",
 									Path:    "cipd_bin_packages/subdir",
 									Version: "canary-version",
+								},
+								{
+									Name:    "exe",
+									Path:    "kitchen-checkout",
+									Version: "exe-version",
 								},
 							},
 						},
