@@ -82,6 +82,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 			hashInfo.UpdateTime = datastore.RoundTime(clock.Now(ctx)).UTC()
 			hashInfo.ConfigGroupNames = cgNames
 			hashInfo.GitRevision = meta.Revision
+			hashInfo.SchemaVersion = schemaVersion
 			return errors.Annotate(datastore.Put(ctx, &hashInfo), "failed to put ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
 		}
 	}, nil)
@@ -111,6 +112,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 				Hash:             localHash,
 				ExternalHash:     meta.ContentHash,
 				ConfigGroupNames: cgNames,
+				SchemaVersion:    schemaVersion,
 			}
 			updated = true
 			if err := datastore.Put(ctx, &pc); err != nil {
@@ -144,6 +146,7 @@ func needsUpdate(ctx context.Context, project string) (bool, ProjectConfig, erro
 	case meta.ContentHash == "":
 		return false, pc, errors.Reason("LUCI Config returns empty content hash for project %q", project).Err()
 	}
+
 	switch err := datastore.Get(ctx, &pc); {
 	case err == datastore.ErrNoSuchEntity:
 		// ProjectConfig's zero value is a good sentinel for non yet saved case.
@@ -154,6 +157,11 @@ func needsUpdate(ctx context.Context, project string) (bool, ProjectConfig, erro
 		// Go through update process to ensure all configs are present.
 		return true, pc, nil
 	case pc.ExternalHash != meta.ContentHash:
+		return true, pc, nil
+	case pc.SchemaVersion != schemaVersion:
+		// Intentionally using != here s.t. rollbacks result in downgrading of the
+		// schema. Given that project configs are checked and potentially updated
+		// every ~1 minute, this if OK.
 		return true, pc, nil
 	default:
 		// Already up-to-date.

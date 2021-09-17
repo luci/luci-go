@@ -34,6 +34,12 @@ import (
 
 const projectConfigKind string = "ProjectConfig"
 
+// schemaVersion is the current DS schema version.
+//
+// Bump it to force-update Project configs and their Config Groups after the
+// next deployment.
+const schemaVersion = 0
+
 // ProjectConfig is the root entity that keeps track of the latest version
 // info of the CV config for a LUCI Project. It only contains high-level
 // metadata about the config. The actual content of config is stored in the
@@ -43,6 +49,11 @@ type ProjectConfig struct {
 	_kind string `gae:"$kind,ProjectConfig"`
 	// Project is the name of this LUCI Project.
 	Project string `gae:"$id"`
+	// SchemaVersion is the version of the schema.
+	//
+	// It is used to force-update old entities to newest format.
+	// See schemaVersion const.
+	SchemaVersion int `gae:",noindex"`
 	// Enabled indicates whether CV is enabled for this LUCI Project.
 	//
 	// Project is disabled if it is de-registered in LUCI Config or it no longer
@@ -114,6 +125,11 @@ type ConfigHashInfo struct {
 	// Hash is the `Hash` of a `ProjectConfig` that CV has imported.
 	Hash    string         `gae:"$id"`
 	Project *datastore.Key `gae:"$parent"`
+	// SchemaVersion is the version of the schema.
+	//
+	// It is used to force-update old entities to newest format.
+	// See schemaVersion const.
+	SchemaVersion int `gae:",noindex"`
 	// GitRevision is the git revision (commit hash) of the imported config.
 	GitRevision string `gae:",noindex"`
 	// ProjectEVersion is largest version of ProjectConfig that this `Hash`
@@ -181,6 +197,11 @@ type ConfigGroup struct {
 	_kind   string         `gae:"$kind,ProjectConfigGroup"`
 	Project *datastore.Key `gae:"$parent"`
 	ID      ConfigGroupID  `gae:"$id"`
+	// SchemaVersion is the version of the schema.
+	//
+	// It is used to force-update old entities to newest format.
+	// See schemaVersion const.
+	SchemaVersion int `gae:",noindex"`
 	// DrainingStartTime represents `draining_start_time` field in the CV config.
 	//
 	// Note that this is a project-level field. Therefore, all ConfigGroups in a
@@ -212,34 +233,44 @@ func putConfigGroups(ctx context.Context, cfg *pb.Config, project, hash string) 
 		return nil
 	}
 
+	// Check if there are any existing entities with the current schema version
+	// such that we can skip updating them.
 	projKey := datastore.MakeKey(ctx, projectConfigKind, project)
-	keys := make([]*datastore.Key, cgLen)
+	entities := make([]*ConfigGroup, cgLen)
 	for i, cg := range cfg.GetConfigGroups() {
-		keys[i] = datastore.NewKey(ctx, "ProjectConfigGroup",
-			string(makeConfigGroupID(hash, cg.GetName(), i)), 0, projKey)
+		entities[i] = &ConfigGroup{
+			ID:      makeConfigGroupID(hash, cg.GetName(), i),
+			Project: projKey,
+		}
 	}
-
-	res, err := datastore.Exists(ctx, keys)
-	if err != nil {
+	err := datastore.Get(ctx, entities)
+	errs, ok := err.(errors.MultiError)
+	if err != nil && !ok {
 		return errors.Annotate(err, "failed to check the existence of ConfigGroups").Tag(transient.Tag).Err()
 	}
-	entities := make([]ConfigGroup, 0, cgLen)
-	for i, cg := range cfg.GetConfigGroups() {
-		if res.Get(0, i) {
-			continue // already exists
+	toPut := entities[:0] // re-use the slice
+	for i, err := range errs {
+		ent := entities[i]
+		switch {
+		case err == datastore.ErrNoSuchEntity:
+			// proceeed to put below.
+		case err != nil:
+			return errors.Annotate(err, "failed to check the existence of one of ConfigGroups").Tag(transient.Tag).Err()
+		case ent.SchemaVersion != schemaVersion:
+			// Intentionally using != here s.t. rollbacks result in downgrading of the
+			// schema. Given that project configs are checked and potentially updated
+			// every ~1 minute, this if OK.
+		default:
+			continue // up to date
 		}
-		entities = append(entities, ConfigGroup{
-			ID:                ConfigGroupID(keys[i].StringID()),
-			Project:           projKey,
-			DrainingStartTime: cfg.GetDrainingStartTime(),
-			SubmitOptions:     cfg.GetSubmitOptions(),
-			Content:           cg,
-		})
+		ent.DrainingStartTime = cfg.GetDrainingStartTime()
+		ent.SubmitOptions = cfg.GetSubmitOptions()
+		ent.Content = cfg.GetConfigGroups()[i]
+		ent.SchemaVersion = schemaVersion
+		toPut = append(toPut, ent)
 	}
 
-	// TODO(yiwzhang): batch up to ~10 entities to avoid hitting 10MiB limit of
-	// request size: https://cloud.google.com/datastore/docs/concepts/limits
-	if err := datastore.Put(ctx, entities); err != nil {
+	if err := datastore.Put(ctx, toPut); err != nil {
 		return errors.Annotate(err, "failed to put ConfigGroups").Tag(transient.Tag).Err()
 	}
 	return nil
