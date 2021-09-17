@@ -240,7 +240,9 @@ div.clickable {
     </thead>
     <tbody>
       <tr>
-      <td>{{index (SplitSlash .Id) 0}}</td>
+      <td><a href="/ui/recents/{{index (SplitSlash .Id) 0}}">
+        {{index (SplitSlash .Id) 0}}
+      </a></td>
       <td><b>{{index (SplitSlash .Id) 1}}</b></td>
       <td>{{.Mode}}</td>
       <td>{{.Status}}</td>
