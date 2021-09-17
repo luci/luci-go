@@ -20,8 +20,9 @@ import (
 	"path"
 	"sort"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	mc "go.chromium.org/luci/gae/service/memcache"
+	"go.chromium.org/luci/server/caching"
 )
 
 // swarmingBuildLogImpl is the implementation for getting a log name from
@@ -29,16 +30,17 @@ import (
 // and whether or not it has been closed.
 func swarmingBuildLogImpl(c context.Context, svc swarmingService, taskID, logname string) (string, bool, error) {
 	server := svc.GetHost()
-	cached, err := mc.GetKey(c, path.Join("swarmingLog", server, taskID, logname))
-	switch {
-	case err == mc.ErrCacheMiss:
 
-	case err != nil:
-		logging.WithError(err).Errorf(c, "failed to fetch log with key %s from memcache", cached.Key())
+	cache := caching.GlobalCache(c, "swarming-log")
+	if cache == nil {
+		return "", false, errors.New("global cache not available in context")
+	}
 
-	default:
+	cacheKey := path.Join(server, taskID, logname)
+	cached, err := cache.Get(c, cacheKey)
+	if err == nil {
 		logging.Debugf(c, "Cache hit for step log %s/%s/%s", server, taskID, logname)
-		return string(cached.Value()), false, nil
+		return string(cached), false, nil
 	}
 
 	fr, err := swarmingFetch(c, svc, taskID, swarmingFetchParams{fetchLog: true})
@@ -64,9 +66,8 @@ func swarmingBuildLogImpl(c context.Context, svc swarmingService, taskID, lognam
 	}
 
 	if stream.Closed {
-		cached.SetValue([]byte(stream.Text))
-		if err := mc.Set(c, cached); err != nil {
-			logging.Errorf(c, "Failed to write log with key %s to memcache: %s", cached.Key(), err)
+		if err := cache.Set(c, cacheKey, []byte(stream.Text), 0); err != nil {
+			logging.WithError(err).Errorf(c, "Failed to write log with key %s to memcache", cacheKey)
 		}
 	}
 
