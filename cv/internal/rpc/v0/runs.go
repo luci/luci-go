@@ -34,15 +34,29 @@ import (
 
 const allowGroup = "service-luci-change-verifier-v0-api-users"
 
+// checkCanUseAPI ensures that calling user is granted permission to use
+// unstable v0 API.
+func checkCanUseAPI(ctx context.Context, name string) error {
+	switch yes, err := auth.IsMember(ctx, allowGroup); {
+	case err != nil:
+		return appstatus.Errorf(codes.Internal, "failed to check ACL")
+	case !yes:
+		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
+	default:
+		logging.Warningf(ctx, "%s is calling %s", auth.CurrentIdentity(ctx), name)
+		return nil
+	}
+}
+
 // RunsServer implements rpc v0 APIs.
 type RunsServer struct {
 	apiv0pb.UnimplementedRunsServer
 }
 
-// GetRun returns the Run.
+// GetRun implements apiv0pb.RunsServer.
 func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (resp *apiv0pb.Run, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-	if err = checkAllowed(ctx, "Runs.GetRun"); err != nil {
+	if err = checkCanUseAPI(ctx, "Runs.GetRun"); err != nil {
 		return
 	}
 
@@ -57,6 +71,9 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		return nil, appstatus.Errorf(codes.NotFound, "run not found")
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+	}
+	if err := checkCanReadRun(ctx, &r); err != nil {
+		return nil, err
 	}
 
 	rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
@@ -127,7 +144,6 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		}
 	}
 
-	// TODO(crbug/1233963): check if user has access to this specific Run.
 	return &apiv0pb.Run{
 		Id:         r.ID.PublicID(),
 		Eversion:   int64(r.EVersion),
@@ -144,17 +160,9 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 	}, nil
 }
 
-func checkAllowed(ctx context.Context, name string) error {
-	// TODO(crbug/1233963): delete this after proper Run ACLs are implemented.
-	switch yes, err := auth.IsMember(ctx, allowGroup); {
-	case err != nil:
-		return appstatus.Errorf(codes.Internal, "failed to check ACL")
-	case !yes:
-		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
-	default:
-		logging.Warningf(ctx, "%s is calling %s", auth.CurrentIdentity(ctx), name)
-		return nil
-	}
+func checkCanReadRun(ctx context.Context, r *run.Run) error {
+	// TODO(crbug/1233963): implement.
+	return nil
 }
 
 func toInternalRunID(id string) (common.RunID, error) {
