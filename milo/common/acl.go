@@ -20,7 +20,6 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 
 	bbAccess "go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/errors"
@@ -122,17 +121,11 @@ func GetAccessClient(c context.Context) *AccessClient {
 // an issue in practice, and if so, consider expiring cache entries randomly.
 func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissions, error) {
 	perms := make(bbAccess.Permissions, len(buckets))
-
-	// Set the namespace in the context for memcache.
 	client := GetAccessClient(c)
-	c, err := info.Namespace(c, fmt.Sprintf("buildbucket-access-%s", client.Host))
-	if err != nil {
-		return nil, err
-	}
 
 	var bucketsToCache []string
 
-	cache := caching.GlobalCache(c, "bucket-permission")
+	cache := caching.GlobalCache(c, fmt.Sprintf("buildbucket-access-%s", client.Host))
 	if cache == nil {
 		panic("global cache not available in context")
 	}
