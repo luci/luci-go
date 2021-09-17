@@ -2,6 +2,17 @@
 
 {{define "content"}}
 
+<script type="text/javascript" src="/static/js/groups.js"></script>
+
+<template id="group-scroller-row-template">
+  <li class="list-group-item">
+    <p class="fw-bold fs-6 mb-0">
+    </p>
+    <small class="mb-0">
+    </small>
+  </li>
+</template>
+
 <div class="container" id="content-box">
   <div class="row mb-4 mt-2">
     <div class="col px-0 py-0 me-2 border rounded">
@@ -13,6 +24,7 @@
       </div>
       <div class="row me-1">
         <ul class="navbar-nav-scroll" id="group-chooser">
+            <!-- Load group-scroller-row template. -->
         </ul>
       </div>
     </div>

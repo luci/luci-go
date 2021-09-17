@@ -135,6 +135,12 @@ var api = (function() {
   exports.call = call;
 
 
+  //// API calls.
+
+  exports.groups = function () {
+    return call('auth.service.Groups', 'ListGroups');
+  };
+
   //// XSRF token utilities.
 
 
