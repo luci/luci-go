@@ -106,6 +106,14 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 				fmt.Fprintf(c.Writer, "\nResultDB: internal error while writing the response!\n")
 				logging.Errorf(c.Context, "Failed to read from RBE-CAS in the middle of response: %s", err)
 			} else {
+				if status.Code(err) == codes.NotFound {
+					// Sometimes RBE-CAS doesn't report NotFound until the read
+					// of the first chunk, so duplicate the NotFound handling
+					// above.
+					// Do not lose the original error message.
+					logging.Warningf(c.Context, "RBE-CAS responded: %s", err)
+					err = appstatus.Errorf(codes.NotFound, "artifact content no longer exists")
+				}
 				r.sendError(c.Context, err)
 			}
 			return

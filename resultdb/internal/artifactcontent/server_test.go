@@ -222,6 +222,13 @@ func TestServeContent(t *testing.T) {
 				So(res.StatusCode, ShouldEqual, http.StatusNotFound)
 			})
 
+			Convey(`Not found on first chunk`, func() {
+				casReader.ResErr = status.Errorf(codes.NotFound, "not found")
+				casReader.ResErrIndex = 0
+				res, _ := fetch(u)
+				So(res.StatusCode, ShouldEqual, http.StatusNotFound)
+			})
+
 			Convey(`Recv error`, func() {
 				casReader.ResErr = status.Errorf(codes.Internal, "internal error")
 				res, _ := fetch(u)
