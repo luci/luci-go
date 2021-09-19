@@ -44,10 +44,12 @@ class GroupChooser {
 
         // Clone and grab elements to modify.
         var clone = template.content.cloneNode(true);
+        var listEl = clone.querySelector('li');
         var name = clone.querySelector('p');
         var description = clone.querySelector('small');
 
         // Modify contents and append to parent.
+        listEl.setAttribute('data-group-name', group.name);
         name.textContent = group.name;
         description.textContent = trimGroupDescription(group.description);
         this.element.appendChild(clone);
@@ -56,10 +58,27 @@ class GroupChooser {
         // HTML template element is not supported.
         console.error('Unable to load HTML template element, not supported.')
       }
+      listEl.addEventListener('click', () => {
+        this.setSelection(group.name);
+      });
     };
 
     groups.map((group) => {
       addElement(group);
+    });
+  }
+
+  // Adds the active class to the selected element,
+  // highlighting the group clicked in the scroller.
+  setSelection(name) {
+    const groupElements = Array.from(document.getElementsByClassName('list-group-item'));
+
+    groupElements.forEach((currentGroup) => {
+      if (currentGroup.dataset.groupName === name) {
+        currentGroup.classList.add('active');
+      } else {
+        currentGroup.classList.remove('active');
+      }
     });
   }
 
