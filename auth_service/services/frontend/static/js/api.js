@@ -137,8 +137,14 @@ var api = (function() {
 
   //// API calls.
 
-  exports.groups = function () {
+  // Get all groups.
+  exports.groups = function() {
     return call('auth.service.Groups', 'ListGroups');
+  };
+
+  // Get individual group.
+  exports.groupRead = function(request) {
+    return call('auth.service.Groups', 'GetGroup', {'name': request});
   };
 
   //// XSRF token utilities.

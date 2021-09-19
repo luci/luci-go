@@ -13,6 +13,55 @@
   </li>
 </template>
 
+<template id="edit-group-form-template">
+  <div class="row mx-0 my-2">
+    <div class="row m-0 px-0 pt-1 border rounded" style="background-color: #f5f5f5;">
+      <h5>
+        <a id="group-heading">group name</a>
+        <a href="#" style="float: right; padding-left: 4px">
+          <i class="bi bi-list-ul" style="font-size: 16px; color: #333"></i>
+        </a>
+        <a href="#" style="float: right; padding-right: 4px">
+          <i class="bi bi-search" style="font-size: 16px; color: #333"></i>
+        </a>
+        <a href="#" style="float: right; padding-right: 4px">
+          <i class="bi bi-calendar3" style="font-size: 16px; color: #333"></i>
+        </a>
+      </h5>
+    </div>
+  </div>
+  <form id="edit-group-form" class="p-1">
+    <div class="row mb-3">
+      <label for="description" class="col-sm-2 col-form-label">Description</label>
+      <div class="col-sm-10">
+        <textarea class="form-control" rows="3" id="description-box"></textarea>
+      </div>
+    </div>
+    <div class="row">
+      <label for="owners" class="col-sm-2 col-form-label">Owners</label>
+      <div class="col-sm-10">
+        <textarea class="form-control" rows="1" id="owners-box"></textarea>
+      </div>
+    </div>
+    <hr>
+    <div class="row mb-3">
+      <label for="members" class="col-sm-2 col-form-label">Members</label>
+      <div class="col-sm-10">
+        <textarea class="form-control" rows="12" id="membersAndGlobs"></textarea>
+      </div>
+    </div>
+    <div class="row">
+      <label for="subgroups" class="col-sm-2 col-form-label">Subgroups</label>
+      <div class="col-sm-10">
+        <textarea class="form-control" rows="5" id="nested"></textarea>
+      </div>
+    </div>
+    <hr>
+    <button type="submit" class="btn btn-primary">Update group</button>
+    <button type="submit" class="btn btn-danger">Delete group</button>
+  </form>
+</template>
+
 <div class="container" id="content-box">
   <div class="row mb-4 mt-2">
     <div class="col px-0 py-0 me-2 border rounded">
@@ -28,52 +77,8 @@
         </ul>
       </div>
     </div>
-    <div class="col-md-8 px-2 pb-2 border rounded">
-      <div class="row mx-0 my-2">
-        <div class="row m-0 px-0 pt-1 border rounded" style="background-color: #f5f5f5;">
-          <h5>group name
-            <a href="#" style="float: right; padding-left: 4px">
-              <i class="bi bi-list-ul" style="font-size: 16px; color: #333"></i>
-            </a>
-            <a href="#" style="float: right; padding-right: 4px">
-              <i class="bi bi-search" style="font-size: 16px; color: #333"></i>
-            </a>
-            <a href="#" style="float: right; padding-right: 4px">
-              <i class="bi bi-calendar3" style="font-size: 16px; color: #333"></i>
-            </a>
-          </h5>
-        </div>
-      </div>
-      <form class="p-1">
-        <div class="row mb-3">
-          <label for="description" class="col-sm-2 col-form-label">Description</label>
-          <div class="col-sm-10">
-            <input type="email" class="form-control" id="inputEmail4">
-          </div>
-        </div>
-        <div class="row">
-          <label for="owners" class="col-sm-2 col-form-label">Owners</label>
-          <div class="col-sm-10">
-            <input type="email" class="form-control" id="inputEmail4">
-          </div>
-        </div>
-        <hr>
-        <div class="row mb-3">
-          <label for="members" class="col-sm-2 col-form-label">Members</label>
-          <div class="col-sm-10">
-            <textarea class="form-control" rows="12" name="membersAndGlobs"></textarea>
-          </div>
-        </div>
-        <div class="row">
-          <label for="subgroups" class="col-sm-2 col-form-label">Subgroups</label>
-          <div class="col-sm-10">
-            <textarea class="form-control" rows="5" name="nested"></textarea>
-          </div>
-        </div>
-        <hr>
-        <button type="submit" class="btn btn-primary">Update group</button>
-        <button type="submit" class="btn btn-danger">Delete group</button>
-      </form>
+    <div class="col-md-8 px-2 pb-2 border rounded" id="group-content">
+      <!-- Load group-form template here -->
     </div>
   </div>
 </div>

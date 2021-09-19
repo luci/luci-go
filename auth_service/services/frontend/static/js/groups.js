@@ -71,6 +71,13 @@ class GroupChooser {
   // Adds the active class to the selected element,
   // highlighting the group clicked in the scroller.
   setSelection(name) {
+    let selectionMade = false;
+    const selectionChangedEvent = new CustomEvent('selectionChanged', {
+      bubble: true,
+      detail: {
+        group: name,
+      }
+    });
     const groupElements = Array.from(document.getElementsByClassName('list-group-item'));
 
     groupElements.forEach((currentGroup) => {
@@ -80,6 +87,91 @@ class GroupChooser {
         currentGroup.classList.remove('active');
       }
     });
+    this.element.dispatchEvent(selectionChangedEvent);
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////////
+// Common code for 'New group' and 'Edit group' forms.
+class GroupForm {
+
+  constructor(element, groupName, template) {
+    // The content containing the form and heading.
+    this.element = document.querySelector(element);
+    // Name of the group this form operates on.
+    this.groupName = groupName;
+    // Template to use: (new or edit).
+    this.template = document.querySelector(template);
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////////
+// Form to view/edit existing groups.
+class EditGroupForm extends GroupForm {
+
+  constructor(groupName) {
+    // Call parent constructor.
+    super('#group-content', groupName, '#edit-group-form-template');
+    // Name of the group this form operates on.
+    this.groupName = groupName;
+  }
+
+  // Get group response and build the form.
+  load() {
+    var defer = api.groupRead(this.groupName);
+    defer.then((response) => {
+      this.buildForm(response);
+    });
+    return defer;
+  }
+
+  // Prepare response for html text content.
+  buildForm(group) {
+    const groupClone = { ...group };
+
+    var members = (groupClone.members ? groupClone.members.map((member) => common.stripPrefix('user', member)) : []);
+    var globs = (groupClone.globs ? groupClone.globs.map((glob) => common.stripPrefix('user', glob)) : []);
+    var membersAndGlobs = [].concat(members, globs);
+
+    // TODO(cjacomet): Assert that membersAndGlobs can be split.
+
+    // Convert lists into a single text blob.
+    groupClone.membersAndGlobs = membersAndGlobs.join('\n') + '\n';
+    groupClone.nested = (groupClone.nested || []).join('\n') + '\n';
+
+    // TODO(cjacomet): Set up external group handling.
+    // TODO(cjacomet): Set up form submission and deletion.
+    this.populateForm(groupClone);
+  }
+
+  // Populates the form with the text lists of the group.
+  populateForm(group) {
+    if ('content' in document.createElement('template')) {
+      // Clone and grab elements to modify.
+      var clone = this.template.content.cloneNode(true);
+      var heading = clone.querySelector('#group-heading');
+      var description = clone.querySelector('#description-box');
+      var owners = clone.querySelector('#owners-box');
+      var membersAndGlobs = clone.querySelector('#membersAndGlobs');
+      var nested = clone.querySelector('#nested');
+
+      // Clear any previous html.
+      this.element.innerHTML = '';
+
+      // Modify contents and append to parent.
+      heading.textContent = group.name;
+      description.textContent = group.description;
+      owners.textContent = group.owners;
+      membersAndGlobs.textContent = group.membersAndGlobs
+      nested.textContent = group.nested;
+      this.element.appendChild(clone);
+    } else {
+      // TODO(cjacomet): Find another way to add group-content group.
+      // HTML template element is not supported.
+      console.error('Unable to load HTML template element, not supported.')
+    }
   }
 
 }
@@ -100,5 +192,19 @@ const trimGroupDescription = (desc) => {
 window.onload = () => {
   // Setup global UI elements.
   var groupChooser = new GroupChooser('group-chooser');
+
+  const startEditGroupFlow = (groupName) => {
+    let form = new EditGroupForm(groupName);
+    form.load();
+  };
+
+  groupChooser.element.addEventListener('selectionChanged', (event) => {
+    if (event.detail.group === null) {
+      console.log('new group flow');
+    } else {
+      startEditGroupFlow(event.detail.group);
+    }
+  });
+
   groupChooser.refetchGroups();
 };
