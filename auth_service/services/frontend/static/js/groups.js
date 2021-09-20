@@ -12,6 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+////////////////////////////////////////////////////////////////////////////////
+// Utility functions.
+
+// Trims group description to fit single line.
+const trimGroupDescription = (desc) => {
+  'use strict';
+  if (desc == null) {
+    return '';
+  }
+  var firstLine = desc.split('\n')[0];
+  if (firstLine.length > 55) {
+    firstLine = firstLine.slice(0, 55) + '...';
+  }
+  return firstLine;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // GroupChooser is a scrollable list containing the auth service groups.
 class GroupChooser {
 
@@ -90,9 +107,17 @@ class GroupChooser {
     this.element.dispatchEvent(selectionChangedEvent);
   }
 
+  // Selects first group available.
+  selectDefault() {
+    let elements = document.getElementsByClassName('list-group-item');
+    if (elements.length) {
+      this.setSelection(elements[0].dataset.groupName);
+    }
+  }
+
 }
 
-////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Common code for 'New group' and 'Edit group' forms.
 class GroupForm {
 
@@ -107,7 +132,7 @@ class GroupForm {
 
 }
 
-////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Form to view/edit existing groups.
 class EditGroupForm extends GroupForm {
 
@@ -176,19 +201,6 @@ class EditGroupForm extends GroupForm {
 
 }
 
-// Trims group description to fit single line.
-const trimGroupDescription = (desc) => {
-  'use strict';
-  if (desc == null) {
-    return '';
-  }
-  var firstLine = desc.split('\n')[0];
-  if (firstLine.length > 55) {
-    firstLine = firstLine.slice(0, 55) + '...';
-  }
-  return firstLine;
-}
-
 window.onload = () => {
   // Setup global UI elements.
   var groupChooser = new GroupChooser('group-chooser');
@@ -206,5 +218,13 @@ window.onload = () => {
     }
   });
 
-  groupChooser.refetchGroups();
+  const jumpToCurrentGroup = (selectDefault) => {
+    if (selectDefault) {
+      groupChooser.selectDefault();
+    }
+  };
+
+  groupChooser.refetchGroups().then(() => {
+    jumpToCurrentGroup(true);
+  });
 };

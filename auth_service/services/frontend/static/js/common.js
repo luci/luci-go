@@ -8,7 +8,7 @@ var common = (function () {
   var exports = {};
 
   // Strips '<prefix>:' from a string if it starts with it.
-  exports.stripPrefix = function (prefix, str) {
+  exports.stripPrefix = (prefix, str) => {
     if (!str) {
       return '';
     }
