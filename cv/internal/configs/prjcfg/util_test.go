@@ -17,7 +17,7 @@ package prjcfg
 import (
 	"testing"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -26,10 +26,10 @@ func TestGerritHost(t *testing.T) {
 	t.Parallel()
 
 	Convey("GerritHost", t, func() {
-		So(GerritHost(&pb.ConfigGroup_Gerrit{Url: "https://o.k"}), ShouldEqual, "o.k")
-		So(GerritHost(&pb.ConfigGroup_Gerrit{Url: "https://strip.sla.shes/"}), ShouldEqual, "strip.sla.shes")
+		So(GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "https://o.k"}), ShouldEqual, "o.k")
+		So(GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "https://strip.sla.shes/"}), ShouldEqual, "strip.sla.shes")
 
-		So(func() { GerritHost(&pb.ConfigGroup_Gerrit{}) }, ShouldPanic)
-		So(func() { GerritHost(&pb.ConfigGroup_Gerrit{Url: "no.scheme"}) }, ShouldPanic)
+		So(func() { GerritHost(&cfgpb.ConfigGroup_Gerrit{}) }, ShouldPanic)
+		So(func() { GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "no.scheme"}) }, ShouldPanic)
 	})
 }

@@ -29,14 +29,14 @@ import (
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // Create creates project config for the first time.
 //
 // Panics if project config already exists.
-func Create(ctx context.Context, project string, cfg *pb.Config) {
+func Create(ctx context.Context, project string, cfg *cfgpb.Config) {
 	MustNotExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 		config.ProjectSet(project): {prjcfg.ConfigFileName: prototext.Format(cfg)},
@@ -50,7 +50,7 @@ func Create(ctx context.Context, project string, cfg *pb.Config) {
 // Update updates project config to, presumed, newer version.
 //
 // Panics if project config doesn't exist.
-func Update(ctx context.Context, project string, cfg *pb.Config) {
+func Update(ctx context.Context, project string, cfg *cfgpb.Config) {
 	MustExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 		config.ProjectSet(project): {prjcfg.ConfigFileName: prototext.Format(cfg)},

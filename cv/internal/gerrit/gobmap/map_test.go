@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"golang.org/x/sync/errgroup"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -53,14 +53,14 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	// First set up an example project with two config groups to show basic
 	// regular usage; there is a "main" group which matches a main ref, and
 	// another fallback group that matches many other refs, but not all.
-	prjcfgtest.Create(ctx, "chromium", &pb.Config{
-		ConfigGroups: []*pb.ConfigGroup{
+	prjcfgtest.Create(ctx, "chromium", &cfgpb.Config{
+		ConfigGroups: []*cfgpb.ConfigGroup{
 			{
 				Name: "group_main",
-				Gerrit: []*pb.ConfigGroup_Gerrit{
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 					{
 						Url: "https://cr-review.gs.com/",
-						Projects: []*pb.ConfigGroup_Gerrit_Project{
+						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 							{
 								Name:      "cr/src",
 								RefRegexp: []string{"refs/heads/main"},
@@ -74,11 +74,11 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				// handled by the main group but not this one, even though it
 				// matches the include regexp list.
 				Name:     "group_other",
-				Fallback: pb.Toggle_YES,
-				Gerrit: []*pb.ConfigGroup_Gerrit{
+				Fallback: cfgpb.Toggle_YES,
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 					{
 						Url: "https://cr-review.gs.com/",
-						Projects: []*pb.ConfigGroup_Gerrit_Project{
+						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 							{
 								Name:             "cr/src",
 								RefRegexp:        []string{"refs/heads/.*"},
@@ -168,14 +168,14 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		// Simulate the project being updated so that the "other" group is no
 		// longer a fallback group. Now some refs will match both groups.
 		prjcfgtest.Enable(ctx, "chromium")
-		prjcfgtest.Update(ctx, "chromium", &pb.Config{
-			ConfigGroups: []*pb.ConfigGroup{
+		prjcfgtest.Update(ctx, "chromium", &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
 				{
 					Name: "group_main",
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://cr-review.gs.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "cr/src",
 									RefRegexp: []string{"refs/heads/main"},
@@ -186,10 +186,10 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				},
 				{
 					Name: "group_other",
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://cr-review.gs.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:             "cr/src",
 									RefRegexp:        []string{"refs/heads/.*"},
@@ -198,7 +198,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 							},
 						},
 					},
-					Fallback: pb.Toggle_NO,
+					Fallback: cfgpb.Toggle_NO,
 				},
 			},
 		})
@@ -216,14 +216,14 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	Convey("With two repos in main group and no other group...", t, func() {
 		// This update includes both additions and removals,
 		// and also tests multiple hosts.
-		prjcfgtest.Update(ctx, "chromium", &pb.Config{
-			ConfigGroups: []*pb.ConfigGroup{
+		prjcfgtest.Update(ctx, "chromium", &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
 				{
 					Name: "group_main",
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://cr-review.gs.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "cr/src",
 									RefRegexp: []string{"refs/heads/main"},
@@ -232,7 +232,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 						},
 						{
 							Url: "https://cr2-review.gs.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "cr2/src",
 									RefRegexp: []string{"refs/heads/main"},
@@ -267,14 +267,14 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	Convey("With another project matching the same ref...", t, func() {
 		// Below another project is created that watches the same repo and ref.
 		// This tests multiple projects matching for one Lookup.
-		prjcfgtest.Create(ctx, "foo", &pb.Config{
-			ConfigGroups: []*pb.ConfigGroup{
+		prjcfgtest.Create(ctx, "foo", &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
 				{
 					Name: "group_foo",
-					Gerrit: []*pb.ConfigGroup_Gerrit{
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://cr-review.gs.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
+							Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 								{
 									Name:      "cr/src",
 									RefRegexp: []string{"refs/heads/main"},
@@ -342,18 +342,18 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 		for v := 1; v <= versions; v++ {
 			for lp := 1; lp <= projects; lp++ {
 				lProject := fmt.Sprintf("project-%d", lp)
-				var gerritProjects []*pb.ConfigGroup_Gerrit_Project
+				var gerritProjects []*cfgpb.ConfigGroup_Gerrit_Project
 				for i := 1; i <= repos; i++ {
 					if mathrand.Float32(ctx) <= repoPresenceProb || (len(gerritProjects) == 0 && i == repos) {
-						gerritProjects = append(gerritProjects, &pb.ConfigGroup_Gerrit_Project{
+						gerritProjects = append(gerritProjects, &cfgpb.ConfigGroup_Gerrit_Project{
 							Name:      fmt.Sprintf("repo-%d", i),
 							RefRegexp: []string{gRef},
 						})
 					}
 				}
-				cfg := &pb.Config{ConfigGroups: []*pb.ConfigGroup{{
+				cfg := &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{
 					Name:   fmt.Sprintf("%d-%d", lp, v),
-					Gerrit: []*pb.ConfigGroup_Gerrit{{Url: "https://" + gHost, Projects: gerritProjects}},
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{{Url: "https://" + gHost, Projects: gerritProjects}},
 				}}}
 				if v == 1 {
 					prjcfgtest.Create(ctx, lProject, cfg)
