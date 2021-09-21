@@ -23,7 +23,7 @@ import (
 	"regexp"
 )
 
-var rGA4Allowed = regexp.MustCompile(`$G-[A-Z0-9]+^`)
+var rGA4Allowed = regexp.MustCompile(`^G-[A-Z0-9]+$`)
 
 // makeGTagSnippet returns an HTML snippet for Google Analytics 4.
 func makeGTagSnippet(measurementID string) template.HTML {
