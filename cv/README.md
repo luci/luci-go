@@ -36,6 +36,7 @@ TODO(crbug.com/1225047): update this doc.
        Gerrit](./internal/gerrit/gerritfake).
      - [internal/changelist](./internal/changelist): encapsulates a changelist
        (a.k.a. CL, patch, Gerrit Change).
+     - [internal/acls](./internal/acls): enforces ALCs.
      - [internal/tryjob](./internal/tryjob): manages tryjobs (i.e.
        Buildbucket builds) which are used to verify a CL.
      - [internal/prjmanager](./internal/prjmanager) and sub-packages: decides
