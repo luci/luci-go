@@ -94,6 +94,8 @@ func logErrors(c context.Context, err *googleapi.Error) {
 func rateLimitExceeded(err *googleapi.Error) bool {
 	for _, err := range err.Errors {
 		switch {
+		case strings.Contains(err.Message, "Queries per user per 100 seconds"):
+			return true
 		case strings.Contains(err.Message, "Rate Limit Exceeded"):
 			return true
 		case strings.Contains(err.Message, "rateLimitExceeded"):
