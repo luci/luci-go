@@ -29,6 +29,8 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -38,6 +40,7 @@ var testCfg = &cfgpb.Config{
 		MaxBurst:   50,
 		BurstDelay: durationpb.New(2 * time.Second),
 	},
+	CqStatusHost: "chromium-cq-status.appspot.com",
 	ConfigGroups: []*cfgpb.ConfigGroup{
 		{
 			Name: "group_foo",
@@ -131,8 +134,13 @@ func (f readOnlyFilter) PutMulti(keys []*datastore.Key, vals []datastore.Propert
 
 func TestPutConfigGroups(t *testing.T) {
 	t.Parallel()
+
 	Convey("PutConfigGroups", t, func() {
 		ctx := gaememory.Use(context.Background())
+		if testing.Verbose() {
+			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+		}
+
 		Convey("New Configs", func() {
 			hash := computeHash(testCfg)
 			err := putConfigGroups(ctx, testCfg, "chromium", hash)
@@ -141,11 +149,11 @@ func TestPutConfigGroups(t *testing.T) {
 				ID:      makeConfigGroupID(hash, "group_foo", 0),
 				Project: datastore.MakeKey(ctx, projectConfigKind, "chromium"),
 			}
-			err = datastore.Get(ctx, &stored)
-			So(err, ShouldBeNil)
+			So(datastore.Get(ctx, &stored), ShouldBeNil)
 			So(stored.DrainingStartTime, ShouldEqual, testCfg.GetDrainingStartTime())
 			So(stored.SubmitOptions, ShouldResembleProto, testCfg.GetSubmitOptions())
 			So(stored.Content, ShouldResembleProto, testCfg.GetConfigGroups()[0])
+			So(stored.SchemaVersion, ShouldEqual, schemaVersion)
 
 			Convey("Skip if already exists", func() {
 				ctx := datastore.AddRawFilters(ctx, func(_ context.Context, rds datastore.RawInterface) datastore.RawInterface {
@@ -153,6 +161,18 @@ func TestPutConfigGroups(t *testing.T) {
 				})
 				err := putConfigGroups(ctx, testCfg, "chromium", computeHash(testCfg))
 				So(err, ShouldBeNil)
+			})
+
+			Convey("Update existing due to schemaVersion", func() {
+				old := stored // copy
+				old.SchemaVersion = schemaVersion - 1
+				So(datastore.Put(ctx, &old), ShouldBeNil)
+
+				err := putConfigGroups(ctx, testCfg, "chromium", computeHash(testCfg))
+				So(err, ShouldBeNil)
+
+				So(datastore.Get(ctx, &stored), ShouldBeNil)
+				So(stored.SchemaVersion, ShouldEqual, schemaVersion)
 			})
 		})
 	})

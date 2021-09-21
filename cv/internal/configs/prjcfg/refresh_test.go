@@ -46,6 +46,7 @@ func TestUpdateProject(t *testing.T) {
 		ctx, testClock, _ := mkTestingCtx()
 		chromiumConfig := &cfgpb.Config{
 			DrainingStartTime: "2017-12-23T15:47:58Z",
+			CqStatusHost:      "chromium-cq-status.appspot.com",
 			SubmitOptions: &cfgpb.SubmitOptions{
 				MaxBurst:   100,
 				BurstDelay: durationpb.New(1 * time.Second),
@@ -99,6 +100,7 @@ func TestUpdateProject(t *testing.T) {
 				So(cg.DrainingStartTime, ShouldEqual, cfg.GetDrainingStartTime())
 				So(cg.SubmitOptions, ShouldResembleProto, cfg.GetSubmitOptions())
 				So(cg.Content, ShouldResembleProto, cfg.GetConfigGroups()[i])
+				So(cg.CQStatusHost, ShouldResemble, cfg.GetCqStatusHost())
 			}
 			// Verify ProjectConfig.
 			pc := ProjectConfig{Project: "chromium"}
@@ -106,6 +108,7 @@ func TestUpdateProject(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pc, ShouldResemble, ProjectConfig{
 				Project:          "chromium",
+				SchemaVersion:    schemaVersion,
 				Enabled:          true,
 				EVersion:         expectedEVersion,
 				Hash:             localHash,
@@ -127,6 +130,7 @@ func TestUpdateProject(t *testing.T) {
 			So(hashInfo, ShouldResemble, ConfigHashInfo{
 				Hash:             localHash,
 				Project:          projKey,
+				SchemaVersion:    schemaVersion,
 				ProjectEVersion:  expectedEVersion,
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
@@ -157,12 +161,24 @@ func TestUpdateProject(t *testing.T) {
 				err := UpdateProject(ctx, "chromium", notify)
 				So(err, ShouldBeNil)
 				pc := ProjectConfig{Project: "chromium"}
-				err = datastore.Get(ctx, &pc)
-				So(err, ShouldBeNil)
+				So(datastore.Get(ctx, &pc), ShouldBeNil)
 				So(pc.EVersion, ShouldEqual, 1)
 				prevUpdatedTime := testClock.Now().Add(-10 * time.Minute)
 				So(pc.UpdateTime, ShouldResemble, prevUpdatedTime.UTC())
 				So(notifyCalled, ShouldBeFalse)
+
+				Convey("But not noop if schemaVersion changed", func() {
+					old := pc // copy
+					old.SchemaVersion--
+					So(datastore.Put(ctx, &old), ShouldBeNil)
+
+					err := UpdateProject(ctx, "chromium", notify)
+					So(err, ShouldBeNil)
+					So(notifyCalled, ShouldBeTrue)
+					So(datastore.Get(ctx, &pc), ShouldBeNil)
+					So(pc.EVersion, ShouldEqual, 2)
+					So(pc.SchemaVersion, ShouldEqual, schemaVersion)
+				})
 			})
 
 			Convey("Update existing ProjectConfig", func() {

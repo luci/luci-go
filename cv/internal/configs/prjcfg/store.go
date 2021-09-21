@@ -38,7 +38,7 @@ const projectConfigKind string = "ProjectConfig"
 //
 // Bump it to force-update Project configs and their Config Groups after the
 // next deployment.
-const schemaVersion = 0
+const schemaVersion = 1
 
 // ProjectConfig is the root entity that keeps track of the latest version
 // info of the CV config for a LUCI Project. It only contains high-level
@@ -215,6 +215,11 @@ type ConfigGroup struct {
 	// Content represents a `pb.ConfigGroup` proto message defined in the CV
 	// config
 	Content *cfgpb.ConfigGroup
+	// CQStatusHost is the URL of the CQ status app. Optional.
+	//
+	// Deprecated.
+	// TODO(crbug/1233963): remove this field.
+	CQStatusHost string `gae:",noindex"`
 }
 
 // ProjectString returns LUCI Project as a string.
@@ -245,8 +250,11 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 	}
 	err := datastore.Get(ctx, entities)
 	errs, ok := err.(errors.MultiError)
-	if err != nil && !ok {
+	switch {
+	case err != nil && !ok:
 		return errors.Annotate(err, "failed to check the existence of ConfigGroups").Tag(transient.Tag).Err()
+	case err == nil:
+		errs = make(errors.MultiError, cgLen)
 	}
 	toPut := entities[:0] // re-use the slice
 	for i, err := range errs {
@@ -263,10 +271,11 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 		default:
 			continue // up to date
 		}
+		ent.SchemaVersion = schemaVersion
 		ent.DrainingStartTime = cfg.GetDrainingStartTime()
 		ent.SubmitOptions = cfg.GetSubmitOptions()
 		ent.Content = cfg.GetConfigGroups()[i]
-		ent.SchemaVersion = schemaVersion
+		ent.CQStatusHost = cfg.GetCqStatusHost()
 		toPut = append(toPut, ent)
 	}
 
