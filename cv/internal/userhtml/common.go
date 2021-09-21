@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -71,7 +73,10 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 		DefaultTemplate: "base",
 		FuncMap: template.FuncMap{
 			"FmTime": func(ts time.Time) string {
-				return ts.UTC().Format("Mon Jan 2 15:04:05.000 MST 2006")
+				return ts.UTC().Format("2006-01-02 15:04:05 (MST)")
+			},
+			"RelTime": func(ts, now time.Time) string {
+				return humanize.RelTime(ts, now, "ago", "from now")
 			},
 			"Split": func(s string) []string {
 				return strings.Split(s, "\n")

@@ -71,6 +71,7 @@ func recentsPage(c *router.Context) {
 		"NextPage":     resp.NextPageToken,
 		"FilterStatus": params.statusString(),
 		"FilterMode":   params.modeString(),
+		"Now":          startTime(c.Context),
 	})
 }
 
