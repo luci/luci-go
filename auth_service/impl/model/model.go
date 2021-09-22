@@ -107,6 +107,30 @@ type AuthGroup struct {
 	CreatedBy string `gae:"created_by"`
 }
 
+type AuthIPAllowlist struct {
+	// AuthVersionedEntityMixin is embedded
+	// to include modification details related to this entity.
+	AuthVersionedEntityMixin
+
+	Kind string `gae:"$kind,AuthIPWhitelist"`
+	ID   string `gae:"$id"`
+
+	// Parent is AuthGlobalConfig.
+	Parent *datastore.Key `gae:"$parent"`
+
+	// Subnets is the list of subnets for this allowlist.
+	Subnets []string `gae:"subnets"`
+
+	// Description is a human readable description of this allowlist.
+	Description string `gae:"description,noindex"`
+
+	// CreatedTS is the time when this allowlist was created, in UTC.
+	CreatedTS time.Time `gae:"created_ts"`
+
+	// CreatedBy is the email of the user who created this allowlist.
+	CreatedBy string `gae:"created_by"`
+}
+
 // RootKey gets the root key for the AuthGroup entity.
 func RootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthGlobalConfig", "root", 0, nil)
@@ -143,6 +167,26 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 		return nil, errors.Annotate(err, "error getting all AuthGroup entities").Err()
 	}
 	return authGroups, nil
+}
+
+// GetAuthIPAllowlist gets the AuthIPAllowlist with the given allowlist name.
+//
+// Returns datastore.ErrNoSuchEntity if the allowlist given is not present.
+// Returns an annotated error for other errors.
+func GetAuthIPAllowlist(ctx context.Context, allowlistName string) (*AuthIPAllowlist, error) {
+	authIPAllowlist := &AuthIPAllowlist{
+		ID:     allowlistName,
+		Parent: RootKey(ctx),
+	}
+
+	switch err := datastore.Get(ctx, authIPAllowlist); {
+	case err == nil:
+		return authIPAllowlist, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	default:
+		return nil, errors.Annotate(err, "error getting AuthIPAllowlist").Err()
+	}
 }
 
 // ToProto converts the AuthGroup entity to the protobuffer

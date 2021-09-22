@@ -173,3 +173,40 @@ func TestGetAllAuthGroups(t *testing.T) {
 		So(actualAuthGroups, ShouldResemble, expectedAuthGroups)
 	})
 }
+
+func TestGetAuthIPAllowlist(t *testing.T) {
+	t.Parallel()
+	Convey("Testing GetAuthIPAllowlist", t, func() {
+		ctx := memory.Use(context.Background())
+
+		authVersionedEntityMixin := &AuthVersionedEntityMixin{
+			ModifiedTS:    time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
+			ModifiedBy:    "test-account",
+			AuthDBRev:     1337,
+			AuthDBPrevRev: 0,
+		}
+
+		authIPAllowlist := &AuthIPAllowlist{
+			ID:                       "test-auth-ip-allowlist-1",
+			Parent:                   RootKey(ctx),
+			AuthVersionedEntityMixin: *authVersionedEntityMixin,
+			Subnets: []string{
+				"123.456.789.101/24",
+				"123.456.789.112/24",
+			},
+			Description: "This is a test AuthIPAllowlist!",
+			CreatedTS:   time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC),
+			CreatedBy:   "test-user",
+		}
+
+		_, err := GetAuthIPAllowlist(ctx, "test-auth-ip-allowlist-1")
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		err = datastore.Put(ctx, authIPAllowlist)
+		So(err, ShouldBeNil)
+
+		actual, err := GetAuthIPAllowlist(ctx, "test-auth-ip-allowlist-1")
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, authIPAllowlist)
+	})
+}
