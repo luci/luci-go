@@ -1,0 +1,41 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package auth.service;
+
+option go_package = "go.chromium.org/luci/auth_service/api/rpcpb";
+
+import "google/protobuf/timestamp.proto";
+
+// Allowlists service contains methods to examine allowlists for services.
+service Allowlists {
+  // GetAllowlist returns Allowlist information for a requested Allowlist.
+  rpc GetAllowlist(GetAllowlistRequest) returns (Allowlist);
+}
+
+// GetAllowlistRequest is to specify the allowlist being requested.
+message GetAllowlistRequest {
+  string name = 1;  // e.g: "some-allowlist"
+}
+
+// Allowlist defines the allowlist for a service using LUCI Auth Service.
+message Allowlist {
+  string name = 1;                           // e.g: "some-allowlist"
+  repeated string subnets = 2;               // e.g: ["127.0.0.1/24"]
+  string description = 3;                    // e.g: "This allowlist is for ..."
+  google.protobuf.Timestamp created_ts = 4;  // e.g: "1972-01-01T10:00:20.021Z"
+  string created_by = 5;                     // e.g: "user:test@example.com"
+}

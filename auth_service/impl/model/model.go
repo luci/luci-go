@@ -203,3 +203,15 @@ func (group *AuthGroup) ToProto() *rpcpb.AuthGroup {
 		CreatedBy:   group.CreatedBy,
 	}
 }
+
+// ToProto converts the AuthIPAllowlist entity to the protobuffer
+// equivalent Allowlist.
+func (allowlist *AuthIPAllowlist) ToProto() *rpcpb.Allowlist {
+	return &rpcpb.Allowlist{
+		Name:        allowlist.ID,
+		Subnets:     allowlist.Subnets,
+		Description: allowlist.Description,
+		CreatedTs:   timestamppb.New(allowlist.CreatedTS),
+		CreatedBy:   allowlist.CreatedBy,
+	}
+}

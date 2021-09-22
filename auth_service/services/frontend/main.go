@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl"
 	"go.chromium.org/luci/auth_service/impl/servers/accounts"
+	"go.chromium.org/luci/auth_service/impl/servers/allowlists"
 	"go.chromium.org/luci/auth_service/impl/servers/groups"
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
 
@@ -93,6 +94,7 @@ func main() {
 		internalspb.RegisterInternalsServer(srv.PRPC, &internals.Server{})
 		rpcpb.RegisterAccountsServer(srv.PRPC, &accounts.Server{})
 		rpcpb.RegisterGroupsServer(srv.PRPC, &groups.Server{})
+		rpcpb.RegisterAllowlistsServer(srv.PRPC, &allowlists.Server{})
 
 		// The middleware chain applied to all plain HTTP routes.
 		mw := router.MiddlewareChain{
