@@ -266,6 +266,22 @@ func TestGetChange(t *testing.T) {
 						Type:         "alpha-numer1c-type",
 					},
 				},
+				Reviewers: &gerritpb.ReviewerStatusMap{
+					Reviewers: []*gerritpb.AccountInfo{
+						&gerritpb.AccountInfo{
+							AccountId: 1000096,
+							Name:      "John Doe",
+							Email:     "john.doe@example.com",
+							Username:  "jdoe",
+						},
+						&gerritpb.AccountInfo{
+							AccountId: 1000097,
+							Name:      "Jane Roe",
+							Email:     "jane.roe@example.com",
+							Username:  "jroe",
+						},
+					},
+				},
 			}
 			var actualRequest *http.Request
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -391,7 +407,23 @@ func TestGetChange(t *testing.T) {
 							"fallback_text": "nothing more required",
 							"type": "alpha-numer1c-type"
 						}
-					]
+					],
+					"reviewers": {
+						"REVIEWER": [
+							{
+								"_account_id": 1000096,
+								"name": "John Doe",
+								"email": "john.doe@example.com",
+								"username": "jdoe"
+							},
+							{
+								"_account_id": 1000097,
+								"name": "Jane Roe",
+								"email": "jane.roe@example.com",
+								"username": "jroe"
+							}
+						]
+					}
 				}`)
 			})
 			defer srv.Close()

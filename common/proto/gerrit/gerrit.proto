@@ -388,7 +388,7 @@ message AccountInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 17.
+// Next tag: 18.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -452,6 +452,9 @@ message ChangeInfo {
 
   // The numeric Change-Id of the change that this change was cherry-picked from.
   int64 cherry_pick_of_change = 16;
+
+  // The users who have been added in and removed from the change.
+  ReviewerStatusMap reviewers = 17;
 }
 
 enum ChangeStatus {
@@ -459,6 +462,20 @@ enum ChangeStatus {
   NEW = 1;
   MERGED = 2;
   ABANDONED = 3;
+}
+
+// ReviewerStatusMap is a map that maps a reviewer state to a list of
+// AccountInfo(s).
+//
+// ReviewerState includes REVIEWER, CC, and REMOVED, and this struct
+// defines a field for each of then.
+message ReviewerStatusMap {
+  // The users who have been added to the change and voted.
+  repeated AccountInfo reviewers = 1;
+  // The users who have been added to the change but haven't voted yet.
+  repeated AccountInfo ccs = 2;
+  // The users who have been removed from the change.
+  repeated AccountInfo removed = 3;
 }
 
 // Information about a patch set.

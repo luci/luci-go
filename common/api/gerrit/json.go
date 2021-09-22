@@ -66,11 +66,12 @@ type ownerInfo struct {
 
 // changeInfo represents JSON for a gerritpb.ChangeInfo on the wire.
 type changeInfo struct {
-	Number   int64        `json:"_number"`
-	Owner    *accountInfo `json:"owner"`
-	Project  string       `json:"project"`
-	Branch   string       `json:"branch"`
-	ChangeID string       `json:"change_id"`
+	Number    int64                     `json:"_number"`
+	Owner     *accountInfo              `json:"owner"`
+	Project   string                    `json:"project"`
+	Branch    string                    `json:"branch"`
+	ChangeID  string                    `json:"change_id"`
+	Reviewers map[string][]*accountInfo `json:"reviewers"`
 
 	// json.Unmarshal cannot convert enum string to value,
 	// so this field is handled specially in ToProto.
@@ -138,6 +139,28 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 			}
 		}
 	}
+	if ci.Reviewers != nil {
+		ret.Reviewers = &gerritpb.ReviewerStatusMap{}
+		if accs, exist := ci.Reviewers["REVIEWER"]; exist {
+			ret.Reviewers.Reviewers = make([]*gerritpb.AccountInfo, len(accs))
+			for i, acc := range accs {
+				ret.Reviewers.Reviewers[i] = acc.ToProto()
+			}
+		}
+		if accs, exist := ci.Reviewers["CC"]; exist {
+			ret.Reviewers.Ccs = make([]*gerritpb.AccountInfo, len(accs))
+			for i, acc := range accs {
+				ret.Reviewers.Ccs[i] = acc.ToProto()
+			}
+		}
+		if accs, exist := ci.Reviewers["REMOVED"]; exist {
+			ret.Reviewers.Removed = make([]*gerritpb.AccountInfo, len(accs))
+			for i, acc := range accs {
+				ret.Reviewers.Ccs[i] = acc.ToProto()
+			}
+		}
+	}
+
 	return ret, nil
 }
 
