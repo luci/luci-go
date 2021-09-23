@@ -63,7 +63,7 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		return nil, err
 	}
 
-	cg, err := rs.LoadConfigGroup(ctx)
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
 	if err != nil {
 		return nil, err
 	}

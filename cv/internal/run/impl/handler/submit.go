@@ -224,7 +224,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 				},
 			})
 		}
-		cg, err := rs.LoadConfigGroup(ctx)
+		cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
 		if err != nil {
 			return nil, err
 		}
@@ -299,10 +299,11 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 					},
 				}
 			}
-			cg, err := rs.LoadConfigGroup(ctx)
+			cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
 			if err != nil {
 				return nil, err
 			}
+
 			if err := impl.cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc, cg); err != nil {
 				return nil, err
 			}
@@ -342,7 +343,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 }
 
 func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlisted bool, err error) {
-	cg, err := rs.LoadConfigGroup(ctx)
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
 	if err != nil {
 		return false, err
 	}

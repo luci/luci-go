@@ -26,6 +26,7 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -120,7 +121,7 @@ func (impl *Impl) cancelTriggers(ctx context.Context, rs *state.RunState, msg st
 	for i, cl := range runCLs {
 		runCLExternalIDs[i] = cl.ExternalID
 	}
-	cg, err := rs.LoadConfigGroup(ctx)
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
 	if err != nil {
 		return err
 	}

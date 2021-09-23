@@ -45,7 +45,7 @@ func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 		return &Result{State: rs}, nil
 	}
 
-	cg, err := rs.LoadConfigGroup(ctx)
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
 	if err != nil {
 		return nil, err
 	}

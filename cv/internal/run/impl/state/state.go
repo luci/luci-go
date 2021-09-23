@@ -37,8 +37,6 @@ type RunState struct {
 	// SubmissionScheduled is true if a submission will be attempted after state
 	// transition completes.
 	SubmissionScheduled bool
-	// cg is the cached config group used by this Run.
-	cg *prjcfg.ConfigGroup
 }
 
 // ShallowCopy returns a shallow copy of run state
@@ -50,26 +48,8 @@ func (rs *RunState) ShallowCopy() *RunState {
 		Run:                 rs.Run,
 		LogEntries:          append(make([]*run.LogEntry, 0, len(rs.LogEntries)), rs.LogEntries...),
 		SubmissionScheduled: rs.SubmissionScheduled,
-
-		cg: rs.cg,
 	}
 	return ret
-}
-
-// LoadConfigGroup loads the ConfigGroup used by this Run.
-//
-// Result is cached inside the state.
-func (rs *RunState) LoadConfigGroup(ctx context.Context) (*prjcfg.ConfigGroup, error) {
-	cgID := rs.Run.ConfigGroupID
-	if rs.cg != nil && cgID == rs.cg.ID {
-		return rs.cg, nil
-	}
-	var err error
-	rs.cg, err = prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), cgID)
-	if err != nil {
-		return nil, err
-	}
-	return rs.cg, nil
 }
 
 // CheckTree returns whether Tree is open for this Run.
@@ -79,7 +59,7 @@ func (rs *RunState) LoadConfigGroup(ctx context.Context) (*prjcfg.ConfigGroup, e
 func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error) {
 	treeOpen := true
 	if !rs.Run.Options.GetSkipTreeChecks() {
-		cg, err := rs.LoadConfigGroup(ctx)
+		cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
 		if err != nil {
 			return false, err
 		}
