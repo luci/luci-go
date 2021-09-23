@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -83,6 +84,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		if len(rs.Submission.GetSubmittedCls()) > 0 {
 			panic(fmt.Errorf("impossible; Run %q is in Status_WAITING_FOR_SUBMISSION status but has submitted CLs ", rs.ID))
 		}
+		rs = rs.ShallowCopy()
 		switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
 		case err != nil:
 			return nil, err
@@ -90,10 +92,11 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			// This Run will be notified by Submit Queue once its turn comes.
 			return &Result{State: rs}, nil
 		}
-
-		rs = rs.ShallowCopy()
-		if rs.Submission == nil {
+		switch {
+		case rs.Submission == nil:
 			rs.Submission = &run.Submission{}
+		default:
+			rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 		}
 
 		switch treeOpen, err := rs.CheckTree(ctx, impl.TreeClient); {
@@ -133,19 +136,18 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 // OnCLSubmitted implements Handler interface.
 func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	rs = rs.ShallowCopy()
-	sub := rs.Submission
+	rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 	submitted := clids.Set()
-	for _, clid := range sub.GetSubmittedCls() {
-		submitted[common.CLID(clid)] = struct{}{}
+	for _, cl := range rs.Submission.GetSubmittedCls() {
+		submitted.AddI64(cl)
 	}
-	if sub.GetSubmittedCls() != nil {
-		sub.SubmittedCls = sub.SubmittedCls[:0]
+	if rs.Submission.GetSubmittedCls() != nil {
+		rs.Submission.SubmittedCls = rs.Submission.SubmittedCls[:0]
 	}
-	for _, cl := range sub.GetCls() {
-		clid := common.CLID(cl)
-		if _, ok := submitted[clid]; ok {
-			sub.SubmittedCls = append(sub.SubmittedCls, cl)
-			delete(submitted, clid)
+	for _, cl := range rs.Submission.GetCls() {
+		if submitted.HasI64(cl) {
+			rs.Submission.SubmittedCls = append(rs.Submission.SubmittedCls, cl)
+			submitted.DelI64(cl)
 		}
 	}
 	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
@@ -153,7 +155,7 @@ func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common
 		Kind: &run.LogEntry_ClSubmitted{
 			ClSubmitted: &run.LogEntry_CLSubmitted{
 				NewlySubmittedCls: common.CLIDsAsInt64s(clids),
-				TotalSubmitted:    int64(len(sub.SubmittedCls)),
+				TotalSubmitted:    int64(len(rs.Submission.SubmittedCls)),
 			},
 		},
 	})
@@ -214,6 +216,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 			for i, f := range clFailures.GetFailures() {
 				failedCLs[i] = f.GetClid()
 			}
+			rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 			rs.Submission.FailedCls = failedCLs
 			rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 				Time: timestamppb.New(clock.Now(ctx)),
@@ -275,6 +278,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 			status = run.Status_FAILED
 			// synthesize submission completed event with permanent failure.
 			if clFailures := sc.GetClFailures(); clFailures != nil {
+				rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 				rs.Submission.FailedCls = make([]int64, len(clFailures.GetFailures()))
 				sc = &eventpb.SubmissionCompleted{
 					Result: eventpb.SubmissionResult_FAILED_PERMANENT,

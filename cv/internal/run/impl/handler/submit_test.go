@@ -1025,9 +1025,11 @@ func TestOnCLSubmitted(t *testing.T) {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{5})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{5})
+			rs = res.State
 			res, err = h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 3})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 5})
+			rs = res.State
 			res, err = h.OnCLSubmitted(ctx, rs, common.CLIDs{7})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})

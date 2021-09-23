@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -35,6 +37,7 @@ const (
 func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error) {
 	if shouldCheckTree(ctx, rs.Status, rs.Submission) {
 		rs = rs.ShallowCopy()
+		rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 		switch open, err := rs.CheckTree(ctx, impl.TreeClient); {
 		case err != nil:
 			return nil, err
