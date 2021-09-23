@@ -236,7 +236,7 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 	return nil
 }
 
-func getBuildForUpdate(ctx context.Context, buildMask *mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
+func getBuildForUpdate(ctx context.Context, updateMask *mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
 	build, err := getBuild(ctx, req.Build.Id)
 	if err != nil {
 		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
@@ -250,17 +250,17 @@ func getBuildForUpdate(ctx context.Context, buildMask *mask.Mask, req *pb.Update
 	}
 
 	finalStatus := build.Proto.Status
-	if buildMask.MustIncludes("status") == mask.IncludeEntirely {
+	if updateMask.MustIncludes("status") == mask.IncludeEntirely {
 		finalStatus = req.Build.Status
 	}
 
 	// ensure that a SCHEDULED build does not have steps or output.
 	if finalStatus == pb.Status_SCHEDULED {
-		if buildMask.MustIncludes("steps") != mask.Exclude {
+		if updateMask.MustIncludes("steps") != mask.Exclude {
 			return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update steps of a SCHEDULED build; either set status to non-SCHEDULED or do not update steps")
 		}
 
-		if buildMask.MustIncludes("output") != mask.Exclude {
+		if updateMask.MustIncludes("output") != mask.Exclude {
 			return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update build output fields of a SCHEDULED build; either set status to non-SCHEDULED or do not update build output")
 		}
 	}
@@ -268,12 +268,12 @@ func getBuildForUpdate(ctx context.Context, buildMask *mask.Mask, req *pb.Update
 	return build, nil
 }
 
-func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *mask.Mask, steps *model.BuildSteps) error {
+func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask *mask.Mask, steps *model.BuildSteps) error {
 	var b *model.Build
 	var origStatus pb.Status
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		var err error
-		b, err = getBuildForUpdate(ctx, buildMask, req)
+		b, err = getBuildForUpdate(ctx, updateMask, req)
 		if err != nil {
 			return err
 		}
@@ -283,7 +283,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		now := timestamppb.New(clock.Now(ctx))
 
 		// output.properties
-		if buildMask.MustIncludes("output.properties") == mask.IncludeEntirely {
+		if updateMask.MustIncludes("output.properties") == mask.IncludeEntirely {
 			prop := model.DSStruct{}
 			if req.Build.Output.GetProperties() != nil {
 				prop = model.DSStruct{*req.Build.Output.Properties}
@@ -295,7 +295,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		}
 
 		// merge the tags of the build entity with the request.
-		if len(req.Build.GetTags()) > 0 && buildMask.MustIncludes("tags") == mask.IncludeEntirely {
+		if len(req.Build.GetTags()) > 0 && updateMask.MustIncludes("tags") == mask.IncludeEntirely {
 			tags := stringset.NewFromSlice(b.Tags...)
 			for _, tag := range req.Build.GetTags() {
 				tags.Add(strpair.Format(tag.Key, tag.Value))
@@ -309,7 +309,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		// Instead, remove the field paths from the mask and merge the protos with the mask.
 		defer nilifyReqBuildDetails(req.Build)()
 		origStatus = b.Proto.Status
-		buildMask.Merge(req.Build, &b.Proto)
+		updateMask.Merge(req.Build, &b.Proto)
 		if b.Proto.Output != nil {
 			b.Proto.Output.Properties = nil
 		}
@@ -341,7 +341,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		}
 
 		// steps
-		if buildMask.MustIncludes("steps") == mask.IncludeEntirely {
+		if updateMask.MustIncludes("steps") == mask.IncludeEntirely {
 			steps.Build = bk
 			toSave = append(toSave, steps)
 		} else if isEndedStatus {
@@ -392,10 +392,10 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	if err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "update_mask: %s", err)
 	}
-	bm := um.MustSubmask("build")
+	updateMask := um.MustSubmask("build")
 
 	// pre-check if the build can be updated before updating it with a transaction.
-	b, err := getBuildForUpdate(ctx, bm, req)
+	b, err := getBuildForUpdate(ctx, updateMask, req)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +405,7 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		return nil, err
 	}
 
-	if err := updateEntities(ctx, req, bm, &bs); err != nil {
+	if err := updateEntities(ctx, req, updateMask, &bs); err != nil {
 		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 	}
 

@@ -133,9 +133,9 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err := validateSearch(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	mask, err := getBuildsSubMask(req.GetFields())
+	mask, err := model.NewBuildMask("builds", req.Fields, req.Mask)
 	if err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
+		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
 	}
 
 	rsp, err := search.NewQuery(req).Fetch(ctx)

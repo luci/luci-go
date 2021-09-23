@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	bb "go.chromium.org/luci/buildbucket"
@@ -292,7 +291,7 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 }
 
 // ToProto returns the *pb.Build representation of this build.
-func (b *Build) ToProto(ctx context.Context, m *mask.Mask) (*pb.Build, error) {
+func (b *Build) ToProto(ctx context.Context, m *BuildMask) (*pb.Build, error) {
 	build := b.ToSimpleBuildProto(ctx)
 	if err := LoadBuildDetails(ctx, m, build); err != nil {
 		return nil, err
@@ -319,32 +318,21 @@ func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
 
 // LoadBuildDetails loads the details of the given builds, trimming them
 // according to the mask.
-func LoadBuildDetails(ctx context.Context, m *mask.Mask, builds ...*pb.Build) error {
+func LoadBuildDetails(ctx context.Context, m *BuildMask, builds ...*pb.Build) error {
 	l := len(builds)
 	inf := make([]*BuildInfra, 0, l)
 	inp := make([]*BuildInputProperties, 0, l)
 	out := make([]*BuildOutputProperties, 0, l)
 	stp := make([]*BuildSteps, 0, l)
 	var dets []interface{}
-	var err error
-	isIncluded := func(path string) bool {
-		switch inc, e := m.Includes(path); {
-		case e != nil:
-			err = errors.Annotate(err, "error checking %q field inclusiveness", path).Err()
-		case inc != mask.Exclude:
-			return true
-		}
-		return false
-	}
+
 	included := map[string]bool{
-		"infra":             isIncluded("infra"),
-		"input.properties":  isIncluded("input.properties"),
-		"output.properties": isIncluded("output.properties"),
-		"steps":             isIncluded("steps"),
+		"infra":             m.Includes("infra"),
+		"input.properties":  m.Includes("input.properties"),
+		"output.properties": m.Includes("output.properties"),
+		"steps":             m.Includes("steps"),
 	}
-	if err != nil {
-		return err
-	}
+
 	for i, p := range builds {
 		if p.GetId() <= 0 {
 			return errors.Reason("invalid build for %q", p).Err()
@@ -363,14 +351,13 @@ func LoadBuildDetails(ctx context.Context, m *mask.Mask, builds ...*pb.Build) er
 		appendIfIncluded("input.properties", inp[i])
 		appendIfIncluded("output.properties", out[i])
 		appendIfIncluded("steps", stp[i])
-		if err != nil {
-			return err
-		}
 	}
+
 	if err := GetIgnoreMissing(ctx, dets); err != nil {
 		return errors.Annotate(err, "error fetching build details").Err()
 	}
 
+	var err error
 	for i, p := range builds {
 		p.Infra = &inf[i].Proto.BuildInfra
 		if p.Input == nil {
@@ -385,7 +372,7 @@ func LoadBuildDetails(ctx context.Context, m *mask.Mask, builds ...*pb.Build) er
 		if err != nil {
 			return errors.Annotate(err, "error fetching steps for build %q", p).Err()
 		}
-		if err := m.Trim(p); err != nil {
+		if err = m.Trim(p); err != nil {
 			return errors.Annotate(err, "error trimming fields for %q", p).Err()
 		}
 	}

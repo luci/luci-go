@@ -54,9 +54,9 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 	if err := validateCancel(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	m, err := getFieldMask(req.Fields)
+	m, err := model.NewBuildMask("", req.Fields, req.Mask)
 	if err != nil {
-		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid field mask")
+		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid mask")
 	}
 
 	bld, err := getBuild(ctx, req.Id)

@@ -58,6 +58,7 @@ const (
 )
 
 var (
+	sha1Regex          = regexp.MustCompile(`^[a-f0-9]{40}$`)
 	reservedKeys       = stringset.NewFromSlice("build_address")
 	gitilesCommitRegex = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]{40})$`)
 	gerritCLRegex      = regexp.MustCompile(`^patch/gerrit/([^/]+)/(\d+)/(\d+)$`)

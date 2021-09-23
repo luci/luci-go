@@ -23,7 +23,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -48,7 +47,7 @@ func TestBuild(t *testing.T) {
 
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-		m := mask.All(&pb.Build{})
+		m := NoopBuildMask
 
 		Convey("read/write", func() {
 			So(datastore.Put(ctx, &Build{
@@ -352,14 +351,14 @@ func TestBuild(t *testing.T) {
 
 			Convey("mask", func() {
 				Convey("include", func() {
-					m := mask.MustFromReadMask(&pb.Build{}, "id")
+					m := HardcodedBuildMask("id")
 					p, err := b.ToProto(ctx, m)
 					So(err, ShouldBeNil)
 					So(p.Id, ShouldEqual, 1)
 				})
 
 				Convey("exclude", func() {
-					m := mask.MustFromReadMask(&pb.Build{}, "builder")
+					m := HardcodedBuildMask("builder")
 					p, err := b.ToProto(ctx, m)
 					So(err, ShouldBeNil)
 					So(p.Id, ShouldEqual, 0)

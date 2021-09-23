@@ -87,9 +87,9 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	if err := validateGet(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	m, err := getFieldMask(req.Fields)
+	m, err := model.NewBuildMask("", req.Fields, req.Mask)
 	if err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
+		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
 	}
 	if req.Id == 0 {
 		addr := fmt.Sprintf("luci.%s.%s/%s/%d", req.Builder.Project, req.Builder.Bucket, req.Builder.Builder, req.BuildNumber)

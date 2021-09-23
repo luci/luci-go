@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
@@ -246,8 +245,7 @@ func validateExperimentName(expName string) error {
 
 // templateBuildMask enumerates properties to read from template builds. See
 // scheduleRequestFromTemplate.
-var templateBuildMask = mask.MustFromReadMask(
-	&pb.Build{},
+var templateBuildMask = model.HardcodedBuildMask(
 	"builder",
 	"critical",
 	"exe",
@@ -1143,16 +1141,16 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 
 // validateScheduleBuild validates and authorizes the given request, returning
 // a normalized version of the request and field mask.
-func validateScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *mask.Mask, error) {
+func validateScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
 	var err error
 	if err = validateSchedule(req); err != nil {
 		return nil, nil, appstatus.BadRequest(err)
 	}
 	normalizeSchedule(req)
 
-	m, err := getFieldMask(req.Fields)
+	m, err := model.NewBuildMask("", req.Fields, req.Mask)
 	if err != nil {
-		return nil, nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
+		return nil, nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
 	}
 
 	if req, err = scheduleRequestFromTemplate(ctx, req); err != nil {
@@ -1183,7 +1181,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildReque
 	// The ith error is the error associated with the ith request.
 	merr := make(errors.MultiError, len(reqs))
 	// The ith mask is the field mask derived from the ith request.
-	masks := make([]*mask.Mask, len(reqs))
+	masks := make([]*model.BuildMask, len(reqs))
 
 	errorInBatch := func() {
 		for i, e := range merr {

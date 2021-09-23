@@ -291,7 +291,7 @@ func TestValidateStep(t *testing.T) {
 
 func TestGetBuildForUpdate(t *testing.T) {
 	t.Parallel()
-	buildMask := func(req *pb.UpdateBuildRequest) *mask.Mask {
+	updateMask := func(req *pb.UpdateBuildRequest) *mask.Mask {
 		fm, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
 		So(err, ShouldBeNil)
 		return fm.MustSubmask("build")
@@ -319,20 +319,20 @@ func TestGetBuildForUpdate(t *testing.T) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 
 		Convey("works", func() {
-			b, err := getBuildForUpdate(ctx, buildMask(req), req)
+			b, err := getBuildForUpdate(ctx, updateMask(req), req)
 			So(err, ShouldBeNil)
 			So(&b.Proto, ShouldResembleProto, &build.Proto)
 
 			Convey("with build.steps", func() {
 				req.Build.Status = pb.Status_STARTED
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", "build.steps"}}
-				_, err = getBuildForUpdate(ctx, buildMask(req), req)
+				_, err = getBuildForUpdate(ctx, updateMask(req), req)
 				So(err, ShouldBeNil)
 			})
 			Convey("with build.output", func() {
 				req.Build.Status = pb.Status_STARTED
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", "build.output"}}
-				_, err = getBuildForUpdate(ctx, buildMask(req), req)
+				_, err = getBuildForUpdate(ctx, updateMask(req), req)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -340,7 +340,7 @@ func TestGetBuildForUpdate(t *testing.T) {
 		Convey("fails", func() {
 			Convey("if build doesn't exist", func() {
 				req.Build.Id = 2
-				_, err := getBuildForUpdate(ctx, buildMask(req), req)
+				_, err := getBuildForUpdate(ctx, updateMask(req), req)
 				So(err, ShouldBeRPCNotFound)
 			})
 
@@ -348,18 +348,18 @@ func TestGetBuildForUpdate(t *testing.T) {
 				build.Proto.Status = pb.Status_SUCCESS
 				So(datastore.Put(ctx, build), ShouldBeNil)
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status"}}
-				_, err := getBuildForUpdate(ctx, buildMask(req), req)
+				_, err := getBuildForUpdate(ctx, updateMask(req), req)
 				So(err, ShouldBeRPCFailedPrecondition, "cannot update an ended build")
 			})
 
 			Convey("with build.steps", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.steps"}}
-				_, err := getBuildForUpdate(ctx, buildMask(req), req)
+				_, err := getBuildForUpdate(ctx, updateMask(req), req)
 				So(err, ShouldBeRPCInvalidArgument, "cannot update steps of a SCHEDULED build")
 			})
 			Convey("with build.output", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.properties"}}
-				_, err := getBuildForUpdate(ctx, buildMask(req), req)
+				_, err := getBuildForUpdate(ctx, updateMask(req), req)
 				So(err, ShouldBeRPCInvalidArgument, "cannot update build output fields of a SCHEDULED build")
 			})
 		})
@@ -380,7 +380,7 @@ func TestUpdateBuild(t *testing.T) {
 		if b.Proto.Output != nil {
 			So(b.Proto.Output.Properties, ShouldBeNil)
 		}
-		m := mask.MustFromReadMask(&pb.Build{}, "output.properties", "steps", "tags")
+		m := model.HardcodedBuildMask("output.properties", "steps", "tags")
 		So(model.LoadBuildDetails(ctx, m, &b.Proto), ShouldBeNil)
 		return b
 	}
