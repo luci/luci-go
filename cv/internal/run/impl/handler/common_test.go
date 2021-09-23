@@ -74,8 +74,8 @@ func TestEndRun(t *testing.T) {
 		sort.Sort(cl.IncompleteRuns)
 		So(datastore.Put(ctx, &cl), ShouldBeNil)
 
-		h, _, _, clUpdater := makeTestImpl(&ct)
-		se := h.endRun(ctx, rs, run.Status_FAILED)
+		impl, deps := makeImpl(&ct)
+		se := impl.endRun(ctx, rs, run.Status_FAILED)
 		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.Run.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
@@ -90,7 +90,7 @@ func TestEndRun(t *testing.T) {
 		ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
 		pmtest.AssertReceivedRunFinished(ctx, rid)
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
-		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
+		So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 
 		Convey("Publish RunEnded event", func() {
 			var task *pubsub.PublishRunEndedTask
@@ -170,31 +170,47 @@ func TestCancelTriggers(t *testing.T) {
 		// Simulate CL no longer existing in Gerrit (e.g. ct.GFake) 1 minute later,
 		// just as Run Manager decides to cancel the CL triggers.
 		ct.Clock.Add(time.Minute)
-		h, _, _, clUpdater := makeTestImpl(&ct)
-		err = h.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, []changelist.ExternalID{cl.ExternalID}, "Dry Run OK", cg)
+		impl, deps := makeImpl(&ct)
+		err = impl.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, []changelist.ExternalID{cl.ExternalID}, "Dry Run OK", cg)
 		// The cancelation errors out, but the CL refresh is scheduled.
 		// TODO(crbug/1227369): fail transiently or better yet schedule another
 		// retry in the future and fail with tq.Ignore.
 		So(gcancel.ErrPermanentTag.In(err), ShouldBeTrue)
-		So(clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
+		So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 	})
 }
 
-func makeTestImpl(ct *cvtesting.Test) (*Impl, *prjmanager.Notifier, *run.Notifier, *clUpdaterMock) {
-	pm := prjmanager.NewNotifier(ct.TQDispatcher)
-	rm := run.NewNotifier(ct.TQDispatcher)
-	clu := &clUpdaterMock{}
+type dependencies struct {
+	pm        *prjmanager.Notifier
+	rm        *run.Notifier
+	clUpdater *clUpdaterMock
+}
+
+func makeTestHandler(ct *cvtesting.Test) (Handler, dependencies) {
+	// TODO(yiwzhang): add a wrapper around handler to ensure runState is not
+	// accidentally modified in place.
+	return makeImpl(ct)
+}
+
+// makeImpl should only be used to test common functions. For testing handler,
+// please use makeTestHandler instead.
+func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
+	deps := dependencies{
+		pm:        prjmanager.NewNotifier(ct.TQDispatcher),
+		rm:        run.NewNotifier(ct.TQDispatcher),
+		clUpdater: &clUpdaterMock{},
+	}
 	impl := &Impl{
-		PM:         pm,
-		RM:         rm,
-		CLMutator:  changelist.NewMutator(ct.TQDispatcher, pm, rm),
-		CLUpdater:  clu,
+		PM:         deps.pm,
+		RM:         deps.rm,
+		CLMutator:  changelist.NewMutator(ct.TQDispatcher, deps.pm, deps.rm),
+		CLUpdater:  deps.clUpdater,
 		TreeClient: ct.TreeFake.Client(),
 		GFactory:   ct.GFactory(),
 		BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake),
 		Publisher:  pubsub.NewPublisher(ct.TQDispatcher),
 	}
-	return impl, pm, rm, clu
+	return impl, deps
 }
 
 type clUpdaterMock struct {

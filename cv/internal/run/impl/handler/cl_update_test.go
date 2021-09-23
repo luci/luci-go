@@ -55,7 +55,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			},
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
-		h, _, _, _ := makeTestImpl(&ct)
+		h, _ := makeTestHandler(&ct)
 
 		// initial state
 		triggerTime := clock.Now(ctx).UTC()

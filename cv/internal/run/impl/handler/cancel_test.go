@@ -58,7 +58,7 @@ func TestCancel(t *testing.T) {
 				common.MakeRunID(lProject, ct.Clock.Now().Add(1*time.Minute), 1, []byte("cafecafe")),
 			},
 		}), ShouldBeNil)
-		h, _, _, _ := makeTestImpl(&ct)
+		h, _ := makeTestHandler(&ct)
 
 		now := ct.Clock.Now().UTC()
 		Convey("Backfill Start time", func() {

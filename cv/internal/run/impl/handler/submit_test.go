@@ -128,7 +128,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 		rs := &state.RunState{Run: r}
 
-		h, _, _, _ := makeTestImpl(&ct)
+		h, deps := makeTestHandler(&ct)
 
 		statuses := []run.Status{
 			run.Status_SUCCEEDED,
@@ -138,7 +138,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, rs.Run.ID, nil)
+					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rs.Run.ID, nil)
 					So(waitlisted, ShouldBeFalse)
 					return err
 				}, nil), ShouldBeNil)
@@ -206,7 +206,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					// another run has taken the current slot
 					anotherRunID := common.MakeRunID(lProject, now, 1, []byte("cafecafe"))
 					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-						_, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, anotherRunID, nil)
+						_, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, anotherRunID, nil)
 						So(err, ShouldBeNil)
 						return nil
 					}, nil), ShouldBeNil)
@@ -353,7 +353,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		ct.GFake.SetDependsOn(gHost, ci1, ci2)
 
 		rs := &state.RunState{Run: r}
-		h, _, _, _ := makeTestImpl(&ct)
+		h, deps := makeTestHandler(&ct)
 
 		statuses := []run.Status{
 			run.Status_SUCCEEDED,
@@ -363,7 +363,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, rs.Run.ID, nil)
+					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rs.Run.ID, nil)
 					So(waitlisted, ShouldBeFalse)
 					return err
 				}, nil), ShouldBeNil)
@@ -456,7 +456,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					TaskId:   "task-foo",
 				}
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, err := submit.TryAcquire(ctx, h.RM.NotifyReadyForSubmission, rid, nil)
+					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rid, nil)
 					So(waitlisted, ShouldBeFalse)
 					return err
 				}, nil), ShouldBeNil)
@@ -988,7 +988,7 @@ func TestOnCLSubmitted(t *testing.T) {
 			},
 		}}
 
-		h, _, _, _ := makeTestImpl(&ct)
+		h, _ := makeTestHandler(&ct)
 		Convey("Single", func() {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{3})
 			So(err, ShouldBeNil)

@@ -132,7 +132,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 			), ShouldBeNil)
 		}
 
-		h, _, _, _ := makeTestImpl(&ct)
+		h, _ := makeTestHandler(&ct)
 
 		statuses := []run.Status{
 			run.Status_SUCCEEDED,

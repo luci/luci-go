@@ -81,9 +81,9 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 				CLs:        common.CLIDs{1},
 			},
 		}
-		h, _, rn, _ := makeTestImpl(&ct)
+		h, deps := makeTestHandler(&ct)
 
-		mig := migration.MigrationServer{RunNotifier: rn}
+		mig := migration.MigrationServer{RunNotifier: deps.rm}
 		report := func(ts ...*migrationpb.Tryjob) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:             identity.Identity("project:infra"),

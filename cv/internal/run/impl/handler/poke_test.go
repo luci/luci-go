@@ -83,7 +83,7 @@ func TestPokeRecheckTree(t *testing.T) {
 			},
 		), ShouldBeNil)
 
-		h, _, _, clUpdater := makeTestImpl(&ct)
+		h, deps := makeTestHandler(&ct)
 
 		now := ct.Clock.Now()
 		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
@@ -95,7 +95,7 @@ func TestPokeRecheckTree(t *testing.T) {
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 			So(res.PostProcessFn, ShouldBeNil)
-			So(clUpdater.refreshedCLs, ShouldBeEmpty)
+			So(deps.clUpdater.refreshedCLs, ShouldBeEmpty)
 		}
 
 		Convey("Tree checks", func() {
@@ -206,7 +206,7 @@ func TestPokeRecheckTree(t *testing.T) {
 					So(res.PostProcessFn, ShouldBeNil)
 					So(res.State, ShouldNotEqual, rs)
 					So(res.State.Run.LatestCLsRefresh, ShouldResemble, datastore.RoundTime(ct.Clock.Now().UTC()))
-					So(clUpdater.refreshedCLs.Contains(1), ShouldBeTrue)
+					So(deps.clUpdater.refreshedCLs.Contains(1), ShouldBeTrue)
 				}
 				Convey("For the first time", func() {
 					rs.Run.CreateTime = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
