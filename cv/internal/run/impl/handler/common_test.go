@@ -21,10 +21,12 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq/tqtesting"
+
+	"go.chromium.org/luci/common/errors"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -37,6 +39,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/bq"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 
@@ -63,7 +66,6 @@ func TestEndRun(t *testing.T) {
 				CLs:        common.CLIDs{1},
 			},
 		}
-
 		anotherRID := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("cafecafe"))
 		cl := changelist.CL{
 			ID:             clid,
@@ -91,7 +93,6 @@ func TestEndRun(t *testing.T) {
 		pmtest.AssertReceivedRunFinished(ctx, rid)
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
 		So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
-
 		Convey("Publish RunEnded event", func() {
 			var task *pubsub.PublishRunEndedTask
 			for _, t := range ct.TQ.Tasks() {
@@ -123,7 +124,6 @@ func TestCancelTriggers(t *testing.T) {
 		const gChange = 123
 		const lProject = "infra"
 		const clid = 1
-
 		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
 				{
@@ -140,7 +140,6 @@ func TestCancelTriggers(t *testing.T) {
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
 		So(err, ShouldBeNil)
 		cg := cgs[0]
-
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		ci := gf.CI(gChange, gf.CQ(+2))
 		cl := changelist.CL{
@@ -166,7 +165,6 @@ func TestCancelTriggers(t *testing.T) {
 			Trigger:    trigger.Find(ci, cg.Content),
 		}
 		So(datastore.Put(ctx, &cl, &rcl), ShouldBeNil)
-
 		// Simulate CL no longer existing in Gerrit (e.g. ct.GFake) 1 minute later,
 		// just as Run Manager decides to cancel the CL triggers.
 		ct.Clock.Add(time.Minute)
@@ -186,10 +184,135 @@ type dependencies struct {
 	clUpdater *clUpdaterMock
 }
 
+type testHandler struct {
+	inner Handler
+}
+
+func validateStateMutation(passed, initialCopy, result *state.RunState) {
+	switch {
+	case cvtesting.SafeShouldResemble(result, initialCopy) == "":
+		// no state change, doesn't matter whether shallow copy is created or not.
+		return
+	case passed == result:
+		So(errors.New("handler mutated the input state but doesn't create a shallow copy before mutation"), ShouldBeNil)
+	case cvtesting.SafeShouldResemble(initialCopy, passed) != "":
+		So(errors.New("handler created a shallow copy but modifed addressable property in place; forgot to clone a proto?"), ShouldBeNil)
+	}
+}
+
+func (t *testHandler) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.Start(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.Cancel(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) OnCLsUpdated(ctx context.Context, rs *state.RunState, cls common.CLIDs) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.OnCLsUpdated(ctx, rs, cls)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) UpdateConfig(ctx context.Context, rs *state.RunState, ver string) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.UpdateConfig(ctx, rs, ver)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.OnCQDTryjobsUpdated(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.OnCQDVerificationCompleted(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.OnReadyForSubmission(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, cls common.CLIDs) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.OnCLSubmitted(ctx, rs, cls)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.OnSubmissionCompleted(ctx, rs, sc)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) TryResumeSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.TryResumeSubmission(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
+func (t *testHandler) Poke(ctx context.Context, rs *state.RunState) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.Poke(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
 func makeTestHandler(ct *cvtesting.Test) (Handler, dependencies) {
-	// TODO(yiwzhang): add a wrapper around handler to ensure runState is not
-	// accidentally modified in place.
-	return makeImpl(ct)
+	handler, dependencies := makeImpl(ct)
+	return &testHandler{inner: handler}, dependencies
 }
 
 // makeImpl should only be used to test common functions. For testing handler,

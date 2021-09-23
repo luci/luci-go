@@ -18,6 +18,7 @@ package state
 import (
 	"context"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -50,14 +51,62 @@ func (rs *RunState) ShallowCopy() *RunState {
 	// otherwise, the copy will always have nil slice even if the `rs` has
 	// zero-length slice which will fail the equality check in test.
 	if rs.CLs != nil {
-		ret.CLs = make(common.CLIDs, len(rs.CLs))
-		copy(ret.CLs, rs.CLs)
+		ret.CLs = append(common.CLIDs(nil), rs.CLs...)
 	}
 	if rs.LogEntries != nil {
 		ret.LogEntries = make([]*run.LogEntry, len(rs.LogEntries))
 		copy(ret.LogEntries, rs.LogEntries)
 	}
 	return &ret
+}
+
+// DeepCopy returns a deep copy of this RunState.
+//
+// This is an expensive operation. It should only be called in test.
+func (rs *RunState) DeepCopy() *RunState {
+	if rs == nil {
+		return nil
+	}
+	// Explicitly copy by hand instead of creating a shallow copy first like
+	// `ShallowCopy` to ensure all newly added fields will be *deep* copied.
+	// TODO(yiwzhang): Make a generic recursive deep copy (similar to
+	// cvtesting.SafeShouldResemble) which recognizes proto and uses `Clone`
+	// to DeepCopy instead.
+	ret := &RunState{
+		Run: run.Run{
+			ID:                  rs.ID,
+			CreationOperationID: rs.CreationOperationID,
+			Mode:                rs.Mode,
+			Status:              rs.Status,
+			EVersion:            rs.EVersion,
+			CreateTime:          rs.CreateTime,
+			StartTime:           rs.StartTime,
+			UpdateTime:          rs.UpdateTime,
+			EndTime:             rs.EndTime,
+			Owner:               rs.Owner,
+			ConfigGroupID:       rs.ConfigGroupID,
+			Options:             proto.Clone(rs.Options).(*run.Options),
+			Submission:          proto.Clone(rs.Submission).(*run.Submission),
+			Tryjobs:             proto.Clone(rs.Tryjobs).(*run.Tryjobs),
+			LatestCLsRefresh:    rs.LatestCLsRefresh,
+			CQDAttemptKey:       rs.CQDAttemptKey,
+			FinalizedByCQD:      rs.FinalizedByCQD,
+		},
+		SubmissionScheduled: rs.SubmissionScheduled,
+	}
+	// Intentionally use nil check instead of checking len(slice), because
+	// otherwise, the copy will always have nil slice even if the `rs` has
+	// zero-length slice which will fail the equality check in test.
+	if rs.CLs != nil {
+		ret.CLs = append(common.CLIDs(nil), rs.CLs...)
+	}
+	if rs.LogEntries != nil {
+		ret.LogEntries = make([]*run.LogEntry, len(rs.LogEntries))
+		for i, entry := range rs.LogEntries {
+			ret.LogEntries[i] = proto.Clone(entry).(*run.LogEntry)
+		}
+	}
+	return ret
 }
 
 // CheckTree returns whether Tree is open for this Run.
