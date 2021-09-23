@@ -39,3 +39,83 @@ type WithPrivateProto struct {
 func NewWithPrivateProto(A int, b string, t *timestamppb.Timestamp) WithPrivateProto {
 	return WithPrivateProto{A: A, b: b, t: t}
 }
+
+type WithInnerStructNoProto struct {
+	X int
+	y string
+	I NoProtos
+}
+
+func NewWithInnerStructNoProto(X int, y string, I NoProtos) WithInnerStructNoProto {
+	return WithInnerStructNoProto{X: X, y: y, I: I}
+}
+
+type WithInnerStructHasProto struct {
+	X int
+	y string
+	I WithPrivateProto
+}
+
+func NewWithInnerStructHasProto(X int, y string, I WithPrivateProto) WithInnerStructHasProto {
+	return WithInnerStructHasProto{X: X, y: y, I: I}
+}
+
+type WithPrivateInnerStructNoProto struct {
+	X int
+	y string
+	i NoProtos
+}
+
+func NewWithPrivateInnerStructNoProto(X int, y string, i NoProtos) WithPrivateInnerStructNoProto {
+	return WithPrivateInnerStructNoProto{X: X, y: y, i: i}
+}
+
+type WithPrivateStructHasProto struct {
+	X int
+	y string
+	i WithPrivateProto
+}
+
+func NewWithPrivateStructHasProto(X int, y string, i WithPrivateProto) WithPrivateStructHasProto {
+	return WithPrivateStructHasProto{X: X, y: y, i: i}
+}
+
+type WithInnerStructSliceNoProto struct {
+	X  int
+	y  string
+	Is []NoProtos
+}
+
+func NewWithInnerStructSliceNoProto(X int, y string, Is []NoProtos) WithInnerStructSliceNoProto {
+	return WithInnerStructSliceNoProto{X: X, y: y, Is: Is}
+}
+
+type WithInnerStructSliceHasProto struct {
+	X  int
+	y  string
+	Is []WithPrivateProto
+}
+
+func NewWithInnerStructSliceHasProto(X int, y string, Is []WithPrivateProto) WithInnerStructSliceHasProto {
+	return WithInnerStructSliceHasProto{X: X, y: y, Is: Is}
+}
+
+type WithPrivateInnerStructSliceNoProto struct {
+	X  int
+	y  string
+	is []NoProtos
+}
+
+func NewWithPrivateInnerStructSliceNoProto(X int, y string, is []NoProtos) WithPrivateInnerStructSliceNoProto {
+	return WithPrivateInnerStructSliceNoProto{X: X, y: y, is: is}
+}
+
+type WithPrivateInnerStructSliceHasProto struct {
+	X  int
+	y  string
+	is []WithPrivateProto
+}
+
+func NewWithPrivateInnerStructSliceHasProto(X int, y string, is []WithPrivateProto) WithPrivateInnerStructSliceHasProto {
+	return WithPrivateInnerStructSliceHasProto{X: X, y: y, is: is}
+}

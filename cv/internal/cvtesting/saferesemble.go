@@ -27,8 +27,11 @@ import (
 	"go.chromium.org/luci/common/testing/assertions"
 )
 
-// SafeShouldResemble compares 2 structs, which may include top-evel proto fields,
-// and should not include any embedded structs except well known standard types.
+// SafeShouldResemble compares 2 structs recursively, which may include proto
+// fields.
+//
+// Inner struct or slice of struct property is okay, but should not include
+// any pointer to struct or slice of pointer to struct property.
 //
 // This should work in place of GoConvey's ShouldResemble on most of CV's
 // structs which may contain protos.
@@ -63,62 +66,108 @@ func SafeShouldResemble(actual interface{}, expected ...interface{}) string {
 		return fmt.Sprintf("Wrong type %T, must be a pointer to struct or a struct", actual)
 	}
 
-	// rA, rE are now structs.
-
+	// Copy the *values* before passing to `compareStructRecursive` because
+	// it will reset proto fields to `nil`.
+	typ := rA.Type()
+	copyA, copyE := reflect.New(typ).Elem(), reflect.New(typ).Elem()
+	copyA.Set(rA) // shallow-copy
+	copyE.Set(rE) // shallow-copy
 	// Because GoConvey's ShouldResemble may hang when comparing protos,
 	// first compare proto fields with ShouldResembleProto,
 	// then compare the remaining fields with ShouldResemble.
-
-	// Copy the *values* s.t. resetting proto fields to `nil` doesn't modify the
-	// passed arguments.
-	typ := rA.Type()
-	vA, vE := reflect.New(typ), reflect.New(typ)
-	vA.Elem().Set(rA) // shallow-copy
-	vE.Elem().Set(rE) // shallow-copy
-
-	buf := strings.Builder{}
-	protoMessageType := reflect.TypeOf((*proto.Message)(nil)).Elem()
-fieldsLoop:
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		switch {
-		case field.Type.Implements(protoMessageType):
-			// ShouldResembleProto can handle this.
-		case field.Type.Kind() == reflect.Slice && field.Type.Elem().Implements(protoMessageType):
-			// ShouldResembleProto can also handle this.
-		default:
-			// Assume not a proto. In practice, this can be a struct or ptr to a
-			// struct with a proto inside. Detecting and bailing in such a case is
-			// left as future work if it becomes really necessary.
-			continue fieldsLoop
-		}
-
-		fA, fE := vA.Elem().Field(i), vE.Elem().Field(i)
-		switch {
-		case fA.CanInterface() != fE.CanInterface():
-			panic(fmt.Errorf("type %s field %s CanInterface behaves differently in actual (%t) and expected (%t)",
-				typ.Name(), field.Name, fA.CanInterface(), fE.CanInterface()))
-		case fA.CanSet() != fE.CanSet():
-			panic(fmt.Errorf("type %s field %s CanSet behaves differently in actual (%t) and expected (%t)",
-				typ.Name(), field.Name, fA.CanSet(), fE.CanSet()))
-		case !fA.CanInterface() || !fA.CanSet():
-			// HACK to make private fields interface-able & settable.
-			fA = reflect.NewAt(field.Type, unsafe.Pointer(fA.UnsafeAddr())).Elem()
-			fE = reflect.NewAt(field.Type, unsafe.Pointer(fE.UnsafeAddr())).Elem()
-		}
-		if diff := assertions.ShouldResembleProto(fA.Interface(), fE.Interface()); diff != "" {
-			addWithIndent(&buf, "field ."+field.Name+" differs:\n", poorifyIfConveyJSON(diff))
-		}
-		// Reset proto field to nil.
-		fA.Set(reflect.New(field.Type).Elem())
-		fE.Set(reflect.New(field.Type).Elem())
+	buf := &strings.Builder{}
+	p := &protoFieldsComparator{
+		actual:   copyA,
+		expected: copyE,
+		diffBuf:  buf,
 	}
-
+	p.compareRecursiveAndNilify()
 	// OK, now compare all non-proto fields.
-	if diff := convey.ShouldResemble(vA.Elem().Interface(), vE.Elem().Interface()); diff != "" {
-		addWithIndent(&buf, "non-proto fields differ:\n", poorifyIfConveyJSON(diff))
+	if diff := convey.ShouldResemble(copyA.Interface(), copyE.Interface()); diff != "" {
+		buf.WriteRune('\n')
+		addWithIndent(buf, "non-proto fields differ:\n", poorifyIfConveyJSON(diff))
 	}
 	return strings.TrimSpace(buf.String())
+}
+
+type protoFieldsComparator struct {
+	actual, expected reflect.Value
+
+	parentFields []string
+	diffBuf      *strings.Builder
+}
+
+var protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
+
+func (p *protoFieldsComparator) compareRecursiveAndNilify() {
+	structType := p.actual.Type()
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		fieldKind := field.Type.Kind()
+		fA, fE := p.actual.Field(i), p.expected.Field(i)
+		fullPath := strings.Join(append(p.parentFields, field.Name), ".")
+		switch {
+		case field.Type.Implements(protoMessageType):
+			fallthrough
+		case fieldKind == reflect.Slice && field.Type.Elem().Implements(protoMessageType):
+			switch {
+			case fA.CanInterface() != fE.CanInterface():
+				panic(fmt.Errorf("type %s field %s CanInterface behaves differently in actual (%t) and expected (%t)",
+					structType.Name(), fullPath, fA.CanInterface(), fE.CanInterface()))
+			case fA.CanSet() != fE.CanSet():
+				panic(fmt.Errorf("type %s field %s CanSet behaves differently in actual (%t) and expected (%t)",
+					structType.Name(), fullPath, fA.CanSet(), fE.CanSet()))
+			case !fA.CanInterface():
+				// HACK to make private fields interface-able.
+				fA = reflect.NewAt(field.Type, unsafe.Pointer(fA.UnsafeAddr())).Elem()
+				fE = reflect.NewAt(field.Type, unsafe.Pointer(fE.UnsafeAddr())).Elem()
+			}
+			if diff := assertions.ShouldResembleProto(fA.Interface(), fE.Interface()); diff != "" {
+				addWithIndent(p.diffBuf, "field ."+fullPath+" differs:\n", poorifyIfConveyJSON(diff))
+			}
+			// Reset proto field to nil.
+			zeroOutValue(fA)
+			zeroOutValue(fE)
+		case fieldKind == reflect.Struct:
+			p := &protoFieldsComparator{
+				actual:       fA,
+				expected:     fE,
+				diffBuf:      p.diffBuf,
+				parentFields: append(p.parentFields, field.Name),
+			}
+			p.compareRecursiveAndNilify()
+		case fieldKind == reflect.Slice && field.Type.Elem().Kind() == reflect.Struct:
+			if fA.Len() != fE.Len() {
+				addWithIndent(p.diffBuf, "field ."+fullPath+" differs in length:\n", fmt.Sprintf("expected %d, got %d", fE.Len(), fA.Len()))
+				// the element may contain proto fields inside.
+				zeroOutValue(fA)
+				zeroOutValue(fE)
+			} else {
+				for i := 0; i < fA.Len(); i++ {
+					p := &protoFieldsComparator{
+						actual:       fA.Index(i),
+						expected:     fE.Index(i),
+						diffBuf:      p.diffBuf,
+						parentFields: append(p.parentFields, fmt.Sprintf("%s[%d]", field.Name, i)),
+					}
+					p.compareRecursiveAndNilify()
+				}
+			}
+		default:
+			// In practice, this can be a ptr to a struct with a proto inside.
+			// Detecting and bailing in such a case is left as future work if it
+			// becomes really necessary.
+		}
+	}
+}
+
+func zeroOutValue(val reflect.Value) {
+	valType := val.Type()
+	if !val.CanSet() {
+		// HACK to workaround setting private fields.
+		val = reflect.NewAt(val.Type(), unsafe.Pointer(val.UnsafeAddr())).Elem()
+	}
+	val.Set(reflect.New(valType).Elem())
 }
 
 func addWithIndent(buf *strings.Builder, section, text string) {

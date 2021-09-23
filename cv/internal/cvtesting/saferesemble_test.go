@@ -148,6 +148,62 @@ func TestSafeShouldResemble(t *testing.T) {
 			a:    saferesembletest.NewWithPrivateProto(1, "b", ts53),
 			e:    saferesembletest.NewWithPrivateProto(1, "b", ts53decoded),
 		},
+		{
+			name: "equal with inner struct fields and no protos",
+			a:    saferesembletest.NewWithInnerStructNoProto(2, "y", saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC)),
+			e:    saferesembletest.NewWithInnerStructNoProto(2, "y", saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC)),
+		},
+		{
+			name: "equal with inner struct fields and has proto",
+			a:    saferesembletest.NewWithInnerStructHasProto(2, "y", saferesembletest.NewWithPrivateProto(1, "b", ts53)),
+			e:    saferesembletest.NewWithInnerStructHasProto(2, "y", saferesembletest.NewWithPrivateProto(1, "b", ts53decoded)),
+		},
+		{
+			name: "equal with private inner struct fields and no protos",
+			a:    saferesembletest.NewWithPrivateInnerStructNoProto(2, "y", saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC)),
+			e:    saferesembletest.NewWithPrivateInnerStructNoProto(2, "y", saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC)),
+		},
+		{
+			name: "equal with private inner struct fields and has proto",
+			a:    saferesembletest.NewWithPrivateStructHasProto(2, "y", saferesembletest.NewWithPrivateProto(1, "b", ts53)),
+			e:    saferesembletest.NewWithPrivateStructHasProto(2, "y", saferesembletest.NewWithPrivateProto(1, "b", ts53decoded)),
+		},
+		{
+			name: "equal with inner struct slice field and no protos",
+			a: saferesembletest.NewWithInnerStructSliceNoProto(2, "y", []saferesembletest.NoProtos{
+				saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC),
+			}),
+			e: saferesembletest.NewWithInnerStructSliceNoProto(2, "y", []saferesembletest.NoProtos{
+				saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC),
+			}),
+		},
+		{
+			name: "equal with inner struct slice field and has proto",
+			a: saferesembletest.NewWithInnerStructSliceHasProto(2, "y", []saferesembletest.WithPrivateProto{
+				saferesembletest.NewWithPrivateProto(1, "b", ts53),
+			}),
+			e: saferesembletest.NewWithInnerStructSliceHasProto(2, "y", []saferesembletest.WithPrivateProto{
+				saferesembletest.NewWithPrivateProto(1, "b", ts53decoded),
+			}),
+		},
+		{
+			name: "equal with private inner struct slice fields and no protos",
+			a: saferesembletest.NewWithPrivateInnerStructSliceNoProto(2, "y", []saferesembletest.NoProtos{
+				saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC),
+			}),
+			e: saferesembletest.NewWithPrivateInnerStructSliceNoProto(2, "y", []saferesembletest.NoProtos{
+				saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC),
+			}),
+		},
+		{
+			name: "equal with private inner struct fields slice and has proto",
+			a: saferesembletest.NewWithPrivateInnerStructSliceHasProto(2, "y", []saferesembletest.WithPrivateProto{
+				saferesembletest.NewWithPrivateProto(1, "b", ts53),
+			}),
+			e: saferesembletest.NewWithPrivateInnerStructSliceHasProto(2, "y", []saferesembletest.WithPrivateProto{
+				saferesembletest.NewWithPrivateProto(1, "b", ts53decoded),
+			}),
+		},
 
 		// Diff.
 		{
@@ -192,8 +248,49 @@ func TestSafeShouldResemble(t *testing.T) {
 			e:             &tWithProtoSlice{TS: []*timestamppb.Timestamp{ts53decoded, ts66}},
 			diffsContains: []string{"field .TS differs:"},
 		},
-
-		// With private fields.
+		{
+			name:          "diff inner struct no protos",
+			a:             saferesembletest.NewWithInnerStructNoProto(2, "y", saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC)),
+			e:             saferesembletest.NewWithInnerStructNoProto(2, "y", saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC.Add(1*time.Second))),
+			diffsContains: []string{"non-proto fields differ:", "(Should resemble)!"},
+		},
+		{
+			name:          "diff inner struct has proto",
+			a:             saferesembletest.NewWithInnerStructHasProto(2, "y", saferesembletest.NewWithPrivateProto(1, "b", ts66)),
+			e:             saferesembletest.NewWithInnerStructHasProto(2, "y", saferesembletest.NewWithPrivateProto(1, "b", ts53)),
+			diffsContains: []string{"field .I.t differs:"},
+		},
+		{
+			name: "diff inner struct slice no protos",
+			a: saferesembletest.NewWithInnerStructSliceNoProto(2, "y", []saferesembletest.NoProtos{
+				saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC),
+			}),
+			e: saferesembletest.NewWithInnerStructSliceNoProto(2, "y", []saferesembletest.NoProtos{
+				saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC.Add(1*time.Second)),
+			}),
+			diffsContains: []string{"non-proto fields differ:", "(Should resemble)!"},
+		},
+		{
+			name: "diff inner struct slice has proto",
+			a: saferesembletest.NewWithInnerStructSliceHasProto(2, "y", []saferesembletest.WithPrivateProto{
+				saferesembletest.NewWithPrivateProto(1, "b", ts66),
+			}),
+			e: saferesembletest.NewWithInnerStructSliceHasProto(2, "y", []saferesembletest.WithPrivateProto{
+				saferesembletest.NewWithPrivateProto(1, "b", ts53),
+			}),
+			diffsContains: []string{"field .Is[0].t differs:"},
+		},
+		{
+			name: "diff in struct slice length of a slice",
+			a: saferesembletest.NewWithInnerStructSliceHasProto(2, "y", []saferesembletest.WithPrivateProto{
+				saferesembletest.NewWithPrivateProto(1, "b", ts53),
+				saferesembletest.NewWithPrivateProto(10, "bb", ts53),
+			}),
+			e: saferesembletest.NewWithInnerStructSliceHasProto(2, "y", []saferesembletest.WithPrivateProto{
+				saferesembletest.NewWithPrivateProto(1, "b", ts53),
+			}),
+			diffsContains: []string{"field .Is differs in length:"},
+		},
 	}
 
 	for i, c := range cases {
