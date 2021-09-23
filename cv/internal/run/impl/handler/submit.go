@@ -49,7 +49,7 @@ import (
 
 // OnReadyForSubmission implements Handler interface.
 func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
-	switch status := rs.Run.Status; {
+	switch status := rs.Status; {
 	case run.IsEnded(status):
 		// It is safe to discard this event because this event either:
 		//  * arrives after Run gets cancelled while waiting for submission, or
@@ -77,11 +77,11 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		// of the fail-safe task sent while acquiring the Submit Queue. CV should
 		// treat this Run as WAITING_FOR_SUBMISSION status.
 		rs = rs.ShallowCopy()
-		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
+		rs.Status = run.Status_WAITING_FOR_SUBMISSION
 		fallthrough
 	case status == run.Status_WAITING_FOR_SUBMISSION:
-		if len(rs.Run.Submission.GetSubmittedCls()) > 0 {
-			panic(fmt.Errorf("impossible; Run %q is in Status_WAITING_FOR_SUBMISSION status but has submitted CLs ", rs.Run.ID))
+		if len(rs.Submission.GetSubmittedCls()) > 0 {
+			panic(fmt.Errorf("impossible; Run %q is in Status_WAITING_FOR_SUBMISSION status but has submitted CLs ", rs.ID))
 		}
 		switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
 		case err != nil:
@@ -92,8 +92,8 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		}
 
 		rs = rs.ShallowCopy()
-		if rs.Run.Submission == nil {
-			rs.Run.Submission = &run.Submission{}
+		if rs.Submission == nil {
+			rs.Submission = &run.Submission{}
 		}
 
 		switch treeOpen, err := rs.CheckTree(ctx, impl.TreeClient); {
@@ -103,7 +103,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			err := parallel.WorkPool(2, func(work chan<- func() error) {
 				work <- func() error {
 					// Tree is closed, revisit after 1 minute.
-					return impl.RM.PokeAfter(ctx, rs.Run.ID, 1*time.Minute)
+					return impl.RM.PokeAfter(ctx, rs.ID, 1*time.Minute)
 				}
 				work <- func() error {
 					// Give up the Submit Queue while waiting for tree to open.
@@ -118,7 +118,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			if err := markSubmitting(ctx, rs); err != nil {
 				return nil, err
 			}
-			s := newSubmitter(ctx, rs.Run.ID, rs.Run.Submission, impl.RM, impl.GFactory)
+			s := newSubmitter(ctx, rs.ID, rs.Submission, impl.RM, impl.GFactory)
 			rs.SubmissionScheduled = true
 			return &Result{
 				State:         rs,
@@ -133,7 +133,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 // OnCLSubmitted implements Handler interface.
 func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	rs = rs.ShallowCopy()
-	sub := rs.Run.Submission
+	sub := rs.Submission
 	submitted := clids.Set()
 	for _, clid := range sub.GetSubmittedCls() {
 		submitted[common.CLID(clid)] = struct{}{}
@@ -170,7 +170,7 @@ func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common
 
 // OnSubmissionCompleted implements Handler interface.
 func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
-	switch status := rs.Run.Status; {
+	switch status := rs.Status; {
 	case run.IsEnded(status):
 		logging.Warningf(ctx, "received SubmissionCompleted event when Run is %s", status)
 		rs = rs.ShallowCopy()
@@ -214,7 +214,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 			for i, f := range clFailures.GetFailures() {
 				failedCLs[i] = f.GetClid()
 			}
-			rs.Run.Submission.FailedCls = failedCLs
+			rs.Submission.FailedCls = failedCLs
 			rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 				Time: timestamppb.New(clock.Now(ctx)),
 				Kind: &run.LogEntry_SubmissionFailure_{
@@ -224,11 +224,11 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 				},
 			})
 		}
-		cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
+		cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 		if err != nil {
 			return nil, err
 		}
-		if err := impl.cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc, cg); err != nil {
+		if err := impl.cancelNotSubmittedCLTriggers(ctx, rs.ID, rs.Submission, sc, cg); err != nil {
 			return nil, err
 		}
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
@@ -248,34 +248,34 @@ func (impl *Impl) TryResumeSubmission(ctx context.Context, rs *state.RunState) (
 
 func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error) {
 	switch {
-	case rs.Run.Status != run.Status_SUBMITTING || rs.SubmissionScheduled:
+	case rs.Status != run.Status_SUBMITTING || rs.SubmissionScheduled:
 		return &Result{State: rs}, nil
 	case sc != nil && sc.Result != eventpb.SubmissionResult_FAILED_TRANSIENT:
 		panic(fmt.Errorf("submission can only be resumed on nil submission completed event or event reporting transient failure; got %s", sc))
 	}
 
-	deadline := rs.Run.Submission.GetDeadline()
-	taskID := rs.Run.Submission.GetTaskId()
+	deadline := rs.Submission.GetDeadline()
+	taskID := rs.Submission.GetTaskId()
 	switch {
 	case deadline == nil:
-		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
+		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.Deadline is not set", rs.ID))
 	case taskID == "":
-		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.Run.ID))
+		panic(fmt.Errorf("impossible: run %q is submitting but Run.Submission.TaskId is not set", rs.ID))
 	}
 
 	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
 	case expired:
 		rs = rs.ShallowCopy()
 		var status run.Status
-		switch submittedCnt := len(rs.Run.Submission.GetSubmittedCls()); {
-		case submittedCnt > 0 && submittedCnt == len(rs.Run.Submission.GetCls()):
+		switch submittedCnt := len(rs.Submission.GetSubmittedCls()); {
+		case submittedCnt > 0 && submittedCnt == len(rs.Submission.GetCls()):
 			// fully submitted
 			status = run.Status_SUCCEEDED
 		default: // None submitted or partially submitted
 			status = run.Status_FAILED
 			// synthesize submission completed event with permanent failure.
 			if clFailures := sc.GetClFailures(); clFailures != nil {
-				rs.Run.Submission.FailedCls = make([]int64, len(clFailures.GetFailures()))
+				rs.Submission.FailedCls = make([]int64, len(clFailures.GetFailures()))
 				sc = &eventpb.SubmissionCompleted{
 					Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 					FailureReason: &eventpb.SubmissionCompleted_ClFailures{
@@ -285,7 +285,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 					},
 				}
 				for i, f := range clFailures.GetFailures() {
-					rs.Run.Submission.FailedCls[i] = f.GetClid()
+					rs.Submission.FailedCls[i] = f.GetClid()
 					sc.GetClFailures().Failures[i] = &eventpb.SubmissionCompleted_CLSubmissionFailure{
 						Clid:    f.GetClid(),
 						Message: fmt.Sprintf("CL failed to submit because of transient failure: %s. However, CV is running out of time to retry.", f.GetMessage()),
@@ -299,12 +299,12 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 					},
 				}
 			}
-			cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
+			cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 			if err != nil {
 				return nil, err
 			}
 
-			if err := impl.cancelNotSubmittedCLTriggers(ctx, rs.Run.ID, rs.Run.Submission, sc, cg); err != nil {
+			if err := impl.cancelNotSubmittedCLTriggers(ctx, rs.ID, rs.Submission, sc, cg); err != nil {
 				return nil, err
 			}
 		}
@@ -320,7 +320,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		// Matching taskID indicates current task is the retry of a previous
 		// submitting task that has failed transiently. Continue the submission.
 		rs = rs.ShallowCopy()
-		s := newSubmitter(ctx, rs.Run.ID, rs.Run.Submission, impl.RM, impl.GFactory)
+		s := newSubmitter(ctx, rs.ID, rs.Submission, impl.RM, impl.GFactory)
 		rs.SubmissionScheduled = true
 		return &Result{
 			State:         rs,
@@ -332,7 +332,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		// consume the event as the retries of submission task will process
 		// this event. It's probably a race condition that this task sees this
 		// event first.
-		if err := impl.RM.Invoke(ctx, rs.Run.ID, deadline.AsTime()); err != nil {
+		if err := impl.RM.Invoke(ctx, rs.ID, deadline.AsTime()); err != nil {
 			return nil, err
 		}
 		return &Result{
@@ -343,15 +343,14 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 }
 
 func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlisted bool, err error) {
-	cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 	if err != nil {
 		return false, err
 	}
 	now := clock.Now(ctx).UTC()
-	rid := rs.Run.ID
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		waitlisted, innerErr = submit.TryAcquire(ctx, rm.NotifyReadyForSubmission, rid, cg.SubmitOptions)
+		waitlisted, innerErr = submit.TryAcquire(ctx, rm.NotifyReadyForSubmission, rs.ID, cg.SubmitOptions)
 		switch {
 		case innerErr != nil:
 			return innerErr
@@ -360,7 +359,7 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 			// transition. In that case, this Run will block Submit Queue infinitely.
 			// Sending a ReadyForSubmission event after 10s as a fail-safe to ensure
 			// Run keeps making progress.
-			return rm.NotifyReadyForSubmission(ctx, rid, now.Add(10*time.Second))
+			return rm.NotifyReadyForSubmission(ctx, rs.ID, now.Add(10*time.Second))
 		default:
 			return nil
 		}
@@ -394,14 +393,14 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlis
 // releaseSubmitQueueIfTaken checks if submit queue is occupied by the given
 // Run before trying to release.
 func releaseSubmitQueueIfTaken(ctx context.Context, rs *state.RunState, rm RM) error {
-	switch current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.Run.ID); {
+	switch current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.ID); {
 	case err != nil:
 		return err
-	case current == rs.Run.ID:
+	case current == rs.ID:
 		return releaseSubmitQueue(ctx, rs, rm)
 	default:
 		for _, w := range waitlist {
-			if w == rs.Run.ID {
+			if w == rs.ID {
 				return releaseSubmitQueue(ctx, rs, rm)
 			}
 		}
@@ -412,7 +411,7 @@ func releaseSubmitQueueIfTaken(ctx context.Context, rs *state.RunState, rm RM) e
 func releaseSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) error {
 	var innerErr error
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		innerErr = submit.Release(ctx, rm.NotifyReadyForSubmission, rs.Run.ID)
+		innerErr = submit.Release(ctx, rm.NotifyReadyForSubmission, rs.ID)
 		return innerErr
 	}, nil)
 	switch {
@@ -434,13 +433,13 @@ func releaseSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) error {
 const submissionDuration = 20 * time.Minute
 
 func markSubmitting(ctx context.Context, rs *state.RunState) error {
-	rs.Run.Status = run.Status_SUBMITTING
+	rs.Status = run.Status_SUBMITTING
 	var err error
-	if rs.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.Run.CLs, rs.Run.ID, rs.Run.Submission); err != nil {
+	if rs.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.CLs, rs.ID, rs.Submission); err != nil {
 		return err
 	}
-	rs.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
-	rs.Run.Submission.TaskId = mustTaskIDFromContext(ctx)
+	rs.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
+	rs.Submission.TaskId = mustTaskIDFromContext(ctx)
 	return nil
 }
 

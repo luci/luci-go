@@ -71,11 +71,11 @@ func TestStart(t *testing.T) {
 		h, _ := makeTestHandler(&ct)
 
 		Convey("Starts when Run is PENDING", func() {
-			rs.Run.Status = run.Status_PENDING
+			rs.Status = run.Status_PENDING
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.State.Run.StartTime, ShouldResemble, clock.Now(ctx).UTC())
+			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+			So(res.State.StartTime, ShouldResemble, clock.Now(ctx).UTC())
 			So(res.State.LogEntries, ShouldHaveLength, 1)
 			So(res.State.LogEntries[0].GetStarted(), ShouldNotBeNil)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -97,7 +97,7 @@ func TestStart(t *testing.T) {
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
-				rs.Run.Status = status
+				rs.Status = status
 				res, err := h.Start(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.State, ShouldEqual, rs)

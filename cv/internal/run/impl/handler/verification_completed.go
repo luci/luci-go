@@ -40,7 +40,7 @@ const (
 
 // OnCQDVerificationCompleted implements Handler interface.
 func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*Result, error) {
-	switch status := rs.Run.Status; {
+	switch status := rs.Status; {
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "Ignoring CQDVerificationCompleted event because Run is %s", status)
 		return &Result{State: rs}, nil
@@ -53,8 +53,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
 	}
 
-	rid := rs.Run.ID
-	vr := migration.VerifiedCQDRun{ID: rid}
+	vr := migration.VerifiedCQDRun{ID: rs.ID}
 	switch err := datastore.Get(ctx, &vr); {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, errors.New("received CQDVerificationCompleted event but VerifiedRun entity doesn't exist")
@@ -65,19 +64,19 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	rs = rs.ShallowCopy()
 	switch vr.Payload.Action {
 	case migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT:
-		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
+		rs.Status = run.Status_WAITING_FOR_SUBMISSION
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 			Time: timestamppb.New(clock.Now(ctx)),
 			Kind: &run.LogEntry_Info_{
 				Info: &run.LogEntry_Info{
 					Label:   cqdVerifiedLabel,
-					Message: usertext.OnFullRunSucceeded(rs.Run.Mode),
+					Message: usertext.OnFullRunSucceeded(rs.Mode),
 				},
 			},
 		})
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
-		msg := usertext.OnRunSucceeded(rs.Run.Mode)
+		msg := usertext.OnRunSucceeded(rs.Mode)
 		if err := impl.cancelTriggers(ctx, rs, msg); err != nil {
 			return nil, err
 		}
@@ -113,7 +112,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 }
 
 func (impl *Impl) cancelTriggers(ctx context.Context, rs *state.RunState, msg string) error {
-	runCLs, err := run.LoadRunCLs(ctx, rs.Run.ID, rs.Run.CLs)
+	runCLs, err := run.LoadRunCLs(ctx, rs.ID, rs.CLs)
 	if err != nil {
 		return err
 	}
@@ -121,9 +120,9 @@ func (impl *Impl) cancelTriggers(ctx context.Context, rs *state.RunState, msg st
 	for i, cl := range runCLs {
 		runCLExternalIDs[i] = cl.ExternalID
 	}
-	cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 	if err != nil {
 		return err
 	}
-	return impl.cancelCLTriggers(ctx, rs.Run.ID, runCLs, runCLExternalIDs, msg, cg)
+	return impl.cancelCLTriggers(ctx, rs.ID, runCLs, runCLExternalIDs, msg, cg)
 }

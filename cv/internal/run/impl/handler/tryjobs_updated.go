@@ -36,7 +36,7 @@ import (
 
 // OnCQDTryjobsUpdated implements Handler interface.
 func (impl *Impl) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (*Result, error) {
-	switch status := rs.Run.Status; {
+	switch status := rs.Status; {
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "Ignoring CQDTryjobsUpdated event because Run is %s", status)
 		return &Result{State: rs}, nil
@@ -48,13 +48,13 @@ func (impl *Impl) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (
 	}
 
 	var lastSeen time.Time
-	if t := rs.Run.Tryjobs.GetCqdUpdateTime(); t != nil {
+	if t := rs.Tryjobs.GetCqdUpdateTime(); t != nil {
 		lastSeen = t.AsTime()
 	}
 
 	// Limit loading reported tryjobs to 128 latest only.
 	// If there is a malfunction in CQDaemon, ignoring earlier reports is fine.
-	switch latest, err := migration.ListReportedTryjobs(ctx, rs.Run.ID, lastSeen, 128); {
+	switch latest, err := migration.ListReportedTryjobs(ctx, rs.ID, lastSeen, 128); {
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to load latest reported Tryjobs").Err()
 	case len(latest) == 0:
@@ -63,10 +63,10 @@ func (impl *Impl) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (
 	default:
 		logging.Debugf(ctx, "received CQDTryjobsUpdated event, read %d latest tryjob reports", len(latest))
 		rs = rs.ShallowCopy()
-		if rs.Run.Tryjobs == nil {
-			rs.Run.Tryjobs = &run.Tryjobs{}
+		if rs.Tryjobs == nil {
+			rs.Tryjobs = &run.Tryjobs{}
 		} else {
-			rs.Run.Tryjobs = proto.Clone(rs.Run.Tryjobs).(*run.Tryjobs)
+			rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
 		}
 		// `latest` are ordered newest to oldest, so process them in reverse order
 		// such the newest report is ultimately stored in the Run.Tryjobs.
@@ -78,7 +78,7 @@ func (impl *Impl) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (
 }
 
 func updateTryjobsFromCQD(ctx context.Context, rs *state.RunState, rep *migration.ReportedTryjobs) {
-	before := rs.Run.Tryjobs.GetTryjobs()
+	before := rs.Tryjobs.GetTryjobs()
 	after := make([]*run.Tryjob, 0, len(rep.Payload.GetTryjobs()))
 	for _, cqd := range rep.Payload.GetTryjobs() {
 		if cqd.GetBuilder() == nil {
@@ -93,8 +93,8 @@ func updateTryjobsFromCQD(ctx context.Context, rs *state.RunState, rep *migratio
 		}
 	}
 	run.SortTryjobs(after)
-	rs.Run.Tryjobs.CqdUpdateTime = timestamppb.New(rep.ReportTime())
-	rs.Run.Tryjobs.Tryjobs = after
+	rs.Tryjobs.CqdUpdateTime = timestamppb.New(rep.ReportTime())
+	rs.Tryjobs.Tryjobs = after
 	if updated := run.DiffTryjobsForReport(before, after); len(updated) > 0 {
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 			Time: timestamppb.New(rep.ReportTime()),

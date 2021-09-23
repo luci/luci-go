@@ -37,7 +37,7 @@ import (
 // UpdateConfig implements Handler interface.
 func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash string) (*Result, error) {
 	// First, check if config update is feasible given Run Status.
-	switch status := rs.Run.Status; {
+	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: Received UpdateConfig event but Run is in unspecified status").Err()
 		common.LogError(ctx, err)
@@ -55,14 +55,14 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 	var runCLs []*run.RunCL
 	eg.Go(func() error {
 		var err error
-		runCLs, err = run.LoadRunCLs(egCtx, rs.Run.ID, rs.Run.CLs)
+		runCLs, err = run.LoadRunCLs(egCtx, rs.ID, rs.CLs)
 		return err
 	})
 	var newMeta prjcfg.Meta
 	var newConfigGroups []*prjcfg.ConfigGroup
 	upToDate := false
 	eg.Go(func() error {
-		switch metas, err := prjcfg.GetHashMetas(egCtx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID.Hash(), hash); {
+		switch metas, err := prjcfg.GetHashMetas(egCtx, rs.ID.LUCIProject(), rs.ConfigGroupID.Hash(), hash); {
 		case err != nil:
 			return err
 		case metas[0].EVersion >= metas[1].EVersion:
@@ -116,19 +116,19 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 		// Run is still feasible.
 		rs = rs.ShallowCopy()
 		for cgid := range m { // extra first and only key from the map.
-			rs.Run.ConfigGroupID = cgid
+			rs.ConfigGroupID = cgid
 		}
 
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 			Time: timestamppb.New(clock.Now(ctx)),
 			Kind: &run.LogEntry_ConfigChanged_{
 				ConfigChanged: &run.LogEntry_ConfigChanged{
-					ConfigGroupId: string(rs.Run.ConfigGroupID),
+					ConfigGroupId: string(rs.ConfigGroupID),
 				},
 			},
 		})
 
-		logging.Infof(ctx, "Upgrading to new ConfigGroupID %q", rs.Run.ConfigGroupID)
+		logging.Infof(ctx, "Upgrading to new ConfigGroupID %q", rs.ConfigGroupID)
 		return &Result{State: rs}, nil
 	}
 	// Run is no longer feasible and should be cancelled.

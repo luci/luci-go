@@ -33,13 +33,13 @@ const (
 
 // Poke implements Handler interface.
 func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error) {
-	if shouldCheckTree(ctx, rs.Run.Status, rs.Run.Submission) {
+	if shouldCheckTree(ctx, rs.Status, rs.Submission) {
 		rs = rs.ShallowCopy()
 		switch open, err := rs.CheckTree(ctx, impl.TreeClient); {
 		case err != nil:
 			return nil, err
 		case !open:
-			if err := impl.RM.PokeAfter(ctx, rs.Run.ID, treeCheckInterval); err != nil {
+			if err := impl.RM.PokeAfter(ctx, rs.ID, treeCheckInterval); err != nil {
 				return nil, err
 			}
 		default:
@@ -48,15 +48,15 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 	}
 
 	if shouldRefreshCLs(ctx, rs) {
-		switch cls, err := changelist.LoadCLs(ctx, rs.Run.CLs); {
+		switch cls, err := changelist.LoadCLs(ctx, rs.CLs); {
 		case err != nil:
 			return nil, err
 		default:
-			if err := impl.CLUpdater.ScheduleBatch(ctx, rs.Run.ID.LUCIProject(), cls); err != nil {
+			if err := impl.CLUpdater.ScheduleBatch(ctx, rs.ID.LUCIProject(), cls); err != nil {
 				return nil, err
 			}
 			rs = rs.ShallowCopy()
-			rs.Run.LatestCLsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
+			rs.LatestCLsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
 		}
 	}
 	return &Result{State: rs}, nil
@@ -71,12 +71,12 @@ func shouldCheckTree(ctx context.Context, st run.Status, sub *run.Submission) bo
 }
 
 func shouldRefreshCLs(ctx context.Context, rs *state.RunState) bool {
-	if run.IsEnded(rs.Run.Status) {
+	if run.IsEnded(rs.Status) {
 		return false
 	}
-	last := rs.Run.LatestCLsRefresh
+	last := rs.LatestCLsRefresh
 	if last.IsZero() {
-		last = rs.Run.CreateTime
+		last = rs.CreateTime
 	}
 	return clock.Since(ctx, last) > clRefreshInterval
 }

@@ -35,9 +35,9 @@ import (
 
 // Start implements Handler interface.
 func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
-	switch status := rs.Run.Status; {
+	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
-		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", rs.Run.ID).Err()
+		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", rs.ID).Err()
 		common.LogError(ctx, err)
 		panic(err)
 	case status != run.Status_PENDING:
@@ -45,17 +45,17 @@ func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 		return &Result{State: rs}, nil
 	}
 
-	cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &Result{State: rs.ShallowCopy()}
-	res.State.Run.Status = run.Status_RUNNING
-	res.State.Run.StartTime = clock.Now(ctx).UTC()
+	res.State.Status = run.Status_RUNNING
+	res.State.StartTime = clock.Now(ctx).UTC()
 
 	res.State.LogEntries = append(res.State.LogEntries, &run.LogEntry{
-		Time: timestamppb.New(res.State.Run.StartTime),
+		Time: timestamppb.New(res.State.StartTime),
 		Kind: &run.LogEntry_Started_{
 			Started: &run.LogEntry_Started{},
 		},

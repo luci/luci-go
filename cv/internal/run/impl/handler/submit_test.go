@@ -138,26 +138,29 @@ func TestOnReadyForSubmission(t *testing.T) {
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rs.Run.ID, nil)
+					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rs.ID, nil)
 					So(waitlisted, ShouldBeFalse)
 					return err
 				}, nil), ShouldBeNil)
-				rs.Run.Status = status
+				rs.Status = status
 				res, err := h.OnReadyForSubmission(ctx, rs)
 				So(err, ShouldBeNil)
-				So(res.State.LogEntries, ShouldResembleProto, []*run.LogEntry{
-					{
-						Time: timestamppb.New(clock.Now(ctx)),
-						Kind: &run.LogEntry_ReleasedSubmitQueue_{
-							ReleasedSubmitQueue: &run.LogEntry_ReleasedSubmitQueue{},
+				expectedState := &state.RunState{
+					Run: rs.Run,
+					LogEntries: []*run.LogEntry{
+						{
+							Time: timestamppb.New(clock.Now(ctx)),
+							Kind: &run.LogEntry_ReleasedSubmitQueue_{
+								ReleasedSubmitQueue: &run.LogEntry_ReleasedSubmitQueue{},
+							},
 						},
 					},
-				})
-				So(&res.State.Run, runtest.ShouldResembleRun, &rs.Run)
+				}
+				So(res.State, cvtesting.SafeShouldResemble, expectedState)
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
-				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.Run.ID)
+				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.ID)
 				So(err, ShouldBeNil)
 				So(current, ShouldBeEmpty)
 				So(waitlist, ShouldBeEmpty)
@@ -165,7 +168,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		}
 
 		Convey("No-Op when status is SUBMITTING", func() {
-			rs.Run.Status = run.Status_SUBMITTING
+			rs.Status = run.Status_SUBMITTING
 			res, err := h.OnReadyForSubmission(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
@@ -178,12 +181,12 @@ func TestOnReadyForSubmission(t *testing.T) {
 			now := ct.Clock.Now().UTC()
 			ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 			Convey(fmt.Sprintf("When status is %s", status), func() {
-				rs.Run.Status = status
+				rs.Status = status
 				Convey("Mark submitting if Submit Queue is acquired and tree is open", func() {
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
-					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+					So(res.State.Submission, ShouldResembleProto, &run.Submission{
 						Deadline:          timestamppb.New(now.Add(submissionDuration)),
 						Cls:               []int64{2, 1}, // in submission order
 						TaskId:            "task-foo",
@@ -213,7 +216,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, anotherRunID)
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
@@ -228,8 +231,8 @@ func TestOnReadyForSubmission(t *testing.T) {
 					ct.TreeFake.ModifyState(ctx, tree.Closed)
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+					So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					So(res.State.Submission, ShouldResembleProto, &run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
 					})
@@ -363,26 +366,29 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rs.Run.ID, nil)
+					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rs.ID, nil)
 					So(waitlisted, ShouldBeFalse)
 					return err
 				}, nil), ShouldBeNil)
-				rs.Run.Status = status
+				rs.Status = status
 				res, err := h.OnSubmissionCompleted(ctx, rs, nil)
 				So(err, ShouldBeNil)
-				So(res.State.LogEntries, ShouldResembleProto, []*run.LogEntry{
-					{
-						Time: timestamppb.New(clock.Now(ctx)),
-						Kind: &run.LogEntry_ReleasedSubmitQueue_{
-							ReleasedSubmitQueue: &run.LogEntry_ReleasedSubmitQueue{},
+				expectedState := &state.RunState{
+					Run: rs.Run,
+					LogEntries: []*run.LogEntry{
+						{
+							Time: timestamppb.New(clock.Now(ctx)),
+							Kind: &run.LogEntry_ReleasedSubmitQueue_{
+								ReleasedSubmitQueue: &run.LogEntry_ReleasedSubmitQueue{},
+							},
 						},
 					},
-				})
-				So(&res.State.Run, runtest.ShouldResembleRun, &rs.Run)
+				}
+				So(res.State, cvtesting.SafeShouldResemble, expectedState)
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
-				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.Run.ID)
+				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.ID)
 				So(err, ShouldBeNil)
 				So(current, ShouldBeEmpty)
 				So(waitlist, ShouldBeEmpty)
@@ -396,8 +402,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			}
 			res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
-			So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now().UTC())
+			So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
+			So(res.State.EndTime, ShouldEqual, ct.Clock.Now().UTC())
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 			So(res.PostProcessFn, ShouldBeNil)
@@ -408,16 +414,16 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
 			}
 			Convey("When deadline is not exceeded", func() {
-				rs.Run.Submission = &run.Submission{
+				rs.Submission = &run.Submission{
 					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 				}
 
 				Convey("Resume submission if TaskID matches", func() {
-					rs.Run.Submission.TaskId = "task-foo" // same task ID as the current task
+					rs.Submission.TaskId = "task-foo" // same task ID as the current task
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
-					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+					So(res.State.Submission, ShouldResembleProto, &run.Submission{
 						Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 						TaskId:   "task-foo",
 					}) // unchanged
@@ -429,29 +435,32 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 				Convey("Invoke RM at deadline if TaskID doesn't match", func() {
 					ctx, rmDispatcher := runtest.MockDispatch(ctx)
-					rs.Run.Submission.TaskId = "another-task"
+					rs.Submission.TaskId = "another-task"
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
-					So(res.State.LogEntries, ShouldResembleProto, []*run.LogEntry{
-						{
-							Time: timestamppb.New(clock.Now(ctx)),
-							Kind: &run.LogEntry_SubmissionFailure_{
-								SubmissionFailure: &run.LogEntry_SubmissionFailure{
-									Event: &eventpb.SubmissionCompleted{Result: eventpb.SubmissionResult_FAILED_TRANSIENT},
+					expectedState := &state.RunState{
+						Run: rs.Run,
+						LogEntries: []*run.LogEntry{
+							{
+								Time: timestamppb.New(clock.Now(ctx)),
+								Kind: &run.LogEntry_SubmissionFailure_{
+									SubmissionFailure: &run.LogEntry_SubmissionFailure{
+										Event: &eventpb.SubmissionCompleted{Result: eventpb.SubmissionResult_FAILED_TRANSIENT},
+									},
 								},
 							},
 						},
-					})
-					So(&res.State.Run, runtest.ShouldResembleRun, &rs.Run)
+					}
+					So(res.State, cvtesting.SafeShouldResemble, expectedState)
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeTrue)
 					So(res.PostProcessFn, ShouldBeNil)
-					So(rmDispatcher.LatestETAof(string(rid)), ShouldHappenOnOrAfter, rs.Run.Submission.Deadline.AsTime())
+					So(rmDispatcher.LatestETAof(string(rid)), ShouldHappenOnOrAfter, rs.Submission.Deadline.AsTime())
 				})
 			})
 
 			Convey("When deadline is exceeded", func() {
-				rs.Run.Submission = &run.Submission{
+				rs.Submission = &run.Submission{
 					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(-10 * time.Minute)),
 					TaskId:   "task-foo",
 				}
@@ -462,15 +471,15 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				}, nil), ShouldBeNil)
 
 				Convey("Single CL Run", func() {
-					rs.Run.Submission.Cls = []int64{2}
+					rs.Submission.Cls = []int64{2}
 					Convey("Not submitted", func() {
 						runAndVerify := func(verifyMsgFn func(lastMsg string)) {
 							res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 							So(err, ShouldBeNil)
-							So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
-							So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+							So(res.State.Status, ShouldEqual, run.Status_FAILED)
+							So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
 							for i, f := range sc.GetClFailures().GetFailures() {
-								So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+								So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
 							}
 							So(res.SideEffectFn, ShouldNotBeNil)
 							So(res.PreserveEvents, ShouldBeFalse)
@@ -480,7 +489,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
 								So(vote.GetValue(), ShouldEqual, 0)
 							}
-							So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+							So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
 						}
 						Convey("CL failure", func() {
 							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
@@ -503,28 +512,28 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						})
 					})
 					Convey("Submitted", func() {
-						rs.Run.Submission.SubmittedCls = []int64{2}
+						rs.Submission.SubmittedCls = []int64{2}
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 						So(err, ShouldBeNil)
-						So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
-						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
+						So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2) // unchanged
-						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
 					})
 				})
 
 				Convey("Multi CLs Run", func() {
-					rs.Run.Submission.Cls = []int64{2, 1}
+					rs.Submission.Cls = []int64{2, 1}
 					runAndVerify := func(verifyMsgFn func(changeNum int64, lastMsg string)) {
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 						So(err, ShouldBeNil)
-						So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
-						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.State.Status, ShouldEqual, run.Status_FAILED)
+						So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
 						for i, f := range sc.GetClFailures().GetFailures() {
-							So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+							So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
 						}
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
@@ -538,7 +547,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								}
 							}
 						}
-						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
 					}
 
 					Convey("None of the CLs are submitted", func() {
@@ -573,7 +582,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					})
 
 					Convey("CLs partially submitted", func() {
-						rs.Run.Submission.SubmittedCls = []int64{2}
+						rs.Submission.SubmittedCls = []int64{2}
 						ct.GFake.MutateChange(gHost, int(ci2.GetNumber()), func(c *gf.Change) {
 							gf.PS(int(ci2.GetRevisions()[ci2.GetCurrentRevision()].GetNumber()) + 1)(c.Info)
 							gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
@@ -617,18 +626,18 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					})
 
 					Convey("CLs fully submitted", func() {
-						rs.Run.Submission.SubmittedCls = []int64{2, 1}
+						rs.Submission.SubmittedCls = []int64{2, 1}
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 						So(err, ShouldBeNil)
-						So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
-						So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
+						So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						// both untouched
 						So(ct.GFake.GetChange(gHost, int(ci1.GetNumber())).Info, ShouldResembleProto, ci1)
 						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2)
-						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.Run.ID)
+						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
 					})
 				})
 			})
@@ -638,20 +647,20 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			sc := &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 			}
-			rs.Run.Submission = &run.Submission{
+			rs.Submission = &run.Submission{
 				Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 				TaskId:   "task-foo",
 			}
 
 			Convey("Single CL Run", func() {
-				rs.Run.Submission.Cls = []int64{2}
+				rs.Submission.Cls = []int64{2}
 				runAndVerify := func(verifyMsgFn func(lastMsg string)) {
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
-					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+					So(res.State.Status, ShouldEqual, run.Status_FAILED)
+					So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
 					for i, f := range sc.GetClFailures().GetFailures() {
-						So(res.State.Run.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+						So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
 					}
 					So(res.SideEffectFn, ShouldNotBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
@@ -689,12 +698,12 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			})
 
 			Convey("Multi CLs Run", func() {
-				rs.Run.Submission.Cls = []int64{2, 1}
+				rs.Submission.Cls = []int64{2, 1}
 				runAndVerify := func(verifyMsgFn func(changeNum int64, lastMsg string)) {
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					So(err, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
-					So(res.State.Run.EndTime, ShouldEqual, ct.Clock.Now())
+					So(res.State.Status, ShouldEqual, run.Status_FAILED)
+					So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
 					So(res.SideEffectFn, ShouldNotBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
@@ -742,7 +751,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				})
 
 				Convey("CLs partially submitted", func() {
-					rs.Run.Submission.SubmittedCls = []int64{2}
+					rs.Submission.SubmittedCls = []int64{2}
 					ct.GFake.MutateChange(gHost, int(ci2.GetNumber()), func(c *gf.Change) {
 						gf.PS(int(ci2.GetRevisions()[ci2.GetCurrentRevision()].GetNumber()) + 1)(c.Info)
 						gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
@@ -992,36 +1001,36 @@ func TestOnCLSubmitted(t *testing.T) {
 		Convey("Single", func() {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{3})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Submission.SubmittedCls, ShouldResemble, []int64{3})
+			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3})
 
 		})
 		Convey("Duplicate", func() {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{3, 3, 3, 3, 1, 1, 1})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Submission.SubmittedCls, ShouldResemble, []int64{3, 1})
+			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1})
 		})
 		Convey("Obey Submission order", func() {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})
+			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})
 		})
 		Convey("Merge to existing", func() {
-			rs.Run.Submission.SubmittedCls = []int64{3, 1}
+			rs.Submission.SubmittedCls = []int64{3, 1}
 			// 1 should be deduped
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 7})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7})
+			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7})
 		})
 		Convey("Last cl arrives first", func() {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{5})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Submission.SubmittedCls, ShouldResemble, []int64{5})
+			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{5})
 			res, err = h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 3})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 5})
+			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 5})
 			res, err = h.OnCLSubmitted(ctx, rs, common.CLIDs{7})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})
+			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})
 		})
 		Convey("Error for unknown CLs", func() {
 			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7, 9, 11})

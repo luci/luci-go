@@ -100,7 +100,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		cl := updateCL(ci, aplConfigOK, accessOK)
 		rcl := run.RunCL{
 			ID:      1,
-			Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID)),
+			Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.ID)),
 			Detail:  cl.Snapshot,
 			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]),
 		}
@@ -122,7 +122,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			}
 			for _, status := range statuses {
 				Convey(fmt.Sprintf("When Run is %s", status), func() {
-					rs.Run.Status = status
+					rs.Status = status
 					ensureNoop()
 				})
 			}
@@ -144,7 +144,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			})
 		})
 		Convey("Preserve events for SUBMITTING Run", func() {
-			rs.Run.Status = run.Status_SUBMITTING
+			rs.Status = run.Status_SUBMITTING
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
@@ -155,7 +155,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		runAndVerifyCancelled := func() {
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		}
@@ -209,7 +209,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				// And Run Manager must have a task to re-check itself at around
 				// NoAccessTime.
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
-				So(ct.TQ.Tasks().Payloads()[0].(*eventpb.ManageRunTask).GetRunId(), ShouldResemble, string(rs.Run.ID))
+				So(ct.TQ.Tasks().Payloads()[0].(*eventpb.ManageRunTask).GetRunId(), ShouldResemble, string(rs.ID))
 				So(ct.TQ.Tasks()[0].ETA, ShouldHappenOnOrBetween, noAccessAt, noAccessAt.Add(time.Second))
 			})
 			Convey("cancel if code review access was lost a while ago", func() {

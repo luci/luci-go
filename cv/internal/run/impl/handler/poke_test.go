@@ -100,8 +100,8 @@ func TestPokeRecheckTree(t *testing.T) {
 
 		Convey("Tree checks", func() {
 			Convey("Check Tree if condition matches", func() {
-				rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
-				rs.Run.Submission = &run.Submission{
+				rs.Status = run.Status_WAITING_FOR_SUBMISSION
+				rs.Submission = &run.Submission{
 					TreeOpen:          false,
 					LastTreeCheckTime: timestamppb.New(now.Add(-1 * time.Minute)),
 				}
@@ -121,7 +121,7 @@ func TestPokeRecheckTree(t *testing.T) {
 				meta, err := prjcfg.GetLatestMeta(ctx, lProject)
 				So(err, ShouldBeNil)
 				So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
-				rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
+				rs.ConfigGroupID = meta.ConfigGroupIDs[0]
 
 				Convey("Open", func() {
 					res, err := h.Poke(ctx, rs)
@@ -130,8 +130,8 @@ func TestPokeRecheckTree(t *testing.T) {
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldNotBeNil)
 					// proceed to submission right away
-					So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
-					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+					So(res.State.Submission, ShouldResembleProto, &run.Submission{
 						Deadline:          timestamppb.New(now.Add(submissionDuration)),
 						Cls:               []int64{1},
 						TaskId:            "task-foo",
@@ -147,9 +147,9 @@ func TestPokeRecheckTree(t *testing.T) {
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
-					So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
 					// record the result and check again after 1 minute.
-					So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+					So(res.State.Submission, ShouldResembleProto, &run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
 					})
@@ -159,13 +159,13 @@ func TestPokeRecheckTree(t *testing.T) {
 
 			Convey("No-op if condition doesn't match", func() {
 				Convey("Not in WAITING_FOR_SUBMISSION status", func() {
-					rs.Run.Status = run.Status_RUNNING
+					rs.Status = run.Status_RUNNING
 					verifyNoOp()
 				})
 
 				Convey("Tree is open in the previous check", func() {
-					rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
-					rs.Run.Submission = &run.Submission{
+					rs.Status = run.Status_WAITING_FOR_SUBMISSION
+					rs.Submission = &run.Submission{
 						TreeOpen:          true,
 						LastTreeCheckTime: timestamppb.New(now.Add(-2 * time.Minute)),
 					}
@@ -173,8 +173,8 @@ func TestPokeRecheckTree(t *testing.T) {
 				})
 
 				Convey("Last Tree check is too recent", func() {
-					rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
-					rs.Run.Submission = &run.Submission{
+					rs.Status = run.Status_WAITING_FOR_SUBMISSION
+					rs.Submission = &run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now.Add(-1 * time.Second)),
 					}
@@ -185,16 +185,16 @@ func TestPokeRecheckTree(t *testing.T) {
 
 		Convey("CLs Refresh", func() {
 			Convey("No-op if finalized", func() {
-				rs.Run.Status = run.Status_CANCELLED
+				rs.Status = run.Status_CANCELLED
 				verifyNoOp()
 			})
 			Convey("No-op if recently created", func() {
-				rs.Run.CreateTime = ct.Clock.Now()
-				rs.Run.LatestCLsRefresh = time.Time{}
+				rs.CreateTime = ct.Clock.Now()
+				rs.LatestCLsRefresh = time.Time{}
 				verifyNoOp()
 			})
 			Convey("No-op if recently refreshed", func() {
-				rs.Run.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval / 2)
+				rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval / 2)
 				verifyNoOp()
 			})
 			Convey("Schedule refresh", func() {
@@ -205,16 +205,16 @@ func TestPokeRecheckTree(t *testing.T) {
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
 					So(res.State, ShouldNotEqual, rs)
-					So(res.State.Run.LatestCLsRefresh, ShouldResemble, datastore.RoundTime(ct.Clock.Now().UTC()))
+					So(res.State.LatestCLsRefresh, ShouldResemble, datastore.RoundTime(ct.Clock.Now().UTC()))
 					So(deps.clUpdater.refreshedCLs.Contains(1), ShouldBeTrue)
 				}
 				Convey("For the first time", func() {
-					rs.Run.CreateTime = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
-					rs.Run.LatestCLsRefresh = time.Time{}
+					rs.CreateTime = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
+					rs.LatestCLsRefresh = time.Time{}
 					verifyScheduled()
 				})
 				Convey("For the (n+1)-th time", func() {
-					rs.Run.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
+					rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
 					verifyScheduled()
 				})
 			})

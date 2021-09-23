@@ -160,12 +160,12 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.State.Run.Tryjobs.GetTryjobs(), ShouldHaveLength, 2)
+			So(res.State.Tryjobs.GetTryjobs(), ShouldHaveLength, 2)
 			// For easier to debug test, compare individual tryjobs first.
-			So(res.State.Run.Tryjobs.GetTryjobs()[0], ShouldResembleProto, expected1001)
-			So(res.State.Run.Tryjobs.GetTryjobs()[1], ShouldResembleProto, expected1002)
+			So(res.State.Tryjobs.GetTryjobs()[0], ShouldResembleProto, expected1001)
+			So(res.State.Tryjobs.GetTryjobs()[1], ShouldResembleProto, expected1002)
 			// And now compare entire Tryjobs state.
-			So(res.State.Run.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+			So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
 				CqdUpdateTime: timestamppb.New(ct.Clock.Now()),
 				Tryjobs:       []*run.Tryjob{expected1001, expected1002},
 				Requirement:   nil, // not important in this test
@@ -175,7 +175,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 
 			// Follow up imports only not yet read reports.
 			priorState := res.State
-			backup := proto.Clone(priorState.Run.Tryjobs).(*run.Tryjobs)
+			backup := proto.Clone(priorState.Tryjobs).(*run.Tryjobs)
 			ct.Clock.Add(time.Minute)
 			reported1001.Status = migrationpb.TryjobStatus_FAILED
 			reported1002.Status = migrationpb.TryjobStatus_SUCCEEDED
@@ -183,15 +183,15 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 			res, err = h.OnCQDTryjobsUpdated(ctx, &state.RunState{Run: priorState.Run})
 			So(err, ShouldBeNil)
 			// Prior state must not be mutated by accident.
-			So(priorState.Run.Tryjobs, ShouldResembleProto, backup)
+			So(priorState.Tryjobs, ShouldResembleProto, backup)
 			// And there should be exactly 1 log entry.
 			So(res.State.LogEntries, ShouldHaveLength, 1)
 			// There must still be 2 tryjobs, but with diff statuses now.
-			So(res.State.Run.Tryjobs.GetTryjobs(), ShouldHaveLength, 2)
-			So(res.State.Run.Tryjobs.GetTryjobs()[0].GetStatus(), ShouldEqual, tryjob.Status_ENDED)
-			So(res.State.Run.Tryjobs.GetTryjobs()[0].GetResult().GetStatus(), ShouldEqual, tryjob.Result_FAILED_PERMANENTLY)
-			So(res.State.Run.Tryjobs.GetTryjobs()[1].GetStatus(), ShouldEqual, tryjob.Status_ENDED)
-			So(res.State.Run.Tryjobs.GetTryjobs()[1].GetResult().GetStatus(), ShouldEqual, tryjob.Result_SUCCEEDED)
+			So(res.State.Tryjobs.GetTryjobs(), ShouldHaveLength, 2)
+			So(res.State.Tryjobs.GetTryjobs()[0].GetStatus(), ShouldEqual, tryjob.Status_ENDED)
+			So(res.State.Tryjobs.GetTryjobs()[0].GetResult().GetStatus(), ShouldEqual, tryjob.Result_FAILED_PERMANENTLY)
+			So(res.State.Tryjobs.GetTryjobs()[1].GetStatus(), ShouldEqual, tryjob.Status_ENDED)
+			So(res.State.Tryjobs.GetTryjobs()[1].GetResult().GetStatus(), ShouldEqual, tryjob.Result_SUCCEEDED)
 
 			// Follow up report with the same tryjobs doesn't result in new Run Log
 			// entry.
@@ -208,8 +208,8 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 			report(reported1002)
 			res, err = h.OnCQDTryjobsUpdated(ctx, &state.RunState{Run: res.State.Run})
 			So(err, ShouldBeNil)
-			So(res.State.Run.Tryjobs.GetTryjobs(), ShouldHaveLength, 1)
-			So(res.State.Run.Tryjobs.GetTryjobs()[0].GetExternalId(), ShouldResemble, expected1002.GetExternalId())
+			So(res.State.Tryjobs.GetTryjobs(), ShouldHaveLength, 1)
+			So(res.State.Tryjobs.GetTryjobs()[0].GetExternalId(), ShouldResemble, expected1002.GetExternalId())
 			So(res.State.LogEntries, ShouldBeEmpty)
 		})
 
@@ -222,7 +222,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
-				rs.Run.Status = status
+				rs.Status = status
 				res, err := h.OnCQDTryjobsUpdated(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.State, ShouldEqual, rs)

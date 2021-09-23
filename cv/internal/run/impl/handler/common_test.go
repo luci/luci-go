@@ -76,8 +76,8 @@ func TestEndRun(t *testing.T) {
 
 		impl, deps := makeImpl(&ct)
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
-		So(rs.Run.Status, ShouldEqual, run.Status_FAILED)
-		So(rs.Run.EndTime, ShouldEqual, ct.Clock.Now())
+		So(rs.Status, ShouldEqual, run.Status_FAILED)
+		So(rs.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
 		cl = changelist.CL{ID: clid}
 		So(datastore.Get(ctx, &cl), ShouldBeNil)
@@ -101,10 +101,10 @@ func TestEndRun(t *testing.T) {
 				}
 			}
 			So(task, ShouldResembleProto, &pubsub.PublishRunEndedTask{
-				PublicId:    rs.Run.ID.PublicID(),
-				LuciProject: rs.Run.ID.LUCIProject(),
-				Status:      rs.Run.Status,
-				Eversion:    int64(rs.Run.EVersion + 1),
+				PublicId:    rs.ID.PublicID(),
+				LuciProject: rs.ID.LUCIProject(),
+				Status:      rs.Status,
+				Eversion:    int64(rs.EVersion + 1),
 			})
 		})
 	})

@@ -28,7 +28,7 @@ import (
 // Cancel implements Handler interface.
 func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
 	// TODO(crbug/1215612): record the cause of cancellation inside Run.
-	switch status := rs.Run.Status; {
+	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
 		common.LogError(ctx, err)
@@ -43,9 +43,9 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 
 	rs = rs.ShallowCopy()
 	se := impl.endRun(ctx, rs, run.Status_CANCELLED)
-	if rs.Run.StartTime.IsZero() {
+	if rs.StartTime.IsZero() {
 		// This run has never started but already gets a cancelled event.
-		rs.Run.StartTime = rs.Run.EndTime
+		rs.StartTime = rs.EndTime
 	}
 
 	return &Result{

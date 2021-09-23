@@ -158,7 +158,7 @@ func TestUpdateConfig(t *testing.T) {
 				run.Status_CANCELLED,
 			} {
 				Convey(fmt.Sprintf("When Run is %s", status), func() {
-					rs.Run.Status = status
+					rs.Status = status
 					ensureNoop(updateConfig())
 				})
 			}
@@ -177,7 +177,7 @@ func TestUpdateConfig(t *testing.T) {
 		})
 
 		Convey("Preserve events for SUBMITTING Run", func() {
-			rs.Run.Status = run.Status_SUBMITTING
+			rs.Status = run.Status_SUBMITTING
 			res := updateConfig()
 			So(res.State, ShouldEqual, rs)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -187,9 +187,9 @@ func TestUpdateConfig(t *testing.T) {
 		Convey("Upgrades to newer config version when", func() {
 			ensureUpdated := func(expectedGroupName string) {
 				res := updateConfig()
-				So(res.State.Run.ConfigGroupID.Hash(), ShouldNotEqual, metaCurrent.Hash())
-				So(res.State.Run.ConfigGroupID.Name(), ShouldEqual, expectedGroupName)
-				So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
+				So(res.State.ConfigGroupID.Hash(), ShouldNotEqual, metaCurrent.Hash())
+				So(res.State.ConfigGroupID.Name(), ShouldEqual, expectedGroupName)
+				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
 				So(res.State.LogEntries, ShouldHaveLength, 1)
 				So(res.State.LogEntries[0].GetConfigChanged(), ShouldNotBeNil)
 				So(res.SideEffectFn, ShouldBeNil)
@@ -223,8 +223,8 @@ func TestUpdateConfig(t *testing.T) {
 			ensureCancelled := func() {
 				res := updateConfig()
 				// Applicable ConfigGroupID should remain the same.
-				So(res.State.Run.ConfigGroupID, ShouldEqual, rs.Run.ConfigGroupID)
-				So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+				So(res.State.ConfigGroupID, ShouldEqual, rs.ConfigGroupID)
+				So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
 				So(res.SideEffectFn, ShouldNotBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 			}

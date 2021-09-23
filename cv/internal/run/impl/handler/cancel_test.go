@@ -62,30 +62,30 @@ func TestCancel(t *testing.T) {
 
 		now := ct.Clock.Now().UTC()
 		Convey("Backfill Start time", func() {
-			rs.Run.Status = run.Status_PENDING
+			rs.Status = run.Status_PENDING
 			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
-			So(res.State.Run.StartTime, ShouldResemble, now)
-			So(res.State.Run.EndTime, ShouldResemble, now)
+			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.StartTime, ShouldResemble, now)
+			So(res.State.EndTime, ShouldResemble, now)
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		})
 
 		Convey("Cancel works", func() {
-			rs.Run.Status = run.Status_RUNNING
-			rs.Run.StartTime = now.Add(-1 * time.Minute)
+			rs.Status = run.Status_RUNNING
+			rs.StartTime = now.Add(-1 * time.Minute)
 			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
-			So(res.State.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
-			So(res.State.Run.EndTime, ShouldResemble, now)
+			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.StartTime, ShouldResemble, now.Add(-1*time.Minute))
+			So(res.State.EndTime, ShouldResemble, now)
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		})
 
 		Convey("Cancels SUBMITTING Run", func() {
-			rs.Run.Status = run.Status_SUBMITTING
+			rs.Status = run.Status_SUBMITTING
 			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
@@ -100,9 +100,9 @@ func TestCancel(t *testing.T) {
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
-				rs.Run.Status = status
-				rs.Run.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
-				rs.Run.EndTime = clock.Now(ctx).UTC().Add(-30 * time.Second)
+				rs.Status = status
+				rs.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
+				rs.EndTime = clock.Now(ctx).UTC().Add(-30 * time.Second)
 				res, err := h.Cancel(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.State, ShouldEqual, rs)

@@ -203,19 +203,20 @@ func (rp *runProcessor) FetchEVersion(ctx context.Context) (eventbox.EVersion, e
 // returned before.
 func (rp *runProcessor) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
 	rs := st.(*state.RunState)
-	rs.Run.EVersion = int(ev)
-	rs.Run.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
-	if err := datastore.Put(ctx, &(rs.Run)); err != nil {
-		return errors.Annotate(err, "failed to put Run %q", rs.Run.ID).Tag(transient.Tag).Err()
+	r := rs.Run
+	r.EVersion = int(ev)
+	r.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+	if err := datastore.Put(ctx, &r); err != nil {
+		return errors.Annotate(err, "failed to put Run %q", r.ID).Tag(transient.Tag).Err()
 	}
 	if len(rs.LogEntries) > 0 {
 		l := run.RunLog{
 			ID:      int64(ev),
-			Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID)),
+			Run:     datastore.MakeKey(ctx, run.RunKind, string(r.ID)),
 			Entries: &run.LogEntries{Entries: rs.LogEntries},
 		}
 		if err := datastore.Put(ctx, &l); err != nil {
-			return errors.Annotate(err, "failed to put RunLog %q", rs.Run.ID).Tag(transient.Tag).Err()
+			return errors.Annotate(err, "failed to put RunLog %q", r.ID).Tag(transient.Tag).Err()
 		}
 	}
 	return nil

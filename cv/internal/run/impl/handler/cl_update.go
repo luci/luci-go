@@ -35,7 +35,7 @@ import (
 
 // OnCLsUpdated implements Handler interface.
 func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
-	switch status := rs.Run.Status; {
+	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: Received CLUpdated events but Run is in unspecified status").Err()
 		common.LogError(ctx, err)
@@ -56,14 +56,14 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		return err
 	})
 	eg.Go(func() (err error) {
-		runCLs, err = run.LoadRunCLs(ectx, rs.Run.ID, clids)
+		runCLs, err = run.LoadRunCLs(ectx, rs.ID, clids)
 		return err
 	})
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
-	cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 	}
 	if preserveEvents {
 		logging.Debugf(ctx, "Will reconsider OnCLUpdated event(s) after %s", earliestReconsiderAt.Sub(clock.Now(ctx)))
-		if err := impl.RM.Invoke(ctx, rs.Run.ID, earliestReconsiderAt); err != nil {
+		if err := impl.RM.Invoke(ctx, rs.ID, earliestReconsiderAt); err != nil {
 			return nil, err
 		}
 	}

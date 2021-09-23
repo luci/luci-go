@@ -91,7 +91,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 		meta, err := prjcfg.GetLatestMeta(ctx, lProject)
 		So(err, ShouldBeNil)
 		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
-		rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
+		rs.ConfigGroupID = meta.ConfigGroupIDs[0]
 
 		createCL := func(ci *gerritpb.ChangeInfo) {
 			ct.GFake.CreateChange(&gf.Change{
@@ -143,7 +143,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
-				rs.Run.Status = status
+				rs.Status = status
 				res, err := h.OnCQDVerificationCompleted(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.State, ShouldEqual, rs)
@@ -159,7 +159,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 
 		now := ct.Clock.Now().UTC()
 		Convey("Submit", func() {
-			rs.Run.Mode = run.FullRun
+			rs.Mode = run.FullRun
 			createCL(gf.CI(gChange,
 				gf.Owner("user-1"),
 				gf.CQ(+2, now.Add(-1*time.Minute), gf.U("user-2")),
@@ -179,8 +179,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldNotBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
-				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+				So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+				So(res.State.Submission, ShouldResembleProto, &run.Submission{
 					Deadline:          timestamppb.New(now.Add(submissionDuration)),
 					Cls:               []int64{1},
 					TaskId:            "task-foo",
@@ -201,7 +201,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 			}
 			So(datastore.Put(ctx, &vr), ShouldBeNil)
 			Convey("Dry run", func() {
-				rs.Run.Mode = run.DryRun
+				rs.Mode = run.DryRun
 				createCL(gf.CI(gChange,
 					gf.Owner("user-1"),
 					gf.CQ(+1, now.Add(-1*time.Minute), gf.U("user-2")),
@@ -211,14 +211,14 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
 				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_SUCCEEDED)
+				So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
 				ci := ct.GFake.GetChange(gHost, gChange).Info
 				So(gf.NonZeroVotes(ci, trigger.CQLabelName), ShouldBeEmpty)
 				So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, "Dry run: This CL passed the CQ dry run.")
 			})
 
 			Convey("Quick dry run", func() {
-				rs.Run.Mode = run.QuickDryRun
+				rs.Mode = run.QuickDryRun
 				createCL(gf.CI(gChange,
 					gf.Owner("user-1"),
 					gf.CQ(+1, now.Add(-1*time.Minute), gf.U("user-2")),
@@ -249,7 +249,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
 				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.State.Run.Status, ShouldEqual, run.Status_FAILED)
+				So(res.State.Status, ShouldEqual, run.Status_FAILED)
 				ci := ct.GFake.GetChange(gHost, gChange).Info
 				So(gf.NonZeroVotes(ci, trigger.CQLabelName), ShouldBeEmpty)
 				So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, "builder abc failed")

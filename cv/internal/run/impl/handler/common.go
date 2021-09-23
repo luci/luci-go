@@ -47,36 +47,35 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 		panic(fmt.Errorf("can't end run with non-final status %s", st))
 	}
 
-	rs.Run.Status = st
+	rs.Status = st
 	now := clock.Now(ctx)
-	rs.Run.EndTime = now.UTC()
+	rs.EndTime = now.UTC()
 	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 		Time: timestamppb.New(now),
 		Kind: &run.LogEntry_RunEnded_{
 			RunEnded: &run.LogEntry_RunEnded{},
 		},
 	})
-	rid := rs.Run.ID
 
 	return eventbox.Chain(
 		func(ctx context.Context) error {
-			return impl.removeRunFromCLs(ctx, rid, rs.Run.CLs)
+			return impl.removeRunFromCLs(ctx, rs.ID, rs.CLs)
 		},
 		func(ctx context.Context) error {
 			txndefer.Defer(ctx, func(postTransCtx context.Context) {
 				logging.Infof(postTransCtx, "finalized Run with status %s", st)
 			})
-			return impl.PM.NotifyRunFinished(ctx, rid)
+			return impl.PM.NotifyRunFinished(ctx, rs.ID)
 		},
 		func(ctx context.Context) error {
-			return impl.BQExporter.Schedule(ctx, rid)
+			return impl.BQExporter.Schedule(ctx, rs.ID)
 		},
 		func(ctx context.Context) error {
 			// If this Run is successfully ended (i.e. saved successfully to
 			// Datastore), the EVersion will be increased by 1 based on how
 			// eventbox works. If this eventbox behavior is changed in the future,
 			// this logic should be revisited.
-			return impl.Publisher.RunEnded(ctx, rid, rs.Run.Status, rs.Run.EVersion+1)
+			return impl.Publisher.RunEnded(ctx, rs.ID, rs.Status, rs.EVersion+1)
 		},
 	)
 }

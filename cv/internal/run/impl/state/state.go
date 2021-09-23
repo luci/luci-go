@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
@@ -29,7 +30,7 @@ import (
 
 // RunState represents the current state of a Run.
 type RunState struct {
-	Run        run.Run
+	run.Run
 	LogEntries []*run.LogEntry
 
 	// Helper fields used during state mutations.
@@ -39,27 +40,35 @@ type RunState struct {
 	SubmissionScheduled bool
 }
 
-// ShallowCopy returns a shallow copy of run state
+// ShallowCopy returns a shallow copy of this RunState.
 func (rs *RunState) ShallowCopy() *RunState {
 	if rs == nil {
 		return nil
 	}
-	ret := &RunState{
-		Run:                 rs.Run,
-		LogEntries:          append(make([]*run.LogEntry, 0, len(rs.LogEntries)), rs.LogEntries...),
-		SubmissionScheduled: rs.SubmissionScheduled,
+	ret := *rs
+	// Intentionally use nil check instead of checking len(slice), because
+	// otherwise, the copy will always have nil slice even if the `rs` has
+	// zero-length slice which will fail the equality check in test.
+	if rs.CLs != nil {
+		ret.CLs = make(common.CLIDs, len(rs.CLs))
+		copy(ret.CLs, rs.CLs)
 	}
-	return ret
+	if rs.LogEntries != nil {
+		ret.LogEntries = make([]*run.LogEntry, len(rs.LogEntries))
+		copy(ret.LogEntries, rs.LogEntries)
+	}
+	return &ret
 }
 
 // CheckTree returns whether Tree is open for this Run.
 //
 // Returns true if no Tree or Options.SkipTreeChecks is configured for this Run.
-// Updates the latest result to `run.Submission`.
+// Updates the latest result to `rs.Submission`.
+// Records a new LogEntry.
 func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error) {
 	treeOpen := true
-	if !rs.Run.Options.GetSkipTreeChecks() {
-		cg, err := prjcfg.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID)
+	if !rs.Options.GetSkipTreeChecks() {
+		cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 		if err != nil {
 			return false, err
 		}
@@ -79,7 +88,7 @@ func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error)
 			})
 		}
 	}
-	rs.Run.Submission.TreeOpen = treeOpen
-	rs.Run.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
+	rs.Submission.TreeOpen = treeOpen
+	rs.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
 	return treeOpen, nil
 }
