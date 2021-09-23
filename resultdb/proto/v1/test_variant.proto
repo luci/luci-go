@@ -75,6 +75,10 @@ enum TestVariantStatus {
   FLAKY = 30;
   // The test variant has one or more test exonerations.
   EXONERATED = 40;
+  // A special value that matches any test variant which doesn't have the status
+  // EXPECTED. This includes all the above statuses. It will never be present on
+  // returned results, it's only for use in predicates.
+  UNEXPECTED_MASK = 45;
   // The test variant has no exonerations, and all results are expected.
   EXPECTED = 50;
 }

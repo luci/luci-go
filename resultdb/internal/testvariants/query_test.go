@@ -277,6 +277,22 @@ func TestQueryTestVariants(t *testing.T) {
 				})
 				So(len(tvs[0].Results), ShouldEqual, 2)
 			})
+
+			Convey(`any unexpected or exonerated`, func() {
+				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_UNEXPECTED_MASK}
+				tvs, _ := mustFetch(q)
+				So(getTVStrings(tvs), ShouldResemble, []string{
+					"10/T4/c467ccce5a16dc72",
+					"10/T5/e3b0c44298fc1c14",
+					"10/Ty/e3b0c44298fc1c14",
+					"20/Tz/e3b0c44298fc1c14",
+					"30/T2/e3b0c44298fc1c14",
+					"30/T5/c467ccce5a16dc72",
+					"30/T8/e3b0c44298fc1c14",
+					"30/Tx/e3b0c44298fc1c14",
+					"40/T1/e3b0c44298fc1c14",
+				})
+			})
 		})
 	})
 }

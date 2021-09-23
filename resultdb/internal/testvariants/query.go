@@ -110,7 +110,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 
 	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]interface{}{
 		"HasTestIds":   len(q.TestIDs) > 0,
-		"StatusFilter": q.Predicate.GetStatus() != 0,
+		"StatusFilter": q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
 	})
 	if err != nil {
 		return
@@ -292,6 +292,11 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 		panic("PageSize <= 0")
 	}
 
+	status := int(q.Predicate.GetStatus())
+	if q.Predicate.GetStatus() == pb.TestVariantStatus_UNEXPECTED_MASK {
+		status = 0
+	}
+
 	q.params = map[string]interface{}{
 		"invIDs":              q.InvocationIDs,
 		"testIDs":             q.TestIDs,
@@ -301,7 +306,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 		"flaky":               int(pb.TestVariantStatus_FLAKY),
 		"exonerated":          int(pb.TestVariantStatus_EXONERATED),
 		"expected":            int(pb.TestVariantStatus_EXPECTED),
-		"status":              int(q.Predicate.GetStatus()),
+		"status":              status,
 	}
 
 	var expected bool
@@ -343,7 +348,8 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 	switch {
 	case err != nil:
 		tvs = nil
-	case len(tvs) < q.PageSize && q.Predicate.GetStatus() != 0:
+	case len(tvs) < q.PageSize && q.Predicate.GetStatus() != 0 &&
+		q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK:
 		// The query is for test variants with specific status, so the query reaches
 		// to its last results already.
 	case len(tvs) < q.PageSize:
