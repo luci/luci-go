@@ -159,7 +159,7 @@ func TestMain(t *testing.T) {
 					So(args, ShouldBeNil)
 					return errors.New("bad stuff")
 				})
-				So(err, ShouldBeNil)
+				So(err, ShouldEqual, errNonSuccess)
 				So(getFinal(), ShouldResembleProto, &bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
@@ -175,7 +175,7 @@ func TestMain(t *testing.T) {
 					So(args, ShouldBeNil)
 					panic("BAD THINGS")
 				})
-				So(err, ShouldBeNil)
+				So(err, ShouldEqual, errNonSuccess)
 				So(getFinal(), ShouldResembleProto, &bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,

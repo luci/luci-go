@@ -38,6 +38,8 @@ import (
 	"go.chromium.org/luci/luciexe"
 )
 
+var errNonSuccess = errors.New("build state != SUCCESS")
+
 // Main implements all the 'command-line' behaviors of the luciexe 'exe'
 // protocol, including:
 //
@@ -83,11 +85,16 @@ import (
 func Main(inputMsg proto.Message, writeFnptr, mergeFnptr interface{}, cb func(context.Context, []string, *State) error) {
 	ctx := gologger.StdConfig.Use(context.Background())
 
-	if err := main(ctx, os.Args, os.Stdin, inputMsg, writeFnptr, mergeFnptr, cb); err != nil {
-		errors.Log(ctx, err)
+	switch err := main(ctx, os.Args, os.Stdin, inputMsg, writeFnptr, mergeFnptr, cb); err {
+	case nil:
+		os.Exit(0)
+
+	case errNonSuccess:
 		os.Exit(1)
+	default:
+		errors.Log(ctx, err)
+		os.Exit(2)
 	}
-	os.Exit(0)
 }
 
 func main(ctx context.Context, args []string, stdin io.Reader, inputMsg proto.Message, writeFnptr, mergeFnptr interface{}, cb func(context.Context, []string, *State) error) error {
@@ -151,6 +158,9 @@ func main(ctx context.Context, args []string, stdin io.Reader, inputMsg proto.Me
 	}
 
 	runUserCb(ictx, userArgs, state, cb)
+	if state.buildPb.Status != bbpb.Status_SUCCESS {
+		return errNonSuccess
+	}
 	return nil
 }
 
