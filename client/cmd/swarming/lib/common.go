@@ -435,6 +435,24 @@ func retryGoogleRPC(ctx context.Context, rpcName string, rpc func() error) error
 		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code >= 500 {
 			return transient.Tag.Apply(err)
 		}
+
+		if errors.Contains(err, context.DeadlineExceeded) {
+			return transient.Tag.Apply(err)
+		}
+
+		var temporary bool
+		errors.Walk(err, func(err error) bool {
+			if terr, ok := err.(interface{ Temporary() bool }); ok && terr.Temporary() {
+				temporary = true
+				return false
+			}
+			return true
+		})
+
+		if temporary {
+			return transient.Tag.Apply(err)
+		}
+
 		if err != nil {
 			return errors.Annotate(err, "failed to call %s", rpcName).Err()
 		}
