@@ -48,7 +48,7 @@ type Subprocess struct {
 
 	waitOnce           sync.Once
 	build              *bbpb.Build
-	err                error
+	err                errors.MultiError
 	firstDeadlineEvent atomic.Value // stores lucictx.DeadlineEvent
 }
 
@@ -205,11 +205,7 @@ func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 			}
 
 			if errMsg != "" {
-				if s.err != nil {
-					s.err = errors.Annotate(s.err, "%s; luciexe error", errMsg).Err()
-				} else {
-					s.err = errors.New(errMsg)
-				}
+				s.err.MaybeAdd(errors.New(errMsg))
 			}
 		}()
 		// No matter what, we want to close stdout/stderr; if none of the other
@@ -217,16 +213,16 @@ func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 		// stdout/stderr.
 		defer func() {
 			close(s.closeChannels)
-			if closeErr := <-s.allClosed; s.err == nil {
-				s.err = closeErr
-			}
+			s.err.MaybeAdd(<-s.allClosed)
 		}()
 
-		if s.err = s.cmd.Wait(); s.err != nil {
-			s.err = errors.Annotate(s.err, "waiting for luciexe").Err()
-			return
-		}
-		s.build, s.err = luciexe.ReadBuildFile(s.collectPath)
+		err := s.cmd.Wait()
+		s.err.MaybeAdd(errors.Annotate(err, "waiting for luciexe").Err())
+
+		// Even if the Wait fails (e.g. process returns non-0 exit code, or other
+		// issue), still try to read the build output.
+		s.build, err = luciexe.ReadBuildFile(s.collectPath)
+		s.err.MaybeAdd(err)
 	})
 	return s.build, s.err
 }

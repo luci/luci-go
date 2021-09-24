@@ -61,6 +61,27 @@ func TestUpstreamErrors(t *testing.T) {
 		})
 	})
 
+	Convey("MaybeAdd", t, func() {
+		me := MultiError(nil)
+
+		Convey("nil", func() {
+			me.MaybeAdd(nil)
+			So(me, ShouldHaveLength, 0)
+			So(error(me), ShouldBeNil)
+		})
+
+		Convey("thing", func() {
+			me.MaybeAdd(errors.New("sup"))
+			So(me, ShouldHaveLength, 1)
+			So(error(me), ShouldNotBeNil)
+
+			me.MaybeAdd(errors.New("what"))
+			So(me, ShouldHaveLength, 2)
+			So(error(me), ShouldNotBeNil)
+		})
+
+	})
+
 	Convey("SingleError passes through", t, func() {
 		e := errors.New("unique")
 		So(SingleError(e), ShouldEqual, e)

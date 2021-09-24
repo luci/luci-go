@@ -232,7 +232,7 @@ func TestSubprocess(t *testing.T) {
 				shutdown()
 
 				bld, err := sp.Wait()
-				So(err, ShouldErrLike, "luciexe process is interrupted")
+				So(err, ShouldContainErr, "luciexe process is interrupted")
 				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
 				So(bld, ShouldResembleProto, &bbpb.Build{})
 			})
@@ -241,7 +241,7 @@ func TestSubprocess(t *testing.T) {
 				tc.Add(100 * time.Second) // hits soft deadline
 
 				bld, err := sp.Wait()
-				So(err, ShouldErrLike, "luciexe process timed out")
+				So(err, ShouldContainErr, "luciexe process timed out")
 				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
 				So(bld, ShouldResembleProto, &bbpb.Build{
 					StatusDetails: &bbpb.StatusDetails{Timeout: &bbpb.StatusDetails_Timeout{}},
@@ -252,7 +252,7 @@ func TestSubprocess(t *testing.T) {
 				cancel()
 
 				bld, err := sp.Wait()
-				So(err, ShouldErrLike, "luciexe process's context is cancelled")
+				So(err, ShouldContainErr, "luciexe process's context is cancelled")
 				// The exit code for killed process varies on different platform.
 				So(sp.cmd.ProcessState.ExitCode(), ShouldNotEqual, unexpectedErrorExitCode)
 				So(bld, ShouldResembleProto, &bbpb.Build{})

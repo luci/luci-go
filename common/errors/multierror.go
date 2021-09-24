@@ -22,6 +22,14 @@ import (
 // `error` objects in one.
 type MultiError []error
 
+// MaybeAdd will add `err` to `m` if `err` is not nil.
+func (m *MultiError) MaybeAdd(err error) {
+	if err == nil {
+		return
+	}
+	*m = append(*m, err)
+}
+
 func (m MultiError) Error() string {
 	n, e := m.Summary()
 	switch n {
