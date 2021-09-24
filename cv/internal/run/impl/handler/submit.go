@@ -135,6 +135,13 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 
 // OnCLSubmitted implements Handler interface.
 func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
+	switch status := rs.Status; {
+	case run.IsEnded(status):
+		logging.Warningf(ctx, "received CLSubmitted event when Run is %s", status)
+		return &Result{State: rs}, nil
+	case status != run.Status_SUBMITTING:
+		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
+	}
 	rs = rs.ShallowCopy()
 	rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 	submitted := clids.Set()
