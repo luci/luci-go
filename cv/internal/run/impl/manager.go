@@ -17,8 +17,10 @@ package impl
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
@@ -177,9 +179,14 @@ func (rp *runProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox
 // encapsulated inside Transition.SideEffectFn callback.
 func (rp *runProcessor) PrepareMutation(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, eventbox.Events, error) {
 	tr := &triageResult{}
+	var eventLog strings.Builder
+	eventLog.WriteString(fmt.Sprintf("Received %d events: ", len(events)))
 	for _, e := range events {
-		tr.triage(ctx, e)
+		eventLog.WriteRune('\n')
+		eventLog.WriteString("  * ")
+		tr.triage(ctx, e, &eventLog)
 	}
+	logging.Debugf(ctx, eventLog.String())
 	ts, err := rp.processTriageResults(ctx, tr, s.(*state.RunState))
 	return ts, tr.garbage, err
 }
@@ -252,7 +259,7 @@ type triageResult struct {
 	garbage eventbox.Events
 }
 
-func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
+func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLog *strings.Builder) {
 	e := &eventpb.Event{}
 	if err := proto.Unmarshal(item.Value, e); err != nil {
 		// This is a bug in code or data corruption.
@@ -260,6 +267,9 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		logging.Errorf(ctx, "CRITICAL: failed to deserialize event %q: %s", item.ID, err)
 		panic(err)
 	}
+	eventLog.WriteString(fmt.Sprintf("%T: ", e.GetEvent()))
+	// use compact json to make log short.
+	eventLog.WriteString((protojson.MarshalOptions{Multiline: false}).Format(e))
 	if pa := e.GetProcessAfter().AsTime(); pa.After(clock.Now(ctx)) {
 		if tr.nextReadyEventTime.IsZero() || pa.Before(tr.nextReadyEventTime) {
 			tr.nextReadyEventTime = pa
