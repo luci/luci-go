@@ -16,6 +16,7 @@ package cancel
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -59,7 +60,9 @@ func TestCancel(t *testing.T) {
 		ci := gf.CI(
 			10001, gf.PS(2),
 			gf.CQ(2, triggerTime, user),
-			gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
+			gf.Updated(clock.Now(ctx).Add(-1*time.Minute)),
+			gf.Reviewer(user),
+		)
 		So(trigger.Find(ci, &cfgpb.ConfigGroup{}).GerritAccountId, ShouldEqual, 100)
 		cl := &changelist.CL{
 			ID:         99999,
@@ -89,13 +92,14 @@ func TestCancel(t *testing.T) {
 		})
 
 		input := Input{
-			CL:            cl,
-			ConfigGroups:  []*prjcfg.ConfigGroup{{}},
-			LUCIProject:   lProject,
-			Message:       "Full Run has passed",
-			Requester:     "test",
-			Notify:        OWNER | VOTERS,
-			LeaseDuration: 30 * time.Second,
+			CL:                cl,
+			ConfigGroups:      []*prjcfg.ConfigGroup{{}},
+			LUCIProject:       lProject,
+			Message:           "Full Run has passed",
+			Requester:         "test",
+			Notify:            OWNER | VOTERS,
+			AddToAttentionSet: REVIEWERS,
+			LeaseDuration:     30 * time.Second,
 			RunCLExternalIDs: []changelist.ExternalID{
 				changelist.MustGobID(gHost, int64(10002)),
 				changelist.MustGobID(gHost, int64(10003)),
@@ -209,6 +213,9 @@ func TestCancel(t *testing.T) {
 						},
 					},
 				})
+			So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
+				{User: strconv.FormatInt(user.GetAccountId(), 10)},
+			})
 		})
 
 		Convey("Remove multiple votes", func() {
@@ -247,6 +254,9 @@ func TestCancel(t *testing.T) {
 							},
 						},
 					})
+				So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
+					{User: strconv.FormatInt(user.GetAccountId(), 10)},
+				})
 			})
 
 			Convey("Removing non-triggering votes fails", func() {

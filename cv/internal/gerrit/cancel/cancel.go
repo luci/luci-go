@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -57,31 +58,24 @@ var ErrPermanentTag = errors.BoolTag{
 	Key: errors.NewTagKey("permanent error while cancelling triggers"),
 }
 
-// Notify defines whom to notify for the cancellation.
+// Whom defines whom to notify for the cancellation.
 //
 // Note: REVIEWERS or VOTERS must be used together with OWNERS.
 // TODO(yiwzhang): Remove this restriction if necessary.
-type Notify int32
+type Whom int32
 
 const (
 	// NONE notifies no one.
-	NONE Notify = 0
+	NONE Whom = 0
 	// OWNER notifies the owner of the CL.
-	OWNER Notify = 1
+	OWNER Whom = 1
 	// REVIEWERS notifies all reviewers of the CL.
-	REVIEWERS Notify = 2
+	REVIEWERS Whom = 2
 	// VOTERS notifies all users that have voted on CQ label when cancelling.
-	VOTERS Notify = 4
+	VOTERS Whom = 4
 )
 
-func (notify Notify) validate() error {
-	if (notify&VOTERS == VOTERS || notify&REVIEWERS == REVIEWERS) && notify&OWNER != OWNER {
-		return errors.New("must notify OWNER when notifying REVIEWERS or VOTERS")
-	}
-	return nil
-}
-
-func (notify Notify) toGerritNotify(voterAccounts []int64) (n gerritpb.Notify, nd *gerritpb.NotifyDetails) {
+func (notify Whom) toGerritNotify(voterAccounts []int64) (n gerritpb.Notify, nd *gerritpb.NotifyDetails) {
 	n = gerritpb.Notify_NOTIFY_NONE
 	if len(voterAccounts) > 0 && notify&VOTERS == VOTERS {
 		nd = &gerritpb.NotifyDetails{
@@ -102,6 +96,56 @@ func (notify Notify) toGerritNotify(voterAccounts []int64) (n gerritpb.Notify, n
 		n = gerritpb.Notify_NOTIFY_OWNER
 	}
 	return
+}
+
+func (notify Whom) toGerritAttentionSet(reviewers []int64, voters []int64) []*gerritpb.AttentionSetInput {
+	// There is no reason for handling OWNER in the attention sets.
+	// The owner is always added in the attention set, when a message is posted,
+	// unless ignore_default_attention_set_rules is set or the owner is added
+	// in remove_from_attention_set. However, CV currently has no use case to
+	// remove OWNER from the attention set.
+	accs := stringset.New(len(reviewers))
+	if notify&REVIEWERS != 0 {
+		for _, r := range reviewers {
+			// The accountID supports various formats, including
+			// a bare account ID, email, full-name, and others.
+			accs.Add(strconv.FormatInt(r, 10))
+		}
+	}
+	if notify&VOTERS != 0 {
+		for _, v := range voters {
+			accs.Add(strconv.FormatInt(v, 10))
+		}
+	}
+	if len(accs) > 0 {
+		ret := make([]*gerritpb.AttentionSetInput, len(accs))
+		for i, acc := range accs.ToSortedSlice() {
+			ret[i] = &gerritpb.AttentionSetInput{User: acc}
+		}
+		return ret
+	}
+	return nil
+}
+
+func (in *Input) panicIfInvalid() {
+	// These are the conditions that shouldn't be met, and likely require code
+	// changes for fixes.
+	var err error
+	switch {
+	case in.CL.Snapshot == nil:
+		err = fmt.Errorf("cl.Snapshot must be non-nil")
+	case in.Trigger == nil:
+		err = fmt.Errorf("trigger must be non-nil")
+	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
+		err = fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject())
+	case len(in.ConfigGroups) == 0:
+		err = fmt.Errorf("ConfigGroups must be given")
+	case (in.Notify&VOTERS == VOTERS || in.Notify&REVIEWERS == REVIEWERS) && in.Notify&OWNER != OWNER:
+		err = fmt.Errorf("must notify OWNER when notifying REVIEWERS or VOTERS")
+	}
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Input contains info to cancel triggers of Run on a CL.
@@ -126,7 +170,9 @@ type Input struct {
 	// Notify describes whom to notify regarding the cancellation.
 	//
 	// Example: OWNER|REVIEWERS|VOTERS
-	Notify Notify
+	Notify Whom
+	// AddToAttentionSet describes whom to add in the attention set.
+	AddToAttentionSet Whom
 	// LeaseDuration is how long a lease will be held for this cancellation.
 	//
 	// If the passed context has a closer deadline, uses that deadline as lease
@@ -168,22 +214,10 @@ type Input struct {
 //   * special `botdata.BotData` which ensures CV won't consider previously
 //     triggering votes as triggering in the future.
 func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
-	switch {
-	case in.CL.Snapshot == nil:
-		panic("cl.Snapshot must be non-nil")
-	case in.Trigger == nil:
-		panic("trigger must be non-nil")
-	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
-		panic(fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject()))
-	case in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted:
+	in.panicIfInvalid()
+	if in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted {
 		return errors.New("failed to cancel trigger because CV lost access to this CL", ErrPreconditionFailedTag)
-	case len(in.ConfigGroups) == 0:
-		panic(fmt.Errorf("ConfigGroups must be given"))
 	}
-	if err := in.Notify.validate(); err != nil {
-		panic(err)
-	}
-
 	if err := ensurePSLatestInCV(ctx, in.CL); err != nil {
 		return err
 	}
@@ -241,7 +275,7 @@ func cancelLeased(ctx context.Context, c *change, in *Input) error {
 		return true
 	})
 
-	removeErr := c.removeVotesAndPostMsg(ctx, ci, in.Trigger, in.Message, in.Notify)
+	removeErr := c.removeVotesAndPostMsg(ctx, ci, in.Trigger, in.Message, in.Notify, in.AddToAttentionSet)
 	if removeErr == nil || !ErrPermanentTag.In(removeErr) {
 		return removeErr
 	}
@@ -254,7 +288,7 @@ func cancelLeased(ctx context.Context, c *change, in *Input) error {
 		msgBuilder.WriteString("\n\n")
 	}
 	msgBuilder.WriteString(failMessage)
-	if err := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Trigger, in.RunCLExternalIDs, in.Notify); err != nil {
+	if err := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Trigger, in.RunCLExternalIDs, in.Notify, in.AddToAttentionSet); err != nil {
 		// Return the original error, but add details from just posting a message.
 		return errors.Annotate(removeErr, "even just posting message also failed: %s", err).Err()
 	}
@@ -358,7 +392,7 @@ func (c *change) recordVotesToRemove(label string, ci *gerritpb.ChangeInfo) {
 	}
 }
 
-func (c *change) sortedAccountIDs() []int64 {
+func (c *change) sortedVoterAccountIDs() []int64 {
 	ids := make([]int64, 0, len(c.votesToRemove))
 	for id := range c.votesToRemove {
 		ids = append(ids, id)
@@ -367,16 +401,24 @@ func (c *change) sortedAccountIDs() []int64 {
 	return ids
 }
 
-func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify Notify) error {
-	accounts := c.sortedAccountIDs()
+func sortedReviewerAccountIDs(ci *gerritpb.ChangeInfo) []int64 {
+	ids := make([]int64, len(ci.GetReviewers().GetReviewers()))
+	for i, acc := range ci.GetReviewers().GetReviewers() {
+		ids[i] = acc.GetAccountId()
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	return ids
+}
+
+func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify, addAtt Whom) error {
 	var nonTriggeringVotesRemovalErrs errors.MultiError
 	needRemoveTriggerVote := false
-	for _, accountID := range accounts {
-		if accountID == t.GetGerritAccountId() {
+	for _, voter := range c.sortedVoterAccountIDs() {
+		if voter == t.GetGerritAccountId() {
 			needRemoveTriggerVote = true
 			continue
 		}
-		if err := c.removeVote(ctx, accountID, "", gerritpb.Notify_NOTIFY_NONE, nil); err != nil {
+		if err := c.removeVote(ctx, voter); err != nil {
 			nonTriggeringVotesRemovalErrs = append(nonTriggeringVotesRemovalErrs, err)
 		}
 	}
@@ -389,34 +431,30 @@ func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeI
 
 	if needRemoveTriggerVote {
 		// Remove the triggering vote last.
-		if err := c.removeVote(ctx, t.GetGerritAccountId(), "", gerritpb.Notify_NOTIFY_NONE, nil); err != nil {
+		if err := c.removeVote(ctx, t.GetGerritAccountId()); err != nil {
 			return err
 		}
 	}
-
-	n, nd := notify.toGerritNotify(accounts)
-	return c.postGerritMsg(ctx, ci, msg, t, n, nd)
+	return c.postGerritMsg(ctx, ci, msg, t, notify, addAtt)
 }
 
-func (c *change) removeVote(ctx context.Context, accountID int64, msg string, n gerritpb.Notify, nd *gerritpb.NotifyDetails) error {
+func (c *change) removeVote(ctx context.Context, accountID int64) error {
 	_, err := c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
 		Number:     c.Number,
 		Project:    c.Project,
 		RevisionId: c.Revision,
 		Labels:     c.votesToRemove[accountID],
-		Message:    gerrit.TruncateMessage(msg),
 		// TODO(yiwzhang): implement subtag like "autogenerated:cv~dry-run" if
 		// we want to display more than one message from CV in Gerrit UI.
 		// Gerrit will show the latest message for each unique tag.
-		Tag:           "autogenerated:cv",
-		Notify:        n,
-		NotifyDetails: nd,
-		OnBehalfOf:    accountID,
+		Tag:        "autogenerated:cv",
+		Notify:     gerritpb.Notify_NOTIFY_NONE,
+		OnBehalfOf: accountID,
 	})
 	return c.annotateGerritErr(ctx, err, "remove vote")
 }
 
-func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, runCLExternalIDs []changelist.ExternalID, notify Notify) (err error) {
+func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, runCLExternalIDs []changelist.ExternalID, notify, addAtt Whom) (err error) {
 	bd := botdata.BotData{
 		Action:      botdata.Cancel,
 		TriggeredAt: t.GetTime().AsTime(),
@@ -432,14 +470,13 @@ func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo,
 	if msg, err = botdata.Append(msg, bd); err != nil {
 		return err
 	}
-	n, nd := notify.toGerritNotify(c.sortedAccountIDs())
-	return c.postGerritMsg(ctx, ci, msg, t, n, nd)
+	return c.postGerritMsg(ctx, ci, msg, t, notify, addAtt)
 }
 
 // postGerritMsg posts the given message to Gerrit.
 //
 // Skips if duplicate message is found after triggering time.
-func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, n gerritpb.Notify, nd *gerritpb.NotifyDetails) (err error) {
+func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, notify, addAtt Whom) (err error) {
 	for _, m := range ci.GetMessages() {
 		switch {
 		case m.GetDate().AsTime().Before(t.GetTime().AsTime()):
@@ -448,14 +485,17 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 		}
 	}
 
+	reviewers, voters := sortedReviewerAccountIDs(ci), c.sortedVoterAccountIDs()
+	n, nd := notify.toGerritNotify(voters)
 	_, err = c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
-		Number:        c.Number,
-		Project:       c.Project,
-		RevisionId:    ci.GetCurrentRevision(),
-		Message:       gerrit.TruncateMessage(msg),
-		Tag:           "autogenerated:cv",
-		Notify:        n,
-		NotifyDetails: nd,
+		Number:            c.Number,
+		Project:           c.Project,
+		RevisionId:        ci.GetCurrentRevision(),
+		Message:           gerrit.TruncateMessage(msg),
+		Tag:               "autogenerated:cv",
+		Notify:            n,
+		NotifyDetails:     nd,
+		AddToAttentionSet: addAtt.toGerritAttentionSet(reviewers, voters),
 	})
 	return c.annotateGerritErr(ctx, err, "post message")
 }

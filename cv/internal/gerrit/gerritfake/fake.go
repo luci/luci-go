@@ -548,6 +548,16 @@ func CQ(value int, timeAndUser ...interface{}) CIModifier {
 	return Vote("Commit-Queue", value, timeAndUser...)
 }
 
+// Reviewer sets the reviewers of the CL.
+func Reviewer(rs ...*gerritpb.AccountInfo) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		if ci.Reviewers == nil {
+			ci.Reviewers = &gerritpb.ReviewerStatusMap{}
+		}
+		ci.Reviewers.Reviewers = rs
+	}
+}
+
 var usernameToAccountIDRegexp = regexp.MustCompile(`^.+[-.\alpha](\d+)$`)
 
 // U returns a Gerrit User for `username`@example.com as gerritpb.AccountInfo.
