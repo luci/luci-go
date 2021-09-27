@@ -45,7 +45,7 @@ func TestCheckLegacy(t *testing.T) {
 		}
 
 		Convey("not existing project", func() {
-			allowed, err := CheckLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("non-existing/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("non-existing/123-1-cafe")})
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeFalse)
 		})
@@ -55,7 +55,7 @@ func TestCheckLegacy(t *testing.T) {
 			cfg.CqStatusHost = cqStatusHostPublic
 			prjcfgtest.Create(ctx, "disabled", cfg)
 			prjcfgtest.Disable(ctx, "disabled")
-			allowed, err := CheckLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("disabled/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("disabled/123-1-cafe")})
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeFalse)
 		})
@@ -63,7 +63,7 @@ func TestCheckLegacy(t *testing.T) {
 		Convey("without configured CQ Status", func() {
 			cfg.CqStatusHost = ""
 			prjcfgtest.Create(ctx, "no-legacy", cfg)
-			allowed, err := CheckLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("no-legacy/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("no-legacy/123-1-cafe")})
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeFalse)
 		})
@@ -71,7 +71,7 @@ func TestCheckLegacy(t *testing.T) {
 		Convey("with misconfigured CQ Status", func() {
 			cfg.CqStatusHost = "misconfigured.example.com"
 			prjcfgtest.Create(ctx, "misconfigured", cfg)
-			allowed, err := CheckLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("misconfigured/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("misconfigured/123-1-cafe")})
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeFalse)
 		})
@@ -79,7 +79,7 @@ func TestCheckLegacy(t *testing.T) {
 		Convey("public access", func() {
 			cfg.CqStatusHost = cqStatusHostPublic
 			prjcfgtest.Create(ctx, "public", cfg)
-			allowed, err := CheckLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("public/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("public/123-1-cafe")})
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeTrue)
 		})
@@ -93,7 +93,7 @@ func TestCheckLegacy(t *testing.T) {
 					Identity:       "user:googler@example.com",
 					IdentityGroups: []string{cqStatusInternalCrIAGroup},
 				})
-				allowed, err := CheckLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("internal/123-1-cafe")})
+				allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("internal/123-1-cafe")})
 				So(err, ShouldBeNil)
 				So(allowed, ShouldBeTrue)
 			})
@@ -103,7 +103,7 @@ func TestCheckLegacy(t *testing.T) {
 					Identity:       "user:hacker@example.com",
 					IdentityGroups: []string{},
 				})
-				allowed, err := CheckLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("internal/123-1-cafe")})
+				allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("internal/123-1-cafe")})
 				So(err, ShouldBeNil)
 				So(allowed, ShouldBeFalse)
 			})

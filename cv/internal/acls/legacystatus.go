@@ -30,7 +30,7 @@ const (
 	cqStatusInternalCrIAGroup = "googlers"
 )
 
-// CheckLegacyCQStatusAccess checks if the calling user has access to the Run
+// checkLegacyCQStatusAccess checks if the calling user has access to the Run
 // via legacy CQ status app.
 //
 // Returns true if user has access.
@@ -44,7 +44,7 @@ const (
 //
 // See also https://crbug.com/1250737.
 // TODO(crbug/1233963): remove this legacy after implementing CV ACLs.
-func CheckLegacyCQStatusAccess(ctx context.Context, r *run.Run) (bool, error) {
+func checkLegacyCQStatusAccess(ctx context.Context, r *run.Run) (bool, error) {
 	// Although Run itself is associated with a ConfigGroup, it may be pinned at
 	// very old revision, so prefer the newest config.
 	m, err := prjcfg.GetLatestMeta(ctx, r.ID.LUCIProject())
