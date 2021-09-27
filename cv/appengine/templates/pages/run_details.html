@@ -110,9 +110,6 @@ div.clickable {
             <th style="width: 1%; white-space: nowrap;" class="text-center">
               CL
             </th>
-            <th class="text-center">
-              Description
-            </th>
             <th style="width: 1%; white-space: nowrap;" class="text-center">
               Next CV Run
             </th>
@@ -130,11 +127,6 @@ div.clickable {
               </td>
               <td style="white-space: nowrap;" class="text-center">
                 <a href="{{.URLWithPatchset}}">{{.ShortWithPatchset}}</a>
-              </td>
-              <td class="text-center">
-                {{with .CL.Detail.GetGerrit}}
-                  {{(index (Split (index .Info.Revisions .Info.CurrentRevision).Commit.Message) 0)}}
-                {{end}}
               </td>
               <td style="white-space: nowrap;" class="text-center">
                 {{with .Next}}
