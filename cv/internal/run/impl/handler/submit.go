@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -457,6 +458,8 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
 	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
+	notify := cancel.OWNER | cancel.VOTERS
+	addAtt := cancel.NONE
 	if err != nil {
 		return err
 	}
@@ -480,7 +483,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 		default:
 			msg = defaultMsg
 		}
-		return impl.cancelCLTriggers(ctx, runID, allRunCLs, runCLExternalIDs, msg, cg)
+		return impl.cancelCLTriggers(ctx, runID, allRunCLs, runCLExternalIDs, msg, cg, notify, addAtt)
 	}
 
 	// Multi-CL Run
@@ -501,7 +504,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 			go func() {
 				defer wg.Done()
 				msg := fmt.Sprintf("%s\n\n%s", messages[failedCL.ID], msgSuffix)
-				errs[i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{failedCL}, runCLExternalIDs, msg, cg)
+				errs[i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{failedCL}, runCLExternalIDs, msg, cg, notify, addAtt)
 			}()
 		}
 		// cancel triggers of CLs that CV won't try to submit.
@@ -530,17 +533,17 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				errs[len(failed)+i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{pendingCL}, runCLExternalIDs, pendingMsg, cg)
+				errs[len(failed)+i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{pendingCL}, runCLExternalIDs, pendingMsg, cg, notify, addAtt)
 			}()
 		}
 		wg.Wait()
 		return common.MostSevereError(errs)
 	case sc.GetTimeout():
 		msg := fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix)
-		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg)
+		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg, notify, addAtt)
 	default:
 		msg := fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
-		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg)
+		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg, notify, addAtt)
 	}
 }
 

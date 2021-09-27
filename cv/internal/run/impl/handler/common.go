@@ -105,7 +105,7 @@ func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clid
 	return impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), cls)
 }
 
-func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *prjcfg.ConfigGroup) error {
+func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *prjcfg.ConfigGroup, notify, addAtt cancel.Whom) error {
 	clids := make(common.CLIDs, len(toCancel))
 	for i, runCL := range toCancel {
 		clids[i] = runCL.ID
@@ -123,15 +123,16 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 			i := i
 			work <- func() error {
 				err := cancel.Cancel(ctx, impl.GFactory, cancel.Input{
-					CL:               cls[i],
-					Trigger:          toCancel[i].Trigger,
-					LUCIProject:      luciProject,
-					Message:          message,
-					Requester:        "Run Manager",
-					Notify:           cancel.OWNER | cancel.VOTERS,
-					LeaseDuration:    time.Minute,
-					ConfigGroups:     []*prjcfg.ConfigGroup{cg},
-					RunCLExternalIDs: runCLExternalIDs,
+					CL:                cls[i],
+					Trigger:           toCancel[i].Trigger,
+					LUCIProject:       luciProject,
+					Message:           message,
+					Requester:         "Run Manager",
+					Notify:            notify,
+					LeaseDuration:     time.Minute,
+					ConfigGroups:      []*prjcfg.ConfigGroup{cg},
+					RunCLExternalIDs:  runCLExternalIDs,
+					AddToAttentionSet: addAtt,
 				})
 				switch {
 				case err == nil:

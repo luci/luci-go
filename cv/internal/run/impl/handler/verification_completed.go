@@ -27,6 +27,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -77,7 +78,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
 		msg := usertext.OnRunSucceeded(rs.Mode)
-		if err := impl.cancelTriggers(ctx, rs, msg); err != nil {
+		if err := impl.cancelTriggers(ctx, rs, msg, cancel.OWNER|cancel.VOTERS, cancel.NONE); err != nil {
 			return nil, err
 		}
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
@@ -92,7 +93,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
-		if err := impl.cancelTriggers(ctx, rs, vr.Payload.FinalMessage); err != nil {
+		if err := impl.cancelTriggers(ctx, rs, vr.Payload.FinalMessage, cancel.OWNER|cancel.VOTERS, cancel.NONE); err != nil {
 			return nil, err
 		}
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
@@ -111,7 +112,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	}
 }
 
-func (impl *Impl) cancelTriggers(ctx context.Context, rs *state.RunState, msg string) error {
+func (impl *Impl) cancelTriggers(ctx context.Context, rs *state.RunState, msg string, notify, addAtt cancel.Whom) error {
 	runCLs, err := run.LoadRunCLs(ctx, rs.ID, rs.CLs)
 	if err != nil {
 		return err
@@ -124,5 +125,5 @@ func (impl *Impl) cancelTriggers(ctx context.Context, rs *state.RunState, msg st
 	if err != nil {
 		return err
 	}
-	return impl.cancelCLTriggers(ctx, rs.ID, runCLs, runCLExternalIDs, msg, cg)
+	return impl.cancelCLTriggers(ctx, rs.ID, runCLs, runCLExternalIDs, msg, cg, notify, addAtt)
 }
