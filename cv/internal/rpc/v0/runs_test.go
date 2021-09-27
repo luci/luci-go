@@ -151,14 +151,6 @@ func TestGetRun(t *testing.T) {
 						},
 					},
 				}
-				apiDef := &apiv0pb.Tryjob_Definition{
-					Backend: &apiv0pb.Tryjob_Definition_Buildbucket_{
-						Buildbucket: &apiv0pb.Tryjob_Definition_Buildbucket{
-							Host:    def.GetBuildbucket().GetHost(),
-							Builder: def.GetBuildbucket().GetBuilder(),
-						},
-					},
-				}
 				r.Tryjobs = &run.Tryjobs{Tryjobs: []*run.Tryjob{
 					// first tryjob was cancelled.
 					{
@@ -195,8 +187,7 @@ func TestGetRun(t *testing.T) {
 				}}
 				So(saveAndGet(r).Tryjobs, ShouldResembleProto, []*apiv0pb.Tryjob{
 					{
-						Status:     apiv0pb.Tryjob_CANCELLED,
-						Definition: apiDef,
+						Status: apiv0pb.Tryjob_CANCELLED,
 						Result: &apiv0pb.Tryjob_Result{
 							Status: apiv0pb.Tryjob_Result_FAILED_TRANSIENTLY,
 							Backend: &apiv0pb.Tryjob_Result_Buildbucket_{
@@ -208,8 +199,7 @@ func TestGetRun(t *testing.T) {
 						},
 					},
 					{
-						Status:     apiv0pb.Tryjob_ENDED,
-						Definition: apiDef,
+						Status: apiv0pb.Tryjob_ENDED,
 						Result: &apiv0pb.Tryjob_Result{
 							Status: apiv0pb.Tryjob_Result_SUCCEEDED,
 							Backend: &apiv0pb.Tryjob_Result_Buildbucket_{

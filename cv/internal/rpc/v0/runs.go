@@ -123,17 +123,6 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 				}
 			}
 		}
-		// definition
-		if bb := tj.GetDefinition().GetBuildbucket(); bb != nil {
-			tryjobs[i].Definition = &apiv0pb.Tryjob_Definition{
-				Backend: &apiv0pb.Tryjob_Definition_Buildbucket_{
-					Buildbucket: &apiv0pb.Tryjob_Definition_Buildbucket{
-						Host:    bb.Host,
-						Builder: bb.Builder,
-					},
-				},
-			}
-		}
 	}
 
 	var submission *apiv0pb.Run_Submission

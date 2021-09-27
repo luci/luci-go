@@ -18,26 +18,10 @@ package cv.v0;
 
 option go_package = "go.chromium.org/luci/cv/api/v0;cvpb";
 
-import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
 // Tryjob represents a Run's view of a tryjob.
 message Tryjob {
-  // Definition defines what a Tryjob should do.
-  //
-  // It must be sufficient to trigger a new tryjob.
-  message Definition {
-    oneof backend {
-      // For buildbucket, it's just a builder.
-      Buildbucket buildbucket = 1;
-    }
-
-    message Buildbucket {
-      string host = 1;
-      buildbucket.v2.BuilderID builder = 2;
-    }
-  }
-
   // Status is a high level status of a Tryjob.
   enum Status {
     // STATUS_UNSPECIFIED is never used.
@@ -99,8 +83,7 @@ message Tryjob {
     }
   }
 
-  // Definition defines what a Tryjob should do.
-  Definition definition = 1;
+  reserved 1; // definition
 
   // Status of the Tryjob.
   Status status = 2;
