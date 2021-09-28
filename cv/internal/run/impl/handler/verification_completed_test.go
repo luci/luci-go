@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -253,6 +254,41 @@ func TestOnVerificationCompleted(t *testing.T) {
 				ci := ct.GFake.GetChange(gHost, gChange).Info
 				So(gf.NonZeroVotes(ci, trigger.CQLabelName), ShouldBeEmpty)
 				So(gf.LastMessage(ci).GetMessage(), ShouldContainSubstring, "builder abc failed")
+
+				Convey("Notify the owner and voters with attention", func() {
+					reqs := []*gerritpb.SetReviewRequest{}
+					for _, req := range ct.GFake.Requests() {
+						switch r, ok := req.(*gerritpb.SetReviewRequest); {
+						case !ok:
+						case r.GetOnBehalfOf() != 0:
+						default:
+							reqs = append(reqs, r)
+						}
+					}
+					sort.SliceStable(reqs, func(i, j int) bool {
+						return reqs[i].Number < reqs[j].Number
+					})
+					So(reqs, ShouldHaveLength, 1)
+					So(reqs[0].GetNumber(), ShouldEqual, ci.GetNumber())
+					So(reqs[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_OWNER)
+					So(reqs[0].GetNotifyDetails(), ShouldResembleProto, &gerritpb.NotifyDetails{
+						Recipients: []*gerritpb.NotifyDetails_Recipient{
+							{
+								RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
+								Info: &gerritpb.NotifyDetails_Info{
+									// The OWNER didnt't vote, so the details do not include
+									// the owner.
+									Accounts: []int64{2},
+								},
+							},
+						},
+					})
+					So(reqs[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
+						// The attention set includes the owner and voter(s).
+						{User: "1"},
+						{User: "2"},
+					})
+				})
 			})
 		})
 	})

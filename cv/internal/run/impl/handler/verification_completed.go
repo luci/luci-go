@@ -93,7 +93,9 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
-		if err := impl.cancelTriggers(ctx, rs, vr.Payload.FinalMessage, cancel.OWNER|cancel.VOTERS, cancel.NONE); err != nil {
+		// Add the same set of group/people to the attention set.
+		nw := cancel.OWNER | cancel.VOTERS
+		if err := impl.cancelTriggers(ctx, rs, vr.Payload.FinalMessage, nw, nw); err != nil {
 			return nil, err
 		}
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{

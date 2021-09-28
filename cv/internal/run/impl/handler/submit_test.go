@@ -17,6 +17,8 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -287,6 +289,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		genCL := func(clid common.CLID, change int, deps ...common.CLID) (*gerritpb.ChangeInfo, *changelist.CL, *run.RunCL) {
 			ci := gf.CI(
 				change, gf.PS(2),
+				gf.CQ(1, ct.Clock.Now().Add(-5*time.Minute), gf.U("user-101")),
 				gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), gf.U("user-100")),
 				gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
 			t := trigger.Find(ci, cg.ConfigGroups[0])
@@ -409,6 +412,50 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			So(res.PostProcessFn, ShouldBeNil)
 		})
 
+		selfSetReviewRequests := func() (ret []*gerritpb.SetReviewRequest) {
+			for _, req := range ct.GFake.Requests() {
+				switch r, ok := req.(*gerritpb.SetReviewRequest); {
+				case !ok:
+				case r.GetOnBehalfOf() != 0:
+				default:
+					ret = append(ret, r)
+				}
+			}
+			sort.SliceStable(ret, func(i, j int) bool {
+				return ret[i].Number < ret[j].Number
+			})
+			return
+		}
+		assertNotify := func(req *gerritpb.SetReviewRequest, n gerritpb.Notify, accs ...int64) {
+			So(req, ShouldNotBeNil)
+			So(req.GetNotify(), ShouldEqual, n)
+			So(req.GetNotifyDetails(), ShouldResembleProto, &gerritpb.NotifyDetails{
+				Recipients: []*gerritpb.NotifyDetails_Recipient{
+					{
+						RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
+						Info: &gerritpb.NotifyDetails_Info{
+							Accounts: accs,
+						},
+					},
+				},
+			})
+		}
+		assertAttentionSet := func(req *gerritpb.SetReviewRequest, accs ...int64) {
+			So(req, ShouldNotBeNil)
+
+			expected := []*gerritpb.AttentionSetInput{}
+			for _, a := range accs {
+				expected = append(expected, &gerritpb.AttentionSetInput{User: strconv.FormatInt(a, 10)})
+			}
+			actual := req.GetAddToAttentionSet()
+			sort.SliceStable(actual, func(i, j int) bool {
+				lhs, _ := strconv.Atoi(actual[i].User)
+				rhs, _ := strconv.Atoi(actual[j].User)
+				return lhs < rhs
+			})
+			So(actual, ShouldResembleProto, expected)
+		}
+
 		Convey("Transient failure", func() {
 			sc := &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
@@ -503,6 +550,17 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
 								So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
 							})
+							reqs := selfSetReviewRequests()
+							So(reqs, ShouldHaveLength, 1)
+							So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
+							// The gerrit request is set with NOTIFY_ONWER, and
+							// The NotifyDetails do not include the owner ID,
+							// but only voters' IDs. Hence, [100 and 101]
+							//
+							// In contrast, the attention set includes all of
+							// the owner and voters' IDs. i.e., p99, 100, 101]
+							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertAttentionSet(reqs[0], 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(lastMsg string) {
@@ -571,6 +629,20 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
 								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
 							})
+							reqs := selfSetReviewRequests()
+							So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
+							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
+							// The gerrit request is set with NOTIFY_ONWER, and
+							// The NotifyDetails do not include the owner ID,
+							// but only voters' IDs. Hence, [100 and 101]
+							//
+							// In contrast, the attention set includes all of
+							// the owner and voters' IDs. i.e., p99, 100, 101]
+							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertAttentionSet(reqs[0], 99, 100, 101)
+							So(reqs[1].GetNumber(), ShouldEqual, ci2.GetNumber())
+							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertAttentionSet(reqs[0], 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(_ int64, lastMsg string) {
@@ -608,6 +680,17 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									panic(fmt.Errorf("unknown change: %d", changeNum))
 								}
 							})
+							reqs := selfSetReviewRequests()
+							So(reqs, ShouldHaveLength, 1) // not for both, but the failed one.
+							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
+							// The gerrit request is set with NOTIFY_ONWER, and
+							// The NotifyDetails do not include the owner ID,
+							// but only voters' IDs. Hence, [100 and 101]
+							//
+							// In contrast, the attention set includes all of
+							// the owner and voters' IDs. i.e., p99, 100, 101]
+							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertAttentionSet(reqs[0], 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(changeNum int64, lastMsg string) {
@@ -623,6 +706,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								}
 							})
 						})
+
 					})
 
 					Convey("CLs fully submitted", func() {
@@ -687,6 +771,17 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
 						So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
 					})
+					reqs := selfSetReviewRequests()
+					So(reqs, ShouldHaveLength, 1)
+					So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
+					// The gerrit request is set with NOTIFY_ONWER, and
+					// The NotifyDetails do not include the owner ID,
+					// but only voters' IDs. Hence, [100 and 101]
+					//
+					// In contrast, the attention set includes all of
+					// the owner and voters' IDs. i.e., p99, 100, 101]
+					assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+					assertAttentionSet(reqs[0], 99, 100, 101)
 				})
 
 				Convey("Unclassified failure", func() {
@@ -739,6 +834,20 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
 							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
 						})
+						reqs := selfSetReviewRequests()
+						So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
+						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
+						// The gerrit request is set with NOTIFY_ONWER, and
+						// The NotifyDetails do not include the owner ID,
+						// but only voters' IDs. Hence, [100 and 101]
+						//
+						// In contrast, the attention set includes all of
+						// the owner and voters' IDs. i.e., p99, 100, 101]
+						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+						assertAttentionSet(reqs[0], 99, 100, 101)
+						So(reqs[1].GetNumber(), ShouldEqual, ci2.GetNumber())
+						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+						assertAttentionSet(reqs[0], 99, 100, 101)
 					})
 
 					Convey("Unclassified failure", func() {
@@ -773,6 +882,17 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
 							}
 						})
+						reqs := selfSetReviewRequests()
+						So(reqs, ShouldHaveLength, 1) // not for both, but the failed one.
+						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
+						// The gerrit request is set with NOTIFY_ONWER, and
+						// The NotifyDetails do not include the owner ID,
+						// but only voters' IDs. Hence, [100 and 101]
+						//
+						// In contrast, the attention set includes all of
+						// the owner and voters' IDs. i.e., p99, 100, 101]
+						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+						assertAttentionSet(reqs[0], 99, 100, 101)
 					})
 
 					Convey("Unclassified failure", func() {
