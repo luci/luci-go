@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
@@ -37,25 +38,29 @@ import (
 )
 
 func runDetails(c *router.Context) {
+	ctx := c.Context
+
 	rID := fmt.Sprintf("%s/%s", c.Params.ByName("Project"), c.Params.ByName("Run"))
 
-	// TODO(crbug/1233963): check if user has access to this specific Run.
-
-	adminServer := &admin.AdminServer{}
-	r, err := adminServer.GetRun(c.Context, &adminpb.GetRunRequest{Run: rID})
+	// Load the Run, checking its existence and ACLs.
+	r, err := acls.LoadRun(ctx, common.RunID(rID))
 	if err != nil {
 		errPage(c, err)
 		return
 	}
 
 	// Reverse entries to get the most recent at the top of the list.
-	logEntries := r.LogEntries
+	logEntries, err := run.LoadRunLogEntries(ctx, r.ID)
+	if err != nil {
+		errPage(c, err)
+		return
+	}
 	nEntries := len(logEntries)
 	for i := 0; i < nEntries/2; i++ {
 		logEntries[i], logEntries[nEntries-1-i] = logEntries[nEntries-1-i], logEntries[i]
 	}
 
-	cls, err := run.LoadRunCLs(c.Context, common.RunID(r.Id), common.MakeCLIDs(r.Cls...))
+	cls, err := run.LoadRunCLs(ctx, common.RunID(r.ID), r.CLs)
 	if err != nil {
 		errPage(c, err)
 		return
@@ -65,26 +70,27 @@ func runDetails(c *router.Context) {
 	sort.Slice(cls, func(i, j int) bool { return cls[i].ExternalID < cls[j].ExternalID })
 
 	// Compute next and previous runs for all cls in parallel.
-	clsAndLinks, err := computeCLsAndLinks(c.Context, adminServer, cls, common.RunID(r.Id))
+	adminServer := &admin.AdminServer{}
+	clsAndLinks, err := computeCLsAndLinks(ctx, adminServer, cls, r.ID)
 	if err != nil {
 		errPage(c, err)
 		return
 	}
 	clidToURL := makeURLMap(cls)
 
-	templates.MustRender(c.Context, c.Writer, "pages/run_details.html", templates.Args{
+	templates.MustRender(ctx, c.Writer, "pages/run_details.html", templates.Args{
 		"Run":  r,
 		"Logs": logEntries,
 		"Cls":  clsAndLinks,
 		"RelTime": func(ts time.Time) string {
-			return humanize.RelTime(ts, startTime(c.Context), "ago", "from now")
+			return humanize.RelTime(ts, startTime(ctx), "ago", "from now")
 		},
 		"LogMessage": func(rle *run.LogEntry) string {
 			switch v := rle.GetKind().(type) {
 			case *run.LogEntry_Info_:
 				return v.Info.Message
 			case *run.LogEntry_ClSubmitted:
-				return StringifySubmissionSuccesses(clidToURL, v.ClSubmitted, int64(len(r.Cls)))
+				return StringifySubmissionSuccesses(clidToURL, v.ClSubmitted, int64(len(r.CLs)))
 			case *run.LogEntry_SubmissionFailure_:
 				return StringifySubmissionFailureReason(clidToURL, v.SubmissionFailure.Event)
 			default:

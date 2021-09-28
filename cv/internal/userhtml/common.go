@@ -81,9 +81,6 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 			"Split": func(s string) []string {
 				return strings.Split(s, "\n")
 			},
-			"SplitSlash": func(s string) []string {
-				return strings.Split(s, "/")
-			},
 			"Title": func(s string) string {
 				return strings.Title(strings.ToLower(strings.Replace(s, "_", " ", -1)))
 			},

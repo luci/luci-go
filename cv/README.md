@@ -47,6 +47,30 @@ TODO(crbug.com/1225047): update this doc.
      - [internal/rpc](./internal/rpc) pRPC handlers, including "admin" API not
        exposed in public `api` dir.
 
+## Developer Guide.
+
+### UI
+
+tl;dr
+
+```
+cd appengine
+go run main.go
+# See output for URLs to http URLs.
+```
+
+To work with Runs from the -dev project, connect to its Datastore by adding
+these arguments:
+```
+go run main.go -cloud-project luci-change-verifier-dev`
+```
+
+For a quick check, eyeball these two pages (your port may be different):
+  * http://localhost:8800/ui/run/cq-test/8991920303854-1-19bc46b6c6972e90
+  * http://localhost:8800/ui/recents/cq-test
+
+Finally, you can deploy your work-in-progress to -dev project directly.
+
 ## How does this code end up in production?
 
 tl;dr this the usual way for LUCI GAE apps. Roughly,

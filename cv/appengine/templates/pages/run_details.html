@@ -1,6 +1,6 @@
 {{define "title"}}
-Project {{index (SplitSlash .Run.Id) 0}}
-Run {{index (SplitSlash .Run.Id) 1}}
+Project {{.Run.ID.LUCIProject}}
+Run {{.Run.ID.Inner}}
 - LUCI Change Verifier
 {{end}}
 
@@ -95,7 +95,7 @@ div.clickable {
   <div>
       <h3>Run details</h3>
         {{template "runDetails" .Run}}
-        {{$Created := .Run.CreateTime.AsTime}}
+        {{$Created := .Run.CreateTime}}
   </div>
 
   <div>
@@ -232,10 +232,10 @@ div.clickable {
     </thead>
     <tbody>
       <tr>
-      <td><a href="/ui/recents/{{index (SplitSlash .Id) 0}}">
-        {{index (SplitSlash .Id) 0}}
+      <td><a href="/ui/recents/{{.ID.LUCIProject}}">
+          {{.ID.LUCIProject}}
       </a></td>
-      <td><b>{{index (SplitSlash .Id) 1}}</b></td>
+      <td><b>{{.ID.Inner}}</b></td>
       <td>{{.Mode}}</td>
       <td>{{.Status}}</td>
       <td>
@@ -248,16 +248,16 @@ div.clickable {
 
   <div id="full-details-panel" class="collapsible well">
   <dl class="dl-horizontal">
-  <dt>Eversion:</dt><dd>{{.Eversion}}</dd>
-  <dt>Id:</dt><dd>{{.Id}}</dd>
+  <dt>Eversion:</dt><dd>{{.EVersion}}</dd>
+  <dt>Id:</dt><dd>{{.ID}}</dd>
   <dt>Mode:</dt><dd>{{.Mode}}</dd>
   <dt>Status:</dt><dd>{{.Status}}</dd>
-  <dt>CreateTime:</dt><dd>{{FmTime .CreateTime.AsTime}}</dd>
-  <dt>StartTime:</dt><dd>{{FmTime .StartTime.AsTime}}</dd>
-  <dt>UpdateTime:</dt><dd>{{FmTime .UpdateTime.AsTime}}</dd>
-  <dt>EndTime:</dt><dd>{{FmTime .EndTime.AsTime}}</dd>
+  <dt>CreateTime:</dt><dd>{{FmTime .CreateTime}}</dd>
+  <dt>StartTime:</dt><dd>{{FmTime .StartTime}}</dd>
+  <dt>UpdateTime:</dt><dd>{{FmTime .UpdateTime}}</dd>
+  <dt>EndTime:</dt><dd>{{FmTime .EndTime}}</dd>
   <dt>Owner:</dt><dd>{{.Owner}}</dd>
-  <dt>ConfigGroupId:</dt><dd>{{.ConfigGroupId}}</dd>
+  <dt>ConfigGroupId:</dt><dd>{{.ConfigGroupID}}</dd>
   </dl>
   </div>
 </div>

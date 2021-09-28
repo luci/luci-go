@@ -72,6 +72,15 @@ func (id RunID) LUCIProject() string {
 	return string(id[:pos])
 }
 
+// Inner is the part after "<LUCIProject>/" for use in UI.
+func (id RunID) Inner() string {
+	pos := strings.IndexRune(string(id), '/')
+	if pos == -1 {
+		panic(fmt.Errorf("invalid run ID %q", id))
+	}
+	return string(id[pos+1:])
+}
+
 // InverseTS of this Run. See RunID doc.
 func (id RunID) InverseTS() string {
 	s := string(id)
