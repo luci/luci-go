@@ -21,12 +21,11 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
+	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
@@ -65,14 +64,8 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		return nil, err
 	}
 
-	r := run.Run{ID: id}
-	switch err := datastore.Get(ctx, &r); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, appstatus.Errorf(codes.NotFound, "run not found")
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
-	}
-	if err := checkCanReadRun(ctx, &r); err != nil {
+	r, err := acls.LoadRun(ctx, id)
+	if err != nil {
 		return nil, err
 	}
 
@@ -144,11 +137,6 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		Tryjobs:    tryjobs,
 		Submission: submission,
 	}, nil
-}
-
-func checkCanReadRun(ctx context.Context, r *run.Run) error {
-	// TODO(crbug/1233963): implement.
-	return nil
 }
 
 func toInternalRunID(id string) (common.RunID, error) {

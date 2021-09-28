@@ -28,9 +28,11 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -48,7 +50,16 @@ func TestGetRun(t *testing.T) {
 		defer cancel()
 
 		rs := RunsServer{}
+
 		rid := common.RunID("prj/123-deadbeef")
+		prjcfgtest.Create(ctx, "prj", &cfgpb.Config{
+			// TODO(crbug/1233963): remove once non-legacy ACLs are implemented.
+			CqStatusHost: "chromium-cq-status.appspot.com",
+			ConfigGroups: []*cfgpb.ConfigGroup{{
+				Name: "first",
+			}},
+		})
+
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:admin@example.com",
 			IdentityGroups: []string{allowGroup},
