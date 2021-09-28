@@ -343,21 +343,16 @@ func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor 
 		return nil, nil, err
 	}
 
-	q := datastore.NewQuery(run.RunCLKind).Eq("IndexedID", cl.ID).Limit(req.GetPageSize()).KeysOnly(true)
+	qb := run.CLQueryBuilder{
+		CLID:    cl.ID,
+		Limit:   req.GetPageSize(),
+		Project: req.GetProject(), // optional.
+	}
 	if excl := cursor.GetRun(); excl != "" {
-		q = q.Gt("__key__", datastore.MakeKey(ctx, run.RunKind, excl, run.RunCLKind, int64(cl.ID)))
+		qb.Min = common.RunID(excl)
 	}
-	// TODO(tandrii): if req.GetProject() is given, restrict __key__ here.
-	var runCLKeys []*datastore.Key
-	if err := datastore.GetAll(ctx, q, &runCLKeys); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to fetch Runs IDs").Tag(transient.Tag).Err()
-	}
-
-	runKeys := make([]*datastore.Key, len(runCLKeys))
-	for i, k := range runCLKeys {
-		runKeys[i] = k.Parent()
-	}
-	return cl, runKeys, nil
+	runKeys, err := qb.GetAllRunKeys(ctx)
+	return cl, runKeys, err
 }
 
 // searchRunsByProject returns Run IDs as Datastore keys, using LUCI Project to

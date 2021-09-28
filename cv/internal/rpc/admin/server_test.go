@@ -470,6 +470,26 @@ func TestSearchRuns(t *testing.T) {
 					total := fetchAll(ctx, req)
 					So(idsOf(total), ShouldResemble, []string{diffProjectID, laterID, earlierID})
 				})
+
+				Convey("with CL and project and paging", func() {
+					// Make CL1 included in 3 runs: diffProjectID, laterID, earlierID.
+					So(datastore.Put(ctx,
+						&run.Run{
+							ID:     diffProjectID,
+							Status: run.Status_RUNNING,
+							CLs:    common.MakeCLIDs(1),
+						},
+						&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},
+					), ShouldBeNil)
+
+					req := &adminpb.SearchRunsRequest{
+						Cl:       &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
+						Project:  lProject,
+						PageSize: 1,
+					}
+					total := fetchAll(ctx, req)
+					So(idsOf(total), ShouldResemble, []string{laterID, earlierID})
+				})
 			})
 
 			Convey("runs aross all projects", func() {
