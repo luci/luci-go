@@ -554,8 +554,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							So(reqs, ShouldHaveLength, 1)
 							So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
 							// The gerrit request is set with NOTIFY_ONWER, and
-							// The NotifyDetails do not include the owner ID,
-							// but only voters' IDs. Hence, [100 and 101]
+							// the NotifyDetails only includes the voters' IDs w/o
+							// the owner's ID. Hence, [100 and 101]
 							//
 							// In contrast, the attention set includes all of
 							// the owner and voters' IDs. i.e., p99, 100, 101]
@@ -633,8 +633,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
 							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
 							// The gerrit request is set with NOTIFY_ONWER, and
-							// The NotifyDetails do not include the owner ID,
-							// but only voters' IDs. Hence, [100 and 101]
+							// the NotifyDetails only includes the voters' IDs w/o
+							// the owner's ID. Hence, [100 and 101]
 							//
 							// In contrast, the attention set includes all of
 							// the owner and voters' IDs. i.e., p99, 100, 101]
@@ -684,8 +684,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							So(reqs, ShouldHaveLength, 1) // not for both, but the failed one.
 							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
 							// The gerrit request is set with NOTIFY_ONWER, and
-							// The NotifyDetails do not include the owner ID,
-							// but only voters' IDs. Hence, [100 and 101]
+							// the NotifyDetails only includes the voters' IDs w/o
+							// the owner's ID. Hence, [100 and 101]
 							//
 							// In contrast, the attention set includes all of
 							// the owner and voters' IDs. i.e., p99, 100, 101]
@@ -775,8 +775,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					So(reqs, ShouldHaveLength, 1)
 					So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
 					// The gerrit request is set with NOTIFY_ONWER, and
-					// The NotifyDetails do not include the owner ID,
-					// but only voters' IDs. Hence, [100 and 101]
+					// the NotifyDetails only includes the voters' IDs w/o
+					// the owner's ID. Hence, [100 and 101]
 					//
 					// In contrast, the attention set includes all of
 					// the owner and voters' IDs. i.e., p99, 100, 101]
@@ -838,8 +838,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
 						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
 						// The gerrit request is set with NOTIFY_ONWER, and
-						// The NotifyDetails do not include the owner ID,
-						// but only voters' IDs. Hence, [100 and 101]
+						// the NotifyDetails only includes the voters' IDs w/o
+						// the owner's ID. Hence, [100 and 101]
 						//
 						// In contrast, the attention set includes all of
 						// the owner and voters' IDs. i.e., p99, 100, 101]
@@ -886,8 +886,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(reqs, ShouldHaveLength, 1) // not for both, but the failed one.
 						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
 						// The gerrit request is set with NOTIFY_ONWER, and
-						// The NotifyDetails do not include the owner ID,
-						// but only voters' IDs. Hence, [100 and 101]
+						// the NotifyDetails only includes the voters' IDs w/o
+						// the owner's ID. Hence, [100 and 101]
 						//
 						// In contrast, the attention set includes all of
 						// the owner and voters' IDs. i.e., p99, 100, 101]
