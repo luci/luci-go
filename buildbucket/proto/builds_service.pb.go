@@ -309,10 +309,11 @@ type BatchRequest struct {
 
 	// Requests to execute in a single batch.
 	//
-	// All requests are executed in their own individual transactions.
-	// BatchRequest as a whole is not transactional.
-	// There's no guaranteed order of execution between batch items (i.e. consider
-	// them to all operate independently).
+	// * All requests are executed in their own individual transactions.
+	// * BatchRequest as a whole is not transactional.
+	// * There's no guaranteed order of execution between batch items (i.e.
+	//   consider them to all operate independently).
+	// * There is a limit of 200 requests per batch.
 	Requests []*BatchRequest_Request `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
 }
 
