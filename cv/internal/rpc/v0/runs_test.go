@@ -191,10 +191,7 @@ func TestGetRun(t *testing.T) {
 						Result: &apiv0pb.Tryjob_Result{
 							Status: apiv0pb.Tryjob_Result_FAILED_TRANSIENTLY,
 							Backend: &apiv0pb.Tryjob_Result_Buildbucket_{
-								Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{
-									Id:     11,
-									Status: bbpb.Status_CANCELED,
-								},
+								Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: 11},
 							},
 						},
 					},
@@ -203,10 +200,7 @@ func TestGetRun(t *testing.T) {
 						Result: &apiv0pb.Tryjob_Result{
 							Status: apiv0pb.Tryjob_Result_SUCCEEDED,
 							Backend: &apiv0pb.Tryjob_Result_Buildbucket_{
-								Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{
-									Id:     12,
-									Status: bbpb.Status_SUCCESS,
-								},
+								Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: 12},
 							},
 						},
 					},

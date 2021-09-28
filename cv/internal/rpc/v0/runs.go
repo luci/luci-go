@@ -116,10 +116,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 			}
 			if bb := result.GetBuildbucket(); bb != nil {
 				tryjobs[i].Result.Backend = &apiv0pb.Tryjob_Result_Buildbucket_{
-					Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{
-						Id:     bb.Id,
-						Status: bb.Status,
-					},
+					Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: bb.Id},
 				}
 			}
 		}
