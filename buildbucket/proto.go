@@ -37,6 +37,7 @@ const (
 	ExperimentBBCanarySoftware = "luci.buildbucket.canary_software"
 	ExperimentNonProduction    = "luci.non_production"
 
+	ExperimentBackendAlt      = "luci.buildbucket.backend_alt"
 	ExperimentBBAgent         = "luci.buildbucket.use_bbagent"
 	ExperimentBBAgentGetBuild = "luci.buildbucket.bbagent_getbuild"
 	ExperimentRecipePY3       = "luci.recipes.use_python3"
@@ -45,10 +46,11 @@ const (
 
 // WellKnownExperiments is the list of all well-known experiments.
 var WellKnownExperiments = stringset.NewFromSlice(
+	ExperimentBackendAlt,
 	ExperimentBBCanarySoftware,
-	ExperimentNonProduction,
 	ExperimentBBAgent,
 	ExperimentBBAgentGetBuild,
+	ExperimentNonProduction,
 	ExperimentRecipePY3,
 	ExperimentUseRealms,
 )

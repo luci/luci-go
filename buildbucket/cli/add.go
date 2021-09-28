@@ -92,6 +92,7 @@ func cmdAdd(p Params) *subcommands.Command {
 
 				Well-known experiments:
 				  * `+bb.ExperimentNonProduction+`
+				  * `+bb.ExperimentBackendAlt+`
 				  * `+bb.ExperimentBBCanarySoftware+`
 				  * `+bb.ExperimentBBAgent+`
 				  * `+bb.ExperimentBBAgentGetBuild+`

@@ -76,7 +76,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 32.
+// Next tag: 34.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -200,11 +200,31 @@ message Builder {
     luci.resultdb.v1.HistoryOptions history_options = 3;
   }
 
+  // Buildbucket backend-specific information for a builder.
+  message Backend {
+    // URI for this backend, e.g. "swarming://chromium-swarm".
+    string target = 1;
+
+    // A string interpreted as JSON encapsulating configuration for this
+    // backend.
+    // TODO(crbug.com/1042991): Move priority, wait_for_capacity, etc. here.
+    string config_json = 2;
+  }
+
   // Name of the builder or builder mixin.
   //
   // If a builder name, will be propagated to "builder" build tag and
   // "buildername" recipe property.
   string name = 1;
+
+  // Backend for this builder.
+  // If unset, builds are scheduled using the legacy pipeline.
+  Backend backend = 32;
+
+  // Alternate backend to use for this builder when the
+  // "luci.buildbucket.backend_alt" experiment is enabled. Works even when
+  // `backend` is empty. Useful for migrations to new backends.
+  Backend backend_alt = 33;
 
   // Hostname of the swarming instance, e.g. "chromium-swarm.appspot.com".
   // Required, but defaults to deprecated Swarming.hostname.
@@ -542,10 +562,15 @@ message Builder {
   // Builds with this experiment will default to the new 'luciexe'-based
   // protocol, rather than the deprecated '@@@annotation@@@' protocol.
   //
-  // # "luci.buildbucket.bbagent_getbuild" (default currently 0%)
+  // # "luci.buildbucket.bbagent_getbuild" (default currently 25%)
   // Builds with this experiment and the above luci.buildbucket.use_bbagent will
   // invoke bbagent with fixed-length CLI instead of the default which is
   // O(build proto size). No-op if luci.buildbucket.use_bbagent isn't also set.
+  //
+  // # "luci.buildbucket.backend_alt" (default currently 0%)
+  // Builds with this experiment will use builder.backend_alt as the Buildbucket
+  // backent when scheduling the build. This overrides builder.backend and
+  // builder.swarming_host. Currently unimplemented.
   //
   // Over time we'll be moving the default on both of these up from 0%. Ideally
   // we'll be removing the @@@annotation@@@ protocol entirely in 2021Q3.

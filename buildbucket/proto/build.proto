@@ -24,6 +24,7 @@ import "google/protobuf/struct.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/step.proto";
+import "go.chromium.org/luci/buildbucket/proto/task.proto";
 import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 
 // A single build, identified by an int64 id.
@@ -493,10 +494,22 @@ message BuildInfra {
     Input input = 4;
   }
 
+  // Backend-specific information.
+  message Backend {
+    // Configuration supplied to the backend at the time it was instructed to
+    // run this build.
+    google.protobuf.Struct config = 1;
+
+    // Current backend task status.
+    // Updated as build runs.
+    Task task = 2;
+  }
+
   Buildbucket buildbucket = 1;
   Swarming swarming = 2;
   LogDog logdog = 3;
   Recipe recipe = 4;
   ResultDB resultdb = 5;
   BBAgent bbagent = 6;
+  Backend backend = 7;
 }

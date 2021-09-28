@@ -779,6 +779,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
+						"-" + bb.ExperimentBackendAlt,
 						"-" + bb.ExperimentBBAgentGetBuild,
 						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
@@ -1118,6 +1119,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
+						"-" + bb.ExperimentBackendAlt,
 						"-" + bb.ExperimentBBAgentGetBuild,
 						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
@@ -1142,6 +1144,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
+						"-" + bb.ExperimentBackendAlt,
 						"-" + bb.ExperimentBBAgentGetBuild,
 						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
@@ -1166,6 +1169,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
+						"-" + bb.ExperimentBackendAlt,
 						"-" + bb.ExperimentBBAgentGetBuild,
 						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
@@ -2729,6 +2733,7 @@ func TestScheduleBuild(t *testing.T) {
 			setExperimentsFromProto(nil, nil, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Experiments: []string{
+					"-" + bb.ExperimentBackendAlt,
 					"-" + bb.ExperimentBBAgentGetBuild,
 					"-" + bb.ExperimentBBCanarySoftware,
 					"-" + bb.ExperimentBBAgent,
@@ -2925,6 +2930,7 @@ func TestScheduleBuild(t *testing.T) {
 				Experiments: []string{
 					"+experiment1",
 					"-experiment2",
+					"-" + bb.ExperimentBackendAlt,
 					"-" + bb.ExperimentBBAgentGetBuild,
 					"-" + bb.ExperimentBBCanarySoftware,
 					"-" + bb.ExperimentBBAgent,
@@ -2969,6 +2975,7 @@ func TestScheduleBuild(t *testing.T) {
 				Canary: true,
 				Experiments: []string{
 					"+" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentBackendAlt,
 					"-" + bb.ExperimentBBAgentGetBuild,
 					"-" + bb.ExperimentBBAgent,
 					"-" + bb.ExperimentRecipePY3,
@@ -3014,6 +3021,7 @@ func TestScheduleBuild(t *testing.T) {
 				Experiments: []string{
 					"+experiment1",
 					"-experiment2",
+					"-" + bb.ExperimentBackendAlt,
 					"-" + bb.ExperimentBBAgentGetBuild,
 					"-" + bb.ExperimentBBCanarySoftware,
 					"-" + bb.ExperimentBBAgent,
@@ -3063,6 +3071,7 @@ func TestScheduleBuild(t *testing.T) {
 					Experimental: true,
 					Experiments: []string{
 						"+" + bb.ExperimentNonProduction,
+						"-" + bb.ExperimentBackendAlt,
 						"-" + bb.ExperimentBBAgentGetBuild,
 						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
@@ -3116,6 +3125,7 @@ func TestScheduleBuild(t *testing.T) {
 					Canary: true,
 					Experiments: []string{
 						"+" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBackendAlt,
 						"-" + bb.ExperimentBBAgentGetBuild,
 						"-" + bb.ExperimentBBAgent,
 						"-" + bb.ExperimentRecipePY3,
@@ -3168,6 +3178,7 @@ func TestScheduleBuild(t *testing.T) {
 					Experiments: []string{
 						"+experiment1",
 						"-experiment2",
+						"-" + bb.ExperimentBackendAlt,
 						"-" + bb.ExperimentBBAgentGetBuild,
 						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
@@ -3228,6 +3239,7 @@ func TestScheduleBuild(t *testing.T) {
 						"+experiment1",
 						"+" + bb.ExperimentNonProduction,
 						"-experiment2",
+						"-" + bb.ExperimentBackendAlt,
 						"-" + bb.ExperimentBBAgentGetBuild,
 						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
