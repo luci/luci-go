@@ -82,6 +82,22 @@ func TestUpstreamErrors(t *testing.T) {
 
 	})
 
+	Convey("AsError", t, func() {
+		var me MultiError
+		So(me, ShouldBeNil)
+
+		var err error
+		err = me
+
+		// Unfortunately Go has many nil's :(
+		//   So(err == nil, ShouldBeTrue)
+		// Note that `ShouldBeNil` won't cut it, since it 'sees through' interfaces.
+
+		// However!
+		err = me.AsError()
+		So(err == nil, ShouldBeTrue)
+	})
+
 	Convey("SingleError passes through", t, func() {
 		e := errors.New("unique")
 		So(SingleError(e), ShouldEqual, e)

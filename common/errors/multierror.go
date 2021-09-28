@@ -43,6 +43,15 @@ func (m MultiError) Error() string {
 	return fmt.Sprintf("%s (and %d other errors)", e, n-1)
 }
 
+// AsError returns an `error` interface for this MultiError only if it has >0
+// length.
+func (m MultiError) AsError() error {
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
 // Summary gets the total count of non-nil errors and returns the first one.
 func (m MultiError) Summary() (n int, first error) {
 	for _, e := range m {

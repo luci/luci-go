@@ -224,7 +224,7 @@ func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 		s.build, err = luciexe.ReadBuildFile(s.collectPath)
 		s.err.MaybeAdd(err)
 	})
-	return s.build, s.err
+	return s.build, s.err.AsError()
 }
 
 // fieldsToClear are a set of fields that MUST be cleared in the initial build
