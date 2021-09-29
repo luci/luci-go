@@ -271,6 +271,9 @@ def _builder(
     # To reduce noise in the properties, set the test presentation config only
     # when it's not the default value.
     if test_presentation != None and test_presentation != resultdb.test_presentation():
+        # Copy the properties dictionary so we won't modify the original value,
+        # which could be immutable if no default value was provided.
+        props["properties"] = dict(props["properties"])
         props["properties"]["$recipe_engine/resultdb/test_presentation"] = resultdbimpl.test_presentation_to_dict(test_presentation)
 
     # Properties should be JSON-serializable. The only way to check is to try to
