@@ -131,14 +131,6 @@ func runIntegrationTest(t *testing.T, triggerArgs []string) {
 	testCollectCommand(t, triggeredTask.TaskId)
 }
 
-func TestWithIsolate(t *testing.T) {
-	t.Parallel()
-
-	Convey(`ok`, t, func() {
-		runIntegrationTest(t, []string{"-isolate-server", "isolateserver-dev.appspot.com"})
-	})
-}
-
 func TestWithCAS(t *testing.T) {
 	t.Parallel()
 
