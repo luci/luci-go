@@ -1,7 +1,24 @@
-{{define "title"}}An error has occurred{{end}}
+{{define "title"}}
+  {{if .IsAnonymous}}
+    Sign-in Required
+  {{else}}
+    An error has occurred
+  {{end}}
+{{end}}
 
 {{define "content"}}
-  <h1> {{.Code}} - An error has occurred &#x1F61F;</h1>
-  <p><pre>{{.Error}}</pre></p>
-  <a href="https://bugs.chromium.org/p/chromium/issues/entry?summary=CV%20Status%20Code%20{{.Code}}&description={{.Error}}&components=Infra%3EPlatform%3ECQ&labels=Type-Bug,Pri-2">File a bug</a>
+  {{if eq .Code 403}}
+    {{if .IsAnonymous}}
+      <p class="lead"> {{.Code}} - Sign-in required</p>
+    {{else}}
+      <p class="lead"> {{.Code}} - Permission Denied &#x1F61F;</p>
+      <p><pre>{{.Error}}</pre></p>
+    {{end}}
+  {{else}}
+    <p class="lead"> {{.Code}} - An error has occurred &#x1F61F;</p>
+    <p><pre>{{.Error}}</pre></p>
+  {{end}}
+  {{if .IsAnonymous}}
+      <p>Click <a href="{{.LoginURL}}">here</a> to sign in</p>
+  {{end}}
 {{end}}
