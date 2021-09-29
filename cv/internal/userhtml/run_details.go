@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -70,8 +69,7 @@ func runDetails(c *router.Context) {
 	sort.Slice(cls, func(i, j int) bool { return cls[i].ExternalID < cls[j].ExternalID })
 
 	// Compute next and previous runs for all cls in parallel.
-	adminServer := &admin.AdminServer{}
-	clsAndLinks, err := computeCLsAndLinks(ctx, adminServer, cls, r.ID)
+	clsAndLinks, err := computeCLsAndLinks(ctx, cls, r.ID)
 	if err != nil {
 		errPage(c, err)
 		return
@@ -114,19 +112,19 @@ func (cl *clAndNeighborRuns) ShortWithPatchset() string {
 	return fmt.Sprintf("%s/%d", displayCLExternalID(cl.CL.ExternalID), cl.CL.Detail.GetPatchset())
 }
 
-func computeCLsAndLinks(ctx context.Context, srv adminpb.AdminServer, cls []*run.RunCL, rid common.RunID) ([]*clAndNeighborRuns, error) {
+func computeCLsAndLinks(ctx context.Context, cls []*run.RunCL, rid common.RunID) ([]*clAndNeighborRuns, error) {
 	ret := make([]*clAndNeighborRuns, len(cls))
 	eg, ctx := errgroup.WithContext(ctx)
 	for i, cl := range cls {
 		i, cl := i, cl
 		eg.Go(func() error {
-			newer, older, err := getNeighborsByCL(ctx, srv, cls[i], rid)
+			prev, next, err := getNeighborsByCL(ctx, cl, rid)
 			if err != nil {
 				return errors.Annotate(err, "unable to get previous and next runs for cl %s", cl.ExternalID).Err()
 			}
 			ret[i] = &clAndNeighborRuns{
-				Prev: older,
-				Next: newer,
+				Prev: prev,
+				Next: next,
 				CL:   cl,
 			}
 			return nil
@@ -135,58 +133,47 @@ func computeCLsAndLinks(ctx context.Context, srv adminpb.AdminServer, cls []*run
 	return ret, eg.Wait()
 }
 
-func getNeighborsByCL(ctx context.Context, srv adminpb.AdminServer, cl *run.RunCL, rID common.RunID) (common.RunID, common.RunID, error) {
-	var newer, older, last common.RunID
-	req := &adminpb.SearchRunsRequest{
-		Project: rID.LUCIProject(),
-		Cl:      &adminpb.GetCLRequest{Id: int64(cl.ID)},
-	}
-	for {
-		// Note that SearchRuns are returned in reverse chronological order
-		// i.e. Most recent first.
-		resp, err := srv.SearchRuns(ctx, req)
-		if err != nil {
-			return "", "", err
-		}
+func getNeighborsByCL(ctx context.Context, cl *run.RunCL, rID common.RunID) (common.RunID, common.RunID, error) {
+	eg, ctx := errgroup.WithContext(ctx)
 
-		i := indexOf(resp.Runs, rID)
-		switch {
-		case i == -1:
-			if resp.GetNextPageToken() == "" {
-				return newer, older, nil
+	prev := common.RunID("")
+	eg.Go(func() error {
+		qb := run.CLQueryBuilder{CLID: cl.ID, Limit: 1}.BeforeInProject(rID)
+		switch keys, err := qb.GetAllRunKeys(ctx); {
+		case err != nil:
+			return err
+		case len(keys) == 1:
+			prev = common.RunID(keys[0].StringID())
+			// It's OK to return the prev Run ID w/o checking ACLs because even if the
+			// user can't see the prev Run, user is already served this Run's ID, which
+			// contains the same LUCI project.
+			if prev.LUCIProject() != rID.LUCIProject() {
+				panic(fmt.Errorf("CLQueryBuilder.Before didn't limit project: %q vs %q", prev, rID))
 			}
-			// There are more pages and we haven't found the run of interest.
-			// Save the last run of this page in case the first run in the next
-			// page is the one of interest.
-			last = common.RunID(resp.Runs[len(resp.Runs)-1].Id)
-			req.PageToken = resp.GetNextPageToken()
-			continue
-		case i > 0:
-			newer = common.RunID(resp.Runs[i-1].Id)
-		case last != common.RunID(""):
-			// This is not the first page, but the run of interest
-			// is the first in the page. Use the last run of the
-			// previous page.
-			newer = last
 		}
+		return nil
+	})
 
-		switch {
-		case i < len(resp.Runs)-1:
-			older = common.RunID(resp.Runs[i+1].Id)
-		case resp.GetNextPageToken() != "":
-			// The last run in the page is the one of interest,
-			// then the first run in the next page will be the next.
-			req.PageToken = resp.GetNextPageToken()
-			resp, err = srv.SearchRuns(ctx, req)
-			if err != nil {
-				return "", "", err
-			}
-			if len(resp.Runs) > 0 {
-				older = common.RunID(resp.Runs[0].Id)
+	next := common.RunID("")
+	eg.Go(func() error {
+		qb := run.CLQueryBuilder{CLID: cl.ID, Limit: 1, Descending: true}.AfterInProject(rID)
+		switch keys, err := qb.GetAllRunKeys(ctx); {
+		case err != nil:
+			return err
+		case len(keys) == 1:
+			next = common.RunID(keys[0].StringID())
+			// It's OK to return the next Run ID w/o checking ACLs because even if the
+			// user can't see the next Run, user is already served this Run's ID, which
+			// contains the same LUCI project.
+			if next.LUCIProject() != rID.LUCIProject() {
+				panic(fmt.Errorf("CLQueryBuilder.After didn't limit project: %q vs %q", next, rID))
 			}
 		}
-		return newer, older, nil
-	}
+		return nil
+	})
+
+	err := eg.Wait()
+	return prev, next, err
 }
 
 // uiTryjob is fed to the template to draw tryjob chips.
