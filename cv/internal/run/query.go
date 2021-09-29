@@ -57,21 +57,10 @@ type CLQueryBuilder struct {
 
 	// Limit limits the number of results if positive. Ignored otherwise.
 	Limit int32
-
-	// Descending orders Run IDs from lexicographically largest to smallest.
-	//
-	// When also scoped to a single LUCI project, this orders Runs from oldest to
-	// newest by creation time.
-	Descending bool
 }
 
 // AfterInProject constrains CLQueryBuilder to Runs created after this Run but
 // belonging to the same LUCI project.
-//
-// Typically used with the `Descending: true` to find the earliest Runs created
-// after the given Run. For example, this will return the chronologically next
-// Run in the same project:
-//   CLQueryBuilder{CLID: cl, Descending: true, Limit: 1}.AfterInProject(run)
 //
 // Panics if CLQueryBuilder is already constrained to a different LUCI Project.
 func (b CLQueryBuilder) AfterInProject(id common.RunID) CLQueryBuilder {
@@ -126,10 +115,6 @@ func (b CLQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query {
 	}
 	if max != "" {
 		q = q.Lt("__key__", datastore.MakeKey(ctx, RunKind, max, RunCLKind, int64(b.CLID)))
-	}
-
-	if b.Descending {
-		q = q.Order("-__key__")
 	}
 
 	return q

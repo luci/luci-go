@@ -83,11 +83,6 @@ func TestCLQueryBuilder(t *testing.T) {
 			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4, bond2, dart5, dart3, rust1, xero7})
 		})
 
-		Convey("Reversed", func() {
-			qb := CLQueryBuilder{CLID: clA, Descending: true}
-			So(getAll(qb), ShouldResemble, common.RunIDs{xero7, rust1, dart3, dart5, bond2, bond4, bond9})
-		})
-
 		Convey("Filter by Project", func() {
 			qb := CLQueryBuilder{CLID: clA, Project: "bond"}
 			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4, bond2})
@@ -133,9 +128,9 @@ func TestCLQueryBuilder(t *testing.T) {
 			So(getAll(qb), ShouldResemble, common.RunIDs(nil))
 		})
 
-		Convey("Next Run = After + Reversed + Limit 1", func() {
-			qb := CLQueryBuilder{CLID: clA, Descending: true, Limit: 1}.AfterInProject(bond2)
-			So(getAll(qb), ShouldResemble, common.RunIDs{bond4})
+		Convey("Obeys limit", func() {
+			qb := CLQueryBuilder{CLID: clA, Limit: 1}.AfterInProject(bond2)
+			So(getAll(qb), ShouldResemble, common.RunIDs{bond9})
 		})
 
 		Convey("After and Before", func() {

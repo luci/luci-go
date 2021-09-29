@@ -241,7 +241,10 @@ func (t *Test) installDS(ctx context.Context) context.Context {
 	ctx = memory.UseWithAppID(ctx, t.AppID)
 	// CV runs against Firestore backend, which is consistent.
 	datastore.GetTestable(ctx).Consistent(true)
-	datastore.GetTestable(ctx).AutoIndex(true)
+	// Intentionally not enabling AutoIndex so that new code accidentally needing
+	// a new index adds it both here (for the rest of CV tests to work, notably
+	// e2e ones) and into appengine/index.yaml.
+	datastore.GetTestable(ctx).AutoIndex(false)
 	return ctx
 }
 

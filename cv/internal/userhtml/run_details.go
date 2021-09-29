@@ -156,12 +156,21 @@ func getNeighborsByCL(ctx context.Context, cl *run.RunCL, rID common.RunID) (com
 
 	next := common.RunID("")
 	eg.Go(func() error {
-		qb := run.CLQueryBuilder{CLID: cl.ID, Limit: 1, Descending: true}.AfterInProject(rID)
+		// CLQueryBuilder gives Runs of the same project ordered from newest to
+		// oldest. We need the oldest run which was created after the `rID`.
+		// So, fetch all the Run IDs, and choose the last of them.
+		//
+		// In practice, there should be << 100 Runs per CL, but since we are
+		// fetching just the keys and the query is very cheap, we go to 500.
+		const limit = 500
+		qb := run.CLQueryBuilder{CLID: cl.ID, Limit: limit}.AfterInProject(rID)
 		switch keys, err := qb.GetAllRunKeys(ctx); {
 		case err != nil:
 			return err
-		case len(keys) == 1:
-			next = common.RunID(keys[0].StringID())
+		case len(keys) == limit:
+			return errors.Reason("too many Runs (>=%d) after %q", limit, rID).Err()
+		case len(keys) > 0:
+			next = common.RunID(keys[len(keys)-1].StringID())
 			// It's OK to return the next Run ID w/o checking ACLs because even if the
 			// user can't see the next Run, user is already served this Run's ID, which
 			// contains the same LUCI project.
