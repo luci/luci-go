@@ -23,7 +23,6 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
-	"strings"
 
 	"golang.org/x/sync/errgroup"
 
@@ -170,14 +169,7 @@ func (d *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjec
 func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (resp *adminpb.GetRunResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetRun"); err != nil {
-		// HACK! Ignore access denied if Run being requested belongs to `infra`
-		// project.
-		// TODO(crbug/1245864): remove this hack once proper ACLs are done.
-		if strings.HasPrefix(req.GetRun(), "infra/") {
-			err = nil // for infra project, proceed loading the Run.
-		} else {
-			return // for every other project, bail with Access Denied.
-		}
+		return
 	}
 	if req.GetRun() == "" {
 		return nil, appstatus.Error(codes.InvalidArgument, "run ID is required")
@@ -241,14 +233,7 @@ func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerReque
 func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsRequest) (resp *adminpb.RunsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "SearchRuns"); err != nil {
-		// HACK! Ignore access denied if Run being requested belongs to `infra`
-		// project.
-		// TODO(crbug/1245864): remove this hack once proper ACLs are done.
-		if req.GetProject() == "infra/" {
-			err = nil // for infra project, proceed searching the Runs.
-		} else {
-			return // for every other project, bail with Access Denied.
-		}
+		return
 	}
 	if req.PageSize, err = pagination.ValidatePageSize(req, 16, 128); err != nil {
 		return nil, err

@@ -169,13 +169,6 @@ func TestGetRun(t *testing.T) {
 			})
 			_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
-
-			Convey("HACK(crbug/1245864): loading `infra` Runs is allowed to everyone", func() {
-				const infraID = "infra/123-deadbeef"
-				So(datastore.Put(ctx, &run.Run{ID: infraID}), ShouldBeNil)
-				_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: infraID})
-				So(grpcutil.Code(err), ShouldEqual, codes.OK)
-			})
 		})
 
 		Convey("with access", func() {
