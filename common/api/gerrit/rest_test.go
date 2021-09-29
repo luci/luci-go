@@ -268,13 +268,13 @@ func TestGetChange(t *testing.T) {
 				},
 				Reviewers: &gerritpb.ReviewerStatusMap{
 					Reviewers: []*gerritpb.AccountInfo{
-						&gerritpb.AccountInfo{
+						{
 							AccountId: 1000096,
 							Name:      "John Doe",
 							Email:     "john.doe@example.com",
 							Username:  "jdoe",
 						},
-						&gerritpb.AccountInfo{
+						{
 							AccountId: 1000097,
 							Name:      "Jane Roe",
 							Email:     "jane.roe@example.com",
@@ -1324,6 +1324,16 @@ func TestGerritError(t *testing.T) {
 		// All APIs share the same error handling code path, so use SubmitChange as
 		// an example.
 		req := &gerritpb.SubmitChangeRequest{Number: 1}
+		Convey("HTTP 400", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(400)
+				w.Header().Set("Content-Type", "text/plain")
+				w.Write([]byte("invalid request: xyz is required"))
+			})
+			defer srv.Close()
+			_, err := c.SubmitChange(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+		})
 		Convey("HTTP 403", func() {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(403)
