@@ -49,6 +49,39 @@ TODO(crbug.com/1225047): update this doc.
 
 ## Developer Guide.
 
+### Full end to end testing of new featuers
+
+ 1. Land your code, which gets auto-deployed to `luci-change-verifier-dev` project,
+    You may also just upload a tainted version and switch all traffic to it, but
+    beware that the next auto-deployment will override it. Thus, adding unit-
+    and e2e tests with fake Gerrit and Cloud dependencies is a good first step
+    and at times cheaper/faster to do.
+
+ 2. `cq-test` LUCI project can be used for any such tests. It's already
+    connected to *only* `luci-change-verifier-dev`. The `cq-test` project's
+    config tells CV to watch 2 repositories:
+      * https://chromium.googlesource.com/playground/gerrit-cq/
+      * https://chrome-internal.googlesource.com/playground/cq/
+          * This repo also hosts [the LUCI
+            config](https://chrome-internal.googlesource.com/playground/cq/+/refs/heads/main/infra/config/main.star)
+            for the `cq-test`.
+
+    Creating a CL on `refs/heads/main` will use **combinable** config group,
+    meaning multi-CL Runs in ChromeOS style can be created.
+    For single-CL Runs, create CLs on `refs/heads/single` ref:
+
+            git new-branch --upstream origin/single
+            # hack hack
+            git cl upload ...
+
+    You can see recent Runs in
+    https://luci-change-verifier-dev.appspot.com/ui/recents/cq-test.
+
+3. (Optional) [internal/cvtesting/e2e/manual](./internal/cvtesting/e2e/manual)
+   contains tools to automate common tasks, e.g. creating and CQ-ing large CL
+   stacks. Feel free to contribute :)
+
+
 ### UI
 
 tl;dr
