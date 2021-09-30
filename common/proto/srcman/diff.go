@@ -171,24 +171,6 @@ func (old *Manifest_CIPDPackage) Diff(new *Manifest_CIPDPackage) ManifestDiff_St
 	})
 }
 
-// IsolatedDiff produces a ManifestDiff_Stat reflecting the difference between
-// two lists of Manifest_Isolated's.
-func IsolatedDiff(oldisos, newisos []*Manifest_Isolated) ManifestDiff_Stat {
-	return zeroCmpTwo(oldisos, newisos, func() ManifestDiff_Stat {
-		// we know they're non-zero and also have the same length at this point
-		for i, old := range oldisos {
-			new := newisos[i]
-			if old.Namespace != new.Namespace {
-				return ManifestDiff_MODIFIED
-			}
-			if old.Hash != new.Hash {
-				return ManifestDiff_MODIFIED
-			}
-		}
-		return ManifestDiff_EQUAL
-	})
-}
-
 // Diff generates a ManifestDiff_Directory object which shows what changed
 // between the `old` manifest directory and the `new` manifest directory.
 func (old *Manifest_Directory) Diff(new *Manifest_Directory) *ManifestDiff_Directory {
@@ -218,9 +200,6 @@ func (old *Manifest_Directory) Diff(new *Manifest_Directory) *ManifestDiff_Direc
 				ret.CipdPackage = cipdPackages
 			}
 		}
-
-		ret.IsolatedServerHost = dirChanged.add(zeroCmpTwo(old.IsolatedServerHost, new.IsolatedServerHost, nil))
-		ret.Isolated = dirChanged.add(IsolatedDiff(old.Isolated, new.Isolated))
 
 		return dirChanged.status()
 	})

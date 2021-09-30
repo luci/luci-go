@@ -118,20 +118,6 @@ message Manifest {
     string version = 3;
   }
 
-  message Isolated {
-    // The namespace of the isolated document.
-    //
-    // Ex.
-    //   default-gzip
-    string namespace = 1;
-
-    // The hash of the isolated document.
-    //
-    // Ex.
-    //   62a7df62ea122380afb306bb4d9cdac1bc7e9a96
-    string hash = 2;
-  }
-
   // A Directory contains one or more descriptions of deployed artifacts. Note
   // that due to the practical nature of jobs on bots, it may be the case that
   // a given directory contains e.g. a git checkout and multiple cipd packages.
@@ -153,16 +139,7 @@ message Manifest {
     //   "other/package": {...}
     map<string, CIPDPackage> cipd_package = 4;
 
-    // The canonicalized hostname of the isolated server which hosts the
-    // isolated. If no Isolated objects are in this Directory, this must be
-    // blank.
-    //
-    // Ex.
-    //   isolateserver.appspot.com
-    string isolated_server_host = 5;
-
-    // A list of all isolateds which have been installed in this directory.
-    repeated Isolated isolated = 6;
+    reserved 5, 6;
   }
 
   // Map of local file system directory path (with forward slashes) to
@@ -209,4 +186,3 @@ message ManifestLink {
   // This is the raw sha256, so it must be exactly 32 bytes.
   bytes sha256 = 2;
 }
-

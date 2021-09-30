@@ -86,13 +86,7 @@ message ManifestDiff {
     // DIFF detection (i.e. if both packages use `version:<sha1>` tags).
     map<string, Stat> cipd_package = 4;
 
-    Stat isolated_server_host = 5;
-    // This merely indicates if the list of isolated hashes was the same or not;
-    // there's not a good way to register the two lists.
-    //
-    // Since order-of-application for isolateds matters, this will indicate
-    // MODIFIED if the order of isolated hashes changes.
-    Stat isolated = 6;
+    reserved 5, 6;
   }
 
   map<string, Directory> directories = 4;
