@@ -160,7 +160,7 @@ until old and new configs match:
 [Starlark]: https://github.com/google/starlark-go
 [depot_tools]: https://chromium.googlesource.com/chromium/tools/depot_tools/
 [infra/tools/luci/lucicfg/${platform}]: https://chrome-infra-packages.appspot.com/p/infra/tools/luci/lucicfg
-[CIPD manifest]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/main/cipd_manifest.txt
+[CIPD manifest]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/master/cipd_manifest.txt
 [canned check]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/39b0b8e32a4ed0675a38d97799e8a219cc549910/presubmit_canned_checks.py#1437
 
 
@@ -447,7 +447,7 @@ There are two ways to run lint checks:
 Checking that files are properly formatted is a special kind of a lint check
 called `formatting`.
 
-[buildifier]: https://github.com/bazelbuild/buildtools/tree/HEAD/buildifier
+[buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
 
 
 ### Specifying a set of linter checks to apply
@@ -475,7 +475,7 @@ verify formatting of Starlark files. It is part of the `default` set. Note that
 it is not a built-in buildifier check and thus it's not listed in the buildifier
 docs nor can it be disabled via `buildifier: disable=...`.
 
-[buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/HEAD/WARNINGS.md
+[buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md
 
 
 ### Examples {#linter_config}
@@ -1563,12 +1563,14 @@ each iteration it triggers builders if either:
     iterations of the poller, only the most recent 50 commits will result in
     triggering requests. Everything older is silently ignored. This is a
     safeguard against mistaken or deliberate but unusual git push actions,
-    which typically don't have intent of triggering a build for each such
-    commit.
+    which typically don't have the intent of triggering a build for each
+    such commit.
     ***
 
   * A ref belonging to the watched set has just been created. This produces
-    a single triggering request.
+    a single triggering request for the commit at the ref's tip.
+    This also applies right after a configuration change which instructs the
+    scheduler to watch a new ref.
 
 Commits that trigger builders can also optionally be filtered by file paths
 they touch. These conditions are specified via `path_regexps` and

@@ -51,12 +51,14 @@ def _gitiles_poller(
         iterations of the poller, only the most recent 50 commits will result in
         triggering requests. Everything older is silently ignored. This is a
         safeguard against mistaken or deliberate but unusual git push actions,
-        which typically don't have intent of triggering a build for each such
-        commit.
+        which typically don't have the intent of triggering a build for each
+        such commit.
         ***
 
       * A ref belonging to the watched set has just been created. This produces
-        a single triggering request.
+        a single triggering request for the commit at the ref's tip.
+        This also applies right after a configuration change which instructs the
+        scheduler to watch a new ref.
 
     Commits that trigger builders can also optionally be filtered by file paths
     they touch. These conditions are specified via `path_regexps` and
