@@ -49,7 +49,7 @@ TODO(crbug.com/1225047): update this doc.
 
 ## Developer Guide.
 
-### Full end to end testing of new featuers
+### Full end to end testing of new features
 
  1. Land your code, which gets auto-deployed to `luci-change-verifier-dev` project,
     You may also just upload a tainted version and switch all traffic to it, but
@@ -71,8 +71,10 @@ TODO(crbug.com/1225047): update this doc.
     For single-CL Runs, create CLs on `refs/heads/single` ref:
 
             git new-branch --upstream origin/single
-            # hack hack
-            git cl upload ...
+            echo "fail, please" > touch_to_fail_tryjob
+            echo "fail with INFRA_FAILURE, please" > touch_to_infra_fail_tryjob
+            git commit -a -m "test a signle CL dry run with failing tryjobs"
+            git cl upload -d
 
     You can see recent Runs in
     https://luci-change-verifier-dev.appspot.com/ui/recents/cq-test.
