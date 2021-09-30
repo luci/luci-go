@@ -50,7 +50,7 @@ var _ gerrit.Client = (*Client)(nil)
 ///////////////////////////////////////////////////////////////////////////////
 // Read RPCs
 
-// Lists changes that match a query.
+// ListChanges lists changes that match a query.
 //
 // Note, although the Gerrit API supports multiple queries, for which
 // it can return multiple lists of changes, this is not a foreseen use-case
@@ -102,10 +102,13 @@ func (client *Client) ListChanges(ctx context.Context, in *gerritpb.ListChangesR
 	return res, nil
 }
 
-// Loads a change by id.
+// GetChange loads a change by id.
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
 func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 	client.f.recordRequest(in)
@@ -117,7 +120,7 @@ func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeReque
 	return applyChangeOpts(change, in.GetOptions()), nil
 }
 
-// Retrieves related changes of a revision.
+// GetRelatedChanges retrieves related changes of a revision.
 //
 // Related changes are changes that either depend on, or are dependencies of
 // the revision.
@@ -181,7 +184,7 @@ func (client *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRel
 	return res, nil
 }
 
-// Lists the files that were modified, added or deleted in a revision.
+// ListFiles lists the files that were modified, added or deleted in a revision.
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
 func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error) {
@@ -208,7 +211,7 @@ func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesReque
 ///////////////////////////////////////////////////////////////////////////////
 // Write RPCs
 
-// Set various review bits on a change.
+// SetReview sets various review bits on a change.
 //
 // Currently, only support following functionalities:
 //  - Post Message.
@@ -216,6 +219,9 @@ func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesReque
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
 func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 	client.f.recordRequest(in)
@@ -251,7 +257,7 @@ func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewReque
 	return &gerritpb.ReviewResult{Labels: in.GetLabels()}, nil
 }
 
-// Submit a specific revision of a change.
+// SubmitRevision submits a specific revision of a change.
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
 func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error) {

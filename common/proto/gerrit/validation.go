@@ -36,6 +36,16 @@ func (r *SetReviewRequest) Validate() error {
 	if err := r.GetNotifyDetails().Validate(); err != nil {
 		return err
 	}
+	for _, att := range r.GetAddToAttentionSet() {
+		if err := att.Validate(); err != nil {
+			return err
+		}
+	}
+	for _, att := range r.GetRemoveFromAttentionSet() {
+		if err := att.Validate(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -68,6 +78,9 @@ func (r *AttentionSetRequest) Validate() error {
 func (i *AttentionSetInput) Validate() error {
 	if i.GetUser() == "" {
 		return errors.New("user is required")
+	}
+	if i.GetReason() == "" {
+		return errors.New("reason is required")
 	}
 	return nil
 }
