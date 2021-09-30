@@ -48,8 +48,9 @@ type AssertedInfo struct {
 
 // AssertedUser is part of the Gerrit JWT, it points to a Gerrit user.
 type AssertedUser struct {
-	AccountID int64    `json:"account_id"` // e.g. 1234, local to the Gerrit host
-	Emails    []string `json:"emails"`     // list of all user emails
+	AccountID      int64    `json:"account_id"`      // e.g. 1234, local to the Gerrit host
+	Emails         []string `json:"emails"`          // list of all user emails
+	PreferredEmail string   `json:"preferred_email"` // the email shown in the Gerrit UI
 }
 
 // AssertedChange is part of the Gerrit JWT, it points to a Gerrit CL.
@@ -144,11 +145,19 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 		return nil, nil, errors.Reason("bad Gerrit JWT: expired %s ago", now.Sub(exp)).Err()
 	}
 
-	// We need at least one email. We also treat the first email as the preferred.
-	if len(tok.AssertedUser.Emails) == 0 {
-		return nil, nil, errors.Reason("bad Gerrit JWT: asserted_user.emails is empty").Err()
+	// Use "preferred_email", but fallback to "emails[0]" if empty, which
+	// theoretically may happen if the preferred email is not backed by an
+	// external ID.
+	preferredEmail := tok.AssertedUser.PreferredEmail
+	if preferredEmail == "" {
+		if len(tok.AssertedUser.Emails) == 0 {
+			return nil, nil, errors.Reason("bad Gerrit JWT: asserted_user.preferred_email and asserted_user.emails are empty").Err()
+		}
+		preferredEmail = tok.AssertedUser.Emails[0]
 	}
-	ident, err := identity.MakeIdentity("user:" + tok.AssertedUser.Emails[0])
+
+	// It must be syntactically a valid email address.
+	ident, err := identity.MakeIdentity("user:" + preferredEmail)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "bad Gerrit JWT: unrecognized email format").Err()
 	}
@@ -156,7 +165,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 	// Success.
 	return &auth.User{
 		Identity: ident,
-		Email:    tok.AssertedUser.Emails[0],
+		Email:    preferredEmail,
 		Extra: &AssertedInfo{
 			User:   tok.AssertedUser,
 			Change: tok.AssertedChange,

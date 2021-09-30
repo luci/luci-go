@@ -39,8 +39,9 @@ func TestAuthMethod(t *testing.T) {
 		const expectedAudience = "good-audience"
 
 		assertedUser := AssertedUser{
-			AccountID: 12345,
-			Emails:    []string{"xyz@example.com", "abc@example.com"},
+			AccountID:      12345,
+			Emails:         []string{"xyz@example.com", "abc@example.com"},
+			PreferredEmail: "abc@example.com",
 		}
 		assertedChange := AssertedChange{
 			Host:         "some-host",
@@ -91,10 +92,32 @@ func TestAuthMethod(t *testing.T) {
 			}))
 			So(err, ShouldBeNil)
 			So(user, ShouldResemble, &auth.User{
+				Identity: "user:abc@example.com",
+				Email:    "abc@example.com",
+				Extra: &AssertedInfo{
+					User:   assertedUser,
+					Change: assertedChange,
+				},
+			})
+		})
+
+		Convey("Success, but no preferred email", func() {
+			user, err := call(prepareJWT(gerritJWT{
+				Aud: expectedAudience,
+				Exp: now.Add(5 * time.Minute).Unix(),
+				AssertedUser: AssertedUser{
+					Emails: []string{"xyz@example.com", "abc@example.com"},
+				},
+				AssertedChange: assertedChange,
+			}))
+			So(err, ShouldBeNil)
+			So(user, ShouldResemble, &auth.User{
 				Identity: "user:xyz@example.com",
 				Email:    "xyz@example.com",
 				Extra: &AssertedInfo{
-					User:   assertedUser,
+					User: AssertedUser{
+						Emails: []string{"xyz@example.com", "abc@example.com"},
+					},
 					Change: assertedChange,
 				},
 			})
@@ -145,7 +168,7 @@ func TestAuthMethod(t *testing.T) {
 				Exp:            now.Add(5 * time.Minute).Unix(),
 				AssertedChange: assertedChange,
 			}))
-			So(err, ShouldErrLike, "bad Gerrit JWT: asserted_user.emails is empty")
+			So(err, ShouldErrLike, "bad Gerrit JWT: asserted_user.preferred_email and asserted_user.emails are empty")
 		})
 
 		Convey("Invalid email", func() {
@@ -153,8 +176,8 @@ func TestAuthMethod(t *testing.T) {
 				Aud: expectedAudience,
 				Exp: now.Add(5 * time.Minute).Unix(),
 				AssertedUser: AssertedUser{
+					PreferredEmail: "this-is-not-an-email",
 					Emails: []string{
-						"this-is-not-an-email",
 						"unused@example.com",
 					},
 				},
