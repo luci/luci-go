@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
@@ -29,6 +30,24 @@ import (
 // Server implements Allowlists server.
 type Server struct {
 	rpcpb.UnimplementedAllowlistsServer
+}
+
+// ListAllowlists implements the corresponding RPC method.
+func (*Server) ListAllowlists(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListAllowlistsResponse, error) {
+	// Get allowlists from datastore.
+	allowlists, err := model.GetAllAuthIPAllowlists(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch allowlists: %s", err)
+	}
+
+	allowlistList := make([]*rpcpb.Allowlist, len(allowlists))
+	for idx, entity := range allowlists {
+		allowlistList[idx] = entity.ToProto()
+	}
+
+	return &rpcpb.ListAllowlistsResponse{
+		Allowlists: allowlistList,
+	}, nil
 }
 
 // GetAllowlist implements the corresponding RPC method.

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
@@ -76,5 +77,79 @@ func TestAllowlistsServer(t *testing.T) {
 		actualResponse, err := srv.GetAllowlist(ctx, request)
 		So(err, ShouldBeNil)
 		So(actualResponse, ShouldResembleProto, expectedResponse)
+	})
+
+	Convey("ListAllowlists RPC call", t, func() {
+		ctx := memory.Use(context.Background())
+
+		So(datastore.Put(ctx,
+			&model.AuthIPAllowlist{
+				AuthVersionedEntityMixin: model.AuthVersionedEntityMixin{},
+				ID:                       "z-test-allowlist",
+				Parent:                   model.RootKey(ctx),
+				Subnets: []string{
+					"127.0.0.1/24",
+					"127.0.0.127/24",
+				},
+				Description: "This is a test allowlist, should show up last.",
+				CreatedTS:   createdTime,
+				CreatedBy:   "user:test-user-2",
+			},
+			&model.AuthIPAllowlist{
+				AuthVersionedEntityMixin: model.AuthVersionedEntityMixin{},
+				ID:                       "a-test-allowlist",
+				Parent:                   model.RootKey(ctx),
+				Subnets: []string{
+					"0.0.0.0/0",
+				},
+				Description: "This is a test allowlist, should show up first.",
+				CreatedTS:   createdTime,
+				CreatedBy:   "user:test-user-1",
+			},
+			&model.AuthIPAllowlist{
+				AuthVersionedEntityMixin: model.AuthVersionedEntityMixin{},
+				ID:                       "test-allowlist",
+				Parent:                   model.RootKey(ctx),
+				Subnets:                  []string{},
+				Description:              "This is a test allowlist, should show up second.",
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-user-3",
+			}), ShouldBeNil)
+
+		// Expected response, build with pb.
+		expectedAllowlists := &rpcpb.ListAllowlistsResponse{
+			Allowlists: []*rpcpb.Allowlist{
+				{
+					Name: "a-test-allowlist",
+					Subnets: []string{
+						"0.0.0.0/0",
+					},
+					Description: "This is a test allowlist, should show up first.",
+					CreatedTs:   timestamppb.New(createdTime),
+					CreatedBy:   "user:test-user-1",
+				},
+				{
+					Name:        "test-allowlist",
+					Subnets:     []string{},
+					Description: "This is a test allowlist, should show up second.",
+					CreatedTs:   timestamppb.New(createdTime),
+					CreatedBy:   "user:test-user-3",
+				},
+				{
+					Name: "z-test-allowlist",
+					Subnets: []string{
+						"127.0.0.1/24",
+						"127.0.0.127/24",
+					},
+					Description: "This is a test allowlist, should show up last.",
+					CreatedTs:   timestamppb.New(createdTime),
+					CreatedBy:   "user:test-user-2",
+				},
+			},
+		}
+
+		actualResponse, err := srv.ListAllowlists(ctx, &emptypb.Empty{})
+		So(err, ShouldBeNil)
+		So(expectedAllowlists.Allowlists, ShouldResembleProto, actualResponse.Allowlists)
 	})
 }

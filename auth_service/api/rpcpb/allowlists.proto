@@ -18,12 +18,24 @@ package auth.service;
 
 option go_package = "go.chromium.org/luci/auth_service/api/rpcpb";
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 // Allowlists service contains methods to examine allowlists for services.
 service Allowlists {
+  // ListAllowlists returns all the allowlists currently stored in LUCI Auth
+  // service datastore. The allowlists will be returned in alphabetical order
+  // based on their ID.
+  rpc ListAllowlists(google.protobuf.Empty) returns (ListAllowlistsResponse);
+
   // GetAllowlist returns Allowlist information for a requested Allowlist.
   rpc GetAllowlist(GetAllowlistRequest) returns (Allowlist);
+}
+
+// ListAllowlistsResponse is all the allowlists present in LUCI Auth Service.
+message ListAllowlistsResponse {
+  // List of all allowlists.
+  repeated Allowlist allowlists = 1;
 }
 
 // GetAllowlistRequest is to specify the allowlist being requested.
