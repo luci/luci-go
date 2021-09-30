@@ -210,3 +210,103 @@ func TestGetAuthIPAllowlist(t *testing.T) {
 		So(actual, ShouldResemble, authIPAllowlist)
 	})
 }
+
+func TestGetAllAuthIPAllowlists(t *testing.T) {
+	t.Parallel()
+	Convey("Testing GetAllAuthIPAllowlists", t, func() {
+		ctx := memory.Use(context.Background())
+		createdTime := time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC)
+
+		authVersionedEntityMixin := &AuthVersionedEntityMixin{
+			ModifiedTS:    time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
+			ModifiedBy:    "test-account",
+			AuthDBRev:     1337,
+			AuthDBPrevRev: 0,
+		}
+
+		// Out of order alphabetically by ID.
+		unorderedAllowlists := []*AuthIPAllowlist{
+			{
+				AuthVersionedEntityMixin: *authVersionedEntityMixin,
+				Kind:                     "AuthIPWhitelist",
+				ID:                       "test-allowlist-1",
+				Parent:                   RootKey(ctx),
+				Subnets:                  []string(nil),
+				Description:              "This is a test allowlist.",
+				CreatedTS:                createdTime,
+				CreatedBy:                "test-user",
+			},
+			{
+				AuthVersionedEntityMixin: *authVersionedEntityMixin,
+				Kind:                     "AuthIPWhitelist",
+				ID:                       "abc-allowlist",
+				Parent:                   RootKey(ctx),
+				Subnets: []string{
+					"0.0.0.0/24",
+					"0.0.0.128/24",
+				},
+				Description: "This is a test allowlist.",
+				CreatedTS:   createdTime,
+				CreatedBy:   "test-user-1",
+			},
+			{
+				AuthVersionedEntityMixin: *authVersionedEntityMixin,
+				Kind:                     "AuthIPWhitelist",
+				ID:                       "bcd-allowlist",
+				Parent:                   RootKey(ctx),
+				Subnets: []string{
+					"127.0.0.1/24",
+				},
+				Description: "This is a test allowlist.",
+				CreatedTS:   createdTime,
+				CreatedBy:   "test-user-2",
+			},
+		}
+
+		// Expected response is ordered alphabetically by ID.
+		expectedAllowlists := []*AuthIPAllowlist{
+			{
+				AuthVersionedEntityMixin: *authVersionedEntityMixin,
+				Kind:                     "AuthIPWhitelist",
+				ID:                       "abc-allowlist",
+				Parent:                   RootKey(ctx),
+				Subnets: []string{
+					"0.0.0.0/24",
+					"0.0.0.128/24",
+				},
+				Description: "This is a test allowlist.",
+				CreatedTS:   createdTime,
+				CreatedBy:   "test-user-1",
+			},
+			{
+				AuthVersionedEntityMixin: *authVersionedEntityMixin,
+				Kind:                     "AuthIPWhitelist",
+				ID:                       "bcd-allowlist",
+				Parent:                   RootKey(ctx),
+				Subnets: []string{
+					"127.0.0.1/24",
+				},
+				Description: "This is a test allowlist.",
+				CreatedTS:   createdTime,
+				CreatedBy:   "test-user-2",
+			},
+			{
+				AuthVersionedEntityMixin: *authVersionedEntityMixin,
+				Kind:                     "AuthIPWhitelist",
+				ID:                       "test-allowlist-1",
+				Parent:                   RootKey(ctx),
+				Subnets:                  []string(nil),
+				Description:              "This is a test allowlist.",
+				CreatedTS:                createdTime,
+				CreatedBy:                "test-user",
+			},
+		}
+
+		err := datastore.Put(ctx, unorderedAllowlists)
+		So(err, ShouldBeNil)
+
+		actualAuthIPAllowlists, err := GetAllAuthIPAllowlists(ctx)
+		So(err, ShouldBeNil)
+		So(actualAuthIPAllowlists, ShouldResemble, expectedAllowlists)
+	})
+}

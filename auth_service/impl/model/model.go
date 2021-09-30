@@ -189,6 +189,20 @@ func GetAuthIPAllowlist(ctx context.Context, allowlistName string) (*AuthIPAllow
 	}
 }
 
+// GetAllAuthIPAllowlists returns all the AuthIPAllowlist entities from the
+// datastore, these are stored as AuthIPWhitelist in the datastore.
+//
+// Returns an annotated error.
+func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
+	query := datastore.NewQuery("AuthIPWhitelist").Ancestor(RootKey(ctx))
+	var authIPAllowlists []*AuthIPAllowlist
+	err := datastore.GetAll(ctx, query, &authIPAllowlists)
+	if err != nil {
+		return nil, errors.Annotate(err, "error getting all AuthIPAllowlist entities").Err()
+	}
+	return authIPAllowlists, nil
+}
+
 // ToProto converts the AuthGroup entity to the protobuffer
 // equivalent.
 func (group *AuthGroup) ToProto() *rpcpb.AuthGroup {
