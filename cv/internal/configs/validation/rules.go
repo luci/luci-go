@@ -23,8 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/stringset"
@@ -55,7 +54,7 @@ func addRules(r *validation.RuleSet) {
 func validateProject(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
 	cfg := v2.Config{}
-	if err := proto.UnmarshalText(string(content), &cfg); err != nil {
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
 		ctx.Error(err)
 	} else {
 		validateProjectConfig(ctx, &cfg)
@@ -86,13 +85,8 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		if cfg.SubmitOptions.MaxBurst < 0 {
 			ctx.Errorf("max_burst must be >= 0")
 		}
-		if cfg.SubmitOptions.BurstDelay != nil {
-			switch d, err := ptypes.Duration(cfg.SubmitOptions.BurstDelay); {
-			case err != nil:
-				ctx.Errorf("invalid burst_delay: %s", err)
-			case d.Seconds() < 0.0:
-				ctx.Errorf("burst_delay must be positive or 0")
-			}
+		if d := cfg.SubmitOptions.BurstDelay; d != nil && d.AsDuration() < 0 {
+			ctx.Errorf("burst_delay must be positive or 0")
 		}
 		ctx.Exit()
 	}
@@ -154,15 +148,11 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNa
 
 	if group.CombineCls != nil {
 		ctx.Enter("combine_cls")
-		if group.CombineCls.StabilizationDelay == nil {
+		switch d := group.CombineCls.StabilizationDelay; {
+		case d == nil:
 			ctx.Errorf("stabilization_delay is required to enable cl_grouping")
-		} else {
-			switch d, err := ptypes.Duration(group.CombineCls.StabilizationDelay); {
-			case err != nil:
-				ctx.Errorf("invalid stabilization_delay: %s", err)
-			case d.Seconds() < 10.0:
-				ctx.Errorf("stabilization_delay must be at least 10 seconds")
-			}
+		case d.AsDuration() < 10*time.Second:
+			ctx.Errorf("stabilization_delay must be at least 10 seconds")
 		}
 		if group.GetVerifiers().GetGerritCqAbility().GetAllowSubmitWithOpenDeps() {
 			ctx.Errorf("combine_cls can not be used with gerrit_cq_ability.allow_submit_with_open_deps=true.")
@@ -665,7 +655,7 @@ func validateTryjobRetry(ctx *validation.Context, r *v2.Verifiers_Tryjob_RetryCo
 func validateMigrationSettings(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
 	cfg := migrationpb.Settings{}
-	if err := proto.UnmarshalText(string(content), &cfg); err != nil {
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
 		ctx.Error(err)
 		return nil
 	}

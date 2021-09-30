@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/config/validation"
@@ -28,7 +28,6 @@ import (
 	v2 "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -111,7 +110,7 @@ func TestValidation(t *testing.T) {
 
 		// It's easier to manipulate Go struct than text.
 		cfg := v2.Config{}
-		So(proto.UnmarshalText(validConfigTextPB, &cfg), ShouldBeNil)
+		So(prototext.Unmarshal([]byte(validConfigTextPB), &cfg), ShouldBeNil)
 
 		Convey("OK", func() {
 			Convey("good proto, good config", func() {
@@ -493,7 +492,7 @@ func TestTryjobValidation(t *testing.T) {
 		validate := func(textPB string) error {
 			vctx := &validation.Context{Context: ctx}
 			cfg := v2.Verifiers_Tryjob{}
-			if err := proto.UnmarshalText(textPB, &cfg); err != nil {
+			if err := prototext.Unmarshal([]byte(textPB), &cfg); err != nil {
 				panic(err)
 			}
 			validateTryjobVerifier(vctx, &cfg, standardModes)
