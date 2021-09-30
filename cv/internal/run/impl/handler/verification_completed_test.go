@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/runtest"
+	"go.chromium.org/luci/cv/internal/usertext"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -285,8 +286,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 					})
 					So(reqs[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
 						// The attention set includes the owner and voter(s).
-						{User: "1"},
-						{User: "2"},
+						{User: "1", Reason: usertext.StoppedRun},
+						{User: "2", Reason: usertext.StoppedRun},
 					})
 				})
 			})

@@ -38,6 +38,7 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/usertext"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -214,7 +215,7 @@ func TestCancel(t *testing.T) {
 					},
 				})
 			So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
-				{User: strconv.FormatInt(user.GetAccountId(), 10)},
+				{User: strconv.FormatInt(user.GetAccountId(), 10), Reason: usertext.StoppedRun},
 			})
 		})
 
@@ -255,7 +256,7 @@ func TestCancel(t *testing.T) {
 						},
 					})
 				So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
-					{User: strconv.FormatInt(user.GetAccountId(), 10)},
+					{User: strconv.FormatInt(user.GetAccountId(), 10), Reason: usertext.StoppedRun},
 				})
 			})
 

@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/usertext"
 )
 
 // ErrPreconditionFailedTag is an error tag indicating that Cancel precondition
@@ -118,7 +119,7 @@ func (notify Whom) toGerritAttentionSet(owner int64, reviewers []int64, voters [
 	if len(accs) > 0 {
 		ret := make([]*gerritpb.AttentionSetInput, len(accs))
 		for i, acc := range accs.ToSortedSlice() {
-			ret[i] = &gerritpb.AttentionSetInput{User: acc}
+			ret[i] = &gerritpb.AttentionSetInput{User: acc, Reason: usertext.StoppedRun}
 		}
 		return ret
 	}

@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/runtest"
+	"go.chromium.org/luci/cv/internal/usertext"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -445,7 +446,13 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 			expected := []*gerritpb.AttentionSetInput{}
 			for _, a := range accs {
-				expected = append(expected, &gerritpb.AttentionSetInput{User: strconv.FormatInt(a, 10)})
+				expected = append(
+					expected,
+					&gerritpb.AttentionSetInput{
+						User:   strconv.FormatInt(a, 10),
+						Reason: usertext.StoppedRun,
+					},
+				)
 			}
 			actual := req.GetAddToAttentionSet()
 			sort.SliceStable(actual, func(i, j int) bool {
