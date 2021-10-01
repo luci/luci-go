@@ -29,6 +29,8 @@ message SettingsCfg {
   LogDogSettings logdog = 2;
   ResultDBSettings resultdb = 4;
 
+  ExperimentSettings experiment = 5;
+
   // List of Gerrit hosts to force git authentication for.
   //
   // By default public hosts are accessed anonymously, and the anonymous access
@@ -86,6 +88,18 @@ message SwarmingSettings {
 message LogDogSettings {
   // Hostname of the LogDog instance to use, e.g. "logs.chromium.org".
   string hostname = 1;
+}
+
+// ExperimentSettings controls all well-known global experiment values.
+message ExperimentSettings {
+  message Experiment {
+    // The name of the global experiment.
+    string name = 1;
+
+    // The value (% chance, 0 - 100) of the global experiment.
+    int32 value = 2;
+  }
+  repeated Experiment experiments = 1;
 }
 
 // A predicate for a builder.
