@@ -801,7 +801,7 @@ func TestTryjobValidation(t *testing.T) {
 				builders {name: "a/b/0" experiment_percentage: 10}
 				builders {name: "a/b/1" triggered_by: "a/b/0"}
 			`), ShouldErrLike,
-				`builder a/b/1): triggered_by must refer to an existing builder without`)
+				`builders #2 "a/b/1"): triggered_by must refer to an existing builder without`)
 
 			So(validate(`
 				builders {

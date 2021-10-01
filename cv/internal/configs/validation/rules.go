@@ -98,7 +98,7 @@ func validateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) {
 	knownNames := make(stringset.Set, len(cfg.ConfigGroups))
 	fallbackGroupIdx := -1
 	for i, g := range cfg.ConfigGroups {
-		ctx.Enter("config_group #%d", i+1)
+		enter(ctx, "config_group", i, g.Name)
 		validateConfigGroup(ctx, g, knownNames)
 		switch {
 		case g.Fallback == cfgpb.Toggle_YES && fallbackGroupIdx == -1:
@@ -138,7 +138,7 @@ func validateConfigGroup(ctx *validation.Context, group *cfgpb.ConfigGroup, know
 	}
 	gerritURLs := stringset.Set{}
 	for i, g := range group.Gerrit {
-		ctx.Enter("gerrit #%d", i+1)
+		enter(ctx, "gerrit", i, g.Url)
 		validateGerrit(ctx, g)
 		if g.Url != "" && !gerritURLs.Add(g.Url) {
 			ctx.Errorf("duplicate gerrit url in the same config_group: %q", g.Url)
@@ -208,7 +208,7 @@ func validateGerrit(ctx *validation.Context, g *cfgpb.ConfigGroup_Gerrit) {
 	}
 	nameToIndex := make(map[string]int, len(g.Projects))
 	for i, p := range g.Projects {
-		ctx.Enter("projects #%d", i+1)
+		enter(ctx, "projects", i, p.Name)
 		validateGerritProject(ctx, p)
 		if p.Name != "" {
 			if _, dup := nameToIndex[p.Name]; !dup {
@@ -362,11 +362,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 
 	visitBuilders := func(cb func(b *cfgpb.Verifiers_Tryjob_Builder)) {
 		for i, b := range v.Builders {
-			if b.Name != "" {
-				ctx.Enter("builder %s", b.Name)
-			} else {
-				ctx.Enter("builder #%d", i+1)
-			}
+			enter(ctx, "builders", i, b.Name)
 			cb(b)
 			ctx.Exit()
 		}
@@ -700,4 +696,12 @@ var regexpCache = lru.New(1024)
 type regexpCacheValue struct {
 	r   *regexp.Regexp
 	err error
+}
+
+func enter(vctx *validation.Context, kind string, i int, name string) {
+	if name == "" {
+		vctx.Enter(kind+" #%d", i+1)
+	} else {
+		vctx.Enter(kind+" #%d %q", i+1, name)
+	}
 }
