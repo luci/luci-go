@@ -49,7 +49,7 @@ func TestLoadRun(t *testing.T) {
 		prjcfgtest.Create(ctx, projectPublic, &cfgpb.Config{
 			// TODO(crbug/1233963): update this test to stop relying on legacy-based
 			// ACL.
-			CqStatusHost: cqStatusHostPublic,
+			CqStatusHost: CQStatusHostPublic,
 			ConfigGroups: []*cfgpb.ConfigGroup{{
 				Name: "first",
 			}},
@@ -57,7 +57,7 @@ func TestLoadRun(t *testing.T) {
 		prjcfgtest.Create(ctx, projectInternal, &cfgpb.Config{
 			// TODO(crbug/1233963): update this test to stop relying on legacy-based
 			// ACL.
-			CqStatusHost: cqStatusHostInternal,
+			CqStatusHost: CQStatusHostInternal,
 			ConfigGroups: []*cfgpb.ConfigGroup{{
 				Name: "first",
 			}},

@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	cqStatusHostPublic        = "chromium-cq-status.appspot.com"
-	cqStatusHostInternal      = "internal-cq-status.appspot.com"
+	CQStatusHostPublic        = "chromium-cq-status.appspot.com"
+	CQStatusHostInternal      = "internal-cq-status.appspot.com"
 	cqStatusInternalCrIAGroup = "googlers"
 )
 
@@ -58,9 +58,9 @@ func checkLegacyCQStatusAccess(ctx context.Context, r *run.Run) (bool, error) {
 	switch cfg, err := prjcfg.GetConfigGroup(ctx, m.Project, m.ConfigGroupIDs[0]); {
 	case err != nil:
 		return false, err
-	case cfg.CQStatusHost == cqStatusHostPublic:
+	case cfg.CQStatusHost == CQStatusHostPublic:
 		return true, nil
-	case cfg.CQStatusHost == cqStatusHostInternal:
+	case cfg.CQStatusHost == CQStatusHostInternal:
 		return auth.IsMember(ctx, cqStatusInternalCrIAGroup)
 	case cfg.CQStatusHost == "":
 		return false, nil

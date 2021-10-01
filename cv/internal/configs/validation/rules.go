@@ -32,6 +32,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/acls"
 )
 
 // Config validation rules go here.
@@ -72,13 +73,12 @@ func validateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) {
 		ctx.Errorf("draining_start_time is temporarily not allowed, see https://crbug.com/1208569." +
 			"Reach out to LUCI team oncall if you need urgent help")
 	}
-	if cfg.CqStatusHost != "" {
-		switch u, err := url.Parse("https://" + cfg.CqStatusHost); {
-		case err != nil:
-			ctx.Errorf("failed to parse cq_status_host %q: %s", cfg.CqStatusHost, err)
-		case u.Host != cfg.CqStatusHost:
-			ctx.Errorf("cq_status_host %q should be just a host %q", cfg.CqStatusHost, u.Host)
-		}
+	switch cfg.CqStatusHost {
+	case acls.CQStatusHostInternal:
+	case acls.CQStatusHostPublic:
+	case "":
+	default:
+		ctx.Errorf("cq_status_host must be either empty or one of %q or %q", acls.CQStatusHostPublic, acls.CQStatusHostInternal)
 	}
 	if cfg.SubmitOptions != nil {
 		ctx.Enter("submit_options")

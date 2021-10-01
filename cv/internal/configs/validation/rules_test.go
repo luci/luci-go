@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/acls"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -57,7 +58,7 @@ func TestValidationRules(t *testing.T) {
 }
 
 const validConfigTextPB = `
-	cq_status_host: "example.com"
+	cq_status_host: "chromium-cq-status.appspot.com"
 	submit_options {
 		max_burst: 2
 		burst_delay { seconds: 120 }
@@ -135,15 +136,25 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, `https://crbug.com/1208569`)
 			})
-			Convey("Bad cq_status_host", func() {
-				cfg.CqStatusHost = "h://@test:123//not//://@adsfhost."
+			Convey("CQ status host can be internal", func() {
+				cfg.CqStatusHost = acls.CQStatusHostInternal
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldNotBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
 			})
-			Convey("cq_status_host not just host", func() {
-				cfg.CqStatusHost = "example.com/path#fragment"
+			Convey("CQ status host can be empty", func() {
+				cfg.CqStatusHost = ""
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, `should be just a host "example.com"`)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+			Convey("CQ status host can be public", func() {
+				cfg.CqStatusHost = acls.CQStatusHostPublic
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+			Convey("CQ status host can not be something else", func() {
+				cfg.CqStatusHost = "nope.example.com"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "cq_status_host must be")
 			})
 			Convey("Bad max_burst", func() {
 				cfg.SubmitOptions.MaxBurst = -1
