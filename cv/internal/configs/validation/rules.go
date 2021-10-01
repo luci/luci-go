@@ -27,10 +27,10 @@ import (
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/stringset"
-	lc "go.chromium.org/luci/config"
+	luciconfig "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 
-	v2 "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 )
 
@@ -53,7 +53,7 @@ func addRules(r *validation.RuleSet) {
 // directly implies only a bug in this code.
 func validateProject(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
-	cfg := v2.Config{}
+	cfg := cfgpb.Config{}
 	if err := prototext.Unmarshal(content, &cfg); err != nil {
 		ctx.Error(err)
 	} else {
@@ -62,8 +62,8 @@ func validateProject(ctx *validation.Context, configSet, path string, content []
 	return nil
 }
 
-func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
-	if cfg.ProjectScopedAccount != v2.Toggle_UNSET {
+func validateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) {
+	if cfg.ProjectScopedAccount != cfgpb.Toggle_UNSET {
 		ctx.Errorf("project_scoped_account for just CQ isn't supported. " +
 			"Use project-wide config for all LUCI services in luci-config/projects.cfg")
 	}
@@ -101,9 +101,9 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		ctx.Enter("config_group #%d", i+1)
 		validateConfigGroup(ctx, g, knownNames)
 		switch {
-		case g.Fallback == v2.Toggle_YES && fallbackGroupIdx == -1:
+		case g.Fallback == cfgpb.Toggle_YES && fallbackGroupIdx == -1:
 			fallbackGroupIdx = i
-		case g.Fallback == v2.Toggle_YES:
+		case g.Fallback == cfgpb.Toggle_YES:
 			ctx.Errorf("At most 1 config_group with fallback=YES allowed "+
 				"(already declared in config_group #%d", fallbackGroupIdx+1)
 		}
@@ -119,7 +119,7 @@ var (
 	analyzerLocationReRegexp = regexp.MustCompile(`^(https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/)?\.\+(\\\.[a-z]+)?$`)
 )
 
-func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNames stringset.Set) {
+func validateConfigGroup(ctx *validation.Context, group *cfgpb.ConfigGroup, knownNames stringset.Set) {
 	switch {
 	case group.Name == "":
 		// TODO(crbug/1063508): make this an error.
@@ -201,7 +201,7 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNa
 	}
 }
 
-func validateGerrit(ctx *validation.Context, g *v2.ConfigGroup_Gerrit) {
+func validateGerrit(ctx *validation.Context, g *cfgpb.ConfigGroup_Gerrit) {
 	validateGerritURL(ctx, g.Url)
 	if len(g.Projects) == 0 {
 		ctx.Errorf("at least 1 project is required")
@@ -249,7 +249,7 @@ func validateGerritURL(ctx *validation.Context, gURL string) {
 	}
 }
 
-func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Project) {
+func validateGerritProject(ctx *validation.Context, gp *cfgpb.ConfigGroup_Gerrit_Project) {
 	if gp.Name == "" {
 		ctx.Errorf("name is required")
 	} else {
@@ -285,7 +285,7 @@ func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Pr
 	}
 }
 
-func validateVerifiers(ctx *validation.Context, v *v2.Verifiers, supportedModes stringset.Set) {
+func validateVerifiers(ctx *validation.Context, v *cfgpb.Verifiers, supportedModes stringset.Set) {
 	if v.Cqlinter != nil {
 		ctx.Errorf("cqlinter verifier is not allowed (internal use only)")
 	}
@@ -337,7 +337,7 @@ func validateVerifiers(ctx *validation.Context, v *v2.Verifiers, supportedModes 
 	}
 }
 
-func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, supportedModes stringset.Set) {
+func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, supportedModes stringset.Set) {
 	if v.RetryConfig != nil {
 		ctx.Enter("retry_config")
 		validateTryjobRetry(ctx, v.RetryConfig)
@@ -345,11 +345,11 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 	}
 
 	switch v.CancelStaleTryjobs {
-	case v2.Toggle_YES:
+	case cfgpb.Toggle_YES:
 		ctx.Errorf("`cancel_stale_tryjobs: YES` matches default CQ behavior now; please remove")
-	case v2.Toggle_NO:
+	case cfgpb.Toggle_NO:
 		ctx.Errorf("`cancel_stale_tryjobs: NO` is no longer supported, use per-builder `cancel_stale` instead")
-	case v2.Toggle_UNSET:
+	case cfgpb.Toggle_UNSET:
 		// OK
 	}
 
@@ -360,7 +360,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 
 	// Validation of builders is done in two passes: local and global.
 
-	visitBuilders := func(cb func(b *v2.Verifiers_Tryjob_Builder)) {
+	visitBuilders := func(cb func(b *cfgpb.Verifiers_Tryjob_Builder)) {
 		for i, b := range v.Builders {
 			if b.Name != "" {
 				ctx.Enter("builder %s", b.Name)
@@ -381,10 +381,10 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 	canStartTriggeringTree := make([]string, 0, len(v.Builders))
 	triggersMap := map[string][]string{} // who triggers whom.
 	// Find config by name.
-	cfgByName := make(map[string]*v2.Verifiers_Tryjob_Builder, len(v.Builders))
+	cfgByName := make(map[string]*cfgpb.Verifiers_Tryjob_Builder, len(v.Builders))
 	hasNonAnalyzerBuilder := false
 
-	visitBuilders(func(b *v2.Verifiers_Tryjob_Builder) {
+	visitBuilders(func(b *cfgpb.Verifiers_Tryjob_Builder) {
 		validateBuilderName(ctx, b.Name, names)
 		cfgByName[b.Name] = b
 		if b.TriggeredBy != "" {
@@ -509,7 +509,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 	// forming a loop.
 
 	// Pass 2, global: verify builder relationships.
-	visitBuilders(func(b *v2.Verifiers_Tryjob_Builder) {
+	visitBuilders(func(b *cfgpb.Verifiers_Tryjob_Builder) {
 		switch {
 		case b.EquivalentTo != nil && b.EquivalentTo.Name != "" && names.Has(b.EquivalentTo.Name):
 			ctx.Errorf("equivalent_to.name must not refer to already defined %q builder", b.EquivalentTo.Name)
@@ -551,12 +551,12 @@ func validateBuilderName(ctx *validation.Context, name string, knownNames string
 			return
 		}
 	}
-	if err := lc.ValidateProjectName(parts[0]); err != nil {
+	if err := luciconfig.ValidateProjectName(parts[0]); err != nil {
 		ctx.Errorf("first part of %q is not a valid LUCI project name", name)
 	}
 }
 
-func validateEquivalentBuilder(ctx *validation.Context, b *v2.Verifiers_Tryjob_EquivalentBuilder, equiNames stringset.Set) {
+func validateEquivalentBuilder(ctx *validation.Context, b *cfgpb.Verifiers_Tryjob_EquivalentBuilder, equiNames stringset.Set) {
 	ctx.Enter("equivalent_to")
 	defer ctx.Exit()
 	validateBuilderName(ctx, b.Name, equiNames)
@@ -607,7 +607,7 @@ func locationRegexpHeuristic(ctx *validation.Context, field string, r *regexp.Re
 	ctx.Warningf("%s %q is probably missing '-review' suffix; did you mean %q?", field, value, exp)
 }
 
-func validateParentLocationRegexp(ctx *validation.Context, child, parent *v2.Verifiers_Tryjob_Builder) {
+func validateParentLocationRegexp(ctx *validation.Context, child, parent *cfgpb.Verifiers_Tryjob_Builder) {
 	// Child's regexps shouldn't be less restrictive than parent.
 	// While general check is not possible, in known so far use-cases, ensuring
 	// the regexps are exact same expressions suffices and will prevent
@@ -630,7 +630,7 @@ func validateParentLocationRegexp(ctx *validation.Context, child, parent *v2.Ver
 	}
 }
 
-func validateTryjobRetry(ctx *validation.Context, r *v2.Verifiers_Tryjob_RetryConfig) {
+func validateTryjobRetry(ctx *validation.Context, r *cfgpb.Verifiers_Tryjob_RetryConfig) {
 	if r.SingleQuota < 0 {
 		ctx.Errorf("negative single_quota not allowed (%d given)", r.SingleQuota)
 	}

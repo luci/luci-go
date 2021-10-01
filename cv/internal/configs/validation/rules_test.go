@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	v2 "go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -109,7 +109,7 @@ func TestValidation(t *testing.T) {
 		})
 
 		// It's easier to manipulate Go struct than text.
-		cfg := v2.Config{}
+		cfg := cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(validConfigTextPB), &cfg), ShouldBeNil)
 
 		Convey("OK", func() {
@@ -160,12 +160,12 @@ func TestValidation(t *testing.T) {
 				add := func(refRegexps ...string) {
 					// Add new regexps sequence with constant valid gerrit url and
 					// project and the same valid verifiers.
-					cfg.ConfigGroups = append(cfg.ConfigGroups, &v2.ConfigGroup{
+					cfg.ConfigGroups = append(cfg.ConfigGroups, &cfgpb.ConfigGroup{
 						Name: fmt.Sprintf("group-%d", len(cfg.ConfigGroups)),
-						Gerrit: []*v2.ConfigGroup_Gerrit{
+						Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 							{
 								Url: orig.Gerrit[0].Url,
-								Projects: []*v2.ConfigGroup_Gerrit_Project{
+								Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
 									{
 										Name:      orig.Gerrit[0].Projects[0].Name,
 										RefRegexp: refRegexps,
@@ -186,9 +186,9 @@ func TestValidation(t *testing.T) {
 				Convey("at most 1 fallback", func() {
 					cfg.ConfigGroups = nil
 					add("refs/heads/.+")
-					cfg.ConfigGroups[0].Fallback = v2.Toggle_YES
+					cfg.ConfigGroups[0].Fallback = cfgpb.Toggle_YES
 					add("refs/branch-heads/.+")
-					cfg.ConfigGroups[1].Fallback = v2.Toggle_YES
+					cfg.ConfigGroups[1].Fallback = cfgpb.Toggle_YES
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "At most 1 config_group with fallback=YES allowed")
 				})
@@ -242,7 +242,7 @@ func TestValidation(t *testing.T) {
 				So(vctx.Finalize(), ShouldErrLike, "duplicate gerrit url in the same config_group")
 			})
 			Convey("CombineCLs", func() {
-				cfg.ConfigGroups[0].CombineCls = &v2.CombineCLs{}
+				cfg.ConfigGroups[0].CombineCls = &cfgpb.CombineCLs{}
 				Convey("Needs stabilization_delay", func() {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "stabilization_delay is required")
@@ -264,13 +264,13 @@ func TestValidation(t *testing.T) {
 				})
 			})
 			Convey("Additional modes", func() {
-				mode := &v2.Mode{
+				mode := &cfgpb.Mode{
 					Name:            "TEST_RUN",
 					CqLabelValue:    1,
 					TriggeringLabel: "TEST_RUN_LABEL",
 					TriggeringValue: 2,
 				}
-				cfg.ConfigGroups[0].AdditionalModes = []*v2.Mode{mode}
+				cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
 				Convey("OK", func() {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
@@ -293,7 +293,7 @@ func TestValidation(t *testing.T) {
 					So(vctx.Finalize(), ShouldErrLike, "`name` must match")
 				})
 				Convey("Duplicate modes", func() {
-					cfg.ConfigGroups[0].AdditionalModes = []*v2.Mode{mode, mode}
+					cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode, mode}
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "duplicate `name` \"TEST_RUN\" not allowed")
 				})
@@ -411,17 +411,17 @@ func TestValidation(t *testing.T) {
 			v := cfg.ConfigGroups[0].Verifiers
 
 			Convey("fake not allowed", func() {
-				v.Fake = &v2.Verifiers_Fake{}
+				v.Fake = &cfgpb.Verifiers_Fake{}
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "fake verifier is not allowed")
 			})
 			Convey("deprecator not allowed", func() {
-				v.Cqlinter = &v2.Verifiers_CQLinter{}
+				v.Cqlinter = &cfgpb.Verifiers_CQLinter{}
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "cqlinter verifier is not allowed")
 			})
 			Convey("tree_status", func() {
-				v.TreeStatus = &v2.Verifiers_TreeStatus{}
+				v.TreeStatus = &cfgpb.Verifiers_TreeStatus{}
 				Convey("needs URL", func() {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "url is required")
@@ -436,7 +436,7 @@ func TestValidation(t *testing.T) {
 				Convey("sane defaults", func() {
 					So(v.GerritCqAbility.AllowSubmitWithOpenDeps, ShouldBeFalse)
 					So(v.GerritCqAbility.AllowOwnerIfSubmittable, ShouldEqual,
-						v2.Verifiers_GerritCQAbility_UNSET)
+						cfgpb.Verifiers_GerritCQAbility_UNSET)
 				})
 				Convey("is required", func() {
 					v.GerritCqAbility = nil
@@ -459,7 +459,7 @@ func TestValidation(t *testing.T) {
 					So(vctx.Finalize(), ShouldErrLike, "must not be empty")
 				})
 				Convey("may grant CL owners extra rights", func() {
-					v.GerritCqAbility.AllowOwnerIfSubmittable = v2.Verifiers_GerritCQAbility_COMMIT
+					v.GerritCqAbility.AllowOwnerIfSubmittable = cfgpb.Verifiers_GerritCQAbility_COMMIT
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				})
@@ -491,7 +491,7 @@ func TestTryjobValidation(t *testing.T) {
 	Convey("Validate Tryjob Verifier Config", t, func() {
 		validate := func(textPB string) error {
 			vctx := &validation.Context{Context: ctx}
-			cfg := v2.Verifiers_Tryjob{}
+			cfg := cfgpb.Verifiers_Tryjob{}
 			if err := prototext.Unmarshal([]byte(textPB), &cfg); err != nil {
 				panic(err)
 			}
