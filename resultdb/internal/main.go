@@ -16,6 +16,8 @@ package internal
 
 import (
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
@@ -27,11 +29,24 @@ import (
 // Main registers all dependencies and runs a service.
 func Main(init func(srv *server.Server) error) {
 	modules := []module.Module{
+		gerritauth.NewModuleFromFlags(),
 		limiter.NewModuleFromFlags(),
-		secrets.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
 		span.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
-	server.Main(nil, modules, init)
+	server.Main(nil, modules, func(srv *server.Server) error {
+		srv.PRPC.Authenticator = &auth.Authenticator{
+			Methods: []auth.Method{
+				// The default method used by majority of clients.
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+				// For authenticating calls from Gerrit plugins.
+				&gerritauth.Method,
+			},
+		}
+		return init(srv)
+	})
 }
