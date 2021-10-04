@@ -169,7 +169,12 @@ func TestCancelTriggers(t *testing.T) {
 		// just as Run Manager decides to cancel the CL triggers.
 		ct.Clock.Add(time.Minute)
 		impl, deps := makeImpl(&ct)
-		err = impl.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, []changelist.ExternalID{cl.ExternalID}, "Dry Run OK", cg, gcancel.NONE, gcancel.NONE)
+		meta := reviewInputMeta{
+			notify:    gcancel.NONE,
+			message:   "Dry Run OK",
+			attention: gcancel.NONE,
+		}
+		err = impl.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, []changelist.ExternalID{cl.ExternalID}, cg, meta)
 		// The cancelation errors out, but the CL refresh is scheduled.
 		// TODO(crbug/1227369): fail transiently or better yet schedule another
 		// retry in the future and fail with tq.Ignore.

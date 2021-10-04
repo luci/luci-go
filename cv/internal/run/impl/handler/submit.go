@@ -458,8 +458,11 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common.RunID, submission *run.Submission, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
 	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
-	// Will add the same set of group/people to the attention set.
-	notifyWhom := cancel.OWNER | cancel.VOTERS
+	meta := reviewInputMeta{
+		notify: cancel.OWNER | cancel.VOTERS,
+		// Add the same set of group/people to the attention set.
+		attention: cancel.OWNER | cancel.VOTERS,
+	}
 	if err != nil {
 		return err
 	}
@@ -470,20 +473,19 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 
 	// Single-CL Run
 	if len(allRunCLs) == 1 {
-		var msg string
 		switch {
 		case sc.GetClFailures() != nil:
 			failures := sc.GetClFailures().GetFailures()
 			if len(failures) != 1 {
 				panic(fmt.Errorf("expected exactly 1 failed CL, got %v", failures))
 			}
-			msg = failures[0].GetMessage()
+			meta.message = failures[0].GetMessage()
 		case sc.GetTimeout():
-			msg = timeoutMsg
+			meta.message = timeoutMsg
 		default:
-			msg = defaultMsg
+			meta.message = defaultMsg
 		}
-		return impl.cancelCLTriggers(ctx, runID, allRunCLs, runCLExternalIDs, msg, cg, notifyWhom, notifyWhom)
+		return impl.cancelCLTriggers(ctx, runID, allRunCLs, runCLExternalIDs, cg, meta)
 	}
 
 	// Multi-CL Run
@@ -500,11 +502,12 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 		}
 		for i, failedCL := range failed {
 			i, failedCL := i, failedCL
+			meta := meta
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				msg := fmt.Sprintf("%s\n\n%s", messages[failedCL.ID], msgSuffix)
-				errs[i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{failedCL}, runCLExternalIDs, msg, cg, notifyWhom, notifyWhom)
+				meta.message = fmt.Sprintf("%s\n\n%s", messages[failedCL.ID], msgSuffix)
+				errs[i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{failedCL}, runCLExternalIDs, cg, meta)
 			}()
 		}
 		// cancel triggers of CLs that CV won't try to submit.
@@ -527,23 +530,23 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 		}
 		fmt.Fprint(&sb, "\n\n")
 		fmt.Fprint(&sb, msgSuffix)
-		pendingMsg := sb.String()
+		meta.message = sb.String()
 		for i, pendingCL := range pending {
 			i, pendingCL := i, pendingCL
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				errs[len(failed)+i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{pendingCL}, runCLExternalIDs, pendingMsg, cg, notifyWhom, notifyWhom)
+				errs[len(failed)+i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{pendingCL}, runCLExternalIDs, cg, meta)
 			}()
 		}
 		wg.Wait()
 		return common.MostSevereError(errs)
 	case sc.GetTimeout():
-		msg := fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix)
-		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg, notifyWhom, notifyWhom)
+		meta.message = fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix)
+		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, cg, meta)
 	default:
-		msg := fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
-		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, msg, cg, notifyWhom, notifyWhom)
+		meta.message = fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
+		return impl.cancelCLTriggers(ctx, runID, pending, runCLExternalIDs, cg, meta)
 	}
 }
 

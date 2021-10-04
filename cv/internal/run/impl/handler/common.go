@@ -105,7 +105,20 @@ func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clid
 	return impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), cls)
 }
 
-func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, message string, cg *prjcfg.ConfigGroup, notify, addAtt cancel.Whom) error {
+type reviewInputMeta struct {
+	// notify is whom to notify.
+	notify cancel.Whom
+	// message provides the reason and details of the review change performed.
+	//
+	// This is posted as a comment in the CL.
+	message string
+	// attention is whom to add in the attention set.
+	attention cancel.Whom
+	// reason explains the reason of the attention.
+	reason string
+}
+
+func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, cg *prjcfg.ConfigGroup, meta reviewInputMeta) error {
 	clids := make(common.CLIDs, len(toCancel))
 	for i, runCL := range toCancel {
 		clids[i] = runCL.ID
@@ -126,13 +139,14 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 					CL:                cls[i],
 					Trigger:           toCancel[i].Trigger,
 					LUCIProject:       luciProject,
-					Message:           message,
+					Message:           meta.message,
 					Requester:         "Run Manager",
-					Notify:            notify,
+					Notify:            meta.notify,
 					LeaseDuration:     time.Minute,
 					ConfigGroups:      []*prjcfg.ConfigGroup{cg},
 					RunCLExternalIDs:  runCLExternalIDs,
-					AddToAttentionSet: addAtt,
+					AddToAttentionSet: meta.attention,
+					AttentionReason:   meta.reason,
 				})
 				switch {
 				case err == nil:
