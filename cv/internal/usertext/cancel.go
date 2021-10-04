@@ -14,6 +14,14 @@
 
 package usertext
 
-// StoppedRun is the message put in the reason of the attention set change
-// performed when CV stops a run.
+// StoppedRun is the default message put in the reason of the attention set
+// change when CV stops a run.
+//
+//
+// Ideally, modules set the message with the reason of the stop so that
+// users are given more detailed info for the reason of the attention set
+// changes that they received a notification for.
+//
+// TODO(crbug/1251469) - find if this is still needed, once all the places
+// are update to specify the reason of cancellation.
 const StoppedRun = "CV stopped processing the Run"
