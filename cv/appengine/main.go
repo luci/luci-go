@@ -25,9 +25,11 @@ import (
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
@@ -63,14 +65,15 @@ import (
 
 func main() {
 	modules := []module.Module{
+		analytics.NewModuleFromFlags(),
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
-		secrets.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		gerritauth.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
-		analytics.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -104,6 +107,18 @@ func main() {
 			return err
 		}
 		_ = runimpl.New(runNotifier, pmNotifier, clMutator, clUpdater, gFactory, tc, bqc)
+
+		// Setup pRPC authentication.
+		srv.PRPC.Authenticator = &auth.Authenticator{
+			Methods: []auth.Method{
+				// The default method used by majority of clients.
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+				// For authenticating calls from Gerrit plugins.
+				&gerritauth.Method,
+			},
+		}
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{
