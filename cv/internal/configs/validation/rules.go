@@ -122,13 +122,11 @@ var (
 func validateConfigGroup(ctx *validation.Context, group *cfgpb.ConfigGroup, knownNames stringset.Set) {
 	switch {
 	case group.Name == "":
-		// TODO(crbug/1063508): make this an error.
-		ctx.Warningf("please, specify `name` for monitoring and analytics")
+		ctx.Errorf("name is required")
 	case !configGroupNameRegexp.MatchString(group.Name):
-		// TODO(crbug/1063508): make this an error.
-		ctx.Warningf("`name` must match %q but %q given", configGroupNameRegexp, group.Name)
+		ctx.Errorf("name must match %q regexp but %q given", configGroupNameRegexp, group.Name)
 	case knownNames.Has(group.Name):
-		ctx.Errorf("duplicate config_group `name` %q not allowed", group.Name)
+		ctx.Errorf("duplicate config_group name %q not allowed", group.Name)
 	default:
 		knownNames.Add(group.Name)
 	}

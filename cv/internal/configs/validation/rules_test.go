@@ -214,13 +214,7 @@ func TestValidation(t *testing.T) {
 						cfg.ConfigGroups[1].Name = "bbb"
 						cfg.ConfigGroups[2].Name = "bbb"
 						validateProjectConfig(vctx, &cfg)
-						So(vctx.Finalize(), ShouldErrLike, "duplicate config_group `name` \"bbb\" not allowed")
-					})
-					Convey("empty dups for now allowed", func() {
-						cfg.ConfigGroups[1].Name = ""
-						cfg.ConfigGroups[2].Name = ""
-						validateProjectConfig(vctx, &cfg)
-						So(mustWarn(vctx.Finalize()), ShouldErrLike, "specify `name`")
+						So(vctx.Finalize(), ShouldErrLike, "duplicate config_group name \"bbb\" not allowed")
 					})
 				})
 			})
@@ -230,12 +224,12 @@ func TestValidation(t *testing.T) {
 			Convey("with no Name", func() {
 				cfg.ConfigGroups[0].Name = ""
 				validateProjectConfig(vctx, &cfg)
-				So(mustWarn(vctx.Finalize()), ShouldErrLike, "please, specify `name`")
+				So(mustError(vctx.Finalize()), ShouldErrLike, "name is required")
 			})
 			Convey("with valid Name", func() {
 				cfg.ConfigGroups[0].Name = "!invalid!"
 				validateProjectConfig(vctx, &cfg)
-				So(mustWarn(vctx.Finalize()), ShouldErrLike, "`name` must match")
+				So(mustError(vctx.Finalize()), ShouldErrLike, "name must match")
 			})
 			Convey("with Gerrit", func() {
 				cfg.ConfigGroups[0].Gerrit = nil
