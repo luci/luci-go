@@ -33,11 +33,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/config/validation"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	prjcfgvalidate "go.chromium.org/luci/cv/internal/configs/validation"
+	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 )
 
@@ -192,10 +191,7 @@ func (r *matchConfigRun) loadAndValidateConfig(ctx context.Context, cfgPath stri
 	if err != nil {
 		return nil, err
 	}
-	vctx := &validation.Context{Context: ctx}
-	vctx.SetFile(cfgPath)
-	prjcfgvalidate.ValidateProjectConfig(vctx, ret)
-	return ret, vctx.Finalize()
+	return ret, validation.ValidateProject(ret)
 }
 
 func (r *matchConfigRun) newGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, error) {

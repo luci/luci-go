@@ -32,7 +32,11 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
-	"go.chromium.org/luci/cv/internal/acls"
+)
+
+const (
+	CQStatusHostPublic   = "chromium-cq-status.appspot.com"
+	CQStatusHostInternal = "internal-cq-status.appspot.com"
 )
 
 // Config validation rules go here.
@@ -58,12 +62,12 @@ func validateProject(ctx *validation.Context, configSet, path string, content []
 	if err := prototext.Unmarshal(content, &cfg); err != nil {
 		ctx.Error(err)
 	} else {
-		ValidateProjectConfig(ctx, &cfg)
+		validateProjectConfig(ctx, &cfg)
 	}
 	return nil
 }
 
-func ValidateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) {
+func validateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) {
 	if cfg.ProjectScopedAccount != cfgpb.Toggle_UNSET {
 		ctx.Errorf("project_scoped_account for just CQ isn't supported. " +
 			"Use project-wide config for all LUCI services in luci-config/projects.cfg")
@@ -74,11 +78,11 @@ func ValidateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) {
 			"Reach out to LUCI team oncall if you need urgent help")
 	}
 	switch cfg.CqStatusHost {
-	case acls.CQStatusHostInternal:
-	case acls.CQStatusHostPublic:
+	case CQStatusHostInternal:
+	case CQStatusHostPublic:
 	case "":
 	default:
-		ctx.Errorf("cq_status_host must be either empty or one of %q or %q", acls.CQStatusHostPublic, acls.CQStatusHostInternal)
+		ctx.Errorf("cq_status_host must be either empty or one of %q or %q", CQStatusHostPublic, CQStatusHostInternal)
 	}
 	if cfg.SubmitOptions != nil {
 		ctx.Enter("submit_options")

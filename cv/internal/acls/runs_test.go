@@ -28,6 +28,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -49,7 +50,7 @@ func TestLoadRun(t *testing.T) {
 		prjcfgtest.Create(ctx, projectPublic, &cfgpb.Config{
 			// TODO(crbug/1233963): update this test to stop relying on legacy-based
 			// ACL.
-			CqStatusHost: CQStatusHostPublic,
+			CqStatusHost: validation.CQStatusHostPublic,
 			ConfigGroups: []*cfgpb.ConfigGroup{{
 				Name: "first",
 			}},
@@ -57,7 +58,7 @@ func TestLoadRun(t *testing.T) {
 		prjcfgtest.Create(ctx, projectInternal, &cfgpb.Config{
 			// TODO(crbug/1233963): update this test to stop relying on legacy-based
 			// ACL.
-			CqStatusHost: CQStatusHostInternal,
+			CqStatusHost: validation.CQStatusHostInternal,
 			ConfigGroups: []*cfgpb.ConfigGroup{{
 				Name: "first",
 			}},

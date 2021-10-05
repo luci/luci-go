@@ -21,12 +21,11 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
 const (
-	CQStatusHostPublic        = "chromium-cq-status.appspot.com"
-	CQStatusHostInternal      = "internal-cq-status.appspot.com"
 	cqStatusInternalCrIAGroup = "googlers"
 )
 
@@ -58,9 +57,9 @@ func checkLegacyCQStatusAccess(ctx context.Context, r *run.Run) (bool, error) {
 	switch cfg, err := prjcfg.GetConfigGroup(ctx, m.Project, m.ConfigGroupIDs[0]); {
 	case err != nil:
 		return false, err
-	case cfg.CQStatusHost == CQStatusHostPublic:
+	case cfg.CQStatusHost == validation.CQStatusHostPublic:
 		return true, nil
-	case cfg.CQStatusHost == CQStatusHostInternal:
+	case cfg.CQStatusHost == validation.CQStatusHostInternal:
 		return auth.IsMember(ctx, cqStatusInternalCrIAGroup)
 	case cfg.CQStatusHost == "":
 		return false, nil

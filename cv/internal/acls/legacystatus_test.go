@@ -23,6 +23,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -52,7 +53,7 @@ func TestCheckLegacy(t *testing.T) {
 
 		Convey("existing but disabled project", func() {
 			// Even if the previously configured CqStatusHost is public.
-			cfg.CqStatusHost = CQStatusHostPublic
+			cfg.CqStatusHost = validation.CQStatusHostPublic
 			prjcfgtest.Create(ctx, "disabled", cfg)
 			prjcfgtest.Disable(ctx, "disabled")
 			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("disabled/123-1-cafe")})
@@ -77,7 +78,7 @@ func TestCheckLegacy(t *testing.T) {
 		})
 
 		Convey("public access", func() {
-			cfg.CqStatusHost = CQStatusHostPublic
+			cfg.CqStatusHost = validation.CQStatusHostPublic
 			prjcfgtest.Create(ctx, "public", cfg)
 			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("public/123-1-cafe")})
 			So(err, ShouldBeNil)
@@ -85,7 +86,7 @@ func TestCheckLegacy(t *testing.T) {
 		})
 
 		Convey("internal CQ Status", func() {
-			cfg.CqStatusHost = CQStatusHostInternal
+			cfg.CqStatusHost = validation.CQStatusHostInternal
 			prjcfgtest.Create(ctx, "internal", cfg)
 
 			Convey("request by Googler is allowed", func() {

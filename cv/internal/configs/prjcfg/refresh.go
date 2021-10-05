@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/validation"
 )
 
 const ConfigFileName = "commit-queue.cfg"
@@ -59,6 +60,12 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	if err != nil {
 		return err
 	}
+	if err := validation.ValidateProject(cfg); err != nil {
+		// TODO(tandrii): hard fail.
+		// return errors.Annotate(err, "new project config is not valid").Err()
+		logging.Errorf(ctx, "UpdateProject %q on invalid config: %s", project, err)
+	}
+
 	// Write out ConfigHashInfo if missing and all ConfigGroups.
 	localHash := computeHash(cfg)
 	cgNames := make([]string, len(cfg.GetConfigGroups()))
