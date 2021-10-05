@@ -20,7 +20,7 @@ export function genFeedbackUrl() {
 
   const searchParams = new URLSearchParams({
     template: 'Build Infrastructure',
-    components: 'Infra>Platform>Milo>ResultUI',
+    components: 'Infra>Platform>Milo',
     labels: 'Pri-2,Type-Bug',
     comment: feedbackComment,
   });
