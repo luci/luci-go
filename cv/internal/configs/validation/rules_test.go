@@ -119,7 +119,7 @@ func TestValidation(t *testing.T) {
 				So(vctx.Finalize(), ShouldBeNil)
 			})
 			Convey("good config", func() {
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
 		})
@@ -128,42 +128,42 @@ func TestValidation(t *testing.T) {
 			Convey("Top level opts can be omitted", func() {
 				cfg.CqStatusHost = ""
 				cfg.SubmitOptions = nil
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
 			Convey("draining time not allowed crbug/1208569", func() {
 				cfg.DrainingStartTime = "2017-12-23T15:47:58Z"
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, `https://crbug.com/1208569`)
 			})
 			Convey("CQ status host can be internal", func() {
 				cfg.CqStatusHost = acls.CQStatusHostInternal
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
 			Convey("CQ status host can be empty", func() {
 				cfg.CqStatusHost = ""
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
 			Convey("CQ status host can be public", func() {
 				cfg.CqStatusHost = acls.CQStatusHostPublic
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
 			Convey("CQ status host can not be something else", func() {
 				cfg.CqStatusHost = "nope.example.com"
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "cq_status_host must be")
 			})
 			Convey("Bad max_burst", func() {
 				cfg.SubmitOptions.MaxBurst = -1
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldNotBeNil)
 			})
 			Convey("Bad burst_delay ", func() {
 				cfg.SubmitOptions.BurstDelay.Seconds = -1
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldNotBeNil)
 			})
 			Convey("config_groups", func() {
@@ -190,7 +190,7 @@ func TestValidation(t *testing.T) {
 
 				Convey("at least 1 Config Group", func() {
 					cfg.ConfigGroups = nil
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "at least 1 config_group is required")
 				})
 
@@ -200,7 +200,7 @@ func TestValidation(t *testing.T) {
 					cfg.ConfigGroups[0].Fallback = cfgpb.Toggle_YES
 					add("refs/branch-heads/.+")
 					cfg.ConfigGroups[1].Fallback = cfgpb.Toggle_YES
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "At most 1 config_group with fallback=YES allowed")
 				})
 
@@ -213,7 +213,7 @@ func TestValidation(t *testing.T) {
 						cfg.ConfigGroups[0].Name = "aaa"
 						cfg.ConfigGroups[1].Name = "bbb"
 						cfg.ConfigGroups[2].Name = "bbb"
-						validateProjectConfig(vctx, &cfg)
+						ValidateProjectConfig(vctx, &cfg)
 						So(vctx.Finalize(), ShouldErrLike, "duplicate config_group name \"bbb\" not allowed")
 					})
 				})
@@ -223,48 +223,48 @@ func TestValidation(t *testing.T) {
 		Convey("ConfigGroups", func() {
 			Convey("with no Name", func() {
 				cfg.ConfigGroups[0].Name = ""
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(mustError(vctx.Finalize()), ShouldErrLike, "name is required")
 			})
 			Convey("with valid Name", func() {
 				cfg.ConfigGroups[0].Name = "!invalid!"
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(mustError(vctx.Finalize()), ShouldErrLike, "name must match")
 			})
 			Convey("with Gerrit", func() {
 				cfg.ConfigGroups[0].Gerrit = nil
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "at least 1 gerrit is required")
 			})
 			Convey("with Verifiers", func() {
 				cfg.ConfigGroups[0].Verifiers = nil
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "verifiers are required")
 			})
 			Convey("no dup Gerrit blocks", func() {
 				cfg.ConfigGroups[0].Gerrit = append(cfg.ConfigGroups[0].Gerrit, cfg.ConfigGroups[0].Gerrit[0])
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "duplicate gerrit url in the same config_group")
 			})
 			Convey("CombineCLs", func() {
 				cfg.ConfigGroups[0].CombineCls = &cfgpb.CombineCLs{}
 				Convey("Needs stabilization_delay", func() {
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "stabilization_delay is required")
 				})
 				cfg.ConfigGroups[0].CombineCls.StabilizationDelay = &durationpb.Duration{}
 				Convey("Needs stabilization_delay > 10s", func() {
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "stabilization_delay must be at least 10 seconds")
 				})
 				cfg.ConfigGroups[0].CombineCls.StabilizationDelay.Seconds = 20
 				Convey("OK", func() {
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				})
 				Convey("Can't use with allow_submit_with_open_deps", func() {
 					cfg.ConfigGroups[0].Verifiers.GerritCqAbility.AllowSubmitWithOpenDeps = true
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "allow_submit_with_open_deps=true")
 				})
 			})
@@ -277,52 +277,52 @@ func TestValidation(t *testing.T) {
 				}
 				cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
 				Convey("OK", func() {
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				})
 				Convey("Requires name", func() {
 					mode.Name = ""
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "`name` is required")
 				})
 				Convey("Uses reserved mode name", func() {
 					for _, m := range []string{"DRY_RUN", "FULL_RUN"} {
 						mode.Name = m
-						validateProjectConfig(vctx, &cfg)
+						ValidateProjectConfig(vctx, &cfg)
 						So(vctx.Finalize(), ShouldErrLike, "`name` MUST not be DRY_RUN or FULL_RUN")
 					}
 				})
 				Convey("Invalid name", func() {
 					mode.Name = "~!Invalid Run Mode!~"
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "`name` must match")
 				})
 				Convey("Duplicate modes", func() {
 					cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode, mode}
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "duplicate `name` \"TEST_RUN\" not allowed")
 				})
 				Convey("CQ label value out of range", func() {
 					for _, val := range []int32{-1, 0, 3, 10} {
 						mode.CqLabelValue = val
-						validateProjectConfig(vctx, &cfg)
+						ValidateProjectConfig(vctx, &cfg)
 						So(vctx.Finalize(), ShouldErrLike, "`cq_label_value` must be either 1 or 2")
 					}
 				})
 				Convey("Requires triggering_label", func() {
 					mode.TriggeringLabel = ""
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "`triggering_label` is required")
 				})
 				Convey("triggering_label must not be Commit-Queue", func() {
 					mode.TriggeringLabel = "Commit-Queue"
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "`triggering_label` MUST not be \"Commit-Queue\"")
 				})
 				Convey("triggering_value out of range", func() {
 					for _, val := range []int32{-1, 0} {
 						mode.TriggeringValue = val
-						validateProjectConfig(vctx, &cfg)
+						ValidateProjectConfig(vctx, &cfg)
 						So(vctx.Finalize(), ShouldErrLike, "`triggering_value` must be > 0")
 					}
 				})
@@ -333,18 +333,18 @@ func TestValidation(t *testing.T) {
 			g := cfg.ConfigGroups[0].Gerrit[0]
 			Convey("needs valid URL", func() {
 				g.Url = ""
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "url is required")
 
 				g.Url = ":badscheme, bad URL"
 				vctx = &validation.Context{Context: ctx}
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "failed to parse url")
 			})
 
 			Convey("without fancy URL components", func() {
 				g.Url = "bad://ok/path-not-good?query=too#neither-is-fragment"
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				err := vctx.Finalize()
 				So(err, ShouldErrLike, "path component not yet allowed in url")
 				So(err, ShouldErrLike, "and 4 other errors")
@@ -352,22 +352,22 @@ func TestValidation(t *testing.T) {
 
 			Convey("current limitations", func() {
 				g.Url = "https://not.yet.allowed.com"
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "only *.googlesource.com hosts supported for now")
 
 				vctx = &validation.Context{Context: ctx}
 				g.Url = "new-scheme://chromium-review.googlesource.com"
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "only 'https' scheme supported for now")
 			})
 			Convey("at least 1 project required", func() {
 				g.Projects = nil
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "at least 1 project is required")
 			})
 			Convey("no dup project blocks", func() {
 				g.Projects = append(g.Projects, g.Projects[0])
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "duplicate project in the same gerrit")
 			})
 		})
@@ -376,38 +376,38 @@ func TestValidation(t *testing.T) {
 			p := cfg.ConfigGroups[0].Gerrit[0].Projects[0]
 			Convey("project name required", func() {
 				p.Name = ""
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "name is required")
 			})
 			Convey("incorrect project names", func() {
 				p.Name = "a/prefix-not-allowed/so-is-.git-suffix/.git"
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldNotBeNil)
 
 				vctx = &validation.Context{Context: ctx}
 				p.Name = "/prefix-not-allowed/so-is-/-suffix/"
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldNotBeNil)
 			})
 			Convey("bad regexp", func() {
 				p.RefRegexp = []string{"refs/heads/master", "*is-bad-regexp"}
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "ref_regexp #2): error parsing regexp:")
 			})
 			Convey("bad regexp_exclude", func() {
 				p.RefRegexpExclude = []string{"*is-bad-regexp"}
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "ref_regexp_exclude #1): error parsing regexp:")
 			})
 			Convey("duplicate regexp", func() {
 				p.RefRegexp = []string{"refs/heads/master", "refs/heads/master"}
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "ref_regexp #2): duplicate regexp:")
 			})
 			Convey("duplicate regexp include/exclude", func() {
 				p.RefRegexp = []string{"refs/heads/.+"}
 				p.RefRegexpExclude = []string{"refs/heads/.+"}
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "ref_regexp_exclude #1): duplicate regexp:")
 			})
 		})
@@ -417,23 +417,23 @@ func TestValidation(t *testing.T) {
 
 			Convey("fake not allowed", func() {
 				v.Fake = &cfgpb.Verifiers_Fake{}
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "fake verifier is not allowed")
 			})
 			Convey("deprecator not allowed", func() {
 				v.Cqlinter = &cfgpb.Verifiers_CQLinter{}
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "cqlinter verifier is not allowed")
 			})
 			Convey("tree_status", func() {
 				v.TreeStatus = &cfgpb.Verifiers_TreeStatus{}
 				Convey("needs URL", func() {
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "url is required")
 				})
 				Convey("needs https URL", func() {
 					v.TreeStatus.Url = "http://example.com/test"
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "url scheme must be 'https'")
 				})
 			})
@@ -445,27 +445,27 @@ func TestValidation(t *testing.T) {
 				})
 				Convey("is required", func() {
 					v.GerritCqAbility = nil
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "gerrit_cq_ability verifier is required")
 				})
 				Convey("needs committer_list", func() {
 					v.GerritCqAbility.CommitterList = nil
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "committer_list is required")
 				})
 				Convey("no empty committer_list", func() {
 					v.GerritCqAbility.CommitterList = []string{""}
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "must not be empty")
 				})
 				Convey("no empty dry_run_access_list", func() {
 					v.GerritCqAbility.DryRunAccessList = []string{""}
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "must not be empty")
 				})
 				Convey("may grant CL owners extra rights", func() {
 					v.GerritCqAbility.AllowOwnerIfSubmittable = cfgpb.Verifiers_GerritCQAbility_COMMIT
-					validateProjectConfig(vctx, &cfg)
+					ValidateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				})
 			})
@@ -480,7 +480,7 @@ func TestValidation(t *testing.T) {
 				v.RetryConfig.FailureWeight = -1
 				v.RetryConfig.TransientFailureWeight = -1
 				v.RetryConfig.TimeoutWeight = -1
-				validateProjectConfig(vctx, &cfg)
+				ValidateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike,
 					"negative single_quota not allowed (-1 given) (and 4 other errors)")
 			})

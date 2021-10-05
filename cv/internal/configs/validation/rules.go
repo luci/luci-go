@@ -58,12 +58,12 @@ func validateProject(ctx *validation.Context, configSet, path string, content []
 	if err := prototext.Unmarshal(content, &cfg); err != nil {
 		ctx.Error(err)
 	} else {
-		validateProjectConfig(ctx, &cfg)
+		ValidateProjectConfig(ctx, &cfg)
 	}
 	return nil
 }
 
-func validateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) {
+func ValidateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) {
 	if cfg.ProjectScopedAccount != cfgpb.Toggle_UNSET {
 		ctx.Errorf("project_scoped_account for just CQ isn't supported. " +
 			"Use project-wide config for all LUCI services in luci-config/projects.cfg")

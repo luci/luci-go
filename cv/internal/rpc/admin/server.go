@@ -18,11 +18,8 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
-	"net/url"
 	"reflect"
-	"regexp"
 	"sort"
-	"strconv"
 
 	"golang.org/x/sync/errgroup"
 
@@ -31,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -759,47 +757,6 @@ func checkAllowed(ctx context.Context, name string) error {
 	}
 }
 
-var regexCrRevPath = regexp.MustCompile(`/([ci])/(\d+)(/(\d+))?`)
-var regexGoB = regexp.MustCompile(`((\w+-)+review\.googlesource\.com)/(#/)?(c/)?(([^\+]+)/\+/)?(\d+)(/(\d+)?)?`)
-
-func parseGerritURL(s string) (changelist.ExternalID, error) {
-	u, err := url.Parse(s)
-	if err != nil {
-		return "", err
-	}
-	var host string
-	var change int64
-	if u.Host == "crrev.com" {
-		m := regexCrRevPath.FindStringSubmatch(u.Path)
-		if m == nil {
-			return "", errors.New("invalid crrev.com URL")
-		}
-		switch m[1] {
-		case "c":
-			host = "chromium-review.googlesource.com"
-		case "i":
-			host = "chrome-internal-review.googlesource.com"
-		default:
-			panic("impossible")
-		}
-		if change, err = strconv.ParseInt(m[2], 10, 64); err != nil {
-			return "", errors.Reason("invalid crrev.com URL change number /%s/", m[2]).Err()
-		}
-	} else {
-		m := regexGoB.FindStringSubmatch(s)
-		if m == nil {
-			return "", errors.Reason("Gerrit URL didn't match regexp %q", regexGoB.String()).Err()
-		}
-		if host = m[1]; host == "" {
-			return "", errors.New("invalid Gerrit host")
-		}
-		if change, err = strconv.ParseInt(m[7], 10, 64); err != nil {
-			return "", errors.Reason("invalid Gerrit URL change number /%s/", m[7]).Err()
-		}
-	}
-	return changelist.GobID(host, change)
-}
-
 func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *run.Run) bool) (*adminpb.GetRunResponse, error) {
 	r := &run.Run{ID: rid}
 	switch err := datastore.Get(ctx, r); {
@@ -892,7 +849,13 @@ func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, err
 		eid = changelist.ExternalID(req.GetExternalId())
 		cl, err = eid.Get(ctx)
 	case req.GetGerritUrl() != "":
-		eid, err = parseGerritURL(req.GetGerritUrl())
+		var host string
+		var change int64
+		host, change, err = gerrit.FuzzyParseURL(req.GetGerritUrl())
+		if err != nil {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
+		}
+		eid, err = changelist.GobID(host, change)
 		if err != nil {
 			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
 		}
