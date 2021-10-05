@@ -43,9 +43,6 @@ import (
 
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
-
-	// Register "${appid}" placeholder for config validation rules.
-	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 )
 
 // Project is a datastore entity representing a single project.

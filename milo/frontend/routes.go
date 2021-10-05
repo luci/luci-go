@@ -24,25 +24,16 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/deprecated"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/discovery"
-	"go.chromium.org/luci/grpc/prpc"
-	milopb "go.chromium.org/luci/milo/api/service/v1"
-	"go.chromium.org/luci/milo/backend"
-	"go.chromium.org/luci/milo/git"
-	"go.chromium.org/luci/milo/git/gitacls"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
-	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
-
-	clientauth "go.chromium.org/luci/auth"
 
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -50,41 +41,35 @@ import (
 )
 
 // Run sets up all the routes and runs the server.
-func Run(templatePath string) {
-	server.SwitchToEncryptedCookies()
+func Run(srv *server.Server, templatePath string) {
+	appVersionID := "unknown"
+	if idx := strings.LastIndex(srv.Options.ContainerImageID, ":"); idx != -1 {
+		appVersionID = srv.Options.ContainerImageID[idx+1:]
+	}
 
 	// Register plain ol' http handlers.
-	r := router.New()
-	standard.InstallHandlers(r)
+	r := srv.Routes
 
-	baseMW := standard.Base()
+	baseMW := router.NewMiddlewareChain()
 	baseAuthMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
-		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
+		auth.Authenticate(srv.CookieAuth),
 	)
 	htmlMW := baseAuthMW.Extend(
 		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		withGitMiddleware,
 		withBuildbucketBuildsClient,
 		withBuildbucketBuildersClient,
-		templates.WithTemplates(getTemplateBundle(templatePath)),
+		templates.WithTemplates(getTemplateBundle(templatePath, appVersionID, srv.Options.Prod)),
 	)
 	xsrfMW := htmlMW.Extend(xsrf.WithTokenCheck)
 	projectMW := htmlMW.Extend(buildProjectACLMiddleware(false))
 	optionalProjectMW := htmlMW.Extend(buildProjectACLMiddleware(true))
-	backendMW := baseMW.Extend(
-		middleware.WithContextTimeout(10*time.Minute),
-		withBuildbucketBuildsClient)
-	cronMW := backendMW.Extend(gaemiddleware.RequireCron, withBuildbucketBuildsClient)
 
 	r.GET("/", htmlMW, frontpageHandler)
 	r.GET("/p", baseMW, movedPermanently("/"))
 	r.GET("/search", htmlMW, searchHandler)
 	r.GET("/opensearch.xml", baseMW, searchXMLHandler)
-
-	// Cron endpoints
-	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
-	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
 
 	// Artifacts.
 	r.GET("/artifact/*path", baseMW, redirect("/ui/artifact/*path", http.StatusFound))
@@ -150,8 +135,23 @@ func Run(templatePath string) {
 	// swarming tasks.
 	r.GET("/raw/build/:logdog_host/:project/*path", htmlMW, handleError(handleRawPresentationBuild))
 
+	pubsubMW := router.NewMiddlewareChain(
+		auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
+			AudienceCheck: openid.AudienceMatchesHost,
+		}),
+		withBuildbucketBuildsClient,
+	)
+	pusherID := identity.Identity(fmt.Sprintf("user:buildbucket-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
+
 	// PubSub subscription endpoints.
-	r.POST("/_ah/push-handlers/buildbucket", backendMW, buildbucket.PubSubHandler)
+	r.POST("/push-handlers/buildbucket", pubsubMW, func(ctx *router.Context) {
+		if got := auth.CurrentIdentity(ctx.Context); got != pusherID {
+			logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", pusherID, got)
+			ctx.Writer.WriteHeader(403)
+		} else {
+			buildbucket.PubSubHandler(ctx)
+		}
+	})
 
 	r.POST("/actions/cancel_build", xsrfMW, handleError(cancelBuildHandler))
 	r.POST("/actions/retry_build", xsrfMW, handleError(retryBuildHandler))
@@ -162,39 +162,6 @@ func Run(templatePath string) {
 	r.GET("/configs.js", baseMW, handleError(configsJSHandler))
 
 	r.GET("/auth-state", baseAuthMW, handleError(getAuthState))
-
-	installAPIRoutes(r, baseMW)
-
-	http.DefaultServeMux.Handle("/", r)
-}
-
-func installAPIRoutes(r *router.Router, base router.MiddlewareChain) {
-	server := &prpc.Server{
-		// The default OAuth2Method invalidates all access tokens associated
-		// with an OAuth client ID once the user signed out. This is problematic
-		// because the access token could be cached and we have Milo hosted on
-		// multiple domains.
-		Authenticator: &auth.Authenticator{
-			Methods: []auth.Method{
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{clientauth.OAuthScopeEmail},
-				},
-			},
-		},
-	}
-	milopb.RegisterMiloInternalServer(server, &backend.MiloInternalService{
-		GetGitClient: func(c context.Context) (git.Client, error) {
-			acls, err := gitacls.FromConfig(c, common.GetSettings(c).SourceAcls)
-			if err != nil {
-				return nil, err
-			}
-			return git.NewClient(acls), nil
-		},
-	})
-
-	discovery.Enable(server)
-	rpcexplorer.Install(r)
-	server.InstallHandlers(r, base)
 }
 
 // handleError is a wrapper for a handler so that the handler can return an error

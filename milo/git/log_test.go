@@ -19,19 +19,20 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/golang/mock/gomock"
-
+	"github.com/gomodule/redigo/redis"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/redisconn"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -42,6 +43,16 @@ func TestLog(t *testing.T) {
 
 	Convey("Log", t, func() {
 		c := memory.Use(context.Background())
+
+		// Set up a test redis server.
+		s, err := miniredis.Run()
+		So(err, ShouldBeNil)
+		defer s.Close()
+		c = redisconn.UsePool(c, &redis.Pool{
+			Dial: func() (redis.Conn, error) {
+				return redis.Dial("tcp", s.Addr())
+			},
+		})
 
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -186,11 +197,15 @@ func TestLog(t *testing.T) {
 			})
 
 			Convey("do not update cache entries that have more info", func() {
-				refCache := (&logReq{
+				refCacheKey := (&logReq{
 					host:    host,
 					project: "project",
-				}).mkCache(c, "refs/heads/main")
-				err = memcache.Delete(c, refCache.Key())
+				}).mkCacheKey(c, "refs/heads/main")
+
+				conn, err := redisconn.Get(c)
+				So(err, ShouldBeNil)
+				defer conn.Close()
+				_, err = conn.Do("DEL", refCacheKey)
 				So(err, ShouldBeNil)
 
 				req2 := &gitilespb.LogRequest{

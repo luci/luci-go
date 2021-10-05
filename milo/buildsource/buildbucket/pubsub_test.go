@@ -65,9 +65,7 @@ func makeReq(build bbv1.LegacyApiCommonBuildMessage) io.ReadCloser {
 	}{build, "hostname"}
 	bm, _ := json.Marshal(bmsg)
 
-	sub := "projects/luci-milo/subscriptions/buildbucket-public"
 	msg := common.PubSubSubscription{
-		Subscription: sub,
 		Message: common.PubSubMessage{
 			Data: base64.StdEncoding.EncodeToString(bm),
 		},

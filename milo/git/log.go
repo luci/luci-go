@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
 	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/grpc/codes"
@@ -35,9 +36,9 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/redisconn"
 )
 
 // LogOptions are options for Log function.
@@ -197,8 +198,9 @@ type logReq struct {
 
 	// fields below are set in call()
 
-	commitishIsHash bool
-	commitishEntry  memcache.Item
+	commitishIsHash          bool
+	commitishCacheKey        string
+	commitishCacheExpiration time.Duration
 }
 
 func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
@@ -213,10 +215,11 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 	})
 
 	l.commitishIsHash = gitHash.MatchString(l.commitish)
-	l.commitishEntry = l.mkCache(c, l.commitish)
+	l.commitishCacheKey = l.mkCacheKey(c, l.commitish)
+	l.commitishCacheExpiration = 12 * time.Hour
 	if !l.commitishIsHash {
 		// committish is not pinned, may move, so set a short expiration.
-		l.commitishEntry.SetExpiration(30 * time.Second)
+		l.commitishCacheExpiration = 30 * time.Second
 	}
 
 	cacheResult := ""
@@ -263,12 +266,19 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 }
 
 func (l *logReq) readCache(c context.Context) (cacheResult string, commits []*gitpb.Commit, ok bool) {
-	e := l.commitishEntry
+	conn, err := redisconn.Get(c)
+	if err != nil {
+		return cacheFailure, nil, false
+	}
+	defer conn.Close()
+
+	e := l.commitishCacheKey
 	dist := byte(0)
 	maxDist := byte(100 - l.min)
+
 	for {
-		switch err := memcache.Get(c, e); {
-		case err == memcache.ErrCacheMiss:
+		switch bytes, err := redis.Bytes(conn.Do("GET", e)); {
+		case err == redis.ErrNil:
 			logging.Infof(c, "cache miss")
 			cacheResult = cacheMiss
 
@@ -276,19 +286,19 @@ func (l *logReq) readCache(c context.Context) (cacheResult string, commits []*gi
 			logging.WithError(err).Errorf(c, "cache failure")
 			cacheResult = cacheFailure
 
-		case len(e.Value()) == 0:
-			logging.WithError(err).Errorf(c, "empty cache value at key %q", e.Key())
+		case len(bytes) == 0:
+			logging.WithError(err).Errorf(c, "empty cache value at key %q", e)
 			cacheResult = decodingFailure
 		default:
-			n := len(e.Value())
+			n := len(bytes)
 			// see logReq for cache value format.
-			data := e.Value()[:n-1]
-			meta := e.Value()[n-1]
+			data := bytes[:n-1]
+			meta := bytes[n-1]
 			switch {
 			case meta == 0:
 				var decoded gitilespb.LogResponse
 				if err := proto.Unmarshal(data, &decoded); err != nil {
-					logging.WithError(err).Errorf(c, "could not decode cached commits at key %q", e.Key())
+					logging.WithError(err).Errorf(c, "could not decode cached commits at key %q", e)
 					cacheResult = decodingFailure
 				} else {
 					cacheResult = cacheHit
@@ -297,7 +307,7 @@ func (l *logReq) readCache(c context.Context) (cacheResult string, commits []*gi
 				}
 
 			case meta >= 100:
-				logging.WithError(err).Errorf(c, "unexpected last byte %d in cache value at key %q", meta, e.Key())
+				logging.WithError(err).Errorf(c, "unexpected last byte %d in cache value at key %q", meta, e)
 				cacheResult = decodingFailure
 
 			case dist+meta <= maxDist:
@@ -305,14 +315,14 @@ func (l *logReq) readCache(c context.Context) (cacheResult string, commits []*gi
 				dist += meta
 				descendant := hex.EncodeToString(data)
 				logging.Debugf(c, "recursing into cache %s with distance %d", descendant, meta)
-				e = l.mkCache(c, descendant)
+				e = l.mkCacheKey(c, descendant)
 				// cacheResult is not set => continue the loop.
 			default:
 				// TODO(nodir): if we need commits C200..C100, but we have
 				// C200->C250 here (C250 entry has C250..C150), instead of
 				// discarding cache, reuse C200..C150 from C250 and fetch
 				// C150..C50.
-				logging.Debugf(c, "distance at key %q is too large", e.Key())
+				logging.Debugf(c, "distance at key %q is too large", e)
 				cacheResult = cacheMiss
 			}
 		}
@@ -324,83 +334,79 @@ func (l *logReq) readCache(c context.Context) (cacheResult string, commits []*gi
 }
 
 func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
-	marshalled, err := proto.Marshal(res)
+	conn, err := redisconn.Get(c)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "failed to marshal gitiles log %s", res)
+		logging.WithError(err).Errorf(c, "failed to get redis connection")
 		return
 	}
+	defer conn.Close()
 
-	// see logReq comment for cache value format.
-	l.commitishEntry.SetValue(append(marshalled, 0))
-
-	// Cache entries to set.
-	caches := make([]memcache.Item, 1, len(res.Log)+1)
-	caches[0] = l.commitishEntry
-	if !l.commitishIsHash && len(res.Log) > 0 {
-		// cache with commit hash cache key too.
-		e := l.mkCache(c, res.Log[0].Id)
-		e.SetValue(l.commitishEntry.Value())
-		caches = append(caches, e)
-	}
-
+	updatedCacheCount := 0
 	if len(res.Log) > 1 {
 		// Also potentially cache with ancestors as cache keys.
-		ancestorCaches := make([]memcache.Item, 0, len(res.Log)-1)
+		ancestorCacheKeys := make([]interface{}, 0, len(res.Log)-1)
 		for i := 1; i < len(res.Log) && len(res.Log[i-1].Parents) == 1; i++ {
-			ancestorCaches = append(ancestorCaches, l.mkCache(c, res.Log[i].Id))
+			ancestorCacheKeys = append(ancestorCacheKeys, l.mkCacheKey(c, res.Log[i].Id))
 		}
-		if err := memcache.Get(c, ancestorCaches...); err != nil {
-			merr, ok := err.(errors.MultiError)
-			if !ok {
-				merr = errors.MultiError{err}
-			}
-			for i, ierr := range merr {
-				e := ancestorCaches[i]
-				if ierr != nil && ierr != memcache.ErrCacheMiss {
-					logging.WithError(err).Errorf(c, "Failed to retrieve cache entry at %q", e.Key())
-				}
-				if ierr != nil {
-					e.SetValue(nil)
-				}
-			}
+		ancestorCacheValues, err := redis.ByteSlices(conn.Do("MGET", ancestorCacheKeys...))
+		if err != nil {
+			logging.WithError(err).Errorf(c, "Failed to retrieve cache entry")
 		}
 
 		topCommitID, err := hex.DecodeString(res.Log[0].Id)
 		if err != nil {
 			logging.WithError(err).Errorf(c, "commit id %q is not a valid hex", res.Log[0].Id)
 		} else {
-			for i, e := range ancestorCaches {
+			conn.Send("MULTI")
+
+			// see logReq comment for cache value format.
+			cacheValue, err := proto.Marshal(res)
+			if err != nil {
+				logging.WithError(err).Errorf(c, "failed to marshal gitiles log %s", res)
+				return
+			}
+			cacheValue = append(cacheValue, 0)
+
+			// cache with the commitish as cache key.
+			conn.Send("SET", l.commitishCacheKey, cacheValue, "EX", l.commitishCacheExpiration.Seconds())
+			updatedCacheCount += 1
+
+			// cache with the commit hash as cache key too.
+			cacheKey := l.mkCacheKey(c, res.Log[0].Id)
+			if cacheKey != l.commitishCacheKey {
+				conn.Send("SET", cacheKey, cacheValue, "EX", (12 * time.Hour).Seconds())
+				updatedCacheCount += 1
+			}
+
+			for i, cacheValue := range ancestorCacheValues {
 				dist := byte(i + 1)
-				if v := e.Value(); len(v) > 0 && v[len(v)-1] <= dist {
+				if len(cacheValue) > 0 && cacheValue[len(cacheValue)-1] <= dist {
 					// This cache entry is not worse than what we can offer.
-				} else {
-					// We have data with a shorter distance.
-					// see logReq comment for format of this cache value.
-					v := make([]byte, len(topCommitID)+1)
-					copy(v, topCommitID)
-					v[len(v)-1] = dist
-					e.SetValue(v)
-					caches = append(caches, e)
+					continue
 				}
+				// We have data with a shorter distance.
+				// see logReq comment for format of this cache value.
+				cacheValue = make([]byte, len(topCommitID)+1)
+				copy(cacheValue, topCommitID)
+				cacheValue[len(cacheValue)-1] = dist
+				conn.Send("SET", ancestorCacheKeys[i].(string), cacheValue, "EX", (12 * time.Hour).Seconds())
+				updatedCacheCount += 1
 			}
 		}
 	}
 
-	// This could be potentially improved by using CAS,
+	// This could be potentially improved by using WATCH or Lua script,
 	// but it would significantly complicate this code.
-	if err := memcache.Set(c, caches...); err != nil {
+	_, err = conn.Do("EXEC")
+	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to cache gitiles log")
 	} else {
-		logging.Debugf(c, "wrote %d entries", len(caches))
+		logging.Debugf(c, "wrote %d entries", updatedCacheCount)
 	}
 }
 
-func (l *logReq) mkCache(c context.Context, commitish string) memcache.Item {
+func (l *logReq) mkCacheKey(c context.Context, commitish string) string {
 	// note: better not to include limit in the cache key.
-	key := fmt.Sprintf("git-log-%s|%s|%s|%s|%t", l.host, l.project, commitish,
+	return fmt.Sprintf("git-log-%s|%s|%s|%s|%t", l.host, l.project, commitish,
 		l.ancestor, l.withFiles)
-	item := memcache.NewItem(c, key)
-	// do not pollute memcache with items we probably won't need soon.
-	item.SetExpiration(12 * time.Hour)
-	return item
 }

@@ -23,6 +23,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.0
 	github.com/Microsoft/go-winio v0.5.0
 	github.com/VividCortex/mysqlerr v1.0.0
+	github.com/alicebob/miniredis/v2 v2.15.1
 	github.com/aws/aws-sdk-go v1.40.42 // indirect
 	github.com/bazelbuild/buildtools v0.0.0-20210911013817-37179d5767a1
 	github.com/bazelbuild/remote-apis v0.0.0-20210812183132-3e816456ee28
@@ -70,6 +71,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/xtgo/set v1.0.0
 	github.com/yosuke-furukawa/json5 v0.1.1
+	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
 	go.opencensus.io v0.23.0
 	go.starlark.net v0.0.0-20210901212718-87f333178d59
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5

@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
@@ -298,9 +297,8 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 		RawQuery: q.Encode(),
 	}).String()
 	status, err := treeStatusCache.GetOrCreate(c, url, func() (v interface{}, exp time.Duration, err error) {
-		client := &http.Client{Transport: urlfetch.Get(c)}
 		out := &ui.TreeStatus{}
-		if err := common.GetJSONData(client, url, out); err != nil {
+		if err := common.GetJSONData(http.DefaultClient, url, out); err != nil {
 			return nil, 0, err
 		}
 		return out, 30 * time.Second, nil
@@ -332,9 +330,8 @@ var oncallDataCache = layered.Cache{
 // getOncallData fetches oncall data and caches it for 10 minutes.
 func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {
 	oncall, err := oncallDataCache.GetOrCreate(c, config.Url, func() (v interface{}, exp time.Duration, err error) {
-		client := &http.Client{Transport: urlfetch.Get(c)}
 		out := &ui.Oncall{}
-		if err := common.GetJSONData(client, config.Url, out); err != nil {
+		if err := common.GetJSONData(http.DefaultClient, config.Url, out); err != nil {
 			return nil, 0, err
 		}
 		return out, 10 * time.Minute, nil

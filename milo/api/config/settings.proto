@@ -34,6 +34,10 @@ message Settings {
 
     // project is the name of the Google Cloud project that the pubsub topic
     // belongs to.
+    //
+    // Deprecated: this is no longer used. The buildbucket subscription should
+    // be configured via GCP console.
+    // TODO(crbug/1255983): set up subscription configuration via terraform.
     string project = 3;
   }
   Buildbucket buildbucket = 2;

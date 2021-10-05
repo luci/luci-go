@@ -23,7 +23,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -31,7 +30,6 @@ import (
 func TestRenderOncallers(t *testing.T) {
 	t.Parallel()
 	ctx := gaetesting.TestingContext()
-	ctx = urlfetch.Set(ctx, http.DefaultTransport)
 	Convey("Oncall fetching works", t, func() {
 		serveMux := http.NewServeMux()
 		serverResponse := func(w http.ResponseWriter, r *http.Request) {

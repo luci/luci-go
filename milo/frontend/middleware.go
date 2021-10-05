@@ -31,8 +31,6 @@ import (
 	"github.com/russross/blackfriday/v2"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -40,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/data/text/sanitizehtml"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/analytics"
@@ -472,10 +471,10 @@ func faviconMIMEType(fileURL string) string {
 // getTemplateBundles is used to render HTML templates. It provides base args
 // passed to all templates.  It takes a path to the template folder, relative
 // to the path of the binary during runtime.
-func getTemplateBundle(templatePath string) *templates.Bundle {
+func getTemplateBundle(templatePath string, appVersionID string, prod bool) *templates.Bundle {
 	return &templates.Bundle{
 		Loader:          templates.FileSystemLoader(templatePath),
-		DebugMode:       info.IsDevAppServer,
+		DebugMode:       func(c context.Context) bool { return !prod },
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			loginURL, err := auth.LoginURL(c, e.Request.URL.RequestURI())
@@ -495,14 +494,14 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 			group := e.Params.ByName("group")
 
 			return templates.Args{
-				"AppVersion":  strings.Split(info.VersionID(c), ".")[0],
+				"AppVersion":  appVersionID,
 				"IsAnonymous": auth.CurrentIdentity(c) == identity.AnonymousIdentity,
 				"User":        auth.CurrentUser(c),
 				"LoginURL":    loginURL,
 				"LogoutURL":   logoutURL,
 				"CurrentTime": clock.Now(c),
 				"Analytics":   analytics.Snippet(c),
-				"RequestID":   info.RequestID(c),
+				"RequestID":   trace.SpanContext(c),
 				"Request":     e.Request,
 				"Navi":        ProjectLinks(c, project, group),
 				"ProjectID":   project,

@@ -15,22 +15,16 @@
 package frontend
 
 import (
-	"net/http"
-
-	"google.golang.org/appengine"
+	"context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/server/router"
 )
 
 // UpdateConfigHandler is an HTTP handler that handles configuration update
 // requests.
-func UpdateConfigHandler(ctx *router.Context) {
-	c, h := ctx.Context, ctx.Writer
-	// Needed to access the PubSub API
-	c = appengine.WithContext(c, ctx.Request)
+func UpdateConfigHandler(c context.Context) error {
 	projErr := common.UpdateProjects(c)
 	if projErr != nil {
 		if merr, ok := projErr.(errors.MultiError); ok {
@@ -41,19 +35,10 @@ func UpdateConfigHandler(ctx *router.Context) {
 			logging.WithError(projErr).Errorf(c, "project update handler encountered error")
 		}
 	}
-	settings, servErr := common.UpdateServiceConfig(c)
+	_, servErr := common.UpdateServiceConfig(c)
 	if servErr != nil {
 		logging.WithError(servErr).Errorf(c, "service update handler encountered error")
-	} else {
-		servErr = common.EnsurePubSubSubscribed(c, settings)
-		if servErr != nil {
-			logging.WithError(servErr).Errorf(
-				c, "pubsub subscriber handler encountered error")
-		}
 	}
-	if projErr != nil || servErr != nil {
-		h.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	h.WriteHeader(http.StatusOK)
+
+	return errors.Flatten(errors.NewMultiError(projErr, servErr))
 }
