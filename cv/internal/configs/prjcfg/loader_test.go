@@ -67,6 +67,7 @@ func TestLoadingConfigs(t *testing.T) {
 				},
 				{
 					Fallback: cfgpb.Toggle_YES,
+					Name:     "catch_all",
 					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://chromium-review.googlesource.com/",
@@ -92,12 +93,12 @@ func TestLoadingConfigs(t *testing.T) {
 			So(m.Exists(), ShouldBeTrue)
 			So(m.Status, ShouldEqual, StatusEnabled)
 			So(m.EVersion, ShouldEqual, 1)
-			So(m.ConfigGroupNames, ShouldResemble, []string{"branch_m100", "index#1"})
+			So(m.ConfigGroupNames, ShouldResemble, []string{"branch_m100", "catch_all"})
 			h := m.Hash()
 			So(h, ShouldStartWith, "sha256:")
 			So(m.ConfigGroupIDs, ShouldResemble, []ConfigGroupID{
 				ConfigGroupID(h + "/branch_m100"),
-				ConfigGroupID(h + "/index#1"),
+				ConfigGroupID(h + "/catch_all"),
 			})
 
 			m2, err := GetHashMeta(ctx, project, h)
@@ -140,7 +141,7 @@ func TestLoadingConfigs(t *testing.T) {
 			So(h, ShouldStartWith, "sha256:")
 			So(m.ConfigGroupIDs, ShouldResemble, []ConfigGroupID{
 				ConfigGroupID(h + "/branch_m100"),
-				ConfigGroupID(h + "/index#1"),
+				ConfigGroupID(h + "/catch_all"),
 				ConfigGroupID(h + "/branch_m200"),
 			})
 			cgs, err := m.GetConfigGroups(ctx)

@@ -70,7 +70,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	localHash := computeHash(cfg)
 	cgNames := make([]string, len(cfg.GetConfigGroups()))
 	for i, cg := range cfg.GetConfigGroups() {
-		cgNames[i] = makeConfigGroupName(cg.GetName(), i)
+		cgNames[i] = cg.GetName()
 	}
 	targetEVersion := existingPC.EVersion + 1
 

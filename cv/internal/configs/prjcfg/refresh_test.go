@@ -67,6 +67,7 @@ func TestUpdateProject(t *testing.T) {
 					},
 				},
 				{
+					Name: "main",
 					Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 						{
 							Url: "https://chromium-review.googlesource.com/",
@@ -90,9 +91,9 @@ func TestUpdateProject(t *testing.T) {
 			cgNames := make([]string, len(cfg.GetConfigGroups()))
 			// Verify ConfigGroups.
 			for i, cgpb := range cfg.GetConfigGroups() {
-				cgNames[i] = makeConfigGroupName(cgpb.GetName(), i)
+				cgNames[i] = cgpb.GetName()
 				cg := ConfigGroup{
-					ID:      makeConfigGroupID(localHash, cgNames[i], i),
+					ID:      MakeConfigGroupID(localHash, cgNames[i]),
 					Project: projKey,
 				}
 				err := datastore.Get(ctx, &cg)
@@ -233,7 +234,7 @@ func TestUpdateProject(t *testing.T) {
 					err := datastore.Delete(ctx,
 						&ConfigHashInfo{Hash: before.Hash, Project: projKey},
 						&ConfigGroup{
-							ID:      makeConfigGroupID(before.Hash, before.ConfigGroupNames[0], 0),
+							ID:      MakeConfigGroupID(before.Hash, before.ConfigGroupNames[0]),
 							Project: projKey,
 						},
 					)

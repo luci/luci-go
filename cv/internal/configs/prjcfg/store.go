@@ -150,10 +150,7 @@ type ConfigHashInfo struct {
 //
 // It is in the format of "hash/name" where
 //   - `hash` is the `Hash` field in the containing `ProjectConfig`.
-//   - `name` is the value of `ConfigGroup.Name` if specified. If `name is
-//      not provided (Name in ConfigGroup is optional as of Sep. 2020. See:
-//      crbug/1063508), use "index#i" as name instead where `i` is the index
-//      (0-based) of this ConfigGroup in the config.
+//   - `name` is the value of `ConfigGroup.Name`.
 type ConfigGroupID string
 
 // Returns Hash of the corresponding project config.
@@ -178,18 +175,7 @@ func MakeConfigGroupID(hash, name string) ConfigGroupID {
 	if name == "" {
 		panic(fmt.Errorf("name must be given"))
 	}
-	return makeConfigGroupID(hash, name, 0)
-}
-
-func makeConfigGroupID(hash, name string, index int) ConfigGroupID {
-	return ConfigGroupID(fmt.Sprintf("%s/%s", hash, makeConfigGroupName(name, index)))
-}
-
-func makeConfigGroupName(name string, index int) string {
-	if name == "" {
-		return fmt.Sprintf("index#%d", index)
-	}
-	return name
+	return ConfigGroupID(fmt.Sprintf("%s/%s", hash, name))
 }
 
 // ConfigGroup is an entity that represents a ConfigGroup defined in CV config.
@@ -244,7 +230,7 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 	entities := make([]*ConfigGroup, cgLen)
 	for i, cg := range cfg.GetConfigGroups() {
 		entities[i] = &ConfigGroup{
-			ID:      makeConfigGroupID(hash, cg.GetName(), i),
+			ID:      MakeConfigGroupID(hash, cg.GetName()),
 			Project: projKey,
 		}
 	}

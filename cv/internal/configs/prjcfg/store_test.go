@@ -103,14 +103,8 @@ func TestGetAllProjectIDs(t *testing.T) {
 func TestMakeConfigGroupID(t *testing.T) {
 	t.Parallel()
 	Convey("Make ConfigGroupID", t, func() {
-		Convey("Name specified", func() {
-			id := makeConfigGroupID("sha256:deadbeefdeadbeef", "foo", 123)
-			So(id, ShouldEqual, "sha256:deadbeefdeadbeef/foo")
-		})
-		Convey("Name missing", func() {
-			id := makeConfigGroupID("sha256:deadbeefdeadbeef", "", 123)
-			So(id, ShouldEqual, "sha256:deadbeefdeadbeef/index#123")
-		})
+		id := MakeConfigGroupID("sha256:deadbeefdeadbeef", "foo")
+		So(id, ShouldEqual, "sha256:deadbeefdeadbeef/foo")
 	})
 }
 
@@ -146,7 +140,7 @@ func TestPutConfigGroups(t *testing.T) {
 			err := putConfigGroups(ctx, testCfg, "chromium", hash)
 			So(err, ShouldBeNil)
 			stored := ConfigGroup{
-				ID:      makeConfigGroupID(hash, "group_foo", 0),
+				ID:      MakeConfigGroupID(hash, "group_foo"),
 				Project: datastore.MakeKey(ctx, projectConfigKind, "chromium"),
 			}
 			So(datastore.Get(ctx, &stored), ShouldBeNil)
