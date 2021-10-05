@@ -24,12 +24,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/bqlog"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -64,8 +67,26 @@ var (
 	gerritCLRegex      = regexp.MustCompile(`^patch/gerrit/([^/]+)/(\d+)/(\d+)$`)
 )
 
+func init() {
+	bqlog.RegisterSink(bqlog.Sink{
+		Prototype: &pb.PRPCRequestLog{},
+		Table: "prpc_request_log",
+	})
+}
+
 // commonPostlude converts an appstatus error to a gRPC error and logs it.
 func commonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	user := auth.CurrentIdentity(ctx)
+	if user.Kind() == identity.User && !strings.HasSuffix(string(user), ".gserviceaccount.com") {
+		user = ""
+	}
+	bqlog.Log(ctx, &pb.PRPCRequestLog{
+		// TODO(crbug/1250459): Fill in other request-related fields.
+		// TODO(crbug/1250459): Log individual batch operations.
+		Id: trace.SpanContext(ctx),
+		Method: methodName,
+		User: string(user),
+	})
 	return appstatus.GRPCifyAndLog(ctx, err)
 }
 

@@ -21,6 +21,7 @@ instance_class: F4
 entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
+  -bqlog-dataset sandbox
   -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
   -cloud-error-reporting
   -config-service-host luci-config.appspot.com
