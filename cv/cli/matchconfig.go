@@ -45,11 +45,13 @@ func cmdMatchConfig(p Params) *subcommands.Command {
 		UsageLine: "match-config [flags] CFG_PATH CL1 [CL2 ...] ",
 		ShortDesc: "Match given CL(s) against given config.",
 		LongDesc: text.Doc(`
-			With a given configuration file, determine the configuration that would apply to the the given CL(s).
+			With a given configuration file, validate it, and determine the configuration
+			that would apply to the the given CL(s).
 
 			CFG_PATH must be the the path to a generated "commit-queue.cfg" file.
-			CL1, CL2, etc. must be given as URLs to Gerrit CLs:
-			  e.g. "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3198992"
+			CL1, CL2, etc. must be given as URLs to Gerrit CLs e.g.:
+			  "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3198992"
+			  "https://crrev.com/c/3198992"
 		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &matchConfigRun{}
@@ -71,7 +73,7 @@ func (r *matchConfigRun) Run(a subcommands.Application, args []string, env subco
 		return r.done(badArgsTag.Apply(err))
 	}
 
-	config, err := r.loadAndValidateConfig(ctx, args[0])
+	config, err := loadAndValidateConfig(ctx, args[0])
 	if err != nil {
 		return r.done(err)
 	}
@@ -87,7 +89,7 @@ func (r *matchConfigRun) Run(a subcommands.Application, args []string, env subco
 
 	clURLs := args[1:]
 	results := make([]matchResult, len(clURLs))
-	err = parallel.WorkPool(0, func(work chan<- func() error) {
+	err = parallel.FanOutIn(func(work chan<- func() error) {
 		for i, clURL := range clURLs {
 			i, clURL := i, clURL
 			matcher := cfgmatcher.LoadMatcherFromConfigGroups(ctx, prjCfgGroups, nil)
@@ -181,7 +183,7 @@ func (r *matchConfigRun) validateArgs(ctx context.Context, args []string) error 
 	return nil
 }
 
-func (r *matchConfigRun) loadAndValidateConfig(ctx context.Context, cfgPath string) (*cfgpb.Config, error) {
+func loadAndValidateConfig(ctx context.Context, cfgPath string) (*cfgpb.Config, error) {
 	in, err := ioutil.ReadFile(cfgPath)
 	if err != nil {
 		return nil, err
