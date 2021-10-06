@@ -77,10 +77,12 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		})
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
+		msg, reason := usertext.OnRunSucceeded(rs.Mode)
 		meta := reviewInputMeta{
 			notify:    cancel.OWNER | cancel.VOTERS,
-			message:   usertext.OnRunSucceeded(rs.Mode),
+			message:   msg,
 			attention: cancel.NONE,
+			reason:    reason,
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
 			return nil, err
@@ -97,11 +99,13 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
+		_, reason := usertext.OnRunFailed(rs.Mode)
 		meta := reviewInputMeta{
 			notify:  cancel.OWNER | cancel.VOTERS,
 			message: vr.Payload.FinalMessage,
 			// Add the same set of group/people to the attention set.
 			attention: cancel.OWNER | cancel.VOTERS,
+			reason:    reason,
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
 			return nil, err

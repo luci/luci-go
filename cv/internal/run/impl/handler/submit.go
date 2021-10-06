@@ -462,6 +462,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 		notify: cancel.OWNER | cancel.VOTERS,
 		// Add the same set of group/people to the attention set.
 		attention: cancel.OWNER | cancel.VOTERS,
+		reason:    submissionFailureAttentionReason,
 	}
 	if err != nil {
 		return err
@@ -872,7 +873,8 @@ const (
 		// to see under what circumstance it may happen and revise this message
 		// so that CV doesn't get blamed for timeout it isn't responsible for.
 		"Please contact LUCI team https://bit.ly/3sMReYs."
-	unexpectedMsgFmt = "CV failed to submit your CL because of unexpected error from Gerrit: %s"
+	unexpectedMsgFmt                 = "CV failed to submit your CL because of unexpected error from Gerrit: %s"
+	submissionFailureAttentionReason = "Submission failed."
 )
 
 // classifyGerritErr returns message to be posted on the CL for the given

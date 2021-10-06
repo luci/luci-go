@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-	"go.chromium.org/luci/cv/internal/usertext"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -233,6 +232,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 		})
 
 		Convey("Run fails verification", func() {
+			rs.Mode = run.FullRun
 			createCL(gf.CI(gChange,
 				gf.Owner("user-1"),
 				gf.CQ(+2, now.Add(-1*time.Minute), gf.U("user-2")),
@@ -286,8 +286,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 					})
 					So(reqs[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
 						// The attention set includes the owner and voter(s).
-						{User: "1", Reason: usertext.StoppedRun},
-						{User: "2", Reason: usertext.StoppedRun},
+						{User: "1", Reason: "CQ full run failed."},
+						{User: "2", Reason: "CQ full run failed."},
 					})
 				})
 			})
