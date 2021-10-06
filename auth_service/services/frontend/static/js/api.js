@@ -147,6 +147,11 @@ var api = (function() {
     return call('auth.service.Groups', 'GetGroup', {'name': request});
   };
 
+  // Get all allowlists.
+  exports.ipAllowlists = function() {
+    return call('auth.service.Allowlists', 'ListAllowlists');
+  };
+
   //// XSRF token utilities.
 
 
