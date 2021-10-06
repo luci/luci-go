@@ -110,6 +110,9 @@ func main() {
 		srv.Routes.GET("/auth/groups", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Context, ctx.Writer, "pages/groups.html", nil)
 		})
+		srv.Routes.GET("/auth/ip_allowlists", mw, func(ctx *router.Context) {
+			templates.MustRender(ctx.Context, ctx.Writer, "pages/ip_allowlists.html", nil)
+		})
 		return nil
 	})
 }
