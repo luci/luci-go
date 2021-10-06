@@ -121,7 +121,7 @@ func TestUploadToCAS(t *testing.T) {
 		e, cleanup := fakes.NewTestEnv(t)
 		defer cleanup()
 		run := baseCommandRun{
-			clientFactory: func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
+			clientFactory: func(ctx context.Context, addr string, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
 				conn, err := e.Server.NewClientConn(ctx)
 				if err != nil {
 					return nil, err

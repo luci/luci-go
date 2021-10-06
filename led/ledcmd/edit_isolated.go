@@ -166,7 +166,7 @@ func newCASClient(ctx context.Context, authOpts auth.Options, jd *job.Definition
 			return nil, err
 		}
 	}
-	return casclient.NewLegacy(ctx, casInstance, authOpts, false)
+	return casclient.NewLegacy(ctx, casclient.AddrProd, casInstance, authOpts, false)
 }
 
 func downloadFromCas(ctx context.Context, casRef *apipb.CASReference, casClient *client.Client, tdir string) error {

@@ -160,7 +160,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 			logging.Errorf(ctx, "failed to cleanup temp dir %q: %s", tdir, err)
 		}
 	}()
-	casClient, err := casclient.NewLegacy(ctx, jd.CasUserPayload.CasInstance, authOpts, false)
+	casClient, err := casclient.NewLegacy(ctx, casclient.AddrProd, jd.CasUserPayload.CasInstance, authOpts, false)
 	if err != nil {
 		return err
 	}

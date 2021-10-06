@@ -346,7 +346,7 @@ type AuthFlags interface {
 	NewHTTPClient(ctx context.Context) (*http.Client, error)
 
 	// NewRBEClient creates an authroised RBE Client.
-	NewRBEClient(ctx context.Context, instance string) (*rbeclient.Client, error)
+	NewRBEClient(ctx context.Context, addr string, instance string) (*rbeclient.Client, error)
 }
 
 type commonFlags struct {
