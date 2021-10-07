@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go install go.chromium.org/luci/tools/cmd/assets
-//go:generate assets -ext *.star
+// +build go1.16
 
-package starlark
+package interpreter
+
+import (
+	"errors"
+	"io/fs"
+
+	"go.starlark.net/starlark"
+)
+
+// FSLoader returns a loader that loads files from a fs.FS implementation.
+func FSLoader(fsys fs.FS) Loader {
+	return func(path string) (_ starlark.StringDict, src string, err error) {
+		switch body, err := fs.ReadFile(fsys, path); {
+		case errors.Is(err, fs.ErrNotExist):
+			return nil, "", ErrNoModule
+		case err != nil:
+			return nil, "", err
+		default:
+			return nil, string(body), nil
+		}
+	}
+}

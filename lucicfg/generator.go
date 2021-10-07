@@ -24,7 +24,7 @@ package lucicfg
 import (
 	"context"
 	"fmt"
-	"strings"
+	"io/fs"
 
 	"go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
-	generated "go.chromium.org/luci/lucicfg/starlark"
+	embedded "go.chromium.org/luci/lucicfg/starlark"
 )
 
 // Inputs define all inputs for the config generator.
@@ -177,29 +177,17 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 
 // embeddedPackages makes a map of loaders for embedded Starlark packages.
 //
-// Each directory directly under go.chromium.org/luci/lucicfg/starlark/...
+// A directory directly under go.chromium.org/luci/lucicfg/starlark/...
 // represents a corresponding starlark package. E.g. files in 'stdlib' directory
 // are loadable via load("@stdlib//<path>", ...).
 func embeddedPackages() map[string]interpreter.Loader {
-	perRoot := map[string]map[string]string{}
-
-	for path, data := range generated.Assets() {
-		chunks := strings.SplitN(path, "/", 2)
-		if len(chunks) != 2 {
-			panic(fmt.Sprintf("forbidden *.star outside the package dir: %s", path))
+	out := make(map[string]interpreter.Loader, 1)
+	for _, pkg := range []string{"stdlib"} {
+		sub, err := fs.Sub(embedded.Content, pkg)
+		if err != nil {
+			panic(fmt.Sprintf("%q is not embedded", pkg))
 		}
-		root, rel := chunks[0], chunks[1]
-		m := perRoot[root]
-		if m == nil {
-			m = make(map[string]string, 1)
-			perRoot[root] = m
-		}
-		m[rel] = data
+		out[pkg] = interpreter.FSLoader(sub)
 	}
-
-	loaders := make(map[string]interpreter.Loader, len(perRoot))
-	for pkg, files := range perRoot {
-		loaders[pkg] = interpreter.MemoryLoader(files)
-	}
-	return loaders
+	return out
 }

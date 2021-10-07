@@ -54,14 +54,12 @@ binary via starlark/assets.gen.go file generated from the contents of
 2. In the `lucicfg` directory (where this README.md file is) run `./fmt-lint.sh`
    to auto-format and lint new code. Fix all linter warnings.
 3. In the same directory run `go generate ./...` to regenerate
-   starlark/assets.gen.go, examples/.../generated and [doc/README.md].
-4. If examples generation failed, you may need to run `go generate ./...`
-   again: it might have used a stale assets.gen.go the first time.
-5. Run `go test ./...` to verify existing tests pass. If your change modifies
+   `examples/.../generated` and [doc/README.md].
+4. Run `go test ./...` to verify existing tests pass. If your change modifies
    the format of emitted files you need to update the expected output in test
    case files. It will most likely happen for [testdata/full_example.star].
    Update `Expect configs:` section there.
-6. If your change warrants a new test, add a file somewhere under [testdata/].
+5. If your change warrants a new test, add a file somewhere under [testdata/].
    See existing files there for examples. There are two kinds of tests:
    * "Expectation style" tests. They have `Expect configs:` or
      `Expect errors like:` sections at the bottom. The test runner will execute
@@ -69,7 +67,7 @@ binary via starlark/assets.gen.go file generated from the contents of
      expectations.
    * More traditional unit tests that use `assert.eq(...)` etc. See
      [testdata/misc/version.star] for an example.
-7. Once you are done with the change, evaluate whether you need to bump lucicfg
+6. Once you are done with the change, evaluate whether you need to bump lucicfg
    version. See the section below.
 
 [doc/README.md]: ./doc/README.md
