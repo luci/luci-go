@@ -119,7 +119,10 @@ func (notify Whom) toGerritAttentionSet(owner int64, reviewers []int64, voters [
 	if len(accs) > 0 {
 		ret := make([]*gerritpb.AttentionSetInput, len(accs))
 		for i, acc := range accs.ToSortedSlice() {
-			ret[i] = &gerritpb.AttentionSetInput{User: acc, Reason: reason}
+			ret[i] = &gerritpb.AttentionSetInput{
+				User:   acc,
+				Reason: reason,
+			}
 		}
 		return ret
 	}
@@ -496,6 +499,7 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 	}
 
 	reviewers, voters := sortedReviewerAccountIDs(ci), c.sortedVoterAccountIDs()
+	reason = fmt.Sprintf("ps#%d: %s", ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), reason)
 	n, nd := notify.toGerritNotify(voters)
 	_, err = c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
 		Number:            c.Number,

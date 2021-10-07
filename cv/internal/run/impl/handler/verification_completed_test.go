@@ -286,8 +286,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 					})
 					So(reqs[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
 						// The attention set includes the owner and voter(s).
-						{User: "1", Reason: "CQ full run failed."},
-						{User: "2", Reason: "CQ full run failed."},
+						{User: "1", Reason: "ps#1: CQ full run failed."},
+						{User: "2", Reason: "ps#1: CQ full run failed."},
 					})
 				})
 			})

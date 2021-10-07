@@ -449,7 +449,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					expected,
 					&gerritpb.AttentionSetInput{
 						User:   strconv.FormatInt(a, 10),
-						Reason: submissionFailureAttentionReason,
+						Reason: "ps#2: " + submissionFailureAttentionReason,
 					},
 				)
 			}

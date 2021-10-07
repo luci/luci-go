@@ -215,7 +215,7 @@ func TestCancel(t *testing.T) {
 					},
 				})
 			So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
-				{User: strconv.FormatInt(user.GetAccountId(), 10), Reason: usertext.StoppedRun},
+				{User: strconv.FormatInt(user.GetAccountId(), 10), Reason: "ps#2: " + usertext.StoppedRun},
 			})
 		})
 
@@ -256,7 +256,7 @@ func TestCancel(t *testing.T) {
 						},
 					})
 				So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
-					{User: strconv.FormatInt(user.GetAccountId(), 10), Reason: usertext.StoppedRun},
+					{User: strconv.FormatInt(user.GetAccountId(), 10), Reason: "ps#2: " + usertext.StoppedRun},
 				})
 			})
 
