@@ -39,17 +39,17 @@ d: |-
 
 def test_b64_encoding():
     # TODO(vadimsh): Use b"..." for binary data.
-    assert.eq(strutil.b64_encode("\u0001"), "AQ==")
-    assert.eq(strutil.b64_decode("AQ=="), "\u0001")
+    assert.eq(strutil.b64_encode("\x01"), "AQ==")
+    assert.eq(strutil.b64_decode("AQ=="), "\x01")
     assert.fails(lambda: strutil.b64_decode("/w="), "illegal base64 data")
     assert.fails(lambda: strutil.b64_decode("_w=="), "illegal base64 data")
 
 def test_hex_encoding():
     assert.eq(strutil.hex_encode(""), "")
     assert.eq(strutil.hex_decode(""), "")
-    assert.eq(strutil.hex_encode("abcZ\u0000\u0001\u00ff"), "6162635a0001c3bf")
-    assert.eq(strutil.hex_decode("6162635a0001c3bf"), "abcZ\u0000\u0001\u00ff")
-    assert.eq(strutil.hex_decode("6162635A0001C3BF"), "abcZ\u0000\u0001\u00ff")
+    assert.eq(strutil.hex_encode("abcZ\x00\x01\x1f"), "6162635a00011f")
+    assert.eq(strutil.hex_decode("6162635a00011f"), "abcZ\x00\x01\x1f")
+    assert.eq(strutil.hex_decode("6162635A00011F"), "abcZ\x00\x01\x1f")
     assert.fails(lambda: strutil.hex_decode("huh"), "invalid byte")
 
 test_expand_int_set()

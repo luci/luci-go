@@ -30,7 +30,7 @@ luci.cq_group(
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
-    ]
+    ],
 )
 
 # Expect errors like:

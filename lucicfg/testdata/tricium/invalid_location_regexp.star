@@ -51,4 +51,3 @@ def test_with_gerrit_url_and_without_gerrit_url_together():
 test_not_supported_location_regxp_fomat()
 test_watching_extensions_but_from_different_set_of_gerrit_repos()
 test_with_gerrit_url_and_without_gerrit_url_together()
-

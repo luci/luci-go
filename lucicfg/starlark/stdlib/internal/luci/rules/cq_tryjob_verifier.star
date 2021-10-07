@@ -355,18 +355,19 @@ def _cq_tryjob_verifier(
             for r in location_regexp:
                 groups = re.submatches(re_for_location_re, r)
                 if not groups:
-                    fail(r'"location_regexp" of an analyzer MUST either be in '+
-                    r'the format of ".+\.extension" (e.g. ".+\.py) '+
-                    r'or "https://host-review.googlesource.com/project/[+]/.+\.extension" '+
-                    r'(e.g. "https://chromium-review.googlesource.com/infra/infra/[+]/.+\.py"). Extension is optional.')
-                gerrit_url, ext = groups[1].rstrip('[+]'), groups[4].lstrip(r'\.')
+                    fail(r'"location_regexp" of an analyzer MUST either be in ' +
+                         r'the format of ".+\.extension" (e.g. ".+\.py) ' +
+                         r'or "https://host-review.googlesource.com/project/[+]/.+\.extension" ' +
+                         r'(e.g. "https://chromium-review.googlesource.com/infra/infra/[+]/.+\.py"). Extension is optional.')
+                gerrit_url, ext = groups[1].rstrip("[+]"), groups[4].lstrip(r"\.")
                 if ext not in ext_to_gerrit_urls:
                     ext_to_gerrit_urls[ext] = []
                 if ((gerrit_url and "" in all_gerrit_urls) or (
-                    gerrit_url == "" and any(all_gerrit_urls))):
-                    fail(r'"location_regexp" of an analyzer MUST NOT mix '+
-                    r'two different formats (i.e. ".+\.extension" '+
-                    r'and "https://host-review.googlesource.com/project/[+]/.+\.extension"). Got %s.' % location_regexp)
+                    gerrit_url == "" and any(all_gerrit_urls)
+                )):
+                    fail(r'"location_regexp" of an analyzer MUST NOT mix ' +
+                         r'two different formats (i.e. ".+\.extension" ' +
+                         r'and "https://host-review.googlesource.com/project/[+]/.+\.extension"). Got %s.' % location_regexp)
                 ext_to_gerrit_urls[ext].append(gerrit_url)
                 all_gerrit_urls.append(gerrit_url)
 
@@ -390,10 +391,14 @@ def _cq_tryjob_verifier(
             ref_gerrit_urls = sorted(ref_gerrit_urls)
             for ext, gerrit_urls in ext_to_gerrit_urls.items():
                 if sorted(gerrit_urls) != ref_gerrit_urls:
-                    fail('each extension specified in "location_regexp" of an '+
-                    'analyzer MUST have the same set of gerrit URLs; got '+
-                    '%s for extension %s, but %s for extension %s.' % (
-                        sorted(gerrit_urls), ext, ref_gerrit_urls, ref_ext))
+                    fail('each extension specified in "location_regexp" of an ' +
+                         "analyzer MUST have the same set of gerrit URLs; got " +
+                         "%s for extension %s, but %s for extension %s." % (
+                             sorted(gerrit_urls),
+                             ext,
+                             ref_gerrit_urls,
+                             ref_ext,
+                         ))
         if location_regexp_exclude:
             fail('"analyzer currently can not be used together with  "location_regexp_exclude"')
 

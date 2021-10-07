@@ -1352,10 +1352,9 @@ def _parse_location_regexp_from_tricium(location_regexps):
         extension_re = r"\\\.[a-z]+"
         re_for_location_re = r"^(%s)?\.\+(%s)?$" % (gerrit_url_re, extension_re)
         groups = re.submatches(re_for_location_re, r)
-        host, proj, ext = groups[2], groups[3], groups[4].lstrip(r'\.')
+        host, proj, ext = groups[2], groups[3], groups[4].lstrip(r"\.")
         if host and proj:
             host_and_projs.append((host, proj))
         if ext:
             exts.append(ext)
     return sorted(set(host_and_projs)), sorted(set(exts))
-

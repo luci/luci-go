@@ -33,7 +33,7 @@ luci.cq_group(
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
-    ]
+    ],
 )
 
 # Expect configs:
@@ -156,4 +156,3 @@ luci.cq_group(
 # }
 # service_account: "tricium-prod@appspot.gserviceaccount.com"
 # ===
-
