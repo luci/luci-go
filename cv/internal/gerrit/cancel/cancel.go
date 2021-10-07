@@ -224,7 +224,7 @@ func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
 	if in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted {
 		return errors.New("failed to cancel trigger because CV lost access to this CL", ErrPreconditionFailedTag)
 	}
-	if in.AttentionReason == "" {
+	if in.AddToAttentionSet != NONE && in.AttentionReason == "" {
 		logging.Warningf(ctx, "FIXME Cancel was given empty in AttentionReason.")
 		in.AttentionReason = usertext.StoppedRun
 	}
