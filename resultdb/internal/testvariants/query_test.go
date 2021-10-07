@@ -117,6 +117,12 @@ func TestQueryTestVariants(t *testing.T) {
 				Line:     54,
 			}}
 		tmdBytes, _ := proto.Marshal(tmd)
+
+		failureReason := &pb.FailureReason{
+			PrimaryErrorMessage: "primary error msg",
+		}
+		failureReasonBytes, _ := proto.Marshal(failureReason)
+
 		testutil.MustApply(ctx,
 			spanutil.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invocations.ID("inv1"),
@@ -130,6 +136,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"RunDurationUsec": pbutil.MustDuration(duration).Microseconds(),
 				"StartTime":       startTime,
 				"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
+				"FailureReason":   spanutil.Compressed(failureReasonBytes),
 				"Tags":            pbutil.StringPairsToStrings(strPairs...),
 				"TestMetadata":    spanutil.Compressed(tmdBytes),
 			}),
@@ -166,7 +173,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"40/T1/e3b0c44298fc1c14",
 			})
 
-			So(tvs[0].Results, ShouldResemble, []*pb.TestResultBundle{
+			So(tvs[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
 				&pb.TestResultBundle{
 					Result: &pb.TestResult{
 						Name:        "invocations/inv1/tests/T4/results/0",
@@ -176,7 +183,10 @@ func TestQueryTestVariants(t *testing.T) {
 						StartTime:   startTime,
 						Duration:    duration,
 						SummaryHtml: "SummaryHtml",
-						Tags:        strPairs,
+						FailureReason: &pb.FailureReason{
+							PrimaryErrorMessage: "primary error msg",
+						},
+						Tags: strPairs,
 					},
 				},
 			})

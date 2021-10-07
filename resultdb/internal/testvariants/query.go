@@ -57,6 +57,7 @@ type tvResult struct {
 	StartTime       spanner.NullTime
 	RunDurationUsec spanner.NullInt64
 	SummaryHTML     []byte
+	FailureReason   []byte
 	Tags            []string
 }
 
@@ -69,6 +70,19 @@ func (q *Query) decompressText(src []byte) (string, error) {
 		return "", err
 	}
 	return string(q.decompressBuf), nil
+}
+
+// decompressProto decompresses and unmarshals src to dest. It's a noop if src
+// is empty.
+func (q *Query) decompressProto(src []byte, dest proto.Message) error {
+	if len(src) == 0 {
+		return nil
+	}
+	var err error
+	if q.decompressBuf, err = spanutil.Decompress(src, q.decompressBuf); err != nil {
+		return err
+	}
+	return proto.Unmarshal(q.decompressBuf, dest)
 }
 
 func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, error) {
@@ -86,6 +100,16 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	var err error
 	if tr.SummaryHtml, err = q.decompressText(r.SummaryHTML); err != nil {
 		return nil, err
+	}
+
+	if len(r.FailureReason) != 0 {
+		// Don't initialize FailureReason when r.FailureReason is empty so
+		// it won't produce {"failureReason": {}} when serialized to JSON.
+		tr.FailureReason = &pb.FailureReason{}
+
+		if err := q.decompressProto(r.FailureReason, tr.FailureReason); err != nil {
+			return nil, err
+		}
 	}
 
 	// Populate Tags.
@@ -393,6 +417,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 				StartTime,
 				RunDurationUsec,
 				SummaryHTML,
+				FailureReason,
 				Tags
 			)) results,
 		FROM unexpectedTestVariants vur
