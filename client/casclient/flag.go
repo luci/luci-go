@@ -23,13 +23,11 @@ import (
 
 // Flags contains values parsed from command line arguments for RBE-CAS.
 type Flags struct {
-	Addr     string
 	Instance string
 }
 
 // Init initializes flag.FlagSet.
 func (c *Flags) Init(f *flag.FlagSet) {
-	f.StringVar(&c.Addr, "cas-addr", AddrProd, "CAS address.")
 	f.StringVar(&c.Instance, "cas-instance", "", "CAS instance (GCP). Format is either a project ID, or \"projects/<project_id>/instances/<instance_id>\"")
 }
 

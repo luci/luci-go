@@ -111,6 +111,6 @@ func (af *testAuthFlags) NewHTTPClient(_ context.Context) (*http.Client, error) 
 	return nil, nil
 }
 
-func (af *testAuthFlags) NewRBEClient(_ context.Context, _ string, _ string) (*rbeclient.Client, error) {
+func (af *testAuthFlags) NewRBEClient(_ context.Context, _ string) (*rbeclient.Client, error) {
 	return nil, nil
 }

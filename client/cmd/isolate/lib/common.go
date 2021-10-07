@@ -59,7 +59,7 @@ type baseCommandRun struct {
 
 	// Overriden in tests.
 
-	clientFactory func(ctx context.Context, addr string, instance string, opts auth.Options, readOnly bool) (*cas.Client, error)
+	clientFactory func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error)
 }
 
 var _ cli.ContextModificator = (*baseCommandRun)(nil)
@@ -96,12 +96,12 @@ func (c *baseCommandRun) ModifyContext(ctx context.Context) context.Context {
 	return c.logConfig.Set(ctx)
 }
 
-func (c *baseCommandRun) newClient(ctx context.Context, addr string, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
+func (c *baseCommandRun) newClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
 	factory := c.clientFactory
 	if factory == nil {
 		factory = casclient.New
 	}
-	return factory(ctx, addr, instance, opts, readOnly)
+	return factory(ctx, instance, opts, readOnly)
 }
 
 type commonServerFlags struct {
@@ -303,7 +303,7 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 }
 
 func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Options, fl *casclient.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
-	cl, err := r.newClient(ctx, fl.Addr, fl.Instance, authOpts, false)
+	cl, err := r.newClient(ctx, fl.Instance, authOpts, false)
 	if err != nil {
 		return nil, err
 	}

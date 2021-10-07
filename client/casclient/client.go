@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package casclient provides remote-apis-sdks client with luci integration.
+// Package cas provides remote-apis-sdks client with luci integration.
 package casclient
 
 import (
 	"context"
 	"fmt"
-	"net"
 	"runtime"
 	"strings"
 
@@ -33,40 +32,18 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-// AddrProd is the PROD CAS service address.
-const AddrProd = "remotebuildexecution.googleapis.com:443"
-
 // New returns luci auth configured Client for RBE-CAS.
-func New(ctx context.Context, addr string, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
-	var dialParams client.DialParams
-	useLocal, err := isLocalAddr(addr)
+func New(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*cas.Client, error) {
+	creds, err := perRPCCreds(ctx, instance, opts, readOnly)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid addr").Err()
-	}
-	if useLocal {
-		// Connect to local fake CAS server.
-		// See also go.chromium.org/luci/tools/cmd/fakecas
-		if instance != "" {
-			return nil, errors.Reason("do not specify instance with local address").Err()
-		}
-		instance = "instance"
-		dialParams = client.DialParams{
-			Service:    addr,
-			NoSecurity: true,
-		}
-	} else {
-		creds, err := perRPCCreds(ctx, instance, opts, readOnly)
-		if err != nil {
-			return nil, err
-		}
-
-		dialParams = client.DialParams{
-			Service:            addr,
-			TransportCredsOnly: true,
-			DialOpts:           []grpc.DialOption{grpc.WithPerRPCCredentials(creds)},
-		}
+		return nil, err
 	}
 
+	dialParams := client.DialParams{
+		Service:            "remotebuildexecution.googleapis.com:443",
+		TransportCredsOnly: true,
+		DialOpts:           []grpc.DialOption{grpc.WithPerRPCCredentials(creds)},
+	}
 	conn, err := client.Dial(ctx, dialParams.Service, dialParams)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to dial RBE").Err()
@@ -119,28 +96,7 @@ func perRPCCreds(ctx context.Context, instance string, opts auth.Options, readOn
 // NewLegacy returns luci auth configured legacy Client for RBE.
 // In general, NewClient is preferred.
 // TODO(crbug.com/1225524): remove this.
-func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
-	useLocal, err := isLocalAddr(addr)
-	if err != nil {
-		return nil, errors.Annotate(err, "invalid addr").Err()
-	}
-	if useLocal {
-		// Connect to local fake CAS server.
-		// See also go.chromium.org/luci/tools/cmd/fakecas
-		if instance != "" {
-			return nil, errors.Reason("do not specify instance with local address").Err()
-		}
-		dialParams := client.DialParams{
-			Service:    addr,
-			NoSecurity: true,
-		}
-		cl, err := client.NewClient(ctx, "instance", dialParams)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to create client").Err()
-		}
-		return cl, nil
-	}
-
+func NewLegacy(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
 	creds, err := perRPCCreds(ctx, instance, opts, readOnly)
 	if err != nil {
 		return nil, err
@@ -200,15 +156,4 @@ func ContextWithMetadata(ctx context.Context, toolName string) (context.Context,
 	logging.Infof(ctx, "context metadata: %#+v", *m)
 
 	return ctx, nil
-}
-
-func isLocalAddr(addr string) (bool, error) {
-	tcpaddr, err := net.ResolveTCPAddr("tcp", addr)
-	if err != nil {
-		return false, err
-	}
-	if tcpaddr.IP == nil {
-		return true, nil
-	}
-	return tcpaddr.IP.IsLoopback(), nil
 }

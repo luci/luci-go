@@ -21,7 +21,6 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -124,7 +123,7 @@ func NewClient(ctx context.Context, instance string) (*client.Client, error) {
 
 	c, err := client.NewClient(ctx, instance,
 		client.DialParams{
-			Service:            casclient.AddrProd,
+			Service:            "remotebuildexecution.googleapis.com:443",
 			TransportCredsOnly: true,
 		},
 		&client.PerRPCCreds{Creds: creds},
