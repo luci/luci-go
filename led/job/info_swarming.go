@@ -39,16 +39,7 @@ func (s swInfo) TaskName() string {
 	return s.GetTask().GetName()
 }
 
-func (s swInfo) CurrentIsolated() (*isolated, error) {
-	isolated := &isolated{}
-	var err error
-	if isolated.CASReference, err = s.currentCasInfo(); err != nil {
-		return nil, err
-	}
-	return isolated, nil
-}
-
-func (s swInfo) currentCasInfo() (*swarmingpb.CASReference, error) {
+func (s swInfo) CurrentIsolated() (*swarmingpb.CASReference, error) {
 	casOptions := map[string]*swarmingpb.CASReference{}
 	if p := s.casUserPayload; p.GetDigest().GetHash() != "" {
 		casOptions[p.Digest.Hash] = p

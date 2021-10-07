@@ -60,7 +60,7 @@ func TestClearCurrentIsolated(t *testing.T) {
 
 				iso, err := jd.Info().CurrentIsolated()
 				So(err, ShouldBeNil)
-				So(iso, ShouldResemble, &isolated{})
+				So(iso, ShouldBeNil)
 			},
 		},
 	})

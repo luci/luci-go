@@ -120,7 +120,7 @@ func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition
 	}
 	defer casClient.Close()
 
-	if err = downloadFromCas(ctx, current.CASReference, casClient, tdir); err != nil {
+	if err = downloadFromCas(ctx, current, casClient, tdir); err != nil {
 		return err
 	}
 

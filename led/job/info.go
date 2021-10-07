@@ -36,7 +36,7 @@ type Info interface {
 	//
 	// Returns error if this is a Swarming job where the slices have differing
 	// isolateds.
-	CurrentIsolated() (*isolated, error)
+	CurrentIsolated() (*swarmingpb.CASReference, error)
 
 	// Dimensions returns a single map of all dimensions in the job Definition
 	// and what their latest expiration is.
@@ -136,8 +136,4 @@ func (jd *Definition) HighLevelInfo() HighLevelInfo {
 // returns the corresponding cas instance from job's Swarming hostname.
 func (jd *Definition) CasInstance() (string, error) {
 	return ToCasInstance(jd.Info().SwarmingHostname())
-}
-
-type isolated struct {
-	*swarmingpb.CASReference
 }

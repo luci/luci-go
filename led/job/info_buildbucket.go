@@ -38,12 +38,11 @@ func (b bbInfo) TaskName() string {
 	return b.GetName()
 }
 
-func (b bbInfo) CurrentIsolated() (*isolated, error) {
-	isolated := &isolated{}
+func (b bbInfo) CurrentIsolated() (*swarmingpb.CASReference, error) {
 	if b.casUserPayload.GetDigest().GetHash() != "" {
-		isolated.CASReference = proto.Clone(b.casUserPayload).(*swarmingpb.CASReference)
+		return proto.Clone(b.casUserPayload).(*swarmingpb.CASReference), nil
 	}
-	return isolated, nil
+	return nil, nil
 }
 
 func (b bbInfo) Dimensions() (ExpiringDimensions, error) {
