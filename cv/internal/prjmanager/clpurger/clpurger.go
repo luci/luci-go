@@ -120,15 +120,17 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
 
 	err = cancel.Cancel(ctx, p.gFactory, cancel.Input{
-		LUCIProject:      task.GetLuciProject(),
-		CL:               cl,
-		LeaseDuration:    time.Minute,
-		Notify:           cancel.VOTERS | cancel.OWNER,
-		Requester:        "prjmanager/clpurger",
-		Trigger:          task.GetTrigger(),
-		Message:          msg,
-		RunCLExternalIDs: nil, // there is no Run.
-		ConfigGroups:     configGroups,
+		LUCIProject:       task.GetLuciProject(),
+		CL:                cl,
+		LeaseDuration:     time.Minute,
+		Notify:            cancel.VOTERS | cancel.OWNER,
+		AddToAttentionSet: cancel.VOTERS | cancel.OWNER,
+		AttentionReason:   "CV can't start a new Run as requested",
+		Requester:         "prjmanager/clpurger",
+		Trigger:           task.GetTrigger(),
+		Message:           msg,
+		RunCLExternalIDs:  nil, // there is no Run.
+		ConfigGroups:      configGroups,
 	})
 	switch {
 	case err == nil:
