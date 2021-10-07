@@ -81,7 +81,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		meta := reviewInputMeta{
 			notify:    cancel.OWNER | cancel.VOTERS,
 			message:   msg,
-			attention: cancel.NONE,
+			attention: cancel.VOTERS,
 			reason:    reason,
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
