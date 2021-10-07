@@ -14,11 +14,12 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
+import { deepEqual } from 'fast-equals';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable, reaction } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 import '../dot_spinner';
 import './tvt_column_header';
@@ -44,6 +45,10 @@ export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref @consumeAppState() appState!: AppState;
   @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
   @observable.ref @consumeInvocationState() invocationState!: InvocationState;
+
+  @computed private get hasCustomGroupingKey() {
+    return !deepEqual(this.invocationState.groupingKeys, ['status']);
+  }
 
   toggleAllVariants(expand: boolean) {
     this.shadowRoot!.querySelectorAll<TestVariantEntryElement>('milo-test-variant-entry').forEach(
@@ -82,7 +87,11 @@ export class TestVariantsTableElement extends MiloBaseElement {
           group
         )
       )}
-      ${this.renderVariantGroup([['status', TestVariantStatus.EXPECTED]], testLoader?.expectedTestVariants || [])}
+      ${this.renderVariantGroup(
+        [['status', TestVariantStatus.EXPECTED]],
+        testLoader?.expectedTestVariants || [],
+        this.hasCustomGroupingKey ? html`<b>note: custom grouping doesn't apply to expected tests</b>` : ''
+      )}
       <div id="variant-list-tail">
         ${testLoader?.testVariantCount === testLoader?.unfilteredTestVariantCount
           ? html`
@@ -106,7 +115,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   @observable private collapsedVariantGroups = new Set<string>();
-  private renderVariantGroup(groupDef: [string, unknown][], variants: TestVariant[]) {
+  private renderVariantGroup(groupDef: [string, unknown][], variants: TestVariant[], note: unknown = null) {
     const groupId = JSON.stringify(groupDef);
     const expanded = !this.collapsedVariantGroups.has(groupId);
     return html`
@@ -134,6 +143,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
                 ><span class=${k === 'status' ? VARIANT_STATUS_CLASS_MAP[v as TestVariantStatus] : ''}>${v}</span></span
               >`
           )}
+          ${note}
         </div>
       </div>
       ${repeat(
