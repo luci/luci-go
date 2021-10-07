@@ -162,6 +162,13 @@ func Run(srv *server.Server, templatePath string) {
 	r.GET("/configs.js", baseMW, handleError(configsJSHandler))
 
 	r.GET("/auth-state", baseAuthMW, handleError(getAuthState))
+
+	// Blackhole PubSubs from the Auth service. They are not needed when using
+	// luci/server. Keeping the route simplifies the migration (the pubsub
+	// subscription can be deleted whenever convenient).
+	srv.Routes.POST("/auth/pubsub/authdb:push", router.MiddlewareChain{}, func(c *router.Context) {
+		// nothing
+	})
 }
 
 // handleError is a wrapper for a handler so that the handler can return an error
