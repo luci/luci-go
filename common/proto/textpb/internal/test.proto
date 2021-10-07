@@ -1,0 +1,23 @@
+// Copyright 2019 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package testpb.internal;
+
+option go_package = "go.chromium.org/luci/common/proto/textpb/internal";
+
+import "go.chromium.org/luci/common/proto/options.proto";
+
+message Leaf {
+  string str = 1;
+  string json = 2 [(luci.text_pb_format) = JSON];
+  repeated string json_rep = 3 [(luci.text_pb_format) = JSON];
+}
+
+message Container {
+  Leaf leaf = 1;
+  repeated Leaf leaf_rep = 2;
+  map<string, Leaf> mapping = 3;
+}
