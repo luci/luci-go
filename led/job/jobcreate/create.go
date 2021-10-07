@@ -153,27 +153,6 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 	return ret, err
 }
 
-func populateIsoPayload(iso *swarmingpb.CASTree, ir *swarming.SwarmingRpcsFilesRef) error {
-	if iso.Digest == "" {
-		iso.Digest = ir.Isolated
-	} else if iso.Digest != ir.Isolated {
-		return errors.Reason("isolate hash inconsistency: %q != %q", iso.Digest, ir.Isolated).Err()
-	}
-
-	if iso.Server == "" {
-		iso.Server = ir.Isolatedserver
-	} else if iso.Server != ir.Isolatedserver {
-		return errors.Reason("isolate server inconsistency: %q != %q", iso.Server, ir.Isolatedserver).Err()
-	}
-
-	if iso.Namespace == "" {
-		iso.Namespace = ir.Namespace
-	} else if iso.Namespace != ir.Namespace {
-		return errors.Reason("isolate namespace inconsistency: %q != %q", iso.Namespace, ir.Namespace).Err()
-	}
-	return nil
-}
-
 func populateCasPayload(cas *swarmingpb.CASReference, cir *swarming.SwarmingRpcsCASReference) error {
 	if cas.CasInstance == "" {
 		cas.CasInstance = cir.CasInstance

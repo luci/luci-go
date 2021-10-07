@@ -76,14 +76,6 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 func TestCreateSwarmRaw(t *testing.T) {
 	t.Parallel()
 
-	Convey(`consume non-buildbucket swarming task`, t, func() {
-		jd := readTestFixture("raw_iso")
-
-		So(jd.GetSwarming(), ShouldNotBeNil)
-		So(jd.Info().SwarmingHostname(), ShouldEqual, "swarming.example.com")
-		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
-	})
-
 	Convey(`consume non-buildbucket swarming task with RBE-CAS prop`, t, func() {
 		jd := readTestFixture("raw_cas")
 
@@ -93,7 +85,7 @@ func TestCreateSwarmRaw(t *testing.T) {
 	})
 
 	Convey(`consume non-buildbucket swarming task with resultdb enabling`, t, func() {
-		jd := readTestFixture("raw_iso")
+		jd := readTestFixture("raw_cas")
 		Convey(`realm unset`, func() {
 			So(jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), ShouldErrLike,
 				"ResultDB cannot be enabled on raw swarming tasks if the realm field is unset")
@@ -109,14 +101,6 @@ func TestCreateSwarmRaw(t *testing.T) {
 
 func TestCreateBBagent(t *testing.T) {
 	t.Parallel()
-
-	Convey(`consume bbagent buildbucket swarming task with isolate prop`, t, func() {
-		jd := readTestFixture("bbagent_iso")
-
-		So(jd.GetBuildbucket(), ShouldNotBeNil)
-		So(jd.Info().SwarmingHostname(), ShouldEqual, "chromium-swarm-dev.appspot.com")
-		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
-	})
 
 	Convey(`consume bbagent buildbucket swarming task with RBE-CAS prop`, t, func() {
 		jd := readTestFixture("bbagent_cas")

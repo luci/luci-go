@@ -25,17 +25,6 @@ import (
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
-func casTreeFromSwarming(iso *swarming.SwarmingRpcsFilesRef) *swarmingpb.CASTree {
-	if iso == nil {
-		return nil
-	}
-	return &swarmingpb.CASTree{
-		Digest:    iso.Isolated,
-		Namespace: iso.Namespace,
-		Server:    iso.Isolatedserver,
-	}
-}
-
 func casReferenceFromSwarming(cas *swarming.SwarmingRpcsCASReference) *swarmingpb.CASReference {
 	if cas == nil {
 		return nil
@@ -130,7 +119,6 @@ func taskPropertiesFromSwarming(ts *swarming.SwarmingRpcsTaskProperties) *swarmi
 	// TODO(iannucci): log that we're dropping SecretBytes?
 
 	return &swarmingpb.TaskProperties{
-		CasInputs:    casTreeFromSwarming(ts.InputsRef),
 		CasInputRoot: casReferenceFromSwarming(ts.CasInputRoot),
 		CipdInputs:   cipdPkgsFromSwarming(ts.CipdInput),
 		NamedCaches:  namedCachesFromSwarming(ts.Caches),

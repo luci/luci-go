@@ -24,7 +24,5 @@ package jobexport
 // ensure they're correct.
 
 //go:generate cp ../jobcreate/testdata/bbagent_cas.job.json testdata/
-//go:generate cp ../jobcreate/testdata/bbagent_iso.job.json testdata/
 //go:generate cp ../jobcreate/testdata/raw_cas.job.json testdata/
-//go:generate cp ../jobcreate/testdata/raw_iso.job.json testdata/
 //go:generate go test -train

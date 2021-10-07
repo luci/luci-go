@@ -76,11 +76,6 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 func TestExportRaw(t *testing.T) {
 	t.Parallel()
 
-	Convey(`export raw swarming task with isolate input`, t, func() {
-		req := readTestFixture("raw_iso")
-		So(req, ShouldNotBeNil)
-	})
-
 	Convey(`export raw swarming task with rbe-cas input`, t, func() {
 		req := readTestFixture("raw_cas")
 		So(req, ShouldNotBeNil)
@@ -92,11 +87,6 @@ func TestExportBBagent(t *testing.T) {
 
 	Convey(`export bbagent task with rbe-cas input`, t, func() {
 		req := readTestFixture("bbagent_cas")
-		So(req, ShouldNotBeNil)
-	})
-
-	Convey(`export bbagent task with isolate input`, t, func() {
-		req := readTestFixture("bbagent_iso")
 		So(req, ShouldNotBeNil)
 	})
 }
