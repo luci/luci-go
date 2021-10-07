@@ -97,7 +97,8 @@ export class InvocationDetailsTabElement extends MobxLitElement {
     commonStyle,
     css`
       :host {
-        padding: 5px 24px;
+        display: block;
+        padding: 10px 20px;
       }
 
       #included-invocations ul {
