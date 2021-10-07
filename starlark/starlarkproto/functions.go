@@ -16,6 +16,7 @@ package starlarkproto
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"go.starlark.net/starlark"
@@ -60,7 +61,11 @@ func ToJSONPB(msg *Message, useProtoNames bool) ([]byte, error) {
 	}
 	// protojson randomly injects spaces into the generate output. Pass it through
 	// a formatter to get rid of them.
-	return formatJSON(blob)
+	var out bytes.Buffer
+	if err := json.Indent(&out, blob, "", "\t"); err != nil {
+		return nil, err
+	}
+	return bytes.TrimSpace(out.Bytes()), nil
 }
 
 // ToWirePB serializes a protobuf message to binary wire format.
