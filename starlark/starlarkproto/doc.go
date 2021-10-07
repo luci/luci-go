@@ -14,11 +14,6 @@
 
 // Package starlarkproto exposes protobuf messages as Starlark types.
 //
-// Uses a slightly modified vendored copy of "google.golang.org/protobuf"
-// internally. It's expected that once "google.golang.org/protobuf" is
-// officially released, starlarkproto will switch to using the released
-// version.
-//
 // Internally a message is stored as a tree of Starlark values, with some type
 // checking done when manipulating fields, based on proto message descriptors
 // loaded dynamically from a serialized FileDescriptorSet.
