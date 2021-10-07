@@ -26,7 +26,6 @@ import (
 
 type swInfo struct {
 	*Swarming
-	userPayload    *swarmingpb.CASTree
 	casUserPayload *swarmingpb.CASReference
 }
 
@@ -43,37 +42,10 @@ func (s swInfo) TaskName() string {
 func (s swInfo) CurrentIsolated() (*isolated, error) {
 	isolated := &isolated{}
 	var err error
-	if isolated.CASTree, err = s.currentIsoInfo(); err != nil {
-		return nil, err
-	}
 	if isolated.CASReference, err = s.currentCasInfo(); err != nil {
 		return nil, err
 	}
 	return isolated, nil
-}
-
-func (s swInfo) currentIsoInfo() (*swarmingpb.CASTree, error) {
-	isolatedOptions := map[string]*swarmingpb.CASTree{}
-	if up := s.userPayload; up != nil && up.Digest != "" {
-		isolatedOptions[up.Digest] = up
-	}
-
-	if sw := s.Swarming; sw != nil {
-		for _, slc := range sw.GetTask().GetTaskSlices() {
-			input := slc.GetProperties().GetCasInputs()
-			if input != nil {
-				isolatedOptions[input.Digest] = input
-			}
-		}
-	}
-	if len(isolatedOptions) > 1 {
-		return nil, errors.Reason(
-			"Definition contains multiple isolate inputs: %v", isolatedOptions).Err()
-	}
-	for _, v := range isolatedOptions {
-		return proto.Clone(v).(*swarmingpb.CASTree), nil
-	}
-	return nil, nil
 }
 
 func (s swInfo) currentCasInfo() (*swarmingpb.CASReference, error) {

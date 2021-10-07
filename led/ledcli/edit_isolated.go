@@ -67,14 +67,14 @@ func (c *cmdEditIsolated) validateFlags(ctx context.Context, positionals []strin
 	return nil
 }
 
-func (c *cmdEditIsolated) execute(ctx context.Context, authClient *http.Client, authOpts auth.Options, inJob *job.Definition) (output interface{}, err error) {
+func (c *cmdEditIsolated) execute(ctx context.Context, _ *http.Client, authOpts auth.Options, inJob *job.Definition) (output interface{}, err error) {
 	var xform ledcmd.IsolatedTransformer
 	if len(c.transformProgram) == 0 {
 		xform = ledcmd.PromptIsolatedTransformer()
 	} else {
 		xform = ledcmd.ProgramIsolatedTransformer(c.transformProgram...)
 	}
-	return inJob, ledcmd.EditIsolated(ctx, authClient, authOpts, inJob, xform)
+	return inJob, ledcmd.EditIsolated(ctx, authOpts, inJob, xform)
 }
 
 func (c *cmdEditIsolated) Run(a subcommands.Application, args []string, env subcommands.Env) int {

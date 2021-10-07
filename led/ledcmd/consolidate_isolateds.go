@@ -16,132 +16,17 @@ package ledcmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/led/job"
 	api "go.chromium.org/luci/swarming/proto/api"
 )
-
-// ConsolidateIsolateSources will, for Swarming tasks:
-//
-//   * Extract Cmd/Cwd from the slice.Properties.CasInputs (if set) and assign
-//     them directly into the swarming task slice.
-//   * Synthesize a new CasInput (and push it to the isolate server) which:
-//     * has no includes, cwd, cmd, etc.
-//     * is the union of UserPayload and slice.Properties.CasInputs
-//   * Combined isolated in slice.Properties.CasInputs.
-func ConsolidateIsolateSources(ctx context.Context, authClient *http.Client, jd *job.Definition) error {
-	if jd.GetSwarming() == nil || jd.UserPayload == nil {
-		return nil
-	}
-
-	arc := mkIsoClient(ctx, authClient, jd.UserPayload)
-
-	for _, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
-		if slc.Properties == nil {
-			slc.Properties = &api.TaskProperties{}
-		}
-
-		if slc.Properties.CasInputs == nil && jd.UserPayload == nil {
-			continue
-		}
-
-		var err error
-		slc.Properties.CasInputs, err = combineIsolateds(ctx, arc,
-			jd.UserPayload, slc.Properties.CasInputs)
-		if err != nil {
-			return errors.Annotate(err, "combining isolateds").Err()
-		}
-	}
-
-	// If we 'consolidated' the UserPayload to the task slices, blank out the
-	// UserPayload's digest. If there were no task slices, we want to hang onto
-	// UserPayload as it's the only content (though this is a pretty pathological
-	// case).
-	if len(jd.GetSwarming().GetTask().GetTaskSlices()) > 0 {
-		if jd.UserPayload != nil {
-			jd.UserPayload.Digest = ""
-		}
-	}
-
-	return nil
-}
-
-func combineIsolateds(ctx context.Context, arc isoClientIface, isos ...*api.CASTree) (*api.CASTree, error) {
-	isoOut := isolated.New(isolated.GetHash(arc.Namespace()))
-	digests := map[string]struct{}{}
-
-	var processIso func(string) error
-	processIso = func(dgst string) error {
-		if _, ok := digests[dgst]; ok {
-			return nil
-		}
-		digests[dgst] = struct{}{}
-
-		isoContent, err := fetchIsolated(ctx, arc, isolated.HexDigest(dgst))
-		if err != nil {
-			return errors.New("fetching isolated")
-		}
-		for path, file := range isoContent.Files {
-			if _, ok := isoOut.Files[path]; ok {
-				return errors.Reason("isolated includes overlapping path %q", path).Err()
-			}
-			isoOut.Files[path] = file
-		}
-		for _, inc := range isoContent.Includes {
-			if err := processIso(string(inc)); err != nil {
-				return errors.Annotate(err, "processing included isolated %q", inc).Err()
-			}
-		}
-		return nil
-	}
-
-	for _, iso := range isos {
-		if iso.GetDigest() == "" {
-			continue
-		}
-
-		if iso.Server != arc.Server() {
-			return nil, errors.Reason(
-				"cannot combine isolates from two different servers: %q vs %q",
-				arc.Server(), iso.Server).Err()
-		}
-
-		if iso.Namespace != arc.Namespace() {
-			return nil, errors.Reason(
-				"cannot combine isolates from two different namespaces: %q vs %q",
-				arc.Namespace(), iso.Namespace).Err()
-		}
-
-		if err := processIso(iso.Digest); err != nil {
-			return nil, errors.Annotate(err, "processing isolated %q", iso.Digest).Err()
-		}
-	}
-
-	ret := &api.CASTree{
-		Server:    arc.Server(),
-		Namespace: arc.Namespace(),
-	}
-	isolated, err := json.Marshal(isoOut)
-	if err != nil {
-		return nil, errors.Annotate(err, "encoding ISOLATED.json").Err()
-	}
-	promise := arc.Push("ISOLATED.json", isolatedclient.NewBytesSource(isolated), 0)
-	promise.WaitForHashed()
-	ret.Digest = string(promise.Digest())
-
-	return ret, arc.Close()
-}
 
 // ConsolidateRbeCasSources combines RBE-CAS inputs in slice.Properties.CasInputRoot
 // and CasUserPayload for swarming tasks. For the same file, the one in CasUserPayload

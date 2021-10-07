@@ -165,57 +165,11 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw.Task.TaskSlices[0].Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 21600})
 		})
 
-		Convey(`UserPayload recipe`, func() {
-			SoHLEdit(bbJob, func(je HighLevelEditor) {
-				je.TaskPayloadSource("", "")
-				je.TaskPayloadPath("some/path")
-			})
-			bbJob.UserPayload.Digest = "beef"
-
-			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldBeNil)
-
-			sw := bbJob.GetSwarming()
-			So(sw, ShouldNotBeNil)
-			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
-
-			slice0 := sw.Task.TaskSlices[0]
-			for _, pkg := range slice0.Properties.CipdInputs {
-				// there shouldn't be any recipe package any more
-				So(pkg.Version, ShouldNotEqual, "HEAD")
-			}
-
-			So(slice0.Properties.Command[:3], ShouldResemble, []string{
-				"bbagent${EXECUTABLE_SUFFIX}", "--output",
-				"${ISOLATED_OUTDIR}/build.proto.json",
-			})
-			bbArgs, err := bbinput.Parse(slice0.Properties.Command[3])
-			So(err, ShouldBeNil)
-
-			So(bbArgs.PayloadPath, ShouldResemble, "some/path")
-			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
-
-			props := ledProperties{}
-			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]interface{}{
-				"$recipe_engine/led": &props,
-			})
-			So(err, ShouldBeNil)
-			expectedProps := ledProperties{
-				LedRunID: "infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898",
-				IsolatedInput: &isoInput{
-					Server:    "https://isolateserver-dev.appspot.com",
-					Namespace: "default-gzip",
-					Hash:      "beef",
-				},
-			}
-			So(props, ShouldResemble, expectedProps)
-		})
-
 		Convey(`CasUserPayload recipe`, func() {
 			SoHLEdit(bbJob, func(je HighLevelEditor) {
 				je.TaskPayloadSource("", "")
 				je.TaskPayloadPath("some/path")
 			})
-			bbJob.UserPayload = nil
 			bbJob.CasUserPayload = &swarmingpb.CASReference{
 				CasInstance: "projects/chromium-swarm-dev/instances/default_instance",
 				Digest: &swarmingpb.Digest{

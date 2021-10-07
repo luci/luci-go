@@ -29,37 +29,6 @@ func TestClearCurrentIsolated(t *testing.T) {
 
 	runCases(t, `ClearCurrentIsolated`, []testCase{
 		{
-			name: "basic with isolate input",
-			fn: func(jd *Definition) {
-				jd.UserPayload = &api.CASTree{
-					Digest:    "deadbeef",
-					Namespace: "namespace",
-					Server:    "server",
-				}
-				for _, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
-					if slc.Properties == nil {
-						slc.Properties = &api.TaskProperties{}
-					}
-					slc.Properties.CasInputs = &api.CASTree{
-						Digest:    "deadbeef",
-						Namespace: "namespace",
-						Server:    "server",
-					}
-				}
-				SoEdit(jd, func(je Editor) {
-					je.ClearCurrentIsolated()
-				})
-
-				for _, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
-					So(slc.Properties.CasInputs, ShouldBeNil)
-				}
-
-				iso, err := jd.Info().CurrentIsolated()
-				So(err, ShouldBeNil)
-				So(iso, ShouldResemble, &isolated{})
-			},
-		},
-		{
 			name: "basic with rbe-cas input",
 			fn: func(jd *Definition) {
 				jd.CasUserPayload = &api.CASReference{

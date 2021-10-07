@@ -14,6 +14,12 @@
             "path": ".swarming_module_cache/vpython"
           }
         ],
+        "cas_input_root": {
+          "digest": {
+            "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "size_bytes": "0"
+          }
+        },
         "cipd_input": {
           "packages": [
             {
@@ -98,11 +104,6 @@
           "--extra-browser-args=--disable-gpu"
         ],
         "grace_period_secs": "30",
-        "inputs_ref": {
-          "isolated": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15",
-          "isolatedserver": "https://isolateserver.appspot.com",
-          "namespace": "default-gzip"
-        },
         "io_timeout_secs": "1200"
       }
     }

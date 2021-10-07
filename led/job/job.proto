@@ -83,18 +83,6 @@ message Definition {
     Swarming swarming = 2;
   }
 
-  // WILL BE DEPRECATED AFTER MIGRATION TO RBE-CAS (crbug.com/1145959).
-  //
-  // If set, this holds the CASTree to use with the build, when launched.
-  //
-  // At the time of launch, this will be merged with
-  // swarming.task_slice[*].properties.inputs_ref, if any.
-  //
-  // The 'server' and 'namespace' fields here are used as the defaults for any
-  // digests specified without server/namespace.
-  swarming.v1.CASTree user_payload = 3;
-
-  // [In Experiment]
   // If set, this holds the CASReference to use with the job, when launched.
   //
   // At the time of launch, this will be merged with

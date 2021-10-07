@@ -25,7 +25,6 @@ import (
 type bbInfo struct {
 	*Buildbucket
 
-	userPayload    *swarmingpb.CASTree
 	casUserPayload *swarmingpb.CASReference
 }
 
@@ -41,9 +40,6 @@ func (b bbInfo) TaskName() string {
 
 func (b bbInfo) CurrentIsolated() (*isolated, error) {
 	isolated := &isolated{}
-	if b.userPayload.GetDigest() != "" {
-		isolated.CASTree = proto.Clone(b.userPayload).(*swarmingpb.CASTree)
-	}
 	if b.casUserPayload.GetDigest().GetHash() != "" {
 		isolated.CASReference = proto.Clone(b.casUserPayload).(*swarmingpb.CASReference)
 	}

@@ -39,12 +39,6 @@ import (
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
-type isoInput struct {
-	Server    string `json:"server"`
-	Namespace string `json:"namespace"`
-	Hash      string `json:"hash"`
-}
-
 type cipdInput struct {
 	Package string `json:"package"`
 	Version string `json:"version"`
@@ -52,8 +46,6 @@ type cipdInput struct {
 
 type ledProperties struct {
 	LedRunID string `json:"led_run_id"`
-
-	IsolatedInput *isoInput `json:"isolated_input,omitempty"`
 
 	RbeCasInput *swarmingpb.CASReference `json:"rbe_cas_input,omitempty"`
 
@@ -123,12 +115,6 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 		props.CIPDInput = &cipdInput{
 			Package: exe.CipdPackage,
 			Version: exe.CipdVersion,
-		}
-	} else if payload := jd.GetUserPayload(); payload.GetDigest() != "" {
-		props.IsolatedInput = &isoInput{
-			Server:    payload.GetServer(),
-			Namespace: payload.GetNamespace(),
-			Hash:      payload.GetDigest(),
 		}
 	} else if payload := jd.GetCasUserPayload(); payload.GetDigest() != nil {
 		props.RbeCasInput = proto.Clone(payload).(*swarmingpb.CASReference)
@@ -346,9 +332,6 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		}
 		return nil
 	}
-	if jd.UserPayload != nil && jd.CasUserPayload != nil {
-		return errors.Reason("job uses isolate and RBE-CAS at the same time - iso: %v\ncas: %v", jd.UserPayload, jd.CasUserPayload).Err()
-	}
 	err := jd.addLedProperties(ctx, uid)
 	if err != nil {
 		return errors.Annotate(err, "adding led properties").Err()
@@ -402,7 +385,6 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 
 	baseProperties := &swarmingpb.TaskProperties{
 		CipdInputs:   append(([]*swarmingpb.CIPDPackage)(nil), bb.CipdPackages...),
-		CasInputs:    jd.UserPayload,
 		CasInputRoot: jd.CasUserPayload,
 
 		EnvPaths:         bb.EnvPrefixes,

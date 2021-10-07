@@ -56,7 +56,6 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 	}
 
 	ret = &job.Definition{
-		UserPayload: &swarmingpb.CASTree{},
 		CasUserPayload: &swarmingpb.CASReference{
 			Digest: &swarmingpb.Digest{},
 		},
@@ -144,27 +143,13 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 
 	// ensure isolate/rbe-cas source consistency
 	for i, slice := range r.TaskSlices {
-		ir := slice.Properties.InputsRef
-		cir := slice.Properties.CasInputRoot
-		switch {
-		case ir != nil && cir != nil:
-			return nil, errors.Reason("task slice %d: both isolate and rbe-cas specified", i).Err()
-		case ir != nil:
-			if err := populateIsoPayload(ret.UserPayload, ir); err != nil {
-				return nil, errors.Annotate(err, "task slice %d", i).Err()
-			}
-		case cir != nil:
+		if cir := slice.Properties.CasInputRoot; cir != nil {
 			if err := populateCasPayload(ret.CasUserPayload, cir); err != nil {
 				return nil, errors.Annotate(err, "task slice %d", i).Err()
 			}
 		}
 	}
-	// drop user_payload or cas_user_payload
-	if ret.UserPayload.Digest == "" {
-		ret.UserPayload = nil
-	} else {
-		ret.CasUserPayload = nil
-	}
+
 	return ret, err
 }
 

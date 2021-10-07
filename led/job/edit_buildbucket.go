@@ -32,7 +32,6 @@ import (
 type buildbucketEditor struct {
 	jd             *Definition
 	bb             *Buildbucket
-	userPayload    *api.CASTree
 	casUserPayload *api.CASReference
 
 	err error
@@ -47,7 +46,7 @@ func newBuildbucketEditor(jd *Definition) *buildbucketEditor {
 	}
 	bb.EnsureBasics()
 
-	return &buildbucketEditor{jd, bb, jd.UserPayload, jd.CasUserPayload, nil}
+	return &buildbucketEditor{jd, bb, jd.CasUserPayload, nil}
 }
 
 func (bbe *buildbucketEditor) Close() error {
@@ -115,8 +114,6 @@ func (bbe *buildbucketEditor) TaskPayloadCmd(args []string) {
 
 func (bbe *buildbucketEditor) ClearCurrentIsolated() {
 	bbe.tweak(func() error {
-		bbe.userPayload = nil
-		bbe.jd.UserPayload = nil
 		bbe.casUserPayload = nil
 		bbe.jd.CasUserPayload = nil
 		return nil

@@ -29,6 +29,13 @@
             "path": "cache/builder"
           }
         ],
+        "cas_input_root": {
+          "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+          "digest": {
+            "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+            "size_bytes": "24"
+          }
+        },
         "cipd_input": {
           "packages": [
             {
@@ -172,12 +179,7 @@
           }
         ],
         "execution_timeout_secs": "1800",
-        "grace_period_secs": "180",
-        "inputs_ref": {
-          "isolated": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15",
-          "isolatedserver": "https://isolateserver-dev.appspot.com",
-          "namespace": "default-gzip"
-        }
+        "grace_period_secs": "180"
       }
     },
     {
@@ -201,6 +203,13 @@
             "path": "cache/builder"
           }
         ],
+        "cas_input_root": {
+          "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+          "digest": {
+            "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+            "size_bytes": "24"
+          }
+        },
         "cipd_input": {
           "packages": [
             {
@@ -340,12 +349,7 @@
           }
         ],
         "execution_timeout_secs": "1800",
-        "grace_period_secs": "180",
-        "inputs_ref": {
-          "isolated": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15",
-          "isolatedserver": "https://isolateserver-dev.appspot.com",
-          "namespace": "default-gzip"
-        }
+        "grace_period_secs": "180"
       }
     }
   ],

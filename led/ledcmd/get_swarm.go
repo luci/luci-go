@@ -143,7 +143,7 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetF
 
 // fill the cas default if no isolate inputs.
 func fillCasDefaults(jd *job.Definition) error {
-	if jd.CasUserPayload.GetCasInstance() == "" && (jd.UserPayload == nil || jd.UserPayload.Digest == "") {
+	if jd.CasUserPayload.GetCasInstance() == "" {
 		cas, err := jd.CasInstance()
 		if err != nil {
 			return err
@@ -151,7 +151,6 @@ func fillCasDefaults(jd *job.Definition) error {
 		jd.CasUserPayload = &swarmingpb.CASReference{
 			CasInstance: cas,
 		}
-		jd.UserPayload = nil
 	}
 	return nil
 }

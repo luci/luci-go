@@ -176,8 +176,6 @@ func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, _ auth.Options, i
 					pkg = ""
 					ver = ""
 					switch strs := strings.Split(c.recipeIsolate, "/"); {
-					case len(strs) == 1:
-						inJob.UserPayload.Digest = c.recipeIsolate
 					case len(strs) == 2:
 						inJob.CasUserPayload.Digest = &apipb.Digest{Hash: strs[0]}
 						if inJob.CasUserPayload.Digest.SizeBytes, err = strconv.ParseInt(strs[1], 10, 64); err != nil {

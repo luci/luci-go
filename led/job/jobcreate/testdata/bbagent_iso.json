@@ -157,10 +157,12 @@
           "containment_type": "NOT_SPECIFIED"
         },
         "execution_timeout_secs": "1800",
-        "inputs_ref": {
-          "isolatedserver": "https://isolateserver-dev.appspot.com",
-          "namespace": "default-gzip",
-          "isolated": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15"
+        "cas_input_root": {
+            "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+            "digest": {
+                "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+                "size_bytes": "24"
+            }
         },
         "grace_period_secs": "30",
         "caches": [
@@ -335,10 +337,12 @@
           "containment_type": "NOT_SPECIFIED"
         },
         "execution_timeout_secs": "1800",
-        "inputs_ref": {
-          "isolatedserver": "https://isolateserver-dev.appspot.com",
-          "namespace": "default-gzip",
-          "isolated": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15"
+        "cas_input_root": {
+            "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+            "digest": {
+                "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+                "size_bytes": "24"
+            }
         },
         "grace_period_secs": "30",
         "caches": [
@@ -546,9 +550,12 @@
       "containment_type": "NOT_SPECIFIED"
     },
     "execution_timeout_secs": "1800",
-    "inputs_ref": {
-      "isolatedserver": "https://isolateserver-dev.appspot.com",
-      "namespace": "default-gzip"
+    "cas_input_root": {
+      "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+      "digest": {
+        "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+        "size_bytes": "24"
+      }
     },
     "grace_period_secs": "30",
     "caches": [

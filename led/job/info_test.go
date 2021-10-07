@@ -32,74 +32,15 @@ func TestGetCurrentIsolated(t *testing.T) {
 			So(current, ShouldResemble, &isolated{})
 		})
 
-		Convey(`UserPayload`, func() {
-			jd := testBBJob()
-			jd.UserPayload = &api.CASTree{Digest: "hello"}
-			current, err := jd.Info().CurrentIsolated()
-			So(err, ShouldBeNil)
-			So(current, ShouldResemble, &isolated{&api.CASTree{Digest: "hello"}, nil})
-		})
-
 		Convey(`CasUserPayload`, func() {
 			jd := testBBJob()
 			jd.CasUserPayload = &api.CASReference{Digest: &api.Digest{Hash: "hash"}}
 			current, err := jd.Info().CurrentIsolated()
 			So(err, ShouldBeNil)
-			So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
+			So(current, ShouldResemble, &isolated{&api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
 		})
 
 		Convey(`Swarming`, func() {
-			Convey(`isolate`, func() {
-				Convey(`one slice`, func() {
-					jd := testSWJob()
-					jd.GetSwarming().Task = &api.TaskRequest{
-						TaskSlices: []*api.TaskSlice{
-							{
-								Properties: &api.TaskProperties{CasInputs: &api.CASTree{
-									Digest: "hello",
-								}},
-							},
-						},
-					}
-					current, err := jd.Info().CurrentIsolated()
-					So(err, ShouldBeNil)
-					So(current, ShouldResemble, &isolated{&api.CASTree{Digest: "hello"}, nil})
-				})
-
-				Convey(`slice+UserPayload (match)`, func() {
-					jd := testSWJob()
-					jd.UserPayload = &api.CASTree{Digest: "hello"}
-					jd.GetSwarming().Task = &api.TaskRequest{
-						TaskSlices: []*api.TaskSlice{
-							{
-								Properties: &api.TaskProperties{CasInputs: &api.CASTree{
-									Digest: "hello",
-								}},
-							},
-						},
-					}
-					current, err := jd.Info().CurrentIsolated()
-					So(err, ShouldBeNil)
-					So(current, ShouldResemble, &isolated{&api.CASTree{Digest: "hello"}, nil})
-				})
-
-				Convey(`slice+UserPayload (mismatch)`, func() {
-					jd := testSWJob()
-					jd.UserPayload = &api.CASTree{Digest: "hello there"}
-					jd.GetSwarming().Task = &api.TaskRequest{
-						TaskSlices: []*api.TaskSlice{
-							{
-								Properties: &api.TaskProperties{CasInputs: &api.CASTree{
-									Digest: "hello",
-								}},
-							},
-						},
-					}
-					_, err := jd.Info().CurrentIsolated()
-					So(err, ShouldErrLike, "Definition contains multiple isolate inputs")
-				})
-			})
-
 			Convey(`rbe-cas`, func() {
 				Convey(`one slice`, func() {
 					jd := testSWJob()
@@ -114,7 +55,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 					}
 					current, err := jd.Info().CurrentIsolated()
 					So(err, ShouldBeNil)
-					So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
+					So(current, ShouldResemble, &isolated{&api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
 				})
 
 				Convey(`slice+CasUserPayload (match)`, func() {
@@ -131,7 +72,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 					}
 					current, err := jd.Info().CurrentIsolated()
 					So(err, ShouldBeNil)
-					So(current, ShouldResemble, &isolated{nil, &api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
+					So(current, ShouldResemble, &isolated{&api.CASReference{Digest: &api.Digest{Hash: "hash"}}})
 				})
 
 				Convey(`slice+CasUserPayload (mismatch)`, func() {

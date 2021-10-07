@@ -17,11 +17,8 @@ package ledcmd
 import (
 	"context"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
-	"sync"
-	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
@@ -31,12 +28,8 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/casclient"
-	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
 	apipb "go.chromium.org/luci/swarming/proto/api"
 
 	"go.chromium.org/luci/led/job"
@@ -86,13 +79,13 @@ func PromptIsolatedTransformer() IsolatedTransformer {
 	}
 }
 
-// EditIsolated allows you to edit the isolated (input_ref or cas_input_root)
+// EditIsolated allows you to edit the isolated (cas_input_root)
 // contents of the job.Definition.
 //
 // This implicitly collapses all isolated sources in the job.Definition into
 // a single isolated source.
-// The output job.Definition always has cas_user_payload and no user_payload.
-func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Options, jd *job.Definition, xform IsolatedTransformer) error {
+// The output job.Definition always has cas_user_payload.
+func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition, xform IsolatedTransformer) error {
 	logging.Infof(ctx, "editing isolated")
 
 	tdir, err := ioutil.TempDir("", "led-edit-isolated")
@@ -105,9 +98,6 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 		}
 	}()
 
-	if err := ConsolidateIsolateSources(ctx, authClient, jd); err != nil {
-		return err
-	}
 	if err := ConsolidateRbeCasSources(ctx, authOpts, jd); err != nil {
 		return err
 	}
@@ -115,9 +105,6 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 	current, err := jd.Info().CurrentIsolated()
 	if err != nil {
 		return err
-	}
-	if current.CASTree != nil && current.CASReference != nil {
-		return errors.Reason("job uses isolate and RBE-CAS at the same time - iso: %v\ncas: %v", current.CASTree, current.CASReference).Err()
 	}
 
 	err = jd.Edit(func(je job.Editor) {
@@ -133,9 +120,6 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 	}
 	defer casClient.Close()
 
-	if err = downloadFromIso(ctx, current.CASTree, authClient, tdir); err != nil {
-		return err
-	}
 	if err = downloadFromCas(ctx, current.CASReference, casClient, tdir); err != nil {
 		return err
 	}
@@ -151,7 +135,6 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 	}
 	logging.Infof(ctx, "isolated upload: done")
 	jd.CasUserPayload = casRef
-	jd.UserPayload = nil
 	return nil
 }
 
@@ -181,33 +164,6 @@ func downloadFromCas(ctx context.Context, casRef *apipb.CASReference, casClient 
 	_, _, err := casClient.DownloadDirectory(ctx, d, tdir, filemetadata.NewNoopCache())
 	if err != nil {
 		return errors.Annotate(err, "failed to download directory").Err()
-	}
-	return nil
-}
-
-func downloadFromIso(ctx context.Context, iso *apipb.CASTree, authClient *http.Client, tdir string) error {
-	if iso.GetDigest() == "" {
-		return nil
-	}
-	rawIsoClient := isolatedclient.NewClient(
-		iso.Server,
-		isolatedclient.WithAuthClient(authClient),
-		isolatedclient.WithNamespace(iso.Namespace),
-		isolatedclient.WithRetryFactory(retry.Default))
-	var statMu sync.Mutex
-	var previousStats *downloader.FileStats
-
-	logging.Infof(ctx, "downloading from isolate...")
-	dl := downloader.New(ctx, rawIsoClient, isolated.HexDigest(iso.GetDigest()), tdir, &downloader.Options{
-		FileStatsCallback: func(s downloader.FileStats, span time.Duration) {
-			logging.Infof(ctx, "%s", s.StatLine(previousStats, span))
-			statMu.Lock()
-			previousStats = &s
-			statMu.Unlock()
-		},
-	})
-	if err := dl.Wait(); err != nil {
-		return err
 	}
 	return nil
 }

@@ -15,98 +15,14 @@
 package ledcmd
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/client/archiver/pipeline"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
-	api "go.chromium.org/luci/swarming/proto/api"
 )
-
-var isolateTestIfaceKey = "holds an isoClientIface during tests"
-
-type pendingItem interface {
-	WaitForHashed()
-	Digest() isolated.HexDigest
-}
-
-type isoClientIface interface {
-	io.Closer
-
-	Fetch(context.Context, isolated.HexDigest, io.Writer) error
-	Push(filename string, data isolatedclient.Source, priority int64) pendingItem
-
-	Server() string
-	Namespace() string
-}
-
-type prodIsoClient struct {
-	raw *isolatedclient.Client
-	arc *pipeline.Archiver
-
-	server    string
-	namespace string
-}
-
-func (p *prodIsoClient) Close() error      { return p.arc.Close() }
-func (p *prodIsoClient) Server() string    { return p.server }
-func (p *prodIsoClient) Namespace() string { return p.namespace }
-func (p *prodIsoClient) Push(filename string, data isolatedclient.Source, priority int64) pendingItem {
-	return p.arc.Push(filename, data, priority)
-}
-func (p *prodIsoClient) Fetch(ctx context.Context, iso isolated.HexDigest, w io.Writer) error {
-	return p.raw.Fetch(ctx, iso, w)
-}
-
-func mkIsoClient(ctx context.Context, authClient *http.Client, tree *api.CASTree) isoClientIface {
-	if val, ok := ctx.Value(&isolateTestIfaceKey).(isoClientIface); ok {
-		return val
-	}
-
-	client := isolatedclient.NewClient(
-		tree.Server, isolatedclient.WithAuthClient(authClient),
-		isolatedclient.WithNamespace(tree.Namespace),
-		isolatedclient.WithRetryFactory(retry.Default),
-	)
-	// The archiver is pretty noisy at Info level, so we skip giving it
-	// a logging-enabled context unless the user actually requseted verbose.
-	arcCtx := context.Background()
-	if logging.GetLevel(ctx) < logging.Info {
-		arcCtx = ctx
-	}
-	// os.Stderr will cause the archiver to print a one-liner progress status.
-	return &prodIsoClient{
-		client,
-		pipeline.NewArchiver(arcCtx, client, os.Stderr),
-		tree.Server,
-		tree.Namespace,
-	}
-}
-
-func fetchIsolated(ctx context.Context, arc isoClientIface, dgst isolated.HexDigest) (*isolated.Isolated, error) {
-	buf := bytes.Buffer{}
-	if err := arc.Fetch(ctx, dgst, &buf); err != nil {
-		return nil, errors.Annotate(err, "fetching isolated %q", dgst).Err()
-	}
-	isoFile := isolated.Isolated{}
-	if err := json.Unmarshal(buf.Bytes(), &isoFile); err != nil {
-		return nil, errors.Annotate(err, "parsing isolated %q", dgst).Err()
-	}
-	return &isoFile, nil
-}
 
 func newSwarmClient(authClient *http.Client, host string) *swarming.Service {
 	swarm, err := swarming.New(authClient)

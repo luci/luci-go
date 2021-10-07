@@ -31,7 +31,7 @@ type Info interface {
 	TaskName() string
 
 	// CurrentIsolated returns the current isolated contents for the
-	// Definition. If the CASTree or CASReference has no hash value,
+	// Definition. If the CASReference has no hash value,
 	// this returns an empty isolated obj.
 	//
 	// Returns error if this is a Swarming job where the slices have differing
@@ -114,9 +114,9 @@ type HighLevelInfo interface {
 // Returns nil if the Definition doesn't support Info().
 func (jd *Definition) Info() Info {
 	if bb := jd.GetBuildbucket(); bb != nil {
-		return bbInfo{bb, jd.UserPayload, jd.CasUserPayload}
+		return bbInfo{bb, jd.CasUserPayload}
 	} else if sw := jd.GetSwarming(); sw != nil {
-		return swInfo{sw, jd.UserPayload, jd.CasUserPayload}
+		return swInfo{sw, jd.CasUserPayload}
 	}
 	return nil
 }
@@ -128,7 +128,7 @@ func (jd *Definition) Info() Info {
 // returns nil.
 func (jd *Definition) HighLevelInfo() HighLevelInfo {
 	if bb := jd.GetBuildbucket(); bb != nil {
-		return bbInfo{bb, jd.UserPayload, jd.CasUserPayload}
+		return bbInfo{bb, jd.CasUserPayload}
 	}
 	return nil
 }
@@ -139,6 +139,5 @@ func (jd *Definition) CasInstance() (string, error) {
 }
 
 type isolated struct {
-	*swarmingpb.CASTree
 	*swarmingpb.CASReference
 }

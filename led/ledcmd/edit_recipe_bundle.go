@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -107,7 +106,7 @@ const (
 // It isolates the recipes from the repository in the given working directory
 // into the UserPayload under the directory "kitchen-checkout/". If there's an
 // existing directory in the UserPayload at that location, it will be removed.
-func EditRecipeBundle(ctx context.Context, authClient *http.Client, authOpts auth.Options, jd *job.Definition, opts *EditRecipeBundleOpts) error {
+func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Definition, opts *EditRecipeBundleOpts) error {
 	if jd.GetBuildbucket() == nil {
 		return errors.New("ledcmd.EditRecipeBundle is only available for Buildbucket tasks")
 	}
@@ -149,7 +148,7 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, authOpts aut
 		}
 		extraProperties[CASRecipeBundleProperty] = jsonCASRef
 	} else {
-		if err := EditIsolated(ctx, authClient, authOpts, jd, func(ctx context.Context, dir string) error {
+		if err := EditIsolated(ctx, authOpts, jd, func(ctx context.Context, dir string) error {
 			bundlePath := filepath.Join(dir, RecipeDirectory)
 			// Remove existing bundled recipes, if any. Ignore the error.
 			os.RemoveAll(bundlePath)
