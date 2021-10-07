@@ -16,10 +16,7 @@ package venv
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -157,12 +154,11 @@ func (cfg *Config) resolveRuntime(c context.Context, e *vpython.Environment) err
 		return errors.Annotate(err, "failed to resolve system Python interpreter").Err()
 	}
 
-	e.Runtime = &vpython.Runtime{
-		Version: e.Spec.PythonVersion,
+	r, err := cfg.si.GetRuntime(c)
+	if err != nil {
+		return errors.Annotate(err, "failed to resolve system Python runtime").Err()
 	}
-	if err := fillRuntime(c, cfg.si, e.Runtime); err != nil {
-		return err
-	}
+	e.Runtime = r
 	logging.Debugf(c, "Resolved system Python runtime: %#s", e.Runtime)
 	return nil
 }
@@ -326,44 +322,3 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 }
 
 func (cfg *Config) systemInterpreter() *python.Interpreter { return cfg.si }
-
-// fillRuntime returns the runtime information of the specified interpreter.
-//
-// Identifying this information requires the interpreter to be run.
-func fillRuntime(c context.Context, i *python.Interpreter, r *vpython.Runtime) (err error) {
-	if *r, err = i.GetRuntime(c); err != nil {
-		return err
-	}
-
-	// "sys.executable" is allowed to be None. If it is, use the Python
-	// interpreter path.
-	//
-	// Resolve it to an absolute path. "sys.executable" says that it must be one,
-	// but we'll enforce it just to be sure.
-	if r.Path == "" {
-		r.Path = i.Python
-	}
-	if err := filesystem.AbsPath(&r.Path); err != nil {
-		return err
-	}
-
-	if r.Hash, err = i.GetHash(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func hashPath(path string) (string, error) {
-	fd, err := os.Open(path)
-	if err != nil {
-		return "", errors.Annotate(err, "failed to open interpreter").Err()
-	}
-	defer fd.Close()
-
-	hash := sha256.New()
-	if _, err := io.Copy(hash, fd); err != nil {
-		return "", errors.Annotate(err, "failed to read [%s] for hashing", path).Err()
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}

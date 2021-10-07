@@ -101,8 +101,7 @@ func TestResolvePythonInterpreter(t *testing.T) {
 		})
 
 		c.Convey(`Can resolve Runtime information`, func() {
-			var r vpython.Runtime
-			err := fillRuntime(ctx, ri.py, &r)
+			r, err := ri.py.GetRuntime(ctx)
 			So(err, ShouldBeNil)
 			So(r.Path, ShouldNotEqual, "")
 			So(r.Prefix, ShouldNotEqual, "")

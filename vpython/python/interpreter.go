@@ -15,7 +15,6 @@
 package python
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -25,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
@@ -45,7 +45,6 @@ type Interpreter struct {
 	// cachedVersion is the cached Version for this interpreter. It is populated
 	// on the first GetVersion call.
 	cachedVersion *Version
-	cachedRuntime *vpython.Runtime
 	cachedMu      sync.Mutex
 
 	// If true, disable reading cache from file.
@@ -158,59 +157,40 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 	return
 }
 
-// GetRuntime runs the specified Python interpreter to extract its path and
-// prefix. It's safe to cache prefix as we run the script in isolated
-// environment. In such case prefix will be determined by build parament or
-// backtracking up the path.
-func (i *Interpreter) GetRuntime(c context.Context) (r vpython.Runtime, err error) {
-	const cachePrefix = "VPythonPythonPrefix"
-	const script = `` +
-		`import json, sys;` +
-		`json.dump({` +
-		`'path': sys.executable,` +
-		`'prefix': sys.prefix,` +
-		`}, sys.stdout)`
-
-	i.cachedMu.Lock()
-	defer i.cachedMu.Unlock()
-
-	if i.cachedRuntime != nil {
-		r = vpython.Runtime{
-			Path:   i.cachedRuntime.GetPath(),
-			Prefix: i.cachedRuntime.GetPrefix(),
-		}
+// GetRuntime returns all runtime info to identify a python installation.
+// It use the same way as CPython to determine Prefix to avoid invoke python.
+func (i *Interpreter) GetRuntime(c context.Context) (r *vpython.Runtime, err error) {
+	path, err := filepath.EvalSymlinks(i.Python)
+	if err != nil {
+		return
+	}
+	path, err = filepath.Abs(path)
+	if err != nil {
 		return
 	}
 
-	if cached, errCached := i.getCached(cachePrefix, &r); cached {
-		i.cachedRuntime = &r
-		return
-	} else if errCached != nil {
-		logging.WithError(errCached).Warningf(c, "Get cached runtime from file failed")
-	}
-
-	// Probe the runtime information.
-	var stdout, stderr bytes.Buffer
-	cmd := i.MkIsolatedCommand(c, CommandTarget{Command: script})
-	defer cmd.Cleanup()
-
-	cmd.Stdout = &stdout
-	if err = cmd.Run(); err != nil {
-		logging.WithError(err).Errorf(c, "Failed to get runtime information:\n%s", stderr.Bytes())
-		err = errors.Annotate(err, "failed to get runtime information").Err()
+	hash, err := getHash(path)
+	if err != nil {
 		return
 	}
 
-	if err = json.Unmarshal(stdout.Bytes(), &r); err != nil {
-		err = errors.Annotate(err, "could not unmarshal output: %q", stdout.Bytes()).Err()
+	version, err := i.GetVersion(c)
+	if err != nil {
 		return
 	}
 
-	i.cachedRuntime = &r
-	if err := i.setCached(cachePrefix, &r); err != nil {
-		logging.WithError(err).Warningf(c, "Set cached runtime to file failed")
+	prefix, err := cpythonSearchForPrefix(path, version)
+	if err != nil {
+		err = errors.Annotate(err, "").Err()
+		return
 	}
-	return
+
+	return &vpython.Runtime{
+		Path:    path,
+		Hash:    hash,
+		Version: version.String(),
+		Prefix:  prefix,
+	}, nil
 }
 
 func (i *Interpreter) GetHash() (string, error) {
@@ -305,6 +285,87 @@ func getHash(path string) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%X", hash.Sum32()), nil
+}
+
+// cpythonSearchForPrefix translate the search_for_prefix in
+// cpython/Modules/getpath.c to avoid invoke python for prefix.
+// The only difference is it will ignore PYTHONHOME as we are assuming that
+// it's running in an isolated environment.
+func cpythonSearchForPrefix(path string, version Version) (prefix string, err error) {
+	buildLandmark := filepath.Join("Modules", "Setup.local")
+
+	// Check to see if path is in the build directory
+	// Path: <path> / <build_landmark>
+	finfo, err := os.Stat(filepath.Join(path, buildLandmark))
+	isBuildDir := (err == nil) && finfo.Mode().IsRegular()
+
+	if isBuildDir {
+		// path is the build directory (buildLandmark exists), now also
+		// check landmark using cpythonIsModule().
+		// Path: <path> \ Lib \ <landmark>
+		// e.g., C:\python3\Lib\<landmark>
+		if cpythonIsModule(filepath.Join(path, "Lib")) {
+			return path, nil
+		}
+	}
+
+	if runtime.GOOS == "windows" {
+		parent := path
+		for {
+			// Path: <path or substring> / <libDir> / < landmark >
+			if cpythonIsModule(filepath.Join(parent, "lib")) {
+				return parent, nil
+			}
+
+			if next := filepath.Dir(parent); parent != next {
+				parent = next
+			} else {
+				break
+			}
+		}
+	} else {
+		// It is equal to "lib" on most platforms. On Fedora and SuSE, it is equal
+		// to "lib64" on 64-bit platforms.
+		for _, libDir := range []string{"lib", "lib64"} {
+			// Search from path, until root is found
+			parent := path
+			for {
+				// Path: <path or substring> / <libDir> / <PythonBase> / <landmark>
+				// e.g., /usr/lib/python3.9/<landmark>
+				if cpythonIsModule(filepath.Join(parent, libDir, version.PythonBase())) {
+					return parent, nil
+				}
+
+				if next := filepath.Dir(parent); parent != next {
+					parent = next
+				} else {
+					break
+				}
+			}
+		}
+	}
+
+	// Use a default prefix
+	return path, nil
+}
+
+// cpythonIsModule translate the ismodule in cpython/Modules/getpath.c
+// Is module -- check for .pyc too
+func cpythonIsModule(prefix string) bool {
+	const moduleLandmark = "os.py"
+	finfo, err := os.Stat(filepath.Join(prefix, moduleLandmark))
+	if (err == nil) && finfo.Mode().IsRegular() {
+		return true
+	}
+
+	// Check for the compiled version of prefix.
+	const compiledLandmark = moduleLandmark + "c"
+	finfo, err = os.Stat(filepath.Join(prefix, compiledLandmark))
+	if (err == nil) && finfo.Mode().IsRegular() {
+		return true
+	}
+
+	return false
 }
 
 // IsolateEnvironment mutates e to remove any environmental influence over
