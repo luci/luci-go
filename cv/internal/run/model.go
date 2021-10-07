@@ -99,6 +99,9 @@ type Run struct {
 	CLs common.CLIDs `gae:",noindex"`
 	// Options are Run-specific additions on top of LUCI project config.
 	Options *Options
+
+	// OngoingLongOps tracks long operations currently happening.
+	OngoingLongOps *OngoingLongOps
 	// Submission is the state of Run Submission.
 	//
 	// If set, Submission is in progress or has completed.

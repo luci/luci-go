@@ -191,6 +191,15 @@ func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.R
 	return n.sendWithoutDispatch(ctx, runID, evt)
 }
 
+// NotifyLongOpCompleted tells RunManager that a long operation has completed.
+func (n *Notifier) NotifyLongOpCompleted(ctx context.Context, runID common.RunID, res *eventpb.LongOpCompleted) error {
+	return n.SendNow(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_LongOpCompleted{
+			LongOpCompleted: res,
+		},
+	})
+}
+
 // NotifyCQDVerificationCompleted tells RunManager that CQDaemon has completed
 // verifying the provided Run.
 //

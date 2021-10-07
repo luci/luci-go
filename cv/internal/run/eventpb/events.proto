@@ -55,6 +55,9 @@ message Event {
     // result and decide whether to retry this submission or succeed or fail
     // the Run.
     SubmissionCompleted submission_completed = 8;
+    // On LongOpCompleted event is sent by Run Manager to itself to mark
+    // completion of a long operation.
+    LongOpCompleted long_op_completed = 10;
 
     // TODO(yiwzhang): Define following events that Run Manager may receive:
     //  * TryjobUpdated
@@ -123,4 +126,13 @@ message CQDTryjobsUpdated {
 }
 
 message CQDFinished {
+}
+
+message LongOpCompleted {
+  string operation_id = 1;
+  // Cancelled is true if the LongOp detected that it was cancelled by the Run
+  // Manager and thus stopped working.
+  // TODO(tandrii): implement.
+  bool cancelled = 2;
+  // TODO(crbug/1240786): add fields if necessary.
 }

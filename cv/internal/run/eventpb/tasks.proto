@@ -20,7 +20,6 @@ option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 
 import "google/protobuf/timestamp.proto";
 
-
 // ManageRunTask sends a signal to RunManager to process events.
 //
 // Always used with de-duplication and thus can't be created from a
@@ -38,4 +37,20 @@ message ManageRunTask {
 message KickManageRunTask {
   string run_id = 1;
   google.protobuf.Timestamp eta = 2;
+}
+
+// DoLongOpTask performs potentially slow work on behalf a Run.
+//
+// A task of this kind is always created transactionally with the Run entity
+// modification recording the operation in OngoingLongOps.
+//
+// A task of this kind does not modify the Run entity directly, but communicates
+// back with Run Manager by sending at least the completion event, and possibly other
+// events.
+//
+// Queue: "manage-run".
+// NOTE: if necessary, allocate a separate queue for these tasks.
+message DoLongOpTask {
+  string run_id = 1;
+  string operation_id = 2;
 }

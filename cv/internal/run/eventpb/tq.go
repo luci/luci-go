@@ -32,6 +32,8 @@ import (
 const (
 	// ManageRunTaskClass is the ID of ManageRunTask Class.
 	ManageRunTaskClass = "manage-run"
+	// DoLongOpTaskClass is the ID of the DoLongOpTask Class.
+	DoLongOpTaskClass = "do-long-op-run"
 	// taskInterval is target frequency of executions of ManageRunTask.
 	//
 	// See Dispatch() for details.
@@ -45,6 +47,7 @@ const (
 type TasksBinding struct {
 	ManageRun    tq.TaskClassRef
 	KickManage   tq.TaskClassRef
+	DoLongOp     tq.TaskClassRef
 	TQDispatcher *tq.Dispatcher
 }
 
@@ -66,6 +69,16 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 			Kind:         tq.Transactional,
 			QuietOnError: true,
 			Quiet:        true,
+		}),
+		DoLongOp: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:        DoLongOpTaskClass,
+			Prototype: &DoLongOpTask{},
+			// TODO(tandrii): figure out if these tasks need a separate queue.
+			Queue: "manage-run",
+			Kind:  tq.Transactional,
+			// TODO(tandrii): switch to quiet once stable.
+			QuietOnError: false,
+			Quiet:        false,
 		}),
 		TQDispatcher: tqd,
 	}

@@ -56,6 +56,10 @@ func New(n *prjmanager.Notifier, g gerrit.Factory, u *updater.Updater) *Purger {
 	n.TasksBinding.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
+			ctx = logging.SetFields(ctx, logging.Fields{
+				"project": task.GetLuciProject(),
+				"cl":      task.GetPurgingCl().GetClid(),
+			})
 			err := p.PurgeCL(ctx, task)
 			return common.TQifyError(ctx, err)
 		},
@@ -74,8 +78,6 @@ func (p *Purger) Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
 
 // PurgeCL purges a CL and notifies PM on success or failure.
 func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
-	ctx = logging.SetField(ctx, "project", task.GetLuciProject())
-	ctx = logging.SetField(ctx, "cl", task.GetPurgingCl().GetClid())
 	now := clock.Now(ctx)
 
 	if len(task.GetReasons()) == 0 {

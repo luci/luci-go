@@ -195,6 +195,16 @@ func AssertReceivedSubmissionCompleted(ctx context.Context, runID common.RunID, 
 	AssertInEventbox(ctx, runID, target)
 }
 
+// AssertReceivedLongOpCompleted asserts Run has received LongOpCompleted event.
+func AssertReceivedLongOpCompleted(ctx context.Context, runID common.RunID, result *eventpb.LongOpCompleted) {
+	target := &eventpb.Event{
+		Event: &eventpb.Event_LongOpCompleted{
+			LongOpCompleted: result,
+		},
+	}
+	AssertInEventbox(ctx, runID, target)
+}
+
 // MockDispatch installs and returns MockDispatcher for Run Manager.
 func MockDispatch(ctx context.Context) (context.Context, MockDispatcher) {
 	m := MockDispatcher{&cvtesting.DispatchRecorder{}}

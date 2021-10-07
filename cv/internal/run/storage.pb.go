@@ -944,6 +944,55 @@ func (x *Tryjob) GetCqdDerived() bool {
 	return false
 }
 
+// OngoingLongOps tracks ongoing long operation.
+type OngoingLongOps struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Ops map operation ID to details.
+	Ops map[string]*OngoingLongOps_Op `protobuf:"bytes,1,rep,name=ops,proto3" json:"ops,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (x *OngoingLongOps) Reset() {
+	*x = OngoingLongOps{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OngoingLongOps) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OngoingLongOps) ProtoMessage() {}
+
+func (x *OngoingLongOps) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OngoingLongOps.ProtoReflect.Descriptor instead.
+func (*OngoingLongOps) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *OngoingLongOps) GetOps() map[string]*OngoingLongOps_Op {
+	if x != nil {
+		return x.Ops
+	}
+	return nil
+}
+
 type LogEntry_Created struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -955,7 +1004,7 @@ type LogEntry_Created struct {
 func (x *LogEntry_Created) Reset() {
 	*x = LogEntry_Created{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -968,7 +1017,7 @@ func (x *LogEntry_Created) String() string {
 func (*LogEntry_Created) ProtoMessage() {}
 
 func (x *LogEntry_Created) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +1049,7 @@ type LogEntry_Started struct {
 func (x *LogEntry_Started) Reset() {
 	*x = LogEntry_Started{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[8]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1013,7 +1062,7 @@ func (x *LogEntry_Started) String() string {
 func (*LogEntry_Started) ProtoMessage() {}
 
 func (x *LogEntry_Started) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1040,7 +1089,7 @@ type LogEntry_ConfigChanged struct {
 func (x *LogEntry_ConfigChanged) Reset() {
 	*x = LogEntry_ConfigChanged{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[9]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1053,7 +1102,7 @@ func (x *LogEntry_ConfigChanged) String() string {
 func (*LogEntry_ConfigChanged) ProtoMessage() {}
 
 func (x *LogEntry_ConfigChanged) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1085,7 +1134,7 @@ type LogEntry_TryjobsRequirementUpdated struct {
 func (x *LogEntry_TryjobsRequirementUpdated) Reset() {
 	*x = LogEntry_TryjobsRequirementUpdated{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[10]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1098,7 +1147,7 @@ func (x *LogEntry_TryjobsRequirementUpdated) String() string {
 func (*LogEntry_TryjobsRequirementUpdated) ProtoMessage() {}
 
 func (x *LogEntry_TryjobsRequirementUpdated) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1128,7 +1177,7 @@ type LogEntry_Info struct {
 func (x *LogEntry_Info) Reset() {
 	*x = LogEntry_Info{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[11]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1141,7 +1190,7 @@ func (x *LogEntry_Info) String() string {
 func (*LogEntry_Info) ProtoMessage() {}
 
 func (x *LogEntry_Info) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[11]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1183,7 +1232,7 @@ type LogEntry_TryjobsUpdated struct {
 func (x *LogEntry_TryjobsUpdated) Reset() {
 	*x = LogEntry_TryjobsUpdated{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[12]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1196,7 +1245,7 @@ func (x *LogEntry_TryjobsUpdated) String() string {
 func (*LogEntry_TryjobsUpdated) ProtoMessage() {}
 
 func (x *LogEntry_TryjobsUpdated) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[12]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1230,7 +1279,7 @@ type LogEntry_TreeChecked struct {
 func (x *LogEntry_TreeChecked) Reset() {
 	*x = LogEntry_TreeChecked{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[13]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1243,7 +1292,7 @@ func (x *LogEntry_TreeChecked) String() string {
 func (*LogEntry_TreeChecked) ProtoMessage() {}
 
 func (x *LogEntry_TreeChecked) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[13]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1275,7 +1324,7 @@ type LogEntry_Waitlisted struct {
 func (x *LogEntry_Waitlisted) Reset() {
 	*x = LogEntry_Waitlisted{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[14]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1288,7 +1337,7 @@ func (x *LogEntry_Waitlisted) String() string {
 func (*LogEntry_Waitlisted) ProtoMessage() {}
 
 func (x *LogEntry_Waitlisted) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[14]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1313,7 +1362,7 @@ type LogEntry_AcquiredSubmitQueue struct {
 func (x *LogEntry_AcquiredSubmitQueue) Reset() {
 	*x = LogEntry_AcquiredSubmitQueue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[15]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1326,7 +1375,7 @@ func (x *LogEntry_AcquiredSubmitQueue) String() string {
 func (*LogEntry_AcquiredSubmitQueue) ProtoMessage() {}
 
 func (x *LogEntry_AcquiredSubmitQueue) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[15]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1351,7 +1400,7 @@ type LogEntry_ReleasedSubmitQueue struct {
 func (x *LogEntry_ReleasedSubmitQueue) Reset() {
 	*x = LogEntry_ReleasedSubmitQueue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[16]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1364,7 +1413,7 @@ func (x *LogEntry_ReleasedSubmitQueue) String() string {
 func (*LogEntry_ReleasedSubmitQueue) ProtoMessage() {}
 
 func (x *LogEntry_ReleasedSubmitQueue) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[16]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1394,7 +1443,7 @@ type LogEntry_CLSubmitted struct {
 func (x *LogEntry_CLSubmitted) Reset() {
 	*x = LogEntry_CLSubmitted{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[17]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1407,7 +1456,7 @@ func (x *LogEntry_CLSubmitted) String() string {
 func (*LogEntry_CLSubmitted) ProtoMessage() {}
 
 func (x *LogEntry_CLSubmitted) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1448,7 +1497,7 @@ type LogEntry_SubmissionFailure struct {
 func (x *LogEntry_SubmissionFailure) Reset() {
 	*x = LogEntry_SubmissionFailure{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[18]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1461,7 +1510,7 @@ func (x *LogEntry_SubmissionFailure) String() string {
 func (*LogEntry_SubmissionFailure) ProtoMessage() {}
 
 func (x *LogEntry_SubmissionFailure) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[18]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1493,7 +1542,7 @@ type LogEntry_RunEnded struct {
 func (x *LogEntry_RunEnded) Reset() {
 	*x = LogEntry_RunEnded{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[19]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1506,7 +1555,7 @@ func (x *LogEntry_RunEnded) String() string {
 func (*LogEntry_RunEnded) ProtoMessage() {}
 
 func (x *LogEntry_RunEnded) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[19]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1533,7 +1582,7 @@ type Tryjobs_Requirement struct {
 func (x *Tryjobs_Requirement) Reset() {
 	*x = Tryjobs_Requirement{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[20]
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1546,7 +1595,7 @@ func (x *Tryjobs_Requirement) String() string {
 func (*Tryjobs_Requirement) ProtoMessage() {}
 
 func (x *Tryjobs_Requirement) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[20]
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1561,6 +1610,94 @@ func (x *Tryjobs_Requirement) ProtoReflect() protoreflect.Message {
 func (*Tryjobs_Requirement) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{5, 0}
 }
+
+type OngoingLongOps_Op struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Deadline best-effort limits the lifetime of this work.
+	//
+	// Run Manager expects to receive a LongOpCompleted event by this deadline.
+	Deadline *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=deadline,proto3" json:"deadline,omitempty"`
+	// If true, signals to the Long Op handler that it should stop as soon
+	// possible.
+	CancelRequested bool `protobuf:"varint,2,opt,name=cancel_requested,json=cancelRequested,proto3" json:"cancel_requested,omitempty"`
+	// Types that are assignable to Work:
+	//	*OngoingLongOps_Op_PostStartMessage
+	Work isOngoingLongOps_Op_Work `protobuf_oneof:"work"`
+}
+
+func (x *OngoingLongOps_Op) Reset() {
+	*x = OngoingLongOps_Op{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OngoingLongOps_Op) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OngoingLongOps_Op) ProtoMessage() {}
+
+func (x *OngoingLongOps_Op) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OngoingLongOps_Op.ProtoReflect.Descriptor instead.
+func (*OngoingLongOps_Op) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{7, 0}
+}
+
+func (x *OngoingLongOps_Op) GetDeadline() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Deadline
+	}
+	return nil
+}
+
+func (x *OngoingLongOps_Op) GetCancelRequested() bool {
+	if x != nil {
+		return x.CancelRequested
+	}
+	return false
+}
+
+func (m *OngoingLongOps_Op) GetWork() isOngoingLongOps_Op_Work {
+	if m != nil {
+		return m.Work
+	}
+	return nil
+}
+
+func (x *OngoingLongOps_Op) GetPostStartMessage() bool {
+	if x, ok := x.GetWork().(*OngoingLongOps_Op_PostStartMessage); ok {
+		return x.PostStartMessage
+	}
+	return false
+}
+
+type isOngoingLongOps_Op_Work interface {
+	isOngoingLongOps_Op_Work()
+}
+
+type OngoingLongOps_Op_PostStartMessage struct {
+	// If true, posts a start message.
+	PostStartMessage bool `protobuf:"varint,3,opt,name=post_start_message,json=postStartMessage,proto3,oneof"`
+}
+
+func (*OngoingLongOps_Op_PostStartMessage) isOngoingLongOps_Op_Work() {}
 
 var File_go_chromium_org_luci_cv_internal_run_storage_proto protoreflect.FileDescriptor
 
@@ -1767,20 +1904,41 @@ var file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = []byte{
 	0x6f, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c,
 	0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x71, 0x64, 0x5f, 0x64, 0x65, 0x72, 0x69, 0x76, 0x65, 0x64,
 	0x18, 0x08, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x63, 0x71, 0x64, 0x44, 0x65, 0x72, 0x69, 0x76,
-	0x65, 0x64, 0x2a, 0xa0, 0x01, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x16, 0x0a,
-	0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46,
-	0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47,
-	0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x02, 0x12,
-	0x1a, 0x0a, 0x16, 0x57, 0x41, 0x49, 0x54, 0x49, 0x4e, 0x47, 0x5f, 0x46, 0x4f, 0x52, 0x5f, 0x53,
-	0x55, 0x42, 0x4d, 0x49, 0x53, 0x53, 0x49, 0x4f, 0x4e, 0x10, 0x04, 0x12, 0x0e, 0x0a, 0x0a, 0x53,
-	0x55, 0x42, 0x4d, 0x49, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x10, 0x05, 0x12, 0x0e, 0x0a, 0x0a, 0x45,
-	0x4e, 0x44, 0x45, 0x44, 0x5f, 0x4d, 0x41, 0x53, 0x4b, 0x10, 0x40, 0x12, 0x0d, 0x0a, 0x09, 0x53,
-	0x55, 0x43, 0x43, 0x45, 0x45, 0x44, 0x45, 0x44, 0x10, 0x41, 0x12, 0x0a, 0x0a, 0x06, 0x46, 0x41,
-	0x49, 0x4c, 0x45, 0x44, 0x10, 0x42, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c,
-	0x4c, 0x45, 0x44, 0x10, 0x43, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f,
-	0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76,
-	0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x72, 0x75, 0x6e, 0x3b, 0x72, 0x75,
-	0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x64, 0x22, 0xca, 0x02, 0x0a, 0x0e, 0x4f, 0x6e, 0x67, 0x6f, 0x69, 0x6e, 0x67, 0x4c, 0x6f,
+	0x6e, 0x67, 0x4f, 0x70, 0x73, 0x12, 0x3a, 0x0a, 0x03, 0x6f, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x28, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c,
+	0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4f, 0x6e, 0x67, 0x6f, 0x69, 0x6e, 0x67, 0x4c, 0x6f, 0x6e, 0x67,
+	0x4f, 0x70, 0x73, 0x2e, 0x4f, 0x70, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x03, 0x6f, 0x70,
+	0x73, 0x1a, 0x9f, 0x01, 0x0a, 0x02, 0x4f, 0x70, 0x12, 0x36, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64,
+	0x6c, 0x69, 0x6e, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d,
+	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65,
+	0x12, 0x29, 0x0a, 0x10, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0f, 0x63, 0x61, 0x6e, 0x63,
+	0x65, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x65, 0x64, 0x12, 0x2e, 0x0a, 0x12, 0x70,
+	0x6f, 0x73, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x48, 0x00, 0x52, 0x10, 0x70, 0x6f, 0x73, 0x74, 0x53,
+	0x74, 0x61, 0x72, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x06, 0x0a, 0x04, 0x77,
+	0x6f, 0x72, 0x6b, 0x1a, 0x5a, 0x0a, 0x08, 0x4f, 0x70, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12,
+	0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65,
+	0x79, 0x12, 0x38, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x22, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72,
+	0x75, 0x6e, 0x2e, 0x4f, 0x6e, 0x67, 0x6f, 0x69, 0x6e, 0x67, 0x4c, 0x6f, 0x6e, 0x67, 0x4f, 0x70,
+	0x73, 0x2e, 0x4f, 0x70, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x2a,
+	0xa0, 0x01, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x12, 0x53, 0x54,
+	0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44,
+	0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12,
+	0x0b, 0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x02, 0x12, 0x1a, 0x0a, 0x16,
+	0x57, 0x41, 0x49, 0x54, 0x49, 0x4e, 0x47, 0x5f, 0x46, 0x4f, 0x52, 0x5f, 0x53, 0x55, 0x42, 0x4d,
+	0x49, 0x53, 0x53, 0x49, 0x4f, 0x4e, 0x10, 0x04, 0x12, 0x0e, 0x0a, 0x0a, 0x53, 0x55, 0x42, 0x4d,
+	0x49, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x10, 0x05, 0x12, 0x0e, 0x0a, 0x0a, 0x45, 0x4e, 0x44, 0x45,
+	0x44, 0x5f, 0x4d, 0x41, 0x53, 0x4b, 0x10, 0x40, 0x12, 0x0d, 0x0a, 0x09, 0x53, 0x55, 0x43, 0x43,
+	0x45, 0x45, 0x44, 0x45, 0x44, 0x10, 0x41, 0x12, 0x0a, 0x0a, 0x06, 0x46, 0x41, 0x49, 0x4c, 0x45,
+	0x44, 0x10, 0x42, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x4c, 0x45, 0x44,
+	0x10, 0x43, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
+	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e,
+	0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x72, 0x75, 0x6e, 0x3b, 0x72, 0x75, 0x6e, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1796,7 +1954,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP() []byt
 }
 
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_goTypes = []interface{}{
 	(Status)(0),                                // 0: cv.internal.run.Status
 	(*Trigger)(nil),                            // 1: cv.internal.run.Trigger
@@ -1806,58 +1964,64 @@ var file_go_chromium_org_luci_cv_internal_run_storage_proto_goTypes = []interfac
 	(*LogEntry)(nil),                           // 5: cv.internal.run.LogEntry
 	(*Tryjobs)(nil),                            // 6: cv.internal.run.Tryjobs
 	(*Tryjob)(nil),                             // 7: cv.internal.run.Tryjob
-	(*LogEntry_Created)(nil),                   // 8: cv.internal.run.LogEntry.Created
-	(*LogEntry_Started)(nil),                   // 9: cv.internal.run.LogEntry.Started
-	(*LogEntry_ConfigChanged)(nil),             // 10: cv.internal.run.LogEntry.ConfigChanged
-	(*LogEntry_TryjobsRequirementUpdated)(nil), // 11: cv.internal.run.LogEntry.TryjobsRequirementUpdated
-	(*LogEntry_Info)(nil),                      // 12: cv.internal.run.LogEntry.Info
-	(*LogEntry_TryjobsUpdated)(nil),            // 13: cv.internal.run.LogEntry.TryjobsUpdated
-	(*LogEntry_TreeChecked)(nil),               // 14: cv.internal.run.LogEntry.TreeChecked
-	(*LogEntry_Waitlisted)(nil),                // 15: cv.internal.run.LogEntry.Waitlisted
-	(*LogEntry_AcquiredSubmitQueue)(nil),       // 16: cv.internal.run.LogEntry.AcquiredSubmitQueue
-	(*LogEntry_ReleasedSubmitQueue)(nil),       // 17: cv.internal.run.LogEntry.ReleasedSubmitQueue
-	(*LogEntry_CLSubmitted)(nil),               // 18: cv.internal.run.LogEntry.CLSubmitted
-	(*LogEntry_SubmissionFailure)(nil),         // 19: cv.internal.run.LogEntry.SubmissionFailure
-	(*LogEntry_RunEnded)(nil),                  // 20: cv.internal.run.LogEntry.RunEnded
-	(*Tryjobs_Requirement)(nil),                // 21: cv.internal.run.Tryjobs.Requirement
-	(*timestamppb.Timestamp)(nil),              // 22: google.protobuf.Timestamp
-	(*tryjob.Definition)(nil),                  // 23: cv.internal.tryjob.Definition
-	(tryjob.Status)(0),                         // 24: cv.internal.tryjob.Status
-	(*tryjob.Result)(nil),                      // 25: cv.internal.tryjob.Result
-	(*eventpb.SubmissionCompleted)(nil),        // 26: cv.internal.run.eventpb.SubmissionCompleted
+	(*OngoingLongOps)(nil),                     // 8: cv.internal.run.OngoingLongOps
+	(*LogEntry_Created)(nil),                   // 9: cv.internal.run.LogEntry.Created
+	(*LogEntry_Started)(nil),                   // 10: cv.internal.run.LogEntry.Started
+	(*LogEntry_ConfigChanged)(nil),             // 11: cv.internal.run.LogEntry.ConfigChanged
+	(*LogEntry_TryjobsRequirementUpdated)(nil), // 12: cv.internal.run.LogEntry.TryjobsRequirementUpdated
+	(*LogEntry_Info)(nil),                      // 13: cv.internal.run.LogEntry.Info
+	(*LogEntry_TryjobsUpdated)(nil),            // 14: cv.internal.run.LogEntry.TryjobsUpdated
+	(*LogEntry_TreeChecked)(nil),               // 15: cv.internal.run.LogEntry.TreeChecked
+	(*LogEntry_Waitlisted)(nil),                // 16: cv.internal.run.LogEntry.Waitlisted
+	(*LogEntry_AcquiredSubmitQueue)(nil),       // 17: cv.internal.run.LogEntry.AcquiredSubmitQueue
+	(*LogEntry_ReleasedSubmitQueue)(nil),       // 18: cv.internal.run.LogEntry.ReleasedSubmitQueue
+	(*LogEntry_CLSubmitted)(nil),               // 19: cv.internal.run.LogEntry.CLSubmitted
+	(*LogEntry_SubmissionFailure)(nil),         // 20: cv.internal.run.LogEntry.SubmissionFailure
+	(*LogEntry_RunEnded)(nil),                  // 21: cv.internal.run.LogEntry.RunEnded
+	(*Tryjobs_Requirement)(nil),                // 22: cv.internal.run.Tryjobs.Requirement
+	(*OngoingLongOps_Op)(nil),                  // 23: cv.internal.run.OngoingLongOps.Op
+	nil,                                        // 24: cv.internal.run.OngoingLongOps.OpsEntry
+	(*timestamppb.Timestamp)(nil),              // 25: google.protobuf.Timestamp
+	(*tryjob.Definition)(nil),                  // 26: cv.internal.tryjob.Definition
+	(tryjob.Status)(0),                         // 27: cv.internal.tryjob.Status
+	(*tryjob.Result)(nil),                      // 28: cv.internal.tryjob.Result
+	(*eventpb.SubmissionCompleted)(nil),        // 29: cv.internal.run.eventpb.SubmissionCompleted
 }
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_depIdxs = []int32{
-	22, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
-	22, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
-	22, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
+	25, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
+	25, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
+	25, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
 	5,  // 3: cv.internal.run.LogEntries.entries:type_name -> cv.internal.run.LogEntry
-	22, // 4: cv.internal.run.LogEntry.time:type_name -> google.protobuf.Timestamp
-	8,  // 5: cv.internal.run.LogEntry.created:type_name -> cv.internal.run.LogEntry.Created
-	9,  // 6: cv.internal.run.LogEntry.started:type_name -> cv.internal.run.LogEntry.Started
-	10, // 7: cv.internal.run.LogEntry.config_changed:type_name -> cv.internal.run.LogEntry.ConfigChanged
-	11, // 8: cv.internal.run.LogEntry.tryjobs_requirement_updated:type_name -> cv.internal.run.LogEntry.TryjobsRequirementUpdated
-	13, // 9: cv.internal.run.LogEntry.tryjobs_updated:type_name -> cv.internal.run.LogEntry.TryjobsUpdated
-	12, // 10: cv.internal.run.LogEntry.info:type_name -> cv.internal.run.LogEntry.Info
-	14, // 11: cv.internal.run.LogEntry.tree_checked:type_name -> cv.internal.run.LogEntry.TreeChecked
-	15, // 12: cv.internal.run.LogEntry.waitlisted:type_name -> cv.internal.run.LogEntry.Waitlisted
-	16, // 13: cv.internal.run.LogEntry.acquired_submit_queue:type_name -> cv.internal.run.LogEntry.AcquiredSubmitQueue
-	17, // 14: cv.internal.run.LogEntry.released_submit_queue:type_name -> cv.internal.run.LogEntry.ReleasedSubmitQueue
-	18, // 15: cv.internal.run.LogEntry.cl_submitted:type_name -> cv.internal.run.LogEntry.CLSubmitted
-	19, // 16: cv.internal.run.LogEntry.submission_failure:type_name -> cv.internal.run.LogEntry.SubmissionFailure
-	20, // 17: cv.internal.run.LogEntry.run_ended:type_name -> cv.internal.run.LogEntry.RunEnded
-	21, // 18: cv.internal.run.Tryjobs.requirement:type_name -> cv.internal.run.Tryjobs.Requirement
+	25, // 4: cv.internal.run.LogEntry.time:type_name -> google.protobuf.Timestamp
+	9,  // 5: cv.internal.run.LogEntry.created:type_name -> cv.internal.run.LogEntry.Created
+	10, // 6: cv.internal.run.LogEntry.started:type_name -> cv.internal.run.LogEntry.Started
+	11, // 7: cv.internal.run.LogEntry.config_changed:type_name -> cv.internal.run.LogEntry.ConfigChanged
+	12, // 8: cv.internal.run.LogEntry.tryjobs_requirement_updated:type_name -> cv.internal.run.LogEntry.TryjobsRequirementUpdated
+	14, // 9: cv.internal.run.LogEntry.tryjobs_updated:type_name -> cv.internal.run.LogEntry.TryjobsUpdated
+	13, // 10: cv.internal.run.LogEntry.info:type_name -> cv.internal.run.LogEntry.Info
+	15, // 11: cv.internal.run.LogEntry.tree_checked:type_name -> cv.internal.run.LogEntry.TreeChecked
+	16, // 12: cv.internal.run.LogEntry.waitlisted:type_name -> cv.internal.run.LogEntry.Waitlisted
+	17, // 13: cv.internal.run.LogEntry.acquired_submit_queue:type_name -> cv.internal.run.LogEntry.AcquiredSubmitQueue
+	18, // 14: cv.internal.run.LogEntry.released_submit_queue:type_name -> cv.internal.run.LogEntry.ReleasedSubmitQueue
+	19, // 15: cv.internal.run.LogEntry.cl_submitted:type_name -> cv.internal.run.LogEntry.CLSubmitted
+	20, // 16: cv.internal.run.LogEntry.submission_failure:type_name -> cv.internal.run.LogEntry.SubmissionFailure
+	21, // 17: cv.internal.run.LogEntry.run_ended:type_name -> cv.internal.run.LogEntry.RunEnded
+	22, // 18: cv.internal.run.Tryjobs.requirement:type_name -> cv.internal.run.Tryjobs.Requirement
 	7,  // 19: cv.internal.run.Tryjobs.tryjobs:type_name -> cv.internal.run.Tryjob
-	22, // 20: cv.internal.run.Tryjobs.cqd_update_time:type_name -> google.protobuf.Timestamp
-	23, // 21: cv.internal.run.Tryjob.definition:type_name -> cv.internal.tryjob.Definition
-	24, // 22: cv.internal.run.Tryjob.status:type_name -> cv.internal.tryjob.Status
-	25, // 23: cv.internal.run.Tryjob.result:type_name -> cv.internal.tryjob.Result
-	7,  // 24: cv.internal.run.LogEntry.TryjobsUpdated.tryjobs:type_name -> cv.internal.run.Tryjob
-	26, // 25: cv.internal.run.LogEntry.SubmissionFailure.event:type_name -> cv.internal.run.eventpb.SubmissionCompleted
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	25, // 20: cv.internal.run.Tryjobs.cqd_update_time:type_name -> google.protobuf.Timestamp
+	26, // 21: cv.internal.run.Tryjob.definition:type_name -> cv.internal.tryjob.Definition
+	27, // 22: cv.internal.run.Tryjob.status:type_name -> cv.internal.tryjob.Status
+	28, // 23: cv.internal.run.Tryjob.result:type_name -> cv.internal.tryjob.Result
+	24, // 24: cv.internal.run.OngoingLongOps.ops:type_name -> cv.internal.run.OngoingLongOps.OpsEntry
+	7,  // 25: cv.internal.run.LogEntry.TryjobsUpdated.tryjobs:type_name -> cv.internal.run.Tryjob
+	29, // 26: cv.internal.run.LogEntry.SubmissionFailure.event:type_name -> cv.internal.run.eventpb.SubmissionCompleted
+	25, // 27: cv.internal.run.OngoingLongOps.Op.deadline:type_name -> google.protobuf.Timestamp
+	23, // 28: cv.internal.run.OngoingLongOps.OpsEntry.value:type_name -> cv.internal.run.OngoingLongOps.Op
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_internal_run_storage_proto_init() }
@@ -1951,7 +2115,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_Created); i {
+			switch v := v.(*OngoingLongOps); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1963,7 +2127,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_Started); i {
+			switch v := v.(*LogEntry_Created); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1975,7 +2139,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_ConfigChanged); i {
+			switch v := v.(*LogEntry_Started); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1987,7 +2151,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_TryjobsRequirementUpdated); i {
+			switch v := v.(*LogEntry_ConfigChanged); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1999,7 +2163,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_Info); i {
+			switch v := v.(*LogEntry_TryjobsRequirementUpdated); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2011,7 +2175,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_TryjobsUpdated); i {
+			switch v := v.(*LogEntry_Info); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2023,7 +2187,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_TreeChecked); i {
+			switch v := v.(*LogEntry_TryjobsUpdated); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2035,7 +2199,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_Waitlisted); i {
+			switch v := v.(*LogEntry_TreeChecked); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2047,7 +2211,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_AcquiredSubmitQueue); i {
+			switch v := v.(*LogEntry_Waitlisted); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2059,7 +2223,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_ReleasedSubmitQueue); i {
+			switch v := v.(*LogEntry_AcquiredSubmitQueue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2071,7 +2235,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_CLSubmitted); i {
+			switch v := v.(*LogEntry_ReleasedSubmitQueue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2083,7 +2247,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_SubmissionFailure); i {
+			switch v := v.(*LogEntry_CLSubmitted); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2095,7 +2259,7 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEntry_RunEnded); i {
+			switch v := v.(*LogEntry_SubmissionFailure); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2107,7 +2271,31 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogEntry_RunEnded); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Tryjobs_Requirement); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*OngoingLongOps_Op); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2134,13 +2322,16 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 		(*LogEntry_SubmissionFailure_)(nil),
 		(*LogEntry_RunEnded_)(nil),
 	}
+	file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[22].OneofWrappers = []interface{}{
+		(*OngoingLongOps_Op_PostStartMessage)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   21,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

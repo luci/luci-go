@@ -17,6 +17,7 @@ package state
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -36,6 +37,9 @@ type RunState struct {
 
 	// Helper fields used during state mutations.
 
+	// NewLongOpIDs which should be scheduled transactionally with the state
+	// transition.
+	NewLongOpIDs []string
 	// SubmissionScheduled is true if a submission will be attempted after state
 	// transition completes.
 	SubmissionScheduled bool
@@ -54,15 +58,17 @@ func (rs *RunState) ShallowCopy() *RunState {
 		ret.CLs = append(common.CLIDs(nil), rs.CLs...)
 	}
 	if rs.LogEntries != nil {
-		ret.LogEntries = make([]*run.LogEntry, len(rs.LogEntries))
-		copy(ret.LogEntries, rs.LogEntries)
+		ret.LogEntries = append([]*run.LogEntry(nil), rs.LogEntries...)
+	}
+	if rs.NewLongOpIDs != nil {
+		ret.NewLongOpIDs = append([]string(nil), rs.NewLongOpIDs...)
 	}
 	return &ret
 }
 
 // DeepCopy returns a deep copy of this RunState.
 //
-// This is an expensive operation. It should only be called in test.
+// This is an expensive operation. It should only be called in tests.
 func (rs *RunState) DeepCopy() *RunState {
 	if rs == nil {
 		return nil
@@ -88,6 +94,7 @@ func (rs *RunState) DeepCopy() *RunState {
 			Options:             proto.Clone(rs.Options).(*run.Options),
 			Submission:          proto.Clone(rs.Submission).(*run.Submission),
 			Tryjobs:             proto.Clone(rs.Tryjobs).(*run.Tryjobs),
+			OngoingLongOps:      proto.Clone(rs.OngoingLongOps).(*run.OngoingLongOps),
 			LatestCLsRefresh:    rs.LatestCLsRefresh,
 			CQDAttemptKey:       rs.CQDAttemptKey,
 			FinalizedByCQD:      rs.FinalizedByCQD,
@@ -105,6 +112,9 @@ func (rs *RunState) DeepCopy() *RunState {
 		for i, entry := range rs.LogEntries {
 			ret.LogEntries[i] = proto.Clone(entry).(*run.LogEntry)
 		}
+	}
+	if rs.NewLongOpIDs != nil {
+		ret.NewLongOpIDs = append([]string(nil), rs.NewLongOpIDs...)
 	}
 	return ret
 }
@@ -140,4 +150,69 @@ func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error)
 	rs.Submission.TreeOpen = treeOpen
 	rs.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
 	return treeOpen, nil
+}
+
+// EnqueueLongOp adds a new long op to the Run state and returns its ID.
+//
+// The actual long operation will be scheduled transactioncally with the Run
+// mutation.
+func (rs *RunState) EnqueueLongOp(op *run.OngoingLongOps_Op) string {
+	// Validate request.
+	switch {
+	case op.GetDeadline() == nil:
+		panic(fmt.Errorf("deadline is required"))
+	case op.GetWork() == nil:
+		panic(fmt.Errorf("work is required"))
+	}
+
+	// Find an ID which wasn't used yet.
+	// Use future EVersion as a prefix to ensure resulting ID is unique over Run's
+	// lifetime.
+	id := ""
+	prefix := rs.EVersion + 1
+	suffix := len(rs.NewLongOpIDs) + 1
+	for {
+		id = fmt.Sprintf("%d-%d", prefix, suffix)
+		if _, dup := rs.OngoingLongOps.GetOps()[id]; !dup {
+			break
+		}
+		suffix++
+	}
+
+	if rs.OngoingLongOps == nil {
+		rs.OngoingLongOps = &run.OngoingLongOps{}
+	} else {
+		rs.OngoingLongOps = proto.Clone(rs.OngoingLongOps).(*run.OngoingLongOps)
+	}
+	if rs.OngoingLongOps.Ops == nil {
+		rs.OngoingLongOps.Ops = make(map[string]*run.OngoingLongOps_Op, 1)
+	}
+	rs.OngoingLongOps.Ops[id] = op
+	rs.NewLongOpIDs = append(rs.NewLongOpIDs, id)
+	return id
+}
+
+// RequestLongOpCancellation records soft request to cancel a long running op.
+//
+// This request is asynchroneous but it's stored in the Run state.
+func (rs *RunState) RequestLongOpCancellation(opID string) {
+	if _, exists := rs.OngoingLongOps.GetOps()[opID]; !exists {
+		panic(fmt.Errorf("long Operation %q doesn't exist", opID))
+	}
+	rs.OngoingLongOps = proto.Clone(rs.OngoingLongOps).(*run.OngoingLongOps)
+	rs.OngoingLongOps.GetOps()[opID].CancelRequested = true
+}
+
+// RemoveCompletedLongOp removes long op from the ongoing ones.
+func (rs *RunState) RemoveCompletedLongOp(opID string) {
+	if _, exists := rs.OngoingLongOps.GetOps()[opID]; !exists {
+		panic(fmt.Errorf("long Operation %q doesn't exist", opID))
+	}
+	if len(rs.OngoingLongOps.GetOps()) == 1 {
+		rs.OngoingLongOps = nil
+		return
+	}
+	// At least 1 other long op will remain.
+	rs.OngoingLongOps = proto.Clone(rs.OngoingLongOps).(*run.OngoingLongOps)
+	delete(rs.OngoingLongOps.Ops, opID)
 }

@@ -309,3 +309,23 @@ message Tryjob {
   // TODO(crbug/1227523): delete after CQDaemon migration.
   bool cqd_derived = 8;
 }
+
+// OngoingLongOps tracks ongoing long operation.
+message OngoingLongOps {
+  message Op {
+    // Deadline best-effort limits the lifetime of this work.
+    //
+    // Run Manager expects to receive a LongOpCompleted event by this deadline.
+    google.protobuf.Timestamp deadline = 1;
+    // If true, signals to the Long Op handler that it should stop as soon
+    // possible.
+    bool cancel_requested = 2;
+
+    oneof work {
+      // If true, posts a start message.
+      bool post_start_message = 3;
+    }
+  }
+  // Ops map operation ID to details.
+  map<string, Op> ops = 1;
+}

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -58,9 +59,12 @@ const maxEventsPerBatch = 10000
 //
 // It decides starting, cancelation, submission etc. for Runs.
 type RunManager struct {
-	runNotifier *run.Notifier
-	pmNotifier  *prjmanager.Notifier
-	handler     handler.Handler
+	runNotifier  *run.Notifier
+	pmNotifier   *prjmanager.Notifier
+	tqDispatcher *tq.Dispatcher
+	handler      handler.Handler
+
+	testDoLongOperationWithDeadline func(context.Context, *run.Run, *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error)
 }
 
 // New constructs a new RunManager instance.
@@ -73,16 +77,21 @@ func New(
 	tc tree.Client,
 	bqc bq.Client,
 ) *RunManager {
-	rm := &RunManager{n, pm, &handler.Impl{
-		PM:         pm,
-		RM:         n,
-		CLUpdater:  u,
-		CLMutator:  clm,
-		BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc),
-		GFactory:   g,
-		TreeClient: tc,
-		Publisher:  pubsub.NewPublisher(n.TasksBinding.TQDispatcher),
-	}}
+	rm := &RunManager{
+		runNotifier:  n,
+		pmNotifier:   pm,
+		tqDispatcher: n.TasksBinding.TQDispatcher,
+		handler: &handler.Impl{
+			PM:         pm,
+			RM:         n,
+			CLUpdater:  u,
+			CLMutator:  clm,
+			BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc),
+			GFactory:   g,
+			TreeClient: tc,
+			Publisher:  pubsub.NewPublisher(n.TasksBinding.TQDispatcher),
+		},
+	}
 	n.TasksBinding.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*eventpb.ManageRunTask)
@@ -102,6 +111,17 @@ func New(
 			}.Error(ctx, err)
 		},
 	)
+	n.TasksBinding.DoLongOp.AttachHandler(
+		func(ctx context.Context, payload proto.Message) error {
+			task := payload.(*eventpb.DoLongOpTask)
+			ctx = logging.SetFields(ctx, logging.Fields{
+				"run":       task.GetRunId(),
+				"operation": task.GetOperationId(),
+			})
+			err := rm.doLongOperation(ctx, task)
+			return common.TQifyError(ctx, err)
+		},
+	)
 	return rm
 }
 
@@ -115,10 +135,11 @@ var fakeHandlerKey = "Fake Run Events Handler"
 
 func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 	proc := &runProcessor{
-		runID:       runID,
-		runNotifier: rm.runNotifier,
-		pmNotifier:  rm.pmNotifier,
-		handler:     rm.handler,
+		runID:        runID,
+		runNotifier:  rm.runNotifier,
+		pmNotifier:   rm.pmNotifier,
+		tqDispatcher: rm.tqDispatcher,
+		handler:      rm.handler,
 	}
 	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
 		proc.handler = h
@@ -149,8 +170,9 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 type runProcessor struct {
 	runID common.RunID
 
-	runNotifier *run.Notifier
-	pmNotifier  *prjmanager.Notifier
+	runNotifier  *run.Notifier
+	pmNotifier   *prjmanager.Notifier
+	tqDispatcher *tq.Dispatcher
 
 	handler handler.Handler
 }
@@ -213,9 +235,14 @@ func (rp *runProcessor) SaveState(ctx context.Context, st eventbox.State, ev eve
 	r := rs.Run
 	r.EVersion = int(ev)
 	r.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+	// Transactionally enqueue new long operations (if any).
+	if err := rp.enqueueLongOps(ctx, &rs.Run, rs.NewLongOpIDs...); err != nil {
+		return err
+	}
 	if err := datastore.Put(ctx, &r); err != nil {
 		return errors.Annotate(err, "failed to put Run %q", r.ID).Tag(transient.Tag).Err()
 	}
+
 	if len(rs.LogEntries) > 0 {
 		l := run.RunLog{
 			ID:      int64(ev),
@@ -251,6 +278,10 @@ type triageResult struct {
 	submissionCompletedEvent struct {
 		event eventbox.Event
 		sc    *eventpb.SubmissionCompleted
+	}
+	longOpCompleted struct {
+		events eventbox.Events
+		ops    []*eventpb.LongOpCompleted
 	}
 	cqdVerificationCompletedEvents eventbox.Events
 	cqdTryjobsUpdated              eventbox.Events
@@ -317,6 +348,9 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 		// TODO(crbug/1227523): remove this after all such events are wiped out
 		// from datastore.
 		tr.garbage = append(tr.garbage, item)
+	case *eventpb.Event_LongOpCompleted:
+		tr.longOpCompleted.events = append(tr.longOpCompleted.events, item)
+		tr.longOpCompleted.ops = append(tr.longOpCompleted.ops, e.GetLongOpCompleted())
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -397,6 +431,9 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 			return nil, err
 		}
 		rs, transitions = applyResult(res, tr.readyForSubmissionEvents, transitions)
+	}
+	if len(tr.longOpCompleted.events) > 0 {
+		// TODO(tandrii): handle Long Op completions.
 	}
 
 	if len(tr.pokeEvents) > 0 {
