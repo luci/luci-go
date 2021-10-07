@@ -72,6 +72,7 @@ export class InvocationDetailsTabElement extends MobxLitElement {
               (invId) => html`
                 <li>
                   <a href=${router.urlForName('invocation', { invocation_id: invId })} target="_blank">${invId}</a>
+                  ${this.renderBuildLink(invId)}
                 </li>
               `
             )}
@@ -91,6 +92,15 @@ export class InvocationDetailsTabElement extends MobxLitElement {
         </table>
       </div>
     `;
+  }
+
+  private renderBuildLink(invId: string) {
+    const match = invId.match(/^build-(?<id>\d+)/);
+    if (!match) {
+      return '';
+    }
+    const buildPageUrl = router.urlForName('build-short-link', { build_id: match.groups!['id'] });
+    return html`(<a href=${buildPageUrl} target="_blank">build page</a>)`;
   }
 
   static styles = [
