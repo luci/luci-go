@@ -944,7 +944,7 @@ func (x *Tryjob) GetCqdDerived() bool {
 	return false
 }
 
-// OngoingLongOps tracks ongoing long operation.
+// OngoingLongOps tracks ongoing long operations.
 type OngoingLongOps struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

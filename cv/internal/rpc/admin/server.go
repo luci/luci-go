@@ -828,6 +828,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		ExternalCls:      externalIDs,
 		Options:          r.Options,
 		Tryjobs:          r.Tryjobs,
+		OngoingLongOps:   r.OngoingLongOps,
 		Submission:       r.Submission,
 		FinalizedByCqd:   r.FinalizedByCQD,
 		LatestClsRefresh: common.TspbNillable(r.LatestCLsRefresh),

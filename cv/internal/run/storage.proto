@@ -310,7 +310,7 @@ message Tryjob {
   bool cqd_derived = 8;
 }
 
-// OngoingLongOps tracks ongoing long operation.
+// OngoingLongOps tracks ongoing long operations.
 message OngoingLongOps {
   message Op {
     // Deadline best-effort limits the lifetime of this work.

@@ -151,7 +151,7 @@ message GetRunRequest {
 // The Run state and outstanding events come from different entities
 // read in parallel.
 message GetRunResponse {
-  // State. Next tag: 21.
+  // State. Next tag: 22.
   string id = 1;
   int64 eversion = 2;
   string mode = 3;
@@ -166,6 +166,7 @@ message GetRunResponse {
   repeated string external_cls = 15;
   cv.internal.run.Options options = 16;
   cv.internal.run.Tryjobs tryjobs = 17;
+  cv.internal.run.OngoingLongOps ongoing_long_ops = 21;
   cv.internal.run.Submission submission = 12;
   bool finalized_by_cqd = 13;
   google.protobuf.Timestamp latest_cls_refresh = 18;
