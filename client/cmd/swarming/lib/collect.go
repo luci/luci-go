@@ -30,6 +30,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/semaphore"
 
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -153,6 +154,7 @@ type collectRun struct {
 	eager             bool
 	perf              bool
 	jsonInput         string
+	casAddr           string
 }
 
 func (c *collectRun) Init(authFlags AuthFlags) {
@@ -168,6 +170,7 @@ func (c *collectRun) Init(authFlags AuthFlags) {
 	c.Flags.Var(&c.taskOutput, "task-output-stdout", "Where to output each task's console output (stderr/stdout). (none|json|console|all)")
 	c.Flags.StringVar(&c.outputDir, "output-dir", "", "Where to download isolated output to.")
 	c.Flags.StringVar(&c.jsonInput, "requests-json", "", "Load the task IDs from a .json file as saved by \"trigger -dump-json\"")
+	c.Flags.StringVar(&c.casAddr, "cas-addr", casclient.AddrProd, "CAS address.")
 }
 
 func (c *collectRun) Parse(args *[]string) error {
@@ -271,7 +274,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 				}
 			}
 			if result.CasOutputRoot != nil {
-				cascli, err := c.authFlags.NewRBEClient(ctx, result.CasOutputRoot.CasInstance)
+				cascli, err := c.authFlags.NewRBEClient(ctx, c.casAddr, result.CasOutputRoot.CasInstance)
 				if err != nil {
 					return err
 				}

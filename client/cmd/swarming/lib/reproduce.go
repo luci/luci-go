@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/client/casclient"
 	clientswarming "go.chromium.org/luci/client/swarming"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/cli"
@@ -215,7 +216,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 
 	// Support RBE-CAS input in task request.
 	if properties.CasInputRoot != nil {
-		cascli, err := c.authFlags.NewRBEClient(ctx, properties.CasInputRoot.CasInstance)
+		cascli, err := c.authFlags.NewRBEClient(ctx, casclient.AddrProd, properties.CasInputRoot.CasInstance)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
 		}
