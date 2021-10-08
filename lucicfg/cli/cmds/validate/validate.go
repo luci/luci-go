@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/maruel/subcommands"
@@ -184,11 +185,16 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 
 		// Find files that are newer in the output or do not exist on disk. Do
 		// semantic comparison for protos, unless -strict is set.
-		changed, _, err := output.Compare(meta.ConfigDir, !vr.strict)
+		cmp, err := output.Compare(meta.ConfigDir, !vr.strict)
 		if err != nil {
 			return result, err
 		}
-		result.Stale = append(result.Stale, changed...)
+		for name, res := range cmp {
+			if res == lucicfg.Different {
+				result.Stale = append(result.Stale, name)
+			}
+		}
+		sort.Strings(result.Stale)
 
 		// Ask the user to regenerate files if they are different.
 		if len(result.Stale) != 0 {

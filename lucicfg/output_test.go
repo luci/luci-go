@@ -64,7 +64,7 @@ func TestOutput(t *testing.T) {
 					"dir/a": BlobDatum("222"),
 				},
 			}
-			changed, unchanged, err := out.Write(tmp)
+			changed, unchanged, err := out.Write(tmp, false)
 			So(changed, ShouldResemble, []string{"a", "dir/a"})
 			So(unchanged, ShouldHaveLength, 0)
 			So(err, ShouldBeNil)
@@ -73,7 +73,7 @@ func TestOutput(t *testing.T) {
 			So(read("dir/a"), ShouldResemble, "222")
 
 			out.Data["a"] = BlobDatum("333")
-			changed, unchanged, err = out.Write(tmp)
+			changed, unchanged, err = out.Write(tmp, false)
 			So(changed, ShouldResemble, []string{"a"})
 			So(unchanged, ShouldResemble, []string{"dir/a"})
 			So(err, ShouldBeNil)
@@ -158,7 +158,7 @@ func TestOutput(t *testing.T) {
 					"m2": &MessageDatum{Header: "# Header\n", Message: testMessage(222, 0)},
 				},
 			}
-			changed, unchanged, err := out.Write(tmp)
+			changed, unchanged, err := out.Write(tmp, false)
 			So(changed, ShouldResemble, []string{"m1", "m2"})
 			So(unchanged, ShouldHaveLength, 0)
 			So(err, ShouldBeNil)
@@ -171,25 +171,39 @@ func TestOutput(t *testing.T) {
 				write("m2", "i:     222")
 
 				// If using semantic comparison, recognizes nothing has changed.
-				changed, unchanged, err := out.Compare(tmp, true)
-				So(changed, ShouldHaveLength, 0)
-				So(unchanged, ShouldResemble, []string{"m1", "m2"})
+				cmp, err := out.Compare(tmp, true)
 				So(err, ShouldBeNil)
+				So(cmp, ShouldResemble, map[string]CompareResult{
+					"m1": Identical,
+					"m2": SemanticallyEqual,
+				})
 
 				// Byte-to-byte comparison recognizes the change.
-				changed, unchanged, err = out.Compare(tmp, false)
-				So(changed, ShouldResemble, []string{"m2"})
-				So(unchanged, ShouldResemble, []string{"m1"})
+				cmp, err = out.Compare(tmp, false)
 				So(err, ShouldBeNil)
+				So(cmp, ShouldResemble, map[string]CompareResult{
+					"m1": Identical,
+					"m2": Different,
+				})
 
-				// Write always reformats the files.
-				changed, unchanged, err = out.Write(tmp)
-				So(changed, ShouldResemble, []string{"m2"})
-				So(unchanged, ShouldResemble, []string{"m1"})
-				So(err, ShouldBeNil)
+				Convey("Write, force=false", func() {
+					// Output didn't really change, so nothing is overwritten.
+					changed, unchanged, err := out.Write(tmp, false)
+					So(err, ShouldBeNil)
+					So(changed, ShouldHaveLength, 0)
+					So(unchanged, ShouldResemble, []string{"m1", "m2"})
+				})
 
-				// Overwrote it on disk.
-				So(read("m2"), ShouldResemble, "# Header\ni: 222\n")
+				Convey("Write, force=true", func() {
+					// We ask to overwrite files even if they all are semantically same.
+					changed, unchanged, err := out.Write(tmp, true)
+					So(err, ShouldBeNil)
+					So(changed, ShouldResemble, []string{"m2"})
+					So(unchanged, ShouldResemble, []string{"m1"})
+
+					// Overwrote it on disk.
+					So(read("m2"), ShouldResemble, "# Header\ni: 222\n")
+				})
 			})
 
 			Convey("Detects real changes", func() {
@@ -197,10 +211,18 @@ func TestOutput(t *testing.T) {
 				write("m2", "i: 333")
 
 				// Detected it.
-				changed, unchanged, err := out.Compare(tmp, true)
+				cmp, err := out.Compare(tmp, true)
+				So(err, ShouldBeNil)
+				So(cmp, ShouldResemble, map[string]CompareResult{
+					"m1": Identical,
+					"m2": Different,
+				})
+
+				// Writes it to disk, even when force=false.
+				changed, unchanged, err := out.Write(tmp, false)
+				So(err, ShouldBeNil)
 				So(changed, ShouldResemble, []string{"m2"})
 				So(unchanged, ShouldResemble, []string{"m1"})
-				So(err, ShouldBeNil)
 			})
 
 			Convey("Handles bad protos", func() {
@@ -208,31 +230,13 @@ func TestOutput(t *testing.T) {
 				write("m2", "not a text proto")
 
 				// Detected the file as changed.
-				changed, unchanged, err := out.Compare(tmp, true)
-				So(changed, ShouldResemble, []string{"m2"})
-				So(unchanged, ShouldResemble, []string{"m1"})
+				cmp, err := out.Compare(tmp, true)
 				So(err, ShouldBeNil)
+				So(cmp, ShouldResemble, map[string]CompareResult{
+					"m1": Identical,
+					"m2": Different,
+				})
 			})
-		})
-
-		Convey("Handles semantically different, but byte-identical protos", func() {
-			// Write the initial version.
-			out := Output{
-				Data: map[string]Datum{
-					"m": &MessageDatum{Message: testMessage(0, 1.7)},
-				},
-			}
-			out.Write(tmp)
-
-			So(read("m"), ShouldResemble, "f: 1.7\n")
-
-			// We didn't touch the file. It should be detected as "unchanged", even
-			// though 1.7 deserializes into "semantically different" float (floats are
-			// weird like that).
-			changed, unchanged, err := out.Compare(tmp, true)
-			So(changed, ShouldHaveLength, 0)
-			So(unchanged, ShouldResemble, []string{"m"})
-			So(err, ShouldBeNil)
 		})
 	})
 

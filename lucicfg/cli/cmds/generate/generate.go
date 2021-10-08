@@ -53,6 +53,7 @@ on disk, so they can be manually examined for reasons they are invalid.
 			gr := &generateRun{}
 			gr.Init(params)
 			gr.AddGeneratorFlags()
+			gr.Flags.BoolVar(&gr.force, "force", false, "Rewrite existing output files on disk even if they are semantically equal to generated ones")
 			gr.Flags.BoolVar(&gr.validate, "validate", false, "Validate the generate configs by sending them to LUCI Config")
 			gr.Flags.StringVar(&gr.emitToStdout, "emit-to-stdout", "",
 				"When set to a path, keep generated configs in memory (don't touch disk) and just emit this single config file to stdout")
@@ -64,6 +65,7 @@ on disk, so they can be manually examined for reasons they are invalid.
 type generateRun struct {
 	base.Subcommand
 
+	force        bool
 	validate     bool
 	emitToStdout string
 }
@@ -143,7 +145,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 			}
 		}
 		// Write the new output there.
-		result.Changed, result.Unchanged, err = output.Write(meta.ConfigDir)
+		result.Changed, result.Unchanged, err = output.Write(meta.ConfigDir, gr.force)
 		if err != nil {
 			return result, err
 		}

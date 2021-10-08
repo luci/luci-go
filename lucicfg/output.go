@@ -55,12 +55,22 @@ type Output struct {
 	Roots map[string]string
 }
 
+// CompareResult is returned by Datum.Compare.
+type CompareResult int
+
+const (
+	UnknownResult     CompareResult = iota // used as a placeholder on errors
+	Identical                              // datums are byte-to-byte identical
+	SemanticallyEqual                      // datums are byte-to-byte different, but semantically equal
+	Different                              // datums are semantically different
+)
+
 // Datum represents one generated output file.
 type Datum interface {
 	// Bytes is a raw file body to put on disk.
 	Bytes() ([]byte, error)
-	// SemanticallySame is true if 'other' represents the same datum.
-	SemanticallySame(other []byte) bool
+	// Compare semantically compares this datum to 'other'.
+	Compare(other []byte) (CompareResult, error)
 }
 
 // BlobDatum is a Datum which is just a raw byte blob.
@@ -69,8 +79,13 @@ type BlobDatum []byte
 // Bytes is a raw file body to put on disk.
 func (b BlobDatum) Bytes() ([]byte, error) { return b, nil }
 
-// SemanticallySame is true if 'other == b'.
-func (b BlobDatum) SemanticallySame(other []byte) bool { return bytes.Equal(b, other) }
+// Compare is Identical if 'other == b' else it is Different.
+func (b BlobDatum) Compare(other []byte) (CompareResult, error) {
+	if bytes.Equal(b, other) {
+		return Identical, nil
+	}
+	return Different, nil
+}
 
 // MessageDatum is a Datum constructed from a proto message.
 type MessageDatum struct {
@@ -90,7 +105,7 @@ type MessageDatum struct {
 // ensureConverted populates `pmsg` and `blob`.
 func (m *MessageDatum) ensureConverted() error {
 	m.once.Do(func() {
-		// Grab it as proto.Message for comparisons in SemanticallySame.
+		// Grab it as proto.Message for comparisons in Compare.
 		m.pmsg = m.Message.ToProto()
 
 		// And convert to a text for strict comparisons and the final output.
@@ -123,27 +138,35 @@ func (m *MessageDatum) Bytes() ([]byte, error) {
 	return m.blob, nil
 }
 
-// SemanticallySame is true if 'other' deserializes and equals b.Message.
+// Compare deserializes `other` and compares it to `m.Message`.
 //
-// On deserialization or comparison errors returns false.
-func (m *MessageDatum) SemanticallySame(other []byte) bool {
-	// Convert `other` to a proto.Message.
+// If `other` can't be deserialized as a proto message at all returns Different.
+// Returns an error if `m` can't be serialized.
+func (m *MessageDatum) Compare(other []byte) (CompareResult, error) {
+	// This populates m.blob and m.pmsg.
+	if err := m.ensureConverted(); err != nil {
+		return UnknownResult, err
+	}
+
+	if bytes.Equal(m.blob, other) {
+		return Identical, nil
+	}
+
+	// Try to load `other` as a proto message of the same type.
 	otherpb := dynamicpb.NewMessage(m.Message.MessageType().Descriptor())
 	opts := prototext.UnmarshalOptions{
 		AllowPartial: true,
 		Resolver:     m.Message.MessageType().Loader().Types(), // used for google.protobuf.Any fields
 	}
 	if err := opts.Unmarshal(other, otherpb); err != nil {
-		return false // e.g. the schema has changed or the file is totally bogus
-	}
-
-	// Convert `m.Message` to a proto.Message too.
-	if err := m.ensureConverted(); err != nil {
-		return false // note: we'll fail later in the serialization anyway
+		return Different, nil // e.g. the schema has changed or the file is totally bogus
 	}
 
 	// Compare them semantically as protos.
-	return proto.Equal(m.pmsg, otherpb)
+	if proto.Equal(m.pmsg, otherpb) {
+		return SemanticallyEqual, nil
+	}
+	return Different, nil
 }
 
 // ConfigSets partitions this output into 0 or more config sets based on Roots.
@@ -187,81 +210,119 @@ func (o Output) ConfigSets() ([]ConfigSet, error) {
 
 // Compare compares files on disk to what's in the output.
 //
-// Returns names of files that are different ('changed') and same ('unchanged').
-//
 // If 'semantic' is true, for output files based on proto messages uses semantic
-// comparison first (i.e. loads the file on disk as a proto message and compares
-// it to the output message). If semantic comparisons says the files are same,
-// we are done. Otherwise we still compare files as byte blobs: it is possible
-// for two semantically different protos to serialize into exact same byte blobs
-// (for one, this can happen when using float64 fields). We should treat such
-// protos as equal, since in the end of the day we care only about how generated
-// files look on the disk.
+// comparison, i.e. loads the file on disk as a proto message and compares
+// it to the output message. If 'semantic' is false, just always compares files
+// as byte blobs.
 //
-// If 'semantic' is false, just compares files as byte blobs.
+// For each file in the output set, the resulting map has a CompareResult
+// describing how it compares to the file on disk. They can either be identical
+// as byte blobs (Identical), different as byte blobs, but semantically
+// the same (SemanticallyEqual), or totally different (Different).
 //
-// Files on disk that are not in the output set are totally ignored. Missing
-// files that are listed in the output set are considered changed.
+// Note that when 'semantic' is false, only Identical and Different can appear
+// in the result, since we compare files as byte blobs only, so there's no
+// notion of being "semantically the same".
+//
+// Files on disk that are not in the output set are totally ignored. Files in
+// the output set that are missing on disk as Different.
 //
 // Returns an error if some file on disk can't be read or some output file can't
 // be serialized.
-func (o Output) Compare(dir string, semantic bool) (changed, unchanged []string, err error) {
-	checkSame := func(d Datum, b []byte) (bool, error) {
+func (o Output) Compare(dir string, semantic bool) (map[string]CompareResult, error) {
+	compare := func(d Datum, b []byte) (CompareResult, error) {
 		if semantic {
-			if d.SemanticallySame(b) {
-				return true, nil
-			}
-			// Fallback to check protos as byte blobs, see the explanation in the
-			// function comment above.
+			return d.Compare(b)
 		}
-		a, err := d.Bytes()
-		return bytes.Equal(a, b), err
+		switch a, err := d.Bytes(); {
+		case err != nil:
+			return UnknownResult, err
+		case bytes.Equal(a, b):
+			return Identical, nil
+		default:
+			return Different, nil
+		}
 	}
 
-	for _, name := range o.Files() {
+	out := make(map[string]CompareResult, len(o.Data))
+
+	for name, datum := range o.Data {
 		path := filepath.Join(dir, filepath.FromSlash(name))
 
-		same := true
 		switch existing, err := ioutil.ReadFile(path); {
 		case os.IsNotExist(err):
-			same = false // new output file
+			out[name] = Different // new output file
 		case err != nil:
-			return nil, nil, errors.Annotate(err, "when checking diff of %q", name).Err()
+			return nil, errors.Annotate(err, "when checking diff of %q", name).Err()
 		default:
-			if same, err = checkSame(o.Data[name], existing); err != nil {
-				return nil, nil, errors.Annotate(err, "when checking diff of %q", name).Err()
+			if out[name], err = compare(datum, existing); err != nil {
+				return nil, errors.Annotate(err, "when checking diff of %q", name).Err()
 			}
 		}
-
-		if same {
-			unchanged = append(unchanged, name)
-		} else {
-			changed = append(changed, name)
-		}
 	}
-	return
+
+	return out, nil
 }
 
 // Write updates files on disk to match the output.
 //
-// Returns a list of updated files and a list of files that are already
-// up-to-date.
+// Returns a list of written files and a list of files that were left untouched.
 //
-// When comparing files does byte-to-byte comparison, not a semantic one. This
-// ensures all written files are formatted in a consistent style. Use Compare
-// to explicitly check the semantic difference.
+// If 'force' is false, compares files on disk to the generated files using
+// the semantic comparison. If they are all up-to-date (semantically) does
+// nothing. If at least one file is stale, rewrites *all* not already identical
+// files. That way all output files always have consistent formatting, but
+// `lucicfg generate` still doesn't produce noop formatting changes by default
+// (it piggy backs formatting changes onto real changes).
+//
+// If 'force' is true, compares files as byte blobs and rewrites all files
+// that changed as blobs. No semantic comparison is done.
 //
 // Creates missing directories. Not atomic. All files have mode 0666.
-func (o Output) Write(dir string) (changed, unchanged []string, err error) {
-	// First pass: populate 'changed' and 'unchanged', so we have a valid result
-	// even when failing midway through writes.
-	changed, unchanged, err = o.Compare(dir, false)
+func (o Output) Write(dir string, force bool) (written, untouched []string, err error) {
+	// Find which files we definitely need to rewrite and which can be skipped.
+	cmp, err := o.Compare(dir, !force)
 	if err != nil {
 		return
 	}
 
-	// Second pass: update changed files.
-	for _, name := range changed {
+	// If nothing has *semantically* changed, don't touch any outputs at all.
+	// Note that when 'force' is true, we compare files as byte blobs, so even if
+	// files are equal semantically, but different as byte blobs, they'll end up
+	// as Different and we'll proceed to overwrite them.
+	different := false
+	for _, res := range cmp {
+		if res == Different {
+			different = true
+			break
+		}
+	}
+	if !different {
+		untouched = make([]string, 0, len(cmp))
+		for name := range cmp {
+			untouched = append(untouched, name)
+		}
+		sort.Strings(untouched)
+		return
+	}
+
+	// We are going to overwrite all files that are not already byte-to-byte
+	// identical to existing files on disk (even if they are semantically the
+	// same) and left byte-to-byte identical files untouched.
+	for name, res := range cmp {
+		switch res {
+		case Identical:
+			untouched = append(untouched, name)
+		case SemanticallyEqual, Different:
+			written = append(written, name)
+		default:
+			panic("impossible")
+		}
+	}
+	sort.Strings(untouched)
+	sort.Strings(written)
+
+	for _, name := range written {
 		path := filepath.Join(dir, filepath.FromSlash(name))
 		if err = os.MkdirAll(filepath.Dir(path), 0777); err != nil {
 			return

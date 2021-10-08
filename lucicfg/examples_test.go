@@ -65,18 +65,24 @@ func runExample(script string) error {
 	}
 
 	if *regen {
-		_, _, err := state.Output.Write(output)
+		_, _, err := state.Output.Write(output, true)
 		return err
 	}
 
 	// We want examples in examples/... to be formatted using current "golden"
 	// style, so do byte-to-byte comparison (not a semantic one).
-	switch diff, _, err := state.Output.Compare(output, false); {
-	case err != nil:
+	cmp, err := state.Output.Compare(output, false)
+	if err != nil {
 		return err
-	case len(diff) != 0:
-		return fmt.Errorf("the following generated files are stale, run `go generate .`: %q", diff)
-	default:
-		return nil
 	}
+	var diff []string
+	for name, res := range cmp {
+		if res == Different {
+			diff = append(diff, name)
+		}
+	}
+	if len(diff) != 0 {
+		return fmt.Errorf("the following generated files are stale, run `go generate .`: %q", diff)
+	}
+	return nil
 }
