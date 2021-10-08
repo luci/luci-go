@@ -147,25 +147,6 @@ const spawnTaskInputJSON = `
 {
 	"requests": [
 		{
-			"name": "spawn-task test with Isolate server",
-			"realm": "infra:tests",
-			"priority": "200",
-			"task_slices": [
-				{
-					"expiration_secs": "21600",
-					"properties": {
-						"dimensions": [
-							{"key": "pool", "value": "infra.tests"},
-							{"key": "os", "value": "Linux"}
-						],
-						"command": ["/bin/bash", "-c", "echo hi > ${ISOLATED_OUTDIR}/out"],
-						"execution_timeout_secs": "3600",
-						"idempotent": true
-					}
-				}
-			]
-		},
-		{
 			"name": "spawn-task test with CAS",
 			"realm": "infra:tests",
 			"priority": "200",
@@ -209,6 +190,6 @@ func TestSpawnTasksCommand(t *testing.T) {
 		So(runCmd(t, "spawn_task", "-json-input", inputPath, "-json-output", outputPath), ShouldEqual, 0)
 
 		results := readTriggerResults(outputPath)
-		So(results.Tasks, ShouldHaveLength, 2)
+		So(results.Tasks, ShouldHaveLength, 1)
 	})
 }
