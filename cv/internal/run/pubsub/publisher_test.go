@@ -36,7 +36,7 @@ func TestExportRunToBQ(t *testing.T) {
 	t.Parallel()
 
 	Convey("Publisher", t, func() {
-		ct := cvtesting.Test{AppID: "cv"}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 

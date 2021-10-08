@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
@@ -29,14 +30,16 @@ func TestIsCVInCharge(t *testing.T) {
 	t.Parallel()
 
 	Convey("IsCVInChargeOfStatus works", t, func() {
-		run := func(project string, settings *migrationpb.Settings, appID string) bool {
-			ct := cvtesting.Test{AppID: appID}
+		run := func(project string, settings *migrationpb.Settings, hostname string) bool {
+			ct := cvtesting.Test{Env: &common.Env{
+				LogicalHostname: hostname,
+			}}
 			ctx, cancel := ct.SetUp()
 			defer cancel()
 
 			So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-			res, err := IsCVInChargeOfStatus(ctx, project)
+			res, err := IsCVInChargeOfStatus(ctx, ct.Env, project)
 			So(err, ShouldBeNil)
 			return res
 		}
@@ -88,8 +91,8 @@ func TestIsCVInCharge(t *testing.T) {
 			for project, expApp := range expected {
 				found := false
 				for _, h := range settings.GetApiHosts() {
+					res := run(project, settings, h.GetHost())
 					app := strings.TrimSuffix(h.GetHost(), ".appspot.com")
-					res := run(project, settings, app)
 					found = found || (app == expApp)
 					So(res, ShouldEqual, app == expApp)
 				}
@@ -113,9 +116,9 @@ func TestIsCVInCharge(t *testing.T) {
 					ProjectRegexpExclude: []string{"ex.+"},
 				},
 			}
-			So(run("included", settings, "cv"), ShouldBeTrue)
-			So(run("unsure", settings, "cv"), ShouldBeFalse)
-			So(run("excluded", settings, "cv"), ShouldBeFalse)
+			So(run("included", settings, "cv.appspot.com"), ShouldBeTrue)
+			So(run("unsure", settings, "cv.appspot.com"), ShouldBeFalse)
+			So(run("excluded", settings, "cv.appspot.com"), ShouldBeFalse)
 		})
 		Convey("Bad exclude regexp excludes everything", func() {
 			settings := &migrationpb.Settings{
@@ -132,8 +135,8 @@ func TestIsCVInCharge(t *testing.T) {
 					ProjectRegexpExclude: []string{`bad\K`, "exc.+"},
 				},
 			}
-			So(run("unsure", settings, "cv"), ShouldBeFalse)
-			So(run("excluded", settings, "cv"), ShouldBeFalse)
+			So(run("unsure", settings, "cv.appspot.com"), ShouldBeFalse)
+			So(run("excluded", settings, "cv.appspot.com"), ShouldBeFalse)
 		})
 	})
 }

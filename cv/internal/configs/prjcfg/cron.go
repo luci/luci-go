@@ -41,11 +41,12 @@ type PM interface {
 type Refresher struct {
 	pm  PM
 	tqd *tq.Dispatcher
+	env *common.Env
 }
 
 // NewRefresher creates a new project config Refresher and registers its TQ tasks.
-func NewRefresher(tqd *tq.Dispatcher, pm PM) *Refresher {
-	pcr := &Refresher{pm, tqd}
+func NewRefresher(tqd *tq.Dispatcher, pm PM, env *common.Env) *Refresher {
+	pcr := &Refresher{pm, tqd, env}
 	pcr.tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           "refresh-project-config",
 		Prototype:    &RefreshProjectConfigTask{},
@@ -78,7 +79,7 @@ func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
 
 	// Consider only some projects, regardless of which projects are registered.
 	// TODO(crbug/1158505): switch to -dev configs.
-	if common.IsDev(ctx) {
+	if r.env.IsGAEDev {
 		projects = []string{"infra", "cq-test"}
 	} else {
 		for i, p := range projects {

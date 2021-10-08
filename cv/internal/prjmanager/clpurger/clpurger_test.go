@@ -43,7 +43,7 @@ func TestPurgeCL(t *testing.T) {
 	t.Parallel()
 
 	Convey("PurgeCL works", t, func() {
-		ct := cvtesting.Test{AppID: "cv"}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)

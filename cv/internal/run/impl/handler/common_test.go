@@ -335,7 +335,7 @@ func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
 		CLUpdater:  deps.clUpdater,
 		TreeClient: ct.TreeFake.Client(),
 		GFactory:   ct.GFactory(),
-		BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake),
+		BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake, ct.Env),
 		Publisher:  pubsub.NewPublisher(ct.TQDispatcher),
 	}
 	return impl, deps

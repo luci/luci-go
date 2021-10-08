@@ -39,11 +39,11 @@ func TestExportRunToBQ(t *testing.T) {
 	t.Parallel()
 
 	Convey("Exporting a Run to BQ works", t, func() {
-		ct := cvtesting.Test{AppID: "cv"}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		exporter := NewExporter(ct.TQDispatcher, ct.BQFake)
+		exporter := NewExporter(ct.TQDispatcher, ct.BQFake, ct.Env)
 
 		// Set up datastore by putting a sample Run + RunCLs.
 		epoch := ct.Clock.Now().UTC()
@@ -128,7 +128,7 @@ func TestExportRunToBQ(t *testing.T) {
 
 			Convey("in dev", func() {
 				So(schedule(), ShouldBeNil)
-				ctx = common.SetDev(ctx)
+				ct.Env.IsGAEDev = true
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				So(ct.BQFake.Rows("", CVDataset, CVTable), ShouldHaveLength, 1)
 				// Must not send to production legacy.

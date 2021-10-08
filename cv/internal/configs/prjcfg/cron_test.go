@@ -42,7 +42,7 @@ func TestConfigRefreshCron(t *testing.T) {
 		defer cancel()
 
 		pm := mockPM{}
-		pcr := NewRefresher(ct.TQDispatcher, &pm)
+		pcr := NewRefresher(ct.TQDispatcher, &pm, ct.Env)
 
 		Convey("for a new project", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{

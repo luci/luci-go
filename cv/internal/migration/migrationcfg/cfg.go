@@ -24,15 +24,15 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/info"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 )
 
 // IsCVInChargeOfStatus returns true if CV is in charge of displaying Run
 // status.
-func IsCVInChargeOfStatus(ctx context.Context, luciProject string) (bool, error) {
+func IsCVInChargeOfStatus(ctx context.Context, env *common.Env, luciProject string) (bool, error) {
 	cfg, err := srvcfg.GetMigrationConfig(ctx)
 	if err != nil {
 		return false, err
@@ -54,13 +54,11 @@ func IsCVInChargeOfStatus(ctx context.Context, luciProject string) (bool, error)
 		}
 	}
 
-	// While this is generally not true, during the migration this is true.
-	myHost := info.TrimmedAppID(ctx) + ".appspot.com"
 	switch {
 	case len(all) == 1:
-		return myHost == all[0].GetHost(), nil
+		return env.LogicalHostname == all[0].GetHost(), nil
 	case len(prod) == 1:
-		return myHost == prod[0].GetHost(), nil
+		return env.LogicalHostname == prod[0].GetHost(), nil
 	case len(prod) > 1:
 		logging.Warningf(ctx, "%q matches %d prod api_hosts %s", luciProject, len(prod), prod)
 	case len(all) > 1:

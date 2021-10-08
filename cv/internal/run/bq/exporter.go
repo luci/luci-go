@@ -36,7 +36,7 @@ type Exporter struct {
 
 // NewExporter creates a new Exporter, registering it in the given TQ
 // dispatcher.
-func NewExporter(tqd *tq.Dispatcher, bqc cvbq.Client) *Exporter {
+func NewExporter(tqd *tq.Dispatcher, bqc cvbq.Client, env *common.Env) *Exporter {
 	exporter := &Exporter{tqd, bqc}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           exportRunToBQTaskClass,
@@ -50,7 +50,7 @@ func NewExporter(tqd *tq.Dispatcher, bqc cvbq.Client) *Exporter {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*ExportRunToBQTask)
 			ctx = logging.SetField(ctx, "run", task.GetRunId())
-			err := send(ctx, bqc, common.RunID(task.GetRunId()))
+			err := send(ctx, env, bqc, common.RunID(task.GetRunId()))
 			return common.TQifyError(ctx, err)
 		},
 	})

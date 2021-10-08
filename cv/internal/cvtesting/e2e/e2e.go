@@ -99,9 +99,6 @@ func init() {
 //   ct.RunUntil(ctx, func() bool { return len(ct.LoadRunsOf("project")) > 0 })
 type Test struct {
 	*cvtesting.Test // auto-initialized if nil
-	// CVDev if true sets e2e test to use `cv-dev` GAE app.
-	// Defaults to `cv` GAE app.
-	CVDev bool
 
 	PMNotifier  *prjmanager.Notifier
 	RunNotifier *run.Notifier
@@ -123,17 +120,8 @@ type Test struct {
 //
 // Must be called exactly once.
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
-	switch {
-	case t.Test == nil:
+	if t.Test == nil {
 		t.Test = &cvtesting.Test{}
-	case t.Test.AppID != "":
-		panic("overriding cvtesting.Test{AppID} in e2e not supported")
-	}
-	switch t.CVDev {
-	case true:
-		t.Test.AppID = "cv-dev"
-	case false:
-		t.Test.AppID = "cv"
 	}
 
 	switch speedUp := *fastClockFlag; {
@@ -171,7 +159,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	clMutator := changelist.NewMutator(t.TQDispatcher, t.PMNotifier, t.RunNotifier)
 	clUpdater := updater.New(t.TQDispatcher, gFactory, clMutator)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clMutator, clUpdater, gFactory, t.TreeFake.Client(), t.BQFake)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clMutator, clUpdater, gFactory, t.TreeFake.Client(), t.BQFake, t.Env)
 
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,

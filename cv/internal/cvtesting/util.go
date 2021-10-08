@@ -23,6 +23,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -53,6 +54,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
@@ -61,6 +63,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+const gaeTopLevelDomain = ".appspot.com"
 
 // TODO(tandrii): add fake config generation facilities.
 
@@ -71,6 +75,8 @@ import (
 //   ctx, cancel := ct.SetUp()
 //   defer cancel()
 type Test struct {
+	// Env simulates CV environment.
+	Env *common.Env
 	// GFake is a Gerrit fake. Defaults to an empty one.
 	GFake *gf.Fake
 	// TreeFake is a fake Tree. Defaults to an open Tree.
@@ -99,9 +105,6 @@ type Test struct {
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
 
-	// AppID overrides default AppID for in-memory tests.
-	AppID string
-
 	// migrationSettings are migration settings during CQD -> CV migration.
 	//
 	// Not installed into context by default.
@@ -112,6 +115,13 @@ type Test struct {
 }
 
 func (t *Test) SetUp() (context.Context, func()) {
+	if t.Env == nil {
+		t.Env = &common.Env{
+			LogicalHostname: "luci-change-verifier" + gaeTopLevelDomain,
+			HTTPAddressBase: "https://luci-change-verifier" + gaeTopLevelDomain,
+		}
+	}
+
 	t.setMaxDuration()
 	ctxShared := context.Background()
 	// Don't set the deadline (timeout) into the context given to the test,
@@ -227,18 +237,19 @@ func (t *Test) setMaxDuration() {
 }
 
 func (t *Test) installDS(ctx context.Context) context.Context {
-	if t.AppID == "" {
-		t.AppID = "dev~app" // default in memory package.
+	if !strings.HasSuffix(t.Env.LogicalHostname, gaeTopLevelDomain) {
+		panic(fmt.Errorf("Env.LogicalHostname %q doesn't end with %q", t.Env.LogicalHostname, gaeTopLevelDomain))
 	}
+	appID := t.Env.LogicalHostname[:len(t.Env.LogicalHostname)-len(gaeTopLevelDomain)]
 
 	if ctx, ok := t.installDSReal(ctx); ok {
-		return memory.UseInfo(ctx, t.AppID)
+		return memory.UseInfo(ctx, appID)
 	}
 	if ctx, ok := t.installDSEmulator(ctx); ok {
-		return memory.UseInfo(ctx, t.AppID)
+		return memory.UseInfo(ctx, appID)
 	}
 
-	ctx = memory.UseWithAppID(ctx, t.AppID)
+	ctx = memory.UseWithAppID(ctx, appID)
 	// CV runs against Firestore backend, which is consistent.
 	datastore.GetTestable(ctx).Consistent(true)
 	// Intentionally not enabling AutoIndex so that new code accidentally needing

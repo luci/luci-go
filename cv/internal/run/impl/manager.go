@@ -76,6 +76,7 @@ func New(
 	g gerrit.Factory,
 	tc tree.Client,
 	bqc bq.Client,
+	env *common.Env,
 ) *RunManager {
 	rm := &RunManager{
 		runNotifier:  n,
@@ -86,7 +87,7 @@ func New(
 			RM:         n,
 			CLUpdater:  u,
 			CLMutator:  clm,
-			BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc),
+			BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc, env),
 			GFactory:   g,
 			TreeClient: tc,
 			Publisher:  pubsub.NewPublisher(n.TasksBinding.TQDispatcher),

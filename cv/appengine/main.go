@@ -77,8 +77,14 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		if srv.Options.CloudProject == "luci-change-verifier-dev" {
-			srv.Context = common.SetDev(srv.Context)
+		env := &common.Env{
+			LogicalHostname: srv.Options.CloudProject + ".appspot.com",
+			IsGAEDev:        srv.Options.CloudProject == "luci-change-verifier-dev",
+		}
+		env.HTTPAddressBase = "https://" + env.LogicalHostname
+		if !srv.Options.Prod {
+			// Local development.
+			env.HTTPAddressBase = "http://" + srv.Options.HTTPAddr
 		}
 
 		gFactory, err := gerrit.NewFactory(
@@ -106,7 +112,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		_ = runimpl.New(runNotifier, pmNotifier, clMutator, clUpdater, gFactory, tc, bqc)
+		_ = runimpl.New(runNotifier, pmNotifier, clMutator, clUpdater, gFactory, tc, bqc, env)
 
 		// Setup pRPC authentication.
 		srv.PRPC.Authenticator = &auth.Authenticator{
@@ -134,7 +140,7 @@ func main() {
 		apiv0pb.RegisterRunsServer(srv.PRPC, &rpcv0.RunsServer{})
 
 		// Register cron.
-		pcr := prjcfg.NewRefresher(&tq.Default, pmNotifier)
+		pcr := prjcfg.NewRefresher(&tq.Default, pmNotifier, env)
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
 			return refreshConfig(ctx, pcr)
 		})

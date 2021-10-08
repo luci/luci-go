@@ -48,7 +48,7 @@ const (
 	legacyTable      = "attempts"
 )
 
-func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
+func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.RunID) error {
 	r := run.Run{ID: id}
 	switch err := datastore.Get(ctx, &r); {
 	case err == datastore.ErrNoSuchEntity:
@@ -81,7 +81,7 @@ func send(ctx context.Context, client cvbq.Client, id common.RunID) error {
 	logging.Debugf(ctx, "CV exporting Run to CQ BQ table")
 	eg.Go(func() error {
 		project := legacyProject
-		if common.IsDev(ctx) {
+		if env.IsGAEDev {
 			project = legacyProjectDev
 		}
 		return client.SendRow(ctx, cvbq.Row{
