@@ -40,6 +40,10 @@ def _cq_group(
     The CQ will run given verifiers whenever there's a pending approved CL for
     a ref in the watched set.
 
+    Pro-tip: a command line tool exists to validate a locally generated .cfg
+    file and verify that it matches arbitrary given CLs as expected.
+    See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#luci-cv-command-line-utils
+
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).
       name: a human- and machine-readable name this CQ group. Must be unique

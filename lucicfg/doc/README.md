@@ -2294,6 +2294,10 @@ Defines a set of refs to watch and a set of verifier to run.
 The CQ will run given verifiers whenever there's a pending approved CL for
 a ref in the watched set.
 
+Pro-tip: a command line tool exists to validate a locally generated .cfg
+file and verify that it matches arbitrary given CLs as expected.
+See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#luci-cv-command-line-utils
+
 #### Arguments {#luci.cq_group-args}
 
 * **name**: a human- and machine-readable name this CQ group. Must be unique within this project. This is used in messages posted to users and in monitoring data. Must match regex `^[a-zA-Z][a-zA-Z0-9_-]*$`.

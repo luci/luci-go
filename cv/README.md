@@ -147,6 +147,40 @@ tl;dr this the usual way for LUCI GAE apps. Roughly,
      deploys the desired version to production `luci-change-verifier`
      [GAE project](https://luci-change-verifier.appspot.com/).
 
+## LUCI CV Command Line utils
+
+LUCI Change Verifier provides a command line interface `luci-cv` intended
+for LUCI integrators to debug CV configurations.
+
+### Getting the `luci-cv` CLI binary.
+
+There are two ways of getting the latest version of the binary at the moment:
+
+ - Building it yourself from this package: `go.chromium.org/luci/cv/cmd/luci-cv` e.g.
+
+       go build go.chromium/org/luci/cv/cmd/luci-cv
+
+ - Getting it from [CIPD](https://chrome-infra-packages.appspot.com/p/infra/tools/luci-cv)
+   e.g. via a command such as:
+
+       cipd ensure -ensure-file - -root cv-cli <<< 'infra/tools/luci-cv/${platform} latest'
+
+For the appropriate syntax and flags information refer to the binary's built-in
+documentation. e.g. `luci-cv help match-config`.
+
+### Examples
+
+#### Check if CL is watched by CV and which config group applies
+
+```
+# (Assuming luci-cv was installed in the current dir)
+~/infra/infra$ ./luci-cv match-config infra/config/generated/commit-queue.cfg https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3214613
+
+https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3214613:
+  Location: Host: chromium-review.googlesource.com, Repo: infra/luci/luci-go, Ref: refs/heads/main
+  Matched: luci-go
+```
+
 ## Links
 
  - The legacy CQDaemon code is in

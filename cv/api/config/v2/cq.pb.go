@@ -199,6 +199,10 @@ func (Verifiers_GerritCQAbility_CQAction) EnumDescriptor() ([]byte, []int) {
 //
 // The config file commit-queue.cfg should be stored in the config directory of
 // your project, alongside cr-buildbucket.cfg.
+//
+// Pro-tip: a command line tool exists to validate a locally generated .cfg
+// file and verify that it matches arbitrary given CLs as expected.
+// See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#luci-cv-command-line-utils
 type Config struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
