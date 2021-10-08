@@ -80,7 +80,7 @@ func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
 	// Consider only some projects, regardless of which projects are registered.
 	// TODO(crbug/1158505): switch to -dev configs.
 	if r.env.IsGAEDev {
-		projects = []string{"infra", "cq-test"}
+		projects = []string{"cq-test"}
 	} else {
 		for i, p := range projects {
 			if p == "cq-test" {
