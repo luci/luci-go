@@ -48,8 +48,7 @@ message KickManageRunTask {
 // back with Run Manager by sending at least the completion event, and possibly other
 // events.
 //
-// Queue: "manage-run".
-// NOTE: if necessary, allocate a separate queue for these tasks.
+// Queue: "manage-run-long-op".
 message DoLongOpTask {
   string run_id = 1;
   string operation_id = 2;

@@ -19,6 +19,12 @@ queue:
     min_backoff_seconds: 1
     max_backoff_seconds: 5
     task_age_limit: 1h
+- name: manage-run-long-op
+  rate: 30/s
+  retry_parameters:
+    min_backoff_seconds: 5
+    max_backoff_seconds: 10
+    task_age_limit: 1h
 - name: poll-gerrit
   rate: 10/s
   retry_parameters:

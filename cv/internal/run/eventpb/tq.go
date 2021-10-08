@@ -73,9 +73,8 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 		DoLongOp: tqd.RegisterTaskClass(tq.TaskClass{
 			ID:        DoLongOpTaskClass,
 			Prototype: &DoLongOpTask{},
-			// TODO(tandrii): figure out if these tasks need a separate queue.
-			Queue: "manage-run",
-			Kind:  tq.Transactional,
+			Queue:     "manage-run-long-op",
+			Kind:      tq.Transactional,
 			// TODO(tandrii): switch to quiet once stable.
 			QuietOnError: false,
 			Quiet:        false,

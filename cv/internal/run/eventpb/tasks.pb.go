@@ -156,8 +156,7 @@ func (x *KickManageRunTask) GetEta() *timestamppb.Timestamp {
 // back with Run Manager by sending at least the completion event, and possibly other
 // events.
 //
-// Queue: "manage-run".
-// NOTE: if necessary, allocate a separate queue for these tasks.
+// Queue: "manage-run-long-op".
 type DoLongOpTask struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
