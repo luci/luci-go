@@ -44,6 +44,7 @@ import (
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
+	"go.chromium.org/luci/cv/internal/run/impl/longops"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 )
@@ -62,9 +63,10 @@ type RunManager struct {
 	runNotifier  *run.Notifier
 	pmNotifier   *prjmanager.Notifier
 	tqDispatcher *tq.Dispatcher
+	gFactory     gerrit.Factory
 	handler      handler.Handler
 
-	testDoLongOperationWithDeadline func(context.Context, *run.Run, *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error)
+	testDoLongOperationWithDeadline func(context.Context, *longops.Base) (*eventpb.LongOpCompleted, error)
 }
 
 // New constructs a new RunManager instance.
@@ -82,6 +84,7 @@ func New(
 		runNotifier:  n,
 		pmNotifier:   pm,
 		tqDispatcher: n.TasksBinding.TQDispatcher,
+		gFactory:     g,
 		handler: &handler.Impl{
 			PM:         pm,
 			RM:         n,

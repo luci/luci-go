@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/longops"
 )
 
 // enqueueLongOp enqueues long operations task and updates the given Run's long
@@ -85,11 +86,17 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongO
 	dctx, cancel := clock.WithDeadline(ctx, d)
 	defer cancel()
 
+	opBase := longops.Base{
+		Run:               r,
+		Op:                op,
+		IsCancelRequested: longOpCancellationChecker(dctx, r, task.GetOperationId()),
+	}
+
 	f := rm.doLongOperationWithDeadline
 	if rm.testDoLongOperationWithDeadline != nil {
 		f = rm.testDoLongOperationWithDeadline
 	}
-	result, err := f(dctx, r, op)
+	result, err := f(dctx, &opBase)
 
 	switch {
 	case err == nil:
@@ -107,15 +114,30 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongO
 	}
 }
 
-func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, r *run.Run, op *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error) {
-	switch w := op.GetWork().(type) {
+func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *longops.Base) (*eventpb.LongOpCompleted, error) {
+	var action interface {
+		Do(context.Context) (*eventpb.LongOpCompleted, error)
+	}
+
+	switch w := opBase.Op.GetWork().(type) {
 	case *run.OngoingLongOps_Op_PostStartMessage:
-		// TODO(tandrii): implement.
-		logging.Errorf(ctx, "TODO(tandrii): implement LongOp.PostStartMessage(%t)", w.PostStartMessage)
+		action = &longops.PostStartMessageOp{
+			Base:     opBase,
+			GFactory: rm.gFactory,
+		}
 	default:
 		logging.Errorf(ctx, "unknown LongOp work %T", w)
+		// Fail task quickly for backwards compatibility in case of a rollback during
+		// future deployment.
+		return nil, errors.Reason("Skipping %T", opBase.Op.GetWork()).Tag(tq.Fatal).Err()
 	}
-	// Fail task quickly for backwards compatibility in case of a rollback during
-	// future deployment.
-	return nil, errors.Reason("Skipping %T", op.GetWork()).Tag(tq.Fatal).Err()
+	return action.Do(ctx)
+}
+
+func longOpCancellationChecker(ctx context.Context, r *run.Run, opID string) func() bool {
+	check := func() bool {
+		// TODO(tandrii): implement.
+		return false
+	}
+	return check
 }

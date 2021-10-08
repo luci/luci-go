@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/longops"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
@@ -105,7 +106,7 @@ func TestLongOps(t *testing.T) {
 
 			Convey("OK", func() {
 				called := false
-				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *run.Run, _ *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error) {
+				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called = true
 					d, ok := ctx.Deadline()
 					So(ok, ShouldBeTrue)
@@ -120,7 +121,7 @@ func TestLongOps(t *testing.T) {
 			Convey("Expired long op must not be executed, but Run Manager should be notified", func() {
 				ct.Clock.Add(time.Hour)
 				called := false
-				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *run.Run, _ *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error) {
+				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called = true
 					return &eventpb.LongOpCompleted{}, nil
 				}
@@ -131,7 +132,7 @@ func TestLongOps(t *testing.T) {
 
 			Convey("Transient failure is retried", func() {
 				called := 0
-				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *run.Run, _ *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error) {
+				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called++
 					if called == 1 {
 						return nil, errors.New("troops", transient.Tag)
@@ -145,7 +146,7 @@ func TestLongOps(t *testing.T) {
 
 			Convey("Non-transient failure is fatal", func() {
 				called := 0
-				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *run.Run, _ *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error) {
+				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called++
 					if called == 1 {
 						return nil, errors.New("foops")
@@ -161,7 +162,7 @@ func TestLongOps(t *testing.T) {
 				Convey("Run deleted", func() {
 					So(datastore.Delete(ctx, &run.Run{ID: runID}), ShouldBeNil)
 					called := false
-					manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *run.Run, _ *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error) {
+					manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 						called = true
 						return &eventpb.LongOpCompleted{}, nil
 					}
@@ -174,7 +175,7 @@ func TestLongOps(t *testing.T) {
 					r.OngoingLongOps = nil
 					So(datastore.Put(ctx, r), ShouldBeNil)
 					called := false
-					manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *run.Run, _ *run.OngoingLongOps_Op) (*eventpb.LongOpCompleted, error) {
+					manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 						called = true
 						return &eventpb.LongOpCompleted{}, nil
 					}
