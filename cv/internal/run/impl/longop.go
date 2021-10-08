@@ -17,6 +17,8 @@ package impl
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
+	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -86,10 +88,14 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongO
 	dctx, cancel := clock.WithDeadline(ctx, d)
 	defer cancel()
 
+	checker := &longOpCancellationChecker{}
+	stop := checker.start(ctx, r, task.GetOperationId())
+	defer stop()
+
 	opBase := longops.Base{
 		Run:               r,
 		Op:                op,
-		IsCancelRequested: longOpCancellationChecker(dctx, r, task.GetOperationId()),
+		IsCancelRequested: checker.check,
 	}
 
 	f := rm.doLongOperationWithDeadline
@@ -134,10 +140,116 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 	return action.Do(ctx)
 }
 
-func longOpCancellationChecker(ctx context.Context, r *run.Run, opID string) func() bool {
-	check := func() bool {
-		// TODO(tandrii): implement.
-		return false
+// longOpCancellationChecker asynchroneously checks whether the given operation
+// was requested to be cancelled by the Run Manager.
+type longOpCancellationChecker struct {
+	// Options.
+
+	// interval controls how frequently the Datastore is checked. Defaults to 5s.
+	interval time.Duration
+	// testChan is used in tests to detect when background goroutine exists.
+	testChan chan struct{}
+
+	// Internal state.
+
+	// state is atomically updated int which stores state of the cancelation
+	// checker:
+	//  * cancelationCheckerInitial
+	//  * cancelationCheckerStarted
+	//  * cancelationCheckerRequested
+	state int32
+}
+
+const (
+	cancelationCheckerInitial   = 0
+	cancelationCheckerStarted   = 1
+	cancelationCheckerRequested = 2
+)
+
+// check quickly and cheaply checks whether cancellation was requested.
+//
+// Does not block on anything.
+func (l *longOpCancellationChecker) check() bool {
+	return atomic.LoadInt32(&l.state) == cancelationCheckerRequested
+}
+
+// start spawns a goroutine checking if cancelation was requested.
+//
+// Returns a stop function, which should be called to free resources.
+func (l *longOpCancellationChecker) start(ctx context.Context, initial *run.Run, opID string) (stop func()) {
+	if !atomic.CompareAndSwapInt32(&l.state, cancelationCheckerInitial, cancelationCheckerStarted) {
+		panic(fmt.Errorf("start called more than once"))
 	}
-	return check
+	switch {
+	case l.interval < 0:
+		panic(fmt.Errorf("negative interval %s", l.interval))
+	case l.interval == 0:
+		l.interval = 5 * time.Second
+	case l.interval < time.Second:
+		// If lower frequency is desired in the future, use Redis directly (instead
+		// of indirectly via dscache).
+		panic(fmt.Errorf("too small interval %s -- don't hammer Datastore", l.interval))
+	}
+
+	ctx, stop = context.WithCancel(ctx)
+
+	// Perform check on initial Run state immediately.
+	// This is useful if TQ task performing long op is retried s.t. the request
+	// for cancellation is detected immediately as opposed to during the next
+	// reload of the Run.
+	if !l.reevaluate(ctx, opID, initial, nil) {
+		return stop
+	}
+
+	go func() {
+		if l.testChan != nil {
+			defer close(l.testChan)
+		}
+		l.background(ctx, opID, initial.ID)
+	}()
+
+	return stop
+}
+
+func (l *longOpCancellationChecker) background(ctx context.Context, opID string, runID common.RunID) {
+	next := clock.Now(ctx)
+	for {
+		next = next.Add(l.interval)
+		left := next.Sub(clock.Now(ctx))
+		if left > 0 {
+			<-clock.After(ctx, left)
+		}
+		r := run.Run{ID: runID}
+		err := datastore.Get(ctx, &r)
+		if !l.reevaluate(ctx, opID, &r, err) {
+			break
+		}
+	}
+}
+
+// reevaluate updates state if necessary and returns whether the background
+// checking should continue.
+func (l *longOpCancellationChecker) reevaluate(ctx context.Context, opID string, r *run.Run, err error) bool {
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		logging.Errorf(ctx, "Run was unexpectedly deleted")
+		atomic.StoreInt32(&l.state, cancelationCheckerRequested)
+		return false
+	case err != nil && ctx.Err() != nil:
+		// Context was cancelled or expired.
+		return false
+	case err != nil:
+		logging.Warningf(ctx, "Failed to reload Run, will retry: %s", err)
+		return true
+	case r.OngoingLongOps == nil || r.OngoingLongOps.GetOps()[opID] == nil:
+		logging.Warningf(ctx, "Reloaded Run no longer has this operation")
+		atomic.StoreInt32(&l.state, cancelationCheckerRequested)
+		return false
+	case r.OngoingLongOps.GetOps()[opID].GetCancelRequested():
+		logging.Warningf(ctx, "Cancelation request detected")
+		atomic.StoreInt32(&l.state, cancelationCheckerRequested)
+		return false
+	default:
+		return true
+	}
 }

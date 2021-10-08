@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -118,6 +119,23 @@ func TestLongOps(t *testing.T) {
 				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{OperationId: opID})
 			})
 
+			Convey("CancelRequested handling", func() {
+				rs := &state.RunState{Run: *loadRun(ctx)}
+				rs.RequestLongOpCancellation(opID)
+				rs.EVersion++
+				So(datastore.Put(ctx, &rs.Run), ShouldBeNil)
+
+				called := false
+				manager.testDoLongOperationWithDeadline = func(ctx context.Context, opBase *longops.Base) (*eventpb.LongOpCompleted, error) {
+					called = true
+					So(opBase.IsCancelRequested(), ShouldBeTrue)
+					return &eventpb.LongOpCompleted{Cancelled: true}, nil
+				}
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+				So(called, ShouldBeTrue)
+				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{OperationId: opID, Cancelled: true})
+			})
+
 			Convey("Expired long op must not be executed, but Run Manager should be notified", func() {
 				ct.Clock.Add(time.Hour)
 				called := false
@@ -182,6 +200,165 @@ func TestLongOps(t *testing.T) {
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
 					So(called, ShouldBeFalse)
 					runtest.AssertEventboxEmpty(ctx, runID)
+				})
+			})
+		})
+	})
+}
+
+func TestLongOpCancellationChecker(t *testing.T) {
+	t.Parallel()
+
+	Convey("longOpCancellationChecker works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		const runID = "chromium/222-1-deadbeef"
+		const opID = "op-1"
+
+		So(datastore.Put(ctx, &run.Run{
+			ID:       runID,
+			Status:   run.Status_RUNNING,
+			EVersion: 1,
+			OngoingLongOps: &run.OngoingLongOps{
+				Ops: map[string]*run.OngoingLongOps_Op{
+					opID: {
+						CancelRequested: false, // changed in tests below
+						// Other fields aren't relevant to this test.
+					},
+				},
+			},
+		}), ShouldBeNil)
+
+		loadRun := func() *run.Run {
+			ret := &run.Run{ID: runID}
+			So(datastore.Get(ctx, ret), ShouldBeNil)
+			return ret
+		}
+
+		ct.Clock.SetTimerCallback(func(dur time.Duration, _ clock.Timer) {
+			// Whenever background goroutine sleeps, awake it immediately.
+			ct.Clock.Add(dur)
+		})
+
+		done := make(chan struct{})
+
+		assertDone := func() {
+			select {
+			case <-done:
+			case <-ctx.Done():
+				So("context expired before background goroutine was done", ShouldBeFalse)
+			}
+		}
+		assertNotDone := func() {
+			select {
+			case <-done:
+				So("background goroutine is done", ShouldBeFalse)
+			default:
+			}
+		}
+
+		l := longOpCancellationChecker{
+			interval: time.Second,
+			testChan: done,
+		}
+
+		Convey("Normal operation without long op cancellation", func() {
+			stop := l.start(ctx, loadRun(), opID)
+			defer stop()
+			So(l.check(), ShouldBeFalse)
+			ct.Clock.Add(time.Minute)
+			So(l.check(), ShouldBeFalse)
+			assertNotDone()
+		})
+
+		Convey("Initial Run state with cancellation request is noticed immediately", func() {
+			r := loadRun()
+			r.OngoingLongOps.GetOps()[opID].CancelRequested = true
+			So(datastore.Put(ctx, r), ShouldBeNil)
+
+			stop := l.start(ctx, loadRun(), opID)
+			defer stop()
+
+			So(l.check(), ShouldBeTrue)
+			// Background goroutine shouldn't even be started, hence the `done`
+			// channel should remain open.
+			assertNotDone()
+		})
+
+		Convey("Notices cancellation request eventually", func() {
+			stop := l.start(ctx, loadRun(), opID)
+			defer stop()
+
+			// Store request to cancel.
+			r := loadRun()
+			r.OngoingLongOps.GetOps()[opID].CancelRequested = true
+			So(datastore.Put(ctx, r), ShouldBeNil)
+
+			ct.Clock.Add(time.Minute)
+			// Must be done soon.
+			assertDone()
+			// Now, the cancellation request must be noticed.
+			So(l.check(), ShouldBeTrue)
+		})
+
+		Convey("Robust in case of edge cases which should not happen in practice", func() {
+			Convey("Notices Run losing track of this long operation", func() {
+				stop := l.start(ctx, loadRun(), opID)
+				defer stop()
+
+				r := loadRun()
+				r.OngoingLongOps = nil
+				So(datastore.Put(ctx, r), ShouldBeNil)
+
+				ct.Clock.Add(time.Minute)
+				// Must be done soon.
+				assertDone()
+				// Treat it as if the long op was requested to be cancelled.
+				So(l.check(), ShouldBeTrue)
+			})
+
+			Convey("Notices Run deletion", func() {
+				stop := l.start(ctx, loadRun(), opID)
+				defer stop()
+
+				So(datastore.Delete(ctx, loadRun()), ShouldBeNil)
+
+				ct.Clock.Add(time.Minute)
+				// Must be done soon.
+				assertDone()
+				// Treat it as if the long op was requested to be cancelled.
+				So(l.check(), ShouldBeTrue)
+			})
+		})
+
+		Convey("Background goroutine lifetime is bounded", func() {
+			Convey("by calling stop()", func() {
+				stop := l.start(ctx, loadRun(), opID)
+				assertNotDone()
+				stop()
+				assertDone()
+				So(l.check(), ShouldBeFalse) // the long op is still not cancelled
+			})
+
+			Convey("by context", func() {
+				Convey("when context expires", func() {
+					innerCtx, ctxCancel := clock.WithTimeout(ctx, time.Minute)
+					defer ctxCancel() // to cleanup test resources, not actually relevant to the test
+					stop := l.start(innerCtx, loadRun(), opID)
+					defer stop()
+					ct.Clock.Add(time.Hour) // expire the innerCtx
+					assertDone()
+					So(l.check(), ShouldBeFalse) // the long op is still not cancelled
+				})
+
+				Convey("context is cancelled", func() {
+					innerCtx, ctxCancel := clock.WithTimeout(ctx, time.Minute)
+					stop := l.start(innerCtx, loadRun(), opID)
+					defer stop()
+					ctxCancel()
+					assertDone()
+					So(l.check(), ShouldBeFalse) // the long op is still not cancelled
 				})
 			})
 		})

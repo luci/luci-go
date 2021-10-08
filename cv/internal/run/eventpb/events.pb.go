@@ -702,7 +702,6 @@ type LongOpCompleted struct {
 	OperationId string `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
 	// Cancelled is true if the LongOp detected that it was cancelled by the Run
 	// Manager and thus stopped working.
-	// TODO(tandrii): implement.
 	Cancelled bool `protobuf:"varint,2,opt,name=cancelled,proto3" json:"cancelled,omitempty"` // TODO(crbug/1240786): add fields if necessary.
 }
 

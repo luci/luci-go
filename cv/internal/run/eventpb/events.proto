@@ -132,7 +132,6 @@ message LongOpCompleted {
   string operation_id = 1;
   // Cancelled is true if the LongOp detected that it was cancelled by the Run
   // Manager and thus stopped working.
-  // TODO(tandrii): implement.
   bool cancelled = 2;
   // TODO(crbug/1240786): add fields if necessary.
 }
