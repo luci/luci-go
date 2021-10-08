@@ -22,6 +22,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/textpb"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/starlark/starlarkproto"
 )
 
@@ -245,22 +247,40 @@ func (o Output) Compare(dir string, semantic bool) (map[string]CompareResult, er
 	}
 
 	out := make(map[string]CompareResult, len(o.Data))
+	m := sync.Mutex{}
 
-	for name, datum := range o.Data {
-		path := filepath.Join(dir, filepath.FromSlash(name))
+	err := parallel.WorkPool(runtime.NumCPU()+4, func(tasks chan<- func() error) {
+		for name, datum := range o.Data {
+			name := name
+			datum := datum
 
-		switch existing, err := ioutil.ReadFile(path); {
-		case os.IsNotExist(err):
-			out[name] = Different // new output file
-		case err != nil:
-			return nil, errors.Annotate(err, "when checking diff of %q", name).Err()
-		default:
-			if out[name], err = compare(datum, existing); err != nil {
-				return nil, errors.Annotate(err, "when checking diff of %q", name).Err()
+			tasks <- func() error {
+				path := filepath.Join(dir, filepath.FromSlash(name))
+
+				var res CompareResult
+				switch existing, err := ioutil.ReadFile(path); {
+				case os.IsNotExist(err):
+					res = Different // new output file
+				case err != nil:
+					return errors.Annotate(err, "when checking diff of %q", name).Err()
+				default:
+					if res, err = compare(datum, existing); err != nil {
+						return errors.Annotate(err, "when checking diff of %q", name).Err()
+					}
+				}
+
+				m.Lock()
+				out[name] = res
+				m.Unlock()
+
+				return nil
 			}
 		}
-	}
+	})
 
+	if err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
