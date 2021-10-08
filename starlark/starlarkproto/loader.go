@@ -90,6 +90,11 @@ func SetDefaultLoader(th *starlark.Thread, l *Loader) {
 	th.SetLocal(threadLoaderKey, l)
 }
 
+// Types returns a registry for looking up or iterating over descriptor types.
+func (l *Loader) Types() *protoregistry.Types {
+	return l.types
+}
+
 // AddDescriptorSet makes all *.proto files defined in the given descriptor set
 // and all its dependencies available for use from Starlark.
 //

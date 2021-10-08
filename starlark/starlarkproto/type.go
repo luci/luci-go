@@ -68,6 +68,11 @@ func (t *MessageType) Descriptor() protoreflect.MessageDescriptor {
 	return t.desc
 }
 
+// Loader returns the loader this message type was loaded from.
+func (t *MessageType) Loader() *Loader {
+	return t.loader
+}
+
 // Message instantiates a new empty message of this type.
 func (t *MessageType) Message() *Message {
 	return &Message{

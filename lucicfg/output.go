@@ -28,8 +28,13 @@ import (
 
 	"go.starlark.net/starlark"
 
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/dynamicpb"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/textpb"
 	"go.chromium.org/luci/starlark/starlarkproto"
 )
 
@@ -72,38 +77,73 @@ type MessageDatum struct {
 	Header  string
 	Message *starlarkproto.Message
 
-	// Cache serialized representation, since we often call Bytes() twice: once
-	// when constructing ConfigSet for sending to the validation, and another when
-	// writing them to disk.
+	// Cache proto.Message and serialized representations, since we need them
+	// in multiple places: when constructing ConfigSet for sending to the
+	// validation, when comparing with configs on disk and when writing them
+	// to disk.
 	once sync.Once
+	pmsg proto.Message
 	blob []byte
 	err  error
 }
 
-// Bytes is a raw file body to put on disk.
-func (m *MessageDatum) Bytes() ([]byte, error) {
+// ensureConverted populates `pmsg` and `blob`.
+func (m *MessageDatum) ensureConverted() error {
 	m.once.Do(func() {
-		if msg, err := starlarkproto.ToTextPB(m.Message); err != nil {
+		// Grab it as proto.Message for comparisons in SemanticallySame.
+		m.pmsg = m.Message.ToProto()
+
+		// And convert to a text for strict comparisons and the final output.
+		opts := prototext.MarshalOptions{
+			AllowPartial: true,
+			Indent:       " ",
+			Resolver:     m.Message.MessageType().Loader().Types(), // used for google.protobuf.Any fields
+		}
+		blob, err := opts.Marshal(m.pmsg)
+		if err == nil {
+			blob, err = textpb.Format(blob, m.Message.MessageType().Descriptor())
+		}
+
+		if err != nil {
 			m.err = err
 		} else {
-			m.blob = make([]byte, 0, len(m.Header)+len(msg))
+			m.blob = make([]byte, 0, len(m.Header)+len(blob))
 			m.blob = append(m.blob, m.Header...)
-			m.blob = append(m.blob, msg...)
+			m.blob = append(m.blob, blob...)
 		}
 	})
-	return m.blob, m.err
+	return m.err
+}
+
+// Bytes is a raw file body to put on disk.
+func (m *MessageDatum) Bytes() ([]byte, error) {
+	if err := m.ensureConverted(); err != nil {
+		return nil, err
+	}
+	return m.blob, nil
 }
 
 // SemanticallySame is true if 'other' deserializes and equals b.Message.
 //
 // On deserialization or comparison errors returns false.
 func (m *MessageDatum) SemanticallySame(other []byte) bool {
-	o, err := starlarkproto.FromTextPB(m.Message.MessageType(), other)
-	if err != nil {
+	// Convert `other` to a proto.Message.
+	otherpb := dynamicpb.NewMessage(m.Message.MessageType().Descriptor())
+	opts := prototext.UnmarshalOptions{
+		AllowPartial: true,
+		Resolver:     m.Message.MessageType().Loader().Types(), // used for google.protobuf.Any fields
+	}
+	if err := opts.Unmarshal(other, otherpb); err != nil {
 		return false // e.g. the schema has changed or the file is totally bogus
 	}
-	eq, err := starlark.Equal(m.Message, o)
-	return err == nil && eq
+
+	// Convert `m.Message` to a proto.Message too.
+	if err := m.ensureConverted(); err != nil {
+		return false // note: we'll fail later in the serialization anyway
+	}
+
+	// Compare them semantically as protos.
+	return proto.Equal(m.pmsg, otherpb)
 }
 
 // ConfigSets partitions this output into 0 or more config sets based on Roots.
