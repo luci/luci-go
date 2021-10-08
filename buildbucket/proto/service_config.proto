@@ -96,8 +96,34 @@ message ExperimentSettings {
     // The name of the global experiment.
     string name = 1;
 
-    // The value (% chance, 0 - 100) of the global experiment.
-    int32 value = 2;
+    // The default_value (% chance, 0 - 100) of the global experiment.
+    int32 default_value = 2;
+
+    // The minimum_value (% chance, 0 - 100) of the global experiment.
+    //
+    // This will override lower Builder-defined experiment values.
+    int32 minimum_value = 3;
+
+    // Allows temporary exclusion of builders from the experiment.
+    // Each line here should have a corresponding bug to remove the exclusion.
+    BuilderPredicate builders = 4;
+
+    // If this is true it means that the experiment has no effect, and is safe
+    // to stop setting in user configs. Additionally, Buildbucket will stop
+    // setting this experiment negatively on Builds.
+    //
+    // When removing a global experiment, set this to true rather than removing
+    // the experiment entirely, because Buildbucket still needs this to permit
+    // (and ignore) user configs which still mention reserved experiments (e.g.
+    // if we have "luci.something" which someone explicitly specifies, and we
+    // ramp it to 100% and remove it from the global spec, Buildbucket will
+    // start complaining that users are using a reserved experiment name, rather
+    // than just ignoring it).
+    //
+    // If inactive experiments appear in user configurations, it may cause
+    // warnings to be printed e.g. at config validation time and/or on the LUCI
+    // UI, etc.
+    bool inactive = 5;
   }
   repeated Experiment experiments = 1;
 }
