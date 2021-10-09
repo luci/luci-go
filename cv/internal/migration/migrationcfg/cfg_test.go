@@ -29,7 +29,7 @@ import (
 func TestIsCVInCharge(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsCVInChargeOfStatus works", t, func() {
+	Convey("IsCVInChargeOfSomething works", t, func() {
 		run := func(project string, settings *migrationpb.Settings, hostname string) bool {
 			ct := cvtesting.Test{Env: &common.Env{
 				LogicalHostname: hostname,
@@ -39,7 +39,7 @@ func TestIsCVInCharge(t *testing.T) {
 
 			So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-			res, err := IsCVInChargeOfStatus(ctx, ct.Env, project)
+			res, err := isCQDInChargeOfPostingStartMessage(ctx, ct.Env, project)
 			So(err, ShouldBeNil)
 			return res
 		}
