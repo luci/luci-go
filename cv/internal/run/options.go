@@ -19,10 +19,13 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/git/footer"
+	"go.chromium.org/luci/cv/internal/changelist"
 )
 
-// ExtractOptions computes the Run Options from 1 CL description.
-func ExtractOptions(clDescription string) *Options {
+// ExtractOptions computes the Run Options from 1 CL.
+func ExtractOptions(snapshot *changelist.Snapshot) *Options {
+	ci := snapshot.GetGerrit().GetInfo()
+	clDescription := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
 	modern := footer.ParseMessage(clDescription)
 	legacy := footer.ParseLegacyMetadata(clDescription)
 

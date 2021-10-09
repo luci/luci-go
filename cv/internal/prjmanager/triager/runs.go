@@ -322,9 +322,7 @@ func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Con
 		if exp != act {
 			return nil, errors.Annotate(itriager.ErrOutdatedPMState, "CL %d EVersion changed %d => %d", cl.ID, exp, act).Err()
 		}
-		ci := cl.Snapshot.GetGerrit().GetInfo()
-		msg := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
-		opts = run.MergeOptions(opts, run.ExtractOptions(msg))
+		opts = run.MergeOptions(opts, run.ExtractOptions(cl.Snapshot))
 	}
 
 	// Run's owner is whoever owns the latest triggered CL.

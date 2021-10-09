@@ -15,9 +15,11 @@
 package run
 
 import (
+	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/data/text"
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -27,8 +29,20 @@ func TestExtractOptions(t *testing.T) {
 	t.Parallel()
 
 	Convey("ExtractOptions works", t, func() {
+		extract := func(msg string) *Options {
+			lines := strings.Split(strings.TrimSpace(msg), "\n")
+			for i, l := range lines {
+				lines[i] = strings.TrimSpace(l)
+			}
+			msg = strings.Join(lines, "\n")
+			return ExtractOptions(&changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+					Info: gerritfake.CI(1, gerritfake.Desc(msg)),
+				}},
+			})
+		}
 		Convey("Default", func() {
-			So(ExtractOptions(text.Doc(`
+			So(extract(`
 				CL title.
 
 				SOME_COMMIT_TAG=ignored-by-CV
@@ -39,65 +53,65 @@ func TestExtractOptions(t *testing.T) {
 				Change-Id: Ideadbeef
 				Bug: 1
 				Yes-Bug-Above: is a Git/Gerrit footer
-      `)), ShouldResembleProto, &Options{})
+      `), ShouldResembleProto, &Options{})
 		})
 
 		Convey("No-Tree-Checks", func() {
-			So(ExtractOptions(text.Doc(`
+			So(extract(`
 				CL title.
 
 				No-Tree-Checks: true
-      `)), ShouldResembleProto, &Options{
+      `), ShouldResembleProto, &Options{
 				SkipTreeChecks: true,
 			})
-			So(ExtractOptions(text.Doc(`
+			So(extract(`
 				CL title.
 
 				NOTREECHECKS=true
-      `)), ShouldResembleProto, &Options{
+      `), ShouldResembleProto, &Options{
 				SkipTreeChecks: true,
 			})
 		})
 
 		Convey("No-Try / No-Presubmit", func() {
-			So(ExtractOptions(text.Doc(`
+			So(extract(`
 				CL title.
 
 				NOPRESUBMIT=true
 
 				No-Try: true
-      `)), ShouldResembleProto, &Options{
+      `), ShouldResembleProto, &Options{
 				SkipTryjobs:   true,
 				SkipPresubmit: true,
 			})
-			So(ExtractOptions(text.Doc(`
+			So(extract(`
 				CL title.
 
 				NOTRY=true
 
 				No-Presubmit: true
-      `)), ShouldResembleProto, &Options{
+      `), ShouldResembleProto, &Options{
 				SkipTryjobs:   true,
 				SkipPresubmit: true,
 			})
 		})
 
 		Convey("Cq-Do-Not-Cancel-Tryjobs", func() {
-			So(ExtractOptions(text.Doc(`
+			So(extract(`
 				CL title.
 
 				Cq-Do-Not-Cancel-Tryjobs: true
-      `)), ShouldResembleProto, &Options{
+      `), ShouldResembleProto, &Options{
 				AvoidCancellingTryjobs: true,
 			})
 		})
 
 		Convey("No-Equivalent-Builders", func() {
-			So(ExtractOptions(text.Doc(`
+			So(extract(`
 				CL title.
 
 				No-Equivalent-Builders: true
-      `)), ShouldResembleProto, &Options{
+      `), ShouldResembleProto, &Options{
 				SkipEquivalentBuilders: true,
 			})
 		})
