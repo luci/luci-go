@@ -165,7 +165,7 @@ func (m *MessageDatum) Compare(other []byte) (CompareResult, error) {
 	}
 
 	// Compare them semantically as protos.
-	if proto.Equal(m.pmsg, otherpb) {
+	if semanticallyEqual(m.pmsg, otherpb) {
 		return SemanticallyEqual, nil
 	}
 	return Different, nil

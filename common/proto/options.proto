@@ -27,15 +27,16 @@ message Metadata {
 }
 
 // Definition of file-level options understood by various LUCI tools.
-//
-// Usage:
-//
-//    import "go.chromium.org/luci/common/proto/options.proto";
-//
-//    option (luci.file_metadata) = {
-//      doc_url: "https://example.com/schema.md";
-//    };
 extend google.protobuf.FileOptions {
+  // Used by lucicfg to populate headers of generated text proto files.
+  //
+  // Usage:
+  //
+  //    import "go.chromium.org/luci/common/proto/options.proto";
+  //
+  //    option (luci.file_metadata) = {
+  //      doc_url: "https://example.com/schema.md";
+  //    };
   optional Metadata file_metadata = 73700;
 }
 
@@ -50,14 +51,26 @@ enum TextPBFieldFormat {
 }
 
 // Definition of field-level options understood by various LUCI tools.
-//
-// Usage:
-//
-//    import "go.chromium.org/luci/common/proto/options.proto";
-//
-//    message MyMessage {
-//      string my_field = 1 [(luci.text_pb_format) = JSON];
-//    }
 extend google.protobuf.FieldOptions {
+  // Used by lucicfg and textpb package to pretty-print text protos.
+  //
+  // Usage:
+  //
+  //    import "go.chromium.org/luci/common/proto/options.proto";
+  //
+  //    message MyMessage {
+  //      string my_field = 1 [(luci.text_pb_format) = JSON];
+  //    }
   optional TextPBFieldFormat text_pb_format = 73701;
+
+  // Used by lucicfg to skip comparing fields when making semantic comparison.
+  //
+  // Usage:
+  //
+  //    import "go.chromium.org/luci/common/proto/options.proto";
+  //
+  //    message MyMessage {
+  //      string my_field = 1 [(luci.lucicfg_ignore) = true];
+  //    }
+  optional bool lucicfg_ignore = 73702;
 }

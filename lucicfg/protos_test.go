@@ -23,14 +23,17 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
+	"go.chromium.org/luci/common/proto/textpb"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// testProtoLoader is a proto.Loader populated with misc/support/test.proto
-// descriptor and its dependencies. Used by testMessage().
-var testProtoLoader *starlarkproto.Loader
+// testMessageType represents testproto.Msg from misc/support/test.proto as
+// loaded through starlarkproto Loader.
+//
+// Used by testMessage and testMessageProto.
+var testMessageType *starlarkproto.MessageType
 
 func init() {
 	// See testdata/gen.go for where this file is generated.
@@ -48,15 +51,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	testProtoLoader = starlarkproto.NewLoader()
+	testProtoLoader := starlarkproto.NewLoader()
 	if err := testProtoLoader.AddDescriptorSet(ds); err != nil {
 		panic(err)
 	}
-}
-
-// testMessage returns new testproto.Msg as a Starlark value to be used from
-// tests (grabs it via testProtoLoader).
-func testMessage(i int, f float64) *starlarkproto.Message {
 	testproto, err := testProtoLoader.Module("misc/support/test.proto")
 	if err != nil {
 		panic(err)
@@ -65,7 +63,13 @@ func testMessage(i int, f float64) *starlarkproto.Message {
 	if err != nil {
 		panic(err)
 	}
-	msg := msgT.(*starlarkproto.MessageType).Message()
+	testMessageType = msgT.(*starlarkproto.MessageType)
+}
+
+// testMessage returns new testproto.Msg as a Starlark value to be used from
+// tests (grabs it via testProtoLoader).
+func testMessage(i int, f float64) *starlarkproto.Message {
+	msg := testMessageType.Message()
 	if err := msg.SetField("i", starlark.MakeInt(i)); err != nil {
 		panic(err)
 	}
@@ -73,6 +77,16 @@ func testMessage(i int, f float64) *starlarkproto.Message {
 		panic(err)
 	}
 	return msg
+}
+
+// testMessageProto returns new testproto.Msg as proto.Message, deserializing
+// it from a text proto.
+func testMessageProto(body string) proto.Message {
+	msg, err := starlarkproto.FromTextPB(testMessageType, []byte(body))
+	if err != nil {
+		panic(err)
+	}
+	return msg.ToProto()
 }
 
 func TestProtos(t *testing.T) {
@@ -88,9 +102,76 @@ func TestProtos(t *testing.T) {
 		So(asInt, ShouldEqual, 123)
 	})
 
+	Convey("testMessageProto works", t, func() {
+		msg := testMessageProto("i: 456")
+		blob, err := textpb.Marshal(msg)
+		So(err, ShouldBeNil)
+		So(string(blob), ShouldEqual, "i: 456\n")
+	})
+
 	Convey("Doc URL works", t, func() {
 		name, doc := protoMessageDoc(testMessage(123, 0))
 		So(name, ShouldEqual, "Msg")
 		So(doc, ShouldEqual, "https://example.com/proto-doc") // see misc/support/test.proto
+	})
+
+	Convey("semanticallyEqual: true", t, func() {
+		msg1 := testMessageProto(`
+			i: 123
+			nested: {
+				s: "aaa"
+				ignore: "ignore 1"
+			}
+			ignore_scalar: "ignore 1"
+			ignore_rep: "ignore 1"
+			ignore_rep: "ignore 1"
+			ignore_nested: {
+				s: "ignore 1"
+			}
+		`)
+		msg2 := testMessageProto(`
+			i: 123
+			nested: {
+				s: "aaa"
+				ignore: "ignore 2"
+			}
+			ignore_scalar: "ignore 2"
+			ignore_rep: "ignore 2"
+			ignore_rep: "ignore 2"
+			ignore_nested: {
+				s: "ignore 2"
+			}
+		`)
+		So(semanticallyEqual(msg1, msg2), ShouldBeTrue)
+	})
+
+	Convey("semanticallyEqual: false", t, func() {
+		msg1 := testMessageProto(`
+			i: 123
+			nested: {
+				s: "aaa"
+				ignore: "ignore 1"
+			}
+			ignore_scalar: "ignore 1"
+			ignore_rep: "ignore 1"
+			ignore_rep: "ignore 1"
+			ignore_nested: {
+				s: "ignore 1"
+			}
+		`)
+		msg2 := testMessageProto(`
+			i: 123
+			nested: {
+				s: "bbb"
+				ignore: "ignore 2"
+			}
+			ignore_scalar: "ignore 2"
+			ignore_rep: "ignore 2"
+			ignore_rep: "ignore 2"
+			ignore_nested: {
+				s: "ignore 2"
+			}
+		`)
+		So(semanticallyEqual(msg1, msg2), ShouldBeFalse)
 	})
 }

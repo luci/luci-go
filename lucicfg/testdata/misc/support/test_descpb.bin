@@ -1,7 +1,15 @@
 
-¥
-misc/support/test.proto	testproto/go.chromium.org/luci/common/proto/options.proto"!
+•
+misc/support/test.proto	testproto/go.chromium.org/luci/common/proto/options.proto"Ú
 Msg
 i (Ri
-f (RfB#¢þ#
+f (Rf)
+nested (2.testproto.NestedRnested)
+ignore_scalar (	B°þ#RignoreScalar#
+
+ignore_rep (	B°þ#R	ignoreRep<
+ignore_nested (2.testproto.NestedB°þ#RignoreNested"4
+Nested
+s (	Rs
+ignore (	B°þ#RignoreB#¢þ#
 https://example.com/proto-docbproto3

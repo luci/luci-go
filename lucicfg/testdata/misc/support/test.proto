@@ -25,4 +25,14 @@ option (luci.file_metadata) = {
 message Msg {
   int64 i = 1;
   float f = 2;
+  Nested nested = 3;
+
+  string ignore_scalar = 4 [(luci.lucicfg_ignore) = true];
+  repeated string ignore_rep = 5 [(luci.lucicfg_ignore) = true];
+  Nested ignore_nested = 6 [(luci.lucicfg_ignore) = true];
+}
+
+message Nested {
+  string s = 1;
+  string ignore = 2 [(luci.lucicfg_ignore) = true];
 }
