@@ -68,6 +68,17 @@ message Snapshot {
   // In particular, Project Manager does not act on the CLs with .Outdated set.
   Outdated outdated = 7;
 
+  // Metadata is an ordered list of key-value pairs, which may later be
+  // interpreted by CV guts.
+  //
+  // For example,
+  //   [("No-Tree-Checks", "True"), ("NOTRY", "TRUE")].
+  //
+  // In case of Gerrit CLs, these are extracted from CL descriptions,
+  // The Git-Footer-Style keys are normalized.
+  // The values are stripped from beginning and trailing whitespace.
+  repeated StringPair metadata = 8;
+
   // CL-kind specific data.
   oneof kind {
     Gerrit gerrit = 11;
@@ -380,4 +391,10 @@ message CLUpdatedEvent {
 // CLUpdatedEvents is a batch of CLUpdatedEvents.
 message CLUpdatedEvents {
   repeated CLUpdatedEvent events = 1;
+}
+
+// A string key-value pair.
+message StringPair {
+  string key = 1;
+  string value = 2;
 }

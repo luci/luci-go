@@ -17,6 +17,7 @@ package updater
 import (
 	"context"
 	"sort"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -476,8 +477,23 @@ func TestUpdateCLWorks(t *testing.T) {
 		})
 
 		Convey("Fetch for the first time", func() {
-			ci := gf.CI(123, gf.Project(gRepo), gf.Ref("refs/heads/main"),
-				gf.Files("a.cpp", "c/b.py"), gf.Desc("T.\n\nCq-Depend: 101"))
+			ci := gf.CI(
+				123, gf.Project(gRepo), gf.Ref("refs/heads/main"),
+				gf.Files("a.cpp", "c/b.py"),
+				gf.Desc(strings.TrimSpace(`
+Title.
+
+Second paragraph.
+May have.
+Several lines.
+AND_A_TAG=with some value
+AND_A_TAG=with the second value
+
+Gerrit-Or-Git: footers are here
+Gerrit-or-Git: can be repeated
+Cq-Depend: 101
+				`)),
+			)
 			ciParent := gf.CI(122, gf.Desc("Z\n\nCq-Depend: must-be-ignored:47"))
 			ciGrandpa := gf.CI(121, gf.Desc("Z\n\nCq-Depend: must-be-ignored:46"))
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci, ciParent, ciGrandpa))
@@ -494,6 +510,13 @@ func TestUpdateCLWorks(t *testing.T) {
 			So(cl.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "c/b.py"})
 			So(cl.Snapshot.GetLuciProject(), ShouldEqual, lProject)
 			So(cl.Snapshot.GetExternalUpdateTime(), ShouldResembleProto, ci.GetUpdated())
+			So(cl.Snapshot.GetMetadata(), ShouldResembleProto, []*changelist.StringPair{
+				{Key: "AND_A_TAG", Value: "with the second value"},
+				{Key: "AND_A_TAG", Value: "with some value"},
+				{Key: "Cq-Depend", Value: "101"},
+				{Key: "Gerrit-Or-Git", Value: "can be repeated"},
+				{Key: "Gerrit-Or-Git", Value: "footers are here"},
+			})
 			So(cl.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto,
 				[]*changelist.GerritGitDep{
 					{Change: 122, Immediate: true},
