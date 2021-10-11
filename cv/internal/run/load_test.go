@@ -15,17 +15,23 @@
 package run
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLoadRunLogEntries(t *testing.T) {
@@ -96,4 +102,186 @@ func TestLoadRunLogEntries(t *testing.T) {
 		So(out2, ShouldHaveLength, 1)
 		So(out2[0].GetCreated().GetConfigGroupId(), ShouldResemble, "fi/rst-but-run2")
 	})
+}
+
+func TestLoadRunsBuilder(t *testing.T) {
+	t.Parallel()
+
+	Convey("LoadRunsBuilder works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "proj"
+		// Run statuses are used in this test to ensure Runs were actually loaded.
+		makeRun := func(id int, s Status) *Run {
+			r := &Run{ID: common.RunID(fmt.Sprintf("%s/%03d", lProject, id)), Status: s}
+			So(datastore.Put(ctx, r), ShouldBeNil)
+			return r
+		}
+
+		r1 := makeRun(1, Status_RUNNING)
+		r2 := makeRun(2, Status_CANCELLED)
+		r3 := makeRun(3, Status_PENDING)
+		r4 := makeRun(4, Status_SUCCEEDED)
+		r201 := makeRun(201, Status_FAILED)
+		r202 := makeRun(202, Status_FAILED)
+		r404 := makeRun(404, Status_PENDING)
+		r405 := makeRun(405, Status_PENDING)
+		So(datastore.Delete(ctx, r404, r405), ShouldBeNil)
+
+		Convey("Without checker", func() {
+			Convey("Every Run exists", func() {
+				verify := func(b LoadRunsBuilder) {
+					runsA, errs := b.Do(ctx)
+					So(errs, ShouldResemble, make(errors.MultiError, 2))
+					So(runsA, ShouldResemble, []*Run{r201, r202})
+
+					runsB, err := b.DoIgnoreNotFound(ctx)
+					So(err, ShouldBeNil)
+					So(runsB, ShouldResemble, runsA)
+				}
+				Convey("IDs", func() {
+					verify(LoadRunsFromIDs(r201.ID, r202.ID))
+				})
+				Convey("keys", func() {
+					verify(LoadRunsFromKeys(
+						datastore.MakeKey(ctx, RunKind, string(r201.ID)),
+						datastore.MakeKey(ctx, RunKind, string(r202.ID)),
+					))
+				})
+			})
+
+			Convey("A missing Run", func() {
+				b := LoadRunsFromIDs(r404.ID)
+
+				runsA, errs := b.Do(ctx)
+				So(errs, ShouldResemble, errors.MultiError{datastore.ErrNoSuchEntity})
+				So(runsA, ShouldResemble, []*Run{{ID: r404.ID}})
+
+				runsB, err := b.DoIgnoreNotFound(ctx)
+				So(err, ShouldBeNil)
+				So(runsB, ShouldBeNil)
+			})
+			Convey("Mix of existing and missing", func() {
+				b := LoadRunsFromIDs(r201.ID, r404.ID, r202.ID, r405.ID, r4.ID)
+
+				runsA, errs := b.Do(ctx)
+				So(errs, ShouldResemble, errors.MultiError{nil, datastore.ErrNoSuchEntity, nil, datastore.ErrNoSuchEntity, nil})
+				So(runsA, ShouldResemble, []*Run{
+					r201,
+					{ID: r404.ID},
+					r202,
+					{ID: r405.ID},
+					r4,
+				})
+
+				runsB, err := b.DoIgnoreNotFound(ctx)
+				So(err, ShouldBeNil)
+				So(runsB, ShouldResemble, []*Run{r201, r202, r4})
+			})
+		})
+
+		Convey("With checker", func() {
+			checker := fakeRunChecker{
+				afterOnNotFound: appstatus.Error(codes.NotFound, "not-found-ds"),
+			}
+
+			Convey("No errors of any kind", func() {
+				b := LoadRunsFromIDs(r201.ID, r202.ID, r4.ID).Checker(checker)
+
+				runsA, errs := b.Do(ctx)
+				So(errs, ShouldResemble, make(errors.MultiError, 3))
+				So(runsA, ShouldResemble, []*Run{r201, r202, r4})
+
+				runsB, err := b.DoIgnoreNotFound(ctx)
+				So(err, ShouldBeNil)
+				So(runsB, ShouldResemble, runsA)
+			})
+
+			Convey("Missing in datastore", func() {
+				b := LoadRunsFromIDs(r404.ID).Checker(checker)
+
+				runsA, errs := b.Do(ctx)
+				So(errs[0], ShouldHaveAppStatus, codes.NotFound)
+				So(runsA, ShouldResemble, []*Run{{ID: r404.ID}})
+
+				runsB, err := b.DoIgnoreNotFound(ctx)
+				So(err, ShouldBeNil)
+				So(runsB, ShouldBeNil)
+			})
+
+			Convey("Mix", func() {
+				checker.before = map[common.RunID]error{
+					r1.ID: appstatus.Error(codes.NotFound, "not-found-before"),
+					r2.ID: errors.New("before-oops"),
+				}
+				checker.after = map[common.RunID]error{
+					r3.ID: appstatus.Error(codes.NotFound, "not-found-after"),
+					r4.ID: errors.New("after-oops"),
+				}
+				Convey("only found and not found", func() {
+					b := LoadRunsFromIDs(r201.ID, r1.ID, r202.ID, r3.ID, r404.ID).Checker(checker)
+
+					runsA, errs := b.Do(ctx)
+					So(errs[0], ShouldBeNil) // r201
+					So(errs[1], ShouldErrLike, "not-found-before")
+					So(errs[2], ShouldBeNil) // r202
+					So(errs[3], ShouldErrLike, "not-found-after")
+					So(errs[4], ShouldErrLike, "not-found-ds")
+					So(runsA, ShouldResemble, []*Run{
+						r201,
+						{ID: r1.ID},
+						r202,
+						r3, // loaded & returned, despite errors
+						{ID: r404.ID},
+					})
+
+					runsB, err := b.DoIgnoreNotFound(ctx)
+					So(err, ShouldBeNil)
+					So(runsB, ShouldResemble, []*Run{r201, r202})
+				})
+				Convey("of everything", func() {
+					b := LoadRunsFromIDs(r201.ID, r1.ID, r2.ID, r3.ID, r4.ID, r404.ID).Checker(checker)
+
+					runsA, errs := b.Do(ctx)
+					So(errs[0], ShouldBeNil) // r201
+					So(errs[1], ShouldErrLike, "not-found-before")
+					So(errs[2], ShouldErrLike, "before-oops")
+					So(errs[3], ShouldErrLike, "not-found-after")
+					So(errs[4], ShouldErrLike, "after-oops")
+					So(errs[5], ShouldErrLike, "not-found-ds")
+					So(runsA, ShouldResemble, []*Run{
+						r201,
+						{ID: r1.ID},
+						{ID: r2.ID},
+						r3, // loaded & returned, despite errors
+						r4, // loaded & returned, despite errors
+						{ID: r404.ID},
+					})
+
+					runsB, err := b.DoIgnoreNotFound(ctx)
+					So(err, ShouldErrLike, "before-oops")
+					So(runsB, ShouldBeNil)
+				})
+			})
+		})
+	})
+}
+
+type fakeRunChecker struct {
+	before          map[common.RunID]error
+	after           map[common.RunID]error
+	afterOnNotFound error
+}
+
+func (f fakeRunChecker) Before(ctx context.Context, id common.RunID) error {
+	return f.before[id]
+}
+
+func (f fakeRunChecker) After(ctx context.Context, runIfFound *Run) error {
+	if runIfFound == nil {
+		return f.afterOnNotFound
+	}
+	return f.after[runIfFound.ID]
 }
