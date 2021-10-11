@@ -31,7 +31,7 @@ import (
 func CheckRunAccess(ctx context.Context, r *run.Run) (bool, error) {
 	// TODO(https://crbug.com/1233963): design & implement & test.
 
-	switch yes, err := checkLegacyCQStatusAccess(ctx, r); {
+	switch yes, err := checkLegacyCQStatusAccess(ctx, r.ID.LUCIProject()); {
 	case err != nil:
 		return false, err
 	case yes:

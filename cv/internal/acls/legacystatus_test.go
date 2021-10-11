@@ -21,11 +21,9 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -46,7 +44,7 @@ func TestCheckLegacy(t *testing.T) {
 		}
 
 		Convey("not existing project", func() {
-			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("non-existing/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, "non-existing")
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeFalse)
 		})
@@ -56,7 +54,7 @@ func TestCheckLegacy(t *testing.T) {
 			cfg.CqStatusHost = validation.CQStatusHostPublic
 			prjcfgtest.Create(ctx, "disabled", cfg)
 			prjcfgtest.Disable(ctx, "disabled")
-			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("disabled/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, "disabled")
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeFalse)
 		})
@@ -64,7 +62,7 @@ func TestCheckLegacy(t *testing.T) {
 		Convey("without configured CQ Status", func() {
 			cfg.CqStatusHost = ""
 			prjcfgtest.Create(ctx, "no-legacy", cfg)
-			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("no-legacy/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, "no-legacy")
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeFalse)
 		})
@@ -72,7 +70,7 @@ func TestCheckLegacy(t *testing.T) {
 		Convey("with misconfigured CQ Status", func() {
 			cfg.CqStatusHost = "misconfigured.example.com"
 			prjcfgtest.Create(ctx, "misconfigured", cfg)
-			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("misconfigured/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, "misconfigured")
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeFalse)
 		})
@@ -80,7 +78,7 @@ func TestCheckLegacy(t *testing.T) {
 		Convey("public access", func() {
 			cfg.CqStatusHost = validation.CQStatusHostPublic
 			prjcfgtest.Create(ctx, "public", cfg)
-			allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("public/123-1-cafe")})
+			allowed, err := checkLegacyCQStatusAccess(ctx, "public")
 			So(err, ShouldBeNil)
 			So(allowed, ShouldBeTrue)
 		})
@@ -94,7 +92,7 @@ func TestCheckLegacy(t *testing.T) {
 					Identity:       "user:googler@example.com",
 					IdentityGroups: []string{cqStatusInternalCrIAGroup},
 				})
-				allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("internal/123-1-cafe")})
+				allowed, err := checkLegacyCQStatusAccess(ctx, "internal")
 				So(err, ShouldBeNil)
 				So(allowed, ShouldBeTrue)
 			})
@@ -104,7 +102,7 @@ func TestCheckLegacy(t *testing.T) {
 					Identity:       "user:hacker@example.com",
 					IdentityGroups: []string{},
 				})
-				allowed, err := checkLegacyCQStatusAccess(ctx, &run.Run{ID: common.RunID("internal/123-1-cafe")})
+				allowed, err := checkLegacyCQStatusAccess(ctx, "internal")
 				So(err, ShouldBeNil)
 				So(allowed, ShouldBeFalse)
 			})

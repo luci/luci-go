@@ -22,15 +22,14 @@ import (
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/validation"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 const (
 	cqStatusInternalCrIAGroup = "googlers"
 )
 
-// checkLegacyCQStatusAccess checks if the calling user has access to the Run
-// via legacy CQ status app.
+// checkLegacyCQStatusAccess checks if the calling user has access to the Runs
+// of the given LUCI project via the legacy CQ status app.
 //
 // Returns true if user has access.
 //
@@ -43,10 +42,8 @@ const (
 //
 // See also https://crbug.com/1250737.
 // TODO(crbug/1233963): remove this legacy after implementing CV ACLs.
-func checkLegacyCQStatusAccess(ctx context.Context, r *run.Run) (bool, error) {
-	// Although Run itself is associated with a ConfigGroup, it may be pinned at
-	// very old revision, so prefer the newest config.
-	m, err := prjcfg.GetLatestMeta(ctx, r.ID.LUCIProject())
+func checkLegacyCQStatusAccess(ctx context.Context, luciProject string) (bool, error) {
+	m, err := prjcfg.GetLatestMeta(ctx, luciProject)
 	switch {
 	case err != nil:
 		return false, err
