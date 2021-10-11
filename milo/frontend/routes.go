@@ -90,7 +90,7 @@ func Run(srv *server.Server, templatePath string) {
 		}
 	}).Extend(optionalProjectMW...)
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", buildPageMW, handleError(handleLUCIBuild))
-	// TODO(crbug/1108198): remove this route once we turned down the old build page.
+	// TODO(crbug/1108198): remvoe this route once we turned down the old build page.
 	r.GET("/old/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
 
 	// Only the new build page can take path suffix, redirect to the new build page.

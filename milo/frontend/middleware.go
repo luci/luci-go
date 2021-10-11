@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -499,7 +500,7 @@ func getTemplateBundle(templatePath string, appVersionID string, prod bool) *tem
 				"LoginURL":    loginURL,
 				"LogoutURL":   logoutURL,
 				"CurrentTime": clock.Now(c),
-				"Analytics":   "UA-55762617-24",
+				"Analytics":   analytics.Snippet(c),
 				"RequestID":   trace.SpanContext(c),
 				"Request":     e.Request,
 				"Navi":        ProjectLinks(c, project, group),
