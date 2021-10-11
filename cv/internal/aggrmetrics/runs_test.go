@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -39,7 +38,6 @@ func TestRunAggregator(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		ctx = caching.WithEmptyProcessCache(ctx)
 		// Truncate current time to seconds to deal with integer delays.
 		ct.Clock.Set(ct.Clock.Now().UTC().Add(time.Second).Truncate(time.Second))
 

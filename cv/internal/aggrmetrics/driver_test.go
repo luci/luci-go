@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/server/caching"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
@@ -51,8 +50,6 @@ func TestDriver(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-
-		ctx = caching.WithEmptyProcessCache(ctx)
 
 		mSent := func(fields ...interface{}) interface{} {
 			return ct.TSMonSentValue(ctx, testMetric, fields...)

@@ -16,9 +16,12 @@ package acls
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/validation"
@@ -26,7 +29,20 @@ import (
 
 const (
 	cqStatusInternalCrIAGroup = "googlers"
+	legacyCQStatusHostTTL     = 20 * time.Minute
 )
+
+// legacyCQStatusHostCache caches CQ status hosts per LUCI project.
+var legacyCQStatusHostCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(100),
+	GlobalNamespace: "acls_legacy_cqstatus_v1",
+	Marshal: func(host interface{}) ([]byte, error) {
+		return []byte(host.(string)), nil
+	},
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		return string(blob), nil
+	},
+}
 
 // checkLegacyCQStatusAccess checks if the calling user has access to the Runs
 // of the given LUCI project via the legacy CQ status app.
@@ -43,25 +59,43 @@ const (
 // See also https://crbug.com/1250737.
 // TODO(crbug/1233963): remove this legacy after implementing CV ACLs.
 func checkLegacyCQStatusAccess(ctx context.Context, luciProject string) (bool, error) {
-	m, err := prjcfg.GetLatestMeta(ctx, luciProject)
-	switch {
+	switch host, err := loadCQStatusHost(ctx, luciProject); {
 	case err != nil:
 		return false, err
-	case m.Status != prjcfg.StatusEnabled:
-		return false, nil
-	}
-	// All ConfigGroups have the same CQStatusHost, so just load the first one.
-	switch cfg, err := prjcfg.GetConfigGroup(ctx, m.Project, m.ConfigGroupIDs[0]); {
-	case err != nil:
-		return false, err
-	case cfg.CQStatusHost == validation.CQStatusHostPublic:
+	case host == validation.CQStatusHostPublic:
 		return true, nil
-	case cfg.CQStatusHost == validation.CQStatusHostInternal:
+	case host == validation.CQStatusHostInternal:
 		return auth.IsMember(ctx, cqStatusInternalCrIAGroup)
-	case cfg.CQStatusHost == "":
+	case host == "":
 		return false, nil
 	default:
-		logging.Errorf(ctx, "crbug/1250737: Unrecognized CQ Status Host %q", cfg.CQStatusHost)
+		logging.Errorf(ctx, "crbug/1250737: Unrecognized CQ Status Host %q", host)
 		return false, nil
 	}
+}
+
+// loadCQStatusHost returns CQ status host configured for a LUCI projects.
+func loadCQStatusHost(ctx context.Context, luciProject string) (string, error) {
+	host, err := legacyCQStatusHostCache.GetOrCreate(ctx, luciProject, func() (interface{}, time.Duration, error) {
+		m, err := prjcfg.GetLatestMeta(ctx, luciProject)
+		switch {
+		case err != nil:
+			return "", 0, err
+		case m.Status != prjcfg.StatusEnabled:
+			// Cache for disabled/deleted projects, too.
+			return "", legacyCQStatusHostTTL, nil
+		}
+		// All ConfigGroups have the same CQStatusHost, so just load the first one.
+		switch cfg, err := prjcfg.GetConfigGroup(ctx, m.Project, m.ConfigGroupIDs[0]); {
+		case err != nil:
+			return "", 0, err
+		default:
+			return cfg.CQStatusHost, legacyCQStatusHostTTL, nil
+		}
+	})
+
+	if err != nil {
+		return "", err
+	}
+	return host.(string), nil
 }

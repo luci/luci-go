@@ -49,6 +49,7 @@ import (
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/gae/service/info"
 	serverauth "go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -150,6 +151,8 @@ func (t *Test) SetUp() (context.Context, func()) {
 	if testing.Verbose() {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 	}
+
+	ctx = caching.WithEmptyProcessCache(ctx)
 
 	if t.TQDispatcher != nil {
 		panic("TQDispatcher must not be set")
