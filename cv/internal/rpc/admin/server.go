@@ -670,11 +670,11 @@ func (d *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEven
 		return nil, appstatus.Error(codes.InvalidArgument, "event with a specific inner event is required")
 	}
 
-	switch err := datastore.Get(ctx, &run.Run{ID: common.RunID(req.GetRun())}); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, appstatus.Error(codes.NotFound, "Run not found")
+	switch r, err := run.LoadRun(ctx, common.RunID(req.GetRun())); {
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+	case r == nil:
+		return nil, appstatus.Error(codes.NotFound, "Run not found")
 	}
 
 	if err := d.RunNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
@@ -758,12 +758,12 @@ func checkAllowed(ctx context.Context, name string) error {
 }
 
 func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *run.Run) bool) (*adminpb.GetRunResponse, error) {
-	r := &run.Run{ID: rid}
-	switch err := datastore.Get(ctx, r); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, appstatus.Error(codes.NotFound, "run not found")
+	r, err := run.LoadRun(ctx, rid)
+	switch {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+		return nil, err
+	case r == nil:
+		return nil, appstatus.Error(codes.NotFound, "Run not found")
 	case shouldSkip != nil && shouldSkip(r):
 		return nil, nil
 	}
