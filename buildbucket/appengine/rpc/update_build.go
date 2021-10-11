@@ -309,7 +309,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		// Instead, remove the field paths from the mask and merge the protos with the mask.
 		defer nilifyReqBuildDetails(req.Build)()
 		origStatus = b.Proto.Status
-		updateMask.Merge(req.Build, &b.Proto)
+		updateMask.Merge(req.Build, b.Proto)
 		if b.Proto.Output != nil {
 			b.Proto.Output.Properties = nil
 		}

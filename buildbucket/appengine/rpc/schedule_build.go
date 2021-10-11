@@ -317,13 +317,18 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 // requests in a map of Bucket ID -> Builder name -> *pb.Builder.
 func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]map[string]*pb.Builder, error) {
 	var bcks []*model.Bucket
-	bckCfgs := map[string]*pb.Bucket{} // Bucket ID -> *pb.Bucket
+
+	// bckCfgs and bldrCfgs use a double-pointer because GetIgnoreMissing will
+	// indirectly overwrite the pointer in the model struct when loading from the
+	// datastore (so, populating Proto and Config fields and using those values
+	// won't help).
+	bckCfgs := map[string]**pb.Bucket{} // Bucket ID -> **pb.Bucket
 	var bldrs []*model.Builder
-	bldrCfgs := map[string]map[string]*pb.Builder{} // Bucket ID -> Builder name -> *pb.Builder
+	bldrCfgs := map[string]map[string]**pb.Builder{} // Bucket ID -> Builder name -> **pb.Builder
 	for _, req := range reqs {
 		bucket := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
 		if _, ok := bldrCfgs[bucket]; !ok {
-			bldrCfgs[bucket] = make(map[string]*pb.Builder)
+			bldrCfgs[bucket] = make(map[string]**pb.Builder)
 		}
 		if _, ok := bldrCfgs[bucket][req.Builder.Builder]; ok {
 			continue
@@ -333,8 +338,6 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 				Parent: model.ProjectKey(ctx, req.Builder.Project),
 				ID:     req.Builder.Bucket,
 			}
-			// b.Proto is a non-pointer type filled in during datastore fetch,
-			// so take its address so the map can be filled in as well.
 			bckCfgs[bucket] = &b.Proto
 			bcks = append(bcks, b)
 		}
@@ -345,12 +348,15 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 		bldrCfgs[bucket][req.Builder.Builder] = &b.Config
 		bldrs = append(bldrs, b)
 	}
-	// Check buckets to see if they support dynamically scheduling builds for builders which are not pre-defined.
+
+	// Note; this will fill in bckCfgs and bldrCfgs.
 	if err := model.GetIgnoreMissing(ctx, bcks, bldrs); err != nil {
 		return nil, errors.Annotate(err, "failed to fetch entities").Err()
 	}
+
+	// Check buckets to see if they support dynamically scheduling builds for builders which are not pre-defined.
 	for _, b := range bcks {
-		if b.Proto.Name == "" {
+		if b.Proto.GetName() == "" {
 			return nil, appstatus.Errorf(codes.NotFound, "bucket not found: %q", b.ID)
 		}
 	}
@@ -359,18 +365,29 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 		// as required, it can be used as a proxy for determining whether the builder config was found or
 		// not. If it's unspecified, the builder wasn't found. Builds for builders which aren't pre-configured
 		// can only be scheduled in buckets which support dynamic builders.
-		if b.Config.Name == "" {
+		if b.Config.GetName() == "" {
 			bucket := protoutil.FormatBucketID(b.Parent.Parent().StringID(), b.Parent.StringID())
 			// TODO(crbug/1042991): Check if bucket is explicitly configured for dynamic builders.
 			// Currently buckets do not require pre-defined builders iff they have no Swarming config.
-			if cfg := bckCfgs[bucket]; cfg.Swarming == nil {
+			if (*bckCfgs[bucket]).GetSwarming() == nil {
 				delete(bldrCfgs[bucket], b.ID)
 				continue
 			}
 			return nil, appstatus.Errorf(codes.NotFound, "builder not found: %q", b.ID)
 		}
 	}
-	return bldrCfgs, nil
+
+	// deref all the pointers.
+	ret := make(map[string]map[string]*pb.Builder, len(bldrCfgs))
+	for bucket, builders := range bldrCfgs {
+		m := make(map[string]*pb.Builder, len(builders))
+		for builderName, builder := range builders {
+			m[builderName] = *builder
+		}
+		ret[bucket] = m
+	}
+
+	return ret, nil
 }
 
 // generateBuildNumbers mutates the given builds, setting build numbers and
@@ -977,7 +994,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			ID:         ids[i],
 			CreatedBy:  user,
 			CreateTime: now,
-			Proto:      *buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg),
+			Proto:      buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg),
 		}
 
 		if !dryRun {
@@ -1042,9 +1059,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 					b,
 					&model.BuildInfra{
 						Build: datastore.KeyForObj(ctx, b),
-						Proto: model.DSBuildInfra{
-							BuildInfra: *b.Proto.Infra,
-						},
+						Proto: b.Proto.Infra,
 					},
 					&model.BuildInputProperties{
 						Build: datastore.KeyForObj(ctx, b),

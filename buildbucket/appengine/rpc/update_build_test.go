@@ -304,7 +304,7 @@ func TestGetBuildForUpdate(t *testing.T) {
 
 		build := &model.Build{
 			ID: 1,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -321,7 +321,7 @@ func TestGetBuildForUpdate(t *testing.T) {
 		Convey("works", func() {
 			b, err := getBuildForUpdate(ctx, updateMask(req), req)
 			So(err, ShouldBeNil)
-			So(&b.Proto, ShouldResembleProto, &build.Proto)
+			So(b.Proto, ShouldResembleProto, build.Proto)
 
 			Convey("with build.steps", func() {
 				req.Build.Status = pb.Status_STARTED
@@ -381,7 +381,7 @@ func TestUpdateBuild(t *testing.T) {
 			So(b.Proto.Output.Properties, ShouldBeNil)
 		}
 		m := model.HardcodedBuildMask("output.properties", "steps", "tags")
-		So(model.LoadBuildDetails(ctx, m, &b.Proto), ShouldBeNil)
+		So(model.LoadBuildDetails(ctx, m, b.Proto), ShouldBeNil)
 		return b
 	}
 
@@ -415,7 +415,7 @@ func TestUpdateBuild(t *testing.T) {
 		// create and save a sample build in the datastore
 		build := &model.Build{
 			ID: 1,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",

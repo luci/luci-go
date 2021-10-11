@@ -79,7 +79,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder1",
-					Config: pb.Builder{Name: "builder"},
+					Config: &pb.Builder{Name: "builder"},
 				},
 			), ShouldBeNil)
 
@@ -99,7 +99,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
 					ID:     "bucket",
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
@@ -111,17 +111,17 @@ func TestListBuilders(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder1",
-					Config: pb.Builder{Name: "builder1"},
+					Config: &pb.Builder{Name: "builder1"},
 				},
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder2",
-					Config: pb.Builder{Name: "builder2"},
+					Config: &pb.Builder{Name: "builder2"},
 				},
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder3",
-					Config: pb.Builder{Name: "builder3"},
+					Config: &pb.Builder{Name: "builder3"},
 				},
 			), ShouldBeNil)
 

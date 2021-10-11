@@ -84,7 +84,7 @@ func TestCreateInvocations(t *testing.T) {
 			builds := []*model.Build{
 				{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "proj1",
@@ -97,7 +97,7 @@ func TestCreateInvocations(t *testing.T) {
 				},
 				{
 					ID: 2,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 2,
 						Builder: &pb.BuilderID{
 							Project: "proj1",
@@ -153,7 +153,7 @@ func TestCreateInvocations(t *testing.T) {
 			builds := []*model.Build{
 				{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id:     1,
 						Number: 123,
 						Builder: &pb.BuilderID{
@@ -208,7 +208,7 @@ func TestCreateInvocations(t *testing.T) {
 			builds := []*model.Build{
 				{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id:     1,
 						Number: 123,
 						Builder: &pb.BuilderID{
@@ -244,7 +244,7 @@ func TestCreateInvocations(t *testing.T) {
 			builds := []*model.Build{
 				{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "proj1",
@@ -267,7 +267,7 @@ func TestCreateInvocations(t *testing.T) {
 			builds := []*model.Build{
 				{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "proj1",

@@ -60,6 +60,6 @@ func (*Builders) GetBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb
 
 	return &pb.BuilderItem{
 		Id:     req.Id,
-		Config: &builder.Config,
+		Config: builder.Config,
 	}, nil
 }

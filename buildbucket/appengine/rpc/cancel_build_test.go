@@ -90,7 +90,7 @@ func TestCancelBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
@@ -100,7 +100,7 @@ func TestCancelBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -128,7 +128,7 @@ func TestCancelBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
@@ -138,7 +138,7 @@ func TestCancelBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -174,7 +174,7 @@ func TestCancelBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
@@ -184,7 +184,7 @@ func TestCancelBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -222,7 +222,7 @@ func TestCancelBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
@@ -232,7 +232,7 @@ func TestCancelBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -243,12 +243,10 @@ func TestCancelBuild(t *testing.T) {
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.BuildInfra{
 					Build: datastore.MakeKey(ctx, "Build", 1),
-					Proto: model.DSBuildInfra{
-						BuildInfra: pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{
-								Hostname: "example.com",
-								TaskId:   "id",
-							},
+					Proto: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "example.com",
+							TaskId:   "id",
 						},
 					},
 				}), ShouldBeNil)
@@ -281,7 +279,7 @@ func TestCancelBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
@@ -291,7 +289,7 @@ func TestCancelBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -302,12 +300,10 @@ func TestCancelBuild(t *testing.T) {
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.BuildInfra{
 					Build: datastore.MakeKey(ctx, "Build", 1),
-					Proto: model.DSBuildInfra{
-						BuildInfra: pb.BuildInfra{
-							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname:   "example.com",
-								Invocation: "id",
-							},
+					Proto: &pb.BuildInfra{
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname:   "example.com",
+							Invocation: "id",
 						},
 					},
 				}), ShouldBeNil)

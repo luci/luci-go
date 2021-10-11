@@ -66,7 +66,7 @@ func TestHasInBucketLegacy(t *testing.T) {
 			So(datastore.Put(ctx, &model.Bucket{
 				ID:     "some-bucket",
 				Parent: model.ProjectKey(ctx, "some-project"),
-				Proto:  pb.Bucket{Acls: acls},
+				Proto:  &pb.Bucket{Acls: acls},
 			}), ShouldBeNil)
 		}
 
@@ -304,7 +304,7 @@ func TestBucketsByPerm(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket1",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Acls: []*pb.Acl{
 					{
 						Identity: "user:user",
@@ -316,7 +316,7 @@ func TestBucketsByPerm(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket1",
 			Parent: model.ProjectKey(ctx, "project2"),
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Acls: []*pb.Acl{
 					{
 						Identity: "user:user",
@@ -328,7 +328,7 @@ func TestBucketsByPerm(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket2",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Acls: []*pb.Acl{
 					{
 						Identity: "user:user",

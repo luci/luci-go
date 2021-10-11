@@ -97,16 +97,16 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 				cancelSteps = false
 			}
 		}
-		if inf.Proto.Swarming.GetHostname() != "" && inf.Proto.Swarming.TaskId != "" {
+		if sw := inf.Proto.GetSwarming(); sw.GetHostname() != "" && sw.TaskId != "" {
 			if err := tasks.CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
-				Hostname: inf.Proto.Swarming.Hostname,
-				TaskId:   inf.Proto.Swarming.TaskId,
+				Hostname: sw.Hostname,
+				TaskId:   sw.TaskId,
 				Realm:    bld.Realm(),
 			}); err != nil {
 				return errors.Annotate(err, "failed to enqueue swarming task cancellation task: %d", bld.ID).Err()
 			}
 		}
-		if inf.Proto.Resultdb.GetHostname() != "" && inf.Proto.Resultdb.Invocation != "" {
+		if rdb := inf.Proto.GetResultdb(); rdb.GetHostname() != "" && rdb.Invocation != "" {
 			if err := tasks.FinalizeResultDB(ctx, &taskdefs.FinalizeResultDB{
 				BuildId: bld.ID,
 			}); err != nil {

@@ -76,7 +76,7 @@ type Build struct {
 	// tags are given their own field so they can be indexed.
 	//
 	// noindex is not respected here, it's set in pb.Build.ToProperty.
-	Proto pb.Build `gae:"proto,noindex"`
+	Proto *pb.Build `gae:"proto,legacy"`
 
 	Project string `gae:"project"`
 	// <project>/<bucket>. Bucket is in v2 format.
@@ -302,7 +302,7 @@ func (b *Build) ToProto(ctx context.Context, m *BuildMask) (*pb.Build, error) {
 // ToSimpleBuildProto returns the *pb.Build without loading steps, infra,
 // input/output properties.
 func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
-	p := proto.Clone(&b.Proto).(*pb.Build)
+	p := proto.Clone(b.Proto).(*pb.Build)
 	p.Tags = make([]*pb.StringPair, 0, len(b.Tags))
 	for _, t := range b.Tags {
 		k, v := strpair.Parse(t)
@@ -359,7 +359,7 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, builds ...*pb.Build) er
 
 	var err error
 	for i, p := range builds {
-		p.Infra = &inf[i].Proto.BuildInfra
+		p.Infra = inf[i].Proto
 		if p.Input == nil {
 			p.Input = &pb.Build_Input{}
 		}

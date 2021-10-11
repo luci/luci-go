@@ -64,7 +64,7 @@ func TestBatch(t *testing.T) {
 			&model.Bucket{
 				ID:     "bucket",
 				Parent: model.ProjectKey(ctx, "project"),
-				Proto: pb.Bucket{
+				Proto: &pb.Bucket{
 					Acls: []*pb.Acl{
 						{
 							Identity: "user:caller@example.com",
@@ -74,7 +74,7 @@ func TestBatch(t *testing.T) {
 				},
 			},
 			&model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -84,7 +84,7 @@ func TestBatch(t *testing.T) {
 				},
 			},
 			&model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 2,
 					Builder: &pb.BuilderID{
 						Project: "project",

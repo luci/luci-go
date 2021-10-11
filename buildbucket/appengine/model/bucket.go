@@ -54,9 +54,7 @@ type Bucket struct {
 	// acl_sets is zeroed by inlining acls. swarming.builders is
 	// zeroed and stored in separate Builder datastore entities due to
 	// potentially large size.
-	//
-	// noindex is not respected here, it's set in pb.Bucket.ToProperty.
-	Proto pb.Bucket `gae:"config,noindex"`
+	Proto *pb.Bucket `gae:"config,legacy"`
 	// Revision is the config revision this entity was created from.
 	// TODO(crbug/1042991): Switch to noindex.
 	Revision string `gae:"revision"`

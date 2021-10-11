@@ -73,7 +73,7 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 				Bucket:  req.Bucket,
 				Builder: b.ID,
 			},
-			Config: &b.Config,
+			Config: b.Config,
 		}
 	}
 	return res, nil

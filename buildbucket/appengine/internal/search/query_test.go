@@ -242,7 +242,7 @@ func TestMainFetchFlow(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
-					Config: pb.Builder{Name: "builder"},
+					Config: &pb.Builder{Name: "builder"},
 				},
 			), ShouldBeNil)
 
@@ -258,7 +258,7 @@ func TestMainFetchFlow(t *testing.T) {
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
 					ID:     "bucket",
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
@@ -270,7 +270,7 @@ func TestMainFetchFlow(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
-					Config: pb.Builder{Name: "builder"},
+					Config: &pb.Builder{Name: "builder"},
 				},
 			), ShouldBeNil)
 
@@ -286,7 +286,7 @@ func TestMainFetchFlow(t *testing.T) {
 			So(datastore.Put(ctx, &model.Bucket{
 				ID:     "bucket",
 				Parent: model.ProjectKey(ctx, "project"),
-				Proto: pb.Bucket{
+				Proto: &pb.Bucket{
 					Acls: []*pb.Acl{
 						{
 							Identity: "user:user",
@@ -296,7 +296,7 @@ func TestMainFetchFlow(t *testing.T) {
 				},
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -335,7 +335,7 @@ func TestMainFetchFlow(t *testing.T) {
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
 					ID:     "bucket",
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
@@ -347,7 +347,7 @@ func TestMainFetchFlow(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
-					Config: pb.Builder{Name: "builder"},
+					Config: &pb.Builder{Name: "builder"},
 				},
 			), ShouldBeNil)
 			So(datastore.Put(ctx, &model.TagIndex{
@@ -356,7 +356,7 @@ func TestMainFetchFlow(t *testing.T) {
 				Entries:    nil,
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -409,7 +409,7 @@ func TestFetchOnBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Acls: []*pb.Acl{
 					{
 						Identity: "user:user",
@@ -420,7 +420,7 @@ func TestFetchOnBuild(t *testing.T) {
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 100,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 100,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -438,7 +438,7 @@ func TestFetchOnBuild(t *testing.T) {
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 200,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 200,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -584,7 +584,7 @@ func TestFetchOnBuild(t *testing.T) {
 		Convey("found by create time", func() {
 			So(datastore.Put(ctx, &model.Build{
 				ID: 8764414515958775808,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -624,7 +624,7 @@ func TestFetchOnBuild(t *testing.T) {
 		Convey("found by created_by", func() {
 			So(datastore.Put(ctx, &model.Build{
 				ID: 1111,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id:        1111,
 					CreatedBy: "project:infra",
 					Builder: &pb.BuilderID{
@@ -664,7 +664,7 @@ func TestFetchOnBuild(t *testing.T) {
 		Convey("found by ENDED_MASK", func() {
 			So(datastore.Put(ctx, &model.Build{
 				ID: 300,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 300,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -725,7 +725,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 			So(datastore.Put(ctx, &model.Build{
 				ID: 321,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 321,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -766,7 +766,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 			So(datastore.Put(ctx, &model.Build{
 				ID: 321,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 321,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -782,7 +782,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Build{
 				ID: 123,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -822,7 +822,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 			So(datastore.Put(ctx, &model.Build{
 				ID: 321,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 321,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -838,7 +838,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Build{
 				ID: 123,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -930,7 +930,7 @@ func TestFetchOnBuild(t *testing.T) {
 		Convey("pagination", func() {
 			So(datastore.Put(ctx, &model.Build{
 				ID: 300,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 300,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -947,7 +947,7 @@ func TestFetchOnBuild(t *testing.T) {
 			// this build can be fetched from db but not accessible by the user.
 			So(datastore.Put(ctx, &model.Build{
 				ID: 400,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 400,
 					Builder: &pb.BuilderID{
 						Project: "project_no_access",
@@ -1058,7 +1058,7 @@ func TestUpdateTagIndex(t *testing.T) {
 		builds := []*model.Build{
 			{
 				ID: 1,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -1074,7 +1074,7 @@ func TestUpdateTagIndex(t *testing.T) {
 			},
 			{
 				ID: 2,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -1137,7 +1137,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Acls: []*pb.Acl{
 					{
 						Identity: "user:user",
@@ -1148,7 +1148,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 100,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 100,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -1166,7 +1166,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 200,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 200,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -1184,7 +1184,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 300,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 300,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -1292,7 +1292,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 		Convey("filter by ENDED_MASK", func() {
 			So(datastore.Put(ctx, &model.Build{
 				ID: 999,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id:     999,
 					Status: pb.Status_STARTED,
 					Builder: &pb.BuilderID{

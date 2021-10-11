@@ -254,7 +254,7 @@ func TestSearchBuilds(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Acls: []*pb.Acl{
 					{
 						Identity: "user:user",
@@ -264,7 +264,7 @@ func TestSearchBuilds(t *testing.T) {
 			},
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -277,7 +277,7 @@ func TestSearchBuilds(t *testing.T) {
 			Tags:      []string{"k1:v1", "k2:v2"},
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 2,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -327,11 +327,9 @@ func TestSearchBuilds(t *testing.T) {
 			key := datastore.KeyForObj(ctx, b)
 			So(datastore.Put(ctx, &model.BuildInfra{
 				Build: key,
-				Proto: model.DSBuildInfra{
-					BuildInfra: pb.BuildInfra{
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "example.com",
-						},
+				Proto: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "example.com",
 					},
 				},
 			}), ShouldBeNil)
@@ -383,7 +381,6 @@ func TestSearchBuilds(t *testing.T) {
 						Input: &pb.Build_Input{
 							Properties: &structpb.Struct{},
 						},
-						Infra: &pb.BuildInfra{},
 					},
 				},
 			}

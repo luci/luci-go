@@ -52,7 +52,7 @@ func TestBuild(t *testing.T) {
 		Convey("read/write", func() {
 			So(datastore.Put(ctx, &Build{
 				ID: 1,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -68,11 +68,11 @@ func TestBuild(t *testing.T) {
 				ID: 1,
 			}
 			So(datastore.Get(ctx, b), ShouldBeNil)
-			p := proto.Clone(&b.Proto).(*pb.Build)
-			b.Proto = pb.Build{}
+			p := proto.Clone(b.Proto).(*pb.Build)
+			b.Proto = &pb.Build{}
 			So(b, ShouldResemble, &Build{
 				ID:           1,
-				Proto:        pb.Build{},
+				Proto:        &pb.Build{},
 				BucketID:     "project/bucket",
 				BuilderID:    "project/bucket/builder",
 				Canary:       false,
@@ -102,7 +102,7 @@ func TestBuild(t *testing.T) {
 			Convey("infra failure", func() {
 				So(datastore.Put(ctx, &Build{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -118,11 +118,11 @@ func TestBuild(t *testing.T) {
 					ID: 1,
 				}
 				So(datastore.Get(ctx, b), ShouldBeNil)
-				p := proto.Clone(&b.Proto).(*pb.Build)
-				b.Proto = pb.Build{}
+				p := proto.Clone(b.Proto).(*pb.Build)
+				b.Proto = &pb.Build{}
 				So(b, ShouldResemble, &Build{
 					ID:           1,
-					Proto:        pb.Build{},
+					Proto:        &pb.Build{},
 					BucketID:     "project/bucket",
 					BuilderID:    "project/bucket/builder",
 					Canary:       false,
@@ -152,7 +152,7 @@ func TestBuild(t *testing.T) {
 			Convey("timeout", func() {
 				So(datastore.Put(ctx, &Build{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -171,11 +171,11 @@ func TestBuild(t *testing.T) {
 					ID: 1,
 				}
 				So(datastore.Get(ctx, b), ShouldBeNil)
-				p := proto.Clone(&b.Proto).(*pb.Build)
-				b.Proto = pb.Build{}
+				p := proto.Clone(b.Proto).(*pb.Build)
+				b.Proto = &pb.Build{}
 				So(b, ShouldResemble, &Build{
 					ID:           1,
-					Proto:        pb.Build{},
+					Proto:        &pb.Build{},
 					BucketID:     "project/bucket",
 					BuilderID:    "project/bucket/builder",
 					Canary:       false,
@@ -208,7 +208,7 @@ func TestBuild(t *testing.T) {
 			Convey("canceled", func() {
 				So(datastore.Put(ctx, &Build{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -224,11 +224,11 @@ func TestBuild(t *testing.T) {
 					ID: 1,
 				}
 				So(datastore.Get(ctx, b), ShouldBeNil)
-				p := proto.Clone(&b.Proto).(*pb.Build)
-				b.Proto = pb.Build{}
+				p := proto.Clone(b.Proto).(*pb.Build)
+				b.Proto = &pb.Build{}
 				So(b, ShouldResemble, &Build{
 					ID:           1,
-					Proto:        pb.Build{},
+					Proto:        &pb.Build{},
 					BucketID:     "project/bucket",
 					BuilderID:    "project/bucket/builder",
 					Canary:       false,
@@ -260,7 +260,7 @@ func TestBuild(t *testing.T) {
 			Convey("implicitly disabled", func() {
 				b := &Build{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -278,7 +278,7 @@ func TestBuild(t *testing.T) {
 					Experiments: []string{
 						"-" + bb.ExperimentUseRealms,
 					},
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -298,7 +298,7 @@ func TestBuild(t *testing.T) {
 						"+" + bb.ExperimentUseRealms,
 						"-disabled",
 					},
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -314,7 +314,7 @@ func TestBuild(t *testing.T) {
 		Convey("ToProto", func() {
 			b := &Build{
 				ID: 1,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 				},
 				Tags: []string{
@@ -326,11 +326,9 @@ func TestBuild(t *testing.T) {
 			key := datastore.KeyForObj(ctx, b)
 			So(datastore.Put(ctx, &BuildInfra{
 				Build: key,
-				Proto: DSBuildInfra{
-					pb.BuildInfra{
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "example.com",
-						},
+				Proto: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "example.com",
 					},
 				},
 			}), ShouldBeNil)
@@ -448,7 +446,7 @@ func TestBuild(t *testing.T) {
 		Convey("ToSimpleBuildProto", func() {
 			b := &Build{
 				ID: 1,
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",

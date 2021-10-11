@@ -53,7 +53,7 @@ func TestBuildEvents(t *testing.T) {
 
 		b := &model.Build{
 			ID: 1,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",

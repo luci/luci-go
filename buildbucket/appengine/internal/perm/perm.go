@@ -203,7 +203,7 @@ func hasPermLegacy(ctx context.Context, perm realms.Permission, project, bucket 
 	}
 
 	// Find the "maximum" role of current identity in this bucket.
-	switch role, err := getRole(ctx, id, bck.Proto.Acls); {
+	switch role, err := getRole(ctx, id, bck.Proto.GetAcls()); {
 	case err != nil:
 		return err
 	case role < pb.Acl_READER:

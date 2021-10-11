@@ -108,14 +108,14 @@ func TestScheduleBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket 1"),
 			ID:     "builder 1",
-			Config: pb.Builder{
+			Config: &pb.Builder{
 				Name: "builder 1",
 			},
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket 1"),
 			ID:     "builder 2",
-			Config: pb.Builder{
+			Config: &pb.Builder{
 				Name: "builder 2",
 			},
 		}), ShouldBeNil)
@@ -123,7 +123,7 @@ func TestScheduleBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			Parent: model.ProjectKey(ctx, "project"),
 			ID:     "bucket 1",
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Name:     "bucket 1",
 				Swarming: &pb.Swarming{},
 			},
@@ -131,7 +131,7 @@ func TestScheduleBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			Parent: model.ProjectKey(ctx, "project"),
 			ID:     "bucket 2",
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Name: "bucket 2",
 			},
 		}), ShouldBeNil)
@@ -242,7 +242,7 @@ func TestScheduleBuild(t *testing.T) {
 		Convey("one", func() {
 			blds := []*model.Build{
 				{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -255,7 +255,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(blds, ShouldResemble, []*model.Build{
 				{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -273,7 +273,7 @@ func TestScheduleBuild(t *testing.T) {
 		Convey("many", func() {
 			blds := []*model.Build{
 				{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -282,7 +282,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -291,7 +291,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -304,7 +304,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(blds, ShouldResemble, []*model.Build{
 				{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -317,7 +317,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -330,7 +330,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -378,9 +378,8 @@ func TestScheduleBuild(t *testing.T) {
 		stripProtos := func(builds []*model.Build) []*pb.Build {
 			ret := make([]*pb.Build, len(builds))
 			for i, b := range builds {
-				p := b.Proto
-				ret[i] = &p
-				b.Proto = pb.Build{}
+				ret[i] = b.Proto
+				b.Proto = nil
 			}
 			return ret
 		}
@@ -406,7 +405,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
 					ID:     "bucket",
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Name: "bucket",
 					},
 				}), ShouldBeNil)
@@ -501,14 +500,14 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
-				Config: pb.Builder{
+				Config: &pb.Builder{
 					Name: "builder",
 				},
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Bucket{
 				Parent: model.ProjectKey(ctx, "project"),
 				ID:     "bucket",
-				Proto: pb.Bucket{
+				Proto: &pb.Bucket{
 					Name: "bucket",
 				},
 			}), ShouldBeNil)
@@ -669,14 +668,14 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
-				Config: pb.Builder{
+				Config: &pb.Builder{
 					Name: "builder",
 				},
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Bucket{
 				Parent: model.ProjectKey(ctx, "project"),
 				ID:     "bucket",
-				Proto: pb.Bucket{
+				Proto: &pb.Bucket{
 					Name: "bucket",
 				},
 			}), ShouldBeNil)
@@ -848,14 +847,14 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "static bucket"),
 				ID:     "static builder",
-				Config: pb.Builder{
+				Config: &pb.Builder{
 					Name: "static builder",
 				},
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Bucket{
 				Parent: model.ProjectKey(ctx, "project"),
 				ID:     "static bucket",
-				Proto: pb.Bucket{
+				Proto: &pb.Bucket{
 					Name:     "static bucket",
 					Swarming: &pb.Swarming{},
 				},
@@ -863,7 +862,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Bucket{
 				Parent: model.ProjectKey(ctx, "project"),
 				ID:     "dynamic bucket",
-				Proto: pb.Bucket{
+				Proto: &pb.Bucket{
 					Name: "dynamic bucket",
 				},
 			}), ShouldBeNil)
@@ -1204,7 +1203,7 @@ func TestScheduleBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Acls: []*pb.Acl{
 					{
 						Identity: "user:caller@example.com",
@@ -1245,7 +1244,7 @@ func TestScheduleBuild(t *testing.T) {
 				Identity: "user:unauthorized@example.com",
 			})
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1268,7 +1267,7 @@ func TestScheduleBuild(t *testing.T) {
 		Convey("canary", func() {
 			Convey("false default", func() {
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -1332,7 +1331,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			Convey("true default", func() {
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -1401,7 +1400,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("critical", func() {
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1466,7 +1465,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("exe", func() {
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1574,7 +1573,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("gerrit changes", func() {
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1711,7 +1710,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("gitiles commit", func() {
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1757,7 +1756,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("input properties", func() {
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1973,7 +1972,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("tags", func() {
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -2093,7 +2092,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("ok", func() {
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -2720,7 +2719,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("nil", func() {
 			ent := &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Exe: &pb.Executable{},
 					Infra: &pb.BuildInfra{
 						Swarming: &pb.BuildInfra_Swarming{},
@@ -2729,7 +2728,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setExperiments(ctx, nil, nil, &ent.Proto)
+			setExperiments(ctx, nil, nil, ent.Proto)
 			setExperimentsFromProto(nil, nil, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Experiments: []string{
@@ -2740,7 +2739,7 @@ func TestScheduleBuild(t *testing.T) {
 					"-" + bb.ExperimentRecipePY3,
 					"-" + bb.ExperimentUseRealms,
 				},
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Exe: &pb.Executable{
 						Cmd: []string{"recipes"},
 					},
@@ -2761,7 +2760,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				normalizeSchedule(req)
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{},
@@ -2770,7 +2769,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperiments(ctx, req, nil, ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"recipes"},
@@ -2785,7 +2784,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				normalizeSchedule(req)
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{},
@@ -2794,7 +2793,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperiments(ctx, req, nil, ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"luciexe"},
@@ -2809,7 +2808,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				normalizeSchedule(req)
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{
 							Cmd: []string{"command"},
 						},
@@ -2820,7 +2819,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperiments(ctx, req, nil, ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"command"},
@@ -2837,7 +2836,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				normalizeSchedule(req)
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{
@@ -2848,7 +2847,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperiments(ctx, req, nil, ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
 				So(ent.Proto.Input.Experimental, ShouldBeFalse)
@@ -2863,7 +2862,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				normalizeSchedule(req)
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{
@@ -2874,7 +2873,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperiments(ctx, req, nil, ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 255)
 				So(ent.Proto.Input.Experimental, ShouldBeTrue)
@@ -2890,7 +2889,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				normalizeSchedule(req)
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{
@@ -2901,7 +2900,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperiments(ctx, req, nil, ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
 			})
@@ -2915,7 +2914,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			ent := &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Exe: &pb.Executable{},
 					Infra: &pb.BuildInfra{
 						Swarming: &pb.BuildInfra_Swarming{},
@@ -2924,7 +2923,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setExperiments(ctx, req, nil, &ent.Proto)
+			setExperiments(ctx, req, nil, ent.Proto)
 			setExperimentsFromProto(req, nil, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Experiments: []string{
@@ -2937,7 +2936,7 @@ func TestScheduleBuild(t *testing.T) {
 					"-" + bb.ExperimentRecipePY3,
 					"-" + bb.ExperimentUseRealms,
 				},
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Exe: &pb.Executable{
 						Cmd: []string{"recipes"},
 					},
@@ -2960,7 +2959,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			normalizeSchedule(req)
 			ent := &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Exe: &pb.Executable{},
 					Infra: &pb.BuildInfra{
 						Swarming: &pb.BuildInfra_Swarming{},
@@ -2969,7 +2968,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setExperiments(ctx, req, nil, &ent.Proto)
+			setExperiments(ctx, req, nil, ent.Proto)
 			setExperimentsFromProto(req, nil, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Canary: true,
@@ -2981,7 +2980,7 @@ func TestScheduleBuild(t *testing.T) {
 					"-" + bb.ExperimentRecipePY3,
 					"-" + bb.ExperimentUseRealms,
 				},
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Canary: true,
 					Exe: &pb.Executable{
 						Cmd: []string{"recipes"},
@@ -3000,7 +2999,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("config only", func() {
 			ent := &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Exe: &pb.Executable{},
 					Infra: &pb.BuildInfra{
 						Swarming: &pb.BuildInfra_Swarming{},
@@ -3015,7 +3014,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setExperiments(ctx, nil, cfg, &ent.Proto)
+			setExperiments(ctx, nil, cfg, ent.Proto)
 			setExperimentsFromProto(nil, cfg, ent)
 			So(ent, ShouldResemble, &model.Build{
 				Experiments: []string{
@@ -3028,7 +3027,7 @@ func TestScheduleBuild(t *testing.T) {
 					"-" + bb.ExperimentRecipePY3,
 					"-" + bb.ExperimentUseRealms,
 				},
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Exe: &pb.Executable{
 						Cmd: []string{"recipes"},
 					},
@@ -3056,7 +3055,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				normalizeSchedule(req)
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{},
@@ -3065,7 +3064,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, nil, &ent.Proto)
+				setExperiments(ctx, req, nil, ent.Proto)
 				setExperimentsFromProto(req, nil, ent)
 				So(ent, ShouldResemble, &model.Build{
 					Experimental: true,
@@ -3078,7 +3077,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentRecipePY3,
 						"-" + bb.ExperimentUseRealms,
 					},
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{
 							Cmd: []string{"recipes"},
 						},
@@ -3110,7 +3109,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{},
@@ -3119,7 +3118,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, cfg, &ent.Proto)
+				setExperiments(ctx, req, cfg, ent.Proto)
 				setExperimentsFromProto(req, cfg, ent)
 				So(ent, ShouldResemble, &model.Build{
 					Canary: true,
@@ -3131,7 +3130,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentRecipePY3,
 						"-" + bb.ExperimentUseRealms,
 					},
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Canary: true,
 						Exe: &pb.Executable{
 							Cmd: []string{"recipes"},
@@ -3163,7 +3162,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{},
@@ -3172,7 +3171,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, cfg, &ent.Proto)
+				setExperiments(ctx, req, cfg, ent.Proto)
 				setExperimentsFromProto(req, cfg, ent)
 				So(ent, ShouldResemble, &model.Build{
 					Experiments: []string{
@@ -3185,7 +3184,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentRecipePY3,
 						"-" + bb.ExperimentUseRealms,
 					},
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{
 							Cmd: []string{"recipes"},
 						},
@@ -3222,7 +3221,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				ent := &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{},
 						Infra: &pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{},
@@ -3231,7 +3230,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setExperiments(ctx, req, cfg, &ent.Proto)
+				setExperiments(ctx, req, cfg, ent.Proto)
 				setExperimentsFromProto(req, cfg, ent)
 				So(ent, ShouldResemble, &model.Build{
 					Experimental: true,
@@ -3246,7 +3245,7 @@ func TestScheduleBuild(t *testing.T) {
 						"-" + bb.ExperimentRecipePY3,
 						"-" + bb.ExperimentUseRealms,
 					},
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Exe: &pb.Executable{
 							Cmd: []string{"recipes"},
 						},
@@ -4665,7 +4664,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			Convey("permission denied", func() {
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -4691,7 +4690,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:caller@example.com",
@@ -4730,7 +4729,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:caller@example.com",
@@ -4760,13 +4759,13 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: pb.Builder{
+						Config: &pb.Builder{
 							Name: "builder",
 						},
 					}), ShouldBeNil)
 					So(datastore.Put(ctx, &model.Build{
 						ID: 9021868963221667745,
-						Proto: pb.Build{
+						Proto: &pb.Build{
 							Id: 9021868963221667745,
 							Builder: &pb.BuilderID{
 								Project: "project",
@@ -4786,7 +4785,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: pb.Builder{
+						Config: &pb.Builder{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
 						},
@@ -4822,7 +4821,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: pb.Builder{
+						Config: &pb.Builder{
 							Name: "builder",
 						},
 					}), ShouldBeNil)
@@ -4843,7 +4842,7 @@ func TestScheduleBuild(t *testing.T) {
 						Convey("ok", func() {
 							So(datastore.Put(ctx, &model.Build{
 								ID: 1,
-								Proto: pb.Build{
+								Proto: &pb.Build{
 									Builder: &pb.BuilderID{
 										Project: "project",
 										Bucket:  "bucket",
@@ -4915,7 +4914,7 @@ func TestScheduleBuild(t *testing.T) {
 			Convey("permission denied", func() {
 				So(datastore.Put(ctx, &model.Build{
 					ID: 1000,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1000,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -4937,7 +4936,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:caller@example.com",
@@ -4950,7 +4949,7 @@ func TestScheduleBuild(t *testing.T) {
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
 					ID: 1000,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1000,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -4974,7 +4973,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: pb.Builder{
+						Config: &pb.Builder{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
 						},
@@ -5031,7 +5030,7 @@ func TestScheduleBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: pb.Bucket{
+			Proto: &pb.Bucket{
 				Acls: []*pb.Acl{
 					{
 						Identity: "user:caller@example.com",
@@ -5044,7 +5043,7 @@ func TestScheduleBuild(t *testing.T) {
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 1000,
-			Proto: pb.Build{
+			Proto: &pb.Build{
 				Id: 1000,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -5056,7 +5055,7 @@ func TestScheduleBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket"),
 			ID:     "builder",
-			Config: pb.Builder{
+			Config: &pb.Builder{
 				BuildNumbers: pb.Toggle_YES,
 				Name:         "builder",
 			},

@@ -49,7 +49,7 @@ func TestBuilderStat(t *testing.T) {
 			builds := []*Build{
 				{
 					ID: 1,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "proj",
 							Bucket:  "bucket",
@@ -59,7 +59,7 @@ func TestBuilderStat(t *testing.T) {
 				},
 				{
 					ID: 2,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "proj",
 							Bucket:  "bucket",
@@ -69,7 +69,7 @@ func TestBuilderStat(t *testing.T) {
 				},
 				{
 					ID: 3,
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "proj",
 							Bucket:  "bucket",

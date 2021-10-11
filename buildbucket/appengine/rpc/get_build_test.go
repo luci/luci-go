@@ -59,7 +59,7 @@ func TestGetBuild(t *testing.T) {
 
 			Convey("permission denied", func() {
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -80,7 +80,7 @@ func TestGetBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:caller@example.com",
@@ -90,7 +90,7 @@ func TestGetBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -118,7 +118,7 @@ func TestGetBuild(t *testing.T) {
 
 		Convey("index", func() {
 			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
+				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -198,7 +198,7 @@ func TestGetBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: pb.Bucket{
+					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:caller@example.com",
