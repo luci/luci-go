@@ -19,9 +19,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -45,28 +42,39 @@ func CheckRunAccess(ctx context.Context, r *run.Run) (bool, error) {
 	return false, nil
 }
 
-// LoadRun returns Run from Datastore while checking ACLs.
+// NewRunReadChecker returns an object to check read premission when loading
+// Runs.
 //
-// Errors is tagged with appstatus for all but internal errors.
-func LoadRun(ctx context.Context, id common.RunID) (*run.Run, error) {
-	// The caller shouldn't be able to distinguish between Run not existing and
-	// not having access to the Run, because it may leak the existence of the Run.
-	const notFoundMsg = "Run not found"
+// If current identity lacks read permission, ensures an appopriate appstatus
+// package error is returned.
+//
+// Example:
+//   r, err := run.LoadRuns(ctx, id, acls.NewRunReadChecker())
+func NewRunReadChecker() runReadChecker { return runReadChecker{} }
 
-	r := &run.Run{ID: id}
-	switch err := datastore.Get(ctx, r); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, appstatus.Error(codes.NotFound, notFoundMsg)
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+// runNotFoundMsg is used as textual reason for gRPC NotFound code.
+//
+// Rational: the caller shouldn't be able to distinguish between Run not
+// existing and not having access to the Run, because it may leak the existence
+// of the Run.
+const runNotFoundMsg = "Run not found"
+
+// runReadChecker checks read access to Runs.
+type runReadChecker struct{}
+
+func (c runReadChecker) Before(ctx context.Context, id common.RunID) error {
+	return nil
+}
+func (c runReadChecker) After(ctx context.Context, r *run.Run) error {
+	if r == nil {
+		return appstatus.Error(codes.NotFound, runNotFoundMsg)
 	}
-
 	switch yes, err := CheckRunAccess(ctx, r); {
 	case err != nil:
-		return nil, err
+		return err
 	case yes:
-		return r, nil
+		return nil
 	default:
-		return nil, appstatus.Error(codes.NotFound, notFoundMsg)
+		return appstatus.Error(codes.NotFound, runNotFoundMsg)
 	}
 }

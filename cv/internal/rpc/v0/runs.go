@@ -64,7 +64,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		return nil, err
 	}
 
-	r, err := acls.LoadRun(ctx, id)
+	r, err := run.LoadRun(ctx, id, acls.NewRunReadChecker())
 	if err != nil {
 		return nil, err
 	}

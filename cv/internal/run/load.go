@@ -16,6 +16,7 @@ package run
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -23,6 +24,55 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 )
+
+// LoadRunChecker allows to plug ACL checking when loading Run from Datastore.
+//
+// See LoadRun().
+type LoadRunChecker interface {
+	// Before is called by LoadRun before attempting to load Run from Datastore.
+	//
+	// If Before returns an error, it's returned as is to the caller of LoadRun.
+	Before(ctx context.Context, id common.RunID) error
+	// After is called by LoadRun after loading Run from Datastore.
+	//
+	// If Run wasn't found, nil is passed.
+	//
+	// If After returns an error, it's returned as is to the caller of LoadRun.
+	After(ctx context.Context, runIfFound *Run) error
+}
+
+// LoadRun returns Run from Datastore, optionally performing before/after
+// checks, typically used for checking read permissions.
+//
+// If Run isn't found, returns (nil, nil), unless optional checker returns an
+// error.
+func LoadRun(ctx context.Context, id common.RunID, checkers ...LoadRunChecker) (*Run, error) {
+	var checker LoadRunChecker = nullRunChecker{}
+	switch l := len(checkers); {
+	case l > 1:
+		panic(fmt.Errorf("at most 1 LoadRunChecker allowed, %d given", l))
+	case l == 1:
+		checker = checkers[0]
+	}
+
+	if err := checker.Before(ctx, id); err != nil {
+		return nil, err
+	}
+
+	r := &Run{ID: id}
+	switch err := datastore.Get(ctx, r); {
+	case err == datastore.ErrNoSuchEntity:
+		r = nil
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+	}
+
+	if err := checker.After(ctx, r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
 
 // LoadRunCLs loads `RunCL` entities of the provided cls in the Run.
 func LoadRunCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) ([]*RunCL, error) {
@@ -86,3 +136,8 @@ func LoadRunLogEntries(ctx context.Context, runID common.RunID) ([]*LogEntry, er
 	}
 	return out, nil
 }
+
+type nullRunChecker struct{}
+
+func (n nullRunChecker) Before(ctx context.Context, id common.RunID) error { return nil }
+func (n nullRunChecker) After(ctx context.Context, runIfFound *Run) error  { return nil }

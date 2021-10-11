@@ -39,7 +39,7 @@ import (
 func TestLoadRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("Check LoadRun works", t, func() {
+	Convey("Check NewRunReadChecker works", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -81,11 +81,11 @@ func TestLoadRun(t *testing.T) {
 		})
 
 		Convey("Run doesn't exist", func() {
-			_, err1 := LoadRun(ctx, common.RunID("foo/bar"))
+			_, err1 := run.LoadRun(ctx, common.RunID("foo/bar"), NewRunReadChecker())
 			So(err1, ShouldHaveAppStatus, codes.NotFound)
 
 			Convey("No access must be indistinguishable from not existing Run", func() {
-				_, err2 := LoadRun(ctx, internalRun.ID)
+				_, err2 := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
 				So(err2, ShouldHaveAppStatus, codes.NotFound)
 
 				st1, _ := appstatus.Get(err1)
@@ -97,7 +97,7 @@ func TestLoadRun(t *testing.T) {
 		})
 
 		Convey("OK public", func() {
-			r, err := LoadRun(ctx, publicRun.ID)
+			r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
 			So(err, ShouldBeNil)
 			So(r, cvtesting.SafeShouldResemble, publicRun)
 		})
@@ -108,7 +108,7 @@ func TestLoadRun(t *testing.T) {
 				Identity:       "user:googler@example.com",
 				IdentityGroups: []string{"googlers"},
 			})
-			r, err := LoadRun(ctx, internalRun.ID)
+			r, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
 			So(err, ShouldBeNil)
 			So(r, cvtesting.SafeShouldResemble, internalRun)
 		})
@@ -118,7 +118,7 @@ func TestLoadRun(t *testing.T) {
 				Identity:       "user:public-user@example.com",
 				IdentityGroups: []string{"insufficient"},
 			})
-			_, err := LoadRun(ctx, internalRun.ID)
+			_, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
 			So(err, ShouldHaveAppStatus, codes.NotFound)
 		})
 	})

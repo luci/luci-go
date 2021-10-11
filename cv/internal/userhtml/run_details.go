@@ -42,7 +42,7 @@ func runDetails(c *router.Context) {
 	rID := fmt.Sprintf("%s/%s", c.Params.ByName("Project"), c.Params.ByName("Run"))
 
 	// Load the Run, checking its existence and ACLs.
-	r, err := acls.LoadRun(ctx, common.RunID(rID))
+	r, err := run.LoadRun(ctx, common.RunID(rID), acls.NewRunReadChecker())
 	if err != nil {
 		errPage(c, err)
 		return
