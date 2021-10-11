@@ -372,8 +372,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 	switch {
 	case err != nil:
 		tvs = nil
-	case len(tvs) < q.PageSize && q.Predicate.GetStatus() != 0 &&
-		q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK:
+	case len(tvs) < q.PageSize && q.Predicate.GetStatus() != 0:
 		// The query is for test variants with specific status, so the query reaches
 		// to its last results already.
 	case len(tvs) < q.PageSize:
