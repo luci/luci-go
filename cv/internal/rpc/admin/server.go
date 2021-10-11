@@ -329,10 +329,8 @@ func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor 
 	qb := run.CLQueryBuilder{
 		CLID:    cl.ID,
 		Limit:   req.GetPageSize(),
-		Project: req.GetProject(), // optional.
-	}
-	if excl := cursor.GetRun(); excl != "" {
-		qb.Min = common.RunID(excl)
+		Project: req.GetProject(),              // optional
+		Min:     common.RunID(cursor.GetRun()), // may be ""
 	}
 	runKeys, err := qb.GetAllRunKeys(ctx)
 	return cl, runKeys, err
@@ -341,38 +339,13 @@ func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor 
 // searchRunsByProject returns Run IDs as Datastore keys, using LUCI Project to
 // limit results.
 func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.Cursor) ([]*datastore.Key, error) {
-	// Prepare queries.
-	baseQ := run.NewQueryWithLUCIProject(ctx, req.GetProject()).Limit(req.GetPageSize()).KeysOnly(true)
-	var queries []*datastore.Query
-	switch s := req.GetStatus(); s {
-	case run.Status_STATUS_UNSPECIFIED:
-		queries = append(queries, baseQ)
-	case run.Status_ENDED_MASK:
-		for _, s := range []run.Status{run.Status_SUCCEEDED, run.Status_CANCELLED, run.Status_FAILED} {
-			queries = append(queries, baseQ.Eq("Status", s))
-		}
-	default:
-		queries = append(queries, baseQ.Eq("Status", s))
+	qb := run.ProjectQueryBuilder{
+		Project: req.GetProject(),
+		Limit:   req.GetPageSize(),
+		Status:  req.GetStatus(),               // optional
+		Min:     common.RunID(cursor.GetRun()), // may be ""
 	}
-	if excl := cursor.GetRun(); excl != "" {
-		for i, q := range queries {
-			queries[i] = q.Gt("__key__", datastore.MakeKey(ctx, run.RunKind, excl))
-		}
-	}
-
-	// Run all queries at once.
-	var runKeys []*datastore.Key
-	err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
-		runKeys = append(runKeys, k)
-		if len(runKeys) == int(req.GetPageSize()) {
-			return datastore.Stop
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
-	}
-	return runKeys, nil
+	return qb.GetAllRunKeys(ctx)
 }
 
 // searchRecentRunsSlow returns Run IDs as Datastore keys for the most recent

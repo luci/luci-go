@@ -201,8 +201,14 @@ func TestProjectQueryBuilder(t *testing.T) {
 				qb = ProjectQueryBuilder{Project: "xero", Status: Status_SUCCEEDED}
 				So(getAll(qb), ShouldResemble, common.RunIDs{xero5})
 			})
-			Convey("Status_ENDED_MASK is not yet supported", func() {
-				So(func() { getAll(ProjectQueryBuilder{Project: "bond", Status: Status_ENDED_MASK}) }, ShouldPanic)
+			Convey("Status_ENDED_MASK", func() {
+				qb := ProjectQueryBuilder{Project: "bond", Status: Status_ENDED_MASK}
+				So(getAll(qb), ShouldResemble, common.RunIDs{bond4, bond2})
+
+				Convey("Obeys limit", func() {
+					qb.Limit = 1
+					So(getAll(qb), ShouldResemble, common.RunIDs{bond4})
+				})
 			})
 		})
 

@@ -18,3 +18,5 @@ package run
 func IsEnded(status Status) bool {
 	return status&Status_ENDED_MASK == Status_ENDED_MASK
 }
+
+var finalStatuses = []Status{Status_SUCCEEDED, Status_CANCELLED, Status_FAILED}

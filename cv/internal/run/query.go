@@ -142,8 +142,6 @@ type ProjectQueryBuilder struct {
 	// Project is the LUCI project. Required.
 	Project string
 	// Status optionally restricts query to Runs with this status.
-	//
-	// TODO(tandrii): support magic Status_ENDED_MASK.
 	Status Status
 	// Max restricts query to Runs with ID lexicographically smaller. Optional.
 	//
@@ -240,10 +238,32 @@ func (b ProjectQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query
 // GetAllRunKeys runs the query and returns Datastore keys to Run entities.
 func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error) {
 	var keys []*datastore.Key
-	if err := datastore.GetAll(ctx, b.BuildKeysOnly(ctx), &keys); err != nil {
+
+	if b.Status != Status_ENDED_MASK {
+		if err := datastore.GetAll(ctx, b.BuildKeysOnly(ctx), &keys); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch Runs IDs").Tag(transient.Tag).Err()
+		}
+		return keys, nil
+	}
+
+	// Status_ENDED_MASK requires several dedicated queries.
+	queries := make([]*datastore.Query, len(finalStatuses))
+	for i, s := range finalStatuses {
+		cpy := b
+		cpy.Status = s
+		queries[i] = cpy.BuildKeysOnly(ctx)
+	}
+	err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+		keys = append(keys, k)
+		if b.Limit > 0 && len(keys) == int(b.Limit) {
+			return datastore.Stop
+		}
+		return nil
+	})
+	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch Runs IDs").Tag(transient.Tag).Err()
 	}
-	return keys, nil
+	return keys, err
 }
 
 // rangeOfProjectIDs returns (min..max) non-existent Run IDs, such that
