@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,11 +23,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 )
-
-// IsEnded returns true if the given status is final.
-func IsEnded(status Status) bool {
-	return status&Status_ENDED_MASK == Status_ENDED_MASK
-}
 
 // LoadRunCLs loads `RunCL` entities of the provided cls in the Run.
 func LoadRunCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) ([]*RunCL, error) {
