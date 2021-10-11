@@ -1,0 +1,56 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.internal.run.eventpb;
+
+option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
+
+message LongOpCompleted {
+  // Next tag: 4.
+
+  // Long Operation ID.
+  string operation_id = 1;
+
+  enum Status {
+    LONG_OP_STATUS_UNSPECIFIED = 0;
+    // SUCCEEDED means the long operation succeeded.
+    SUCCEEDED = 1;
+    // FAILED means the long operation experienced a failure.
+    FAILED = 2;
+    // Cancelled is true if the LongOp detected that it was cancelled by the Run
+    // Manager and thus stopped its working before completion.
+    CANCELLED = 3;
+    // Expired means the long operation expired.
+    //
+    // If this is the case, the `result` field may be unset: this should be rare
+    // but may happen if Run Manager detects expiry before a LongOpCompleted
+    // event is sent by the long operation handling task.
+    EXPIRED = 4;
+  }
+  // Status of the long operation.
+  Status status = 2;
+
+  oneof result {
+    PostStartMessage post_start_message = 3;
+  }
+
+  message PostStartMessage {
+    // CLIDs on which the message was posted.
+    repeated int64 posted = 1;
+    // Maps CLID to the permenant error.
+    map<int64, string> permanent_errors = 2;
+  }
+}

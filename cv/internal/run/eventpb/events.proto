@@ -21,6 +21,7 @@ option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+import "go.chromium.org/luci/cv/internal/run/eventpb/longop.proto";
 import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
 
 // Event is a container for all kinds of events a Run Manager can receive.
@@ -126,12 +127,4 @@ message CQDTryjobsUpdated {
 }
 
 message CQDFinished {
-}
-
-message LongOpCompleted {
-  string operation_id = 1;
-  // Cancelled is true if the LongOp detected that it was cancelled by the Run
-  // Manager and thus stopped working.
-  bool cancelled = 2;
-  // TODO(crbug/1240786): add fields if necessary.
 }

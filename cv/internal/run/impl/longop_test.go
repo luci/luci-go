@@ -112,11 +112,14 @@ func TestLongOps(t *testing.T) {
 					d, ok := ctx.Deadline()
 					So(ok, ShouldBeTrue)
 					So(d.UTC(), ShouldResemble, op.GetDeadline().AsTime())
-					return &eventpb.LongOpCompleted{}, nil
+					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
 				So(called, ShouldBeTrue)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{OperationId: opID})
+				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+					OperationId: opID,
+					Status:      eventpb.LongOpCompleted_SUCCEEDED,
+				})
 			})
 
 			Convey("CancelRequested handling", func() {
@@ -129,11 +132,14 @@ func TestLongOps(t *testing.T) {
 				manager.testDoLongOperationWithDeadline = func(ctx context.Context, opBase *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called = true
 					So(opBase.IsCancelRequested(), ShouldBeTrue)
-					return &eventpb.LongOpCompleted{Cancelled: true}, nil
+					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_CANCELLED}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
 				So(called, ShouldBeTrue)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{OperationId: opID, Cancelled: true})
+				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+					OperationId: opID,
+					Status:      eventpb.LongOpCompleted_CANCELLED,
+				})
 			})
 
 			Convey("Expired long op must not be executed, but Run Manager should be notified", func() {
@@ -145,7 +151,30 @@ func TestLongOps(t *testing.T) {
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
 				So(called, ShouldBeFalse)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{OperationId: opID})
+				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+					OperationId: opID,
+					Status:      eventpb.LongOpCompleted_EXPIRED,
+				})
+			})
+
+			Convey("Expired while executing", func() {
+				called := false
+				manager.testDoLongOperationWithDeadline = func(dctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
+					called = true
+					ct.Clock.Add(time.Hour) // expire the `dctx`
+					// NOTE: it's unclear why the following sometimes fails:
+					for dctx.Err() == nil {
+						clock.Sleep(dctx, time.Second)
+					}
+					So(dctx.Err(), ShouldNotBeNil)
+					return nil, errors.Annotate(dctx.Err(), "somehow treating as permanent failure").Err()
+				}
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+				So(called, ShouldBeTrue)
+				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+					OperationId: opID,
+					Status:      eventpb.LongOpCompleted_EXPIRED,
+				})
 			})
 
 			Convey("Transient failure is retried", func() {
@@ -155,11 +184,14 @@ func TestLongOps(t *testing.T) {
 					if called == 1 {
 						return nil, errors.New("troops", transient.Tag)
 					}
-					return &eventpb.LongOpCompleted{}, nil
+					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
 				So(called, ShouldEqual, 2)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{OperationId: opID})
+				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+					OperationId: opID,
+					Status:      eventpb.LongOpCompleted_SUCCEEDED,
+				})
 			})
 
 			Convey("Non-transient failure is fatal", func() {
@@ -173,7 +205,10 @@ func TestLongOps(t *testing.T) {
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
 				So(called, ShouldEqual, 1)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{OperationId: opID})
+				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+					OperationId: opID,
+					Status:      eventpb.LongOpCompleted_FAILED,
+				})
 			})
 
 			Convey("Doesn't execute in weird cases", func() {

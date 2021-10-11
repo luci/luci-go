@@ -53,7 +53,7 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 	op.assertCalledOnce()
 
 	if op.IsCancelRequested() {
-		return &eventpb.LongOpCompleted{Cancelled: true}, nil
+		return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_CANCELLED}, nil
 	}
 	if err := op.prepare(ctx); err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 		// event.
 		return nil, common.MostSevereError(err)
 	case cancelledCount > 0:
-		return &eventpb.LongOpCompleted{Cancelled: true}, nil
+		return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_CANCELLED}, nil
 	default:
 		return &eventpb.LongOpCompleted{}, nil
 	}

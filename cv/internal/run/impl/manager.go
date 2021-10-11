@@ -63,6 +63,7 @@ type RunManager struct {
 	runNotifier  *run.Notifier
 	pmNotifier   *prjmanager.Notifier
 	tqDispatcher *tq.Dispatcher
+	env          *common.Env
 	gFactory     gerrit.Factory
 	handler      handler.Handler
 
@@ -84,6 +85,7 @@ func New(
 		runNotifier:  n,
 		pmNotifier:   pm,
 		tqDispatcher: n.TasksBinding.TQDispatcher,
+		env:          env,
 		gFactory:     g,
 		handler: &handler.Impl{
 			PM:         pm,

@@ -53,12 +53,10 @@ func (rp *runProcessor) enqueueLongOps(ctx context.Context, r *run.Run, opIDs ..
 
 func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongOpTask) error {
 	notifyCompleted := func(res *eventpb.LongOpCompleted) error {
-		switch {
-		case res == nil:
-			res = &eventpb.LongOpCompleted{OperationId: task.GetOperationId()}
-		default:
-			res.OperationId = task.GetOperationId()
+		if res.Status == eventpb.LongOpCompleted_LONG_OP_STATUS_UNSPECIFIED {
+			panic(fmt.Errorf("LongOpCompleted.Status must be set"))
 		}
+		res.OperationId = task.GetOperationId()
 		return rm.runNotifier.NotifyLongOpCompleted(ctx, common.RunID(task.GetRunId()), res)
 	}
 
@@ -79,14 +77,12 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongO
 	now := clock.Now(ctx)
 	d := op.GetDeadline().AsTime()
 	if d.Before(now) {
-		if err := notifyCompleted(nil); err != nil {
+		result := &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_EXPIRED}
+		if err := notifyCompleted(result); err != nil {
 			logging.Errorf(ctx, "Failed to NotifyLongOpCompleted: %s", err)
 		}
 		return errors.Reason("DoLongRunOperationTask arrived too late (deadline: %s, now %s)", d, now).Err()
 	}
-
-	dctx, cancel := clock.WithDeadline(ctx, d)
-	defer cancel()
 
 	checker := &longOpCancellationChecker{}
 	stop := checker.start(ctx, r, task.GetOperationId())
@@ -98,6 +94,8 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongO
 		IsCancelRequested: checker.check,
 	}
 
+	dctx, cancel := clock.WithDeadline(ctx, d)
+	defer cancel()
 	f := rm.doLongOperationWithDeadline
 	if rm.testDoLongOperationWithDeadline != nil {
 		f = rm.testDoLongOperationWithDeadline
@@ -110,8 +108,16 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongO
 	case transient.Tag.In(err):
 		// Just retry.
 		return err
+	case errors.Unwrap(err) == dctx.Err() && result == nil:
+		// Failed due to hitting a deadline, so set an appropriate result by default.
+		result = &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_EXPIRED}
+		fallthrough
 	default:
-		// On permanent failure, don't fail task until the Run Manager is notified.
+		// On permanent failure, don't fail the task until the Run Manager is
+		// notified.
+		if result == nil {
+			result = &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_FAILED}
+		}
 		if nerr := notifyCompleted(result); nerr != nil {
 			logging.Errorf(ctx, "Long op %T permanently failed with %s, but also failed to notify Run Manager", op.GetWork(), err)
 			return nerr
