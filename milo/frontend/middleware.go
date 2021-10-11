@@ -492,7 +492,10 @@ func getTemplateBundle(templatePath string, appVersionID string, prod bool) *tem
 
 			project := e.Params.ByName("project")
 			group := e.Params.ByName("group")
-
+			analyticsID := "UA-55762617-24"
+			if strings.Contains(e.Request.Host, "luci-milo-dev.appspot.com") {
+				analyticsID = "UA-55762617-26"
+			}
 			return templates.Args{
 				"AppVersion":  appVersionID,
 				"IsAnonymous": auth.CurrentIdentity(c) == identity.AnonymousIdentity,
@@ -500,7 +503,7 @@ func getTemplateBundle(templatePath string, appVersionID string, prod bool) *tem
 				"LoginURL":    loginURL,
 				"LogoutURL":   logoutURL,
 				"CurrentTime": clock.Now(c),
-				"Analytics":   analytics.Snippet(c),
+				"Analytics":   analytics.MakeUASnippet(analyticsID),
 				"RequestID":   trace.SpanContext(c),
 				"Request":     e.Request,
 				"Navi":        ProjectLinks(c, project, group),

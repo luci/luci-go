@@ -86,7 +86,7 @@ func Snippet(c context.Context) template.HTML {
 		logging.Errorf(c, "Analytics ID %s does not match UA-\\d+-\\d+", id)
 		return ""
 	}
-	return makeUASnippet(id)
+	return MakeUASnippet(id)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
