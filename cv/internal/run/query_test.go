@@ -145,3 +145,120 @@ func TestCLQueryBuilder(t *testing.T) {
 		})
 	})
 }
+
+func TestProjectQueryBuilder(t *testing.T) {
+	t.Parallel()
+
+	Convey("ProjectQueryBuilder works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		getAll := func(qb ProjectQueryBuilder) (out common.RunIDs) {
+			keys, err := qb.GetAllRunKeys(ctx)
+			So(err, ShouldBeNil)
+			for _, k := range keys {
+				out = append(out, common.RunID(k.StringID()))
+			}
+			return out
+		}
+
+		makeRun := func(proj string, delay time.Duration, s Status) common.RunID {
+			createdAt := ct.Clock.Now().Add(delay)
+			runID := common.MakeRunID(proj, createdAt, 1, []byte{0, byte(delay / time.Millisecond)})
+			So(datastore.Put(ctx, &Run{ID: runID, Status: s}), ShouldBeNil)
+			return runID
+		}
+
+		// RunID below are ordered lexicographically.
+		bond9 := makeRun("bond", 9*time.Millisecond, Status_RUNNING)
+		bond4 := makeRun("bond", 4*time.Millisecond, Status_FAILED)
+		bond2 := makeRun("bond", 2*time.Millisecond, Status_CANCELLED)
+		xero7 := makeRun("xero", 7*time.Millisecond, Status_RUNNING)
+		xero6 := makeRun("xero", 6*time.Millisecond, Status_RUNNING)
+		xero5 := makeRun("xero", 5*time.Millisecond, Status_SUCCEEDED)
+
+		Convey("Project without Runs", func() {
+			qb := ProjectQueryBuilder{Project: "missing"}
+			So(getAll(qb), ShouldResemble, common.RunIDs(nil))
+		})
+
+		Convey("Project with some Runs", func() {
+			qb := ProjectQueryBuilder{Project: "bond"}
+			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4, bond2})
+		})
+
+		Convey("Obeys limit", func() {
+			qb := ProjectQueryBuilder{Project: "bond", Limit: 2}
+			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4})
+		})
+
+		Convey("Filters by Status", func() {
+			Convey("Simple", func() {
+				qb := ProjectQueryBuilder{Project: "xero", Status: Status_RUNNING}
+				So(getAll(qb), ShouldResemble, common.RunIDs{xero7, xero6})
+
+				qb = ProjectQueryBuilder{Project: "xero", Status: Status_SUCCEEDED}
+				So(getAll(qb), ShouldResemble, common.RunIDs{xero5})
+			})
+			Convey("Status_ENDED_MASK is not yet supported", func() {
+				So(func() { getAll(ProjectQueryBuilder{Project: "bond", Status: Status_ENDED_MASK}) }, ShouldPanic)
+			})
+		})
+
+		Convey("Min", func() {
+			qb := ProjectQueryBuilder{Project: "bond", Min: bond9}
+			So(getAll(qb), ShouldResemble, common.RunIDs{bond4, bond2})
+
+			Convey("same as Before", func() {
+				qb2 := ProjectQueryBuilder{}.Before(bond9)
+				So(qb, ShouldResemble, qb2)
+			})
+		})
+
+		Convey("Max", func() {
+			qb := ProjectQueryBuilder{Project: "bond", Max: bond2}
+			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4})
+
+			Convey("same as After", func() {
+				qb2 := ProjectQueryBuilder{}.After(bond2)
+				So(qb, ShouldResemble, qb2)
+			})
+		})
+
+		Convey("After .. Before", func() {
+			Convey("Some", func() {
+				qb := ProjectQueryBuilder{}.After(bond2).Before(bond9)
+				So(getAll(qb), ShouldResemble, common.RunIDs{bond4})
+			})
+
+			Convey("Empty", func() {
+				qb := ProjectQueryBuilder{Project: "bond"}.After(bond4).Before(bond9)
+				So(getAll(qb), ShouldHaveLength, 0)
+			})
+
+			Convey("Overconstrained", func() {
+				qb := ProjectQueryBuilder{Project: "bond"}.After(bond9).Before(bond2)
+				_, err := qb.BuildKeysOnly(ctx).Finalize()
+				So(err, ShouldEqual, datastore.ErrNullQuery)
+			})
+
+			Convey("With status", func() {
+				qb := ProjectQueryBuilder{Status: Status_FAILED}.After(bond2).Before(bond9)
+				So(getAll(qb), ShouldResemble, common.RunIDs{bond4})
+				qb = ProjectQueryBuilder{Status: Status_SUCCEEDED}.After(bond2).Before(bond9)
+				So(getAll(qb), ShouldHaveLength, 0)
+			})
+
+		})
+
+		Convey("Invalid usage panics", func() {
+			So(func() { ProjectQueryBuilder{}.BuildKeysOnly(ctx) }, ShouldPanic)
+			So(func() { ProjectQueryBuilder{Project: "not-bond", Min: bond4}.BuildKeysOnly(ctx) }, ShouldPanic)
+			So(func() { ProjectQueryBuilder{Project: "not-bond", Max: bond4}.BuildKeysOnly(ctx) }, ShouldPanic)
+			So(func() { ProjectQueryBuilder{Project: "not-bond"}.Before(bond4) }, ShouldPanic)
+			So(func() { ProjectQueryBuilder{Project: "not-bond"}.After(bond4) }, ShouldPanic)
+			So(func() { ProjectQueryBuilder{}.After(bond4).Before(xero7) }, ShouldPanic)
+		})
+	})
+}

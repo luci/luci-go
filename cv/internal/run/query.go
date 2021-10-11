@@ -66,7 +66,7 @@ type CLQueryBuilder struct {
 func (b CLQueryBuilder) AfterInProject(id common.RunID) CLQueryBuilder {
 	if p := id.LUCIProject(); p != b.Project {
 		if b.Project != "" {
-			panic(fmt.Errorf("invalid CLQueryBuilder.After(%q): .Project is already set to %q", id, b.Project))
+			panic(fmt.Errorf("invalid CLQueryBuilder.AfterInProject(%q): .Project is already set to %q", id, b.Project))
 		}
 		b.Project = p
 	}
@@ -81,7 +81,7 @@ func (b CLQueryBuilder) AfterInProject(id common.RunID) CLQueryBuilder {
 func (b CLQueryBuilder) BeforeInProject(id common.RunID) CLQueryBuilder {
 	if p := id.LUCIProject(); p != b.Project {
 		if b.Project != "" {
-			panic(fmt.Errorf("invalid CLQueryBuilder.Before(%q): .Project is already set to %q", id, b.Project))
+			panic(fmt.Errorf("invalid CLQueryBuilder.BeforeInProject(%q): .Project is already set to %q", id, b.Project))
 		}
 		b.Project = p
 	}
@@ -120,16 +120,128 @@ func (b CLQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query {
 	return q
 }
 
+// GetAllRunKeys runs the query across all matched RunCLs entities and returns
+// Datastore keys to corresponding Run entities.
 func (b CLQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error) {
 	// Fetch RunCL keys.
 	var keys []*datastore.Key
 	if err := datastore.GetAll(ctx, b.BuildKeysOnly(ctx), &keys); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch Runs IDs").Tag(transient.Tag).Err()
+		return nil, errors.Annotate(err, "failed to fetch RunCLs IDs").Tag(transient.Tag).Err()
 	}
 
 	// Replace each RunCL key with its parent (Run) key.
 	for i := range keys {
 		keys[i] = keys[i].Parent()
+	}
+	return keys, nil
+}
+
+// ProjectQueryBuilder builds datastore.Query for searching Runs scoped to a
+// LUCI project.
+type ProjectQueryBuilder struct {
+	// Project is the LUCI project. Required.
+	Project string
+	// Status optionally restricts query to Runs with this status.
+	//
+	// TODO(tandrii): support magic Status_ENDED_MASK.
+	Status Status
+	// Max restricts query to Runs with ID lexicographically smaller. Optional.
+	//
+	// This means query is restricted to Runs created after this Run.
+	//
+	// This Run must belong to the same LUCI project.
+	Max common.RunID
+	// Min restricts query to Runs with ID lexicographically larger. Optional.
+	//
+	// This means query is restricted to Runs created before this Run.
+	//
+	// This Run must belong to the same LUCI project.
+	Min common.RunID
+
+	// Limit limits the number of results if positive. Ignored otherwise.
+	Limit int32
+}
+
+// After restricts the query to Runs created after the given Run.
+//
+// Panics if ProjectQueryBuilder is already constrained to a different Project.
+func (b ProjectQueryBuilder) After(id common.RunID) ProjectQueryBuilder {
+	if p := id.LUCIProject(); p != b.Project {
+		if b.Project != "" {
+			panic(fmt.Errorf("invalid ProjectQueryBuilder.After(%q): .Project is already set to %q", id, b.Project))
+		}
+		b.Project = p
+	}
+	b.Max = id
+	return b
+}
+
+// Before restricts the query to Runs created before the given Run.
+//
+// Panics if ProjectQueryBuilder is already constrained to a different Project.
+func (b ProjectQueryBuilder) Before(id common.RunID) ProjectQueryBuilder {
+	if p := id.LUCIProject(); p != b.Project {
+		if b.Project != "" {
+			panic(fmt.Errorf("invalid ProjectQueryBuilder.Before(%q): .Project is already set to %q", id, b.Project))
+		}
+		b.Project = p
+	}
+	b.Min = id
+	return b
+}
+
+// BuildKeysOnly returns keys-only query on Run entities.
+//
+// It's exposed primarily for debugging reasons.
+//
+// WARNING: panics if Status is magic Status_ENDED_MASK,
+// as it's not feasible to perform this as 1 query.
+func (b ProjectQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query {
+	q := datastore.NewQuery(RunKind).KeysOnly(true)
+
+	switch b.Status {
+	case Status_ENDED_MASK:
+		panic(fmt.Errorf("Status=Status_ENDED_MASK is not yet supported"))
+	case Status_STATUS_UNSPECIFIED:
+	default:
+		q = q.Eq("Status", int(b.Status))
+	}
+
+	if b.Limit > 0 {
+		q = q.Limit(b.Limit)
+	}
+
+	if b.Project == "" {
+		panic(fmt.Errorf("Project is not set"))
+	}
+	min, max := rangeOfProjectIDs(b.Project)
+
+	switch {
+	case b.Min == "":
+	case b.Min.LUCIProject() != b.Project:
+		panic(fmt.Errorf("Min %q doesn't match Project %q", b.Min, b.Project))
+	default:
+		min = string(b.Min)
+	}
+	q = q.Gt("__key__", datastore.MakeKey(ctx, RunKind, min))
+
+	switch {
+	case b.Max == "":
+	case b.Max.LUCIProject() != b.Project:
+		panic(fmt.Errorf("Max %q doesn't match Project %q", b.Max, b.Project))
+	default:
+		max = string(b.Max)
+	}
+	q = q.Lt("__key__", datastore.MakeKey(ctx, RunKind, max))
+
+	return q
+}
+
+// GetAllRunKeys runs the query and returns Datastore keys to Run entities.
+func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error) {
+	var keys []*datastore.Key
+	if err := datastore.GetAll(ctx, b.BuildKeysOnly(ctx), &keys); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch Runs IDs").Tag(transient.Tag).Err()
 	}
 	return keys, nil
 }
