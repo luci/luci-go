@@ -59,6 +59,19 @@ type CLQueryBuilder struct {
 	Limit int32
 }
 
+// isSatisfied returns whether the given Run satisfies the query.
+func (b CLQueryBuilder) isSatisfied(r *Run) bool {
+	switch {
+	case r == nil:
+	case b.Project != "" && r.ID.LUCIProject() != b.Project:
+	case b.Min != "" && r.ID <= b.Min:
+	case b.Max != "" && r.ID >= b.Max:
+	default:
+		return true
+	}
+	return false
+}
+
 // AfterInProject constrains CLQueryBuilder to Runs created after this Run but
 // belonging to the same LUCI project.
 //
@@ -136,6 +149,11 @@ func (b CLQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, er
 	return keys, nil
 }
 
+// LoadRuns loads satisfying Runs from Datastore.
+func (b CLQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, error) {
+	return loadRunsFromQuery(ctx, b, checkers...)
+}
+
 // ProjectQueryBuilder builds datastore.Query for searching Runs scoped to a
 // LUCI project.
 type ProjectQueryBuilder struct {
@@ -158,6 +176,21 @@ type ProjectQueryBuilder struct {
 
 	// Limit limits the number of results if positive. Ignored otherwise.
 	Limit int32
+}
+
+// isSatisfied returns whether the given Run satisfies the query.
+func (b ProjectQueryBuilder) isSatisfied(r *Run) bool {
+	switch {
+	case r == nil:
+	case r.ID.LUCIProject() != b.Project:
+	case b.Status == Status_ENDED_MASK && !IsEnded(r.Status):
+	case b.Status != Status_ENDED_MASK && b.Status != Status_STATUS_UNSPECIFIED && r.Status != b.Status:
+	case b.Min != "" && r.ID <= b.Min:
+	case b.Max != "" && r.ID >= b.Max:
+	default:
+		return true
+	}
+	return false
 }
 
 // After restricts the query to Runs created after the given Run.
@@ -266,6 +299,11 @@ func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Ke
 	return keys, err
 }
 
+// LoadRuns loads satisfying Runs from Datastore.
+func (b ProjectQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, error) {
+	return loadRunsFromQuery(ctx, b, checkers...)
+}
+
 // rangeOfProjectIDs returns (min..max) non-existent Run IDs, such that
 // the following
 //     min < $RunID  < max
@@ -275,4 +313,45 @@ func rangeOfProjectIDs(project string) (string, string) {
 	// number. So it must be lexicographically greater than "project/0" and
 	// less than "project/:" (int(':') == int('9') + 1).
 	return project + "/0", project + "/:"
+}
+
+type runKeysQuery interface {
+	GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error)
+	isSatisfied(r *Run) bool
+}
+
+func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunChecker) ([]*Run, error) {
+	if l := len(checkers); l > 1 {
+		panic(fmt.Errorf("at most 1 LoadRunChecker allowed, %d given", l))
+	}
+
+	keys, err := q.GetAllRunKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+	loader := LoadRunsFromKeys(keys...)
+	if len(checkers) == 1 {
+		loader = loader.Checker(checkers[0])
+	}
+
+	runs, err := loader.DoIgnoreNotFound(ctx)
+	switch {
+	case err != nil:
+		return nil, err
+	case len(runs) == 0:
+		return nil, nil
+	}
+
+	// Even for queries which can do everything using native Datastore query,
+	// there is a window of time bewteen the Datastore query fetching keys of
+	// satisfying Runs and actual Runs being fetched.
+	// During this window, the Runs ultimately fetched could have been modified,
+	// so check again and skip all fetched Runs which longer satisfy the query.
+	out := runs[:0]
+	for _, r := range runs {
+		if q.isSatisfied(r) {
+			out = append(out, r)
+		}
+	}
+	return out, nil
 }

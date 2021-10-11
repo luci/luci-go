@@ -40,6 +40,12 @@ func TestCLQueryBuilder(t *testing.T) {
 			for _, k := range keys {
 				out = append(out, common.RunID(k.StringID()))
 			}
+
+			// Check that loading Runs returns the same values in the same order.
+			runs, err := qb.LoadRuns(ctx)
+			So(err, ShouldBeNil)
+			So(idsOf(runs), ShouldResemble, out)
+
 			return out
 		}
 
@@ -160,6 +166,12 @@ func TestProjectQueryBuilder(t *testing.T) {
 			for _, k := range keys {
 				out = append(out, common.RunID(k.StringID()))
 			}
+
+			// Check that loading Runs returns the same values in the same order.
+			runs, err := qb.LoadRuns(ctx)
+			So(err, ShouldBeNil)
+			So(idsOf(runs), ShouldResemble, out)
+
 			return out
 		}
 
@@ -267,4 +279,15 @@ func TestProjectQueryBuilder(t *testing.T) {
 			So(func() { ProjectQueryBuilder{}.After(bond4).Before(xero7) }, ShouldPanic)
 		})
 	})
+}
+
+func idsOf(runs []*Run) common.RunIDs {
+	if len(runs) == 0 {
+		return nil
+	}
+	out := make(common.RunIDs, len(runs))
+	for i, r := range runs {
+		out[i] = r.ID
+	}
+	return out
 }
