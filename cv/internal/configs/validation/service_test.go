@@ -54,7 +54,7 @@ func TestMigrationConfigValidation(t *testing.T) {
 				  project_regexp_exclude: "cq-test.+"
 				}
 
-				use_cv_status {
+				use_cv_start_message {
 				  project_regexp: "cq-test.+"
 				  project_regexp_exclude: "cq-test-bad"
 				}

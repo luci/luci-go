@@ -45,8 +45,8 @@ func validateMigrationSettings(ctx *validation.Context, configSet, path string, 
 		validateRegexp(ctx, "project_regexp_exclude", a.GetProjectRegexpExclude())
 		ctx.Exit()
 	}
-	if u := cfg.GetUseCvStatus(); u != nil {
-		ctx.Enter("use_cv_status")
+	if u := cfg.GetUseCvStartMessage(); u != nil {
+		ctx.Enter("use_cv_start_message")
 		validateRegexp(ctx, "project_regexp", u.GetProjectRegexp())
 		validateRegexp(ctx, "project_regexp_exclude", u.GetProjectRegexpExclude())
 		ctx.Exit()
