@@ -39,7 +39,7 @@ func TestIsCVInCharge(t *testing.T) {
 
 			So(srvcfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-			res, err := isCQDInChargeOfPostingStartMessage(ctx, ct.Env, project)
+			res, err := IsCVInChargeOfPostingStartMessage(ctx, ct.Env, project)
 			So(err, ShouldBeNil)
 			return res
 		}
@@ -70,7 +70,7 @@ func TestIsCVInCharge(t *testing.T) {
 						ProjectRegexpExclude: []string{"dev-not-2"},
 					},
 				},
-				UseCvStatus: &migrationpb.Settings_UseCVStatus{
+				UseCvStartMessage: &migrationpb.Settings_UseCVStartMessage{
 					ProjectRegexp:        []string{"prod-enabled-.+", "dev-.+"},
 					ProjectRegexpExclude: []string{".+-404"},
 				},
@@ -111,7 +111,7 @@ func TestIsCVInCharge(t *testing.T) {
 						ProjectRegexpExclude: []string{"ex.+"},
 					},
 				},
-				UseCvStatus: &migrationpb.Settings_UseCVStatus{
+				UseCvStartMessage: &migrationpb.Settings_UseCVStartMessage{
 					ProjectRegexp:        []string{`invalid\Z`, "incl.+"},
 					ProjectRegexpExclude: []string{"ex.+"},
 				},
@@ -130,7 +130,7 @@ func TestIsCVInCharge(t *testing.T) {
 						ProjectRegexpExclude: []string{`bad\K`, "exc.+"},
 					},
 				},
-				UseCvStatus: &migrationpb.Settings_UseCVStatus{
+				UseCvStartMessage: &migrationpb.Settings_UseCVStartMessage{
 					ProjectRegexp:        []string{"incl.+"},
 					ProjectRegexpExclude: []string{`bad\K`, "exc.+"},
 				},

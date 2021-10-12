@@ -33,19 +33,12 @@ import (
 // IsCVInChargeOfPostingStartMessage returns true if CV is in charge of posting
 // the start message on Gerrit CL.
 func IsCVInChargeOfPostingStartMessage(ctx context.Context, env *common.Env, luciProject string) (bool, error) {
-	res, err := isCQDInChargeOfPostingStartMessage(ctx, env, luciProject)
-	return !res, err
-}
-
-func isCQDInChargeOfPostingStartMessage(ctx context.Context, env *common.Env, luciProject string) (bool, error) {
 	cfg, err := srvcfg.GetMigrationConfig(ctx)
 	if err != nil {
 		return false, err
 	}
-	u := cfg.GetUseCvStatus()
-	// NOTE: as https://crrev.com/i/4173580 documents in detail,
-	// `use_cv_runs` is abused to actually mean "CQDaemon posts start message".
-	if !matches(ctx, luciProject, u.GetProjectRegexp(), u.GetProjectRegexpExclude(), "use_cv_runs") {
+	u := cfg.GetUseCvStartMessage()
+	if !matches(ctx, luciProject, u.GetProjectRegexp(), u.GetProjectRegexpExclude(), "use_cv_start_message") {
 		return false, nil
 	}
 

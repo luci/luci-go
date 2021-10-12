@@ -54,7 +54,6 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
@@ -105,11 +104,6 @@ type Test struct {
 	// with limited CPU resources.
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
-
-	// migrationSettings are migration settings during CQD -> CV migration.
-	//
-	// Not installed into context by default.
-	migrationSettings *migrationpb.Settings
 
 	// cleanupFuncs are executed in reverse order in cleanup().
 	cleanupFuncs []func()

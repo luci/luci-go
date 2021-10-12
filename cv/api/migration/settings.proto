@@ -54,5 +54,19 @@ message Settings {
     repeated string project_regexp = 1;
     repeated string project_regexp_exclude = 2;
   }
-  UseCVStatus use_cv_status = 4;
+  // Deprecated.
+  UseCVStatus use_cv_status = 4 [deprecated=true];
+
+  // Post starting message in CV.
+  //
+  // The project is opted to CV posting starting message if and only if all 3 hold:
+  //  * project matches at least one project_regexp.
+  //  * project matches no project_regexp_exclude.
+  //  * project matches exactly one ApiHost overall OR exactly one with
+  //    prod=true.
+  message UseCVStartMessage {
+    repeated string project_regexp = 1;
+    repeated string project_regexp_exclude = 2;
+  }
+  UseCVStartMessage use_cv_start_message = 5;
 }
