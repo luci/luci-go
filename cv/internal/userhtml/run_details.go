@@ -91,6 +91,28 @@ func runDetails(c *router.Context) {
 				return StringifySubmissionSuccesses(clidToURL, v.ClSubmitted, int64(len(r.CLs)))
 			case *run.LogEntry_SubmissionFailure_:
 				return StringifySubmissionFailureReason(clidToURL, v.SubmissionFailure.Event)
+			case *run.LogEntry_RunEnded_:
+				// This assumes the status of a Run won't change after transitioning to
+				// one of the terminal statuses. If the assumption is no longer valid.
+				// End status and cancellation reason need to be stored explicitly in
+				// the log entry.
+				if r.Status == run.Status_CANCELLED {
+					switch len(r.CancellationReasons) {
+					case 0:
+					case 1:
+						return fmt.Sprintf("Run is cancelled. Reason: %s", r.CancellationReasons[0])
+					default:
+						var sb strings.Builder
+						sb.WriteString("Run is cancelled. Reasons:")
+						for _, reason := range r.CancellationReasons {
+							sb.WriteRune('\n')
+							sb.WriteString("  * ")
+							sb.WriteString(strings.TrimSpace(reason))
+						}
+						return sb.String()
+					}
+				}
+				return ""
 			default:
 				return ""
 			}
