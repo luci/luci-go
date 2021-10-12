@@ -192,7 +192,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					Name: "other-project", ConfigGroupIds: []string{"other-group"},
 				})
 				updateCL(ci, ac, accessOK)
-				runAndVerifyCancelled("no longer have access to https://x-review.example.com/c/1: watched not only by this project")
+				runAndVerifyCancelled(fmt.Sprintf("no longer have access to https://x-review.example.com/c/1: watched not only by LUCI Project %q", lProject))
 			})
 			Convey("wait if code review access was just lost, potentially due to eventual consistency", func() {
 				noAccessAt := ct.Clock.Now().Add(42 * time.Second)

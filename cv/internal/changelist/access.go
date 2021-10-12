@@ -94,11 +94,11 @@ func (cl *CL) AccessKindWithReason(ctx context.Context, luciProject string) (Acc
 		// ApplicableConfig may not be always computable w/o first fetching CL from
 		// code review, so this case is handled below.
 	case len(projects) == 0:
-		return AccessDenied, "not watched by any project"
+		return AccessDenied, "not watched by any LUCI Project"
 	case len(projects) > 1:
-		return AccessDenied, "watched not only by this project"
+		return AccessDenied, fmt.Sprintf("watched not only by LUCI Project %q", luciProject)
 	case projects[0].GetName() != luciProject:
-		return AccessDenied, "not watched by this project"
+		return AccessDenied, fmt.Sprintf("not watched by LUCI Project %q", luciProject)
 	default:
 		// CL is watched by this project only.
 	}
