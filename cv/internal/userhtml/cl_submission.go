@@ -32,20 +32,15 @@ func StringifySubmissionSuccesses(clidToURL map[common.CLID]string, v *run.LogEn
 	case 0:
 		sb.WriteString("No CLs were submitted successfully")
 	case 1:
-		if _, err := fmt.Fprintf(&sb, "CL %s was submitted successfully", clidToURL[currentlySubmitted[0]]); err != nil {
-			panic(err)
-		}
+		_, _ = fmt.Fprintf(&sb, "CL %s was submitted successfully", clidToURL[currentlySubmitted[0]])
 	default:
-		urls := make([]string, 0, len(currentlySubmitted))
+		_, _ = fmt.Fprintf(&sb, "%d CLs were submitted successfully:", len(currentlySubmitted))
 		for _, clid := range currentlySubmitted {
-			urls = append(urls, clidToURL[clid])
-		}
-		if _, err := fmt.Fprintf(&sb, "CLs %s were submitted successfully", listify(urls)); err != nil {
-			panic(err)
+			_, _ = fmt.Fprintf(&sb, "\n  * %s", clidToURL[clid])
 		}
 	}
-	if _, err := fmt.Fprintf(&sb, "\n%d out of %d pending", all-v.TotalSubmitted, all); err != nil {
-		panic(err)
+	if left := all - v.TotalSubmitted; left > 0 {
+		_, _ = fmt.Fprintf(&sb, "\n%d out of %d CLs are still pending", all-v.TotalSubmitted, all)
 	}
 	return sb.String()
 }
