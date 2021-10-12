@@ -135,6 +135,7 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 	case *run.OngoingLongOps_Op_PostStartMessage:
 		action = &longops.PostStartMessageOp{
 			Base:     opBase,
+			Env:      rm.env,
 			GFactory: rm.gFactory,
 		}
 	default:
