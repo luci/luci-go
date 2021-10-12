@@ -286,8 +286,8 @@ type triageResult struct {
 		sc    *eventpb.SubmissionCompleted
 	}
 	longOpCompleted struct {
-		events eventbox.Events
-		ops    []*eventpb.LongOpCompleted
+		events  eventbox.Events
+		results []*eventpb.LongOpCompleted
 	}
 	cqdVerificationCompletedEvents eventbox.Events
 	cqdTryjobsUpdated              eventbox.Events
@@ -356,7 +356,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 		tr.garbage = append(tr.garbage, item)
 	case *eventpb.Event_LongOpCompleted:
 		tr.longOpCompleted.events = append(tr.longOpCompleted.events, item)
-		tr.longOpCompleted.ops = append(tr.longOpCompleted.ops, e.GetLongOpCompleted())
+		tr.longOpCompleted.results = append(tr.longOpCompleted.results, e.GetLongOpCompleted())
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -439,7 +439,13 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		rs, transitions = applyResult(res, tr.readyForSubmissionEvents, transitions)
 	}
 	if len(tr.longOpCompleted.events) > 0 {
-		// TODO(tandrii): handle Long Op completions.
+		for i, opResult := range tr.longOpCompleted.results {
+			res, err := rp.handler.OnLongOpCompleted(ctx, rs, opResult)
+			if err != nil {
+				return nil, err
+			}
+			rs, transitions = applyResult(res, tr.longOpCompleted.events[i:i+1], transitions)
+		}
 	}
 
 	if len(tr.pokeEvents) > 0 {

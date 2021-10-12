@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
-	submitpb "go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
@@ -182,16 +181,16 @@ func TestRunManager(t *testing.T) {
 			{
 				&eventpb.Event{
 					Event: &eventpb.Event_SubmissionCompleted{
-						SubmissionCompleted: &submitpb.SubmissionCompleted{
-							Result: submitpb.SubmissionResult_SUCCEEDED,
+						SubmissionCompleted: &eventpb.SubmissionCompleted{
+							Result: eventpb.SubmissionResult_SUCCEEDED,
 						},
 					},
 				},
 				func(ctx context.Context) error {
 					return notifier.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_SubmissionCompleted{
-							SubmissionCompleted: &submitpb.SubmissionCompleted{
-								Result: submitpb.SubmissionResult_SUCCEEDED,
+							SubmissionCompleted: &eventpb.SubmissionCompleted{
+								Result: eventpb.SubmissionResult_SUCCEEDED,
 							},
 						},
 					})
@@ -212,6 +211,25 @@ func TestRunManager(t *testing.T) {
 					})
 				},
 				"OnReadyForSubmission",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_LongOpCompleted{
+						LongOpCompleted: &eventpb.LongOpCompleted{
+							OperationId: "1-1",
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.SendNow(ctx, runID, &eventpb.Event{
+						Event: &eventpb.Event_LongOpCompleted{
+							LongOpCompleted: &eventpb.LongOpCompleted{
+								OperationId: "1-1",
+							},
+						},
+					})
+				},
+				"OnLongOpCompleted",
 			},
 			{
 				&eventpb.Event{
@@ -464,8 +482,17 @@ func (fh *fakeHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, cl
 	}, nil
 }
 
-func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *submitpb.SubmissionCompleted) (*handler.Result, error) {
+func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*handler.Result, error) {
 	fh.addInvocation("OnSubmissionCompleted")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
+	}, nil
+}
+
+func (fh *fakeHandler) OnLongOpCompleted(ctx context.Context, rs *state.RunState, result *eventpb.LongOpCompleted) (*handler.Result, error) {
+	fh.addInvocation("OnLongOpCompleted")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

@@ -62,7 +62,8 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 			rs.LatestCLsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
 		}
 	}
-	return &Result{State: rs}, nil
+
+	return impl.processExpiredLongOps(ctx, rs)
 }
 
 func shouldCheckTree(ctx context.Context, st run.Status, sub *run.Submission) bool {
