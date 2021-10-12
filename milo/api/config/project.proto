@@ -33,6 +33,8 @@ message Project {
   // storage.googleapis.com.
   string logo_url = 4;
 
+  // DEPRECATED: Use bug_url_template instead.
+  //
   // BuildBugTemplate is the template for making a custom bug link for
   // filing a bug against a build that displays on the build page. This
   // is a separate link from the general Milo feedback link that is
@@ -64,6 +66,30 @@ message Project {
   // TODO(crbug.com/1099036): deprecate this once a long term solution is
   // implemented.
   repeated string ignored_builder_ids = 7;
+
+  // BugUrlTemplate is the template for making a custom bug link for
+  // filing a bug against a build that displays on the build page. This
+  // is a separate link from the general Milo feedback link that is
+  // displayed in the top right corner. This field is optional.
+  //
+  // The protocal must be `https` and the domain name must be one of the
+  // following:
+  // * bugs.chromium.org
+  // * b.corp.google.com
+  // * buganizer.corp.google.com
+  //
+  // The template is interpreted as a mustache template and the following
+  // variables are available:
+  // * {{{ builder.project }}}
+  // * {{{ builder.bucket }}}
+  // * {{{ builder.builder }}}
+  // * {{{ milo_build_url }}}
+  // * {{{ milo_builder_url }}}
+  //
+  // All variables are URL component encoded. Additionally, use `{{{ ... }}}` to
+  // disable HTML escaping. If the template is not a valid mustache template,
+  // the link is not displayed.
+  string bug_url_template = 8;
 }
 
 // BugTemplate defines how to make custom bug links to file Monorail
