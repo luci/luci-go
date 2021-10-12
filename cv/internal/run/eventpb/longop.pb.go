@@ -46,6 +46,10 @@ const (
 	// Manager and thus stopped its working before completion.
 	LongOpCompleted_CANCELLED LongOpCompleted_Status = 3
 	// Expired means the long operation expired.
+	//
+	// If this is the case, the `result` field may be unset: this should be rare
+	// but may happen if Run Manager detects expiry before a LongOpCompleted
+	// event is sent by the long operation handling task.
 	LongOpCompleted_EXPIRED LongOpCompleted_Status = 4
 )
 

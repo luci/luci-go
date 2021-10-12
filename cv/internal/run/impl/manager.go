@@ -264,8 +264,11 @@ func (rp *runProcessor) SaveState(ctx context.Context, st eventbox.State, ev eve
 
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
-	startEvents     eventbox.Events
-	cancelEvents    eventbox.Events
+	startEvents  eventbox.Events
+	cancelEvents struct {
+		events  eventbox.Events
+		reasons []string
+	}
 	pokeEvents      eventbox.Events
 	newConfigEvents struct {
 		events   eventbox.Events
@@ -317,7 +320,8 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 	case *eventpb.Event_Start:
 		tr.startEvents = append(tr.startEvents, item)
 	case *eventpb.Event_Cancel:
-		tr.cancelEvents = append(tr.cancelEvents, item)
+		tr.cancelEvents.events = append(tr.cancelEvents.events, item)
+		tr.cancelEvents.reasons = append(tr.cancelEvents.reasons, e.GetCancel().GetReason())
 	case *eventpb.Event_Poke:
 		tr.pokeEvents = append(tr.pokeEvents, item)
 	case *eventpb.Event_NewConfig:
@@ -367,8 +371,8 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 	var transitions []eventbox.Transition
 
 	switch {
-	case len(tr.cancelEvents) > 0:
-		res, err := rp.handler.Cancel(ctx, rs)
+	case len(tr.cancelEvents.events) > 0:
+		res, err := rp.handler.Cancel(ctx, rs, tr.cancelEvents.reasons)
 		if err != nil {
 			return nil, err
 		}
@@ -378,7 +382,7 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		// it. But the duration is long enough for Project Manager to create
 		// this Run in CV. In that case, Run Manager should just move this Run
 		// to cancelled state directly.
-		events := append(tr.cancelEvents, tr.startEvents...)
+		events := append(tr.cancelEvents.events, tr.startEvents...)
 		rs, transitions = applyResult(res, events, transitions)
 	case len(tr.startEvents) > 0:
 		res, err := rp.handler.Start(ctx, rs)

@@ -97,6 +97,8 @@ message Start {
 }
 
 message Cancel {
+  // reason for cancelling the run.
+  string reason = 1;
 }
 
 message Poke {

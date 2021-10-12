@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -26,8 +27,7 @@ import (
 )
 
 // Cancel implements Handler interface.
-func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
-	// TODO(crbug/1215612): record the cause of cancellation inside Run.
+func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState, reasons []string) (*Result, error) {
 	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
@@ -42,6 +42,10 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, erro
 	}
 
 	rs = rs.ShallowCopy()
+	// make sure reasons are unique and doesn't contain empty reasons.
+	uniqueReasons := stringset.NewFromSlice(reasons...)
+	uniqueReasons.Del("")
+	rs.CancellationReasons = uniqueReasons.ToSortedSlice()
 	se := impl.endRun(ctx, rs, run.Status_CANCELLED)
 	if rs.StartTime.IsZero() {
 		// This run has never started but already gets a cancelled event.

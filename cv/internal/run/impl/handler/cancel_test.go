@@ -63,11 +63,12 @@ func TestCancel(t *testing.T) {
 		now := ct.Clock.Now().UTC()
 		Convey("Backfill Start time", func() {
 			rs.Status = run.Status_PENDING
-			res, err := h.Cancel(ctx, rs)
+			res, err := h.Cancel(ctx, rs, []string{"pending for too long"})
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
 			So(res.State.StartTime, ShouldResemble, now)
 			So(res.State.EndTime, ShouldResemble, now)
+			So(res.State.CancellationReasons, ShouldResemble, []string{"pending for too long"})
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		})
@@ -75,18 +76,27 @@ func TestCancel(t *testing.T) {
 		Convey("Cancel works", func() {
 			rs.Status = run.Status_RUNNING
 			rs.StartTime = now.Add(-1 * time.Minute)
-			res, err := h.Cancel(ctx, rs)
+			res, err := h.Cancel(ctx, rs, []string{"user request"})
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
 			So(res.State.StartTime, ShouldResemble, now.Add(-1*time.Minute))
 			So(res.State.EndTime, ShouldResemble, now)
+			So(res.State.CancellationReasons, ShouldResemble, []string{"user request"})
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		})
 
+		Convey("Filter cancellation reasons", func() {
+			rs.Status = run.Status_RUNNING
+			rs.StartTime = now.Add(-1 * time.Minute)
+			res, err := h.Cancel(ctx, rs, []string{"user request", "", "user request"})
+			So(err, ShouldBeNil)
+			So(res.State.CancellationReasons, ShouldResemble, []string{"user request"})
+		})
+
 		Convey("Cancels SUBMITTING Run", func() {
 			rs.Status = run.Status_SUBMITTING
-			res, err := h.Cancel(ctx, rs)
+			res, err := h.Cancel(ctx, rs, []string{"user request"})
 			So(err, ShouldBeNil)
 			So(res.State, ShouldEqual, rs)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -103,7 +113,7 @@ func TestCancel(t *testing.T) {
 				rs.Status = status
 				rs.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
 				rs.EndTime = clock.Now(ctx).UTC().Add(-30 * time.Second)
-				res, err := h.Cancel(ctx, rs)
+				res, err := h.Cancel(ctx, rs, []string{"user request"})
 				So(err, ShouldBeNil)
 				So(res.State, ShouldEqual, rs)
 				So(res.SideEffectFn, ShouldBeNil)

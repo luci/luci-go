@@ -445,7 +445,7 @@ func (fh *fakeHandler) Start(ctx context.Context, rs *state.RunState) (*handler.
 	}, nil
 }
 
-func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
+func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState, reasons []string) (*handler.Result, error) {
 	fh.addInvocation("Cancel")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),

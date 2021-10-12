@@ -50,7 +50,7 @@ type Handler interface {
 	Start(context.Context, *state.RunState) (*Result, error)
 
 	// Cancel cancels a Run.
-	Cancel(context.Context, *state.RunState) (*Result, error)
+	Cancel(context.Context, *state.RunState, []string) (*Result, error)
 
 	// OnCLsUpdated decides whether to cancel a Run based on changes to the CLs.
 	OnCLsUpdated(context.Context, *state.RunState, common.CLIDs) (*Result, error)

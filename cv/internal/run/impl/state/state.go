@@ -57,6 +57,9 @@ func (rs *RunState) ShallowCopy() *RunState {
 	if rs.CLs != nil {
 		ret.CLs = append(common.CLIDs(nil), rs.CLs...)
 	}
+	if rs.CancellationReasons != nil {
+		rs.CancellationReasons = append([]string(nil), rs.CancellationReasons...)
+	}
 	if rs.LogEntries != nil {
 		ret.LogEntries = append([]*run.LogEntry(nil), rs.LogEntries...)
 	}
@@ -106,6 +109,9 @@ func (rs *RunState) DeepCopy() *RunState {
 	// zero-length slice which will fail the equality check in test.
 	if rs.CLs != nil {
 		ret.CLs = append(common.CLIDs(nil), rs.CLs...)
+	}
+	if rs.CancellationReasons != nil {
+		rs.CancellationReasons = append([]string(nil), rs.CancellationReasons...)
 	}
 	if rs.LogEntries != nil {
 		ret.LogEntries = make([]*run.LogEntry, len(rs.LogEntries))

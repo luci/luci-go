@@ -78,7 +78,8 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 				earliestReconsiderAt = reconsiderAt
 			}
 		case yes:
-			return impl.Cancel(ctx, rs)
+			// TODO(yiwzhang): fill up the reason
+			return impl.Cancel(ctx, rs, nil)
 		}
 	}
 	if preserveEvents {

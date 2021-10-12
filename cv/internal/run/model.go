@@ -99,7 +99,14 @@ type Run struct {
 	CLs common.CLIDs `gae:",noindex"`
 	// Options are Run-specific additions on top of LUCI project config.
 	Options *Options
-
+	// CancellationReasons are the reasons for cancelling a Run.
+	//
+	// Typically, only one reason will be available. But it's possible that Run
+	// Manager received multiple cancellation requested at the approximately
+	// the same time.
+	//
+	// Reasons should not contain duplication and empty reason.
+	CancellationReasons []string `gae:",noindex"`
 	// OngoingLongOps tracks long operations currently happening.
 	OngoingLongOps *OngoingLongOps
 	// Submission is the state of Run Submission.

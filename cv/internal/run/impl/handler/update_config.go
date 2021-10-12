@@ -133,8 +133,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 	}
 	// Run is no longer feasible and should be cancelled.
 	reason := formatNoLongerFeasibleRunReason(unwatched, multiple, diffTrigger, m, &newMeta)
-	logging.Warningf(ctx, reason)
-	return impl.Cancel(ctx, rs)
+	return impl.Cancel(ctx, rs, []string{reason})
 }
 
 func matchingConfigGroups(matcher *cfgmatcher.Matcher, cl *run.RunCL) []prjcfg.ConfigGroupID {

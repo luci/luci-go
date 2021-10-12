@@ -215,9 +215,9 @@ func (t *testHandler) Start(ctx context.Context, rs *state.RunState) (*Result, e
 	return res, err
 }
 
-func (t *testHandler) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
+func (t *testHandler) Cancel(ctx context.Context, rs *state.RunState, reasons []string) (*Result, error) {
 	initialCopy := rs.DeepCopy()
-	res, err := t.inner.Cancel(ctx, rs)
+	res, err := t.inner.Cancel(ctx, rs, reasons)
 	if err != nil {
 		return nil, err
 	}
