@@ -115,6 +115,26 @@ func TestExtractOptions(t *testing.T) {
 				SkipEquivalentBuilders: true,
 			})
 		})
+
+		Convey("If keys are repeated, any true value means true", func() {
+			So(extract(`
+				CL title.
+
+				NOTRY=true
+				No-Try: false
+      `), ShouldResembleProto, &Options{
+				SkipTryjobs: true,
+			})
+			So(extract(`
+				CL title.
+
+				NOTRY=false
+				No-Try: true
+      `), ShouldResembleProto, &Options{
+				SkipTryjobs: true,
+			})
+		})
+
 	})
 }
 
