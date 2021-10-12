@@ -141,7 +141,7 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				"HandlerDuration": func() time.Duration {
 					return clock.Now(ctx).Sub(startTime(ctx))
 				},
-				"AnalyticsSnippet": analytics.GTagSnippet(ctx),
+				"AnalyticsSnippet": analytics.Snippet(ctx),
 			}, nil
 		},
 	}

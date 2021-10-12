@@ -168,11 +168,11 @@ func main() {
 					return nil, err
 				}
 				return templates.Args{
-					"IsAnonymous": auth.CurrentIdentity(ctx) == identity.AnonymousIdentity,
-					"User":        auth.CurrentUser(ctx),
-					"LoginURL":    loginURL,
-					"LogoutURL":   logoutURL,
-					"GTagSnippet": analytics.GTagSnippet(ctx),
+					"IsAnonymous":            auth.CurrentIdentity(ctx) == identity.AnonymousIdentity,
+					"User":                   auth.CurrentUser(ctx),
+					"LoginURL":               loginURL,
+					"LogoutURL":              logoutURL,
+					"GoogleAnalyticsSnippet": analytics.Snippet(ctx),
 				}, nil
 			},
 		}

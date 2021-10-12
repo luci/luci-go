@@ -24,10 +24,7 @@ import (
 
 var rAllowed = regexp.MustCompile(`UA-\d+-\d+`)
 
-// TODO(crbug/1258632): temporary hack. This should be made private and the
-// module should provide public method to read cached analytic.js from
-// context like `GTagSnippet`.
-func MakeUASnippet(trackingID string) template.HTML {
+func makeUASnippet(trackingID string) template.HTML {
 	return template.HTML(fmt.Sprintf(`
 <script>
 setTimeout(function() {

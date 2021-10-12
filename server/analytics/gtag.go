@@ -17,7 +17,6 @@ package analytics
 // gtag.go has logic for generating Google Analytics 4 (gtag.js) snippet.
 
 import (
-	"context"
 	"fmt"
 	"html/template"
 	"regexp"
@@ -41,10 +40,4 @@ func makeGTagSnippet(measurementID string) template.HTML {
 			measurementID, measurementID,
 		),
 	)
-}
-
-// GTagSnippet gets the cached gtag.js snippet from ctx.
-func GTagSnippet(ctx context.Context) template.HTML {
-	v, _ := ctx.Value(&ctxKey).(template.HTML)
-	return v
 }
