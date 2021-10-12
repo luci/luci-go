@@ -236,7 +236,7 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	if req.PageSize, err = pagination.ValidatePageSize(req, 16, 128); err != nil {
 		return nil, err
 	}
-	cursor := &run.Cursor{}
+	cursor := &run.PageToken{}
 	if err := pagination.ValidatePageToken(req, cursor); err != nil {
 		return nil, err
 	}
@@ -256,11 +256,11 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		return nil, err
 	}
 
-	var nextCursor *run.Cursor
+	var nextCursor *run.PageToken
 	if l := len(runKeys); int32(l) == req.GetPageSize() {
 		// For Admin API, it's OK to return StringID as is, as Admins can see any
 		// LUCI project.
-		nextCursor = &run.Cursor{Run: runKeys[l-1].StringID()}
+		nextCursor = &run.PageToken{Run: runKeys[l-1].StringID()}
 	}
 
 	// Fetch individual runs in parallel and apply final filtering.
@@ -320,7 +320,7 @@ func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 
 // searchRunsByCL returns CL & Run IDs as Datastore keys, using CL to limit
 // results.
-func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.Cursor) (*changelist.CL, []*datastore.Key, error) {
+func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.PageToken) (*changelist.CL, []*datastore.Key, error) {
 	cl, err := loadCL(ctx, req.GetCl())
 	if err != nil {
 		return nil, nil, err
@@ -338,7 +338,7 @@ func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor 
 
 // searchRunsByProject returns Run IDs as Datastore keys, using LUCI Project to
 // limit results.
-func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.Cursor) ([]*datastore.Key, error) {
+func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.PageToken) ([]*datastore.Key, error) {
 	qb := run.ProjectQueryBuilder{
 		Project: req.GetProject(),
 		Limit:   req.GetPageSize(),
@@ -360,7 +360,7 @@ func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, cu
 //
 // WARNING: this is the most inefficient way to be used infrequently for CV
 // admin needs only.
-func searchRecentRunsSlow(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.Cursor) ([]*datastore.Key, error) {
+func searchRecentRunsSlow(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.PageToken) ([]*datastore.Key, error) {
 	// Since RunID includes LUCI project, RunIDs aren't lexicographically ordered
 	// by creation time across LUCI projects.
 	// So, the brute force is to query each known to CV LUCI project for most
@@ -369,7 +369,7 @@ func searchRecentRunsSlow(ctx context.Context, req *adminpb.SearchRunsRequest, c
 	// makeCursor selects the right cursor to a specific project given the current
 	// cursor a.k.a. the largest (earliest) returned RunID by the prior
 	// searchRecentRunsSlow.
-	makeCursor := func(project string) *run.Cursor {
+	makeCursor := func(project string) *run.PageToken {
 		if cursor.GetRun() == "" {
 			return nil
 		}
@@ -394,7 +394,7 @@ func searchRecentRunsSlow(ctx context.Context, req *adminpb.SearchRunsRequest, c
 			// same InverseTS will be strictly greater than "InverseTS-".
 			suffix = '-'
 		}
-		return &run.Cursor{Run: fmt.Sprintf("%s/%s%c", project, boundaryInverseTS, suffix)}
+		return &run.PageToken{Run: fmt.Sprintf("%s/%s%c", project, boundaryInverseTS, suffix)}
 	}
 
 	// Load all enabled & disabled projects.
