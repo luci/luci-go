@@ -19,12 +19,8 @@ import (
 	"regexp"
 	"time"
 
-	"google.golang.org/protobuf/encoding/prototext"
-
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/config/validation"
-
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 )
 
 // Config validation rules go here.
@@ -38,38 +34,6 @@ func init() {
 func addRules(r *validation.RuleSet) {
 	r.Add("regex:projects/[^/]+", "commit-queue.cfg", validateProject)
 	r.Add("services/commit-queue", "migration-settings.cfg", validateMigrationSettings)
-}
-
-// validateMigrationSettings validates a migration-settings file.
-//
-// Validation result is returned via validation ctx, while error returned
-// directly implies only a bug in this code.
-func validateMigrationSettings(ctx *validation.Context, configSet, path string, content []byte) error {
-	ctx.SetFile(path)
-	cfg := migrationpb.Settings{}
-	if err := prototext.Unmarshal(content, &cfg); err != nil {
-		ctx.Error(err)
-		return nil
-	}
-	for i, a := range cfg.GetApiHosts() {
-		ctx.Enter("api_hosts #%d", i+1)
-		switch h := a.GetHost(); h {
-		case "luci-change-verifier-dev.appspot.com":
-		case "luci-change-verifier.appspot.com":
-		default:
-			ctx.Errorf("invalid host (given: %q)", h)
-		}
-		validateRegexp(ctx, "project_regexp", a.GetProjectRegexp())
-		validateRegexp(ctx, "project_regexp_exclude", a.GetProjectRegexpExclude())
-		ctx.Exit()
-	}
-	if u := cfg.GetUseCvStatus(); u != nil {
-		ctx.Enter("use_cv_status")
-		validateRegexp(ctx, "project_regexp", u.GetProjectRegexp())
-		validateRegexp(ctx, "project_regexp_exclude", u.GetProjectRegexpExclude())
-		ctx.Exit()
-	}
-	return nil
 }
 
 // regexpCompileCached is the caching version of regexp.Compile.
