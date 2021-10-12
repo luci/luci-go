@@ -86,15 +86,13 @@ type runStage struct {
 	cachedReverseDeps map[int64][]int64
 }
 
-// TODO(tandrii): rename (a *runStage) to (rs *runStage).
-
-func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) (*runcreator.Creator, time.Time, error) {
 	// Only start with ready CLs. Non-ready ones can't form new Runs anyway.
 	if !info.ready {
 		return nil, time.Time{}, nil
 	}
 
-	if !a.markVisited(clid) {
+	if !rs.markVisited(clid) {
 		return nil, time.Time{}, nil
 	}
 
@@ -102,12 +100,12 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 	combo.add(info)
 
 	cgIndex := info.pcl.GetConfigGroupIndexes()[0]
-	cg := a.pm.ConfigGroup(cgIndex)
+	cg := rs.pm.ConfigGroup(cgIndex)
 
 	if cg.Content.GetCombineCls() != nil {
 		// Maximize Run's CL # to include not only all reachable dependencies, but also
 		// reachable dependents, recursively.
-		a.expandComboVisited(info, &combo)
+		rs.expandComboVisited(info, &combo)
 
 		// Shall the decision be delayed?
 		delay := cg.Content.GetCombineCls().GetStabilizationDelay().AsDuration()
@@ -117,10 +115,10 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 	}
 
 	if combo.withNotYetLoadedDeps != nil {
-		return a.postponeDueToNotYetLoadedDeps(ctx, &combo)
+		return rs.postponeDueToNotYetLoadedDeps(ctx, &combo)
 	}
 	if len(combo.notReady) > 0 {
-		return a.postponeDueToNotReadyCLs(ctx, &combo)
+		return rs.postponeDueToNotReadyCLs(ctx, &combo)
 	}
 
 	// At this point all CLs in combo are stable, ready and with valid deps.
@@ -141,7 +139,7 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 	// TODO(tandrii): support >1 concurrent Run on the same CL(s).
 	if runs := combo.overlappingRuns(); len(runs) > 0 {
 		for runIndex, sharedCLsCount := range runs { // take the first and only Run
-			prun := a.c.GetPruns()[runIndex]
+			prun := rs.c.GetPruns()[runIndex]
 			switch l := len(prun.GetClids()); {
 			case l < sharedCLsCount:
 				panic("impossible")
@@ -154,7 +152,7 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 				//  * during cancellation: some CLs' votes have already been removed;
 				//  * a newly ingested LUCI project config splits Run across multiple
 				//    ConfigGroups or even makes one CL unwatched by the project.
-				return a.postponeDueToExistingRunDiffScope(ctx, &combo, prun)
+				return rs.postponeDueToExistingRunDiffScope(ctx, &combo, prun)
 			case sharedCLsCount == len(combo.all):
 				// The combo scope is exactly the same as Run. This is the most likely
 				// situation -- there is nothing for PM to do but wait.
@@ -185,13 +183,13 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 				// tryjobs, which won't even be cancelled. Grrr.
 				// TODO(tandrii): alternatively, consider canceling the existing Run,
 				// similar to CQDaemon.
-				return a.postponeExpandingExistingRunScope(ctx, &combo, prun)
+				return rs.postponeExpandingExistingRunScope(ctx, &combo, prun)
 			}
 		}
 		panic("unreachable")
 	}
 
-	rc, err := a.makeCreator(ctx, &combo, cg)
+	rc, err := rs.makeCreator(ctx, &combo, cg)
 	if err != nil {
 		return nil, time.Time{}, err
 	}
@@ -232,50 +230,50 @@ func (a *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInf
 	}
 }
 
-func (a *runStage) reverseDeps() map[int64][]int64 {
-	if a.cachedReverseDeps != nil {
-		return a.cachedReverseDeps
+func (rs *runStage) reverseDeps() map[int64][]int64 {
+	if rs.cachedReverseDeps != nil {
+		return rs.cachedReverseDeps
 	}
-	a.cachedReverseDeps = map[int64][]int64{}
-	for clid, info := range a.cls {
+	rs.cachedReverseDeps = map[int64][]int64{}
+	for clid, info := range rs.cls {
 		if info.deps == nil {
 			// CL is or will be purged, so its deps weren't even triaged.
 			continue
 		}
 		info.deps.iterateNotSubmitted(info.pcl, func(dep *changelist.Dep) {
 			did := dep.GetClid()
-			a.cachedReverseDeps[did] = append(a.cachedReverseDeps[did], clid)
+			rs.cachedReverseDeps[did] = append(rs.cachedReverseDeps[did], clid)
 		})
 	}
-	return a.cachedReverseDeps
+	return rs.cachedReverseDeps
 }
 
-func (a *runStage) expandComboVisited(info *clInfo, result *combo) {
+func (rs *runStage) expandComboVisited(info *clInfo, result *combo) {
 	if info.deps != nil {
 		info.deps.iterateNotSubmitted(info.pcl, func(dep *changelist.Dep) {
-			a.expandCombo(dep.GetClid(), result)
+			rs.expandCombo(dep.GetClid(), result)
 		})
 	}
-	for _, clid := range a.reverseDeps()[info.pcl.GetClid()] {
-		a.expandCombo(clid, result)
+	for _, clid := range rs.reverseDeps()[info.pcl.GetClid()] {
+		rs.expandCombo(clid, result)
 	}
 }
 
-func (a *runStage) expandCombo(clid int64, result *combo) {
-	info := a.cls[clid]
+func (rs *runStage) expandCombo(clid int64, result *combo) {
+	info := rs.cls[clid]
 	if info == nil {
 		// Can only happen if clid is a dep that's not yet loaded (otherwise dep
 		// would be in this component, and hence info would be set).
 		return
 	}
-	if !a.markVisited(clid) {
+	if !rs.markVisited(clid) {
 		return
 	}
 	result.add(info)
-	a.expandComboVisited(info, result)
+	rs.expandComboVisited(info, result)
 }
 
-func (a *runStage) postponeDueToNotYetLoadedDeps(ctx context.Context, combo *combo) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) postponeDueToNotYetLoadedDeps(ctx context.Context, combo *combo) (*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): this waiting can last forever. Component needs to
 	// record how long it has been waiting and abort with clear message to the
 	// user.
@@ -283,25 +281,25 @@ func (a *runStage) postponeDueToNotYetLoadedDeps(ctx context.Context, combo *com
 	return nil, time.Time{}, nil
 }
 
-func (a *runStage) postponeDueToNotReadyCLs(ctx context.Context, combo *combo) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) postponeDueToNotReadyCLs(ctx context.Context, combo *combo) (*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): for safety, this should not wait forever.
 	logging.Warningf(ctx, "%s waits for not yet ready CLs", combo)
 	return nil, time.Time{}, nil
 }
 
-func (a *runStage) postponeDueToExistingRunDiffScope(ctx context.Context, combo *combo, r *prjpb.PRun) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) postponeDueToExistingRunDiffScope(ctx context.Context, combo *combo, r *prjpb.PRun) (*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): for safety, this should not wait forever.
 	logging.Warningf(ctx, "%s is waiting for a differently scoped run %q to finish", combo, r.GetId())
 	return nil, time.Time{}, nil
 }
 
-func (a *runStage) postponeExpandingExistingRunScope(ctx context.Context, combo *combo, r *prjpb.PRun) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) postponeExpandingExistingRunScope(ctx context.Context, combo *combo, r *prjpb.PRun) (*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): for safety, this should not wait forever.
 	logging.Warningf(ctx, "%s is waiting for smaller scoped run %q to finish", combo, r.GetId())
 	return nil, time.Time{}, nil
 }
 
-func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.ConfigGroup) (*runcreator.Creator, error) {
+func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.ConfigGroup) (*runcreator.Creator, error) {
 	latestIndex := -1
 	cls := make([]*changelist.CL, len(combo.all))
 	for i, info := range combo.all {
@@ -358,11 +356,11 @@ func (a *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Con
 }
 
 // markVisited makes CL visited if not already and returns if action was taken.
-func (a *runStage) markVisited(clid int64) bool {
-	if _, visited := a.visitedCLs[clid]; visited {
+func (rs *runStage) markVisited(clid int64) bool {
+	if _, visited := rs.visitedCLs[clid]; visited {
 		return false
 	}
-	a.visitedCLs[clid] = struct{}{}
+	rs.visitedCLs[clid] = struct{}{}
 	return true
 }
 
