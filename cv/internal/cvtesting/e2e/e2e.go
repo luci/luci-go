@@ -301,50 +301,33 @@ func (t *Test) LoadProject(ctx context.Context, lProject string) *prjmanager.Pro
 
 // LoadRun returns Run entity or nil if not exists.
 func (t *Test) LoadRun(ctx context.Context, id common.RunID) *run.Run {
-	r := &run.Run{ID: id}
-	switch err := datastore.Get(ctx, r); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil
-	case err != nil:
+	r, err := run.LoadRun(ctx, id)
+	if err != nil {
 		panic(err)
-	default:
-		return r
 	}
+	return r
 }
 
 // LoadRunsOf loads all Runs of a project from Datastore.
 func (t *Test) LoadRunsOf(ctx context.Context, lProject string) []*run.Run {
-	var res []*run.Run
-	err := datastore.GetAll(ctx, run.NewQueryWithLUCIProject(ctx, lProject), &res)
+	runs, err := run.ProjectQueryBuilder{Project: lProject}.LoadRuns(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return res
+	return runs
 }
 
 // LoadGerritRuns loads all Runs from Datastore which include a Gerrit CL.
-func (t *Test) LoadGerritRuns(ctx context.Context, gHost string, gChange int64, lProject string) []*run.Run {
-	// TODO(tandrii): use query based on CL ID and don't require lProject
-	// argument.
+func (t *Test) LoadGerritRuns(ctx context.Context, gHost string, gChange int64) []*run.Run {
 	cl := t.LoadGerritCL(ctx, gHost, gChange)
 	if cl == nil {
 		return nil
 	}
-	var runs []*run.Run
-	err := datastore.GetAll(ctx, run.NewQueryWithLUCIProject(ctx, lProject), &runs)
+	runs, err := run.CLQueryBuilder{CLID: cl.ID}.LoadRuns(ctx)
 	if err != nil {
 		panic(err)
 	}
-	res := runs[:0]
-	for _, r := range runs {
-		for _, clid := range r.CLs {
-			if clid == cl.ID {
-				res = append(res, r)
-				break
-			}
-		}
-	}
-	return res
+	return runs
 }
 
 // EarliestCreatedRun returns the earliest created Run in a project.
@@ -366,23 +349,16 @@ func (t *Test) EarliestCreatedRunOf(ctx context.Context, lProject string) *run.R
 //
 // If there are several, returns the one with latest .StartTime.
 // Returns nil if there is such Runs, including if Gerrit CL isn't yet in DS.
-func (t *Test) LatestRunWithGerritCL(ctx context.Context, lProject, gHost string, gChange int64) *run.Run {
-	cl := t.LoadGerritCL(ctx, gHost, gChange)
-	if cl == nil {
-		return nil
-	}
+func (t *Test) LatestRunWithGerritCL(ctx context.Context, gHost string, gChange int64) *run.Run {
 	var ret *run.Run
-	for _, r := range t.LoadRunsOf(ctx, lProject) {
-		for _, clid := range r.CLs {
-			switch {
-			case clid != cl.ID:
-			case ret == nil:
-				ret = r
-			case ret.CreateTime.After(r.CreateTime):
-				ret = r
-			case ret.CreateTime.Equal(r.CreateTime) && ret.StartTime.Before(r.StartTime):
-				ret = r
-			}
+	for _, r := range t.LoadGerritRuns(ctx, gHost, gChange) {
+		switch {
+		case ret == nil:
+			ret = r
+		case ret.CreateTime.After(r.CreateTime):
+			ret = r
+		case ret.CreateTime.Equal(r.CreateTime) && ret.StartTime.Before(r.StartTime):
+			ret = r
 		}
 	}
 	return ret

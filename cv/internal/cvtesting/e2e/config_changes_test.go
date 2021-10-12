@@ -67,8 +67,8 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 
 		var runFirstSingle, runFirstCombo *run.Run
 		ct.RunUntil(ctx, func() bool {
-			runFirstSingle = ct.LatestRunWithGerritCL(ctx, lProject, gHost, gChangeFirstSingle)
-			runFirstCombo = ct.LatestRunWithGerritCL(ctx, lProject, gHost, gChangeFirstCombo)
+			runFirstSingle = ct.LatestRunWithGerritCL(ctx, gHost, gChangeFirstSingle)
+			runFirstCombo = ct.LatestRunWithGerritCL(ctx, gHost, gChangeFirstCombo)
 			return runtest.AreRunning(runFirstSingle, runFirstCombo)
 		})
 		// Project must have no other runs.
@@ -88,13 +88,13 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 
 		var runSecondSingle *run.Run
 		ct.RunUntil(ctx, func() bool {
-			runSecondSingle = ct.LatestRunWithGerritCL(ctx, lProject, gHost, gChangeSecondSingle)
+			runSecondSingle = ct.LatestRunWithGerritCL(ctx, gHost, gChangeSecondSingle)
 			return runtest.AreRunning(runSecondSingle)
 		})
 		// TODO(crbug/1221535): CV should not ignore gChangeSecondCombo while
 		// runFirstCombo is running. It should either stop runFirstCombo or start a
 		// new Run.
-		So(ct.LatestRunWithGerritCL(ctx, lProject, gHost, gChangeSecondCombo), ShouldBeNil)
+		So(ct.LatestRunWithGerritCL(ctx, gHost, gChangeSecondCombo), ShouldBeNil)
 		runFirstSingle = ct.LoadRun(ctx, runFirstSingle.ID)
 		runFirstCombo = ct.LoadRun(ctx, runFirstCombo.ID)
 		So(runtest.AreRunning(runFirstSingle, runFirstCombo, runSecondSingle), ShouldBeTrue)

@@ -144,7 +144,7 @@ func TestConcurentRunsSingular(t *testing.T) {
 				if !ct.Clock.Now().After(a.finishTime) {
 					return false
 				}
-				runs = ct.LoadGerritRuns(ctx, gHost, int64(a.gChange), lProject)
+				runs = ct.LoadGerritRuns(ctx, gHost, int64(a.gChange))
 				return len(runs) > 0
 			})
 			So(runs, ShouldHaveLength, 1)
