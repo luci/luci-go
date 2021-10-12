@@ -64,6 +64,14 @@ func TestEndRun(t *testing.T) {
 				CreateTime: ct.Clock.Now().Add(-2 * time.Minute),
 				StartTime:  ct.Clock.Now().Add(-1 * time.Minute),
 				CLs:        common.CLIDs{1},
+				OngoingLongOps: &run.OngoingLongOps{
+					Ops: map[string]*run.OngoingLongOps_Op{
+						"11-22": {
+							CancelRequested: false,
+							Work:            &run.OngoingLongOps_Op_PostStartMessage{PostStartMessage: true},
+						},
+					},
+				},
 			},
 		}
 		anotherRID := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("cafecafe"))
@@ -80,6 +88,7 @@ func TestEndRun(t *testing.T) {
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
 		So(rs.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.EndTime, ShouldEqual, ct.Clock.Now())
+		So(rs.OngoingLongOps.GetOps()["11-22"].GetCancelRequested(), ShouldBeTrue)
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
 		cl = changelist.CL{ID: clid}
 		So(datastore.Get(ctx, &cl), ShouldBeNil)
@@ -93,6 +102,7 @@ func TestEndRun(t *testing.T) {
 		pmtest.AssertReceivedRunFinished(ctx, rid)
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
 		So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
+
 		Convey("Publish RunEnded event", func() {
 			var task *pubsub.PublishRunEndedTask
 			for _, t := range ct.TQ.Tasks() {

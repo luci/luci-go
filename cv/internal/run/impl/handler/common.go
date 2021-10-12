@@ -56,6 +56,12 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 			RunEnded: &run.LogEntry_RunEnded{},
 		},
 	})
+	for id, op := range rs.OngoingLongOps.GetOps() {
+		if !op.GetCancelRequested() {
+			logging.Warningf(ctx, "Requesting best-effort cancellation of long op %q %T", id, op.GetWork())
+			op.CancelRequested = true
+		}
+	}
 
 	return eventbox.Chain(
 		func(ctx context.Context) error {
