@@ -95,19 +95,19 @@ func TestCLQueryBuilder(t *testing.T) {
 		})
 
 		Convey("Filtering by Project and Min with diff project", func() {
-			qb := CLQueryBuilder{CLID: clA, Project: "dart", Min: bond4}
+			qb := CLQueryBuilder{CLID: clA, Project: "dart", MinExcl: bond4}
 			So(getAll(qb), ShouldResemble, common.RunIDs{dart5, dart3})
 
-			qb = CLQueryBuilder{CLID: clA, Project: "dart", Min: rust1}
+			qb = CLQueryBuilder{CLID: clA, Project: "dart", MinExcl: rust1}
 			_, err := qb.BuildKeysOnly(ctx).Finalize()
 			So(err, ShouldEqual, datastore.ErrNullQuery)
 		})
 
 		Convey("Filtering by Project and Max with diff project", func() {
-			qb := CLQueryBuilder{CLID: clA, Project: "dart", Max: xero7}
+			qb := CLQueryBuilder{CLID: clA, Project: "dart", MaxExcl: xero7}
 			So(getAll(qb), ShouldResemble, common.RunIDs{dart5, dart3})
 
-			qb = CLQueryBuilder{CLID: clA, Project: "dart", Max: bond4}
+			qb = CLQueryBuilder{CLID: clA, Project: "dart", MaxExcl: bond4}
 			_, err := qb.BuildKeysOnly(ctx).Finalize()
 			So(err, ShouldEqual, datastore.ErrNullQuery)
 		})
@@ -225,7 +225,7 @@ func TestProjectQueryBuilder(t *testing.T) {
 		})
 
 		Convey("Min", func() {
-			qb := ProjectQueryBuilder{Project: "bond", Min: bond9}
+			qb := ProjectQueryBuilder{Project: "bond", MinExcl: bond9}
 			So(getAll(qb), ShouldResemble, common.RunIDs{bond4, bond2})
 
 			Convey("same as Before", func() {
@@ -235,7 +235,7 @@ func TestProjectQueryBuilder(t *testing.T) {
 		})
 
 		Convey("Max", func() {
-			qb := ProjectQueryBuilder{Project: "bond", Max: bond2}
+			qb := ProjectQueryBuilder{Project: "bond", MaxExcl: bond2}
 			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4})
 
 			Convey("same as After", func() {
@@ -272,8 +272,8 @@ func TestProjectQueryBuilder(t *testing.T) {
 
 		Convey("Invalid usage panics", func() {
 			So(func() { ProjectQueryBuilder{}.BuildKeysOnly(ctx) }, ShouldPanic)
-			So(func() { ProjectQueryBuilder{Project: "not-bond", Min: bond4}.BuildKeysOnly(ctx) }, ShouldPanic)
-			So(func() { ProjectQueryBuilder{Project: "not-bond", Max: bond4}.BuildKeysOnly(ctx) }, ShouldPanic)
+			So(func() { ProjectQueryBuilder{Project: "not-bond", MinExcl: bond4}.BuildKeysOnly(ctx) }, ShouldPanic)
+			So(func() { ProjectQueryBuilder{Project: "not-bond", MaxExcl: bond4}.BuildKeysOnly(ctx) }, ShouldPanic)
 			So(func() { ProjectQueryBuilder{Project: "not-bond"}.Before(bond4) }, ShouldPanic)
 			So(func() { ProjectQueryBuilder{Project: "not-bond"}.After(bond4) }, ShouldPanic)
 			So(func() { ProjectQueryBuilder{}.After(bond4).Before(xero7) }, ShouldPanic)

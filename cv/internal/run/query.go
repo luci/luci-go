@@ -31,20 +31,20 @@ type CLQueryBuilder struct {
 	CLID common.CLID
 	// Project optionally restricts Runs to the given LUCI project.
 	Project string
-	// Max restricts query to Runs with ID lexicographically smaller.
+	// MaxExcl restricts query to Runs with ID lexicographically smaller.
 	//
 	// This means query will return union of:
 	//   * all Runs created after this Run in the same project,
 	//   * all Runs in lexicographically smaller projects,
 	//     unless .Project is set to the same project (recommended).
-	Max common.RunID
-	// Min restricts query to Runs with ID lexicographically larger.
+	MaxExcl common.RunID
+	// MinExcl restricts query to Runs with ID lexicographically larger.
 	//
 	// This means query will return union of:
 	//   * all Runs created before this Run in the same project,
 	//   * all Runs in lexicographically larger projects,
 	//     unless .Project is set to the same project (recommended).
-	Min common.RunID
+	MinExcl common.RunID
 
 	// Limit limits the number of results if positive. Ignored otherwise.
 	Limit int32
@@ -55,8 +55,8 @@ func (b CLQueryBuilder) isSatisfied(r *Run) bool {
 	switch {
 	case r == nil:
 	case b.Project != "" && r.ID.LUCIProject() != b.Project:
-	case b.Min != "" && r.ID <= b.Min:
-	case b.Max != "" && r.ID >= b.Max:
+	case b.MinExcl != "" && r.ID <= b.MinExcl:
+	case b.MaxExcl != "" && r.ID >= b.MaxExcl:
 	default:
 		return true
 	}
@@ -74,7 +74,7 @@ func (b CLQueryBuilder) AfterInProject(id common.RunID) CLQueryBuilder {
 		}
 		b.Project = p
 	}
-	b.Max = id
+	b.MaxExcl = id
 	return b
 }
 
@@ -89,7 +89,7 @@ func (b CLQueryBuilder) BeforeInProject(id common.RunID) CLQueryBuilder {
 		}
 		b.Project = p
 	}
-	b.Min = id
+	b.MinExcl = id
 	return b
 }
 
@@ -103,8 +103,8 @@ func (b CLQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query {
 		q = q.Limit(b.Limit)
 	}
 
-	min := string(b.Min)
-	max := string(b.Max)
+	min := string(b.MinExcl)
+	max := string(b.MaxExcl)
 	if b.Project != "" {
 		prMin, prMax := rangeOfProjectIDs(b.Project)
 		if min == "" || min < prMin {
@@ -152,18 +152,18 @@ type ProjectQueryBuilder struct {
 	Project string
 	// Status optionally restricts query to Runs with this status.
 	Status Status
-	// Max restricts query to Runs with ID lexicographically smaller. Optional.
+	// MaxExcl restricts query to Runs with ID lexicographically smaller. Optional.
 	//
 	// This means query is restricted to Runs created after this Run.
 	//
 	// This Run must belong to the same LUCI project.
-	Max common.RunID
-	// Min restricts query to Runs with ID lexicographically larger. Optional.
+	MaxExcl common.RunID
+	// MinExcl restricts query to Runs with ID lexicographically larger. Optional.
 	//
 	// This means query is restricted to Runs created before this Run.
 	//
 	// This Run must belong to the same LUCI project.
-	Min common.RunID
+	MinExcl common.RunID
 
 	// Limit limits the number of results if positive. Ignored otherwise.
 	Limit int32
@@ -176,8 +176,8 @@ func (b ProjectQueryBuilder) isSatisfied(r *Run) bool {
 	case r.ID.LUCIProject() != b.Project:
 	case b.Status == Status_ENDED_MASK && !IsEnded(r.Status):
 	case b.Status != Status_ENDED_MASK && b.Status != Status_STATUS_UNSPECIFIED && r.Status != b.Status:
-	case b.Min != "" && r.ID <= b.Min:
-	case b.Max != "" && r.ID >= b.Max:
+	case b.MinExcl != "" && r.ID <= b.MinExcl:
+	case b.MaxExcl != "" && r.ID >= b.MaxExcl:
 	default:
 		return true
 	}
@@ -194,7 +194,7 @@ func (b ProjectQueryBuilder) After(id common.RunID) ProjectQueryBuilder {
 		}
 		b.Project = p
 	}
-	b.Max = id
+	b.MaxExcl = id
 	return b
 }
 
@@ -208,7 +208,7 @@ func (b ProjectQueryBuilder) Before(id common.RunID) ProjectQueryBuilder {
 		}
 		b.Project = p
 	}
-	b.Min = id
+	b.MinExcl = id
 	return b
 }
 
@@ -239,20 +239,20 @@ func (b ProjectQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query
 	min, max := rangeOfProjectIDs(b.Project)
 
 	switch {
-	case b.Min == "":
-	case b.Min.LUCIProject() != b.Project:
-		panic(fmt.Errorf("Min %q doesn't match Project %q", b.Min, b.Project))
+	case b.MinExcl == "":
+	case b.MinExcl.LUCIProject() != b.Project:
+		panic(fmt.Errorf("MinExcl %q doesn't match Project %q", b.MinExcl, b.Project))
 	default:
-		min = string(b.Min)
+		min = string(b.MinExcl)
 	}
 	q = q.Gt("__key__", datastore.MakeKey(ctx, RunKind, min))
 
 	switch {
-	case b.Max == "":
-	case b.Max.LUCIProject() != b.Project:
-		panic(fmt.Errorf("Max %q doesn't match Project %q", b.Max, b.Project))
+	case b.MaxExcl == "":
+	case b.MaxExcl.LUCIProject() != b.Project:
+		panic(fmt.Errorf("MaxExcl %q doesn't match Project %q", b.MaxExcl, b.Project))
 	default:
-		max = string(b.Max)
+		max = string(b.MaxExcl)
 	}
 	q = q.Lt("__key__", datastore.MakeKey(ctx, RunKind, max))
 

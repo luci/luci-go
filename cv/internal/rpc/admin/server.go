@@ -330,7 +330,7 @@ func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor 
 		CLID:    cl.ID,
 		Limit:   req.GetPageSize(),
 		Project: req.GetProject(),              // optional
-		Min:     common.RunID(cursor.GetRun()), // may be ""
+		MinExcl: common.RunID(cursor.GetRun()), // may be ""
 	}
 	runKeys, err := qb.GetAllRunKeys(ctx)
 	return cl, runKeys, err
@@ -343,7 +343,7 @@ func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, cu
 		Project: req.GetProject(),
 		Limit:   req.GetPageSize(),
 		Status:  req.GetStatus(),               // optional
-		Min:     common.RunID(cursor.GetRun()), // may be ""
+		MinExcl: common.RunID(cursor.GetRun()), // may be ""
 	}
 	return qb.GetAllRunKeys(ctx)
 }
