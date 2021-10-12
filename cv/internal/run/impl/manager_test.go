@@ -79,11 +79,13 @@ func TestRunManager(t *testing.T) {
 			{
 				&eventpb.Event{
 					Event: &eventpb.Event_Cancel{
-						Cancel: &eventpb.Cancel{},
+						Cancel: &eventpb.Cancel{
+							Reason: "user request",
+						},
 					},
 				},
 				func(ctx context.Context) error {
-					return notifier.Cancel(ctx, runID)
+					return notifier.Cancel(ctx, runID, "user request")
 				},
 				"Cancel",
 			},
@@ -287,7 +289,7 @@ func TestRunManager(t *testing.T) {
 			fh := &fakeHandler{}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
 			notifier.Start(ctx, runID)
-			notifier.Cancel(ctx, runID)
+			notifier.Cancel(ctx, runID, "user request")
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			So(fh.invocations[0], ShouldEqual, "Cancel")
 			for _, inv := range fh.invocations[1:] {
@@ -296,7 +298,9 @@ func TestRunManager(t *testing.T) {
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
 			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{
 				Event: &eventpb.Event_Cancel{
-					Cancel: &eventpb.Cancel{},
+					Cancel: &eventpb.Cancel{
+						Reason: "user request",
+					},
 				},
 			},
 				&eventpb.Event{

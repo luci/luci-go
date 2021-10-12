@@ -16,6 +16,7 @@ package manager
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync"
 	"testing"
@@ -171,7 +172,14 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(plog, ShouldNotBeNil)
 					So(poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), ShouldResemble, []string{lProject})
 					// Should ask Runs to cancel themselves.
-					So(runNotifier.popCancel(), ShouldResemble, p.IncompleteRuns())
+					reqs := make([]cancellationRequest, len(p.IncompleteRuns()))
+					for i, runID := range p.IncompleteRuns() {
+						reqs[i] = cancellationRequest{
+							id:     runID,
+							reason: fmt.Sprintf("CV is disabled for LUCI Project %q", lProject),
+						}
+					}
+					So(runNotifier.popCancel(), ShouldResemble, reqs)
 
 					Convey("wait for all IncompleteRuns to finish", func() {
 						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
@@ -408,8 +416,13 @@ func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
 
 type runNotifierMock struct {
 	m            sync.Mutex
-	cancel       common.RunIDs
+	cancel       []cancellationRequest
 	updateConfig common.RunIDs
+}
+
+type cancellationRequest struct {
+	id     common.RunID
+	reason string
 }
 
 func (r *runNotifierMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, cls *changelist.CLUpdatedEvents) error {
@@ -424,9 +437,9 @@ func (r *runNotifierMock) PokeNow(ctx context.Context, id common.RunID) error {
 	panic("not implemented")
 }
 
-func (r *runNotifierMock) Cancel(ctx context.Context, id common.RunID) error {
+func (r *runNotifierMock) Cancel(ctx context.Context, id common.RunID, reason string) error {
 	r.m.Lock()
-	r.cancel = append(r.cancel, id)
+	r.cancel = append(r.cancel, cancellationRequest{id: id, reason: reason})
 	r.m.Unlock()
 	return nil
 }
@@ -447,11 +460,13 @@ func (r *runNotifierMock) popUpdateConfig() common.RunIDs {
 	return out
 }
 
-func (r *runNotifierMock) popCancel() common.RunIDs {
+func (r *runNotifierMock) popCancel() []cancellationRequest {
 	r.m.Lock()
 	out := r.cancel
 	r.cancel = nil
 	r.m.Unlock()
-	sort.Sort(out)
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].id < out[j].id
+	})
 	return out
 }

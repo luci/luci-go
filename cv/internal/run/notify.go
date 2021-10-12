@@ -125,12 +125,12 @@ func (n *Notifier) UpdateConfig(ctx context.Context, runID common.RunID, hash st
 }
 
 // Cancel tells RunManager to cancel the given Run.
-//
-// TODO(crbug/1215612): support reason.
-func (n *Notifier) Cancel(ctx context.Context, runID common.RunID) error {
+func (n *Notifier) Cancel(ctx context.Context, runID common.RunID, reason string) error {
 	return n.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Cancel{
-			Cancel: &eventpb.Cancel{},
+			Cancel: &eventpb.Cancel{
+				Reason: reason,
+			},
 		},
 	})
 }

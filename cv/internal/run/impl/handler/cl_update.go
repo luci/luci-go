@@ -71,15 +71,14 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 	preserveEvents := false
 	var earliestReconsiderAt time.Time
 	for i := range clids {
-		switch yes, reconsiderAt := shouldCancel(ctx, cls[i], runCLs[i], cg); {
+		switch reconsiderAt, cancellationReason := shouldCancel(ctx, cls[i], runCLs[i], cg); {
 		case !reconsiderAt.IsZero():
 			preserveEvents = true
 			if earliestReconsiderAt.IsZero() || earliestReconsiderAt.After(reconsiderAt) {
 				earliestReconsiderAt = reconsiderAt
 			}
-		case yes:
-			// TODO(yiwzhang): fill up the reason
-			return impl.Cancel(ctx, rs, nil)
+		case cancellationReason != "":
+			return impl.Cancel(ctx, rs, []string{cancellationReason})
 		}
 	}
 	if preserveEvents {
@@ -91,22 +90,22 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 	return &Result{State: rs, PreserveEvents: preserveEvents}, nil
 }
 
-func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *prjcfg.ConfigGroup) (bool, time.Time) {
+func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *prjcfg.ConfigGroup) (time.Time, string) {
 	project := cg.ProjectString()
 	clString := fmt.Sprintf("CL %d %s", cl.ID, cl.ExternalID)
 	switch kind, reason := cl.AccessKindWithReason(ctx, project); kind {
 	case changelist.AccessDenied:
 		logging.Warningf(ctx, "No longer have access to %s: %s", clString, reason)
-		return true, time.Time{}
+		return time.Time{}, fmt.Sprintf("no longer have access to %s: %s", cl.ExternalID.MustURL(), reason)
 	case changelist.AccessDeniedProbably:
 		logging.Warningf(ctx, "Probably no longer have access to %s (%s), not canceling yet", clString, reason)
 		// Keep the run Running for now. The access should become either
 		// AccessGranted or AccessDenied, eventually.
-		return false, cl.Access.GetByProject()[project].GetNoAccessTime().AsTime()
+		return cl.Access.GetByProject()[project].GetNoAccessTime().AsTime(), ""
 	case changelist.AccessUnknown:
 		logging.Errorf(ctx, "Unknown access to %s (%s), not canceling yet", clString, reason)
 		// Keep the run Running for now, it should become clear eventually.
-		return false, time.Time{}
+		return time.Time{}, ""
 	case changelist.AccessGranted:
 		// The expected and most likely case.
 	default:
@@ -115,27 +114,30 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *pr
 
 	if o, c := rcl.Detail.GetPatchset(), cl.Snapshot.GetPatchset(); o != c {
 		logging.Infof(ctx, "%s has new patchset %d => %d", clString, o, c)
-		return true, time.Time{}
+		return time.Time{}, fmt.Sprintf("the patchset of %s has changed from %d to %d", cl.ExternalID.MustURL(), o, c)
 	}
 	if o, c := rcl.Detail.GetGerrit().GetInfo().GetRef(), cl.Snapshot.GetGerrit().GetInfo().GetRef(); o != c {
 		logging.Warningf(ctx, "%s has new ref %q => %q", clString, o, c)
-		return true, time.Time{}
+		return time.Time{}, fmt.Sprintf("the ref of %s has moved from %s to %s", cl.ExternalID.MustURL(), o, c)
 	}
-	if o, c := rcl.Trigger, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content); hasTriggerChanged(o, c) {
+	o, c := rcl.Trigger, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)
+	if whatChanged := hasTriggerChanged(o, c, cl.ExternalID.MustURL()); whatChanged != "" {
 		logging.Infof(ctx, "%s has new trigger\nOLD: %s\nNEW: %s", clString, o, c)
-		return true, time.Time{}
+		return time.Time{}, whatChanged
 	}
-	return false, time.Time{}
+	return time.Time{}, ""
 }
 
-func hasTriggerChanged(old, cur *run.Trigger) bool {
+func hasTriggerChanged(old, cur *run.Trigger, clURL string) string {
 	switch {
 	case cur == nil:
-		return true // trigger removal
+		return fmt.Sprintf("the trigger on %s has been removed", clURL)
 	case old.GetMode() != cur.GetMode():
-		return true // mode has changed
+		return fmt.Sprintf("the triggering vote on %s has requested a different run mode: %s", clURL, cur.GetMode())
 	case !old.GetTime().AsTime().Equal(cur.GetTime().AsTime()):
-		return true // triggering time has changed
+		return fmt.Sprintf(
+			"the timestamp of the triggering vote on %s has changed from %s to %s",
+			clURL, old.GetTime().AsTime(), cur.GetTime().AsTime())
 	default:
 		// Theoretically, if the triggering user changes, it should also be counted
 		// as changed trigger. However, checking whether triggering time has changed
@@ -143,6 +145,6 @@ func hasTriggerChanged(old, cur *run.Trigger) bool {
 		// have the exact same timestamp. And even if it really happens, CV won't
 		// be able to handle this case because CV will generate the same Run ID as
 		// user is not taken into account during ID generation.
-		return false
+		return ""
 	}
 }

@@ -41,7 +41,7 @@ import (
 type RunNotifier interface {
 	Start(ctx context.Context, id common.RunID) error
 	PokeNow(ctx context.Context, id common.RunID) error
-	Cancel(ctx context.Context, id common.RunID) error
+	Cancel(ctx context.Context, id common.RunID, reason string) error
 	UpdateConfig(ctx context.Context, id common.RunID, hash string, eversion int64) error
 }
 

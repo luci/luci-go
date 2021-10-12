@@ -69,7 +69,8 @@ func TestOnCLsUpdated(t *testing.T) {
 		}
 		updateCL := func(ci *gerritpb.ChangeInfo, ap *changelist.ApplicableConfig, acc *changelist.Access) changelist.CL {
 			cl := changelist.CL{
-				ID: 1,
+				ID:         1,
+				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
 				Snapshot: &changelist.Snapshot{
 					LuciProject: lProject,
 					Patchset:    ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(),
@@ -152,35 +153,36 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(res.PreserveEvents, ShouldBeTrue)
 		})
 
-		runAndVerifyCancelled := func() {
+		runAndVerifyCancelled := func(reason string) {
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.CancellationReasons, ShouldResemble, []string{reason})
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		}
 
 		Convey("Cancels Run on new Patchset", func() {
 			updateCL(gf.CI(gChange, gf.PS(gPatchSet+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
-			runAndVerifyCancelled()
+			runAndVerifyCancelled("the patchset of https://x-review.example.com/c/1 has changed from 5 to 6")
 		})
 		Convey("Cancels Run on moved Ref", func() {
 			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Ref("refs/heads/new")), aplConfigOK, accessOK)
-			runAndVerifyCancelled()
+			runAndVerifyCancelled("the ref of https://x-review.example.com/c/1 has moved from refs/heads/main to refs/heads/new")
 		})
 		Convey("Cancels Run on removed trigger", func() {
 			newCI := gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
 			So(trigger.Find(newCI, cfg.GetConfigGroups()[0]), ShouldBeNil)
 			updateCL(newCI, aplConfigOK, accessOK)
-			runAndVerifyCancelled()
+			runAndVerifyCancelled("the trigger on https://x-review.example.com/c/1 has been removed")
 		})
 		Convey("Cancels Run on changed mode", func() {
 			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
-			runAndVerifyCancelled()
+			runAndVerifyCancelled("the triggering vote on https://x-review.example.com/c/1 has requested a different run mode: DRY_RUN")
 		})
 		Convey("Cancels Run on change of triggering time", func() {
 			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime.Add(2*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
-			runAndVerifyCancelled()
+			runAndVerifyCancelled(fmt.Sprintf("the timestamp of the triggering vote on https://x-review.example.com/c/1 has changed from %s to %s", triggerTime, triggerTime.Add(2*time.Minute)))
 		})
 
 		Convey("Change of access level to the CL", func() {
@@ -190,7 +192,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					Name: "other-project", ConfigGroupIds: []string{"other-group"},
 				})
 				updateCL(ci, ac, accessOK)
-				runAndVerifyCancelled()
+				runAndVerifyCancelled("no longer have access to https://x-review.example.com/c/1: watched not only by this project")
 			})
 			Convey("wait if code review access was just lost, potentially due to eventual consistency", func() {
 				noAccessAt := ct.Clock.Now().Add(42 * time.Second)
@@ -217,7 +219,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					lProject: {NoAccessTime: timestamppb.New(ct.Clock.Now())},
 				}}
 				updateCL(ci, aplConfigOK, acc)
-				runAndVerifyCancelled()
+				runAndVerifyCancelled("no longer have access to https://x-review.example.com/c/1: code review site denied access")
 			})
 			Convey("wait if access level is unknown", func() {
 				cl.Snapshot = nil

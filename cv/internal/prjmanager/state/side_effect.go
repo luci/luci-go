@@ -16,6 +16,7 @@ package state
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -107,8 +108,7 @@ func (c *CancelIncompleteRuns) Do(ctx context.Context) error {
 		for _, id := range c.RunIDs {
 			id := id
 			work <- func() error {
-				// TODO(tandrii): pass "Project disabled" as a reason.
-				return c.RunNotifier.Cancel(ctx, id)
+				return c.RunNotifier.Cancel(ctx, id, fmt.Sprintf("CV is disabled for LUCI Project %q", id.LUCIProject()))
 			}
 		}
 	})
