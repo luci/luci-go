@@ -25,15 +25,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 )
 
-// NewQueryWithLUCIProject returns a query for Run entities that belongs
-// to the given LUCI Project.
-func NewQueryWithLUCIProject(ctx context.Context, project string) *datastore.Query {
-	min, max := rangeOfProjectIDs(project)
-	return datastore.NewQuery(RunKind).
-		Gt("__key__", datastore.MakeKey(ctx, RunKind, min)).
-		Lt("__key__", datastore.MakeKey(ctx, RunKind, max))
-}
-
 // CLQueryBuilder builds datastore.Query for searching Runs of a given CL.
 type CLQueryBuilder struct {
 	// CLID of the CL being searched for. Required.

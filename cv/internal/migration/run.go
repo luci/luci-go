@@ -36,7 +36,7 @@ import (
 )
 
 func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.ActiveRun, error) {
-	runs, err := fetchRunsWithStatus(ctx, project, run.Status_RUNNING)
+	runs, err := run.ProjectQueryBuilder{Project: project, Status: run.Status_RUNNING}.LoadRuns(ctx)
 	switch {
 	case err != nil:
 		return nil, err
@@ -159,15 +159,6 @@ func makeActiveRun(ctx context.Context, r *run.Run) (*migrationpb.ActiveRun, err
 		Cls:     mcls,
 		FyiDeps: fyiDeps,
 	}, nil
-}
-
-func fetchRunsWithStatus(ctx context.Context, project string, status run.Status) ([]*run.Run, error) {
-	var runs []*run.Run
-	q := run.NewQueryWithLUCIProject(ctx, project).Eq("Status", status)
-	if err := datastore.GetAll(ctx, q, &runs); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch Run entities").Tag(transient.Tag).Err()
-	}
-	return runs, nil
 }
 
 // fetchAttempt loads Run from Datastore given its CQD attempt key hash.

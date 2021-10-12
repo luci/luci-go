@@ -407,14 +407,16 @@ func TestComponentsActions(t *testing.T) {
 			}
 
 			findRunOf := func(clid int) *run.Run {
-				var runs []*run.Run
-				So(datastore.GetAll(ctx, run.NewQueryWithLUCIProject(ctx, lProject), &runs), ShouldBeNil)
-				for _, r := range runs {
-					if r.CLs[0] == common.CLID(clid) {
-						return r
-					}
+				switch runs, err := (run.CLQueryBuilder{CLID: common.CLID(clid)}).LoadRuns(ctx); {
+				case err != nil:
+					panic(err)
+				case len(runs) == 0:
+					return nil
+				case len(runs) > 1:
+					panic(fmt.Errorf("%d Runs for given CL", len(runs)))
+				default:
+					return runs[0]
 				}
-				return nil
 			}
 
 			Convey("100% success", func() {
