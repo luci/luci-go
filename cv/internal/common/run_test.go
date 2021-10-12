@@ -85,6 +85,22 @@ func TestID(t *testing.T) {
 				So(err, ShouldErrLike, "must be in the form")
 			})
 		})
+
+		Convey("Vallidate", func() {
+			id := MakeRunID("infra", time.Date(2020, 01, 01, 1, 1, 1, 2, time.UTC), 1, []byte{31, 44})
+			So(id.Validate(), ShouldBeNil)
+			minimal := RunID("i/1-1-a")
+			So(minimal.Validate(), ShouldBeNil)
+
+			So(RunID("i/1-1-").Validate(), ShouldErrLike, "digest")
+			So(RunID("i/1-1").Validate(), ShouldErrLike, "version")
+			So(RunID("i/1").Validate(), ShouldErrLike, "InverseTS")
+			So(RunID("/1-1-a").Validate(), ShouldErrLike, "project")
+
+			So(RunID("+/1-1-a").Validate(), ShouldErrLike, "invalid character at 0 (+)")
+			So(RunID("a/a-1-a").Validate(), ShouldErrLike, "InverseTS")
+			So(RunID("a/1-b-a").Validate(), ShouldErrLike, "version")
+		})
 	})
 }
 

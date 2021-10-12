@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config"
 )
 
 // RunID is an unique RunID to identify a Run in CV.
@@ -61,6 +62,63 @@ func MakeRunID(luciProject string, createTime time.Time, digestVersion int, clsD
 	}
 	id := fmt.Sprintf("%s/%013d-%d-%s", luciProject, ms, digestVersion, hex.EncodeToString(clsDigest))
 	return RunID(id)
+}
+
+// Validate returns an error if Run ID is not valid.
+//
+// If validate returns nil,
+//  * it means all other methods on RunID will work fine instead of panicking,
+//  * it doesn't mean Run ID is possible to generate using the MakeRunID.
+//    This is especially relevant in CV tests, where specifying short Run IDs is
+//    useful.
+func (id RunID) Validate() (err error) {
+	defer func() {
+		if err != nil {
+			err = errors.Annotate(err, "malformed RunID %q", id).Err()
+		}
+	}()
+
+	allDigits := func(digits string) bool {
+		for _, r := range digits {
+			if r < '0' || r > '9' {
+				return false
+			}
+		}
+		return true
+	}
+
+	s := string(id)
+	i := strings.IndexRune(s, '/')
+	if i < 1 {
+		return fmt.Errorf("lacks LUCI project")
+	}
+	if err := config.ValidateProjectName(s[:i]); err != nil {
+		return fmt.Errorf("invalid LUCI project part: %s", err)
+	}
+	s = s[i+1:]
+
+	i = strings.IndexRune(s, '-')
+	if i < 1 {
+		return fmt.Errorf("lacks InverseTS part")
+	}
+	if !allDigits(s[:i]) {
+		return fmt.Errorf("invalid InverseTS")
+	}
+
+	s = s[i+1:]
+	i = strings.IndexRune(s, '-')
+	if i < 1 {
+		return fmt.Errorf("lacks version")
+	}
+	if !allDigits(s[:i]) {
+		return fmt.Errorf("invalid version")
+	}
+
+	s = s[i+1:]
+	if len(s) == 0 {
+		return fmt.Errorf("lacks digest")
+	}
+	return nil
 }
 
 // LUCIProject this Run belongs to.
