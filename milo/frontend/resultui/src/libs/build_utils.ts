@@ -27,11 +27,14 @@ export function getURLPathForBuild(build: Pick<Build, 'builder' | 'number' | 'id
 }
 
 export function getURLPathForBuilder(builder: BuilderID): string {
-  return `/p/${builder.project}/builders/${builder.bucket}/${builder.builder}`;
+  return (
+    `${getURLPathForProject(builder.project)}/builders/${encodeURIComponent(builder.bucket)}` +
+    `/${encodeURIComponent(builder.builder)}`
+  );
 }
 
 export function getURLPathForProject(proj: string): string {
-  return `/p/${proj}`;
+  return `/p/${encodeURIComponent(proj)}`;
 }
 
 export function getLegacyURLPathForBuild(builder: BuilderID, buildNumOrId: string) {

@@ -14,7 +14,13 @@
 
 import { assert } from 'chai';
 
-import { getBuildbucketLink, getLogdogRawUrl, getSafeUrlFromBuildset } from './build_utils';
+import {
+  getBuildbucketLink,
+  getLogdogRawUrl,
+  getSafeUrlFromBuildset,
+  getURLPathForBuilder,
+  getURLPathForProject,
+} from './build_utils';
 
 describe('Build Utils Tests', () => {
   describe('Get Logdog URL', () => {
@@ -69,6 +75,21 @@ describe('Build Utils Tests', () => {
         url,
         'https://chromium.googlesource.com/chromium/src/+/6ae002709a6e0df5f61428d962e44a62920e76e1'
       );
+    });
+  });
+
+  describe('getURLPathForBuilder', () => {
+    it('should encode the path components', () => {
+      assert.strictEqual(
+        getURLPathForBuilder({ project: 'test project', bucket: 'test bucket', builder: 'test builder' }),
+        '/p/test%20project/builders/test%20bucket/test%20builder'
+      );
+    });
+  });
+
+  describe('getURLPathForProject', () => {
+    it('should encode the project', () => {
+      assert.strictEqual(getURLPathForProject('test project'), '/p/test%20project');
     });
   });
 });
