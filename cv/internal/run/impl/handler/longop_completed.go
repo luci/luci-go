@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -25,6 +26,10 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
+
+// longOpGracePeriod is additional time waited for the long operation
+// completion event to be received before force-expiring it.
+const longOpGracePeriod = time.Minute
 
 // OnLongOpCompleted implements Handler interface.
 func (impl *Impl) OnLongOpCompleted(ctx context.Context, rs *state.RunState, result *eventpb.LongOpCompleted) (*Result, error) {
@@ -64,9 +69,9 @@ func (impl *Impl) OnLongOpCompleted(ctx context.Context, rs *state.RunState, res
 // processExpiredLongOps is a fail-safe for abnormal cases to ensure that a Run
 // doesn't remain stuck.
 func (impl *Impl) processExpiredLongOps(ctx context.Context, rs *state.RunState) (*Result, error) {
-	now := clock.Now(ctx)
+	cutoff := clock.Now(ctx).Add(-longOpGracePeriod)
 	for opID, op := range rs.OngoingLongOps.GetOps() {
-		if op.GetDeadline().AsTime().Before(now) {
+		if op.GetDeadline().AsTime().Before(cutoff) {
 			logging.Warningf(ctx, "Long operation %q has expired at %s", opID, op.GetDeadline().AsTime())
 			// In practice, there should be at most 1 ongoing long op.
 			// TODO(tandrii): once `Result` objects can be combined, process all

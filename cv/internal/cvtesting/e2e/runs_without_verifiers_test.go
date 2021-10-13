@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -840,5 +842,101 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			Status:      run.Status_SUCCEEDED,
 			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
 		})
+	})
+}
+
+func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV creates 2 CLs Full Run, but fails to post start message on one of the CLs", t, func() {
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "g-review.example.com"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange1 = 11
+		const gChange2 = 22
+
+		// Start CQDaemon.
+		ct.MustCQD(ctx, lProject)
+
+		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
+		prjcfgtest.Create(ctx, lProject, cfg)
+
+		tStart := ct.Clock.Now()
+
+		// Create mutually dependent CLs using Cq-Depend git footer.
+		ci1 := gf.CI(
+			gChange1, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.CQ(+2, tStart, gf.U("user-1")),
+			gf.Desc(fmt.Sprintf("This is the first CL\n\nCq-Depend: %d", gChange2)),
+		)
+		ci2 := gf.CI(
+			gChange2, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.CQ(+2, tStart, gf.U("user-1")),
+			gf.Desc(fmt.Sprintf("This is the second CL\n\nCq-Depend: %d", gChange1)),
+		)
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci1, ci2))
+		ct.LogPhase(ctx, "Set up gChange2 with no permission to post messages")
+		ct.GFake.MutateChange(gHost, gChange2, func(c *gf.Change) {
+			cnt := 0
+			c.ACLs = func(op gf.Operation, luciProject string) *status.Status {
+				switch op {
+				case gf.OpRead, gf.OpAlterVotesOfOthers:
+					return status.New(codes.OK, "")
+				case gf.OpReview:
+					cnt++
+					if cnt == 1 {
+						return status.New(codes.FailedPrecondition, "unlikely fluke rejecting the start message")
+					}
+					return status.New(codes.OK, "")
+				default:
+					panic(fmt.Errorf("Unknown op: %d", op))
+				}
+			}
+		})
+
+		ct.LogPhase(ctx, "CV discovers all CLs")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool {
+			b1 := ct.LoadGerritCL(ctx, gHost, gChange1) != nil
+			b2 := ct.LoadGerritCL(ctx, gHost, gChange2) != nil
+			return b1 && b2
+		})
+
+		ct.LogPhase(ctx, "CV starts a new Run")
+		var r *run.Run
+		ct.RunUntil(ctx, func() bool {
+			r = ct.EarliestCreatedRunOf(ctx, lProject)
+			return r != nil
+		})
+		So(r.Mode, ShouldEqual, run.FullRun)
+		So(r.CLs, ShouldHaveLength, 2)
+
+		ct.LogPhase(ctx, "CV posts a message on the first CL, but fails on another CL")
+		ct.RunUntil(ctx, func() bool {
+			return ct.LastMessage(gHost, gChange1) != nil
+		})
+
+		ct.LogPhase(ctx, "CV fails the Run")
+		ct.RunUntil(ctx, func() bool {
+			r = ct.LoadRun(ctx, r.ID)
+			return run.IsEnded(r.Status)
+		})
+		So(r.Status, ShouldEqual, run.Status_FAILED)
+		// Both CLs should have the failure message, but first CL should also have
+		// the starting message.
+		const expecteFailMsg = "Full run: This CL failed the CQ full run.\n\nFailed to post the starting message"
+		So(ct.LastMessage(gHost, gChange2).GetMessage(), ShouldContainSubstring, expecteFailMsg)
+		msgs1 := ct.GFake.GetChange(gHost, gChange1).Info.GetMessages()
+		So(msgs1[len(msgs1)-1].GetMessage(), ShouldContainSubstring, expecteFailMsg)
+		So(msgs1[len(msgs1)-2].GetMessage(), ShouldContainSubstring, "CQ is trying the patch.")
 	})
 }

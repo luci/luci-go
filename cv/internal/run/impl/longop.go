@@ -109,7 +109,7 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongO
 		// Just retry.
 		return err
 	case errors.Unwrap(err) == dctx.Err() && result == nil:
-		// Failed due to hitting a deadline, so set an appropriate result by default.
+		logging.Warningf(ctx, "Failed long op due to hitting a deadline, setting result as EXPIRED")
 		result = &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_EXPIRED}
 		fallthrough
 	default:
