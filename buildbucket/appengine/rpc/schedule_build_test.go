@@ -2776,7 +2776,7 @@ func TestScheduleBuild(t *testing.T) {
 				})
 			})
 
-			Convey("luciexe", func() {
+			Convey("luciexe (experiment)", func() {
 				req := &pb.ScheduleBuildRequest{
 					Experiments: map[string]bool{
 						bb.ExperimentBBAgent: true,
@@ -2798,6 +2798,30 @@ func TestScheduleBuild(t *testing.T) {
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"luciexe"},
 				})
+				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
+			})
+
+			Convey("luciexe (explicit)", func() {
+				req := &pb.ScheduleBuildRequest{}
+				normalizeSchedule(req)
+				ent := &model.Build{
+					Proto: &pb.Build{
+						Exe: &pb.Executable{
+							Cmd: []string{"luciexe"},
+						},
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, nil, ent.Proto)
+				setExperimentsFromProto(req, nil, ent)
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					Cmd: []string{"luciexe"},
+				})
+				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
 			})
 
 			Convey("cmd > experiment", func() {

@@ -624,12 +624,6 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 		exps[exp] = en
 	}
 
-	for exp, en := range exps {
-		if en {
-			build.Input.Experiments = append(build.Input.Experiments, exp)
-		}
-	}
-
 	// For now, continue to set legacy field values from the experiments.
 	if en := exps[bb.ExperimentBBCanarySoftware]; en {
 		build.Canary = true
@@ -637,7 +631,6 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	if en := exps[bb.ExperimentNonProduction]; en {
 		build.Input.Experimental = true
 	}
-	sort.Strings(build.Input.Experiments)
 
 	// Set experimental values.
 	if exps[bb.ExperimentBBAgent] {
@@ -650,12 +643,24 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	if len(build.Exe.Cmd) == 0 {
 		build.Exe.Cmd = []string{"recipes"}
 	}
+
 	if exps[bb.ExperimentNonProduction] {
 		// Request > experimental > proto precedence.
 		if req.GetPriority() == 0 {
 			build.Infra.Swarming.Priority = 255
 		}
 	}
+
+	// We always want to set the bbagent experiment if we selected bbagent.
+	exps[bb.ExperimentBBAgent] = build.Exe.Cmd[0] != "recipes"
+
+	for exp, en := range exps {
+		if en {
+			build.Input.Experiments = append(build.Input.Experiments, exp)
+		}
+	}
+	sort.Strings(build.Input.Experiments)
+
 }
 
 // defBuilderCacheTimeout is the default value for WaitForWarmCache in the
