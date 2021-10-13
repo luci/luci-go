@@ -222,3 +222,19 @@ func (rs *RunState) RemoveCompletedLongOp(opID string) {
 	rs.OngoingLongOps = proto.Clone(rs.OngoingLongOps).(*run.OngoingLongOps)
 	delete(rs.OngoingLongOps.Ops, opID)
 }
+
+// LogInfo adds a generic LogEntry visible in debug UI as is.
+//
+// Don't use for adding a complicated info formatted into the message string,
+// use a specialized LogEntry type instead.
+func (rs *RunState) LogInfo(ctx context.Context, label, message string) {
+	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+		Time: timestamppb.New(clock.Now(ctx)),
+		Kind: &run.LogEntry_Info_{
+			Info: &run.LogEntry_Info{
+				Label:   label,
+				Message: message,
+			},
+		},
+	})
+}

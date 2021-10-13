@@ -17,12 +17,10 @@ package handler
 import (
 	"context"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -35,8 +33,8 @@ import (
 )
 
 const (
-	cqdVerifiedLabel           = "CQD Verified"
-	cqdVerificationFailedLabel = "CQD Verification Failed"
+	logEntryCQDVerifiedLabel      = "CQD Verified"
+	logEntryCQDVerificationFailed = "CQD Verification Failed"
 )
 
 // OnCQDVerificationCompleted implements Handler interface.
@@ -66,15 +64,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	switch vr.Payload.Action {
 	case migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT:
 		rs.Status = run.Status_WAITING_FOR_SUBMISSION
-		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
-			Time: timestamppb.New(clock.Now(ctx)),
-			Kind: &run.LogEntry_Info_{
-				Info: &run.LogEntry_Info{
-					Label:   cqdVerifiedLabel,
-					Message: usertext.OnFullRunSucceeded(rs.Mode),
-				},
-			},
-		})
+		rs.LogInfo(ctx, logEntryCQDVerifiedLabel, usertext.OnFullRunSucceeded(rs.Mode))
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
 		msg, reason := usertext.OnRunSucceeded(rs.Mode)
@@ -87,15 +77,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
 			return nil, err
 		}
-		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
-			Time: timestamppb.New(clock.Now(ctx)),
-			Kind: &run.LogEntry_Info_{
-				Info: &run.LogEntry_Info{
-					Label:   cqdVerifiedLabel,
-					Message: meta.message,
-				},
-			},
-		})
+		rs.LogInfo(ctx, logEntryCQDVerifiedLabel, meta.message)
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
@@ -110,15 +92,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
 			return nil, err
 		}
-		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
-			Time: timestamppb.New(clock.Now(ctx)),
-			Kind: &run.LogEntry_Info_{
-				Info: &run.LogEntry_Info{
-					Label:   cqdVerificationFailedLabel,
-					Message: meta.message,
-				},
-			},
-		})
+		rs.LogInfo(ctx, logEntryCQDVerificationFailed, meta.message)
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	default:
