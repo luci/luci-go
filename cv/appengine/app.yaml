@@ -37,6 +37,9 @@ handlers:
 - url: /static/jquery
   static_dir: static/jquery
   secure: always
+- url: /static/images
+  static_dir: static/images
+  secure: always
 - url: /.*
   script: auto
   secure: always
