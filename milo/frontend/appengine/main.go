@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -46,6 +47,7 @@ func main() {
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
+		analytics.NewModuleFromFlags(),
 	}
 	datastore.EnableSafeGet()
 	server.Main(nil, modules, func(srv *server.Server) error {
