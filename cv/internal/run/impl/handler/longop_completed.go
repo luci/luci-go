@@ -34,8 +34,22 @@ func (impl *Impl) OnLongOpCompleted(ctx context.Context, rs *state.RunState, res
 		return &Result{State: rs}, nil
 	case runStatus == run.Status_PENDING:
 		return nil, errors.Reason("expected at least RUNNING status, got %s", runStatus).Err()
+	}
+
+	op := rs.OngoingLongOps.GetOps()[result.GetOperationId()]
+	if op == nil {
+		logging.Warningf(ctx, "Long operation %q has no entry in Run (maybe already expired?)", result.GetOperationId())
+		return &Result{State: rs}, nil
+	}
+
+	switch w := op.GetWork().(type) {
+	case *run.OngoingLongOps_Op_PostStartMessage:
+		return impl.onCompletedPostStartMessage(ctx, rs, op, result)
 	default:
-		// TODO handle.
+		logging.Errorf(ctx, "Unknown long operation %q work type %T finished with:\n%s", result.GetOperationId(), w, result)
+		// Remove the long op from the Run anyway, and move on.
+		rs = rs.ShallowCopy()
+		rs.RemoveCompletedLongOp(result.GetOperationId())
 		return &Result{State: rs}, nil
 	}
 }
