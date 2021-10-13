@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -33,6 +34,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/configs/validation"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration"
@@ -60,6 +62,7 @@ func TestCreatesSingularRun(t *testing.T) {
 		const gChange = 33
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg.CqStatusHost = validation.CQStatusHostPublic
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
@@ -82,12 +85,19 @@ func TestCreatesSingularRun(t *testing.T) {
 
 		// Under normal conditions, this would be done by the same TQ handler that
 		// creates the Run, but with flaky Datastore this may come late.
-		ct.LogPhase(ctx, "PM incorporates Run into component")
+		ct.LogPhase(ctx, "CV Project Manager incorporates Run into component")
 		ct.RunUntil(ctx, func() bool {
 			cs := ct.LoadProject(ctx, lProject).State.GetComponents()
 			return len(cs) == 1 && len(cs[0].GetPruns()) == 1
 		})
 		So(ct.LoadProject(ctx, lProject).State.GetComponents()[0].GetPruns()[0].GetId(), ShouldResemble, string(r.ID))
+
+		ct.LogPhase(ctx, "CV posts starting message")
+		ct.RunUntil(ctx, func() bool {
+			return ct.LastMessage(gHost, gChange) != nil
+		})
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring,
+			fmt.Sprintf("CQ is trying the patch.\n\nFollow status at: https://luci-change-verifier.appspot.com/ui/run/%s\n\nBot data: {", r.ID))
 
 		ct.LogPhase(ctx, "User cancels the Run")
 		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
@@ -106,6 +116,68 @@ func TestCreatesSingularRun(t *testing.T) {
 		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
 		So(ct.LoadProject(ctx, lProject).State.GetPcls(), ShouldBeEmpty)
 		So(ct.LoadProject(ctx, lProject).State.GetComponents(), ShouldBeEmpty)
+	})
+}
+
+func TestCreatesSingularRunLegacy(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV creates 1 CL Run with CQDaemon posting starting message", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "g-review"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange = 33
+
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		prjcfgtest.Create(ctx, lProject, cfg)
+
+		ct.LogPhase(ctx, "Make CQDaemon in charge of posting the start message")
+		ct.InitialMigrationSettings.GetUseCvStartMessage().ProjectRegexpExclude = []string{".+"}
+		ct.UpdateMigrationConfig(ctx, ct.InitialMigrationSettings)
+
+		tStart := ct.Clock.Now()
+
+		ct.LogPhase(ctx, "User uploads a CL and votes CQ+1")
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef), gf.PS(1),
+			gf.Owner("user-1"),
+			gf.Updated(tStart), gf.CQ(+1, tStart, gf.U("user-1")),
+		)))
+
+		ct.LogPhase(ctx, "CV notices CL and starts the Run")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		var r *run.Run
+		ct.RunUntil(ctx, func() bool {
+			r = ct.EarliestCreatedRunOf(ctx, lProject)
+			return r != nil && r.Status == run.Status_RUNNING
+		})
+
+		ct.LogPhase(ctx, "CV doesn't post the message")
+		ct.RunUntil(ctx, func() bool {
+			r := ct.LoadRun(ctx, r.ID)
+			return clock.Since(ctx, tStart) > time.Hour && len(r.OngoingLongOps.GetOps()) == 0
+		})
+
+		ct.LogPhase(ctx, "User uploads new patchset and CV cancels the Run")
+		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
+			now := ct.Clock.Now()
+			gf.PS(2)(c.Info)
+			gf.CQ(+0, now, gf.U("user-1"))(c.Info)
+			gf.Updated(now)(c.Info)
+		})
+		ct.RunUntil(ctx, func() bool {
+			r = ct.LoadRun(ctx, r.ID)
+			return run.IsEnded(r.Status)
+		})
+
+		ct.LogPhase(ctx, "But no message was posted on the CL")
+		So(ct.GFake.GetChange(gHost, gChange).Info.GetMessages(), ShouldBeEmpty)
 	})
 }
 
