@@ -29,6 +29,7 @@ import (
 
 	nativeDatastore "cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
@@ -54,10 +55,12 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
@@ -104,6 +107,11 @@ type Test struct {
 	// with limited CPU resources.
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
+
+	// InitialMigrationSettings controls CQD -> CV migration.
+	//
+	// If you need to change them, do call UpdateMigrationConfig().
+	InitialMigrationSettings *migrationpb.Settings
 
 	// cleanupFuncs are executed in reverse order in cleanup().
 	cleanupFuncs []func()
@@ -172,6 +180,22 @@ func (t *Test) SetUp() (context.Context, func()) {
 	t.TSMonStore = store.NewInMemory(&target.Task{})
 	tsmon.GetState(ctx).SetStore(t.TSMonStore)
 
+	if t.InitialMigrationSettings == nil {
+		t.InitialMigrationSettings = &migrationpb.Settings{
+			ApiHosts: []*migrationpb.Settings_ApiHost{{
+				Host:          t.Env.LogicalHostname,
+				Prod:          true,
+				ProjectRegexp: []string{".+"},
+			}},
+			UseCvStartMessage: &migrationpb.Settings_UseCVStartMessage{
+				ProjectRegexp: []string{".+"},
+			},
+		}
+	}
+	if err := srvcfg.SetTestMigrationConfig(ctx, proto.Clone(t.InitialMigrationSettings).(*migrationpb.Settings)); err != nil {
+		panic(err)
+	}
+
 	return ctx, t.cleanup
 }
 
@@ -211,6 +235,15 @@ func (t *Test) TSMonSentDistr(ctx context.Context, m types.Metric, fieldVals ...
 		panic(fmt.Errorf("metric %q value is not a %T, but %T", m.Info().Name, d, v))
 	}
 	return d
+}
+
+// UpdateMigrationConfig updates the config and due to its caching, pushes time
+// forward to invalidate old cache.
+func (t *Test) UpdateMigrationConfig(ctx context.Context, cfg *migrationpb.Settings) {
+	if err := srvcfg.SetTestMigrationConfig(ctx, cfg); err != nil {
+		panic(err)
+	}
+	t.Clock.Add(time.Minute)
 }
 
 func (t *Test) setMaxDuration() {

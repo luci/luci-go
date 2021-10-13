@@ -30,7 +30,6 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
@@ -61,7 +60,6 @@ func TestPostStartMessage(t *testing.T) {
 		)
 
 		// TODO(crbug/1240786): remove this setup after CV does 100% of posting.
-		ct.Env.LogicalHostname = "cv.example.com"
 		migCfg := &migrationpb.Settings{
 			ApiHosts: []*migrationpb.Settings_ApiHost{{
 				Host:          ct.Env.LogicalHostname,
@@ -72,7 +70,7 @@ func TestPostStartMessage(t *testing.T) {
 				ProjectRegexp: []string{lProject},
 			},
 		}
-		So(srvcfg.SetTestMigrationConfig(ctx, migCfg), ShouldBeNil)
+		ct.UpdateMigrationConfig(ctx, migCfg)
 		yes, err := migrationcfg.IsCVInChargeOfPostingStartMessage(ctx, ct.Env, lProject)
 		So(err, ShouldBeNil)
 		So(yes, ShouldBeTrue)
@@ -209,8 +207,7 @@ func TestPostStartMessage(t *testing.T) {
 		// TODO(crbug/1240786): remove this setup after CV does 100% of posting.
 		Convey("Happy path with CQDaemon in charge", func() {
 			migCfg.GetUseCvStartMessage().ProjectRegexpExclude = []string{".+"}
-			So(srvcfg.SetTestMigrationConfig(ctx, migCfg), ShouldBeNil)
-			ct.Clock.Add(5 * time.Minute) // expire servicecfg cache.
+			ct.UpdateMigrationConfig(ctx, migCfg)
 			yes, err := migrationcfg.IsCVInChargeOfPostingStartMessage(ctx, ct.Env, lProject)
 			So(err, ShouldBeNil)
 			So(yes, ShouldBeFalse)
