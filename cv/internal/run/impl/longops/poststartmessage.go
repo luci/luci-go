@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
+	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/usertext"
@@ -160,6 +161,15 @@ func (op *PostStartMessageOp) prepare(ctx context.Context) error {
 func (op *PostStartMessageOp) doCL(ctx context.Context, rcl *run.RunCL) error {
 	if rcl.Detail.GetGerrit() == nil {
 		panic(fmt.Errorf("CL %d is not a Gerrit CL", rcl.ID))
+	}
+
+	// TODO(crbug/1240786): delete once CV does this in all projects.
+	switch yes, err := migrationcfg.IsCVInChargeOfPostingStartMessage(ctx, op.Env, op.Run.ID.LUCIProject()); {
+	case err != nil:
+		return err
+	case !yes:
+		logging.Warningf(ctx, "crbug/1240786: not posting start message on %s, expecting CQDaemon to do it", rcl.ExternalID)
+		return nil
 	}
 
 	if op.IsCancelRequested() {

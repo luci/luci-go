@@ -27,13 +27,16 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 
@@ -56,6 +59,23 @@ func TestPostStartMessage(t *testing.T) {
 			gChange1 = 111
 			gChange2 = 222
 		)
+
+		// TODO(crbug/1240786): remove this setup after CV does 100% of posting.
+		ct.Env.LogicalHostname = "cv.example.com"
+		migCfg := &migrationpb.Settings{
+			ApiHosts: []*migrationpb.Settings_ApiHost{{
+				Host:          ct.Env.LogicalHostname,
+				Prod:          true,
+				ProjectRegexp: []string{lProject},
+			}},
+			UseCvStartMessage: &migrationpb.Settings_UseCVStartMessage{
+				ProjectRegexp: []string{lProject},
+			},
+		}
+		So(srvcfg.SetTestMigrationConfig(ctx, migCfg), ShouldBeNil)
+		yes, err := migrationcfg.IsCVInChargeOfPostingStartMessage(ctx, ct.Env, lProject)
+		So(err, ShouldBeNil)
+		So(yes, ShouldBeTrue)
 
 		cfg := cfgpb.Config{
 			CqStatusHost: validation.CQStatusHostPublic,
@@ -184,6 +204,28 @@ func TestPostStartMessage(t *testing.T) {
 			So(ci, gf.ShouldLastMessageContain, "Bot data:")
 			// Should post exactly one message.
 			So(ci.GetMessages(), ShouldHaveLength, 1)
+		})
+
+		// TODO(crbug/1240786): remove this setup after CV does 100% of posting.
+		Convey("Happy path with CQDaemon in charge", func() {
+			migCfg.GetUseCvStartMessage().ProjectRegexpExclude = []string{".+"}
+			So(srvcfg.SetTestMigrationConfig(ctx, migCfg), ShouldBeNil)
+			ct.Clock.Add(5 * time.Minute) // expire servicecfg cache.
+			yes, err := migrationcfg.IsCVInChargeOfPostingStartMessage(ctx, ct.Env, lProject)
+			So(err, ShouldBeNil)
+			So(yes, ShouldBeFalse)
+
+			op := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))))
+			res, err := op.Do(ctx)
+			So(err, ShouldBeNil)
+			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+			So(res.GetPostStartMessage(), ShouldResembleProto, &eventpb.LongOpCompleted_PostStartMessage{
+				Posted: clidsOf(gChange1),
+			})
+
+			ci := ct.GFake.GetChange(gHost, gChange1).Info
+			// Should not actually post anything.
+			So(ci.GetMessages(), ShouldHaveLength, 0)
 		})
 
 		Convey("Happy path with multiple CLs", func() {
