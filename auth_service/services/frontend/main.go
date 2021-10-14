@@ -105,12 +105,12 @@ func main() {
 		}
 
 		srv.Routes.GET("/", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", nil)
+			http.Redirect(ctx.Writer, ctx.Request, "/groups", http.StatusFound)
 		})
-		srv.Routes.GET("/auth/groups", mw, func(ctx *router.Context) {
+		srv.Routes.GET("/groups", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Context, ctx.Writer, "pages/groups.html", nil)
 		})
-		srv.Routes.GET("/auth/ip_allowlists", mw, func(ctx *router.Context) {
+		srv.Routes.GET("/ip_allowlists", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Context, ctx.Writer, "pages/ip_allowlists.html", nil)
 		})
 		return nil
