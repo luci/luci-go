@@ -34,6 +34,14 @@ groups {
 	name: "auth-service-access"
 	members: "user:cjacomet@google.com"
 	members: "user:vadimsh@google.com"
+
+	# ChOps Security Core team
+	members: "user:jclinton@google.com"
+	members: "user:akashmukherjee@google.com"
+	members: "user:sumakasa@google.com"
+	members: "user:xinyuoffline@google.com"
+	members: "user:yulanlin@google.com"
+	members: "user:rnasnas@google.com"
 }
 
 # prpc CLI tool client ID.
