@@ -85,9 +85,9 @@ type Project struct {
 	//
 	// The template is interpreted as a mustache template and the following
 	// variables are available:
-	// * {{{ builder.project }}}
-	// * {{{ builder.bucket }}}
-	// * {{{ builder.builder }}}
+	// * {{{ build.builder.project }}}
+	// * {{{ build.builder.bucket }}}
+	// * {{{ build.builder.builder }}}
 	// * {{{ milo_build_url }}}
 	// * {{{ milo_builder_url }}}
 	//
