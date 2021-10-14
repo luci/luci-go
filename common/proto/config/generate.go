@@ -17,10 +17,10 @@
 // Copied from:
 //
 // Repo: https://chromium.googlesource.com/infra/luci/luci-py/
-// Revision: c4a61d86f3edfcdd2c34425ab15deb52d760911a
+// Revision: 17d35b0688d1183903da223c30049df707838cd1
 // Path: appengine/components/components/config/proto/*.proto
 //
-// Modification: added luci.file_metadata annotation.
+// Modification: added luci.* options.
 package config
 
 //go:generate cproto
