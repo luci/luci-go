@@ -63,6 +63,11 @@ func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
 			return errors.Reason("wheel %q cannot be the VirtualEnv package", w.Name).Err()
 		}
 
+		// If this package doesn't match the tag set, skip it.
+		if !PackageMatches(w, tags) {
+			continue
+		}
+
 		// If this package has already been included, assert version consistency.
 		if v, ok := packageVersions[w.Name]; ok {
 			if v != w.Version {
@@ -70,11 +75,6 @@ func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
 			}
 
 			// This package has already been included, so we can ignore it.
-			continue
-		}
-
-		// If this package doesn't match the tag set, skip it.
-		if !PackageMatches(w, tags) {
 			continue
 		}
 

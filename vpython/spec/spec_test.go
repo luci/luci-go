@@ -139,6 +139,21 @@ func TestNormalizeAndHash(t *testing.T) {
 				env.Spec.Wheel = []*vpython.Spec_Package{pkgFoo, pkgFooV2, pkgFoo, pkgBar, pkgBaz}
 				So(NormalizeEnvironment(&env), ShouldErrLike, "multiple versions for package")
 			})
+
+			Convey(`Will normalize if there is a duplicate wheel with a different version, but it doesn't match.`, func() {
+				env.Pep425Tag = append(env.Pep425Tag, maybeTag)
+
+				pkgMaybe := &vpython.Spec_Package{Name: "maybe", Version: "3", MatchTag: []*vpython.PEP425Tag{
+					{Python: maybeTag.Python},
+				}}
+
+				pkgSkipped := &vpython.Spec_Package{Name: "maybe", Version: "4", NotMatchTag: []*vpython.PEP425Tag{
+					{Python: otherTag.Python},
+				}}
+
+				env.Spec.Wheel = []*vpython.Spec_Package{pkgMaybe, pkgSkipped}
+				So(NormalizeEnvironment(&env), ShouldBeNil)
+			})
 		})
 	})
 }
