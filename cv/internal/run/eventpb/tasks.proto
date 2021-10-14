@@ -39,7 +39,7 @@ message KickManageRunTask {
   google.protobuf.Timestamp eta = 2;
 }
 
-// DoLongOpTask performs potentially slow work on behalf a Run.
+// ManageRunLongOpTask performs potentially slow work on behalf a Run.
 //
 // A task of this kind is always created transactionally with the Run entity
 // modification recording the operation in OngoingLongOps.
@@ -49,6 +49,13 @@ message KickManageRunTask {
 // events.
 //
 // Queue: "manage-run-long-op".
+message ManageRunLongOpTask {
+  string run_id = 1;
+  string operation_id = 2;
+}
+
+// DoLongOpTask is a legacy ManageRunLongOpTask.
+// TODO(tandrii): remove after migration.
 message DoLongOpTask {
   string run_id = 1;
   string operation_id = 2;

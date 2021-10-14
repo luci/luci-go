@@ -96,7 +96,7 @@ func TestLongOps(t *testing.T) {
 		})
 		// Verify that long op task was enqueued.
 		So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
-			&eventpb.DoLongOpTask{
+			&eventpb.ManageRunLongOpTask{
 				OperationId: opID,
 				RunId:       runID,
 			},
@@ -114,7 +114,7 @@ func TestLongOps(t *testing.T) {
 					So(d.UTC(), ShouldResemble, op.GetDeadline().AsTime())
 					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
 				}
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 				So(called, ShouldBeTrue)
 				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
@@ -134,7 +134,7 @@ func TestLongOps(t *testing.T) {
 					So(opBase.IsCancelRequested(), ShouldBeTrue)
 					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_CANCELLED}, nil
 				}
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 				So(called, ShouldBeTrue)
 				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
@@ -149,7 +149,7 @@ func TestLongOps(t *testing.T) {
 					called = true
 					return &eventpb.LongOpCompleted{}, nil
 				}
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 				So(called, ShouldBeFalse)
 				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
@@ -169,7 +169,7 @@ func TestLongOps(t *testing.T) {
 					So(dctx.Err(), ShouldNotBeNil)
 					return nil, errors.Annotate(dctx.Err(), "somehow treating as permanent failure").Err()
 				}
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 				So(called, ShouldBeTrue)
 				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
@@ -186,7 +186,7 @@ func TestLongOps(t *testing.T) {
 					}
 					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
 				}
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 				So(called, ShouldEqual, 2)
 				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
@@ -203,7 +203,7 @@ func TestLongOps(t *testing.T) {
 					}
 					return &eventpb.LongOpCompleted{}, nil
 				}
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 				So(called, ShouldEqual, 1)
 				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
@@ -219,7 +219,7 @@ func TestLongOps(t *testing.T) {
 						called = true
 						return &eventpb.LongOpCompleted{}, nil
 					}
-					ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 					So(called, ShouldBeFalse)
 					runtest.AssertEventboxEmpty(ctx, runID)
 				})
@@ -232,7 +232,7 @@ func TestLongOps(t *testing.T) {
 						called = true
 						return &eventpb.LongOpCompleted{}, nil
 					}
-					ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.DoLongOpTaskClass))
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 					So(called, ShouldBeFalse)
 					runtest.AssertEventboxEmpty(ctx, runID)
 				})

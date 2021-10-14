@@ -38,8 +38,8 @@ import (
 func (rp *runProcessor) enqueueLongOps(ctx context.Context, r *run.Run, opIDs ...string) error {
 	for _, opID := range opIDs {
 		err := rp.tqDispatcher.AddTask(ctx, &tq.Task{
-			Title: fmt.Sprintf("%s/long-op/%s/%T", r.ID, opID, r.OngoingLongOps.GetOps()[opID].GetWork()),
-			Payload: &eventpb.DoLongOpTask{
+			Title: fmt.Sprintf("%s/%s/%T", r.ID, opID, r.OngoingLongOps.GetOps()[opID].GetWork()),
+			Payload: &eventpb.ManageRunLongOpTask{
 				RunId:       string(r.ID),
 				OperationId: opID,
 			},
@@ -51,7 +51,7 @@ func (rp *runProcessor) enqueueLongOps(ctx context.Context, r *run.Run, opIDs ..
 	return nil
 }
 
-func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.DoLongOpTask) error {
+func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.ManageRunLongOpTask) error {
 	notifyCompleted := func(res *eventpb.LongOpCompleted) error {
 		if res.Status == eventpb.LongOpCompleted_LONG_OP_STATUS_UNSPECIFIED {
 			panic(fmt.Errorf("LongOpCompleted.Status must be set"))
