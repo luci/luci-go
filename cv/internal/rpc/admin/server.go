@@ -677,6 +677,7 @@ func (d *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 		{trans, req.GetPurgeCl()},
 		{false, req.GetRefreshGerritCl()},
 		{false, req.GetRefreshProjectConfig()},
+		{trans, req.GetManageRunLongOp()},
 	}
 
 	chosen := possiblePayloads[0]

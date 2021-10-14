@@ -266,7 +266,7 @@ message RunsResponse {
 }
 
 message ScheduleTaskRequest {
-  // Next tag: 12.
+  // Next tag: 13.
 
   // Exactly one of the following.
   // Not using oneof because it's more congitive load to type for something
@@ -282,6 +282,7 @@ message ScheduleTaskRequest {
   cv.internal.run.bq.ExportRunToBQTask export_run_to_bq = 8;
   cv.internal.run.eventpb.ManageRunTask manage_run = 9;
   cv.internal.run.eventpb.KickManageRunTask kick_manage_run = 10;
+  cv.internal.run.eventpb.ManageRunLongOpTask manage_run_long_op = 12;
 
   // Optional.
   string deduplication_key  = 11;
