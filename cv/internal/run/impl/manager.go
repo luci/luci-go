@@ -128,22 +128,6 @@ func New(
 			return common.TQifyError(ctx, err)
 		},
 	)
-	// TODO(tandrii): delete.
-	n.TasksBinding.DoLongOp.AttachHandler(
-		func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*eventpb.DoLongOpTask)
-			ctx = logging.SetFields(ctx, logging.Fields{
-				"run":       task.GetRunId(),
-				"operation": task.GetOperationId(),
-			})
-			logging.Warningf(ctx, "legacy DoLongOpTask task kind")
-			err := rm.doLongOperation(ctx, &eventpb.ManageRunLongOpTask{
-				RunId:       task.GetRunId(),
-				OperationId: task.GetOperationId(),
-			})
-			return common.TQifyError(ctx, err)
-		},
-	)
 	return rm
 }
 

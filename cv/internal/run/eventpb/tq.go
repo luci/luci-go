@@ -49,9 +49,6 @@ type TasksBinding struct {
 	KickManage      tq.TaskClassRef
 	ManageRunLongOp tq.TaskClassRef
 	TQDispatcher    *tq.Dispatcher
-
-	// TODO(tandrii): delete this legacy.
-	DoLongOp tq.TaskClassRef
 }
 
 // Register registers tasks with the given TQ Dispatcher.
@@ -79,15 +76,6 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 			Queue:     "manage-run-long-op",
 			Kind:      tq.Transactional,
 			// TODO(tandrii): switch to quiet once stable.
-			QuietOnError: false,
-			Quiet:        false,
-		}),
-		// TODO(tandrii): remove once all old tasks are executed.
-		DoLongOp: tqd.RegisterTaskClass(tq.TaskClass{
-			ID:           "do-long-op-run",
-			Prototype:    &DoLongOpTask{},
-			Queue:        "manage-run-long-op",
-			Kind:         tq.Transactional,
 			QuietOnError: false,
 			Quiet:        false,
 		}),

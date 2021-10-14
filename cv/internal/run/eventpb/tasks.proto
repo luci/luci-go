@@ -53,10 +53,3 @@ message ManageRunLongOpTask {
   string run_id = 1;
   string operation_id = 2;
 }
-
-// DoLongOpTask is a legacy ManageRunLongOpTask.
-// TODO(tandrii): remove after migration.
-message DoLongOpTask {
-  string run_id = 1;
-  string operation_id = 2;
-}
