@@ -224,7 +224,10 @@ func (l *longOpCancellationChecker) background(ctx context.Context, opID string,
 		next = next.Add(l.interval)
 		left := next.Sub(clock.Now(ctx))
 		if left > 0 {
-			<-clock.After(ctx, left)
+			if res := <-clock.After(ctx, left); res.Err != nil {
+				// Context got cancelled.
+				break
+			}
 		}
 		r := run.Run{ID: runID}
 		err := datastore.Get(ctx, &r)
