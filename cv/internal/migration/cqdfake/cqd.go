@@ -39,11 +39,6 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 )
 
-// StartingMessage is what CQDaemon fake posts when starting working on a Run.
-//
-// Yes, spelling is right -- this is what CQDaemon posted historically.
-const StartingMessage = "CQ is trying da patch"
-
 type CQDFake struct {
 	LUCIProject string
 	CV          migrationpb.MigrationServer
@@ -290,23 +285,7 @@ func (cqd *CQDFake) addLocked(ctx context.Context, r *migrationpb.ReportedRun) e
 	if cqd.attempts == nil {
 		cqd.attempts = make(map[string]*migrationpb.ReportedRun, 1)
 	}
-	msg := fmt.Sprintf("Run %q | Attempt %q: %s", r.Id, r.Attempt.Key, StartingMessage)
-	for _, cl := range r.Attempt.GerritChanges {
-		req := &migrationpb.PostGerritMessageRequest{
-			Project:    cqd.LUCIProject,
-			AttemptKey: r.Attempt.Key,
-			Host:       cl.Host,
-			Change:     cl.Change,
-			Revision:   "badly-faked-revision",
-			Comment:    msg,
-			SendEmail:  true,
-		}
-		if _, err := cqd.CV.PostGerritMessage(cqd.migrationAPIContext(ctx), req); err != nil {
-			return err
-		}
-	}
 	cqd.attempts[r.Attempt.Key] = proto.Clone(r).(*migrationpb.ReportedRun)
-	logging.Debugf(ctx, "CQD: %s", msg)
 	return nil
 }
 

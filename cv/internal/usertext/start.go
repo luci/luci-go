@@ -24,9 +24,7 @@ import (
 
 // OnRunStarted generates a starting message for humans.
 func OnRunStarted(mode run.Mode) string {
-	// TODO(tandrii): change to CV once CV posting the message sticks in
-	// production, because this may affect user's email filters.
-	const body = "CQ is trying the patch."
+	const body = "CV is trying the patch."
 	switch mode {
 	case run.QuickDryRun:
 		return "Quick dry run: " + body

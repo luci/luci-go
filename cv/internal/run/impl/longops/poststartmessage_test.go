@@ -166,7 +166,7 @@ func TestPostStartMessage(t *testing.T) {
 				Posted: clidsOf(gChange1),
 			})
 
-			So(ct.GFake.GetChange(gHost, gChange1).Info, gf.ShouldLastMessageContain, "CQ is trying the patch.\n\nBot data: ")
+			So(ct.GFake.GetChange(gHost, gChange1).Info, gf.ShouldLastMessageContain, "CV is trying the patch.\n\nBot data: ")
 		})
 
 		Convey("Happy path", func() {
@@ -179,7 +179,7 @@ func TestPostStartMessage(t *testing.T) {
 			})
 
 			ci := ct.GFake.GetChange(gHost, gChange1).Info
-			So(ci, gf.ShouldLastMessageContain, "CQ is trying the patch.\n\nFollow status at:")
+			So(ci, gf.ShouldLastMessageContain, "CV is trying the patch.\n\nFollow status at:")
 			So(ci, gf.ShouldLastMessageContain, "https://luci-change-verifier.appspot.com/ui/run/chromeos/777-1-deadbeef")
 			So(ci, gf.ShouldLastMessageContain, "Bot data:")
 			// Should post exactly one message.
@@ -201,7 +201,7 @@ func TestPostStartMessage(t *testing.T) {
 
 			for _, gChange := range []int{gChange1, gChange2} {
 				ci := ct.GFake.GetChange(gHost, gChange).Info
-				So(ci, gf.ShouldLastMessageContain, "Dry run: CQ is trying the patch.\n\nFollow status at:")
+				So(ci, gf.ShouldLastMessageContain, "Dry run: CV is trying the patch.\n\nFollow status at:")
 				// Should post exactly one message.
 				So(ci.GetMessages(), ShouldHaveLength, 1)
 				bd, ok := botdata.Parse(ci.GetMessages()[0])
@@ -224,7 +224,7 @@ func TestPostStartMessage(t *testing.T) {
 			_, err := opFirst.Do(ctx)
 			So(err, ShouldBeNil)
 			ci := ct.GFake.GetChange(gHost, gChange1).Info
-			So(ci, gf.ShouldLastMessageContain, "CQ is trying the patch")
+			So(ci, gf.ShouldLastMessageContain, "CV is trying the patch")
 			So(ci.GetMessages(), ShouldHaveLength, 1)
 
 			Convey("very quick retry leads to dups", func() {

@@ -17,7 +17,6 @@ package e2e
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -37,7 +36,6 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/migration"
-	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 
@@ -96,7 +94,7 @@ func TestCreatesSingularRun(t *testing.T) {
 			return ct.LastMessage(gHost, gChange) != nil
 		})
 		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring,
-			fmt.Sprintf("CQ is trying the patch.\n\nFollow status at: https://luci-change-verifier.appspot.com/ui/run/%s\n\nBot data: {", r.ID))
+			fmt.Sprintf("CV is trying the patch.\n\nFollow status at: https://luci-change-verifier.appspot.com/ui/run/%s\n\nBot data: {", r.ID))
 
 		ct.LogPhase(ctx, "User cancels the Run")
 		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
@@ -167,12 +165,6 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 			return r != nil && r.Status == run.Status_RUNNING
 		})
 		So(r.Mode, ShouldEqual, run.QuickDryRun)
-
-		ct.LogPhase(ctx, "CQDaemon posts starting message to the Gerrit CL")
-		ct.RunUntil(ctx, func() bool {
-			m := ct.LastMessage(gHost, gChange).GetMessage()
-			return strings.Contains(m, cqdfake.StartingMessage) && strings.Contains(m, string(r.ID))
-		})
 
 		ct.LogPhase(ctx, "CQDaemon decides that QuickDryRun has passed and notifies CV")
 		ct.Clock.Add(time.Minute)
@@ -383,12 +375,6 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		})
 		So(r.Mode, ShouldEqual, run.FullRun)
 
-		ct.LogPhase(ctx, "CQDaemon posts starting message to the Gerrit CL")
-		ct.RunUntil(ctx, func() bool {
-			m := ct.LastMessage(gHost, gChange).GetMessage()
-			return strings.Contains(m, cqdfake.StartingMessage) && strings.Contains(m, string(r.ID))
-		})
-
 		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
 		ct.Clock.Add(time.Minute)
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(
@@ -473,12 +459,6 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 			return r != nil && r.Status == run.Status_RUNNING
 		})
 		So(r.Mode, ShouldEqual, run.DryRun)
-
-		ct.LogPhase(ctx, "CQDaemon posts starting message to the Gerrit CL")
-		ct.RunUntil(ctx, func() bool {
-			m := ct.LastMessage(gHost, gChange).GetMessage()
-			return strings.Contains(m, cqdfake.StartingMessage) && strings.Contains(m, string(r.ID))
-		})
 
 		ct.LogPhase(ctx, "User aborts the run by removing a vote")
 		ct.Clock.Add(time.Minute)
@@ -659,17 +639,6 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		runCLIDs := r.CLs
 		sort.Sort(runCLIDs)
 		So(r.CLs, ShouldResemble, clids)
-
-		ct.LogPhase(ctx, "CQDaemon posts starting message to each Gerrit CLs")
-		ct.RunUntil(ctx, func() bool {
-			for _, change := range []int64{gChange1, gChange2, gChange3} {
-				m := ct.LastMessage(gHost, change).GetMessage()
-				if !strings.Contains(m, cqdfake.StartingMessage) || !strings.Contains(m, string(r.ID)) {
-					return false
-				}
-			}
-			return true
-		})
 
 		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
 		ct.Clock.Add(time.Minute)
@@ -946,6 +915,6 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 		So(ct.LastMessage(gHost, gChange2).GetMessage(), ShouldContainSubstring, expecteFailMsg)
 		msgs1 := ct.GFake.GetChange(gHost, gChange1).Info.GetMessages()
 		So(msgs1[len(msgs1)-1].GetMessage(), ShouldContainSubstring, expecteFailMsg)
-		So(msgs1[len(msgs1)-2].GetMessage(), ShouldContainSubstring, "CQ is trying the patch.")
+		So(msgs1[len(msgs1)-2].GetMessage(), ShouldContainSubstring, "CV is trying the patch.")
 	})
 }
