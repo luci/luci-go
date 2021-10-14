@@ -82,11 +82,8 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 		for i, rcl := range op.rcls {
 			i, rcl := i, rcl
 			work <- func() error {
-				if errs[i] = op.doCL(ctx, rcl); errs[i] != nil {
-					// Log error immediately, as all errors will be aggregated across all
-					// CLs below.
-					logging.Errorf(ctx, "failed to post start message on CL %d %q: %s", rcl.ID, rcl.ExternalID, errs[i])
-				}
+				// all errors will be aggregated across all CLs below.
+				errs[i] = op.doCL(ctx, rcl)
 				return nil
 			}
 		}
@@ -117,6 +114,7 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 				firstError = err
 			}
 			psm.GetPermanentErrors()[int64(rcl.ID)] = err.Error()
+			logging.Errorf(ctx, "failed to post start message on CL %d %q: %s", rcl.ID, rcl.ExternalID, err)
 		case firstError == nil:
 			// First transient error.
 			firstError = err
