@@ -153,6 +153,9 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		}
 		return tmplReusedTrigger.Execute(sb, v.ReusedTrigger)
 
+	case *changelist.CLError_CommitBlocked:
+		return tmplCommitBlocked.Execute(sb, nil)
+
 	default:
 		return errors.Reason("unsupported purge reason %t: %s", v, reason).Err()
 	}
@@ -264,4 +267,10 @@ var tmplReusedTrigger = tmplMust(`
 This may happen in rare circumstances such as moving a Gerrit Change to a new branch, abandoning & restoring the CL during an ongoing CQ Run, or when different users vote differently on a CQ label.
 
 Please re-trigger the CQ if neccessary.
+`)
+
+var tmplCommitBlocked = tmplMust(`
+{{CQ_OR_CV}} won't start a full run for the CL because it has a Commit: false footer.
+
+This CL description footer is used to prevent accidental submission of a CL. You may try a dry run. If you want to actually submit the CL, you will need to remove this footer first.
 `)

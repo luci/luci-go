@@ -17,6 +17,7 @@ package state
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -264,6 +265,12 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		return pcl
 	}
 
+	if hasCommitFalseFlag(cl.Snapshot.GetMetadata()) {
+		pcl.Errors = append(pcl.Errors, &changelist.CLError{
+			Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
+		})
+	}
+
 	if ci.GetOwner().GetEmail() == "" {
 		pcl.Errors = append(pcl.Errors, &changelist.CLError{
 			Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
@@ -388,4 +395,16 @@ func newMultiProjectWatchError(cl *changelist.CL) *changelist.CLError {
 			},
 		},
 	}
+}
+
+func hasCommitFalseFlag(metadata []*changelist.StringPair) bool {
+	for _, p := range metadata {
+		// The values stored in the CL Snapshot Metadata are not necessarily normalized,
+		// and could have come from "Commit: false", "COMMIT=FALSE" or some other style.
+		// Other possible values like "Commit: no" are not recognized.
+		if strings.ToLower(p.Key) == "commit" && strings.ToLower(p.Value) == "false" {
+			return true
+		}
+	}
+	return false
 }

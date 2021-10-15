@@ -494,3 +494,46 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, string(first.ID))
 	})
 }
+
+func TestPurgesOnCommitFalseFooter(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges a CL with a Commit: false footer", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject = "infra"
+			gHost    = "g-review"
+			gRepo    = "re/po"
+			gRef     = "refs/heads/main"
+			gChange  = 43
+		)
+
+		prjcfgtest.Create(ctx, lProject, MakeCfgSingular("cg0", gHost, gRepo, gRef))
+
+		ci := gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Updated(ct.Now()), gf.CQ(+2, ct.Now(), gf.U("user-1")),
+			gf.Owner("user-1"),
+			gf.Desc("Summary\n\nCommit: false"),
+		)
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
+		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 2)
+
+		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool {
+			return ct.MaxCQVote(ctx, gHost, gChange) == 0
+		})
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "Commit: false footer")
+
+		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
+		ct.RunUntil(ctx, func() bool {
+			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		})
+	})
+}
