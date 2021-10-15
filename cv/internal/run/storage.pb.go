@@ -144,16 +144,16 @@ type Trigger struct {
 	// Additional label is recorded in case applicable ConfigGroup had additional
 	// modes, e.g. for QUICK_DRY_RUN mode.
 	AdditionalLabel string `protobuf:"bytes,5,opt,name=additional_label,json=additionalLabel,proto3" json:"additional_label,omitempty"`
-	// Triggering user email if known.
+	// Triggering user email. Always known for Runs creaeted since July 2021.
 	//
 	// Gerrit doesn't guarantee that every user has set their preferred email,
-	// but LUCI ACLs are based entirely on user emails. Thus, Runs with the email
-	// unset are quickly aborted by CQDaemon.
-	//
-	// TODO(tandrii): once CQDaemon is deleted, require email to start a Run,
-	// and remove Gerrit-specific gerrit_account_id.
+	// but LUCI ACLs are based entirely on user emails. Thus, Project Manager will
+	// refuse starting Runs for users without the email.
 	Email string `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	// Gerrit account ID. Always known.
+	//
+	// Deprecated. It must be used only for serving migration.FetchActiveRuns.
+	// TODO(crbug/1225047): once CQDaemon is deleted, delete this field.
 	GerritAccountId int64 `protobuf:"varint,4,opt,name=gerrit_account_id,json=gerritAccountId,proto3" json:"gerrit_account_id,omitempty"`
 }
 
