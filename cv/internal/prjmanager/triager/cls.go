@@ -76,8 +76,8 @@ func (c *clInfo) lastTriggered() time.Time {
 
 // triagedCL is the result of CL triage (see clInfo.triage()).
 //
-// Note: doesn't take into account `combine_cls.stabilization_delay`,
-// Thus a CL may be ready or with purgeReason but due to stabilization delay,
+// Note: This doesn't take into account `combine_cls.stabilization_delay`,
+// thus a CL may be ready or with purgeReason, but due to stabilization delay,
 // it shouldn't be acted upon *yet*.
 type triagedCL struct {
 	// deps are triaged deps, set only if CL is watched by exactly 1 config group.
@@ -85,25 +85,25 @@ type triagedCL struct {
 	deps *triagedDeps
 	// purgeReasons is set if the CL ought to be purged.
 	//
-	// Not set is CL is .purgingCL is non-nil since CL is already being purged.
+	// Not set if CL is .purgingCL is non-nil since CL is already being purged.
 	purgeReasons []*changelist.CLError
 	// ready is true if it can be used in creation of new Runs.
 	//
 	// If true, purgeReason must be nil, and deps must be OK though they may contain
-	// not not yet loaded deps.
+	// not-yet-loaded deps.
 	ready bool
 }
 
-// triage sets triagedCL part of clInfo.
+// triage sets the triagedCL part of clInfo.
 //
-// Expects non-triagedCL part of clInfo to be arleady set.
+// Expects non-triagedCL part of clInfo to be already set.
 // panics iff component is not in a valid state.
 func (info *clInfo) triage(pm pmState) {
 	switch {
 	case len(info.runIndexes) > 0:
-		// Once CV supports API based triggering, a CL may be at the same time be in
-		// purged state && have an incomplete Run. The presence in a Run is more
-		// important, so treat as such.
+		// Once CV supports API-based triggering, a CL may be both in purged
+		// state and have an incomplete Run at the same time. The presence in a
+		// Run is more important, so treat it as such.
 		info.triageInRun(pm)
 	case info.purgingCL != nil:
 		info.triageInPurge(pm)
