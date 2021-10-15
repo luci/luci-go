@@ -183,7 +183,6 @@ message GetRunResponse {
   cv.internal.run.Tryjobs tryjobs = 17;
   cv.internal.run.OngoingLongOps ongoing_long_ops = 21;
   cv.internal.run.Submission submission = 12;
-  bool finalized_by_cqd = 13;
   google.protobuf.Timestamp latest_cls_refresh = 18;
 
   // Log entries are substantitve changes to a Run's state.

@@ -182,13 +182,6 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 //
 // Returns nil if no Attempt is available.
 func fetchCQDAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
-	if r.FinalizedByCQD {
-		f, err := migration.LoadFinishedCQDRun(ctx, r.ID)
-		if err != nil {
-			return nil, err
-		}
-		return f.Payload.GetAttempt(), nil
-	}
 	v := migration.VerifiedCQDRun{ID: r.ID}
 	switch err := datastore.Get(ctx, &v); {
 	case err == datastore.ErrNoSuchEntity:

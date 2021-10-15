@@ -121,17 +121,12 @@ type Run struct {
 	// refresh of CLs.
 	LatestCLsRefresh time.Time `gae:",noindex"`
 
-	// CQAttemptKey is what CQDaemon exports to BigQuery as Attempt's key.
+	// CQAttemptKey is what is exported to BigQuery as Attempt's key.
 	//
 	// In CQDaemon's source, it's equivalent to GerritAttempt.attempt_key_hash.
 	//
 	// TODO(crbug/1227523): delete this field.
 	CQDAttemptKey string
-	// FinalizedByCQD is true iff the Run was finalized by CQDaemon, which
-	// includes submitting CLs and/or removing CQ votes and sending BQ row.
-	//
-	// TODO(crbug/1227523): delete this field.
-	FinalizedByCQD bool `gae:",noindex"`
 }
 
 // Mutate mutates the Run by executing `mut`.
