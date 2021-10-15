@@ -24,10 +24,6 @@ import (
 )
 
 var (
-	// metricPickupLatencyS replicates CQDaemon's metric
-	// "/chrome/infra/commit_queue/pickup_latency/durations"
-	//
-	// TODO(crbug/1225047): remove mention of legacy metric.
 	metricPickupLatencyS = metric.NewCumulativeDistribution(
 		"cv/pickup/latency",
 		"Time between triggering CV and when CV processing actually starts",
