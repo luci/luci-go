@@ -18,10 +18,11 @@ import (
 	"context"
 	"math/rand"
 
+	"google.golang.org/grpc"
+
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
-	"google.golang.org/grpc"
 )
 
 // MirrorIterator starts with the Gerrit host as is and then iterates over
