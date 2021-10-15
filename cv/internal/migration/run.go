@@ -16,7 +16,6 @@ package migration
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -159,52 +158,6 @@ func makeActiveRun(ctx context.Context, r *run.Run) (*migrationpb.ActiveRun, err
 		Cls:     mcls,
 		FyiDeps: fyiDeps,
 	}, nil
-}
-
-// fetchAttempt loads Run from Datastore given its CQD attempt key hash.
-//
-// Returns nil, nil if such Run doesn't exist.
-func fetchAttempt(ctx context.Context, key string) (*run.Run, error) {
-	q := datastore.NewQuery(run.RunKind).Eq("CQDAttemptKey", key)
-	var out []*run.Run
-	if err := datastore.GetAll(ctx, q, &out); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch Run with CQDAttemptKeyHash=%q", key).Tag(transient.Tag).Err()
-	}
-	switch l := len(out); l {
-	case 0:
-		return nil, nil
-	case 1:
-		return out[0], nil
-	default:
-		sb := strings.Builder{}
-		for _, r := range out {
-			sb.WriteRune(' ')
-			sb.WriteString(string(r.ID))
-		}
-		logging.Errorf(ctx, "Found %d Runs with CQDAttemptKeyHash=%q: [%s]", l, key, sb.String())
-		// To unblock CQDaemon, choose the latest Run, which given ID generation
-		// scheme must be the first in the output.
-		return out[0], nil
-	}
-}
-
-// fetchRun loads Run from Datastore by ID if given, falling back to CQD attempt
-// key hash otherwise.
-//
-// Returns nil, nil if such Run doesn't exist.
-func fetchRun(ctx context.Context, id common.RunID, attemptKey string) (*run.Run, error) {
-	if id == "" {
-		return fetchAttempt(ctx, attemptKey)
-	}
-	res := &run.Run{ID: id}
-	switch err := datastore.Get(ctx, res); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, nil
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Run entity").Tag(transient.Tag).Err()
-	default:
-		return res, nil
-	}
 }
 
 // VerifiedCQDRun is the Run reported by CQDaemon after verification completes.

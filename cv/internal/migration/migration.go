@@ -69,23 +69,18 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 		return nil, err
 	}
 
-	k := req.GetRun().GetAttempt().GetKey()
-	if k == "" {
-		return nil, appstatus.Error(codes.InvalidArgument, "attempt key is required")
+	runID := common.RunID(req.GetRun().GetId())
+	if runID == "" {
+		return nil, appstatus.Error(codes.InvalidArgument, "CV Run ID is required")
 	}
+	logging.Debugf(ctx, "ReportVerifiedRun(Run %q) status %s", runID, req.GetRun().GetAttempt().GetStatus())
 
-	optionalID := common.RunID(req.GetRun().GetId())
-	logging.Debugf(ctx, "ReportVerifiedRun(Run %q | Attempt %q) status %s", optionalID, k, req.GetRun().GetAttempt().GetStatus())
-	r, err := fetchRun(ctx, optionalID, k)
+	r, err := run.LoadRun(ctx, runID)
 	switch {
 	case err != nil:
 		return nil, err
 	case r == nil:
-		logging.Errorf(ctx, "BUG: ReportVerifiedRun(Run %q | Attempt %q) for a Run not known to CV", optionalID, k)
-		return nil, appstatus.Errorf(codes.NotFound, "Run %q does not exist", optionalID)
-	case optionalID == "":
-		// Set the missing Run ID.
-		req.GetRun().Id = string(r.ID)
+		return nil, appstatus.Errorf(codes.NotFound, "Run %q does not exist", runID)
 	}
 
 	err = saveVerifiedCQDRun(ctx, req, func(ctx context.Context) error {
@@ -153,8 +148,8 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 
 	case req.GetProject() == "":
 		return nil, appstatus.Error(codes.InvalidArgument, "project is required")
-	case req.GetAttemptKey() == "":
-		return nil, appstatus.Error(codes.InvalidArgument, "attempt_key is required")
+	case req.GetRunId() == "":
+		return nil, appstatus.Error(codes.InvalidArgument, "run_id is required")
 	case req.GetComment() == "":
 		return nil, appstatus.Error(codes.InvalidArgument, "comment is required")
 	}
@@ -167,7 +162,7 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 	eg, eCtx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
 		var err error
-		r, err = fetchRun(eCtx, common.RunID(req.GetRunId()), req.GetAttemptKey())
+		r, err = run.LoadRun(eCtx, common.RunID(req.GetRunId()))
 		return err
 	})
 	eg.Go(func() error {
@@ -262,12 +257,11 @@ func (m *MigrationServer) FetchRunStatus(ctx context.Context, req *migrationpb.F
 		return nil, appstatus.Error(codes.InvalidArgument, "luci_project is required")
 	}
 
-	r, err := fetchRun(ctx, common.RunID(req.GetCvId()), req.GetAttemptKey())
+	r, err := run.LoadRun(ctx, common.RunID(req.GetCvId()))
 	switch {
 	case err != nil:
 		return nil, err
 	case r == nil:
-		logging.Errorf(ctx, "BUG: FetchRunStatus(Run %q | Attempt %q) for a Run not known to CV", req.GetCvId(), req.GetAttemptKey())
 		return nil, appstatus.Error(codes.NotFound, "Run does not exist")
 	}
 

@@ -99,7 +99,6 @@ func (rs *RunState) DeepCopy() *RunState {
 			Tryjobs:             proto.Clone(rs.Tryjobs).(*run.Tryjobs),
 			OngoingLongOps:      proto.Clone(rs.OngoingLongOps).(*run.OngoingLongOps),
 			LatestCLsRefresh:    rs.LatestCLsRefresh,
-			CQDAttemptKey:       rs.CQDAttemptKey,
 		},
 		SubmissionScheduled: rs.SubmissionScheduled,
 	}

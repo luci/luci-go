@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -111,11 +112,10 @@ func TestPostGerritMessage(t *testing.T) {
 
 			// Put a Run.
 			r := &run.Run{
-				ID:            common.RunID(req.GetRunId()),
-				CQDAttemptKey: req.GetAttemptKey(),
-				Mode:          run.DryRun,
-				Status:        run.Status_RUNNING,
-				CreateTime:    ct.Clock.Now().Add(-time.Hour).UTC(),
+				ID:         common.RunID(req.GetRunId()),
+				Mode:       run.DryRun,
+				Status:     run.Status_RUNNING,
+				CreateTime: ct.Clock.Now().Add(-time.Hour).UTC(),
 			}
 			So(datastore.Put(ctx, r), ShouldBeNil)
 
@@ -208,8 +208,8 @@ func TestReportVerifiedRun(t *testing.T) {
 
 		const runID = common.RunID("infra/111-1-deadbeef")
 		req := &migrationpb.ReportVerifiedRunRequest{
-			// Id field is set in some tests below
 			Run: &migrationpb.ReportedRun{
+				Id: string(runID),
 				Attempt: &cvbqpb.Attempt{
 					Key:    runID.AttemptKey(),
 					Status: cvbqpb.AttemptStatus_SUCCESS,
@@ -238,31 +238,25 @@ func TestReportVerifiedRun(t *testing.T) {
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			So(loadVerifiedCQDRun(), ShouldBeNil)
 		})
-		Convey("with a Run, always saves", func() {
-			So(datastore.Put(ctx, &run.Run{
-				ID:            runID,
-				CQDAttemptKey: runID.AttemptKey(),
-			}), ShouldBeNil)
+		Convey("with a Run, always saves and notifies Run Manager", func() {
+			So(datastore.Put(ctx, &run.Run{ID: runID}), ShouldBeNil)
 
-			Convey("deduces the Run ID if not given and notifies Run Manager", func() {
-				_, err := m.ReportVerifiedRun(ctx, req)
+			_, err := m.ReportVerifiedRun(ctx, proto.Clone(req).(*migrationpb.ReportVerifiedRunRequest))
+			So(err, ShouldBeNil)
+			first := loadVerifiedCQDRun()
+			So(first.Payload.Run.Attempt.Status, ShouldEqual, cvbqpb.AttemptStatus_SUCCESS)
+			So(rnMock.verificationCompleted, ShouldContain, runID)
+
+			Convey("does not overwrite existing data", func() {
+				rnMock.verificationCompleted = nil
+				req.Run.Attempt.Status = cvbqpb.AttemptStatus_INFRA_FAILURE
+				_, err := m.ReportVerifiedRun(ctx, proto.Clone(req).(*migrationpb.ReportVerifiedRunRequest))
 				So(err, ShouldBeNil)
-				first := loadVerifiedCQDRun()
-				So(first.Payload.Run.Attempt.Status, ShouldEqual, cvbqpb.AttemptStatus_SUCCESS)
-				So(rnMock.verificationCompleted, ShouldContain, runID)
-
-				Convey("does not overwrite existing data", func() {
-					rnMock.verificationCompleted = nil
-					req.Run.Id = string(runID)
-					req.Run.Attempt.Status = cvbqpb.AttemptStatus_INFRA_FAILURE
-					_, err := m.ReportVerifiedRun(ctx, req)
-					So(err, ShouldBeNil)
-					second := loadVerifiedCQDRun()
-					So(second.UpdateTime, ShouldResemble, first.UpdateTime)
-					So(second.Payload, ShouldResembleProto, first.Payload)
-					// Run Manager doesn't need to be notified again.
-					So(rnMock.verificationCompleted, ShouldBeEmpty)
-				})
+				second := loadVerifiedCQDRun()
+				So(second.UpdateTime, ShouldResemble, first.UpdateTime)
+				So(second.Payload, ShouldResembleProto, first.Payload)
+				// Run Manager doesn't need to be notified again.
+				So(rnMock.verificationCompleted, ShouldBeEmpty)
 			})
 		})
 	})

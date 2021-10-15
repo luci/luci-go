@@ -366,7 +366,6 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 	}
 	rb.run = &run.Run{
 		ID:                  rb.run.ID,
-		CQDAttemptKey:       rb.run.ID.AttemptKey(),
 		EVersion:            1,
 		CreationOperationID: rb.OperationID,
 		CreateTime:          rb.CreateTime,

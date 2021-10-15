@@ -120,13 +120,6 @@ type Run struct {
 	// LatestCLsRefresh is the latest time when Run Manager scheduled async
 	// refresh of CLs.
 	LatestCLsRefresh time.Time `gae:",noindex"`
-
-	// CQAttemptKey is what is exported to BigQuery as Attempt's key.
-	//
-	// In CQDaemon's source, it's equivalent to GerritAttempt.attempt_key_hash.
-	//
-	// TODO(crbug/1227523): delete this field.
-	CQDAttemptKey string
 }
 
 // Mutate mutates the Run by executing `mut`.
