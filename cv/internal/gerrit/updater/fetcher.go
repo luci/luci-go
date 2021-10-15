@@ -208,7 +208,7 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 		return err
 	}
 
-	metadata := extractMetadata(ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage())
+	metadata := ExtractMetadata(ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage())
 	changelist.RemoveUnusedGerritInfo(ci)
 	f.toUpdate.Snapshot = &changelist.Snapshot{
 		LuciProject:        f.luciProject,
@@ -938,7 +938,10 @@ func (u updateFields) apply(cl *changelist.CL) (changed bool) {
 	return
 }
 
-func extractMetadata(clDescription string) []*changelist.StringPair {
+// ExtractMetadata extracts CL metadata from Gerrit CL description.
+//
+// TODO(tandrii): un-export once all CLs have metadata.
+func ExtractMetadata(clDescription string) []*changelist.StringPair {
 	kvs := footer.ParseMessage(clDescription)
 	for k, vs := range footer.ParseLegacyMetadata(clDescription) {
 		kvs[k] = append(kvs[k], vs...)

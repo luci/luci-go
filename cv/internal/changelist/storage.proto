@@ -26,6 +26,8 @@ import "go.chromium.org/luci/common/proto/gerrit/gerrit.proto";
 // When stored in CL entity, represents latest known Gerrit data.
 // When stored in RunCL entity, represents data pertaining to a fixed patchset.
 message Snapshot {
+  // Next tag: 12.
+
   // The timestamp from external system.
   // Used to determine if re-querying external system is needed.
   google.protobuf.Timestamp external_update_time = 1;
