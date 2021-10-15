@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/metadata"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -35,11 +35,7 @@ func TestExtractOptions(t *testing.T) {
 				lines[i] = strings.TrimSpace(l)
 			}
 			msg = strings.Join(lines, "\n")
-			return ExtractOptions(&changelist.Snapshot{
-				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
-					Info: gerritfake.CI(1, gerritfake.Desc(msg)),
-				}},
-			})
+			return ExtractOptions(&changelist.Snapshot{Metadata: metadata.Extract(msg)})
 		}
 		Convey("Default", func() {
 			So(extract(`

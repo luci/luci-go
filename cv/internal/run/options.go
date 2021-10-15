@@ -24,10 +24,11 @@ import (
 
 // ExtractOptions computes the Run Options from 1 CL.
 func ExtractOptions(snapshot *changelist.Snapshot) *Options {
-	ci := snapshot.GetGerrit().GetInfo()
-	clDescription := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
-	modern := footer.ParseMessage(clDescription)
-	legacy := footer.ParseLegacyMetadata(clDescription)
+	byKey := make(map[string][]string, len(snapshot.GetMetadata()))
+	for _, pair := range snapshot.GetMetadata() {
+		k, v := pair.GetKey(), pair.GetValue()
+		byKey[k] = append(byKey[k], v)
+	}
 
 	valuesOf := func(mkey, lkey string) []string {
 		var out []string
@@ -37,11 +38,11 @@ func ExtractOptions(snapshot *changelist.Snapshot) *Options {
 		case k != mkey:
 			panic(fmt.Errorf("Use normalized key %q not %q in CV code", k, mkey))
 		default:
-			out = append(out, modern[mkey]...)
+			out = append(out, byKey[mkey]...)
 		}
 
 		if lkey != "" {
-			out = append(out, legacy[lkey]...)
+			out = append(out, byKey[lkey]...)
 		}
 		return out
 	}
