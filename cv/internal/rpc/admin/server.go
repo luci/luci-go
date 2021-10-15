@@ -65,7 +65,7 @@ type AdminServer struct {
 	adminpb.UnimplementedAdminServer
 }
 
-func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectRequest) (resp *adminpb.GetProjectResponse, err error) {
+func (a *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectRequest) (resp *adminpb.GetProjectResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetProject"); err != nil {
 		return
@@ -111,7 +111,7 @@ func (d *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectReq
 	}
 }
 
-func (d *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjectLogsRequest) (resp *adminpb.GetProjectLogsResponse, err error) {
+func (a *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjectLogsRequest) (resp *adminpb.GetProjectLogsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetProjectLogs"); err != nil {
 		return
@@ -164,7 +164,7 @@ func (d *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjec
 	return resp, nil
 }
 
-func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (resp *adminpb.GetRunResponse, err error) {
+func (a *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (resp *adminpb.GetRunResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetRun"); err != nil {
 		return
@@ -175,7 +175,7 @@ func (d *AdminServer) GetRun(ctx context.Context, req *adminpb.GetRunRequest) (r
 	return loadRunAndEvents(ctx, common.RunID(req.GetRun()), nil)
 }
 
-func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (resp *adminpb.GetCLResponse, err error) {
+func (a *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (resp *adminpb.GetCLResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetCL"); err != nil {
 		return
@@ -202,7 +202,7 @@ func (d *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (res
 	return resp, nil
 }
 
-func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerRequest) (resp *adminpb.GetPollerResponse, err error) {
+func (a *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerRequest) (resp *adminpb.GetPollerResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "GetPoller"); err != nil {
 		return
@@ -228,7 +228,7 @@ func (d *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerReque
 	return resp, nil
 }
 
-func (d *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsRequest) (resp *adminpb.RunsResponse, err error) {
+func (a *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsRequest) (resp *adminpb.RunsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "SearchRuns"); err != nil {
 		return
@@ -515,7 +515,7 @@ type itemEntity struct {
 	Value  []byte         `gae:",noindex"`
 }
 
-func (d *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.DeleteProjectEventsRequest) (resp *adminpb.DeleteProjectEventsResponse, err error) {
+func (a *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.DeleteProjectEventsRequest) (resp *adminpb.DeleteProjectEventsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "DeleteProjectEvents"); err != nil {
 		return
@@ -550,7 +550,7 @@ func (d *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.Dele
 	return &adminpb.DeleteProjectEventsResponse{Events: stats}, nil
 }
 
-func (d *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.RefreshProjectCLsRequest) (resp *adminpb.RefreshProjectCLsResponse, err error) {
+func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.RefreshProjectCLsRequest) (resp *adminpb.RefreshProjectCLsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "RefreshProjectCLs"); err != nil {
 		return
@@ -587,7 +587,7 @@ func (d *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 					Change:      change,
 					ClidHint:    id,
 				}
-				return d.GerritUpdater.Schedule(ctx, payload)
+				return a.GerritUpdater.Schedule(ctx, payload)
 			}
 		}
 	})
@@ -595,7 +595,7 @@ func (d *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 		return nil, err
 	}
 
-	if err := d.PMNotifier.NotifyCLsUpdated(ctx, req.GetProject(), changelist.ToUpdatedEvents(cls...)); err != nil {
+	if err := a.PMNotifier.NotifyCLsUpdated(ctx, req.GetProject(), changelist.ToUpdatedEvents(cls...)); err != nil {
 		return nil, err
 	}
 
@@ -606,7 +606,7 @@ func (d *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 	return &adminpb.RefreshProjectCLsResponse{ClVersions: clvs}, nil
 }
 
-func (d *AdminServer) SendProjectEvent(ctx context.Context, req *adminpb.SendProjectEventRequest) (_ *emptypb.Empty, err error) {
+func (a *AdminServer) SendProjectEvent(ctx context.Context, req *adminpb.SendProjectEventRequest) (_ *emptypb.Empty, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "SendProjectEvent"); err != nil {
 		return
@@ -625,13 +625,13 @@ func (d *AdminServer) SendProjectEvent(ctx context.Context, req *adminpb.SendPro
 		return nil, appstatus.Error(codes.NotFound, "project not found")
 	}
 
-	if err := d.PMNotifier.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
+	if err := a.PMNotifier.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
 		return nil, errors.Annotate(err, "failed to send event").Err()
 	}
 	return &emptypb.Empty{}, nil
 }
 
-func (d *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEventRequest) (_ *emptypb.Empty, err error) {
+func (a *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEventRequest) (_ *emptypb.Empty, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "SendRunEvent"); err != nil {
 		return
@@ -650,13 +650,13 @@ func (d *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEven
 		return nil, appstatus.Error(codes.NotFound, "Run not found")
 	}
 
-	if err := d.RunNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
+	if err := a.RunNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
 		return nil, errors.Annotate(err, "failed to send event").Err()
 	}
 	return &emptypb.Empty{}, nil
 }
 
-func (d *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTaskRequest) (_ *emptypb.Empty, err error) {
+func (a *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTaskRequest) (_ *emptypb.Empty, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 	if err = checkAllowed(ctx, "ScheduleTask"); err != nil {
 		return
@@ -707,10 +707,10 @@ func (d *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 
 	if chosen.inTransaction {
 		err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			return d.TQDispatcher.AddTask(ctx, t)
+			return a.TQDispatcher.AddTask(ctx, t)
 		}, nil)
 	} else {
-		err = d.TQDispatcher.AddTask(ctx, t)
+		err = a.TQDispatcher.AddTask(ctx, t)
 	}
 
 	if err != nil {

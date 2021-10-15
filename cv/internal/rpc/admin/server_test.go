@@ -60,13 +60,13 @@ func TestGetProject(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := AdminServer{}
+		a := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
+			_, err := a.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -76,7 +76,7 @@ func TestGetProject(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
+				_, err := a.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			})
 		})
@@ -92,13 +92,13 @@ func TestGetProjectLogs(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := AdminServer{}
+		a := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
+			_, err := a.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -108,7 +108,7 @@ func TestGetProjectLogs(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("nothing", func() {
-				resp, err := d.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
+				resp, err := a.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
 				So(err, ShouldBeNil)
 				So(resp.GetLogs(), ShouldHaveLength, 0)
 			})
@@ -127,13 +127,13 @@ func TestGetRun(t *testing.T) {
 		const rid = "proj/123-deadbeef"
 		So(datastore.Put(ctx, &run.Run{ID: rid}), ShouldBeNil)
 
-		d := AdminServer{}
+		a := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
+			_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -143,11 +143,11 @@ func TestGetRun(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid + "cafe"})
+				_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid + "cafe"})
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			})
 			Convey("exists", func() {
-				_, err := d.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
+				_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
 				So(grpcutil.Code(err), ShouldEqual, codes.OK)
 			})
 		})
@@ -162,13 +162,13 @@ func TestGetCL(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		d := AdminServer{}
+		a := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
+			_, err := a.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -178,7 +178,7 @@ func TestGetCL(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			So(datastore.Put(ctx, &changelist.CL{ID: 123, ExternalID: changelist.MustGobID("x-review", 44)}), ShouldBeNil)
-			resp, err := d.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
+			resp, err := a.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
 			So(err, ShouldBeNil)
 			So(resp.GetExternalId(), ShouldEqual, "gerrit/x-review/44")
 		})
@@ -194,13 +194,13 @@ func TestGetPoller(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := AdminServer{}
+		a := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
+			_, err := a.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -214,7 +214,7 @@ func TestGetPoller(t *testing.T) {
 				LuciProject: lProject,
 				UpdateTime:  now,
 			}), ShouldBeNil)
-			resp, err := d.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
+			resp, err := a.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
 			So(err, ShouldBeNil)
 			So(resp.GetUpdateTime().AsTime(), ShouldResemble, now)
 		})
@@ -268,7 +268,7 @@ func TestSearchRuns(t *testing.T) {
 			}
 		}
 
-		d := AdminServer{}
+		a := AdminServer{}
 
 		fetchAll := func(ctx context.Context, origReq *adminpb.SearchRunsRequest) *adminpb.RunsResponse {
 			var out *adminpb.RunsResponse
@@ -277,7 +277,7 @@ func TestSearchRuns(t *testing.T) {
 			for out == nil || nextPageToken != "" {
 				req := proto.Clone(origReq).(*adminpb.SearchRunsRequest)
 				req.PageToken = nextPageToken
-				resp, err := d.SearchRuns(ctx, req)
+				resp, err := a.SearchRuns(ctx, req)
 				So(err, ShouldBeNil)
 				assertOrdered(resp)
 				if out == nil {
@@ -294,7 +294,7 @@ func TestSearchRuns(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
+			_, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -304,41 +304,41 @@ func TestSearchRuns(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("no runs exist", func() {
-				resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
+				resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
 				So(err, ShouldBeNil)
 				So(resp.GetRuns(), ShouldHaveLength, 0)
 			})
 			Convey("two runs of the same project", func() {
 				So(datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}), ShouldBeNil)
-				resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
+				resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
 				So(err, ShouldBeNil)
 				So(idsOf(resp), ShouldResemble, []string{laterID, earlierID})
 
 				Convey("with page size exactly 2", func() {
 					req := &adminpb.SearchRunsRequest{Project: lProject, PageSize: 2}
-					resp1, err := d.SearchRuns(ctx, req)
+					resp1, err := a.SearchRuns(ctx, req)
 					So(err, ShouldBeNil)
 					So(idsOf(resp1), ShouldResemble, []string{laterID, earlierID})
 
 					req.PageToken = resp1.GetNextPageToken()
-					resp2, err := d.SearchRuns(ctx, req)
+					resp2, err := a.SearchRuns(ctx, req)
 					So(err, ShouldBeNil)
 					So(idsOf(resp2), ShouldBeEmpty)
 				})
 
 				Convey("with page size of 1", func() {
 					req := &adminpb.SearchRunsRequest{Project: lProject, PageSize: 1}
-					resp1, err := d.SearchRuns(ctx, req)
+					resp1, err := a.SearchRuns(ctx, req)
 					So(err, ShouldBeNil)
 					So(idsOf(resp1), ShouldResemble, []string{laterID})
 
 					req.PageToken = resp1.GetNextPageToken()
-					resp2, err := d.SearchRuns(ctx, req)
+					resp2, err := a.SearchRuns(ctx, req)
 					So(err, ShouldBeNil)
 					So(idsOf(resp2), ShouldResemble, []string{earlierID})
 
 					req.PageToken = resp2.GetNextPageToken()
-					resp3, err := d.SearchRuns(ctx, req)
+					resp3, err := a.SearchRuns(ctx, req)
 					So(err, ShouldBeNil)
 					So(idsOf(resp3), ShouldBeEmpty)
 					So(resp3.GetNextPageToken(), ShouldBeEmpty)
@@ -368,7 +368,7 @@ func TestSearchRuns(t *testing.T) {
 				), ShouldBeNil)
 
 				Convey("exact", func() {
-					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+					resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
 						Status:  run.Status_CANCELLED,
 					})
@@ -377,7 +377,7 @@ func TestSearchRuns(t *testing.T) {
 				})
 
 				Convey("ended", func() {
-					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+					resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
 						Status:  run.Status_ENDED_MASK,
 					})
@@ -386,7 +386,7 @@ func TestSearchRuns(t *testing.T) {
 				})
 
 				Convey("with CL", func() {
-					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+					resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Cl: &adminpb.GetCLRequest{ExternalId: string(cl2.ExternalID)},
 					})
 					So(err, ShouldBeNil)
@@ -394,7 +394,7 @@ func TestSearchRuns(t *testing.T) {
 				})
 
 				Convey("with CL and run status", func() {
-					resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{
+					resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Cl:     &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
 						Status: run.Status_ENDED_MASK,
 					})
@@ -497,7 +497,7 @@ func TestSearchRuns(t *testing.T) {
 						makeRun(1, 60, 12),
 					)
 					Convey("without paging", func() {
-						resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
+						resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
 						So(err, ShouldBeNil)
 						assertOrdered(resp)
 						So(idsOf(resp), ShouldResemble, expIDs)
@@ -520,7 +520,7 @@ func TestSearchRuns(t *testing.T) {
 						makeRun(1, 60, 12),
 					)
 					Convey("without paging", func() {
-						resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
+						resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
 						So(err, ShouldBeNil)
 						assertOrdered(resp)
 						So(idsOf(resp), ShouldResemble, expIDs)
@@ -547,7 +547,7 @@ func TestSearchRuns(t *testing.T) {
 
 					Convey("without paging", func() {
 						So(len(runs), ShouldBeLessThan, 128)
-						resp, err := d.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
+						resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
 						So(err, ShouldBeNil)
 						assertOrdered(resp)
 						So(resp.GetRuns(), ShouldHaveLength, len(runs))
@@ -572,13 +572,13 @@ func TestDeleteProjectEvents(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := AdminServer{}
+		a := AdminServer{}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
+			_, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -594,13 +594,13 @@ func TestDeleteProjectEvents(t *testing.T) {
 			So(pm.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 			Convey("All", func() {
-				resp, err := d.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
+				resp, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
 				So(err, ShouldBeNil)
 				So(resp.GetEvents(), ShouldResemble, map[string]int64{"*prjpb.Event_ClUpdated": 2, "*prjpb.Event_NewConfig": 1})
 			})
 
 			Convey("Limited", func() {
-				resp, err := d.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 2})
+				resp, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 2})
 				So(err, ShouldBeNil)
 				sum := int64(0)
 				for _, v := range resp.GetEvents() {
@@ -621,7 +621,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := AdminServer{
+		a := AdminServer{
 			GerritUpdater: updater.New(ct.TQDispatcher, ct.GFactory(), nil),
 			PMNotifier:    prjmanager.NewNotifier(ct.TQDispatcher),
 		}
@@ -630,7 +630,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
+			_, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -654,7 +654,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 				ExternalID: changelist.MustGobID("x-review.example.com", 55),
 			}), ShouldBeNil)
 
-			resp, err := d.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
+			resp, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
 			So(err, ShouldBeNil)
 			So(resp.GetClVersions(), ShouldResemble, map[int64]int64{1: 4})
 			So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{55})
@@ -671,7 +671,7 @@ func TestSendProjectEvent(t *testing.T) {
 		defer cancel()
 
 		const lProject = "luci"
-		d := AdminServer{
+		a := AdminServer{
 			PMNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
@@ -679,7 +679,7 @@ func TestSendProjectEvent(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{Project: lProject})
+			_, err := a.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{Project: lProject})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -689,7 +689,7 @@ func TestSendProjectEvent(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{
+				_, err := a.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{
 					Project: lProject,
 					Event:   &prjpb.Event{Event: &prjpb.Event_Poke{Poke: &prjpb.Poke{}}},
 				})
@@ -708,7 +708,7 @@ func TestSendRunEvent(t *testing.T) {
 		defer cancel()
 
 		const rid = "proj/123-deadbeef"
-		d := AdminServer{
+		a := AdminServer{
 			RunNotifier: run.NewNotifier(ct.TQDispatcher),
 		}
 
@@ -716,7 +716,7 @@ func TestSendRunEvent(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.SendRunEvent(ctx, &adminpb.SendRunEventRequest{Run: rid})
+			_, err := a.SendRunEvent(ctx, &adminpb.SendRunEventRequest{Run: rid})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -726,7 +726,7 @@ func TestSendRunEvent(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.SendRunEvent(ctx, &adminpb.SendRunEventRequest{
+				_, err := a.SendRunEvent(ctx, &adminpb.SendRunEventRequest{
 					Run:   rid,
 					Event: &eventpb.Event{Event: &eventpb.Event_Poke{Poke: &eventpb.Poke{}}},
 				})
@@ -745,7 +745,7 @@ func TestScheduleTask(t *testing.T) {
 		defer cancel()
 
 		const lProject = "infra"
-		d := AdminServer{
+		a := AdminServer{
 			TQDispatcher: ct.TQDispatcher,
 			PMNotifier:   prjmanager.NewNotifier(ct.TQDispatcher),
 		}
@@ -767,7 +767,7 @@ func TestScheduleTask(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.ScheduleTask(ctx, req)
+			_, err := a.ScheduleTask(ctx, req)
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -778,14 +778,14 @@ func TestScheduleTask(t *testing.T) {
 			})
 			Convey("OK", func() {
 				Convey("Non-Transactional", func() {
-					_, err := d.ScheduleTask(ctx, req)
+					_, err := a.ScheduleTask(ctx, req)
 					So(err, ShouldBeNil)
 					So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
 						req.GetManageProject(),
 					})
 				})
 				Convey("Transactional", func() {
-					_, err := d.ScheduleTask(ctx, reqTrans)
+					_, err := a.ScheduleTask(ctx, reqTrans)
 					So(err, ShouldBeNil)
 					So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
 						reqTrans.GetKickManageProject(),
@@ -795,19 +795,19 @@ func TestScheduleTask(t *testing.T) {
 			Convey("InvalidArgument", func() {
 				Convey("Missing payload", func() {
 					req.ManageProject = nil
-					_, err := d.ScheduleTask(ctx, req)
+					_, err := a.ScheduleTask(ctx, req)
 					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 					So(err, ShouldErrLike, "none given")
 				})
 				Convey("Two payloads", func() {
 					req.KickManageProject = reqTrans.GetKickManageProject()
-					_, err := d.ScheduleTask(ctx, req)
+					_, err := a.ScheduleTask(ctx, req)
 					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 					So(err, ShouldErrLike, "but 2+ given")
 				})
 				Convey("Trans + DeduplicationKey is not allwoed", func() {
 					reqTrans.DeduplicationKey = "beef"
-					_, err := d.ScheduleTask(ctx, reqTrans)
+					_, err := a.ScheduleTask(ctx, reqTrans)
 					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 					So(err, ShouldErrLike, `"KickManageProjectTask" is transactional`)
 				})
