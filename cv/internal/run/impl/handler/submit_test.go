@@ -440,16 +440,15 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				},
 			})
 		}
-		assertAttentionSet := func(req *gerritpb.SetReviewRequest, accs ...int64) {
+		assertAttentionSet := func(req *gerritpb.SetReviewRequest, reason string, accs ...int64) {
 			So(req, ShouldNotBeNil)
-
 			expected := []*gerritpb.AttentionSetInput{}
 			for _, a := range accs {
 				expected = append(
 					expected,
 					&gerritpb.AttentionSetInput{
 						User:   strconv.FormatInt(a, 10),
-						Reason: "ps#2: " + submissionFailureAttentionReason,
+						Reason: "ps#2: " + reason,
 					},
 				)
 			}
@@ -566,7 +565,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							// In contrast, the attention set includes all of
 							// the owner and voters' IDs. i.e., p99, 100, 101]
 							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
-							assertAttentionSet(reqs[0], 99, 100, 101)
+							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(lastMsg string) {
@@ -626,7 +625,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							runAndVerify(func(changeNum int64, lastMsg string) {
 								switch changeNum {
 								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):\n  https://x-review.example.com/c/2222")
+									So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit the following CL(s) which this CL depends on:\n  https://x-review.example.com/c/2222")
 								case ci2.GetNumber():
 									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
 								default:
@@ -645,10 +644,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							// In contrast, the attention set includes all of
 							// the owner and voters' IDs. i.e., p99, 100, 101]
 							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
-							assertAttentionSet(reqs[0], 99, 100, 101)
+							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 							So(reqs[1].GetNumber(), ShouldEqual, ci2.GetNumber())
 							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
-							assertAttentionSet(reqs[0], 99, 100, 101)
+							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(_ int64, lastMsg string) {
@@ -687,7 +686,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								}
 							})
 							reqs := selfSetReviewRequests()
-							So(reqs, ShouldHaveLength, 1) // not for both, but the failed one.
+							So(reqs, ShouldHaveLength, 2) // for both submitted and failed CLs
 							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
 							// The gerrit request is set with NOTIFY_ONWER, and
 							// the NotifyDetails only includes the voters' IDs w/o
@@ -696,7 +695,13 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							// In contrast, the attention set includes all of
 							// the owner and voters' IDs. i.e., p99, 100, 101]
 							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
-							assertAttentionSet(reqs[0], 99, 100, 101)
+							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
+							So(reqs[0].Message, ShouldContainSubstring, "CL failed to submit because of transient failure")
+							// The 2nd Gerrit message should be for the submitted CL to indicate
+							// the submission failure on the dependent CLs.
+							assertNotify(reqs[1], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
+							So(reqs[1].Message, ShouldContainSubstring, "CV submitted this CL, but failed to submit")
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(changeNum int64, lastMsg string) {
@@ -787,7 +792,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					// In contrast, the attention set includes all of
 					// the owner and voters' IDs. i.e., p99, 100, 101]
 					assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
-					assertAttentionSet(reqs[0], 99, 100, 101)
+					assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 				})
 
 				Convey("Unclassified failure", func() {
@@ -833,7 +838,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						runAndVerify(func(changeNum int64, lastMsg string) {
 							switch changeNum {
 							case 1111:
-								So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit its dependent CL(s):\n  https://x-review.example.com/c/2222")
+								So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit the following CL(s) which this CL depends on:\n  https://x-review.example.com/c/2222")
 							case 2222:
 								So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
 							}
@@ -850,10 +855,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						// In contrast, the attention set includes all of
 						// the owner and voters' IDs. i.e., p99, 100, 101]
 						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
-						assertAttentionSet(reqs[0], 99, 100, 101)
+						assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						So(reqs[1].GetNumber(), ShouldEqual, ci2.GetNumber())
 						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
-						assertAttentionSet(reqs[0], 99, 100, 101)
+						assertAttentionSet(reqs[1], submissionFailureAttentionReason, 99, 100, 101)
 					})
 
 					Convey("Unclassified failure", func() {
@@ -889,7 +894,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							}
 						})
 						reqs := selfSetReviewRequests()
-						So(reqs, ShouldHaveLength, 1) // not for both, but the failed one.
+						So(reqs, ShouldHaveLength, 2) // for both submitted and failed CLs
 						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
 						// The gerrit request is set with NOTIFY_ONWER, and
 						// the NotifyDetails only includes the voters' IDs w/o
@@ -898,7 +903,13 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						// In contrast, the attention set includes all of
 						// the owner and voters' IDs. i.e., p99, 100, 101]
 						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
-						assertAttentionSet(reqs[0], 99, 100, 101)
+						assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
+						So(reqs[0].Message, ShouldContainSubstring, "CV failed to submit this CL")
+						// The 2nd Gerrit message should be for the submitted CL to indicate
+						// the submission failure on the dependent CLs.
+						assertNotify(reqs[1], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+						assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
+						So(reqs[1].Message, ShouldContainSubstring, "CV submitted this CL, but failed to submit")
 					})
 
 					Convey("Unclassified failure", func() {
