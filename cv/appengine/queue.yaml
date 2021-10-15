@@ -1,46 +1,75 @@
 # Documentation:
 # https://cloud.google.com/appengine/docs/standard/go111/config/queueref
 queue:
+
+###############################################################################
+# Production critical queues.
+# Each queue in this section must have alerting for it.
+
 - name: bq-export
   rate: 30/s
+
 - name: kick-manage-project
   rate: 500/s
+
 - name: manage-project
   rate: 30/s
   retry_parameters:
     min_backoff_seconds: 1
     max_backoff_seconds: 5
     task_age_limit: 1h
+
 - name: kick-manage-run
   rate: 500/s
+
 - name: manage-run
   rate: 30/s
   retry_parameters:
     min_backoff_seconds: 1
     max_backoff_seconds: 5
     task_age_limit: 1h
+
 - name: manage-run-long-op
   rate: 30/s
   retry_parameters:
     min_backoff_seconds: 5
     max_backoff_seconds: 10
     task_age_limit: 1h
+
 - name: poll-gerrit
   rate: 10/s
   retry_parameters:
     min_backoff_seconds: 1
     task_age_limit: 1h
+
 - name: purge-project-cl
   rate: 30/s
+
 - name: refresh-project-config
   rate: 20/s
+
 - name: refresh-gerrit-cl
   rate: 50/s
   retry_parameters:
     min_backoff_seconds: 1
     max_backoff_seconds: 300
     task_age_limit: 1h
+
 - name: notify-on-cl-updated
   rate: 30/s
+
 - name: tq-sweep
   rate: 500/s
+
+###############################################################################
+# Special queues not critical for production.
+# They aren't alerted upon.
+
+# dsmapper queue is for performing mass migration of DS entities.
+# See admin API and its implementation.
+- name: dsmapper
+  rate: 100/s
+
+# Default queue is for rare tasks, e.g. admin tasks.
+- name: default
+  rate: 1/s

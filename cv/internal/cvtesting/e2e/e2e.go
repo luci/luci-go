@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -165,12 +166,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		RunNotifier: t.RunNotifier,
 		GFactory:    gFactory,
 	}
-	t.AdminServer = &admin.AdminServer{
-		TQDispatcher:  t.TQDispatcher,
-		RunNotifier:   t.RunNotifier,
-		PMNotifier:    t.PMNotifier,
-		GerritUpdater: clUpdater,
-	}
+	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
 	return ctx, deferme
 }
 

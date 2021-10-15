@@ -61,3 +61,5 @@ entrypoint: >
   -gerrit-auth-audience ${GERRIT_AUDIENCE}
   -root-secret ${ROOT_SECRET}
   -analytics-id ${ANALYTICS_ID}
+  -dsmapper-mapper-queue dsmapper
+  -dsmapper-control-queue default

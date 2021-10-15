@@ -622,8 +622,8 @@ func TestRefreshProjectCLs(t *testing.T) {
 
 		const lProject = "luci"
 		a := AdminServer{
-			GerritUpdater: updater.New(ct.TQDispatcher, ct.GFactory(), nil),
-			PMNotifier:    prjmanager.NewNotifier(ct.TQDispatcher),
+			gerritUpdater: updater.New(ct.TQDispatcher, ct.GFactory(), nil),
+			pmNotifier:    prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
 		Convey("without access", func() {
@@ -672,7 +672,7 @@ func TestSendProjectEvent(t *testing.T) {
 
 		const lProject = "luci"
 		a := AdminServer{
-			PMNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
+			pmNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
 		Convey("without access", func() {
@@ -709,7 +709,7 @@ func TestSendRunEvent(t *testing.T) {
 
 		const rid = "proj/123-deadbeef"
 		a := AdminServer{
-			RunNotifier: run.NewNotifier(ct.TQDispatcher),
+			runNotifier: run.NewNotifier(ct.TQDispatcher),
 		}
 
 		Convey("without access", func() {
@@ -746,8 +746,8 @@ func TestScheduleTask(t *testing.T) {
 
 		const lProject = "infra"
 		a := AdminServer{
-			TQDispatcher: ct.TQDispatcher,
-			PMNotifier:   prjmanager.NewNotifier(ct.TQDispatcher),
+			tqDispatcher: ct.TQDispatcher,
+			pmNotifier:   prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 		req := &adminpb.ScheduleTaskRequest{
 			DeduplicationKey: "key",

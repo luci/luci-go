@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
@@ -68,6 +69,7 @@ func main() {
 		analytics.NewModuleFromFlags(),
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
+		dsmapper.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		gerritauth.NewModuleFromFlags(),
@@ -131,12 +133,10 @@ func main() {
 			GFactory:    gFactory,
 			RunNotifier: runNotifier,
 		})
-		adminpb.RegisterAdminServer(srv.PRPC, &admin.AdminServer{
-			TQDispatcher:  &tq.Default,
-			GerritUpdater: clUpdater,
-			PMNotifier:    pmNotifier,
-			RunNotifier:   runNotifier,
-		})
+		adminpb.RegisterAdminServer(srv.PRPC, admin.New(
+			&tq.Default, &dsmapper.Default,
+			clUpdater, pmNotifier, runNotifier,
+		))
 		apiv0pb.RegisterRunsServer(srv.PRPC, &rpcv0.RunsServer{})
 
 		// Register cron.

@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -57,12 +58,23 @@ import (
 const allowGroup = "service-luci-change-verifier-admins"
 
 type AdminServer struct {
-	TQDispatcher  *tq.Dispatcher
-	GerritUpdater *updater.Updater
-	PMNotifier    *prjmanager.Notifier
-	RunNotifier   *run.Notifier
+	tqDispatcher  *tq.Dispatcher
+	gerritUpdater *updater.Updater
+	pmNotifier    *prjmanager.Notifier
+	runNotifier   *run.Notifier
+	dsMapper      *dsmapper.Controller
 
 	adminpb.UnimplementedAdminServer
+}
+
+func New(t *tq.Dispatcher, ds *dsmapper.Controller, u *updater.Updater, p *prjmanager.Notifier, r *run.Notifier) *AdminServer {
+	return &AdminServer{
+		tqDispatcher:  t,
+		gerritUpdater: u,
+		pmNotifier:    p,
+		runNotifier:   r,
+		dsMapper:      ds,
+	}
 }
 
 func (a *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectRequest) (resp *adminpb.GetProjectResponse, err error) {
@@ -587,7 +599,7 @@ func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 					Change:      change,
 					ClidHint:    id,
 				}
-				return a.GerritUpdater.Schedule(ctx, payload)
+				return a.gerritUpdater.Schedule(ctx, payload)
 			}
 		}
 	})
@@ -595,7 +607,7 @@ func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 		return nil, err
 	}
 
-	if err := a.PMNotifier.NotifyCLsUpdated(ctx, req.GetProject(), changelist.ToUpdatedEvents(cls...)); err != nil {
+	if err := a.pmNotifier.NotifyCLsUpdated(ctx, req.GetProject(), changelist.ToUpdatedEvents(cls...)); err != nil {
 		return nil, err
 	}
 
@@ -625,7 +637,7 @@ func (a *AdminServer) SendProjectEvent(ctx context.Context, req *adminpb.SendPro
 		return nil, appstatus.Error(codes.NotFound, "project not found")
 	}
 
-	if err := a.PMNotifier.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
+	if err := a.pmNotifier.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
 		return nil, errors.Annotate(err, "failed to send event").Err()
 	}
 	return &emptypb.Empty{}, nil
@@ -650,7 +662,7 @@ func (a *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEven
 		return nil, appstatus.Error(codes.NotFound, "Run not found")
 	}
 
-	if err := a.RunNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
+	if err := a.runNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
 		return nil, errors.Annotate(err, "failed to send event").Err()
 	}
 	return &emptypb.Empty{}, nil
@@ -707,10 +719,10 @@ func (a *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 
 	if chosen.inTransaction {
 		err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			return a.TQDispatcher.AddTask(ctx, t)
+			return a.tqDispatcher.AddTask(ctx, t)
 		}, nil)
 	} else {
-		err = a.TQDispatcher.AddTask(ctx, t)
+		err = a.tqDispatcher.AddTask(ctx, t)
 	}
 
 	if err != nil {
