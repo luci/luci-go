@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
@@ -257,16 +258,21 @@ func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) error {
 	if err != nil {
 		return err
 	}
-	_, err = gc.SetReview(ctx, req)
-	switch code := grpcutil.Code(err); code {
-	case codes.OK:
-		return nil
-	case codes.PermissionDenied, codes.NotFound:
-		// This is permanent error which shouldn't be retried.
-		return errors.Annotate(err, "no Gerrit.SetReview access to CL %d %s", rcl.ID, rcl.ExternalID).Err()
-	default:
-		return gerrit.UnhandledError(ctx, err, "failed to Gerrit.SetReview details of CL %d %s messages", rcl.ID, rcl.ExternalID)
-	}
+	return op.GFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
+		switch _, err := gc.SetReview(ctx, req); grpcutil.Code(err) {
+		case codes.OK:
+			return nil
+		case codes.PermissionDenied:
+			// This is a permanent error which shouldn't be retried.
+			return errors.Annotate(err, "no Gerrit.SetReview access to CL %d %s", rcl.ID, rcl.ExternalID).Err()
+		case codes.NotFound:
+			// This is known to happen on new CLs or on recently created revisions.
+			logging.Debugf(ctx, "HTTP 404 when posting start message: %s", err)
+			return errors.Annotate(gerrit.ErrStaleData, "no Gerrit.SetReview access to CL %d %s, likely stale replica", rcl.ID, rcl.ExternalID).Err()
+		default:
+			return gerrit.UnhandledError(ctx, err, "failed to Gerrit.SetReview details of CL %d %s messages", rcl.ID, rcl.ExternalID)
+		}
+	})
 }
 
 func (op *PostStartMessageOp) makeMessage(rcl *run.RunCL) (string, error) {
