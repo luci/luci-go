@@ -40,10 +40,7 @@ luci.logdog(
 luci.milo(
     logo = "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png",
     favicon = "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico",
-    monorail_project = "tutu, all aboard",
-    monorail_components = ["Stuff>Hard"],
-    bug_summary = "Bug summary",
-    bug_description = "Everything is broken",
+    bug_url_template = "https://bugs.chromium.org/p/tutu%%2C%%20all%%20aboard/issues/entry?summary=Bug%%20summary&description=Everything%%20is%%20broken&components=Stuff%%3EHard",
 )
 
 # Recipes.
@@ -1016,12 +1013,7 @@ lucicfg.emit(
 #   external_id: "main"
 # }
 # logo_url: "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png"
-# build_bug_template {
-#   summary: "Bug summary"
-#   description: "Everything is broken"
-#   monorail_project: "tutu, all aboard"
-#   components: "Stuff>Hard"
-# }
+# bug_url_template: "https://bugs.chromium.org/p/tutu%2C%20all%20aboard/issues/entry?summary=Bug%20summary&description=Everything%20is%20broken&components=Stuff%3EHard"
 # ===
 #
 # === luci-notify.cfg

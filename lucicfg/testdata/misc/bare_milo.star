@@ -4,17 +4,13 @@ luci.project(
 )
 
 luci.milo(
-    monorail_project = "project",
-    monorail_components = ["A"],
+    bug_url_template = "https://b.corp.google.com/createIssue?notes={{{milo_build_url}}}&title=build%%20{{{build.builder.build}}}%%20failed",
 )
 
 # Expect configs:
 #
 # === luci-milo.cfg
-# build_bug_template {
-#   monorail_project: "project"
-#   components: "A"
-# }
+# bug_url_template: "https://b.corp.google.com/createIssue?notes={{{milo_build_url}}}&title=build%20{{{build.builder.build}}}%20failed"
 # ===
 #
 # === project.cfg

@@ -641,6 +641,7 @@ def gen_milo_cfg(ctx):
     opts = struct(
         logo = milo_node.props.logo if milo_node else None,
         favicon = milo_node.props.favicon if milo_node else None,
+        bug_url_template = milo_node.props.bug_url_template if milo_node else None,
     )
 
     # Keep the order of views as they were defined, for Milo's list of consoles.
@@ -648,6 +649,7 @@ def gen_milo_cfg(ctx):
     if not views and not milo_node:
         return
 
+    # Deprecated
     build_bug_template = None
     if milo_node and milo_node.props.monorail_project:
         build_bug_template = milo_pb.BugTemplate(
@@ -661,12 +663,15 @@ def gen_milo_cfg(ctx):
     project_name = get_project().props.name
 
     set_config(ctx, milo.cfg_file, milo_pb.Project(
-        build_bug_template = build_bug_template,
+        bug_url_template = opts.bug_url_template,
         logo_url = opts.logo,
         consoles = [
             _milo_console_pb(view, opts, project_name)
             for view in views
         ],
+
+        # Deprecated
+        build_bug_template = build_bug_template,
     ))
 
 def _milo_check_connections():
