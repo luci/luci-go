@@ -1,3 +1,17 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package target
 
 import (
@@ -29,22 +43,25 @@ func TestTargetPopulate(t *testing.T) {
 
 	Convey("Populate metrics collection", t, func() {
 		Convey("With DeviceTarget", func() {
-			d := &pb.MetricsCollection{
-				RootLabels: []*pb.MetricsCollection_RootLabels{
-					{
-						Key:   proto.String("proxy_zone"),
-						Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "abc"},
-					},
-				},
-			}
-
+			d := &pb.MetricsCollection{}
 			deviceTarget.PopulateProto(d)
-
 			So(d.TargetSchema, ShouldBeNil)
 			So(d.RootLabels, ShouldResembleProto, []*pb.MetricsCollection_RootLabels{
 				{
+					Key:   proto.String("proxy_environment"),
+					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "pa"},
+				},
+				{
+					Key:   proto.String("acquisition_name"),
+					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "mon-chrome-infra"},
+				},
+				{
 					Key:   proto.String("proxy_zone"),
-					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "abc"},
+					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "atl"},
+				},
+				{
+					Key:   proto.String("pop"),
+					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: ""},
 				},
 				{
 					Key:   proto.String("alertable"),
@@ -53,6 +70,10 @@ func TestTargetPopulate(t *testing.T) {
 				{
 					Key:   proto.String("realm"),
 					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "ACQ_CHROME"},
+				},
+				{
+					Key:   proto.String("asn"),
+					Value: &pb.MetricsCollection_RootLabels_Int64Value{Int64Value: 0},
 				},
 				{
 					Key:   proto.String("metro"),
@@ -67,6 +88,10 @@ func TestTargetPopulate(t *testing.T) {
 					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "test-hostname"},
 				},
 				{
+					Key:   proto.String("vendor"),
+					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: ""},
+				},
+				{
 					Key:   proto.String("hostgroup"),
 					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "test-hostgroup"},
 				},
@@ -74,22 +99,21 @@ func TestTargetPopulate(t *testing.T) {
 		})
 
 		Convey("With TaskTarget", func() {
-			d := &pb.MetricsCollection{
-				RootLabels: []*pb.MetricsCollection_RootLabels{
-					{
-						Key:   proto.String("proxy_zone"),
-						Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "abc"},
-					},
-				},
-			}
-
+			d := &pb.MetricsCollection{}
 			taskTarget.PopulateProto(d)
-
 			So(d.TargetSchema, ShouldBeNil)
 			So(d.RootLabels, ShouldResembleProto, []*pb.MetricsCollection_RootLabels{
 				{
+					Key:   proto.String("proxy_environment"),
+					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "pa"},
+				},
+				{
+					Key:   proto.String("acquisition_name"),
+					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "mon-chrome-infra"},
+				},
+				{
 					Key:   proto.String("proxy_zone"),
-					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "abc"},
+					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "atl"},
 				},
 				{
 					Key:   proto.String("service_name"),

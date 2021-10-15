@@ -330,8 +330,8 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(coll[0].TargetSchema, ShouldBeNil)
 					So(coll[1].TargetSchema, ShouldBeNil)
 
-					s0 := coll[0].RootLabels[0]
-					s1 := coll[1].RootLabels[0]
+					s0 := coll[0].RootLabels[3]
+					s1 := coll[1].RootLabels[3]
 
 					serviceName := &pb.MetricsCollection_RootLabels{
 						Key: proto.String("service_name"),
@@ -556,8 +556,8 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(coll[0].TargetSchema, ShouldBeNil)
 					So(coll[1].TargetSchema, ShouldBeNil)
 
-					s0 := coll[0].RootLabels[0]
-					s1 := coll[1].RootLabels[0]
+					s0 := coll[0].RootLabels[3]
+					s1 := coll[1].RootLabels[3]
 
 					serviceName := &pb.MetricsCollection_RootLabels{
 						Key: proto.String("service_name"),

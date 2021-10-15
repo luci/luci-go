@@ -26,6 +26,16 @@ import (
 func (t *Task) PopulateProto(d *pb.MetricsCollection) {
 	d.RootLabels = append(
 		d.RootLabels,
+		// ProdX automatically adds and sets the following fields
+		// with own values, even if tsmon doesn't add them in RootLabels,
+		// except that proxy_zone may be required under certain conditions.
+		//
+		// This adds them to avoid unexpected data loss,
+		// just in case the above assumptions change.
+		RootLabel("proxy_environment", "pa"),
+		RootLabel("acquisition_name", "mon-chrome-infra"),
+		RootLabel("proxy_zone", "atl"),
+
 		RootLabel("service_name", t.ServiceName),
 		RootLabel("job_name", t.JobName),
 		RootLabel("data_center", t.DataCenter),
@@ -38,11 +48,24 @@ func (t *Task) PopulateProto(d *pb.MetricsCollection) {
 func (t *NetworkDevice) PopulateProto(d *pb.MetricsCollection) {
 	d.RootLabels = append(
 		d.RootLabels,
+		// ProdX automatically adds and sets the following fields
+		// with own values. Even if tsmon sets them with own values,
+		// the custom values are ignored.
+		//
+		// This adds them to avoid unexpected data loss,
+		// just in case the above assumptions change.
+		RootLabel("proxy_environment", "pa"),
+		RootLabel("acquisition_name", "mon-chrome-infra"),
+		RootLabel("proxy_zone", "atl"),
+
+		RootLabel("pop", ""),
 		RootLabel("alertable", true),
 		RootLabel("realm", "ACQ_CHROME"),
+		RootLabel("asn", int64(0)),
 		RootLabel("metro", t.Metro),
 		RootLabel("role", t.Role),
 		RootLabel("hostname", t.Hostname),
+		RootLabel("vendor", ""),
 		RootLabel("hostgroup", t.Hostgroup),
 	)
 }

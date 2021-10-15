@@ -102,6 +102,9 @@ func TestSerializeCell(t *testing.T) {
 	resetTS := timestamppb.New(reset)
 
 	emptyTaskRootLabels := []*pb.MetricsCollection_RootLabels{
+		target.RootLabel("proxy_environment", "pa"),
+		target.RootLabel("acquisition_name", "mon-chrome-infra"),
+		target.RootLabel("proxy_zone", "atl"),
 		target.RootLabel("service_name", ""),
 		target.RootLabel("job_name", ""),
 		target.RootLabel("data_center", ""),
@@ -336,6 +339,9 @@ func TestSerializeCell(t *testing.T) {
 		}}, now)
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
 			RootLabels: []*pb.MetricsCollection_RootLabels{
+				target.RootLabel("proxy_environment", "pa"),
+				target.RootLabel("acquisition_name", "mon-chrome-infra"),
+				target.RootLabel("proxy_zone", "atl"),
 				target.RootLabel("service_name", "hello"),
 				target.RootLabel("job_name", "world"),
 				target.RootLabel("data_center", ""),
