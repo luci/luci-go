@@ -113,6 +113,7 @@ func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 		r.Description = ""
 		if c := r.GetCommit(); c != nil {
 			c.Parents = nil
+			// TODO(tandrii): erase commit message.
 		}
 		r.Uploader = nil
 		r.Files = nil

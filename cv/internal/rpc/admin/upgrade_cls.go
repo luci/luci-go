@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/gerrit/metadata"
 )
 
 var upgradeCLConfig = dsmapper.JobConfig{
@@ -45,7 +45,7 @@ func upgradeCLs(ctx context.Context, keys []*datastore.Key) error {
 	needUpgrade := func(cls []*changelist.CL) []*changelist.CL {
 		toUpdate := cls[:0]
 		for _, cl := range cls {
-			// NOTE: updater.ExtractMetadata returns empty slice, hence comparison
+			// NOTE: metadata.Extract returns empty slice, hence comparison
 			// against nil, not len(...) == 0.
 			if cl.Snapshot == nil || cl.Snapshot.GetMetadata() != nil {
 				continue
@@ -81,12 +81,10 @@ func upgradeCLs(ctx context.Context, keys []*datastore.Key) error {
 		now := datastore.RoundTime(clock.Now(ctx).UTC())
 		for _, cl := range cls {
 			ci := cl.Snapshot.GetGerrit().GetInfo()
-			// updater.ExtractMetadata always returns a non-nil slice, possibly empty.
-			cl.Snapshot.Metadata = updater.ExtractMetadata(ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage())
+			// metadata.Extract always returns a non-nil slice, possibly empty.
+			cl.Snapshot.Metadata = metadata.Extract(ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage())
 			cl.UpdateTime = now
 			cl.EVersion++
-			// NOTE: not notifying any other CV parts because this isn't a material
-			// update.
 		}
 		return datastore.Put(ctx, cls)
 	}, nil)

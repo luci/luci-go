@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/git/footer"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -44,6 +43,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cqdepend"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	"go.chromium.org/luci/cv/internal/gerrit/metadata"
 )
 
 const (
@@ -208,12 +208,13 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 		return err
 	}
 
-	metadata := ExtractMetadata(ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage())
+	// Save CL Description before it's out from ChangeInfo.
+	clDescription := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
 	changelist.RemoveUnusedGerritInfo(ci)
 	f.toUpdate.Snapshot = &changelist.Snapshot{
 		LuciProject:        f.luciProject,
 		ExternalUpdateTime: ci.GetUpdated(),
-		Metadata:           metadata,
+		Metadata:           metadata.Extract(clDescription),
 		Kind: &changelist.Snapshot_Gerrit{
 			Gerrit: &changelist.Gerrit{
 				Host: f.host,
@@ -936,27 +937,4 @@ func (u updateFields) apply(cl *changelist.CL) (changed bool) {
 	}
 
 	return
-}
-
-// ExtractMetadata extracts CL metadata from Gerrit CL description.
-//
-// TODO(tandrii): un-export once all CLs have metadata.
-func ExtractMetadata(clDescription string) []*changelist.StringPair {
-	kvs := footer.ParseMessage(clDescription)
-	for k, vs := range footer.ParseLegacyMetadata(clDescription) {
-		kvs[k] = append(kvs[k], vs...)
-	}
-	keys := make([]string, len(kvs))
-	for k := range kvs {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	// Each keys has at least one value.
-	out := make([]*changelist.StringPair, 0, len(kvs))
-	for _, k := range keys {
-		for _, v := range kvs[k] {
-			out = append(out, &changelist.StringPair{Key: k, Value: v})
-		}
-	}
-	return out
 }
