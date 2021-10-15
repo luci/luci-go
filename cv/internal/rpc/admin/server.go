@@ -62,18 +62,19 @@ type AdminServer struct {
 	gerritUpdater *updater.Updater
 	pmNotifier    *prjmanager.Notifier
 	runNotifier   *run.Notifier
-	dsMapper      *dsmapper.Controller
+
+	dsmapper *dsMapper
 
 	adminpb.UnimplementedAdminServer
 }
 
-func New(t *tq.Dispatcher, ds *dsmapper.Controller, u *updater.Updater, p *prjmanager.Notifier, r *run.Notifier) *AdminServer {
+func New(t *tq.Dispatcher, ctrl *dsmapper.Controller, u *updater.Updater, p *prjmanager.Notifier, r *run.Notifier) *AdminServer {
 	return &AdminServer{
 		tqDispatcher:  t,
 		gerritUpdater: u,
 		pmNotifier:    p,
 		runNotifier:   r,
-		dsMapper:      ds,
+		dsmapper:      newDSMapper(ctrl),
 	}
 }
 

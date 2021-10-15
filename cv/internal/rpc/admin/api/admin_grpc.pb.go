@@ -31,6 +31,13 @@ type AdminClient interface {
 	GetPoller(ctx context.Context, in *GetPollerRequest, opts ...grpc.CallOption) (*GetPollerResponse, error)
 	// SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
 	SearchRuns(ctx context.Context, in *SearchRunsRequest, opts ...grpc.CallOption) (*RunsResponse, error)
+	// DSMLaunchJob launches a new job, pre-registered in dsmapper.go.
+	// Returns job ID.
+	DSMLaunchJob(ctx context.Context, in *DSMLaunchJobRequest, opts ...grpc.CallOption) (*DSMJobID, error)
+	// DSMGetJob returns details of previously launched job given its ID.
+	DSMGetJob(ctx context.Context, in *DSMJobID, opts ...grpc.CallOption) (*DSMJob, error)
+	// DSMAbortJob aborts previously launched job given its ID.
+	DSMAbortJob(ctx context.Context, in *DSMJobID, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// RefreshProjectCLs refreshes all CLs currently tracked by PM.
 	//
 	// This is generally safe to call, but it may consume Gerrit Quota of the
@@ -133,6 +140,33 @@ func (c *adminClient) SearchRuns(ctx context.Context, in *SearchRunsRequest, opt
 	return out, nil
 }
 
+func (c *adminClient) DSMLaunchJob(ctx context.Context, in *DSMLaunchJobRequest, opts ...grpc.CallOption) (*DSMJobID, error) {
+	out := new(DSMJobID)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/DSMLaunchJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminClient) DSMGetJob(ctx context.Context, in *DSMJobID, opts ...grpc.CallOption) (*DSMJob, error) {
+	out := new(DSMJob)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/DSMGetJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminClient) DSMAbortJob(ctx context.Context, in *DSMJobID, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/DSMAbortJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminClient) RefreshProjectCLs(ctx context.Context, in *RefreshProjectCLsRequest, opts ...grpc.CallOption) (*RefreshProjectCLsResponse, error) {
 	out := new(RefreshProjectCLsResponse)
 	err := c.cc.Invoke(ctx, "/cv.internal.rpc.admin.api.Admin/RefreshProjectCLs", in, out, opts...)
@@ -194,6 +228,13 @@ type AdminServer interface {
 	GetPoller(context.Context, *GetPollerRequest) (*GetPollerResponse, error)
 	// SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
 	SearchRuns(context.Context, *SearchRunsRequest) (*RunsResponse, error)
+	// DSMLaunchJob launches a new job, pre-registered in dsmapper.go.
+	// Returns job ID.
+	DSMLaunchJob(context.Context, *DSMLaunchJobRequest) (*DSMJobID, error)
+	// DSMGetJob returns details of previously launched job given its ID.
+	DSMGetJob(context.Context, *DSMJobID) (*DSMJob, error)
+	// DSMAbortJob aborts previously launched job given its ID.
+	DSMAbortJob(context.Context, *DSMJobID) (*emptypb.Empty, error)
 	// RefreshProjectCLs refreshes all CLs currently tracked by PM.
 	//
 	// This is generally safe to call, but it may consume Gerrit Quota of the
@@ -256,6 +297,15 @@ func (UnimplementedAdminServer) GetPoller(context.Context, *GetPollerRequest) (*
 }
 func (UnimplementedAdminServer) SearchRuns(context.Context, *SearchRunsRequest) (*RunsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchRuns not implemented")
+}
+func (UnimplementedAdminServer) DSMLaunchJob(context.Context, *DSMLaunchJobRequest) (*DSMJobID, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DSMLaunchJob not implemented")
+}
+func (UnimplementedAdminServer) DSMGetJob(context.Context, *DSMJobID) (*DSMJob, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DSMGetJob not implemented")
+}
+func (UnimplementedAdminServer) DSMAbortJob(context.Context, *DSMJobID) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DSMAbortJob not implemented")
 }
 func (UnimplementedAdminServer) RefreshProjectCLs(context.Context, *RefreshProjectCLsRequest) (*RefreshProjectCLsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshProjectCLs not implemented")
@@ -393,6 +443,60 @@ func _Admin_SearchRuns_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Admin_DSMLaunchJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DSMLaunchJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).DSMLaunchJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/DSMLaunchJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).DSMLaunchJob(ctx, req.(*DSMLaunchJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admin_DSMGetJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DSMJobID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).DSMGetJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/DSMGetJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).DSMGetJob(ctx, req.(*DSMJobID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admin_DSMAbortJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DSMJobID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).DSMAbortJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cv.internal.rpc.admin.api.Admin/DSMAbortJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).DSMAbortJob(ctx, req.(*DSMJobID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Admin_RefreshProjectCLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshProjectCLsRequest)
 	if err := dec(in); err != nil {
@@ -513,6 +617,18 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchRuns",
 			Handler:    _Admin_SearchRuns_Handler,
+		},
+		{
+			MethodName: "DSMLaunchJob",
+			Handler:    _Admin_DSMLaunchJob_Handler,
+		},
+		{
+			MethodName: "DSMGetJob",
+			Handler:    _Admin_DSMGetJob_Handler,
+		},
+		{
+			MethodName: "DSMAbortJob",
+			Handler:    _Admin_DSMAbortJob_Handler,
 		},
 		{
 			MethodName: "RefreshProjectCLs",

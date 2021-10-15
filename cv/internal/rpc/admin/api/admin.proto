@@ -22,6 +22,8 @@ option go_package = "go.chromium.org/luci/cv/internal/rpc/admin/api;adminpb";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/server/dsmapper/dsmapperpb/messages.proto";
+
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 import "go.chromium.org/luci/cv/internal/configs/prjcfg/tasks.proto";
 import "go.chromium.org/luci/cv/internal/gerrit/poller/storage.proto";
@@ -58,6 +60,18 @@ service Admin {
 
   // SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
   rpc SearchRuns(SearchRunsRequest) returns (RunsResponse);
+
+  /////////////////////////////////////////////////////////////////////////////
+  // API to mass upgrade DS entities via server/dsmapper.
+  /////////////////////////////////////////////////////////////////////////////
+
+  // DSMLaunchJob launches a new job, pre-registered in dsmapper.go.
+  // Returns job ID.
+  rpc DSMLaunchJob(DSMLaunchJobRequest) returns (DSMJobID);
+  // DSMGetJob returns details of previously launched job given its ID.
+  rpc DSMGetJob(DSMJobID) returns (DSMJob);
+  // DSMAbortJob aborts previously launched job given its ID.
+  rpc DSMAbortJob(DSMJobID) returns (google.protobuf.Empty);
 
   /////////////////////////////////////////////////////////////////////////////
   // Advanced APIs with side effects.
@@ -286,4 +300,19 @@ message ScheduleTaskRequest {
 
   // Optional.
   string deduplication_key  = 11;
+}
+
+message DSMLaunchJobRequest {
+  // Name of migration, must be registered in admin/dsmapper.go.
+  string name = 1;
+}
+
+message DSMJobID {
+  int64 id = 1;
+}
+
+message DSMJob {
+  // Name as registered is admin/dsmapper.go.
+  string name = 1;
+  luci.server.dsmapper.JobInfo info = 2;
 }
