@@ -364,9 +364,9 @@ type change struct {
 
 func (c *change) getLatest(ctx context.Context, knownUpdatedTime time.Time) (*gerritpb.ChangeInfo, error) {
 	var ci *gerritpb.ChangeInfo
-	err := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		var err error
-		ci, err = c.gc.GetChange(ctx, &gerritpb.GetChangeRequest{
+	var gerritErr error
+	staleErr := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
+		ci, gerritErr = c.gc.GetChange(ctx, &gerritpb.GetChangeRequest{
 			Number:  c.Number,
 			Project: c.Project,
 			Options: []gerritpb.QueryOption{
@@ -377,15 +377,32 @@ func (c *change) getLatest(ctx context.Context, knownUpdatedTime time.Time) (*ge
 			},
 		}, opt)
 		switch {
-		case err != nil:
-			return err
+		case grpcutil.Code(gerritErr) == codes.NotFound:
+			// If a Run fails right after this CL is uploaded, it is possible that
+			// CV receives NotFound when fetching this CL due to eventual consistency
+			// of Gerrit. Therefore, consider this error as stale data. It is also
+			// possible that user actually deleted this CL. In that case, it is also
+			// okay to retry here because theorectically, Gerrit should consistently
+			// return 404 and fail the task. When the task retries, CV should figure
+			// that it has lost its access to this CL at the beginning and give up
+			// the trigger cancellation. But, even if Gerrit accidentally return
+			// the deleted CL, the subsequent SetReview call will also fail the task.
+			return gerrit.ErrStaleData
+		case gerritErr != nil:
+			return nil // stop iterating
 		case ci.GetUpdated().AsTime().Before(knownUpdatedTime):
 			return gerrit.ErrStaleData
 		}
 		return nil
 	})
-
-	return ci, c.annotateGerritErr(ctx, err, "get")
+	switch {
+	case gerritErr != nil:
+		return nil, c.annotateGerritErr(ctx, gerritErr, "get")
+	case staleErr != nil:
+		return nil, staleErr
+	default:
+		return ci, nil
+	}
 }
 
 func (c *change) recordVotesToRemove(label string, ci *gerritpb.ChangeInfo) {
