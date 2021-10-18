@@ -76,7 +76,6 @@ message Project {
   // following:
   // * bugs.chromium.org
   // * b.corp.google.com
-  // * buganizer.corp.google.com
   //
   // The template is interpreted as a mustache template and the following
   // variables are available:
@@ -87,8 +86,8 @@ message Project {
   // * {{{ milo_builder_url }}}
   //
   // All variables are URL component encoded. Additionally, use `{{{ ... }}}` to
-  // disable HTML escaping. If the template is not a valid mustache template,
-  // the link is not displayed.
+  // disable HTML escaping. If the template is not a valid mustache template, or
+  // doesn't satisfy the requirements above, the link is not displayed.
   string bug_url_template = 8;
 }
 

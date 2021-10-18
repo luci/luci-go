@@ -81,7 +81,6 @@ type Project struct {
 	// following:
 	// * bugs.chromium.org
 	// * b.corp.google.com
-	// * buganizer.corp.google.com
 	//
 	// The template is interpreted as a mustache template and the following
 	// variables are available:
@@ -92,8 +91,8 @@ type Project struct {
 	// * {{{ milo_builder_url }}}
 	//
 	// All variables are URL component encoded. Additionally, use `{{{ ... }}}` to
-	// disable HTML escaping. If the template is not a valid mustache template,
-	// the link is not displayed.
+	// disable HTML escaping. If the template is not a valid mustache template, or
+	// doesn't satisfy the requirements above, the link is not displayed.
 	BugUrlTemplate string `protobuf:"bytes,8,opt,name=bug_url_template,json=bugUrlTemplate,proto3" json:"bug_url_template,omitempty"`
 }
 
