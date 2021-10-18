@@ -157,10 +157,10 @@ type LegacyApiBucketMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "ConfigFileContent")
 	// to unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "ConfigFileContent") to
@@ -191,10 +191,10 @@ type LegacyApiBuildResponseMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Build") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Build") to include in API
@@ -219,10 +219,10 @@ type LegacyApiCancelBatchRequestMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "BuildIds") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BuildIds") to include in
@@ -251,10 +251,10 @@ type LegacyApiCancelBatchResponseMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Error") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Error") to include in API
@@ -282,10 +282,10 @@ type LegacyApiCancelBatchResponseMessageOneResult struct {
 
 	// ForceSendFields is a list of field names (e.g. "Build") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Build") to include in API
@@ -308,10 +308,10 @@ type LegacyApiCancelRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "ResultDetailsJson")
 	// to unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "ResultDetailsJson") to
@@ -409,10 +409,10 @@ type LegacyApiCommonBuildMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Bucket") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Bucket") to include in API
@@ -439,10 +439,10 @@ type LegacyApiDeleteManyBuildsResponse struct {
 
 	// ForceSendFields is a list of field names (e.g. "Error") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Error") to include in API
@@ -475,10 +475,10 @@ type LegacyApiErrorMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Message") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Message") to include in
@@ -515,10 +515,10 @@ type LegacyApiFailRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "FailureReason") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "FailureReason") to include
@@ -541,10 +541,10 @@ type LegacyApiHeartbeatBatchRequestMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Heartbeats") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Heartbeats") to include in
@@ -571,10 +571,10 @@ type LegacyApiHeartbeatBatchRequestMessageOneHeartbeat struct {
 
 	// ForceSendFields is a list of field names (e.g. "BuildId") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BuildId") to include in
@@ -603,10 +603,10 @@ type LegacyApiHeartbeatBatchResponseMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Error") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Error") to include in API
@@ -633,10 +633,10 @@ type LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult struct {
 
 	// ForceSendFields is a list of field names (e.g. "BuildId") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BuildId") to include in
@@ -661,10 +661,10 @@ type LegacyApiHeartbeatRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "LeaseExpirationTs")
 	// to unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "LeaseExpirationTs") to
@@ -688,10 +688,10 @@ type LegacyApiLeaseRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "LeaseExpirationTs")
 	// to unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "LeaseExpirationTs") to
@@ -725,10 +725,10 @@ type LegacyApiPubSubCallbackMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "AuthToken") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "AuthToken") to include in
@@ -751,10 +751,10 @@ type LegacyApiPutBatchRequestMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Builds") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Builds") to include in API
@@ -783,10 +783,10 @@ type LegacyApiPutBatchResponseMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Error") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Error") to include in API
@@ -814,10 +814,10 @@ type LegacyApiPutBatchResponseMessageOneResult struct {
 
 	// ForceSendFields is a list of field names (e.g. "Build") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Build") to include in API
@@ -858,10 +858,10 @@ type LegacyApiPutRequestMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Bucket") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Bucket") to include in API
@@ -888,10 +888,10 @@ type LegacyApiRetryRequestMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "ClientOperationId")
 	// to unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "ClientOperationId") to
@@ -924,10 +924,10 @@ type LegacyApiSearchResponseMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Builds") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Builds") to include in API
@@ -952,10 +952,10 @@ type LegacyApiStartRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "LeaseKey") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "LeaseKey") to include in
@@ -984,10 +984,10 @@ type LegacyApiSucceedRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "LeaseKey") to
 	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "LeaseKey") to include in
@@ -1015,6 +1015,8 @@ type BackfillTagIndexCall struct {
 }
 
 // BackfillTagIndex: Backfills TagIndex entities from builds.
+//
+// - tagKey: .
 func (s *Service) BackfillTagIndex(tagKey string) *BackfillTagIndexCall {
 	c := &BackfillTagIndexCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.urlParams_.Set("tag_key", tagKey)
@@ -1048,7 +1050,7 @@ func (c *BackfillTagIndexCall) Header() http.Header {
 
 func (c *BackfillTagIndexCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1112,6 +1114,8 @@ type CancelCall struct {
 }
 
 // Cancel: Cancels a build.
+//
+// - id: .
 func (s *Service) Cancel(id int64, legacyapicancelrequestbodymessage *LegacyApiCancelRequestBodyMessage) *CancelCall {
 	c := &CancelCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -1146,7 +1150,7 @@ func (c *CancelCall) Header() http.Header {
 
 func (c *CancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1283,7 +1287,7 @@ func (c *CancelBatchCall) Header() http.Header {
 
 func (c *CancelBatchCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1374,6 +1378,9 @@ type DeleteManyBuildsCall struct {
 }
 
 // DeleteManyBuilds: Deletes scheduled or started builds in a bucket.
+//
+// - bucket: .
+// - status: .
 func (s *Service) DeleteManyBuilds(bucket string, status string) *DeleteManyBuildsCall {
 	c := &DeleteManyBuildsCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -1420,7 +1427,7 @@ func (c *DeleteManyBuildsCall) Header() http.Header {
 
 func (c *DeleteManyBuildsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1543,6 +1550,8 @@ type FailCall struct {
 }
 
 // Fail: Marks a build as failed.
+//
+// - id: .
 func (s *Service) Fail(id int64, legacyapifailrequestbodymessage *LegacyApiFailRequestBodyMessage) *FailCall {
 	c := &FailCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -1577,7 +1586,7 @@ func (c *FailCall) Header() http.Header {
 
 func (c *FailCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1712,7 +1721,7 @@ func (c *FixBuildsCall) Header() http.Header {
 
 func (c *FixBuildsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1766,6 +1775,8 @@ type GetCall struct {
 }
 
 // Get: Returns a build by id.
+//
+// - id: .
 func (s *Service) Get(id int64) *GetCall {
 	c := &GetCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -1809,7 +1820,7 @@ func (c *GetCall) Header() http.Header {
 
 func (c *GetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1908,6 +1919,8 @@ type GetBucketCall struct {
 }
 
 // GetBucket: Returns bucket information.
+//
+// - bucket: .
 func (s *Service) GetBucket(bucket string) *GetBucketCall {
 	c := &GetBucketCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -1951,7 +1964,7 @@ func (c *GetBucketCall) Header() http.Header {
 
 func (c *GetBucketCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2049,6 +2062,8 @@ type HeartbeatCall struct {
 }
 
 // Heartbeat: Updates build lease.
+//
+// - id: .
 func (s *Service) Heartbeat(id int64, legacyapiheartbeatrequestbodymessage *LegacyApiHeartbeatRequestBodyMessage) *HeartbeatCall {
 	c := &HeartbeatCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -2083,7 +2098,7 @@ func (c *HeartbeatCall) Header() http.Header {
 
 func (c *HeartbeatCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2220,7 +2235,7 @@ func (c *HeartbeatBatchCall) Header() http.Header {
 
 func (c *HeartbeatBatchCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2312,6 +2327,8 @@ type LeaseCall struct {
 }
 
 // Lease: Leases a build. Response may contain an error.
+//
+// - id: .
 func (s *Service) Lease(id int64, legacyapileaserequestbodymessage *LegacyApiLeaseRequestBodyMessage) *LeaseCall {
 	c := &LeaseCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -2346,7 +2363,7 @@ func (c *LeaseCall) Header() http.Header {
 
 func (c *LeaseCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2450,6 +2467,9 @@ type PauseCall struct {
 }
 
 // Pause: Pauses or unpause a bucket.
+//
+// - bucket: .
+// - isPaused: .
 func (s *Service) Pause(bucket string, isPaused bool) *PauseCall {
 	c := &PauseCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -2484,7 +2504,7 @@ func (c *PauseCall) Header() http.Header {
 
 func (c *PauseCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2644,7 +2664,7 @@ func (c *PeekCall) Header() http.Header {
 
 func (c *PeekCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2777,7 +2797,7 @@ func (c *PutCall) Header() http.Header {
 
 func (c *PutCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2900,7 +2920,7 @@ func (c *PutBatchCall) Header() http.Header {
 
 func (c *PutBatchCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2990,6 +3010,8 @@ type ResetCall struct {
 }
 
 // Reset: Forcibly unleases a build and resets its state to SCHEDULED.
+//
+// - id: .
 func (s *Service) Reset(id int64) *ResetCall {
 	c := &ResetCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -3023,7 +3045,7 @@ func (c *ResetCall) Header() http.Header {
 
 func (c *ResetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3119,6 +3141,8 @@ type RetryCall struct {
 }
 
 // Retry: Retries an existing build.
+//
+// - id: .
 func (s *Service) Retry(id int64, legacyapiretryrequestmessage *LegacyApiRetryRequestMessage) *RetryCall {
 	c := &RetryCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -3153,7 +3177,7 @@ func (c *RetryCall) Header() http.Header {
 
 func (c *RetryCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3408,7 +3432,7 @@ func (c *SearchCall) Header() http.Header {
 
 func (c *SearchCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3605,6 +3629,8 @@ type StartCall struct {
 }
 
 // Start: Marks a build as started.
+//
+// - id: .
 func (s *Service) Start(id int64, legacyapistartrequestbodymessage *LegacyApiStartRequestBodyMessage) *StartCall {
 	c := &StartCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -3639,7 +3665,7 @@ func (c *StartCall) Header() http.Header {
 
 func (c *StartCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3744,6 +3770,8 @@ type SucceedCall struct {
 }
 
 // Succeed: Marks a build as succeeded.
+//
+// - id: .
 func (s *Service) Succeed(id int64, legacyapisucceedrequestbodymessage *LegacyApiSucceedRequestBodyMessage) *SucceedCall {
 	c := &SucceedCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -3778,7 +3806,7 @@ func (c *SucceedCall) Header() http.Header {
 
 func (c *SucceedCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210318")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}

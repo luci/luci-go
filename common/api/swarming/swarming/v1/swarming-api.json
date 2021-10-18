@@ -943,18 +943,6 @@
           "scopes": [
             "https://www.googleapis.com/auth/userinfo.email"
           ]
-        },
-        "tags": {
-          "description": "Returns the cached set of tags currently seen in the fleet.",
-          "httpMethod": "GET",
-          "id": "swarming.tasks.tags",
-          "path": "tasks/tags",
-          "response": {
-            "$ref": "SwarmingRpcsTasksTags"
-          },
-          "scopes": [
-            "https://www.googleapis.com/auth/userinfo.email"
-          ]
         }
       }
     }
@@ -1345,6 +1333,9 @@
           "type": "boolean"
         },
         "delete_bot": {
+          "type": "boolean"
+        },
+        "delete_bots": {
           "type": "boolean"
         },
         "get_bootstrap_token": {
@@ -2004,6 +1995,10 @@
         "bot_id": {
           "type": "string"
         },
+        "bot_idle_since_ts": {
+          "format": "date-time",
+          "type": "string"
+        },
         "bot_version": {
           "type": "string"
         },
@@ -2244,24 +2239,6 @@
           "type": "string"
         },
         "now": {
-          "format": "date-time",
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "SwarmingRpcsTasksTags": {
-      "description": "Returns all the tags and tag possibilities in the fleet.",
-      "id": "SwarmingRpcsTasksTags",
-      "properties": {
-        "tasks_tags": {
-          "description": "Represents a mapping of string to list of strings.",
-          "items": {
-            "$ref": "SwarmingRpcsStringListPair"
-          },
-          "type": "array"
-        },
-        "ts": {
           "format": "date-time",
           "type": "string"
         }
