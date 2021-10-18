@@ -208,13 +208,12 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 		return err
 	}
 
-	// Save CL Description before it's out from ChangeInfo.
-	clDescription := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
-	changelist.RemoveUnusedGerritInfo(ci)
 	f.toUpdate.Snapshot = &changelist.Snapshot{
 		LuciProject:        f.luciProject,
 		ExternalUpdateTime: ci.GetUpdated(),
-		Metadata:           metadata.Extract(clDescription),
+		Metadata: metadata.Extract(
+			ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage(),
+		),
 		Kind: &changelist.Snapshot_Gerrit{
 			Gerrit: &changelist.Gerrit{
 				Host: f.host,
@@ -223,7 +222,12 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 		},
 	}
 	f.toUpdate.DelAccess = []string{f.luciProject}
-	return f.fetchPostChangeInfo(ctx, ci)
+	if err := f.fetchPostChangeInfo(ctx, ci); err != nil {
+		return err
+	}
+	// Finally, remove all info no longer necessary for CV.
+	changelist.RemoveUnusedGerritInfo(ci)
+	return nil
 }
 
 func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeInfo) error {
