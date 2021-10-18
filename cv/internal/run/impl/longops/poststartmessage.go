@@ -166,7 +166,7 @@ func (op *PostStartMessageOp) doCL(ctx context.Context, rcl *run.RunCL) error {
 	}
 	switch posted, err := op.isAlreadyPosted(ctx, rcl); {
 	case err != nil:
-		return err
+		return errors.Annotate(err, "failed to check if message was already posted").Err()
 	case posted:
 		logging.Debugf(ctx, "CL %d %s already has the starting message", rcl.ID, rcl.ExternalID)
 		return nil
@@ -185,9 +185,9 @@ func (op *PostStartMessageOp) isAlreadyPosted(ctx context.Context, rcl *run.RunC
 	cl := changelist.CL{ID: rcl.ID}
 	switch err := datastore.Get(ctx, &cl); {
 	case err == datastore.ErrNoSuchEntity:
-		return false, errors.Annotate(err, "CL %d %s no longer exists", rcl.ID, rcl.ExternalID).Err()
+		return false, errors.Annotate(err, "CL no longer exists").Err()
 	case err != nil:
-		return false, errors.Annotate(err, "failed to load CL %d %s", rcl.ID, rcl.ExternalID).Tag(transient.Tag).Err()
+		return false, errors.Annotate(err, "failed to load CL").Tag(transient.Tag).Err()
 	case op.isAlreadyPostedOn(rcl, cl.Snapshot.GetGerrit().GetInfo()):
 		return true, nil
 	case clock.Since(ctx, cl.Snapshot.GetExternalUpdateTime().AsTime()) < staleCLAgeThreshold:
@@ -200,19 +200,37 @@ func (op *PostStartMessageOp) isAlreadyPosted(ctx context.Context, rcl *run.RunC
 	if err != nil {
 		return false, err
 	}
-	ci, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
+
+	req := &gerritpb.GetChangeRequest{
 		Project: rcl.Detail.GetGerrit().GetInfo().GetProject(),
 		Number:  rcl.Detail.GetGerrit().GetInfo().GetNumber(),
 		Options: []gerritpb.QueryOption{gerritpb.QueryOption_MESSAGES},
+	}
+	var ci *gerritpb.ChangeInfo
+	outerErr := op.GFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
+		ci, err = gc.GetChange(ctx, req)
+		switch grpcutil.Code(err) {
+		case codes.OK:
+			return nil
+		case codes.PermissionDenied:
+			// This is permanent error which shouldn't be retried.
+			return err
+		case codes.NotFound:
+			return gerrit.ErrStaleData
+		default:
+			err = gerrit.UnhandledError(ctx, err, "Gerrit.GetChange")
+			return err
+		}
 	})
-	switch code := grpcutil.Code(err); code {
-	case codes.OK:
-		return op.isAlreadyPostedOn(rcl, ci), nil
-	case codes.PermissionDenied, codes.NotFound:
-		// This is permanent error which shouldn't be retried.
-		return false, errors.Annotate(err, "no Gerrit.GetChange access to CL %d %s", rcl.ID, rcl.ExternalID).Err()
+	switch {
+	case err != nil:
+		return false, errors.Annotate(err, "failed to get the latest Gerrit ChangeInfo").Err()
+	case outerErr != nil:
+		// Shouldn't happen, unless Mirror iterate itself errors out for some
+		// reason.
+		return false, outerErr
 	default:
-		return false, gerrit.UnhandledError(ctx, err, "failed to Gerrtit.GetChange on CL %d %s messages", rcl.ID, rcl.ExternalID)
+		return op.isAlreadyPostedOn(rcl, ci), nil
 	}
 }
 
@@ -244,6 +262,12 @@ func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to generate the starting message").Err()
 	}
+
+	gc, err := op.GFactory.MakeClient(ctx, rcl.Detail.GetGerrit().GetHost(), op.Run.ID.LUCIProject())
+	if err != nil {
+		return err
+	}
+
 	req := &gerritpb.SetReviewRequest{
 		Project:    rcl.Detail.GetGerrit().GetInfo().GetProject(),
 		Number:     rcl.Detail.GetGerrit().GetInfo().GetNumber(),
@@ -253,26 +277,32 @@ func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) error {
 		Notify:  gerritpb.Notify_NOTIFY_NONE,
 		Message: msg,
 	}
-
-	gc, err := op.GFactory.MakeClient(ctx, rcl.Detail.GetGerrit().GetHost(), op.Run.ID.LUCIProject())
-	if err != nil {
-		return err
-	}
-	return op.GFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		switch _, err := gc.SetReview(ctx, req); grpcutil.Code(err) {
+	outerErr := op.GFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
+		_, err = gc.SetReview(ctx, req)
+		switch grpcutil.Code(err) {
 		case codes.OK:
 			return nil
 		case codes.PermissionDenied:
 			// This is a permanent error which shouldn't be retried.
-			return errors.Annotate(err, "no Gerrit.SetReview access to CL %d %s", rcl.ID, rcl.ExternalID).Err()
+			return err
 		case codes.NotFound:
 			// This is known to happen on new CLs or on recently created revisions.
-			logging.Debugf(ctx, "HTTP 404 when posting start message: %s", err)
-			return errors.Annotate(gerrit.ErrStaleData, "no Gerrit.SetReview access to CL %d %s, likely stale replica", rcl.ID, rcl.ExternalID).Err()
+			return gerrit.ErrStaleData
 		default:
-			return gerrit.UnhandledError(ctx, err, "failed to Gerrit.SetReview details of CL %d %s messages", rcl.ID, rcl.ExternalID)
+			err = gerrit.UnhandledError(ctx, err, "Gerrit.SetReview")
+			return err
 		}
 	})
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "failed to Gerrit.SetReview").Err()
+	case outerErr != nil:
+		// Shouldn't happen, unless MirrorIterator itself errors out for some
+		// reason.
+		return outerErr
+	default:
+		return nil
+	}
 }
 
 func (op *PostStartMessageOp) makeMessage(rcl *run.RunCL) (string, error) {
