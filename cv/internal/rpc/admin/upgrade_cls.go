@@ -25,52 +25,47 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/gerrit/metadata"
 )
 
 var upgradeCLConfig = dsmapper.JobConfig{
-	Mapper: "cl-metadata",
+	Mapper: "cl-description",
 	Query: dsmapper.Query{
 		Kind: "CL",
 	},
-	PageSize:   16,
+	PageSize:   32,
 	ShardCount: 4,
 }
 
-var upgradeCLFactory = func(context.Context, *dsmapper.Job, int) (dsmapper.Mapper, error) {
-	return upgradeCLs, nil
-}
+var upgradeCLFactory = func(_ context.Context, j *dsmapper.Job, _ int) (dsmapper.Mapper, error) {
+	tsJobName := string(j.Config.Mapper)
+	tsJobID := int64(j.ID)
 
-func upgradeCLs(ctx context.Context, keys []*datastore.Key) error {
-	needUpgrade := func(cls []*changelist.CL) []*changelist.CL {
-		toUpdate := cls[:0]
-		for _, cl := range cls {
-			// NOTE: metadata.Extract returns empty slice, hence comparison
-			// against nil, not len(...) == 0.
-			if cl.Snapshot == nil || cl.Snapshot.GetMetadata() != nil {
-				continue
+	upgradeCLs := func(ctx context.Context, keys []*datastore.Key) error {
+		needUpgrade := func(cls []*changelist.CL) []*changelist.CL {
+			toUpdate := cls[:0]
+			for _, cl := range cls {
+				ci := cl.Snapshot.GetGerrit().GetInfo()
+				if ci == nil {
+					continue
+				}
+				revInfo := ci.GetRevisions()[ci.GetCurrentRevision()]
+				if revInfo == nil {
+					continue
+				}
+				if revInfo.GetCommit().GetMessage() == "" {
+					continue
+				}
+				toUpdate = append(toUpdate, cl)
 			}
-			toUpdate = append(toUpdate, cl)
+			return toUpdate
 		}
-		return toUpdate
-	}
 
-	cls := make([]*changelist.CL, len(keys))
-	for i, k := range keys {
-		cls[i] = &changelist.CL{ID: common.CLID(k.IntID())}
-	}
+		cls := make([]*changelist.CL, len(keys))
+		for i, k := range keys {
+			cls[i] = &changelist.CL{ID: common.CLID(k.IntID())}
+		}
 
-	// Check before a transaction if an update is even necessary.
-	if err := datastore.Get(ctx, cls); err != nil {
-		return errors.Annotate(err, "failed to fetch CLs").Tag(transient.Tag).Err()
-	}
-	cls = needUpgrade(cls)
-	if len(cls) == 0 {
-		return nil
-	}
-
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		// Reload inside transaction to avoid races with other CV parts.
+		// Check before a transaction if an update is even necessary.
 		if err := datastore.Get(ctx, cls); err != nil {
 			return errors.Annotate(err, "failed to fetch CLs").Tag(transient.Tag).Err()
 		}
@@ -78,18 +73,30 @@ func upgradeCLs(ctx context.Context, keys []*datastore.Key) error {
 		if len(cls) == 0 {
 			return nil
 		}
-		now := datastore.RoundTime(clock.Now(ctx).UTC())
-		for _, cl := range cls {
-			ci := cl.Snapshot.GetGerrit().GetInfo()
-			// metadata.Extract always returns a non-nil slice, possibly empty.
-			cl.Snapshot.Metadata = metadata.Extract(ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage())
-			cl.UpdateTime = now
-			cl.EVersion++
+
+		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			// Reload inside transaction to avoid races with other CV parts.
+			if err := datastore.Get(ctx, cls); err != nil {
+				return errors.Annotate(err, "failed to fetch CLs").Tag(transient.Tag).Err()
+			}
+			cls = needUpgrade(cls)
+			if len(cls) == 0 {
+				return nil
+			}
+			now := datastore.RoundTime(clock.Now(ctx).UTC())
+			for _, cl := range cls {
+				changelist.RemoveUnusedGerritInfo(cl.Snapshot.GetGerrit().GetInfo())
+				cl.UpdateTime = now
+				cl.EVersion++
+			}
+			return datastore.Put(ctx, cls)
+		}, nil)
+		if err != nil {
+			return errors.Annotate(err, "failed to update CLs").Tag(transient.Tag).Err()
 		}
-		return datastore.Put(ctx, cls)
-	}, nil)
-	if err != nil {
-		return errors.Annotate(err, "failed to update CLs").Tag(transient.Tag).Err()
+		metricUpgraded.Add(ctx, int64(len(cls)), tsJobName, tsJobID, "CL")
+		return nil
 	}
-	return nil
+
+	return upgradeCLs, nil
 }
