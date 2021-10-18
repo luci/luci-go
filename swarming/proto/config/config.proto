@@ -80,6 +80,9 @@ message SettingsCfg {
 
   // Configuration for Swarming-ResultDB integration.
   ResultDBSettings resultdb = 19;
+
+  // Configuration for RBE-CAS integration.
+  CASSettings cas = 20;
 }
 
 
@@ -186,4 +189,12 @@ message ResultDBSettings {
   // Must start with "https://" or "http://",
   // e.g. "https://results.api.cr.dev".
   string server = 1;
+}
+
+// Settings for CAS integration.
+message CASSettings {
+  // Host of the CAS viewer.
+  // Must start with "https://" or "http://",
+  // e.g. "https://cas-viewer.appspot.com".
+  string viewer_server = 1;
 }

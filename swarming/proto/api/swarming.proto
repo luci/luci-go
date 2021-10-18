@@ -283,6 +283,9 @@ message BotInfo {
 
   // This field is used in BOT_MISSING event to know the timestamp of the last activity.
   google.protobuf.Timestamp last_seen_ts = 10;
+
+  // The time when the bot became idle.
+  google.protobuf.Timestamp idle_since_ts = 11;
 }
 
 // PhysicalEntity includes information about an host or device.
@@ -608,11 +611,22 @@ message Containment {
   int64 limit_total_committed_memory = 4;
 }
 
+// The user to run the task.
+enum User {
+  // Unspecified; will default to pool-level defaults.
+  USER_UNSPECIFIED = 0;
+  // Historical value; tasks currently run as the same user that Swarming ran
+  // as.
+  USER_SWARMING = 1;
+  // Using the new, unprivileged user to run the task.
+  USER_TEMPORARY = 2;
+}
+
 // Defines the 'what' to run.
 //
 // A serialization of this message is hashed and this hash is what is used for
 // task deduping.
-// NEXT_ID: 19
+// NEXT_ID: 20
 message TaskProperties {
   // Inputs.
 
@@ -727,6 +741,9 @@ message TaskProperties {
   //
   // Items must be sorted.
   repeated string outputs = 17;
+
+  // User to run the task as.
+  User user = 19;
 }
 
 // Defines a possible task execution for a task request to be run on the
@@ -849,6 +866,11 @@ message TaskRequest {
   //
   // This points to the TaskResult.run_id (ending with '1', '2' or more).
   string parent_run_id = 11;
+  // Root task id, independent of the depth of recursive tasks.
+  string root_task_id = 16;
+  // Root task run id, independent of the depth of recursive tasks.
+  string root_run_id = 17;
+
   // Send notification to this pubsub topic for updates of this task.
   PubSub pubsub_notification = 10;
   // Maximum delay between bot pings before the bot is considered dead
@@ -919,7 +941,7 @@ message PubSub {
 // partition to enforce strong consistency and ignore on-going tasks. See
 // https://cloud.google.com/bigquery/streaming-data-into-bigquery#dataconsistency
 // for more information.
-// NEXT_ID: 22
+// NEXT_ID: 23
 message TaskResult {
   TaskRequest request = 1;
 
@@ -1021,12 +1043,15 @@ message TaskResult {
 
   // Process exit code if relevant. May be forcibly set to -1 in exceptional
   // cases.
-  sint32 exit_code = 19;
+  sint64 exit_code = 19;
   // Isolated outputs, if any.
   // Deprecated: `cas_output_root` will be used.
   CASTree outputs = 20;
   // RBE-CAS output, if any.
   CASReference cas_output_root = 21;
+
+  // ResultDB related properties for this task.
+  ResultDBInfo resultdb_info = 22;
 }
 
 // Defines pinned CIPD packages that were installed during the task.
@@ -1049,17 +1074,92 @@ message TaskPerformance {
   // Total cost of running this task in $USD. In the case of DEDUPED task, this
   // represents the amount saved.
   float cost_usd = 1;
+  // Total overhead caused by the bot.
+  // This is calculated by subtracting the command duration measured in
+  // run_isolated.py from the total duration in task_runner.run_command().
+  // https://source.chromium.org/chromium/infra/infra/+/master:luci/appengine/swarming/swarming_bot/bot_code/task_runner.py;l=811;drc=dfa14c6863d14a5969bb4fea08846985d89aed76
+  google.protobuf.Duration total_overhead = 5;
   // Overhead that is caused by the bot server that is not accounted for by the
   // other overheads.
   google.protobuf.Duration other_overhead = 2;
+  // Deprecated: use setup_overhead instead.
   // Task environment setup overhead. This is the task state
   // RUNNING_OVERHEAD_SETUP.
   TaskOverheadStats setup = 3;
+  // Deprecated: use teardown_overhead instead.
   // Task environment teardown overhead. This is the task state
   // RUNNING_OVERHEAD_TEARDOWN.
   TaskOverheadStats teardown = 4;
+  // Task environment setup overhead. This is the task state
+  // RUNNING_OVERHEAD_SETUP.
+  TaskSetupOverhead setup_overhead = 6;
+  // Task environment teardown overhead. This is the task state
+  // RUNNING_OVERHEAD_TEARDOWN.
+  TaskTeardownOverhead teardown_overhead = 7;
 }
 
+// Overhead information about setup.
+message TaskSetupOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+  // Cache trimming overhead.
+  CacheTrimOverhead cache_trim = 2;
+  // CIPD packge installation overhead.
+  CIPDOverhead cipd = 3;
+  // Named cache install overhead.
+  NamedCacheOverhead named_cache = 4;
+  // CAS download overhead.
+  CASOverhead cas = 5;
+}
+
+// Overhead information about teardown.
+message TaskTeardownOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+  // CAS upload overhead.
+  CASOverhead cas = 2;
+  // Named cache uninstall overhead.
+  NamedCacheOverhead named_cache = 3;
+  // Directory cleanup overhead.
+  CleanupOverhead cleanup = 4;
+}
+
+// Overhead information about cache trimming.
+message CacheTrimOverhead {
+  google.protobuf.Duration duration = 1;
+}
+
+// Overhead information about CIPD packge installation.
+message CIPDOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+}
+
+// Overhead information about Named Caches install or uninstall.
+message NamedCacheOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+}
+
+// Overhead information about CAS download or upload.
+message CASOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+
+  // CAS entries that were not present in the local or remote cache and had to
+  // be sent across the network.
+  CASEntriesStats cold = 2;
+  // CAS entries that were in the cache and thus didn't have to be transferred.
+  CASEntriesStats hot = 3;
+}
+
+// Overhead information about cleanup step.
+message CleanupOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+}
+
+// Deprecated: Use TaskSetupOverheadStats or TaskTeardownOverheadStats instead.
 // Information about setup or teardown.
 message TaskOverheadStats {
   // Duration of this overhead.
@@ -1281,4 +1381,19 @@ enum TaskState {
 message ResultDBCfg {
   // Flag to indicates the integration is enabled.
   bool enable = 1;
+}
+
+// ResultDB Related properties.
+message ResultDBInfo {
+  // ResultDB hostname, e.g. "results.api.cr.dev"
+  string hostname =1;
+
+  // Name of the task's ResultDB invocation.
+  //
+  // e.g. "invocations/task-chromium-swarm.appspot.com-deadbeef1"
+  // None if Swarming:ResultDB integration was not enabled for this task.
+  //
+  // If the task was deduplicated, this equals invocation name of the original
+  // task.
+  string  invocation = 2;
 }
