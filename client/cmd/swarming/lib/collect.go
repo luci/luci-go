@@ -146,6 +146,7 @@ func CmdCollect(authFlags AuthFlags) *subcommands.Command {
 type collectRun struct {
 	commonFlags
 
+	wait              bool
 	timeout           time.Duration
 	taskSummaryJSON   string
 	taskSummaryPython bool
@@ -159,6 +160,7 @@ type collectRun struct {
 
 func (c *collectRun) Init(authFlags AuthFlags) {
 	c.commonFlags.Init(authFlags)
+	c.Flags.BoolVar(&c.wait, "wait", true, "Wait task completion.")
 	c.Flags.DurationVar(&c.timeout, "timeout", 0, "Timeout to wait for result. Set to 0 for no timeout.")
 	c.Flags.StringVar(&c.taskSummaryJSON, "task-summary-json", "", "Dump a summary of task results to a file as json.")
 
@@ -182,6 +184,10 @@ func (c *collectRun) Parse(args *[]string) error {
 	// Validate timeout duration.
 	if c.timeout < 0 {
 		return errors.Reason("negative timeout is not allowed").Err()
+	}
+
+	if !c.wait && c.timeout > 0 {
+		return errors.Reason("Do not specify -timeout with -wait=false.").Err()
 	}
 
 	// Validate arguments.
@@ -337,6 +343,10 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 		}
 		if !state.Alive() {
 			logging.Debugf(ctx, "Task completed successfully: %s", taskID)
+			return result
+		}
+		if !c.wait {
+			logging.Debugf(ctx, "Task %s fetched", taskID)
 			return result
 		}
 
