@@ -20,6 +20,7 @@ import {
   getSafeUrlFromBuildset,
   getURLPathForBuilder,
   getURLPathForProject,
+  renderBugUrlTemplate,
 } from './build_utils';
 
 describe('Build Utils Tests', () => {
@@ -90,6 +91,84 @@ describe('Build Utils Tests', () => {
   describe('getURLPathForProject', () => {
     it('should encode the project', () => {
       assert.strictEqual(getURLPathForProject('test project'), '/p/test%20project');
+    });
+  });
+
+  describe('renderBugUrlTemplate', () => {
+    it('should render the chromium bug URL correctly', () => {
+      const url = renderBugUrlTemplate(
+        // eslint-disable-next-line max-len
+        'https://bugs.chromium.org/p/chromium/issues/entry?summary=summary&description=project%3A+{{{build.builder.project}}}%0Abucket%3A+{{{build.builder.bucket}}}%0Abuilder%3A+{{{build.builder.builder}}}%0Abuilder+url%3A+{{{milo_builder_url}}}%0Abuild+url%3A+{{{milo_build_url}}}',
+        {
+          id: '123',
+          builder: {
+            project: 'test project',
+            bucket: 'test bucket',
+            builder: 'test builder',
+          },
+        },
+        'https://luci-milo-dev.appspot.com'
+      );
+      assert.strictEqual(
+        url,
+        // eslint-disable-next-line max-len
+        'https://bugs.chromium.org/p/chromium/issues/entry?summary=summary&description=project%3A+test%20project%0Abucket%3A+test%20bucket%0Abuilder%3A+test%20builder%0Abuilder+url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fp%2Ftest%2520project%2Fbuilders%2Ftest%2520bucket%2Ftest%2520builder%0Abuild+url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fui%2Fb%2F123'
+      );
+    });
+
+    it('should render the buganizer bug URL correctly', () => {
+      const url = renderBugUrlTemplate(
+        // eslint-disable-next-line max-len
+        'https://b.corp.google.com/createIssue?title=title&description=project%3A+{{{build.builder.project}}}%0Abucket%3A+{{{build.builder.bucket}}}%0Abuilder%3A+{{{build.builder.builder}}}%0Abuilder_url%3A+{{{milo_builder_url}}}%0Abuild_url%3A+{{{milo_build_url}}}',
+        {
+          id: '123',
+          builder: {
+            project: 'test project',
+            bucket: 'test bucket',
+            builder: 'test builder',
+          },
+        },
+        'https://luci-milo-dev.appspot.com'
+      );
+      assert.strictEqual(
+        url,
+        // eslint-disable-next-line max-len
+        'https://b.corp.google.com/createIssue?title=title&description=project%3A+test%20project%0Abucket%3A+test%20bucket%0Abuilder%3A+test%20builder%0Abuilder_url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fp%2Ftest%2520project%2Fbuilders%2Ftest%2520bucket%2Ftest%2520builder%0Abuild_url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fui%2Fb%2F123'
+      );
+    });
+
+    it("should return empty string if the domain doesn't match", () => {
+      const url = renderBugUrlTemplate(
+        // eslint-disable-next-line max-len
+        'https://bug.chromium.org/p/chromium/issues/entry',
+        {
+          id: '123',
+          builder: {
+            project: 'test project',
+            bucket: 'test bucket',
+            builder: 'test builder',
+          },
+        },
+        'https://luci-milo-dev.appspot.com'
+      );
+      assert.strictEqual(url, '');
+    });
+
+    it("should return empty string if the schema doesn't match", () => {
+      const url = renderBugUrlTemplate(
+        // eslint-disable-next-line max-len
+        'http://bugs.chromium.org/p/chromium/issues/entry',
+        {
+          id: '123',
+          builder: {
+            project: 'test project',
+            bucket: 'test bucket',
+            builder: 'test builder',
+          },
+        },
+        'https://luci-milo-dev.appspot.com'
+      );
+      assert.strictEqual(url, '');
     });
   });
 });

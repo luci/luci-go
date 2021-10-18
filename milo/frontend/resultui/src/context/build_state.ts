@@ -16,7 +16,7 @@ import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { autorun, computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
+import { getGitilesRepoURL, renderBugUrlTemplate, renderBuildBugTemplate } from '../libs/build_utils';
 import { POTENTIALLY_EXPIRED } from '../libs/constants';
 import { createContextLink } from '../libs/context';
 import * as iter from '../libs/iter_utils';
@@ -365,8 +365,16 @@ export class BuildState {
 
   @computed
   get customBugLink(): string | null {
+    if (!this.build) {
+      return null;
+    }
+
+    if (this.projectCfg?.bugUrlTemplate) {
+      return renderBugUrlTemplate(this.projectCfg.bugUrlTemplate, this.build);
+    }
+
     const bugTemplate = this.projectCfg?.buildBugTemplate;
-    if (!bugTemplate?.monorailProject || !this.build) {
+    if (!bugTemplate?.monorailProject) {
       return null;
     }
     const components = bugTemplate.components?.join(',');

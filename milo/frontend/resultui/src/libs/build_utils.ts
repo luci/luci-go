@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Mustache from 'mustache';
+
 import { BuildExt } from '../models/build_ext';
 import { Link } from '../models/link';
 import { router } from '../routes';
@@ -133,4 +135,44 @@ export function renderBuildBugTemplate(template: string, build: BuildExt): strin
     .replace('{{.Build.Builder.Builder}}', build.builder.builder)
     .replace('{{.MiloBuildUrl}}', window.location.origin + getURLPathForBuild(build))
     .replace('{{.MiloBuilderUrl}}', window.location.origin + getURLPathForBuilder(build.builder));
+}
+
+const RE_BUG_URL = /https:\/\/(bugs\.chromium\.org|b\.corp\.google\.com)(\/*.)?/;
+
+/**
+ * Renders Project.BugUrlTemplate. See the definition for Project.BugUrlTemplate
+ * https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/milo/api/config/project.proto#70
+ * for details.
+ */
+export function renderBugUrlTemplate(
+  urlTemplate: string,
+  build: Pick<Build, 'id' | 'builder'>,
+  miloOrigin = window.location.origin
+) {
+  let bugUrl = '';
+  try {
+    bugUrl = Mustache.render(urlTemplate, {
+      build: {
+        builder: {
+          project: encodeURIComponent(build.builder.project),
+          bucket: encodeURIComponent(build.builder.bucket),
+          builder: encodeURIComponent(build.builder.builder),
+        },
+      },
+      milo_build_url: encodeURIComponent(miloOrigin + router.urlForName('build-short-link', { build_id: build.id })),
+      milo_builder_url: encodeURIComponent(miloOrigin + getURLPathForBuilder(build.builder)),
+    });
+  } catch (_e) {
+    console.warn(
+      'failed to render the bug URL template. Please ensure the bug URL template is a valid mustache template.'
+    );
+    // Do nothing.
+  }
+  if (!RE_BUG_URL.test(bugUrl)) {
+    // IDEA: instead of failing silently, we could link users to a page that
+    // shows the error log and how to fix it.
+    console.warn('the bug URL has an invalid/disallowed domain name or scheme');
+    bugUrl = '';
+  }
+  return bugUrl;
 }

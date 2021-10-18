@@ -58,6 +58,7 @@ type Project struct {
 
 	LogoURL           string
 	BuildBugTemplate  config.BugTemplate
+	BugURLTemplate    string
 	IgnoredBuilderIDs []string
 
 	// Tolerate unknown fields when fetching entities.
@@ -456,6 +457,7 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *co
 	project.HasConfig = true
 	project.LogoURL = miloCfg.LogoUrl
 	project.IgnoredBuilderIDs = miloCfg.IgnoredBuilderIds
+	project.BugURLTemplate = miloCfg.BugUrlTemplate
 
 	if miloCfg.BuildBugTemplate != nil {
 		project.BuildBugTemplate = *miloCfg.BuildBugTemplate

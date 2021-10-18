@@ -79,6 +79,7 @@ export interface GetProjectCfgRequest {
 export interface Project {
   readonly buildBugTemplate?: BugTemplate;
   readonly logoUrl?: string;
+  readonly bugUrlTemplate?: string;
 }
 
 export interface BugTemplate {
