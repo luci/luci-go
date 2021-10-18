@@ -26,6 +26,7 @@ option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/projects:commit-queue.cfg";
 };
 
+
 // This message describes a CQ configuration.
 //
 // The config file commit-queue.cfg should be stored in the config directory of
@@ -35,12 +36,9 @@ option (luci.file_metadata) = {
 // file and verify that it matches arbitrary given CLs as expected.
 // See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#luci-cv-command-line-utils
 message Config {
-  // Optional. If present, the CQ will refrain from processing any CLs,
-  // on which CQ was triggered after the specified time.
-  //
-  // This is an UTC RFC3339 (stiptime(tm)) string representing the time.
-  // For example, "2017-12-23T15:47:58Z", where Z is required.
-  string draining_start_time = 1;
+  // Deprecated. Ignored. Do not use.
+  // See also https://crbug.com/1208569 to implement an alternative.
+  string draining_start_time = 1 [deprecated = true];
 
   // Optional and deprecated.
   // URL of the CQ status app to push updates to.
@@ -52,9 +50,10 @@ message Config {
   // At least 1 ConfigGroup is required.
   repeated ConfigGroup config_groups = 4;
 
-  // DO NOT USE.
+  // Deprecated. Ignored. Do not use.
   Toggle project_scoped_account = 5 [deprecated = true];
 }
+
 
 // SubmitOptions control how CQ submits CLs.
 message SubmitOptions {
@@ -101,9 +100,9 @@ enum CommentLevel {
 
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
-//
-// Next field number: 8
 message ConfigGroup {
+  // Next field number: 8.
+
   reserved 3; // allow_cq_depend.
 
   // The human- and machine-readable name (unique within this project) of this
@@ -179,15 +178,15 @@ message ConfigGroup {
   // Defines how to verify a CL before submitting it. Required.
   Verifiers verifiers = 2;
 
-  // EXPERIMENTAL! TODO(tandrii, crbug/966115): add better doc or remove.
-  //
   // If set, this ConfigGroup will be used if no other ConfigGroup matches.
   //
   // At most 1 config_group can be YES.
   //
-  // Example use is to define specific config_group for refs/heads/master,
+  // Example use is to define specific config_group for refs/heads/main,
   // and fallback one for refs/heads/* which will pick up all CLs on
-  // non-master branches.
+  // non-main branches.
+  //
+  // TODO(crbug/966115): provide a better solution.
   Toggle fallback = 5;
 
   // Optional. Additional run modes supported besides standard DRY_RUN and
@@ -259,8 +258,7 @@ message Mode {
 // can be used to CLs in the right order.
 //
 // WARNING: When submitting CLs, CQ can not do so atomically (all submitted or
-// none submitted) because Gerrit doesn't support this even for the same repo &
-// target_ref.
+// none submitted) because Gerrit doesn't support this even for the same repo.
 message CombineCLs {
   // Roughly, how long CQ waits for CQ to be triggered on each of the related
   // CLs.
@@ -637,9 +635,15 @@ message Verifiers {
   }
 
   // CQLinter is for internal use in CQ.
+  //
+  // Deprecated. Do not use.
+  // TODO(crbug/1127991): Remove after migration off CQDaemon is completed.
   message CQLinter{}
 
   // Fake is for internal use in CQ.
+  //
+  // Deprecated. Do not use.
+  // TODO(crbug/1127991): Remove after migration off CQDaemon is completed.
   message Fake {
     string name = 1;
     string eventual_state = 2;
