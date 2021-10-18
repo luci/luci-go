@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package lease provides a way to "lock" an external resource with expiration
-// time so that concurrent processes/task executions can achieve exclusive
-// privilege to make mutations (generally long-running and non-idempotent)
-// on that resource.
 package lease
 
 import (
@@ -30,8 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/cv/internal/common"
 )
 
 // ResourceID is an ID identifying external resource (e.g. a Gerrit CL).
@@ -39,11 +33,6 @@ import (
 // It is in the format of "type/value" where 'type' is the type of the
 // resource and 'value' is the string id which identifies the resource.
 type ResourceID string
-
-// MakeCLResourceID returns ResourceID of a CL in CV.
-func MakeCLResourceID(clid common.CLID) ResourceID {
-	return ResourceID(fmt.Sprintf("CL/%d", clid))
-}
 
 func (id ResourceID) isValid() bool {
 	if i := strings.IndexByte(string(id), '/'); i > 0 && i < len(id)-1 {

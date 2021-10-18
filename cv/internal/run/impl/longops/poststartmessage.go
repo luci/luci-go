@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
@@ -262,11 +263,16 @@ func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to generate the starting message").Err()
 	}
-
 	gc, err := op.GFactory.MakeClient(ctx, rcl.Detail.GetGerrit().GetHost(), op.Run.ID.LUCIProject())
 	if err != nil {
 		return err
 	}
+
+	ctx, cancelLease, err := lease.ApplyOnCL(ctx, rcl.ID, 2*time.Minute, "post-start-message")
+	if err != nil {
+		return err
+	}
+	defer cancelLease()
 
 	req := &gerritpb.SetReviewRequest{
 		Project:    rcl.Detail.GetGerrit().GetInfo().GetProject(),

@@ -27,7 +27,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -249,7 +248,7 @@ func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
 		return err
 	}
 
-	leaseCtx, close, err := applyLeaseForCL(ctx, in.CL.ID, in.LeaseDuration, in.Requester)
+	leaseCtx, close, err := lease.ApplyOnCL(ctx, in.CL.ID, in.LeaseDuration, in.Requester)
 	if err != nil {
 		return err
 	}
@@ -319,32 +318,6 @@ func ensurePSLatestInCV(ctx context.Context, cl *changelist.CL) error {
 		return errors.Reason("failed to cancel because ps %d is not current for cl(%d)", cl.Snapshot.GetPatchset(), cl.ID).Tag(ErrPreconditionFailedTag).Err()
 	}
 	return nil
-}
-
-func applyLeaseForCL(ctx context.Context, clid common.CLID, duration time.Duration, requester string) (context.Context, func(), error) {
-	leaseExpireTime := clock.Now(ctx).UTC().Add(duration)
-	if d, ok := ctx.Deadline(); ok && d.Before(leaseExpireTime) {
-		leaseExpireTime = d // Honor the deadline imposed by context
-	}
-	leaseExpireTime = leaseExpireTime.Truncate(time.Millisecond)
-	l, err := lease.Apply(ctx, lease.Application{
-		ResourceID: lease.MakeCLResourceID(clid),
-		Holder:     requester,
-		ExpireTime: leaseExpireTime,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	dctx, cancel := context.WithDeadline(ctx, leaseExpireTime)
-	close := func() {
-		cancel()
-		if err := l.Terminate(ctx); err != nil {
-			// Best-effort termination since lease will expire naturally.
-			common.LogError(ctx, err)
-		}
-	}
-	return dctx, close, nil
 }
 
 type change struct {
