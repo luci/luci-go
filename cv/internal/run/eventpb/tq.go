@@ -71,13 +71,12 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 			Quiet:        true,
 		}),
 		ManageRunLongOp: tqd.RegisterTaskClass(tq.TaskClass{
-			ID:        ManageRunLongOpTaskClass,
-			Prototype: &ManageRunLongOpTask{},
-			Queue:     "manage-run-long-op",
-			Kind:      tq.Transactional,
-			// TODO(tandrii): switch to quiet once stable.
-			QuietOnError: false,
-			Quiet:        false,
+			ID:           ManageRunLongOpTaskClass,
+			Prototype:    &ManageRunLongOpTask{},
+			Queue:        "manage-run-long-op",
+			Kind:         tq.Transactional,
+			QuietOnError: true,
+			Quiet:        true,
 		}),
 		TQDispatcher: tqd,
 	}
