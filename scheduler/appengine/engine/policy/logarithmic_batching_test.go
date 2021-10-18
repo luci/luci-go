@@ -16,9 +16,12 @@ package policy
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 
@@ -29,7 +32,7 @@ func TestLogarithmicBatching(t *testing.T) {
 	t.Parallel()
 
 	Convey("With simulator", t, func(c C) {
-		const invocationDuration = time.Minute
+		invocationDuration := time.Hour // may be modified in tests below.
 		s := Simulator{
 			OnRequest: func(s *Simulator, r task.Request) time.Duration {
 				return invocationDuration
@@ -113,5 +116,113 @@ func TestLogarithmicBatching(t *testing.T) {
 				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t-003", "t-004", "t-005"})
 			})
 		})
+
+		Convey("Long simulation", func() {
+			// Run this with: `go test -run TestLogarithmicBatching -v`
+			// TODO(tandrii): maybe make it like a Go benchmark?
+
+			// Parameters.
+			const (
+				veryVerbose         = false
+				maxBatchSize        = 50
+				maxConcurrentBuilds = 2
+				logBase             = 1.185
+				buildDuration       = 43 * time.Minute
+				simulDuration       = time.Hour * 24 * 5
+			)
+			percentiles := []int{0, 25, 50, 75, 100}
+			// Value of 10 below means a commit lands every 10 minutes.
+			MinutesBetweenCommitsByHourOfDay := []int{
+				20, 30, 30, 30, 30, 30, // midnight .. 6am
+				20, 10, 6, 3, 1, 1, // 6am..noon
+				1, 1, 2, 3, 4, 5, // noon .. 6pm
+				6, 10, 12, 15, 20, 20, // 6pm .. midnight
+			}
+
+			// Setup.
+			invocationDuration = buildDuration
+			s.Policy, err = LogarithmicBatchingPolicy(maxConcurrentBuilds, maxBatchSize, logBase)
+			So(err, ShouldBeNil)
+			s.Epoch = testclock.TestRecentTimeUTC.Truncate(24 * time.Hour)
+
+			// Simulate.
+			var pendingSizes []int
+			var commits []time.Time
+			for {
+				delay := time.Minute * time.Duration(MinutesBetweenCommitsByHourOfDay[s.Now.Hour()])
+				if delay <= 0 {
+					panic("wrong minutesOfCommitDelayByHourOfDay")
+				}
+				addTriggers(delay, 1)
+				commits = append(commits, s.Now)
+				pendingSizes = append(pendingSizes, len(s.PendingTriggers))
+
+				elapsed := s.Now.Sub(s.Epoch)
+				if veryVerbose {
+					s.OnDebugLog("%70s [%12s]  [%s] remaining %d", "", elapsed, s.Now, len(s.PendingTriggers))
+				}
+				if elapsed > simulDuration {
+					break
+				}
+			}
+
+			// Analyze.
+			var oldestCommitAgeMinutes []int
+			triggerSizes := make([]int, len(s.Invocations))
+			commistProcesssed := 0
+			for i, inv := range s.Invocations {
+				l := len(inv.Request.IncomingTriggers)
+				oldestCreatedAt := commits[commistProcesssed]
+				oldestAge := s.Epoch.Add(inv.Created).Sub(oldestCreatedAt)
+				commistProcesssed += l
+				triggerSizes[i] = l
+				oldestCommitAgeMinutes = append(oldestCommitAgeMinutes, int(oldestAge/time.Minute))
+			}
+
+			separatorLine := strings.Repeat("=", 80)
+			_, _ = Printf("\n\n%s\nReport\n%s\n", separatorLine, separatorLine)
+			_, _ = Printf(" * logBase             %.5f\n", logBase)
+			_, _ = Printf(" * maxBatchSize        %d\n", maxBatchSize)
+			_, _ = Printf(" * maxConcurrentBuilds %d\n", maxConcurrentBuilds)
+			_, _ = Printf(" * build duration      %s\n", buildDuration)
+			_, _ = Printf(" * simulation duration %s\n", simulDuration)
+			_, _ = Println()
+			_, _ = Printf("Simulated %d commits, %d builds, %d triggers remaining\n", lastAddedTrigger, len(s.Invocations), len(s.PendingTriggers))
+			_, _ = Println()
+			_, _ = Println(fmtPercentiles("    number of per-build commits", "%3d", triggerSizes, percentiles...))
+			_, _ = Println(fmtPercentiles("      number of pending commits", "%3d", pendingSizes, percentiles...))
+			_, _ = Println(fmtPercentiles("oldest pending commit (minutes)", "%3d", oldestCommitAgeMinutes, percentiles...))
+			_, _ = Printf("%s\n", separatorLine)
+		})
 	})
+}
+
+func fmtPercentiles(prefix, valFormat string, values []int, percentiles ...int) string {
+	var sb strings.Builder
+	sb.WriteString(prefix)
+	sb.WriteRune(':')
+
+	sort.Ints(values)
+	sort.Ints(percentiles)
+	l := len(values)
+	for _, p := range percentiles {
+		switch {
+		case p < 0 || p > 100:
+			panic(fmt.Errorf("invalid percentile %d, must be in 0..100", p))
+		case p == 0:
+			sb.WriteString(" min ")
+		case p == 100:
+			sb.WriteString(" max ")
+		default:
+			_, _ = fmt.Fprintf(&sb, "  p%02d ", p)
+		}
+		idx := l * p / 100
+		if idx >= l {
+			idx = l - 1
+		}
+		_, _ = fmt.Fprintf(&sb, valFormat, values[idx])
+		sb.WriteRune(',')
+	}
+
+	return strings.TrimRight(sb.String(), ",")
 }

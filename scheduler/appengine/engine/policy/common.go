@@ -15,6 +15,8 @@
 package policy
 
 import (
+	"fmt"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -59,6 +61,9 @@ func basePolicy(maxConcurrentInvs, maxBatchSize int, reducer func([]*internal.Tr
 			numTriggers := reducer(triggers)
 			if numTriggers == 0 {
 				break
+			}
+			if numTriggers > len(triggers) {
+				panic(fmt.Errorf("invalid policy implementation: returned %d which is more than %d triggers given", numTriggers, len(triggers)))
 			}
 			if size > numTriggers {
 				size = numTriggers
