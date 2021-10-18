@@ -55,49 +55,6 @@ message Config {
 }
 
 
-// SubmitOptions control how CQ submits CLs.
-message SubmitOptions {
-  // Optional. Maximum number of successful CQ attempts completed by submitting
-  // corresponding Gerrit CL(s) before waiting burst_delay.
-  //
-  // This feature today applies to all attempts processed by this CQ, across all
-  // config_groups.
-  //
-  // Must be >0 to take effect. Requires burst_delay to be set, too.
-  int32 max_burst = 1;
-
-  // Optional. Delay between bursts of submissions of CQ attempts.
-  // See max_burst for more info.
-  //
-  // Must be >0 to take effect. Requires max_burst to be set, too.
-  google.protobuf.Duration burst_delay = 2;
-}
-
-
-// A boolean with an "unset" default value.
-enum Toggle {
-  UNSET = 0;
-  YES = 1;
-  NO = 2;
-}
-
-
-// Determines how visible the results of a build for this builder are in Gerrit
-// comments.
-//
-// This doesn't affect the buildbucket plugin (green/red chips).
-enum CommentLevel {
-  // Currently default to full visibility.
-  COMMENT_LEVEL_UNSET = 0;
-  // The CQ reports the summary markdown and a link to the buildbucket build id
-  // in Milo with the builder name in the URL in a Gerrit comment.
-  COMMENT_LEVEL_FULL = 1;
-  // The CQ reports a generic "Build failed: https://ci.chromium.org/b/1234"
-  // with no summary markdown.
-  COMMENT_LEVEL_RESTRICTED = 2;
-}
-
-
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
 message ConfigGroup {
@@ -198,6 +155,26 @@ message ConfigGroup {
   repeated Mode additional_modes = 7;
 }
 
+
+// SubmitOptions control how CQ submits CLs.
+message SubmitOptions {
+  // Optional. Maximum number of successful CQ attempts completed by submitting
+  // corresponding Gerrit CL(s) before waiting burst_delay.
+  //
+  // This feature today applies to all attempts processed by this CQ, across all
+  // config_groups.
+  //
+  // Must be >0 to take effect. Requires burst_delay to be set, too.
+  int32 max_burst = 1;
+
+  // Optional. Delay between bursts of submissions of CQ attempts.
+  // See max_burst for more info.
+  //
+  // Must be >0 to take effect. Requires max_burst to be set, too.
+  google.protobuf.Duration burst_delay = 2;
+}
+
+
 // Mode defines a CQ Run mode and how it can be triggered.
 message Mode {
   // Required. Name of this mode.
@@ -279,6 +256,7 @@ message CombineCLs {
   // it (i.e., before it triggers first tryjob).
   google.protobuf.Duration stabilization_delay = 1;
 }
+
 
 // Verifiers are various types of checks that a Commit Queue performs on a CL.
 // All verifiers must pass in order for a CL to be submitted. Configuration file
@@ -649,4 +627,28 @@ message Verifiers {
     string eventual_state = 2;
     int32 delay = 3;
   }
+}
+
+
+// Determines how visible the results of a build for this builder are in Gerrit
+// comments.
+//
+// This doesn't affect the buildbucket plugin (green/red chips).
+enum CommentLevel {
+  // Currently default to full visibility.
+  COMMENT_LEVEL_UNSET = 0;
+  // The CQ reports the summary markdown and a link to the buildbucket build id
+  // in Milo with the builder name in the URL in a Gerrit comment.
+  COMMENT_LEVEL_FULL = 1;
+  // The CQ reports a generic "Build failed: https://ci.chromium.org/b/1234"
+  // with no summary markdown.
+  COMMENT_LEVEL_RESTRICTED = 2;
+}
+
+
+// A boolean with an "unset" default value.
+enum Toggle {
+  UNSET = 0;
+  YES = 1;
+  NO = 2;
 }
