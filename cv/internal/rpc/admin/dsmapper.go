@@ -53,6 +53,7 @@ func newDSMapper(ctrl *dsmapper.Controller) *dsMapper {
 	s.register(&upgradeRunCLConfig, upgradeRunCLFactory)
 	s.register(&upgradeCLConfig, upgradeCLFactory)
 	s.register(&removeOldRunEventsConfig, removeOldRunEventsFactory)
+	s.register(&deleteFinishedCQDRunConfig, deleteFinishedCQDRunFactory)
 	s.final = true
 	return s
 }
