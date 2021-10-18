@@ -110,11 +110,10 @@ func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 		if r == nil {
 			return
 		}
-		r.Description = ""
-		if c := r.GetCommit(); c != nil {
-			c.Parents = nil
-			// TODO(tandrii): erase commit message.
-		}
+		r.Description = "" // patchset title.
+		// Erase parents and the commit message,
+		// which is the CL description for the current.
+		r.Commit = nil
 		r.Uploader = nil
 		r.Files = nil
 	}
