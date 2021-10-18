@@ -22,12 +22,13 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/dsmapper"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
 var upgradeRunCLConfig = dsmapper.JobConfig{
-	Mapper: "runcl-indexedid",
+	Mapper: "runcl-externalid",
 	Query: dsmapper.Query{
 		Kind: "RunCL",
 	},
@@ -35,41 +36,31 @@ var upgradeRunCLConfig = dsmapper.JobConfig{
 	ShardCount: 4,
 }
 
-var upgradeRunCLFactory = func(context.Context, *dsmapper.Job, int) (dsmapper.Mapper, error) {
-	return upgradeRunCLs, nil
-}
+var upgradeRunCLFactory = func(ctx context.Context, j *dsmapper.Job, shard int) (dsmapper.Mapper, error) {
+	tsJobName := string(j.Config.Mapper)
+	tsJobID := int64(j.ID)
 
-func upgradeRunCLs(ctx context.Context, keys []*datastore.Key) error {
-	needUpgrade := func(rcls []*run.RunCL) []*run.RunCL {
-		toUpdate := rcls[:0]
-		for _, rcl := range rcls {
-			if rcl.IndexedID != rcl.ID {
-				toUpdate = append(toUpdate, rcl)
+	upgradeRunCLs := func(ctx context.Context, keys []*datastore.Key) error {
+		needUpgrade := func(rcls []*run.RunCL) []*run.RunCL {
+			toUpdate := rcls[:0]
+			for _, rcl := range rcls {
+				if rcl.ExternalID == "" {
+					toUpdate = append(toUpdate, rcl)
+				}
+			}
+			return toUpdate
+		}
+
+		rcls := make([]*run.RunCL, len(keys))
+		for i, k := range keys {
+			rcls[i] = &run.RunCL{
+				ID:  common.CLID(k.IntID()),
+				Run: k.Parent(),
 			}
 		}
-		return toUpdate
-	}
 
-	rcls := make([]*run.RunCL, len(keys))
-	for i, k := range keys {
-		rcls[i] = &run.RunCL{
-			ID:  common.CLID(k.IntID()),
-			Run: k.Parent(),
-		}
-	}
-
-	// Most RunCLs are already correct.
-	// So, check before a transaction if an update is even necessary.
-	if err := datastore.Get(ctx, rcls); err != nil {
-		return errors.Annotate(err, "failed to fetch RunCLs").Tag(transient.Tag).Err()
-	}
-	rcls = needUpgrade(rcls)
-	if len(rcls) == 0 {
-		return nil
-	}
-
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		// Reload inside transaction to avoid any pitfalls.
+		// Most RunCLs are already correct.
+		// So, check before a transaction if an update is even necessary.
 		if err := datastore.Get(ctx, rcls); err != nil {
 			return errors.Annotate(err, "failed to fetch RunCLs").Tag(transient.Tag).Err()
 		}
@@ -77,13 +68,41 @@ func upgradeRunCLs(ctx context.Context, keys []*datastore.Key) error {
 		if len(rcls) == 0 {
 			return nil
 		}
-		for _, rcl := range rcls {
-			rcl.IndexedID = rcl.ID
+
+		// Compute CLID -> ExternalID map by loading corresponding CL entities.
+		cls := make([]*changelist.CL, len(rcls))
+		for i, rcl := range rcls {
+			cls[i] = &changelist.CL{ID: rcl.ID}
 		}
-		return datastore.Put(ctx, rcls)
-	}, nil)
-	if err != nil {
-		return errors.Annotate(err, "failed to update RunCLs").Tag(transient.Tag).Err()
+		if err := datastore.Get(ctx, cls); err != nil {
+			return errors.Annotate(err, "failed to fetch CLs").Tag(transient.Tag).Err()
+		}
+		mp := make(map[common.CLID]changelist.ExternalID, len(cls))
+		for _, cl := range cls {
+			mp[cl.ID] = cl.ExternalID
+		}
+
+		// Finally, update RunCL entities.
+		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			// Reload inside transaction to avoid any races.
+			if err := datastore.Get(ctx, rcls); err != nil {
+				return errors.Annotate(err, "failed to fetch RunCLs").Tag(transient.Tag).Err()
+			}
+			rcls = needUpgrade(rcls)
+			if len(rcls) == 0 {
+				return nil
+			}
+			for _, rcl := range rcls {
+				rcl.ExternalID = mp[rcl.ID]
+			}
+			return datastore.Put(ctx, rcls)
+		}, nil)
+		if err != nil {
+			return errors.Annotate(err, "failed to update RunCLs").Tag(transient.Tag).Err()
+		}
+		metricUpgraded.Add(ctx, int64(len(rcls)), tsJobName, tsJobID, "RunCL")
+		return nil
 	}
-	return nil
+
+	return upgradeRunCLs, nil
 }

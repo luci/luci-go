@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
@@ -41,56 +41,46 @@ func TestUpgradeRunCLs(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		mkRunCL := func(id, idx common.CLID) (*run.RunCL, *datastore.Key) {
+		const gHost = "x-review.example.com"
+
+		mkRunCL := func(gChange int64, missing bool) (*run.RunCL, *changelist.CL) {
+			cl := changelist.MustGobID(gHost, gChange).MustCreateIfNotExists(ctx)
 			rcl := &run.RunCL{
-				ID:        id,
-				IndexedID: idx,
-				Run:       datastore.MakeKey(ctx, run.RunKind, fmt.Sprintf("proj/%d-beef", id)),
+				ID:  cl.ID,
+				Run: datastore.MakeKey(ctx, run.RunKind, fmt.Sprintf("proj/%d-beef", gChange)),
+			}
+			if !missing {
+				rcl.ExternalID = cl.ExternalID
 			}
 			So(datastore.Put(ctx, rcl), ShouldBeNil)
-			k, err := datastore.KeyForObjErr(ctx, rcl)
-			So(err, ShouldBeNil)
-			return rcl, k
+			return rcl, cl
 		}
 
-		rcl1, k1 := mkRunCL(1, 1)
-		rcl2, k2 := mkRunCL(2, 0)
-		rcl3, k3 := mkRunCL(3, 0)
-		rcl4, k4 := mkRunCL(4, 4)
+		rcl1, cl1 := mkRunCL(1, true)
+		rcl2, cl2 := mkRunCL(2, false)
+		rcl3, cl3 := mkRunCL(3, true)
+		rcl4, cl4 := mkRunCL(4, false)
 
-		assertMigrated := func(rcls ...*run.RunCL) {
-			So(datastore.Get(ctx, rcls), ShouldBeNil)
-			for _, rcl := range rcls {
-				So(rcl.ID, ShouldEqual, rcl.IndexedID)
-			}
-		}
-
-		Convey("All", func() {
-			So(upgradeRunCLs(ctx, []*datastore.Key{k1, k2, k3, k4}), ShouldBeNil)
-			assertMigrated(rcl1, rcl2, rcl3, rcl4)
+		// Run the migration.
+		ctrl := &dsmapper.Controller{}
+		ctrl.Install(ct.TQDispatcher)
+		a := New(ct.TQDispatcher, ctrl, nil, nil, nil)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:       "user:admin@example.com",
+			IdentityGroups: []string{allowGroup},
 		})
-		Convey("Quick exit", func() {
-			So(upgradeRunCLs(ctx, []*datastore.Key{k1, k4}), ShouldBeNil)
-			assertMigrated(rcl1, rcl4)
-		})
+		jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "runcl-externalid"})
+		So(err, ShouldBeNil)
+		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+		jobInfo, err := a.DSMGetJob(ctx, jobID)
+		So(err, ShouldBeNil)
+		So(jobInfo.GetInfo().GetState(), ShouldEqual, dsmapperpb.State_SUCCESS)
 
-		Convey("End to end", func() {
-			ctrl := &dsmapper.Controller{}
-			ctrl.Install(ct.TQDispatcher)
-			a := New(ct.TQDispatcher, ctrl, nil, nil, nil)
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity:       "user:admin@example.com",
-				IdentityGroups: []string{allowGroup},
-			})
-
-			jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "runcl-indexedid"})
-			So(err, ShouldBeNil)
-			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-			jobInfo, err := a.DSMGetJob(ctx, jobID)
-			So(err, ShouldBeNil)
-			So(jobInfo.GetInfo().GetState(), ShouldEqual, dsmapperpb.State_SUCCESS)
-
-			assertMigrated(rcl1, rcl2, rcl3, rcl4)
-		})
+		// Verify.
+		So(datastore.Get(ctx, rcl1, rcl2, rcl3, rcl4), ShouldBeNil)
+		So(rcl1.ExternalID, ShouldResemble, cl1.ExternalID)
+		So(rcl2.ExternalID, ShouldResemble, cl2.ExternalID)
+		So(rcl3.ExternalID, ShouldResemble, cl3.ExternalID)
+		So(rcl4.ExternalID, ShouldResemble, cl4.ExternalID)
 	})
 }

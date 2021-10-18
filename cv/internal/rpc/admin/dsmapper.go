@@ -22,10 +22,23 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/dsmapper"
 
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
+)
+
+var (
+	metricUpgraded = metric.NewCounter(
+		"cv/internal/dsmapper/upgraded",
+		"Number of Datastore entities upgraded with dsmapper",
+		nil,
+		field.String("name"), // dsmapper.ID
+		field.Int("id"),      // dsmapper.JobID
+		field.String("kind"), // entity Kind
+	)
 )
 
 type dsMapper struct {
