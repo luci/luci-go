@@ -22,6 +22,8 @@ import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 
 // Event is a container for all kinds of events a project manager can receive.
 message Event {
+  reserved 3;
+
   oneof event {
     NewConfig new_config = 1;
 
@@ -33,9 +35,6 @@ message Event {
     RunFinished run_finished = 5;
 
     PurgeCompleted purge_completed = 6;
-
-    // TODO(1227523): wipe out all events with it and delete from here.
-    cv.internal.changelist.CLUpdatedEvent cl_updated = 3;
   }
 }
 

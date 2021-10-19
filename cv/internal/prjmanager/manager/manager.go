@@ -318,9 +318,6 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *prjpb.Event_Poke:
 		tr.highestIDWins(item, &tr.poke)
 
-	case *prjpb.Event_ClUpdated:
-		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
-		tr.triageCLUpdated(v.ClUpdated, item.ID)
 	case *prjpb.Event_ClsUpdated:
 		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
 		for _, cl := range v.ClsUpdated.GetEvents() {

@@ -73,18 +73,6 @@ func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
 	})
 }
 
-// NotifyCLUpdated tells Project Manager to check latest version of a given CL.
-func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
-	return n.SendNow(ctx, luciProject, &prjpb.Event{
-		Event: &prjpb.Event_ClUpdated{
-			ClUpdated: &changelist.CLUpdatedEvent{
-				Clid:     int64(clid),
-				Eversion: int64(eversion),
-			},
-		},
-	})
-}
-
 // NotifyCLsUpdated tells Project Manager to check latest versions of the given
 // CLs.
 func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls *changelist.CLUpdatedEvents) error {

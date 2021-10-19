@@ -49,13 +49,12 @@ type dsMapper struct {
 
 func newDSMapper(ctrl *dsmapper.Controller) *dsMapper {
 	s := &dsMapper{ctrl: ctrl}
-	// Add your dsmapper factory with here,
+	// Add your dsmapper factory here,
 	// e.g. s.register(&yourConfig, yourFactory)
 
 	// TODO(crbug/1260615): remove descriptions once CQDaemon is gone.
 	s.register(&removeCLDescriptionsCOnfig, removeCLDescriptionsFactory)
 
-	s.register(&removeOldProjectEventsConfig, removeOldProjectEventsFactory)
 	s.final = true
 	return s
 }

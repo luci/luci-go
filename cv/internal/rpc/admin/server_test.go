@@ -589,14 +589,14 @@ func TestDeleteProjectEvents(t *testing.T) {
 			})
 			pm := prjmanager.NewNotifier(ct.TQDispatcher)
 
-			So(pm.NotifyCLUpdated(ctx, lProject, common.CLID(1), 1), ShouldBeNil)
-			So(pm.NotifyCLUpdated(ctx, lProject, common.CLID(2), 1), ShouldBeNil)
+			So(pm.Poke(ctx, lProject), ShouldBeNil)
 			So(pm.UpdateConfig(ctx, lProject), ShouldBeNil)
+			So(pm.Poke(ctx, lProject), ShouldBeNil)
 
 			Convey("All", func() {
 				resp, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
 				So(err, ShouldBeNil)
-				So(resp.GetEvents(), ShouldResemble, map[string]int64{"*prjpb.Event_ClUpdated": 2, "*prjpb.Event_NewConfig": 1})
+				So(resp.GetEvents(), ShouldResemble, map[string]int64{"*prjpb.Event_Poke": 2, "*prjpb.Event_NewConfig": 1})
 			})
 
 			Convey("Limited", func() {
