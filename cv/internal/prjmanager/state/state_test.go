@@ -506,24 +506,27 @@ func TestUpdateConfig(t *testing.T) {
 
 			Convey("CL with Commit: false footer has an error", func() {
 				cl101.Snapshot.Metadata = []*changelist.StringPair{{Key: "Commit", Value: "false"}}
-				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
-					Clid:               int64(cl101.ID),
-					Eversion:           int64(cl101.EVersion),
-					ConfigGroupIndexes: []int32{0}, // g0
-					Trigger: &run.Trigger{
-						Email:           "user-1@example.com",
-						GerritAccountId: 1,
-						Mode:            string(run.FullRun),
-						Time:            triggerTS,
-					},
-					Errors: []*changelist.CLError{
-						{
-							Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
-						},
+				So(s1.makePCL(ctx, cl101).GetErrors(), ShouldResembleProto, []*changelist.CLError{
+					{
+						Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
 					},
 				})
 			})
 
+			Convey("'Commit: false' footer works with different capitalization", func() {
+				cl101.Snapshot.Metadata = []*changelist.StringPair{{Key: "COMMIT", Value: "FALSE"}}
+				So(s1.makePCL(ctx, cl101).GetErrors(), ShouldResembleProto, []*changelist.CLError{
+					{
+						Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
+					},
+				})
+			})
+
+			Convey("'Commit: false' has no effect for dry run CL", func() {
+				// cl202 is set up for dry run, unlike cl101.
+				cl202.Snapshot.Metadata = []*changelist.StringPair{{Key: "Commit", Value: "false"}}
+				So(s1.makePCL(ctx, cl202).GetErrors(), ShouldBeEmpty)
+			})
 		})
 	})
 }
