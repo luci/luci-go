@@ -196,6 +196,7 @@ def gen_project_cfg(ctx):
             config_dir = strutil.join_path(
                 __native__.get_meta("config_dir"),
                 proj.props.config_dir,
+                allow_dots = True,
             ),
             entry_point = __native__.entry_point,
             vars = __native__.var_flags,
