@@ -125,10 +125,9 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		bld.Leasee = nil
 		bld.LeaseExpirationDate = time.Time{}
 		bld.LeaseKey = 0
-		bld.StatusChangedTime = clock.Now(ctx).UTC()
 
 		bld.Proto.CanceledBy = string(auth.CurrentIdentity(ctx))
-		bld.Proto.EndTime = timestamppb.New(bld.StatusChangedTime)
+		bld.Proto.EndTime = timestamppb.New(clock.Now(ctx).UTC())
 		bld.Proto.Status = pb.Status_CANCELED
 		bld.Proto.SummaryMarkdown = req.SummaryMarkdown
 

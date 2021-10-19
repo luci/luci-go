@@ -223,15 +223,27 @@ func OverrideGlobalBuildUpdateTimeClock(c clock.Clock) (undo func()) {
 // Save returns the datastore.PropertyMap representation of this build. Mutates
 // this entity to reflect computed datastore fields in the returned PropertyMap.
 func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
+	var now time.Time
+	var nowPb *timestamppb.Timestamp
+	if c := buildUpdateTimeClock; c != nil {
+		now = c.Now()
+		nowPb = timestamppb.New(now)
+	}
+
 	b.BucketID = protoutil.FormatBucketID(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
 	b.BuilderID = protoutil.FormatBuilderID(b.Proto.Builder)
 	b.Canary = b.Proto.Canary
 	b.Experimental = b.Proto.Input.GetExperimental()
 	b.Incomplete = !protoutil.IsEnded(b.Proto.Status)
 	b.Project = b.Proto.Builder.Project
+
+	oldStatus := b.Status
 	b.Status = b.Proto.Status
-	if c := buildUpdateTimeClock; c != nil {
-		b.Proto.UpdateTime = timestamppb.New(c.Now())
+	if b.Status != oldStatus && !now.IsZero() {
+		b.StatusChangedTime = now
+	}
+	if nowPb != nil {
+		b.Proto.UpdateTime = nowPb
 	}
 
 	// Set legacy values used by Python.
