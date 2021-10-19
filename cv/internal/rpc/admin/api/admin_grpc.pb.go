@@ -32,6 +32,10 @@ type AdminClient interface {
 	// SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
 	SearchRuns(ctx context.Context, in *SearchRunsRequest, opts ...grpc.CallOption) (*RunsResponse, error)
 	// DSMLaunchJob launches a new job, pre-registered in dsmapper.go.
+	//
+	// If unsure about job name, use "404" and observe the error,
+	// which will list all known names.
+	//
 	// Returns job ID.
 	DSMLaunchJob(ctx context.Context, in *DSMLaunchJobRequest, opts ...grpc.CallOption) (*DSMJobID, error)
 	// DSMGetJob returns details of previously launched job given its ID.
@@ -229,6 +233,10 @@ type AdminServer interface {
 	// SearchRuns returns Runs ordered by .CreateTime DESC (most recent first).
 	SearchRuns(context.Context, *SearchRunsRequest) (*RunsResponse, error)
 	// DSMLaunchJob launches a new job, pre-registered in dsmapper.go.
+	//
+	// If unsure about job name, use "404" and observe the error,
+	// which will list all known names.
+	//
 	// Returns job ID.
 	DSMLaunchJob(context.Context, *DSMLaunchJobRequest) (*DSMJobID, error)
 	// DSMGetJob returns details of previously launched job given its ID.

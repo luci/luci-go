@@ -84,12 +84,12 @@ func (a *AdminServer) DSMLaunchJob(ctx context.Context, req *adminpb.DSMLaunchJo
 	cfg, exists := a.dsmapper.cfgs[dsmapper.ID(req.GetName())]
 	if !exists {
 		var sb strings.Builder
-		_, _ = fmt.Fprintf(&sb, "Name %q is not pregistered; known names are:", req.GetName())
+		_, _ = fmt.Fprintf(&sb, "Name %q is not pregistered; %d known names are: ", req.GetName(), len(a.dsmapper.cfgs))
 		for name := range a.dsmapper.cfgs {
-			sb.WriteRune(' ')
 			sb.WriteString(string(name))
+			sb.WriteRune(',')
 		}
-		return nil, appstatus.Error(codes.NotFound, sb.String())
+		return nil, appstatus.Error(codes.NotFound, strings.TrimRight(sb.String(), ","))
 	}
 
 	jobID, err := a.dsmapper.ctrl.LaunchJob(ctx, cfg)

@@ -66,6 +66,10 @@ service Admin {
   /////////////////////////////////////////////////////////////////////////////
 
   // DSMLaunchJob launches a new job, pre-registered in dsmapper.go.
+  //
+  // If unsure about job name, use "404" and observe the error,
+  // which will list all known names.
+  //
   // Returns job ID.
   rpc DSMLaunchJob(DSMLaunchJobRequest) returns (DSMJobID);
   // DSMGetJob returns details of previously launched job given its ID.
