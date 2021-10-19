@@ -32,9 +32,8 @@ message PRPCRequestLog {
   // When the request being logged was received (microseconds since epoch).
   int64 creation_time = 3 [(bqschema.options).bq_type = "TIMESTAMP"];
 
-  // Duration of the request.
-  // TODO(crbug/1250459): Decide on units.
-  int32 duration = 4;
+  // Duration of the request in microseconds.
+  int64 duration = 4;
 
   // Method called. e.g. "Builds.GetBuild".
   string method = 5;

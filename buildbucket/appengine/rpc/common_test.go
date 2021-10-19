@@ -21,8 +21,12 @@ import (
 	"testing"
 	"time"
 
+	storagepb "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1beta2"
+
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
+
+	"go.chromium.org/luci/server/bqlog"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -36,6 +40,33 @@ import (
 func init() {
 	// By default cause Build.Proto.UpdateTime fields to be unset
 	model.OverrideGlobalBuildUpdateTimeClock(nil)
+}
+
+func TestLogToBQ(t *testing.T) {
+	t.Parallel()
+
+	Convey("logToBQ", t, func(c C) {
+		b := &bqlog.Bundler{
+			CloudProject: "project",
+			Dataset:      "dataset",
+		}
+		ctx := withBundler(context.Background(), b)
+		b.RegisterSink(bqlog.Sink{
+			Prototype: &pb.PRPCRequestLog{},
+			Table:     "table",
+		})
+		b.Start(ctx, &bqlog.FakeBigQueryWriter{
+			Send: func(req *storagepb.AppendRowsRequest) error {
+				rows := req.GetProtoRows().GetRows().GetSerializedRows()
+				// TODO(crbug/1250459): Check that rows being sent to BQ look correct.
+				c.So(len(rows), ShouldEqual, 1)
+				return nil
+			},
+		})
+		defer b.Shutdown(ctx)
+
+		logToBQ(ctx, "id", "parent", "method")
+	})
 }
 
 func TestValidateTags(t *testing.T) {

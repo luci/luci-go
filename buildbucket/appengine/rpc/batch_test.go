@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/tq"
 
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
@@ -55,6 +56,18 @@ func TestBatch(t *testing.T) {
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
+
+		b := &bqlog.Bundler{
+			CloudProject: "project",
+			Dataset:      "dataset",
+		}
+		ctx = withBundler(ctx, b)
+		b.RegisterSink(bqlog.Sink{
+			Prototype: &pb.PRPCRequestLog{},
+			Table:     "table",
+		})
+		b.Start(ctx, &bqlog.FakeBigQueryWriter{})
+		defer b.Shutdown(ctx)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:caller@example.com",

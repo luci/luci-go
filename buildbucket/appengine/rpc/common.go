@@ -19,12 +19,14 @@ import (
 	"crypto/subtle"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -70,23 +72,49 @@ var (
 func init() {
 	bqlog.RegisterSink(bqlog.Sink{
 		Prototype: &pb.PRPCRequestLog{},
-		Table: "prpc_request_log",
+		Table:     "prpc_request_log",
 	})
 }
 
-// commonPostlude converts an appstatus error to a gRPC error and logs it.
-func commonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+// bundler is the key to a *bqlog.Bundler in the context.
+var bundlerKey = "bundler"
+
+// withBundler returns a new context with the given *bqlog.Bundler set.
+func withBundler(ctx context.Context, b *bqlog.Bundler) context.Context {
+	return context.WithValue(ctx, &bundlerKey, b)
+}
+
+// getBundler returns the *bqlog.Bundler installed in the current context.
+// Panics if there isn't one.
+func getBundler(ctx context.Context) *bqlog.Bundler {
+	return ctx.Value(&bundlerKey).(*bqlog.Bundler)
+}
+
+// logToBQ logs a PRPC request log for this request to BigQuery (best-effort).
+func logToBQ(ctx context.Context, id, parent, methodName string) {
 	user := auth.CurrentIdentity(ctx)
 	if user.Kind() == identity.User && !strings.HasSuffix(string(user), ".gserviceaccount.com") {
 		user = ""
 	}
-	bqlog.Log(ctx, &pb.PRPCRequestLog{
-		// TODO(crbug/1250459): Fill in other request-related fields.
-		// TODO(crbug/1250459): Log individual batch operations.
-		Id: trace.SpanContext(ctx),
-		Method: methodName,
-		User: string(user),
+	cTime := getStartTime(ctx)
+	duration := int64(0)
+	if !cTime.IsZero() {
+		duration = clock.Now(ctx).Sub(cTime).Microseconds()
+	}
+	getBundler(ctx).Log(ctx, &pb.PRPCRequestLog{
+		Id:           id,
+		Parent:       parent,
+		CreationTime: cTime.UnixNano() / 1000,
+		Duration:     duration,
+		Method:       methodName,
+		User:         string(user),
 	})
+}
+
+// commonPostlude converts an appstatus error to a gRPC error and logs it.
+// Requires a *bqlog.Bundler in the context (see commonPrelude).
+func commonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	logToBQ(ctx, trace.SpanContext(ctx), "", methodName)
 	return appstatus.GRPCifyAndLog(ctx, err)
 }
 
@@ -96,10 +124,27 @@ func teeErr(err error, keep *error) error {
 	return err
 }
 
-// logDetails logs debug information about the request.
-func logDetails(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
+// timeKey is the key to a time.Time in the context.
+var timeKey = "start time"
+
+// withStartTime returns a new context with the given time.Time set.
+func withStartTime(ctx context.Context, t time.Time) context.Context {
+	return context.WithValue(ctx, &timeKey, t)
+}
+
+// getStartTime returns the time.Time installed in the current context.
+func getStartTime(ctx context.Context) time.Time {
+	if t, ok := ctx.Value(&timeKey).(time.Time); ok {
+		return t
+	}
+	return time.Time{}
+}
+
+// commonPrelude logs debug information about the request and installs a
+// start time and *bqlog.Bundler in the current context.
+func commonPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
 	logging.Debugf(ctx, "%q called %q with request %s", auth.CurrentIdentity(ctx), methodName, proto.MarshalTextString(req))
-	return ctx, nil
+	return withBundler(withStartTime(ctx, clock.Now(ctx)), &bqlog.Default), nil
 }
 
 func validatePageSize(pageSize int32) error {

@@ -25,6 +25,6 @@ go install go.chromium.org/luci/tools/cmd/bqschemaupdater
 
 # Actually update BQ schemas, -dev before prod.
 bqschemaupdater -message buildbucket.v2.Build -table cr-buildbucket-dev.raw.completed_builds
-bqschemaupdater -message buildbucket.v2.PRPCRequestLog -table cr-buildbucket-dev.sandbox.prpc_request_log
+bqschemaupdater -message buildbucket.v2.PRPCRequestLog -table cr-buildbucket-dev.sandbox.prpc_request_log -partitioning-field creation_time -partitioning-expiration "720h" # 30d
 bqschemaupdater -message buildbucket.v2.Build -table cr-buildbucket.raw.completed_builds
-bqschemaupdater -message buildbucket.v2.PRPCRequestLog -table cr-buildbucket.sandbox.prpc_request_log
+bqschemaupdater -message buildbucket.v2.PRPCRequestLog -table cr-buildbucket.sandbox.prpc_request_log -partitioning-field creation_time -partitioning-expiration "720h" # 30d

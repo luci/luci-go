@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -76,16 +77,22 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed write request count in Batch is %d.", writeReqsSizeLimit).Err())
 	}
 
+	// ID used to log this Batch operation in the pRPC request log (see common.go).
+	// Used as the parent request log ID when logging individual operations here.
+	parent := trace.SpanContext(ctx)
 	err := parallel.WorkPool(64, func(c chan<- func() error) {
-		c <- func() error {
+		c <- func() (err error) {
+			ctx, span := trace.StartSpan(ctx, "Batch.ScheduleBuild")
 			// Batch schedule requests. An error means all requests failed.
 			ret, err := b.scheduleBuilds(ctx, schBatchReq)
+			defer span.End(err)
 			if err != nil {
 				merr := err.(errors.MultiError)
 				for i, e := range merr {
 					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
 						Response: toBatchResponseError(ctx, e),
 					}
+					logToBQ(ctx, fmt.Sprintf("%s;%d", trace.SpanContext(ctx), schIndices[i]), parent, "ScheduleBuild")
 				}
 				return nil
 			}
@@ -95,30 +102,43 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 						ScheduleBuild: r,
 					},
 				}
+				logToBQ(ctx, fmt.Sprintf("%s;%d", trace.SpanContext(ctx), schIndices[i]), parent, "ScheduleBuild")
 			}
 			return nil
 		}
 		for i, r := range goBatchReq {
 			i, r := i, r
-			c <- func() error {
+			c <- func() (err error) {
+				ctx := ctx
+				method := ""
 				response := &pb.BatchResponse_Response{}
-				var err error
+				var span trace.Span
 				switch r.Request.(type) {
 				case *pb.BatchRequest_Request_GetBuild:
+					ctx, span = trace.StartSpan(ctx, "Batch.GetBuild")
+					defer span.End(err)
 					ret, e := b.GetBuild(ctx, r.GetGetBuild())
 					response.Response = &pb.BatchResponse_Response_GetBuild{GetBuild: ret}
 					err = e
+					method = "GetBuild"
 				case *pb.BatchRequest_Request_SearchBuilds:
+					ctx, span = trace.StartSpan(ctx, "Batch.SearchBuilds")
+					defer span.End(err)
 					ret, e := b.SearchBuilds(ctx, r.GetSearchBuilds())
 					response.Response = &pb.BatchResponse_Response_SearchBuilds{SearchBuilds: ret}
 					err = e
+					method = "SearchBuilds"
 				case *pb.BatchRequest_Request_CancelBuild:
+					ctx, span = trace.StartSpan(ctx, "Batch.CancelBuild")
+					defer span.End(err)
 					ret, e := b.CancelBuild(ctx, r.GetCancelBuild())
 					response.Response = &pb.BatchResponse_Response_CancelBuild{CancelBuild: ret}
 					err = e
+					method = "CancelBuild"
 				default:
 					panic(fmt.Sprintf("attempted to handle unexpected request type %T", r.Request))
 				}
+				logToBQ(ctx, trace.SpanContext(ctx), parent, method)
 				if err != nil {
 					logging.Warningf(ctx, "Error from Go: %s", err)
 					if goErrSt, ok := convertGRPCError(err); ok {
@@ -127,6 +147,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 					response.Response = toBatchResponseError(ctx, err)
 				}
 				res.Responses[goIndices[i]] = response
+				span.End(nil)
 				return nil
 			}
 		}
