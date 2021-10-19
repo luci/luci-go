@@ -2,16 +2,7 @@
 
 linters:
   enable:
-    - gci
     - stylecheck
-
-# all available settings of specific linters
-linters-settings:
-  gci:
-    # put imports beginning with prefix after 3rd-party packages;
-    # only support one prefix
-    # if not set, use goimports.local-prefixes
-    local-prefixes: go.chromium.org/luci
 
 issues:
   # Independently from option `exclude` we use default exclude patterns,
