@@ -18,6 +18,8 @@ package cv.internal.run.eventpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 
+import "google/protobuf/timestamp.proto";
+
 message LongOpCompleted {
   // Next tag: 4.
 
@@ -52,5 +54,8 @@ message LongOpCompleted {
     repeated int64 posted = 1;
     // Maps CLID to the permenant error.
     map<int64, string> permanent_errors = 2;
+    // Approximate time when CV became certain that the message was posted on
+    // the last CL.
+    google.protobuf.Timestamp time = 3;
   }
 }

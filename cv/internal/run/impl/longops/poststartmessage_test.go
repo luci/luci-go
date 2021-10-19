@@ -162,10 +162,7 @@ func TestPostStartMessage(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			So(res.GetPostStartMessage(), ShouldResembleProto, &eventpb.LongOpCompleted_PostStartMessage{
-				Posted: clidsOf(gChange1),
-			})
-
+			So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1))
 			So(ct.GFake.GetChange(gHost, gChange1).Info, gf.ShouldLastMessageContain, "CV is trying the patch.\n\nBot data: ")
 		})
 
@@ -174,9 +171,7 @@ func TestPostStartMessage(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			So(res.GetPostStartMessage(), ShouldResembleProto, &eventpb.LongOpCompleted_PostStartMessage{
-				Posted: clidsOf(gChange1),
-			})
+			So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1))
 
 			ci := ct.GFake.GetChange(gHost, gChange1).Info
 			So(ci, gf.ShouldLastMessageContain, "CV is trying the patch.\n\nFollow status at:")
@@ -184,6 +179,9 @@ func TestPostStartMessage(t *testing.T) {
 			So(ci, gf.ShouldLastMessageContain, "Bot data:")
 			// Should post exactly one message.
 			So(ci.GetMessages(), ShouldHaveLength, 1)
+
+			// Recorded timestamp must be approximately correct.
+			So(res.GetPostStartMessage().GetTime().AsTime(), ShouldHappenWithin, time.Second, ci.GetMessages()[0].GetDate().AsTime())
 		})
 
 		Convey("Happy path with multiple CLs", func() {
@@ -195,9 +193,7 @@ func TestPostStartMessage(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			So(res.GetPostStartMessage(), ShouldResembleProto, &eventpb.LongOpCompleted_PostStartMessage{
-				Posted: clidsOf(gChange1, gChange2),
-			})
+			So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1, gChange2))
 
 			for _, gChange := range []int{gChange1, gChange2} {
 				ci := ct.GFake.GetChange(gHost, gChange).Info
@@ -210,6 +206,10 @@ func TestPostStartMessage(t *testing.T) {
 				So(bd.CLs, ShouldHaveLength, 2)
 				So(bd.CLs[0].Number, ShouldEqual, gChange1)
 				So(bd.CLs[1].Number, ShouldEqual, gChange2)
+
+				// Recorded timestamp must be approximately correct since both CLs are
+				// posted at around the same time.
+				So(res.GetPostStartMessage().GetTime().AsTime(), ShouldHappenWithin, time.Second, ci.GetMessages()[0].GetDate().AsTime())
 			}
 		})
 
@@ -232,10 +232,10 @@ func TestPostStartMessage(t *testing.T) {
 				res, err := opRetry.Do(ctx)
 				So(err, ShouldBeNil)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-				So(res.GetPostStartMessage(), ShouldResembleProto, &eventpb.LongOpCompleted_PostStartMessage{
-					Posted: clidsOf(gChange1),
-				})
+				So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1))
 				So(ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), ShouldHaveLength, 2)
+				// And the timestamp isn't entirely right, but that's fine.
+				So(res.GetPostStartMessage().GetTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC().Truncate(time.Second))
 			})
 
 			Convey("later retry", func() {
@@ -243,11 +243,12 @@ func TestPostStartMessage(t *testing.T) {
 				res, err := opRetry.Do(ctx)
 				So(err, ShouldBeNil)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-				So(res.GetPostStartMessage(), ShouldResembleProto, &eventpb.LongOpCompleted_PostStartMessage{
-					Posted: clidsOf(gChange1),
-				})
+				So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1))
 				// There should still be exactly 1 message.
-				So(ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), ShouldHaveLength, 1)
+				ci := ct.GFake.GetChange(gHost, gChange1).Info
+				So(ci.GetMessages(), ShouldHaveLength, 1)
+				// and the timestamp must be exactly correct.
+				So(res.GetPostStartMessage().GetTime().AsTime(), ShouldResemble, ci.GetMessages()[0].GetDate().AsTime())
 			})
 		})
 

@@ -18,6 +18,7 @@ package state
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -226,8 +227,13 @@ func (rs *RunState) RemoveCompletedLongOp(opID string) {
 // Don't use for adding a complicated info formatted into the message string,
 // use a specialized LogEntry type instead.
 func (rs *RunState) LogInfo(ctx context.Context, label, message string) {
+	rs.LogInfoAt(label, message, clock.Now(ctx))
+}
+
+// LogInfoAt is LogInfo with a custom timestamp.
+func (rs *RunState) LogInfoAt(label, message string, at time.Time) {
 	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
-		Time: timestamppb.New(clock.Now(ctx)),
+		Time: timestamppb.New(at),
 		Kind: &run.LogEntry_Info_{
 			Info: &run.LogEntry_Info{
 				Label:   label,

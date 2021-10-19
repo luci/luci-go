@@ -102,7 +102,12 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 		failRunReason += fmt.Sprintf(" within the %s deadline", maxPostStartMessageDuration)
 		rs.LogInfo(ctx, logEntryLabelPostStartMessage, failRunReason)
 	case eventpb.LongOpCompleted_SUCCEEDED:
-		rs.LogInfo(ctx, logEntryLabelPostStartMessage, "posted start message on each CL")
+		// TODO(tandrii): simplify once all such events have timestamp.
+		if t := result.GetPostStartMessage().GetTime(); t != nil {
+			rs.LogInfoAt(logEntryLabelPostStartMessage, "posted start message on each CL", t.AsTime())
+		} else {
+			rs.LogInfo(ctx, logEntryLabelPostStartMessage, "posted start message on each CL")
+		}
 		return &Result{State: rs}, nil
 	case eventpb.LongOpCompleted_CANCELLED:
 		rs.LogInfo(ctx, logEntryLabelPostStartMessage, "cancelled posting start message on CL(s)")

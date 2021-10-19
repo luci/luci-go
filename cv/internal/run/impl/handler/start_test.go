@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 
@@ -185,9 +186,11 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 			result.Status = eventpb.LongOpCompleted_SUCCEEDED
 			// The result is set in practice but serves debugging purposes only,
 			// and is ignored by the onCompletedPostStartMessage.
+			postedAt := ct.Clock.Now().Add(-time.Second)
 			result.Result = &eventpb.LongOpCompleted_PostStartMessage_{
 				PostStartMessage: &eventpb.LongOpCompleted_PostStartMessage{
 					Posted: []int64{1},
+					Time:   timestamppb.New(postedAt),
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
@@ -196,6 +199,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 			So(res.State.OngoingLongOps, ShouldBeNil)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
+			So(res.State.LogEntries[0].GetTime().AsTime(), ShouldResemble, postedAt.UTC())
 		})
 
 		Convey("on failure, fails the Runs", func() {

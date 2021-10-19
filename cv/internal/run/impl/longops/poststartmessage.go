@@ -17,11 +17,13 @@ package longops
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -50,6 +52,11 @@ import (
 // while low values increase load on Gerrit.
 const staleCLAgeThreshold = 10 * time.Second
 
+// notPosted means start message wasn't posted yet.
+//
+// exists for readability only.
+var notPosted time.Time
+
 // PostStartMessageOp posts a start message on each of the Run CLs.
 //
 // PostStartMessageOp is a single-use object.
@@ -65,6 +72,9 @@ type PostStartMessageOp struct {
 	rcls       []*run.RunCL
 	cfg        *prjcfg.ConfigGroup
 	botdataCLs []botdata.ChangeID
+
+	lock           sync.Mutex
+	latestPostedAt time.Time
 }
 
 // Do actually posts the start messages.
@@ -84,8 +94,17 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 		for i, rcl := range op.rcls {
 			i, rcl := i, rcl
 			work <- func() error {
-				// all errors will be aggregated across all CLs below.
-				errs[i] = op.doCL(ctx, rcl)
+				switch posted, err := op.doCL(ctx, rcl); {
+				case err != nil:
+					// all errors will be aggregated across all CLs below.
+					errs[i] = err
+				default:
+					op.lock.Lock()
+					if op.latestPostedAt.IsZero() || op.latestPostedAt.Before(posted) {
+						op.latestPostedAt = posted
+					}
+					op.lock.Unlock()
+				}
 				return nil
 			}
 		}
@@ -131,6 +150,7 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 		// Must be a transient error, expect a retry.
 		return nil, firstError
 	default:
+		psm.Time = timestamppb.New(op.latestPostedAt)
 		return result, nil
 	}
 }
@@ -157,49 +177,52 @@ func (op *PostStartMessageOp) prepare(ctx context.Context) error {
 	return nil
 }
 
-func (op *PostStartMessageOp) doCL(ctx context.Context, rcl *run.RunCL) error {
+func (op *PostStartMessageOp) doCL(ctx context.Context, rcl *run.RunCL) (time.Time, error) {
 	if rcl.Detail.GetGerrit() == nil {
 		panic(fmt.Errorf("CL %d is not a Gerrit CL", rcl.ID))
 	}
 
 	if op.IsCancelRequested() {
-		return errCancelHonored
+		return notPosted, errCancelHonored
 	}
-	switch posted, err := op.isAlreadyPosted(ctx, rcl); {
+	switch postedAt, err := op.isAlreadyPosted(ctx, rcl); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check if message was already posted").Err()
-	case posted:
-		logging.Debugf(ctx, "CL %d %s already has the starting message", rcl.ID, rcl.ExternalID)
-		return nil
+		return notPosted, errors.Annotate(err, "failed to check if message was already posted").Err()
+	case postedAt != notPosted:
+		logging.Debugf(ctx, "CL %d %s already has the starting message at %s", rcl.ID, rcl.ExternalID, postedAt)
+		return postedAt, nil
 	}
 
 	if op.IsCancelRequested() {
-		return errCancelHonored
+		return notPosted, errCancelHonored
 	}
 	return op.post(ctx, rcl)
 }
 
-func (op *PostStartMessageOp) isAlreadyPosted(ctx context.Context, rcl *run.RunCL) (bool, error) {
+func (op *PostStartMessageOp) isAlreadyPosted(ctx context.Context, rcl *run.RunCL) (time.Time, error) {
 	// Check if Gerrit CL already has the starting message by first checking CV's
 	// own cache (CL entity in Datastore) and if the cache is old, fetching latest
 	// info from Gerrit.
 	cl := changelist.CL{ID: rcl.ID}
 	switch err := datastore.Get(ctx, &cl); {
 	case err == datastore.ErrNoSuchEntity:
-		return false, errors.Annotate(err, "CL no longer exists").Err()
+		return notPosted, errors.Annotate(err, "CL no longer exists").Err()
 	case err != nil:
-		return false, errors.Annotate(err, "failed to load CL").Tag(transient.Tag).Err()
-	case op.isAlreadyPostedOn(rcl, cl.Snapshot.GetGerrit().GetInfo()):
-		return true, nil
+		return notPosted, errors.Annotate(err, "failed to load CL").Tag(transient.Tag).Err()
+	}
+
+	switch posted := op.findMessageTS(rcl, cl.Snapshot.GetGerrit().GetInfo()); {
+	case posted != notPosted:
+		return posted, nil
 	case clock.Since(ctx, cl.Snapshot.GetExternalUpdateTime().AsTime()) < staleCLAgeThreshold:
 		// Accept possibility of duplicate messages within the staleCLAgeThreshold.
-		return false, nil
+		return notPosted, nil
 	}
 
 	// Fetch the latest CL details from Gerrit.
 	gc, err := op.GFactory.MakeClient(ctx, rcl.Detail.GetGerrit().GetHost(), op.Run.ID.LUCIProject())
 	if err != nil {
-		return false, err
+		return notPosted, err
 	}
 
 	req := &gerritpb.GetChangeRequest{
@@ -225,25 +248,27 @@ func (op *PostStartMessageOp) isAlreadyPosted(ctx context.Context, rcl *run.RunC
 	})
 	switch {
 	case err != nil:
-		return false, errors.Annotate(err, "failed to get the latest Gerrit ChangeInfo").Err()
+		return notPosted, errors.Annotate(err, "failed to get the latest Gerrit ChangeInfo").Err()
 	case outerErr != nil:
 		// Shouldn't happen, unless Mirror iterate itself errors out for some
 		// reason.
-		return false, outerErr
+		return notPosted, outerErr
 	default:
-		return op.isAlreadyPostedOn(rcl, ci), nil
+		return op.findMessageTS(rcl, ci), nil
 	}
 }
 
-func (op *PostStartMessageOp) isAlreadyPostedOn(rcl *run.RunCL, ci *gerritpb.ChangeInfo) bool {
+// findMessageTS returns when the start message was posted on a CL or `notPosted`.
+func (op *PostStartMessageOp) findMessageTS(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time {
 	// Look at latest messages first for efficiency,
 	// and skip all messages which are too old.
 	clTriggeredAt := rcl.Trigger.Time.AsTime()
 	for i := len(ci.GetMessages()) - 1; i >= 0; i-- {
 		m := ci.GetMessages()[i]
-		if m.GetDate().AsTime().Before(clTriggeredAt) {
+		t := m.GetDate().AsTime()
+		if t.Before(clTriggeredAt) {
 			// i-th message is too old, no need to check even older ones.
-			return false
+			return notPosted
 		}
 		switch data, ok := botdata.Parse(m); {
 		case !ok:
@@ -252,25 +277,25 @@ func (op *PostStartMessageOp) isAlreadyPostedOn(rcl *run.RunCL, ci *gerritpb.Cha
 		case data.Revision != rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision():
 		case len(data.CLs) != len(op.Run.CLs):
 		default:
-			return true
+			return t
 		}
 	}
-	return false
+	return notPosted
 }
 
-func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) error {
+func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) (time.Time, error) {
 	msg, err := op.makeMessage(rcl)
 	if err != nil {
-		return errors.Annotate(err, "failed to generate the starting message").Err()
+		return notPosted, errors.Annotate(err, "failed to generate the starting message").Err()
 	}
 	gc, err := op.GFactory.MakeClient(ctx, rcl.Detail.GetGerrit().GetHost(), op.Run.ID.LUCIProject())
 	if err != nil {
-		return err
+		return notPosted, err
 	}
 
 	ctx, cancelLease, err := lease.ApplyOnCL(ctx, rcl.ID, 2*time.Minute, "post-start-message")
 	if err != nil {
-		return err
+		return notPosted, err
 	}
 	defer cancelLease()
 
@@ -301,13 +326,15 @@ func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) error {
 	})
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to Gerrit.SetReview").Err()
+		return notPosted, errors.Annotate(err, "failed to Gerrit.SetReview").Err()
 	case outerErr != nil:
 		// Shouldn't happen, unless MirrorIterator itself errors out for some
 		// reason.
-		return outerErr
+		return notPosted, outerErr
 	default:
-		return nil
+		// NOTE: to avoid another round-trip to Gerrit, use the CV time here even
+		// though it isn't the same as what Gerrit recorded.
+		return clock.Now(ctx).Truncate(time.Second), nil
 	}
 }
 
