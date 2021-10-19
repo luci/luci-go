@@ -49,8 +49,8 @@ type dsMapper struct {
 
 func newDSMapper(ctrl *dsmapper.Controller) *dsMapper {
 	s := &dsMapper{ctrl: ctrl}
-	// Add your dsmapper factory with here, e.g.:
-	s.register(&upgradeRunCLConfig, upgradeRunCLFactory)
+	// Add your dsmapper factory with here,
+	// e.g. s.register(&yourConfig, yourFactory)
 	s.register(&upgradeCLConfig, upgradeCLFactory)
 	s.register(&removeOldRunEventsConfig, removeOldRunEventsFactory)
 	s.final = true

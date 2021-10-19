@@ -108,10 +108,6 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				default:
 					panic(fmt.Sprintf("DisplayExternalID called with unsupported type %t", v))
 				}
-				if eid == "" {
-					// Very old RunCL entities don't have ExternalID set.
-					return ""
-				}
 				return displayCLExternalID(changelist.ExternalID(eid))
 			},
 			// Runlog specific, see run_details.go.
