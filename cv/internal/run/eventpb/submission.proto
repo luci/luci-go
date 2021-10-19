@@ -36,10 +36,6 @@ message SubmissionCompleted {
   }
 
   oneof failure_reason {
-    // Deprecated. Use `cl_failures` instead.
-    //
-    // TODO(crbug/1227523): delete after no event has this field set.
-    CLSubmissionFailure cl_failure = 2 [deprecated = true];
     // Submission deadline is exceeded. Must be permanent failure.
     bool timeout = 3;
     // CLs that fail to submit. Could be transient or permanent.

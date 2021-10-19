@@ -331,9 +331,6 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 			tr.newConfigEvents.eversion = ev
 			tr.newConfigEvents.hash = e.GetNewConfig().GetHash()
 		}
-	case *eventpb.Event_ClUpdated:
-		tr.clUpdatedEvents.events = append(tr.clUpdatedEvents.events, item)
-		tr.clUpdatedEvents.cls = append(tr.clUpdatedEvents.cls, common.CLID(e.GetClUpdated().GetClid()))
 	case *eventpb.Event_ClsUpdated:
 		tr.clUpdatedEvents.events = append(tr.clUpdatedEvents.events, item)
 		for _, one := range e.GetClsUpdated().GetEvents() {
@@ -354,10 +351,6 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
 	case *eventpb.Event_CqdTryjobsUpdated:
 		tr.cqdTryjobsUpdated = append(tr.cqdTryjobsUpdated, item)
-	case *eventpb.Event_CqdFinished:
-		// TODO(crbug/1227523): remove this after all such events are wiped out
-		// from datastore.
-		tr.garbage = append(tr.garbage, item)
 	case *eventpb.Event_LongOpCompleted:
 		tr.longOpCompleted.events = append(tr.longOpCompleted.events, item)
 		tr.longOpCompleted.results = append(tr.longOpCompleted.results, e.GetLongOpCompleted())

@@ -78,14 +78,6 @@ message Event {
     //
     // TODO(crbug/1141880): Remove this event after migration.
     CQDTryjobsUpdated cqd_tryjobs_updated = 32;
-
-
-    // TODO(crbug/1227523): wipe out all outstanding events of this kind
-    // and delete it from here.
-    CQDFinished cqd_finished = 31;
-    // TODO(crbug/1227523): wipe out all outstanding events of this kind
-    // and delete it from here.
-    cv.internal.changelist.CLUpdatedEvent cl_updated = 5;
   }
 
   // Instructs Run Manager that this event can only be processed after
@@ -126,7 +118,4 @@ message CQDVerificationCompleted {
 }
 
 message CQDTryjobsUpdated {
-}
-
-message CQDFinished {
 }

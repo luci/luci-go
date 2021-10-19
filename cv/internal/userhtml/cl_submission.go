@@ -53,8 +53,6 @@ func StringifySubmissionFailureReason(clidToURL map[common.CLID]string, sc *even
 		switch sc.GetFailureReason().(type) {
 		case *eventpb.SubmissionCompleted_Timeout:
 			return "Timeout"
-		case *eventpb.SubmissionCompleted_ClFailure:
-			return "" // deprecated.
 		case *eventpb.SubmissionCompleted_ClFailures:
 			msg, err := sFormatCLSubmissionFailures(clidToURL, sc.GetClFailures())
 			if err != nil {
