@@ -17,7 +17,6 @@ package admin
 import (
 	"context"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -25,12 +24,13 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 var upgradeCLConfig = dsmapper.JobConfig{
-	Mapper: "cl-description",
+	Mapper: "runcl-description",
 	Query: dsmapper.Query{
-		Kind: "CL",
+		Kind: "RunCL",
 	},
 	PageSize:   32,
 	ShardCount: 4,
@@ -41,10 +41,10 @@ var upgradeCLFactory = func(_ context.Context, j *dsmapper.Job, _ int) (dsmapper
 	tsJobID := int64(j.ID)
 
 	upgradeCLs := func(ctx context.Context, keys []*datastore.Key) error {
-		needUpgrade := func(cls []*changelist.CL) []*changelist.CL {
+		needUpgrade := func(cls []*run.RunCL) []*run.RunCL {
 			toUpdate := cls[:0]
 			for _, cl := range cls {
-				ci := cl.Snapshot.GetGerrit().GetInfo()
+				ci := cl.Detail.GetGerrit().GetInfo()
 				if ci == nil {
 					continue
 				}
@@ -60,14 +60,17 @@ var upgradeCLFactory = func(_ context.Context, j *dsmapper.Job, _ int) (dsmapper
 			return toUpdate
 		}
 
-		cls := make([]*changelist.CL, len(keys))
+		cls := make([]*run.RunCL, len(keys))
 		for i, k := range keys {
-			cls[i] = &changelist.CL{ID: common.CLID(k.IntID())}
+			cls[i] = &run.RunCL{
+				ID:  common.CLID(k.IntID()),
+				Run: k.Parent(),
+			}
 		}
 
 		// Check before a transaction if an update is even necessary.
 		if err := datastore.Get(ctx, cls); err != nil {
-			return errors.Annotate(err, "failed to fetch CLs").Tag(transient.Tag).Err()
+			return errors.Annotate(err, "failed to fetch RunCLs").Tag(transient.Tag).Err()
 		}
 		cls = needUpgrade(cls)
 		if len(cls) == 0 {
@@ -77,24 +80,21 @@ var upgradeCLFactory = func(_ context.Context, j *dsmapper.Job, _ int) (dsmapper
 		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 			// Reload inside transaction to avoid races with other CV parts.
 			if err := datastore.Get(ctx, cls); err != nil {
-				return errors.Annotate(err, "failed to fetch CLs").Tag(transient.Tag).Err()
+				return errors.Annotate(err, "failed to fetch RunCLs").Tag(transient.Tag).Err()
 			}
 			cls = needUpgrade(cls)
 			if len(cls) == 0 {
 				return nil
 			}
-			now := datastore.RoundTime(clock.Now(ctx).UTC())
 			for _, cl := range cls {
-				changelist.RemoveUnusedGerritInfo(cl.Snapshot.GetGerrit().GetInfo())
-				cl.UpdateTime = now
-				cl.EVersion++
+				changelist.RemoveUnusedGerritInfo(cl.Detail.GetGerrit().GetInfo())
 			}
 			return datastore.Put(ctx, cls)
 		}, nil)
 		if err != nil {
-			return errors.Annotate(err, "failed to update CLs").Tag(transient.Tag).Err()
+			return errors.Annotate(err, "failed to update RunCLs").Tag(transient.Tag).Err()
 		}
-		metricUpgraded.Add(ctx, int64(len(cls)), tsJobName, tsJobID, "CL")
+		metricUpgraded.Add(ctx, int64(len(cls)), tsJobName, tsJobID, "RunCL")
 		return nil
 	}
 

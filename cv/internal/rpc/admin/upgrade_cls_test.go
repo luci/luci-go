@@ -15,6 +15,7 @@
 package admin
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
+	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -38,33 +40,27 @@ import (
 func TestUpgradeCLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Upgrade all CLs to not contain CL description", t, func() {
+	Convey("Upgrade all RunCLs to not contain CL description", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		const startEversion = 1
-		var startTime = datastore.RoundTime(ct.Clock.Now().UTC())
-		mkCL := func(id common.CLID, ci *gerritpb.ChangeInfo) *changelist.CL {
-			cl := &changelist.CL{
-				ID:         id,
-				Snapshot:   nil,
-				EVersion:   startEversion,
-				UpdateTime: startTime,
-			}
-			if ci != nil {
-				cl.Snapshot = &changelist.Snapshot{
+		mkCL := func(id common.CLID, ci *gerritpb.ChangeInfo) *run.RunCL {
+			cl := &run.RunCL{
+				ID:  id,
+				Run: datastore.MakeKey(ctx, run.RunKind, fmt.Sprintf("prj/%d", id)),
+				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
 						Info: ci,
 					}},
-				}
+				},
 			}
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 			return cl
 		}
 
-		clDesc := func(cl *changelist.CL, patchset int32) string {
-			ci := cl.Snapshot.GetGerrit().GetInfo()
+		clDesc := func(cl *run.RunCL, patchset int32) string {
+			ci := cl.Detail.GetGerrit().GetInfo()
 			for _, revInfo := range ci.GetRevisions() {
 				if revInfo.GetNumber() == patchset {
 					return revInfo.GetCommit().GetMessage()
@@ -75,29 +71,20 @@ func TestUpgradeCLs(t *testing.T) {
 
 		cl1 := mkCL(1, gf.CI(1, gf.PS(1), gf.Desc("First")))
 		cl2 := mkCL(2, gf.CI(2, gf.PS(1), gf.Desc("PS#1 blah"), gf.PS(2), gf.Desc("PS#2 foo")))
-		cl3 := mkCL(4, nil)
 
 		// Check test setup.
 		So(clDesc(cl1, 1), ShouldResemble, "First")
 		So(clDesc(cl2, 1), ShouldResemble, "PS#1 blah")
 		So(clDesc(cl2, 2), ShouldResemble, "PS#2 foo")
-		So(clDesc(cl3, 1), ShouldBeEmpty)
 
 		verify := func() {
-			So(datastore.Get(ctx, cl1, cl2, cl3), ShouldBeNil)
+			So(datastore.Get(ctx, cl1, cl2), ShouldBeNil)
 
 			So(clDesc(cl1, 1), ShouldBeEmpty)
-			So(cl1.EVersion, ShouldEqual, startEversion+1)
-			So(cl1.UpdateTime, ShouldHappenAfter, startTime)
 
-			So(cl2.Snapshot.GetGerrit().GetInfo().GetRevisions(), ShouldHaveLength, 2)
+			So(cl2.Detail.GetGerrit().GetInfo().GetRevisions(), ShouldHaveLength, 2)
 			So(clDesc(cl2, 1), ShouldBeEmpty)
 			So(clDesc(cl2, 2), ShouldBeEmpty)
-			So(cl2.EVersion, ShouldEqual, startEversion+1)
-			So(cl2.UpdateTime, ShouldHappenAfter, startTime)
-
-			So(cl3.Snapshot, ShouldBeNil)
-			So(cl3.UpdateTime, ShouldResemble, startTime)
 		}
 
 		// Run the migration.
@@ -109,7 +96,7 @@ func TestUpgradeCLs(t *testing.T) {
 			Identity:       "user:admin@example.com",
 			IdentityGroups: []string{allowGroup},
 		})
-		jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "cl-description"})
+		jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "runcl-description"})
 		So(err, ShouldBeNil)
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 		jobInfo, err := a.DSMGetJob(ctx, jobID)
