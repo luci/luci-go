@@ -265,12 +265,6 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		return pcl
 	}
 
-	if hasCommitFalseFlag(cl.Snapshot.GetMetadata()) {
-		pcl.Errors = append(pcl.Errors, &changelist.CLError{
-			Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
-		})
-	}
-
 	if ci.GetOwner().GetEmail() == "" {
 		pcl.Errors = append(pcl.Errors, &changelist.CLError{
 			Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
@@ -278,6 +272,14 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	}
 
 	s.setTrigger(ci, pcl)
+
+	// Check for "Commit: false" footer after setting Trigger, because this should
+	// only have an effect in the case of an attempted full run.
+	if hasCommitFalseFlag(cl.Snapshot.GetMetadata()) && run.Mode(pcl.Trigger.GetMode()) == run.FullRun {
+		pcl.Errors = append(pcl.Errors, &changelist.CLError{
+			Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
+		})
+	}
 	return pcl
 }
 

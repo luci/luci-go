@@ -270,7 +270,7 @@ Please re-trigger the CQ if neccessary.
 `)
 
 var tmplCommitBlocked = tmplMust(`
-{{CQ_OR_CV}} won't start a full run for the CL because it has a Commit: false footer.
+{{CQ_OR_CV}} won't start a full run for the CL because it has a "Commit: false" footer.
 
-This CL description footer is used to prevent accidental submission of a CL. You may try a dry run. If you want to actually submit the CL, you will need to remove this footer first.
+The "Commit: false" footer is used to prevent accidental submission of a CL. You may try a dry run; if you want to submit the CL, you must first remove the "Commit: false" footer from the CL description.
 `)

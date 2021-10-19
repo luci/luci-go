@@ -498,8 +498,7 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 func TestPurgesOnCommitFalseFooter(t *testing.T) {
 	t.Parallel()
 
-	Convey("PM purges a CL with a Commit: false footer", t, func() {
-		/////////////////////////    Setup   ////////////////////////////////
+	Convey("PM purges a CL with a 'Commit: false' footer", t, func() {
 		ct := Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -529,7 +528,7 @@ func TestPurgesOnCommitFalseFooter(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "Commit: false footer")
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "\"Commit: false\" footer")
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
