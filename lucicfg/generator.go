@@ -40,6 +40,7 @@ import (
 // Inputs define all inputs for the config generator.
 type Inputs struct {
 	Code  interpreter.Loader // a package with the user supplied code
+	Path  string             // absolute path to the main package, if known
 	Entry string             // a name of the entry point script in this package
 	Meta  *Meta              // defaults for lucicfg own parameters
 	Vars  map[string]string  // var values passed via `-var key=value` flags

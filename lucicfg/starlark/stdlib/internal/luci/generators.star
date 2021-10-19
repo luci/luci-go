@@ -188,16 +188,21 @@ def gen_project_cfg(ctx):
         else:
             fail("impossible")
 
+    # Path to the generated LUCI config directory relative to the main package
+    # root.
+    config_dir = strutil.join_path(
+        __native__.get_meta("config_dir"),
+        proj.props.config_dir,
+        allow_dots = True,
+    )
+
     set_config(ctx, "project.cfg", config_pb.ProjectCfg(
         name = proj.props.name,
         access = access,
         lucicfg = config_pb.GeneratorMetadata(
             version = "%d.%d.%d" % lucicfg.version(),
-            config_dir = strutil.join_path(
-                __native__.get_meta("config_dir"),
-                proj.props.config_dir,
-                allow_dots = True,
-            ),
+            config_dir = config_dir,
+            package_dir = __native__.package_dir(config_dir),
             entry_point = __native__.entry_point,
             vars = __native__.var_flags,
         ) if not __native__.running_tests else None,

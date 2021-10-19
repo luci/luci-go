@@ -17,6 +17,7 @@ package lucicfg
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sort"
 
 	"go.starlark.net/starlark"
@@ -203,5 +204,21 @@ func init() {
 			return nil, err
 		}
 		return call.State.vars.Get(call.Thread, id, def)
+	})
+
+	// package_dir(from_dir) returns a relative path to the main package.
+	declNative("package_dir", func(call nativeCall) (starlark.Value, error) {
+		var fromDir starlark.String
+		if err := call.unpack(1, &fromDir); err != nil {
+			return nil, err
+		}
+		// Abs path to the generated output.
+		fromAbs := filepath.Join(call.State.Inputs.Path, filepath.FromSlash(fromDir.GoString()))
+		// Relative path from generated outputs to the main package dir.
+		rel, err := filepath.Rel(fromAbs, call.State.Inputs.Path)
+		if err != nil {
+			return nil, err
+		}
+		return starlark.String(filepath.ToSlash(rel)), nil
 	})
 }

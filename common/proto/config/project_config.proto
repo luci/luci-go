@@ -42,6 +42,8 @@ message ProjectCfg {
 message GeneratorMetadata {
   // Version of lucicfg binary used to generate the config.
   string version = 1;
+  // Path to the main package relative to project.cfg.
+  string package_dir = 5;
   // Directory with generated LUCI project configs relative to the main package.
   string config_dir = 2;
   // Name of the entry point Starlark file at the root of the main package.
