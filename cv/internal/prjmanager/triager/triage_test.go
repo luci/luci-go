@@ -130,12 +130,15 @@ func TestTriage(t *testing.T) {
 				})
 			}
 			So(datastore.Put(ctx, cl), ShouldBeNil)
+			pclTrigger := proto.Clone(tr).(*run.Trigger)
+			pclTrigger.Email = ""
+			pclTrigger.GerritAccountId = 0
 			return cl, &prjpb.PCL{
 				Clid:               int64(clid),
 				Eversion:           1,
 				Status:             prjpb.PCL_OK,
 				ConfigGroupIndexes: []int32{grpIndex},
-				Trigger:            tr,
+				Trigger:            pclTrigger,
 				Deps:               cl.Snapshot.GetDeps(),
 			}
 		}

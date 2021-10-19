@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -314,30 +315,34 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		return nil, errors.Annotate(err, "failed to load CLs").Tag(transient.Tag).Err()
 	}
 
-	var opts *run.Options
-	for i, cl := range cls {
-		exp, act := combo.all[i].pcl.GetEversion(), int64(cl.EVersion)
-		if exp != act {
-			return nil, errors.Annotate(itriager.ErrOutdatedPMState, "CL %d EVersion changed %d => %d", cl.ID, exp, act).Err()
-		}
-		opts = run.MergeOptions(opts, run.ExtractOptions(cl.Snapshot))
-	}
-
 	// Run's owner is whoever owns the latest triggered CL.
 	// It's guaranteed to be set because otherwise CL would have been sent for
-	// pruning and nor marked as ready.
+	// purging and not marked as ready.
 	owner, err := cls[latestIndex].Snapshot.OwnerIdentity()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get OwnerIdentity of %d", cls[latestIndex].ID).Err()
 	}
 
 	bcls := make([]runcreator.CL, len(cls))
+	var opts *run.Options
 	for i, cl := range cls {
 		pcl := combo.all[i].pcl
+		exp, act := pcl.GetEversion(), int64(cl.EVersion)
+		if exp != act {
+			return nil, errors.Annotate(itriager.ErrOutdatedPMState, "CL %d EVersion changed %d => %d", cl.ID, exp, act).Err()
+		}
+		opts = run.MergeOptions(opts, run.ExtractOptions(cl.Snapshot))
+
+		// Restore email, which Project Manager doesn't track inside PCLs.
+		tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)
+		if tr.GetMode() != pcl.GetTrigger().GetMode() {
+			panic(fmt.Errorf("inconsistent Trigger in PM (%s) vs freshly extracted (%s)", pcl.GetTrigger(), tr))
+		}
+
 		bcls[i] = runcreator.CL{
 			ID:               common.CLID(pcl.GetClid()),
 			ExpectedEVersion: int(pcl.GetEversion()),
-			TriggerInfo:      pcl.GetTrigger(),
+			TriggerInfo:      tr,
 			Snapshot:         cl.Snapshot,
 		}
 	}
