@@ -57,8 +57,10 @@ func runExample(script string) error {
 	output := filepath.Join(root, "generated")
 
 	state, err := Generate(context.Background(), Inputs{
-		Code:  interpreter.FileSystemLoader(root),
-		Entry: main,
+		Code:        interpreter.FileSystemLoader(root),
+		Entry:       main,
+		Meta:        &Meta{ConfigDir: "generated"},
+		testVersion: "1.1.1",
 	})
 	if err != nil {
 		return err

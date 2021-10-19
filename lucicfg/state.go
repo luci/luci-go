@@ -77,7 +77,11 @@ func (s *State) checkUncosumedVars() (errs []error) {
 
 // clear resets the state.
 func (s *State) clear() {
-	*s = State{Inputs: s.Inputs, vars: s.vars}
+	*s = State{
+		Inputs: s.Inputs,
+		Meta:   s.Inputs.Meta.Copy(),
+		vars:   s.vars,
+	}
 	s.vars.ClearValues()
 }
 
@@ -164,19 +168,6 @@ func init() {
 			return nil, err
 		}
 		call.State.clear()
-		return starlark.None, nil
-	})
-
-	// value_of_var_flag(name) returns a string with a value from
-	// `-var <name>=...` CLI flag (or None if no such flag).
-	declNative("value_of_var_flag", func(call nativeCall) (starlark.Value, error) {
-		var name starlark.String
-		if err := call.unpack(1, &name); err != nil {
-			return nil, err
-		}
-		if val, ok := call.State.Inputs.Vars[name.GoString()]; ok {
-			return starlark.String(val), nil
-		}
 		return starlark.None, nil
 	})
 

@@ -18,7 +18,7 @@ load("@stdlib//internal/error.star", "error")
 
 def _version():
     """Returns a triple with lucicfg version: `(major, minor, revision)`."""
-    return __native__.version()
+    return __native__.version
 
 def _check_version(min, message = None):
     """Fails if lucicfg version is below the requested minimal one.
@@ -346,7 +346,7 @@ def _var(*, default = None, validator = None, expose_as = None):
     # Validate the value passed via CLI flag (if any).
     preset_value = None
     if expose_as:
-        preset_value = __native__.value_of_var_flag(expose_as)
+        preset_value = __native__.var_flags.get(expose_as)
         if preset_value == None:
             preset_value = default
         elif validator:

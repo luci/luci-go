@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"sort"
 
 	"go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
@@ -40,6 +41,7 @@ import (
 type Inputs struct {
 	Code  interpreter.Loader // a package with the user supplied code
 	Entry string             // a name of the entry point script in this package
+	Meta  *Meta              // defaults for lucicfg own parameters
 	Vars  map[string]string  // var values passed via `-var key=value` flags
 
 	// Used to setup additional facilities for unit tests.
@@ -47,6 +49,7 @@ type Inputs struct {
 	testPredeclared             starlark.StringDict
 	testThreadModifier          func(th *starlark.Thread)
 	testDisableFailureCollector bool
+	testVersion                 string
 }
 
 // Generate interprets the high-level config.
@@ -54,8 +57,17 @@ type Inputs struct {
 // Returns a multi-error with all captured errors. Some of them may implement
 // BacktracableError interface.
 func Generate(ctx context.Context, in Inputs) (*State, error) {
-	state := &State{Inputs: in}
+	state := &State{
+		Inputs: in,
+		Meta:   in.Meta.Copy(),
+	}
 	ctx = withState(ctx, state)
+
+	// Do not put frequently changing version string into test outputs.
+	ver := Version
+	if in.testVersion != "" {
+		ver = in.testVersion
+	}
 
 	// All available symbols implemented in go.
 	predeclared := starlark.StringDict{
@@ -70,9 +82,16 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		// '__native__' is NOT public API. It should be used only through public
 		// @stdlib functions.
 		"__native__": native(starlark.StringDict{
-			"ctor":             builtins.Ctor,
-			"genstruct":        builtins.GenStruct,
-			"re_submatches":    builtins.RegexpMatcher("submatches"),
+			// How the generator was launched.
+			"version":       versionTuple(ver),
+			"entry_point":   starlark.String(in.Entry),
+			"var_flags":     asFrozenDict(in.Vars),
+			"running_tests": starlark.Bool(in.testThreadModifier != nil),
+			// Some built-in utilities implemented in `builtins` package.
+			"ctor":          builtins.Ctor,
+			"genstruct":     builtins.GenStruct,
+			"re_submatches": builtins.RegexpMatcher("submatches"),
+			// Built-in proto descriptors.
 			"wellknown_descpb": wellKnownDescSet,
 			"googtypes_descpb": googTypesDescSet,
 			"lucitypes_descpb": luciTypesDescSet,
@@ -190,4 +209,21 @@ func embeddedPackages() map[string]interpreter.Loader {
 		out[pkg] = interpreter.FSLoader(sub)
 	}
 	return out
+}
+
+// asFrozenDict converts a map to a frozen Starlark dict.
+func asFrozenDict(m map[string]string) *starlark.Dict {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	d := starlark.NewDict(len(m))
+	for _, k := range keys {
+		d.SetKey(starlark.String(k), starlark.String(m[k]))
+	}
+	d.Freeze()
+
+	return d
 }

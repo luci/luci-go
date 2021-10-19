@@ -49,6 +49,22 @@ type Meta struct {
 	detectedTouchedFlags bool
 }
 
+// Copy returns an "untouched" copy of `m`.
+//
+// In the returned copy WasTouched reports all fields as untouched.
+func (m *Meta) Copy() Meta {
+	if m == nil {
+		return Meta{}
+	}
+	return Meta{
+		ConfigServiceHost: m.ConfigServiceHost,
+		ConfigDir:         m.ConfigDir,
+		TrackedFiles:      append([]string(nil), m.TrackedFiles...),
+		FailOnWarnings:    m.FailOnWarnings,
+		LintChecks:        append([]string(nil), m.LintChecks...),
+	}
+}
+
 // Log logs the values of the meta parameters to Debug logger.
 func (m *Meta) Log(ctx context.Context) {
 	logging.Debugf(ctx, "Meta config:")
@@ -169,6 +185,32 @@ func (m *Meta) fieldsMap() map[string]interface{} {
 	}
 }
 
+// getField gets the field k.
+func (m *Meta) getField(k string) (starlark.Value, error) {
+	ptr := m.fieldsMap()[k]
+	if ptr == nil {
+		return nil, fmt.Errorf("get_meta: no such meta key %q", k)
+	}
+
+	switch ptr := ptr.(type) {
+	case *string:
+		return starlark.String(*ptr), nil
+
+	case *bool:
+		return starlark.Bool(*ptr), nil
+
+	case *[]string:
+		vals := make([]starlark.Value, len(*ptr))
+		for idx, str := range *ptr {
+			vals[idx] = starlark.String(str)
+		}
+		return starlark.NewList(vals), nil
+
+	default:
+		panic("impossible")
+	}
+}
+
 // setField sets the field k to v.
 func (m *Meta) setField(k string, v starlark.Value) (err error) {
 	ptr := m.fieldsMap()[k]
@@ -223,6 +265,15 @@ func (m *Meta) setField(k string, v starlark.Value) (err error) {
 }
 
 func init() {
+	// get_meta(k) returns the value of the corresponding field in Meta.
+	declNative("get_meta", func(call nativeCall) (starlark.Value, error) {
+		var k starlark.String
+		if err := call.unpack(1, &k); err != nil {
+			return nil, err
+		}
+		return call.State.Meta.getField(k.GoString())
+	})
+
 	// set_meta(k, v) sets the value of the corresponding field in Meta.
 	declNative("set_meta", func(call nativeCall) (starlark.Value, error) {
 		var k starlark.String

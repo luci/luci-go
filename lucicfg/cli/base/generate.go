@@ -95,6 +95,7 @@ You may also optionally set +x flag on it, but this is not required.
 	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
 		Code:  interpreter.FileSystemLoader(root),
 		Entry: main,
+		Meta:  meta,
 		Vars:  vars,
 	})
 	if err != nil {

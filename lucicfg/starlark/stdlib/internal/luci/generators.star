@@ -19,6 +19,7 @@ load("@stdlib//internal/experiments.star", "experiments")
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/re.star", "re")
+load("@stdlib//internal/strutil.star", "strutil")
 load("@stdlib//internal/time.star", "time")
 load("@stdlib//internal/luci/common.star", "builder_ref", "keys", "kinds", "triggerer")
 load("@stdlib//internal/luci/lib/acl.star", "acl", "aclimpl")
@@ -190,6 +191,15 @@ def gen_project_cfg(ctx):
     set_config(ctx, "project.cfg", config_pb.ProjectCfg(
         name = proj.props.name,
         access = access,
+        lucicfg = config_pb.GeneratorMetadata(
+            version = "%d.%d.%d" % lucicfg.version(),
+            config_dir = strutil.join_path(
+                __native__.get_meta("config_dir"),
+                proj.props.config_dir,
+            ),
+            entry_point = __native__.entry_point,
+            vars = __native__.var_flags,
+        ) if not __native__.running_tests else None,
     ))
 
 ################################################################################

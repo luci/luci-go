@@ -24,27 +24,22 @@ const (
 	// Version is the version of lucicfg tool.
 	//
 	// It ends up in CLI output and in User-Agent headers.
-	Version = "1.28.4"
+	Version = "1.29.0"
 
 	// UserAgent is used for User-Agent header in HTTP requests from lucicfg.
 	UserAgent = "lucicfg v" + Version
 )
 
-func init() {
-	// See //internal/lucicfg.star.
-	declNative("version", func(call nativeCall) (starlark.Value, error) {
-		if err := call.unpack(0); err != nil {
-			return nil, err
-		}
-		var major, minor, rev int
-		_, err := fmt.Sscanf(Version, "%d.%d.%d", &major, &minor, &rev)
-		if err != nil {
-			panic(err)
-		}
-		return starlark.Tuple{
-			starlark.MakeInt(major),
-			starlark.MakeInt(minor),
-			starlark.MakeInt(rev),
-		}, nil
-	})
+// versionTuple converts the given version string to a 3-tuple.
+func versionTuple(ver string) starlark.Tuple {
+	var major, minor, rev int
+	_, err := fmt.Sscanf(ver, "%d.%d.%d", &major, &minor, &rev)
+	if err != nil {
+		panic(err)
+	}
+	return starlark.Tuple{
+		starlark.MakeInt(major),
+		starlark.MakeInt(minor),
+		starlark.MakeInt(rev),
+	}
 }

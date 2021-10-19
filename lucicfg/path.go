@@ -36,7 +36,7 @@ func cleanRelativePath(base, rel string, allowDots bool) (string, error) {
 }
 
 func init() {
-	// Used in //internal/lucicfg.star and in //internal/validate.star.
+	// Used in lucicfg.star, strutil.star and validate.star.
 	declNative("clean_relative_path", func(call nativeCall) (starlark.Value, error) {
 		var base starlark.String
 		var path starlark.String

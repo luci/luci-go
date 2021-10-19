@@ -126,6 +126,9 @@ func TestAllStarlark(t *testing.T) {
 				// check the stack trace (only the error message), so it's not a big
 				// deal for them.
 				testDisableFailureCollector: !integrationTest,
+
+				// Do not put frequently changing version string into test outputs.
+				testVersion: "1.1.1",
 			})
 
 			// If test was expected to fail on Starlark side, make sure it did, in

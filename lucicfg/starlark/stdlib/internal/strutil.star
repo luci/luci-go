@@ -134,6 +134,22 @@ def _template(s):
     """
     return __native__.template(s)
 
+def _join_path(base, rel, allow_dots = False):
+    """Joins two slash-separated paths together, normalizing the result.
+
+    Args:
+      base: a string with the base path.
+      rel: a string with the path to append to it.
+      allow_dots: if True, allow the resulting path to start with `..`.
+
+    Returns:
+      The joined path.
+    """
+    res, err = __native__.clean_relative_path(base, rel, allow_dots)
+    if err:
+        fail(err)
+    return res
+
 strutil = struct(
     expand_int_set = _expand_int_set,
     json_to_yaml = _json_to_yaml,
@@ -143,4 +159,5 @@ strutil = struct(
     hex_encode = _hex_encode,
     hex_decode = _hex_decode,
     template = _template,
+    join_path = _join_path,
 )
