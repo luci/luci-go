@@ -52,6 +52,7 @@ func newDSMapper(ctrl *dsmapper.Controller) *dsMapper {
 	// Add your dsmapper factory with here,
 	// e.g. s.register(&yourConfig, yourFactory)
 	s.register(&upgradeCLConfig, upgradeCLFactory)
+	s.register(&removeOldProjectEventsConfig, removeOldProjectEventsFactory)
 	s.final = true
 	return s
 }
