@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-var upgradeCLConfig = dsmapper.JobConfig{
+var removeCLDescriptionsCOnfig = dsmapper.JobConfig{
 	Mapper: "runcl-description",
 	Query: dsmapper.Query{
 		Kind: "RunCL",
@@ -36,7 +36,7 @@ var upgradeCLConfig = dsmapper.JobConfig{
 	ShardCount: 4,
 }
 
-var upgradeCLFactory = func(_ context.Context, j *dsmapper.Job, _ int) (dsmapper.Mapper, error) {
+var removeCLDescriptionsFactory = func(_ context.Context, j *dsmapper.Job, _ int) (dsmapper.Mapper, error) {
 	tsJobName := string(j.Config.Mapper)
 	tsJobID := int64(j.ID)
 

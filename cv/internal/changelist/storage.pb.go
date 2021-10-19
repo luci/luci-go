@@ -334,6 +334,8 @@ type Gerrit struct {
 	//      * number
 	//      * ref
 	//      * created
+	//      * commit (for current_revision only)
+	//          * message (current CL description)
 	//  * labels
 	//      * optional
 	//      * all (only if vote != 0)

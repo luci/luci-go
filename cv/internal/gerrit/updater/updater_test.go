@@ -504,6 +504,9 @@ Cq-Depend: 101
 			So(u.Refresh(ctx, task), ShouldBeNil)
 			cl := getCL(ctx, gHost, 123)
 			So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessGranted)
+			So(cl.Snapshot.GetGerrit().GetHost(), ShouldEqual, gHost)
+			So(cl.Snapshot.GetGerrit().Info.GetProject(), ShouldEqual, gRepo)
+			So(cl.Snapshot.GetGerrit().Info.GetRef(), ShouldEqual, "refs/heads/main")
 			So(cl.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "c/b.py"})
 			So(cl.Snapshot.GetLuciProject(), ShouldEqual, lProject)
 			So(cl.Snapshot.GetExternalUpdateTime(), ShouldResembleProto, ci.GetUpdated())
@@ -514,12 +517,6 @@ Cq-Depend: 101
 				{Key: "Gerrit-Or-Git", Value: "can be repeated"},
 				{Key: "Gerrit-Or-Git", Value: "footers are here"},
 			})
-			// But CL description must be not be saved.
-			clCI := cl.Snapshot.GetGerrit().GetInfo()
-			So(clCI.GetRevisions()[clCI.GetCurrentRevision()].GetCommit().GetMessage(), ShouldBeEmpty)
-			So(clCI.GetRef(), ShouldEqual, "refs/heads/main")
-			So(clCI.GetProject(), ShouldEqual, gRepo)
-			So(cl.Snapshot.GetGerrit().GetHost(), ShouldEqual, gHost)
 			So(cl.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto,
 				[]*changelist.GerritGitDep{
 					{Change: 122, Immediate: true},

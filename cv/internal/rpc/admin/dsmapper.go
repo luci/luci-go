@@ -51,7 +51,10 @@ func newDSMapper(ctrl *dsmapper.Controller) *dsMapper {
 	s := &dsMapper{ctrl: ctrl}
 	// Add your dsmapper factory with here,
 	// e.g. s.register(&yourConfig, yourFactory)
-	s.register(&upgradeCLConfig, upgradeCLFactory)
+
+	// TODO(crbug/1260615): remove descriptions once CQDaemon is gone.
+	s.register(&removeCLDescriptionsCOnfig, removeCLDescriptionsFactory)
+
 	s.register(&removeOldProjectEventsConfig, removeOldProjectEventsFactory)
 	s.final = true
 	return s

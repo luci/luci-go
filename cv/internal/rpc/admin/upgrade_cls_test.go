@@ -80,11 +80,12 @@ func TestUpgradeCLs(t *testing.T) {
 		verify := func() {
 			So(datastore.Get(ctx, cl1, cl2), ShouldBeNil)
 
-			So(clDesc(cl1, 1), ShouldBeEmpty)
+			// TODO(crbug/1260615): fix the test s.t. all descriptions are empty.
+			So(clDesc(cl1, 1), ShouldResemble, "First")
 
 			So(cl2.Detail.GetGerrit().GetInfo().GetRevisions(), ShouldHaveLength, 2)
-			So(clDesc(cl2, 1), ShouldBeEmpty)
-			So(clDesc(cl2, 2), ShouldBeEmpty)
+			So(clDesc(cl2, 1), ShouldResemble, "PS#1 blah")
+			So(clDesc(cl2, 2), ShouldResemble, "PS#2 foo")
 		}
 
 		// Run the migration.
