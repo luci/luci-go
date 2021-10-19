@@ -835,7 +835,7 @@ func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 		latest, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
 			Number:  ci.GetNumber(),
 			Project: ci.GetProject(),
-		})
+		}, opt)
 		switch {
 		case err != nil:
 			return err

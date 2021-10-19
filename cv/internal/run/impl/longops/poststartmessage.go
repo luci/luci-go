@@ -232,7 +232,7 @@ func (op *PostStartMessageOp) isAlreadyPosted(ctx context.Context, rcl *run.RunC
 	}
 	var ci *gerritpb.ChangeInfo
 	outerErr := op.GFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		ci, err = gc.GetChange(ctx, req)
+		ci, err = gc.GetChange(ctx, req, opt)
 		switch grpcutil.Code(err) {
 		case codes.OK:
 			return nil
@@ -309,7 +309,7 @@ func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) (time.Ti
 		Message: msg,
 	}
 	outerErr := op.GFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		_, err = gc.SetReview(ctx, req)
+		_, err = gc.SetReview(ctx, req, opt)
 		switch grpcutil.Code(err) {
 		case codes.OK:
 			return nil
