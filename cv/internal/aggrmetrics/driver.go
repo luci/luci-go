@@ -47,6 +47,7 @@ func New(ctx context.Context, tqd *tq.Dispatcher) *Driver {
 	d := &Driver{
 		aggregators: []aggregator{
 			&runsAggregator{},
+			&pmReporter{},
 		},
 		lastFlush: clock.Now(ctx),
 	}
