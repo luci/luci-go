@@ -80,6 +80,24 @@ func TestTagGRPC(t *testing.T) {
 		So(parsed.Prop, ShouldEqual, data.Prop)
 	})
 
+	Convey("ParseLegacyBuilderID", t, func() {
+		Convey("For valid ID", func() {
+			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test bucket/test builder")
+			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+				Project: "test project",
+				Bucket:  "test bucket",
+				Builder: "test builder",
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey("For invalid ID", func() {
+			builderID, err := ParseLegacyBuilderID("buildbucket/123456")
+			So(builderID, ShouldBeNil)
+			So(err, ShouldEqual, ErrInvalidLegacyBuilderID)
+		})
+	})
+
 	Convey("ParseLegacyBuildID", t, func() {
 		Convey("For valid build ID", func() {
 			builderID, buildNum, err := ParseLegacyBuildID("buildbucket/luci.test project.test bucket/test builder/123456")

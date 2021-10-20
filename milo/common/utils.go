@@ -114,6 +114,24 @@ func LegacyBuilderIDString(bid *buildbucketpb.BuilderID) string {
 	return fmt.Sprintf("buildbucket/luci.%s.%s/%s", bid.Project, bid.Bucket, bid.Builder)
 }
 
+var ErrInvalidLegacyBuilderID = errors.New("the string is not a valid legacy builder ID")
+var legacyBuilderIDRe = regexp.MustCompile(`^buildbucket/luci\.([^./]+)\.([^./]+)/([^./]+)$`)
+
+// ParseLegacyBuilderID parses the legacy builder ID
+// (e.g. `buildbucket/luci.<project>.<bucket>/<builder>`)
+// and returns the builder ID in the new format.
+func ParseLegacyBuilderID(bid string) (*buildbucketpb.BuilderID, error) {
+	match := legacyBuilderIDRe.FindStringSubmatch(bid)
+	if len(match) == 0 {
+		return nil, ErrInvalidLegacyBuilderID
+	}
+	return &buildbucketpb.BuilderID{
+		Project: match[1],
+		Bucket:  match[2],
+		Builder: match[3],
+	}, nil
+}
+
 var legacyBuildIDWithBuildNumRe = regexp.MustCompile(`^buildbucket/luci\.([^./]+)\.([^./]+)/([^./]+)/(\d+)$`)
 var ErrInvalidLegacyBuildID = errors.New("the string is not a valid legacy build ID")
 
