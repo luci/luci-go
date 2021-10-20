@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.milo.v1;
 
 import "go.chromium.org/luci/common/proto/git/commit.proto";
+import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/milo/api/config/project.proto";
@@ -27,7 +28,7 @@ option go_package = "go.chromium.org/luci/milo/api/service/v1;milopb";
 //
 // Note: this is private API and should only be used by Milo apps. Breaking
 // changes might be introduced without notice.
-// Please contact chops-tfs-team@ if your code needs to depend on this service.
+// Please contact chops-luci-test@ if your code needs to depend on this service.
 service MiloInternal {
   // Retrieves blamelist of a build.
   //
@@ -42,6 +43,9 @@ service MiloInternal {
   //
   // Return the config of the project.
   rpc GetProjectCfg(GetProjectCfgRequest) returns (.milo.Project) {};
+
+  // Retrieves the recent, finished builds of a builder.
+  rpc QueryRecentBuilds(QueryRecentBuildsRequest) returns (QueryRecentBuildsResponse) {};
 }
 
 // A request message for `QueryBlamelist` RPC.
@@ -112,4 +116,36 @@ message QueryBlamelistPageToken {
 message GetProjectCfgRequest {
   // The project name.
   string project = 1;
+}
+
+// A request message for `QueryRecentBuilds` RPC.
+message QueryRecentBuildsRequest {
+  // The builder to query the build history from.
+  buildbucket.v2.BuilderID builder = 1;
+
+  // Optional. The maxium number of builds to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 25 builds will be returned.
+  // The maximum value is 100; values above 100 will be coerced to 100.
+  int32 page_size = 2;
+
+  // Optional. A page token, received from a previous `QueryRecentBuilds`
+  // call. Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all parameters provided to `QueryRecentBuilds`, with
+  // the exception of page_size and page_token, must match the call that
+  // provided the page token.
+  string page_token = 3;
+}
+
+// A response message for `QueryRecentBuilds` RPC.
+message QueryRecentBuildsResponse {
+  // Recent builds. Ordered by `CreateTime`.
+  // Only Id, Builder, Number, CreateTime, Status, Critical are populated.
+  repeated buildbucket.v2.Build builds = 1;
+
+  // A token that can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
 }
