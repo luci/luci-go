@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
-// pokeRuns pokes run manager of each of IncompleteRuns.
+// pokeRuns pokes Run Manager for each incomplete Run.
 //
 // Doesn't have to be called in a transaction.
 func (h *Handler) pokeRuns(ctx context.Context, s *State) error {
@@ -42,11 +42,6 @@ func (h *Handler) pokeRuns(ctx context.Context, s *State) error {
 // indexOfConfigGroup returns index of the externed Config Group name, which
 // must exist.
 func (s *State) indexOfConfigGroup(id prjcfg.ConfigGroupID) int32 {
-	if id.Hash() != s.PB.GetConfigHash() {
-		// TODO(tandrii): remove quick sanity check, extra string comparison is
-		// wasteful.
-		panic(fmt.Errorf("given %s != expected hash %s", id, s.PB.GetConfigHash()))
-	}
 	want := id.Name()
 	// This can be optimized by lazily creating and caching a map from
 	// ConfigGroupID to its index, but most projects have <10 groups,

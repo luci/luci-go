@@ -343,15 +343,23 @@ func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 	} else {
 		cg = &cfgpb.ConfigGroup{}
 	}
-	pcl.Trigger = trigger.Find(ci, cg)
-	// TODO(tandrii): stop storing triggering user's email
-	switch mode := run.Mode(pcl.Trigger.GetMode()); mode {
+	t := trigger.Find(ci, cg)
+	if t == nil {
+		return
+	}
+
+	switch mode := run.Mode(t.GetMode()); mode {
 	case "", run.DryRun, run.FullRun, run.QuickDryRun:
 	default:
 		pcl.Errors = append(pcl.Errors, &changelist.CLError{
 			Kind: &changelist.CLError_UnsupportedMode{UnsupportedMode: string(mode)},
 		})
+		return
 	}
+	// Project Manager doesn't care about email or Gerrit account.
+	t.Email = ""
+	t.GerritAccountId = 0
+	pcl.Trigger = t
 }
 
 // loadCLsForPCLs loads CLs from Datastore corresponding to PCLs.

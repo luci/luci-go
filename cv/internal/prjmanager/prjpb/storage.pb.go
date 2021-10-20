@@ -457,10 +457,7 @@ type PCL struct {
 	//  * previously triggered member of an incomplete Run, which is probably
 	//    being finalized right now by its Run Manager.
 	//
-	// TODO(tandrii): don't store potentially long user's email,
-	// which isn't necessary for PM decision making. It should be (re)-computed
-	// based on CL snapshots at the time only when actual Run is actually being
-	// created.
+	// Doesn't store email nor Gerrit account ID.
 	Trigger *run.Trigger `protobuf:"bytes,12,opt,name=trigger,proto3" json:"trigger,omitempty"`
 	// Submitted means CV isn't going to work on a CL, but CL is still tracked as
 	// a dep of another CL or as a member of an incomplete Run (though the other
