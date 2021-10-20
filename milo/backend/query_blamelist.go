@@ -36,6 +36,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+var queryBlamelistPageSize = PageSizeLimiter{
+	Max:     1000,
+	Default: 100,
+}
+
 // QueryBlamelist implements milopb.MiloInternal service
 func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.QueryBlamelistRequest) (_ *milopb.QueryBlamelistResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
@@ -56,7 +61,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 		return nil, appstatus.BadRequest(err)
 	}
 
-	pageSize := adjustPageSize(req.PageSize)
+	pageSize := int(queryBlamelistPageSize.Adjust(req.PageSize))
 
 	// Fetch one more commit to check whether there are more commits in the
 	// blamelist.
@@ -197,21 +202,4 @@ func parseQueryBlamelistPageToken(tokenStr string) (token *milopb.QueryBlamelist
 func serializeQueryBlamelistPageToken(token *milopb.QueryBlamelistPageToken) (string, error) {
 	bytes, err := proto.Marshal(token)
 	return base64.StdEncoding.EncodeToString(bytes), err
-}
-
-const (
-	pageSizeMax     = 1000
-	pageSizeDefault = 100
-)
-
-// adjustPageSize takes the given requested pageSize and adjusts as necessary.
-func adjustPageSize(pageSize int32) int {
-	switch {
-	case pageSize >= pageSizeMax:
-		return pageSizeMax
-	case pageSize > 0:
-		return int(pageSize)
-	default:
-		return pageSizeDefault
-	}
 }
