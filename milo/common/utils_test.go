@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -77,5 +78,25 @@ func TestTagGRPC(t *testing.T) {
 		err = JSONUnmarshalCompressed(bytes, &parsed)
 		So(err, ShouldBeNil)
 		So(parsed.Prop, ShouldEqual, data.Prop)
+	})
+
+	Convey("ParseLegacyBuildID", t, func() {
+		Convey("For valid build ID", func() {
+			builderID, buildNum, err := ParseLegacyBuildID("buildbucket/luci.test project.test bucket/test builder/123456")
+			So(err, ShouldBeNil)
+			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+				Project: "test project",
+				Bucket:  "test bucket",
+				Builder: "test builder",
+			})
+			So(buildNum, ShouldEqual, 123456)
+		})
+
+		Convey("For invalid build ID", func() {
+			builderID, buildNum, err := ParseLegacyBuildID("buildbucket/123456")
+			So(err, ShouldEqual, ErrInvalidLegacyBuildID)
+			So(builderID, ShouldBeNil)
+			So(buildNum, ShouldEqual, 0)
+		})
 	})
 }

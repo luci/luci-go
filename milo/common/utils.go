@@ -23,6 +23,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -111,6 +112,28 @@ func ReadExactOneFromForm(form url.Values, key string) (string, error) {
 // It is used in the Milo datastore.
 func LegacyBuilderIDString(bid *buildbucketpb.BuilderID) string {
 	return fmt.Sprintf("buildbucket/luci.%s.%s/%s", bid.Project, bid.Bucket, bid.Builder)
+}
+
+var legacyBuildIDWithBuildNumRe = regexp.MustCompile(`^buildbucket/luci\.([^./]+)\.([^./]+)/([^./]+)/(\d+)$`)
+var ErrInvalidLegacyBuildID = errors.New("the string is not a valid legacy build ID")
+
+// ParseLegacyBuildID parses the legacy build ID
+// (e.g. `buildbucket/luci.<project>.<bucket>/<builder>/<number>`)
+func ParseLegacyBuildID(bid string) (builderID *buildbucketpb.BuilderID, number int32, err error) {
+	match := legacyBuildIDWithBuildNumRe.FindStringSubmatch(bid)
+	if len(match) == 0 {
+		return nil, 0, ErrInvalidLegacyBuildID
+	}
+	builderID = &buildbucketpb.BuilderID{
+		Project: match[1],
+		Bucket:  match[2],
+		Builder: match[3],
+	}
+	buildNum, err := strconv.ParseInt(match[4], 10, 32)
+	if err != nil {
+		return nil, 0, ErrInvalidLegacyBuildID
+	}
+	return builderID, int32(buildNum), nil
 }
 
 // JSONMarshalCompressed converts a message into compressed JSON form, suitable for storing in memcache.
