@@ -35,7 +35,6 @@ import (
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server"
@@ -56,7 +55,8 @@ import (
 
 const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 
-var bqTableCache = caching.RegisterLRUCache(50)
+// schemaApplyer ensures BQ schema matches the row proto definitons.
+var schemaApplyer = bq.NewSchemaApplyer(caching.RegisterLRUCache(50))
 
 // Options is bqexporter configuration.
 type Options struct {
@@ -168,15 +168,6 @@ type inserter interface {
 	Put(ctx context.Context, src interface{}) error
 }
 
-// table is implemented by *bigquery.Table.
-// See its documentation for description of the methods below.
-type table interface {
-	FullyQualifiedName() string
-	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
-	Create(ctx context.Context, md *bigquery.TableMetadata) error
-	Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string) (*bigquery.TableMetadata, error)
-}
-
 func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
 	realm, err := invocations.ReadRealm(span.Single(ctx), invID)
 	if err != nil {
@@ -196,118 +187,6 @@ func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryE
 	return bigquery.NewClient(ctx, bqExport.Project, option.WithHTTPClient(&http.Client{
 		Transport: tr,
 	}))
-}
-
-// ensureBQTable creates a BQ table if it doesn't exist and updates its schema
-// if it is stale.
-func ensureBQTable(ctx context.Context, t table, newSchema bigquery.Schema) error {
-	// Note: creating/updating the table inside GetOrCreate ensures that different
-	// goroutines do not attempt to create/update the same table concurrently.
-	_, err := bqTableCache.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (interface{}, time.Duration, error) {
-		_, err := t.Metadata(ctx)
-		apiErr, ok := err.(*googleapi.Error)
-		switch {
-		case ok && apiErr.Code == http.StatusNotFound:
-			// Table doesn't exist. Create it and cache its existence for 5 minutes.
-			return nil, 5 * time.Minute, errors.Annotate(createBQTable(ctx, t, newSchema), "create bq table").Err()
-
-		case ok && apiErr.Code == http.StatusForbidden:
-			// No read table permission.
-			return tq.Fatal.Apply(err), time.Minute, nil
-
-		case err != nil:
-			return nil, 0, err
-		}
-
-		// Table exists and is accessible.
-		// Ensure its schema is up to date and remember that for 5 minutes.
-		err = ensureBQTableFields(ctx, t, newSchema)
-		return nil, 5 * time.Minute, errors.Annotate(err, "ensure bq table fields").Err()
-	})
-
-	return err
-}
-
-func createBQTable(ctx context.Context, t table, newSchema bigquery.Schema) error {
-	err := t.Create(ctx, &bigquery.TableMetadata{
-		TimePartitioning: &bigquery.TimePartitioning{
-			Field:      "partition_time",
-			Expiration: partitionExpirationTime,
-		},
-		Schema: newSchema,
-	})
-	apiErr, ok := err.(*googleapi.Error)
-	switch {
-	case ok && apiErr.Code == http.StatusConflict:
-		// Table just got created. This is fine.
-		return nil
-	case ok && apiErr.Code == http.StatusForbidden:
-		// No create table permission.
-		return tq.Fatal.Apply(err)
-	case err != nil:
-		return err
-	default:
-		logging.Infof(ctx, "Created BigQuery table %s", t.FullyQualifiedName())
-		return nil
-	}
-}
-
-// ensureBQTableFields adds missing fields to t.
-func ensureBQTableFields(ctx context.Context, t table, newSchema bigquery.Schema) error {
-	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		// We should retrieve Metadata in a retry loop because of the ETag check
-		// below.
-		md, err := t.Metadata(ctx)
-		if err != nil {
-			return err
-		}
-
-		combinedSchema := md.Schema
-
-		// Append fields missing in the actual schema.
-		mutated := false
-		var appendMissing func(schema, newSchema bigquery.Schema) bigquery.Schema
-		appendMissing = func(schema, newFields bigquery.Schema) bigquery.Schema {
-			indexed := make(map[string]*bigquery.FieldSchema, len(schema))
-			for _, c := range schema {
-				indexed[c.Name] = c
-			}
-
-			for _, newField := range newFields {
-				if existingField := indexed[newField.Name]; existingField == nil {
-					// The field is missing.
-					schema = append(schema, newField)
-					mutated = true
-				} else {
-					existingField.Schema = appendMissing(existingField.Schema, newField.Schema)
-				}
-			}
-			return schema
-		}
-
-		// Relax the new fields because we cannot add new required fields.
-		combinedSchema = appendMissing(combinedSchema, newSchema)
-		if !mutated {
-			// Nothing to update.
-			return nil
-		}
-
-		_, err = t.Update(ctx, bigquery.TableMetadataToUpdate{Schema: combinedSchema}, md.ETag)
-		apiErr, ok := err.(*googleapi.Error)
-		switch {
-		case ok && apiErr.Code == http.StatusConflict:
-			// ETag became stale since we requested it. Try again.
-			return transient.Tag.Apply(err)
-
-		case err != nil:
-			return err
-
-		default:
-			logging.Infof(ctx, "Updated BigQuery table %s", t.FullyQualifiedName())
-			return nil
-		}
-	}, nil)
-
 }
 
 func hasReason(apiErr *googleapi.Error, reason string) bool {
@@ -405,14 +284,30 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 	table := client.Dataset(bqExport.Dataset).Table(bqExport.Table)
 	ins := table.Inserter()
 
+	// Both test results and test artifacts tables are partitioned by partition_time.
+	tableMetadata := &bigquery.TableMetadata{
+		TimePartitioning: &bigquery.TimePartitioning{
+			Field:      "partition_time",
+			Expiration: partitionExpirationTime,
+		},
+	}
+
 	switch bqExport.ResultType.(type) {
 	case *pb.BigQueryExport_TestResults_:
-		if err := ensureBQTable(ctx, table, testResultRowSchema.Relax()); err != nil {
+		tableMetadata.Schema = testResultRowSchema.Relax()
+		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
+			if !transient.Tag.In(err) {
+				err = tq.Fatal.Apply(err)
+			}
 			return errors.Annotate(err, "ensure test results bq table").Err()
 		}
 		return errors.Annotate(b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport), "export test results").Err()
 	case *pb.BigQueryExport_TextArtifacts_:
-		if err := ensureBQTable(ctx, table, textArtifactRowSchema.Relax()); err != nil {
+		tableMetadata.Schema = textArtifactRowSchema.Relax()
+		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
+			if !transient.Tag.In(err) {
+				err = tq.Fatal.Apply(err)
+			}
 			return errors.Annotate(err, "ensure text artifacts bq table").Err()
 		}
 		return errors.Annotate(b.exportTextArtifactsToBigQuery(ctx, ins, invID, bqExport), "export text artifacts").Err()

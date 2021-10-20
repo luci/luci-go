@@ -18,21 +18,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/http"
 	"sync"
 	"testing"
-	"time"
 
-	"cloud.google.com/go/bigquery"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -182,106 +175,6 @@ func TestExportToBigQuery(t *testing.T) {
 		Convey(`fail`, func() {
 			err := b.exportTextArtifactsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport)
 			So(err, ShouldErrLike, "some error")
-		})
-	})
-}
-
-type tableMock struct {
-	fullyQualifiedName string
-
-	md      *bigquery.TableMetadata
-	mdCalls int
-	mdErr   error
-
-	createMD  *bigquery.TableMetadata
-	createErr error
-
-	updateMD  *bigquery.TableMetadataToUpdate
-	updateErr error
-}
-
-func (t *tableMock) FullyQualifiedName() string {
-	return t.fullyQualifiedName
-}
-
-func (t *tableMock) Metadata(ctx context.Context) (*bigquery.TableMetadata, error) {
-	t.mdCalls++
-	return t.md, t.mdErr
-}
-
-func (t *tableMock) Create(ctx context.Context, md *bigquery.TableMetadata) error {
-	t.createMD = md
-	return t.createErr
-}
-
-func (t *tableMock) Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string) (*bigquery.TableMetadata, error) {
-	t.updateMD = &md
-	return t.md, t.updateErr
-}
-
-func TestBqTableCache(t *testing.T) {
-	t.Parallel()
-	Convey(`TestCheckBqTableCache`, t, func() {
-		ctx := testutil.TestingContext()
-		tc := clock.Get(ctx).(testclock.TestClock)
-		ctx = caching.WithEmptyProcessCache(ctx)
-
-		t := &tableMock{
-			fullyQualifiedName: "project.dataset.table",
-			md:                 &bigquery.TableMetadata{},
-		}
-
-		Convey(`Table does not exist`, func() {
-			t.mdErr = &googleapi.Error{Code: http.StatusNotFound}
-			err := ensureBQTable(ctx, t, testResultRowSchema.Relax())
-			So(err, ShouldBeNil)
-			So(t.createMD.Schema, ShouldResemble, testResultRowSchema)
-		})
-
-		Convey(`Table is missing fields`, func() {
-			t.md.Schema = bigquery.Schema{
-				{
-					Name: "legacy",
-				},
-				{
-					Name:   "exported",
-					Schema: bigquery.Schema{{Name: "legacy"}},
-				},
-			}
-			err := ensureBQTable(ctx, t, testResultRowSchema.Relax())
-			So(err, ShouldBeNil)
-
-			So(t.updateMD, ShouldNotBeNil) // The table was updated.
-			So(len(t.updateMD.Schema), ShouldBeGreaterThan, 3)
-			So(t.updateMD.Schema[0].Name, ShouldEqual, "legacy")
-			So(t.updateMD.Schema[1].Name, ShouldEqual, "exported")
-			So(t.updateMD.Schema[1].Schema[0].Name, ShouldEqual, "legacy")
-			So(t.updateMD.Schema[1].Schema[1].Name, ShouldEqual, "id") // new field
-			So(t.updateMD.Schema[1].Schema[1].Required, ShouldBeFalse) // relaxed
-		})
-
-		Convey(`Table is up to date`, func() {
-			t.md.Schema = textArtifactRowSchema
-			err := ensureBQTable(ctx, t, textArtifactRowSchema.Relax())
-			So(err, ShouldBeNil)
-			So(t.updateMD, ShouldBeNil) // we did not try to update it
-		})
-
-		Convey(`Cache is working`, func() {
-			err := ensureBQTable(ctx, t, testResultRowSchema.Relax())
-			So(err, ShouldBeNil)
-			calls := t.mdCalls
-
-			// Confirms the cache is working.
-			err = ensureBQTable(ctx, t, testResultRowSchema.Relax())
-			So(err, ShouldBeNil)
-			So(t.mdCalls, ShouldEqual, calls) // no more new calls were made.
-
-			// Confirms the cache is expired as expected.
-			tc.Add(6 * time.Minute)
-			err = ensureBQTable(ctx, t, testResultRowSchema.Relax())
-			So(err, ShouldBeNil)
-			So(t.mdCalls, ShouldBeGreaterThan, calls) // new calls were made.
 		})
 	})
 }
