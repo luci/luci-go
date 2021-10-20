@@ -334,6 +334,10 @@ func (t taskState) Alive() bool {
 	return (t & maskAlive) != 0
 }
 
+func (t taskState) Completed() bool {
+	return (t & stateCompleted) != 0
+}
+
 // AuthFlags is an interface to register auth flags and create http.Client and CAS Client.
 type AuthFlags interface {
 	// Register registers auth flags to the given flag set. e.g. -service-account-json.

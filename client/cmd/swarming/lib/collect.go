@@ -242,6 +242,10 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		if err != nil {
 			return tagTransientGoogleAPIError(err)
 		}
+		result, err = preserveEmptyFieldsOnTaskResult(result)
+		if err != nil {
+			return tagTransientGoogleAPIError(err)
+		}
 
 		// Signal that we want to start downloading outputs. We'll only proceed
 		// to download them if another task has not already finished and
@@ -304,6 +308,39 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		output:  output,
 		outputs: outputs,
 	}
+}
+
+func preserveEmptyFieldsOnTaskResult(tr *swarming.SwarmingRpcsTaskResult) (*swarming.SwarmingRpcsTaskResult, error) {
+	state, err := parseTaskState(tr.State)
+	if err != nil {
+		return nil, err
+	}
+	tr.ForceSendFields = append(tr.ForceSendFields, "CurrentTaskSlice")
+
+	// Keep ExitCode=0 only if the task has completed.
+	if state.Completed() {
+		tr.ForceSendFields = append(tr.ForceSendFields, "ExitCode")
+	}
+	if tr.PerformanceStats != nil {
+		casStatsForceSendFields := []string{
+			"InitialNumberItems",
+			"InitialSize",
+			"ItemsCold",
+			"ItemsHot",
+			"NumItemsCold",
+			"NumItemsHot",
+			"TotalBytesItemsCold",
+			"TotalBytesItemsHot",
+		}
+		ps := tr.PerformanceStats
+		if ps.IsolatedDownload != nil && ps.IsolatedDownload.Duration > 0 {
+			ps.IsolatedDownload.ForceSendFields = append(ps.IsolatedDownload.ForceSendFields, casStatsForceSendFields...)
+		}
+		if ps.IsolatedUpload != nil && ps.IsolatedUpload.Duration > 0 {
+			ps.IsolatedUpload.ForceSendFields = append(ps.IsolatedUpload.ForceSendFields, casStatsForceSendFields...)
+		}
+	}
+	return tr, nil
 }
 
 func prepareOutputDir(outputDir, taskID string) (string, error) {
@@ -416,7 +453,7 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 			jsonResult["error"] = result.err.Error()
 		}
 		if result.result != nil {
-			jsonResult["results"] = *result.result
+			jsonResult["results"] = result.result
 			if c.taskOutput.includesJSON() {
 				jsonResult["output"] = result.output
 			}
