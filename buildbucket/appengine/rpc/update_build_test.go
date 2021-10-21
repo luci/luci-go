@@ -367,8 +367,7 @@ func TestGetBuildForUpdate(t *testing.T) {
 }
 
 func TestUpdateBuild(t *testing.T) {
-	// Non-parallel due to manipulation of GlobalBuildUpdateTimeClock
-	// t.Parallel()
+	t.Parallel()
 
 	tk := "a token"
 	getBuildWithDetails := func(ctx context.Context, bid int64) *model.Build {
@@ -404,7 +403,6 @@ func TestUpdateBuild(t *testing.T) {
 
 		t0 := testclock.TestRecentTimeUTC
 		ctx, tclock := testclock.UseTime(ctx, t0)
-		defer model.OverrideGlobalBuildUpdateTimeClock(tclock)()
 
 		// helper function to call UpdateBuild.
 		updateBuild := func(ctx context.Context, req *pb.UpdateBuildRequest) error {
@@ -429,8 +427,10 @@ func TestUpdateBuild(t *testing.T) {
 		}
 		So(datastore.Put(ctx, build), ShouldBeNil)
 		req := &pb.UpdateBuildRequest{
-			Build:      &pb.Build{Id: 1, SummaryMarkdown: "summary"},
-			UpdateMask: &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}},
+			Build: &pb.Build{Id: 1, SummaryMarkdown: "summary"},
+			UpdateMask: &field_mask.FieldMask{Paths: []string{
+				"build.summary_markdown",
+			}},
 		}
 
 		Convey("permission deined, if sender is not in updater group", func() {

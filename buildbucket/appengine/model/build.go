@@ -20,10 +20,8 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -196,40 +194,9 @@ func (b *Build) Load(p datastore.PropertyMap) error {
 	return datastore.GetPLS(b).Load(p)
 }
 
-var buildUpdateTimeClock = clock.GetSystemClock()
-
-// OverrideGlobalBuildUpdateTimeClock allows you to override the clock used
-// for setting the Build.Proto.UpdateTime field.
-//
-// This should only be used in tests, though use appropriate caution since this
-// is a global variable.
-//
-// Overriding with `nil` will result in UpdateTime not being manipulated at all.
-//
-// Returns a function to undo the manipulation.
-//
-// Example Usage:
-//
-//    ctx, testClock := testclock.UseTime(ctx, ...)
-//    defer OverrideGlobalBuildUpdateTimeClock(testClock)()
-func OverrideGlobalBuildUpdateTimeClock(c clock.Clock) (undo func()) {
-	oldVal := buildUpdateTimeClock
-	buildUpdateTimeClock = c
-	return func() {
-		buildUpdateTimeClock = oldVal
-	}
-}
-
 // Save returns the datastore.PropertyMap representation of this build. Mutates
 // this entity to reflect computed datastore fields in the returned PropertyMap.
 func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
-	var now time.Time
-	var nowPb *timestamppb.Timestamp
-	if c := buildUpdateTimeClock; c != nil {
-		now = c.Now()
-		nowPb = timestamppb.New(now)
-	}
-
 	b.BucketID = protoutil.FormatBucketID(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
 	b.BuilderID = protoutil.FormatBuilderID(b.Proto.Builder)
 	b.Canary = b.Proto.Canary
@@ -239,12 +206,10 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 
 	oldStatus := b.Status
 	b.Status = b.Proto.Status
-	if b.Status != oldStatus && !now.IsZero() {
-		b.StatusChangedTime = now
+	if b.Status != oldStatus {
+		b.StatusChangedTime = b.Proto.UpdateTime.AsTime()
 	}
-	if nowPb != nil {
-		b.Proto.UpdateTime = nowPb
-	}
+	b.CreateTime = b.Proto.CreateTime.AsTime()
 
 	// Set legacy values used by Python.
 	switch b.Status {

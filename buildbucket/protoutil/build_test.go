@@ -21,6 +21,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -41,5 +43,41 @@ func TestTimestamps(t *testing.T) {
 		dur, ok = RunDuration(build)
 		So(ok, ShouldBeTrue)
 		So(dur, ShouldEqual, 20*time.Second)
+	})
+}
+
+func TestSetStatus(t *testing.T) {
+	t.Parallel()
+
+	Convey("SetStatus", t, func() {
+		build := &pb.Build{}
+		now := testclock.TestRecentTimeUTC
+
+		Convey("STARTED", func() {
+			So(SetStatus(now, build, pb.Status_STARTED), ShouldBeNil)
+			So(build, ShouldResembleProto, &pb.Build{
+				Status:     pb.Status_STARTED,
+				StartTime:  timestamppb.New(now),
+				UpdateTime: timestamppb.New(now),
+			})
+
+			Convey("no-op", func() {
+				So(SetStatus(now.Add(time.Minute), build, pb.Status_STARTED), ShouldBeNil)
+				So(build, ShouldResembleProto, &pb.Build{
+					Status:     pb.Status_STARTED,
+					StartTime:  timestamppb.New(now),
+					UpdateTime: timestamppb.New(now),
+				})
+			})
+		})
+
+		Convey("CANCELED", func() {
+			So(SetStatus(now, build, pb.Status_CANCELED), ShouldBeNil)
+			So(build, ShouldResembleProto, &pb.Build{
+				Status:     pb.Status_CANCELED,
+				UpdateTime: timestamppb.New(now),
+				EndTime:    timestamppb.New(now),
+			})
+		})
 	})
 }

@@ -122,19 +122,22 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 			return errors.Annotate(err, "failed to enqueue pubsub notification task: %d", bld.ID).Err()
 		}
 
+		now := clock.Now(ctx).UTC()
+
 		bld.Leasee = nil
 		bld.LeaseExpirationDate = time.Time{}
 		bld.LeaseKey = 0
 
 		bld.Proto.CanceledBy = string(auth.CurrentIdentity(ctx))
-		bld.Proto.EndTime = timestamppb.New(clock.Now(ctx).UTC())
-		bld.Proto.Status = pb.Status_CANCELED
+		if err := protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED); err != nil {
+			return err
+		}
 		bld.Proto.SummaryMarkdown = req.SummaryMarkdown
 
 		toPut := []interface{}{bld}
 
 		if cancelSteps {
-			switch changed, err := stp.CancelIncomplete(ctx, bld.Proto.EndTime); {
+			switch changed, err := stp.CancelIncomplete(ctx, timestamppb.New(now)); {
 			case err != nil:
 				return errors.Annotate(err, "failed to fetch build steps: %d", bld.ID).Err()
 			case changed:

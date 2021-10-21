@@ -22,7 +22,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -280,8 +279,6 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		toSave := []interface{}{b}
 		bk := datastore.KeyForObj(ctx, b)
 
-		now := timestamppb.New(clock.Now(ctx))
-
 		// output.properties
 		if updateMask.MustIncludes("output.properties") == mask.IncludeEntirely {
 			prop := model.DSStruct{}
@@ -292,6 +289,14 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 				Build: bk,
 				Proto: prop,
 			})
+		}
+
+		now := clock.Now(ctx)
+
+		// Always set UpdateTime.
+		b.Proto.UpdateTime, err = ptypes.TimestampProto(now)
+		if err != nil {
+			return errors.Annotate(err, "attempting to convert %s to proto", now).Err()
 		}
 
 		// merge the tags of the build entity with the request.
@@ -309,7 +314,15 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		// Instead, remove the field paths from the mask and merge the protos with the mask.
 		defer nilifyReqBuildDetails(req.Build)()
 		origStatus = b.Proto.Status
-		updateMask.Merge(req.Build, b.Proto)
+
+		if updateMask.MustIncludes("status") == mask.IncludeEntirely {
+			if err := protoutil.SetStatus(now, b.Proto, req.Build.Status); err != nil {
+				return err
+			}
+		}
+		if err := updateMask.Merge(req.Build, b.Proto); err != nil {
+			return errors.Annotate(err, "attempting to merge masked build").Err()
+		}
 		if b.Proto.Output != nil {
 			b.Proto.Output.Properties = nil
 		}
@@ -317,9 +330,6 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		switch {
 		case origStatus == b.Proto.Status:
 		case b.Proto.Status == pb.Status_STARTED:
-			if b.Proto.StartTime == nil {
-				b.Proto.StartTime = now
-			}
 			if err := buildStarting(ctx, b); err != nil {
 				return nil
 			}
@@ -328,9 +338,6 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 			b.LeaseExpirationDate = time.Time{}
 			b.LeaseKey = 0
 
-			if b.Proto.EndTime == nil {
-				b.Proto.EndTime = now
-			}
 			if err := buildCompleting(ctx, b); err != nil {
 				return err
 			}

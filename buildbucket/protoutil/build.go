@@ -57,3 +57,34 @@ func Tags(b *pb.Build) strpair.Map {
 	}
 	return m
 }
+
+// SetStatus sets the status field on `b`, and also correctly adjusts
+// StartTime and EndTime.
+//
+// Will set UpdateTime iff `st` is different than `b.Status`.
+func SetStatus(now time.Time, b *pb.Build, st pb.Status) error {
+	if b.Status == st {
+		return nil
+	}
+	b.Status = st
+
+	nowPb, err := ptypes.TimestampProto(now.UTC())
+	if err != nil {
+		return err
+	}
+
+	b.UpdateTime = nowPb
+	switch {
+	case st == pb.Status_STARTED:
+		if b.StartTime == nil {
+			b.StartTime = nowPb
+		}
+
+	case IsEnded(st):
+		if b.EndTime == nil {
+			b.EndTime = nowPb
+		}
+	}
+
+	return nil
+}

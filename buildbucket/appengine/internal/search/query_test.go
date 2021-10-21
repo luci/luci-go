@@ -45,11 +45,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func init() {
-	// don't bother with UpdateTime values
-	model.OverrideGlobalBuildUpdateTimeClock(nil)
-}
-
 func TestNewSearchQuery(t *testing.T) {
 	t.Parallel()
 

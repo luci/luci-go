@@ -160,9 +160,10 @@ func TestCancelBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					EndTime: timestamppb.New(now),
-					Input:   &pb.Build_Input{},
-					Status:  pb.Status_CANCELED,
+					UpdateTime: timestamppb.New(now),
+					EndTime:    timestamppb.New(now),
+					Input:      &pb.Build_Input{},
+					Status:     pb.Status_CANCELED,
 				})
 				So(sch.Tasks(), ShouldHaveLength, 2)
 			})
@@ -263,9 +264,10 @@ func TestCancelBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					EndTime: timestamppb.New(now),
-					Input:   &pb.Build_Input{},
-					Status:  pb.Status_CANCELED,
+					UpdateTime: timestamppb.New(now),
+					EndTime:    timestamppb.New(now),
+					Input:      &pb.Build_Input{},
+					Status:     pb.Status_CANCELED,
 				})
 				So(sch.Tasks(), ShouldHaveLength, 3)
 			})
@@ -320,9 +322,10 @@ func TestCancelBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					EndTime: timestamppb.New(now),
-					Input:   &pb.Build_Input{},
-					Status:  pb.Status_CANCELED,
+					UpdateTime: timestamppb.New(now),
+					EndTime:    timestamppb.New(now),
+					Input:      &pb.Build_Input{},
+					Status:     pb.Status_CANCELED,
 				})
 				So(sch.Tasks(), ShouldHaveLength, 3)
 			})

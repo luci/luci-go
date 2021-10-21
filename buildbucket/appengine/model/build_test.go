@@ -35,15 +35,14 @@ import (
 )
 
 func TestBuild(t *testing.T) {
-	// Non-parallel due to manipulation of GlobalBuildUpdateTimeClock
-	// t.Parallel()
+	t.Parallel()
 
 	Convey("Build", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx, tclock := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		defer OverrideGlobalBuildUpdateTimeClock(tclock)()
 
-		t0pb := timestamppb.New(tclock.Now())
+		t0 := tclock.Now()
+		t0pb := timestamppb.New(t0)
 
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -59,9 +58,10 @@ func TestBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Status: pb.Status_SUCCESS,
+					Status:     pb.Status_SUCCESS,
+					CreateTime: t0pb,
+					UpdateTime: t0pb,
 				},
-				CreateTime: testclock.TestRecentTimeUTC,
 			}), ShouldBeNil)
 
 			b := &Build{
@@ -76,8 +76,8 @@ func TestBuild(t *testing.T) {
 				BucketID:          "project/bucket",
 				BuilderID:         "project/bucket/builder",
 				Canary:            false,
-				CreateTime:        datastore.RoundTime(testclock.TestRecentTimeUTC),
-				StatusChangedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+				CreateTime:        datastore.RoundTime(t0),
+				StatusChangedTime: datastore.RoundTime(t0),
 				Experimental:      false,
 				Incomplete:        false,
 				Status:            pb.Status_SUCCESS,
@@ -95,6 +95,7 @@ func TestBuild(t *testing.T) {
 					Builder: "builder",
 				},
 				Status:     pb.Status_SUCCESS,
+				CreateTime: t0pb,
 				UpdateTime: t0pb,
 			})
 		})
@@ -110,9 +111,10 @@ func TestBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Status: pb.Status_INFRA_FAILURE,
+						Status:     pb.Status_INFRA_FAILURE,
+						CreateTime: t0pb,
+						UpdateTime: t0pb,
 					},
-					CreateTime: testclock.TestRecentTimeUTC,
 				}), ShouldBeNil)
 
 				b := &Build{
@@ -127,8 +129,8 @@ func TestBuild(t *testing.T) {
 					BucketID:          "project/bucket",
 					BuilderID:         "project/bucket/builder",
 					Canary:            false,
-					CreateTime:        datastore.RoundTime(testclock.TestRecentTimeUTC),
-					StatusChangedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+					CreateTime:        datastore.RoundTime(t0),
+					StatusChangedTime: datastore.RoundTime(t0),
 					Experimental:      false,
 					Incomplete:        false,
 					Status:            pb.Status_INFRA_FAILURE,
@@ -147,6 +149,7 @@ func TestBuild(t *testing.T) {
 						Builder: "builder",
 					},
 					Status:     pb.Status_INFRA_FAILURE,
+					CreateTime: t0pb,
 					UpdateTime: t0pb,
 				})
 			})
@@ -165,8 +168,9 @@ func TestBuild(t *testing.T) {
 						StatusDetails: &pb.StatusDetails{
 							Timeout: &pb.StatusDetails_Timeout{},
 						},
+						CreateTime: t0pb,
+						UpdateTime: t0pb,
 					},
-					CreateTime: testclock.TestRecentTimeUTC,
 				}), ShouldBeNil)
 
 				b := &Build{
@@ -181,8 +185,8 @@ func TestBuild(t *testing.T) {
 					BucketID:          "project/bucket",
 					BuilderID:         "project/bucket/builder",
 					Canary:            false,
-					CreateTime:        datastore.RoundTime(testclock.TestRecentTimeUTC),
-					StatusChangedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+					CreateTime:        datastore.RoundTime(t0),
+					StatusChangedTime: datastore.RoundTime(t0),
 					Experimental:      false,
 					Incomplete:        false,
 					Status:            pb.Status_INFRA_FAILURE,
@@ -204,6 +208,7 @@ func TestBuild(t *testing.T) {
 					StatusDetails: &pb.StatusDetails{
 						Timeout: &pb.StatusDetails_Timeout{},
 					},
+					CreateTime: t0pb,
 					UpdateTime: t0pb,
 				})
 			})
@@ -218,9 +223,10 @@ func TestBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Status: pb.Status_CANCELED,
+						Status:     pb.Status_CANCELED,
+						CreateTime: t0pb,
+						UpdateTime: t0pb,
 					},
-					CreateTime: testclock.TestRecentTimeUTC,
 				}), ShouldBeNil)
 
 				b := &Build{
@@ -235,8 +241,8 @@ func TestBuild(t *testing.T) {
 					BucketID:          "project/bucket",
 					BuilderID:         "project/bucket/builder",
 					Canary:            false,
-					CreateTime:        datastore.RoundTime(testclock.TestRecentTimeUTC),
-					StatusChangedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+					CreateTime:        datastore.RoundTime(t0),
+					StatusChangedTime: datastore.RoundTime(t0),
 					Experimental:      false,
 					Incomplete:        false,
 					Status:            pb.Status_CANCELED,
@@ -255,6 +261,7 @@ func TestBuild(t *testing.T) {
 						Builder: "builder",
 					},
 					Status:     pb.Status_CANCELED,
+					CreateTime: t0pb,
 					UpdateTime: t0pb,
 				})
 			})
