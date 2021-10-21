@@ -95,7 +95,7 @@ func New(
 			BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc, env),
 			GFactory:   g,
 			TreeClient: tc,
-			Publisher:  pubsub.NewPublisher(n.TasksBinding.TQDispatcher),
+			Publisher:  pubsub.NewPublisher(n.TasksBinding.TQDispatcher, env),
 		},
 	}
 	n.TasksBinding.ManageRun.AttachHandler(

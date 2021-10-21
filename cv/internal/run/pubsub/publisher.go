@@ -41,7 +41,7 @@ type Publisher struct {
 
 // NewPublisher creates a new Publisher and registers TaskClasses for run
 // events.
-func NewPublisher(tqd *tq.Dispatcher) *Publisher {
+func NewPublisher(tqd *tq.Dispatcher, env *common.Env) *Publisher {
 	p := &Publisher{tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:        v1RunEndedTaskClass,
@@ -54,6 +54,7 @@ func NewPublisher(tqd *tq.Dispatcher) *Publisher {
 				Id:       t.GetPublicId(),
 				Status:   versioning.RunStatusV1(t.GetStatus()),
 				Eversion: t.GetEversion(),
+				Hostname: env.LogicalHostname,
 			})
 			if err != nil {
 				return nil, err

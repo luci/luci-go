@@ -40,7 +40,7 @@ func TestExportRunToBQ(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		publisher := NewPublisher(ct.TQDispatcher)
+		publisher := NewPublisher(ct.TQDispatcher, ct.Env)
 		epoch := ct.Clock.Now().UTC()
 		r := run.Run{
 			ID:            common.MakeRunID("lproject", epoch, 1, []byte("aaa")),
@@ -80,6 +80,7 @@ func TestExportRunToBQ(t *testing.T) {
 					Id:       r.ID.PublicID(),
 					Status:   cvpb.Run_SUCCEEDED,
 					Eversion: int64(r.EVersion),
+					Hostname: ct.Env.LogicalHostname,
 				})
 			})
 		})

@@ -36,4 +36,6 @@ message PubSubRun {
   Run.Status status = 2;
   // eversion is the entity version, which is monotonically increasing.
   int64 eversion = 3;
+  // The hostname of the CV service that published the message.
+  string hostname = 4;
 }
