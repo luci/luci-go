@@ -54,7 +54,7 @@ func TestSetStatus(t *testing.T) {
 		now := testclock.TestRecentTimeUTC
 
 		Convey("STARTED", func() {
-			So(SetStatus(now, build, pb.Status_STARTED), ShouldBeNil)
+			SetStatus(now, build, pb.Status_STARTED)
 			So(build, ShouldResembleProto, &pb.Build{
 				Status:     pb.Status_STARTED,
 				StartTime:  timestamppb.New(now),
@@ -62,7 +62,7 @@ func TestSetStatus(t *testing.T) {
 			})
 
 			Convey("no-op", func() {
-				So(SetStatus(now.Add(time.Minute), build, pb.Status_STARTED), ShouldBeNil)
+				SetStatus(now.Add(time.Minute), build, pb.Status_STARTED)
 				So(build, ShouldResembleProto, &pb.Build{
 					Status:     pb.Status_STARTED,
 					StartTime:  timestamppb.New(now),
@@ -72,7 +72,7 @@ func TestSetStatus(t *testing.T) {
 		})
 
 		Convey("CANCELED", func() {
-			So(SetStatus(now, build, pb.Status_CANCELED), ShouldBeNil)
+			SetStatus(now, build, pb.Status_CANCELED)
 			So(build, ShouldResembleProto, &pb.Build{
 				Status:     pb.Status_CANCELED,
 				UpdateTime: timestamppb.New(now),

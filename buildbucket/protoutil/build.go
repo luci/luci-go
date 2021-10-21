@@ -17,9 +17,8 @@ package protoutil
 import (
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
-
 	"go.chromium.org/luci/common/data/strpair"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -29,9 +28,13 @@ const BuildMediaType = "application/luci+proto; message=buildbucket.v2.Build"
 
 // RunDuration returns duration between build start and end.
 func RunDuration(b *pb.Build) (duration time.Duration, ok bool) {
-	start, startErr := ptypes.Timestamp(b.StartTime)
-	end, endErr := ptypes.Timestamp(b.EndTime)
-	if startErr != nil || start.IsZero() || endErr != nil || end.IsZero() {
+	if b.StartTime == nil || b.EndTime == nil {
+		return 0, false
+	}
+
+	start := b.StartTime.AsTime()
+	end := b.EndTime.AsTime()
+	if start.IsZero() || end.IsZero() {
 		return 0, false
 	}
 
@@ -40,9 +43,13 @@ func RunDuration(b *pb.Build) (duration time.Duration, ok bool) {
 
 // SchedulingDuration returns duration between build creation and start.
 func SchedulingDuration(b *pb.Build) (duration time.Duration, ok bool) {
-	create, createErr := ptypes.Timestamp(b.CreateTime)
-	start, startErr := ptypes.Timestamp(b.StartTime)
-	if createErr != nil || create.IsZero() || startErr != nil || start.IsZero() {
+	if b.CreateTime == nil || b.StartTime == nil {
+		return 0, false
+	}
+
+	create := b.CreateTime.AsTime()
+	start := b.StartTime.AsTime()
+	if create.IsZero() || start.IsZero() {
 		return 0, false
 	}
 
@@ -62,16 +69,13 @@ func Tags(b *pb.Build) strpair.Map {
 // StartTime and EndTime.
 //
 // Will set UpdateTime iff `st` is different than `b.Status`.
-func SetStatus(now time.Time, b *pb.Build, st pb.Status) error {
+func SetStatus(now time.Time, b *pb.Build, st pb.Status) {
 	if b.Status == st {
-		return nil
+		return
 	}
 	b.Status = st
 
-	nowPb, err := ptypes.TimestampProto(now.UTC())
-	if err != nil {
-		return err
-	}
+	nowPb := timestamppb.New(now.UTC())
 
 	b.UpdateTime = nowPb
 	switch {
@@ -85,6 +89,4 @@ func SetStatus(now time.Time, b *pb.Build, st pb.Status) error {
 			b.EndTime = nowPb
 		}
 	}
-
-	return nil
 }

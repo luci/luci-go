@@ -21,7 +21,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/maruel/subcommands"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
@@ -215,7 +214,7 @@ func (r *logRun) printLogs(ctx context.Context, logs []*pb.Log) error {
 				if s.Desc.StreamType != logpb.StreamType_TEXT {
 					return fmt.Errorf("log %q is not a text stream; only text streams are currently supported", logs[i].Name)
 				}
-				m.Chans[i].start, err = ptypes.Timestamp(s.Desc.Timestamp)
+				m.Chans[i].start = s.Desc.Timestamp.AsTime()
 				return err
 			}
 		}

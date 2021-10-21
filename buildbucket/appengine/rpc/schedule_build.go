@@ -1009,9 +1009,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			blds[i].Proto.Id = ids[i]
 			blds[i].Proto.Infra.Buildbucket.Hostname = fmt.Sprintf("%s.appspot.com", appID)
 			blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, blds[i].Proto.Id)
-			if err := protoutil.SetStatus(now, blds[i].Proto, pb.Status_SCHEDULED); err != nil {
-				return nil, appstatus.BadRequest(errors.Annotate(err, "build %d couldn't set status", i).Err())
-			}
+			protoutil.SetStatus(now, blds[i].Proto, pb.Status_SCHEDULED)
 		}
 
 		setExperimentsFromProto(reqs[i], cfg, blds[i])

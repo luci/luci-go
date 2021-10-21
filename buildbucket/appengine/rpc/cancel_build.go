@@ -129,9 +129,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		bld.LeaseKey = 0
 
 		bld.Proto.CanceledBy = string(auth.CurrentIdentity(ctx))
-		if err := protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED); err != nil {
-			return err
-		}
+		protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED)
 		bld.Proto.SummaryMarkdown = req.SummaryMarkdown
 
 		toPut := []interface{}{bld}

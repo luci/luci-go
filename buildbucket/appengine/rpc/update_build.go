@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -169,16 +169,11 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step, buildStatus pb.Status
 
 func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 	var st, et time.Time
-	var err error
 	if step.StartTime != nil {
-		if st, err = ptypes.Timestamp(step.StartTime); err != nil {
-			return errors.Annotate(err, "start_time").Err()
-		}
+		st = step.StartTime.AsTime()
 	}
 	if step.EndTime != nil {
-		if et, err = ptypes.Timestamp(step.EndTime); err != nil {
-			return errors.Annotate(err, "end_time").Err()
-		}
+		et = step.EndTime.AsTime()
 	}
 
 	_, stRequired := statusesWithStartTime[step.Status]
@@ -294,10 +289,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		now := clock.Now(ctx)
 
 		// Always set UpdateTime.
-		b.Proto.UpdateTime, err = ptypes.TimestampProto(now)
-		if err != nil {
-			return errors.Annotate(err, "attempting to convert %s to proto", now).Err()
-		}
+		b.Proto.UpdateTime = timestamppb.New(now)
 
 		// merge the tags of the build entity with the request.
 		if len(req.Build.GetTags()) > 0 && updateMask.MustIncludes("tags") == mask.IncludeEntirely {
@@ -316,9 +308,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		origStatus = b.Proto.Status
 
 		if updateMask.MustIncludes("status") == mask.IncludeEntirely {
-			if err := protoutil.SetStatus(now, b.Proto, req.Build.Status); err != nil {
-				return err
-			}
+			protoutil.SetStatus(now, b.Proto, req.Build.Status)
 		}
 		if err := updateMask.Merge(req.Build, b.Proto); err != nil {
 			return errors.Annotate(err, "attempting to merge masked build").Err()

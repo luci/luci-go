@@ -26,7 +26,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/mgutz/ansi"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -294,9 +293,9 @@ func (p *printer) steps(steps []*pb.Step) {
 
 		// Print duration.
 		durString := ""
-		if start, err := ptypes.Timestamp(s.StartTime); err == nil {
+		if start := s.StartTime.AsTime(); s.StartTime != nil {
 			var stepDur time.Duration
-			if end, err := ptypes.Timestamp(s.EndTime); err == nil {
+			if end := s.EndTime.AsTime(); s.EndTime != nil {
 				stepDur = end.Sub(start)
 			} else {
 				now := p.nowFn()
