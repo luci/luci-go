@@ -14,13 +14,17 @@
 
 package model
 
-import "time"
+import (
+	"time"
+
+	"go.chromium.org/luci/milo/common/model/milostatus"
+)
 
 // Summary summarizes a thing (step, build, group of builds, whatever).
 type Summary struct {
 	// Status indicates the 'goodness' and lifetime of the thing. This usually
 	// translates directly to a status color.
-	Status Status
+	Status milostatus.Status
 
 	// Start indicates when this thing started doing its action.
 	Start time.Time

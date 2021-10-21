@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -105,25 +106,25 @@ func TestPools(t *testing.T) {
 				Convey(`Empty is Idle`, func() {
 					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
-					So(s.Status, ShouldEqual, model.Idle)
+					So(s.Status, ShouldEqual, milostatus.Idle)
 				})
 				Convey(`With TaskID is Busy`, func() {
 					bot.TaskId = "someID"
 					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
-					So(s.Status, ShouldEqual, model.Busy)
+					So(s.Status, ShouldEqual, milostatus.Busy)
 				})
 				Convey(`Died is Offline`, func() {
 					bot.IsDead = true
 					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
-					So(s.Status, ShouldEqual, model.Offline)
+					So(s.Status, ShouldEqual, milostatus.Offline)
 				})
 				Convey(`Quarantined is Offline`, func() {
 					bot.Quarantined = true
 					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
-					So(s.Status, ShouldEqual, model.Offline)
+					So(s.Status, ShouldEqual, milostatus.Offline)
 				})
 			})
 		})

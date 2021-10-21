@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 )
 
 // PoolDescriptor describes the attributes of a pool in "tag:value" format.
@@ -96,7 +97,7 @@ type Bot struct {
 	// URL is a link to a bot page, if available.
 	URL string
 	// Status is the current status of the Bot.
-	Status BotStatus
+	Status milostatus.BotStatus
 	// LastSeen denotes when the Bot was last seen.
 	LastSeen time.Time
 }

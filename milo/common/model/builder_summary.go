@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
@@ -47,7 +48,7 @@ type BuilderSummary struct {
 	LastFinishedCreated time.Time
 
 	// LastFinishedStatus is the status of last finished build on builder.
-	LastFinishedStatus Status
+	LastFinishedStatus milostatus.Status
 
 	// LastFinishedCritical is the criticality of last finished build on builder.
 	LastFinishedCritical buildbucketpb.Trinary

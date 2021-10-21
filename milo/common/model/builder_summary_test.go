@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -60,37 +61,37 @@ func TestUpdateBuilder(t *testing.T) {
 
 		Convey("Updating appropriate builder having existing last finished build", func() {
 			builder.LastFinishedCreated = builds[5].Created
-			builder.LastFinishedStatus = Success
+			builder.LastFinishedStatus = milostatus.Success
 			builder.LastFinishedBuildID = builds[5].BuildID
 			err := datastore.Put(c, builder)
 			So(err, ShouldBeNil)
 
 			Convey("with finished build should not update last finished build info", func() {
-				builds[6].Summary.Status = Failure
+				builds[6].Summary.Status = milostatus.Failure
 				updateBuilder(builds[6])
-				So(builder.LastFinishedStatus, ShouldEqual, Failure)
+				So(builder.LastFinishedStatus, ShouldEqual, milostatus.Failure)
 				So(builder.LastFinishedBuildID, ShouldEqual, builds[6].BuildID)
 			})
 
 			Convey("for build created earlier than last finished", func() {
-				builds[4].Summary.Status = Failure
+				builds[4].Summary.Status = milostatus.Failure
 				updateBuilder(builds[4])
-				So(builder.LastFinishedStatus, ShouldEqual, Success)
+				So(builder.LastFinishedStatus, ShouldEqual, milostatus.Success)
 				So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 			})
 
 			Convey("for build created later than last finished", func() {
-				builds[6].Summary.Status = NotRun
+				builds[6].Summary.Status = milostatus.NotRun
 				updateBuilder(builds[6])
-				So(builder.LastFinishedStatus, ShouldEqual, Success)
+				So(builder.LastFinishedStatus, ShouldEqual, milostatus.Success)
 				So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 			})
 		})
 
 		Convey("Updating appropriate builder with no last finished build should initialize it", func() {
-			builds[5].Summary.Status = Failure
+			builds[5].Summary.Status = milostatus.Failure
 			updateBuilder(builds[5])
-			So(builder.LastFinishedStatus, ShouldEqual, Failure)
+			So(builder.LastFinishedStatus, ShouldEqual, milostatus.Failure)
 			So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 		})
 	})

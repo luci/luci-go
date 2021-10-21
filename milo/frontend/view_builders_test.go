@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -83,7 +84,7 @@ func TestGetBuilderHistories(t *testing.T) {
 
 		// Populate builds.
 		var builds []*model.BuildSummary
-		addBuilds := func(builder, project string, statuses ...model.Status) {
+		addBuilds := func(builder, project string, statuses ...milostatus.Status) {
 			buildPrefix := "buildbucket/bucket/"
 			for i, status := range statuses {
 				buildID := fmt.Sprintf("%s%s/%d", buildPrefix, builder, i)
@@ -100,18 +101,18 @@ func TestGetBuilderHistories(t *testing.T) {
 
 		// One builder has lots of builds.
 		addBuilds("b2", p,
-			model.Running,
-			model.Success,
-			model.Running,
-			model.Exception,
-			model.Running,
-			model.InfraFailure)
+			milostatus.Running,
+			milostatus.Success,
+			milostatus.Running,
+			milostatus.Exception,
+			milostatus.Running,
+			milostatus.InfraFailure)
 		// One builder is not on any project's consoles.
-		addBuilds("b3", p, model.Success)
+		addBuilds("b3", p, milostatus.Success)
 		// One builder is on two consoles.
-		addBuilds("b4", p, model.Success)
+		addBuilds("b4", p, milostatus.Success)
 		// One builder is on the console of a different project.
-		addBuilds("b5", "private", model.Success)
+		addBuilds("b5", "private", milostatus.Success)
 		err = datastore.Put(c, builds)
 		So(err, ShouldBeNil)
 

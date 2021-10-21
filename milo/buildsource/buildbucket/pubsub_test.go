@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -170,7 +171,7 @@ func TestPubSub(t *testing.T) {
 				So(buildAct.BuildKey.String(), ShouldEqual, bKey.String())
 				So(buildAct.BuilderID, ShouldEqual, "buildbucket/luci.fake.bucket/fake_builder")
 				So(buildAct.Summary, ShouldResemble, model.Summary{
-					Status: model.Running,
+					Status: milostatus.Running,
 					Start:  RefTime.Add(3 * time.Hour),
 				})
 				So(buildAct.Created, ShouldResemble, RefTime.Add(2*time.Hour))
@@ -183,7 +184,7 @@ func TestPubSub(t *testing.T) {
 				blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_builder"}
 				err = datastore.Get(c, &blder)
 				So(err, ShouldBeNil)
-				So(blder.LastFinishedStatus, ShouldResemble, model.NotRun)
+				So(blder.LastFinishedStatus, ShouldResemble, milostatus.NotRun)
 				So(blder.LastFinishedBuildID, ShouldEqual, "")
 			})
 		})
@@ -234,7 +235,7 @@ func TestPubSub(t *testing.T) {
 				So(buildAct.BuildKey.String(), ShouldEqual, bKey.String())
 				So(buildAct.BuilderID, ShouldEqual, "buildbucket/luci.fake.bucket/fake_builder")
 				So(buildAct.Summary, ShouldResemble, model.Summary{
-					Status: model.Success,
+					Status: milostatus.Success,
 					Start:  RefTime.Add(3 * time.Hour),
 					End:    RefTime.Add(6 * time.Hour),
 				})
@@ -244,7 +245,7 @@ func TestPubSub(t *testing.T) {
 				err = datastore.Get(c, &blder)
 				So(err, ShouldBeNil)
 				So(blder.LastFinishedCreated, ShouldResemble, RefTime.Add(2*time.Hour))
-				So(blder.LastFinishedStatus, ShouldResemble, model.Success)
+				So(blder.LastFinishedStatus, ShouldResemble, milostatus.Success)
 				So(blder.LastFinishedBuildID, ShouldEqual, "buildbucket/2234")
 				So(buildAct.BlamelistPins, ShouldResemble, []string{
 					"commit/gitiles/chromium.googlesource.com/angle/angle/+/8930f18245df678abc944376372c77ba5e2a658b",
@@ -277,7 +278,7 @@ func TestPubSub(t *testing.T) {
 				err := datastore.Get(c, &buildAct)
 				So(err, ShouldBeNil)
 				So(buildAct.Summary, ShouldResemble, model.Summary{
-					Status: model.Success,
+					Status: milostatus.Success,
 					Start:  RefTime.Add(3 * time.Hour),
 					End:    RefTime.Add(6 * time.Hour),
 				})
@@ -287,7 +288,7 @@ func TestPubSub(t *testing.T) {
 				err = datastore.Get(c, &blder)
 				So(err, ShouldBeNil)
 				So(blder.LastFinishedCreated, ShouldResemble, RefTime.Add(2*time.Hour))
-				So(blder.LastFinishedStatus, ShouldResemble, model.Success)
+				So(blder.LastFinishedStatus, ShouldResemble, milostatus.Success)
 				So(blder.LastFinishedBuildID, ShouldEqual, "buildbucket/2234")
 			})
 		})

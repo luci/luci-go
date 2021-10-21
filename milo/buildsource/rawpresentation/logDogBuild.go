@@ -23,7 +23,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
-	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -44,37 +44,37 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *annopb.Step, includeC
 	}
 	switch anno.Status {
 	case annopb.Status_RUNNING:
-		comp.Status = model.Running
+		comp.Status = milostatus.Running
 
 	case annopb.Status_SUCCESS:
-		comp.Status = model.Success
+		comp.Status = milostatus.Success
 
 	case annopb.Status_FAILURE:
 		if fd := anno.GetFailureDetails(); fd != nil {
 			switch fd.Type {
 			case annopb.FailureDetails_EXCEPTION, annopb.FailureDetails_INFRA:
-				comp.Status = model.InfraFailure
+				comp.Status = milostatus.InfraFailure
 
 			case annopb.FailureDetails_EXPIRED:
-				comp.Status = model.Expired
+				comp.Status = milostatus.Expired
 
 			default:
-				comp.Status = model.Failure
+				comp.Status = milostatus.Failure
 			}
 
 			if fd.Text != "" {
 				comp.Text = append(comp.Text, fd.Text)
 			}
 		} else {
-			comp.Status = model.Failure
+			comp.Status = milostatus.Failure
 		}
 
 	case annopb.Status_PENDING:
-		comp.Status = model.NotRun
+		comp.Status = milostatus.NotRun
 
 		// Missing the case of waiting on unfinished dependency...
 	default:
-		comp.Status = model.NotRun
+		comp.Status = milostatus.NotRun
 	}
 
 	// Main link is a link to the stdout.

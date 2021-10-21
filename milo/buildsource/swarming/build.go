@@ -45,7 +45,7 @@ import (
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 )
@@ -528,7 +528,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 // stream doesn't exist and the swarming job is complete.  It modifies the build
 // to add information that would've otherwise been in the annotation stream.
 func failedToStart(c context.Context, build *ui.MiloBuildLegacy, res *swarming.SwarmingRpcsTaskResult, host string) error {
-	build.Summary.Status = model.InfraFailure
+	build.Summary.Status = milostatus.InfraFailure
 	started, err := time.Parse(SwarmingTimeLayout, res.StartedTs)
 	if err != nil {
 		return err
@@ -538,7 +538,7 @@ func failedToStart(c context.Context, build *ui.MiloBuildLegacy, res *swarming.S
 		return err
 	}
 	build.Summary.ExecutionTime = ui.NewInterval(c, started, ended)
-	infoComp := infoComponent(model.InfraFailure,
+	infoComp := infoComponent(milostatus.InfraFailure,
 		"LogDog stream not found", "Job likely failed to start.")
 	infoComp.ExecutionTime = build.Summary.ExecutionTime
 	build.Components = append(build.Components, infoComp)
@@ -622,7 +622,7 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 	if fr.log != "" {
 		lds, err := streamsFromAnnotatedLog(c, fr.log)
 		if err != nil {
-			comp := infoComponent(model.InfraFailure, "Milo annotation parser", err.Error())
+			comp := infoComponent(milostatus.InfraFailure, "Milo annotation parser", err.Error())
 			comp.SubLink = append(comp.SubLink, ui.LinkSet{
 				ui.NewLink("swarming task", taskURL.String(), ""),
 			})
@@ -652,7 +652,7 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 func addFailureSummary(b *ui.MiloBuildLegacy) {
 	for _, comp := range b.Components {
 		// Add interesting information into the main summary text.
-		if comp.Status != model.Success {
+		if comp.Status != milostatus.Success {
 			b.Summary.Text = append(
 				b.Summary.Text, fmt.Sprintf("%s %s", comp.Status, comp.Label))
 		}
@@ -695,19 +695,19 @@ func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*
 			return &build, err
 		}
 		logging.WithError(err).Errorf(c, "User cannot access stream.")
-		build.Components = append(build.Components, infoComponent(model.Running,
+		build.Components = append(build.Components, infoComponent(milostatus.Running,
 			"Waiting...", "waiting for annotation stream"))
 
 	case coordinator.ErrNoAccess:
 		logging.WithError(err).Errorf(c, "User cannot access stream.")
-		build.Components = append(build.Components, infoComponent(model.Failure,
+		build.Components = append(build.Components, infoComponent(milostatus.Failure,
 			"No Access", "no access to annotation stream"))
 	case nil:
 		// continue
 
 	default:
 		logging.WithError(err).Errorf(c, "Failed to load LogDog annotation stream.")
-		build.Components = append(build.Components, infoComponent(model.InfraFailure,
+		build.Components = append(build.Components, infoComponent(milostatus.InfraFailure,
 			"Error", "failed to load annotation stream: "+err.Error()))
 	}
 
@@ -734,7 +734,7 @@ func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*
 
 // infoComponent is a helper function to return a resp build step with the
 // given status, label, and step text.
-func infoComponent(st model.Status, label, text string) *ui.BuildComponent {
+func infoComponent(st milostatus.Status, label, text string) *ui.BuildComponent {
 	return &ui.BuildComponent{
 		Type:   ui.Summary,
 		Label:  ui.NewEmptyLink(label),

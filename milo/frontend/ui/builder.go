@@ -22,6 +22,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 )
 
 type BuilderPage struct {
@@ -57,7 +58,7 @@ func (bp *BuilderPage) HasChanges() bool {
 // Bot wraps a model.Bot to provide a UI specific statuses.
 type Bot struct {
 	model.Bot
-	Status model.BotStatus
+	Status milostatus.BotStatus
 }
 
 func (b *Bot) Label() *Link {
@@ -106,16 +107,16 @@ func NewMachinePool(c context.Context, botPool *model.BotPool) *MachinePool {
 	}
 	for i, bot := range botPool.Bots {
 		uiBot := Bot{bot, bot.Status} // Wrap the model.Bot
-		if bot.Status == model.Offline && bot.LastSeen.After(fiveMinAgo) {
+		if bot.Status == milostatus.Offline && bot.LastSeen.After(fiveMinAgo) {
 			// If the bot has been offline for less than 5 minutes, mark it as busy.
-			uiBot.Status = model.Busy
+			uiBot.Status = milostatus.Busy
 		}
 		switch bot.Status {
-		case model.Idle:
+		case milostatus.Idle:
 			result.Idle++
-		case model.Busy:
+		case milostatus.Busy:
 			result.Busy++
-		case model.Offline:
+		case milostatus.Offline:
 			result.Offline++
 		}
 		result.Bots[i] = uiBot

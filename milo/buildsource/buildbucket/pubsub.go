@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
@@ -160,7 +161,7 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 		Summary: model.Summary{
 			Start:  mustTimestamp(b.StartTime),
 			End:    mustTimestamp(b.EndTime),
-			Status: statusMap[b.Status],
+			Status: milostatus.FromBuildbucket(b.Status),
 		},
 		Version:      mustTimestamp(b.UpdateTime).UnixNano(),
 		Experimental: b.GetInput().GetExperimental(),

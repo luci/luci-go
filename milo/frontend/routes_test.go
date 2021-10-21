@@ -44,6 +44,7 @@ import (
 
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -183,7 +184,7 @@ func consoleTestData() []TestBundle {
 		Build: []*model.BuildSummary{
 			{
 				Summary: model.Summary{
-					Status: model.Success,
+					Status: milostatus.Success,
 				},
 			},
 			nil,
@@ -191,7 +192,7 @@ func consoleTestData() []TestBundle {
 		Builder: &model.BuilderSummary{
 			BuilderID:          "buildbucket/luci.project-foo.try/builder-bar",
 			ProjectID:          "project-foo",
-			LastFinishedStatus: model.InfraFailure,
+			LastFinishedStatus: milostatus.InfraFailure,
 		},
 	}
 	root := ui.NewCategory("Root")
@@ -228,13 +229,13 @@ func consoleTestData() []TestBundle {
 										Name: ui.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
 											{
-												LastFinishedStatus: model.Success,
+												LastFinishedStatus: milostatus.Success,
 											},
 											{
-												LastFinishedStatus: model.Success,
+												LastFinishedStatus: milostatus.Success,
 											},
 											{
-												LastFinishedStatus: model.Failure,
+												LastFinishedStatus: milostatus.Failure,
 											},
 										},
 									},
@@ -246,7 +247,7 @@ func consoleTestData() []TestBundle {
 										Name: ui.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
 											{
-												LastFinishedStatus: model.Success,
+												LastFinishedStatus: milostatus.Success,
 											},
 										},
 									},

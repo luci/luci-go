@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 )
 
 // BuildersRelativeHandler is responsible for rendering a builders list page according to project.
@@ -255,7 +256,7 @@ func getHistory(c context.Context, builderID buildsource.BuilderID, project stri
 		fetch <- func() error {
 			q := datastore.NewQuery("BuildSummary").
 				Eq("BuilderID", builderID).
-				Eq("Summary.Status", model.NotRun)
+				Eq("Summary.Status", milostatus.NotRun)
 			pending, err := datastore.Count(c, q)
 			hist.NumPending = int(pending)
 			return err
@@ -265,7 +266,7 @@ func getHistory(c context.Context, builderID buildsource.BuilderID, project stri
 		fetch <- func() error {
 			q := datastore.NewQuery("BuildSummary").
 				Eq("BuilderID", builderID).
-				Eq("Summary.Status", model.Running)
+				Eq("Summary.Status", milostatus.Running)
 			running, err := datastore.Count(c, q)
 			hist.NumRunning = int(running)
 			return err

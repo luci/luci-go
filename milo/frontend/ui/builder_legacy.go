@@ -15,7 +15,7 @@
 package ui
 
 import (
-	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 )
 
 // BuildSummaryLegacy is a summary of a build, with just enough information for display
@@ -25,7 +25,7 @@ type BuildSummaryLegacy struct {
 	Link *Link
 
 	// Status of the build.
-	Status model.Status
+	Status milostatus.Status
 
 	// Pending is time interval that this build was pending.
 	PendingTime Interval

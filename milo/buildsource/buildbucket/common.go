@@ -20,9 +20,7 @@ import (
 	"net/http"
 	"time"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
-	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -41,16 +39,4 @@ func newSwarmbucketClient(ctx context.Context, server string) (*swarmbucket.Serv
 	}
 	client.BasePath = fmt.Sprintf("https://%s/_ah/api/swarmbucket/v1/", server)
 	return client, nil
-}
-
-// statusMap maps buildbucket status to milo status.
-// Buildbucket statuses not in the map must be treated
-// as InfraFailure.
-var statusMap = map[buildbucketpb.Status]model.Status{
-	buildbucketpb.Status_SCHEDULED:     model.NotRun,
-	buildbucketpb.Status_STARTED:       model.Running,
-	buildbucketpb.Status_SUCCESS:       model.Success,
-	buildbucketpb.Status_FAILURE:       model.Failure,
-	buildbucketpb.Status_INFRA_FAILURE: model.InfraFailure,
-	buildbucketpb.Status_CANCELED:      model.Canceled,
 }

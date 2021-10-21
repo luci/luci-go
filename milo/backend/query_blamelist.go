@@ -30,6 +30,7 @@ import (
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
@@ -106,7 +107,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 				hasAssociatedBuild := false
 				err := datastore.Run(ctx, q.Eq(commitColumn, protoutil.GitilesBuildSet(curGC)), func(build *model.BuildSummary) error {
 					switch build.Summary.Status {
-					case model.InfraFailure, model.Expired, model.Canceled:
+					case milostatus.InfraFailure, milostatus.Expired, milostatus.Canceled:
 						return nil
 					default:
 						hasAssociatedBuild = true

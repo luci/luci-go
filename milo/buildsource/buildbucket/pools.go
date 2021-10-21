@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 )
@@ -134,9 +135,9 @@ func parseBot(c context.Context, swarmingHost string, botInfo *swarmingAPI.Swarm
 
 	switch {
 	case botInfo.TaskId != "" || botInfo.MaintenanceMsg != "":
-		result.Status = model.Busy
+		result.Status = milostatus.Busy
 	case botInfo.IsDead || botInfo.Quarantined:
-		result.Status = model.Offline
+		result.Status = milostatus.Offline
 	default:
 		// Defaults to idle.
 	}

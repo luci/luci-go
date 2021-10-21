@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 )
 
 // MiloBuildLegacy denotes a full renderable Milo build page.
@@ -64,14 +64,14 @@ type MiloBuildLegacy struct {
 	ShowDebugLogsPref bool
 }
 
-var statusPrecendence = map[model.Status]int{
-	model.Canceled:     0,
-	model.Expired:      1,
-	model.Exception:    2,
-	model.InfraFailure: 3,
-	model.Failure:      4,
-	model.Warning:      5,
-	model.Success:      6,
+var statusPrecendence = map[milostatus.Status]int{
+	milostatus.Canceled:     0,
+	milostatus.Expired:      1,
+	milostatus.Exception:    2,
+	milostatus.InfraFailure: 3,
+	milostatus.Failure:      4,
+	milostatus.Warning:      5,
+	milostatus.Success:      6,
 }
 
 // fixComponent fixes possible display inconsistencies with the build, including:
@@ -87,7 +87,7 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 		// Then set the finish time to be the same as the build finish time.
 		comp.ExecutionTime.Finished = buildFinished
 		comp.ExecutionTime.Duration = buildFinished.Sub(comp.ExecutionTime.Started)
-		comp.Status = model.InfraFailure
+		comp.Status = milostatus.InfraFailure
 	}
 
 	// Fix substeps recursively.
@@ -108,7 +108,7 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 		}
 	}
 
-	comp.Collapsed = collapseGreen && comp.Status == model.Success
+	comp.Collapsed = collapseGreen && comp.Status == milostatus.Success
 
 	// Strip parent component name from the title.
 	if comp.Label != nil {
@@ -303,7 +303,7 @@ type BuildComponent struct {
 	Label *Link
 
 	// Status of the build.
-	Status model.Status
+	Status milostatus.Status
 
 	// Banner is a banner of logos that define the OS and devices this
 	// component is associated with.

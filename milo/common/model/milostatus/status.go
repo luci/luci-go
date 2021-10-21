@@ -14,9 +14,13 @@
 
 //go:generate stringer -type=Status,BotStatus
 
-package model
+package milostatus
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+)
 
 // Status indicates the status of some piece of the CI; builds, steps, builders,
 // etc. The UI maps this to a color, and some statuses may map to the same
@@ -80,6 +84,53 @@ func (s Status) Terminal() bool {
 // MarshalJSON renders enums into String rather than an int when marshalling.
 func (s Status) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
+}
+
+// statusMap maps buildbucket status to milo status.
+// Buildbucket statuses not in the map must be treated
+// as InfraFailure.
+var statusMap = map[buildbucketpb.Status]Status{
+	buildbucketpb.Status_SCHEDULED:     NotRun,
+	buildbucketpb.Status_STARTED:       Running,
+	buildbucketpb.Status_SUCCESS:       Success,
+	buildbucketpb.Status_FAILURE:       Failure,
+	buildbucketpb.Status_INFRA_FAILURE: InfraFailure,
+	buildbucketpb.Status_CANCELED:      Canceled,
+}
+
+// FromBuildbucket converts buildbucket status to milo status.
+//
+// Note: this mapping between milo status and buildbucket status isn't
+// one-to-one (i.e. `status == FromBuildbucket(status).ToBuildbucket()` is not
+// always true).
+func FromBuildbucket(status buildbucketpb.Status) Status {
+	s, ok := statusMap[status]
+	if !ok {
+		return InfraFailure
+	}
+	return s
+}
+
+// bbStatusMap maps milo status to buildbucket status.
+var bbStatusMap = map[Status]buildbucketpb.Status{
+	NotRun:       buildbucketpb.Status_SCHEDULED,
+	Running:      buildbucketpb.Status_STARTED,
+	Success:      buildbucketpb.Status_SUCCESS,
+	Warning:      buildbucketpb.Status_SUCCESS,
+	Failure:      buildbucketpb.Status_FAILURE,
+	InfraFailure: buildbucketpb.Status_INFRA_FAILURE,
+	Exception:    buildbucketpb.Status_INFRA_FAILURE,
+	Expired:      buildbucketpb.Status_CANCELED,
+	Canceled:     buildbucketpb.Status_CANCELED,
+}
+
+// ToBuildbucket converts milo status to buildbucket status.
+//
+// Note: this mapping between milo status and buildbucket status isn't
+// one-to-one (i.e. `status == FromBuildbucket(status).ToBuildbucket()` is not
+// always true).
+func (status Status) ToBuildbucket() buildbucketpb.Status {
+	return bbStatusMap[status]
 }
 
 // BotStatus indicates the status of a machine.
