@@ -315,7 +315,11 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 
 // fetchBuilderConfigs returns the Builder configs referenced by the given
 // requests in a map of Bucket ID -> Builder name -> *pb.Builder.
+//
+// A single returned error means a global error which applies to every request.
+// Otherwise, it would be a MultiError where len(MultiError) equals to len(reqs).
 func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]map[string]*pb.Builder, error) {
+	merr := make(errors.MultiError, len(reqs))
 	var bcks []*model.Bucket
 
 	// bckCfgs and bldrCfgs use a double-pointer because GetIgnoreMissing will
@@ -325,12 +329,16 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 	bckCfgs := map[string]**pb.Bucket{} // Bucket ID -> **pb.Bucket
 	var bldrs []*model.Builder
 	bldrCfgs := map[string]map[string]**pb.Builder{} // Bucket ID -> Builder name -> **pb.Builder
-	for _, req := range reqs {
+
+	idxMap := map[string]map[string][]int{} // Bucket ID -> Builder name -> a list of index
+	for i, req := range reqs {
 		bucket := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
 		if _, ok := bldrCfgs[bucket]; !ok {
 			bldrCfgs[bucket] = make(map[string]**pb.Builder)
+			idxMap[bucket] = map[string][]int{}
 		}
 		if _, ok := bldrCfgs[bucket][req.Builder.Builder]; ok {
+			idxMap[bucket][req.Builder.Builder] = append(idxMap[bucket][req.Builder.Builder], i)
 			continue
 		}
 		if _, ok := bckCfgs[bucket]; !ok {
@@ -347,6 +355,7 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 		}
 		bldrCfgs[bucket][req.Builder.Builder] = &b.Config
 		bldrs = append(bldrs, b)
+		idxMap[bucket][req.Builder.Builder] = append(idxMap[bucket][req.Builder.Builder], i)
 	}
 
 	// Note; this will fill in bckCfgs and bldrCfgs.
@@ -357,7 +366,12 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 	// Check buckets to see if they support dynamically scheduling builds for builders which are not pre-defined.
 	for _, b := range bcks {
 		if b.Proto.GetName() == "" {
-			return nil, appstatus.Errorf(codes.NotFound, "bucket not found: %q", b.ID)
+			bucket := protoutil.FormatBucketID(b.Parent.StringID(), b.ID)
+			for _, bldrIdx := range idxMap[bucket] {
+				for idx := range bldrIdx {
+					merr[idx] = appstatus.Errorf(codes.NotFound, "bucket not found: %q", b.ID)
+				}
+			}
 		}
 	}
 	for _, b := range bldrs {
@@ -373,7 +387,9 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 				delete(bldrCfgs[bucket], b.ID)
 				continue
 			}
-			return nil, appstatus.Errorf(codes.NotFound, "builder not found: %q", b.ID)
+			for _, idx := range idxMap[bucket][b.ID] {
+				merr[idx] = appstatus.Errorf(codes.NotFound, "builder not found: %q", b.ID)
+			}
 		}
 	}
 
@@ -387,25 +403,37 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 		ret[bucket] = m
 	}
 
-	return ret, nil
+	// doesn't contain any errors.
+	if merr.First() == nil {
+		return ret, nil
+	}
+	return ret, merr.AsError()
 }
 
 // generateBuildNumbers mutates the given builds, setting build numbers and
 // build address tags.
+//
+// It would return a MultiError (if any) where len(MultiError) equals to len(reqs).
 func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
+	merr := make(errors.MultiError, len(builds))
 	seq := make(map[string][]*model.Build)
-	for _, b := range builds {
+	idxMap := make(map[string][]int) // BuilderID -> a list of index
+	for i, b := range builds {
 		name := protoutil.FormatBuilderID(b.Proto.Builder)
 		seq[name] = append(seq[name], b)
+		idxMap[name] = append(idxMap[name], i)
 	}
-	return parallel.WorkPool(min(64, len(builds)), func(work chan<- func() error) {
+	_ = parallel.WorkPool(min(64, len(builds)), func(work chan<- func() error) {
 		for name, blds := range seq {
 			name := name
 			blds := blds
 			work <- func() error {
 				n, err := model.GenerateSequenceNumbers(ctx, name, len(blds))
 				if err != nil {
-					return err
+					for _, idx := range idxMap[name] {
+						merr[idx] = err
+					}
+					return nil
 				}
 				for i, b := range blds {
 					b.Proto.Number = n + int32(i)
@@ -417,6 +445,11 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 			}
 		}
 	})
+
+	if merr.First() == nil {
+		return nil
+	}
+	return merr.AsError()
 }
 
 // builderMatches returns whether or not the given builder matches the given
@@ -954,11 +987,13 @@ func setExperimentsFromProto(req *pb.ScheduleBuildRequest, cfg *pb.Builder, buil
 	build.Experimental = build.Proto.Input.Experimental
 }
 
-// scheduleBuilds handles requests to schedule builds. Requests must be
-// validated and authorized.
+// scheduleBuilds handles requests to schedule builds. Requests must be validated and authorized.
+// The length of returned builds always equal to len(reqs).
+// A single returned error means a global error which applies to every request.
+// Otherwise, it would be a MultiError where len(MultiError) equals to len(reqs).
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
 	if len(reqs) == 0 {
-		return nil, nil
+		return []*model.Build{}, nil
 	}
 
 	dryRun := reqs[0].DryRun
@@ -976,30 +1011,36 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	}
 	appID := info.AppID(ctx) // e.g. cr-buildbucket
 
+	merr := make(errors.MultiError, len(reqs))
 	// Bucket -> Builder -> *pb.Builder.
 	cfgs, err := fetchBuilderConfigs(ctx, reqs)
-	if err != nil {
-		return nil, errors.Annotate(err, "error fetching builders").Err()
+	if me, ok := err.(errors.MultiError); ok {
+		merr = mergeErrs(merr, me, "error fetching builders", func(i int) int { return i })
+	} else if err != nil {
+		return nil, err
 	}
 
-	blds := make([]*model.Build, len(reqs))
-	nums := make([]*model.Build, 0, len(reqs))
+	validReq, idxMapBlds := getValidReqs(reqs, merr)
+	var idxMapNums []int
+	blds := make([]*model.Build, len(validReq))
+	nums := make([]*model.Build, 0, len(validReq))
 	var ids []int64
 	if dryRun {
-		ids = make([]int64, len(reqs))
+		ids = make([]int64, len(validReq))
 	} else {
-		ids = buildid.NewBuildIDs(ctx, now, len(reqs))
+		ids = buildid.NewBuildIDs(ctx, now, len(validReq))
 	}
 	for i := range blds {
-		bucket := fmt.Sprintf("%s/%s", reqs[i].Builder.Project, reqs[i].Builder.Bucket)
-		cfg := cfgs[bucket][reqs[i].Builder.Builder]
+		origI := idxMapBlds[i]
+		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
+		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 
 		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
 		blds[i] = &model.Build{
 			ID:         ids[i],
 			CreatedBy:  user,
 			CreateTime: now,
-			Proto:      buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg),
+			Proto:      buildFromScheduleRequest(ctx, validReq[i], cfg, globalCfg),
 		}
 
 		if !dryRun {
@@ -1012,10 +1053,10 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			protoutil.SetStatus(now, blds[i].Proto, pb.Status_SCHEDULED)
 		}
 
-		setExperimentsFromProto(reqs[i], cfg, blds[i])
+		setExperimentsFromProto(validReq[i], cfg, blds[i])
 		blds[i].IsLuci = cfg != nil
-		blds[i].PubSubCallback.Topic = reqs[i].GetNotify().GetPubsubTopic()
-		blds[i].PubSubCallback.UserData = reqs[i].GetNotify().GetUserData()
+		blds[i].PubSubCallback.Topic = validReq[i].GetNotify().GetPubsubTopic()
+		blds[i].PubSubCallback.UserData = validReq[i].GetNotify().GetUserData()
 		// Tags are stored in the outer struct (see model/build.go).
 		blds[i].Tags = protoutil.StringPairMap(blds[i].Proto.Tags).Format()
 
@@ -1024,10 +1065,11 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			exp[d.Expiration.GetSeconds()] = struct{}{}
 		}
 		if len(exp) > 6 {
-			return nil, appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", i).Err())
+			merr[origI] = appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", i).Err())
 		}
 
 		if cfg.GetBuildNumbers() == pb.Toggle_YES {
+			idxMapNums = append(idxMapNums, origI)
 			nums = append(nums, blds[i])
 		}
 	}
@@ -1035,9 +1077,11 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		return blds, nil
 	}
 	if err := generateBuildNumbers(ctx, nums); err != nil {
-		return nil, errors.Annotate(err, "error generating build numbers").Err()
+		me := err.(errors.MultiError)
+		merr = mergeErrs(merr, me, "error generating build numbers", func(idx int) int { return idxMapNums[idx] })
 	}
 
+	validBlds, idxMapValidBlds := getValidBlds(blds, merr, idxMapBlds)
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error { return model.UpdateBuilderStat(ctx, blds, now) }
 		if rdbHost := globalCfg.GetResultdb().GetHostname(); rdbHost != "" {
@@ -1045,6 +1089,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		}
 		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
 	})
+	// TODO(yuanjunh): merge errors from the above three workers into the original merr.
 	if err != nil {
 		return nil, err
 	}
@@ -1052,13 +1097,18 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	// This parallel work isn't combined with the above parallel work to ensure build entities and Swarming
 	// task creation tasks are only created if everything else has succeeded (since everything can't be done
 	// in one transaction).
-	err = parallel.WorkPool(min(64, len(blds)), func(work chan<- func() error) {
-		for i, b := range blds {
+	_ = parallel.WorkPool(min(64, len(validBlds)), func(work chan<- func() error) {
+		for i, b := range validBlds {
+			origI := idxMapValidBlds[i]
+			if merr[origI] != nil {
+				validBlds[i] = nil
+				continue
+			}
+
 			b := b
-			// blds and reqs slices map 1:1.
-			reqID := reqs[i].RequestId
-			bucket := fmt.Sprintf("%s/%s", reqs[i].Builder.Project, reqs[i].Builder.Bucket)
-			cfg := cfgs[bucket][reqs[i].Builder.Builder]
+			reqID := reqs[origI].RequestId
+			bucket := fmt.Sprintf("%s/%s", reqs[origI].Builder.Project, reqs[origI].Builder.Bucket)
+			cfg := cfgs[bucket][reqs[origI].Builder.Builder]
 			work <- func() error {
 				toPut := []interface{}{
 					b,
@@ -1116,19 +1166,30 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 					}
 					return nil
 				}, nil)
+
+				// Record any error happened in the above transaction.
 				if err != nil {
-					return err
+					validBlds[i] = nil
+					merr[origI] = err
+					return nil
 				}
 				buildCreated(ctx, b)
 				return nil
 			}
 		}
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	return blds, nil
+	if merr.First() == nil {
+		return validBlds, nil
+	}
+	// Map back to final results to make sure len(resBlds) always equal to len(reqs).
+	resBlds := make([]*model.Build, len(reqs))
+	for i, bld := range validBlds {
+		if merr[idxMapValidBlds[i]] == nil {
+			resBlds[idxMapValidBlds[i]] = bld
+		}
+	}
+	return resBlds, merr
 }
 
 // normalizeSchedule converts deprecated fields to non-deprecated ones.
@@ -1191,65 +1252,118 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 
 	blds, err := scheduleBuilds(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, err.(errors.MultiError).First()
 	}
 	return blds[0].ToProto(ctx, m)
 }
 
 // scheduleBuilds handles requests to schedule builds.
-func (*Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, error) {
+// The length of returned builds and errors (if any) always equal to the len(reqs).
+// The returned error type is always MultiError.
+func (*Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, errors.MultiError) {
 	// The ith error is the error associated with the ith request.
 	merr := make(errors.MultiError, len(reqs))
 	// The ith mask is the field mask derived from the ith request.
 	masks := make([]*model.BuildMask, len(reqs))
 
-	errorInBatch := func() {
+	errorInBatch := func(err error) errors.MultiError {
 		for i, e := range merr {
 			if e == nil {
-				merr[i] = appstatus.BadRequest(errors.Reason("error in schedule batch").Err())
+				merr[i] = appstatus.BadRequest(errors.Annotate(err, "error in schedule batch").Err())
 			}
 		}
+		return merr
 	}
 
-	err := parallel.WorkPool(min(64, len(reqs)), func(work chan<- func() error) {
+	_ = parallel.WorkPool(min(64, len(reqs)), func(work chan<- func() error) {
 		for i, req := range reqs {
 			i := i
 			req := req
 			work <- func() error {
 				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, req)
-				return merr[i]
+				return nil
 			}
 		}
 	})
-	if err != nil {
-		errorInBatch()
-		return nil, merr
-	}
 
-	// Any error fails all requests.
-	blds, err := scheduleBuilds(ctx, reqs...)
+	validReqs, idxMapValidReqs := getValidReqs(reqs, merr)
+	// Non-MultiError error should apply to every item and fail all requests.
+	blds, err := scheduleBuilds(ctx, validReqs...)
 	if err != nil {
-		for i := range merr {
-			merr[i] = err
+		if me, ok := err.(errors.MultiError); ok {
+			merr = mergeErrs(merr, me, "", func(i int) int { return idxMapValidReqs[i] })
+		} else {
+			return nil, errorInBatch(err)
 		}
-		return nil, merr
 	}
 
 	ret := make([]*pb.Build, len(blds))
-	err = parallel.WorkPool(min(64, len(blds)), func(work chan<- func() error) {
+	_ = parallel.WorkPool(min(64, len(blds)), func(work chan<- func() error) {
 		for i, bld := range blds {
+			origI := idxMapValidReqs[i]
 			i := i
 			bld := bld
 			work <- func() error {
 				// TODO(crbug/1042991): Don't re-read freshly written entities (see ToProto).
-				ret[i], merr[i] = bld.ToProto(ctx, masks[i])
-				return merr[i]
+				ret[i], merr[origI] = bld.ToProto(ctx, masks[origI])
+				return nil
 			}
 		}
 	})
-	if err != nil {
-		errorInBatch()
-		return nil, merr
+
+	if merr.First() == nil {
+		return ret, nil
 	}
-	return ret, nil
+	origRet := make([]*pb.Build, len(reqs))
+	for i, origI := range idxMapValidReqs {
+		if merr[origI] == nil {
+			origRet[origI] = ret[i]
+		}
+	}
+	return origRet, merr
+}
+
+// mergeErrs merges errs into origErrs according to the idxMapper.
+func mergeErrs(origErrs, errs errors.MultiError, reason string, idxMapper func(int) int) errors.MultiError {
+	for i, err := range errs {
+		if err != nil {
+			origErrs[idxMapper(i)] = errors.Annotate(err, reason).Err()
+		}
+	}
+	return origErrs
+}
+
+// getValidReqs returns a list of valid ScheduleBuildRequest where its corresponding error is nil,
+// as well as an index map where idxMap[returnedIndex] == originalIndex.
+func getValidReqs(reqs []*pb.ScheduleBuildRequest, errs errors.MultiError) ([]*pb.ScheduleBuildRequest, []int) {
+	if len(reqs) != len(errs) {
+		panic("The length of reqs and the length of errs must be the same.")
+	}
+	var validReqs []*pb.ScheduleBuildRequest
+	var idxMap []int
+	for i, req := range reqs {
+		if errs[i] == nil {
+			idxMap = append(idxMap, i)
+			validReqs = append(validReqs, req)
+		}
+	}
+	return validReqs, idxMap
+}
+
+// getValidBlds returns a list of valid builds where its corresponding error is nil.
+// as well as an index map where idxMap[returnedIndex] == originalIndex.
+func getValidBlds(blds []*model.Build, origErrs errors.MultiError, idxMapBlds []int) ([]*model.Build, []int) {
+	if len(blds) != len(idxMapBlds) {
+		panic("The length of blds and the length of idxMapBlds must be the same.")
+	}
+	var validBlds []*model.Build
+	var idxMap []int
+	for i, bld := range blds {
+		origI := idxMapBlds[i]
+		if origErrs[origI] == nil {
+			idxMap = append(idxMap, origI)
+			validBlds = append(validBlds, bld)
+		}
+	}
+	return validBlds, idxMap
 }

@@ -147,8 +147,9 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			So(len(err.(errors.MultiError)), ShouldEqual, len(reqs))
 			So(err, ShouldErrLike, "bucket not found")
-			So(bldrs, ShouldBeNil)
+			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
 		})
 
 		Convey("builder not found", func() {
@@ -162,8 +163,34 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			So(len(err.(errors.MultiError)), ShouldEqual, len(reqs))
 			So(err, ShouldErrLike, "builder not found")
-			So(bldrs, ShouldBeNil)
+			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
+		})
+
+		Convey("one found and the other not found", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket 1",
+						Builder: "builder 1",
+					},
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket 1",
+						Builder: "builder 100",
+					},
+				},
+			}
+			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			So(err.(errors.MultiError)[1], ShouldErrLike, "builder not found")
+			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
+			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.Builder{
+				Name: "builder 1",
+			})
 		})
 
 		Convey("dynamic", func() {
@@ -378,8 +405,12 @@ func TestScheduleBuild(t *testing.T) {
 		stripProtos := func(builds []*model.Build) []*pb.Build {
 			ret := make([]*pb.Build, len(builds))
 			for i, b := range builds {
-				ret[i] = b.Proto
-				b.Proto = nil
+				if b == nil {
+					ret[i] = nil
+				} else {
+					ret[i] = b.Proto
+					b.Proto = nil
+				}
 			}
 			return ret
 		}
@@ -395,8 +426,10 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				blds, err := scheduleBuilds(ctx, req)
-				So(err, ShouldErrLike, "error fetching builders")
-				So(blds, ShouldBeNil)
+				So(err, ShouldHaveLength, 1)
+				So(err.(errors.MultiError), ShouldErrLike, "error fetching builders")
+				So(blds, ShouldHaveLength, 1)
+				So(blds[0], ShouldBeNil)
 				So(sch.Tasks(), ShouldBeEmpty)
 				So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
 			})
@@ -540,6 +573,8 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				blds, err := scheduleBuilds(ctx, reqs...)
+				_, ok := err.(errors.MultiError)
+				So(ok, ShouldBeFalse)
 				So(err, ShouldErrLike, "all requests must have the same dry_run value")
 				So(blds, ShouldBeNil)
 				So(sch.Tasks(), ShouldBeEmpty)
@@ -1197,6 +1232,220 @@ func TestScheduleBuild(t *testing.T) {
 			})
 			So(sch.Tasks(), ShouldHaveLength, 2)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
+		})
+
+		Convey("one success and one failure", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Notify: &pb.NotificationConfig{
+						PubsubTopic: "topic",
+						UserData:    []byte("data"),
+					},
+					Tags: []*pb.StringPair{
+						{
+							Key:   "buildset",
+							Value: "buildset",
+						},
+						{
+							Key:   "user_agent",
+							Value: "gerrit",
+						},
+					},
+				},
+				{
+					RequestId: "dupReqIdWithoutBuildAssociated",
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Notify: &pb.NotificationConfig{
+						PubsubTopic: "topic",
+						UserData:    []byte("data"),
+					},
+					Tags: []*pb.StringPair{
+						{
+							Key:   "buildset",
+							Value: "buildset",
+						},
+						{
+							Key:   "user_agent",
+							Value: "gerrit",
+						},
+					},
+				},
+			}
+			r := model.NewRequestID(ctx, 0, time.Time{}, "dupReqIdWithoutBuildAssociated")
+			So(datastore.Put(ctx,
+				r,
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder",
+					Config: &pb.Builder{
+						Name: "builder",
+					},
+				}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Bucket{
+				Parent: model.ProjectKey(ctx, "project"),
+				ID:     "bucket",
+				Proto: &pb.Bucket{
+					Name: "bucket",
+				},
+			}), ShouldBeNil)
+
+			blds, err := scheduleBuilds(ctx, reqs...)
+			So(err.(errors.MultiError), ShouldHaveLength, 2)
+			So(err.(errors.MultiError)[1], ShouldErrLike, "failed to fetch deduplicated build")
+			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
+			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id: 9021868963222163313,
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir: "cache",
+							Input: &pb.BuildInfra_BBAgent_Input{
+								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+									{
+										Name:    "bbagent",
+										Path:    ".",
+										Version: "bbagent-version",
+									},
+									{
+										Name:    "kitchen",
+										Path:    ".",
+										Version: "kitchen-version",
+									},
+									{
+										Path: "kitchen-checkout",
+									},
+								},
+							},
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963222163313",
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
+							Priority: 30,
+						},
+					},
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{},
+					},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+						{
+							Key:   "buildset",
+							Value: "buildset",
+						},
+						{
+							Key:   "user_agent",
+							Value: "gerrit",
+						},
+					},
+				},
+				nil,
+			})
+			So(blds, ShouldResemble, []*model.Build{
+				{
+					ID:                9021868963222163313,
+					BucketID:          "project/bucket",
+					BuilderID:         "project/bucket/builder",
+					CreatedBy:         "anonymous:anonymous",
+					CreateTime:        testclock.TestRecentTimeUTC,
+					StatusChangedTime: testclock.TestRecentTimeUTC,
+					Experiments: []string{
+						"-" + bb.ExperimentBackendAlt,
+						"-" + bb.ExperimentBBAgentGetBuild,
+						"-" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
+						"-" + bb.ExperimentRecipePY3,
+						"-" + bb.ExperimentUseRealms,
+					},
+					Incomplete: true,
+					IsLuci:     true,
+					Status:     pb.Status_SCHEDULED,
+					Tags: []string{
+						"builder:builder",
+						"buildset:buildset",
+						"user_agent:gerrit",
+					},
+					Project: "project",
+					PubSubCallback: model.PubSubCallback{
+						Topic:    "topic",
+						UserData: []byte("data"),
+					},
+					LegacyProperties: model.LegacyProperties{
+						Status: model.Scheduled,
+					},
+				},
+				nil,
+			})
+			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(datastore.Get(ctx, blds[0]), ShouldBeNil)
+
+			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
+			So(err, ShouldBeNil)
+			// TagIndexEntry for the 2nd req should exist but its build entity shouldn't.
+			// Because an error was thrown in the build creation transaction which is after the TagIndex update.
+			So(ind, ShouldResemble, []*model.TagIndexEntry{
+				{
+					BuildID:     9021868963222163313,
+					BucketID:    "project/bucket",
+					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+				},
+				{
+					BuildID:     9021868963222163297,
+					BucketID:    "project/bucket",
+					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+				},
+			})
+			So(datastore.Get(ctx, &model.Build{ID: 9021868963222163297}), ShouldErrLike, "no such entity")
 		})
 	})
 
@@ -5110,8 +5359,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, err := srv.scheduleBuilds(ctx, reqs)
-			So(err, ShouldBeNil)
+			rsp, merr := srv.scheduleBuilds(ctx, reqs)
+			So(merr, ShouldBeNil)
 			So(rsp, ShouldHaveLength, 1)
 			So(rsp[0], ShouldResembleProto, &pb.Build{
 				Builder: &pb.BuilderID{
@@ -5141,7 +5390,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("many", func() {
-			Convey("not found", func() {
+			Convey("one of them not found", func() {
 				reqs := []*pb.ScheduleBuildRequest{
 					{
 						TemplateBuildId: 1000,
@@ -5161,19 +5410,46 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					},
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
 				}
 
 				rsp, err := srv.scheduleBuilds(ctx, reqs)
 				So(err, ShouldNotBeNil)
 				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
-				So(err.(errors.MultiError)[0], ShouldErrLike, "error in schedule batch")
-				So(err.(errors.MultiError)[1], ShouldErrLike, "not found")
-				So(rsp, ShouldBeEmpty)
-				So(sch.Tasks(), ShouldBeEmpty)
-
-				ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
-				So(err, ShouldBeNil)
-				So(ind, ShouldBeEmpty)
+				So(err[0], ShouldBeNil)
+				So(err[1], ShouldErrLike, "not found")
+				So(err[2], ShouldBeNil)
+				So(rsp, ShouldResembleProto, []*pb.Build{
+					{
+						Id:         9021868963222163313,
+						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
+						Number:     1,
+						CreatedBy:  "user:caller@example.com",
+						Status:     pb.Status_SCHEDULED,
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Input:      &pb.Build_Input{},
+					},
+					nil,
+					{
+						Id:         9021868963222163297,
+						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
+						Number:     2,
+						CreatedBy:  "user:caller@example.com",
+						Status:     pb.Status_SCHEDULED,
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Input:      &pb.Build_Input{},
+					},
+				})
 			})
 
 			Convey("ok", func() {
@@ -5198,8 +5474,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := srv.scheduleBuilds(ctx, reqs)
-				So(err, ShouldBeNil)
+				rsp, merr := srv.scheduleBuilds(ctx, reqs)
+				So(merr, ShouldBeNil)
 				So(rsp, ShouldHaveLength, 2)
 				So(rsp[0], ShouldResembleProto, &pb.Build{
 					Builder: &pb.BuilderID{

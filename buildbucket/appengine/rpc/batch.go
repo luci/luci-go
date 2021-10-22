@@ -83,26 +83,26 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	err := parallel.WorkPool(64, func(c chan<- func() error) {
 		c <- func() (err error) {
 			ctx, span := trace.StartSpan(ctx, "Batch.ScheduleBuild")
-			// Batch schedule requests. An error means all requests failed.
-			ret, err := b.scheduleBuilds(ctx, schBatchReq)
+			// Batch schedule requests. It allows partial success.
+			ret, merr := b.scheduleBuilds(ctx, schBatchReq)
 			defer span.End(err)
-			if err != nil {
-				merr := err.(errors.MultiError)
-				for i, e := range merr {
+			for i, e := range merr {
+				if e != nil {
 					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
 						Response: toBatchResponseError(ctx, e),
 					}
 					logToBQ(ctx, fmt.Sprintf("%s;%d", trace.SpanContext(ctx), schIndices[i]), parent, "ScheduleBuild")
 				}
-				return nil
 			}
 			for i, r := range ret {
-				res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
-					Response: &pb.BatchResponse_Response_ScheduleBuild{
-						ScheduleBuild: r,
-					},
+				if r != nil {
+					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
+						Response: &pb.BatchResponse_Response_ScheduleBuild{
+							ScheduleBuild: r,
+						},
+					}
+					logToBQ(ctx, fmt.Sprintf("%s;%d", trace.SpanContext(ctx), schIndices[i]), parent, "ScheduleBuild")
 				}
-				logToBQ(ctx, fmt.Sprintf("%s;%d", trace.SpanContext(ctx), schIndices[i]), parent, "ScheduleBuild")
 			}
 			return nil
 		}
