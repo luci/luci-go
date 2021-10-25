@@ -131,7 +131,13 @@ message Run {
 
   // The tryjobs of the Run.
   //
-  // This may contain Tryjobs that are no longer required.
+  // Note that this data is a snapshot at the time Run is ended. Therefore,
+  // some tryjobs may be in open status. If you need fresh data, query the
+  // corresponding backend system using the returned id.
+  //
+  // It may also contain tryjobs that are no longer required.
+  // TODO(yiwzhang): Re-evalute whether the statement above is true after
+  // tryjobs are handled by LUCI CV instead of CQDaemon.
   repeated Tryjob tryjobs = 11;
 
   // Submission represents the state of a Run Submission.

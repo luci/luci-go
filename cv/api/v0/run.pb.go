@@ -190,7 +190,13 @@ type Run struct {
 	Cls []*GerritChange `protobuf:"bytes,10,rep,name=cls,proto3" json:"cls,omitempty"`
 	// The tryjobs of the Run.
 	//
-	// This may contain Tryjobs that are no longer required.
+	// Note that this data is a snapshot at the time Run is ended. Therefore,
+	// some tryjobs may be in open status. If you need fresh data, query the
+	// corresponding backend system using the returned id.
+	//
+	// It may also contain tryjobs that are no longer required.
+	// TODO(yiwzhang): Re-evalute whether the statement above is true after
+	// tryjobs are handled by LUCI CV instead of CQDaemon.
 	Tryjobs []*Tryjob `protobuf:"bytes,11,rep,name=tryjobs,proto3" json:"tryjobs,omitempty"`
 	// The state of Run Submission.
 	//
