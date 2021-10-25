@@ -43,7 +43,8 @@
 // Start by creating two Google Secret Manager secrets (with no values) named
 // `tink-aead-primary` and `oauth-client-secret` in the cloud project that
 // the server is running in (referred to as `<cloud-project>` below). Make sure
-// the server account has "Secret Manager Secret Accessor" role in them.
+// the server account has "Secret Manager Secret Accessor" role in them. These
+// steps are usually done using Terraform.
 //
 // Initialize `tink-aead-primary` key by using
 // http://go.chromium.org/luci/server/cmd/tink-aead-key tool:
