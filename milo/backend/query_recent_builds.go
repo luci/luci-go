@@ -40,6 +40,11 @@ var queryRecentBuildsPageSize = PageSizeLimiter{
 func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb.QueryRecentBuildsRequest) (_ *milopb.QueryRecentBuildsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 
+	err = validatesQueryRecentBuildsRequest(req)
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
 	allowed, err := common.IsAllowed(ctx, req.GetBuilder().GetProject())
 	if err != nil {
 		return nil, err
@@ -49,11 +54,6 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 			return nil, appstatus.Error(codes.Unauthenticated, "not logged in")
 		}
 		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
-	}
-
-	err = validatesQueryRecentBuildsRequest(req)
-	if err != nil {
-		return nil, appstatus.BadRequest(err)
 	}
 
 	cur, err := decodeCursor(ctx, req.PageToken)

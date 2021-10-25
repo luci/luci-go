@@ -46,6 +46,11 @@ var queryBlamelistPageSize = PageSizeLimiter{
 func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.QueryBlamelistRequest) (_ *milopb.QueryBlamelistResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 
+	startRev, err := prepareQueryBlamelistRequest(req)
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
 	allowed, err := common.IsAllowed(ctx, req.GetBuilder().GetProject())
 	if err != nil {
 		return nil, err
@@ -55,11 +60,6 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 			return nil, appstatus.Error(codes.Unauthenticated, "not logged in ")
 		}
 		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
-	}
-
-	startRev, err := prepareQueryBlamelistRequest(req)
-	if err != nil {
-		return nil, appstatus.BadRequest(err)
 	}
 
 	pageSize := int(queryBlamelistPageSize.Adjust(req.PageSize))
