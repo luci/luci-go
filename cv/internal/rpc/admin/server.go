@@ -250,7 +250,7 @@ func (a *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		return nil, err
 	}
 	cursor := &run.PageToken{}
-	if err := pagination.ValidatePageToken(req, cursor); err != nil {
+	if err := pagination.DecryptPageToken(ctx, req.GetPageToken(), cursor); err != nil {
 		return nil, err
 	}
 
@@ -324,7 +324,7 @@ func (a *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		}
 	}
 
-	resp.NextPageToken, err = pagination.TokenString(nextCursor)
+	resp.NextPageToken, err = pagination.EncryptPageToken(ctx, nextCursor)
 	if err != nil {
 		return nil, err
 	}

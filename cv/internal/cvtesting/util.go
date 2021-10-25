@@ -28,6 +28,8 @@ import (
 	"time"
 
 	nativeDatastore "cloud.google.com/go/datastore"
+	"github.com/google/tink/go/aead"
+	"github.com/google/tink/go/keyset"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
 
@@ -51,6 +53,7 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 	serverauth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -155,6 +158,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 	}
 
 	ctx = caching.WithEmptyProcessCache(ctx)
+	ctx = SetUpSecrets(ctx)
 
 	if t.TQDispatcher != nil {
 		panic("TQDispatcher must not be set")
@@ -493,4 +497,17 @@ func (t *Test) setUpTestClock(ctx context.Context) context.Context {
 		}
 	})
 	return ctx
+}
+
+// SetUpSecrets initializes server/secrets with AEAD crypto key.
+func SetUpSecrets(ctx context.Context) context.Context {
+	kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
+	if err != nil {
+		panic(err)
+	}
+	aead, err := aead.New(kh)
+	if err != nil {
+		panic(err)
+	}
+	return secrets.SetPrimaryTinkAEADForTest(ctx, aead)
 }

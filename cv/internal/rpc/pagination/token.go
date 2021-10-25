@@ -15,8 +15,7 @@
 package pagination
 
 import (
-	"encoding/base64"
-	"fmt"
+	"context"
 	"reflect"
 
 	"google.golang.org/grpc/codes"
@@ -24,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/secrets"
 )
 
 // InvalidToken annotates the error with InvalidArgument appstatus.
@@ -31,72 +31,36 @@ func InvalidToken(err error) error {
 	return appstatus.Attachf(err, codes.InvalidArgument, "invalid page token")
 }
 
-type requestWithPageToken interface {
-	GetPageToken() string
-}
+// cryptoAdditionalData is used to verify integrity of the page tokens.
+var cryptoAdditionalData = []byte("cv-proto-token")
 
-// ValidatePageToken validates & extracts page token from the request
-// into the given proto.
-func ValidatePageToken(req requestWithPageToken, dst proto.Message) error {
-	return parse(req.GetPageToken(), dst)
-}
-
-// schemaVersion is the version of the schema of the token.
+// DecryptPageToken extracts page token from the request into the given proto.
 //
-// Version 1 schema is:
-//   Outer envelope: base64.RawURLEncoding.
-//   Why: safe to use in URLs as is.
-//
-//   Inner 1 byte prefix: version.
-//   Why: support evolution of the format, e.g. HMAC-ing the cursor.
-//
-//   Inner remaining: envelope of the serialized binary proto.
-//   Why: support arbitrary page tokens.
-//
-const schemaVersion = 1
-
-// TokenString serializes a generic page token to an opaque URL-safe string.
-//
-// Input proto can be nil, in which case resulting page token is empty.
-func TokenString(src proto.Message) (string, error) {
-	if src == nil || reflect.ValueOf(src).IsNil() {
-		return "", nil
-	}
-	// Pre-allocate space to avoid needless re-allocations later.
-	// Reserve 1 byte for version set below.
-	// 64 bytes total because most tokens should be short.
-	bytes := make([]byte, 1, 64)
-	bytes[0] = schemaVersion
-	bytes, err := proto.MarshalOptions{}.MarshalAppend(bytes, src)
-	if err != nil {
-		return "", errors.Annotate(err, "failed to serialize page token").Err()
-	}
-	return base64.RawURLEncoding.EncodeToString(bytes), nil
-}
-
-// parse parses a generic page token into the proto.
-//
-// Empty page token is valid and results in no changes to the destination proto.
-func parse(token string, dst proto.Message) error {
-	if token == "" {
+// Returns appstatus-annotated InvalidArgument error if token isn't valid.
+func DecryptPageToken(ctx context.Context, pageToken string, dst proto.Message) error {
+	if pageToken == "" {
 		return nil
 	}
-	bytes, err := base64.RawURLEncoding.DecodeString(token)
+	bytes, err := secrets.URLSafeDecrypt(ctx, pageToken, cryptoAdditionalData)
 	if err != nil {
 		return InvalidToken(err)
 	}
-
-	switch {
-	case len(bytes) == 0:
-		return InvalidToken(fmt.Errorf("invalid inner format"))
-	case bytes[0] != schemaVersion:
-		return InvalidToken(fmt.Errorf("unknown version %d", bytes[0]))
-	default:
-		bytes = bytes[1:]
-	}
-
-	if err = proto.Unmarshal(bytes, dst); err != nil {
+	if err := proto.Unmarshal(bytes, dst); err != nil {
 		return InvalidToken(err)
 	}
 	return nil
+}
+
+// EncryptPageToken encrypts a generic page token to an opaque URL-safe string,
+//
+// Input proto can be nil, in which case resulting page token is empty.
+func EncryptPageToken(ctx context.Context, src proto.Message) (string, error) {
+	if src == nil || reflect.ValueOf(src).IsNil() {
+		return "", nil
+	}
+	bytes, err := proto.Marshal(src)
+	if err != nil {
+		return "", errors.Annotate(err, "failed to serialize page token").Err()
+	}
+	return secrets.URLSafeEncrypt(ctx, bytes, cryptoAdditionalData)
 }

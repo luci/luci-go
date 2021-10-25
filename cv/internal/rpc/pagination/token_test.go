@@ -15,12 +15,14 @@
 package pagination
 
 import (
+	"context"
 	"testing"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -28,58 +30,42 @@ import (
 
 func TestPageTokens(t *testing.T) {
 	t.Parallel()
+	ctx := cvtesting.SetUpSecrets(context.Background())
 
 	Convey("Page token round trip", t, func() {
 		Convey("not empty", func() {
 			// Any proto type should work.
 			in := timestamppb.New(testclock.TestRecentTimeUTC)
-			token, err := TokenString(in)
+			token, err := EncryptPageToken(ctx, in)
 			So(err, ShouldBeNil)
 			out := &timestamppb.Timestamp{}
-			So(parse(token, out), ShouldBeNil)
+			So(DecryptPageToken(ctx, token, out), ShouldBeNil)
 			So(out, ShouldResembleProto, in)
 		})
 		Convey("empty page token", func() {
-			token, err := TokenString(nil)
+			token, err := EncryptPageToken(ctx, nil)
 			So(err, ShouldBeNil)
 			So(token, ShouldResemble, "")
 			out := &timestamppb.Timestamp{}
-			So(parse(token, out), ShouldBeNil)
+			So(DecryptPageToken(ctx, token, out), ShouldBeNil)
 			So(out, ShouldResembleProto, &timestamppb.Timestamp{})
 		})
 		Convey("empty page token with typed nil", func() {
 			var typedNil *timestamppb.Timestamp
-			token, err := TokenString(typedNil)
+			token, err := EncryptPageToken(ctx, typedNil)
 			So(err, ShouldBeNil)
 			So(token, ShouldResemble, "")
 		})
 	})
 
-	Convey("Page token parsing errors", t, func() {
+	Convey("Bad page token", t, func() {
 		dst := &timestamppb.Timestamp{Seconds: 1, Nanos: 2}
-		goodToken, err := TokenString(timestamppb.New(testclock.TestRecentTimeUTC))
+		goodToken, err := EncryptPageToken(ctx, timestamppb.New(testclock.TestRecentTimeUTC))
 		So(err, ShouldBeNil)
-
-		Convey("bad base64", func() {
-			tokenBytes := []byte(goodToken)
-			tokenBytes[10] = '\\'
-			err = parse(string(tokenBytes), dst)
-			So(err, ShouldErrLike, "illegal base64")
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page token")
-		})
-
-		Convey("bad proto", func() {
-			tokenBytes := []byte(goodToken)
-			tokenBytes[4] = 'a'
-			err = parse(string(tokenBytes), dst)
-			So(err, ShouldErrLike, "invalid wire-format")
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page token")
-		})
-
-		Convey("bad version", func() {
-			err := parse("blah", dst)
-			So(err, ShouldErrLike, "unknown version")
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page token")
-		})
+		tokenBytes := []byte(goodToken)
+		tokenBytes[10] = '\\'
+		err = DecryptPageToken(ctx, string(tokenBytes), dst)
+		So(err, ShouldErrLike, "illegal base64")
+		So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page token")
 	})
 }
