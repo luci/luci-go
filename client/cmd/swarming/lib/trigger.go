@@ -241,7 +241,7 @@ func (c *triggerRun) Init(authFlags AuthFlags) {
 	// Task request.
 	c.Flags.StringVar(&c.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
 	c.Flags.Int64Var(&c.priority, "priority", 200, "The lower value, the more important the task.")
-	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task.")
+	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task. In the form of `key:value`.")
 	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
 	c.Flags.Int64Var(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
 	c.Flags.BoolVar(&c.enableResultDB, "enable-resultdb", false, "Enable ResultDB for this task.")
