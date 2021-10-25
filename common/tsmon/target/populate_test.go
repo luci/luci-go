@@ -45,7 +45,6 @@ func TestTargetPopulate(t *testing.T) {
 		Convey("With DeviceTarget", func() {
 			d := &pb.MetricsCollection{}
 			deviceTarget.PopulateProto(d)
-			So(d.TargetSchema, ShouldBeNil)
 			So(d.RootLabels, ShouldResembleProto, []*pb.MetricsCollection_RootLabels{
 				{
 					Key:   proto.String("proxy_environment"),
@@ -101,7 +100,6 @@ func TestTargetPopulate(t *testing.T) {
 		Convey("With TaskTarget", func() {
 			d := &pb.MetricsCollection{}
 			taskTarget.PopulateProto(d)
-			So(d.TargetSchema, ShouldBeNil)
 			So(d.RootLabels, ShouldResembleProto, []*pb.MetricsCollection_RootLabels{
 				{
 					Key:   proto.String("proxy_environment"),

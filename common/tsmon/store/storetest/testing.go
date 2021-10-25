@@ -326,10 +326,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					coll := monitor.SerializeCells(all, testclock.TestRecentTimeUTC)
 
-					// TargetSchema is deprecated.
-					So(coll[0].TargetSchema, ShouldBeNil)
-					So(coll[1].TargetSchema, ShouldBeNil)
-
 					s0 := coll[0].RootLabels[3]
 					s1 := coll[1].RootLabels[3]
 
@@ -551,10 +547,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(len(all), ShouldEqual, 2)
 
 					coll := monitor.SerializeCells(all, testclock.TestRecentTimeUTC)
-
-					// TargetSchema is deprecated.
-					So(coll[0].TargetSchema, ShouldBeNil)
-					So(coll[1].TargetSchema, ShouldBeNil)
 
 					s0 := coll[0].RootLabels[3]
 					s1 := coll[1].RootLabels[3]
