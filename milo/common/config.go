@@ -57,7 +57,6 @@ type Project struct {
 	ACL       ACL `gae:",noindex"`
 
 	LogoURL           string
-	BuildBugTemplate  config.BugTemplate
 	BugURLTemplate    string
 	IgnoredBuilderIDs []string
 
@@ -458,10 +457,6 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *co
 	project.LogoURL = miloCfg.LogoUrl
 	project.IgnoredBuilderIDs = miloCfg.IgnoredBuilderIds
 	project.BugURLTemplate = miloCfg.BugUrlTemplate
-
-	if miloCfg.BuildBugTemplate != nil {
-		project.BuildBugTemplate = *miloCfg.BuildBugTemplate
-	}
 
 	return &project, &miloCfg, &miloCfgMeta, nil
 }

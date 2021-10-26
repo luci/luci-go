@@ -51,8 +51,7 @@ func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.Get
 		return nil, err
 	}
 	return &milo.Project{
-		BuildBugTemplate: &project.BuildBugTemplate,
-		LogoUrl:          project.LogoURL,
-		BugUrlTemplate:   project.BugURLTemplate,
+		LogoUrl:        project.LogoURL,
+		BugUrlTemplate: project.BugURLTemplate,
 	}, nil
 }

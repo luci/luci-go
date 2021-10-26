@@ -17,13 +17,11 @@ package buildbucket
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -41,7 +39,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/milo/api/config"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/backend"
 	"go.chromium.org/luci/milo/common"
@@ -199,34 +196,6 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build, timeout ti
 	}
 
 	return simplisticBlamelist(nc, b)
-}
-
-// getBugLink attempts to formulate and return the build page bug link
-// for the given build.
-func getBugLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
-	project, err := common.GetProject(c.Context, b.Builder.GetProject())
-	if err != nil || proto.Equal(&project.BuildBugTemplate, &config.BugTemplate{}) {
-		return "", err
-	}
-
-	baseURL := "https://" + c.Request.Host
-	builderPath := fmt.Sprintf("/p/%s/builders/%s/%s", b.Builder.GetProject(), b.Builder.GetBucket(), b.Builder.GetBuilder())
-
-	buildURL, err := url.Parse(baseURL + builderPath + "/" + c.Params.ByName("numberOrId"))
-	if err != nil {
-		return "", errors.Annotate(err, "Unable to make build URL for build bug link.").Err()
-	}
-
-	builderURL, err := url.Parse(baseURL + builderPath)
-	if err != nil {
-		return "", errors.Annotate(err, "Unable to make builder URL for build bug link.").Err()
-	}
-
-	return MakeBuildBugLink(&project.BuildBugTemplate, map[string]interface{}{
-		"Build":          b,
-		"MiloBuildUrl":   buildURL,
-		"MiloBuilderUrl": builderURL,
-	})
 }
 
 // searchBuildset creates a searchBuildsRequest that looks for a buildset tag.
@@ -414,10 +383,6 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamel
 		blameErr = errors.Reason("invalid blamelist option").Err()
 	}
 
-	link, err := getBugLink(ctx, b)
-	if err != nil {
-		return nil, err
-	}
 	bucketID := b.Builder.Project + "/" + b.Builder.Bucket
 	permissions, err := common.BucketPermissions(c, bucketID)
 	if err != nil {
@@ -430,7 +395,6 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamel
 			Now:   now,
 		},
 		Blame:           blame,
-		BuildBugLink:    link,
 		BuildbucketHost: host,
 		BlamelistError:  blameErr,
 		ForcedBlamelist: blamelistOpt == ForceBlamelist,

@@ -14,7 +14,6 @@
 
 import Mustache from 'mustache';
 
-import { BuildExt } from '../models/build_ext';
 import { Link } from '../models/link';
 import { router } from '../routes';
 import { Build, BuilderID, BuildInfraSwarming, GerritChange, GitilesCommit } from '../services/buildbucket';
@@ -115,26 +114,6 @@ export function getSafeUrlFromBuildset(buildset: string): string | null {
     }
   }
   return null;
-}
-
-/**
- * Renders build bug template.
- *
- * The following patterns will be replaced with the actual values:
- *  * {{.Build.Builder.Project}}
- *  * {{.Build.Builder.Bucket}}
- *  * {{.Build.Builder.Builder}}
- *  * {{.MiloBuildUrl}}
- *  * {{.MiloBuilderUrl}}
- */
-// TODO(weiweilin): support more go template syntax if needed.
-export function renderBuildBugTemplate(template: string, build: BuildExt): string {
-  return template
-    .replace('{{.Build.Builder.Project}}', build.builder.project)
-    .replace('{{.Build.Builder.Bucket}}', build.builder.bucket)
-    .replace('{{.Build.Builder.Builder}}', build.builder.builder)
-    .replace('{{.MiloBuildUrl}}', window.location.origin + getURLPathForBuild(build))
-    .replace('{{.MiloBuilderUrl}}', window.location.origin + getURLPathForBuilder(build.builder));
 }
 
 const RE_BUG_URL = /https:\/\/(bugs\.chromium\.org|b\.corp\.google\.com)(\/*.)?/;

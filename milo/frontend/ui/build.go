@@ -111,11 +111,6 @@ type BuildPage struct {
 	// build on the same builder, and this run.
 	Blame []*Commit `json:"blame,omitempty"`
 
-	// BuildBugLink is a URL to be used a feedback link for the build. If the
-	// link could not be generated an empty string will be returned. There will be
-	// no link, for example, if the project has not set up their build bug template.
-	BuildBugLink string `json:"build_bug_link,omitempty"`
-
 	// BuildbucketHost is the hostname for the buildbucket instance this build came from.
 	BuildbucketHost string `json:"buildbucket_host,omitempty"`
 

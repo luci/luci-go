@@ -17,23 +17,17 @@ package frontend
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	"google.golang.org/protobuf/proto"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/api/config"
-	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -85,43 +79,9 @@ func renderBuildLegacy(c *router.Context, build *ui.MiloBuildLegacy, renderTimel
 	build.Fix(c.Context)
 
 	templates.MustRender(c.Context, c.Writer, "pages/build_legacy.html", templates.Args{
-		"Build":             build,
-		"BuildFeedbackLink": makeFeedbackLink(c, build),
+		"Build": build,
 	})
 	return nil
-}
-
-// makeFeedbackLink attempts to create the feedback link for the build page. If the
-// project is not configured for a custom feedback link or an interpolation placeholder
-// cannot be satisfied an empty string is returned.
-func makeFeedbackLink(c *router.Context, build *ui.MiloBuildLegacy) string {
-	project, err := common.GetProject(c.Context, c.Params.ByName("project"))
-	if err != nil || proto.Equal(&project.BuildBugTemplate, &config.BugTemplate{}) {
-		return ""
-	}
-
-	buildURL := c.Request.URL
-	var builderURL *url.URL
-	if build.Summary.ParentLabel != nil && build.Summary.ParentLabel.URL != "" {
-		builderURL, err = buildURL.Parse(build.Summary.ParentLabel.URL)
-		if err != nil {
-			logging.WithError(err).Errorf(c.Context, "Unable to parse build.Summary.ParentLabel.URL for custom feedback link")
-			return ""
-		}
-	}
-
-	link, err := buildbucket.MakeBuildBugLink(&project.BuildBugTemplate, map[string]interface{}{
-		"Build":          makeBuild(c.Params, build),
-		"MiloBuildUrl":   buildURL,
-		"MiloBuilderUrl": builderURL,
-	})
-
-	if err != nil {
-		logging.WithError(err).Errorf(c.Context, "Unable to make custom feedback link")
-		return ""
-	}
-
-	return link
 }
 
 // makeBuild partially populates a buildbucketpb.Build. Currently it attempts to

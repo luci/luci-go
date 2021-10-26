@@ -101,9 +101,6 @@
       Builder {{ .Build.Summary.ParentLabel.HTML }}
     {{ end }}
     Build {{.Build.Summary.Label.HTML }}
-    {{ if .BuildFeedbackLink }}
-      [ <a href="{{ .BuildFeedbackLink }}">File a bug</a> ]
-    {{ end }}
     {{ if .Build.Summary.Banner }}
       {{ range .Build.Summary.Banner.OS }}
         <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
