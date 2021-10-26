@@ -1612,16 +1612,7 @@ at once declares a builder and a poller that triggers this builder.
 ### luci.milo {#luci.milo}
 
 ```python
-luci.milo(
-    # Optional arguments.
-    logo = None,
-    favicon = None,
-    bug_url_template = None,
-    monorail_project = None,
-    monorail_components = None,
-    bug_summary = None,
-    bug_description = None,
-)
+luci.milo(logo = None, favicon = None, bug_url_template = None)
 ```
 
 
@@ -1658,10 +1649,6 @@ displayed.
 * **logo**: optional https URL to the project logo (usually \*.png), must be hosted on `storage.googleapis.com`.
 * **favicon**: optional https URL to the project favicon (usually \*.ico), must be hosted on `storage.googleapis.com`.
 * **bug_url_template**: optional string template for making a custom bug link for filing a bug against a build that displays on the build page.
-* **monorail_project**: Deprecated. Please use `bug_url_template` instead. optional Monorail project to file bugs in when a user clicks the feedback link on a build page.
-* **monorail_components**: Deprecated. Please use `bug_url_template` instead. a list of the Monorail component to assign to a new bug, in th  hierarchical `>`-separated format, e.g. `Infra>Client>ChromeOS>CI`. Required if `monorail_project` is set, otherwise must not be used.
-* **bug_summary**: Deprecated. Please use `bug_url_template` instead. string with a text template for generating new bug's summary given a builder on whose page a user clicked the bug link. Must not be used if `monorail_project` is unset.
-* **bug_description**: Deprecated. Please use `bug_url_template` instead. string with a text template for generating new bug's description given a builder on whose page a user clicked the bug link. Must not be used if `monorail_project` is unset.
 
 
 

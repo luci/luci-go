@@ -665,16 +665,6 @@ def gen_milo_cfg(ctx):
     if not views and not milo_node:
         return
 
-    # Deprecated
-    build_bug_template = None
-    if milo_node and milo_node.props.monorail_project:
-        build_bug_template = milo_pb.BugTemplate(
-            summary = milo_node.props.bug_summary,
-            description = milo_node.props.bug_description,
-            monorail_project = milo_node.props.monorail_project,
-            components = milo_node.props.monorail_components,
-        )
-
     milo = get_service("milo", "using views or setting Milo config")
     project_name = get_project().props.name
 
@@ -685,9 +675,6 @@ def gen_milo_cfg(ctx):
             _milo_console_pb(view, opts, project_name)
             for view in views
         ],
-
-        # Deprecated
-        build_bug_template = build_bug_template,
     ))
 
 def _milo_check_connections():
