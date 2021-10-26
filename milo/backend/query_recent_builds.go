@@ -21,6 +21,8 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/pagination"
+	"go.chromium.org/luci/common/pagination/dscursor"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
@@ -31,6 +33,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+var queryRecentBuildsPageTokenVault = dscursor.NewVault([]byte("luci.milo.v1.MiloInternal.QueryRecentBuilds"))
+
 var queryRecentBuildsPageSize = PageSizeLimiter{
 	Max:     100,
 	Default: 25,
@@ -40,11 +44,13 @@ var queryRecentBuildsPageSize = PageSizeLimiter{
 func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb.QueryRecentBuildsRequest) (_ *milopb.QueryRecentBuildsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 
+	// Validate request.
 	err = validatesQueryRecentBuildsRequest(req)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
+	// Perform ACL check.
 	allowed, err := common.IsAllowed(ctx, req.GetBuilder().GetProject())
 	if err != nil {
 		return nil, err
@@ -56,21 +62,29 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
 	}
 
-	cur, err := decodeCursor(ctx, req.PageToken)
-	if err != nil {
+	// Decode cursor from page token.
+	cur, err := queryRecentBuildsPageTokenVault.Cursor(ctx, req.PageToken)
+	switch err {
+	case pagination.ErrInvalidPageToken:
 		return nil, appstatus.Error(codes.InvalidArgument, "invalid page token")
+	case nil:
+		// Continue
+	default:
+		return nil, err
 	}
 
 	pageSize := int(queryRecentBuildsPageSize.Adjust(req.PageSize))
 
+	// Construct query.
 	legacyBuilderID := common.LegacyBuilderIDString(req.Builder)
 	q := datastore.NewQuery("BuildSummary").
 		Eq("BuilderID", legacyBuilderID).
 		Order("-Created").
 		Start(cur)
 
+	// Query recent builds.
 	recentBuilds := make([]*buildbucketpb.Build, 0, pageSize)
-	nextPageToken := ""
+	var nextCursor datastore.Cursor
 	err = datastore.Run(ctx, q, func(b *model.BuildSummary, getCursor datastore.CursorCB) error {
 		if !b.Summary.Status.Terminal() {
 			return nil
@@ -96,16 +110,21 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 		})
 
 		if len(recentBuilds) == pageSize {
-			cursor, err := getCursor()
+			nextCursor, err = getCursor()
 			if err != nil {
 				return err
 			}
-			nextPageToken = cursor.String()
 
 			return datastore.Stop
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct the next page token.
+	nextPageToken, err := queryRecentBuildsPageTokenVault.PageToken(ctx, nextCursor)
 	if err != nil {
 		return nil, err
 	}

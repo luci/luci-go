@@ -14,12 +14,6 @@
 
 package backend
 
-import (
-	"context"
-
-	"go.chromium.org/luci/gae/service/datastore"
-)
-
 type PageSizeLimiter struct {
 	Max     int32
 	Default int32
@@ -36,13 +30,4 @@ func (psl *PageSizeLimiter) Adjust(pageSize int32) int32 {
 	default:
 		return psl.Default
 	}
-}
-
-// decodeCursor is a wrapper around datastore.DecodeCursor. It treats empty
-// page token as nil Cursor.
-func decodeCursor(ctx context.Context, pageToken string) (datastore.Cursor, error) {
-	if pageToken == "" {
-		return nil, nil
-	}
-	return datastore.DecodeCursor(ctx, pageToken)
 }

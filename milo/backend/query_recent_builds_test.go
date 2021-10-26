@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/tink/go/aead"
+	"github.com/google/tink/go/keyset"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -31,6 +33,7 @@ import (
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/secrets"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -38,6 +41,11 @@ func TestQueryRecentBuilds(t *testing.T) {
 	t.Parallel()
 	Convey(`TestQueryRecentBuilds`, t, func() {
 		ctx := memory.Use(context.Background())
+		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
+		So(err, ShouldBeNil)
+		aead, err := aead.New(kh)
+		So(err, ShouldBeNil)
+		ctx = secrets.SetPrimaryTinkAEADForTest(ctx, aead)
 		datastore.GetTestable(ctx).AddIndexes(&datastore.IndexDefinition{
 			Kind: "BuildSummary",
 			SortBy: []datastore.IndexColumn{
@@ -83,7 +91,7 @@ func TestQueryRecentBuilds(t *testing.T) {
 			createFakeBuild(builder1, 4, baseTime.AddDate(0, 0, -1), milostatus.InfraFailure),
 		}
 
-		err := datastore.Put(ctx, builds)
+		err = datastore.Put(ctx, builds)
 		So(err, ShouldBeNil)
 
 		err = datastore.Put(ctx, &common.Project{
