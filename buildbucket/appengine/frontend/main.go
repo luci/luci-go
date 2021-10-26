@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
@@ -46,6 +47,7 @@ func main() {
 		gaeemulation.NewModuleFromFlags(),
 		gerritauth.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
