@@ -154,21 +154,6 @@ func validatePageSize(pageSize int32) error {
 	return nil
 }
 
-// decodeCursor decodes a datastore cursor from a page token.
-// The returned error may be appstatus-annotated.
-func decodeCursor(ctx context.Context, pageToken string) (datastore.Cursor, error) {
-	if pageToken == "" {
-		return nil, nil
-	}
-
-	cursor, err := datastore.DecodeCursor(ctx, pageToken)
-	if err != nil {
-		return nil, appstatus.Attachf(err, codes.InvalidArgument, "bad cursor")
-	}
-
-	return cursor, nil
-}
-
 // getBuild returns the build with the given ID or NotFound appstatus if it is
 // not found.
 func getBuild(ctx context.Context, id int64) (*model.Build, error) {

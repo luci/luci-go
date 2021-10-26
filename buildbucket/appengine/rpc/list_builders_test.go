@@ -20,10 +20,14 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"github.com/google/tink/go/aead"
+	"github.com/google/tink/go/keyset"
+
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/secrets"
 
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
@@ -41,6 +45,11 @@ func TestListBuilders(t *testing.T) {
 	Convey("ListBuilders", t, func() {
 		srv := &Builders{}
 		ctx := memory.Use(context.Background())
+		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
+		So(err, ShouldBeNil)
+		aead, err := aead.New(kh)
+		So(err, ShouldBeNil)
+		ctx = secrets.SetPrimaryTinkAEADForTest(ctx, aead)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -58,11 +67,13 @@ func TestListBuilders(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "bucket must match")
 			})
 
-			Convey(`No bucket`, func() {
+			Convey(`Invalid page token`, func() {
 				_, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
-					Project: "p",
+					Project:   "project",
+					Bucket:    "bucket",
+					PageToken: "invalid token",
 				})
-				So(err, ShouldHaveAppStatus, codes.Unimplemented, "request without bucket is not supported yet")
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page token")
 			})
 		})
 
@@ -98,7 +109,7 @@ func TestListBuilders(t *testing.T) {
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
-					ID:     "bucket",
+					ID:     "bucket1",
 					Proto: &pb.Bucket{
 						Acls: []*pb.Acl{
 							{
@@ -109,36 +120,65 @@ func TestListBuilders(t *testing.T) {
 					},
 				},
 				&model.Builder{
-					Parent: model.BucketKey(ctx, "project", "bucket"),
+					Parent: model.BucketKey(ctx, "project", "bucket1"),
 					ID:     "builder1",
 					Config: &pb.Builder{Name: "builder1"},
 				},
 				&model.Builder{
-					Parent: model.BucketKey(ctx, "project", "bucket"),
+					Parent: model.BucketKey(ctx, "project", "bucket1"),
 					ID:     "builder2",
 					Config: &pb.Builder{Name: "builder2"},
 				},
 				&model.Builder{
-					Parent: model.BucketKey(ctx, "project", "bucket"),
+					Parent: model.BucketKey(ctx, "project", "bucket1"),
 					ID:     "builder3",
 					Config: &pb.Builder{Name: "builder3"},
 				},
+
+				// Bucket without permission
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket2",
+					Proto:  &pb.Bucket{},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket2"),
+					ID:     "builder1",
+					Config: &pb.Builder{Name: "builder1"},
+				},
+
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket3",
+					Proto: &pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+								Role:     pb.Acl_READER,
+							},
+						},
+					},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket3"),
+					ID:     "builder1",
+					Config: &pb.Builder{Name: "builder1"},
+				},
 			), ShouldBeNil)
 
-			res, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
-				Project:  "project",
-				Bucket:   "bucket",
-				PageSize: 2,
-			})
-			So(err, ShouldBeNil)
-			So(res.NextPageToken, ShouldNotEqual, "")
-			So(res, ShouldResembleProto, &pb.ListBuildersResponse{
-				NextPageToken: res.NextPageToken,
-				Builders: []*pb.BuilderItem{
+			Convey(`List all builders in bucket`, func() {
+				res, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
+					Project:  "project",
+					Bucket:   "bucket1",
+					PageSize: 2,
+				})
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldNotEqual, "")
+				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
-							Bucket:  "bucket",
+							Bucket:  "bucket1",
 							Builder: "builder1",
 						},
 						Config: &pb.Builder{Name: "builder1"},
@@ -146,32 +186,84 @@ func TestListBuilders(t *testing.T) {
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
-							Bucket:  "bucket",
+							Bucket:  "bucket1",
 							Builder: "builder2",
 						},
 						Config: &pb.Builder{Name: "builder2"},
 					},
-				},
-			})
+				})
 
-			res, err = srv.ListBuilders(ctx, &pb.ListBuildersRequest{
-				Project:   "project",
-				Bucket:    "bucket",
-				PageToken: res.NextPageToken,
-			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ListBuildersResponse{
-				Builders: []*pb.BuilderItem{
+				res, err = srv.ListBuilders(ctx, &pb.ListBuildersRequest{
+					Project:   "project",
+					Bucket:    "bucket1",
+					PageToken: res.NextPageToken,
+				})
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldBeEmpty)
+				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
-							Bucket:  "bucket",
+							Bucket:  "bucket1",
 							Builder: "builder3",
 						},
 						Config: &pb.Builder{Name: "builder3"},
 					},
-				},
+				})
 			})
+
+			Convey(`List all builders in project`, func() {
+				res, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
+					Project:  "project",
+					PageSize: 2,
+				})
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldNotEqual, "")
+				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
+					{
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket1",
+							Builder: "builder1",
+						},
+						Config: &pb.Builder{Name: "builder1"},
+					},
+					{
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket1",
+							Builder: "builder2",
+						},
+						Config: &pb.Builder{Name: "builder2"},
+					},
+				})
+
+				res, err = srv.ListBuilders(ctx, &pb.ListBuildersRequest{
+					Project:   "project",
+					PageToken: res.NextPageToken,
+				})
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldBeEmpty)
+				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
+					{
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket1",
+							Builder: "builder3",
+						},
+						Config: &pb.Builder{Name: "builder3"},
+					},
+					{
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket3",
+							Builder: "builder1",
+						},
+						Config: &pb.Builder{Name: "builder1"},
+					},
+				})
+			})
+
 		})
 	})
 }
