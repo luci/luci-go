@@ -68,7 +68,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/sergi/go-diff v1.2.0
 	github.com/smartystreets/assertions v1.2.0
-	github.com/smartystreets/goconvey v1.6.4
+	github.com/smartystreets/goconvey v1.7.0
 	github.com/xtgo/set v1.0.0
 	github.com/yosuke-furukawa/json5 v0.1.1
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
