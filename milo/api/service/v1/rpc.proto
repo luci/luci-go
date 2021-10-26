@@ -46,6 +46,9 @@ service MiloInternal {
 
   // Retrieves the recent, finished builds of a builder.
   rpc QueryRecentBuilds(QueryRecentBuildsRequest) returns (QueryRecentBuildsResponse) {};
+
+  // Retrieves a list of builders in a project or a builder group.
+  rpc ListBuilders(ListBuildersRequest) returns (ListBuildersResponse) {};
 }
 
 // A request message for `QueryBlamelist` RPC.
@@ -144,6 +147,45 @@ message QueryRecentBuildsResponse {
   // Recent builds. Ordered by `CreateTime`.
   // Only Id, Builder, Number, CreateTime, Status, Critical are populated.
   repeated buildbucket.v2.Build builds = 1;
+
+  // A token that can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// A request message for `ListBuilders` RPC.
+message ListBuildersRequest {
+  // Required. The project to query the builders from.
+  string project = 1;
+
+  // Optional. The group/console to query the builders from.
+  //
+  // When omitted, all builders from the project is returned. Including all
+  // builders defined in the consoles, builder groups, and buildbucket.
+  string group = 2;
+
+  // Optional. The maxium number of builders to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 builders will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 3;
+
+  // Optional. A page token, received from a previous `ListBuilders`
+  // call. Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all parameters provided to `ListBuilders`, with the
+  // exception of page_size and page_token, must match the call that provided
+  // the page token.
+  string page_token = 4;
+}
+
+// A response message for `ListBuilders` RPC.
+message ListBuildersResponse {
+  // A list of matched builders.
+  //
+  // Only builder IDs are populated for now.
+  repeated buildbucket.v2.BuilderItem builders = 1;
 
   // A token that can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there are no subsequent pages.
