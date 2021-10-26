@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-var listBuildersCursorVault = dscursor.NewVault([]byte("buildbucket-builders-list_builders"))
+var listBuildersCursorVault = dscursor.NewVault([]byte("buildbucket.v2.Builders.ListBuilders"))
 
 // validateListBuildersReq validates the given request.
 func validateListBuildersReq(ctx context.Context, req *pb.ListBuildersRequest) error {
