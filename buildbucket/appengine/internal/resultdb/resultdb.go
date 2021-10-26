@@ -44,11 +44,13 @@ var mockRecorderClientKey = "used in tests only for setting the mock recorder cl
 // cfgs is the builder config map with the struct of Bucket ID -> Builder name -> *pb.Builder.
 //
 // Note: it will mutate the value of build.Proto.Infra.Resultdb.Invocation and build.ResultDBUpdateToken.
-func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.Builder, host string) error {
+func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.Builder, host string) errors.MultiError {
 	bbHost := info.AppID(ctx) + ".appspot.com"
+	merr := make(errors.MultiError, len(builds))
 
-	err := parallel.WorkPool(64, func(ch chan<- func() error) {
-		for _, b := range builds {
+	_ = parallel.WorkPool(64, func(ch chan<- func() error) {
+		for i, b := range builds {
+			i := i
 			b := b
 			proj := b.Proto.Builder.Project
 			cfg := cfgs[protoutil.FormatBucketID(proj, b.Proto.Builder.Bucket)][b.Proto.Builder.Builder]
@@ -67,7 +69,8 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 				// Use per-project credential to create invocation.
 				recorderClient, err := newRecorderClient(ctx, host, proj)
 				if err != nil {
-					return errors.Annotate(err, "failed to create resultDB recorder client for project: %s", proj).Err()
+					merr[i] = errors.Annotate(err, "failed to create resultDB recorder client for project: %s", proj).Err()
+					return nil
 				}
 
 				// Make a call to create build id invocation.
@@ -86,11 +89,13 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 				}
 				header := metadata.MD{}
 				if _, err = recorderClient.CreateInvocation(ctx, reqForBldID, grpc.Header(&header)); err != nil {
-					return errors.Annotate(err, "failed to create the invocation for build id: %d", b.Proto.Id).Err()
+					merr[i] = errors.Annotate(err, "failed to create the invocation for build id: %d", b.Proto.Id).Err()
+					return nil
 				}
 				token, ok := header["update-token"]
 				if !ok {
-					return errors.Reason("CreateInvocation response doesn't have update-token header for build id: %d", b.Proto.Id).Err()
+					merr[i] = errors.Reason("CreateInvocation response doesn't have update-token header for build id: %d", b.Proto.Id).Err()
+					return nil
 				}
 				b.ResultDBUpdateToken = token[0]
 				b.Proto.Infra.Resultdb.Invocation = fmt.Sprintf("invocations/%s", reqForBldID.InvocationId)
@@ -110,7 +115,8 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 						RequestId: fmt.Sprintf("build-%d-%d", b.Proto.Id, b.Proto.Number),
 					})
 					if err != nil {
-						return errors.Annotate(err, "failed to create the invocation for build number: %d (build id: %d)", b.Proto.Number, b.Proto.Id).Err()
+						merr[i] = errors.Annotate(err, "failed to create the invocation for build number: %d (build id: %d)", b.Proto.Number, b.Proto.Id).Err()
+						return nil
 					}
 				}
 				return nil
@@ -118,8 +124,8 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 		}
 	})
 
-	if err != nil {
-		return err
+	if merr.First() != nil {
+		return merr
 	}
 	return nil
 }

@@ -144,25 +144,40 @@ func IndexedTags(tags strpair.Map) []string {
 
 // UpdateTagIndex updates the tag index for the given builds. Panics if any
 // build.Proto.Builder is unspecified.
-func UpdateTagIndex(ctx context.Context, builds []*model.Build) error {
-	// tag -> entries
-	idx := make(map[string][]model.TagIndexEntry)
-	for _, b := range builds {
+func UpdateTagIndex(ctx context.Context, builds []*model.Build) errors.MultiError {
+	merr := make(errors.MultiError, len(builds))
+	tagToBldIdx := make(map[string][]int)                  // tag -> builds indexes
+	indexEntries := make(map[string][]model.TagIndexEntry) // tag -> entries
+
+	for i, b := range builds {
 		for _, t := range IndexedTags(strpair.ParseMap(b.Tags)) {
-			idx[t] = append(idx[t], model.TagIndexEntry{
+			indexEntries[t] = append(indexEntries[t], model.TagIndexEntry{
 				BuildID:     b.ID,
 				BucketID:    protoutil.FormatBucketID(b.Proto.Builder.Project, b.Proto.Builder.Bucket),
 				CreatedTime: mustTimestamp(b.Proto.CreateTime),
 			})
+			tagToBldIdx[t] = append(tagToBldIdx[t], i)
 		}
 	}
-	return parallel.WorkPool(64, func(work chan<- func() error) {
-		for tag, ents := range idx {
+	_ = parallel.WorkPool(64, func(work chan<- func() error) {
+		for tag, ents := range indexEntries {
 			tag := tag
 			ents := ents
-			work <- func() error { return model.UpdateTagIndex(ctx, tag, ents) }
+			work <- func() error {
+				if err := model.UpdateTagIndex(ctx, tag, ents); err != nil {
+					for _, i := range tagToBldIdx[tag] {
+						merr[i] = err
+					}
+				}
+				return nil
+			}
 		}
 	})
+
+	if merr.First() != nil {
+		return merr
+	}
+	return nil
 }
 
 // Fetch performs main build search logic.

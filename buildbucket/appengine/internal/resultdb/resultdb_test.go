@@ -263,6 +263,72 @@ func TestCreateInvocations(t *testing.T) {
 			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = DeadlineExceeded desc = timeout")
 		})
 
+		Convey("partial success", func() {
+			builds := []*model.Build{
+				{
+					ID: 1,
+					Proto: &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "proj1",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+					},
+					Experiments: []string{"+luci.use_realms"},
+				},
+				{
+					ID: 2,
+					Proto: &pb.Build{
+						Id: 2,
+						Builder: &pb.BuilderID{
+							Project: "proj1",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+					},
+					Experiments: []string{"+luci.use_realms"},
+				},
+			}
+
+			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
+				&rdbPb.CreateInvocationRequest{
+					InvocationId: "build-1",
+					Invocation: &rdbPb.Invocation{
+						BigqueryExports:  bqExports,
+						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
+						HistoryOptions:   historyOptions,
+						Realm:            "proj1:bucket",
+					},
+					RequestId: "build-1",
+				}), gomock.Any()).Return(nil, grpcStatus.Error(codes.Internal, "error"))
+			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
+				&rdbPb.CreateInvocationRequest{
+					InvocationId: "build-2",
+					Invocation: &rdbPb.Invocation{
+						BigqueryExports:  bqExports,
+						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/2",
+						HistoryOptions:   historyOptions,
+						Realm:            "proj1:bucket",
+					},
+					RequestId: "build-2",
+				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
+				h, _ := opt.(grpc.HeaderCallOption)
+				h.HeaderAddr.Set("update-token", "update token")
+				return &rdbPb.Invocation{}, nil
+			})
+
+			err := CreateInvocations(ctx, builds, cfgs, "host")
+			So(err[0], ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = Internal desc = error")
+			So(err[1], ShouldBeNil)
+			So(builds[0].ResultDBUpdateToken, ShouldEqual, "")
+			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "")
+			So(builds[1].ResultDBUpdateToken, ShouldEqual, "update token")
+			So(builds[1].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-2")
+		})
+
 		Convey("resultDB not enabled", func() {
 			builds := []*model.Build{
 				{

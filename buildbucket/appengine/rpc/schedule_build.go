@@ -1083,15 +1083,21 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 
 	validBlds, idxMapValidBlds := getValidBlds(blds, merr, idxMapBlds)
 	err = parallel.FanOutIn(func(work chan<- func() error) {
-		work <- func() error { return model.UpdateBuilderStat(ctx, blds, now) }
+		work <- func() error { return model.UpdateBuilderStat(ctx, validBlds, now) }
 		if rdbHost := globalCfg.GetResultdb().GetHostname(); rdbHost != "" {
-			work <- func() error { return resultdb.CreateInvocations(ctx, blds, cfgs, rdbHost) }
+			work <- func() error { return resultdb.CreateInvocations(ctx, validBlds, cfgs, rdbHost) }
 		}
-		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
+		work <- func() error { return search.UpdateTagIndex(ctx, validBlds) }
 	})
-	// TODO(yuanjunh): merge errors from the above three workers into the original merr.
 	if err != nil {
-		return nil, err
+		errs := err.(errors.MultiError)
+		for _, e := range errs {
+			if me, ok := e.(errors.MultiError); ok {
+				merr = mergeErrs(merr, me, "", func(idx int) int { return idxMapValidBlds[idx] })
+			} else {
+				return nil, e // top-level error
+			}
+		}
 	}
 
 	// This parallel work isn't combined with the above parallel work to ensure build entities and Swarming
