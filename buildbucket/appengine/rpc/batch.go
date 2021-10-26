@@ -178,6 +178,9 @@ func convertGRPCError(err error) (*grpcStatus.Status, bool) {
 
 // toBatchResponseError converts an error to BatchResponse_Response_Error type.
 func toBatchResponseError(ctx context.Context, err error) *pb.BatchResponse_Response_Error {
+	if errors.Contains(err, context.DeadlineExceeded) {
+		return &pb.BatchResponse_Response_Error{Error: grpcStatus.New(codes.DeadlineExceeded, "deadline exceeded").Proto()}
+	}
 	st, ok := appstatus.Get(err)
 	if !ok {
 		logging.Errorf(ctx, "Non-appstatus error in a batch response: %s", err)

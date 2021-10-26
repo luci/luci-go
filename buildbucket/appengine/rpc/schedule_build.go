@@ -1066,6 +1066,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		}
 		if len(exp) > 6 {
 			merr[origI] = appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", i).Err())
+			continue
 		}
 
 		if cfg.GetBuildNumbers() == pb.Toggle_YES {
@@ -1258,7 +1259,11 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 
 	blds, err := scheduleBuilds(ctx, req)
 	if err != nil {
-		return nil, err.(errors.MultiError).First()
+		if merr, ok := err.(errors.MultiError); ok {
+			return nil, merr.First()
+		} else {
+			return nil, err
+		}
 	}
 	return blds[0].ToProto(ctx, m)
 }
@@ -1306,6 +1311,9 @@ func (*Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildReque
 	ret := make([]*pb.Build, len(blds))
 	_ = parallel.WorkPool(min(64, len(blds)), func(work chan<- func() error) {
 		for i, bld := range blds {
+			if bld == nil {
+				continue
+			}
 			origI := idxMapValidReqs[i]
 			i := i
 			bld := bld
