@@ -122,7 +122,7 @@ func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, sta
 func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error) {
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	var tasks []*swarming.SwarmingRpcsTaskResult
+	tasks := []*swarming.SwarmingRpcsTaskResult{}
 	// If no fields are specified, all fields will be returned. If any fields are
 	// specified, ensure the cursor is specified so we can get subsequent pages.
 	if len(fields) > 0 {
@@ -246,7 +246,7 @@ func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions ...strin
 func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	var bots []*swarming.SwarmingRpcsBotInfo
+	bots := []*swarming.SwarmingRpcsBotInfo{}
 	// If no fields are specified, all fields will be returned. If any fields are
 	// specified, ensure the cursor is specified so we can get subsequent pages.
 	if len(fields) > 0 {
