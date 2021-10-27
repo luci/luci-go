@@ -35,7 +35,7 @@ import (
 )
 
 func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.ActiveRun, error) {
-	runs, err := run.ProjectQueryBuilder{Project: project, Status: run.Status_RUNNING}.LoadRuns(ctx)
+	runs, _, err := run.ProjectQueryBuilder{Project: project, Status: run.Status_RUNNING}.LoadRuns(ctx)
 	switch {
 	case err != nil:
 		return nil, err

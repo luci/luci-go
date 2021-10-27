@@ -93,6 +93,15 @@ func (b CLQueryBuilder) BeforeInProject(id common.RunID) CLQueryBuilder {
 	return b
 }
 
+// PageToken constraints CLQueryBuilder to continue searching from the prior
+// search.
+func (b CLQueryBuilder) PageToken(pt *PageToken) CLQueryBuilder {
+	if pt != nil {
+		b.MinExcl = common.RunID(pt.GetRun())
+	}
+	return b
+}
+
 // BuildKeysOnly returns keys-only query on RunCL entities.
 //
 // It's exposed primarily for debugging reasons.
@@ -140,10 +149,14 @@ func (b CLQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, er
 	return keys, nil
 }
 
-// LoadRuns loads satisfying Runs from Datastore.
-func (b CLQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, error) {
+// LoadRuns returns matched Runs and the ID of the last Run returned by
+// the Datastore query.
+func (b CLQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
 	return loadRunsFromQuery(ctx, b, checkers...)
 }
+
+// qLimit implements runKeysQuery interface.
+func (b CLQueryBuilder) qLimit() int32 { return b.Limit }
 
 // ProjectQueryBuilder builds datastore.Query for searching Runs scoped to a
 // LUCI project.
@@ -209,6 +222,15 @@ func (b ProjectQueryBuilder) Before(id common.RunID) ProjectQueryBuilder {
 		b.Project = p
 	}
 	b.MinExcl = id
+	return b
+}
+
+// PageToken constraints ProjectQueryBuilder to continue searching from the
+// prior search.
+func (b ProjectQueryBuilder) PageToken(pt *PageToken) ProjectQueryBuilder {
+	if pt != nil {
+		b.MinExcl = common.RunID(pt.GetRun())
+	}
 	return b
 }
 
@@ -290,10 +312,14 @@ func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Ke
 	return keys, err
 }
 
-// LoadRuns loads satisfying Runs from Datastore.
-func (b ProjectQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, error) {
+// LoadRuns returns matched Runs and the ID of the last Run returned by
+// the Datastore query.
+func (b ProjectQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
 	return loadRunsFromQuery(ctx, b, checkers...)
 }
+
+// qLimit implements runKeysQuery interface.
+func (b ProjectQueryBuilder) qLimit() int32 { return b.Limit }
 
 // rangeOfProjectIDs returns (min..max) non-existent Run IDs, such that
 // the following
@@ -309,17 +335,29 @@ func rangeOfProjectIDs(project string) (string, string) {
 type runKeysQuery interface {
 	GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error)
 	isSatisfied(r *Run) bool
+	qLimit() int32
 }
 
-func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunChecker) ([]*Run, error) {
+// loadRunsFromQuery returns matched Runs and a page token.
+func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
 	if l := len(checkers); l > 1 {
 		panic(fmt.Errorf("at most 1 LoadRunChecker allowed, %d given", l))
 	}
 
 	keys, err := q.GetAllRunKeys(ctx)
-	if err != nil {
-		return nil, err
+	var pageToken *PageToken
+	switch {
+	case err != nil:
+		return nil, nil, err
+	case len(keys) == 0:
+		return nil, nil, nil
+	case len(keys) < int(q.qLimit()):
+		// Search space exhausted.
+		pageToken = nil
+	default:
+		pageToken = &PageToken{Run: keys[len(keys)-1].StringID()}
 	}
+
 	loader := LoadRunsFromKeys(keys...)
 	if len(checkers) == 1 {
 		loader = loader.Checker(checkers[0])
@@ -328,9 +366,9 @@ func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunC
 	runs, err := loader.DoIgnoreNotFound(ctx)
 	switch {
 	case err != nil:
-		return nil, err
+		return nil, nil, err
 	case len(runs) == 0:
-		return nil, nil
+		return nil, pageToken, nil
 	}
 
 	// Even for queries which can do everything using native Datastore query,
@@ -344,5 +382,5 @@ func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunC
 			out = append(out, r)
 		}
 	}
-	return out, nil
+	return out, pageToken, nil
 }

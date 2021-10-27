@@ -42,9 +42,16 @@ func TestCLQueryBuilder(t *testing.T) {
 			}
 
 			// Check that loading Runs returns the same values in the same order.
-			runs, err := qb.LoadRuns(ctx)
+			runs, pageToken, err := qb.LoadRuns(ctx)
 			So(err, ShouldBeNil)
 			So(idsOf(runs), ShouldResemble, out)
+
+			// Check the pageToken.
+			if l := len(keys); l == 0 {
+				So(pageToken, ShouldBeNil)
+			} else {
+				So(pageToken.GetRun(), ShouldResemble, keys[l-1].StringID())
+			}
 
 			return out
 		}
@@ -134,9 +141,26 @@ func TestCLQueryBuilder(t *testing.T) {
 			So(getAll(qb), ShouldResemble, common.RunIDs(nil))
 		})
 
-		Convey("Obeys limit", func() {
+		Convey("Obeys limit and returns correct page token", func() {
 			qb := CLQueryBuilder{CLID: clA, Limit: 1}.AfterInProject(bond2)
-			So(getAll(qb), ShouldResemble, common.RunIDs{bond9})
+			runs1, pageToken1, err := qb.LoadRuns(ctx)
+			So(err, ShouldBeNil)
+			So(idsOf(runs1), ShouldResemble, common.RunIDs{bond9})
+			So(pageToken1, ShouldNotBeNil)
+
+			qb = qb.PageToken(pageToken1)
+			So(qb.MinExcl, ShouldResemble, bond9)
+			runs2, pageToken2, err := qb.LoadRuns(ctx)
+			So(err, ShouldBeNil)
+			So(idsOf(runs2), ShouldResemble, common.RunIDs{bond4})
+			So(pageToken2, ShouldNotBeNil)
+
+			qb = qb.PageToken(pageToken2)
+			So(qb.MinExcl, ShouldResemble, bond4)
+			runs3, pageToken3, err := qb.LoadRuns(ctx)
+			So(err, ShouldBeNil)
+			So(runs3, ShouldBeEmpty)
+			So(pageToken3, ShouldBeNil)
 		})
 
 		Convey("After and Before", func() {
@@ -168,9 +192,16 @@ func TestProjectQueryBuilder(t *testing.T) {
 			}
 
 			// Check that loading Runs returns the same values in the same order.
-			runs, err := qb.LoadRuns(ctx)
+			runs, pageToken, err := qb.LoadRuns(ctx)
 			So(err, ShouldBeNil)
 			So(idsOf(runs), ShouldResemble, out)
+
+			// Check the pageToken.
+			if l := len(keys); l == 0 {
+				So(pageToken, ShouldBeNil)
+			} else {
+				So(pageToken.GetRun(), ShouldResemble, keys[l-1].StringID())
+			}
 
 			return out
 		}
@@ -200,9 +231,19 @@ func TestProjectQueryBuilder(t *testing.T) {
 			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4, bond2})
 		})
 
-		Convey("Obeys limit", func() {
+		Convey("Obeys limit and returns correct page token", func() {
 			qb := ProjectQueryBuilder{Project: "bond", Limit: 2}
-			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4})
+			runs1, pageToken1, err := qb.LoadRuns(ctx)
+			So(err, ShouldBeNil)
+			So(idsOf(runs1), ShouldResemble, common.RunIDs{bond9, bond4})
+			So(pageToken1, ShouldNotBeNil)
+
+			qb = qb.PageToken(pageToken1)
+			So(qb.MinExcl, ShouldResemble, bond4)
+			runs2, pageToken2, err := qb.LoadRuns(ctx)
+			So(err, ShouldBeNil)
+			So(idsOf(runs2), ShouldResemble, common.RunIDs{bond2})
+			So(pageToken2, ShouldBeNil)
 		})
 
 		Convey("Filters by Status", func() {

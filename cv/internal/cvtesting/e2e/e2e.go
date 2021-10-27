@@ -306,7 +306,7 @@ func (t *Test) LoadRun(ctx context.Context, id common.RunID) *run.Run {
 
 // LoadRunsOf loads all Runs of a project from Datastore.
 func (t *Test) LoadRunsOf(ctx context.Context, lProject string) []*run.Run {
-	runs, err := run.ProjectQueryBuilder{Project: lProject}.LoadRuns(ctx)
+	runs, _, err := run.ProjectQueryBuilder{Project: lProject}.LoadRuns(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -319,7 +319,7 @@ func (t *Test) LoadGerritRuns(ctx context.Context, gHost string, gChange int64) 
 	if cl == nil {
 		return nil
 	}
-	runs, err := run.CLQueryBuilder{CLID: cl.ID}.LoadRuns(ctx)
+	runs, _, err := run.CLQueryBuilder{CLID: cl.ID}.LoadRuns(ctx)
 	if err != nil {
 		panic(err)
 	}

@@ -407,7 +407,7 @@ func TestComponentsActions(t *testing.T) {
 			}
 
 			findRunOf := func(clid int) *run.Run {
-				switch runs, err := (run.CLQueryBuilder{CLID: common.CLID(clid)}).LoadRuns(ctx); {
+				switch runs, _, err := (run.CLQueryBuilder{CLID: common.CLID(clid)}).LoadRuns(ctx); {
 				case err != nil:
 					panic(err)
 				case len(runs) == 0:
