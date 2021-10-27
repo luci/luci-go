@@ -84,6 +84,7 @@ func getApplication() *subcommands.DefaultApplication {
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
 			lib.CmdBots(af),
+			lib.CmdCancelTask(af),
 			lib.CmdCollect(af),
 			lib.CmdDeleteBots(af),
 			lib.CmdReproduce(af),
