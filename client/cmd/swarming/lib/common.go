@@ -129,7 +129,7 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, start 
 		fields = append(fields, "cursor")
 	}
 	call := s.service.Tasks.List().Context(ctx).Limit(limit).Start(start).State(state).Tags(tags...).Fields(fields...)
-	// Keep calling as long as there's a cursor indicating more bots to list.
+	// Keep calling as long as there's a cursor indicating more tasks to list.
 	for {
 		var res *swarming.SwarmingRpcsTaskList
 		err := retryGoogleRPC(ctx, "ListTasks", func() (ierr error) {
