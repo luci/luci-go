@@ -15,6 +15,7 @@
 package secrets
 
 import (
+	"bytes"
 	"container/heap"
 	"context"
 	"encoding/base64"
@@ -25,6 +26,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/tink/go/aead"
+	"github.com/google/tink/go/insecurecleartextkeyset"
+	"github.com/google/tink/go/keyset"
 	gax "github.com/googleapis/gax-go/v2"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	"google.golang.org/grpc/codes"
@@ -137,6 +141,7 @@ func (sm *SecretManagerStore) RandomSecret(ctx context.Context, name string) (Se
 //   * `sm://<project>/<secret>`: a concrete secret in Google Secret Manager.
 //   * `sm://<secret>`: same as `sm://<CloudProject>/<secret>`.
 //   * `devsecret://<base64-encoded secret>`: return this concrete secret.
+//   * `devsecret-gen://tink/aead`: generate a new secret of the Tink AEAD.
 //   * `devsecret-text://<string>`: return this concrete secret.
 func (sm *SecretManagerStore) StoredSecret(ctx context.Context, name string) (Secret, error) {
 	return sm.readAndTrackSecret(ctx, name, false)
@@ -285,6 +290,9 @@ func (sm *SecretManagerStore) normalizeName(name string) (string, error) {
 	case strings.HasPrefix(name, "devsecret://"):
 		return name, nil
 
+	case strings.HasPrefix(name, "devsecret-gen://"):
+		return name, nil
+
 	case strings.HasPrefix(name, "devsecret-text://"):
 		return name, nil
 
@@ -318,6 +326,21 @@ func (sm *SecretManagerStore) readSecret(ctx context.Context, name string, withP
 			name:  name,
 			value: Secret{Current: value},
 		}, nil
+
+	case strings.HasPrefix(name, "devsecret-gen://"):
+		switch kind := strings.TrimPrefix(name, "devsecret-gen://"); kind {
+		case "tink/aead":
+			value, err := generateDevTinkAEADKeyset(ctx)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to generate new tink AEAD keyset").Err()
+			}
+			return &trackedSecret{
+				name:  name,
+				value: Secret{Current: value},
+			}, nil
+		default:
+			return nil, errors.Reason("devsecret-gen:// kind %q is not supported", kind).Err()
+		}
 
 	case strings.HasPrefix(name, "devsecret-text://"):
 		return &trackedSecret{
@@ -478,4 +501,24 @@ func reloadBackoffInterval(ctx context.Context, attempt int) time.Duration {
 		dur = maxRetryDelay
 	}
 	return dur
+}
+
+// generateDevTinkAEADKeyset generates "devsecret-gen://tink/aead" key.
+func generateDevTinkAEADKeyset(ctx context.Context) ([]byte, error) {
+	kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to generate from template").Err()
+	}
+	buf := bytes.NewBuffer(nil)
+	if err := insecurecleartextkeyset.Write(kh, keyset.NewJSONWriter(buf)); err != nil {
+		return nil, errors.Annotate(err, "failed to serialize newly generated keyset").Err()
+	}
+	value := buf.Bytes()
+	logging.Infof(
+		ctx,
+		"Generated a new development AEAD keyset. To re-use locally during development, "+
+			"replace \"devsecret-gen://tink/aead\" with the value below\n\tdevsecret://%s",
+		base64.RawStdEncoding.EncodeToString(value),
+	)
+	return value, nil
 }

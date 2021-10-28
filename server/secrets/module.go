@@ -74,8 +74,12 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"primary-tink-aead-key",
 		o.PrimaryTinkAEADKey,
 		`A "sm://..." reference to a clear text JSON Tink AEAD key set to use for `+
-			`AEAD operations by default. Optional, but some server modules may `+
-			`require it and will refuse to start if it is not set.`,
+			`AEAD operations by default. Optional, but some server modules may require `+
+			`it and will refuse to start if it is not set. `+
+			`For development, you need a valid AEAD keyset and pass it via `+
+			`devsecret://... or devsecret-text://... or specify `+
+			`devsecret-gen://tink/aead to automatically generate a new random key, `+
+			`which you can then re-use via devsecret:// in the future.`,
 	)
 }
 
