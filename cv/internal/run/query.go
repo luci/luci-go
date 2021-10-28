@@ -149,8 +149,7 @@ func (b CLQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, er
 	return keys, nil
 }
 
-// LoadRuns returns matched Runs and the ID of the last Run returned by
-// the Datastore query.
+// LoadRuns returns matched Runs and the page token to continue search later.
 func (b CLQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
 	return loadRunsFromQuery(ctx, b, checkers...)
 }
@@ -312,8 +311,7 @@ func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Ke
 	return keys, err
 }
 
-// LoadRuns returns matched Runs and the ID of the last Run returned by
-// the Datastore query.
+// LoadRuns returns matched Runs and the page token to continue search later.
 func (b ProjectQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
 	return loadRunsFromQuery(ctx, b, checkers...)
 }

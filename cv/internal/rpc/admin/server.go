@@ -249,9 +249,12 @@ func (a *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	if req.PageSize, err = pagination.ValidatePageSize(req, 16, 128); err != nil {
 		return nil, err
 	}
-	cursor := &run.PageToken{}
-	if err := pagination.DecryptPageToken(ctx, req.GetPageToken(), cursor); err != nil {
-		return nil, err
+	var pt *run.PageToken
+	if s := req.GetPageToken(); s != "" {
+		pt = &run.PageToken{}
+		if err := pagination.DecryptPageToken(ctx, req.GetPageToken(), pt); err != nil {
+			return nil, err
+		}
 	}
 
 	// Compute potentially interesting run keys using the most efficient query.
@@ -259,21 +262,14 @@ func (a *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	var cl *changelist.CL
 	switch {
 	case req.GetCl() != nil:
-		cl, runKeys, err = searchRunsByCL(ctx, req, cursor)
+		cl, runKeys, err = searchRunsByCL(ctx, req, pt)
 	case req.GetProject() != "":
-		runKeys, err = searchRunsByProject(ctx, req, cursor)
+		runKeys, err = searchRunsByProject(ctx, req, pt)
 	default:
-		runKeys, err = searchRecentRunsSlow(ctx, req, cursor)
+		runKeys, err = searchRecentRunsSlow(ctx, req, pt)
 	}
 	if err != nil {
 		return nil, err
-	}
-
-	var nextCursor *run.PageToken
-	if l := len(runKeys); int32(l) == req.GetPageSize() {
-		// For Admin API, it's OK to return StringID as is, as Admins can see any
-		// LUCI project.
-		nextCursor = &run.PageToken{Run: runKeys[l-1].StringID()}
 	}
 
 	// Fetch individual runs in parallel and apply final filtering.
@@ -324,16 +320,18 @@ func (a *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 		}
 	}
 
-	resp.NextPageToken, err = pagination.EncryptPageToken(ctx, nextCursor)
-	if err != nil {
-		return nil, err
+	if l := len(runKeys); int32(l) == req.GetPageSize() {
+		resp.NextPageToken, err = pagination.EncryptPageToken(ctx, &run.PageToken{Run: runKeys[l-1].StringID()})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }
 
 // searchRunsByCL returns CL & Run IDs as Datastore keys, using CL to limit
 // results.
-func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.PageToken) (*changelist.CL, []*datastore.Key, error) {
+func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, pt *run.PageToken) (*changelist.CL, []*datastore.Key, error) {
 	cl, err := loadCL(ctx, req.GetCl())
 	if err != nil {
 		return nil, nil, err
@@ -342,22 +340,20 @@ func searchRunsByCL(ctx context.Context, req *adminpb.SearchRunsRequest, cursor 
 	qb := run.CLQueryBuilder{
 		CLID:    cl.ID,
 		Limit:   req.GetPageSize(),
-		Project: req.GetProject(),              // optional
-		MinExcl: common.RunID(cursor.GetRun()), // may be ""
-	}
+		Project: req.GetProject(), // optional
+	}.PageToken(pt)
 	runKeys, err := qb.GetAllRunKeys(ctx)
 	return cl, runKeys, err
 }
 
 // searchRunsByProject returns Run IDs as Datastore keys, using LUCI Project to
 // limit results.
-func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.PageToken) ([]*datastore.Key, error) {
+func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, pt *run.PageToken) ([]*datastore.Key, error) {
 	qb := run.ProjectQueryBuilder{
 		Project: req.GetProject(),
 		Limit:   req.GetPageSize(),
-		Status:  req.GetStatus(),               // optional
-		MinExcl: common.RunID(cursor.GetRun()), // may be ""
-	}
+		Status:  req.GetStatus(), // optional
+	}.PageToken(pt)
 	return qb.GetAllRunKeys(ctx)
 }
 
