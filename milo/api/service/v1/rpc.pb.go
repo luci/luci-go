@@ -464,6 +464,9 @@ type ListBuildersRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Required. The project to query the builders from.
+	//
+	// Note that external builders that are referenced by the consoles in the
+	// project will also be included in the response.
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// Optional. The group/console to query the builders from.
 	//
@@ -553,6 +556,10 @@ type ListBuildersResponse struct {
 
 	// A list of matched builders.
 	//
+	// Builders are ordered by their canonical string ID
+	// (i.e. "{project}/{bucket}/{builder}") with the exception that builders from
+	// `ListBuildersRequest.project` always come before builders from other
+	// projects.
 	// Only builder IDs are populated for now.
 	Builders []*proto.BuilderItem `protobuf:"bytes,1,rep,name=builders,proto3" json:"builders,omitempty"`
 	// A token that can be sent as `page_token` to retrieve the next page.
@@ -604,6 +611,69 @@ func (x *ListBuildersResponse) GetNextPageToken() string {
 		return x.NextPageToken
 	}
 	return ""
+}
+
+// A stateless page token for `ListBuilders` RPC.
+type ListBuildersPageToken struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The next buildbucket `ListBuilders` RPC page token if there are still
+	// builders from buildbucket to be returned.
+	//
+	// Should not coexist with `NextMiloBuilderIndex`.
+	NextBuildbucketPageToken string `protobuf:"bytes,1,opt,name=next_buildbucket_page_token,json=nextBuildbucketPageToken,proto3" json:"next_buildbucket_page_token,omitempty"`
+	// The index of the next builder from Milo project definition.
+	//
+	// Should not coexist with `NextBuildbucketPageToken`.
+	NextMiloBuilderIndex int32 `protobuf:"varint,2,opt,name=next_milo_builder_index,json=nextMiloBuilderIndex,proto3" json:"next_milo_builder_index,omitempty"`
+}
+
+func (x *ListBuildersPageToken) Reset() {
+	*x = ListBuildersPageToken{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ListBuildersPageToken) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBuildersPageToken) ProtoMessage() {}
+
+func (x *ListBuildersPageToken) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBuildersPageToken.ProtoReflect.Descriptor instead.
+func (*ListBuildersPageToken) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListBuildersPageToken) GetNextBuildbucketPageToken() string {
+	if x != nil {
+		return x.NextBuildbucketPageToken
+	}
+	return ""
+}
+
+func (x *ListBuildersPageToken) GetNextMiloBuilderIndex() int32 {
+	if x != nil {
+		return x.NextMiloBuilderIndex
+	}
+	return 0
 }
 
 var File_go_chromium_org_luci_milo_api_service_v1_rpc_proto protoreflect.FileDescriptor
@@ -695,7 +765,16 @@ var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDesc = []byte{
 	0x52, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x73, 0x12, 0x26, 0x0a, 0x0f, 0x6e, 0x65,
 	0x78, 0x74, 0x5f, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x0d, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b,
-	0x65, 0x6e, 0x32, 0xf4, 0x02, 0x0a, 0x0c, 0x4d, 0x69, 0x6c, 0x6f, 0x49, 0x6e, 0x74, 0x65, 0x72,
+	0x65, 0x6e, 0x22, 0x8d, 0x01, 0x0a, 0x15, 0x4c, 0x69, 0x73, 0x74, 0x42, 0x75, 0x69, 0x6c, 0x64,
+	0x65, 0x72, 0x73, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x3d, 0x0a, 0x1b,
+	0x6e, 0x65, 0x78, 0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74,
+	0x5f, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x18, 0x6e, 0x65, 0x78, 0x74, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b,
+	0x65, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x35, 0x0a, 0x17, 0x6e,
+	0x65, 0x78, 0x74, 0x5f, 0x6d, 0x69, 0x6c, 0x6f, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72,
+	0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x14, 0x6e, 0x65,
+	0x78, 0x74, 0x4d, 0x69, 0x6c, 0x6f, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x49, 0x6e, 0x64,
+	0x65, 0x78, 0x32, 0xf4, 0x02, 0x0a, 0x0c, 0x4d, 0x69, 0x6c, 0x6f, 0x49, 0x6e, 0x74, 0x65, 0x72,
 	0x6e, 0x61, 0x6c, 0x12, 0x5d, 0x0a, 0x0e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d,
 	0x65, 0x6c, 0x69, 0x73, 0x74, 0x12, 0x23, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6d, 0x69, 0x6c,
 	0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c,
@@ -737,7 +816,7 @@ func file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescGZIP() []byt
 	return file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_goTypes = []interface{}{
 	(*QueryBlamelistRequest)(nil),     // 0: luci.milo.v1.QueryBlamelistRequest
 	(*QueryBlamelistResponse)(nil),    // 1: luci.milo.v1.QueryBlamelistResponse
@@ -747,27 +826,28 @@ var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_goTypes = []interfac
 	(*QueryRecentBuildsResponse)(nil), // 5: luci.milo.v1.QueryRecentBuildsResponse
 	(*ListBuildersRequest)(nil),       // 6: luci.milo.v1.ListBuildersRequest
 	(*ListBuildersResponse)(nil),      // 7: luci.milo.v1.ListBuildersResponse
-	(*proto.GitilesCommit)(nil),       // 8: buildbucket.v2.GitilesCommit
-	(*proto.BuilderID)(nil),           // 9: buildbucket.v2.BuilderID
-	(*git.Commit)(nil),                // 10: git.Commit
-	(*proto.Build)(nil),               // 11: buildbucket.v2.Build
-	(*proto.BuilderItem)(nil),         // 12: buildbucket.v2.BuilderItem
-	(*config.Project)(nil),            // 13: milo.Project
+	(*ListBuildersPageToken)(nil),     // 8: luci.milo.v1.ListBuildersPageToken
+	(*proto.GitilesCommit)(nil),       // 9: buildbucket.v2.GitilesCommit
+	(*proto.BuilderID)(nil),           // 10: buildbucket.v2.BuilderID
+	(*git.Commit)(nil),                // 11: git.Commit
+	(*proto.Build)(nil),               // 12: buildbucket.v2.Build
+	(*proto.BuilderItem)(nil),         // 13: buildbucket.v2.BuilderItem
+	(*config.Project)(nil),            // 14: milo.Project
 }
 var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_depIdxs = []int32{
-	8,  // 0: luci.milo.v1.QueryBlamelistRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	9,  // 1: luci.milo.v1.QueryBlamelistRequest.builder:type_name -> buildbucket.v2.BuilderID
-	10, // 2: luci.milo.v1.QueryBlamelistResponse.commits:type_name -> git.Commit
-	10, // 3: luci.milo.v1.QueryBlamelistResponse.preceding_commit:type_name -> git.Commit
-	9,  // 4: luci.milo.v1.QueryRecentBuildsRequest.builder:type_name -> buildbucket.v2.BuilderID
-	11, // 5: luci.milo.v1.QueryRecentBuildsResponse.builds:type_name -> buildbucket.v2.Build
-	12, // 6: luci.milo.v1.ListBuildersResponse.builders:type_name -> buildbucket.v2.BuilderItem
+	9,  // 0: luci.milo.v1.QueryBlamelistRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	10, // 1: luci.milo.v1.QueryBlamelistRequest.builder:type_name -> buildbucket.v2.BuilderID
+	11, // 2: luci.milo.v1.QueryBlamelistResponse.commits:type_name -> git.Commit
+	11, // 3: luci.milo.v1.QueryBlamelistResponse.preceding_commit:type_name -> git.Commit
+	10, // 4: luci.milo.v1.QueryRecentBuildsRequest.builder:type_name -> buildbucket.v2.BuilderID
+	12, // 5: luci.milo.v1.QueryRecentBuildsResponse.builds:type_name -> buildbucket.v2.Build
+	13, // 6: luci.milo.v1.ListBuildersResponse.builders:type_name -> buildbucket.v2.BuilderItem
 	0,  // 7: luci.milo.v1.MiloInternal.QueryBlamelist:input_type -> luci.milo.v1.QueryBlamelistRequest
 	3,  // 8: luci.milo.v1.MiloInternal.GetProjectCfg:input_type -> luci.milo.v1.GetProjectCfgRequest
 	4,  // 9: luci.milo.v1.MiloInternal.QueryRecentBuilds:input_type -> luci.milo.v1.QueryRecentBuildsRequest
 	6,  // 10: luci.milo.v1.MiloInternal.ListBuilders:input_type -> luci.milo.v1.ListBuildersRequest
 	1,  // 11: luci.milo.v1.MiloInternal.QueryBlamelist:output_type -> luci.milo.v1.QueryBlamelistResponse
-	13, // 12: luci.milo.v1.MiloInternal.GetProjectCfg:output_type -> milo.Project
+	14, // 12: luci.milo.v1.MiloInternal.GetProjectCfg:output_type -> milo.Project
 	5,  // 13: luci.milo.v1.MiloInternal.QueryRecentBuilds:output_type -> luci.milo.v1.QueryRecentBuildsResponse
 	7,  // 14: luci.milo.v1.MiloInternal.ListBuilders:output_type -> luci.milo.v1.ListBuildersResponse
 	11, // [11:15] is the sub-list for method output_type
@@ -879,6 +959,18 @@ func file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ListBuildersPageToken); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -886,7 +978,7 @@ func file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
