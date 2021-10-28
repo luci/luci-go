@@ -96,9 +96,18 @@ go run main.go
 
 To work with Runs from the -dev project, connect to its Datastore by adding
 these arguments:
+
 ```
-go run main.go -cloud-project luci-change-verifier-dev`
+go run main.go \
+    -cloud-project luci-change-verifier-dev \
+    -root-secret devsecret://base64anything \
+    -primary-tink-aead-key devsecret-gen://tink/aead
 ```
+
+**NOTE**: if you want the old page tokens to work on subsequent `go run main.go ...`
+invocations, when you first invoke it, observe output of the first invocation which
+should mention a `devsecret://veeeeeeeeeeeeeeery-looooooong-base64-line`, which
+you can use on subsequent invocations instead of `devsecret-gen://tink/aead`.
 
 For a quick check, eyeball these two pages (your port may be different):
   * http://localhost:8800/ui/run/cq-test/8991920303854-1-19bc46b6c6972e90
