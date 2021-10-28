@@ -39,7 +39,7 @@ const (
 
 	// noFlushForTooLong defines threshold for emiting error to logs on unusually
 	// long durations without a tsmon flush.
-	noFlushForTooLong = 4 * time.Minute
+	noFlushForTooLong = 10 * time.Minute
 )
 
 // New creates a new Driver for metrics aggregation.
