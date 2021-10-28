@@ -154,11 +154,9 @@ def _builder(
       swarming_host: appspot hostname of a Swarming service to use for this
         builder instead of the default specified in luci.project(...). Use with
         great caution. Supports the module-scoped default.
-      swarming_tags: a list of tags (`k:v` strings) to assign to the Swarming
-        task that runs the builder. Each tag will also end up in `swarming_tag`
-        Buildbucket tag, for example `swarming_tag:builder:release`. Supports
-        the module-scoped defaults. They are joined with the explicitly passed
-        tags.
+      swarming_tags: Deprecated. Used only to enable
+        "vpython:native-python-wrapper" and does not actually propagate to
+        Swarming. A list of tags (`k:v` strings).
       expiration_timeout: how long to wait for a build to be picked up by a
         matching bot (based on `dimensions`) before canceling the build and
         marking it as expired. If None, defer the decision to Buildbucket
