@@ -15,12 +15,18 @@
 package run
 
 import (
+	"encoding/hex"
+	"fmt"
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -322,6 +328,164 @@ func TestProjectQueryBuilder(t *testing.T) {
 	})
 }
 
+func TestRecentQueryBuilder(t *testing.T) {
+	t.Parallel()
+
+	Convey("RecentQueryBuilder works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		// checkOrder verifies this order:
+		//  * DESC Created (== ASC InverseTS, or latest first)
+		//  * ASC  Project
+		//  * ASC  RunID (the remaining part of RunID)
+		checkOrder := func(runs []*Run) {
+			for i := range runs {
+				if i == 0 {
+					continue
+				}
+				switch l, r := runs[i-1], runs[i]; {
+				case !l.CreateTime.Equal(r.CreateTime):
+					So(l.CreateTime, ShouldHappenAfter, r.CreateTime)
+				case l.ID.LUCIProject() != r.ID.LUCIProject():
+					So(l.ID.LUCIProject(), ShouldBeLessThan, r.ID.LUCIProject())
+				default:
+					// Same CreateTime and Project.
+					So(l.ID, ShouldBeLessThan, r.ID)
+				}
+			}
+		}
+
+		getAllWithPageToken := func(qb RecentQueryBuilder) (common.RunIDs, *PageToken) {
+			keys, err := qb.GetAllRunKeys(ctx)
+			So(err, ShouldBeNil)
+			var out common.RunIDs
+			for _, k := range keys {
+				out = append(out, common.RunID(k.StringID()))
+			}
+
+			// Check that loading Runs returns the same values in the same order.
+			runs, pageToken, err := qb.LoadRuns(ctx)
+			So(err, ShouldBeNil)
+			So(idsOf(runs), ShouldResemble, out)
+
+			checkOrder(runs)
+
+			// Check the pageToken.
+			if l := len(keys); l == int(qb.Limit) {
+				So(pageToken.GetRun(), ShouldResemble, keys[l-1].StringID())
+			} else {
+				So(pageToken, ShouldBeNil)
+			}
+
+			return out, pageToken
+		}
+
+		getAll := func(qb RecentQueryBuilder) common.RunIDs {
+			out, _ := getAllWithPageToken(qb)
+			return out
+		}
+
+		// Choose epoch such that inverseTS of Run ID has zeros at the end for
+		// ease of debugging.
+		epoch := testclock.TestRecentTimeUTC.Truncate(time.Millisecond).Add(498490844 * time.Millisecond)
+
+		makeRun := func(project, createdAfter, remainder int) *Run {
+			remBytes, err := hex.DecodeString(fmt.Sprintf("%02d", remainder))
+			if err != nil {
+				panic(err)
+			}
+			createTime := epoch.Add(time.Duration(createdAfter) * time.Millisecond)
+			id := common.MakeRunID(
+				fmt.Sprintf("p%02d", project),
+				createTime,
+				1,
+				remBytes,
+			)
+			return &Run{ID: id, CreateTime: createTime}
+		}
+
+		placeRuns := func(runs ...*Run) common.RunIDs {
+			ids := make(common.RunIDs, len(runs))
+			So(datastore.Put(ctx, runs), ShouldBeNil)
+			projects := stringset.New(10)
+			for i, r := range runs {
+				projects.Add(r.ID.LUCIProject())
+				ids[i] = r.ID
+			}
+			for p := range projects {
+				prjcfgtest.Create(ctx, p, &cfgpb.Config{})
+			}
+			return ids
+		}
+
+		Convey("just one project", func() {
+			expIDs := placeRuns(
+				// project, creationDelay, hash.
+				makeRun(1, 90, 11),
+				makeRun(1, 80, 12),
+				makeRun(1, 70, 13),
+				makeRun(1, 70, 14),
+				makeRun(1, 70, 15),
+				makeRun(1, 60, 11),
+				makeRun(1, 60, 12),
+			)
+			Convey("without paging", func() {
+				So(getAll(RecentQueryBuilder{Limit: 128}), ShouldResemble, expIDs)
+			})
+			Convey("with paging", func() {
+				page, next := getAllWithPageToken(RecentQueryBuilder{Limit: 3})
+				So(page, ShouldResemble, expIDs[:3])
+				So(getAll(RecentQueryBuilder{Limit: 3}.PageToken(next)), ShouldResemble, expIDs[3:6])
+			})
+		})
+
+		Convey("two projects with overlapping timestaps", func() {
+			expIDs := placeRuns(
+				// project, creationDelay, hash.
+				makeRun(1, 90, 11),
+				makeRun(1, 80, 12), // same creationDelay, but smaller project
+				makeRun(2, 80, 12),
+				makeRun(2, 80, 13), // later hash
+				makeRun(2, 70, 13),
+				makeRun(1, 60, 12),
+			)
+			Convey("without paging", func() {
+				So(getAll(RecentQueryBuilder{Limit: 128}), ShouldResemble, expIDs)
+			})
+			Convey("with paging", func() {
+				page, next := getAllWithPageToken(RecentQueryBuilder{Limit: 2})
+				So(page, ShouldResemble, expIDs[:2])
+				So(getAll(RecentQueryBuilder{Limit: 4}.PageToken(next)), ShouldResemble, expIDs[2:6])
+			})
+		})
+
+		Convey("large scale", func() {
+			var runs []*Run
+			for p := 50; p < 60; p++ {
+				// Distribute # of Runs unevenly across projects.
+				for c := p - 49; c > 0; c-- {
+					// Create some Runs with the same start timestamp.
+					for r := 90; r <= 90+c%3; r++ {
+						runs = append(runs, makeRun(p, c, r))
+					}
+				}
+			}
+			placeRuns(runs...)
+			So(len(runs), ShouldBeLessThan, 128)
+
+			_, _ = Println("without paging")
+			all := getAll(RecentQueryBuilder{Limit: 128})
+			So(len(all), ShouldEqual, len(runs))
+
+			_, _ = Println("with paging")
+			page, next := getAllWithPageToken(RecentQueryBuilder{Limit: 13})
+			So(page, ShouldResemble, all[:13])
+			So(getAll(RecentQueryBuilder{Limit: 7}.PageToken(next)), ShouldResemble, all[13:20])
+		})
+	})
+}
 func idsOf(runs []*Run) common.RunIDs {
 	if len(runs) == 0 {
 		return nil

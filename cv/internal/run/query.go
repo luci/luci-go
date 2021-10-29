@@ -15,14 +15,17 @@
 package run
 
 import (
+	"container/heap"
 	"context"
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // CLQueryBuilder builds datastore.Query for searching Runs of a given CL.
@@ -318,6 +321,178 @@ func (b ProjectQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunCh
 
 // qLimit implements runKeysQuery interface.
 func (b ProjectQueryBuilder) qLimit() int32 { return b.Limit }
+
+// RecentQueryBuilder builds a VERY SLOW query for searching recent Runs
+// across all LUCI projects.
+//
+// If two runs have the same timestamp, orders Runs first by the LUCI Project
+// name and then by the remainder of the Run's ID.
+//
+// Beware: two Runs having the same timestamp is actually quite likely with Google
+// Gerrit because it rounds updates to second granularity, which then makes its
+// way as Run Creation time.
+//
+// **WARNING**: this is the most inefficient way to be used infrequently for CV
+// admin needs only. Behind the scenes, it issues a Datastore query per active
+// LUCI project.
+//
+// Doesn't yet support restricting search to a specific time range, but it can
+// be easily implemented if necessary.
+type RecentQueryBuilder struct {
+	// Status optionally restricts query to Runs with this status.
+	Status Status
+	// Limit limits the number of results if positive. Ignored otherwise.
+	Limit int32
+
+	// lastFoundRunID is basically a page token.
+	lastFoundRunID common.RunID
+	// boundaryInverseTS / boundaryProject are just caches based on
+	// lastFoundRunID set by PageToken(). See keysForProject() for their use.
+	boundaryInverseTS string
+	boundaryProject   string
+}
+
+// PageToken constraints RecentQueryBuilder to continue searching from the
+// prior search.
+func (b RecentQueryBuilder) PageToken(pt *PageToken) RecentQueryBuilder {
+	if pt != nil {
+		b.lastFoundRunID = common.RunID(pt.GetRun())
+		b.boundaryProject = b.lastFoundRunID.LUCIProject()
+		b.boundaryInverseTS = b.lastFoundRunID.InverseTS()
+	}
+	return b
+}
+
+// GetAllRunKeys runs the query and returns Datastore keys to Run entities.
+//
+// WARNING: very slow.
+//
+// Since RunID includes LUCI project, RunIDs aren't lexicographically ordered by
+// creation time across LUCI projects. So, the brute force is to query each known
+// to CV LUCI project for most recent Run IDs, and then merge and select the
+// next page of resulting keys.
+func (b RecentQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error) {
+	// Load all enabled & disabled projects.
+	projects, err := prjcfg.GetAllProjectIDs(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	// Do a query per project, in parallel.
+	// KeysOnly queries are cheap in both time and money.
+	allKeys := make([][]*datastore.Key, len(projects))
+	errs := parallel.WorkPool(min(16, len(projects)), func(work chan<- func() error) {
+		for i, p := range projects {
+			i, p := i, p
+			work <- func() error {
+				var err error
+				allKeys[i], err = b.keysForProject(ctx, p)
+				return err
+			}
+		}
+	})
+	if errs != nil {
+		return nil, common.MostSevereError(errs)
+	}
+	// Finally, merge resulting keys maintaining the documented order.
+	return b.selectLatest(allKeys...), nil
+}
+
+// LoadRuns returns matched Runs and the page token to continue search later.
+func (b RecentQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
+	return loadRunsFromQuery(ctx, b, checkers...)
+}
+
+// qLimit implements runKeysQuery interface.
+func (b RecentQueryBuilder) qLimit() int32 { return b.Limit }
+
+// isSatisfied returns whether the given Run satisfies the query.
+func (b RecentQueryBuilder) isSatisfied(r *Run) bool {
+	switch {
+	case r == nil:
+	case b.Status == Status_ENDED_MASK && !IsEnded(r.Status):
+	case b.Status != Status_ENDED_MASK && b.Status != Status_STATUS_UNSPECIFIED && r.Status != b.Status:
+	default:
+		return true
+	}
+	return false
+}
+
+// keysForProject returns matching Run keys for a specific project.
+func (b RecentQueryBuilder) keysForProject(ctx context.Context, project string) ([]*datastore.Key, error) {
+	pqb := ProjectQueryBuilder{
+		Status:  b.Status,
+		Project: project,
+		Limit:   b.Limit,
+	}
+	switch {
+	case b.boundaryProject == "":
+		// No page token.
+	case b.boundaryProject > project:
+		// Must be a strictly older Run, i.e. have strictly higher InverseTS than
+		// the boundaryInverseTS. Since '-' (ASCII code 45) follows the InverseTS
+		// in RunID schema, all Run IDs with the same InverseTS will be smaller
+		// than 'InverseTS.' ('.' has ASCII code 46).
+		pqb.MinExcl = common.RunID(fmt.Sprintf("%s/%s%c", project, b.boundaryInverseTS, ('-' + 1)))
+	case b.boundaryProject < project:
+		// Must have the same or higher InverseTS.
+		// Since '-' follows the InverseTS in RunID schema, any RunID with the
+		// same InverseTS will be strictly greater than "InverseTS-".
+		pqb.MinExcl = common.RunID(fmt.Sprintf("%s/%s%c", project, b.boundaryInverseTS, '-'))
+	default:
+		// Same LUCI project, can use the last found Run as the boundary.
+		// This is actually important in case there are several Runs in this project
+		// with the same timestamp.
+		pqb.MinExcl = b.lastFoundRunID
+	}
+	return pqb.GetAllRunKeys(ctx)
+}
+
+// selectLatest returns up to the limit of Run IDs ordered by:
+//  * DESC Created (== ASC InverseTS, or latest first)
+//  * ASC  Project
+//  * ASC  RunID (the remaining part of RunID)
+//
+// IDs in each input slice must be be in Created DESC order.
+//
+// Mutates inputs.
+func (b RecentQueryBuilder) selectLatest(inputs ...[]*datastore.Key) []*datastore.Key {
+	popLatest := func(idx int) (runHeapKey, bool) {
+		input := inputs[idx]
+		if len(input) == 0 {
+			return runHeapKey{}, false
+		}
+		inputs[idx] = input[1:]
+		rid := common.RunID(input[0].StringID())
+		inverseTS := rid.InverseTS()
+		project := rid.LUCIProject()
+		remaining := rid[len(project)+1+len(inverseTS):]
+		sortKey := fmt.Sprintf("%s/%s/%s", inverseTS, project, remaining)
+		return runHeapKey{input[0], sortKey, idx}, true
+	}
+
+	h := make(runHeap, 0, len(inputs))
+	// Init the heap with the latest element from each non-empty input.
+	for idx := range inputs {
+		if v, ok := popLatest(idx); ok {
+			h = append(h, v)
+		}
+	}
+	heap.Init(&h)
+
+	var out []*datastore.Key
+	for len(h) > 0 {
+		v := heap.Pop(&h).(runHeapKey)
+		out = append(out, v.dsKey)
+		if len(out) == int(b.Limit) { // if Limit is <= 0, continues until heap is empty.
+			break
+		}
+		if v, ok := popLatest(v.idx); ok {
+			heap.Push(&h, v)
+		}
+	}
+	return out
+}
 
 // rangeOfProjectIDs returns (min..max) non-existent Run IDs, such that
 // the following

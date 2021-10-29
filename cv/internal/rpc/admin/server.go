@@ -15,11 +15,9 @@
 package admin
 
 import (
-	"container/heap"
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
 
 	"golang.org/x/sync/errgroup"
 
@@ -42,7 +40,6 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -359,160 +356,11 @@ func searchRunsByProject(ctx context.Context, req *adminpb.SearchRunsRequest, pt
 
 // searchRecentRunsSlow returns Run IDs as Datastore keys for the most recent
 // Runs.
-//
-// If two runs from different projects have the same timestamp, orders Runs
-// first by the LUCI Project name and then by the remainder of the Run's ID.
-//
-// NOTE: two Runs having the same timestamp is actually quite likely with Google
-// Gerrit because it rounds updates to second granularity, which then makes its
-// way as Run Creation time.
-//
-// WARNING: this is the most inefficient way to be used infrequently for CV
-// admin needs only.
-func searchRecentRunsSlow(ctx context.Context, req *adminpb.SearchRunsRequest, cursor *run.PageToken) ([]*datastore.Key, error) {
-	// Since RunID includes LUCI project, RunIDs aren't lexicographically ordered
-	// by creation time across LUCI projects.
-	// So, the brute force is to query each known to CV LUCI project for most
-	// recent Run IDs, and then merge and select the next page of resulting keys.
-
-	// makeCursor selects the right cursor to a specific project given the current
-	// cursor a.k.a. the largest (earliest) returned RunID by the prior
-	// searchRecentRunsSlow.
-	makeCursor := func(project string) *run.PageToken {
-		if cursor.GetRun() == "" {
-			return nil
-		}
-		boundaryRunID := common.RunID(cursor.GetRun())
-		boundaryProject := boundaryRunID.LUCIProject()
-		if boundaryProject == project {
-			// Can re-use cursor as is.
-			return cursor
-		}
-		boundaryInverseTS := boundaryRunID.InverseTS()
-		var suffix rune
-		if boundaryProject > project {
-			// Must be a strictly older Run, i.e. have strictly higher InverseTS.
-			// Since '-' (ASCII code 45) follows the InverseTS in RunID schema,
-			// all Run IDs with the same InverseTS will be smaller than 'InverseTS.'
-			// ('.' has ASCII code 46).
-			suffix = '-' + 1
-		} else {
-			// May be the same as age as the cursor, i.e. have same or higher
-			// InverseTS.
-			// Since '-' follows the InverseTS in RunID schema, any RunID with the
-			// same InverseTS will be strictly greater than "InverseTS-".
-			suffix = '-'
-		}
-		return &run.PageToken{Run: fmt.Sprintf("%s/%s%c", project, boundaryInverseTS, suffix)}
-	}
-
-	// Load all enabled & disabled projects.
-	projects, err := prjcfg.GetAllProjectIDs(ctx, false)
-	if err != nil {
-		return nil, err
-	}
-	if !sort.StringsAreSorted(projects) {
-		panic(fmt.Errorf("BUG: prjcfg.GetAllProjectIDs returned unsorted list"))
-	}
-
-	// Do a query per project, in parallel.
-	// KeysOnly queries are cheap in both time and money.
-	allKeys := make([][]*datastore.Key, len(projects))
-	errs := parallel.WorkPool(min(16, len(projects)), func(work chan<- func() error) {
-		for i, p := range projects {
-			i, p := i, p
-			work <- func() error {
-				r := proto.Clone(req).(*adminpb.SearchRunsRequest)
-				r.Project = p
-				var err error
-				allKeys[i], err = searchRunsByProject(ctx, r, makeCursor(p))
-				return err
-			}
-		}
-	})
-	if errs != nil {
-		return nil, common.MostSevereError(errs)
-	}
-
-	// Finally, merge resulting keys maintaining the documented order:
-	return latestRuns(int(req.GetPageSize()), allKeys...), nil
-}
-
-// latestRuns returns up to the limit of Run IDs ordered by:
-//  * DESC Created (== ASC InverseTS, or latest first)
-//  * ASC  Project
-//  * ASC  RunID (the remaining part of RunID)
-//
-// IDs in each input slice must be be in Created DESC order.
-//
-// Mutates inputs.
-func latestRuns(limit int, inputs ...[]*datastore.Key) []*datastore.Key {
-	popLatest := func(idx int) (runHeapKey, bool) {
-		input := inputs[idx]
-		if len(input) == 0 {
-			return runHeapKey{}, false
-		}
-		inputs[idx] = input[1:]
-		rid := common.RunID(input[0].StringID())
-		inverseTS := rid.InverseTS()
-		project := rid.LUCIProject()
-		remaining := rid[len(project)+1+len(inverseTS):]
-		sortKey := fmt.Sprintf("%s/%s/%s", inverseTS, project, remaining)
-		return runHeapKey{input[0], sortKey, idx}, true
-	}
-
-	h := make(runHeap, 0, len(inputs))
-	// Init the heap with the latest element from each non-empty input.
-	for idx := range inputs {
-		if v, ok := popLatest(idx); ok {
-			h = append(h, v)
-		}
-	}
-	heap.Init(&h)
-
-	var out []*datastore.Key
-	for len(h) > 0 {
-		v := heap.Pop(&h).(runHeapKey)
-		out = append(out, v.dsKey)
-		if len(out) == limit {
-			break
-		}
-		if v, ok := popLatest(v.idx); ok {
-			heap.Push(&h, v)
-		}
-	}
-	return out
-}
-
-type runHeapKey struct {
-	dsKey   *datastore.Key
-	sortKey string // inverseTS/project/remainder
-	idx     int
-}
-type runHeap []runHeapKey
-
-func (r runHeap) Len() int {
-	return len(r)
-}
-
-func (r runHeap) Less(i int, j int) bool {
-	return r[i].sortKey < r[j].sortKey
-}
-
-func (r runHeap) Swap(i int, j int) {
-	r[i], r[j] = r[j], r[i]
-}
-
-func (r *runHeap) Push(x interface{}) {
-	*r = append(*r, x.(runHeapKey))
-}
-
-func (r *runHeap) Pop() interface{} {
-	idx := len(*r) - 1
-	v := (*r)[idx]
-	(*r)[idx].dsKey = nil // free memory as a good habit.
-	*r = (*r)[:idx]
-	return v
+func searchRecentRunsSlow(ctx context.Context, req *adminpb.SearchRunsRequest, pt *run.PageToken) ([]*datastore.Key, error) {
+	return run.RecentQueryBuilder{
+		Status: req.GetStatus(), // optional
+		Limit:  req.GetPageSize(),
+	}.PageToken(pt).GetAllRunKeys(ctx)
 }
 
 // Copy from dsset.
