@@ -571,6 +571,60 @@ func TestLoadRunsFromQuery(t *testing.T) {
 			So(runs, ShouldBeEmpty)
 			So(pt, ShouldBeNil)
 		})
+
+		Convey("Limits looping when most Runs are filtered out, returning partial page instead", func() {
+			// Create batches Runs referencing the same CL with every batch having 1
+			// visible Run and many not visible ones.
+			// It's important that each batch has a shared project name prefix,
+			// s.t. that CLQueryBuilder iterates Runs in the order of batches.
+			const batchesN = queryStopAfterIterations + 2
+			const invisibleN = 7
+			const visibleSuffix = "visible"
+			const invisibleSuffix = "zzz-no-access" // must be after visibleSuffix lexicographically
+			var visible, invisible common.RunIDs
+			visibleSet := stringset.New(batchesN)
+			clX := common.CLID(25)
+			for i := 1; i < batchesN; i++ {
+				creationDelay := time.Duration(i) * time.Millisecond
+				id := makeRun(fmt.Sprintf("%d-%s", i, visibleSuffix), creationDelay, clX)
+				visible = append(visible, id)
+				visibleSet.Add(string(id))
+				for j := 1; j <= invisibleN; j++ {
+					id := makeRun(fmt.Sprintf("%d-%s-%02d", i, invisibleSuffix, j), creationDelay, clX)
+					invisible = append(invisible, id)
+				}
+			}
+			// Simulate extremely slow ACL checks.
+			const aclCheckDuration = queryStopAfterDuration / 20
+			// Quick check test setup: the queryStopAfterDuration must be hit before
+			// queryStopAfterIterations are done.
+			So(aclCheckDuration*(invisibleN+1)*queryStopAfterIterations, ShouldBeGreaterThan, queryStopAfterDuration)
+			aclChecker.beforeFunc = func(id common.RunID) error {
+				ct.Clock.Add(aclCheckDuration)
+				if visibleSet.Has(string(id)) {
+					return nil
+				}
+				return errNotFound
+			}
+
+			tStart := ct.Clock.Now()
+			// Run the query s.t. every iteration it loads an entire batch.
+			q := CLQueryBuilder{CLID: clX, Limit: invisibleN + 1}
+			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
+			took := ct.Clock.Now().Sub(tStart)
+			So(err, ShouldBeNil)
+			// Shouldn't have terminated prematurely.
+			So(took, ShouldBeGreaterThanOrEqualTo, queryStopAfterDuration)
+			// It should have loaded `queryStopAfterIterations` of batches, each
+			// having 1 visible Run.
+			So(idsOf(runs), ShouldResemble, visible[:queryStopAfterIterations])
+			// Which must be less than the requested limit.
+			So(len(runs), ShouldBeLessThan, q.Limit)
+			// Quick check test assumption.
+			So(invisibleSuffix, ShouldBeGreaterThan, visibleSuffix)
+			// Thus the page token must point to the last Run among invisible ones.
+			So(pt.GetRun(), ShouldResemble, string(invisible[(queryStopAfterIterations*invisibleN)-1]))
+		})
 	})
 }
 

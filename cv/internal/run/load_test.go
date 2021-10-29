@@ -271,12 +271,17 @@ func TestLoadRunsBuilder(t *testing.T) {
 
 type fakeRunChecker struct {
 	before          map[common.RunID]error
+	beforeFunc      func(common.RunID) error // applied only if Run is not in `before`
 	after           map[common.RunID]error
 	afterOnNotFound error
 }
 
 func (f fakeRunChecker) Before(ctx context.Context, id common.RunID) error {
-	return f.before[id]
+	err := f.before[id]
+	if err == nil && f.beforeFunc != nil {
+		err = f.beforeFunc(id)
+	}
+	return err
 }
 
 func (f fakeRunChecker) After(ctx context.Context, runIfFound *Run) error {

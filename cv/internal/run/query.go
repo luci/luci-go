@@ -18,8 +18,11 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -522,6 +525,11 @@ type runKeysQuery interface {
 	qLimit() int32
 }
 
+// queryStopAfterDuration and queryStopAfterIterations gracefully stop
+// loadRunsFromQuery after both are reached.
+const queryStopAfterDuration = 5 * time.Second
+const queryStopAfterIterations = 5
+
 // loadRunsFromQuery returns matched Runs and a page token.
 //
 // If limit is specified, continues loading Runs until the limit is reached.
@@ -533,10 +541,10 @@ func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunC
 	var out []*Run
 
 	// Loop until we fetch the limit.
-	// If `checkers` somehow filter out most Runs, e.g. because the
-	// user can't see them, then this can loop for a very long time.
+	startTime := clock.Now(ctx)
+	originalQuery := q
 	limit := int(q.qLimit())
-	for {
+	for iteration := 1; ; iteration++ {
 		// Fetch the next `limit` of keys in all iterations, even though we may
 		// already have some in `out` since the keys-only queries are cheap,
 		// and this way code is simpler.
@@ -573,8 +581,17 @@ func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunC
 			return out, nil, nil
 
 		case len(out) < limit:
-			// Continue iterating, but start from the last considered key.
-			q = q.qPageToken(&PageToken{Run: keys[len(keys)-1].StringID()})
+			// Prepare to iterating from the last considered key.
+			pt := &PageToken{Run: keys[len(keys)-1].StringID()}
+			q = q.qPageToken(pt)
+			if iteration >= queryStopAfterIterations && clock.Since(ctx, startTime) > queryStopAfterDuration {
+				// Avoid excessive looping when most Runs are filtered out by returning
+				// an incomplete page of results earlier with a valid page token s.t.
+				// if necessary the caller can continue later.
+				logging.Debugf(ctx, "loadRunsFromQuery stops after %d iterations and %s time, returning %d out of %d requested Runs [query: %s]",
+					iteration, clock.Since(ctx, startTime), len(out), limit, originalQuery)
+				return out, pt, nil
+			}
 
 		case len(out) == limit && len(keys) < limit:
 			// Even though some Runs may have been filtered by checkers and/or
