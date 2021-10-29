@@ -15,6 +15,7 @@
 package run
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"testing"
@@ -40,26 +41,8 @@ func TestCLQueryBuilder(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		getAll := func(qb CLQueryBuilder) (out common.RunIDs) {
-			keys, err := qb.GetAllRunKeys(ctx)
-			So(err, ShouldBeNil)
-			for _, k := range keys {
-				out = append(out, common.RunID(k.StringID()))
-			}
-
-			// Check that loading Runs returns the same values in the same order.
-			runs, pageToken, err := qb.LoadRuns(ctx)
-			So(err, ShouldBeNil)
-			So(idsOf(runs), ShouldResemble, out)
-
-			// Check the pageToken.
-			if l := len(keys); l == 0 {
-				So(pageToken, ShouldBeNil)
-			} else {
-				So(pageToken.GetRun(), ShouldResemble, keys[l-1].StringID())
-			}
-
-			return out
+		getAll := func(qb CLQueryBuilder) common.RunIDs {
+			return execQueryInTestSameRunsAndKeys(ctx, qb)
 		}
 
 		makeRun := func(proj string, delay time.Duration, clids ...common.CLID) common.RunID {
@@ -190,26 +173,8 @@ func TestProjectQueryBuilder(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		getAll := func(qb ProjectQueryBuilder) (out common.RunIDs) {
-			keys, err := qb.GetAllRunKeys(ctx)
-			So(err, ShouldBeNil)
-			for _, k := range keys {
-				out = append(out, common.RunID(k.StringID()))
-			}
-
-			// Check that loading Runs returns the same values in the same order.
-			runs, pageToken, err := qb.LoadRuns(ctx)
-			So(err, ShouldBeNil)
-			So(idsOf(runs), ShouldResemble, out)
-
-			// Check the pageToken.
-			if l := len(keys); l == 0 {
-				So(pageToken, ShouldBeNil)
-			} else {
-				So(pageToken.GetRun(), ShouldResemble, keys[l-1].StringID())
-			}
-
-			return out
+		getAll := func(qb ProjectQueryBuilder) common.RunIDs {
+			return execQueryInTestSameRunsAndKeys(ctx, qb)
 		}
 
 		makeRun := func(proj string, delay time.Duration, s Status) common.RunID {
@@ -229,7 +194,7 @@ func TestProjectQueryBuilder(t *testing.T) {
 
 		Convey("Project without Runs", func() {
 			qb := ProjectQueryBuilder{Project: "missing"}
-			So(getAll(qb), ShouldResemble, common.RunIDs(nil))
+			So(getAll(qb), ShouldBeEmpty)
 		})
 
 		Convey("Project with some Runs", func() {
@@ -358,28 +323,12 @@ func TestRecentQueryBuilder(t *testing.T) {
 		}
 
 		getAllWithPageToken := func(qb RecentQueryBuilder) (common.RunIDs, *PageToken) {
-			keys, err := qb.GetAllRunKeys(ctx)
-			So(err, ShouldBeNil)
-			var out common.RunIDs
-			for _, k := range keys {
-				out = append(out, common.RunID(k.StringID()))
-			}
-
-			// Check that loading Runs returns the same values in the same order.
-			runs, pageToken, err := qb.LoadRuns(ctx)
-			So(err, ShouldBeNil)
-			So(idsOf(runs), ShouldResemble, out)
-
+			keys, runs, pt := execQueryInTest(ctx, qb)
 			checkOrder(runs)
-
-			// Check the pageToken.
-			if l := len(keys); l == int(qb.Limit) {
-				So(pageToken.GetRun(), ShouldResemble, keys[l-1].StringID())
-			} else {
-				So(pageToken, ShouldBeNil)
-			}
-
-			return out, pageToken
+			// Check that loading Runs returns the same values in the same order.
+			So(idsOf(runs), ShouldResemble, idsOfKeys(keys))
+			assertCorrectPageToken(qb, keys, pt)
+			return idsOfKeys(keys), pt
 		}
 
 		getAll := func(qb RecentQueryBuilder) common.RunIDs {
@@ -486,6 +435,41 @@ func TestRecentQueryBuilder(t *testing.T) {
 		})
 	})
 }
+
+type queryInTest interface {
+	runKeysQuery
+	LoadRuns(context.Context, ...LoadRunChecker) ([]*Run, *PageToken, error)
+}
+
+func execQueryInTest(ctx context.Context, q queryInTest, checkers ...LoadRunChecker) ([]*datastore.Key, []*Run, *PageToken) {
+	keys, err := q.GetAllRunKeys(ctx)
+	So(err, ShouldBeNil)
+	runs, pageToken, err := q.LoadRuns(ctx, checkers...)
+	So(err, ShouldBeNil)
+	return keys, runs, pageToken
+}
+
+func execQueryInTestSameRunsAndKeysWithPageToken(ctx context.Context, q queryInTest, checkers ...LoadRunChecker) (common.RunIDs, *PageToken) {
+	keys, runs, pageToken := execQueryInTest(ctx, q, checkers...)
+	ids := idsOfKeys(keys)
+	So(ids, ShouldResemble, idsOf(runs))
+	assertCorrectPageToken(q, keys, pageToken)
+	return ids, pageToken
+}
+
+func assertCorrectPageToken(q queryInTest, keys []*datastore.Key, pageToken *PageToken) {
+	if l := len(keys); q.qLimit() <= 0 || l < int(q.qLimit()) {
+		So(pageToken, ShouldBeNil)
+	} else {
+		So(pageToken.GetRun(), ShouldResemble, keys[l-1].StringID())
+	}
+}
+
+func execQueryInTestSameRunsAndKeys(ctx context.Context, q queryInTest, checkers ...LoadRunChecker) common.RunIDs {
+	ids, _ := execQueryInTestSameRunsAndKeysWithPageToken(ctx, q, checkers...)
+	return ids
+}
+
 func idsOf(runs []*Run) common.RunIDs {
 	if len(runs) == 0 {
 		return nil
@@ -493,6 +477,17 @@ func idsOf(runs []*Run) common.RunIDs {
 	out := make(common.RunIDs, len(runs))
 	for i, r := range runs {
 		out[i] = r.ID
+	}
+	return out
+}
+
+func idsOfKeys(keys []*datastore.Key) common.RunIDs {
+	if len(keys) == 0 {
+		return nil
+	}
+	out := make(common.RunIDs, len(keys))
+	for i, k := range keys {
+		out[i] = common.RunID(k.StringID())
 	}
 	return out
 }

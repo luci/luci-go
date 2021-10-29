@@ -524,7 +524,7 @@ func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunC
 		return nil, nil, err
 	case len(keys) == 0:
 		return nil, nil, nil
-	case len(keys) < int(q.qLimit()):
+	case len(keys) < int(q.qLimit()) || q.qLimit() <= 0:
 		// Search space exhausted.
 		pageToken = nil
 	default:
