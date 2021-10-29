@@ -160,6 +160,9 @@ func (b CLQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker
 // qLimit implements runKeysQuery interface.
 func (b CLQueryBuilder) qLimit() int32 { return b.Limit }
 
+// qPageToken implements runKeysQuery interface.
+func (b CLQueryBuilder) qPageToken(pt *PageToken) runKeysQuery { return b.PageToken(pt) }
+
 // ProjectQueryBuilder builds datastore.Query for searching Runs scoped to a
 // LUCI project.
 type ProjectQueryBuilder struct {
@@ -322,6 +325,9 @@ func (b ProjectQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunCh
 // qLimit implements runKeysQuery interface.
 func (b ProjectQueryBuilder) qLimit() int32 { return b.Limit }
 
+// qPageToken implements runKeysQuery interface.
+func (b ProjectQueryBuilder) qPageToken(pt *PageToken) runKeysQuery { return b.PageToken(pt) }
+
 // RecentQueryBuilder builds a VERY SLOW query for searching recent Runs
 // across all LUCI projects.
 //
@@ -405,6 +411,9 @@ func (b RecentQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChe
 
 // qLimit implements runKeysQuery interface.
 func (b RecentQueryBuilder) qLimit() int32 { return b.Limit }
+
+// qPageToken implements runKeysQuery interface.
+func (b RecentQueryBuilder) qPageToken(pt *PageToken) runKeysQuery { return b.PageToken(pt) }
 
 // isSatisfied returns whether the given Run satisfies the query.
 func (b RecentQueryBuilder) isSatisfied(r *Run) bool {
@@ -505,55 +514,93 @@ func rangeOfProjectIDs(project string) (string, string) {
 	return project + "/0", project + "/:"
 }
 
+// runKeysQuery abstracts out existing ...QueryBuilder in this file.
 type runKeysQuery interface {
-	GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error)
-	isSatisfied(r *Run) bool
+	GetAllRunKeys(context.Context) ([]*datastore.Key, error)
+	isSatisfied(*Run) bool
+	qPageToken(*PageToken) runKeysQuery // must return a copy
 	qLimit() int32
 }
 
 // loadRunsFromQuery returns matched Runs and a page token.
+//
+// If limit is specified, continues loading Runs until the limit is reached.
 func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
 	if l := len(checkers); l > 1 {
 		panic(fmt.Errorf("at most 1 LoadRunChecker allowed, %d given", l))
 	}
 
-	keys, err := q.GetAllRunKeys(ctx)
-	var pageToken *PageToken
-	switch {
-	case err != nil:
-		return nil, nil, err
-	case len(keys) == 0:
-		return nil, nil, nil
-	case len(keys) < int(q.qLimit()) || q.qLimit() <= 0:
-		// Search space exhausted.
-		pageToken = nil
-	default:
-		pageToken = &PageToken{Run: keys[len(keys)-1].StringID()}
-	}
+	var out []*Run
 
-	loader := LoadRunsFromKeys(keys...)
-	if len(checkers) == 1 {
-		loader = loader.Checker(checkers[0])
-	}
+	// Loop until we fetch the limit.
+	// If `checkers` somehow filter out most Runs, e.g. because the
+	// user can't see them, then this can loop for a very long time.
+	limit := int(q.qLimit())
+	for {
+		// Fetch the next `limit` of keys in all iterations, even though we may
+		// already have some in `out` since the keys-only queries are cheap,
+		// and this way code is simpler.
+		keys, err := q.GetAllRunKeys(ctx)
+		switch {
+		case err != nil:
+			return nil, nil, err
+		case len(keys) == 0:
+			// Search space exhausted.
+			return out, nil, nil
+		}
 
-	runs, err := loader.DoIgnoreNotFound(ctx)
-	switch {
-	case err != nil:
-		return nil, nil, err
-	case len(runs) == 0:
-		return nil, pageToken, nil
-	}
+		loader := LoadRunsFromKeys(keys...)
+		if len(checkers) == 1 {
+			loader = loader.Checker(checkers[0])
+		}
+		runs, err := loader.DoIgnoreNotFound(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		// Even for queries which can do everything using native Datastore query,
+		// there is a window of time bewteen the Datastore query fetching keys of
+		// satisfying Runs and actual Runs being fetched.
+		// During this window, the Runs ultimately fetched could have been modified,
+		// so check again and skip all fetched Runs which no longer satisfy the query.
+		for _, r := range runs {
+			if q.isSatisfied(r) {
+				out = append(out, r)
+			}
+		}
 
-	// Even for queries which can do everything using native Datastore query,
-	// there is a window of time bewteen the Datastore query fetching keys of
-	// satisfying Runs and actual Runs being fetched.
-	// During this window, the Runs ultimately fetched could have been modified,
-	// so check again and skip all fetched Runs which longer satisfy the query.
-	out := runs[:0]
-	for _, r := range runs {
-		if q.isSatisfied(r) {
-			out = append(out, r)
+		switch {
+		case limit <= 0:
+			return out, nil, nil
+
+		case len(out) < limit:
+			// Continue iterating, but start from the last considered key.
+			q = q.qPageToken(&PageToken{Run: keys[len(keys)-1].StringID()})
+
+		case len(out) == limit && len(keys) < limit:
+			// Even though some Runs may have been filtered by checkers and/or
+			// isSatisfied called, we know we processed all the keys most recently
+			// fetched and there are no more keys.
+			// So, page token is not necessary.
+			return out, nil, nil
+
+		case len(out) == limit:
+			return out, &PageToken{Run: keys[len(keys)-1].StringID()}, nil
+
+		default:
+			firstNotReturnedID := string(out[limit].ID)
+			// The firstNotReturnedID would have been a perfect page token iff
+			// *inclusive* PageToken was supported. But since we need an *exclusive*
+			// page token, find a key preceding the key corresponding to
+			// firstNotReturnedID.
+			// NOTE: the keys themselves aren't necessarily ordered by ASC Run ID,
+			// e.g. in case of RecentQueryBuilder. Therefore, we must iterate them in
+			// order and can't do binary search.
+			for i, k := range keys {
+				if k.StringID() == firstNotReturnedID {
+					return out[:limit], &PageToken{Run: keys[i-1].StringID()}, nil
+				}
+			}
+			panic("unrechable")
 		}
 	}
-	return out, pageToken, nil
 }

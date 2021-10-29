@@ -24,6 +24,8 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
+	"google.golang.org/grpc/codes"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
@@ -432,6 +434,142 @@ func TestRecentQueryBuilder(t *testing.T) {
 			page, next := getAllWithPageToken(RecentQueryBuilder{Limit: 13})
 			So(page, ShouldResemble, all[:13])
 			So(getAll(RecentQueryBuilder{Limit: 7}.PageToken(next)), ShouldResemble, all[13:20])
+		})
+	})
+}
+
+// TestLoadRunsFromQuery provides additional coverage to loadRunsFromQuery
+// which isn't achieved in other tests in this file, where loadRunsFromQuery is
+// tested indirectly as part of ...QueryBuilder.LoadRuns().
+func TestLoadRunsFromQuery(t *testing.T) {
+	t.Parallel()
+
+	Convey("loadRunsFromQuery", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		makeRun := func(proj string, delay time.Duration, clids ...common.CLID) common.RunID {
+			createdAt := ct.Clock.Now().Add(delay)
+			runID := common.MakeRunID(proj, createdAt, 1, []byte{0, byte(delay / time.Millisecond)})
+			So(datastore.Put(ctx, &Run{ID: runID, CLs: clids}), ShouldBeNil)
+			for _, clid := range clids {
+				So(datastore.Put(ctx, &RunCL{
+					Run:       datastore.MakeKey(ctx, RunKind, string(runID)),
+					ID:        clid,
+					IndexedID: clid,
+				}), ShouldBeNil)
+			}
+			return runID
+		}
+
+		clA, clB, clZ := common.CLID(1), common.CLID(2), common.CLID(3)
+
+		// RunID below are ordered lexicographically.
+		bond9 := makeRun("bond", 9*time.Millisecond, clA)
+		bond4 := makeRun("bond", 4*time.Millisecond, clA, clB)
+		bond2 := makeRun("bond", 2*time.Millisecond, clA) // ignored by aclChecker
+		dart5 := makeRun("dart", 5*time.Millisecond, clA)
+		dart3 := makeRun("dart", 3*time.Millisecond, clA)      // ignored by aclChecker
+		rust8 := makeRun("rust", 8*time.Millisecond, clA, clB) // ignored by aclChecker
+		rust1 := makeRun("rust", 1*time.Millisecond, clA, clB)
+		xero7 := makeRun("xero", 7*time.Millisecond, clA)
+
+		errNotFound := appstatus.Error(codes.NotFound, "but really, no permission")
+		aclChecker := &fakeRunChecker{
+			before: map[common.RunID]error{
+				bond2: errNotFound,
+				rust8: errNotFound,
+			},
+			after: map[common.RunID]error{
+				dart3: errNotFound,
+			},
+		}
+
+		Convey("If there is no limit, page token must not be returned but ACLs must be obeyed", func() {
+			q := CLQueryBuilder{CLID: clA}
+			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
+			So(err, ShouldBeNil)
+			So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, dart5, rust1, xero7})
+			So(pt, ShouldBeNil)
+		})
+
+		Convey("Obeys and provides exactly the limit of Runs when available", func() {
+			Convey("without ACLs filtering", func() {
+				q := CLQueryBuilder{CLID: clA, Limit: 3}
+				runs, pt, err := loadRunsFromQuery(ctx, q)
+				So(err, ShouldBeNil)
+				So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, bond2})
+				So(pt, ShouldNotBeNil)
+			})
+
+			Convey("even with ACLs filtering", func() {
+				Convey("limit=3", func() {
+					q := CLQueryBuilder{CLID: clA, Limit: 3}
+					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
+					So(err, ShouldBeNil)
+					So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, dart5})
+					_, _ = Println("and chooses pagetoken to maximally avoid redundant work")
+					// NOTE: the second behind-the-scenes query should have fetched
+					// keys for {dart5,dart3,rust8}.
+					So(pt.GetRun(), ShouldResemble, string(rust8))
+
+					q = q.PageToken(pt)
+					runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
+					So(err, ShouldBeNil)
+					So(idsOf(runs), ShouldResemble, common.RunIDs{rust1, xero7})
+					So(pt, ShouldBeNil)
+				})
+				Convey("limit=4", func() {
+					q := CLQueryBuilder{CLID: clA, Limit: 4}
+					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
+					So(err, ShouldBeNil)
+					So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, dart5, rust1})
+					_, _ = Println("and chooses pagetoken to maximally avoid redundant work")
+					// NOTE: the second behind-the-scenes query should have fetched
+					// keys for {dart3,rust8,rust1,xero7} but xero7 didn't fit into
+					// `runs`, thus next time it's sufficient to start with >rust1.
+					So(pt.GetRun(), ShouldResemble, string(rust1))
+
+					q = q.PageToken(pt)
+					runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
+					So(err, ShouldBeNil)
+					So(idsOf(runs), ShouldResemble, common.RunIDs{xero7})
+					So(pt, ShouldBeNil)
+				})
+				Convey("limit=5", func() {
+					q := CLQueryBuilder{CLID: clA, Limit: 5}
+					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
+					So(err, ShouldBeNil)
+					So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, dart5, rust1, xero7})
+					// NOTE: the second behind-the-scenes query should have fetched
+					// keys for {rust8,rust1,xero7}, and thus exhausted the search.
+					So(pt, ShouldBeNil)
+				})
+			})
+		})
+
+		Convey("If there are exactly `limit` Runs, page token may be returned", func() {
+			q := CLQueryBuilder{CLID: clB, Limit: 3}
+			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
+			So(err, ShouldBeNil)
+			So(idsOf(runs), ShouldResemble, common.RunIDs{bond4, rust1})
+			if pt != nil {
+				// If page token is returned, then next page must be empty.
+				q = q.PageToken(pt)
+				runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
+				So(err, ShouldBeNil)
+				So(runs, ShouldBeEmpty)
+				So(pt, ShouldBeNil)
+			}
+		})
+
+		Convey("If there are no Runs, then limit is not obeyed", func() {
+			q := CLQueryBuilder{CLID: clZ, Limit: 1}
+			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
+			So(err, ShouldBeNil)
+			So(runs, ShouldBeEmpty)
+			So(pt, ShouldBeNil)
 		})
 	})
 }
