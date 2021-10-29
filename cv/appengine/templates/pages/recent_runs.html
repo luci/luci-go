@@ -48,33 +48,32 @@
         {{$Project := .Project}}
         {{range .Runs}}
           <tr>
-            <td><a href="/ui/recents/{{index (SplitSlash .Id) 0}}">{{index (SplitSlash .Id) 0}}</a></td>
+            <td><a href="/ui/recents/{{.ID.LUCIProject}}">{{.ID.LUCIProject}}</a></td>
             <td>
-              {{$RunID := index (SplitSlash .Id) 1}}
-              <a href="/ui/run/{{.Id}}">
-                ({{slice $RunID 5 10}})
+              <a href="/ui/run/{{.ID}}">
+                ({{slice .ID.Inner 5 10}})
               </a>
               <em>
-                {{$RunID}}
+                {{.ID.Inner}}
               </em>
             </td>
             <td><a href="/ui/recents/{{$Project}}?mode={{.Mode}}">{{.Mode}}</a></td>
             <td><a href="/ui/recents/{{$Project}}?status={{.Status}}">{{.Status}}</a></td>
             <td>
-              <span title="{{RelTime .CreateTime.AsTime $Now}}">
-                {{FmTime .CreateTime.AsTime}}
+              <span title="{{RelTime .CreateTime $Now}}">
+                {{FmTime .CreateTime}}
               </span>
             </td>
             <td>
-              {{if (gt (len .ExternalCls) 5)}}
+              {{if (gt (len .ExternalCLs) 5)}}
               <div class="tall-cell">
-              <p>{{ len .ExternalCls }} total CLs</p>
+              <p>{{ len .ExternalCLs }} total CLs</p>
               {{else}}
               <div>
               {{end}}
               <ul>
-              {{range .ExternalCls}}
-                <li><a href="{{LinkifyExternalID .}}">{{DisplayExternalID .}}</a></li>
+              {{range .ExternalCLs}}
+                <li><a href="{{.MustURL}}">{{DisplayExternalID .}}</a></li>
               {{end}}
               </ul>
               </div>

@@ -27,48 +27,37 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/cv/internal/rpc/admin"
-	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
+	"go.chromium.org/luci/cv/internal/acls"
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/rpc/pagination"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
 func recentsPage(c *router.Context) {
 	project := c.Params.ByName("Project")
-
 	params, err := parseFormParams(c)
 	if err != nil {
 		errPage(c, err)
 		return
 	}
 
-	// TODO(crbug/1233963): check if user has permission to search this specific project.
-	req := &adminpb.SearchRunsRequest{
-		Project:   project,
-		PageToken: params.pageToken,
-		PageSize:  50,
-		Status:    params.status,
-		Mode:      string(params.mode),
-	}
-
-	adminServer := &admin.AdminServer{}
-	resp, err := adminServer.SearchRuns(c.Context, req)
+	runs, prev, next, err := searchRuns(c.Context, project, params)
 	if err != nil {
 		errPage(c, err)
 		return
 	}
-	logging.Debugf(c.Context, "%d runs retrieved", len(resp.Runs))
-
-	prev, err := pageTokens(c.Context, params.pageToken, resp.NextPageToken)
+	runsWithCLs, err := resolveRunsCLs(c.Context, runs)
 	if err != nil {
 		errPage(c, err)
 		return
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/recent_runs.html", map[string]interface{}{
-		"Runs":         resp.Runs,
+		"Runs":         runsWithCLs,
 		"Project":      project,
 		"PrevPage":     prev,
-		"NextPage":     resp.NextPageToken,
+		"NextPage":     next,
 		"FilterStatus": params.statusString(),
 		"FilterMode":   params.modeString(),
 		"Now":          startTime(c.Context),
@@ -76,9 +65,9 @@ func recentsPage(c *router.Context) {
 }
 
 type recentRunsParams struct {
-	status    run.Status
-	mode      run.Mode
-	pageToken string
+	status          run.Status
+	mode            run.Mode
+	pageTokenString string
 }
 
 func parseFormParams(c *router.Context) (recentRunsParams, error) {
@@ -104,7 +93,7 @@ func parseFormParams(c *router.Context) (recentRunsParams, error) {
 		return params, fmt.Errorf("invalid Run mode %q", params.mode)
 	}
 
-	params.pageToken = strings.TrimSpace(c.Request.Form.Get("page"))
+	params.pageTokenString = strings.TrimSpace(c.Request.Form.Get("page"))
 	return params, nil
 }
 
@@ -117,6 +106,80 @@ func (r *recentRunsParams) statusString() string {
 
 func (r *recentRunsParams) modeString() string {
 	return string(r.mode)
+}
+
+func searchRuns(ctx context.Context, project string, params recentRunsParams) (runs []*run.Run, prev, next string, err error) {
+	var pageToken *run.PageToken
+	if params.pageTokenString != "" {
+		pageToken = &run.PageToken{}
+		if err = pagination.DecryptPageToken(ctx, params.pageTokenString, pageToken); err != nil {
+			// Log but don't return to the user entire error to avoid any accidental
+			// leakage.
+			logging.Warningf(ctx, "bad page token: %s", err)
+			err = fmt.Errorf("bad page token")
+			return
+		}
+	}
+
+	var qb interface {
+		LoadRuns(context.Context, ...run.LoadRunChecker) ([]*run.Run, *run.PageToken, error)
+	}
+	if project == "" {
+		qb = run.RecentQueryBuilder{
+			Limit:  50,
+			Status: params.status,
+		}.PageToken(pageToken)
+	} else {
+		qb = run.ProjectQueryBuilder{
+			Project: project,
+			Limit:   50,
+			Status:  params.status,
+		}.PageToken(pageToken)
+	}
+
+	var nextPageToken *run.PageToken
+	runs, nextPageToken, err = qb.LoadRuns(ctx, acls.NewRunReadChecker())
+	if err != nil {
+		return
+	}
+	logging.Debugf(ctx, "%d runs retrieved", len(runs))
+
+	next, err = pagination.EncryptPageToken(ctx, nextPageToken)
+	if err != nil {
+		return
+	}
+
+	prev, err = pageTokens(ctx, params.pageTokenString, next)
+	return
+}
+
+func resolveRunsCLs(ctx context.Context, runs []*run.Run) ([]runWithExternalCLs, error) {
+	cls := make(map[common.CLID]*changelist.CL, len(runs))
+	for _, r := range runs {
+		for _, clid := range r.CLs {
+			if cls[clid] == nil {
+				cls[clid] = &changelist.CL{ID: clid}
+			}
+		}
+	}
+	if _, err := changelist.LoadCLsMap(ctx, cls); err != nil {
+		return nil, err
+	}
+
+	out := make([]runWithExternalCLs, len(runs))
+	for i, r := range runs {
+		out[i].Run = r
+		out[i].ExternalCLs = make([]changelist.ExternalID, len(r.CLs))
+		for j, clid := range r.CLs {
+			out[i].ExternalCLs[j] = cls[clid].ExternalID
+		}
+	}
+	return out, nil
+}
+
+type runWithExternalCLs struct {
+	*run.Run
+	ExternalCLs []changelist.ExternalID
 }
 
 var tokenCache = layered.Cache{

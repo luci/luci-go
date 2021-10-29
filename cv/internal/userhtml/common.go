@@ -89,13 +89,6 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 			"Title": func(s string) string {
 				return strings.Title(strings.ToLower(strings.Replace(s, "_", " ", -1)))
 			},
-			"LinkifyExternalID": func(eid string) string {
-				if eid == "" {
-					// Very old RunCL entities don't have ExternalID set.
-					return ""
-				}
-				return changelist.ExternalID(eid).MustURL()
-			},
 			// Shortens a cl id for display purposes.
 			// Accepts string or changelist.ExternalID.
 			"DisplayExternalID": func(arg interface{}) string {
