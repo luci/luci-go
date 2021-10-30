@@ -119,6 +119,8 @@
 // puts a limit on a number of concurrent gRPC/pRPC requests the server is
 // handling.
 //
+// • go.chromium.org/luci/server/mailer: sending simple emails.
+//
 // • go.chromium.org/luci/server/redisconn: a Redis client. Also enables Redis
 // as a caching backend for go.chromium.org/luci/server/caching and for
 // go.chromium.org/luci/gae/filter/dscache.

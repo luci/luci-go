@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mailer can be used to send mails through the mailer service.
+// Package mailer can be used to send mails through a mailer service.
 //
 // Install it as a server module and then use Send(...) API.
 package mailer
@@ -21,7 +21,7 @@ import (
 	"context"
 )
 
-var mailerCtxKey = "go.chromium.org/luci/mailer/client/mailer.Mailer"
+var mailerCtxKey = "go.chromium.org/luci/server/mailer.Mailer"
 
 // Mail represents an email message.
 //

@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/mailer/client/mailer"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
@@ -35,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/mailer"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
