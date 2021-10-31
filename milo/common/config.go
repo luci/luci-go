@@ -56,9 +56,17 @@ type Project struct {
 	HasConfig bool
 	ACL       ACL `gae:",noindex"`
 
-	LogoURL           string
-	BugURLTemplate    string
+	LogoURL        string
+	BugURLTemplate string
+
+	// IgnoredBuilderIds is a list of builder IDs to be ignored by pubsub handler.
+	// ID format: <bucket>/<builder>
 	IgnoredBuilderIDs []string
+
+	// ExternalBuilderIDs is a list of builder IDs that are not in this project
+	// but are referenced by this project.
+	// ID format: <project>/<bucket>/<builder>
+	ExternalBuilderIDs []string
 
 	// Tolerate unknown fields when fetching entities.
 	_ datastore.PropertyMap `gae:"-,extra"`
@@ -457,6 +465,20 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *co
 	project.LogoURL = miloCfg.LogoUrl
 	project.IgnoredBuilderIDs = miloCfg.IgnoredBuilderIds
 	project.BugURLTemplate = miloCfg.BugUrlTemplate
+
+	// Populate project.ExternalBuilderIDs
+	for _, console := range miloCfg.Consoles {
+		for _, builder := range console.Builders {
+			bid, err := ParseLegacyBuilderID(builder.Name)
+			if err != nil {
+				return nil, nil, nil, errors.Annotate(err, "invalid legacy builder name").Err()
+			}
+			if bid.Project != project.ID {
+				project.ExternalBuilderIDs = append(project.ExternalBuilderIDs, bid.Project+"/"+bid.Bucket+"/"+bid.Builder)
+			}
+		}
+	}
+	sort.Strings(project.ExternalBuilderIDs)
 
 	return &project, &miloCfg, &miloCfgMeta, nil
 }
