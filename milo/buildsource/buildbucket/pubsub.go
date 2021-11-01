@@ -68,8 +68,9 @@ func PubSubHandler(ctx *router.Context) {
 		errors.Log(ctx.Context, err)
 	}
 	if transient.Tag.In(err) {
-		// Transient errors are 500 so that PubSub retries them.
-		ctx.Writer.WriteHeader(http.StatusInternalServerError)
+		// Transient errors are 4xx so that PubSub retries them.
+		// TODO(crbug.com/1099036): Address High traffic builders causing errors.
+		ctx.Writer.WriteHeader(http.StatusTooEarly)
 		return
 	}
 	// No errors or non-transient errors are 200s so that PubSub does not retry
