@@ -310,3 +310,36 @@ func TestGetAllAuthIPAllowlists(t *testing.T) {
 		So(actualAuthIPAllowlists, ShouldResemble, expectedAllowlists)
 	})
 }
+
+func TestGetAuthGlobalConfig(t *testing.T) {
+	t.Parallel()
+	Convey("Testing GetAuthGlobalConfig", t, func() {
+		ctx := memory.Use(context.Background())
+
+		authVersionedEntityMixin := &AuthVersionedEntityMixin{
+			ModifiedTS:    time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
+			ModifiedBy:    "test-account",
+			AuthDBRev:     1337,
+			AuthDBPrevRev: 0,
+		}
+
+		authGlobalConfig := &AuthGlobalConfig{
+			AuthVersionedEntityMixin: *authVersionedEntityMixin,
+			OAuthAdditionalClientIDs: []string{"add-client-id-1", "add-client-id-2"},
+			OAuthClientID:            "test.client.id",
+			OAuthClientSecret:        "test.client.secret",
+			TokenServerURL:           "test.token.server.url",
+			SecurityConfig:           []byte{1, 2, 3, 4},
+		}
+
+		_, err := GetAuthGlobalConfig(ctx)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		err = datastore.Put(ctx, authGlobalConfig)
+		So(err, ShouldBeNil)
+
+		actual, err := GetAuthGlobalConfig(ctx)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, authGlobalConfig)
+	})
+}

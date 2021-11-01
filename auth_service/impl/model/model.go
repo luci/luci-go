@@ -203,6 +203,23 @@ func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
 	return authIPAllowlists, nil
 }
 
+// GetAuthGlobalConfig returns the AuthGlobalConfig datastore entity.
+//
+// Returns datastore.ErrNoSuchEntity if the AuthGlobalConfig is not present.
+// Retuns an annotated error for other errors.
+func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
+	authGlobalConfig := &AuthGlobalConfig{}
+
+	switch err := datastore.Get(ctx, authGlobalConfig); {
+	case err == nil:
+		return authGlobalConfig, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	default:
+		return nil, errors.Annotate(err, "error getting AuthGlobalConfig").Err()
+	}
+}
+
 // ToProto converts the AuthGroup entity to the protobuffer
 // equivalent.
 func (group *AuthGroup) ToProto() *rpcpb.AuthGroup {
