@@ -96,7 +96,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		start: start,
 		quiet: c.defaultFlags.Quiet,
 	}
-	if c.casFlags.Instance != "" {
+	if c.casFlags.UseCAS() {
 		ctx, err := casclient.ContextWithMetadata(ctx, "isolate")
 		if err != nil {
 			return err
