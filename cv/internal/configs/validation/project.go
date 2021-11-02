@@ -376,7 +376,6 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 	triggersMap := map[string][]string{} // who triggers whom.
 	// Find config by name.
 	cfgByName := make(map[string]*cfgpb.Verifiers_Tryjob_Builder, len(v.Builders))
-	hasNonAnalyzerBuilder := false
 
 	visitBuilders(func(b *cfgpb.Verifiers_Tryjob_Builder) {
 		validateBuilderName(ctx, b.Name, names)
@@ -462,25 +461,10 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 				ctx.Errorf("includable_only is not combinable with mode_allowlist")
 			}
 		}
-		if !isAnalyzer {
-			hasNonAnalyzerBuilder = true
-		}
 		if b.ExperimentPercentage == 0 && b.TriggeredBy == "" && b.EquivalentTo == nil {
 			canStartTriggeringTree = append(canStartTriggeringTree, b.Name)
 		}
 	})
-
-	if !hasNonAnalyzerBuilder {
-		// TODO(crbug/1202952): This is for preventing users from defining new
-		// config group purely for analyzer purpose that accidentally overlaps
-		// with users' main cq config group before Tricium is merged into CV.
-		// Current known use cases (i.e. defining Tricium config in auxillary LUCI
-		// Projects) will set `lucicfg.config(tracked_files="tricium-prod.cfg")`
-		// so that no cq config will be generated. This check should be removed
-		// after Tricium is merged into CV so that ANALYZER_RUN is treated the
-		// same way as any other modes supported by CV.
-		ctx.Errorf("must have at least one non-analyzer tryjob builder")
-	}
 
 	// Between passes, do a depth-first search into triggers-whom DAG starting
 	// with only those builders which can be triggered directly by CQ.
@@ -518,7 +502,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 				b.TriggeredBy)
 		case b.TriggeredBy != "":
 			// Reaching here means parent exists in config.
-			parent, _ := cfgByName[b.TriggeredBy]
+			parent := cfgByName[b.TriggeredBy]
 			validateParentLocationRegexp(ctx, b, parent)
 		}
 	})

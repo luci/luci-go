@@ -689,12 +689,6 @@ func TestTryjobValidation(t *testing.T) {
 					`location_regexp_exclude is not combinable with tryjob run in ANALYZER_RUN mode`)
 				So(validate(`
 				builders {
-					name: "a/b/c"
-					mode_allowlist: "ANALYZER_RUN"
-				}`), ShouldErrLike,
-					"must have at least one non-analyzer tryjob builder")
-				So(validate(`
-				builders {
 					name: "x/y/z"
 				}
 				builders {
