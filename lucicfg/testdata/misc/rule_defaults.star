@@ -25,6 +25,8 @@ luci.builder.defaults.test_presentation.set(resultdb.test_presentation(column_ke
 
 luci.recipe.defaults.cipd_package.set("cipd/default")
 luci.recipe.defaults.cipd_version.set("refs/default")
+luci.recipe.defaults.use_bbagent.set(True)
+luci.recipe.defaults.use_python3.set(True)
 
 luci.project(
     name = "project",
@@ -109,14 +111,26 @@ luci.builder(
 #       dimensions: "base:base val"
 #       dimensions: "overridden:original 1"
 #       dimensions: "overridden:original 2"
-#       recipe {
-#         name: "recipe1"
+#       exe {
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
-#         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.gpu\"],\"grouping_keys\":[\"v.test_suite\",\"status\"]}"
-#         properties_j: "base:\"base val\""
-#         properties_j: "overridden:\"original\""
+#         cmd: "luciexe"
 #       }
+#       properties:
+#         '{'
+#         '  "$recipe_engine/resultdb/test_presentation": {'
+#         '    "column_keys": ['
+#         '      "v.gpu"'
+#         '    ],'
+#         '    "grouping_keys": ['
+#         '      "v.test_suite",'
+#         '      "status"'
+#         '    ]'
+#         '  },'
+#         '  "base": "base val",'
+#         '  "overridden": "original",'
+#         '  "recipe": "recipe1"'
+#         '}'
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
@@ -142,6 +156,10 @@ luci.builder(
 #         key: "def-exp-3"
 #         value: 30
 #       }
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
+#       }
 #     }
 #     builders {
 #       name: "b2"
@@ -151,15 +169,27 @@ luci.builder(
 #       dimensions: "base:base val"
 #       dimensions: "overridden:new 1"
 #       dimensions: "overridden:new 2"
-#       recipe {
-#         name: "recipe1"
+#       exe {
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
-#         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.os\"],\"grouping_keys\":[\"v.test_suite\",\"status\"]}"
-#         properties_j: "base:\"base val\""
-#         properties_j: "extra:\"extra\""
-#         properties_j: "overridden:\"new\""
+#         cmd: "luciexe"
 #       }
+#       properties:
+#         '{'
+#         '  "$recipe_engine/resultdb/test_presentation": {'
+#         '    "column_keys": ['
+#         '      "v.os"'
+#         '    ],'
+#         '    "grouping_keys": ['
+#         '      "v.test_suite",'
+#         '      "status"'
+#         '    ]'
+#         '  },'
+#         '  "base": "base val",'
+#         '  "extra": "extra",'
+#         '  "overridden": "new",'
+#         '  "recipe": "recipe1"'
+#         '}'
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
@@ -193,6 +223,10 @@ luci.builder(
 #         key: "def-exp-3"
 #         value: 30
 #       }
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
+#       }
 #     }
 #     builders {
 #       name: "b3"
@@ -201,14 +235,26 @@ luci.builder(
 #       dimensions: "base:base val"
 #       dimensions: "overridden:original 1"
 #       dimensions: "overridden:original 2"
-#       recipe {
-#         name: "recipe2"
+#       exe {
 #         cipd_package: "cipd/another"
 #         cipd_version: "refs/another"
-#         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.gpu\"],\"grouping_keys\":[\"v.test_suite\",\"status\"]}"
-#         properties_j: "base:\"base val\""
-#         properties_j: "overridden:\"original\""
+#         cmd: "luciexe"
 #       }
+#       properties:
+#         '{'
+#         '  "$recipe_engine/resultdb/test_presentation": {'
+#         '    "column_keys": ['
+#         '      "v.gpu"'
+#         '    ],'
+#         '    "grouping_keys": ['
+#         '      "v.test_suite",'
+#         '      "status"'
+#         '    ]'
+#         '  },'
+#         '  "base": "base val",'
+#         '  "overridden": "original",'
+#         '  "recipe": "recipe2"'
+#         '}'
 #       priority: 1
 #       execution_timeout_secs: 1800
 #       expiration_secs: 1200
@@ -236,6 +282,10 @@ luci.builder(
 #         key: "def-exp-3"
 #         value: 30
 #       }
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
+#       }
 #     }
 #     builders {
 #       name: "b4"
@@ -244,13 +294,17 @@ luci.builder(
 #       dimensions: "base:base val"
 #       dimensions: "overridden:original 1"
 #       dimensions: "overridden:original 2"
-#       recipe {
-#         name: "recipe1"
+#       exe {
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
-#         properties_j: "base:\"base val\""
-#         properties_j: "overridden:\"original\""
+#         cmd: "luciexe"
 #       }
+#       properties:
+#         '{'
+#         '  "base": "base val",'
+#         '  "overridden": "original",'
+#         '  "recipe": "recipe1"'
+#         '}'
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
@@ -275,6 +329,10 @@ luci.builder(
 #       experiments {
 #         key: "def-exp-3"
 #         value: 30
+#       }
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #   }

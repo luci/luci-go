@@ -322,7 +322,9 @@ def _buildbucket_builders(bucket):
             if not def_swarming_host:
                 def_swarming_host = get_service("swarming", "defining builders").host
             swarming_host = def_swarming_host
-        exe, recipe, properties = _handle_executable(node)
+        exe, recipe, properties, experiments = _handle_executable(node)
+        combined_experiments = dict(node.props.experiments)
+        combined_experiments.update(experiments)
         builders.append(buildbucket_pb.Builder(
             name = node.props.name,
             description_html = node.props.description_html,
@@ -341,7 +343,7 @@ def _buildbucket_builders(bucket):
             wait_for_capacity = _buildbucket_trinary(node.props.wait_for_capacity),
             build_numbers = _buildbucket_toggle(node.props.build_numbers),
             experimental = _buildbucket_toggle(node.props.experimental),
-            experiments = node.props.experiments,
+            experiments = combined_experiments,
             task_template_canary_percentage = optional_UInt32Value(
                 node.props.task_template_canary_percentage,
             ),
@@ -354,7 +356,7 @@ def _handle_executable(node):
 
     Builder node =>
       buildbucket_pb.Builder.Recipe | common_pb.Executable,
-      buildbucket_pb.Builder.Properties
+      buildbucket_pb.Builder.Properties, buildbucket_pb.Builder.Experiments
 
     This function produces either a Recipe or Executable definition depending on
     whether executable.props.recipe was set. luci.recipe(...) will always set
@@ -370,6 +372,7 @@ def _handle_executable(node):
     executables = graph.children(node.key, kinds.EXECUTABLE)
     if len(executables) != 1:
         fail("impossible: the builder should have a reference to an executable")
+    experiments = {}
     executable = executables[0]
     if not executable.props.cmd and executable.props.recipe:
         # old kitchen way
@@ -396,7 +399,9 @@ def _handle_executable(node):
             props_dict = dict(props_dict)
             props_dict["recipe"] = executable.props.recipe
         properties = to_json(props_dict)
-    return executable_def, recipe_def, properties
+        if executable.props.recipes_py3:
+            experiments["luci.recipes.use_python3"] = 100
+    return executable_def, recipe_def, properties, experiments
 
 def _buildbucket_caches(caches):
     """[swarming.cache] => [buildbucket_pb.Builder.CacheEntry]."""

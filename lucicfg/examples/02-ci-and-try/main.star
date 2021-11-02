@@ -103,7 +103,7 @@ luci.gitiles_poller(
     repo = REPO_URL,
 )
 
-def ci_builder(name, *, os, category, cpu = "x86-64", use_bbagent = True):
+def ci_builder(name, *, os, category, cpu = "x86-64"):
     """Defines a post-submit builder.
 
     Args:
@@ -111,13 +111,8 @@ def ci_builder(name, *, os, category, cpu = "x86-64", use_bbagent = True):
       os: the target OS.
       category: the category to put it under in the console.
       cpu: the target CPU.
-      use_bbagent: if True use bbagent.
     """
     recipe_id = "ci_builder"
-    if use_bbagent == True:
-        recipe_id += "-bbagent"
-    else:
-        recipe_id += "-luciexe"
 
     luci.builder(
         name = name,
@@ -126,7 +121,7 @@ def ci_builder(name, *, os, category, cpu = "x86-64", use_bbagent = True):
             name = recipe_id,
             recipe = "ci_builder",
             cipd_package = RECIPE_BUNDLE,
-            use_bbagent = use_bbagent,
+            use_python3 = True,
         ),
         dimensions = {
             "pool": "luci.my-awesome-project.ci",
@@ -155,24 +150,18 @@ ci_builder(
     os = "Windows",
     cpu = "x86-32",
     category = "Win|32",
-    use_bbagent = False,
 )
 ci_builder("win-64", os = "Windows", cpu = "x86-64", category = "Win|64")
 
-def try_builder(name, *, os, cpu = "x86-64", use_bbagent = True):
+def try_builder(name, *, os, cpu = "x86-64"):
     """Defines a pre-submit builder.
 
     Args:
       name: name of the builder to define.
       os: the target OS.
       cpu: the target CPU.
-      use_bbagent: if True use bbagent.
     """
     recipe_id = "try_builder"
-    if use_bbagent == True:
-        recipe_id += "-bbagent"
-    else:
-        recipe_id += "-luciexe"
 
     luci.builder(
         name = name,
@@ -181,6 +170,7 @@ def try_builder(name, *, os, cpu = "x86-64", use_bbagent = True):
             name = recipe_id,
             recipe = "try_builder",
             cipd_package = RECIPE_BUNDLE,
+            use_python3 = True,
         ),
         dimensions = {
             "pool": "luci.my-awesome-project.try",
@@ -204,11 +194,8 @@ def try_builder(name, *, os, cpu = "x86-64", use_bbagent = True):
     )
 
 # Actually define a bunch of Try builders.
-#
-# In this hypothetical scenario, we set use_bbagent=None (the default) to have
-# buildbucket choose according to its global configuration.
-try_builder("xenial", os = "Ubuntu-16.04", use_bbagent = None)
-try_builder("bionic", os = "Ubuntu-18.04", use_bbagent = None)
+try_builder("xenial", os = "Ubuntu-16.04")
+try_builder("bionic", os = "Ubuntu-18.04")
 try_builder("mac-10.13", os = "Mac-10.13")
-try_builder("win-32", os = "Windows", cpu = "x86-32", use_bbagent = False)
+try_builder("win-32", os = "Windows", cpu = "x86-32")
 try_builder("win-64", os = "Windows", cpu = "x86-64")

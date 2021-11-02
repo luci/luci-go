@@ -24,6 +24,7 @@ def _executable_props(
         cipd_package = None,
         cipd_version = None,
         recipe = None,
+        recipes_py3 = None,
         cmd = None):
     """Defines an executable's properties. See luci.executable(...).
 
@@ -34,6 +35,7 @@ def _executable_props(
       cipd_version: a version of the executable package to fetch, default
         is `refs/heads/main`. Supports the module-scoped default.
       recipe: name of a recipe. Required if the executable is a recipe bundle.
+      recipes_py3: True iff this is a recipe and should run under python3.
       cmd: a list of strings to use as the executable command. If None
         (or empty), Buildbucket will fill this in on the server side to either
         `['luciexe']` or `['recipes']`, depending on its global configuration.
@@ -54,6 +56,11 @@ def _executable_props(
         "recipe": validate.string(
             "recipe",
             recipe,
+            required = False,
+        ),
+        "recipes_py3": validate.bool(
+            "recipes_py3",
+            recipes_py3,
             required = False,
         ),
         "cmd": validate.str_list(
@@ -118,7 +125,8 @@ def _recipe(
         cipd_package = None,
         cipd_version = None,
         recipe = None,
-        use_bbagent = None):  # transitional for crbug.com/1015181
+        use_bbagent = None,  # transitional for crbug.com/1015181
+        use_python3 = None):
     """Defines an executable that runs a particular recipe.
 
     Recipes are python-based DSL for defining what a builder should do, see
@@ -168,6 +176,10 @@ def _recipe(
         unspecified, which will cause Buildbucket to pick according to it's own
         global configuration. See [this bug](crbug.com/1015181) for the global
         bbagent rollout. Supports the module-scoped default.
+      use_python3: a boolean to use python3 to run the recipes. If set, also
+        implies use_bbagent=True. This is equivalent to setting the
+        'luci.recipes.use_python3' experiment on the builder to 100%.
+        Supports the module-scoped default.
     """
     name = validate.string("name", name)
     use_bbagent = validate.bool(
@@ -176,7 +188,16 @@ def _recipe(
         required = False,
         default = ctx.defaults.use_bbagent.get(),
     )
+    use_python3 = validate.bool(
+        "use_python3",
+        use_python3,
+        required = False,
+        default = ctx.defaults.use_python3.get(),
+    )
     key = keys.executable(name)
+
+    if use_python3:
+        use_bbagent = True
 
     cmd = None
     if use_bbagent != None:
@@ -190,6 +211,7 @@ def _recipe(
         cipd_package = cipd_package,
         cipd_version = cipd_version,
         recipe = recipe or name,
+        recipes_py3 = use_python3,
         cmd = cmd,
     )
     graph.add_node(key, idempotent = True, props = props)
@@ -209,5 +231,6 @@ recipe = lucicfg.rule(
         "cipd_package": validate.string,
         "cipd_version": validate.string,
         "use_bbagent": validate.bool,
+        "use_python3": validate.bool,
     }),
 )

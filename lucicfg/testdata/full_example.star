@@ -48,6 +48,7 @@ luci.milo(
 luci.recipe(
     name = "main/recipe",
     cipd_package = "recipe/bundles/main",
+    use_python3 = True,
 )
 
 # Executables.
@@ -98,10 +99,7 @@ luci.builder(
     name = "linux ci builder",
     bucket = "ci",
     description_html = "this is a linux ci builder",
-    executable = luci.recipe(
-        name = "main/recipe",
-        cipd_package = "recipe/bundles/main",
-    ),
+    executable = "main/recipe",
     triggered_by = ["main-poller"],
     triggers = [
         "ci/generically named builder",
@@ -287,6 +285,7 @@ luci.builder(
     executable = luci.recipe(
         name = "inline/recipe",
         cipd_package = "recipe/bundles/inline",
+        use_bbagent = True,
     ),
     service_account = "builder@example.com",
     triggers = [
@@ -305,6 +304,7 @@ luci.builder(
     executable = luci.recipe(
         name = "inline/recipe",
         cipd_package = "recipe/bundles/inline",
+        use_bbagent = True,
     ),
     service_account = "builder@example.com",
     triggered_by = [inline_poller()],
@@ -638,37 +638,69 @@ lucicfg.emit(
 #     builders {
 #       name: "builder with custom swarming host"
 #       swarming_host: "another-swarming.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
 #       name: "builder with the default test presentation config"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
 #       name: "cron builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
@@ -697,14 +729,29 @@ lucicfg.emit(
 #       dimensions: "os:Linux"
 #       dimensions: "300:prefer_if_available:first-choice"
 #       dimensions: "prefer_if_available:fallback"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
-#         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.gpu\"],\"grouping_keys\":[\"status\",\"v.test_suite\"]}"
-#         properties_j: "prop1:\"val1\""
-#         properties_j: "prop2:[\"val2\",123]"
+#         cmd: "luciexe"
 #       }
+#       properties:
+#         '{'
+#         '  "$recipe_engine/resultdb/test_presentation": {'
+#         '    "column_keys": ['
+#         '      "v.gpu"'
+#         '    ],'
+#         '    "grouping_keys": ['
+#         '      "status",'
+#         '      "v.test_suite"'
+#         '    ]'
+#         '  },'
+#         '  "prop1": "val1",'
+#         '  "prop2": ['
+#         '    "val2",'
+#         '    123'
+#         '  ],'
+#         '  "recipe": "main/recipe"'
+#         '}'
 #       priority: 80
 #       execution_timeout_secs: 10800
 #       expiration_secs: 3600
@@ -726,6 +773,10 @@ lucicfg.emit(
 #       }
 #       build_numbers: YES
 #       service_account: "builder@example.com"
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
+#       }
 #       resultdb {
 #         enable: true
 #         bq_exports {
@@ -781,10 +832,18 @@ lucicfg.emit(
 #     builders {
 #       name: "watched builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #   }
@@ -802,11 +861,15 @@ lucicfg.emit(
 #     builders {
 #       name: "another builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "inline/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
 #       }
+#       properties:
+#         '{'
+#         '  "recipe": "inline/recipe"'
+#         '}'
 #       service_account: "builder@example.com"
 #     }
 #     builders {
@@ -822,20 +885,28 @@ lucicfg.emit(
 #     builders {
 #       name: "triggered builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "inline/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
 #       }
+#       properties:
+#         '{'
+#         '  "recipe": "inline/recipe"'
+#         '}'
 #     }
 #     builders {
 #       name: "triggerer builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "inline/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
 #       }
+#       properties:
+#         '{'
+#         '  "recipe": "inline/recipe"'
+#         '}'
 #       service_account: "builder@example.com"
 #     }
 #   }
@@ -881,55 +952,103 @@ lucicfg.emit(
 #     builders {
 #       name: "equivalent cq builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
 #       name: "linux try builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
 #       name: "linux try builder 2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
 #       name: "main cq builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #     builders {
 #       name: "spell-checker"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe {
-#         name: "main/recipe"
+#       exe {
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
 #       }
 #     }
 #   }
