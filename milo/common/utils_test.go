@@ -101,6 +101,16 @@ func TestTagGRPC(t *testing.T) {
 			})
 		})
 
+		Convey("Allow '.' in bucket ID", func() {
+			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test.bucket/test builder")
+			So(err, ShouldBeNil)
+			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+				Project: "test project",
+				Bucket:  "test.bucket",
+				Builder: "test builder",
+			})
+		})
+
 		Convey("For invalid ID", func() {
 			builderID, err := ParseLegacyBuilderID("buildbucket/123456")
 			So(err, ShouldEqual, ErrInvalidLegacyBuilderID)
@@ -127,6 +137,17 @@ func TestTagGRPC(t *testing.T) {
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test.builder",
+			})
+			So(buildNum, ShouldEqual, 123456)
+		})
+
+		Convey("Allow '.' in bucket ID", func() {
+			builderID, buildNum, err := ParseLegacyBuildID("buildbucket/luci.test project.test.bucket/test builder/123456")
+			So(err, ShouldBeNil)
+			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+				Project: "test project",
+				Bucket:  "test.bucket",
+				Builder: "test builder",
 			})
 			So(buildNum, ShouldEqual, 123456)
 		})
