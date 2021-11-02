@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"math/rand"
+	"strconv"
 	"testing"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -382,7 +384,8 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+
+		globalCfg := &pb.SettingsCfg{
 			Resultdb: &pb.ResultDBSettings{
 				Hostname: "rdbHost",
 			},
@@ -396,7 +399,7 @@ func TestScheduleBuild(t *testing.T) {
 					Version:     "kitchen-version",
 				},
 			},
-		}), ShouldBeNil)
+		}
 
 		// stripProtos strips the Proto field from each of the given *model.Builds,
 		// returning a slice whose ith index is the stripped *pb.Build value.
@@ -425,7 +428,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				blds, err := scheduleBuilds(ctx, req)
+				blds, err := scheduleBuilds(ctx, globalCfg, req)
 				So(err, ShouldHaveLength, 1)
 				So(err.(errors.MultiError), ShouldErrLike, "error fetching builders")
 				So(blds, ShouldHaveLength, 1)
@@ -451,7 +454,7 @@ func TestScheduleBuild(t *testing.T) {
 					DryRun: true,
 				}
 
-				blds, err := scheduleBuilds(ctx, req)
+				blds, err := scheduleBuilds(ctx, globalCfg, req)
 				So(err, ShouldBeNil)
 				So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 					{
@@ -572,7 +575,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				blds, err := scheduleBuilds(ctx, reqs...)
+				blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 				_, ok := err.(errors.MultiError)
 				So(ok, ShouldBeFalse)
 				So(err, ShouldErrLike, "all requests must have the same dry_run value")
@@ -593,7 +596,7 @@ func TestScheduleBuild(t *testing.T) {
 					DryRun: true,
 				}
 
-				blds, err := scheduleBuilds(ctx, req)
+				blds, err := scheduleBuilds(ctx, globalCfg, req)
 				So(err, ShouldBeNil)
 				So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 					{
@@ -672,7 +675,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("zero", func() {
-			blds, err := scheduleBuilds(ctx)
+			blds, err := scheduleBuilds(ctx, nil)
 			So(err, ShouldBeNil)
 			So(blds, ShouldBeEmpty)
 			So(sch.Tasks(), ShouldBeEmpty)
@@ -715,7 +718,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}), ShouldBeNil)
 
-			blds, err := scheduleBuilds(ctx, req)
+			blds, err := scheduleBuilds(ctx, globalCfg, req)
 			So(err, ShouldBeNil)
 			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
@@ -815,12 +818,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
 					IsLuci:     true,
@@ -904,7 +902,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}), ShouldBeNil)
 
-			blds, err := scheduleBuilds(ctx, reqs...)
+			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 			So(err, ShouldBeNil)
 
 			fvs := []interface{}{"luci.project.static bucket", "static builder", ""}
@@ -1150,6 +1148,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			})
+
 			So(blds, ShouldResemble, []*model.Build{
 				{
 					ID:                9021868963221610337,
@@ -1159,12 +1158,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
 					IsLuci:     true,
@@ -1185,12 +1179,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
 					IsLuci:     true,
@@ -1211,12 +1200,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
 					IsLuci:     false,
@@ -1230,6 +1214,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			})
+
 			So(sch.Tasks(), ShouldHaveLength, 2)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
@@ -1298,7 +1283,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}), ShouldBeNil)
 
-			blds, err := scheduleBuilds(ctx, reqs...)
+			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 			So(err.(errors.MultiError), ShouldHaveLength, 2)
 			So(err.(errors.MultiError)[1], ShouldErrLike, "failed to fetch deduplicated build")
 			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
@@ -1400,12 +1385,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
 					Experiments: []string{
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBCanarySoftware,
 						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
 					},
 					Incomplete: true,
 					IsLuci:     true,
@@ -2972,136 +2952,119 @@ func TestScheduleBuild(t *testing.T) {
 	})
 
 	Convey("setExperiments", t, func() {
-		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(0)))
+		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(1)))
+
+		// settings.cfg
+		gCfg := &pb.SettingsCfg{
+			Experiment: &pb.ExperimentSettings{},
+		}
+
+		// builder config
+		cfg := &pb.Builder{
+			Experiments: map[string]int32{},
+		}
+
+		// base datastore entity (and embedded Build Proto)
+		ent := &model.Build{
+			Proto: &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Exe: &pb.Executable{},
+				Infra: &pb.BuildInfra{
+					Swarming:    &pb.BuildInfra_Swarming{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+				},
+				Input: &pb.Build_Input{},
+			},
+		}
+
+		expect := &model.Build{
+			Proto: &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Exe: &pb.Executable{
+					Cmd: []string{"recipes"},
+				},
+				Infra: &pb.BuildInfra{
+					Swarming:    &pb.BuildInfra_Swarming{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+				},
+				Input: &pb.Build_Input{},
+			},
+			Experiments: []string{
+				"-" + bb.ExperimentBBAgent,
+			},
+		}
+
+		req := &pb.ScheduleBuildRequest{
+			Experiments: map[string]bool{},
+		}
+
+		setExps := func() {
+			normalizeSchedule(req)
+			disabled := setExperiments(ctx, req, cfg, gCfg, ent.Proto)
+			setExperimentsFromProto(ent, disabled)
+		}
 
 		Convey("nil", func() {
-			ent := &model.Build{
-				Proto: &pb.Build{
-					Exe: &pb.Executable{},
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
-					Input: &pb.Build_Input{},
-				},
-			}
+			setExps()
+			So(ent, ShouldResemble, expect)
+		})
 
-			setExperiments(ctx, nil, nil, ent.Proto)
-			setExperimentsFromProto(nil, nil, ent)
-			So(ent, ShouldResemble, &model.Build{
-				Experiments: []string{
-					"-" + bb.ExperimentBackendAlt,
-					"-" + bb.ExperimentBBAgentGetBuild,
-					"-" + bb.ExperimentBBCanarySoftware,
-					"-" + bb.ExperimentBBAgent,
-					"-" + bb.ExperimentRecipePY3,
-					"-" + bb.ExperimentUseRealms,
-				},
-				Proto: &pb.Build{
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
-					Input: &pb.Build_Input{},
-				},
+		Convey("dice rolling works", func() {
+			for i := 0; i < 100; i += 10 {
+				cfg.Experiments["exp"+strconv.Itoa(i)] = int32(i)
+			}
+			setExps()
+
+			So(ent.Proto.Input.Experiments, ShouldResemble, []string{
+				"exp60", "exp70", "exp80", "exp90",
 			})
 		})
 
 		Convey("command", func() {
 			Convey("recipes", func() {
-				req := &pb.ScheduleBuildRequest{
-					Experiments: map[string]bool{
-						bb.ExperimentBBAgent: false,
-					},
-				}
-				normalizeSchedule(req)
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Experiments[bb.ExperimentBBAgent] = false
+				setExps()
 
-				setExperiments(ctx, req, nil, ent.Proto)
-				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"recipes"},
 				})
 			})
 
 			Convey("luciexe (experiment)", func() {
-				req := &pb.ScheduleBuildRequest{
-					Experiments: map[string]bool{
-						bb.ExperimentBBAgent: true,
-					},
-				}
-				normalizeSchedule(req)
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Experiments[bb.ExperimentBBAgent] = true
+				setExps()
 
-				setExperiments(ctx, req, nil, ent.Proto)
-				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"luciexe"},
 				})
 				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
+				So(ent.Experiments, ShouldContain, "+"+bb.ExperimentBBAgent)
 			})
 
 			Convey("luciexe (explicit)", func() {
-				req := &pb.ScheduleBuildRequest{}
-				normalizeSchedule(req)
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{
-							Cmd: []string{"luciexe"},
-						},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				ent.Proto.Exe.Cmd = []string{"luciexe"}
+				setExps()
 
-				setExperiments(ctx, req, nil, ent.Proto)
-				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"luciexe"},
 				})
 				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
+				So(ent.Experiments, ShouldContain, "+"+bb.ExperimentBBAgent)
 			})
 
 			Convey("cmd > experiment", func() {
-				req := &pb.ScheduleBuildRequest{
-					Experiments: map[string]bool{
-						bb.ExperimentBBAgent: true,
-					},
-				}
-				normalizeSchedule(req)
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{
-							Cmd: []string{"command"},
-						},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Experiments[bb.ExperimentBBAgent] = true
+				ent.Proto.Exe.Cmd = []string{"command"}
+				setExps()
 
-				setExperiments(ctx, req, nil, ent.Proto)
-				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"command"},
 				})
@@ -3110,440 +3073,237 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("priority", func() {
 			Convey("production", func() {
-				req := &pb.ScheduleBuildRequest{
-					Experiments: map[string]bool{
-						bb.ExperimentNonProduction: false,
-					},
-				}
-				normalizeSchedule(req)
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{
-								Priority: 1,
-							},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Experiments[bb.ExperimentBBAgent] = false
+				setExps()
+				ent.Proto.Infra.Swarming.Priority = 1
 
-				setExperiments(ctx, req, nil, ent.Proto)
-				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
 				So(ent.Proto.Input.Experimental, ShouldBeFalse)
 				So(ent.Experimental, ShouldBeFalse)
 			})
 
 			Convey("non-production", func() {
-				req := &pb.ScheduleBuildRequest{
-					Experiments: map[string]bool{
-						bb.ExperimentNonProduction: true,
-					},
-				}
-				normalizeSchedule(req)
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{
-								Priority: 1,
-							},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Experiments[bb.ExperimentNonProduction] = true
+				ent.Proto.Infra.Swarming.Priority = 1
+				setExps()
 
-				setExperiments(ctx, req, nil, ent.Proto)
-				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 255)
 				So(ent.Proto.Input.Experimental, ShouldBeTrue)
 				So(ent.Experimental, ShouldBeTrue)
 			})
 
 			Convey("req > experiment", func() {
-				req := &pb.ScheduleBuildRequest{
-					Experiments: map[string]bool{
-						bb.ExperimentNonProduction: true,
-					},
-					Priority: 1,
-				}
-				normalizeSchedule(req)
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{
-								Priority: 1,
-							},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Experiments[bb.ExperimentNonProduction] = true
+				req.Priority = 1
+				setInfra(req, cfg, ent.Proto, gCfg)
+				setExps()
 
-				setExperiments(ctx, req, nil, ent.Proto)
-				setExperimentsFromProto(req, nil, ent)
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
 			})
 		})
 
 		Convey("request only", func() {
-			req := &pb.ScheduleBuildRequest{
-				Experiments: map[string]bool{
-					"experiment1": true,
-					"experiment2": false,
-				},
-			}
-			ent := &model.Build{
-				Proto: &pb.Build{
-					Exe: &pb.Executable{},
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
-					Input: &pb.Build_Input{},
-				},
-			}
+			req.Experiments["experiment1"] = true
+			req.Experiments["experiment2"] = false
+			setExps()
 
-			setExperiments(ctx, req, nil, ent.Proto)
-			setExperimentsFromProto(req, nil, ent)
-			So(ent, ShouldResemble, &model.Build{
-				Experiments: []string{
-					"+experiment1",
-					"-experiment2",
-					"-" + bb.ExperimentBackendAlt,
-					"-" + bb.ExperimentBBAgentGetBuild,
-					"-" + bb.ExperimentBBCanarySoftware,
-					"-" + bb.ExperimentBBAgent,
-					"-" + bb.ExperimentRecipePY3,
-					"-" + bb.ExperimentUseRealms,
-				},
-				Proto: &pb.Build{
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
-					Input: &pb.Build_Input{
-						Experiments: []string{
-							"experiment1",
-						},
-					},
-				},
-			})
+			expect.Experiments = []string{
+				"+experiment1",
+				"-experiment2",
+				"-" + bb.ExperimentBBAgent,
+			}
+			expect.Proto.Input.Experiments = []string{"experiment1"}
+
+			So(ent, ShouldResemble, expect)
 		})
 
 		Convey("legacy only", func() {
-			req := &pb.ScheduleBuildRequest{
-				Canary:       pb.Trinary_YES,
-				Experimental: pb.Trinary_NO,
-			}
-			normalizeSchedule(req)
-			ent := &model.Build{
-				Proto: &pb.Build{
-					Exe: &pb.Executable{},
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
-					Input: &pb.Build_Input{},
-				},
-			}
+			req.Canary = pb.Trinary_YES
+			req.Experimental = pb.Trinary_NO
+			setExps()
 
-			setExperiments(ctx, req, nil, ent.Proto)
-			setExperimentsFromProto(req, nil, ent)
-			So(ent, ShouldResemble, &model.Build{
-				Canary: true,
-				Experiments: []string{
-					"+" + bb.ExperimentBBCanarySoftware,
-					"-" + bb.ExperimentBackendAlt,
-					"-" + bb.ExperimentBBAgentGetBuild,
-					"-" + bb.ExperimentBBAgent,
-					"-" + bb.ExperimentRecipePY3,
-					"-" + bb.ExperimentUseRealms,
-				},
-				Proto: &pb.Build{
-					Canary: true,
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
-					Input: &pb.Build_Input{
-						Experiments: []string{
-							bb.ExperimentBBCanarySoftware,
-						},
-					},
-				},
-			})
+			expect.Canary = true
+			expect.Experiments = []string{
+				"+" + bb.ExperimentBBCanarySoftware,
+				"-" + bb.ExperimentBBAgent,
+				"-" + bb.ExperimentNonProduction,
+			}
+			expect.Proto.Canary = true
+			expect.Proto.Input.Experiments = []string{bb.ExperimentBBCanarySoftware}
+
+			So(ent, ShouldResemble, expect)
 		})
 
 		Convey("config only", func() {
-			ent := &model.Build{
-				Proto: &pb.Build{
-					Exe: &pb.Executable{},
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
-					Input: &pb.Build_Input{},
-				},
-			}
-			cfg := &pb.Builder{
-				Experiments: map[string]int32{
-					"experiment1": 100,
-					"experiment2": 0,
-				},
-			}
+			cfg.Experiments["experiment1"] = 100
+			cfg.Experiments["experiment2"] = 0
+			setExps()
 
-			setExperiments(ctx, nil, cfg, ent.Proto)
-			setExperimentsFromProto(nil, cfg, ent)
-			So(ent, ShouldResemble, &model.Build{
-				Experiments: []string{
-					"+experiment1",
-					"-experiment2",
-					"-" + bb.ExperimentBackendAlt,
-					"-" + bb.ExperimentBBAgentGetBuild,
-					"-" + bb.ExperimentBBCanarySoftware,
-					"-" + bb.ExperimentBBAgent,
-					"-" + bb.ExperimentRecipePY3,
-					"-" + bb.ExperimentUseRealms,
-				},
-				Proto: &pb.Build{
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
-					},
-					Input: &pb.Build_Input{
-						Experiments: []string{
-							"experiment1",
-						},
-					},
-				},
-			})
+			expect.Experiments = []string{
+				"+experiment1",
+				"-experiment2",
+				"-" + bb.ExperimentBBAgent,
+			}
+			expect.Proto.Input.Experiments = []string{"experiment1"}
+
+			So(ent, ShouldResemble, expect)
 		})
 
 		Convey("override", func() {
 			Convey("request > legacy", func() {
-				req := &pb.ScheduleBuildRequest{
-					Canary:       pb.Trinary_YES,
-					Experimental: pb.Trinary_NO,
-					Experiments: map[string]bool{
-						bb.ExperimentBBCanarySoftware: false,
-						bb.ExperimentNonProduction:    true,
-					},
-				}
-				normalizeSchedule(req)
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Canary = pb.Trinary_YES
+				req.Experimental = pb.Trinary_NO
+				req.Experiments[bb.ExperimentBBCanarySoftware] = false
+				req.Experiments[bb.ExperimentNonProduction] = true
+				setExps()
 
-				setExperiments(ctx, req, nil, ent.Proto)
-				setExperimentsFromProto(req, nil, ent)
-				So(ent, ShouldResemble, &model.Build{
-					Experimental: true,
-					Experiments: []string{
-						"+" + bb.ExperimentNonProduction,
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBCanarySoftware,
-						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
-					},
-					Proto: &pb.Build{
-						Exe: &pb.Executable{
-							Cmd: []string{"recipes"},
-						},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{
-								Priority: 255,
-							},
-						},
-						Input: &pb.Build_Input{
-							Experimental: true,
-							Experiments: []string{
-								bb.ExperimentNonProduction,
-							},
-						},
-					},
-				})
+				expect.Experiments = []string{
+					"+" + bb.ExperimentNonProduction,
+					"-" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentBBAgent,
+				}
+				expect.Experimental = true
+				expect.Proto.Input.Experimental = true
+				expect.Proto.Input.Experiments = []string{bb.ExperimentNonProduction}
+				expect.Proto.Infra.Swarming.Priority = 255
+
+				So(ent, ShouldResemble, expect)
 			})
 
 			Convey("legacy > config", func() {
-				req := &pb.ScheduleBuildRequest{
-					Canary:       pb.Trinary_YES,
-					Experimental: pb.Trinary_NO,
-				}
-				normalizeSchedule(req)
-				cfg := &pb.Builder{
-					Experiments: map[string]int32{
-						bb.ExperimentBBCanarySoftware: 0,
-						bb.ExperimentNonProduction:    100,
-					},
-				}
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Canary = pb.Trinary_YES
+				req.Experimental = pb.Trinary_NO
+				cfg.Experiments[bb.ExperimentBBCanarySoftware] = 0
+				cfg.Experiments[bb.ExperimentNonProduction] = 100
+				setExps()
 
-				setExperiments(ctx, req, cfg, ent.Proto)
-				setExperimentsFromProto(req, cfg, ent)
-				So(ent, ShouldResemble, &model.Build{
-					Canary: true,
-					Experiments: []string{
-						"+" + bb.ExperimentBBCanarySoftware,
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
-					},
-					Proto: &pb.Build{
-						Canary: true,
-						Exe: &pb.Executable{
-							Cmd: []string{"recipes"},
-						},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{
-							Experiments: []string{
-								bb.ExperimentBBCanarySoftware,
-							},
-						},
-					},
-				})
+				expect.Experiments = []string{
+					"+" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentBBAgent,
+					"-" + bb.ExperimentNonProduction,
+				}
+				expect.Canary = true
+				expect.Proto.Canary = true
+				expect.Proto.Input.Experiments = []string{bb.ExperimentBBCanarySoftware}
+
+				So(ent, ShouldResemble, expect)
 			})
 
 			Convey("request > config", func() {
-				req := &pb.ScheduleBuildRequest{
-					Experiments: map[string]bool{
-						"experiment1": true,
-						"experiment2": false,
-					},
-				}
-				normalizeSchedule(req)
-				cfg := &pb.Builder{
-					Experiments: map[string]int32{
-						"experiment1": 0,
-						"experiment2": 100,
-					},
-				}
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Experiments["experiment1"] = true
+				req.Experiments["experiment2"] = false
+				cfg.Experiments["experiment1"] = 0
+				cfg.Experiments["experiment2"] = 100
+				setExps()
 
-				setExperiments(ctx, req, cfg, ent.Proto)
-				setExperimentsFromProto(req, cfg, ent)
-				So(ent, ShouldResemble, &model.Build{
-					Experiments: []string{
-						"+experiment1",
-						"-experiment2",
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBCanarySoftware,
-						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
-					},
-					Proto: &pb.Build{
-						Exe: &pb.Executable{
-							Cmd: []string{"recipes"},
-						},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{
-							Experiments: []string{
-								"experiment1",
-							},
-						},
-					},
-				})
+				expect.Experiments = []string{
+					"+experiment1",
+					"-experiment2",
+					"-" + bb.ExperimentBBAgent,
+				}
+				expect.Proto.Input.Experiments = []string{"experiment1"}
+
+				So(ent, ShouldResemble, expect)
 			})
 
 			Convey("request > legacy > config", func() {
-				req := &pb.ScheduleBuildRequest{
-					Canary:       pb.Trinary_YES,
-					Experimental: pb.Trinary_NO,
-					Experiments: map[string]bool{
-						bb.ExperimentBBCanarySoftware: false,
-						bb.ExperimentNonProduction:    true,
-						"experiment1":                 true,
-						"experiment2":                 false,
-					},
-				}
-				normalizeSchedule(req)
-				cfg := &pb.Builder{
-					Experiments: map[string]int32{
-						bb.ExperimentBBCanarySoftware: 100,
-						bb.ExperimentNonProduction:    100,
-						"experiment1":                 0,
-						"experiment2":                 0,
-					},
-				}
-				ent := &model.Build{
-					Proto: &pb.Build{
-						Exe: &pb.Executable{},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{},
-						},
-						Input: &pb.Build_Input{},
-					},
-				}
+				req.Canary = pb.Trinary_YES
+				req.Experimental = pb.Trinary_NO
+				req.Experiments[bb.ExperimentBBCanarySoftware] = false
+				req.Experiments[bb.ExperimentNonProduction] = true
+				req.Experiments["experiment1"] = true
+				req.Experiments["experiment2"] = false
+				cfg.Experiments[bb.ExperimentBBCanarySoftware] = 100
+				cfg.Experiments[bb.ExperimentNonProduction] = 100
+				cfg.Experiments["experiment1"] = 0
+				cfg.Experiments["experiment2"] = 0
+				setExps()
 
-				setExperiments(ctx, req, cfg, ent.Proto)
-				setExperimentsFromProto(req, cfg, ent)
-				So(ent, ShouldResemble, &model.Build{
-					Experimental: true,
-					Experiments: []string{
-						"+experiment1",
-						"+" + bb.ExperimentNonProduction,
-						"-experiment2",
-						"-" + bb.ExperimentBackendAlt,
-						"-" + bb.ExperimentBBAgentGetBuild,
-						"-" + bb.ExperimentBBCanarySoftware,
-						"-" + bb.ExperimentBBAgent,
-						"-" + bb.ExperimentRecipePY3,
-						"-" + bb.ExperimentUseRealms,
-					},
-					Proto: &pb.Build{
-						Exe: &pb.Executable{
-							Cmd: []string{"recipes"},
-						},
-						Infra: &pb.BuildInfra{
-							Swarming: &pb.BuildInfra_Swarming{
-								Priority: 255,
-							},
-						},
-						Input: &pb.Build_Input{
-							Experimental: true,
-							Experiments: []string{
-								"experiment1",
-								bb.ExperimentNonProduction,
-							},
-						},
-					},
+				expect.Experiments = []string{
+					"+experiment1",
+					"+" + bb.ExperimentNonProduction,
+					"-experiment2",
+					"-" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentBBAgent,
+				}
+				expect.Experimental = true
+				expect.Proto.Input.Experimental = true
+				expect.Proto.Input.Experiments = []string{
+					"experiment1",
+					bb.ExperimentNonProduction,
+				}
+				expect.Proto.Infra.Swarming.Priority = 255
+
+				So(ent, ShouldResemble, expect)
+			})
+		})
+
+		Convey("global configuration", func() {
+			addExp := func(name string, dflt, min int32, inactive bool, b *pb.BuilderPredicate) {
+				gCfg.Experiment.Experiments = append(gCfg.Experiment.Experiments, &pb.ExperimentSettings_Experiment{
+					Name:         name,
+					DefaultValue: dflt,
+					MinimumValue: min,
+					Builders:     b,
+					Inactive:     inactive,
 				})
+			}
+
+			Convey("default always", func() {
+				addExp("always", 100, 0, false, nil)
+
+				Convey("will fill in if unset", func() {
+					setExps()
+
+					So(ent.Proto.Input.Experiments, ShouldResemble, []string{"always"})
+				})
+
+				Convey("can be overridden from request", func() {
+					req.Experiments["always"] = false
+					setExps()
+
+					So(ent.Proto.Input.Experiments, ShouldBeEmpty)
+				})
+			})
+
+			Convey("per builder", func() {
+				addExp("per.builder", 100, 0, false, &pb.BuilderPredicate{
+					Regex: []string{"project/bucket/builder"},
+				})
+				addExp("other.builder", 100, 0, false, &pb.BuilderPredicate{
+					Regex: []string{"project/bucket/other"},
+				})
+				setExps()
+
+				So(ent.Proto.Input.Experiments, ShouldResemble, []string{"per.builder"})
+			})
+
+			Convey("min value", func() {
+				// note that default == 0, min == 100 is a bit silly, but works for this
+				// test.
+				addExp("min.value", 0, 100, false, nil)
+
+				Convey("overrides builder config", func() {
+					cfg.Experiments["min.value"] = 0
+					setExps()
+
+					So(ent.Proto.Input.Experiments, ShouldResemble, []string{"min.value"})
+				})
+
+				Convey("can be overridden from request", func() {
+					req.Experiments["min.value"] = false
+					setExps()
+
+					So(ent.Proto.Input.Experiments, ShouldBeEmpty)
+				})
+			})
+
+			Convey("inactive", func() {
+				addExp("inactive", 30, 30, true, nil)
+				cfg.Experiments["inactive"] = 100
+				setExps()
+
+				So(ent.Proto.Input.Experiments, ShouldBeEmpty)
 			})
 		})
 	})
@@ -5296,7 +5056,7 @@ func TestScheduleBuild(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:caller@example.com",
 		})
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+		globalCfg := &pb.SettingsCfg{
 			Resultdb: &pb.ResultDBSettings{
 				Hostname: "rdbHost",
 			},
@@ -5310,7 +5070,7 @@ func TestScheduleBuild(t *testing.T) {
 					Version:     "kitchen-version",
 				},
 			},
-		}), ShouldBeNil)
+		}
 
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
@@ -5359,7 +5119,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := srv.scheduleBuilds(ctx, reqs)
+			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
 			So(merr, ShouldBeNil)
 			So(rsp, ShouldHaveLength, 1)
 			So(rsp[0], ShouldResembleProto, &pb.Build{
@@ -5421,7 +5181,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := srv.scheduleBuilds(ctx, reqs)
+				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
 				So(err, ShouldNotBeNil)
 				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
 				So(err[0], ShouldBeNil)
@@ -5474,7 +5234,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, merr := srv.scheduleBuilds(ctx, reqs)
+				rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
 				So(merr, ShouldBeNil)
 				So(rsp, ShouldHaveLength, 2)
 				So(rsp[0], ShouldResembleProto, &pb.Build{
@@ -5609,13 +5369,13 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("validateSchedule", t, func() {
 		Convey("nil", func() {
-			err := validateSchedule(nil)
+			err := validateSchedule(nil, nil)
 			So(err, ShouldErrLike, "builder or template_build_id is required")
 		})
 
 		Convey("empty", func() {
 			req := &pb.ScheduleBuildRequest{}
-			err := validateSchedule(req)
+			err := validateSchedule(req, nil)
 			So(err, ShouldErrLike, "builder or template_build_id is required")
 		})
 
@@ -5624,7 +5384,7 @@ func TestScheduleBuild(t *testing.T) {
 				RequestId:       "request/id",
 				TemplateBuildId: 1,
 			}
-			err := validateSchedule(req)
+			err := validateSchedule(req, nil)
 			So(err, ShouldErrLike, "request_id cannot contain")
 		})
 
@@ -5632,7 +5392,7 @@ func TestScheduleBuild(t *testing.T) {
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{},
 			}
-			err := validateSchedule(req)
+			err := validateSchedule(req, nil)
 			So(err, ShouldErrLike, "project must match")
 		})
 
@@ -5644,7 +5404,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "dimensions")
 			})
 
@@ -5660,7 +5420,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldBeNil)
 				})
 
@@ -5677,7 +5437,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldErrLike, "nanos must not be specified")
 				})
 
@@ -5695,7 +5455,7 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							TemplateBuildId: 1,
 						}
-						err := validateSchedule(req)
+						err := validateSchedule(req, nil)
 						So(err, ShouldErrLike, "seconds must not be negative")
 					})
 
@@ -5712,7 +5472,7 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							TemplateBuildId: 1,
 						}
-						err := validateSchedule(req)
+						err := validateSchedule(req, nil)
 						So(err, ShouldErrLike, "seconds must be a multiple of 60")
 					})
 				})
@@ -5730,7 +5490,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldBeNil)
 				})
 			})
@@ -5745,7 +5505,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldErrLike, "key must be specified")
 				})
 
@@ -5759,7 +5519,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldErrLike, "caches may only be specified in builder configs")
 				})
 
@@ -5773,7 +5533,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldErrLike, "pool may only be specified in builder configs")
 				})
 
@@ -5787,7 +5547,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldBeNil)
 				})
 			})
@@ -5801,7 +5561,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "value must be specified")
 			})
 
@@ -5815,7 +5575,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -5826,7 +5586,7 @@ func TestScheduleBuild(t *testing.T) {
 					Exe:             &pb.Executable{},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldBeNil)
 			})
 
@@ -5837,7 +5597,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "cipd_package must not be specified")
 			})
 
@@ -5849,7 +5609,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldErrLike, "cipd_version")
 				})
 
@@ -5860,7 +5620,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req)
+					err := validateSchedule(req, nil)
 					So(err, ShouldBeNil)
 				})
 			})
@@ -5872,7 +5632,7 @@ func TestScheduleBuild(t *testing.T) {
 					GerritChanges:   []*pb.GerritChange{},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldBeNil)
 			})
 
@@ -5883,7 +5643,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "gerrit_changes")
 			})
 
@@ -5898,7 +5658,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "change must be specified")
 			})
 
@@ -5913,7 +5673,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "host must be specified")
 			})
 
@@ -5928,7 +5688,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "patchset must be specified")
 			})
 
@@ -5943,7 +5703,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "project must be specified")
 			})
 
@@ -5959,7 +5719,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -5971,7 +5731,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				TemplateBuildId: 1,
 			}
-			err := validateSchedule(req)
+			err := validateSchedule(req, nil)
 			So(err, ShouldErrLike, "gitiles_commit")
 		})
 
@@ -5981,7 +5741,7 @@ func TestScheduleBuild(t *testing.T) {
 					Notify:          &pb.NotificationConfig{},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "notify")
 			})
 
@@ -5992,7 +5752,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "pubsub_topic")
 			})
 
@@ -6004,7 +5764,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "user_data")
 			})
 
@@ -6016,7 +5776,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -6027,7 +5787,7 @@ func TestScheduleBuild(t *testing.T) {
 					Priority:        -1,
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "priority must be in")
 			})
 
@@ -6036,7 +5796,7 @@ func TestScheduleBuild(t *testing.T) {
 					Priority:        256,
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "priority must be in")
 			})
 		})
@@ -6053,7 +5813,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldErrLike, "must not be specified")
 			})
 
@@ -6068,7 +5828,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req)
+				err := validateSchedule(req, nil)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -6082,7 +5842,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				TemplateBuildId: 1,
 			}
-			err := validateSchedule(req)
+			err := validateSchedule(req, nil)
 			So(err, ShouldErrLike, "tags")
 		})
 
@@ -6095,7 +5855,7 @@ func TestScheduleBuild(t *testing.T) {
 						"cool.experiment_thing": true,
 					},
 				}
-				So(validateSchedule(req), ShouldBeNil)
+				So(validateSchedule(req, stringset.NewFromSlice("luci.use_realms")), ShouldBeNil)
 			})
 
 			Convey("bad name", func() {
@@ -6105,7 +5865,7 @@ func TestScheduleBuild(t *testing.T) {
 						"bad name": true,
 					},
 				}
-				So(validateSchedule(req), ShouldErrLike, "does not match")
+				So(validateSchedule(req, nil), ShouldErrLike, "does not match")
 			})
 
 			Convey("bad reserved", func() {
@@ -6115,7 +5875,7 @@ func TestScheduleBuild(t *testing.T) {
 						"luci.use_ralms": true,
 					},
 				}
-				So(validateSchedule(req), ShouldErrLike, "unknown experiment has reserved prefix")
+				So(validateSchedule(req, nil), ShouldErrLike, "unknown experiment has reserved prefix")
 			})
 		})
 	})

@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
@@ -194,7 +195,7 @@ func validateProperties(p *structpb.Struct) error {
 }
 
 // validateSchedule validates the given request.
-func validateSchedule(req *pb.ScheduleBuildRequest) error {
+func validateSchedule(req *pb.ScheduleBuildRequest, wellKnownExperiments stringset.Set) error {
 	var err error
 	switch {
 	case strings.Contains(req.GetRequestId(), "/"):
@@ -222,7 +223,7 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 	}
 
 	for expName := range req.Experiments {
-		if err := validateExperimentName(expName); err != nil {
+		if err := validateExperimentName(expName, wellKnownExperiments); err != nil {
 			return errors.Annotate(err, "experiment %q", expName).Err()
 		}
 	}
@@ -233,11 +234,11 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 
 var experimentNameRE = regexp.MustCompile(`^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$`)
 
-func validateExperimentName(expName string) error {
+func validateExperimentName(expName string, wellKnownExperiments stringset.Set) error {
 	switch {
 	case !experimentNameRE.MatchString(expName):
 		return errors.Reason("does not match %q", experimentNameRE).Err()
-	case strings.HasPrefix(expName, "luci.") && !bb.WellKnownExperiments.Has(expName):
+	case strings.HasPrefix(expName, "luci.") && !wellKnownExperiments.Has(expName):
 		return errors.New(`unknown experiment has reserved prefix "luci."`)
 	}
 	return nil
@@ -480,6 +481,11 @@ func builderMatches(builder string, pred *pb.BuilderPredicate) bool {
 // build.Canary, build.Exe.CipdPackage, and build.Infra.Bbagent.Input must be
 // set.
 func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
+	swarming := globalCfg.GetSwarming()
+	if swarming == nil {
+		return
+	}
+
 	getVersion := func(p *pb.SwarmingSettings_Package, b *pb.Build) string {
 		if b.Canary && p.VersionCanary != "" {
 			return p.VersionCanary
@@ -489,15 +495,15 @@ func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
 
 	// BBAgent + Kitchen + Exe + UserPackages.
 	// TODO(crbug/1042991): Set CIPD hostname for all packages.
-	packages := make([]*pb.BuildInfra_BBAgent_Input_CIPDPackage, 0, 3+len(globalCfg.Swarming.GetUserPackages()))
+	packages := make([]*pb.BuildInfra_BBAgent_Input_CIPDPackage, 0, 3+len(swarming.UserPackages))
 	packages = append(packages, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
-		Name:    globalCfg.Swarming.BbagentPackage.PackageName,
+		Name:    swarming.BbagentPackage.PackageName,
 		Path:    ".",
-		Version: getVersion(globalCfg.Swarming.BbagentPackage, build),
+		Version: getVersion(swarming.BbagentPackage, build),
 	}, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
-		Name:    globalCfg.Swarming.KitchenPackage.PackageName,
+		Name:    swarming.KitchenPackage.PackageName,
 		Path:    ".",
-		Version: getVersion(globalCfg.Swarming.KitchenPackage, build),
+		Version: getVersion(swarming.KitchenPackage, build),
 	}, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
 		Name:    build.Exe.CipdPackage,
 		Path:    "kitchen-checkout",
@@ -505,7 +511,7 @@ func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
 	})
 
 	id := protoutil.FormatBuilderID(build.Builder)
-	for _, p := range globalCfg.Swarming.GetUserPackages() {
+	for _, p := range swarming.UserPackages {
 		if !builderMatches(id, p.Builders) {
 			continue
 		}
@@ -638,35 +644,99 @@ func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Buil
 	}
 }
 
-// setExperiments computes the experiments from the given request and builder
-// config, setting them in the proto. Mutates the given *pb.Build.
-// build.Infra.Swarming, build.Input and build.Exe must not be nil (see
-// setInfra, setInput and setExecutable respectively). The request must not
-// set legacy experiment values (see normalizeSchedule).
-func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
-	// Experiment -> enabled.
-	exps := make(map[string]bool, len(req.GetExperiments()))
-
-	// Set experiments according to the builder config.
-	for exp, pct := range cfg.GetExperiments() {
-		exps[exp] = mathrand.Int31n(ctx, 100) < pct
+func activeGlobalExpsForBuilder(build *pb.Build, globalCfg *pb.SettingsCfg) (active []*pb.ExperimentSettings_Experiment, ignored stringset.Set) {
+	exps := globalCfg.GetExperiment().GetExperiments()
+	if len(exps) == 0 {
+		return nil, nil
 	}
 
-	// Override with explicitly requested experiments.
-	for exp, en := range req.GetExperiments() {
-		exps[exp] = en
+	active = make([]*pb.ExperimentSettings_Experiment, 0, len(exps))
+	ignored = stringset.New(0)
+
+	bid := protoutil.FormatBuilderID(build.Builder)
+	for _, exp := range exps {
+		if exp.Inactive {
+			ignored.Add(exp.Name)
+			continue
+		}
+		if builderMatches(bid, exp.Builders) {
+			active = append(active, exp)
+		}
+	}
+
+	return
+}
+
+// setExperiments computes the experiments from the given request, builder and
+// global config, setting them in the proto. Mutates the given *pb.Build.
+// build.Infra.Swarming, build.Input and build.Exe must not be nil (see
+// setInfra, setInput and setExecutable respectively). The request must not set
+// legacy experiment values (see normalizeSchedule).
+func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg, build *pb.Build) (disabledExperiments []string) {
+	globalExps, ignoredExps := activeGlobalExpsForBuilder(build, globalCfg)
+
+	// Set up the dice-rolling apparatus
+	exps := make(map[string]int32, len(cfg.GetExperiments())+len(globalExps))
+
+	// 1. Populate with defaults
+	for _, exp := range globalExps {
+		exps[exp.Name] = exp.DefaultValue
+	}
+	// 2. Overwrite with builder config
+	for name, value := range cfg.GetExperiments() {
+		exps[name] = value
+	}
+	// 3. Overwrite with minimum global experiment values
+	for _, exp := range globalExps {
+		if exp.MinimumValue > exps[exp.Name] {
+			exps[exp.Name] = exp.MinimumValue
+		}
+	}
+	// 4. Explicit requests have highest precedence
+	for name, enabled := range req.GetExperiments() {
+		if enabled {
+			exps[name] = 100
+		} else {
+			exps[name] = 0
+		}
+	}
+	// 5. Remove all inactive global expirements
+	ignoredExps.Iter(func(expName string) bool {
+		if _, ok := exps[expName]; ok {
+			// TODO(crbug.com/854099): Add some sort of warning mechanism to builds so
+			// this can show up in Milo.
+			logging.Warningf(ctx, "dropping inactive experiment %q", expName)
+			delete(exps, expName)
+		}
+		return true
+	})
+
+	selections := make(map[string]bool, len(exps))
+
+	// Finally, roll the dice. We order `exps` here for test determinisim.
+	expNames := make([]string, 0, len(exps))
+	for exp := range exps {
+		expNames = append(expNames, exp)
+	}
+	sort.Strings(expNames)
+	for _, exp := range expNames {
+		pct := exps[exp]
+		switch {
+		case pct >= 100:
+			selections[exp] = true
+		case pct <= 0:
+			selections[exp] = false
+		default:
+			selections[exp] = mathrand.Int31n(ctx, 100) < pct
+		}
 	}
 
 	// For now, continue to set legacy field values from the experiments.
-	if en := exps[bb.ExperimentBBCanarySoftware]; en {
-		build.Canary = true
-	}
-	if en := exps[bb.ExperimentNonProduction]; en {
-		build.Input.Experimental = true
-	}
+	build.Canary = selections[bb.ExperimentBBCanarySoftware]
+	build.Input.Experimental = selections[bb.ExperimentNonProduction]
 
 	// Set experimental values.
-	if exps[bb.ExperimentBBAgent] {
+	if selections[bb.ExperimentBBAgent] {
 		// Proto > experimental precedence.
 		if len(build.Exe.Cmd) == 0 {
 			build.Exe.Cmd = []string{"luciexe"}
@@ -676,24 +746,25 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	if len(build.Exe.Cmd) == 0 {
 		build.Exe.Cmd = []string{"recipes"}
 	}
+	// We always want to set the bbagent experiment if we selected bbagent.
+	selections[bb.ExperimentBBAgent] = build.Exe.Cmd[0] != "recipes"
 
-	if exps[bb.ExperimentNonProduction] {
-		// Request > experimental > proto precedence.
-		if req.GetPriority() == 0 {
-			build.Infra.Swarming.Priority = 255
-		}
+	// Request > experimental > proto precedence.
+	if selections[bb.ExperimentNonProduction] && req.GetPriority() == 0 {
+		build.Infra.Swarming.Priority = 255
 	}
 
-	// We always want to set the bbagent experiment if we selected bbagent.
-	exps[bb.ExperimentBBAgent] = build.Exe.Cmd[0] != "recipes"
-
-	for exp, en := range exps {
-		if en {
-			build.Input.Experiments = append(build.Input.Experiments, exp)
+	for exp, en := range selections {
+		lst := &build.Input.Experiments
+		if !en {
+			lst = &disabledExperiments
 		}
+		*lst = append(*lst, exp)
 	}
 	sort.Strings(build.Input.Experiments)
+	sort.Strings(disabledExperiments)
 
+	return
 }
 
 // defBuilderCacheTimeout is the default value for WaitForWarmCache in the
@@ -927,8 +998,8 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build)
 // buildFromScheduleRequest returns a build proto created from the given
 // request and builder config. Sets fields except those which can only be
 // determined at creation time.
-func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg) *pb.Build {
-	b := &pb.Build{
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg) (b *pb.Build, disabledExperiments []string) {
+	b = &pb.Build{
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
 		WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
@@ -943,43 +1014,21 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setInput(req, cfg, b)
 	setTags(req, b)
 	setTimeouts(req, cfg, b)
-	setExperiments(ctx, req, cfg, b) // Requires setExecutable, setInfra, setInput.
-	setCIPDPackages(b, globalCfg)    // Requires setExecutable, setInfra, setExperiments.
+	disabledExperiments = setExperiments(ctx, req, cfg, globalCfg, b) // Requires setExecutable, setInfra, setInput.
+	setCIPDPackages(b, globalCfg)                                     // Requires setExecutable, setInfra, setExperiments.
 
-	return b
+	return
 }
 
 // setExperimentsFromProto sets experiments in the model (see model/build.go).
-// build.Proto.Input.Experiments must be set (see setExperiments).
-func setExperimentsFromProto(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
-	// The proto contains enabled experiments, but the model contains all experiments.
-	exps := make(map[string]bool, len(bb.WellKnownExperiments)+len(cfg.GetExperiments())+len(req.GetExperiments()))
-
-	for exp := range bb.WellKnownExperiments {
-		exps[exp] = false
+// build.Proto.Input.Experiments and
+// build.Proto.Infra.Buildbucket.DisabledExperiments must be set (see setExperiments).
+func setExperimentsFromProto(build *model.Build, disabledExperiments []string) {
+	for _, exp := range disabledExperiments {
+		build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
 	}
-	for exp := range cfg.GetExperiments() {
-		exps[exp] = false
-	}
-	for exp := range req.GetExperiments() {
-		exps[exp] = false
-	}
-
 	for _, exp := range build.Proto.Input.Experiments {
-		exps[exp] = true
-	}
-
-	// -luci.non_production values are excluded (see model/build.go).
-	if !exps[bb.ExperimentNonProduction] {
-		delete(exps, bb.ExperimentNonProduction)
-	}
-
-	for exp, en := range exps {
-		if en {
-			build.Experiments = append(build.Experiments, fmt.Sprintf("+%s", exp))
-		} else {
-			build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
-		}
+		build.Experiments = append(build.Experiments, fmt.Sprintf("+%s", exp))
 	}
 	sort.Strings(build.Experiments)
 
@@ -991,7 +1040,7 @@ func setExperimentsFromProto(req *pb.ScheduleBuildRequest, cfg *pb.Builder, buil
 // The length of returned builds always equal to len(reqs).
 // A single returned error means a global error which applies to every request.
 // Otherwise, it would be a MultiError where len(MultiError) equals to len(reqs).
-func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
+func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
 	if len(reqs) == 0 {
 		return []*model.Build{}, nil
 	}
@@ -1005,10 +1054,6 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 
 	now := clock.Now(ctx).UTC()
 	user := auth.CurrentIdentity(ctx)
-	globalCfg, err := config.GetSettingsCfg(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "error fetching service config").Err()
-	}
 	appID := info.AppID(ctx) // e.g. cr-buildbucket
 
 	merr := make(errors.MultiError, len(reqs))
@@ -1035,12 +1080,17 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 
-		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
+		// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
+		//
+		// TODO(crbug.com/1264659): Make disabledExperiments part of the Build message once
+		// kitchen is gone.
+		build, disabledExperiments := buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg)
+
 		blds[i] = &model.Build{
 			ID:         ids[i],
 			CreatedBy:  user,
 			CreateTime: now,
-			Proto:      buildFromScheduleRequest(ctx, validReq[i], cfg, globalCfg),
+			Proto:      build,
 		}
 
 		if !dryRun {
@@ -1053,7 +1103,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			protoutil.SetStatus(now, blds[i].Proto, pb.Status_SCHEDULED)
 		}
 
-		setExperimentsFromProto(validReq[i], cfg, blds[i])
+		setExperimentsFromProto(blds[i], disabledExperiments)
 		blds[i].IsLuci = cfg != nil
 		blds[i].PubSubCallback.Topic = validReq[i].GetNotify().GetPubsubTopic()
 		blds[i].PubSubCallback.UserData = validReq[i].GetNotify().GetUserData()
@@ -1229,9 +1279,9 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 
 // validateScheduleBuild validates and authorizes the given request, returning
 // a normalized version of the request and field mask.
-func validateScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
+func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
 	var err error
-	if err = validateSchedule(req); err != nil {
+	if err = validateSchedule(req, wellKnownExperiments); err != nil {
 		return nil, nil, appstatus.BadRequest(err)
 	}
 	normalizeSchedule(req)
@@ -1252,18 +1302,23 @@ func validateScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*
 
 // ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
 func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
-	req, m, err := validateScheduleBuild(ctx, req)
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "error fetching service config").Err()
+	}
+	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
+
+	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req)
 	if err != nil {
 		return nil, err
 	}
 
-	blds, err := scheduleBuilds(ctx, req)
+	blds, err := scheduleBuilds(ctx, globalCfg, req)
 	if err != nil {
 		if merr, ok := err.(errors.MultiError); ok {
 			return nil, merr.First()
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 	return blds[0].ToProto(ctx, m)
 }
@@ -1271,11 +1326,12 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 // scheduleBuilds handles requests to schedule builds.
 // The length of returned builds and errors (if any) always equal to the len(reqs).
 // The returned error type is always MultiError.
-func (*Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, errors.MultiError) {
+func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, errors.MultiError) {
 	// The ith error is the error associated with the ith request.
 	merr := make(errors.MultiError, len(reqs))
 	// The ith mask is the field mask derived from the ith request.
 	masks := make([]*model.BuildMask, len(reqs))
+	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
 	errorInBatch := func(err error) errors.MultiError {
 		for i, e := range merr {
@@ -1291,7 +1347,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildReque
 			i := i
 			req := req
 			work <- func() error {
-				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, req)
+				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req)
 				return nil
 			}
 		}
@@ -1299,7 +1355,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildReque
 
 	validReqs, idxMapValidReqs := getValidReqs(reqs, merr)
 	// Non-MultiError error should apply to every item and fail all requests.
-	blds, err := scheduleBuilds(ctx, validReqs...)
+	blds, err := scheduleBuilds(ctx, globalCfg, validReqs...)
 	if err != nil {
 		if me, ok := err.(errors.MultiError); ok {
 			merr = mergeErrs(merr, me, "", func(i int) int { return idxMapValidReqs[i] })

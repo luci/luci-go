@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -37,6 +38,11 @@ const (
 
 // Batch handles a batch request. Implements pb.BuildsServer.
 func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "error fetching service config").Err()
+	}
+
 	res := &pb.BatchResponse{}
 	if len(req.GetRequests()) == 0 {
 		return res, nil
@@ -80,11 +86,11 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	// ID used to log this Batch operation in the pRPC request log (see common.go).
 	// Used as the parent request log ID when logging individual operations here.
 	parent := trace.SpanContext(ctx)
-	err := parallel.WorkPool(64, func(c chan<- func() error) {
+	err = parallel.WorkPool(64, func(c chan<- func() error) {
 		c <- func() (err error) {
 			ctx, span := trace.StartSpan(ctx, "Batch.ScheduleBuild")
 			// Batch schedule requests. It allows partial success.
-			ret, merr := b.scheduleBuilds(ctx, schBatchReq)
+			ret, merr := b.scheduleBuilds(ctx, globalCfg, schBatchReq)
 			defer span.End(err)
 			for i, e := range merr {
 				if e != nil {

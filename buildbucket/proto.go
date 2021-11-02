@@ -44,17 +44,6 @@ const (
 	ExperimentUseRealms       = "luci.use_realms"
 )
 
-// WellKnownExperiments is the list of all well-known experiments.
-var WellKnownExperiments = stringset.NewFromSlice(
-	ExperimentBackendAlt,
-	ExperimentBBCanarySoftware,
-	ExperimentBBAgent,
-	ExperimentBBAgentGetBuild,
-	ExperimentNonProduction,
-	ExperimentRecipePY3,
-	ExperimentUseRealms,
-)
-
 var (
 	// DisallowedAppendTagKeys is the set of tag keys which cannot be set via
 	// UpdateBuild. Clients calling UpdateBuild must strip these before making
