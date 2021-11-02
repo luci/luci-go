@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net"
 
@@ -32,7 +31,7 @@ const port = ":9000"
 func main() {
 	s := grpc.NewServer()
 	cas := fakes.NewCAS()
-	ex := &exec{}
+	ex := &fakes.Exec{}
 	bsgrpc.RegisterByteStreamServer(s, cas)
 	regrpc.RegisterContentAddressableStorageServer(s, cas)
 	regrpc.RegisterCapabilitiesServer(s, ex)
@@ -52,12 +51,4 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve fake CAS gRPC server: %v\n", err)
 	}
-}
-
-// exec implements only GetCapabilities for CAS client.
-type exec struct{}
-
-// GetCapabilities returns the fake capabilities.
-func (c *exec) GetCapabilities(ctx context.Context, req *regrpc.GetCapabilitiesRequest) (res *regrpc.ServerCapabilities, err error) {
-	return &regrpc.ServerCapabilities{}, nil
 }
