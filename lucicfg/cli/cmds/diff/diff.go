@@ -274,7 +274,7 @@ var knownTypes = []struct {
 	proto           string
 	protoNormalizer protoNormalizer
 }{
-	{"commit-queue", "cq.config.Config", func(ctx context.Context, m proto.Message) error {
+	{"commit-queue", "cv.config.Config", func(ctx context.Context, m proto.Message) error {
 		return normalize.CQ(ctx, m.(*cq_pb.Config))
 	}},
 	{"cr-buildbucket", "buildbucket.BuildbucketCfg", func(ctx context.Context, m proto.Message) error {

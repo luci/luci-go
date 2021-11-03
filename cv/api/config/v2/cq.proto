@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cq.config;
+package cv.config;
 
 option go_package = "go.chromium.org/luci/cv/api/config/v2;config";
 
