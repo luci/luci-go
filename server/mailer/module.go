@@ -22,12 +22,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/internal/gae"
@@ -170,7 +170,7 @@ func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure 
 	return func(ctx context.Context, msg *Mail) error {
 		requestID, err := uuid.NewRandom()
 		if err != nil {
-			return status.Errorf(codes.Internal, "failed to generate request ID: %s", err)
+			return errors.Annotate(err, "failed to generate request ID").Tag(transient.Tag).Err()
 		}
 		resp, err := mailerClient.SendMail(ctx, &mailer.SendMailRequest{
 			RequestId: requestID.String(),
@@ -184,7 +184,7 @@ func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure 
 			HtmlBody:  msg.HTMLBody,
 		})
 		if err != nil {
-			return err
+			return grpcutil.WrapIfTransient(err)
 		}
 		logging.Infof(ctx, "Email enqueued as %q", resp.MessageId)
 		return nil
@@ -212,7 +212,10 @@ func (m *mailerModule) initGAEMailer(ctx context.Context) (Mailer, error) {
 
 		res := &gaebasepb.VoidProto{}
 		if err := gae.Call(ctx, "mail", "Send", req, res); err != nil {
-			return status.Errorf(codes.Internal, "GAE mail: %s", err)
+			// TODO(vadimsh): In theory we can extract internal GAE Mail error codes
+			// here and decide if an error is transient or not. For now assume they
+			// all are.
+			return transient.Tag.Apply(err)
 		}
 		logging.Infof(ctx, "Email enqueued")
 		return nil
