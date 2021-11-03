@@ -200,8 +200,8 @@ func (m *mailerModule) initGAEMailer(ctx context.Context) (Mailer, error) {
 			Bcc:     msg.Bcc,
 			Subject: &msg.Subject,
 		}
-		if len(msg.ReplyTo) != 0 {
-			req.ReplyTo = &msg.ReplyTo[0]
+		if msg.ReplyTo != "" {
+			req.ReplyTo = &msg.ReplyTo
 		}
 		if msg.TextBody != "" {
 			req.TextBody = &msg.TextBody

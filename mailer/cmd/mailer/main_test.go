@@ -43,7 +43,7 @@ func TestMailer(t *testing.T) {
 	testReq := &mailer.SendMailRequest{
 		RequestId: "some-request-id",
 		Sender:    "sender@example.com",
-		ReplyTo:   []string{"replyto-1@example.com", "replyto-2@example.com"},
+		ReplyTo:   "replyto-1@example.com",
 		To:        []string{"to-1@example.com", "to-2@example.com"},
 		Cc:        []string{"cc-1@example.com", "cc-2@example.com"},
 		Bcc:       []string{"bcc-1@example.com", "bcc-2@example.com"},
@@ -57,7 +57,7 @@ func TestMailer(t *testing.T) {
 
 	expectedEmail := email.NewEmail()
 	expectedEmail.From = testReq.Sender
-	expectedEmail.ReplyTo = testReq.ReplyTo
+	expectedEmail.ReplyTo = []string{testReq.ReplyTo}
 	expectedEmail.To = testReq.To
 	expectedEmail.Cc = testReq.Cc
 	expectedEmail.Bcc = testReq.Bcc

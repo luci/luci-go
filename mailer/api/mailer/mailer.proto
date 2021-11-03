@@ -61,7 +61,7 @@ message SendMailRequest {
   string sender = 2 [ (google.api.field_behavior) = REQUIRED ];
 
   // ReplyTo is put into "Reply-To" email header field.
-  repeated string reply_to = 3;
+  string reply_to = 3;
 
   // To is put into "To" email header field.
   repeated string to = 4;

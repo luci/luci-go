@@ -248,7 +248,9 @@ func (s *mailerServer) enqueueMail(ctx context.Context, req *mailer.SendMailRequ
 
 	msg := email.NewEmail()
 	msg.From = req.Sender
-	msg.ReplyTo = req.ReplyTo
+	if req.ReplyTo != "" {
+		msg.ReplyTo = []string{req.ReplyTo}
+	}
 	msg.To = req.To
 	msg.Cc = req.Cc
 	msg.Bcc = req.Bcc

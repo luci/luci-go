@@ -35,8 +35,8 @@ var mailerCtxKey = "go.chromium.org/luci/server/mailer.Mailer"
 type Mail struct {
 	// Sender is put into "From" email header field.
 	Sender string
-	// ReplyTo is put into "Reply-To" email header field.
-	ReplyTo []string
+	// ReplyTo is put into "Reply-To" email header field if not empty.
+	ReplyTo string
 	// To is put into "To" email header field.
 	To []string
 	// Cc is put into "Cc" email header field.
