@@ -41,7 +41,6 @@ const (
 	ExperimentBBAgent         = "luci.buildbucket.use_bbagent"
 	ExperimentBBAgentGetBuild = "luci.buildbucket.bbagent_getbuild"
 	ExperimentRecipePY3       = "luci.recipes.use_python3"
-	ExperimentUseRealms       = "luci.use_realms"
 )
 
 var (

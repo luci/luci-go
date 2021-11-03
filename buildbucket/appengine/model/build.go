@@ -131,10 +131,7 @@ type Build struct {
 // Realm returns this build's auth realm, or an empty string if not opted into the
 // realms experiment.
 func (b *Build) Realm() string {
-	if b.ExperimentStatus(bb.ExperimentUseRealms) == pb.Trinary_YES {
-		return fmt.Sprintf("%s:%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket)
-	}
-	return ""
+	return fmt.Sprintf("%s:%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket)
 }
 
 // ExperimentStatus scans the experiments attached to this Build and returns:
