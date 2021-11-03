@@ -34,20 +34,35 @@ var mailerCtxKey = "go.chromium.org/luci/server/mailer.Mailer"
 // non-empty.
 type Mail struct {
 	// Sender is put into "From" email header field.
+	//
+	// If empty, some default value will be used. See ModuleOptions.
 	Sender string
-	// ReplyTo is put into "Reply-To" email header field if not empty.
+
+	// ReplyTo is put into "Reply-To" email header field.
+	//
+	// Optional.
 	ReplyTo string
+
 	// To is put into "To" email header field.
 	To []string
+
 	// Cc is put into "Cc" email header field.
 	Cc []string
+
 	// Bcc is put into "Bcc" email header field.
 	Bcc []string
+
 	// Subject is put into "Subject" email header field.
 	Subject string
+
 	// TextBody is a plaintext body of the email message.
+	//
+	// Can be used together with HTMLBody to send a multipart email.
 	TextBody string
+
 	// HTMLBody is an HTML body of the email message.
+	//
+	// Can be used together with TextBody to send a multipart email.
 	HTMLBody string
 }
 

@@ -17,11 +17,13 @@ package mailer
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -62,11 +64,22 @@ type ModuleOptions struct {
 	// results in emails being logged in local logs only and not actually sent
 	// anywhere.
 	MailerService string
+
+	// DefaultSender is a value to use in "From" email header field by default.
+	//
+	// Used only if `Sender` field of Mail struct is not populated.
+	//
+	// On GAE defaults to "<appid> noreply@<appid>.appspotmail.com".
+	//
+	// When using a pRPC backend, defaults to an empty string, which indicates
+	// that the pRPC backend should make the decision itself.
+	DefaultSender string
 }
 
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	f.StringVar(&o.MailerService, "mailer-service", o.MailerService, `What mailing backend to use.`)
+	f.StringVar(&o.DefaultSender, "mailer-default-sender", o.DefaultSender, `A value to use in "From" email header field by default.`)
 }
 
 // NewModule returns a server module that initializes the mailer in the context.
@@ -131,6 +144,9 @@ func (m *mailerModule) Initialize(ctx context.Context, host module.Host, opts mo
 		if !opts.GAE {
 			return nil, errors.Reason(`"-mailer-service gae" can only be used on GAE`).Err()
 		}
+		if m.opts.DefaultSender == "" {
+			m.opts.DefaultSender = fmt.Sprintf("%s <noreply@%s.appspotmail.com>", opts.CloudProject, opts.CloudProject)
+		}
 		mailer, err = m.initGAEMailer(ctx)
 	default:
 		return nil, errors.Reason("unrecognized -mailer-service %q", service).Err()
@@ -140,6 +156,13 @@ func (m *mailerModule) Initialize(ctx context.Context, host module.Host, opts mo
 		return nil, err
 	}
 	return Use(ctx, mailer), nil
+}
+
+func (m *mailerModule) sender(msg *Mail) string {
+	if msg.Sender != "" {
+		return msg.Sender
+	}
+	return m.opts.DefaultSender
 }
 
 func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure bool) (Mailer, error) {
@@ -174,7 +197,7 @@ func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure 
 		}
 		resp, err := mailerClient.SendMail(ctx, &mailer.SendMailRequest{
 			RequestId: requestID.String(),
-			Sender:    msg.Sender,
+			Sender:    m.sender(msg),
 			ReplyTo:   msg.ReplyTo,
 			To:        msg.To,
 			Cc:        msg.Cc,
@@ -194,7 +217,7 @@ func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure 
 func (m *mailerModule) initGAEMailer(ctx context.Context) (Mailer, error) {
 	return func(ctx context.Context, msg *Mail) error {
 		req := &gaemailpb.MailMessage{
-			Sender:  &msg.Sender,
+			Sender:  proto.String(m.sender(msg)),
 			To:      msg.To,
 			Cc:      msg.Cc,
 			Bcc:     msg.Bcc,
