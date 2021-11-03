@@ -5851,11 +5851,11 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 					Experiments: map[string]bool{
-						"luci.use_realms":       true,
+						bb.ExperimentBBAgent:    true,
 						"cool.experiment_thing": true,
 					},
 				}
-				So(validateSchedule(req, stringset.NewFromSlice("luci.use_realms")), ShouldBeNil)
+				So(validateSchedule(req, stringset.NewFromSlice(bb.ExperimentBBAgent)), ShouldBeNil)
 			})
 
 			Convey("bad name", func() {

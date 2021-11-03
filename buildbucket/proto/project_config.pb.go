@@ -639,20 +639,6 @@ type Builder struct {
 	// Opts the build into using python3 to run the recipes. This is achieved by
 	// bbagent setting the $RECIPES_USE_PY3 environment variable. Only works for
 	// builds with bbagent enabled.
-	//
-	// # "luci.use_realms"  (default 0%)
-	// Opts the build into using LUCI realms for ACLs when communicating with
-	// Swarming.
-	//
-	// Requires configuration in your project (to set up realms, roles and
-	// permission grants). Makes Buildbucket's interaction with Swarming
-	// use realms, and will cause underlying swarming tasks to be in
-	// 'realms' mode.
-	//
-	// Does NOT effect Buildbucket's own ACL checks (e.g. who can trigger
-	// and see the build). They are controlled via
-	// `luci.project(..., enforce_realms_in=[...])` in your project's
-	// lucicfg configuration.
 	Experiments map[string]int32 `protobuf:"bytes,28,rep,name=experiments,proto3" json:"experiments,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 	// This field will set the default value of the "critical" field of
 	// all the builds of this builder. Please refer to build.proto for

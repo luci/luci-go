@@ -93,7 +93,6 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
 					},
-					Experiments: []string{"+luci.use_realms"},
 				},
 				{
 					ID: 2,
@@ -106,7 +105,6 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
 					},
-					Experiments: []string{"+luci.use_realms"},
 				},
 			}
 
@@ -163,7 +161,6 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
 					},
-					Experiments: []string{"+luci.use_realms"},
 				},
 			}
 			bqExports := []*rdbPb.BigQueryExport{}
@@ -218,7 +215,6 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
 					},
-					Experiments: []string{"+luci.use_realms"},
 				},
 			}
 			bqExports := []*rdbPb.BigQueryExport{}
@@ -253,7 +249,6 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
 					},
-					Experiments: []string{"+luci.use_realms"},
 				},
 			}
 
@@ -276,7 +271,6 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
 					},
-					Experiments: []string{"+luci.use_realms"},
 				},
 				{
 					ID: 2,
@@ -289,7 +283,6 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
 					},
-					Experiments: []string{"+luci.use_realms"},
 				},
 			}
 
