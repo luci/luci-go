@@ -15,6 +15,10 @@
 // Package mailer can be used to send mails through a mailer service.
 //
 // Install it as a server module and then use Send(...) API.
+//
+// Using "gae" backend requires running on GAE and having
+// "app_engine_apis: true" in the module YAML.
+// See https://cloud.google.com/appengine/docs/standard/go/services/access.
 package mailer
 
 import (

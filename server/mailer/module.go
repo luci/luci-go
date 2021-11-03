@@ -30,6 +30,9 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/internal/gae"
+	gaebasepb "go.chromium.org/luci/server/internal/gae/base"
+	gaemailpb "go.chromium.org/luci/server/internal/gae/mail"
 	"go.chromium.org/luci/server/module"
 
 	"go.chromium.org/luci/mailer/api/mailer"
@@ -189,5 +192,29 @@ func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure 
 }
 
 func (m *mailerModule) initGAEMailer(ctx context.Context) (Mailer, error) {
-	return nil, errors.Reason("not implemented yet").Err()
+	return func(ctx context.Context, msg *Mail) error {
+		req := &gaemailpb.MailMessage{
+			Sender:  &msg.Sender,
+			To:      msg.To,
+			Cc:      msg.Cc,
+			Bcc:     msg.Bcc,
+			Subject: &msg.Subject,
+		}
+		if len(msg.ReplyTo) != 0 {
+			req.ReplyTo = &msg.ReplyTo[0]
+		}
+		if msg.TextBody != "" {
+			req.TextBody = &msg.TextBody
+		}
+		if msg.HTMLBody != "" {
+			req.HtmlBody = &msg.HTMLBody
+		}
+
+		res := &gaebasepb.VoidProto{}
+		if err := gae.Call(ctx, "mail", "Send", req, res); err != nil {
+			return status.Errorf(codes.Internal, "GAE mail: %s", err)
+		}
+		logging.Infof(ctx, "Email enqueued")
+		return nil
+	}, nil
 }

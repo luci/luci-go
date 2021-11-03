@@ -243,6 +243,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/internal"
+	"go.chromium.org/luci/server/internal/gae"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/portal"
@@ -831,6 +832,9 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		} else {
 			logging.Infof(srv.Context, "Cloud region is %s", srv.Options.CloudRegion)
 		}
+		// Initialize default tickets for background activities. These tickets are
+		// overridden in per-request contexts with request-specific tickets.
+		srv.Context = gae.WithTickets(srv.Context, gae.DefaultTickets())
 	}
 
 	// Log enabled experiments, warn if some of them are unknown now.
@@ -1347,6 +1351,13 @@ var cloudTraceFormat = propagation.HTTPFormat{}
 func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	started := clock.Now(s.Context)
 
+	// If running on GAE, initialize the per-request API tickets needed to make
+	// RPCs to the GAE service bridge.
+	ctx := s.Context
+	if s.Options.GAE {
+		ctx = gae.WithTickets(ctx, gae.RequestTickets(c.Request.Header))
+	}
+
 	// Wrap the request in a tracing span. The span is closed in the defer below
 	// (where we know the response status code). If this is a health check, open
 	// the span nonetheless, but do not record it (health checks are spammy and
@@ -1354,7 +1365,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	// and has TraceID). Additionally if some of health check code opens a span
 	// of its own, it will be ignored (as a child of not-recorded span).
 	healthCheck := isHealthCheckRequest(c.Request)
-	ctx, span := s.startRequestSpan(s.Context, c.Request, healthCheck)
+	ctx, span := s.startRequestSpan(ctx, c.Request, healthCheck)
 
 	// This is used in waitUntilNotServing.
 	if !healthCheck {
