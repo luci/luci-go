@@ -62,9 +62,12 @@ const runNotFoundMsg = "Run not found"
 // runReadChecker checks read access to Runs.
 type runReadChecker struct{}
 
+// Before implements run.LoadRunChecker.
 func (c runReadChecker) Before(ctx context.Context, id common.RunID) error {
 	return nil
 }
+
+// After implements run.LoadRunChecker.
 func (c runReadChecker) After(ctx context.Context, r *run.Run) error {
 	if r == nil {
 		return appstatus.Error(codes.NotFound, runNotFoundMsg)
@@ -77,4 +80,9 @@ func (c runReadChecker) After(ctx context.Context, r *run.Run) error {
 	default:
 		return appstatus.Error(codes.NotFound, runNotFoundMsg)
 	}
+}
+
+// BeforeQuery implements run.ProjectAwareChecker.
+func (c runReadChecker) BeforeQuery(ctx context.Context, project string) error {
+	return grpcCheckProjectAccess(ctx, project)
 }

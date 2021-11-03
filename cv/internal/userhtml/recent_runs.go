@@ -122,7 +122,7 @@ func searchRuns(ctx context.Context, project string, params recentRunsParams) (r
 	}
 
 	var qb interface {
-		LoadRuns(context.Context, ...run.LoadRunChecker) ([]*run.Run, *run.PageToken, error)
+		LoadRuns(context.Context, ...run.ProjectAwareChecker) ([]*run.Run, *run.PageToken, error)
 	}
 	if project == "" {
 		qb = run.RecentQueryBuilder{

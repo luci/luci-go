@@ -36,10 +36,10 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestLoadRun(t *testing.T) {
+func TestRunReadChecker(t *testing.T) {
 	t.Parallel()
 
-	Convey("Check NewRunReadChecker works", t, func() {
+	Convey("NewRunReadChecker works", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -80,46 +80,96 @@ func TestLoadRun(t *testing.T) {
 			Identity: identity.AnonymousIdentity,
 		})
 
-		Convey("Run doesn't exist", func() {
-			_, err1 := run.LoadRun(ctx, common.RunID("foo/bar"), NewRunReadChecker())
-			So(err1, ShouldHaveAppStatus, codes.NotFound)
+		Convey("Loading individual Runs", func() {
+			Convey("Run doesn't exist", func() {
+				_, err1 := run.LoadRun(ctx, common.RunID("foo/bar"), NewRunReadChecker())
+				So(err1, ShouldHaveAppStatus, codes.NotFound)
 
-			Convey("No access must be indistinguishable from not existing Run", func() {
-				_, err2 := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-				So(err2, ShouldHaveAppStatus, codes.NotFound)
+				Convey("No access must be indistinguishable from not existing Run", func() {
+					_, err2 := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
+					So(err2, ShouldHaveAppStatus, codes.NotFound)
 
-				st1, _ := appstatus.Get(err1)
-				st2, _ := appstatus.Get(err2)
-				So(st1.Message(), ShouldResemble, st2.Message())
-				So(st1.Details(), ShouldBeEmpty)
-				So(st2.Details(), ShouldBeEmpty)
+					st1, _ := appstatus.Get(err1)
+					st2, _ := appstatus.Get(err2)
+					So(st1.Message(), ShouldResemble, st2.Message())
+					So(st1.Details(), ShouldBeEmpty)
+					So(st2.Details(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("OK public", func() {
+				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
+				So(err, ShouldBeNil)
+				So(r, cvtesting.SafeShouldResemble, publicRun)
+			})
+
+			Convey("OK internal", func() {
+				// TODO(crbug/1233963): add a test once non-legacy ACLs are working.
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:googler@example.com",
+					IdentityGroups: []string{"googlers"},
+				})
+				r, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
+				So(err, ShouldBeNil)
+				So(r, cvtesting.SafeShouldResemble, internalRun)
+			})
+
+			Convey("PermissionDenied", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:public-user@example.com",
+					IdentityGroups: []string{"insufficient"},
+				})
+				_, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
+				So(err, ShouldHaveAppStatus, codes.NotFound)
 			})
 		})
 
-		Convey("OK public", func() {
-			r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
-			So(err, ShouldBeNil)
-			So(r, cvtesting.SafeShouldResemble, publicRun)
-		})
-
-		Convey("OK internal", func() {
-			// TODO(crbug/1233963): add a test once non-legacy ACLs are working.
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity:       "user:googler@example.com",
-				IdentityGroups: []string{"googlers"},
+		Convey("Searching Runs", func() {
+			Convey("OK public project", func() {
+				runs, _, err := run.ProjectQueryBuilder{Project: projectPublic}.LoadRuns(ctx, NewRunReadChecker())
+				So(err, ShouldBeNil)
+				So(runs, ShouldHaveLength, 1)
+				So(runs[0].ID, ShouldResemble, publicRun.ID)
 			})
-			r, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-			So(err, ShouldBeNil)
-			So(r, cvtesting.SafeShouldResemble, internalRun)
-		})
-
-		Convey("PermissionDenied", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity:       "user:public-user@example.com",
-				IdentityGroups: []string{"insufficient"},
+			Convey("OK internal project with access", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:googler@example.com",
+					IdentityGroups: []string{"googlers"},
+				})
+				runs, _, err := run.ProjectQueryBuilder{Project: projectInternal}.LoadRuns(ctx, NewRunReadChecker())
+				So(err, ShouldBeNil)
+				So(runs, ShouldHaveLength, 1)
+				So(runs[0].ID, ShouldResemble, internalRun.ID)
 			})
-			_, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-			So(err, ShouldHaveAppStatus, codes.NotFound)
+			Convey("Internal Project is not found without access", func() {
+				runs, _, err := run.ProjectQueryBuilder{Project: projectInternal}.LoadRuns(ctx, NewRunReadChecker())
+				So(err, ShouldHaveAppStatus, codes.NotFound)
+				So(runs, ShouldBeEmpty)
+			})
+			Convey("Not existing project is also not found", func() {
+				runs, _, err := run.ProjectQueryBuilder{Project: "does-not-exist"}.LoadRuns(ctx, NewRunReadChecker())
+				So(err, ShouldHaveAppStatus, codes.NotFound)
+				So(runs, ShouldBeEmpty)
+			})
+			Convey("Searching across projects", func() {
+				Convey("without access to internal project", func() {
+					runs, _, err := run.RecentQueryBuilder{}.LoadRuns(ctx, NewRunReadChecker())
+					So(err, ShouldBeNil)
+					So(runs, ShouldHaveLength, 1)
+					So(runs[0].ID, ShouldResemble, publicRun.ID)
+				})
+				Convey("with access to internal project", func() {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity:       "user:googler@example.com",
+						IdentityGroups: []string{"googlers"},
+					})
+					runs, _, err := run.RecentQueryBuilder{}.LoadRuns(ctx, NewRunReadChecker())
+					So(err, ShouldBeNil)
+					So(runs, ShouldHaveLength, 2)
+					So(runs[0].ID, ShouldResemble, publicRun.ID)
+					So(runs[1].ID, ShouldResemble, internalRun.ID)
+				})
+			})
 		})
 	})
 }

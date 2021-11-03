@@ -20,12 +20,15 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -165,6 +168,21 @@ func (b CLQueryBuilder) qLimit() int32 { return b.Limit }
 
 // qPageToken implements runKeysQuery interface.
 func (b CLQueryBuilder) qPageToken(pt *PageToken) runKeysQuery { return b.PageToken(pt) }
+
+// ProjectAwareChecker is a LoadRunChecker which also does per-project check
+// before querying the Datastore for Runs in a specific project (if applicable).
+//
+// This allows to plug ACL checking before issuing potentially expensive query
+// against an existing project to which the user has no access.
+type ProjectAwareChecker interface {
+	// BeforeQuery is called before attempting to query Runs IDs belonging to
+	// a specific project from Datastore.
+	//
+	// If BeforeQuery returns an error, the query in not done.
+	BeforeQuery(ctx context.Context, project string) error
+
+	LoadRunChecker
+}
 
 // ProjectQueryBuilder builds datastore.Query for searching Runs scoped to a
 // LUCI project.
@@ -321,8 +339,19 @@ func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Ke
 }
 
 // LoadRuns returns matched Runs and the page token to continue search later.
-func (b ProjectQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
-	return loadRunsFromQuery(ctx, b, checkers...)
+func (b ProjectQueryBuilder) LoadRuns(ctx context.Context, checkers ...ProjectAwareChecker) ([]*Run, *PageToken, error) {
+	var rCheckers []LoadRunChecker
+	switch l := len(checkers); {
+	case l > 1:
+		panic(fmt.Errorf("at most 1 LoadRunChecker allowed, %d given", l))
+	case l == 1:
+		c := checkers[0]
+		if err := c.BeforeQuery(ctx, b.Project); err != nil {
+			return nil, nil, err
+		}
+		rCheckers = append(rCheckers, c)
+	}
+	return loadRunsFromQuery(ctx, b, rCheckers...)
 }
 
 // qLimit implements runKeysQuery interface.
@@ -359,6 +388,12 @@ type RecentQueryBuilder struct {
 	// lastFoundRunID set by PageToken(). See keysForProject() for their use.
 	boundaryInverseTS string
 	boundaryProject   string
+
+	// availableProjects is set on a local temp copy of the RecentQueryBuilder by
+	// the LoadRuns(). It's then used by loadAvailableProjects as a cache if not
+	// nil. Empty slice means a cached value of no available projects,
+	// possibly because caller has no access to any project.
+	availableProjects []string
 }
 
 // PageToken constraints RecentQueryBuilder to continue searching from the
@@ -381,10 +416,12 @@ func (b RecentQueryBuilder) PageToken(pt *PageToken) RecentQueryBuilder {
 // to CV LUCI project for most recent Run IDs, and then merge and select the
 // next page of resulting keys.
 func (b RecentQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error) {
-	// Load all enabled & disabled projects.
-	projects, err := prjcfg.GetAllProjectIDs(ctx, false)
-	if err != nil {
+	projects, err := b.loadAvailableProjects(ctx)
+	switch {
+	case err != nil:
 		return nil, err
+	case len(projects) == 0:
+		return nil, nil
 	}
 
 	// Do a query per project, in parallel.
@@ -408,8 +445,67 @@ func (b RecentQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key
 }
 
 // LoadRuns returns matched Runs and the page token to continue search later.
-func (b RecentQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
-	return loadRunsFromQuery(ctx, b, checkers...)
+func (b RecentQueryBuilder) LoadRuns(ctx context.Context, checkers ...ProjectAwareChecker) ([]*Run, *PageToken, error) {
+	// Convert slice of QueryProjectChecker to slice of LoadRunChecker.
+	var rCheckers []LoadRunChecker
+	switch l := len(checkers); {
+	case l > 1:
+		panic(fmt.Errorf("at most 1 LoadRunChecker allowed, %d given", l))
+	case l == 1:
+		rCheckers = []LoadRunChecker{checkers[0]}
+	}
+
+	// Load all enabled & disabled projects and set the cache.
+	// NOTE: the cache is bound to this copy of RecentQueryBuilder and whichever
+	// copies are made from it by the loadRunsFromQuery, but the caller of the
+	// RecentQueryBuilder.LoadRuns never gets to see such a copy.
+	//
+	// This also applies QueryProjectChecker.
+	switch projects, err := b.loadAvailableProjects(ctx, checkers...); {
+	case err != nil:
+		return nil, nil, err
+	case len(projects) == 0:
+		b.availableProjects = []string{}
+	default:
+		b.availableProjects = projects
+	}
+
+	return loadRunsFromQuery(ctx, b, rCheckers...)
+}
+
+// loadAvailableProjects caches active visible projects.
+func (b RecentQueryBuilder) loadAvailableProjects(ctx context.Context, checkers ...ProjectAwareChecker) ([]string, error) {
+	// Use cache if it is set.
+	// NOTE: Empty slice is a valid cache value of 0 available projects.
+	if b.availableProjects != nil {
+		return b.availableProjects, nil
+	}
+
+	// Load all enabled & disabled projects.
+	switch projects, err := prjcfg.GetAllProjectIDs(ctx, false); {
+	case err != nil:
+		return nil, err
+	case len(checkers) == 1:
+		// Check project-level ACLs.
+		c := checkers[0]
+		filtered := projects[:0]
+		for _, p := range projects {
+			err = c.BeforeQuery(ctx, p)
+			switch st, ok := appstatus.Get(err); {
+			case err == nil:
+				filtered = append(filtered, p)
+			case !ok:
+				return nil, err // not an appstatus error
+			case st.Code() == codes.NotFound || st.Code() == codes.PermissionDenied:
+				// Skip
+			default:
+				return nil, err // non-permission appstatus error
+			}
+		}
+		return filtered, nil
+	default:
+		return projects, nil
+	}
 }
 
 // qLimit implements runKeysQuery interface.
