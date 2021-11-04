@@ -162,6 +162,26 @@ func RootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthGlobalConfig", "root", 0, nil)
 }
 
+// GetReplicationState fetches AuthReplicationState from the datastore.
+//
+// Returns datastore.ErrNoSuchEntity if it is missing.
+func GetReplicationState(ctx context.Context) (*AuthReplicationState, error) {
+	state := &AuthReplicationState{
+		Kind:   "AuthReplicationState",
+		ID:     "self",
+		Parent: RootKey(ctx),
+	}
+
+	switch err := datastore.Get(ctx, state); {
+	case err == nil:
+		return state, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	default:
+		return nil, errors.Annotate(err, "error getting AuthReplicationState").Err()
+	}
+}
+
 // GetAuthGroup gets the AuthGroup with the given id(groupName).
 //
 // Returns datastore.ErrNoSuchEntity if the group given is not present.

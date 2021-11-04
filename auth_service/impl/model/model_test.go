@@ -128,6 +128,25 @@ func testIPAllowlist(ctx context.Context, name string, subnets []string) *AuthIP
 
 ////////////////////////////////////////////////////////////////////////////////
 
+func TestGetReplicationState(t *testing.T) {
+	t.Parallel()
+
+	Convey("Testing GetReplicationState", t, func() {
+		ctx := memory.Use(context.Background())
+
+		state := testAuthReplicationState(ctx, 12345)
+
+		_, err := GetReplicationState(ctx)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		So(datastore.Put(ctx, state), ShouldBeNil)
+
+		actual, err := GetReplicationState(ctx)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, state)
+	})
+}
+
 func TestGetAuthGroup(t *testing.T) {
 	t.Parallel()
 

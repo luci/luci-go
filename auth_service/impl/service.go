@@ -16,46 +16,17 @@
 package impl
 
 import (
-	"context"
-	"fmt"
-	"strings"
-
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/secrets"
 )
 
-const fakeAuthDBProto = `
-groups {
-	name: "auth-service-access"
-	members: "user:cjacomet@google.com"
-	members: "user:vadimsh@google.com"
-
-	# ChOps Security Core team
-	members: "user:jclinton@google.com"
-	members: "user:akashmukherjee@google.com"
-	members: "user:sumakasa@google.com"
-	members: "user:xinyuoffline@google.com"
-	members: "user:yulanlin@google.com"
-	members: "user:rnasnas@google.com"
-}
-
-# prpc CLI tool client ID.
-oauth_additional_client_ids: "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
-# Default RPC Explorer client ID.
-oauth_additional_client_ids: "446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com"
-`
-
 // Main launches a server with some default modules and configuration installed.
 func Main(modules []module.Module, cb func(srv *server.Server) error) {
-	fakeAuthDB, err := authdb.SnapshotDBFromTextProto(strings.NewReader(fakeAuthDBProto))
-	if err != nil {
-		panic(fmt.Errorf("bad AuthDB text proto: %s", err))
-	}
+	authDBProvider := &AuthDBProvider{}
 
 	opts := &server.Options{
 		// Options for getting OAuth2 tokens when running the server locally.
@@ -65,10 +36,8 @@ func Main(modules []module.Module, cb func(srv *server.Server) error) {
 				"https://www.googleapis.com/auth/userinfo.email",
 			},
 		}),
-		// Use a fake hardcoded AuthDB for now until we can read the datastore.
-		AuthDBProvider: func(context.Context) (authdb.DB, error) {
-			return fakeAuthDB, nil
-		},
+		// Use the AuthDB built directly from the datastore entities.
+		AuthDBProvider: authDBProvider.GetAuthDB,
 	}
 
 	modules = append([]module.Module{
@@ -76,5 +45,8 @@ func Main(modules []module.Module, cb func(srv *server.Server) error) {
 		secrets.NewModuleFromFlags(),      // for accessing Cloud Secret Manager
 	}, modules...)
 
-	server.Main(opts, modules, cb)
+	server.Main(opts, modules, func(srv *server.Server) error {
+		srv.RunInBackground("authdb", authDBProvider.RefreshPeriodically)
+		return cb(srv)
+	})
 }
