@@ -2,6 +2,7 @@
   "name": "led: test_name",
   "parent_task_id": "293109284abc",
   "priority": "40",
+  "realm": "infra:ci",
   "service_account": "adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com",
   "tags": [
     "allow_milo:1",

@@ -344,10 +344,16 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 
 	bb := jd.GetBuildbucket()
 	bbi := bb.GetBbagentArgs().GetBuild().GetInfra()
+	project := bb.GetBbagentArgs().GetBuild().GetBuilder().GetProject()
+	bucket := bb.GetBbagentArgs().GetBuild().GetBuilder().GetBucket()
+	if project == "" || bucket == "" {
+		return errors.Reason("incomplete Builder ID, need both `project` and `bucket` set").Err()
+	}
 	sw := &Swarming{
 		Hostname: jd.Info().SwarmingHostname(),
 		Task: &swarmingpb.TaskRequest{
 			Name:           jd.Info().TaskName(),
+			Realm:          fmt.Sprintf("%s:%s", project, bucket),
 			ParentTaskId:   parentTaskId,
 			Priority:       jd.Info().Priority(),
 			ServiceAccount: bbi.GetSwarming().GetTaskServiceAccount(),
@@ -358,29 +364,13 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	}
 
 	// Enable swarming/resultdb integration.
-	enable_resultdb := false
-	switch resultdb {
-	case RDBOn:
-		enable_resultdb = true
-	case RDBOff:
-		enable_resultdb = false
-	default:
-		enable_resultdb = bbi.GetResultdb() != nil && bbi.Resultdb.GetInvocation() != ""
-	}
-	if enable_resultdb {
+	enableRDB := (resultdb == RDBOn || (resultdb == "" && bbi.GetResultdb().GetInvocation() != ""))
+	if enableRDB {
 		// Clear the original build's ResultDB invocation.
 		bbi.Resultdb.Invocation = ""
 		sw.Task.Resultdb = &swarmingpb.ResultDBCfg{
 			Enable: true,
 		}
-
-		// Populate task.Realm using builder's bucket.
-		project := bb.GetBbagentArgs().GetBuild().GetBuilder().GetProject()
-		bucket := bb.GetBbagentArgs().GetBuild().GetBuilder().GetBucket()
-		if project == "" || bucket == "" {
-			return errors.Reason("incomplete Builder ID, need both `project` and `bucket` set").Err()
-		}
-		sw.Task.Realm = fmt.Sprintf("%s:%s", project, bucket)
 	}
 
 	baseProperties := &swarmingpb.TaskProperties{
