@@ -3276,6 +3276,7 @@ func TestScheduleBuild(t *testing.T) {
 				setExps()
 
 				So(ent.Proto.Input.Experiments, ShouldResemble, []string{"per.builder"})
+				So(ent.Experiments, ShouldContain, "-other.builder")
 			})
 
 			Convey("min value", func() {

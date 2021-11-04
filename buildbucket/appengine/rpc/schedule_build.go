@@ -659,9 +659,12 @@ func activeGlobalExpsForBuilder(build *pb.Build, globalCfg *pb.SettingsCfg) (act
 			ignored.Add(exp.Name)
 			continue
 		}
-		if builderMatches(bid, exp.Builders) {
-			active = append(active, exp)
+		if !builderMatches(bid, exp.Builders) {
+			exp = proto.Clone(exp).(*pb.ExperimentSettings_Experiment)
+			exp.DefaultValue = 0
+			exp.MinimumValue = 0
 		}
+		active = append(active, exp)
 	}
 
 	return

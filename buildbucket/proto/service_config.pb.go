@@ -528,6 +528,9 @@ type ExperimentSettings_Experiment struct {
 	MinimumValue int32 `protobuf:"varint,3,opt,name=minimum_value,json=minimumValue,proto3" json:"minimum_value,omitempty"`
 	// Allows temporary exclusion of builders from the experiment.
 	// Each line here should have a corresponding bug to remove the exclusion.
+	//
+	// If a builder is excluded from this experiment, it acts as though
+	// default_value and minimum_value are both 0.
 	Builders *BuilderPredicate `protobuf:"bytes,4,opt,name=builders,proto3" json:"builders,omitempty"`
 	// If this is true it means that the experiment has no effect, and is safe
 	// to stop setting in user configs. Additionally, Buildbucket will stop
