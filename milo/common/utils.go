@@ -108,10 +108,16 @@ func ReadExactOneFromForm(form url.Values, key string) (string, error) {
 	return input[0], nil
 }
 
+// BucketResourceID returns a string identifying the bucket resource.
+// It is used when checking bucket permission.
+func BucketResourceID(project, bucket string) string {
+	return fmt.Sprintf("luci.%s.%s", project, bucket)
+}
+
 // LegacyBuilderIDString returns a legacy string identifying the builder.
 // It is used in the Milo datastore.
 func LegacyBuilderIDString(bid *buildbucketpb.BuilderID) string {
-	return fmt.Sprintf("buildbucket/luci.%s.%s/%s", bid.Project, bid.Bucket, bid.Builder)
+	return fmt.Sprintf("buildbucket/%s/%s", BucketResourceID(bid.Project, bid.Bucket), bid.Builder)
 }
 
 var ErrInvalidLegacyBuilderID = errors.New("the string is not a valid legacy builder ID")
