@@ -42,7 +42,7 @@ func checkCanUseAPI(ctx context.Context, name string) error {
 	case !yes:
 		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
 	default:
-		logging.Warningf(ctx, "%s is calling %s", auth.CurrentIdentity(ctx), name)
+		logging.Debugf(ctx, "%s is calling %s", auth.CurrentIdentity(ctx), name)
 		return nil
 	}
 }
