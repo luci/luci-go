@@ -20,20 +20,42 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
+	"go.chromium.org/luci/server/auth/service/protocol"
+
+	. "github.com/smartystreets/goconvey/convey"
+)
+
+var (
+	testCreatedTS  = time.Date(2020, time.August, 16, 15, 20, 0, 0, time.UTC)
+	testModifiedTS = time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC)
 )
 
 func testAuthVersionedEntityMixin() AuthVersionedEntityMixin {
 	return AuthVersionedEntityMixin{
-		ModifiedTS:    time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
-		ModifiedBy:    "user:test-user@example.com",
+		ModifiedTS:    testModifiedTS,
+		ModifiedBy:    "user:test-modifier@example.com",
 		AuthDBRev:     1337,
 		AuthDBPrevRev: 1336,
 	}
+}
+
+func testSecurityConfig() *protocol.SecurityConfig {
+	return &protocol.SecurityConfig{
+		InternalServiceRegexp: []string{`.*\.example.com`},
+	}
+}
+
+func testSecurityConfigBlob() []byte {
+	blob, err := proto.Marshal(testSecurityConfig())
+	if err != nil {
+		panic(err)
+	}
+	return blob
 }
 
 func testAuthGlobalConfig(ctx context.Context) *AuthGlobalConfig {
@@ -48,7 +70,7 @@ func testAuthGlobalConfig(ctx context.Context) *AuthGlobalConfig {
 		},
 		OAuthClientSecret: "test-client-secret",
 		TokenServerURL:    "https://token-server.example.com",
-		SecurityConfig:    []byte{0, 1, 2, 3}, // TODO: use something real here
+		SecurityConfig:    testSecurityConfigBlob(),
 	}
 }
 
@@ -58,12 +80,18 @@ func testAuthReplicationState(ctx context.Context, rev int64) *AuthReplicationSt
 		ID:         "self",
 		Parent:     RootKey(ctx),
 		AuthDBRev:  rev,
-		ModifiedTS: time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
+		ModifiedTS: testModifiedTS,
 		PrimaryID:  "test-primary-id",
 	}
 }
 
 func testAuthGroup(ctx context.Context, name string, members []string) *AuthGroup {
+	if members == nil {
+		members = []string{
+			fmt.Sprintf("user:%s-m1@example.com", name),
+			fmt.Sprintf("user:%s-m2@example.com", name),
+		}
+	}
 	return &AuthGroup{
 		Kind:                     "AuthGroup",
 		ID:                       name,
@@ -74,21 +102,27 @@ func testAuthGroup(ctx context.Context, name string, members []string) *AuthGrou
 		Nested:                   []string{"nested-" + name},
 		Description:              fmt.Sprintf("This is a test auth group %q.", name),
 		Owners:                   "owners-" + name,
-		CreatedTS:                time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC),
-		CreatedBy:                "user:test-user@example.com",
+		CreatedTS:                testCreatedTS,
+		CreatedBy:                "user:test-creator@example.com",
 	}
 }
 
 func testIPAllowlist(ctx context.Context, name string, subnets []string) *AuthIPAllowlist {
+	if subnets == nil {
+		subnets = []string{
+			"127.0.0.1/10",
+			"127.0.0.1/20",
+		}
+	}
 	return &AuthIPAllowlist{
 		Kind:                     "AuthIPWhitelist",
 		ID:                       name,
 		Parent:                   RootKey(ctx),
 		AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
 		Subnets:                  subnets,
-		Description:              fmt.Sprintf("This is a test AuthIPAllowlist %q", name),
-		CreatedTS:                time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC),
-		CreatedBy:                "user:test-user@example.com",
+		Description:              fmt.Sprintf("This is a test AuthIPAllowlist %q.", name),
+		CreatedTS:                testCreatedTS,
+		CreatedBy:                "user:test-creator@example.com",
 	}
 }
 

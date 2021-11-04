@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
 // Snapshot contains transactionally captured AuthDB entities.
@@ -83,4 +85,55 @@ func TakeSnapshot(ctx context.Context) (snap *Snapshot, err error) {
 		return nil, err
 	}
 	return snap, nil
+}
+
+// ToAuthDBProto converts the snapshot to an AuthDB proto message.
+func (s *Snapshot) ToAuthDBProto() *protocol.AuthDB {
+	groups := make([]*protocol.AuthGroup, len(s.Groups))
+	for i, v := range s.Groups {
+		groups[i] = &protocol.AuthGroup{
+			Name:        v.ID,
+			Members:     v.Members,
+			Globs:       v.Globs,
+			Nested:      v.Nested,
+			Description: v.Description,
+			CreatedTs:   v.CreatedTS.UnixNano() / 1000,
+			CreatedBy:   v.CreatedBy,
+			ModifiedTs:  v.ModifiedTS.UnixNano() / 1000,
+			ModifiedBy:  v.ModifiedBy,
+			Owners:      v.Owners,
+		}
+	}
+
+	allowlists := make([]*protocol.AuthIPWhitelist, len(s.IPAllowlists))
+	for i, v := range s.IPAllowlists {
+		allowlists[i] = &protocol.AuthIPWhitelist{
+			Name:        v.ID,
+			Subnets:     v.Subnets,
+			Description: v.Description,
+			CreatedTs:   v.CreatedTS.UnixNano() / 1000,
+			CreatedBy:   v.CreatedBy,
+			ModifiedTs:  v.ModifiedTS.UnixNano() / 1000,
+			ModifiedBy:  v.ModifiedBy,
+		}
+	}
+
+	return &protocol.AuthDB{
+		OauthClientId:            s.GlobalConfig.OAuthClientID,
+		OauthClientSecret:        s.GlobalConfig.OAuthClientSecret,
+		OauthAdditionalClientIds: s.GlobalConfig.OAuthAdditionalClientIDs,
+		TokenServerUrl:           s.GlobalConfig.TokenServerURL,
+		SecurityConfig:           s.GlobalConfig.SecurityConfig,
+		Groups:                   groups,
+		IpWhitelists:             allowlists,
+		IpWhitelistAssignments:   nil, // TODO
+		Realms:                   nil, // TODO
+	}
+}
+
+// ToAuthDB converts the snapshot to an authdb.SnapshotDB.
+//
+// It then can be used by the auth service itself to make ACL checks.
+func (s *Snapshot) ToAuthDB() (*authdb.SnapshotDB, error) {
+	return authdb.NewSnapshotDB(s.ToAuthDBProto(), "", s.ReplicationState.AuthDBRev, false)
 }
