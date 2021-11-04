@@ -36,10 +36,10 @@ type AuthVersionedEntityMixin struct {
 	ModifiedBy string `gae:"modified_by"`
 
 	// AuthDBRev is the revision number that this entity was last modified at.
-	AuthDBRev int `gae:"auth_db_rev"`
+	AuthDBRev int64 `gae:"auth_db_rev"`
 
 	// AuthDBPrevRev is revision number of the previous version of this entity.
-	AuthDBPrevRev int `gae:"auth_db_prev_rev"`
+	AuthDBPrevRev int64 `gae:"auth_db_prev_rev"`
 }
 
 // AuthGlobalConfig is the root entity for auth models.
@@ -52,22 +52,48 @@ type AuthGlobalConfig struct {
 	Kind string `gae:"$kind,AuthGlobalConfig"`
 	ID   string `gae:"$id,root"`
 
-	// OAuthAdditionalClientIDs are the additional client ID's allowed to access the service.
-	OAuthAdditionalClientIDs []string `gae:"oauth_additional_client_ids,noindex"`
-
 	// OAuthClientID is an OAuth2 client_id to use to mint new OAuth2 tokens.
 	OAuthClientID string `gae:"oauth_client_id,noindex"`
+
+	// OAuthAdditionalClientIDs are the additional client ID's allowed to access
+	// the service.
+	OAuthAdditionalClientIDs []string `gae:"oauth_additional_client_ids,noindex"`
 
 	// OAuthClientSecret is passed to clients.
 	OAuthClientSecret string `gae:"oauth_client_secret,noindex"`
 
-	// TokenServerURL is the URL of the token server to use to generate delegation tokens.
+	// TokenServerURL is the URL of the token server to use to generate delegation
+	// tokens.
 	TokenServerURL string `gae:"token_server_url,noindex"`
 
 	// SecurityConfig is serialized security config from security_config.proto.
 	//
 	// See https://source.chromium.org/chromium/infra/infra/+/main:luci/appengine/components/components/auth/proto/security_config.proto.
 	SecurityConfig []byte `gae:"security_config,noindex"`
+}
+
+// AuthReplicationState contains revision number incremented each time a part
+// of AuthDB changes.
+type AuthReplicationState struct {
+	Kind string `gae:"$kind,AuthReplicationState"`
+	ID   string `gae:"$id,self"`
+
+	// Parent is RootKey().
+	Parent *datastore.Key `gae:"$parent"`
+
+	// AuthDBRev is increased by 1 with every change to the AuthDB that should be
+	// distributed to linked services.
+	AuthDBRev int64 `gae:"auth_db_rev,noindex"`
+
+	// ModifiedTS is the time this entity was last modified.
+	ModifiedTS time.Time `gae:"modified_ts,noindex"`
+
+	// Deprecated fields kept for compatibility with the Python version. They can
+	// be removed once the Python version is not running any more.
+
+	PrimaryID  string   `gae:"primary_id,noindex"`
+	PrimaryURL string   `gae:"primary_url,noindex"`
+	ShardIDs   []string `gae:"shard_ids,noindex"`
 }
 
 // AuthGroup is a group of identities, the entity id is the group name.
@@ -79,7 +105,7 @@ type AuthGroup struct {
 	Kind string `gae:"$kind,AuthGroup"`
 	ID   string `gae:"$id"`
 
-	// Parent is AuthGlobalConfig.
+	// Parent is RootKey().
 	Parent *datastore.Key `gae:"$parent"`
 
 	// Members is the list of members that are explicitly in this group.
@@ -115,7 +141,7 @@ type AuthIPAllowlist struct {
 	Kind string `gae:"$kind,AuthIPWhitelist"`
 	ID   string `gae:"$id"`
 
-	// Parent is AuthGlobalConfig.
+	// Parent is RootKey().
 	Parent *datastore.Key `gae:"$parent"`
 
 	// Subnets is the list of subnets for this allowlist.
@@ -131,7 +157,7 @@ type AuthIPAllowlist struct {
 	CreatedBy string `gae:"created_by"`
 }
 
-// RootKey gets the root key for the AuthGroup entity.
+// RootKey gets the root key of the entity group with all AuthDB entities.
 func RootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthGlobalConfig", "root", 0, nil)
 }
@@ -142,6 +168,7 @@ func RootKey(ctx context.Context) *datastore.Key {
 // Returns an annotated error for other errors.
 func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 	authGroup := &AuthGroup{
+		Kind:   "AuthGroup",
 		ID:     groupName,
 		Parent: RootKey(ctx),
 	}
@@ -175,6 +202,7 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 // Returns an annotated error for other errors.
 func GetAuthIPAllowlist(ctx context.Context, allowlistName string) (*AuthIPAllowlist, error) {
 	authIPAllowlist := &AuthIPAllowlist{
+		Kind:   "AuthIPWhitelist",
 		ID:     allowlistName,
 		Parent: RootKey(ctx),
 	}
@@ -206,9 +234,12 @@ func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
 // GetAuthGlobalConfig returns the AuthGlobalConfig datastore entity.
 //
 // Returns datastore.ErrNoSuchEntity if the AuthGlobalConfig is not present.
-// Retuns an annotated error for other errors.
+// Returns an annotated error for other errors.
 func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
-	authGlobalConfig := &AuthGlobalConfig{}
+	authGlobalConfig := &AuthGlobalConfig{
+		Kind: "AuthGlobalConfig",
+		ID:   "root",
+	}
 
 	switch err := datastore.Get(ctx, authGlobalConfig); {
 	case err == nil:
