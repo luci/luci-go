@@ -16,7 +16,6 @@ package common
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"go.chromium.org/luci/gae/service/datastore"
@@ -78,36 +77,40 @@ func CheckACL(c context.Context, acl ACL) (bool, error) {
 
 var accessClientKey = "access client key"
 
-// AccessClient wraps an accessProto.AccessClient and exports its Host.
-type AccessClient struct {
+// CachedAccessClient wraps an accessProto.AccessClient and caches its response.
+type CachedAccessClient struct {
 	accessProto.AccessClient
-	Host string
+	cache caching.BlobCache
 }
 
-// NewAccessClient creates a new AccessClient for talking to this milo instance's buildbucket instance.
-func NewAccessClient(c context.Context) (*AccessClient, error) {
-	settings := GetSettings(c)
-	if settings.Buildbucket.GetHost() == "" {
-		return nil, errors.Reason("no buildbucket host found").Err()
-	}
+// NewCachedAccessClient creates a new AccessClient for talking to this milo instance's buildbucket instance.
+func NewCachedAccessClient(c context.Context, buildbucketHost string, cache caching.BlobCache) (*CachedAccessClient, error) {
 	t, err := auth.GetRPCTransport(c, auth.AsUser)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
-	return &AccessClient{
-		AccessClient: bbAccess.NewClient(settings.Buildbucket.Host, &http.Client{Transport: t}),
-		Host:         settings.Buildbucket.Host,
+	return &CachedAccessClient{
+		AccessClient: bbAccess.NewClient(buildbucketHost, &http.Client{Transport: t}),
+		cache:        cache,
 	}, nil
 }
 
-// WithAccessClient attaches an AccessClient to the given context.
-func WithAccessClient(c context.Context, a *AccessClient) context.Context {
+// NewTestCachedAccessClient creates a cached access client for testing purpose.
+func NewTestCachedAccessClient(client *bbAccess.TestClient, cache caching.BlobCache) *CachedAccessClient {
+	return &CachedAccessClient{
+		AccessClient: client,
+		cache:        cache,
+	}
+}
+
+// WithCachedAccessClient attaches an AccessClient to the given context.
+func WithCachedAccessClient(c context.Context, a *CachedAccessClient) context.Context {
 	return context.WithValue(c, &accessClientKey, a)
 }
 
-// GetAccessClient retrieves an AccessClient from the given context.
-func GetAccessClient(c context.Context) *AccessClient {
-	if client, ok := c.Value(&accessClientKey).(*AccessClient); !ok {
+// GetCachedAccessClient retrieves an AccessClient from the given context.
+func GetCachedAccessClient(c context.Context) *CachedAccessClient {
+	if client, ok := c.Value(&accessClientKey).(*CachedAccessClient); !ok {
 		panic("access client not found in context")
 	} else {
 		return client
@@ -119,21 +122,15 @@ func GetAccessClient(c context.Context) *AccessClient {
 // TODO(mknyszek): If a cache entry expires, then there could be QPS issues if all
 // instances query buildbucket for an update simultaneously. Evaluate whether there's
 // an issue in practice, and if so, consider expiring cache entries randomly.
-func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissions, error) {
+func (ac *CachedAccessClient) BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissions, error) {
 	perms := make(bbAccess.Permissions, len(buckets))
-	client := GetAccessClient(c)
 
 	var bucketsToCache []string
-
-	cache := caching.GlobalCache(c, fmt.Sprintf("buildbucket-access-%s", client.Host))
-	if cache == nil {
-		panic("global cache not available in context")
-	}
 
 	// Create cache entries for each bucket.
 	identityString := string(auth.CurrentIdentity(c))
 	for _, bucket := range buckets {
-		blob, err := cache.Get(c, identityString+"|"+bucket)
+		blob, err := ac.cache.Get(c, identityString+"|"+bucket)
 		if err != nil {
 			bucketsToCache = append(bucketsToCache, bucket)
 			continue
@@ -153,7 +150,7 @@ func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissio
 	}
 
 	// Make an RPC to get uncached buckets from buildbucket.
-	newPerms, validTime, err := bbAccess.BucketPermissions(c, client, bucketsToCache)
+	newPerms, validTime, err := bbAccess.BucketPermissions(c, ac, bucketsToCache)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +165,7 @@ func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissio
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to marshal Action").Err()
 		}
-		err = cache.Set(c, identityString+"|"+bucket, bytes, validTime)
+		err = ac.cache.Set(c, identityString+"|"+bucket, bytes, validTime)
 		if err != nil {
 			logging.WithError(err).Warningf(c, "failed to cache permission for bucket: %s", bucket)
 		}

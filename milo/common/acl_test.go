@@ -36,11 +36,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func withTestAccessClient(c context.Context, client *access.TestClient) context.Context {
-	return WithAccessClient(c, &AccessClient{
-		AccessClient: client,
-		Host:         "buildbucket.example.com",
-	})
+func newTestAccessClient(c context.Context, client *access.TestClient) *CachedAccessClient {
+	return NewTestCachedAccessClient(client, caching.GlobalCache(c, "buildbucket-access-buildbucket.example.com"))
 }
 
 func TestACL(t *testing.T) {
@@ -147,29 +144,29 @@ func TestACL(t *testing.T) {
 				})
 
 				Convey("Get bucket permissions uncached", func() {
-					c = withTestAccessClient(c, &client)
+					cachedAccessClient := newTestAccessClient(c, &client)
 
 					// Uncached call.
 					client.PermittedActionsResponse = helloPermissions.ToProto(0)
-					perms, err := BucketPermissions(c, "hello")
+					perms, err := cachedAccessClient.BucketPermissions(c, "hello")
 					So(err, ShouldBeNil)
 					So(perms, ShouldResemble, helloPermissions)
 
 					// Cached call. Since perms is nil and we haven't advanced the clock,
 					// this would error if the value isn't cached.
 					client.PermittedActionsResponse = (access.Permissions{}).ToProto(0)
-					perms, err = BucketPermissions(c, "hello")
+					perms, err = cachedAccessClient.BucketPermissions(c, "hello")
 					So(err, ShouldBeNil)
 					So(perms["hello"], ShouldEqual, access.AccessBucket)
 				})
 
 				Convey("Get bucket permissions cache duration", func() {
-					c = withTestAccessClient(c, &client)
+					cachedAccessClient := newTestAccessClient(c, &client)
 					c, clk := testclock.UseTime(c, testclock.TestRecentTimeLocal)
 
 					// Uncached call.
 					client.PermittedActionsResponse = helloPermissions.ToProto(1 * time.Second)
-					perms, err := BucketPermissions(c, "hello")
+					perms, err := cachedAccessClient.BucketPermissions(c, "hello")
 					So(err, ShouldBeNil)
 					So(perms, ShouldResemble, helloPermissions)
 
@@ -181,17 +178,17 @@ func TestACL(t *testing.T) {
 						"hello": access.ViewBuild,
 					}
 					client.PermittedActionsResponse = expectPermissions.ToProto(0)
-					perms, err = BucketPermissions(c, "hello")
+					perms, err = cachedAccessClient.BucketPermissions(c, "hello")
 					So(err, ShouldBeNil)
 					So(perms, ShouldResemble, expectPermissions)
 				})
 
 				Convey("Get bucket permissions for cached and uncached buckets", func() {
-					c = withTestAccessClient(c, &client)
+					cachedAccessClient := newTestAccessClient(c, &client)
 
 					// Uncached call.
 					client.PermittedActionsResponse = helloPermissions.ToProto(0)
-					perms, err := BucketPermissions(c, "hello")
+					perms, err := cachedAccessClient.BucketPermissions(c, "hello")
 					So(err, ShouldBeNil)
 					So(perms, ShouldResemble, helloPermissions)
 
@@ -202,7 +199,7 @@ func TestACL(t *testing.T) {
 						"goodbye": access.AccessBucket,
 					}
 					client.PermittedActionsResponse = goodbyePermissions.ToProto(0)
-					perms, err = BucketPermissions(c, "hello", "goodbye")
+					perms, err = cachedAccessClient.BucketPermissions(c, "hello", "goodbye")
 					So(err, ShouldBeNil)
 					So(perms["hello"], ShouldEqual, access.AccessBucket)
 					So(perms["goodbye"], ShouldEqual, access.AccessBucket)
@@ -210,7 +207,7 @@ func TestACL(t *testing.T) {
 			})
 
 			Convey("Make sure cache doesn't share identity", func() {
-				c = withTestAccessClient(c, &client)
+				cachedAccessClient := newTestAccessClient(c, &client)
 
 				cABob := auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
@@ -222,14 +219,14 @@ func TestACL(t *testing.T) {
 				})
 				// Uncached call.
 				client.PermittedActionsResponse = helloPermissions.ToProto(0)
-				perms, err := BucketPermissions(cEve, "hello")
+				perms, err := cachedAccessClient.BucketPermissions(cEve, "hello")
 				So(err, ShouldBeNil)
 				So(perms, ShouldResemble, helloPermissions)
 
 				// Eve's result should now be cached, but anon should make an RPC
 				// for themselves, and Eve's result should not be used.
 				client.PermittedActionsResponse = (access.Permissions{}).ToProto(0)
-				perms, err = BucketPermissions(cABob, "hello")
+				perms, err = cachedAccessClient.BucketPermissions(cABob, "hello")
 				So(err, ShouldBeNil)
 				So(len(perms), ShouldEqual, 0)
 			})

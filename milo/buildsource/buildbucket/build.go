@@ -384,7 +384,8 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamel
 	}
 
 	bucketID := b.Builder.Project + "/" + b.Builder.Bucket
-	permissions, err := common.BucketPermissions(c, bucketID)
+	accessClient := common.GetCachedAccessClient(c)
+	permissions, err := accessClient.BucketPermissions(c, bucketID)
 	if err != nil {
 		return nil, err
 	}

@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -544,12 +545,24 @@ func withGitMiddleware(c *router.Context, next router.Handler) {
 // This middleware depends on auth middleware in order to generate the access
 // client, so it must be called after the auth middleware is installed.
 func withAccessClientMiddleware(c *router.Context, next router.Handler) {
-	client, err := common.NewAccessClient(c.Context)
+	settings := common.GetSettings(c.Context)
+	if settings.Buildbucket.GetHost() == "" {
+		ErrorHandler(c, errors.Reason("no buildbucket host found").Err())
+		return
+	}
+
+	cache := caching.GlobalCache(c.Context, fmt.Sprintf("buildbucket-access-%s", settings.Buildbucket.Host))
+	if cache == nil {
+		ErrorHandler(c, errors.Reason("no global cache configured").Err())
+		return
+	}
+
+	client, err := common.NewCachedAccessClient(c.Context, settings.Buildbucket.Host, cache)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
 	}
-	c.Context = common.WithAccessClient(c.Context, client)
+	c.Context = common.WithCachedAccessClient(c.Context, client)
 	next(c)
 }
 

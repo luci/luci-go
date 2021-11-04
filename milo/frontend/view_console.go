@@ -519,7 +519,8 @@ func filterUnauthorizedBuildersFromConsoles(c context.Context, cons []*common.Co
 	for _, con := range cons {
 		buckets = buckets.Union(con.Buckets())
 	}
-	perms, err := common.BucketPermissions(c, buckets.ToSlice()...)
+	accessClient := common.GetCachedAccessClient(c)
+	perms, err := accessClient.BucketPermissions(c, buckets.ToSlice()...)
 	if err != nil {
 		return err
 	}

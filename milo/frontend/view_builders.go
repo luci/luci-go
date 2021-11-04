@@ -122,7 +122,8 @@ func filterAuthorizedBuilders(c context.Context, builders []string) ([]string, e
 			buckets.Add(bucket)
 		}
 	}
-	perms, err := common.BucketPermissions(c, buckets.ToSlice()...)
+	accessClient := common.GetCachedAccessClient(c)
+	perms, err := accessClient.BucketPermissions(c, buckets.ToSlice()...)
 	if err != nil {
 		return nil, err
 	}
