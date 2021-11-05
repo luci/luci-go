@@ -79,6 +79,13 @@ type Context struct {
 	// scopes permissible there.
 	Options auth.Options
 
+	// ExposeSystemAccount indicates if this authentication context should also
+	// expose non-default "system" logical LUCI account (using the same
+	// credentials as the default account).
+	//
+	// This is an advanced feature used to emulate Swarming environment.
+	ExposeSystemAccount bool
+
 	// EnableGitAuth enables authentication for Git subprocesses.
 	//
 	// Assumes 'git' binary is actually gitwrapper and that 'git-credential-luci'
@@ -242,9 +249,9 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 	// If there's no auth credentials at all, do not launch any LUCI_CONTEXT (it
 	// is impossible without credentials). Subprocesses will discover lack of
 	// ambient credentials on their own and fail (or proceed) appropriately.
-	canInherit := opts.Method == auth.LUCIContextMethod && opts.ActAsServiceAccount == ""
+	canInherit := opts.Method == auth.LUCIContextMethod && opts.ActAsServiceAccount == "" && !ac.ExposeSystemAccount
 	if !canInherit && !ac.anonymous {
-		if ac.luciSrv, ac.localAuth, err = launchSrv(ctx, tokens, ac.ID); err != nil {
+		if ac.luciSrv, ac.localAuth, err = launchSrv(ctx, tokens, ac.ID, ac.ExposeSystemAccount); err != nil {
 			return errors.Annotate(err, "failed to launch local auth server for %q account", ac.ID).Err()
 		}
 	}
@@ -375,9 +382,7 @@ func (ac *Context) Authenticator() *auth.Authenticator {
 // SetInEnviron).
 func (ac *Context) Export(ctx context.Context, env environ.Env) context.Context {
 	// Mutate LUCI_CONTEXT to use localauth.Server{...} launched by us (if any).
-	if ac.localAuth != nil {
-		ctx = lucictx.SetLocalAuth(ctx, ac.localAuth)
-	}
+	ctx = ac.SetLocalAuth(ctx)
 
 	if ac.EnableGitAuth {
 		env.Set("GIT_TERMINAL_PROMPT", "0")           // no interactive prompts
@@ -438,6 +443,18 @@ func (ac *Context) Export(ctx context.Context, env environ.Env) context.Context 
 	return ctx
 }
 
+// SetLocalAuth updates `local_auth` section of LUCI_CONTEXT.
+//
+// Note that this would allow LUCI libraries to use this auth context, but
+// other software (gsutil, gcloud, firebase etc) will not see it. They need
+// various environment variables to be exported first. Use Export for that.
+func (ac *Context) SetLocalAuth(ctx context.Context) context.Context {
+	if ac.localAuth != nil {
+		return lucictx.SetLocalAuth(ctx, ac.localAuth)
+	}
+	return ctx
+}
+
 // Report logs the service account email used by this auth context.
 func (ac *Context) Report(ctx context.Context) {
 	account := ac.email
@@ -456,14 +473,14 @@ func (ac *Context) Report(ctx context.Context) {
 //
 // Returns the server itself (so it can be stopped) and also LocalAuth section
 // that can be put into LUCI_CONTEXT to make subprocesses use the server.
-func launchSrv(ctx context.Context, tokens *auth.TokenGenerator, accID string) (*localauth.Server, *lucictx.LocalAuth, error) {
-	// We currently always setup a context with one account (which is also
-	// default). It means if we override some existing LUCI_CONTEXT, all
-	// non-default accounts there are "forgotten".
+func launchSrv(ctx context.Context, tokens *auth.TokenGenerator, accID string, exposeSystemAccount bool) (*localauth.Server, *lucictx.LocalAuth, error) {
+	generators := make(map[string]localauth.TokenGenerator, 2)
+	generators[accID] = tokens
+	if exposeSystemAccount {
+		generators["system"] = tokens
+	}
 	srv := &localauth.Server{
-		TokenGenerators: map[string]localauth.TokenGenerator{
-			accID: tokens,
-		},
+		TokenGenerators:  generators,
 		DefaultAccountID: accID,
 	}
 	la, err := srv.Start(ctx)

@@ -592,6 +592,9 @@ func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 			c.Flags.StringVar(
 				&c.tokenServerHost, "token-server-host", params.AuthOptions.TokenServerHost,
 				"The LUCI Token Server hostname to use when using -act-via-realm.")
+			c.Flags.BoolVar(
+				&c.exposeSystemAccount, "expose-system-account", false,
+				`Exposes non-default "system" LUCI logical account to emulate Swarming environment.`)
 			return c
 		},
 	}
@@ -600,9 +603,10 @@ func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 type contextRun struct {
 	commandRunBase
 
-	actAs           string
-	actViaRealm     string
-	tokenServerHost string
+	actAs               string
+	actViaRealm         string
+	tokenServerHost     string
+	exposeSystemAccount bool
 }
 
 func (c *contextRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -651,12 +655,13 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	// an auth context with all bells and whistles. If you enable or disable
 	// a feature here, make sure to adjust scopesContext as well.
 	authCtx := authctx.Context{
-		ID:                 "luci-auth",
-		Options:            opts,
-		EnableGitAuth:      true,
-		EnableDockerAuth:   true,
-		EnableGCEEmulation: true,
-		EnableFirebaseAuth: true,
+		ID:                  "luci-auth",
+		Options:             opts,
+		ExposeSystemAccount: c.exposeSystemAccount,
+		EnableGitAuth:       true,
+		EnableDockerAuth:    true,
+		EnableGCEEmulation:  true,
+		EnableFirebaseAuth:  true,
 	}
 	if err = authCtx.Launch(ctx, ""); err != nil {
 		fmt.Fprintln(os.Stderr, err)
