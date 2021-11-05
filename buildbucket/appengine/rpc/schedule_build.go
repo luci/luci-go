@@ -644,6 +644,16 @@ func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Buil
 	}
 }
 
+// activeGlobalExpsForBuilder filters the global experiments, returning the
+// experiments that apply to this builder, as well as experiments which are
+// ignored.
+//
+// If experiments are known, but don't apply to the builder, then they're
+// returned in a form where their DefaultValue and MinimumValue are 0.
+//
+// Ignored experiments are global experiments which no longer do anything,
+// and should be removed from the build (even if specified via
+// ScheduleBuildRequest).
 func activeGlobalExpsForBuilder(build *pb.Build, globalCfg *pb.SettingsCfg) (active []*pb.ExperimentSettings_Experiment, ignored stringset.Set) {
 	exps := globalCfg.GetExperiment().GetExperiments()
 	if len(exps) == 0 {
