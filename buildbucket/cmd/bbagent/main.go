@@ -44,6 +44,8 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/authctx"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -80,9 +82,29 @@ func mainImpl() int {
 
 	hostname := flag.String("host", "", "Buildbucket server hostname")
 	buildID := flag.Int64("build-id", 0, "Buildbucket build ID")
+	useGCEAccount := flag.Bool("use-gce-account", false, "Use GCE metadata service account for all calls")
 	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
+
 	flag.Parse()
 	args := flag.Args()
+
+	if *useGCEAccount {
+		// If asked to use the GCE account, create a new local auth context so it
+		// can be properly picked through out the rest of bbagent process tree. Use
+		// it as the default task account and as a "system" account (so it is used
+		// for things like Logdog PubSub calls).
+		authCtx := authctx.Context{
+			ID:                  "bbagent",
+			Options:             auth.Options{Method: auth.GCEMetadataMethod},
+			ExposeSystemAccount: true,
+		}
+		err := authCtx.Launch(ctx, "")
+		check(errors.Annotate(err, "failed launch the local LUCI auth context").Err())
+		defer authCtx.Close(ctx)
+
+		// Switch the default auth in the context to the one we just setup.
+		ctx = authCtx.SetLocalAuth(ctx)
+	}
 
 	var input *bbpb.BBAgentArgs
 	var bbclient BuildsClient
@@ -127,6 +149,20 @@ func mainImpl() int {
 		}
 	default:
 		check(errors.Reason("-host and -build-id are required").Err())
+	}
+
+	// Populate `realm` in the context based on the build's bucket if there's no
+	// realm there already.
+	if lucictx.GetRealm(ctx).GetName() == "" {
+		project := input.Build.Builder.Project
+		bucket := input.Build.Builder.Bucket
+		if project != "" && bucket != "" {
+			ctx = lucictx.SetRealm(ctx, &lucictx.Realm{
+				Name: fmt.Sprintf("%s:%s", project, bucket),
+			})
+		} else {
+			logging.Warningf(ctx, "Bad BuilderID in the build proto: %s", input.Build.Builder)
+		}
 	}
 
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
