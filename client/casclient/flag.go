@@ -47,9 +47,9 @@ func (c *Flags) Parse() error {
 	return nil
 }
 
-// UseCAS returns if instance or address is specified.
+// UseCAS returns if instance or custom address is specified.
 func (c *Flags) UseCAS() bool {
-	return c.Instance != "" || c.Addr != ""
+	return c.Instance != "" || c.Addr != AddrProd
 }
 
 // GCP project ID format: https://cloud.google.com/resource-manager/docs/creating-managing-projects
