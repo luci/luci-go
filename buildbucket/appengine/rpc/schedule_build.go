@@ -1094,9 +1094,6 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 
 		// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
-		//
-		// TODO(crbug.com/1264659): Make disabledExperiments part of the Build message once
-		// kitchen is gone.
 		build, disabledExperiments := buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg)
 
 		blds[i] = &model.Build{

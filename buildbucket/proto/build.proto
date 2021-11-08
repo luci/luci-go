@@ -294,17 +294,6 @@ message BuildInfra {
 
     // Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
     string hostname = 7;
-
-    // This is the list of known-but-not-enabled experiments at the time the
-    // build was scheduled.
-    //
-    // TODO(crbug.com/1264659) - Currently this only appears in the Datastore
-    // model for the Build; Once kitchen is gone, this could be added without
-    // having to synchronize rev'ing kitchen (which has failed in the past
-    // with an unknown fields; I think this is fixed, but I'd rather just leave
-    // it alone).
-    //
-    // repeated string disabled_experiments = 8;
   }
 
   // Swarming-specific information.
