@@ -31,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/cli/base"
-	"go.chromium.org/luci/lucicfg/cli/cmds/diff"
 	"go.chromium.org/luci/lucicfg/cli/cmds/fmt"
 	"go.chromium.org/luci/lucicfg/cli/cmds/generate"
 	"go.chromium.org/luci/lucicfg/cli/cmds/lint"
@@ -80,9 +79,6 @@ func GetApplication(params base.Parameters) *cli.Application {
 			validate.Cmd(params),
 			fmt.Cmd(params),
 			lint.Cmd(params),
-
-			subcommands.Section("Aiding in the migration\n"),
-			diff.Cmd(params),
 
 			subcommands.Section("Authentication for LUCI Config\n"),
 			authcli.SubcommandInfo(params.AuthOptions, "auth-info", true),
