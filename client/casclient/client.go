@@ -128,7 +128,7 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 		// Connect to local fake CAS server.
 		// See also go.chromium.org/luci/tools/cmd/fakecas
 		if instance != "" {
-			return nil, errors.Reason("do not specify instance with local address").Err()
+			logging.Warningf(ctx, "instance `%s` is given, but will be ignored.", instance)
 		}
 		dialParams := client.DialParams{
 			Service:    addr,
