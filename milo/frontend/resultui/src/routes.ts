@@ -232,6 +232,16 @@ router.setRoutes({
       ],
     },
     {
+      path: '/test/:realm/:test_id',
+      action: async (_ctx, cmd) => {
+        await import(
+          /* webpackChunkName: "test_history_page" */
+          './pages/test_history_page'
+        );
+        return cmd.component('milo-test-history-page');
+      },
+    },
+    {
       path: '/auth-callback/:channel_id',
       action: async (ctx, cmd) => {
         new BroadcastChannel(ctx.params['channel_id'] as string).postMessage('close');
