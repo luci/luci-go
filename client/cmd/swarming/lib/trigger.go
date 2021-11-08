@@ -174,6 +174,7 @@ type triggerRun struct {
 	isolateServer             string
 	namespace                 string
 	isolated                  string
+	casInstance               string
 	digest                    string
 	dimensions                stringmapflag.Value
 	env                       stringmapflag.Value
@@ -214,6 +215,7 @@ func (c *triggerRun) Init(authFlags AuthFlags) {
 	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
 	c.Flags.StringVar(&c.isolated, "s", "", "Alias for -isolated.")
+	c.Flags.StringVar(&c.casInstance, "cas-instance", "", "CAS instance (GCP). Format is \"projects/<project_id>/instances/<instance_id>\". Default is contructed from -server.")
 	c.Flags.StringVar(&c.digest, "digest", "", "Digest of root directory uploaded to CAS `<Hash>/<Size>`.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	c.Flags.Var(&c.dimensions, "d", "Alias for -dimension.")
@@ -406,19 +408,24 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 			return nil, errors.Annotate(err, "invalid digest: %s", c.digest).Err()
 		}
 
-		// infer cas instance from server URL.
-		u, err := url.Parse(c.serverURL)
-		if err != nil {
-			return nil, errors.Annotate(err, "invalid server url: %s", c.serverURL).Err()
-		}
+		casInstance := c.casInstance
+		if casInstance == "" {
+			// infer cas instance from server URL.
+			u, err := url.Parse(c.serverURL)
+			if err != nil {
+				return nil, errors.Annotate(err, "invalid server url: %s", c.serverURL).Err()
+			}
 
-		const appspot = ".appspot.com"
-		if !strings.HasSuffix(u.Host, appspot) {
-			return nil, errors.Reason("server url should have '%s' suffix: %s", appspot, c.serverURL).Err()
+			const appspot = ".appspot.com"
+			if !strings.HasSuffix(u.Host, appspot) {
+				return nil, errors.Reason("server url should have '%s' suffix: %s", appspot, c.serverURL).Err()
+			}
+
+			casInstance = "projects/" + strings.TrimSuffix(u.Host, appspot) + "/instances/default_instance"
 		}
 
 		CASRef = &swarming.SwarmingRpcsCASReference{
-			CasInstance: "projects/" + strings.TrimSuffix(u.Host, appspot) + "/instances/default_instance",
+			CasInstance: casInstance,
 			Digest: &swarming.SwarmingRpcsDigest{
 				Hash:      d.Hash,
 				SizeBytes: d.Size,
