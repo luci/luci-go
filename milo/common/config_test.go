@@ -278,6 +278,47 @@ func TestConfig(t *testing.T) {
 					So(ids, ShouldResemble, []string{"default_header", "console.bar", "console.baz"})
 				})
 			})
+
+			Convey("Check removing Milo config only", func() {
+				c := cfgclient.Use(c, memcfg.New(mockedConfigsNoConsole))
+				So(UpdateProjects(c), ShouldBeNil)
+
+				Convey("Check kept the Project entity", func() {
+					foo := &Project{ID: "foo"}
+					So(datastore.Get(c, foo), ShouldBeNil)
+					So(foo.HasConfig, ShouldBeFalse)
+					So(foo.ACL, ShouldResemble, ACL{
+						Groups:     []string{"a", "b"},
+						Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
+					})
+				})
+
+				Convey("Check removed the console", func() {
+					cs, err := GetConsole(c, "foo", "default")
+					So(err, ShouldNotBeNil)
+					So(cs, ShouldEqual, nil)
+				})
+			})
+
+			Convey("Check applying broken config", func() {
+				c := cfgclient.Use(c, memcfg.New(mockedConfigsBroken))
+				So(UpdateProjects(c), ShouldNotBeNil)
+
+				Convey("Check kept the Project entity", func() {
+					foo := &Project{ID: "foo"}
+					So(datastore.Get(c, foo), ShouldBeNil)
+					So(foo.HasConfig, ShouldBeTrue)
+					So(foo.ACL, ShouldResemble, ACL{
+						Groups:     []string{"a", "b"},
+						Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
+					})
+				})
+
+				Convey("Check kept the console", func() {
+					_, err := GetConsole(c, "foo", "default")
+					So(err, ShouldBeNil)
+				})
+			})
 		})
 	})
 }
@@ -535,4 +576,43 @@ var mockedConfigsUpdate = map[config.Set]memcfg.Files{
 		"project.cfg": ``,
 	},
 	// No project/baz anymore.
+}
+
+// A copy of mockedConfigs with projects/foo and projects/external Milo configs
+// removed.
+var mockedConfigsNoConsole = map[config.Set]memcfg.Files{
+	"projects/foo": {
+		"project.cfg": fooProjectCfg,
+	},
+	"projects/bar": {
+		"${appid}.cfg": ``, // empty, but present
+		"project.cfg":  ``,
+	},
+	"projects/baz": {
+		// no Milo config
+		"project.cfg": bazProjectCfg,
+	},
+	"projects/external": {
+		"project.cfg": externalProjectCfg,
+	},
+}
+
+// A copy of mockedConfigs with projects/foo broken.
+var mockedConfigsBroken = map[config.Set]memcfg.Files{
+	"projects/foo": {
+		"${appid}.cfg": `broken milo config file`,
+		"project.cfg":  fooProjectCfg,
+	},
+	"projects/bar": {
+		"${appid}.cfg": ``, // empty, but present
+		"project.cfg":  ``,
+	},
+	"projects/baz": {
+		// no Milo config
+		"project.cfg": bazProjectCfg,
+	},
+	"projects/external": {
+		"${appid}.cfg": externalConsoleCfg,
+		"project.cfg":  externalProjectCfg,
+	},
 }

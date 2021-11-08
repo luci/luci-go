@@ -586,12 +586,11 @@ func parseProjectACL(projectCfg string) (ACL, error) {
 
 // getConsolesFromMiloCfg extracts a list of consoles from a Milo config proto
 // and returns them in a map, indexed by name.
+//
+// If miloCfg is nil or doesn't have any consoles, returns non-nil empty map.
 func getConsolesFromMiloCfg(miloCfg *config.Project) map[string]*config.Console {
-	if miloCfg == nil {
-		return nil
-	}
-	consoles := make(map[string]*config.Console, len(miloCfg.Consoles))
-	for _, console := range miloCfg.Consoles {
+	consoles := make(map[string]*config.Console, len(miloCfg.GetConsoles()))
+	for _, console := range miloCfg.GetConsoles() {
 		consoles[console.Id] = console
 	}
 	return consoles
@@ -616,6 +615,7 @@ func UpdateProjects(c context.Context) error {
 	// This will collect results of individual fetchProject call. It will receive
 	// exactly len(cfgs) items no matter what.
 	type result struct {
+		projectID   string
 		project     *Project
 		miloCfg     *config.Project
 		miloCfgMeta *configInterface.Meta
@@ -632,6 +632,7 @@ func UpdateProjects(c context.Context) error {
 			tasks <- func() error {
 				project, miloCfg, miloCfgMeta, err := fetchProject(c, &cfg)
 				results <- result{
+					projectID:   cfg.ConfigSet.Project(),
 					project:     project,
 					miloCfg:     miloCfg,
 					miloCfgMeta: miloCfgMeta,
@@ -646,15 +647,17 @@ func UpdateProjects(c context.Context) error {
 	// We use the map for two purposes:
 	//   * Resolving external console references
 	//   * Pruning consoles that were deleted.
+	// Projects with broken configs that could not be fetched are represented by
+	// nil entries. Projects without consoles are represented by empty maps.
 	knownProjects := map[string]map[string]*config.Console{}
 	merr := errors.MultiError{}
 	resultsList := make([]result, 0, len(cfgs))
 	for i := 0; i < len(cfgs); i++ {
 		res := <-results
-		if res.project != nil {
-			knownProjects[res.project.ID] = getConsolesFromMiloCfg(res.miloCfg) // may be nil
-		}
-		if res.err != nil {
+		if res.err == nil {
+			knownProjects[res.projectID] = getConsolesFromMiloCfg(res.miloCfg)
+		} else {
+			knownProjects[res.projectID] = nil
 			merr = append(merr, res.err)
 		}
 		resultsList = append(resultsList, res)
@@ -749,12 +752,9 @@ func UpdateProjects(c context.Context) error {
 	// Print some stats.
 	processedConsoles := 0
 	for _, cons := range knownProjects {
-		if cons != nil {
-			processedConsoles += len(cons)
-		}
+		processedConsoles += len(cons)
 	}
-	logging.Infof(
-		c, "processed %d consoles over %d projects", processedConsoles, len(knownProjects))
+	logging.Infof(c, "processed %d consoles over %d projects", processedConsoles, len(knownProjects))
 
 	if len(merr) == 0 {
 		return nil
