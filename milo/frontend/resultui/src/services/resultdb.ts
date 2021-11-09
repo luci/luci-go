@@ -245,26 +245,24 @@ export interface CommitPosition {
 }
 
 export interface CommitPositionRange {
-  readonly earliest: CommitPosition;
-  readonly latest: CommitPosition;
+  readonly earliest?: CommitPosition;
+  readonly latest?: CommitPosition;
 }
 
 export interface TimeRange {
-  readonly earliest: string;
-  readonly latest: string;
+  readonly earliest?: string;
+  readonly latest?: string;
 }
 
-type GetTestResultHistoryRequestRange = { commitPositionRange: CommitPositionRange } | { timeRange: TimeRange };
-
-interface GetTestResultHistoryRequestMain {
+export interface GetTestResultHistoryRequest {
   readonly realm: string;
   readonly testIdRegexp: string;
   readonly variantPredicate?: VariantPredicate;
   readonly pageSize?: number;
   readonly pageToken?: string;
+  readonly timeRange?: TimeRange;
+  readonly commitPositionRange?: CommitPositionRange;
 }
-
-export type GetTestResultHistoryRequest = GetTestResultHistoryRequestMain & GetTestResultHistoryRequestRange;
 
 export interface GetTestResultHistoryResponseEntry {
   readonly commitPosition: CommitPosition;

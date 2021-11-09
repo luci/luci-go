@@ -15,6 +15,14 @@
 
 type Constructor<T, P extends unknown[] = []> = new (...params: P) => T;
 
+type Mutable<T> = {
+  -readonly [key in keyof T]: T[key];
+};
+
+type DeepMutable<T> = {
+  -readonly [key in keyof T]: DeepMutable<T[key]>;
+};
+
 /**
  * Configs of the app.
  * Declared in the server generated file, /configs.js, included as a script tag.

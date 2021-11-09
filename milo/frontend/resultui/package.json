@@ -38,6 +38,7 @@
     "d3": "^7.1.1",
     "diff2html": "^3.4.12",
     "dompurify": "^2.3.3",
+    "escape-string-regexp": "^5.0.0",
     "fast-equals": "^2.0.3",
     "fast-json-stable-stringify": "^2.1.0",
     "hotkeys-js": "^3.8.3",
