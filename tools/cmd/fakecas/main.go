@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
 	regrpc "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
@@ -30,6 +31,7 @@ import (
 
 func main() {
 	port := flag.Int("port", 9000, "local port number used by fake server")
+	addrFile := flag.String("addr-file", "", "dump listening address in this file")
 	flag.Parse()
 
 	s := grpc.NewServer()
@@ -43,7 +45,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v\n", err)
 	}
-	log.Printf("listening tcp port %d\n", *port)
+	log.Printf("listening address: %s\n", lis.Addr())
+
+	if *addrFile != "" {
+		if err := os.WriteFile(*addrFile, []byte(lis.Addr().String()), 0600); err != nil {
+			log.Fatalf("failed to write addrFile: %v", err)
+		}
+	}
 
 	defer signals.HandleInterrupt(func() {
 		log.Println("shutting down fake CAS gRPC server...")
