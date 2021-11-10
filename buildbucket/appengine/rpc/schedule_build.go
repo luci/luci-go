@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
@@ -685,28 +684,33 @@ func activeGlobalExpsForBuilder(build *pb.Build, globalCfg *pb.SettingsCfg) (act
 // build.Infra.Swarming, build.Input and build.Exe must not be nil (see
 // setInfra, setInput and setExecutable respectively). The request must not set
 // legacy experiment values (see normalizeSchedule).
-func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg, build *pb.Build) (disabledExperiments []string) {
+func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg, build *pb.Build) {
 	globalExps, ignoredExps := activeGlobalExpsForBuilder(build, globalCfg)
 
 	// Set up the dice-rolling apparatus
 	exps := make(map[string]int32, len(cfg.GetExperiments())+len(globalExps))
+	er := make(map[string]pb.BuildInfra_Buildbucket_ExperimentReason, len(exps))
 
 	// 1. Populate with defaults
 	for _, exp := range globalExps {
 		exps[exp.Name] = exp.DefaultValue
+		er[exp.Name] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT
 	}
 	// 2. Overwrite with builder config
 	for name, value := range cfg.GetExperiments() {
+		er[name] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG
 		exps[name] = value
 	}
 	// 3. Overwrite with minimum global experiment values
 	for _, exp := range globalExps {
 		if exp.MinimumValue > exps[exp.Name] {
+			er[exp.Name] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_MINIMUM
 			exps[exp.Name] = exp.MinimumValue
 		}
 	}
 	// 4. Explicit requests have highest precedence
 	for name, enabled := range req.GetExperiments() {
+		er[name] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 		if enabled {
 			exps[name] = 100
 		} else {
@@ -716,9 +720,7 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	// 5. Remove all inactive global expirements
 	ignoredExps.Iter(func(expName string) bool {
 		if _, ok := exps[expName]; ok {
-			// TODO(crbug.com/854099): Add some sort of warning mechanism to builds so
-			// this can show up in Milo.
-			logging.Warningf(ctx, "dropping inactive experiment %q", expName)
+			er[expName] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_INACTIVE
 			delete(exps, expName)
 		}
 		return true
@@ -759,8 +761,6 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	if len(build.Exe.Cmd) == 0 {
 		build.Exe.Cmd = []string{"recipes"}
 	}
-	// We always want to set the bbagent experiment if we selected bbagent.
-	selections[bb.ExperimentBBAgent] = build.Exe.Cmd[0] != "recipes"
 
 	// Request > experimental > proto precedence.
 	if selections[bb.ExperimentNonProduction] && req.GetPriority() == 0 {
@@ -768,14 +768,16 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	}
 
 	for exp, en := range selections {
-		lst := &build.Input.Experiments
 		if !en {
-			lst = &disabledExperiments
+			continue
 		}
-		*lst = append(*lst, exp)
+		build.Input.Experiments = append(build.Input.Experiments, exp)
 	}
 	sort.Strings(build.Input.Experiments)
-	sort.Strings(disabledExperiments)
+
+	if len(er) > 0 {
+		build.Infra.Buildbucket.ExperimentReasons = er
+	}
 
 	return
 }
@@ -1011,7 +1013,7 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build)
 // buildFromScheduleRequest returns a build proto created from the given
 // request and builder config. Sets fields except those which can only be
 // determined at creation time.
-func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg) (b *pb.Build, disabledExperiments []string) {
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg) (b *pb.Build) {
 	b = &pb.Build{
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
@@ -1027,18 +1029,21 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setInput(req, cfg, b)
 	setTags(req, b)
 	setTimeouts(req, cfg, b)
-	disabledExperiments = setExperiments(ctx, req, cfg, globalCfg, b) // Requires setExecutable, setInfra, setInput.
-	setCIPDPackages(b, globalCfg)                                     // Requires setExecutable, setInfra, setExperiments.
+	setExperiments(ctx, req, cfg, globalCfg, b) // Requires setExecutable, setInfra, setInput.
+	setCIPDPackages(b, globalCfg)               // Requires setExecutable, setInfra, setExperiments.
 
 	return
 }
 
 // setExperimentsFromProto sets experiments in the model (see model/build.go).
 // build.Proto.Input.Experiments and
-// build.Proto.Infra.Buildbucket.DisabledExperiments must be set (see setExperiments).
-func setExperimentsFromProto(build *model.Build, disabledExperiments []string) {
-	for _, exp := range disabledExperiments {
-		build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
+// build.Proto.Infra.Buildbucket.ExperimentReasons must be set (see setExperiments).
+func setExperimentsFromProto(build *model.Build) {
+	setExps := stringset.NewFromSlice(build.Proto.Input.Experiments...)
+	for exp := range build.Proto.Infra.Buildbucket.ExperimentReasons {
+		if !setExps.Has(exp) {
+			build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
+		}
 	}
 	for _, exp := range build.Proto.Input.Experiments {
 		build.Experiments = append(build.Experiments, fmt.Sprintf("+%s", exp))
@@ -1094,7 +1099,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 
 		// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
-		build, disabledExperiments := buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg)
+		build := buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg)
 
 		blds[i] = &model.Build{
 			ID:         ids[i],
@@ -1113,7 +1118,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 			protoutil.SetStatus(now, blds[i].Proto, pb.Status_SCHEDULED)
 		}
 
-		setExperimentsFromProto(blds[i], disabledExperiments)
+		setExperimentsFromProto(blds[i])
 		blds[i].IsLuci = cfg != nil
 		blds[i].PubSubCallback.Topic = validReq[i].GetNotify().GetPubsubTopic()
 		blds[i].PubSubCallback.UserData = validReq[i].GetNotify().GetUserData()

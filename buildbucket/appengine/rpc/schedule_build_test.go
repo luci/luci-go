@@ -817,12 +817,10 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:         "anonymous:anonymous",
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Experiments: []string{
-						"-" + bb.ExperimentBBAgent,
-					},
-					Incomplete: true,
-					IsLuci:     true,
-					Status:     pb.Status_SCHEDULED,
+					Experiments:       nil,
+					Incomplete:        true,
+					IsLuci:            true,
+					Status:            pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:builder",
 						"buildset:buildset",
@@ -1157,12 +1155,9 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:         "anonymous:anonymous",
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Experiments: []string{
-						"-" + bb.ExperimentBBAgent,
-					},
-					Incomplete: true,
-					IsLuci:     true,
-					Status:     pb.Status_SCHEDULED,
+					Incomplete:        true,
+					IsLuci:            true,
+					Status:            pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:static builder",
 					},
@@ -1178,12 +1173,9 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:         "anonymous:anonymous",
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Experiments: []string{
-						"-" + bb.ExperimentBBAgent,
-					},
-					Incomplete: true,
-					IsLuci:     true,
-					Status:     pb.Status_SCHEDULED,
+					Incomplete:        true,
+					IsLuci:            true,
+					Status:            pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:static builder",
 					},
@@ -1199,12 +1191,9 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:         "anonymous:anonymous",
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Experiments: []string{
-						"-" + bb.ExperimentBBAgent,
-					},
-					Incomplete: true,
-					IsLuci:     false,
-					Status:     pb.Status_SCHEDULED,
+					Incomplete:        true,
+					IsLuci:            false,
+					Status:            pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:dynamic builder",
 					},
@@ -1384,12 +1373,9 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:         "anonymous:anonymous",
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Experiments: []string{
-						"-" + bb.ExperimentBBAgent,
-					},
-					Incomplete: true,
-					IsLuci:     true,
-					Status:     pb.Status_SCHEDULED,
+					Incomplete:        true,
+					IsLuci:            true,
+					Status:            pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:builder",
 						"buildset:buildset",
@@ -2997,9 +2983,6 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Input: &pb.Build_Input{},
 			},
-			Experiments: []string{
-				"-" + bb.ExperimentBBAgent,
-			},
 		}
 
 		req := &pb.ScheduleBuildRequest{
@@ -3008,8 +2991,13 @@ func TestScheduleBuild(t *testing.T) {
 
 		setExps := func() {
 			normalizeSchedule(req)
-			disabled := setExperiments(ctx, req, cfg, gCfg, ent.Proto)
-			setExperimentsFromProto(ent, disabled)
+			setExperiments(ctx, req, cfg, gCfg, ent.Proto)
+			setExperimentsFromProto(ent)
+		}
+		initReasons := func() map[string]pb.BuildInfra_Buildbucket_ExperimentReason {
+			er := make(map[string]pb.BuildInfra_Buildbucket_ExperimentReason)
+			expect.Proto.Infra.Buildbucket.ExperimentReasons = er
+			return er
 		}
 
 		Convey("nil", func() {
@@ -3056,8 +3044,6 @@ func TestScheduleBuild(t *testing.T) {
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"luciexe"},
 				})
-				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
-				So(ent.Experiments, ShouldContain, "+"+bb.ExperimentBBAgent)
 			})
 
 			Convey("cmd > experiment", func() {
@@ -3110,9 +3096,11 @@ func TestScheduleBuild(t *testing.T) {
 			expect.Experiments = []string{
 				"+experiment1",
 				"-experiment2",
-				"-" + bb.ExperimentBBAgent,
 			}
 			expect.Proto.Input.Experiments = []string{"experiment1"}
+			er := initReasons()
+			er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
+			er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
 			So(ent, ShouldResemble, expect)
 		})
@@ -3125,11 +3113,13 @@ func TestScheduleBuild(t *testing.T) {
 			expect.Canary = true
 			expect.Experiments = []string{
 				"+" + bb.ExperimentBBCanarySoftware,
-				"-" + bb.ExperimentBBAgent,
 				"-" + bb.ExperimentNonProduction,
 			}
 			expect.Proto.Canary = true
 			expect.Proto.Input.Experiments = []string{bb.ExperimentBBCanarySoftware}
+			er := initReasons()
+			er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
+			er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
 			So(ent, ShouldResemble, expect)
 		})
@@ -3142,9 +3132,11 @@ func TestScheduleBuild(t *testing.T) {
 			expect.Experiments = []string{
 				"+experiment1",
 				"-experiment2",
-				"-" + bb.ExperimentBBAgent,
 			}
 			expect.Proto.Input.Experiments = []string{"experiment1"}
+			er := initReasons()
+			er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG
+			er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG
 
 			So(ent, ShouldResemble, expect)
 		})
@@ -3160,12 +3152,14 @@ func TestScheduleBuild(t *testing.T) {
 				expect.Experiments = []string{
 					"+" + bb.ExperimentNonProduction,
 					"-" + bb.ExperimentBBCanarySoftware,
-					"-" + bb.ExperimentBBAgent,
 				}
 				expect.Experimental = true
 				expect.Proto.Input.Experimental = true
 				expect.Proto.Input.Experiments = []string{bb.ExperimentNonProduction}
 				expect.Proto.Infra.Swarming.Priority = 255
+				er := initReasons()
+				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
+				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
 				So(ent, ShouldResemble, expect)
 			})
@@ -3179,12 +3173,14 @@ func TestScheduleBuild(t *testing.T) {
 
 				expect.Experiments = []string{
 					"+" + bb.ExperimentBBCanarySoftware,
-					"-" + bb.ExperimentBBAgent,
 					"-" + bb.ExperimentNonProduction,
 				}
 				expect.Canary = true
 				expect.Proto.Canary = true
 				expect.Proto.Input.Experiments = []string{bb.ExperimentBBCanarySoftware}
+				er := initReasons()
+				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
+				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
 				So(ent, ShouldResemble, expect)
 			})
@@ -3199,9 +3195,11 @@ func TestScheduleBuild(t *testing.T) {
 				expect.Experiments = []string{
 					"+experiment1",
 					"-experiment2",
-					"-" + bb.ExperimentBBAgent,
 				}
 				expect.Proto.Input.Experiments = []string{"experiment1"}
+				er := initReasons()
+				er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
+				er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
 				So(ent, ShouldResemble, expect)
 			})
@@ -3224,7 +3222,6 @@ func TestScheduleBuild(t *testing.T) {
 					"+" + bb.ExperimentNonProduction,
 					"-experiment2",
 					"-" + bb.ExperimentBBCanarySoftware,
-					"-" + bb.ExperimentBBAgent,
 				}
 				expect.Experimental = true
 				expect.Proto.Input.Experimental = true
@@ -3233,6 +3230,11 @@ func TestScheduleBuild(t *testing.T) {
 					bb.ExperimentNonProduction,
 				}
 				expect.Proto.Infra.Swarming.Priority = 255
+				er := initReasons()
+				er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
+				er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
+				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
+				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
 				So(ent, ShouldResemble, expect)
 			})
@@ -3256,6 +3258,9 @@ func TestScheduleBuild(t *testing.T) {
 					setExps()
 
 					So(ent.Proto.Input.Experiments, ShouldResemble, []string{"always"})
+					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+						"always": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
+					})
 				})
 
 				Convey("can be overridden from request", func() {
@@ -3263,6 +3268,9 @@ func TestScheduleBuild(t *testing.T) {
 					setExps()
 
 					So(ent.Proto.Input.Experiments, ShouldBeEmpty)
+					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+						"always": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+					})
 				})
 			})
 
@@ -3277,6 +3285,10 @@ func TestScheduleBuild(t *testing.T) {
 
 				So(ent.Proto.Input.Experiments, ShouldResemble, []string{"per.builder"})
 				So(ent.Experiments, ShouldContain, "-other.builder")
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+					"per.builder":   pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
+					"other.builder": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
+				})
 			})
 
 			Convey("min value", func() {
@@ -3289,6 +3301,9 @@ func TestScheduleBuild(t *testing.T) {
 					setExps()
 
 					So(ent.Proto.Input.Experiments, ShouldResemble, []string{"min.value"})
+					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+						"min.value": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_MINIMUM,
+					})
 				})
 
 				Convey("can be overridden from request", func() {
@@ -3296,15 +3311,24 @@ func TestScheduleBuild(t *testing.T) {
 					setExps()
 
 					So(ent.Proto.Input.Experiments, ShouldBeEmpty)
+					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+						"min.value": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+					})
 				})
 			})
 
 			Convey("inactive", func() {
 				addExp("inactive", 30, 30, true, nil)
+				addExp("other_inactive", 30, 30, true, nil)
 				cfg.Experiments["inactive"] = 100
 				setExps()
 
 				So(ent.Proto.Input.Experiments, ShouldBeEmpty)
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+					"inactive": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_INACTIVE,
+					// Note that other_inactive wasn't requested in the build so it's
+					// absent here.
+				})
 			})
 		})
 	})

@@ -82,7 +82,9 @@ message Build {
 
     // The sorted list of experiments enabled on this build.
     //
-    // See `Builder.experiments` for well-known experiments.
+    // See `Builder.experiments` for a detailed breakdown on how experiments
+    // work, and go/buildbucket-settings.cfg for the current state of global
+    // experiments.
     repeated string experiments = 6;
   }
 
@@ -294,6 +296,38 @@ message BuildInfra {
 
     // Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
     string hostname = 7;
+
+    enum ExperimentReason {
+      // This value is unused (i.e. if you see this, it's a bug).
+      EXPERIMENT_REASON_UNSET = 0;
+
+      // This experiment was configured from the 'default_value' of a global
+      // experiment.
+      //
+      // See go/buildbucket-settings.cfg for the list of global experiments.
+      EXPERIMENT_REASON_GLOBAL_DEFAULT = 1;
+
+      // This experiment was configured from the Builder configuration.
+      EXPERIMENT_REASON_BUILDER_CONFIG = 2;
+
+      // This experiment was configured from the 'minimum_value' of a global
+      // experiment.
+      //
+      // See go/buildbucket-settings.cfg for the list of global experiments.
+      EXPERIMENT_REASON_GLOBAL_MINIMUM = 3;
+
+      // This experiment was explicitly set from the ScheduleBuildRequest.
+      EXPERIMENT_REASON_REQUESTED = 4;
+
+      // This experiment is inactive and so was removed from the Build.
+      //
+      // See go/buildbucket-settings.cfg for the list of global experiments.
+      EXPERIMENT_REASON_GLOBAL_INACTIVE = 5;
+    }
+
+    // This contains a map of all the experiments involved for this build, as
+    // well as which bit of configuration lead to them being set or unset.
+    map<string, ExperimentReason> experiment_reasons = 8;
   }
 
   // Swarming-specific information.

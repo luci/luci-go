@@ -513,72 +513,9 @@ message Builder {
   //
   // Well-known experiments
   //
-  // # "luci.non_production"  (default 0%)
-  // Builds with this experiment SHOULD NOT affect production resources. This
-  // means that they should e.g. skip uploads steps which send data to locations
-  // which would overlap with production uploads.
-  //
-  // This experiment does not directly affect the behavior of any LUCI services,
-  // but is set by some LUCI tools/systems (for example `led`). It is very
-  // coarse-grained, but is still useful to allow communication from
-  // higher-layer systems that the build in question shouldn't impact
-  // production.
-  //
-  // Although it's tempting to enable new functionality when this experiment is
-  // set, prefer to create your own experiment names for that purpose. For
-  // example:
-  //
-  //    # Good
-  //    upload_bucket = 'gs://production-binaries'
-  //    if 'luci.non_production' in experiments:
-  //      upload_bucket = 'gs://non-production-binaries'
-  //
-  //    # Good
-  //    if 'luci.non_production' not in experiments:
-  //      official_results_service.report(stuff)
-  //
-  //    # Bad
-  //    if 'luci.non_production' in experiments:
-  //      enable_wacky_new_functionality()
-  //
-  //    # Instead
-  //    if 'my_project.wacky_new_functionality' in experiments:
-  //      enable_wacky_new_functionality()
-  //
-  // Currently maps to the "recipe_engine/runtime".is_experimental flag in
-  // recipes, though getting it directly from build.input.experiments is
-  // preferable.
-  //
-  // # "luci.buildbucket.canary_software"  (default 10%)
-  // Builds with this experiment use the canary software versions listed in
-  // Buildbucket's service-wide `settings.cfg`.
-  //
-  // NOTE: There's a good argument for controlling each software package with
-  // its own experiment. However, in practice, we don't usually have more than
-  // one piece of software in canary at the same time. If we were designing this
-  // today, we would likely lean towards individual package control.
-  //
-  // # "luci.buildbucket.use_bbagent"  (default currently 0%)
-  // Builds with this experiment will default to the new 'luciexe'-based
-  // protocol, rather than the deprecated '@@@annotation@@@' protocol.
-  //
-  // # "luci.buildbucket.bbagent_getbuild" (default currently 25%)
-  // Builds with this experiment and the above luci.buildbucket.use_bbagent will
-  // invoke bbagent with fixed-length CLI instead of the default which is
-  // O(build proto size). No-op if luci.buildbucket.use_bbagent isn't also set.
-  //
-  // # "luci.buildbucket.backend_alt" (default currently 0%)
-  // Builds with this experiment will use builder.backend_alt as the Buildbucket
-  // backent when scheduling the build. This overrides builder.backend and
-  // builder.swarming_host. Currently unimplemented.
-  //
-  // Over time we'll be moving the default on both of these up from 0%. Ideally
-  // we'll be removing the @@@annotation@@@ protocol entirely in 2021Q3.
-  //
-  // # "luci.recipes.use_python3"  (default 0%)
-  // Opts the build into using python3 to run the recipes. This is achieved by
-  // bbagent setting the $RECIPES_USE_PY3 environment variable. Only works for
-  // builds with bbagent enabled.
+  // Buildbucket has a number of 'global' experiments which are in various
+  // states of deployment at any given time. For the current state, see
+  // go/buildbucket-settings.cfg.
   map<string, int32> experiments = 28;
 
   // This field will set the default value of the "critical" field of
