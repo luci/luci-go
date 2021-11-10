@@ -17,6 +17,7 @@ import { assert } from 'chai';
 import {
   createTVCmpFn,
   createTVPropGetter,
+  getCriticalVariantKeys,
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
   TestVariant,
@@ -124,5 +125,71 @@ describe('createTVCmpFn', () => {
     assert.strictEqual(cmpFn(variant1, variant2), -1);
     assert.strictEqual(cmpFn(variant2, variant1), 1);
     assert.strictEqual(cmpFn(variant2, variant3), -1);
+  });
+});
+
+describe('getCriticalVariantKeys', () => {
+  it('when all variants are the same', () => {
+    const keys = getCriticalVariantKeys([
+      { def: { key1: 'val1', key2: 'val2' } },
+      { def: { key1: 'val1', key2: 'val2' } },
+      { def: { key1: 'val1', key2: 'val2' } },
+      { def: { key1: 'val1', key2: 'val2' } },
+    ]);
+    assert.deepEqual(keys, []);
+  });
+
+  it('when some variants are the different', () => {
+    const keys = getCriticalVariantKeys([
+      { def: { key1: 'val1', key2: 'val2' } },
+      { def: { key1: 'val1', key2: 'val2' } },
+      { def: { key1: 'val1', key2: 'val3' } },
+      { def: { key1: 'val1', key2: 'val2' } },
+    ]);
+    assert.deepEqual(keys, ['key2']);
+  });
+
+  it('when some variant defs has missing keys', () => {
+    const keys = getCriticalVariantKeys([
+      { def: { key1: 'val1', key2: 'val2' } },
+      { def: { key1: 'val1', key2: 'val2' } },
+      { def: { key1: 'val1', key2: 'val2' } },
+      { def: { key1: 'val1' } },
+    ]);
+    assert.deepEqual(keys, ['key2']);
+  });
+
+  it('when some variant values always change together', () => {
+    const keys = getCriticalVariantKeys([
+      { def: { test_suite: 'test-suite-1', builder: 'linux-builder', os: 'linux' } },
+      { def: { test_suite: 'test-suite-1', builder: 'macos-builder', os: 'macos' } },
+      { def: { test_suite: 'test-suite-2', builder: 'linux-builder', os: 'linux' } },
+      { def: { test_suite: 'test-suite-2', builder: 'macos-builder', os: 'macos' } },
+    ]);
+    assert.deepEqual(keys, ['builder', 'test_suite']);
+  });
+
+  it("when there are additional variant keys that don't matter", () => {
+    const keys = getCriticalVariantKeys([
+      { def: { test_suite: 'test-suite-1', builder: 'linux-builder', os: 'linux', a_param1: 'val1' } },
+      { def: { test_suite: 'test-suite-1', builder: 'macos-builder', os: 'macos', a_param2: 'val2' } },
+      { def: { test_suite: 'test-suite-2', builder: 'linux-builder', os: 'linux', a_param3: 'val3' } },
+      { def: { test_suite: 'test-suite-2', builder: 'macos-builder', os: 'macos', a_param4: 'val4' } },
+      { def: { test_suite: 'test-suite-2', builder: 'macos-builder', os: 'macos', a_param5: 'val5' } },
+    ]);
+    // Having a_param4 is enough to uniquely identify all variants.
+    assert.deepEqual(keys, ['builder', 'test_suite', 'a_param4']);
+  });
+
+  it('when there are multiple valid set of critical keys', () => {
+    const keys = getCriticalVariantKeys([
+      { def: { test_suite: 'test-suite-1', builder: 'linux-builder', os: 'linux', a_param: 'val1' } },
+      { def: { test_suite: 'test-suite-1', builder: 'macos-builder', os: 'macos', a_param: 'val2' } },
+      { def: { test_suite: 'test-suite-2', builder: 'linux-builder', os: 'linux', a_param: 'val3' } },
+      { def: { test_suite: 'test-suite-2', builder: 'macos-builder', os: 'macos', a_param: 'val4' } },
+    ]);
+    // Having a_param is enough to uniquely identify all variants.
+    // But we prefer keys that are known to have special meanings.
+    assert.deepEqual(keys, ['builder', 'test_suite']);
   });
 });
