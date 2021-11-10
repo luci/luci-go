@@ -14,13 +14,15 @@
 
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { AxisScale, axisTop, scaleTime, select as d3Select, timeFormat } from 'd3';
-import { css, customElement, html, svg } from 'lit-element';
+import { css, customElement, html, property, svg } from 'lit-element';
 import { DateTime } from 'luxon';
 import { comparer, computed, observable, reaction } from 'mobx';
 
+import './graph_config';
 import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
+import { provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { TestHistoryLoader } from '../../models/test_history_loader';
@@ -46,6 +48,8 @@ const STATUS_ORDER = [
 @consumer
 export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref @consumeAppState() appState!: AppState;
+  @property() @provideTestHistoryPageState() pageState = new TestHistoryPageState();
+
   @observable.ref private testHistoryLoader: TestHistoryLoader | null = null;
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
@@ -159,6 +163,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         </tr>
       </table>
       <milo-status-bar .components=${[{ color: 'var(--active-color)', weight: 1 }]}></milo-status-bar>
+      <milo-th-graph-config></milo-th-graph-config>
       <div id="main">
         <table id="variant-def-table">
           <tr>
@@ -227,6 +232,11 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       `;
     }
 
+    const count =
+      (this.pageState.countUnexpected ? counts[TestVariantStatus.UNEXPECTED] : 0) +
+      (this.pageState.countUnexpectedlySkipped ? counts[TestVariantStatus.UNEXPECTEDLY_SKIPPED] : 0) +
+      (this.pageState.countFlaky ? counts[TestVariantStatus.FLAKY] : 0);
+
     return svg`
       <g transform="translate(${index * CELL_SIZE + CELL_PADDING}, ${CELL_PADDING})">
         ${STATUS_ORDER.map((status) => {
@@ -246,7 +256,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           class="count-label"
           x=${CELL_SIZE / 2}
           y=${CELL_SIZE / 2}
-        >${entries.length - counts[TestVariantStatus.EXPECTED]}</text>
+        >${count}</text>
       </g>
     `;
   }
