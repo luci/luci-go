@@ -15,6 +15,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net"
 
@@ -26,9 +28,10 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-const port = ":9000"
-
 func main() {
+	port := flag.Int("port", 9000, "local port number used by fake server")
+	flag.Parse()
+
 	s := grpc.NewServer()
 	cas := fakes.NewCAS()
 	ex := &fakes.Exec{}
@@ -36,11 +39,11 @@ func main() {
 	regrpc.RegisterContentAddressableStorageServer(s, cas)
 	regrpc.RegisterCapabilitiesServer(s, ex)
 
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v\n", err)
 	}
-	log.Printf("listening tcp port %s\n", port)
+	log.Printf("listening tcp port %d\n", *port)
 
 	defer signals.HandleInterrupt(func() {
 		log.Println("shutting down fake CAS gRPC server...")
