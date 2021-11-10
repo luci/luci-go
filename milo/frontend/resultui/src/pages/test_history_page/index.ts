@@ -13,23 +13,52 @@
 // limitations under the License.
 
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
-import { css, customElement, html } from 'lit-element';
-import { observable } from 'mobx';
+import { css, customElement, html, svg } from 'lit-element';
+import { DateTime } from 'luxon';
+import { computed, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
+import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
+import { TestHistoryLoader } from '../../models/test_history_loader';
 import { NOT_FOUND_URL } from '../../routes';
+import { TestVariantStatus } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
+
+const INNER_CELL_SIZE = 28;
+const CELL_PADDING = 0.5;
+const CELL_SIZE = INNER_CELL_SIZE + 2 * CELL_PADDING;
+
+const STATUS_ORDER = [
+  TestVariantStatus.EXPECTED,
+  TestVariantStatus.FLAKY,
+  TestVariantStatus.UNEXPECTEDLY_SKIPPED,
+  TestVariantStatus.UNEXPECTED,
+];
 
 @customElement('milo-test-history-page')
 @provider
 @consumer
 export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref @consumeAppState() appState!: AppState;
+  @observable.ref private testHistoryLoader: TestHistoryLoader | null = null;
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
+
+  private readonly now = DateTime.now().startOf('day').plus({ hours: 12 });
+  @observable.ref private days = 14;
+
+  @computed private get endDate() {
+    return this.now.minus({ days: this.days });
+  }
+
+  @computed private get dates() {
+    return Array(this.days)
+      .fill(0)
+      .map((_, i) => this.now.minus({ days: i }));
+  }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const realm = location.params['realm'];
@@ -41,6 +70,47 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     this.testId = testId;
 
     return;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    // Set up TestHistoryLoader.
+    this.addDisposer(
+      reaction(
+        () => [this.realm, this.testId, this.appState?.testHistoryService],
+        () => {
+          if (!this.realm || !this.testId || !this.appState.testHistoryService) {
+            this.testHistoryLoader = null;
+            return;
+          }
+
+          this.testHistoryLoader = new TestHistoryLoader(
+            this.realm,
+            this.testId,
+            (datetime) => datetime.toFormat('yyyy-MM-dd'),
+            this.appState.testHistoryService
+          );
+        },
+        {
+          fireImmediately: true,
+        }
+      )
+    );
+
+    // Ensure all the entries are loaded / being loaded.
+    this.addDisposer(
+      reaction(
+        () => [this.testHistoryLoader, this.endDate],
+        () => {
+          if (!this.testHistoryLoader) {
+            return;
+          }
+          this.testHistoryLoader.loadUntil(this.endDate);
+        },
+        { fireImmediately: true }
+      )
+    );
   }
 
   protected render() {
@@ -56,7 +126,66 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         </tr>
       </table>
       <milo-status-bar .components=${[{ color: 'var(--active-color)', weight: 1 }]}></milo-status-bar>
-      <div id="main"></div>
+      <div>
+        <svg id="graph">
+          <g id="x-axis"></g>
+          <g id="variant-def"></g>
+          <g id="main">
+            ${this.testHistoryLoader?.variants.map(
+              ([vHash], i) => svg`
+              <g transform="translate(0, ${i * CELL_SIZE + CELL_PADDING})">
+                ${this.dates.map((d, j) => this.renderEntries(vHash, d, j))}
+              </g>
+            `
+            )}
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+
+  private renderEntries(vHash: string, date: DateTime, index: number) {
+    const entries = this.testHistoryLoader!.getEntries(vHash, date);
+    if (entries === null || entries.length === 0) {
+      return null;
+    }
+
+    const counts = {
+      [TestVariantStatus.EXPECTED]: 0,
+      [TestVariantStatus.EXONERATED]: 0,
+      [TestVariantStatus.FLAKY]: 0,
+      [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 0,
+      [TestVariantStatus.UNEXPECTED]: 0,
+      [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 0,
+    };
+
+    for (const entry of entries) {
+      counts[entry.status]++;
+    }
+
+    let previousHeight = 0;
+
+    return svg`
+      <g transform="translate(${index * CELL_SIZE + CELL_PADDING}, 0)">
+        ${STATUS_ORDER.map((status) => {
+          const height = (INNER_CELL_SIZE * counts[status]) / entries.length;
+          const ele = svg`
+            <rect
+              class="${VARIANT_STATUS_CLASS_MAP[status]}"
+              y=${previousHeight}
+              width=${INNER_CELL_SIZE}
+              height=${height}
+            />
+          `;
+          previousHeight += height;
+          return ele;
+        })}
+        <text
+          class="count-label"
+          x=${INNER_CELL_SIZE / 2}
+          y=${INNER_CELL_SIZE / 2}
+        >${entries.length - counts[TestVariantStatus.EXPECTED]}</text>
+      </g>
     `;
   }
 
@@ -81,6 +210,32 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
         /* Shrink the first column */
         width: 0px;
+      }
+
+      #graph {
+        width: 100%;
+      }
+
+      .unexpected {
+        fill: var(--failure-color);
+      }
+      .unexpectedly-skipped {
+        fill: var(--critical-failure-color);
+      }
+      .flaky {
+        fill: var(--warning-color);
+      }
+      .exonerated {
+        fill: var(--exonerated-color);
+      }
+      .expected {
+        fill: var(--success-color);
+      }
+
+      .count-label {
+        fill: white;
+        text-anchor: middle;
+        alignment-baseline: central;
       }
     `,
   ];
