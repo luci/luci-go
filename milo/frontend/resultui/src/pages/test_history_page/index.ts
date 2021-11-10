@@ -28,10 +28,11 @@ import { NOT_FOUND_URL } from '../../routes';
 import { getCriticalVariantKeys, TestVariantStatus } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
-const X_AXIS_HEIGHT = 40;
+const X_AXIS_HEIGHT = 70;
 const INNER_CELL_SIZE = 28;
 const CELL_PADDING = 0.5;
 const CELL_SIZE = INNER_CELL_SIZE + 2 * CELL_PADDING;
+const ICON_PADDING = (CELL_SIZE - 24) / 2;
 
 const STATUS_ORDER = [
   TestVariantStatus.EXPECTED,
@@ -70,8 +71,8 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
   @computed private get axisTime() {
     const ret = d3Select(document.createElementNS('http://www.w3.org/2000/svg', 'g'))
-      .attr('transform', `translate(0, ${X_AXIS_HEIGHT})`)
-      .call(axisTop(this.scaleTime).tickFormat(timeFormat('%m-%d')));
+      .attr('transform', `translate(1, ${X_AXIS_HEIGHT - 1})`)
+      .call(axisTop(this.scaleTime).tickFormat(timeFormat('%Y-%m-%d')));
 
     ret
       .selectAll('text')
@@ -176,7 +177,13 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           <g id="main" transform="translate(0, ${X_AXIS_HEIGHT})">
             ${this.variants.map(
               ([vHash], i) => svg`
-              <g transform="translate(0, ${i * CELL_SIZE + CELL_PADDING})">
+              <g transform="translate(1, ${i * CELL_SIZE})">
+                <rect
+                  x="-1"
+                  height=${CELL_SIZE}
+                  width=${CELL_SIZE * this.days + 2}
+                  fill=${i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'}
+                />
                 ${this.dates.map((d, j) => this.renderEntries(vHash, d, j))}
               </g>
             `
@@ -208,8 +215,20 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
     let previousHeight = 0;
 
+    if (counts[TestVariantStatus.EXPECTED] === entries.length) {
+      const img =
+        entries.length > 1
+          ? '/ui/immutable/svgs/check_circle_stacked_24dp.svg'
+          : '/ui/immutable/svgs/check_circle_24dp.svg';
+      return svg`
+        <g transform="translate(${index * CELL_SIZE + ICON_PADDING}, 0)">
+          <image href=${img} y=${ICON_PADDING} height="24" width="24" />
+        </g>
+      `;
+    }
+
     return svg`
-      <g transform="translate(${index * CELL_SIZE + CELL_PADDING}, 0)">
+      <g transform="translate(${index * CELL_SIZE + CELL_PADDING}, ${CELL_PADDING})">
         ${STATUS_ORDER.map((status) => {
           const height = (INNER_CELL_SIZE * counts[status]) / entries.length;
           const ele = svg`
@@ -225,8 +244,8 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         })}
         <text
           class="count-label"
-          x=${INNER_CELL_SIZE / 2}
-          y=${INNER_CELL_SIZE / 2}
+          x=${CELL_SIZE / 2}
+          y=${CELL_SIZE / 2}
         >${entries.length - counts[TestVariantStatus.EXPECTED]}</text>
       </g>
     `;
@@ -261,13 +280,16 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       }
 
       #variant-def-table {
+        padding-top: ${X_AXIS_HEIGHT - CELL_SIZE}px;
         border-spacing: 0;
       }
       #variant-def-table tr:first-child {
-        height: ${X_AXIS_HEIGHT}px;
       }
       #variant-def-table tr {
         height: ${CELL_SIZE}px;
+      }
+      #variant-def-table tr:nth-child(even) {
+        background-color: var(--block-background-color);
       }
       #variant-def-table * {
         padding: 0;
