@@ -31,6 +31,8 @@ func TestIsLocalAddr(t *testing.T) {
 			{":9999", true},
 			{"localhost:9999", true},
 			{"127.0.0.1:9999", true},
+			{"[::]:9999", false},
+			{"[::1]:9999", true},
 			{"remotebuildexecution.googleapis.com:443", false},
 		}
 		for _, td := range testdata {

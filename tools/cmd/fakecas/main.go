@@ -41,7 +41,7 @@ func main() {
 	regrpc.RegisterContentAddressableStorageServer(s, cas)
 	regrpc.RegisterCapabilitiesServer(s, ex)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v\n", err)
 	}
