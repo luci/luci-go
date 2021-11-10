@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
+import { AxisScale, axisTop, scaleTime, select as d3Select, timeFormat } from 'd3';
 import { css, customElement, html, svg } from 'lit-element';
 import { DateTime } from 'luxon';
 import { computed, observable, reaction } from 'mobx';
@@ -27,6 +28,7 @@ import { NOT_FOUND_URL } from '../../routes';
 import { TestVariantStatus } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
+const X_AXIS_HEIGHT = 40;
 const INNER_CELL_SIZE = 28;
 const CELL_PADDING = 0.5;
 const CELL_SIZE = INNER_CELL_SIZE + 2 * CELL_PADDING;
@@ -58,6 +60,28 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     return Array(this.days)
       .fill(0)
       .map((_, i) => this.now.minus({ days: i }));
+  }
+
+  @computed private get scaleTime() {
+    return scaleTime()
+      .domain([this.now, this.now.minus({ days: this.days })])
+      .range([0, this.dates.length * CELL_SIZE]) as AxisScale<Date>;
+  }
+
+  @computed private get axisTime() {
+    const ret = d3Select(document.createElementNS('http://www.w3.org/2000/svg', 'g'))
+      .attr('transform', `translate(0, ${X_AXIS_HEIGHT})`)
+      .call(axisTop(this.scaleTime).tickFormat(timeFormat('%m-%d')));
+
+    ret
+      .selectAll('text')
+      .attr('y', 0)
+      .attr('x', 9)
+      .attr('dy', '.35em')
+      .attr('transform', 'rotate(-90)')
+      .style('text-anchor', 'start');
+
+    return ret;
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -127,10 +151,10 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       </table>
       <milo-status-bar .components=${[{ color: 'var(--active-color)', weight: 1 }]}></milo-status-bar>
       <div>
-        <svg id="graph">
-          <g id="x-axis"></g>
+        <svg id="graph" height=${X_AXIS_HEIGHT + CELL_SIZE * (this.testHistoryLoader?.variants.length || 0)}>
+          ${this.axisTime}
           <g id="variant-def"></g>
-          <g id="main">
+          <g id="main" transform="translate(0, ${X_AXIS_HEIGHT})">
             ${this.testHistoryLoader?.variants.map(
               ([vHash], i) => svg`
               <g transform="translate(0, ${i * CELL_SIZE + CELL_PADDING})">
