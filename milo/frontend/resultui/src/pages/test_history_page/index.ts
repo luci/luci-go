@@ -16,7 +16,7 @@ import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from 
 import { AxisScale, axisTop, scaleTime, select as d3Select, timeFormat } from 'd3';
 import { css, customElement, html, svg } from 'lit-element';
 import { DateTime } from 'luxon';
-import { computed, observable, reaction } from 'mobx';
+import { comparer, computed, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
@@ -25,7 +25,7 @@ import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { TestHistoryLoader } from '../../models/test_history_loader';
 import { NOT_FOUND_URL } from '../../routes';
-import { TestVariantStatus } from '../../services/resultdb';
+import { getCriticalVariantKeys, TestVariantStatus } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
 const X_AXIS_HEIGHT = 40;
@@ -82,6 +82,14 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       .style('text-anchor', 'start');
 
     return ret;
+  }
+
+  @computed private get variants() {
+    return this.testHistoryLoader?.variants || [];
+  }
+
+  @computed({ equals: comparer.shallow }) private get criticalVariantKeys() {
+    return getCriticalVariantKeys(this.variants.map(([_, v]) => v));
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -150,12 +158,23 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         </tr>
       </table>
       <milo-status-bar .components=${[{ color: 'var(--active-color)', weight: 1 }]}></milo-status-bar>
-      <div>
-        <svg id="graph" height=${X_AXIS_HEIGHT + CELL_SIZE * (this.testHistoryLoader?.variants.length || 0)}>
+      <div id="main">
+        <table id="variant-def-table">
+          <tr>
+            ${this.criticalVariantKeys.map((k) => html`<th>${k}</th>`)}
+          </tr>
+          ${this.variants.map(
+            ([_, v]) => html`
+              <tr>
+                ${this.criticalVariantKeys.map((k) => html`<td>${v.def[k] || ''}</td>`)}
+              </tr>
+            `
+          )}
+        </table>
+        <svg id="graph" height=${X_AXIS_HEIGHT + CELL_SIZE * this.variants.length}>
           ${this.axisTime}
-          <g id="variant-def"></g>
           <g id="main" transform="translate(0, ${X_AXIS_HEIGHT})">
-            ${this.testHistoryLoader?.variants.map(
+            ${this.variants.map(
               ([vHash], i) => svg`
               <g transform="translate(0, ${i * CELL_SIZE + CELL_PADDING})">
                 ${this.dates.map((d, j) => this.renderEntries(vHash, d, j))}
@@ -234,6 +253,28 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
         /* Shrink the first column */
         width: 0px;
+      }
+
+      #main {
+        display: grid;
+        grid-template-columns: auto 1fr;
+      }
+
+      #variant-def-table {
+        border-spacing: 0;
+      }
+      #variant-def-table tr:first-child {
+        height: ${X_AXIS_HEIGHT}px;
+      }
+      #variant-def-table tr {
+        height: ${CELL_SIZE}px;
+      }
+      #variant-def-table * {
+        padding: 0;
+      }
+      #variant-def-table td {
+        text-align: center;
+        padding: 0 2px;
       }
 
       #graph {
