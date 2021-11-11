@@ -21,6 +21,7 @@ import (
 	"net"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -177,8 +178,11 @@ func Options(creds credentials.PerRPCCredentials) []client.Opt {
 		client.RegularMode(0600),
 		client.CompressedBytestreamThreshold(0),
 
-		// Do not set per RPC timeout.
-		client.RPCTimeouts{},
+		// Set per RPC timeout only for batch operations.
+		client.RPCTimeouts{
+			"BatchUpdateBlobs": time.Minute,
+			"BatchReadBlobs":   time.Minute,
+		},
 	}
 }
 
