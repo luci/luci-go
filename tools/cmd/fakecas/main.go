@@ -30,7 +30,7 @@ import (
 )
 
 func main() {
-	port := flag.Int("port", 9000, "local port number used by fake server")
+	port := flag.Int("port", 0, "local port number used by fake server")
 	addrFile := flag.String("addr-file", "", "dump listening address in this file")
 	flag.Parse()
 
