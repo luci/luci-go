@@ -772,7 +772,13 @@ type BuildInfra_Buildbucket struct {
 	// Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
 	Hostname string `protobuf:"bytes,7,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	// This contains a map of all the experiments involved for this build, as
-	// well as which bit of configuration lead to them being set or unset.
+	// well as which bit of configuration lead to them being set (or unset).
+	//
+	// Note that if the reason here is EXPERIMENT_REASON_GLOBAL_INACTIVE,
+	// then that means that the experiment is completely disabled and has no
+	// effect, but your builder or ScheduleBuildRequest still indicated that
+	// the experiment should be set. If you see this, then please remove it
+	// from your configuration and/or requests.
 	ExperimentReasons map[string]BuildInfra_Buildbucket_ExperimentReason `protobuf:"bytes,8,rep,name=experiment_reasons,json=experimentReasons,proto3" json:"experiment_reasons,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=buildbucket.v2.BuildInfra_Buildbucket_ExperimentReason"`
 }
 

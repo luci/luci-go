@@ -326,7 +326,13 @@ message BuildInfra {
     }
 
     // This contains a map of all the experiments involved for this build, as
-    // well as which bit of configuration lead to them being set or unset.
+    // well as which bit of configuration lead to them being set (or unset).
+    //
+    // Note that if the reason here is EXPERIMENT_REASON_GLOBAL_INACTIVE,
+    // then that means that the experiment is completely disabled and has no
+    // effect, but your builder or ScheduleBuildRequest still indicated that
+    // the experiment should be set. If you see this, then please remove it
+    // from your configuration and/or requests.
     map<string, ExperimentReason> experiment_reasons = 8;
   }
 
