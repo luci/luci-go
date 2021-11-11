@@ -13,84 +13,33 @@
 // limitations under the License.
 
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
-import { AxisScale, axisTop, scaleTime, select as d3Select, timeFormat } from 'd3';
-import { css, customElement, html, property, svg } from 'lit-element';
-import { DateTime } from 'luxon';
+import { css, customElement, html, property } from 'lit-element';
 import { comparer, computed, observable, reaction } from 'mobx';
 
 import './graph_config';
 import '../../components/status_bar';
+import './status_graph';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
-import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
-import { TestHistoryLoader } from '../../models/test_history_loader';
 import { NOT_FOUND_URL } from '../../routes';
-import { getCriticalVariantKeys, TestVariantStatus } from '../../services/resultdb';
+import { getCriticalVariantKeys } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
-
-const X_AXIS_HEIGHT = 70;
-const INNER_CELL_SIZE = 28;
-const CELL_PADDING = 0.5;
-const CELL_SIZE = INNER_CELL_SIZE + 2 * CELL_PADDING;
-const ICON_PADDING = (CELL_SIZE - 24) / 2;
-
-const STATUS_ORDER = [
-  TestVariantStatus.EXPECTED,
-  TestVariantStatus.FLAKY,
-  TestVariantStatus.UNEXPECTEDLY_SKIPPED,
-  TestVariantStatus.UNEXPECTED,
-];
+import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 @customElement('milo-test-history-page')
 @provider
 @consumer
 export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref @consumeAppState() appState!: AppState;
-  @property() @provideTestHistoryPageState() pageState = new TestHistoryPageState();
+  @property() @provideTestHistoryPageState() pageState!: TestHistoryPageState;
 
-  @observable.ref private testHistoryLoader: TestHistoryLoader | null = null;
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
 
-  private readonly now = DateTime.now().startOf('day').plus({ hours: 12 });
-  @observable.ref private days = 14;
-
-  @computed private get endDate() {
-    return this.now.minus({ days: this.days });
-  }
-
-  @computed private get dates() {
-    return Array(this.days)
-      .fill(0)
-      .map((_, i) => this.now.minus({ days: i }));
-  }
-
-  @computed private get scaleTime() {
-    return scaleTime()
-      .domain([this.now, this.now.minus({ days: this.days })])
-      .range([0, this.dates.length * CELL_SIZE]) as AxisScale<Date>;
-  }
-
-  @computed private get axisTime() {
-    const ret = d3Select(document.createElementNS('http://www.w3.org/2000/svg', 'g'))
-      .attr('transform', `translate(1, ${X_AXIS_HEIGHT - 1})`)
-      .call(axisTop(this.scaleTime).tickFormat(timeFormat('%Y-%m-%d')));
-
-    ret
-      .selectAll('text')
-      .attr('y', 0)
-      .attr('x', 9)
-      .attr('dy', '.35em')
-      .attr('transform', 'rotate(-90)')
-      .style('text-anchor', 'start');
-
-    return ret;
-  }
-
   @computed private get variants() {
-    return this.testHistoryLoader?.variants || [];
+    return this.pageState.testHistoryLoader?.variants || [];
   }
 
   @computed({ equals: comparer.shallow }) private get criticalVariantKeys() {
@@ -112,40 +61,21 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
   connectedCallback() {
     super.connectedCallback();
 
-    // Set up TestHistoryLoader.
+    // Set up TestHistoryPageState.
     this.addDisposer(
       reaction(
         () => [this.realm, this.testId, this.appState?.testHistoryService],
         () => {
           if (!this.realm || !this.testId || !this.appState.testHistoryService) {
-            this.testHistoryLoader = null;
             return;
           }
 
-          this.testHistoryLoader = new TestHistoryLoader(
-            this.realm,
-            this.testId,
-            (datetime) => datetime.toFormat('yyyy-MM-dd'),
-            this.appState.testHistoryService
-          );
+          this.pageState?.dispose();
+          this.pageState = new TestHistoryPageState(this.realm, this.testId, this.appState.testHistoryService);
         },
         {
           fireImmediately: true,
         }
-      )
-    );
-
-    // Ensure all the entries are loaded / being loaded.
-    this.addDisposer(
-      reaction(
-        () => [this.testHistoryLoader, this.endDate],
-        () => {
-          if (!this.testHistoryLoader) {
-            return;
-          }
-          this.testHistoryLoader.loadUntil(this.endDate);
-        },
-        { fireImmediately: true }
       )
     );
   }
@@ -163,6 +93,16 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         </tr>
       </table>
       <milo-status-bar .components=${[{ color: 'var(--active-color)', weight: 1 }]}></milo-status-bar>
+      ${this.renderBody()}
+    `;
+  }
+
+  private renderBody() {
+    if (!this.pageState) {
+      return html``;
+    }
+
+    return html`
       <milo-th-graph-config></milo-th-graph-config>
       <div id="main">
         <table id="variant-def-table">
@@ -177,87 +117,8 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
             `
           )}
         </table>
-        <svg id="graph" height=${X_AXIS_HEIGHT + CELL_SIZE * this.variants.length}>
-          ${this.axisTime}
-          <g id="main" transform="translate(0, ${X_AXIS_HEIGHT})">
-            ${this.variants.map(
-              ([vHash], i) => svg`
-              <g transform="translate(1, ${i * CELL_SIZE})">
-                <rect
-                  x="-1"
-                  height=${CELL_SIZE}
-                  width=${CELL_SIZE * this.days + 2}
-                  fill=${i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'}
-                />
-                ${this.dates.map((d, j) => this.renderEntries(vHash, d, j))}
-              </g>
-            `
-            )}
-          </g>
-        </svg>
+        <milo-th-status-graph></milo-th-status-graph>
       </div>
-    `;
-  }
-
-  private renderEntries(vHash: string, date: DateTime, index: number) {
-    const entries = this.testHistoryLoader!.getEntries(vHash, date);
-    if (entries === null || entries.length === 0) {
-      return null;
-    }
-
-    const counts = {
-      [TestVariantStatus.EXPECTED]: 0,
-      [TestVariantStatus.EXONERATED]: 0,
-      [TestVariantStatus.FLAKY]: 0,
-      [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 0,
-      [TestVariantStatus.UNEXPECTED]: 0,
-      [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 0,
-    };
-
-    for (const entry of entries) {
-      counts[entry.status]++;
-    }
-
-    let previousHeight = 0;
-
-    if (counts[TestVariantStatus.EXPECTED] === entries.length) {
-      const img =
-        entries.length > 1
-          ? '/ui/immutable/svgs/check_circle_stacked_24dp.svg'
-          : '/ui/immutable/svgs/check_circle_24dp.svg';
-      return svg`
-        <g transform="translate(${index * CELL_SIZE + ICON_PADDING}, 0)">
-          <image href=${img} y=${ICON_PADDING} height="24" width="24" />
-        </g>
-      `;
-    }
-
-    const count =
-      (this.pageState.countUnexpected ? counts[TestVariantStatus.UNEXPECTED] : 0) +
-      (this.pageState.countUnexpectedlySkipped ? counts[TestVariantStatus.UNEXPECTEDLY_SKIPPED] : 0) +
-      (this.pageState.countFlaky ? counts[TestVariantStatus.FLAKY] : 0);
-
-    return svg`
-      <g transform="translate(${index * CELL_SIZE + CELL_PADDING}, ${CELL_PADDING})">
-        ${STATUS_ORDER.map((status) => {
-          const height = (INNER_CELL_SIZE * counts[status]) / entries.length;
-          const ele = svg`
-            <rect
-              class="${VARIANT_STATUS_CLASS_MAP[status]}"
-              y=${previousHeight}
-              width=${INNER_CELL_SIZE}
-              height=${height}
-            />
-          `;
-          previousHeight += height;
-          return ele;
-        })}
-        <text
-          class="count-label"
-          x=${CELL_SIZE / 2}
-          y=${CELL_SIZE / 2}
-        >${count}</text>
-      </g>
     `;
   }
 
@@ -307,32 +168,6 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       #variant-def-table td {
         text-align: center;
         padding: 0 2px;
-      }
-
-      #graph {
-        width: 100%;
-      }
-
-      .unexpected {
-        fill: var(--failure-color);
-      }
-      .unexpectedly-skipped {
-        fill: var(--critical-failure-color);
-      }
-      .flaky {
-        fill: var(--warning-color);
-      }
-      .exonerated {
-        fill: var(--exonerated-color);
-      }
-      .expected {
-        fill: var(--success-color);
-      }
-
-      .count-label {
-        fill: white;
-        text-anchor: middle;
-        alignment-baseline: central;
       }
     `,
   ];
