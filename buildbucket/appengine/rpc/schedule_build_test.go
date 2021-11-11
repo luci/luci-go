@@ -42,6 +42,7 @@ import (
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -49,6 +50,11 @@ import (
 
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func fv(vs ...interface{}) []interface{} {
+	ret := []interface{}{"luci.project.bucket", "builder"}
+	return append(ret, vs...)
+}
 
 func TestScheduleBuild(t *testing.T) {
 	t.Parallel()
@@ -434,7 +440,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(blds, ShouldHaveLength, 1)
 				So(blds[0], ShouldBeNil)
 				So(sch.Tasks(), ShouldBeEmpty)
-				So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
+				So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), ShouldBeNil)
 			})
 
 			Convey("dynamic", func() {
@@ -583,7 +589,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 
 				// dry-run should not increase the build creation counter metric.
-				So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("")), ShouldBeNil)
+				So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), ShouldBeNil)
 			})
 
 			Convey("one", func() {
@@ -720,7 +726,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			blds, err := scheduleBuilds(ctx, globalCfg, req)
 			So(err, ShouldBeNil)
-			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
+			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 				{
 					Builder: &pb.BuilderID{
@@ -904,9 +910,9 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			fvs := []interface{}{"luci.project.static bucket", "static builder", ""}
-			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fvs), ShouldEqual, 2)
+			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), ShouldEqual, 2)
 			fvs = []interface{}{"luci.project.dynamic bucket", "dynamic builder", ""}
-			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fvs), ShouldEqual, 1)
+			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), ShouldEqual, 1)
 
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 				{
@@ -1275,7 +1281,7 @@ func TestScheduleBuild(t *testing.T) {
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 			So(err.(errors.MultiError), ShouldHaveLength, 2)
 			So(err.(errors.MultiError)[1], ShouldErrLike, "failed to fetch deduplicated build")
-			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
+			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
 				{
 					Builder: &pb.BuilderID{

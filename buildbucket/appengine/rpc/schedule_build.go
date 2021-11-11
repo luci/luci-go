@@ -46,6 +46,7 @@ import (
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
@@ -1245,7 +1246,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 					merr[origI] = err
 					return nil
 				}
-				buildCreated(ctx, b)
+				metrics.BuildCreated(ctx, b)
 				return nil
 			}
 		}

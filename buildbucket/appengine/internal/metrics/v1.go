@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+package metrics
 
 import (
 	"fmt"
@@ -38,38 +38,39 @@ var (
 		"user_agent":         field.String("user_agent"),
 	}
 
-	mV1 = struct {
-		buildCountCreated       metric.Counter
-		buildCountStarted       metric.Counter
-		buildCountCompleted     metric.Counter
-		buildDurationCycle      metric.CumulativeDistribution
-		buildDurationRun        metric.CumulativeDistribution
-		buildDurationScheduling metric.CumulativeDistribution
+	// V1 is a collection of metric objects for V1 metrics.
+	V1 = struct {
+		BuildCountCreated       metric.Counter
+		BuildCountStarted       metric.Counter
+		BuildCountCompleted     metric.Counter
+		BuildDurationCycle      metric.CumulativeDistribution
+		BuildDurationRun        metric.CumulativeDistribution
+		BuildDurationScheduling metric.CumulativeDistribution
 	}{
-		buildCountCreated: metric.NewCounter(
+		BuildCountCreated: metric.NewCounter(
 			"buildbucket/builds/created",
 			"Build creation", nil,
 			bFields("user_agent")...,
 		),
-		buildCountStarted: metric.NewCounter(
+		BuildCountStarted: metric.NewCounter(
 			"buildbucket/builds/started",
 			"Build start", nil,
 			bFields("canary")...,
 		),
-		buildCountCompleted: metric.NewCounter(
+		BuildCountCompleted: metric.NewCounter(
 			"buildbucket/builds/completed",
 			"Build completion, including success, failure and cancellation", nil,
 			bFields("result", "failure_reason", "cancelation_reason", "canary")...,
 		),
-		buildDurationCycle: newbuildDurationMetric(
+		BuildDurationCycle: newbuildDurationMetric(
 			"buildbucket/builds/cycle_durations",
 			"Duration between build creation and completion",
 		),
-		buildDurationRun: newbuildDurationMetric(
+		BuildDurationRun: newbuildDurationMetric(
 			"buildbucket/builds/run_durations",
 			"Duration between build start and completion",
 		),
-		buildDurationScheduling: newbuildDurationMetric(
+		BuildDurationScheduling: newbuildDurationMetric(
 			"buildbucket/builds/scheduling_durations",
 			"Duration between build creation and start",
 		),
@@ -124,4 +125,10 @@ func getLegacyMetricFields(b *model.Build) (result, failureR, cancelationR strin
 		panic(fmt.Sprintf("getLegacyMetricFields: invalid status %q", b.Status))
 	}
 	return
+}
+
+// legacyBucketName returns the V1 luci bucket name.
+// e.g., "luci.chromium.try".
+func legacyBucketName(bid *pb.BuilderID) string {
+	return fmt.Sprintf("luci.%s.%s", bid.Project, bid.Bucket)
 }

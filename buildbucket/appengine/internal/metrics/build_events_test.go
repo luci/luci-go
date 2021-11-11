@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+package metrics
 
 import (
 	"context"
@@ -67,57 +67,57 @@ func TestBuildEvents(t *testing.T) {
 
 		Convey("buildCreated", func() {
 			b.Tags = []string{"os:linux"}
-			buildCreated(ctx, b)
-			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("")), ShouldEqual, 1)
+			BuildCreated(ctx, b)
+			So(store.Get(ctx, V1.BuildCountCreated, time.Time{}, fv("")), ShouldEqual, 1)
 
 			b.Tags = []string{"user_agent:gerrit"}
-			buildCreated(ctx, b)
-			So(store.Get(ctx, mV1.buildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
+			BuildCreated(ctx, b)
+			So(store.Get(ctx, V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
 		})
 
 		Convey("buildStarted", func() {
 			Convey("build/started", func() {
 				b.Proto.Canary = false
-				buildStarted(ctx, b)
-				So(store.Get(ctx, mV1.buildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+				BuildStarted(ctx, b)
+				So(store.Get(ctx, V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
 
 				b.Proto.Canary = true
-				buildStarted(ctx, b)
-				So(store.Get(ctx, mV1.buildCountStarted, time.Time{}, fv(true)), ShouldEqual, 1)
+				BuildStarted(ctx, b)
+				So(store.Get(ctx, V1.BuildCountStarted, time.Time{}, fv(true)), ShouldEqual, 1)
 			})
 
 			Convey("build/scheduling_durations", func() {
 				fields := fv("", "", "", true)
 				b.Proto.StartTime = pbTS(b.CreateTime.Add(33 * time.Second))
-				buildStarted(ctx, b)
-				val := store.Get(ctx, mV1.buildDurationScheduling, time.Time{}, fields)
+				BuildStarted(ctx, b)
+				val := store.Get(ctx, V1.BuildDurationScheduling, time.Time{}, fields)
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
 			})
 		})
 
-		Convey("buildCompleted", func() {
+		Convey("BuildCompleted", func() {
 			Convey("builds/completed", func() {
 				b.Status = pb.Status_FAILURE
-				buildCompleted(ctx, b)
+				BuildCompleted(ctx, b)
 				fields := fv(model.Failure.String(), model.BuildFailure.String(), "", true)
-				So(store.Get(ctx, mV1.buildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
+				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
 
 				b.Status = pb.Status_CANCELED
-				buildCompleted(ctx, b)
+				BuildCompleted(ctx, b)
 				fields = fv(model.Canceled.String(), "", model.ExplicitlyCanceled.String(), true)
-				So(store.Get(ctx, mV1.buildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
+				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
 
 				b.Status = pb.Status_INFRA_FAILURE
-				buildCompleted(ctx, b)
+				BuildCompleted(ctx, b)
 				fields = fv(model.Failure.String(), model.InfraFailure.String(), "", true)
-				So(store.Get(ctx, mV1.buildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
+				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
 
 				// timeout
 				b.Status = pb.Status_INFRA_FAILURE
 				b.Proto.StatusDetails = &pb.StatusDetails{Timeout: &pb.StatusDetails_Timeout{}}
-				buildCompleted(ctx, b)
+				BuildCompleted(ctx, b)
 				fields = fv(model.Failure.String(), model.InfraFailure.String(), "", true)
-				So(store.Get(ctx, mV1.buildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
+				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
 			})
 
 			b.Status = pb.Status_SUCCESS
@@ -125,8 +125,8 @@ func TestBuildEvents(t *testing.T) {
 
 			Convey("builds/cycle_durations", func() {
 				b.Proto.EndTime = pbTS(b.CreateTime.Add(33 * time.Second))
-				buildCompleted(ctx, b)
-				val := store.Get(ctx, mV1.buildDurationCycle, time.Time{}, fields)
+				BuildCompleted(ctx, b)
+				val := store.Get(ctx, V1.BuildDurationCycle, time.Time{}, fields)
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
 			})
 
@@ -134,8 +134,8 @@ func TestBuildEvents(t *testing.T) {
 				b.Proto.StartTime = pbTS(b.CreateTime.Add(3 * time.Second))
 				b.Proto.EndTime = pbTS(b.CreateTime.Add(33 * time.Second))
 
-				buildCompleted(ctx, b)
-				val := store.Get(ctx, mV1.buildDurationRun, time.Time{}, fields)
+				BuildCompleted(ctx, b)
+				val := store.Get(ctx, V1.BuildDurationRun, time.Time{}, fields)
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 30)
 			})
 		})

@@ -40,6 +40,7 @@ import (
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
@@ -606,7 +607,7 @@ func TestUpdateBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 
 				// no metric update, either.
-				So(store.Get(ctx, mV1.buildCountStarted, time.Time{}, fv(false)), ShouldEqual, nil)
+				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, nil)
 			})
 
 			Convey("Status_STARTED w/ status change", func() {
@@ -628,7 +629,7 @@ func TestUpdateBuild(t *testing.T) {
 				So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, build.ID)
 
 				// BuildStarted metric should be set 1.
-				So(store.Get(ctx, mV1.buildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
 			})
 		})
 
@@ -661,7 +662,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
-				So(store.Get(ctx, mV1.buildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+				So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
 			})
 		})
 	})

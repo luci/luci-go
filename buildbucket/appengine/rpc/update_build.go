@@ -29,12 +29,16 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -320,15 +324,21 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		switch {
 		case origStatus == b.Proto.Status:
 		case b.Proto.Status == pb.Status_STARTED:
-			if err := buildStarting(ctx, b); err != nil {
+			if err := notifyPubSub(ctx, b); err != nil {
 				return nil
 			}
 		case isEndedStatus:
 			b.Leasee = nil
 			b.LeaseExpirationDate = time.Time{}
 			b.LeaseKey = 0
-
-			if err := buildCompleting(ctx, b); err != nil {
+			bqTask := &taskdefs.ExportBigQuery{BuildId: b.ID}
+			invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
+			err := parallel.FanOutIn(func(tks chan<- func() error) {
+				tks <- func() error { return notifyPubSub(ctx, b) }
+				tks <- func() error { return tasks.ExportBigQuery(ctx, bqTask) }
+				tks <- func() error { return tasks.FinalizeResultDB(ctx, invTask) }
+			})
+			if err != nil {
 				return err
 			}
 		default:
@@ -364,9 +374,11 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 	case txErr != nil: // skip, if the txn failed.
 	case origStatus == b.Status: // skip, if no status changed.
 	case protoutil.IsEnded(b.Status):
-		buildCompleted(ctx, b)
+		logging.Infof(ctx, "Build %d: completed by %q with status %q", b.ID, auth.CurrentIdentity(ctx), b.Status)
+		metrics.BuildCompleted(ctx, b)
 	default:
-		buildStarted(ctx, b)
+		logging.Infof(ctx, "Build %d: started", b.ID)
+		metrics.BuildStarted(ctx, b)
 	}
 	return txErr
 }
