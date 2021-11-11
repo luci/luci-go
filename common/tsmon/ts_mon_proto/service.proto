@@ -1,0 +1,24 @@
+// Copyright 2021 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/common/tsmon/ts_mon_proto";
+
+package ts_mon.proto;
+
+import "google/rpc/status.proto";
+import "go.chromium.org/luci/common/tsmon/ts_mon_proto/metrics.proto";
+
+service MonitoringService {
+  rpc Insert(MonitoringInsertRequest) returns (MonitoringInsertResponse);
+}
+
+message MonitoringInsertRequest {
+  reserved 1;  // deprecated
+  MetricsPayload payload = 2;
+}
+
+message MonitoringInsertResponse {
+  google.rpc.Status response_status = 1;
+}
