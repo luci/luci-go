@@ -229,7 +229,9 @@ def _validate_run_mode(attr, val, *, default = None, required = True):
 # `cq.MODE_*` constants define common values for cq run modes.
 #   * **cq.MODE_DRY_RUN**: Run all tests but do not submit.
 #   * **cq.MODE_QUICK_DRY_RUN**: Run some tests but do not submit.
-#     See https://crbug.com/1189817.
+#     See https://crbug.com/1189817. To show Quick Run status in Gerrit, set the
+#     `rts_was_used` output property to true. For more, see the
+#     [Gerrit plugin](https://chromium.googlesource.com/infra/gerrit-plugins/buildbucket/+/refs/heads/main/README.md).
 #   * **cq.MODE_FULL_RUN**: Run all tests and potentially submit.
 #   * **cq.MODE_ANALYZER_RUN**: Run code analyzers on patchset upload.
 #     As of April 2021, all such runs are launched by Tricium. Eventually,
