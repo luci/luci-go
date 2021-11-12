@@ -62,6 +62,8 @@ const (
 	BuildTokenKey = "x-build-token"
 )
 
+const UserPackageDir = "cipd_bin_packages"
+
 var (
 	sha1Regex          = regexp.MustCompile(`^[a-f0-9]{40}$`)
 	reservedKeys       = stringset.NewFromSlice("build_address")

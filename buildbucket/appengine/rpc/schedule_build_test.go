@@ -484,23 +484,28 @@ func TestScheduleBuild(t *testing.T) {
 								Input: &pb.BuildInfra_BBAgent_Input{
 									CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
 										{
-											Name:    "bbagent",
-											Path:    ".",
-											Version: "bbagent-version",
-										},
-										{
-											Name:    "kitchen",
-											Path:    ".",
-											Version: "kitchen-version",
-										},
-										{
 											Path: "kitchen-checkout",
 										},
 									},
 								},
 								PayloadPath: "kitchen-checkout",
 							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Agent: &pb.BuildInfra_Buildbucket_Agent{
+									Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+										Data: map[string]*pb.InputDataRef{
+											"kitchen-checkout": {
+												DataType: &pb.InputDataRef_Cipd{
+													Cipd: &pb.InputDataRef_CIPD{
+														Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "", Version: ""}},
+													},
+												},
+											},
+										},
+									},
+									Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+								},
+							},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
 							},
@@ -626,23 +631,28 @@ func TestScheduleBuild(t *testing.T) {
 								Input: &pb.BuildInfra_BBAgent_Input{
 									CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
 										{
-											Name:    "bbagent",
-											Path:    ".",
-											Version: "bbagent-version",
-										},
-										{
-											Name:    "kitchen",
-											Path:    ".",
-											Version: "kitchen-version",
-										},
-										{
 											Path: "kitchen-checkout",
 										},
 									},
 								},
 								PayloadPath: "kitchen-checkout",
 							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Agent: &pb.BuildInfra_Buildbucket_Agent{
+									Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+										Data: map[string]*pb.InputDataRef{
+											"kitchen-checkout": {
+												DataType: &pb.InputDataRef_Cipd{
+													Cipd: &pb.InputDataRef_CIPD{
+														Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "", Version: ""}},
+													},
+												},
+											},
+										},
+									},
+									Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+								},
+							},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
 							},
@@ -753,16 +763,6 @@ func TestScheduleBuild(t *testing.T) {
 							Input: &pb.BuildInfra_BBAgent_Input{
 								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
 									{
-										Name:    "bbagent",
-										Path:    ".",
-										Version: "bbagent-version",
-									},
-									{
-										Name:    "kitchen",
-										Path:    ".",
-										Version: "kitchen-version",
-									},
-									{
 										Path: "kitchen-checkout",
 									},
 								},
@@ -771,6 +771,20 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"kitchen-checkout": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "", Version: ""}},
+												},
+											},
+										},
+									},
+								},
+								Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221667745",
@@ -940,16 +954,6 @@ func TestScheduleBuild(t *testing.T) {
 							Input: &pb.BuildInfra_BBAgent_Input{
 								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
 									{
-										Name:    "bbagent",
-										Path:    ".",
-										Version: "bbagent-version",
-									},
-									{
-										Name:    "kitchen",
-										Path:    ".",
-										Version: "kitchen-version",
-									},
-									{
 										Path: "kitchen-checkout",
 									},
 								},
@@ -958,6 +962,20 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"kitchen-checkout": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "", Version: ""}},
+												},
+											},
+										},
+									},
+								},
+								Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610337",
@@ -1019,16 +1037,6 @@ func TestScheduleBuild(t *testing.T) {
 							Input: &pb.BuildInfra_BBAgent_Input{
 								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
 									{
-										Name:    "bbagent",
-										Path:    ".",
-										Version: "bbagent-version",
-									},
-									{
-										Name:    "kitchen",
-										Path:    ".",
-										Version: "kitchen-version",
-									},
-									{
 										Path: "kitchen-checkout",
 									},
 								},
@@ -1037,6 +1045,20 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"kitchen-checkout": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "", Version: ""}},
+												},
+											},
+										},
+									},
+								},
+								Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610321",
@@ -1098,16 +1120,6 @@ func TestScheduleBuild(t *testing.T) {
 							Input: &pb.BuildInfra_BBAgent_Input{
 								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
 									{
-										Name:    "bbagent",
-										Path:    ".",
-										Version: "bbagent-version",
-									},
-									{
-										Name:    "kitchen",
-										Path:    ".",
-										Version: "kitchen-version",
-									},
-									{
 										Path: "kitchen-checkout",
 									},
 								},
@@ -1116,6 +1128,20 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"kitchen-checkout": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "", Version: ""}},
+												},
+											},
+										},
+									},
+								},
+								Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610305",
@@ -1308,16 +1334,6 @@ func TestScheduleBuild(t *testing.T) {
 							Input: &pb.BuildInfra_BBAgent_Input{
 								CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
 									{
-										Name:    "bbagent",
-										Path:    ".",
-										Version: "bbagent-version",
-									},
-									{
-										Name:    "kitchen",
-										Path:    ".",
-										Version: "kitchen-version",
-									},
-									{
 										Path: "kitchen-checkout",
 									},
 								},
@@ -1326,6 +1342,18 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"kitchen-checkout": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "", Version: ""}}},
+											},
+										},
+									},
+								},
+								Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963222163313",
@@ -2401,16 +2429,6 @@ func TestScheduleBuild(t *testing.T) {
 						Input: &pb.BuildInfra_BBAgent_Input{
 							CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
 								{
-									Name:    "bbagent",
-									Path:    ".",
-									Version: "bbagent-version",
-								},
-								{
-									Name:    "kitchen",
-									Path:    ".",
-									Version: "kitchen-version",
-								},
-								{
 									Name:    "exe",
 									Path:    "kitchen-checkout",
 									Version: "exe-version",
@@ -2499,16 +2517,6 @@ func TestScheduleBuild(t *testing.T) {
 					Bbagent: &pb.BuildInfra_BBAgent{
 						Input: &pb.BuildInfra_BBAgent_Input{
 							CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
-								{
-									Name:    "bbagent",
-									Path:    ".",
-									Version: "canary-version",
-								},
-								{
-									Name:    "kitchen",
-									Path:    ".",
-									Version: "canary-version",
-								},
 								{
 									Name:    "include",
 									Path:    "cipd_bin_packages",
@@ -3400,7 +3408,11 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					PayloadPath: "kitchen-checkout",
 				},
-				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					KnownPublicGerritHosts: []string{
+						"host",
+					},
+				},
 				Logdog: &pb.BuildInfra_LogDog{
 					Project: "project",
 				},
@@ -5907,6 +5919,72 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				So(validateSchedule(req, nil), ShouldErrLike, "unknown experiment has reserved prefix")
+			})
+		})
+	})
+
+	Convey("setInfraAgent", t, func() {
+		Convey("basic", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Canary: true,
+				Exe: &pb.Executable{
+					CipdPackage: "exe",
+					CipdVersion: "exe-version",
+				},
+				Infra: &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						Input: &pb.BuildInfra_BBAgent_Input{
+							CipdPackages: []*pb.BuildInfra_BBAgent_Input_CIPDPackage{
+								{
+									Name:    "infra/tools/luci/vpython/${platform}",
+									Path:    "cipd_bin_packages",
+									Version: "canary-version",
+								},
+								{
+									Name:    "exe",
+									Path:    "kitchen-checkout",
+									Version: "exe-version",
+								},
+							},
+						},
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+				},
+			}
+			setInfraAgent(b)
+			So(b.Infra.Buildbucket.Agent, ShouldResembleProto, &pb.BuildInfra_Buildbucket_Agent{
+				Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+					Data: map[string]*pb.InputDataRef{
+						"cipd_bin_packages": {
+							DataType: &pb.InputDataRef_Cipd{
+								Cipd: &pb.InputDataRef_CIPD{
+									Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+										{Package: "infra/tools/luci/vpython/${platform}", Version: "canary-version"},
+									},
+								},
+							},
+							OnPath:  []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
+							Purpose: pb.InputDataRef_PURPOSE_UNSPECIFIED,
+						},
+						"kitchen-checkout": {
+							DataType: &pb.InputDataRef_Cipd{
+								Cipd: &pb.InputDataRef_CIPD{
+									Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+										{Package: "exe", Version: "exe-version"},
+									},
+								},
+							},
+							OnPath:  []string{},
+							Purpose: pb.InputDataRef_PURPOSE_UNSPECIFIED,
+						},
+					},
+				},
+				Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
 			})
 		})
 	})

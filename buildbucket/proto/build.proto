@@ -272,11 +272,145 @@ message Build {
   bool wait_for_capacity = 28;
 }
 
+message InputDataRef {
+  message CAS {
+    // Full name of RBE-CAS instance. `projects/{project_id}/instances/{instance}`.
+    // e.g. projects/chromium-swarm/instances/default_instance
+    string cas_instance = 1;
+
+    // This is a [Digest][build.bazel.remote.execution.v2.Digest] of a blob on
+    // RBE-CAS. See the explanations at the original definition.
+    // https://github.com/bazelbuild/remote-apis/blob/77cfb44a88577a7ade5dd2400425f6d50469ec6d/build/bazel/remote/execution/v2/remote_execution.proto#L753-L791
+    message Digest {
+      string hash = 1;
+      int64 size_bytes = 2;
+    }
+
+    Digest digest = 2;
+  }
+
+  message CIPD {
+    string server = 1;
+
+    message PkgSpec {
+      // Package MAY include CIPD variables, including conditional variables like
+      // `${os=windows}`. Additionally, version may be a ref or a tag.
+      string package = 1;
+      string version = 2;
+    }
+    repeated PkgSpec specs = 2;
+  }
+
+  oneof data_type {
+    CAS cas = 1;
+    CIPD cipd = 2;
+  }
+
+  // TODO(crbug.com/1266060): TBD. `on_path` may need to move out to be incorporated into a field which captures other envvars.
+  // Subdirectories relative to the root of `ref` which should be set as a prefix to
+  // the $PATH variable.
+  //
+  // A substitude of `env_prefixes` in SwarmingRpcsTaskProperties field -
+  // https://chromium.googlesource.com/infra/luci/luci-go/+/0048a84944e872776fba3542aa96d5943ae64bab/common/api/swarming/swarming/v1/swarming-gen.go#1495
+  repeated string on_path = 3;
+
+  enum Purpose {
+    PURPOSE_UNSPECIFIED = 0;
+
+    // Can be set to indicate that this DataRef holds a recipe bundle.
+    //
+    // This could be used to clue-in tools like `led edit-recipe-bundle`
+    // that this DataRef is the one holding the recipes. Useful in situations
+    // where the `Build.exe` field is used for a bootstrapper application.
+    PURPOSE_RECIPE_BUNDLE = 1;
+
+    // Can be set to indicate that this DataRef holds data specifically
+    // for bbagent's own use.
+    //
+    // There's a proposal currently to add `nsjail` support to bbagent, and it
+    // would need to bring a copy of `nsjail` in order to run the user binary
+    // but we wouldn't necessarily want to expose it to the user binary.
+    PURPOSE_BBAGENT_UTILITY = 2;
+  }
+  Purpose purpose = 4;
+}
+
+message ResolvedDataRef {
+  message Timing {
+    google.protobuf.Duration fetch_duration = 1;
+    google.protobuf.Duration install_duration = 2;
+  }
+
+  message CAS {
+    // TODO(crbug.com/1266060): potential fields can be
+    // int64 cache_hits = ?;
+    // int64 cache_hit_size = ?:
+    // int64 cache_misses = ?;
+    // int64 cache_miss_size = ?;
+    // need more thinking and better to determine when starting writing code
+    // to download binaries in bbagent.
+    Timing timing = 1;
+  }
+
+  message CIPD {
+    message PkgSpec {
+      // True if this package wasn't installed because `package` contained a
+      // non-applicable conditional (e.g. ${os=windows} on a mac machine).
+      bool skipped = 1;
+
+      string package = 2;  // fully resolved
+      string version = 3;  // fully resolved
+
+      Trinary was_cached = 4;
+      Timing timing = 5;  // optional
+    }
+
+    repeated PkgSpec specs = 2;
+  }
+
+  // TODO(crbug.com/1266060): if we have local caches here, report if they were cached
+  // and how big they were when they were mapped in.
+
+  oneof data_type {
+    CAS cas = 1;
+    CIPD cipd = 2;
+  }
+}
+
 // Build infrastructure that was used for a particular build.
 message BuildInfra {
 
   // Buildbucket-specific information, captured at the build creation time.
   message Buildbucket {
+    // Agent.input is for informational. bbagent will use BBagent.Input fields to download stuff
+    // and then update Agent.output.
+    message Agent {
+      message Input {
+
+        // maps relative-to-root directory to the data
+        //
+        // For now, data is only allowed at the 'leaves', e.g. you cannot
+        // specify data at "a/b/c" and "a/b" (but "a/b/c" and "a/q" would be OK).
+        // All directories beginning with "luci." are reserved for Buildbucket's own use.
+        //
+        // TODO(crbug.com/1266060): Enforce the above constraints in a later phase.
+        // Currently users don't have the flexibility to set the parent directory path.
+        map<string, InputDataRef> data = 1;
+      }
+      message Output {
+        // maps relative-to-root directory to the fully-resolved ref.
+        //
+        // This will always have 1:1 mapping to Agent.Input.data
+        map<string, ResolvedDataRef> resolved_data = 1;
+
+        Status status = 2;
+        StatusDetails status_details = 3;
+        string summary_html = 4;
+      }
+      Input input = 1;
+      Output output = 2;
+    }
+
     reserved 4; // field "canary" was moved to Build message.
 
     // Version of swarming task template. Defines
@@ -334,6 +468,15 @@ message BuildInfra {
     // the experiment should be set. If you see this, then please remove it
     // from your configuration and/or requests.
     map<string, ExperimentReason> experiment_reasons = 8;
+
+    // The agent binary (bbagent or kitchen) resolutions Buildbucket made for this build.
+    // This includes all agent_executable references supplied to
+    // the TaskBackend in "original" (CIPD) form, to facilitate debugging.
+    map<string, ResolvedDataRef> agent_executable = 9;
+
+    Agent agent = 10;
+
+    repeated string known_public_gerrit_hosts = 11;
   }
 
   // Swarming-specific information.
@@ -500,10 +643,10 @@ message BuildInfra {
         // Required.
         string version = 2;
 
-        // Hostname of the CIPD server to fetch this package from.
+        // CIPD server to fetch this package from.
         //
         // Required.
-        string host = 3;
+        string server = 3;
 
         // Path where this CIPD package should be installed.
         //

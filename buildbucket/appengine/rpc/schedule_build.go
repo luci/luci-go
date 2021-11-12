@@ -493,18 +493,10 @@ func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
 		return p.Version
 	}
 
-	// BBAgent + Kitchen + Exe + UserPackages.
-	// TODO(crbug/1042991): Set CIPD hostname for all packages.
+	// Exe + UserPackages.
+	// TODO(yuanjun): Set a global default CIPD server in SettingsCfg proto and fetch from it.
 	packages := make([]*pb.BuildInfra_BBAgent_Input_CIPDPackage, 0, 3+len(swarming.UserPackages))
 	packages = append(packages, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
-		Name:    swarming.BbagentPackage.PackageName,
-		Path:    ".",
-		Version: getVersion(swarming.BbagentPackage, build),
-	}, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
-		Name:    swarming.KitchenPackage.PackageName,
-		Path:    ".",
-		Version: getVersion(swarming.KitchenPackage, build),
-	}, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
 		Name:    build.Exe.CipdPackage,
 		Path:    "kitchen-checkout",
 		Version: build.Exe.CipdVersion,
@@ -515,7 +507,7 @@ func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
 		if !builderMatches(id, p.Builders) {
 			continue
 		}
-		path := "cipd_bin_packages"
+		path := UserPackageDir
 		if p.Subdir != "" {
 			path = fmt.Sprintf("%s/%s", path, p.Subdir)
 		}
@@ -819,8 +811,9 @@ func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, gl
 			PayloadPath:            "kitchen-checkout",
 		},
 		Buildbucket: &pb.BuildInfra_Buildbucket{
-			RequestedDimensions: req.GetDimensions(),
-			RequestedProperties: req.GetProperties(),
+			RequestedDimensions:    req.GetDimensions(),
+			RequestedProperties:    req.GetProperties(),
+			KnownPublicGerritHosts: globalCfg.GetKnownPublicGerritHosts(),
 		},
 		Logdog: &pb.BuildInfra_LogDog{
 			Hostname: globalCfg.GetLogdog().GetHostname(),
@@ -1032,8 +1025,46 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setTimeouts(req, cfg, b)
 	setExperiments(ctx, req, cfg, globalCfg, b) // Requires setExecutable, setInfra, setInput.
 	setCIPDPackages(b, globalCfg)               // Requires setExecutable, setInfra, setExperiments.
-
+	setInfraAgent(b)                            // Requires setInfra, setCIPDPackages
+	setInfraAgentExecutable(b, globalCfg)       // Requires setInfra
 	return
+}
+
+// setInfraAgent maps the build.Infra.Bbagent.Input.CipdPackages values into
+// build.Infra.Buildbucket.Agent.Input.
+// Mutates the given *pb.Build. build.Infra.Bbagent.Input must be set.
+func setInfraAgent(build *pb.Build) {
+	inputData := make(map[string]*pb.InputDataRef)
+	for _, pkg := range build.Infra.Bbagent.Input.CipdPackages {
+		if _, ok := inputData[pkg.Path]; !ok {
+			inputData[pkg.Path] = &pb.InputDataRef{
+				DataType: &pb.InputDataRef_Cipd{
+					Cipd: &pb.InputDataRef_CIPD{
+						Server: pkg.Server,
+					},
+				},
+			}
+			if strings.HasPrefix(pkg.Path, UserPackageDir) {
+				inputData[pkg.Path].OnPath = []string{pkg.Path, fmt.Sprintf("%s/%s", pkg.Path, "bin")}
+			}
+		}
+		inputData[pkg.Path].GetCipd().Specs = append(inputData[pkg.Path].GetCipd().Specs, &pb.InputDataRef_CIPD_PkgSpec{
+			Package: pkg.Name,
+			Version: pkg.Version,
+		})
+	}
+
+	build.Infra.Buildbucket.Agent = &pb.BuildInfra_Buildbucket_Agent{
+		Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+			Data: inputData,
+		},
+		Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+	}
+}
+
+// setInfraAgentExecutable resolve agent binaries for all platforms and set into infra.Buildbucket.agentExecutable.
+func setInfraAgentExecutable(build *pb.Build, globalCfg *pb.SettingsCfg) {
+	// TODO(crbug.com/1266060) set agentExecutable.
 }
 
 // setExperimentsFromProto sets experiments in the model (see model/build.go).
