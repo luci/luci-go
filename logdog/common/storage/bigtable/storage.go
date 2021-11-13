@@ -185,13 +185,6 @@ func (s *Storage) Get(c context.Context, r storage.GetRequest, cb storage.GetCal
 			}
 		}
 
-		log.Fields{
-			"rk":         rk.encode(),
-			"rkIndex":    rk.index,
-			"rkCount":    rk.count,
-			"startIndex": startIndex,
-		}.Debugf(c, "Punting row key range [%d - %d]...", startIndex, rk.index)
-
 		for index := startIndex; index <= rk.index; index++ {
 			// If we're not doing keys-only, consume the row.
 			var row []byte
