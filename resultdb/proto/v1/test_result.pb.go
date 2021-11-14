@@ -138,7 +138,7 @@ type TestResult struct {
 	// Output only.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Test id, a unique identifier of the test in a LUCI project.
-	// Regex: ^[[::print::]]{1,256}$
+	// Regex: ^[[::print::]]{1,512}$
 	//
 	// If two tests have a common test id prefix that ends with a
 	// non-alphanumeric character, they considered a part of a group. Examples:
