@@ -56,7 +56,12 @@ export class TestHistoryPageState {
 
   private disposers: Array<() => void> = [];
   constructor(readonly realm: string, readonly testId: string, readonly testHistoryService: TestHistoryService) {
-    this.testHistoryLoader = new TestHistoryLoader(realm, testId, (datetime) => datetime.toFormat('yyyy-MM-dd'), testHistoryService);
+    this.testHistoryLoader = new TestHistoryLoader(
+      realm,
+      testId,
+      (datetime) => datetime.toFormat('yyyy-MM-dd'),
+      testHistoryService
+    );
 
     // Ensure all the entries are loaded / being loaded.
     this.disposers.push(
