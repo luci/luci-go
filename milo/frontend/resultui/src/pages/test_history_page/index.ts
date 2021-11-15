@@ -18,12 +18,13 @@ import { observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
 import './date_axis';
+import './duration_graph';
 import './graph_config';
 import './status_graph';
 import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
+import { GraphType, provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
@@ -99,7 +100,14 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       <div id="main">
         <milo-th-variant-def-table id="variant-def-table"></milo-th-variant-def-table>
         <milo-th-date-axis id="x-axis"></milo-th-date-axis>
-        <milo-th-status-graph id="graph"></milo-th-status-graph>
+        ${(() => {
+          switch (this.pageState.graphType) {
+            case GraphType.DURATION:
+              return html`<milo-th-duration-graph id="graph"></milo-th-duration-graph>`;
+            case GraphType.STATUS:
+              return html`<milo-th-status-graph id="graph"></milo-th-status-graph>`;
+          }
+        })()}
       </div>
     `;
   }

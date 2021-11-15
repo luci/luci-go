@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { css, customElement, html } from 'lit-element';
+import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
@@ -35,7 +36,6 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
       <div>
         <label>Show:</label>
         <select
-          disabled
           @input=${(e: InputEvent) => {
             this.pageState.graphType = (e.target as HTMLOptionElement).value as GraphType;
           }}
@@ -58,7 +58,10 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
           <option ?selected=${this.pageState.xAxisType === XAxisType.DATE} value=${XAxisType.DATE}>Date</option>
         </select>
       </div>
-      <div id="count-filter">
+      <div
+        id="count-filter"
+        style=${styleMap({ display: this.pageState.graphType === GraphType.STATUS ? '' : 'none' })}
+      >
         <label>Count:</label>
         <div>
           <input

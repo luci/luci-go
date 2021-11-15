@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { interpolateOranges, scaleLinear, scaleSequential } from 'd3';
 import { DateTime } from 'luxon';
 import { computed, observable, reaction } from 'mobx';
 
@@ -28,6 +29,10 @@ export const enum XAxisType {
   DATE = 'DATE',
   COMMIT = 'COMMIT',
 }
+
+// Use SCALE_COLOR to discard colors avoid using white color when the input is
+// close to 0.
+const SCALE_COLOR = scaleLinear().range([0.1, 1]).domain([0, 1]);
 
 /**
  * Records the test history page state.
@@ -53,6 +58,15 @@ export class TestHistoryPageState {
   @observable.ref countUnexpected = true;
   @observable.ref countUnexpectedlySkipped = true;
   @observable.ref countFlaky = true;
+
+  // Keep track of the max and min duration to render the duration graph.
+  @observable.ref durationInitialized = false;
+  @observable.ref maxDurationMs = 100;
+  @observable.ref minDurationMs = 0;
+
+  @computed get scaleDurationColor() {
+    return scaleSequential((x) => interpolateOranges(SCALE_COLOR(x))).domain([this.minDurationMs, this.maxDurationMs]);
+  }
 
   private disposers: Array<() => void> = [];
   constructor(readonly realm: string, readonly testId: string, readonly testHistoryService: TestHistoryService) {
