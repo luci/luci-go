@@ -34,11 +34,12 @@ import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../components
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
+import { BUILD_STATUS_CLASS_MAP, PREDEFINED_TIME_INTERVALS } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
 import { enumerate } from '../../libs/iter_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
+import { roundDown } from '../../libs/utils';
 import { StepExt } from '../../models/step_ext';
 import commonStyle from '../../styles/common_style.css';
 
@@ -68,38 +69,6 @@ const LIST_ITEM_X_OFFSET = STEP_MARGIN + TEXT_MARGIN + BORDER_SIZE;
 const LIST_ITEM_Y_OFFSET = STEP_MARGIN + (STEP_HEIGHT - LIST_ITEM_HEIGHT) / 2;
 
 const V_GRID_LINE_MAX_GAP = 80;
-const PREDEFINED_TIME_INTERVALS = [
-  // Values that can divide 1 day.
-  86400000, // 24hr
-  43200000, // 12hr
-  28800000, // 8hr
-  // Values that can divide 12 hours.
-  21600000, // 6hr
-  14400000, // 4hr
-  10800000, // 3hr
-  7200000, // 2hr
-  3600000, // 1hr
-  // Values that can divide 1 hour.
-  1800000, // 30min
-  1200000, // 20min
-  900000, // 15min
-  600000, // 10min
-  // Values that can divide 15 minutes.
-  300000, // 5min
-  180000, // 3min
-  120000, // 2min
-  60000, // 1min
-  // Values that can divide 1 minute.
-  30000, // 30s
-  20000, // 20s
-  15000, // 15s
-  10000, // 10s
-  // Values that can divide 15 seconds.
-  5000, // 5s
-  3000, // 3s
-  2000, // 2s
-  1000, // 1s
-];
 
 /**
  * A utility function that helps assigning appropriate list numbers to steps.
@@ -203,18 +172,7 @@ export class TimelineTabElement extends MiloBaseElement {
 
     const maxInterval = (endTime - startTime + 2 * padding) / (this.bodyWidth / V_GRID_LINE_MAX_GAP);
 
-    // Assign a default value here to make TSC happy.
-    let interval = PREDEFINED_TIME_INTERVALS[0];
-
-    // Find the largest interval that is no larger than the maximum interval.
-    // Use linear search because the array is relatively short.
-    for (const predefined of PREDEFINED_TIME_INTERVALS) {
-      interval = predefined;
-      if (maxInterval >= predefined) {
-        break;
-      }
-    }
-    this.timeInterval = timeMillisecond.every(interval)!;
+    this.timeInterval = timeMillisecond.every(roundDown(maxInterval, PREDEFINED_TIME_INTERVALS))!;
 
     // Render each component.
     this.renderHeader();

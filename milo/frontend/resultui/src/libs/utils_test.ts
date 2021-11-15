@@ -14,7 +14,7 @@
 
 import { assert } from 'chai';
 
-import { ChainableURL } from './utils';
+import { ChainableURL, roundDown, roundUp } from './utils';
 
 describe('utils', () => {
   describe('ChainableURL', () => {
@@ -39,6 +39,38 @@ describe('utils', () => {
       it('should override search params with multiple values correctly', async () => {
         const newUrlStr = url.withSearchParam('key2', 'newVal2', true).toString();
         assert.equal(newUrlStr, 'https://www.google.com/path?key1=newVal1&key2=newVal2&key3=val3&key3=val3');
+      });
+    });
+  });
+
+  describe('roundUp/Down', () => {
+    const list = [1, 3, 5, 7];
+
+    describe('roundUp', () => {
+      it('should return the next number in the list', () => {
+        assert.strictEqual(roundUp(4, list), 5);
+      });
+
+      it("should return the number itself if it's in the list", () => {
+        assert.strictEqual(roundUp(3, list), 3);
+      });
+
+      it("should return the number itself if it's larger than any number in the list", () => {
+        assert.strictEqual(roundUp(9, list), 9);
+      });
+    });
+
+    describe('roundDown', () => {
+      it('should return the next number in the list', () => {
+        assert.strictEqual(roundDown(4, list), 3);
+      });
+
+      it("should return the number itself if it's in the list", () => {
+        assert.strictEqual(roundDown(3, list), 3);
+      });
+
+      it("should return the number itself if it's smaller than any number in the list", () => {
+        assert.strictEqual(roundDown(-1, list), -1);
       });
     });
   });
