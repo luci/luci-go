@@ -116,6 +116,21 @@ export const ARTIFACT_LENGTH_LIMIT = 50000;
 export const POTENTIALLY_EXPIRED = Symbol('POTENTIALLY_EXPIRED');
 
 /**
+ * The number of milliseconds in a second.
+ */
+export const SECOND_MS = 1000;
+
+/**
+ * The number of milliseconds in a minute.
+ */
+export const MINUTE_MS = 60000;
+
+/**
+ * The number of milliseconds in an hour.
+ */
+export const HOUR_MS = 3600000;
+
+/**
  * A list of numbers in ascending order that are suitable to be used as time
  * intervals (in ms).
  */

@@ -19,6 +19,7 @@ import { observable, reaction } from 'mobx';
 import '../../components/status_bar';
 import './date_axis';
 import './duration_graph';
+import './duration_scale';
 import './graph_config';
 import './status_graph';
 import './variant_def_table';
@@ -108,6 +109,9 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
               return html`<milo-th-status-graph id="graph"></milo-th-status-graph>`;
           }
         })()}
+        ${this.pageState.graphType === GraphType.DURATION
+          ? html`<milo-th-duration-scale id="extra"></milo-th-duration-scale>`
+          : ''}
       </div>
     `;
   }
@@ -137,11 +141,11 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
       #main {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto 1fr auto;
         grid-template-rows: auto 1fr;
         grid-template-areas:
-          'v-table x-axis'
-          'v-table graph';
+          'v-table x-axis extra'
+          'v-table graph extra';
       }
 
       #variant-def-table {
@@ -154,6 +158,10 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
       #graph {
         grid-area: graph;
+      }
+
+      #extra {
+        grid-area: extra;
       }
     `,
   ];
