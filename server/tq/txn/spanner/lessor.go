@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,36 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package datastore
+package spanner
 
 import (
 	"context"
+	"math"
 	"time"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
+	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/server/tq/internal/lessor"
 	"go.chromium.org/luci/server/tq/internal/partition"
 )
 
-// dsLessor implements lessor.Lessor on top of Cloud Datastore.
-type dsLessor struct {
+// spanLessor implements lessor.Lessor on top of Cloud Spanner.
+type spanLessor struct {
 }
 
 // WithLease acquires the lease and executes WithLeaseCB.
 // The obtained lease duration may be shorter than requested.
 // The obtained lease may be only for some parts of the desired Partition.
-func (l *dsLessor) WithLease(ctx context.Context, sectionID string, part *partition.Partition, dur time.Duration, clbk lessor.WithLeaseCB) error {
+func (l *spanLessor) WithLease(ctx context.Context, sectionID string, part *partition.Partition, dur time.Duration, clbk lessor.WithLeaseCB) error {
 	expiresAt := clock.Now(ctx).Add(dur)
 	if d, ok := ctx.Deadline(); ok && expiresAt.After(d) {
 		expiresAt = d
 	}
-	expiresAt = ds.RoundTime(expiresAt)
 
 	lease, err := l.acquire(ctx, sectionID, part, expiresAt)
 	if err != nil {
@@ -55,33 +56,33 @@ func (l *dsLessor) WithLease(ctx context.Context, sectionID string, part *partit
 	return nil
 }
 
-func (*dsLessor) acquire(ctx context.Context, sectionID string, desired *partition.Partition, expiresAt time.Time) (*lease, error) {
+func (*spanLessor) acquire(ctx context.Context, sectionID string, desired *partition.Partition, expiresAt time.Time) (*lease, error) {
 	var acquired *lease
 	deletedExpired := 0
-	err := ds.RunInTransaction(ctx, func(ctx context.Context) error {
+
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		deletedExpired = 0 // reset in case of retries.
-		active, expired, err := loadAll(ctx, sectionID)
+		all, err := loadAll(ctx, sectionID)
 		if err != nil {
-			return err
+			return errors.Annotate(err, "failed to read leases").Err()
 		}
+		active, expired := activeAndExpired(ctx, all)
 		if len(expired) > 0 {
 			// Deleting >= 1 lease every time a new one is created suffices to avoid
 			// accumulating garbage above O(active leases).
 			if len(expired) > 50 {
 				expired = expired[:50]
 			}
-			if err = ds.Delete(ctx, expired); err != nil {
-				return errors.Annotate(err, "failed to remove %d expired leases", len(expired)).Err()
-			}
+			remove(ctx, expired)
 			deletedExpired = len(expired)
 		}
 		parts, err := availableForLease(desired, active)
 		if err != nil {
 			return errors.Annotate(err, "failed to decode available leases").Err()
 		}
-		acquired, err = save(ctx, sectionID, expiresAt, parts)
-		return err
-	}, &ds.TransactionOptions{Attempts: 5})
+		acquired = save(ctx, sectionID, expiresAt, parts, maxLeaseID(all))
+		return nil
+	})
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to transact a lease").Tag(transient.Tag).Err()
 	}
@@ -93,33 +94,26 @@ func (*dsLessor) acquire(ctx context.Context, sectionID string, desired *partiti
 	return acquired, nil
 }
 
-func leasesRootKey(ctx context.Context, sectionID string) *ds.Key {
-	return ds.NewKey(ctx, "tq.LeasesRoot", sectionID, 0, nil)
-}
-
 type lease struct {
-	_kind string `gae:"$kind,tq.Lease"`
-
-	Id              int64     `gae:"$id"`     // autoassigned. If not set, implies a noop lease.
-	Parent          *ds.Key   `gae:"$parent"` // tq.LeasesRoot entity.
-	SerializedParts []string  `gae:",noindex"`
-	ExpiresAt       time.Time `gae:",noindex"` // precision up to microseconds.
+	SectionID string
+	LeaseID int64
+	SerializedParts []string
+	ExpiresAt time.Time
 
 	// Set only when lease object is created in save().
-	parts partition.SortedPartitions `gae:"-"`
+	parts partition.SortedPartitions
 }
 
-func save(ctx context.Context, sectionID string, expiresAt time.Time, parts partition.SortedPartitions) (*lease, error) {
+func save(ctx context.Context, sectionID string, expiresAt time.Time, parts partition.SortedPartitions, max int64) *lease {
 	if len(parts) == 0 {
 		return &lease{
 			ExpiresAt: expiresAt,
 			parts:     parts,
-		}, nil // no need to save noop lease.
+		} // no need to save noop lease.
 	}
 
 	l := &lease{
-		// ID will be autoassgined.
-		Parent:          leasesRootKey(ctx, sectionID),
+		SectionID:       sectionID,
 		SerializedParts: make([]string, len(parts)),
 		ExpiresAt:       expiresAt.UTC(),
 		parts:           parts,
@@ -127,29 +121,78 @@ func save(ctx context.Context, sectionID string, expiresAt time.Time, parts part
 	for i, p := range parts {
 		l.SerializedParts[i] = p.String()
 	}
-	if err := ds.Put(ctx, l); err != nil {
-		return nil, errors.Annotate(err, "failed to save a new lease").Tag(transient.Tag).Err()
+
+	// Strictly increase the leaseID until it reaches to math.MaxInt64 then
+	// go back and increase from 1 again.
+	var leaseID int64
+	switch {
+	case max< math.MaxInt64:
+		leaseID = max + 1
+	default:
+		leaseID = 1
 	}
-	return l, nil
+
+	l.LeaseID = leaseID
+	m := spanner.InsertMap("TQLeases", map[string]interface{}{
+		"SectionID": l.SectionID,
+		"LeaseID": leaseID,
+		"SerializedParts": l.SerializedParts,
+		"ExpiresAt": l.ExpiresAt,
+	})
+	span.BufferWrite(ctx, m)
+
+	return l
 }
 
 func (l *lease) remove(ctx context.Context) {
-	if l.Id == 0 {
-		return // noop leases are not saved.
+	if l.LeaseID == 0 {
+		return
 	}
-	if err := ds.Delete(ctx, l); err != nil {
+
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		remove(ctx, []*lease{l})
+		return nil
+	})
+	if err != nil {
 		// Log only. Once lease expires, it'll garbage-collected next time a new
 		// lease is acquired for the same sectionID.
 		logging.Warningf(ctx, "failed to remove lease %v", l)
 	}
 }
 
-func loadAll(ctx context.Context, sectionID string) (active, expired []*lease, err error) {
-	var all []*lease
-	q := ds.NewQuery("tq.Lease").Ancestor(leasesRootKey(ctx, sectionID))
-	if err := ds.GetAll(ctx, q, &all); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to fetch leases").Tag(transient.Tag).Err()
+func query(ctx context.Context, sectionID string) ([]*lease, error) {
+	st := spanner.NewStatement(`
+		SELECT SectionID, LeaseID, SerializedParts, ExpiresAt
+		FROM TQLeases
+		WHERE SectionID = @sectionID
+	`)
+	st.Params = map[string]interface{}{
+		"sectionID":    sectionID,
 	}
+
+	var all []*lease
+	err := span.Query(ctx, st).Do(
+		func(row *spanner.Row) error {
+			l := &lease{}
+			if err := row.Columns(&l.SectionID, &l.LeaseID, &l.SerializedParts, &l.ExpiresAt); err != nil {
+				return err
+			}
+			all = append(all, l)
+			return nil
+		},
+	)
+	return all, err
+}
+
+func loadAll(ctx context.Context, sectionID string) ([]*lease, error) {
+	all, err := query(ctx, sectionID)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch leases").Tag(transient.Tag).Err()
+	}
+	return all, nil
+}
+
+func activeAndExpired(ctx context.Context, all []*lease) (active, expired []*lease) {
 	// Partition active leases in the front and expired at the end of the slice.
 	i, j := 0, len(all)
 	now := clock.Now(ctx)
@@ -161,7 +204,17 @@ func loadAll(ctx context.Context, sectionID string) (active, expired []*lease, e
 		j--
 		all[i], all[j] = all[j], all[i]
 	}
-	return all[:i], all[i:], nil
+	return all[:i], all[i:]
+}
+
+func maxLeaseID(all []*lease) int64 {
+  var max int64 = 0
+	for _, l := range all {
+		if l.LeaseID > max {
+			max = l.LeaseID
+		}
+	}
+	return max
 }
 
 func availableForLease(desired *partition.Partition, active []*lease) (partition.SortedPartitions, error) {
@@ -182,4 +235,16 @@ func availableForLease(desired *partition.Partition, active []*lease) (partition
 		}
 	}
 	return builder.Result(), nil
+}
+
+func remove(ctx context.Context, ls []*lease) {
+	ms := make([]*spanner.Mutation, 0, len(ls))
+	for _, l := range ls {
+		if l.LeaseID == 0 {
+			continue
+		}
+		m := spanner.Delete("TQLeases", spanner.Key{l.SectionID, l.LeaseID})
+		ms = append(ms, m)
+	}
+	span.BufferWrite(ctx, ms...)
 }

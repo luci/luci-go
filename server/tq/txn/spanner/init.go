@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/lessor"
 )
 
 var impl spanDB
@@ -46,5 +47,11 @@ func init() {
 		NonTxn: func(ctx context.Context) db.DB {
 			return impl
 		},
+	})
+}
+
+func init() {
+	lessor.Register("spanner", func(context.Context) (lessor.Lessor, error) {
+		return &spanLessor{}, nil
 	})
 }

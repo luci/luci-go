@@ -58,10 +58,17 @@
 //
 // Using the sweeper with Spanner
 //
-// You need to Create a table in your database:
+// You need to Create below tables in your database:
 //   CREATE TABLE TQReminders (
 //     ID STRING(MAX) NOT NULL,
 //     FreshUntil TIMESTAMP NOT NULL,
 //     Payload BYTES(102400) NOT NULL,
 //   ) PRIMARY KEY (ID ASC);
+//
+//   CREATE TABLE TQLeases (
+//     SectionID STRING(MAX) NOT NULL,
+//     LeaseID INT64 NOT NULL,
+//     SerializedParts ARRAY<STRING(MAX)>,
+//     ExpiresAt TIMESTAMP NOT NULL,
+//   ) PRIMARY KEY (SectionID ASC, LeaseID ASC);
 package tq
