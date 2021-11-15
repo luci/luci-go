@@ -29,6 +29,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -41,13 +42,22 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-// emulatorCfg is the gcloud config name for Cloud Spanner Emulator.
-const emulatorCfg = "spanner-emulator"
+const (
+	// emulatorCfg is the gcloud config name for Cloud Spanner Emulator.
+	emulatorCfg = "spanner-emulator"
+
+	// IntegrationTestEnvVar is the name of the environment variable which controls
+	// whether spanner tests are executed.
+	// The value must be "1" for integration tests to run.
+	IntegrationTestEnvVar = "INTEGRATION_TESTS"
+)
 
 // TempDBConfig specifies how to create a temporary database.
 type TempDBConfig struct {
@@ -290,4 +300,126 @@ func (e *Emulator) NewInstance(ctx context.Context, projectName string) (string,
 	default:
 		return ins.Name, nil
 	}
+}
+
+var spannerClient *spanner.Client
+
+// CleanupDatabase deletes all data from all tables.
+type CleanupDatabase func(ctx context.Context, client *spanner.Client) error
+
+// FindInitScript returns path to a .sql file which contains the schema of the
+// tested Spanner database.
+type FindInitScript func() (string, error)
+
+
+// runIntegrationTests returns true if integration tests should run.
+func runIntegrationTests() bool {
+	return os.Getenv(IntegrationTestEnvVar) == "1"
+}
+
+// SpannerTestContext returns a context for testing code that talks to Spanner.
+// Skips the test if integration tests are not enabled.
+//
+// Tests that use Spanner MUST NOT call t.Parallel().
+func SpannerTestContext(tb testing.TB, cleanupDatabase CleanupDatabase) context.Context {
+	switch {
+	case !runIntegrationTests():
+		tb.Skipf("env var %s=1 is missing", IntegrationTestEnvVar)
+	case spannerClient == nil:
+		tb.Fatalf("spanner client is not initialized; forgot to call SpannerTestMain?")
+	}
+
+	ctx := context.Background()
+	err := cleanupDatabase(ctx, spannerClient)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	ctx = span.UseClient(ctx, spannerClient)
+
+	return ctx
+}
+
+// SpannerTestMain is a test main function for packages that have tests that
+// talk to spanner. It creates/destroys a temporary spanner database
+// before/after running tests.
+//
+// This function never returns. Instead it calls os.Exit with the value returned
+// by m.Run().
+func SpannerTestMain(m *testing.M, findInitScript FindInitScript) {
+	exitCode, err := spannerTestMain(m, findInitScript)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	os.Exit(exitCode)
+}
+
+func spannerTestMain(m *testing.M, findInitScript FindInitScript) (exitCode int, err error) {
+	testing.Init()
+
+	if runIntegrationTests() {
+		ctx := context.Background()
+		start := clock.Now(ctx)
+		var instanceName string
+		var emulator *Emulator
+
+		var err error
+		// Start Cloud Spanner Emulator.
+		if emulator, err = StartEmulator(ctx); err != nil {
+			return 0, err
+		}
+		defer func() {
+			switch stopErr := emulator.Stop(); {
+			case stopErr == nil:
+
+			case err == nil:
+				err = stopErr
+
+			default:
+				fmt.Fprintf(os.Stderr, "failed to stop the emulator: %s\n", stopErr)
+			}
+		}()
+
+		// Create a Spanner instance.
+		if instanceName, err = emulator.NewInstance(ctx, ""); err != nil {
+			return 0, err
+		}
+		fmt.Printf("started cloud emulator instance and created a temporary Spanner instance %s in %s\n", instanceName, time.Since(start))
+		start = clock.Now(ctx)
+
+		// Find init_db.sql
+		initScriptPath, err := findInitScript()
+		if err != nil {
+			return 0, err
+		}
+
+		// Create a Spanner database.
+		db, err := NewTempDB(ctx, TempDBConfig{InitScriptPath: initScriptPath, InstanceName: instanceName}, emulator)
+		if err != nil {
+			return 0, errors.Annotate(err, "failed to create a temporary Spanner database").Err()
+		}
+		fmt.Printf("created a temporary Spanner database %s in %s\n", db.Name, time.Since(start))
+
+		defer func() {
+			switch dropErr := db.Drop(ctx); {
+			case dropErr == nil:
+
+			case err == nil:
+				err = dropErr
+
+			default:
+				fmt.Fprintf(os.Stderr, "failed to drop the database: %s\n", dropErr)
+			}
+		}()
+
+		// Create a global Spanner client.
+		spannerClient, err = db.Client(ctx)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return m.Run(), nil
 }
