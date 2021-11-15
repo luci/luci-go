@@ -614,8 +614,13 @@ func convertIsolateToJSON5(content []byte) io.Reader {
 
 func parseIsolate(content []byte) (*isolate, error) {
 	isolate := &isolate{}
-	// TODO(tandrii): figure out why decoding directly into isolate
-	// doesn't work.
+
+	// Try to decode json without any modification first.
+	if err := json5.Unmarshal(content, &isolate); err == nil {
+		return isolate, nil
+	}
+
+	// TODO: remove single quotation usage from isolate user.
 	// if err := json5.NewDecoder(json5src).Decode(isolate); err != nil {
 	var data interface{}
 	if err := json5.NewDecoder(convertIsolateToJSON5(content)).Decode(&data); err != nil {

@@ -512,6 +512,15 @@ func TestConfigSettingsUnionRight(t *testing.T) {
 	})
 }
 
+func TestParseIsolate(t *testing.T) {
+	t.Parallel()
+	Convey("test parseIsolate having double quotation with escape", t, func() {
+		content := []byte(`{"variables": {"command": ["{\"test_args\": <(test_args)}"]}}`)
+		_, err := parseIsolate(content)
+		So(err, ShouldBeNil)
+	})
+}
+
 // Helper functions.
 
 // absToOS converts a POSIX path to OS specific format.
