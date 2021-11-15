@@ -154,7 +154,7 @@ func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 		fl.defaults.Scopes = append([]string(nil), scopesDefault...)
 	}
 	f.StringVar(&fl.serviceAccountJSON, "service-account-json", fl.defaults.ServiceAccountJSONPath,
-		"Path to JSON file with service account credentials to use.")
+		fmt.Sprintf("Path to JSON file with service account credentials to use. Or specify `%s` to use GCE's default service account.", auth.GCEServiceAccount))
 }
 
 // registerScopesFlags adds scope-related flags.
