@@ -14,19 +14,19 @@
 
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html, property } from 'lit-element';
-import { comparer, computed, observable, reaction } from 'mobx';
+import { observable, reaction } from 'mobx';
 
-import './graph_config';
 import '../../components/status_bar';
+import './date_axis';
+import './graph_config';
 import './status_graph';
+import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
-import { getCriticalVariantKeys } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
-import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 @customElement('milo-test-history-page')
 @provider
@@ -37,14 +37,6 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
-
-  @computed private get variants() {
-    return this.pageState.testHistoryLoader?.variants || [];
-  }
-
-  @computed({ equals: comparer.shallow }) private get criticalVariantKeys() {
-    return getCriticalVariantKeys(this.variants.map(([_, v]) => v));
-  }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const realm = location.params['realm'];
@@ -105,19 +97,9 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     return html`
       <milo-th-graph-config></milo-th-graph-config>
       <div id="main">
-        <table id="variant-def-table">
-          <tr>
-            ${this.criticalVariantKeys.map((k) => html`<th>${k}</th>`)}
-          </tr>
-          ${this.variants.map(
-            ([_, v]) => html`
-              <tr>
-                ${this.criticalVariantKeys.map((k) => html`<td>${v.def[k] || ''}</td>`)}
-              </tr>
-            `
-          )}
-        </table>
-        <milo-th-status-graph></milo-th-status-graph>
+        <milo-th-variant-def-table id="variant-def-table"></milo-th-variant-def-table>
+        <milo-th-date-axis id="x-axis"></milo-th-date-axis>
+        <milo-th-status-graph id="graph"></milo-th-status-graph>
       </div>
     `;
   }
@@ -148,26 +130,22 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       #main {
         display: grid;
         grid-template-columns: auto 1fr;
+        grid-template-rows: auto 1fr;
+        grid-template-areas:
+          'v-table x-axis'
+          'v-table graph';
       }
 
       #variant-def-table {
-        padding-top: ${X_AXIS_HEIGHT - CELL_SIZE}px;
-        border-spacing: 0;
+        grid-area: v-table;
       }
-      #variant-def-table tr:first-child {
+
+      #x-axis {
+        grid-area: x-axis;
       }
-      #variant-def-table tr {
-        height: ${CELL_SIZE}px;
-      }
-      #variant-def-table tr:nth-child(even) {
-        background-color: var(--block-background-color);
-      }
-      #variant-def-table * {
-        padding: 0;
-      }
-      #variant-def-table td {
-        text-align: center;
-        padding: 0 2px;
+
+      #graph {
+        grid-area: graph;
       }
     `,
   ];

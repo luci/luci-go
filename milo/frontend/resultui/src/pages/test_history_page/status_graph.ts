@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AxisScale, axisTop, scaleTime, select as d3Select, timeFormat } from 'd3';
 import { css, customElement, html, svg } from 'lit-element';
 import { DateTime } from 'luxon';
-import { computed, observable } from 'mobx';
+import { observable } from 'mobx';
 
 import './graph_config';
 import '../../components/status_bar';
@@ -41,48 +40,23 @@ const STATUS_ORDER = [
 export class TestHistoryStatusGraphElement extends MiloBaseElement {
   @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
 
-  @computed private get scaleTime() {
-    return scaleTime()
-      .domain([this.pageState.now, this.pageState.now.minus({ days: this.pageState.days })])
-      .range([0, this.pageState.dates.length * CELL_SIZE]) as AxisScale<Date>;
-  }
-
-  @computed private get axisTime() {
-    const ret = d3Select(document.createElementNS('http://www.w3.org/2000/svg', 'g'))
-      .attr('transform', `translate(1, ${X_AXIS_HEIGHT - 1})`)
-      .call(axisTop(this.scaleTime).tickFormat(timeFormat('%Y-%m-%d')));
-
-    ret
-      .selectAll('text')
-      .attr('y', 0)
-      .attr('x', 9)
-      .attr('dy', '.35em')
-      .attr('transform', 'rotate(-90)')
-      .style('text-anchor', 'start');
-
-    return ret;
-  }
-
   protected render() {
     const variants = this.pageState.testHistoryLoader!.variants;
     return html`
       <svg id="graph" height=${X_AXIS_HEIGHT + CELL_SIZE * variants.length}>
-        ${this.axisTime}
-        <g id="main" transform="translate(0, ${X_AXIS_HEIGHT})">
-          ${variants.map(
-            ([vHash], i) => svg`
-              <g transform="translate(1, ${i * CELL_SIZE})">
-                <rect
-                  x="-1"
-                  height=${CELL_SIZE}
-                  width=${CELL_SIZE * this.pageState.days + 2}
-                  fill=${i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'}
-                />
-                ${this.pageState.dates.map((d, j) => this.renderEntries(vHash, d, j))}
-              </g>
-            `
-          )}
-        </g>
+        ${variants.map(
+          ([vHash], i) => svg`
+            <g transform="translate(1, ${i * CELL_SIZE})">
+              <rect
+                x="-1"
+                height=${CELL_SIZE}
+                width=${CELL_SIZE * this.pageState.days + 2}
+                fill=${i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'}
+              />
+              ${this.pageState.dates.map((d, j) => this.renderEntries(vHash, d, j))}
+            </g>
+          `
+        )}
       </svg>
     `;
   }
