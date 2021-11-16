@@ -20,22 +20,20 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 var expectedCodeRPCOption = prpc.ExpectedCode(
@@ -111,17 +109,6 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 	rpcOpts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
-	// Per crbug/1030156, default of 5 retries isn't good enough.
-	rpcOpts.Retry = func() retry.Iterator {
-		return &retry.ExponentialBackoff{
-			Limited: retry.Limited{
-				Delay:   time.Second,
-				Retries: 10,
-			},
-			Multiplier: 2.0,
-			MaxDelay:   5 * time.Minute,
-		}
-	}
 	r.buildsClient = pb.NewBuildsPRPCClient(&prpc.Client{
 		C:       r.httpClient,
 		Host:    r.host,

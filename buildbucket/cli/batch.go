@@ -16,18 +16,25 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
-
-	"go.chromium.org/luci/common/proto"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -79,7 +86,7 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
 
-	res, err := r.buildsClient.Batch(ctx, req)
+	res, err := sendBatchReq(ctx, req, r.buildsClient)
 	if err != nil {
 		return r.done(ctx, err)
 	}
@@ -95,4 +102,48 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		}
 	}
 	return 0
+}
+
+// sendBatchReq sends the Batch request to Buildbucket and handles retries.
+func sendBatchReq(ctx context.Context, req *pb.BatchRequest, buildsClient pb.BuildsClient) (*pb.BatchResponse, error) {
+	res := &pb.BatchResponse{
+		Responses: make([]*pb.BatchResponse_Response, len(req.Requests)),
+	}
+	idxMap := make([]int, len(req.Requests)) // req.Requests index -> res.Responses index
+	for i := 0; i < len(req.Requests); i++ {
+		idxMap[i] = i
+	}
+	var globalErr error
+	_ = retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		toRetry := make([]*pb.BatchRequest_Request, 0, len(req.Requests))
+		idxMapForRetry := make([]int, 0, len(req.Requests))
+		results, err := buildsClient.Batch(ctx, req)
+		if err != nil {
+			globalErr = err
+			return nil // buildsClient has already handled top-level retryable errors.
+		}
+		for i, result := range results.Responses {
+			if sts := result.GetError(); sts != nil {
+				code := status.FromProto(sts).Code()
+				// Should also retry if some sub-requests timed out.
+				if grpcutil.IsTransientCode(code) || code == codes.DeadlineExceeded {
+					idxMapForRetry = append(idxMapForRetry, idxMap[i])
+					toRetry = append(toRetry, req.Requests[i])
+				}
+			}
+			res.Responses[idxMap[i]] = result
+		}
+		if len(toRetry) > 0 {
+			idxMap = idxMapForRetry
+			req = &pb.BatchRequest{
+				Requests: toRetry,
+			}
+			return errors.Reason("%d/%d batch subrequests failed", len(toRetry), len(res.Responses)).Tag(transient.Tag).Err()
+		}
+		return nil
+	}, func(err error, d time.Duration) {
+		logging.WithError(err).Debugf(ctx, "retrying them in %s...", d)
+	})
+
+	return res, globalErr
 }
