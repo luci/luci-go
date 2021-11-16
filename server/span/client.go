@@ -63,6 +63,15 @@ func Apply(ctx context.Context, ms []*spanner.Mutation, opts ...spanner.ApplyOpt
 	return client(ctx).Apply(ctx, ms, opts...)
 }
 
+// PartitionedUpdate executes a DML statement in parallel across the database,
+// using separate, internal transactions that commit independently.
+//
+// Panics if called from inside a read-write transaction.
+func PartitionedUpdate(ctx context.Context, st spanner.Statement) (count int64, err error) {
+	panicOnNestedRW(ctx)
+	return client(ctx).PartitionedUpdate(ctx, st)
+}
+
 // Single returns a derived context with a single-use read-only transaction.
 //
 // It provides a read-only snapshot transaction optimized for the case where
