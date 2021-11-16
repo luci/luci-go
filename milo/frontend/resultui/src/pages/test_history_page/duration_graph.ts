@@ -50,14 +50,17 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
   }
 
   private renderEntries(vHash: string, date: DateTime, index: number) {
-    const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date)?.filter((e) => e.averageDuration);
-    if (!entries || entries.length === 0) {
+    const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date);
+    const durations = this.pageState.passOnlyDuration
+      ? entries?.filter((e) => e.avgDurationPass).map((e) => e.avgDurationPass!)
+      : entries?.filter((e) => e.avgDuration).map((e) => e.avgDuration!);
+    if (!durations || durations.length === 0) {
       return null;
     }
 
     const averageDurationMs =
-      entries.map((e) => parseProtoDuration(e.averageDuration!)).reduce((duration, total) => total + duration, 0) /
-      entries.length;
+      durations.map((duration) => parseProtoDuration(duration)).reduce((duration, total) => total + duration, 0) /
+      durations.length;
 
     if (!this.pageState.durationInitialized) {
       this.pageState.maxDurationMs = averageDurationMs;

@@ -55,7 +55,8 @@ export interface TestVariantHistoryEntry {
   readonly variant?: Variant;
   readonly variantHash: string;
   readonly status: TestVariantStatus;
-  readonly averageDuration?: string;
+  readonly avgDuration?: string;
+  readonly avgDurationPass?: string;
 }
 
 export interface QueryTestHistoryResponse {
@@ -268,9 +269,22 @@ function computedTestVariantStatus(
  */
 function finalizedTVEntry(tvhEntry: DeepMutable<TestVariantHistoryEntry>, results: TestResult[]) {
   tvhEntry.status = computedTestVariantStatus(results, []);
-  const durations = results.filter((r) => r.duration).map((r) => parseProtoDuration(r.duration!));
-  if (durations.length > 0) {
-    tvhEntry!.averageDuration = `${durations.reduce((a, b) => a + b, 0) / durations.length}s`;
+
+  const statusDurations = results
+    .filter((r) => r.duration)
+    .map<[TestStatus, number]>((r) => [r.status, parseProtoDuration(r.duration!)]);
+  if (statusDurations.length > 0) {
+    tvhEntry!.avgDuration = `${
+      statusDurations.reduce((prev, [_, duration]) => prev + duration, 0) / statusDurations.length / 1000
+    }s`;
   }
+
+  const passedDurations = statusDurations.filter(([s]) => s === TestStatus.Pass);
+  if (passedDurations.length > 0) {
+    tvhEntry!.avgDurationPass = `${
+      passedDurations.reduce((prev, [_, duration]) => prev + duration, 0) / passedDurations.length / 1000
+    }s`;
+  }
+
   return tvhEntry;
 }

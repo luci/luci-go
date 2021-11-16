@@ -25,6 +25,7 @@ import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 const DURATION_SCALE_PADDING = 10;
 const DURATION_RECT_WIDTH = 20;
+const Y_AXIS_WIDTH = 50;
 const MIN_TICK_SIZE = 20;
 
 @customElement('milo-th-duration-scale')
@@ -84,7 +85,7 @@ export class TestHistoryDurationScaleElement extends MiloBaseElement {
   protected render() {
     const variants = this.pageState.testHistoryLoader!.variants;
     return html`
-      <svg height=${X_AXIS_HEIGHT + CELL_SIZE * variants.length} width="65">
+      <svg height=${X_AXIS_HEIGHT + CELL_SIZE * variants.length} width=${Y_AXIS_WIDTH + DURATION_RECT_WIDTH}>
         <defs>
           <linearGradient id="duration-gradient" gradientTransform="rotate(90)">
             <stop offset="0%" stop-color=${this.pageState.scaleDurationColor(this.pageState.maxDurationMs)}></stop>

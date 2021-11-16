@@ -55,6 +55,11 @@ export class TestHistoryPageState {
   @observable.ref graphType = GraphType.STATUS;
   @observable.ref xAxisType = XAxisType.DATE;
 
+  /**
+   * Only include durations from passed results.
+   */
+  @observable.ref passOnlyDuration = true;
+
   @observable.ref countUnexpected = true;
   @observable.ref countUnexpectedlySkipped = true;
   @observable.ref countFlaky = true;
@@ -63,6 +68,12 @@ export class TestHistoryPageState {
   @observable.ref durationInitialized = false;
   @observable.ref maxDurationMs = 100;
   @observable.ref minDurationMs = 0;
+
+  resetDurations() {
+    this.durationInitialized = false;
+    this.maxDurationMs = 100;
+    this.minDurationMs = 0;
+  }
 
   @computed get scaleDurationColor() {
     return scaleSequential((x) => interpolateOranges(SCALE_COLOR(x))).domain([this.minDurationMs, this.maxDurationMs]);
