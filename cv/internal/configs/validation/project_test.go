@@ -660,13 +660,6 @@ func TestTryjobValidation(t *testing.T) {
 
 			Convey("contains ANALYZER_RUN", func() {
 				So(validate(`
-				builders {
-					name: "a/b/c"
-					mode_allowlist: "DRY_RUN"
-					mode_allowlist: "ANALYZER_RUN"
-				}`), ShouldErrLike,
-					"ANALYZER_RUN must be the only element in mode_allowlist")
-				So(validate(`
 					builders {
 						name: "a/b/c"
 						location_regexp: ".*"

@@ -437,9 +437,6 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 			if isAnalyzer {
 				// TODO(crbug/1202952): Remove following restrictions after Tricium is
 				// folded into CV.
-				if len(b.ModeAllowlist) > 1 {
-					ctx.Errorf("%s must be the only element in mode_allowlist", analyzerRun)
-				}
 				for i, r := range b.LocationRegexp {
 					// TODO(crbug/1202952): Remove this check after tricium is folded
 					// into CV.
