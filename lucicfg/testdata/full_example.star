@@ -504,7 +504,7 @@ luci.cq_tryjob_verifier(
     cq_group = "main-cq",
     location_regexp = [r".+\.py", r".+\.go"],
     owner_whitelist = ["project-contributor"],
-    mode_allowlist = [cq.MODE_ANALYZER_RUN],
+    mode_allowlist = [cq.MODE_ANALYZER_RUN, cq.MODE_FULL_RUN],
 )
 
 # Emitting arbitrary configs,
@@ -557,6 +557,7 @@ lucicfg.emit(
 #         location_regexp: ".+\\.go"
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
+#         mode_allowlist: "FULL_RUN"
 #       }
 #       builders {
 #         name: "another-project/try/yyy"
