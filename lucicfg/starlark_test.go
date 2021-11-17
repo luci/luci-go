@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -36,6 +37,16 @@ import (
 	"go.chromium.org/luci/starlark/starlarktest"
 )
 
+// If this env var is 1, the test will regenerate the "Expect configs:" part of
+// test *.star files.
+const RegenEnvVar = "LUCICFG_TEST_REGEN"
+
+const (
+	expectConfigsHeader    = "Expect configs:"
+	expectErrorsHeader     = "Expect errors:"
+	expectErrorsLikeHeader = "Expect errors like:"
+)
+
 func init() {
 	// Enable not-yet-standard features.
 	resolve.AllowLambda = true
@@ -47,6 +58,8 @@ func init() {
 // TestAllStarlark loads and executes all test scripts (testdata/*.star).
 func TestAllStarlark(t *testing.T) {
 	t.Parallel()
+
+	gotExpectationErrors := false
 
 	starlarktest.RunTests(t, starlarktest.Options{
 		TestsDir: "testdata",
@@ -73,11 +86,11 @@ func TestAllStarlark(t *testing.T) {
 				}
 			}
 
-			expectErrExct := readCommentBlock(body, "Expect errors:")
-			expectErrLike := readCommentBlock(body, "Expect errors like:")
-			expectCfg := readCommentBlock(body, "Expect configs:")
+			expectErrExct := readCommentBlock(body, expectErrorsHeader)
+			expectErrLike := readCommentBlock(body, expectErrorsLikeHeader)
+			expectCfg := readCommentBlock(body, expectConfigsHeader)
 			if expectErrExct != "" && expectErrLike != "" {
-				t.Errorf("Cannot use 'Expect errors' and 'Expect errors like' at the same time")
+				t.Errorf("Cannot use %q and %q at the same time", expectErrorsHeader, expectErrorsLikeHeader)
 				return nil
 			}
 
@@ -185,21 +198,38 @@ func TestAllStarlark(t *testing.T) {
 			// If was expecting to see some configs, assert we did see them.
 			if expectCfg != "" {
 				got := bytes.Buffer{}
-				for _, f := range state.Output.Files() {
+				for idx, f := range state.Output.Files() {
+					if idx != 0 {
+						fmt.Fprintf(&got, "\n\n")
+					}
 					fmt.Fprintf(&got, "=== %s\n", f)
 					if blob, err := state.Output.Data[f].Bytes(); err != nil {
 						t.Errorf("Serializing %s: %s", f, err)
 					} else {
 						fmt.Fprintf(&got, string(blob))
 					}
-					fmt.Fprintf(&got, "===\n\n")
+					fmt.Fprintf(&got, "===")
 				}
-				errorOnDiff(t, got.String(), expectCfg)
+				if os.Getenv(RegenEnvVar) == "1" {
+					if err := updateExpected(path, got.String()); err != nil {
+						t.Errorf("Failed to updated %q: %s", path, err)
+					}
+				} else if errorOnDiff(t, got.String(), expectCfg) {
+					gotExpectationErrors = true
+				}
 			}
 
 			return nil
 		},
 	})
+
+	if gotExpectationErrors {
+		t.Errorf("\n\n"+
+			"========================================================\n"+
+			"If you want to update expectations stored in *.star run:\n"+
+			"$ %s=1 go test .\n"+
+			"========================================================", RegenEnvVar)
+	}
 }
 
 // readCommentBlock reads a comment block that start with "# <hdr>\n".
@@ -222,22 +252,56 @@ func readCommentBlock(script, hdr string) string {
 	return sb.String()
 }
 
-// errorOnDiff emits an error to T if got != exp.
-func errorOnDiff(t *testing.T, got, exp string) {
+// updateExpected updates the expected generated config stored in the comment
+// block at the end of the *.star file.
+func updateExpected(path, exp string) error {
+	blob, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	idx := bytes.Index(blob, []byte(fmt.Sprintf("# %s\n", expectConfigsHeader)))
+	if idx == -1 {
+		return errors.Reason("doesn't have `Expect configs` comment block").Err()
+	}
+	blob = blob[:idx]
+
+	blob = append(blob, []byte(fmt.Sprintf("# %s\n", expectConfigsHeader))...)
+	blob = append(blob, []byte("#\n")...)
+	for _, line := range strings.Split(exp, "\n") {
+		if len(line) == 0 {
+			blob = append(blob, '#')
+		} else {
+			blob = append(blob, []byte("# ")...)
+			blob = append(blob, []byte(line)...)
+		}
+		blob = append(blob, '\n')
+	}
+
+	return ioutil.WriteFile(path, blob, 0666)
+}
+
+// errorOnDiff emits an error to T and returns true if got != exp.
+func errorOnDiff(t *testing.T, got, exp string) bool {
 	t.Helper()
 
 	got = strings.TrimSpace(got)
 	exp = strings.TrimSpace(exp)
+
 	switch {
 	case got == "":
 		t.Errorf("Got nothing, but was expecting:\n\n%s\n", exp)
+		return true
 	case got != exp:
 		dmp := diffmatchpatch.New()
 		diffs := dmp.DiffMain(exp, got, false)
 		t.Errorf(
 			"Got:\n\n%s\n\nWas expecting:\n\n%s\n\nDiff:\n\n%s\n",
 			got, exp, dmp.DiffPrettyText(diffs))
+		return true
 	}
+
+	return false
 }
 
 // errorOnMismatch emits an error to T if got doesn't match a pattern pat.
