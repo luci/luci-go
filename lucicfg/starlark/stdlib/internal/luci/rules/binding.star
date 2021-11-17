@@ -37,9 +37,6 @@ def _binding(
     They can be used if none of the predefined roles represent the desired set
     of permissions.
 
-    DocTags:
-      Experimental.
-
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).
       realm: a single realm or a list of realms to add the binding to. Can be
@@ -51,7 +48,6 @@ def _binding(
       projects: a single LUCI project name or a list of project names to assign
         the role to.
     """
-    realms.experiment.require()
     return realms.binding(
         impl = realms.default_impl,
         realm = realm,

@@ -31,9 +31,6 @@ def _custom_role(
     Custom roles are scoped to the project (i.e. different projects may have
     identically named, but semantically different custom roles).
 
-    DocTags:
-      Experimental.
-
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).
       name: name of the custom role. Must start with `customRole/`. Required.
@@ -48,7 +45,6 @@ def _custom_role(
         LUCI service (`<service>`). See **TODO** for the up-to-date list of
         available permissions and their meaning.
     """
-    realms.experiment.require()
     return realms.custom_role(
         impl = realms.default_impl,
         name = name,

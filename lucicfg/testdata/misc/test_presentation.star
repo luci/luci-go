@@ -93,3 +93,12 @@ luci.builder(
 # === project.cfg
 # name: "project"
 # ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "ci"
+# }
+# ===

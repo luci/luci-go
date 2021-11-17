@@ -101,9 +101,6 @@ def _realm(
             groups = ['group-b'],
         )
 
-    DocTags:
-      Experimental.
-
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).
       name: name of the realm. Must match `[a-z0-9_\\.\\-/]{1,400}` or be
@@ -116,7 +113,6 @@ def _realm(
         during Realms migration to gradually roll out the enforcement realm by
         realm, service by service.
     """
-    realms.experiment.require()
     return realms.realm(
         impl = realms.default_impl,
         name = name,

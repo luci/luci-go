@@ -18,3 +18,9 @@ lucicfg.emit(
 # === project.cfg
 # name: "test"
 # ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# ===

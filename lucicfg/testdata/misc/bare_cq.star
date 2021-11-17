@@ -31,3 +31,9 @@ luci.cq_group(
 # === project.cfg
 # name: "zzz"
 # ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# ===

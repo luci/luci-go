@@ -1,5 +1,3 @@
-lucicfg.enable_experiment("crbug.com/1085650")
-
 luci.project(name = "proj")
 luci.realm(name = "a", extends = "b")
 luci.realm(name = "b", extends = "a")

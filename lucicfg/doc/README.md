@@ -1041,8 +1041,8 @@ be used to setup permissions that apply to all resources in the project. See
 * **scheduler**: appspot hostname of a LUCI Scheduler service to use (if any).
 * **swarming**: appspot hostname of a Swarming service to use by default (if any).
 * **tricium**: appspot hostname of a Tricium service to use by default (if any).
-* **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets.
-* **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the root realm. They will be inherited by all realms in the project. Experimental. Will eventually replace `acls`.
+* **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets. Being gradually replaced by [luci.binding(...)](#luci.binding) in `bindings`.
+* **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the root realm. They will be inherited by all realms in the project. Will eventually replace `acls`.
 * **enforce_realms_in**: a list of LUCI service IDs that should enforce realms permissions across all realms. Used only during Realms migration to gradually roll out the enforcement. Can also be enabled realm-by-realm via `enforce_in` in [luci.realm(...)](#luci.realm).
 
 
@@ -1062,10 +1062,6 @@ luci.realm(
 )
 ```
 
-
-*** note
-**Experimental.** No backward compatibility guarantees.
-***
 
 
 Defines a realm.
@@ -1170,10 +1166,6 @@ luci.binding(
 ```
 
 
-*** note
-**Experimental.** No backward compatibility guarantees.
-***
-
 
 Binding assigns roles in a realm to individuals, groups or LUCI projects.
 
@@ -1204,10 +1196,6 @@ of permissions.
 luci.custom_role(name, extends = None, permissions = None)
 ```
 
-
-*** note
-**Experimental.** No backward compatibility guarantees.
-***
 
 
 Defines a custom role.
@@ -1272,9 +1260,9 @@ this bucket and all resources these builds produce. See [luci.realm(...)](#luci.
 #### Arguments {#luci.bucket-args}
 
 * **name**: name of the bucket, e.g. `ci` or `try`. Required.
-* **acls**: list of [acl.entry(...)](#acl.entry) objects.
+* **acls**: list of [acl.entry(...)](#acl.entry) objects. Being gradually replaced by [luci.binding(...)](#luci.binding) in `bindings`.
 * **extends**: a reference or a list of references to realms to inherit permission from. Note that buckets themselves are realms for this purpose. Optional. Default (and implicit) is `@root`.
-* **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the bucket's realm. Experimental. Will eventually replace `acls`.
+* **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the bucket's realm. Will eventually replace `acls`.
 
 
 

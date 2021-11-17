@@ -47,6 +47,7 @@ luci.builder(
 # === luci-scheduler.cfg
 # job {
 #   id: "builder"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
@@ -56,6 +57,7 @@ luci.builder(
 # }
 # trigger {
 #   id: "poller"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   triggers: "builder"
 #   gitiles {
@@ -70,4 +72,13 @@ luci.builder(
 #
 # === project.cfg
 # name: "project"
+# ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "ci"
+# }
 # ===

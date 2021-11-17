@@ -18,7 +18,6 @@ load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "builder_ref", "keys", "triggerer")
-load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/luci/lib/resultdb.star", "resultdb", "resultdbimpl")
 load("@stdlib//internal/luci/lib/scheduler.star", "schedulerimpl")
 load("@stdlib//internal/luci/lib/swarming.star", "swarming")
@@ -226,7 +225,7 @@ def _builder(
     props = {
         "name": name,
         "bucket": bucket_key.id,
-        "realm": bucket_key.id if realms.experiment.is_enabled() else None,
+        "realm": bucket_key.id,
         "description_html": validate.string("description_html", description_html, required = False),
         "project": "",  # means "whatever is being defined right now"
         "properties": validate.str_dict("properties", properties),
@@ -326,7 +325,7 @@ def _builder(
 
     # Setup a binding that allows the service account to be used for builds
     # in the bucket's realm.
-    if realms.experiment.is_enabled() and props["service_account"]:
+    if props["service_account"]:
         binding(
             realm = bucket_key.id,
             roles = "role/buildbucket.builderServiceAccount",

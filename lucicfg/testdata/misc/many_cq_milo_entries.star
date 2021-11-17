@@ -276,3 +276,16 @@ one("builder-a")
 # === project.cfg
 # name: "project"
 # ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "bucket"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:noop@example.com"
+#   }
+# }
+# ===

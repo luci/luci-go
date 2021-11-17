@@ -102,6 +102,7 @@ luci.builder(
 # === luci-scheduler.cfg
 # job {
 #   id: "b1-builder-builder"
+#   realm: "b1"
 #   acl_sets: "b1"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
@@ -111,6 +112,7 @@ luci.builder(
 # }
 # job {
 #   id: "b2-builder-builder"
+#   realm: "b2"
 #   acl_sets: "b2"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
@@ -120,6 +122,7 @@ luci.builder(
 # }
 # job {
 #   id: "b2-poller-builder"
+#   realm: "b2"
 #   acl_sets: "b2"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
@@ -129,6 +132,7 @@ luci.builder(
 # }
 # trigger {
 #   id: "b1-poller"
+#   realm: "b1"
 #   acl_sets: "b1"
 #   gitiles {
 #     repo: "https://noop.com"
@@ -137,6 +141,7 @@ luci.builder(
 # }
 # trigger {
 #   id: "b1-poller-builder"
+#   realm: "b1"
 #   acl_sets: "b1"
 #   triggers: "b2-poller-builder"
 #   gitiles {
@@ -146,6 +151,7 @@ luci.builder(
 # }
 # trigger {
 #   id: "b2-poller"
+#   realm: "b2"
 #   acl_sets: "b2"
 #   gitiles {
 #     repo: "https://noop.com"
@@ -154,6 +160,7 @@ luci.builder(
 # }
 # trigger {
 #   id: "some poller"
+#   realm: "b1"
 #   acl_sets: "b1"
 #   triggers: "b1-builder-builder"
 #   triggers: "b2-builder-builder"
@@ -172,4 +179,16 @@ luci.builder(
 #
 # === project.cfg
 # name: "project"
+# ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "b1"
+# }
+# realms {
+#   name: "b2"
+# }
 # ===

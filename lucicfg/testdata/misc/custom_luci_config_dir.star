@@ -8,3 +8,9 @@ luci.project(
 # === abc/def/project.cfg
 # name: "project"
 # ===
+#
+# === abc/def/realms.cfg
+# realms {
+#   name: "@root"
+# }
+# ===

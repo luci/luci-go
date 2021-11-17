@@ -19,7 +19,6 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys")
 load("@stdlib//internal/luci/lib/acl.star", "aclimpl")
-load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/luci/lib/service.star", "service")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
 load("@stdlib//internal/luci/rules/realm.star", "realm")
@@ -67,9 +66,10 @@ def _project(
       tricium: appspot hostname of a Tricium service to use by default
         (if any).
       acls: list of acl.entry(...) objects, will be inherited by all buckets.
+        Being gradually replaced by luci.binding(...) in `bindings`.
       bindings: a list of luci.binding(...) to add to the root realm. They will
-        be inherited by all realms in the project. Experimental. Will eventually
-        replace `acls`.
+        be inherited by all realms in the project. Will eventually replace
+        `acls`.
       enforce_realms_in: a list of LUCI service IDs that should enforce realms
         permissions across all realms. Used only during Realms migration to
         gradually roll out the enforcement. Can also be enabled realm-by-realm
@@ -88,17 +88,14 @@ def _project(
         "swarming": service.from_host("swarming", swarming),
         "tricium": service.from_host("tricium", tricium),
         "acls": aclimpl.validate_acls(acls, project_level = True),
-        "realms_enabled": realms.experiment.is_enabled(),
     })
 
-    # All projects have a root realm.
-    if realms.experiment.is_enabled():
-        # Convert legacy `acls` entries into binding(...) too.
-        bindings = bindings[:] if bindings else []
-        bindings.extend([binding(**d) for d in aclimpl.binding_dicts(acls)])
+    # Convert legacy `acls` entries into binding(...) too.
+    bindings = bindings[:] if bindings else []
+    bindings.extend([binding(**d) for d in aclimpl.binding_dicts(acls)])
 
-        # Add all bindings to the root realm.
-        realm(name = "@root", bindings = bindings, enforce_in = enforce_realms_in)
+    # Add all bindings to the root realm.
+    realm(name = "@root", bindings = bindings, enforce_in = enforce_realms_in)
 
     return graph.keyset(key)
 

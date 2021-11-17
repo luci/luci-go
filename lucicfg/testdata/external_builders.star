@@ -70,3 +70,12 @@ luci.list_view_entry(
 # === project.cfg
 # name: "project"
 # ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "bucket"
+# }
+# ===

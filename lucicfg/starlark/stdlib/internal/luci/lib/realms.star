@@ -289,9 +289,6 @@ def _generate_custom_role(impl, role):
     )
 
 realms = struct(
-    # LUCI Realms integration is hidden behind an experiment for now.
-    experiment = experiments.register("crbug.com/1085650"),
-
     # Internal API to reuse realms generator logic outside of lucicfg stdlib.
     implementation_api = _implementation_api,
     default_impl = _default_impl,

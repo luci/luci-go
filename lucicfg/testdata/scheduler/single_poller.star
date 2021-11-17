@@ -24,6 +24,7 @@ luci.gitiles_poller(
 # === luci-scheduler.cfg
 # trigger {
 #   id: "poller"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   gitiles {
 #     repo: "https://noop.com"
@@ -37,4 +38,13 @@ luci.gitiles_poller(
 #
 # === project.cfg
 # name: "project"
+# ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "ci"
+# }
 # ===

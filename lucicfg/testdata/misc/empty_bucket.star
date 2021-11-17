@@ -15,3 +15,12 @@ luci.bucket(name = "bucket")
 # === project.cfg
 # name: "zzz"
 # ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "bucket"
+# }
+# ===

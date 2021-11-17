@@ -87,6 +87,7 @@ luci.builder(
 # === luci-scheduler.cfg
 # job {
 #   id: "b1"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
@@ -96,6 +97,7 @@ luci.builder(
 # }
 # job {
 #   id: "b2"
+#   realm: "ci"
 #   acls {
 #     role: TRIGGERER
 #     granted_to: "noop1@example.com"
@@ -109,6 +111,7 @@ luci.builder(
 # }
 # job {
 #   id: "b3"
+#   realm: "ci"
 #   acls {
 #     role: TRIGGERER
 #     granted_to: "noop1@example.com"
@@ -126,6 +129,7 @@ luci.builder(
 # }
 # trigger {
 #   id: "p1"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   triggers: "b1"
 #   triggers: "b2"
@@ -137,6 +141,7 @@ luci.builder(
 # }
 # trigger {
 #   id: "p2"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   triggers: "b1"
 #   triggers: "b2"
@@ -153,4 +158,18 @@ luci.builder(
 #
 # === project.cfg
 # name: "project"
+# ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "ci"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:noop1@example.com"
+#     principals: "user:noop2@example.com"
+#   }
+# }
 # ===

@@ -74,6 +74,7 @@ luci.builder(
 # === luci-scheduler.cfg
 # job {
 #   id: "b3"
+#   realm: "ci"
 #   acls {
 #     role: TRIGGERER
 #     granted_to: "account@example.com"
@@ -92,4 +93,17 @@ luci.builder(
 #
 # === project.cfg
 # name: "project"
+# ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "ci"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:account@example.com"
+#   }
+# }
 # ===

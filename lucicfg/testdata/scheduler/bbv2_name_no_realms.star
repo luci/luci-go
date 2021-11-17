@@ -38,11 +38,11 @@ luci.builder(
 # === luci-scheduler.cfg
 # job {
 #   id: "b1"
+#   realm: "ci"
 #   schedule: "triggered"
 #   acl_sets: "ci"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "ci"
 #     builder: "b1"
 #   }
 # }
@@ -53,4 +53,17 @@ luci.builder(
 #
 # === project.cfg
 # name: "project"
+# ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "ci"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:noop@example.com"
+#   }
+# }
 # ===

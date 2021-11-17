@@ -1,5 +1,4 @@
 lucicfg.enable_experiment("crbug.com/1182002")  # short BBv2 names
-lucicfg.enable_experiment("crbug.com/1085650")  # realms
 
 luci.project(
     name = "project",

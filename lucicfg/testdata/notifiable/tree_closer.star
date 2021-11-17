@@ -106,3 +106,12 @@ luci.tree_closer(
 # === project.cfg
 # name: "project"
 # ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "bucket"
+# }
+# ===

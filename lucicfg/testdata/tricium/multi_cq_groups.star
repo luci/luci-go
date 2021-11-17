@@ -104,6 +104,12 @@ luci.cq_group(
 # name: "foo"
 # ===
 #
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# ===
+#
 # === tricium-prod.cfg
 # functions {
 #   type: ANALYZER

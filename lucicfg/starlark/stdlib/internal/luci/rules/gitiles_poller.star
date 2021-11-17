@@ -18,7 +18,6 @@ load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys", "triggerer")
-load("@stdlib//internal/luci/lib/realms.star", "realms")
 
 def _gitiles_poller(
         ctx,
@@ -131,7 +130,7 @@ def _gitiles_poller(
     graph.add_node(poller_key, idempotent = True, props = {
         "name": name,
         "bucket": bucket_key.id,
-        "realm": bucket_key.id if realms.experiment.is_enabled() else None,
+        "realm": bucket_key.id,
         "repo": validate.repo_url("repo", repo),
         "refs": refs,
         "path_regexps": path_regexps,

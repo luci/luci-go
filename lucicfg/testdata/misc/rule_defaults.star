@@ -342,6 +342,7 @@ luci.builder(
 # === luci-scheduler.cfg
 # job {
 #   id: "b1"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   triggering_policy {
 #     kind: GREEDY_BATCHING
@@ -355,6 +356,7 @@ luci.builder(
 # }
 # job {
 #   id: "b2"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   triggering_policy {
 #     kind: GREEDY_BATCHING
@@ -368,6 +370,7 @@ luci.builder(
 # }
 # job {
 #   id: "b3"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   triggering_policy {
 #     kind: GREEDY_BATCHING
@@ -381,6 +384,7 @@ luci.builder(
 # }
 # job {
 #   id: "b4"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   triggering_policy {
 #     kind: GREEDY_BATCHING
@@ -399,4 +403,18 @@ luci.builder(
 #
 # === project.cfg
 # name: "project"
+# ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# realms {
+#   name: "ci"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:default@example.com"
+#     principals: "user:new@example.com"
+#   }
+# }
 # ===

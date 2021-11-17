@@ -16,3 +16,9 @@ luci.milo(
 # === project.cfg
 # name: "infra"
 # ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+# }
+# ===

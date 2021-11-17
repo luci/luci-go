@@ -1197,6 +1197,7 @@ lucicfg.emit(
 # === luci-scheduler.cfg
 # job {
 #   id: "another builder"
+#   realm: "inline"
 #   acl_sets: "inline"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
@@ -1206,6 +1207,7 @@ lucicfg.emit(
 # }
 # job {
 #   id: "another executable builder"
+#   realm: "inline"
 #   acl_sets: "inline"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
@@ -1215,6 +1217,7 @@ lucicfg.emit(
 # }
 # job {
 #   id: "cron builder"
+#   realm: "ci"
 #   schedule: "0 6 * * *"
 #   acl_sets: "ci"
 #   buildbucket {
@@ -1225,6 +1228,7 @@ lucicfg.emit(
 # }
 # job {
 #   id: "generically named builder"
+#   realm: "ci"
 #   acls {
 #     role: TRIGGERER
 #     granted_to: "builder@example.com"
@@ -1238,6 +1242,7 @@ lucicfg.emit(
 # }
 # job {
 #   id: "generically named executable builder"
+#   realm: "ci"
 #   acls {
 #     role: TRIGGERER
 #     granted_to: "builder@example.com"
@@ -1251,6 +1256,7 @@ lucicfg.emit(
 # }
 # job {
 #   id: "linux ci builder"
+#   realm: "ci"
 #   acl_sets: "ci"
 #   triggering_policy {
 #     kind: GREEDY_BATCHING
@@ -1265,6 +1271,7 @@ lucicfg.emit(
 # }
 # job {
 #   id: "triggered builder"
+#   realm: "inline"
 #   acls {
 #     role: TRIGGERER
 #     granted_to: "builder@example.com"
@@ -1278,6 +1285,7 @@ lucicfg.emit(
 # }
 # job {
 #   id: "triggerer builder"
+#   realm: "inline"
 #   acl_sets: "inline"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
@@ -1287,6 +1295,7 @@ lucicfg.emit(
 # }
 # trigger {
 #   id: "inline poller"
+#   realm: "inline"
 #   schedule: "with 10s interval"
 #   acl_sets: "inline"
 #   triggers: "another builder"
@@ -1301,6 +1310,7 @@ lucicfg.emit(
 # }
 # trigger {
 #   id: "main-poller"
+#   realm: "ci"
 #   schedule: "with 10s interval"
 #   acl_sets: "ci"
 #   triggers: "generically named builder"
@@ -1348,6 +1358,66 @@ lucicfg.emit(
 # === project.cfg
 # name: "infra"
 # access: "group:all"
+# ===
+#
+# === realms.cfg
+# realms {
+#   name: "@root"
+#   bindings {
+#     role: "role/buildbucket.owner"
+#     principals: "group:admins"
+#   }
+#   bindings {
+#     role: "role/buildbucket.reader"
+#     principals: "group:all"
+#   }
+#   bindings {
+#     role: "role/configs.reader"
+#     principals: "group:all"
+#   }
+#   bindings {
+#     role: "role/cq.committer"
+#     principals: "group:admins"
+#   }
+#   bindings {
+#     role: "role/logdog.reader"
+#     principals: "group:all"
+#   }
+#   bindings {
+#     role: "role/scheduler.owner"
+#     principals: "group:admins"
+#   }
+#   bindings {
+#     role: "role/scheduler.reader"
+#     principals: "group:all"
+#   }
+# }
+# realms {
+#   name: "ci"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:builder@example.com"
+#   }
+#   bindings {
+#     role: "role/scheduler.triggerer"
+#     principals: "group:devs"
+#     principals: "project:some-project"
+#   }
+# }
+# realms {
+#   name: "inline"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:builder@example.com"
+#   }
+# }
+# realms {
+#   name: "try"
+#   bindings {
+#     role: "role/buildbucket.triggerer"
+#     principals: "group:devs"
+#   }
+# }
 # ===
 #
 # === tricium-prod.cfg

@@ -78,7 +78,8 @@ func init() {
 				}
 				help = "available experiments: " + strings.Join(quoted, ", ")
 			}
-			logging.Warningf(call.Ctx, "enable_experiment: unknown experiment %q (%s)", expID, help)
+			logging.Warningf(call.Ctx, "enable_experiment: unknown experiment %q (%s). "+
+				"It is possible the experiment was retired already, consider removing this call to stop the warning.", expID, help)
 		}
 		return starlark.None, nil
 	})

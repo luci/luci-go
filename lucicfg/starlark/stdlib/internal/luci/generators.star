@@ -218,7 +218,7 @@ def gen_realms_cfg(ctx):
       ctx: the generator context.
     """
     proj = get_project(required = False)
-    if proj and proj.props.realms_enabled:
+    if proj:
         set_config(
             ctx = ctx,
             path = "realms-dev.cfg" if proj.props.dev else "realms.cfg",
