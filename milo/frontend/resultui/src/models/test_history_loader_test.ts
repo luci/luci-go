@@ -89,7 +89,7 @@ describe('TestHistoryLoader', () => {
     assert.strictEqual(testHistoryLoader.getEntries('key1:val2', DateTime.fromISO('2021-11-03T00:00:00Z'), true), null);
 
     // Load all entries created on or after 2021-11-05.
-    await testHistoryLoader.loadUntil(DateTime.fromISO('2021-11-05T00:00:00Z'));
+    await testHistoryLoader.loadUntil(DateTime.fromISO('2021-11-05T12:00:00Z'));
     // The loader should get the 2nd page because it's unclear that all the
     // entries from 2021-11-05 had been loaded after getting the first page.
     assert.deepEqual(stub.getCalls().length, 2);
@@ -113,6 +113,12 @@ describe('TestHistoryLoader', () => {
     assert.strictEqual(testHistoryLoader.getEntries('key1:val2', DateTime.fromISO('2021-11-04T00:00:00Z'), true), null);
     assert.strictEqual(testHistoryLoader.getEntries('key1:val1', DateTime.fromISO('2021-11-03T00:00:00Z'), true), null);
     assert.strictEqual(testHistoryLoader.getEntries('key1:val2', DateTime.fromISO('2021-11-03T00:00:00Z'), true), null);
+
+    // Load again with a earlier timestamp but still within the same bucket
+    // after resolving.
+    await testHistoryLoader.loadUntil(DateTime.fromISO('2021-11-05T01:00:00Z'));
+    // The loader should not load the next date.
+    assert.deepEqual(stub.getCalls().length, 2);
 
     // Load all entries created on or after 2021-11-04.
     await testHistoryLoader.loadUntil(DateTime.fromISO('2021-11-04T00:00:00Z'));

@@ -110,7 +110,7 @@ export class TestHistoryLoader {
       pageToken = res.nextPageToken;
 
       // We've loaded all required entries. Yield back.
-      if (this.targetTime > this.loadedTime && this.targetTimeStr !== this.loadedTimeStr) {
+      while (this.targetTime > this.loadedTime && this.targetTimeStr !== this.loadedTimeStr) {
         yield null;
       }
     }
