@@ -424,9 +424,16 @@ service Repository {
   // Possible statuses communicated that way:
   //   NOT_FOUND if the requested version of the package doesn't exist.
   //   FAILED_PRECONDITION if the instance is still being processed or it is not
-  ///      a bootstrap package at all.
+  //       a bootstrap package at all.
   //   ABORTED if the instance has failed processors associated with it,
   //       such instance is effectively broken and should not be used.
+  //
+  // NOTE: The CIPD package server implements a REST endpoint which can be used
+  // to retrieve the contents of bootstrap packages:
+  //
+  //   GET /bootstrap/<package>/+/<version>
+  //
+  // which will serve a 302 redirect to a signed url for the `file` contents.
   //
   // Returns:
   //   OK if the request was accepted and (perhaps partially) processed.
