@@ -20,6 +20,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -47,6 +48,9 @@ func SerializeCells(cells []types.Cell, now time.Time) []*pb.MetricsCollection {
 			collection = &pb.MetricsCollection{}
 			collections[targetHash] = collection
 			c.Target.PopulateProto(collection)
+
+			// add is_tsmon to indicate that this target is a tsmon schema.
+			collection.RootLabels = append(collection.RootLabels, target.RootLabel("is_tsmon", true))
 		}
 
 		// Find the data set, add it if it doesn't exist.

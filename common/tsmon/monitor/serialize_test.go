@@ -110,6 +110,7 @@ func TestSerializeCell(t *testing.T) {
 		target.RootLabel("data_center", ""),
 		target.RootLabel("host_name", ""),
 		target.RootLabel("task_num", int64(0)),
+		target.RootLabel("is_tsmon", true),
 	}
 
 	Convey("Int", t, func() {
@@ -347,6 +348,7 @@ func TestSerializeCell(t *testing.T) {
 				target.RootLabel("data_center", ""),
 				target.RootLabel("host_name", ""),
 				target.RootLabel("task_num", int64(0)),
+				target.RootLabel("is_tsmon", true),
 			},
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),

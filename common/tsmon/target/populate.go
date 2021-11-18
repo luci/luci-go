@@ -24,8 +24,7 @@ import (
 
 // PopulateProto implements Target.
 func (t *Task) PopulateProto(d *pb.MetricsCollection) {
-	d.RootLabels = append(
-		d.RootLabels,
+	d.RootLabels = []*pb.MetricsCollection_RootLabels{
 		// ProdX automatically adds and sets the following fields
 		// with own values, even if tsmon doesn't add them in RootLabels,
 		// except that proxy_zone may be required under certain conditions.
@@ -41,13 +40,12 @@ func (t *Task) PopulateProto(d *pb.MetricsCollection) {
 		RootLabel("data_center", t.DataCenter),
 		RootLabel("host_name", t.HostName),
 		RootLabel("task_num", int64(t.TaskNum)),
-	)
+	}
 }
 
 // PopulateProto implements Target.
 func (t *NetworkDevice) PopulateProto(d *pb.MetricsCollection) {
-	d.RootLabels = append(
-		d.RootLabels,
+	d.RootLabels = []*pb.MetricsCollection_RootLabels{
 		// ProdX automatically adds and sets the following fields
 		// with own values. Even if tsmon sets them with own values,
 		// the custom values are ignored.
@@ -67,9 +65,10 @@ func (t *NetworkDevice) PopulateProto(d *pb.MetricsCollection) {
 		RootLabel("hostname", t.Hostname),
 		RootLabel("vendor", ""),
 		RootLabel("hostgroup", t.Hostgroup),
-	)
+	}
 }
 
+// RootLabel returns a root label with a given value.
 func RootLabel(key string, value interface{}) *pb.MetricsCollection_RootLabels {
 	label := &pb.MetricsCollection_RootLabels{Key: proto.String(key)}
 
