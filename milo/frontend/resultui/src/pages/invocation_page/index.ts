@@ -23,6 +23,7 @@ import '../../components/tab_bar';
 import './invocation_details_tab';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
+import { provideTestVariantTableState } from '../../components/test_variants_table/context';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -53,6 +54,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
 
   @observable.ref
   @provideInvocationState({ global: true })
+  @provideTestVariantTableState({ global: true })
   invocationState!: InvocationState;
 
   private invocationId = '';

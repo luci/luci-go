@@ -69,23 +69,23 @@ export class TestResultsTabElement extends MiloBaseElement {
     }
     if (searchParams.has('cols')) {
       const cols = searchParams.get('cols')!;
-      this.invocationState.columnsParam = cols.split(',').filter((col) => col !== '');
+      this.invocationState.setColumnKeys(cols.split(',').filter((col) => col !== ''));
     }
     if (searchParams.has('sortby')) {
       const sortingKeys = searchParams.get('sortby')!;
-      this.invocationState.sortingKeysParam = sortingKeys.split(',').filter((col) => col !== '');
+      this.invocationState.setSortingKeys(sortingKeys.split(',').filter((col) => col !== ''));
     }
     if (searchParams.has('groupby')) {
       const groupingKeys = searchParams.get('groupby')!;
-      this.invocationState.groupingKeysParam = groupingKeys.split(',').filter((key) => key !== '');
+      this.invocationState.setGroupingKeys(groupingKeys.split(',').filter((key) => key !== ''));
     }
 
     // Update the querystring when filters are updated.
     this.addDisposer(
       reaction(
         () => {
-          const displayedCols = this.invocationState.displayedColumns.join(',');
-          const defaultCols = this.invocationState.defaultColumns.join(',');
+          const displayedCols = this.invocationState.columnKeys.join(',');
+          const defaultCols = this.invocationState.defaultColumnKeys.join(',');
           const sortingKeys = this.invocationState.sortingKeys.join(',');
           const defaultSortingKeys = this.invocationState.defaultSortingKeys.join(',');
           const groupingKeys = this.invocationState.groupingKeys.join(',');
@@ -112,7 +112,7 @@ export class TestResultsTabElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => this.configsStore.userConfigs.testResults.columnWidths,
-        (columnWidths) => (this.invocationState.customColumnWidths = columnWidths),
+        (columnWidths) => this.invocationState.setColumnWidths(columnWidths),
         { fireImmediately: true }
       )
     );

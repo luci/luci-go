@@ -26,6 +26,7 @@ import '../../components/tab_bar';
 import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
+import { provideTestVariantTableState } from '../../components/test_variants_table/context';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, GetBuildError, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
@@ -153,6 +154,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   @observable.ref
   @provideInvocationState({ global: true })
+  @provideTestVariantTableState({ global: true })
   invocationState!: InvocationState;
 
   @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);

@@ -18,6 +18,7 @@ import { customElement, html, LitElement, property } from 'lit-element';
 import sinon, { SinonStub } from 'sinon';
 
 import './test_results_tab';
+import { provideTestVariantTableState } from '../components/test_variants_table/context';
 import { AppState, provideAppState } from '../context/app_state';
 import { InvocationState, provideInvocationState } from '../context/invocation_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
@@ -73,6 +74,7 @@ class ContextProvider extends LitElement {
 
   @property()
   @provideInvocationState()
+  @provideTestVariantTableState()
   invocationState!: InvocationState;
 }
 

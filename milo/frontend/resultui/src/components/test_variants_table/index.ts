@@ -14,7 +14,6 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
-import { deepEqual } from 'fast-equals';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
@@ -25,15 +24,15 @@ import '../dot_spinner';
 import './tvt_column_header';
 import './test_variant_entry';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportErrorAsync } from '../../libs/error_handler';
-import { getPropKeyLabel, TestVariant, TestVariantStatus } from '../../services/resultdb';
+import { createTVPropGetter, getPropKeyLabel, TestVariantStatus } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 import { MiloBaseElement } from '../milo_base';
+import { consumeTestVariantTableState, TestVariantTableState, VariantGroup } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
 /**
@@ -44,10 +43,10 @@ import { TestVariantEntryElement } from './test_variant_entry';
 export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref @consumeAppState() appState!: AppState;
   @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
-  @observable.ref @consumeInvocationState() invocationState!: InvocationState;
+  @observable.ref @consumeTestVariantTableState() tableState!: TestVariantTableState;
 
-  @computed private get hasCustomGroupingKey() {
-    return !deepEqual(this.invocationState.groupingKeys, ['status']);
+  @computed private get columnGetters() {
+    return this.tableState.columnKeys.map((col) => createTVPropGetter(col));
   }
 
   toggleAllVariants(expand: boolean) {
@@ -62,52 +61,42 @@ export class TestVariantsTableElement extends MiloBaseElement {
     // When a new test loader is received, load the first page.
     this.addDisposer(
       reaction(
-        () => this.invocationState.testLoader,
-        (testLoader) => reportErrorAsync(this, async () => testLoader?.loadFirstPageOfTestVariants())(),
+        () => this.tableState.loadedFirstPage,
+        () => {
+          if (this.tableState.loadedFirstPage) {
+            return;
+          }
+          reportErrorAsync(this, () => this.tableState.loadFirstPage())();
+        },
         { fireImmediately: true }
       )
     );
   }
 
-  private loadMore = reportErrorAsync(this, async () => this.invocationState.testLoader?.loadNextTestVariants());
+  private loadMore = reportErrorAsync(this, () => this.tableState.loadNextPage());
 
   private renderAllVariants() {
-    const testLoader = this.invocationState.testLoader;
-    const groupers = this.invocationState.groupers;
     return html`
-      ${
-        // Indicates that there are no unexpected test variants.
-        testLoader?.loadedAllUnexpectedVariants && testLoader.unexpectedTestVariants.length === 0
-          ? this.renderVariantGroup([['status', TestVariantStatus.UNEXPECTED]], [])
-          : ''
-      }
-      ${(testLoader?.groupedNonExpectedVariants || []).map((group) =>
-        this.renderVariantGroup(
-          groupers.map(([key, getter]) => [key, getter(group[0])]),
-          group
-        )
-      )}
-      ${this.renderVariantGroup(
-        [['status', TestVariantStatus.EXPECTED]],
-        testLoader?.expectedTestVariants || [],
-        this.hasCustomGroupingKey ? html`<b>note: custom grouping doesn't apply to expected tests</b>` : ''
-      )}
+      ${this.tableState.variantGroups.map((group) => this.renderVariantGroup(group))}
       <div id="variant-list-tail">
-        ${testLoader?.testVariantCount === testLoader?.unfilteredTestVariantCount
+        ${this.tableState.testVariantCount === this.tableState.unfilteredTestVariantCount
           ? html`
-              Showing ${testLoader?.testVariantCount || 0} /
-              ${testLoader?.unfilteredTestVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'} tests.
+              Showing ${this.tableState.testVariantCount} /
+              ${this.tableState.unfilteredTestVariantCount}${this.tableState.loadedAllTestVariants ? '' : '+'} tests.
             `
           : html`
               Showing
-              <i>${testLoader?.testVariantCount || 0}</i>
-              test${testLoader?.testVariantCount === 1 ? '' : 's'} that
-              <i>match${testLoader?.testVariantCount === 1 ? 'es' : ''} the filter</i>, out of
-              <i>${testLoader?.unfilteredTestVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'}</i> tests.
+              <i>${this.tableState.testVariantCount}</i>
+              test${this.tableState.testVariantCount === 1 ? '' : 's'} that
+              <i>match${this.tableState.testVariantCount === 1 ? 'es' : ''} the filter</i>, out of
+              <i>${this.tableState.unfilteredTestVariantCount}${this.tableState.loadedAllTestVariants ? '' : '+'}</i>
+              tests.
             `}
         <span
           class="active-text"
-          style=${styleMap({ display: this.invocationState.testLoader?.loadedAllVariants ?? true ? 'none' : '' })}
+          style=${styleMap({
+            display: !this.tableState.loadedAllTestVariants && this.tableState.readyToLoad ? 'none' : '',
+          })}
           >${this.renderLoadMore()}</span
         >
       </div>
@@ -115,14 +104,14 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   @observable private collapsedVariantGroups = new Set<string>();
-  private renderVariantGroup(groupDef: [string, unknown][], variants: TestVariant[], note: unknown = null) {
-    const groupId = JSON.stringify(groupDef);
+  private renderVariantGroup(group: VariantGroup) {
+    const groupId = JSON.stringify(group.def);
     const expanded = !this.collapsedVariantGroups.has(groupId);
     return html`
       <div
         class=${classMap({
           expanded,
-          empty: variants.length === 0,
+          empty: group.variants.length === 0,
           'group-header': true,
         })}
         @click=${() => {
@@ -135,25 +124,25 @@ export class TestVariantsTableElement extends MiloBaseElement {
       >
         <mwc-icon class="group-icon">${expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
         <div>
-          <b>${variants.length} test variant${variants.length === 1 ? '' : 's'}:</b>
-          ${groupDef.map(
+          <b>${group.variants.length} test variant${group.variants.length === 1 ? '' : 's'}:</b>
+          ${group.def.map(
             ([k, v]) =>
               html`<span class="group-kv"
                 ><span>${getPropKeyLabel(k)}=</span
                 ><span class=${k === 'status' ? VARIANT_STATUS_CLASS_MAP[v as TestVariantStatus] : ''}>${v}</span></span
               >`
           )}
-          ${note}
+          ${group.note || ''}
         </div>
       </div>
       ${repeat(
-        expanded ? variants : [],
+        expanded ? group.variants : [],
         (v) => `${v.testId} ${v.variantHash}`,
         (v) => html`
           <milo-test-variant-entry
             .variant=${v}
-            .columnGetters=${this.invocationState.displayedColumnGetters}
-            .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
+            .columnGetters=${this.columnGetters}
+            .expanded=${this.tableState.testVariantCount === 1}
           ></milo-test-variant-entry>
         `
       )}
@@ -161,17 +150,14 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   private renderLoadMore() {
-    const state = this.invocationState;
+    const state = this.tableState;
     return html`
-      <span
-        style=${styleMap({ display: state.testLoader?.isLoading ?? true ? 'none' : '' })}
-        @click=${() => this.loadMore()}
-      >
+      <span style=${styleMap({ display: state.isLoading ?? true ? 'none' : '' })} @click=${() => this.loadMore()}>
         [load more]
       </span>
       <span
         style=${styleMap({
-          display: state.testLoader?.isLoading ?? true ? '' : 'none',
+          display: state.isLoading ?? true ? '' : 'none',
           cursor: 'initial',
         })}
       >
@@ -194,12 +180,12 @@ export class TestVariantsTableElement extends MiloBaseElement {
           .label=${/* invis char */ '\u2002' + 'S'}
           .canHide=${false}
         ></milo-tvt-column-header>
-        ${this.invocationState.displayedColumns.map(
+        ${this.tableState.columnKeys.map(
           (col, i) => html`<milo-tvt-column-header
             .colIndex=${i}
             .resizeTo=${(newWidth: number, finalized: boolean) => {
               if (!finalized) {
-                const newColWidths = this.invocationState.columnWidths.slice();
+                const newColWidths = this.tableState.columnWidths.slice();
                 newColWidths[i] = newWidth;
                 // Update the style directly so lit-element doesn't need to
                 // re-render the component frequently.

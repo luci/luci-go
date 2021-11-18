@@ -27,38 +27,38 @@ describe('tvt_column_header', () => {
   beforeEach(async () => {
     invState = new InvocationState(new AppState());
     columnHeaderEle = await fixture<TestVariantsTableColumnHeader>(html`
-      <milo-tvt-column-header .invocationState=${invState} .propKey=${'v.propKey'} .label=${'label'}>
+      <milo-tvt-column-header .tableState=${invState} .propKey=${'v.propKey'} .label=${'label'}>
       </milo-tvt-column-header>
     `);
   });
   afterEach(fixtureCleanup);
 
   it('can hide column', async () => {
-    invState.columnsParam = ['v.propKey'];
+    invState.setColumnKeys(['v.propKey']);
 
-    assert.deepEqual(invState.displayedColumns, ['v.propKey']);
+    assert.deepEqual(invState.columnKeys, ['v.propKey']);
 
     columnHeaderEle.hideColumn();
 
-    assert.deepEqual(invState.displayedColumns, []);
+    assert.deepEqual(invState.columnKeys, []);
   });
 
   it('can group rows', async () => {
-    invState.columnsParam = ['v.propKey'];
+    invState.setColumnKeys(['v.propKey']);
 
-    assert.deepEqual(invState.displayedColumns, ['v.propKey']);
+    assert.deepEqual(invState.columnKeys, ['v.propKey']);
     assert.deepEqual(invState.groupingKeys, ['status']);
 
     columnHeaderEle.groupRows();
 
     // The grouping key should be removed from displayedColumns.
-    assert.deepEqual(invState.displayedColumns, []);
+    assert.deepEqual(invState.columnKeys, []);
     // The new grouping key should append to the existing grouping keys.
     assert.deepEqual(invState.groupingKeys, ['status', 'v.propKey']);
   });
 
   it('should not group by the same column multiple times', async () => {
-    invState.groupingKeysParam = ['status', 'v.propKey'];
+    invState.setGroupingKeys(['status', 'v.propKey']);
 
     assert.deepEqual(invState.groupingKeys, ['status', 'v.propKey']);
 
@@ -70,49 +70,49 @@ describe('tvt_column_header', () => {
   });
 
   it('can sort rows', async () => {
-    invState.columnsParam = ['v.propKey'];
+    invState.setColumnKeys(['v.propKey']);
 
-    assert.deepEqual(invState.displayedColumns, ['v.propKey']);
+    assert.deepEqual(invState.columnKeys, ['v.propKey']);
     assert.deepEqual(invState.sortingKeys, ['status', 'name']);
 
     columnHeaderEle.sortColumn(true);
 
     // The sorting key should not be removed from displayedColumns.
-    assert.deepEqual(invState.displayedColumns, ['v.propKey']);
+    assert.deepEqual(invState.columnKeys, ['v.propKey']);
     // The new sorting key should prepended to the existing sorting keys.
     assert.deepEqual(invState.sortingKeys, ['v.propKey', 'status', 'name']);
   });
 
   it('can sort rows in descending order', async () => {
-    invState.columnsParam = ['v.propKey'];
+    invState.setColumnKeys(['v.propKey']);
 
-    assert.deepEqual(invState.displayedColumns, ['v.propKey']);
+    assert.deepEqual(invState.columnKeys, ['v.propKey']);
     assert.deepEqual(invState.sortingKeys, ['status', 'name']);
 
     columnHeaderEle.sortColumn(false);
 
     // The sorting key should not be removed from displayedColumns.
-    assert.deepEqual(invState.displayedColumns, ['v.propKey']);
+    assert.deepEqual(invState.columnKeys, ['v.propKey']);
     // The new sorting key should prepended to the existing sorting keys.
     assert.deepEqual(invState.sortingKeys, ['-v.propKey', 'status', 'name']);
   });
 
   it('should not sort by the same column multiple times', async () => {
-    invState.sortingKeysParam = ['status', 'v.propKey'];
+    invState.setSortingKeys(['status', 'v.propKey']);
     assert.deepEqual(invState.sortingKeys, ['status', 'v.propKey']);
     columnHeaderEle.sortColumn(true);
     // The new sorting key should prepended to the existing sorting keys.
     // Duplicated sorting keys should be removed.
     assert.deepEqual(invState.sortingKeys, ['v.propKey', 'status']);
 
-    invState.sortingKeysParam = ['status', '-v.propKey'];
+    invState.setSortingKeys(['status', '-v.propKey']);
     assert.deepEqual(invState.sortingKeys, ['status', '-v.propKey']);
     columnHeaderEle.sortColumn(true);
     // Sorting keys with '-' prefix should be removed too if they have the same
     // prop key.
     assert.deepEqual(invState.sortingKeys, ['v.propKey', 'status']);
 
-    invState.sortingKeysParam = ['status', 'v.propKey'];
+    invState.setSortingKeys(['status', 'v.propKey']);
     assert.deepEqual(invState.sortingKeys, ['status', 'v.propKey']);
     // Sorting in descending order should remove duplicated keys too.
     columnHeaderEle.sortColumn(false);

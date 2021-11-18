@@ -19,17 +19,17 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
 import '../drag_tracker';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumer } from '../../libs/context';
 import commonStyle from '../../styles/common_style.css';
 import { DragEvent } from '../drag_tracker';
+import { consumeTestVariantTableState, TestVariantTableState } from './context';
 
 @customElement('milo-tvt-column-header')
 @consumer
 export class TestVariantsTableColumnHeader extends MobxLitElement {
   @observable.ref
-  @consumeInvocationState()
-  invocationState!: InvocationState;
+  @consumeTestVariantTableState()
+  tableState!: TestVariantTableState;
 
   // Setting the colIndex also makes the column resizable.
   @observable.ref colIndex?: number;
@@ -43,7 +43,7 @@ export class TestVariantsTableColumnHeader extends MobxLitElement {
 
   @observable.ref private menuIsOpen = false;
 
-  private removeKey(oldKeys: string[]): string[] {
+  private removeKey(oldKeys: readonly string[]): string[] {
     const keys = oldKeys.slice();
     const i = keys.findIndex((k) => k === this.propKey || k === '-' + this.propKey);
     if (i > -1) {
@@ -53,28 +53,28 @@ export class TestVariantsTableColumnHeader extends MobxLitElement {
   }
 
   sortColumn(ascending: boolean) {
-    const newSortingKeys = this.removeKey(this.invocationState.sortingKeys);
+    const newSortingKeys = this.removeKey(this.tableState.sortingKeys);
     newSortingKeys.unshift((ascending ? '' : '-') + this.propKey);
-    this.invocationState.sortingKeysParam = newSortingKeys;
+    this.tableState.setSortingKeys(newSortingKeys);
   }
 
   groupRows() {
     this.hideColumn();
-    const newGroupingKeys = this.removeKey(this.invocationState.groupingKeys);
+    const newGroupingKeys = this.removeKey(this.tableState.groupingKeys);
     newGroupingKeys.push(this.propKey);
-    this.invocationState.groupingKeysParam = newGroupingKeys;
+    this.tableState.setGroupingKeys(newGroupingKeys);
   }
 
   hideColumn() {
-    const newColumnKeys = this.removeKey(this.invocationState.displayedColumns);
-    this.invocationState.columnsParam = newColumnKeys;
+    const newColumnKeys = this.removeKey(this.tableState.columnKeys);
+    this.tableState.setColumnKeys(newColumnKeys);
   }
 
   private renderResizer() {
     if (this.colIndex === undefined) {
       return html``;
     }
-    const startWidth = this.invocationState.columnWidths[this.colIndex];
+    const startWidth = this.tableState.columnWidths[this.colIndex];
     let currentWidth = startWidth;
     return html`
       <milo-drag-tracker

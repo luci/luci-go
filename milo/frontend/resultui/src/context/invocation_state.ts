@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { deepEqual } from 'fast-equals';
+import { html } from 'lit-html';
 import { autorun, comparer, computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
+import { TestVariantTableState, VariantGroup } from '../components/test_variants_table/context';
 import { createContextLink } from '../libs/context';
 import { parseSearchQuery } from '../libs/search_query';
 import { InnerTag, TAG_SOURCE } from '../libs/tag';
 import { unwrapObservable } from '../libs/unwrap_observable';
 import { TestLoader } from '../models/test_loader';
 import { TestPresentationConfig } from '../services/buildbucket';
-import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant } from '../services/resultdb';
+import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant, TestVariantStatus } from '../services/resultdb';
 import { AppState } from './app_state';
 
 export class QueryInvocationError extends Error implements InnerTag {
@@ -36,7 +39,7 @@ export class QueryInvocationError extends Error implements InnerTag {
 /**
  * Records state of an invocation.
  */
-export class InvocationState {
+export class InvocationState implements TestVariantTableState {
   // '' means no associated invocation ID.
   // null means uninitialized.
   @observable.ref invocationId: string | null = null;
@@ -51,39 +54,46 @@ export class InvocationState {
   @observable.ref searchFilter = (_v: TestVariant) => true;
 
   @observable.ref presentationConfig: TestPresentationConfig = {};
-  @observable.ref columnsParam?: string[];
-  @computed({ equals: comparer.shallow }) get defaultColumns() {
+
+  @observable.ref private customColumnKeys?: readonly string[];
+  @computed({ equals: comparer.shallow }) get defaultColumnKeys() {
     return this.presentationConfig.column_keys || [];
   }
-  @computed({ equals: comparer.shallow }) get displayedColumns() {
-    return this.columnsParam || this.defaultColumns;
+  @computed({ equals: comparer.shallow }) get columnKeys() {
+    return this.customColumnKeys || this.defaultColumnKeys;
   }
-  @computed get displayedColumnGetters() {
-    return this.displayedColumns.map((col) => createTVPropGetter(col));
+  setColumnKeys(v: readonly string[]): void {
+    this.customColumnKeys = v;
   }
 
-  @observable customColumnWidths: { readonly [key: string]: number } = {};
+  @observable.ref private customColumnWidths: { readonly [key: string]: number } = {};
+  setColumnWidths(v: { readonly [key: string]: number }): void {
+    this.customColumnWidths = v;
+  }
   @computed get columnWidths() {
-    return this.displayedColumns.map((col) => this.customColumnWidths[col] ?? 100);
+    return this.columnKeys.map((col) => this.customColumnWidths[col] ?? 100);
   }
 
-  @observable.ref sortingKeysParam?: string[];
+  @observable.ref private customSortingKeys?: readonly string[];
+  setSortingKeys(v: readonly string[]): void {
+    this.customSortingKeys = v;
+  }
   @computed({ equals: comparer.shallow }) get defaultSortingKeys() {
-    return ['status', ...this.defaultColumns, 'name'];
+    return ['status', ...this.defaultColumnKeys, 'name'];
   }
   @computed({ equals: comparer.shallow }) get sortingKeys() {
-    return this.sortingKeysParam || this.defaultSortingKeys;
-  }
-  @computed get testVariantCmpFn(): (v1: TestVariant, v2: TestVariant) => number {
-    return createTVCmpFn(this.sortingKeys);
+    return this.customSortingKeys || this.defaultSortingKeys;
   }
 
-  @observable.ref groupingKeysParam?: string[];
+  @observable.ref private customGroupingKeys?: readonly string[];
+  setGroupingKeys(v: readonly string[]): void {
+    this.customGroupingKeys = v;
+  }
   @computed({ equals: comparer.shallow }) get defaultGroupingKeys() {
     return this.presentationConfig.grouping_keys || ['status'];
   }
   @computed({ equals: comparer.shallow }) get groupingKeys() {
-    return this.groupingKeysParam || this.defaultGroupingKeys;
+    return this.customGroupingKeys || this.defaultGroupingKeys;
   }
   @computed get groupers(): Array<[string, (v: TestVariant) => unknown]> {
     return this.groupingKeys.map((key) => [key, createTVPropGetter(key)]);
@@ -108,7 +118,7 @@ export class InvocationState {
         }
         this.testLoader.filter = this.searchFilter;
         this.testLoader.groupers = this.groupers;
-        this.testLoader.cmpFn = this.testVariantCmpFn;
+        this.testLoader.cmpFn = createTVCmpFn(this.sortingKeys);
       })
     );
   }
@@ -172,6 +182,59 @@ export class InvocationState {
       return null;
     }
     return new TestLoader({ invocations: [this.invocationName] }, this.appState.resultDb);
+  }
+
+  @computed get variantGroups() {
+    if (!this.testLoader) {
+      return [];
+    }
+    const ret: VariantGroup[] = [];
+    if (this.testLoader.loadedAllUnexpectedVariants && this.testLoader.unexpectedTestVariants.length === 0) {
+      // Indicates that there are no unexpected test variants.
+      ret.push({
+        def: [['status', TestVariantStatus.UNEXPECTED]],
+        variants: [],
+      });
+    }
+    ret.push(
+      ...this.testLoader.groupedNonExpectedVariants.map((group) => ({
+        def: this.groupers.map(([key, getter]) => [key, getter(group[0])] as [string, unknown]),
+        variants: group,
+      })),
+      {
+        def: [['status', TestVariantStatus.EXPECTED]],
+        variants: this.testLoader.expectedTestVariants,
+        note: deepEqual(this.groupingKeys, ['status'])
+          ? ''
+          : html`<b>note: custom grouping doesn't apply to expected tests</b>`,
+      }
+    );
+    return ret;
+  }
+  @computed get testVariantCount() {
+    return this.testLoader?.testVariantCount || 0;
+  }
+  @computed get unfilteredTestVariantCount() {
+    return this.testLoader?.unfilteredTestVariantCount || 0;
+  }
+  @computed get loadedAllTestVariants() {
+    return this.testLoader?.loadedAllVariants || false;
+  }
+
+  @computed get readyToLoad() {
+    return Boolean(this.testLoader);
+  }
+  @computed get isLoading() {
+    return this.testLoader?.isLoading || false;
+  }
+  @computed get loadedFirstPage() {
+    return this.testLoader?.firstPageLoaded || false;
+  }
+  loadFirstPage(): Promise<void> {
+    return this.testLoader?.loadFirstPageOfTestVariants() || Promise.race([]);
+  }
+  loadNextPage(): Promise<void> {
+    return this.testLoader?.loadNextTestVariants() || Promise.race([]);
   }
 }
 

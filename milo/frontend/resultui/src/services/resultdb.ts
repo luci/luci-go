@@ -389,7 +389,7 @@ export async function getInvIdFromBuildNum(builder: BuilderID, buildNum: number)
  * 3. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
  * v.gpu).
  */
-export function createTVPropGetter(propKey: string): (v: TestVariant) => { toString(): string } {
+export function createTVPropGetter(propKey: string): (v: TestVariant) => ToString {
   if (propKey.match(/^v[.]/i)) {
     const variantKey = propKey.slice(2);
     return (v) => v.variant?.def[variantKey] || '';
@@ -413,7 +413,7 @@ export function createTVPropGetter(propKey: string): (v: TestVariant) => { toStr
  * 1. '{property_key}': sort by property_key in ascending order.
  * 2. '-{property_key}': sort by property_key in descending order.
  */
-export function createTVCmpFn(sortingKeys: string[]): (v1: TestVariant, v2: TestVariant) => number {
+export function createTVCmpFn(sortingKeys: readonly string[]): (v1: TestVariant, v2: TestVariant) => number {
   const sorters: Array<[number, (v: TestVariant) => { toString(): string }]> = sortingKeys.map((key) => {
     const [mul, propKey] = key.startsWith('-') ? [-1, key.slice(1)] : [1, key];
     const propGetter = createTVPropGetter(propKey);

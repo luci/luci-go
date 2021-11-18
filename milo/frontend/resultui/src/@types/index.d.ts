@@ -23,6 +23,10 @@ type DeepMutable<T> = {
   -readonly [key in keyof T]: DeepMutable<T[key]>;
 };
 
+interface ToString {
+  toString(): string;
+}
+
 /**
  * Configs of the app.
  * Declared in the server generated file, /configs.js, included as a script tag.

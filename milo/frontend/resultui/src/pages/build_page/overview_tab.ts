@@ -19,7 +19,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html, TemplateResult } from 'lit-element';
-import { observable } from 'mobx';
+import { computed, observable } from 'mobx';
 
 import '../../components/build_tag_row';
 import '../../components/build_step_list';
@@ -48,7 +48,7 @@ import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
 import { router } from '../../routes';
 import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
-import { getPropKeyLabel } from '../../services/resultdb';
+import { createTVPropGetter, getPropKeyLabel } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -75,6 +75,10 @@ export class OverviewTabElement extends MobxLitElement {
 
   @observable.ref private showRetryDialog = false;
   @observable.ref private showCancelDialog = false;
+
+  @computed private get columnGetters() {
+    return this.invocationState.columnKeys.map((col) => createTVPropGetter(col));
+  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -317,7 +321,7 @@ export class OverviewTabElement extends MobxLitElement {
         htmlTemplates.push(html`
           <milo-test-variant-entry
             .variant=${testVariant}
-            .columnGetters=${this.invocationState.displayedColumnGetters}
+            .columnGetters=${this.columnGetters}
           ></milo-test-variant-entry>
         `);
       }
