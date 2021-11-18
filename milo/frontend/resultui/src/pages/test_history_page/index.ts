@@ -19,7 +19,7 @@ import { observable, reaction } from 'mobx';
 import '../../components/status_bar';
 import './date_axis';
 import './duration_graph';
-import './duration_scale';
+import './duration_legend';
 import './graph_config';
 import './status_graph';
 import './variant_def_table';
@@ -110,7 +110,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           }
         })()}
         ${this.pageState.graphType === GraphType.DURATION
-          ? html`<milo-th-duration-scale id="extra"></milo-th-duration-scale>`
+          ? html`<milo-th-duration-legend id="extra"></milo-th-duration-legend>`
           : ''}
       </div>
     `;

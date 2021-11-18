@@ -23,14 +23,14 @@ import { consumer } from '../../libs/context';
 import { roundUp } from '../../libs/utils';
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
-const DURATION_SCALE_PADDING = 10;
+const DURATION_LEGEND_PADDING = 10;
 const DURATION_RECT_WIDTH = 20;
 const Y_AXIS_WIDTH = 50;
 const MIN_TICK_SIZE = 20;
 
-@customElement('milo-th-duration-scale')
+@customElement('milo-th-duration-legend')
 @consumer
-export class TestHistoryDurationScaleElement extends MiloBaseElement {
+export class TestHistoryDurationLegendElement extends MiloBaseElement {
   @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
 
   @computed private get scaleDurationY() {
@@ -40,13 +40,13 @@ export class TestHistoryDurationScaleElement extends MiloBaseElement {
   }
 
   @computed private get scaleHeight() {
-    return this.pageState.testHistoryLoader.variants.length * CELL_SIZE + X_AXIS_HEIGHT - 2 * DURATION_SCALE_PADDING;
+    return this.pageState.testHistoryLoader.variants.length * CELL_SIZE + X_AXIS_HEIGHT - 2 * DURATION_LEGEND_PADDING;
   }
 
   @computed private get tickStepSizeMs() {
     const durationDiff = this.pageState.maxDurationMs - this.pageState.minDurationMs;
-    const durationScaleHeight = this.scaleDurationY.range()[1];
-    const minInterval = (durationDiff / durationScaleHeight) * MIN_TICK_SIZE;
+    const durationLegendHeight = this.scaleDurationY.range()[1];
+    const minInterval = (durationDiff / durationLegendHeight) * MIN_TICK_SIZE;
     return roundUp(minInterval, PREDEFINED_TIME_INTERVALS);
   }
 
@@ -98,7 +98,7 @@ export class TestHistoryDurationScaleElement extends MiloBaseElement {
             <stop offset="100%" stop-color=${this.pageState.scaleDurationColor(this.pageState.minDurationMs)}></stop>
           </linearGradient>
         </defs>
-        <g transform="translate(${DURATION_RECT_WIDTH}, ${DURATION_SCALE_PADDING})">
+        <g transform="translate(${DURATION_RECT_WIDTH}, ${DURATION_LEGEND_PADDING})">
           <rect
             x=${-DURATION_RECT_WIDTH}
             y="-0.5"
