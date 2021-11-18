@@ -23,6 +23,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
+import "go.chromium.org/luci/cv/api/config/v2/cq.proto";
 import "go.chromium.org/luci/cv/api/recipe/v1/cq.proto";
 
 // Definition defines what a Tryjob should do.
@@ -38,6 +39,35 @@ message Definition {
     string host = 1;
     buildbucket.v2.BuilderID builder = 2;
   }
+
+  // If set, existing tryjob matching this definition is deemed equivalent
+  // to the primary Definition.
+  //
+  // Note that recurisve `equivalent_to` is not supported. Also, this doesn't
+  // affect triggering a new tryjob.
+  Definition equivalent_to = 2;
+}
+
+// Requirement is what has to happen to verify a specific Run.
+//
+// It is computed based on the Project Config and specifics of the Run.
+message Requirement {
+  // Definitions is the definitions of all Tryjobs that should be triggered
+  // to verify a specific Run.
+  repeated Definition definitions = 1;
+  // RetryConfig specifies retries allowed in case of Tryjob failure.
+  //
+  // No retry allowed if nil.
+  cv.config.Verifiers.Tryjob.RetryConfig retry_config = 2;
+  // Version increments by 1 everytime this requirement changes.
+  //
+  // Starts with 1.
+  int32 version = 3;
+  // The timestamp when requirement is last computed.
+  //
+  // Every requirement computation will update this field even if the result
+  // requirement is the same as the existing one.
+  google.protobuf.Timestamp last_computed_at = 4;
 }
 
 // Status is a high level status of a Tryjob from CV implementation PoV.
@@ -134,4 +164,49 @@ message Result {
     int64 id = 1;
     buildbucket.v2.Status status = 2;
   }
+}
+
+// ExecutionState is the state of executing Tryjobs requirement.
+message ExecutionState {
+  // Execution tracks the execution state of each individual Tryjob requirement.
+  message Execution {
+    // Attempt represents each attempt to complete an execution.
+    //
+    // Failed attempt will trigger a retry attempt if quota allows.
+    message Attempt {
+      // TryjobId is the id of this Tryjob attempt.
+      int64 tryjob_id = 1;
+      // Status is the status of this Tryjob attempt.
+      cv.internal.tryjob.Status status = 2;
+      // Result of this Tryjob attempt.
+      cv.internal.tryjob.Result result = 3;
+      // Reused indicates the current attempt of this Tryjob wasn't triggered
+      // by CV for this Run specifically.
+      //
+      // In other words, either:
+      //  * tryjob was triggered by CV for a previous Run
+      //  * tryjob was triggered by non-CV (e.g. `git cl try`)
+      bool reused = 4;
+
+      // TODO(yiwzhang): add model for children tryjobs. It could reuse
+      // `Attempt` messages, it may also have a trimmed version of `Attempt`
+      // message because some of the fields don't make sense to children
+      // Tryjobs. Also, if crbug.com/1031205 is shipped before we implement
+      // children support in LUCI CV, we may not even need a new field
+      // (maybe a new status will suffice: like WAITING_FOR_CHILDREN).
+    }
+    // Attempts records all attempts (including retries) to verify the Run with
+    // this Tryjob Execution.
+    repeated Attempt attempts = 2;
+    // UsedQuota is the quote consumed for retrying the execution of this
+    // Tryjob.
+    int32 used_quota = 3;
+  }
+  // Executions track the execution state of all required Tryjobs.
+  //
+  // It is one to one mapped to `requirement.definitions`
+  repeated Execution executions = 1;
+  // RequirementsVersion is the version of the requirements this executor is
+  // currently executing.
+  int32 requirements_version = 2;
 }

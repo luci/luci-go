@@ -242,32 +242,40 @@ message LogEntry {
 
 // Tryjobs is the state of Run's tryjobs.
 message Tryjobs {
-
   // Requirement is what has to happen to verify a given Run.
-  Requirement requirement = 1;
+  cv.internal.tryjob.Requirement requirement = 1;
+  // StagingRequirement will be promoted to requirement.
+  //
+  // It is typically set when the existing requirement is executing and waiting
+  // to be cancelled. For example:
+  //  T0: Run starts and computes the requirement. A long op task is executing
+  //      the requirement.
+  //  T1: A new config is ingested and results in a new requirement. RM
+  //      requests a cancellation for the long op task and set the new
+  //      requirement to this field.
+  //  T2: The long op task is successfully cancelled. RM promotes the
+  //      staging requirement to requirement and enqueue a new long op task to
+  //      execute the new requirement.
+  cv.internal.tryjob.Requirement staging_requirement = 4;
 
   // Tryjobs tracks tryjobs of a Run.
   //
   // It may contain Tryjobs which are no longer required.
-  // It does contain all Tryjobs which weren't reused even if no longer required.
+  // It does contain all Tryjobs which weren't reused even if no longer
+  // required.
   //
-  // TODO(crbug/1227523): delete ExternalID from sorted order.
-  // Sorted by ID, then by ExternalID (for migration from CQD purpose).
-  repeated Tryjob tryjobs = 2;
+  // TODO(crbug/1227363): replace this field in favor of `state`
+  repeated Tryjob tryjobs = 2 [deprecated = true];
 
   // The timestamp of the CQDaemon report last incorporated into `tryjobs`.
   //
   // TODO(crbug/1227523): delete this field.
   google.protobuf.Timestamp cqd_update_time = 3;
 
-  // TODO(crbug/1227363): add quota.
-
-
-  // Requirement is what has to happen to verify a given Run,
-  // computed based on LUCI project config and specifics of the Run.
-  message Requirement {
-    // TODO(crbug/1227363): define.
-  }
+  // State is the latest state reported by Tryjob Executor task.
+  //
+  // Once the Run is ended, this state is finalized.
+  cv.internal.tryjob.ExecutionState state = 5;
 }
 
 // Tryjob represents a Run's view of a tryjob.
