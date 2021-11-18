@@ -239,7 +239,7 @@ func (rp *runProcessor) FetchEVersion(ctx context.Context) (eventbox.EVersion, e
 func (rp *runProcessor) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
 	rs := st.(*state.RunState)
 	r := rs.Run
-	r.EVersion = int(ev)
+	r.EVersion = int64(ev)
 	r.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 	// Transactionally enqueue new long operations (if any).
 	if err := rp.enqueueLongOps(ctx, &rs.Run, rs.NewLongOpIDs...); err != nil {

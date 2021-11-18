@@ -84,7 +84,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.Snapshot, ShouldResembleProto, s)
 
 				execBatchOnCLUpdatedTask()
-				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int{
+				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
 					lProject: {cl.ID: cl.EVersion},
 				})
 				So(rm.byRun, ShouldBeEmpty)
@@ -128,10 +128,10 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.Snapshot, ShouldResembleProto, s2)
 
 				execBatchOnCLUpdatedTask()
-				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int{
+				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
 					lProject: {cl.ID: cl.EVersion},
 				})
-				So(rm.byRun, ShouldResemble, map[common.RunID]map[common.CLID]int{
+				So(rm.byRun, ShouldResemble, map[common.RunID]map[common.CLID]int64{
 					run1: {cl.ID: cl.EVersion},
 					run2: {cl.ID: cl.EVersion},
 				})
@@ -186,7 +186,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 				execBatchOnCLUpdatedTask()
 				So(pm.byProject[lProject][cl.ID], ShouldEqual, cl.EVersion)
-				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int{
+				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
 					"prior-project": {cl.ID: cl.EVersion},
 					lProject:        {cl.ID: cl.EVersion},
 				})
@@ -308,7 +308,7 @@ func TestMutatorBatch(t *testing.T) {
 					expectedRun2 = append(expectedRun2, cl.ID)
 				}
 				// Ensure each CL has unique EVersion later on.
-				cl.EVersion = 10 * gChange
+				cl.EVersion = int64(10 * gChange)
 				So(datastore.Put(ctx, cl), ShouldBeNil)
 			}
 			ct.Clock.Add(time.Minute)
@@ -319,7 +319,7 @@ func TestMutatorBatch(t *testing.T) {
 				// and compute eversion map at the same time.
 				dsCLs, err := LoadCLs(ctx, clids)
 				So(err, ShouldBeNil)
-				eversions := make(map[common.CLID]int, len(dsCLs))
+				eversions := make(map[common.CLID]int64, len(dsCLs))
 				for i := range dsCLs {
 					So(dsCLs[i].IncompleteRuns.ContainsSorted(run3), ShouldBeTrue)
 					So(dsCLs[i].ID, ShouldEqual, resCLs[i].ID)
@@ -330,8 +330,8 @@ func TestMutatorBatch(t *testing.T) {
 				}
 
 				// Ensure Project and Run managers were notified correctly.
-				assertNotified := func(actual map[common.CLID]int, expectedIDs common.CLIDs) {
-					expected := make(map[common.CLID]int, len(expectedIDs))
+				assertNotified := func(actual map[common.CLID]int64, expectedIDs common.CLIDs) {
+					expected := make(map[common.CLID]int64, len(expectedIDs))
 					for _, id := range expectedIDs {
 						expected[id] = eversions[id]
 					}
@@ -555,51 +555,51 @@ func makeAccess(luciProject string, updatedTime time.Time) *Access {
 
 type pmMock struct {
 	m         sync.Mutex
-	byProject map[string]map[common.CLID]int // latest max EVersion
+	byProject map[string]map[common.CLID]int64 // latest max EVersion
 }
 
 func (p *pmMock) NotifyCLsUpdated(ctx context.Context, project string, events *CLUpdatedEvents) error {
 	p.m.Lock()
 	defer p.m.Unlock()
 	if p.byProject == nil {
-		p.byProject = make(map[string]map[common.CLID]int, 1)
+		p.byProject = make(map[string]map[common.CLID]int64, 1)
 	}
 	m := p.byProject[project]
 	if m == nil {
-		m = make(map[common.CLID]int, len(events.GetEvents()))
+		m = make(map[common.CLID]int64, len(events.GetEvents()))
 		p.byProject[project] = m
 	}
 	for _, e := range events.GetEvents() {
 		clid := common.CLID(e.GetClid())
-		m[clid] = max(m[clid], int(e.GetEversion()))
+		m[clid] = max(m[clid], e.GetEversion())
 	}
 	return nil
 }
 
 type rmMock struct {
 	m     sync.Mutex
-	byRun map[common.RunID]map[common.CLID]int // latest max EVersion
+	byRun map[common.RunID]map[common.CLID]int64 // latest max EVersion
 }
 
 func (r *rmMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, events *CLUpdatedEvents) error {
 	r.m.Lock()
 	defer r.m.Unlock()
 	if r.byRun == nil {
-		r.byRun = make(map[common.RunID]map[common.CLID]int, 1)
+		r.byRun = make(map[common.RunID]map[common.CLID]int64, 1)
 	}
 	m := r.byRun[rid]
 	if m == nil {
-		m = make(map[common.CLID]int, 1)
+		m = make(map[common.CLID]int64, 1)
 		r.byRun[rid] = m
 	}
 	for _, e := range events.GetEvents() {
 		clid := common.CLID(e.GetClid())
-		m[clid] = max(m[clid], int(e.GetEversion()))
+		m[clid] = max(m[clid], e.GetEversion())
 	}
 	return nil
 }
 
-func max(i, j int) int {
+func max(i, j int64) int64 {
 	if i < j {
 		return j
 	}

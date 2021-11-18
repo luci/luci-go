@@ -207,7 +207,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 			PublicId:    r.ID.PublicID(),
 			LuciProject: lProject,
 			Status:      run.Status_SUCCEEDED,
-			Eversion:    int64(finalRun.EVersion),
+			Eversion:    finalRun.EVersion,
 		})
 	})
 }
@@ -321,14 +321,14 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 			PublicId:    qdr.ID.PublicID(),
 			LuciProject: lProject,
 			Status:      run.Status_CANCELLED,
-			Eversion:    int64(ct.LoadRun(ctx, qdr.ID).EVersion),
+			Eversion:    ct.LoadRun(ctx, qdr.ID).EVersion,
 		})
 		// 2nd message is for the the full-run failed.
 		So(ct.RunEndedPubSubTasks()[1].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
 			PublicId:    fr.ID.PublicID(),
 			LuciProject: lProject,
 			Status:      run.Status_FAILED,
-			Eversion:    int64(ct.LoadRun(ctx, fr.ID).EVersion),
+			Eversion:    ct.LoadRun(ctx, fr.ID).EVersion,
 		})
 	})
 }
@@ -415,7 +415,7 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 			PublicId:    r.ID.PublicID(),
 			LuciProject: lProject,
 			Status:      run.Status_SUCCEEDED,
-			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
+			Eversion:    ct.LoadRun(ctx, r.ID).EVersion,
 		})
 	})
 }
@@ -488,7 +488,7 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 			PublicId:    r.ID.PublicID(),
 			LuciProject: lProject,
 			Status:      run.Status_CANCELLED,
-			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
+			Eversion:    ct.LoadRun(ctx, r.ID).EVersion,
 		})
 	})
 }
@@ -695,7 +695,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			PublicId:    r.ID.PublicID(),
 			LuciProject: lProject,
 			Status:      run.Status_SUCCEEDED,
-			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
+			Eversion:    ct.LoadRun(ctx, r.ID).EVersion,
 		})
 	})
 }
@@ -818,7 +818,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			PublicId:    r.ID.PublicID(),
 			LuciProject: lProject,
 			Status:      run.Status_SUCCEEDED,
-			Eversion:    int64(ct.LoadRun(ctx, r.ID).EVersion),
+			Eversion:    ct.LoadRun(ctx, r.ID).EVersion,
 		})
 	})
 }

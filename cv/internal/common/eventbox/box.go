@@ -317,7 +317,7 @@ func deleteSemanticGarbage(ctx context.Context, r Recipient, d *dsset.Set, event
 type State interface{}
 
 // EVersion is recipient entity version.
-type EVersion int
+type EVersion int64
 
 // PostProcessFn should be executed after event processing completes.
 type PostProcessFn func(context.Context) error

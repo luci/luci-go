@@ -71,7 +71,7 @@ type Run struct {
 	// EVersion is the entity version.
 	//
 	// It increments by one upon every successful modification.
-	EVersion int `gae:",noindex"`
+	EVersion int64 `gae:",noindex"`
 	// CreateTime is the timestamp when this Run was created.
 	//
 	// This is the timestamp of the last vote, on a Gerrit CL, that triggers this Run.

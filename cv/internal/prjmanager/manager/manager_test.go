@@ -330,9 +330,9 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		for _, pcl := range p.State.GetPcls() {
 			switch common.CLID(pcl.GetClid()) {
 			case cl43.ID:
-				So(pcl.GetEversion(), ShouldEqual, int64(cl43.EVersion))
+				So(pcl.GetEversion(), ShouldEqual, cl43.EVersion)
 			case cl44.ID:
-				So(pcl.GetEversion(), ShouldEqual, int64(cl44.EVersion))
+				So(pcl.GetEversion(), ShouldEqual, cl44.EVersion)
 			default:
 				So("must not happen", ShouldBeTrue)
 			}

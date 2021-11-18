@@ -255,7 +255,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				defaultPCL(cls[13]),
 				{
 					Clid:     int64(cls[11].ID),
-					Eversion: int64(cls[11].EVersion),
+					Eversion: cls[11].EVersion,
 					Status:   prjpb.PCL_UNWATCHED,
 					Deps:     nil, // not visible to this project
 					Trigger:  nil, // not visible to this project
@@ -311,7 +311,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			state.PB.Pcls = []*prjpb.PCL{
 				{
 					Clid:      int64(cls[1].ID),
-					Eversion:  int64(cls[1].EVersion),
+					Eversion:  cls[1].EVersion,
 					Status:    prjpb.PCL_OK,
 					Submitted: true,
 				},
@@ -354,7 +354,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				state.PB.Pcls = sortPCLs(append(state.PB.Pcls,
 					&prjpb.PCL{
 						Clid:               int64(cls[2].ID),
-						Eversion:           int64(cls[2].EVersion),
+						Eversion:           cls[2].EVersion,
 						Status:             prjpb.PCL_OK,
 						Trigger:            trigger.Find(cis[2], cfg.ConfigGroups[0]),
 						ConfigGroupIndexes: []int32{0},

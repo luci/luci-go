@@ -72,13 +72,13 @@ func NewPublisher(tqd *tq.Dispatcher, env *common.Env) *Publisher {
 }
 
 // RunEnded schedules a task to publish a RunEnded message.
-func (s *Publisher) RunEnded(ctx context.Context, rid common.RunID, status run.Status, eVersion int) error {
+func (s *Publisher) RunEnded(ctx context.Context, rid common.RunID, status run.Status, eVersion int64) error {
 	return s.tqd.AddTask(ctx, &tq.Task{
 		Payload: &PublishRunEndedTask{
 			PublicId:    rid.PublicID(),
 			LuciProject: rid.LUCIProject(),
 			Status:      status,
-			Eversion:    int64(eVersion),
+			Eversion:    eVersion,
 		},
 	})
 }

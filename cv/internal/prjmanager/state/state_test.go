@@ -405,7 +405,7 @@ func TestUpdateConfig(t *testing.T) {
 			Convey("Status == OK", func() {
 				expected := &prjpb.PCL{
 					Clid:               int64(cl101.ID),
-					Eversion:           int64(cl101.EVersion),
+					Eversion:           cl101.EVersion,
 					ConfigGroupIndexes: []int32{0}, // g0
 					Trigger: &run.Trigger{
 						Mode: string(run.FullRun),
@@ -441,7 +441,7 @@ func TestUpdateConfig(t *testing.T) {
 				cl101.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
 				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
 					Clid:     int64(cl101.ID),
-					Eversion: int64(cl101.EVersion),
+					Eversion: cl101.EVersion,
 					Status:   prjpb.PCL_UNKNOWN,
 				})
 			})
@@ -450,7 +450,7 @@ func TestUpdateConfig(t *testing.T) {
 				cl101.Snapshot.LuciProject = "another"
 				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
 					Clid:     int64(cl101.ID),
-					Eversion: int64(cl101.EVersion),
+					Eversion: cl101.EVersion,
 					Status:   prjpb.PCL_UNKNOWN,
 				})
 			})
@@ -459,7 +459,7 @@ func TestUpdateConfig(t *testing.T) {
 				s1.PB.LuciProject = "another"
 				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
 					Clid:     int64(cl101.ID),
-					Eversion: int64(cl101.EVersion),
+					Eversion: cl101.EVersion,
 					Status:   prjpb.PCL_UNWATCHED,
 				})
 			})
@@ -473,7 +473,7 @@ func TestUpdateConfig(t *testing.T) {
 					})
 				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
 					Clid:               int64(cl101.ID),
-					Eversion:           int64(cl101.EVersion),
+					Eversion:           cl101.EVersion,
 					Status:             prjpb.PCL_OK,
 					ConfigGroupIndexes: []int32{0}, // g0
 					Trigger: &run.Trigger{
@@ -572,7 +572,7 @@ func TestOnCLsUpdated(t *testing.T) {
 
 		Convey("One simple CL", func() {
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
-				int64(cl101.ID): int64(cl101.EVersion),
+				int64(cl101.ID): cl101.EVersion,
 			})
 			So(err, ShouldBeNil)
 			So(s0.PB, ShouldResembleProto, pb0)
@@ -610,14 +610,14 @@ func TestOnCLsUpdated(t *testing.T) {
 				}
 				pb := backupPB(s1)
 				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
-					int64(cl101.ID): int64(cl101.EVersion),
+					int64(cl101.ID): cl101.EVersion,
 				})
 				So(s1.PB, ShouldResembleProto, pb)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// The only expected changes are:
 				pb.Components[0].TriageRequired = true
-				pb.Pcls[0].Eversion = int64(cl101.EVersion)
+				pb.Pcls[0].Eversion = cl101.EVersion
 				So(s2.PB, ShouldResembleProto, pb)
 			})
 		})
@@ -656,7 +656,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				}
 				pb := backupPB(s1)
 				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
-					int64(cl202.ID): int64(cl202.EVersion),
+					int64(cl202.ID): cl202.EVersion,
 				})
 				So(s1.PB, ShouldResembleProto, pb)
 				So(err, ShouldBeNil)
@@ -699,10 +699,10 @@ func TestOnCLsUpdated(t *testing.T) {
 			pb1 := backupPB(s1)
 			bumpEVersion(ctx, cl203, 3)
 			s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
-				404:             404,                   // doesn't even exist
-				int64(cl202.ID): int64(cl202.EVersion), // new
-				int64(cl101.ID): int64(cl101.EVersion), // unchanged
-				int64(cl203.ID): 3,                     // updated
+				404:             404,            // doesn't even exist
+				int64(cl202.ID): cl202.EVersion, // new
+				int64(cl101.ID): cl101.EVersion, // unchanged
+				int64(cl203.ID): 3,              // updated
 			})
 			So(err, ShouldBeNil)
 			So(s1.PB, ShouldResembleProto, pb1)
@@ -777,7 +777,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		Convey("non-STARTED project ignores all CL events", func() {
 			s0.PB.Status = prjpb.Status_STOPPING
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
-				int64(cl101.ID): int64(cl101.EVersion),
+				int64(cl101.ID): cl101.EVersion,
 			})
 			So(err, ShouldBeNil)
 			So(sideEffect, ShouldBeNil)
@@ -1102,7 +1102,7 @@ func backupPB(s *State) *prjpb.PState {
 	return ret
 }
 
-func bumpEVersion(ctx context.Context, cl *changelist.CL, desired int) {
+func bumpEVersion(ctx context.Context, cl *changelist.CL, desired int64) {
 	if cl.EVersion >= desired {
 		panic(fmt.Errorf("can't go %d to %d", cl.EVersion, desired))
 	}
@@ -1113,7 +1113,7 @@ func bumpEVersion(ctx context.Context, cl *changelist.CL, desired int) {
 func defaultPCL(cl *changelist.CL) *prjpb.PCL {
 	p := &prjpb.PCL{
 		Clid:               int64(cl.ID),
-		Eversion:           int64(cl.EVersion),
+		Eversion:           cl.EVersion,
 		ConfigGroupIndexes: []int32{0},
 		Status:             prjpb.PCL_OK,
 		Deps:               cl.Snapshot.GetDeps(),

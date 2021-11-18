@@ -245,7 +245,7 @@ type CLMutation struct {
 	id         common.CLID
 	externalID ExternalID
 
-	priorEversion   int
+	priorEversion   int64
 	priorUpdateTime time.Time
 	priorProject    string
 }
@@ -426,7 +426,7 @@ func (m *Mutator) dispatchBatchNotify(ctx context.Context, muts ...*CLMutation) 
 		Runs:     make(map[string]*CLUpdatedEvents, 2),
 	}
 	for _, mut := range muts {
-		e := &CLUpdatedEvent{Clid: int64(mut.CL.ID), Eversion: int64(mut.CL.EVersion)}
+		e := &CLUpdatedEvent{Clid: int64(mut.CL.ID), Eversion: mut.CL.EVersion}
 		for _, p := range mut.projects() {
 			batch.Projects[p] = batch.Projects[p].append(e)
 		}

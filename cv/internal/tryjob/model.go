@@ -45,7 +45,7 @@ type Tryjob struct {
 	// EVersion is the entity version.
 	//
 	// It increments by one upon every successful modification.
-	EVersion int `gae:",noindex"`
+	EVersion int64 `gae:",noindex"`
 	// EntityCreateTime is the timestamp when this entity was created.
 	//
 	// NOTE: this is not the backend's tryjob creation time,

@@ -327,7 +327,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 	var opts *run.Options
 	for i, cl := range cls {
 		pcl := combo.all[i].pcl
-		exp, act := pcl.GetEversion(), int64(cl.EVersion)
+		exp, act := pcl.GetEversion(), cl.EVersion
 		if exp != act {
 			return nil, errors.Annotate(itriager.ErrOutdatedPMState, "CL %d EVersion changed %d => %d", cl.ID, exp, act).Err()
 		}
@@ -341,7 +341,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 
 		bcls[i] = runcreator.CL{
 			ID:               common.CLID(pcl.GetClid()),
-			ExpectedEVersion: int(pcl.GetEversion()),
+			ExpectedEVersion: pcl.GetEversion(),
 			TriggerInfo:      tr,
 			Snapshot:         cl.Snapshot,
 		}

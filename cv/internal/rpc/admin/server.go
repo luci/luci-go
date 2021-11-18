@@ -201,7 +201,7 @@ func (a *AdminServer) GetCL(ctx context.Context, req *adminpb.GetCLRequest) (res
 	}
 	resp = &adminpb.GetCLResponse{
 		Id:               int64(cl.ID),
-		Eversion:         int64(cl.EVersion),
+		Eversion:         cl.EVersion,
 		ExternalId:       string(cl.ExternalID),
 		UpdateTime:       timestamppb.New(cl.UpdateTime),
 		Snapshot:         cl.Snapshot,
@@ -458,7 +458,7 @@ func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 
 	clvs := make(map[int64]int64, len(p.State.GetPcls()))
 	for _, cl := range cls {
-		clvs[int64(cl.ID)] = int64(cl.EVersion)
+		clvs[int64(cl.ID)] = cl.EVersion
 	}
 	return &adminpb.RefreshProjectCLsResponse{ClVersions: clvs}, nil
 }
@@ -646,7 +646,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 
 	return &adminpb.GetRunResponse{
 		Id:                  string(rid),
-		Eversion:            int64(r.EVersion),
+		Eversion:            r.EVersion,
 		Mode:                string(r.Mode),
 		Status:              r.Status,
 		CreateTime:          common.TspbNillable(r.CreateTime),

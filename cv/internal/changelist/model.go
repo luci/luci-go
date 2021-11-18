@@ -41,7 +41,7 @@ type CL struct {
 
 	// EVersion is entity version. Every update should increment it by 1.
 	// See Update() function.
-	EVersion int `gae:",noindex"`
+	EVersion int64 `gae:",noindex"`
 
 	// UpdateTime is exact time of when this entity was last updated.
 	//
@@ -93,7 +93,7 @@ func (cl *CL) URL() (string, error) { return cl.ExternalID.URL() }
 func (cl *CL) ToUpdatedEvent() *CLUpdatedEvent {
 	return &CLUpdatedEvent{
 		Clid:     int64(cl.ID),
-		Eversion: int64(cl.EVersion),
+		Eversion: cl.EVersion,
 	}
 }
 
@@ -106,7 +106,7 @@ func ToUpdatedEvents(cls ...*CL) *CLUpdatedEvents {
 		}
 		events[i] = &CLUpdatedEvent{
 			Clid:     int64(cl.ID),
-			Eversion: int64(cl.EVersion),
+			Eversion: cl.EVersion,
 		}
 	}
 	sort.Slice(events, func(i, j int) bool {

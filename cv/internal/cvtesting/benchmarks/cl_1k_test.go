@@ -133,7 +133,7 @@ func makePCL(cl *changelist.CL) *prjpb.PCL {
 	tr.Email = tr.Email + " "
 	return &prjpb.PCL{
 		Clid:               int64(cl.ID),
-		Eversion:           int64(cl.EVersion),
+		Eversion:           cl.EVersion,
 		Status:             prjpb.PCL_OK,
 		Submitted:          false,
 		ConfigGroupIndexes: []int32{0},

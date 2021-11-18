@@ -108,7 +108,7 @@ type Creator struct {
 // CL is a helper struct for per-CL input for run creation.
 type CL struct {
 	ID               common.CLID
-	ExpectedEVersion int
+	ExpectedEVersion int64
 	TriggerInfo      *run.Trigger
 	Snapshot         *changelist.Snapshot // Only needed for compat with CQDaemon.
 }
