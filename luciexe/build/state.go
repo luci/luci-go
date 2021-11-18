@@ -199,6 +199,16 @@ func (s *State) LogDatagram(name string, opts ...streamclient.Option) streamclie
 	return ret
 }
 
+// Infra returns a clone of the Build.Infra submessage.
+func (s *State) Infra() *bbpb.BuildInfra {
+	s.buildPbMu.RLock()
+	defer s.buildPbMu.RUnlock()
+	if s.buildPb.Infra == nil {
+		return nil
+	}
+	return proto.Clone(s.buildPb.Infra).(*bbpb.BuildInfra)
+}
+
 // SynthesizeIOProto synthesizes a `.proto` file from the input and ouptut
 // property messages declared at Start() time.
 func (s *State) SynthesizeIOProto(o io.Writer) error {

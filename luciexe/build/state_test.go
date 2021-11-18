@@ -36,7 +36,15 @@ func TestState(t *testing.T) {
 	Convey(`State`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		nowpb := timestamppb.New(testclock.TestRecentTimeUTC)
-		st, ctx, err := Start(ctx, nil)
+
+		origInfra := &bbpb.BuildInfra{
+			Buildbucket: &bbpb.BuildInfra_Buildbucket{
+				ServiceConfigRevision: "I am a string",
+			},
+		}
+		st, ctx, err := Start(ctx, &bbpb.Build{
+			Infra: origInfra,
+		})
 		So(err, ShouldBeNil)
 		defer func() {
 			if st != nil {
@@ -58,6 +66,24 @@ func TestState(t *testing.T) {
 				st.End(nil)
 				So(func() { st.End(nil) }, ShouldPanicLike, "cannot mutate ended build")
 				st = nil
+			})
+		})
+
+		Convey(`Infra`, func() {
+			infra := st.Infra()
+			So(infra.Buildbucket.ServiceConfigRevision, ShouldResemble, "I am a string")
+			infra.Buildbucket.ServiceConfigRevision = "narf"
+			So(origInfra.Buildbucket.ServiceConfigRevision, ShouldResemble, "I am a string")
+
+			Convey(`nil build`, func() {
+				st, _, err := Start(ctx, nil)
+				So(err, ShouldBeNil)
+				defer func() {
+					if st != nil {
+						st.End(nil)
+					}
+				}()
+				So(st.Infra(), ShouldBeNil)
 			})
 		})
 	})
