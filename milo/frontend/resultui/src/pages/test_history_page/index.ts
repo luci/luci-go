@@ -122,6 +122,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       :host {
         display: grid;
         width: 100%;
+        min-width: 800px;
         grid-template-rows: auto auto 1fr;
       }
 
@@ -141,6 +142,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
       #main {
         display: grid;
+        margin: 0 5px;
         grid-template-columns: auto 1fr auto;
         grid-template-rows: auto 1fr;
         grid-template-areas:

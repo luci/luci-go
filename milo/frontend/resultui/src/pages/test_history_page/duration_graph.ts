@@ -21,7 +21,7 @@ import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context
 import { consumer } from '../../libs/context';
 import { parseProtoDuration } from '../../libs/time_utils';
 import commonStyle from '../../styles/common_style.css';
-import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE, X_AXIS_HEIGHT } from './constants';
+import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 @customElement('milo-th-duration-graph')
 @consumer
@@ -31,7 +31,7 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
   protected render() {
     const variants = this.pageState.testHistoryLoader!.variants;
     return html`
-      <svg id="graph" height=${X_AXIS_HEIGHT + CELL_SIZE * variants.length}>
+      <svg id="graph" height=${CELL_SIZE * variants.length}>
         ${variants.map(
           ([vHash], i) => svg`
             <g transform="translate(1, ${i * CELL_SIZE})">

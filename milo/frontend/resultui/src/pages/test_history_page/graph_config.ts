@@ -125,7 +125,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
         display: grid;
         height: 32px;
         padding: 5px;
-        grid-template-columns: auto auto auto auto auto auto 1fr;
+        grid-template-columns: auto auto 1fr;
         grid-gap: 15px;
       }
 

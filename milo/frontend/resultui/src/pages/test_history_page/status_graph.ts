@@ -24,7 +24,7 @@ import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { TestVariantStatus } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
-import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE, X_AXIS_HEIGHT } from './constants';
+import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 const ICON_PADDING = (CELL_SIZE - 24) / 2;
 
@@ -43,7 +43,7 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
   protected render() {
     const variants = this.pageState.testHistoryLoader!.variants;
     return html`
-      <svg id="graph" height=${X_AXIS_HEIGHT + CELL_SIZE * variants.length}>
+      <svg id="graph" height=${CELL_SIZE * variants.length}>
         ${variants.map(
           ([vHash], i) => svg`
             <g transform="translate(1, ${i * CELL_SIZE})">
