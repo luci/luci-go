@@ -419,7 +419,7 @@ func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, 
 
 	var finalErrs errors.MultiError
 	if fatalErr != nil {
-		finalErrs = append(finalErrs, errors.Annotate(fatalErr, "fatal error in builbucket.UpdateBuild").Err())
+		finalErrs = append(finalErrs, errors.Annotate(fatalErr, "fatal error in buildbucket.UpdateBuild").Err())
 	}
 	if err := outputFile.Write(finalBuild); err != nil {
 		finalErrs = append(finalErrs, errors.Annotate(err, "writing final build").Err())
