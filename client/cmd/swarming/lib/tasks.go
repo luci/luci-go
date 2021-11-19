@@ -31,14 +31,14 @@ import (
 )
 
 // CmdTasks returns an object for the `tasks` subcommand.
-func CmdTasks(authFlgas AuthFlags) *subcommands.Command {
+func CmdTasks(authFlags AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "tasks <options>",
 		ShortDesc: "lists tasks",
 		LongDesc:  "List tasks matching the given options.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &tasksRun{}
-			r.Init(authFlgas)
+			r.Init(authFlags)
 			return r
 		},
 	}
@@ -57,8 +57,8 @@ type tasksRun struct {
 	start   float64
 }
 
-func (t *tasksRun) Init(authFlgas AuthFlags) {
-	t.commonFlags.Init(authFlgas)
+func (t *tasksRun) Init(authFlags AuthFlags) {
+	t.commonFlags.Init(authFlags)
 	t.Flags.StringVar(&t.outfile, "json", "", "Path to output JSON results. Implies quiet.")
 	t.Flags.Int64Var(&t.limit, "limit", defaultLimit, "Maximum number of tasks to retrieve.")
 	t.Flags.StringVar(&t.state, "state", "ALL", "Only include tasks in the specified state.")
