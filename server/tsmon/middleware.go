@@ -16,13 +16,13 @@ package tsmon
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
@@ -214,6 +214,9 @@ func (s *State) checkSettings(c context.Context) (*tsmon.State, *Settings) {
 		s.state = state
 		s.state.SetMonitor(monitor.NewNilMonitor()) // doFlush uses its own monitor
 		s.state.InhibitGlobalCallbacksOnFlush()
+		if s.InstanceID != nil {
+			s.instanceID = s.InstanceID(c)
+		}
 	} else if state != s.state {
 		panic("tsmon state in the context was unexpectedly changed between requests")
 	}
@@ -285,10 +288,6 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 	// Need to flush. Update flushingNow. Redo the check under write lock, as well
 	// as do a bunch of other calls while we hold the lock. Will be useful later.
 	s.lock.Lock()
-	if s.instanceID == "" && s.InstanceID != nil {
-		s.instanceID = s.InstanceID(c)
-	}
-	instanceID := s.instanceID
 	lastFlush := s.lastFlush
 	nextFlush = s.nextFlush
 	skip = s.flushingNow || now.Add(epsilonT).Before(nextFlush)
@@ -339,7 +338,7 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 		nextFlush = s.nextFlush
 	}()
 
-	err = s.ensureTaskNumAndFlush(c, instanceID, state, settings)
+	err = s.ensureTaskNumAndFlush(c, state, settings)
 	if err != nil {
 		if err == ErrNoTaskNumber {
 			logging.Warningf(c, "Skipping the tsmon flush: no task number assigned yet")
@@ -362,39 +361,30 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 // the metrics.
 //
 // Returns ErrNoTaskNumber if the task wasn't assigned a task number yet.
-func (s *State) ensureTaskNumAndFlush(c context.Context, instanceID string, state *tsmon.State, settings *Settings) error {
-	var task target.Task
-	defTarget := state.Store().DefaultTarget()
-	if t, ok := defTarget.(*target.Task); ok {
-		task = *t
-	} else {
-		return fmt.Errorf("default tsmon target is not a Task (%T): %v", defTarget, defTarget)
-	}
-
-	// Notify the task number allocator that we are still alive and grab the
-	// TaskNum assigned to us. Use 0 if TaskNumAllocator is nil.
-	var assignedTaskNum int
-	var err error
+func (s *State) ensureTaskNumAndFlush(c context.Context, state *tsmon.State, settings *Settings) error {
 	if s.TaskNumAllocator != nil {
-		assignedTaskNum, err = s.TaskNumAllocator.NotifyTaskIsAlive(c, &task, instanceID)
-		if err != nil && err != ErrNoTaskNumber {
-			return fmt.Errorf("failed to get task number assigned for %q - %s", instanceID, err)
-		}
-	}
+		// Notify the task number allocator that we are still alive and grab
+		// the TaskNum assigned to us.
+		task := *state.Store().DefaultTarget().(*target.Task)
+		switch num, err := s.TaskNumAllocator.NotifyTaskIsAlive(c, &task, s.instanceID); {
+		case err == nil:
+			task.TaskNum = int32(num)
+		case err == ErrNoTaskNumber:
+			if task.TaskNum >= 0 {
+				logging.Warningf(c, "The task was inactive for too long and lost its task number, clearing cumulative metrics")
+				state.ResetCumulativeMetrics(c)
 
-	// Don't do the flush if we still haven't got a task number.
-	if err == ErrNoTaskNumber {
-		if task.TaskNum >= 0 {
-			logging.Warningf(c, "The task was inactive for too long and lost its task number, clearing cumulative metrics")
-			state.ResetCumulativeMetrics(c)
+				// set the task num to -1 to stop resetting cumulative metrics,
+				// in case ErrNoTaskNumber is repeated.
+				task.TaskNum = -1
+				state.Store().SetDefaultTarget(&task)
+			}
+			return err
+		default:
+			return errors.Annotate(err, "failed to get a new task num for %q", s.instanceID).Err()
 		}
-		task.TaskNum = -1
 		state.Store().SetDefaultTarget(&task)
-		return ErrNoTaskNumber
 	}
-
-	task.TaskNum = int32(assignedTaskNum)
-	state.Store().SetDefaultTarget(&task)
 	return s.doFlush(c, state, settings)
 }
 
