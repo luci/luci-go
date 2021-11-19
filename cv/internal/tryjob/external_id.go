@@ -66,12 +66,10 @@ func (e ExternalID) ParseBuildbucketID() (host string, build int64, err error) {
 
 // URL returns URL of the Tryjob.
 func (e ExternalID) URL() (string, error) {
-	idx := strings.IndexRune(string(e), '/')
-	if idx <= 0 {
-		return "", errors.Reason("invalid ExternalID: %q", e).Err()
-	}
-	switch kind := string(e)[:idx]; kind {
-	case "buildbucket":
+	switch kind, err := e.kind(); {
+	case err != nil:
+		return "", err
+	case kind == "buildbucket":
 		host, build, err := e.ParseBuildbucketID()
 		if err != nil {
 			return "", errors.Annotate(err, "invalid tryjob.ExternalID").Err()
@@ -89,4 +87,13 @@ func (e ExternalID) MustURL() string {
 		panic(err)
 	}
 	return ret
+}
+
+func (e ExternalID) kind() (string, error) {
+	s := string(e)
+	idx := strings.IndexRune(s, '/')
+	if idx <= 0 {
+		return "", errors.Reason("invalid ExternalID: %q", s).Err()
+	}
+	return s[:idx], nil
 }

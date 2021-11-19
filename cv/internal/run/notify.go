@@ -145,6 +145,12 @@ func (n *Notifier) NotifyCLsUpdated(ctx context.Context, runID common.RunID, cls
 	})
 }
 
+// NotifyTryjobUpdated tells RunManager that a Tryjob entity was updated.
+func (n *Notifier) NotifyTryjobUpdated(ctx context.Context, runID common.RunID, tID common.TryjobID, eversion int64) error {
+	// TODO(crbug.com/1227363): implement.
+	return errors.New("not implemented")
+}
+
 // NotifyReadyForSubmission informs RunManager that the provided Run will be
 // ready for submission at `eta`.
 func (n *Notifier) NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error {
