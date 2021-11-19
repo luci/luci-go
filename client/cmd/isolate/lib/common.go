@@ -36,7 +36,6 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/archiver/tarring"
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/internal/common"
@@ -45,7 +44,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/profiling"
 	"go.chromium.org/luci/common/system/filesystem"
@@ -106,24 +104,19 @@ func (c *baseCommandRun) newClient(ctx context.Context, addr string, instance st
 
 type commonServerFlags struct {
 	baseCommandRun
-	isolatedFlags isolatedclient.Flags
-	authFlags     authcli.Flags
+	authFlags authcli.Flags
 
 	parsedAuthOpts auth.Options
 }
 
 func (c *commonServerFlags) Init(authOpts auth.Options) {
 	c.baseCommandRun.Init()
-	c.isolatedFlags.Init(&c.Flags)
 	c.authFlags.Register(&c.Flags, authOpts)
 }
 
 func (c *commonServerFlags) Parse() error {
 	var err error
 	if err = c.baseCommandRun.Parse(); err != nil {
-		return err
-	}
-	if err = c.isolatedFlags.Parse(); err != nil {
 		return err
 	}
 	c.parsedAuthOpts, err = c.authFlags.Options()
@@ -134,14 +127,6 @@ func (c *commonServerFlags) createAuthClient(ctx context.Context) (*http.Client,
 	// Don't enforce authentication by using OptionalLogin mode. This is needed
 	// for IP-allowed bots: they have NO credentials to send.
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
-}
-
-func (c *commonServerFlags) createIsolatedClient(authCl *http.Client) (*isolatedclient.Client, error) {
-	userAgent := "isolate-go/" + IsolateVersion
-	if ver, err := version.GetStartupVersion(); err == nil && ver.InstanceID != "" {
-		userAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
-	}
-	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent(userAgent))
 }
 
 type isolateFlags struct {

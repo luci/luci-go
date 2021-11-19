@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"runtime/pprof"
 	"runtime/trace"
@@ -29,10 +28,8 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/archiver/tarring"
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/isolate"
-	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -41,28 +38,19 @@ import (
 func CmdBatchArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "batcharchive <options> file1 file2 ...",
-		ShortDesc: "archives multiple isolated trees at once.",
-		LongDesc: `Archives multiple isolated trees at once.
+		ShortDesc: "archives multiple CAS trees at once.",
+		LongDesc: `Archives multiple CAS trees at once.
 
 Using single command instead of multiple sequential invocations allows to cut
-redundant work when isolated trees share common files (e.g. file hashes are
+redundant work when CAS trees share common files (e.g. file hashes are
 checked only once, their presence on the server is checked only once, and
 so on).
-
-Takes a list of paths to *.isolated.gen.json files that describe what trees to
-isolate. Format of files is:
-{
-  "version": 1,
-  "dir": <absolute path to a directory all other paths are relative to>,
-  "args": [list of command line arguments for single 'archive' command]
-}`,
+`,
 		CommandRun: func() subcommands.CommandRun {
 			c := batchArchiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.casFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
-			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maximum number of in-flight check requests.")
-			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 8, "The maximum number of in-flight uploads.")
 			return &c
 		},
 	}
@@ -70,10 +58,8 @@ isolate. Format of files is:
 
 type batchArchiveRun struct {
 	commonServerFlags
-	casFlags             casclient.Flags
-	dumpJSON             string
-	maxConcurrentChecks  int
-	maxConcurrentUploads int
+	casFlags casclient.Flags
+	dumpJSON string
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
@@ -168,16 +154,12 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		quiet: c.defaultFlags.Quiet,
 	}
 
-	if c.casFlags.UseCAS() {
-		ctx, err := casclient.ContextWithMetadata(ctx, "isolate")
-		if err != nil {
-			return err
-		}
-		_, err = c.uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, opts...)
+	ctx, err = casclient.ContextWithMetadata(ctx, "isolate")
+	if err != nil {
 		return err
 	}
-
-	return c.batchArchiveToIsolate(ctx, al, opts)
+	_, err = c.uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, opts...)
+	return err
 }
 
 func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) {
@@ -190,69 +172,6 @@ func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) 
 		opts[i] = o
 	}
 	return opts, nil
-}
-
-// batchArchiveToIsolate archives a series of isolate files to isolate server.
-func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, al *archiveLogger, opts []*isolate.ArchiveOptions) error {
-	authClient, err := c.createAuthClient(ctx)
-	if err != nil {
-		return err
-	}
-	client, err := c.createIsolatedClient(authClient)
-	if err != nil {
-		return err
-	}
-
-	// Set up a checker and uploader. We limit the uploader to one concurrent
-	// upload, since the uploads are all coming from disk (with the exception of
-	// the isolated JSON itself) and we only want a single goroutine reading from
-	// disk at once.
-	checker := tarring.NewChecker(ctx, client, c.maxConcurrentChecks)
-	uploader := tarring.NewUploader(ctx, client, c.maxConcurrentUploads)
-	a := tarring.NewArchiver(checker, uploader)
-
-	var errArchive error
-	var isolSummaries []tarring.IsolatedSummary
-	for _, opt := range opts {
-		// Parse the incoming isolate file.
-		deps, rootDir, isol, err := isolate.ProcessIsolate(opt)
-		if err != nil {
-			return errors.Annotate(err, "isolate %s: failed to process", opt.Isolate).Err()
-		}
-		log.Printf("Isolate %s referenced %d deps", opt.Isolate, len(deps))
-
-		isolSummary, err := a.Archive(&tarring.ArchiveArgs{
-			Deps:          deps,
-			RootDir:       rootDir,
-			IgnoredPathRe: opt.IgnoredPathFilterRe,
-			Isolated:      opt.Isolated,
-			Isol:          isol})
-		if err != nil && errArchive == nil {
-			errArchive = errors.Annotate(err, "isolate %s: failed to archive", opt.Isolate).Err()
-		} else {
-			al.printSummary(isolSummary)
-			isolSummaries = append(isolSummaries, isolSummary)
-		}
-	}
-	if errArchive != nil {
-		return errArchive
-	}
-	// Make sure that all pending items have been checked.
-	if err := checker.Close(); err != nil {
-		return err
-	}
-
-	// Make sure that all the uploads have completed successfully.
-	if err := uploader.Close(); err != nil {
-		return err
-	}
-
-	if err := dumpSummaryJSON(c.dumpJSON, isolSummaries...); err != nil {
-		return err
-	}
-
-	al.LogSummary(ctx, checker.Hit.Count(), checker.Miss.Count(), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()))
-	return nil
 }
 
 // processGenJSON validates a genJSON file and returns the contents.
