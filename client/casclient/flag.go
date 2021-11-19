@@ -36,7 +36,10 @@ func (c *Flags) Init(f *flag.FlagSet) {
 // Parse applies changes specified by command line flags.
 func (c *Flags) Parse() error {
 	if c.Instance == "" {
-		// -cas-instance is optional for now
+		if c.Addr == AddrProd {
+			return errors.Reason("CAS instance or local CAS address must be specified").Err()
+		}
+		// Use local CAS address in this case.
 		return nil
 	}
 	ins, err := parseCASInstance(c.Instance)
