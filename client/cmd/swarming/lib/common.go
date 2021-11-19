@@ -22,7 +22,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -33,17 +32,12 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
-	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/lhttp"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/system/signals"
 )
 
 const (
@@ -89,7 +83,6 @@ type swarmingService interface {
 	TaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	TaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	FilesFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error)
 	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
 	CountBots(ctx context.Context, dimensions ...string) (*swarming.SwarmingRpcsBotsCount, error)
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
@@ -100,7 +93,6 @@ type swarmingService interface {
 type swarmingServiceImpl struct {
 	client  *http.Client
 	service *swarming.Service
-	worker  int
 }
 
 func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
@@ -184,37 +176,6 @@ func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (re
 		return ierr
 	})
 	return res, err
-}
-
-func (s *swarmingServiceImpl) FilesFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error) {
-	isolatedOpts := []isolatedclient.Option{
-		isolatedclient.WithAuthClient(s.client),
-		isolatedclient.WithNamespace(isolateRef.Namespace),
-		isolatedclient.WithUserAgent(SwarmingUserAgent),
-	}
-	isolatedClient := isolatedclient.NewClient(isolateRef.Isolatedserver, isolatedOpts...)
-
-	var filesMu sync.Mutex
-	var files []string
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
-	opts := &downloader.Options{
-		MaxConcurrentJobs: s.worker,
-		FileCallback: func(name string, _ *isolated.File) {
-			filesMu.Lock()
-			files = append(files, name)
-			filesMu.Unlock()
-		},
-		FileStatsCallback: func(fileStats downloader.FileStats, _ time.Duration) {
-			logging.Debugf(ctx, "Downloaded %d of %d bytes in %d of %d files to %s",
-				fileStats.BytesCompleted, fileStats.BytesScheduled,
-				fileStats.CountCompleted, fileStats.CountScheduled,
-				outdir)
-		},
-	}
-	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(isolateRef.Isolated), outdir, opts)
-	return files, dl.Wait()
 }
 
 // FilesFromCAS downloads outputs from CAS.
@@ -358,7 +319,6 @@ type commonFlags struct {
 	defaultFlags common.Flags
 	authFlags    AuthFlags
 	serverURL    string
-	worker       int
 }
 
 // Init initializes common flags.
@@ -368,7 +328,6 @@ func (c *commonFlags) Init(authFlags AuthFlags) {
 	c.authFlags.Register(&c.Flags)
 	c.Flags.StringVar(&c.serverURL, "server", os.Getenv(ServerEnvVar), fmt.Sprintf("Server URL; required. Set $%s to set a default.", ServerEnvVar))
 	c.Flags.StringVar(&c.serverURL, "S", os.Getenv(ServerEnvVar), "Alias for -server.")
-	c.Flags.IntVar(&c.worker, "worker", 8, "Number of workers used to download isolated files.")
 }
 
 // Parse parses the common flags.
@@ -409,7 +368,7 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	return &swarmingServiceImpl{
 		client:  authcli,
 		service: s,
-		worker:  c.worker}, nil
+	}, nil
 }
 
 func tagTransientGoogleAPIError(err error) error {

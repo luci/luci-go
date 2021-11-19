@@ -202,18 +202,6 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 		cmdEnvMap.Set(prefix.Key, strings.Join(paths, string(os.PathListSeparator)))
 	}
 
-	// Download input files.
-	if properties.InputsRef != nil && properties.InputsRef.Isolated != "" && properties.CasInputRoot != nil {
-		return nil, errors.Reason("fetched TaskRequest has files from Isolate and RBE-CAS").Err()
-	}
-
-	// Support isolated input in task request.
-	if properties.InputsRef != nil && properties.InputsRef.Isolated != "" {
-		if _, err := service.FilesFromIsolate(ctx, c.work, properties.InputsRef); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch files from isolate").Err()
-		}
-	}
-
 	// Support RBE-CAS input in task request.
 	if properties.CasInputRoot != nil {
 		cascli, err := c.authFlags.NewRBEClient(ctx, casclient.AddrProd, properties.CasInputRoot.CasInstance)

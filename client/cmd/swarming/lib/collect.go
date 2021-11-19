@@ -267,21 +267,12 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 			}
 			output = taskOutput.Output
 		}
-		// Download the result isolated if available and if we have a place to put it.
+		// Download the result files if available and if we have a place to put it.
 		if c.outputDir != "" {
 			logging.Debugf(ctx, "Fetching task outputs: %s", taskID)
 			outdir, err := prepareOutputDir(c.outputDir, taskID)
 			if err != nil {
 				return err
-			}
-			if result.OutputsRef != nil && result.CasOutputRoot != nil {
-				return errors.Reason("Invalid TaskResult: both OutputsRef and CasOutputRoot exist").Err()
-			}
-			if result.OutputsRef != nil {
-				outputs, err = service.FilesFromIsolate(ctx, outdir, result.OutputsRef)
-				if err != nil {
-					return tagTransientGoogleAPIError(err)
-				}
 			}
 			if result.CasOutputRoot != nil {
 				cascli, err := c.authFlags.NewRBEClient(ctx, c.casAddr, result.CasOutputRoot.CasInstance)

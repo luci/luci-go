@@ -137,39 +137,6 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.err, ShouldErrLike, "502")
 	})
 
-	Convey(`Test bot finished with outputs on Isolate server`, t, func() {
-		var writtenTo string
-		var writtenIsolated string
-		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
-				return &swarming.SwarmingRpcsTaskResult{
-					State:      "COMPLETED",
-					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
-				}, nil
-			},
-			taskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
-				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
-			},
-			filesFromIsolate: func(c context.Context, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
-				writtenTo = output
-				writtenIsolated = ref.Isolated
-				return []string{"hello"}, nil
-			},
-		}
-		runner := &collectRun{
-			taskOutput: taskOutputAll,
-			outputDir:  "bah",
-		}
-		result := testCollectPollWithServer(runner, service)
-		So(result.err, ShouldBeNil)
-		So(result.result, ShouldNotBeNil)
-		So(result.result.State, ShouldResemble, "COMPLETED")
-		So(result.output, ShouldResemble, "yipeeee")
-		So(result.outputs, ShouldResemble, []string{"hello"})
-		So(writtenTo, ShouldStartWith, "bah")
-		So(writtenIsolated, ShouldResemble, "aaaaaaaaa")
-	})
-
 	Convey(`Test bot finished with outputs on CAS`, t, func() {
 		var writtenTo string
 		var writtenInstance string
@@ -268,8 +235,11 @@ func TestCollectPollForTasks(t *testing.T) {
 					return nil, c.Err()
 				}
 				return &swarming.SwarmingRpcsTaskResult{
-					State:      "COMPLETED",
-					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+					State: "COMPLETED",
+					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
+						CasInstance: "test-instance",
+						Digest:      &swarming.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+					},
 				}, nil
 			},
 			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
@@ -309,8 +279,11 @@ func TestCollectPollForTasks(t *testing.T) {
 		service := &testService{
 			taskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return &swarming.SwarmingRpcsTaskResult{
-					State:      "COMPLETED",
-					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+					State: "COMPLETED",
+					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
+						CasInstance: "test-instance",
+						Digest:      &swarming.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+					},
 				}, nil
 			},
 			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
@@ -363,8 +336,11 @@ func TestCollectPollForTasks(t *testing.T) {
 		service := &testService{
 			taskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return &swarming.SwarmingRpcsTaskResult{
-					State:      "COMPLETED",
-					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+					State: "COMPLETED",
+					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
+						CasInstance: "test-instance",
+						Digest:      &swarming.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+					},
 				}, nil
 			},
 			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
