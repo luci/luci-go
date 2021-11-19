@@ -24,9 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/client/archiver/pipeline"
 	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
-	"go.chromium.org/luci/client/isolated"
 	clientswarming "go.chromium.org/luci/client/swarming"
 	"go.chromium.org/luci/common/errors"
 	commonisolated "go.chromium.org/luci/common/isolated"
@@ -218,37 +216,7 @@ func upload(ctx context.Context, client *isolatedclient.Client, baseDir, outDir 
 	var digest commonisolated.HexDigest
 
 	if !isEmpty {
-		arch := pipeline.NewArchiver(ctx, client, nil)
-		defer arch.Close() // Ignore "was already closed" error here.
-
-		items, err := isolated.ArchiveFiles(ctx, arch, baseDir, []string{outDir})
-		if err != nil {
-			return "", nil, errors.Annotate(err, "failed to upload files in %s", absOutDir).Err()
-		}
-		outDirItem := items[0]
-
-		outDirItem.WaitForHashed()
-		if err := outDirItem.Error(); err != nil {
-			return "", nil, errors.Annotate(err, "failed to upload isolated for %s", absOutDir).Err()
-		}
-
-		if err := arch.Close(); err != nil {
-			return "", nil, errors.Annotate(err, "failed to Close archiver").Err()
-		}
-
-		itemsHot, err := arch.Stats().PackedHits()
-		if err != nil {
-			return "", nil, errors.Annotate(err, "failed to call PackedHits").Err()
-		}
-
-		itemsCold, err := arch.Stats().PackedMisses()
-		if err != nil {
-			return "", nil, errors.Annotate(err, "failed to call PackedMisses").Err()
-		}
-
-		stats.ItemsHot = itemsHot
-		stats.ItemsCold = itemsCold
-		digest = outDirItem.Digest()
+		// TODO: implement CAS archive.
 	}
 
 	stats.Duration = time.Now().Sub(start)
