@@ -32,6 +32,11 @@ cron:
   url: /internal/cron/buildbucket/update_buckets
   schedule: every 1 minutes
 
+- description: report builder metrics
+  target: monitor
+  url: /internal/cron/buildbucket/report_builder_metrics
+  schedule: every 1 minute
+
 ### ereporter2
 
 - description: ereporter2 cleanup
