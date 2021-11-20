@@ -34,8 +34,8 @@ cron:
 
 - description: report builder metrics
   target: monitor
-  url: /internal/cron/buildbucket/report_builder_metrics
-  schedule: every 1 minute
+  url: /internal/cron/report_builder_metrics
+  schedule: every 1 minutes
 
 ### ereporter2
 
