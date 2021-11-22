@@ -48,7 +48,7 @@ type Updater struct {
 	tqd        *tq.Dispatcher
 	rmNotifier rmNotifier
 
-	mutex    sync.Mutex // guards `backends`
+	rwmutex  sync.RWMutex // guards `backends`
 	backends map[string]updaterBackend
 }
 
@@ -74,8 +74,8 @@ func (u *Updater) RegisterBackend(b updaterBackend) {
 	if strings.ContainsRune(kind, '/') {
 		panic(fmt.Errorf("backend %T of kind %q must not contain '/'", b, kind))
 	}
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
+	u.rwmutex.Lock()
+	defer u.rwmutex.Unlock()
 	if _, exists := u.backends[kind]; exists {
 		panic(fmt.Errorf("backend %q is already registered", kind))
 	}
@@ -106,8 +106,8 @@ func (u *Updater) backendFor(t *Tryjob) (updaterBackend, error) {
 	if err != nil {
 		return nil, err
 	}
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
+	u.rwmutex.RLock()
+	defer u.rwmutex.RUnlock()
 	if b, exists := u.backends[kind]; exists {
 		return b, nil
 	}
