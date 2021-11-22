@@ -33,7 +33,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
@@ -188,7 +187,7 @@ type triggerRun struct {
 	hardTimeout               int64
 	ioTimeout                 int64
 	cipdPackage               stringmapflag.Value
-	outputs                   common.Strings
+	outputs                   stringlistflag.Flag
 	optionalDimension         optionalDimension
 	serviceAccount            string
 	relativeCwd               string
@@ -197,7 +196,7 @@ type triggerRun struct {
 	// Task request.
 	taskName       string
 	priority       int64
-	tags           common.Strings
+	tags           stringlistflag.Flag
 	user           string
 	expiration     int64
 	enableResultDB bool
