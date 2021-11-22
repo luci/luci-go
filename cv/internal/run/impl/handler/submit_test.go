@@ -558,7 +558,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							reqs := selfSetReviewRequests()
 							So(reqs, ShouldHaveLength, 1)
 							So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
-							// The gerrit request is set with NOTIFY_ONWER, and
+							// The gerrit request is set with NOTIFY_OWNER, and
 							// the NotifyDetails only includes the voters' IDs w/o
 							// the owner's ID. Hence, [100 and 101]
 							//
@@ -848,7 +848,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						reqs := selfSetReviewRequests()
 						So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
 						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
-						// The gerrit request is set with NOTIFY_ONWER, and
+						// The gerrit request is set with NOTIFY_OWNER, and
 						// the NotifyDetails only includes the voters' IDs w/o
 						// the owner's ID. Hence, [100 and 101]
 						//
@@ -910,6 +910,24 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						assertNotify(reqs[1], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
 						assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
 						So(reqs[1].Message, ShouldContainSubstring, "CV submitted this CL, but failed to submit")
+					})
+
+					Convey("don't attempt posting dependent failure message if posted already", func() {
+						ct.GFake.MutateChange(gHost, int(ci2.GetNumber()), func(c *gf.Change) {
+							msgs := c.Info.GetMessages()
+							msgs = append(msgs, &gerritpb.ChangeMessageInfo{
+								Message: partiallySubmittedMsgForSubmittedCLs,
+							})
+							gf.Messages(msgs...)(c.Info)
+						})
+						runAndVerify(func(changeNum int64, lastMsg string) {
+							if changeNum == ci2.GetNumber() {
+								So(lastMsg, ShouldContainSubstring, partiallySubmittedMsgForSubmittedCLs)
+							}
+						})
+						reqs := selfSetReviewRequests()
+						So(reqs, ShouldHaveLength, 1)
+						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber()) // no request to ci2
 					})
 
 					Convey("Unclassified failure", func() {

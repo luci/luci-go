@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
+	"go.chromium.org/luci/cv/internal/run/impl/util"
 )
 
 // OnReadyForSubmission implements Handler interface.
@@ -544,17 +545,12 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 		}
 
 		msg := fmt.Sprintf("%s%s", partiallySubmittedMsgForSubmittedCLs, sb.String())
-		for i, cl := range submitted {
-			i, g := i, cl.Detail.GetGerrit()
-			gc, err := impl.GFactory.MakeClient(ctx, g.GetHost(), runID.LUCIProject())
-			if err != nil {
-				errs[len(failed)+len(pending)+i] = err
-				continue
-			}
+		for i, rcl := range submitted {
+			i, rcl := i, rcl
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				errs[len(failed)+len(pending)+i] = postMsgForDependentFailures(ctx, gc, g.GetInfo(), msg)
+				errs[len(failed)+len(pending)+i] = postMsgForDependentFailures(ctx, impl.GFactory, rcl, msg)
 			}()
 		}
 
@@ -946,7 +942,35 @@ func classifyErr(ctx context.Context, err error) *eventpb.SubmissionCompleted {
 
 // postMsgForDependentFailures posts a review message to
 // a given CL to notify submission failures of the dependent CLs.
-func postMsgForDependentFailures(ctx context.Context, gc gerrit.Client, ci *gerritpb.ChangeInfo, msg string) error {
+func postMsgForDependentFailures(ctx context.Context, gf gerrit.Factory, rcl *run.RunCL, msg string) error {
+	queryOpts := []gerritpb.QueryOption{gerritpb.QueryOption_MESSAGES}
+	posted, err := util.IsActionTakenOnGerritCL(ctx, gf, rcl, queryOpts, func(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time {
+		// In practice, Gerrit generally orders the messages from earliest to
+		// latest. So iterating in the reverse order because it's more likely the
+		// desired message is posted recently. Also don't visit any messages before
+		// the run trigger as those messages should belong to previous Runs.
+		clTriggeredAt := rcl.Trigger.Time.AsTime()
+		for i := len(ci.GetMessages()) - 1; i >= 0; i-- {
+			m := ci.GetMessages()[i]
+			switch t := m.GetDate().AsTime(); {
+			case t.Before(clTriggeredAt):
+				// i-th message is too old, no need to check even older ones.
+				return time.Time{}
+			case strings.Contains(m.GetMessage(), msg):
+				return t
+			}
+		}
+		return time.Time{}
+	})
+
+	switch {
+	case err != nil:
+		return err
+	case !posted.IsZero():
+		return nil
+	}
+
+	ci := rcl.Detail.GetGerrit().GetInfo()
 	votes := ci.GetLabels()[trigger.CQLabelName].GetAll()
 	voters := make([]int64, 0, len(votes))
 	attens := stringset.New(len(votes))
@@ -959,16 +983,7 @@ func postMsgForDependentFailures(ctx context.Context, gc gerrit.Client, ci *gerr
 		}
 	}
 	sort.Slice(voters, func(i, j int) bool { return voters[i] < voters[j] })
-	aset := make([]*gerritpb.AttentionSetInput, len(attens))
-	reason := fmt.Sprintf("ps#%d: failed to submit dependent CLs",
-		ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber())
-	for i, att := range attens.ToSortedSlice() {
-		aset[i] = &gerritpb.AttentionSetInput{
-			User:   att,
-			Reason: reason,
-		}
-	}
-	_, err := gc.SetReview(ctx, &gerritpb.SetReviewRequest{
+	req := &gerritpb.SetReviewRequest{
 		Number:     ci.GetNumber(),
 		Project:    ci.GetProject(),
 		RevisionId: ci.GetCurrentRevision(),
@@ -985,7 +1000,15 @@ func postMsgForDependentFailures(ctx context.Context, gc gerrit.Client, ci *gerr
 				},
 			},
 		},
-		AddToAttentionSet: aset,
-	})
-	return err
+		AddToAttentionSet: make([]*gerritpb.AttentionSetInput, len(attens)),
+	}
+	reason := fmt.Sprintf("ps#%d: failed to submit dependent CLs",
+		ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber())
+	for i, att := range attens.ToSortedSlice() {
+		req.AddToAttentionSet[i] = &gerritpb.AttentionSetInput{
+			User:   att,
+			Reason: reason,
+		}
+	}
+	return util.MutateGerritCL(ctx, gf, rcl, req, 1*time.Minute, "post-msg-for-dependent-failure")
 }
