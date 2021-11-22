@@ -36,7 +36,6 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/client/archiver/tarring"
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
@@ -259,10 +258,6 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 	args[0] = prefix
 	copy(args[1:], a)
 	return fmt.Printf("%s"+format, args...)
-}
-
-func (al *archiveLogger) printSummary(summary tarring.IsolatedSummary) {
-	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
 }
 
 func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *casclient.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
