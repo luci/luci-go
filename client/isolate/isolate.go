@@ -15,8 +15,6 @@
 package isolate
 
 import (
-	"bytes"
-	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -25,11 +23,9 @@ import (
 	"runtime"
 	"strings"
 
-	"go.chromium.org/luci/client/archiver/pipeline"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 )
 
 // IsolatedGenJSONVersion is used in the batcharchive json format.
@@ -142,19 +138,6 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 	return subst, err
 }
 
-// Archive processes a .isolate, generates a .isolated and archive it.
-// Returns a *PendingItem to the .isolated.
-func Archive(arch *pipeline.Archiver, opts *ArchiveOptions) *pipeline.PendingItem {
-	displayName := filepath.Base(opts.Isolated)
-	f, err := archive(arch, opts, displayName)
-	if err != nil {
-		i := &pipeline.PendingItem{DisplayName: displayName}
-		i.SetErr(err)
-		return i
-	}
-	return f
-}
-
 func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions) ([]string, string, error) {
 	// Expand variables in the deps, and convert each path to an absolute form.
 	for i := range deps {
@@ -264,74 +247,4 @@ func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 		relDeps[i] = rel
 	}
 	return relDeps, rootDir, nil
-}
-
-func archive(arch *pipeline.Archiver, opts *ArchiveOptions, displayName string) (*pipeline.PendingItem, error) {
-	deps, rootDir, i, err := ProcessIsolate(opts)
-	if err != nil {
-		return nil, err
-	}
-	// Handle each dependency, either a file or a directory.
-	var fileItems []*pipeline.PendingItem
-	for _, dep := range deps {
-		relPath, err := filepath.Rel(rootDir, dep)
-		if err != nil {
-			return nil, err
-		}
-		// Grab the stats right away; this can be used for both checking whether
-		// it's a directory and checking whether it's a link.
-		info, err := os.Lstat(dep)
-		if err != nil {
-			return nil, err
-		}
-		if mode := info.Mode(); mode.IsDir() {
-			if relPath, err = filepath.Rel(rootDir, dep); err != nil {
-				return nil, err
-			}
-			dirFItems, dirSymItems, err := pipeline.PushDirectory(arch, dep, relPath)
-			if err != nil {
-				return nil, err
-			}
-			for pending, item := range dirFItems {
-				i.Files[item.RelPath] = isolated.BasicFile("", int(item.Info.Mode()), item.Info.Size())
-				fileItems = append(fileItems, pending)
-			}
-			for relPath, dstPath := range dirSymItems {
-				i.Files[relPath] = isolated.SymLink(dstPath)
-			}
-		} else {
-			if mode&os.ModeSymlink == os.ModeSymlink {
-				l, err := os.Readlink(dep)
-				if err != nil {
-					// Kill the process: there's no reason to continue if a file is
-					// unavailable.
-					log.Fatalf("Unable to stat %q: %v", dep, err)
-				}
-				i.Files[relPath] = isolated.SymLink(l)
-			} else {
-				i.Files[relPath] = isolated.BasicFile("", int(mode.Perm()), info.Size())
-				fileItems = append(fileItems, arch.PushFile(relPath, dep, -info.Size()))
-			}
-		}
-	}
-
-	for _, item := range fileItems {
-		item.WaitForHashed()
-		if err = item.Error(); err != nil {
-			return nil, err
-		}
-		f := i.Files[item.DisplayName]
-		f.Digest = item.Digest()
-		i.Files[item.DisplayName] = f
-	}
-
-	raw := &bytes.Buffer{}
-	if err = json.NewEncoder(raw).Encode(i); err != nil {
-		return nil, err
-	}
-
-	if err := ioutil.WriteFile(opts.Isolated, raw.Bytes(), 0644); err != nil {
-		return nil, err
-	}
-	return arch.Push(displayName, isolatedclient.NewBytesSource(raw.Bytes()), 0), nil
 }
