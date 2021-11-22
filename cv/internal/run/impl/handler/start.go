@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -44,7 +45,7 @@ const (
 )
 
 // Start implements Handler interface.
-func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
+func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", rs.ID).Err()
@@ -55,27 +56,59 @@ func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 		return &Result{State: rs}, nil
 	}
 
-	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
-	if err != nil {
-		return nil, err
-	}
-
-	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	rs = rs.ShallowCopy()
 	rs.Status = run.Status_RUNNING
-	rs.StartTime = now
+	rs.StartTime = datastore.RoundTime(clock.Now(ctx).UTC())
 	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
-		Time: timestamppb.New(now),
+		Time: timestamppb.New(rs.StartTime),
 		Kind: &run.LogEntry_Started_{
 			Started: &run.LogEntry_Started{},
 		},
 	})
-	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-		Deadline: timestamppb.New(now.Add(maxPostStartMessageDuration)),
-		Work: &run.OngoingLongOps_Op_PostStartMessage{
-			PostStartMessage: true,
-		},
+
+	var cg *prjcfg.ConfigGroup
+	var runCLs []*run.RunCL
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.Go(func() (err error) {
+		cg, err = prjcfg.GetConfigGroup(ectx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+		if err != nil {
+			return err
+		}
+		return nil
 	})
+	eg.Go(func() (err error) {
+		runCLs, err = run.LoadRunCLs(ectx, rs.ID, rs.CLs)
+		return err
+	})
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	switch requirement, err := computeRequirement(ctx, requirementInput{
+		cg:      cg,
+		owner:   rs.Owner,
+		cls:     runCLs,
+		options: rs.Options,
+	}); {
+	case err == nil:
+		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+			Deadline: timestamppb.New(clock.Now(ctx).Add(maxPostStartMessageDuration)),
+			Work: &run.OngoingLongOps_Op_PostStartMessage{
+				PostStartMessage: true,
+			},
+		})
+		rs.Tryjobs = &run.Tryjobs{
+			Requirement: requirement,
+		}
+		// TODO(crbug/1227363): enqueue long op to execute requirement.
+	case isInvalidRequirementErr(err):
+		// TODO(crbug/1227363): enqueue long op to cancel triggers
+	default:
+		return nil, errors.Annotate(err, "failed to compute tryjob requirement").Err()
+	}
+	// Note that it is inevitable that duplicate pickup latency metric maybe
+	// emitted for the same Run if the state transition fails later that
+	// causes a retry.
 	recordPickupLatency(ctx, &(rs.Run), cg)
 	return &Result{State: rs}, nil
 }
