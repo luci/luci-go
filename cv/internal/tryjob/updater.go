@@ -71,7 +71,7 @@ func NewUpdater(tqd *tq.Dispatcher, rm rmNotifier) *Updater {
 // Panics if backend for the same kind is already registered.
 func (u *Updater) RegisterBackend(b updaterBackend) {
 	kind := b.Kind()
-	if strings.IndexRune(kind, '/') >= 0 {
+	if strings.ContainsRune(kind, '/') {
 		panic(fmt.Errorf("backend %T of kind %q must not contain '/'", b, kind))
 	}
 	u.mutex.Lock()
