@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/util"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -239,7 +240,7 @@ func TestPostStartMessage(t *testing.T) {
 			})
 
 			Convey("later retry", func() {
-				ct.Clock.Add(staleCLAgeThreshold)
+				ct.Clock.Add(util.StaleCLAgeThreshold)
 				res, err := opRetry.Do(ctx)
 				So(err, ShouldBeNil)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)

@@ -21,8 +21,6 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -31,26 +29,16 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/util"
 	"go.chromium.org/luci/cv/internal/usertext"
 )
-
-// staleCLAgeThreshold controls when CV should fetch latest Gerrit info before
-// trying to post the starting message.
-//
-// Large values increase the chance of duplicate starting messages,
-// while low values increase load on Gerrit.
-const staleCLAgeThreshold = 10 * time.Second
 
 // notPosted means start message wasn't posted yet.
 //
@@ -185,7 +173,9 @@ func (op *PostStartMessageOp) doCL(ctx context.Context, rcl *run.RunCL) (time.Ti
 	if op.IsCancelRequested() {
 		return notPosted, errCancelHonored
 	}
-	switch postedAt, err := op.isAlreadyPosted(ctx, rcl); {
+
+	queryOpts := []gerritpb.QueryOption{gerritpb.QueryOption_MESSAGES}
+	switch postedAt, err := util.IsActionTakenOnGerritCL(ctx, op.GFactory, rcl, queryOpts, op.hasStartMessagePosted); {
 	case err != nil:
 		return notPosted, errors.Annotate(err, "failed to check if message was already posted").Err()
 	case postedAt != notPosted:
@@ -196,70 +186,22 @@ func (op *PostStartMessageOp) doCL(ctx context.Context, rcl *run.RunCL) (time.Ti
 	if op.IsCancelRequested() {
 		return notPosted, errCancelHonored
 	}
-	return op.post(ctx, rcl)
-}
 
-func (op *PostStartMessageOp) isAlreadyPosted(ctx context.Context, rcl *run.RunCL) (time.Time, error) {
-	// Check if Gerrit CL already has the starting message by first checking CV's
-	// own cache (CL entity in Datastore) and if the cache is old, fetching latest
-	// info from Gerrit.
-	cl := changelist.CL{ID: rcl.ID}
-	switch err := datastore.Get(ctx, &cl); {
-	case err == datastore.ErrNoSuchEntity:
-		return notPosted, errors.Annotate(err, "CL no longer exists").Err()
-	case err != nil:
-		return notPosted, errors.Annotate(err, "failed to load CL").Tag(transient.Tag).Err()
-	}
-
-	switch posted := op.findMessageTS(rcl, cl.Snapshot.GetGerrit().GetInfo()); {
-	case posted != notPosted:
-		return posted, nil
-	case clock.Since(ctx, cl.Snapshot.GetExternalUpdateTime().AsTime()) < staleCLAgeThreshold:
-		// Accept possibility of duplicate messages within the staleCLAgeThreshold.
-		return notPosted, nil
-	}
-
-	// Fetch the latest CL details from Gerrit.
-	gc, err := op.GFactory.MakeClient(ctx, rcl.Detail.GetGerrit().GetHost(), op.Run.ID.LUCIProject())
+	req, err := op.makeSetReviewReq(rcl)
 	if err != nil {
 		return notPosted, err
 	}
-
-	req := &gerritpb.GetChangeRequest{
-		Project: rcl.Detail.GetGerrit().GetInfo().GetProject(),
-		Number:  rcl.Detail.GetGerrit().GetInfo().GetNumber(),
-		Options: []gerritpb.QueryOption{gerritpb.QueryOption_MESSAGES},
+	if err := util.MutateGerritCL(ctx, op.GFactory, rcl, req, 2*time.Minute, "post-start-message"); err != nil {
+		return notPosted, err
 	}
-	var ci *gerritpb.ChangeInfo
-	outerErr := op.GFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		ci, err = gc.GetChange(ctx, req, opt)
-		switch grpcutil.Code(err) {
-		case codes.OK:
-			return nil
-		case codes.PermissionDenied:
-			// This is permanent error which shouldn't be retried.
-			return err
-		case codes.NotFound:
-			return gerrit.ErrStaleData
-		default:
-			err = gerrit.UnhandledError(ctx, err, "Gerrit.GetChange")
-			return err
-		}
-	})
-	switch {
-	case err != nil:
-		return notPosted, errors.Annotate(err, "failed to get the latest Gerrit ChangeInfo").Err()
-	case outerErr != nil:
-		// Shouldn't happen, unless Mirror iterate itself errors out for some
-		// reason.
-		return notPosted, outerErr
-	default:
-		return op.findMessageTS(rcl, ci), nil
-	}
+	// NOTE: to avoid another round-trip to Gerrit, use the CV time here even
+	// though it isn't the same as what Gerrit recorded.
+	return clock.Now(ctx).Truncate(time.Second), nil
 }
 
-// findMessageTS returns when the start message was posted on a CL or `notPosted`.
-func (op *PostStartMessageOp) findMessageTS(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time {
+// hasStartMessagePosted returns when the start message was posted on a CL or
+// zero time.
+func (op *PostStartMessageOp) hasStartMessagePosted(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time {
 	// Look at latest messages first for efficiency,
 	// and skip all messages which are too old.
 	clTriggeredAt := rcl.Trigger.Time.AsTime()
@@ -283,61 +225,7 @@ func (op *PostStartMessageOp) findMessageTS(rcl *run.RunCL, ci *gerritpb.ChangeI
 	return notPosted
 }
 
-func (op *PostStartMessageOp) post(ctx context.Context, rcl *run.RunCL) (time.Time, error) {
-	msg, err := op.makeMessage(rcl)
-	if err != nil {
-		return notPosted, errors.Annotate(err, "failed to generate the starting message").Err()
-	}
-	gc, err := op.GFactory.MakeClient(ctx, rcl.Detail.GetGerrit().GetHost(), op.Run.ID.LUCIProject())
-	if err != nil {
-		return notPosted, err
-	}
-
-	ctx, cancelLease, err := lease.ApplyOnCL(ctx, rcl.ID, 2*time.Minute, "post-start-message")
-	if err != nil {
-		return notPosted, err
-	}
-	defer cancelLease()
-
-	req := &gerritpb.SetReviewRequest{
-		Project:    rcl.Detail.GetGerrit().GetInfo().GetProject(),
-		Number:     rcl.Detail.GetGerrit().GetInfo().GetNumber(),
-		RevisionId: rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision(),
-		Tag:        op.Run.Mode.GerritMessageTag(),
-		Notify:     gerritpb.Notify_NOTIFY_NONE,
-		Message:    msg,
-	}
-	outerErr := op.GFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		_, err = gc.SetReview(ctx, req, opt)
-		switch grpcutil.Code(err) {
-		case codes.OK:
-			return nil
-		case codes.PermissionDenied:
-			// This is a permanent error which shouldn't be retried.
-			return err
-		case codes.NotFound:
-			// This is known to happen on new CLs or on recently created revisions.
-			return gerrit.ErrStaleData
-		default:
-			err = gerrit.UnhandledError(ctx, err, "Gerrit.SetReview")
-			return err
-		}
-	})
-	switch {
-	case err != nil:
-		return notPosted, errors.Annotate(err, "failed to Gerrit.SetReview").Err()
-	case outerErr != nil:
-		// Shouldn't happen, unless MirrorIterator itself errors out for some
-		// reason.
-		return notPosted, outerErr
-	default:
-		// NOTE: to avoid another round-trip to Gerrit, use the CV time here even
-		// though it isn't the same as what Gerrit recorded.
-		return clock.Now(ctx).Truncate(time.Second), nil
-	}
-}
-
-func (op *PostStartMessageOp) makeMessage(rcl *run.RunCL) (string, error) {
+func (op *PostStartMessageOp) makeSetReviewReq(rcl *run.RunCL) (*gerritpb.SetReviewRequest, error) {
 	humanMsg := usertext.OnRunStartedGerritMessage(op.Run, op.cfg, op.Env)
 	bd := botdata.BotData{
 		Action:      botdata.Start,
@@ -345,5 +233,16 @@ func (op *PostStartMessageOp) makeMessage(rcl *run.RunCL) (string, error) {
 		Revision:    rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision(),
 		TriggeredAt: rcl.Trigger.Time.AsTime(),
 	}
-	return botdata.Append(humanMsg, bd)
+	msg, err := botdata.Append(humanMsg, bd)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to generate the starting message").Err()
+	}
+	return &gerritpb.SetReviewRequest{
+		Project:    rcl.Detail.GetGerrit().GetInfo().GetProject(),
+		Number:     rcl.Detail.GetGerrit().GetInfo().GetNumber(),
+		RevisionId: rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision(),
+		Tag:        op.Run.Mode.GerritMessageTag(),
+		Notify:     gerritpb.Notify_NOTIFY_NONE,
+		Message:    msg,
+	}, nil
 }
