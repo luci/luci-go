@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package isolated
+package lib
 
 import (
 	"path/filepath"
@@ -32,12 +32,12 @@ func TestScatterGatherAdd(t *testing.T) {
 	rp3unclean := rp3 + "/"
 
 	Convey(`Test that Add works in a good case.`, t, func() {
-		sc := ScatterGather{}
+		sc := scatterGather{}
 		So(sc.Add(wd1, rp1), ShouldBeNil)
 		So(sc.Add(wd1, rp2), ShouldBeNil)
 		So(sc.Add(wd2, rp3unclean), ShouldBeNil)
 
-		So(sc, ShouldResemble, ScatterGather{
+		So(sc, ShouldResemble, scatterGather{
 			rp1: wd1,
 			rp2: wd1,
 			rp3: wd2,
@@ -45,7 +45,7 @@ func TestScatterGatherAdd(t *testing.T) {
 	})
 
 	Convey(`Test that Add fails in a bad case.`, t, func() {
-		sc := ScatterGather{}
+		sc := scatterGather{}
 		So(sc.Add(wd1, rp1), ShouldBeNil)
 		So(sc.Add(wd1, rp1), ShouldNotBeNil)
 		So(sc.Add(wd2, rp1), ShouldNotBeNil)
@@ -58,7 +58,7 @@ func TestScatterGatherSet(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test that Set works in a good case.", t, func() {
-		sc := ScatterGather{}
+		sc := scatterGather{}
 		So(sc.Set("C:\\windir:dir"), ShouldBeNil)
 		So(sc.String(), ShouldEqual, "map[C:\\windir:[dir]]")
 	})

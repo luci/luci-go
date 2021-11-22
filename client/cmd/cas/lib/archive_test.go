@@ -18,15 +18,13 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-
-	"go.chromium.org/luci/client/isolated"
 )
 
 func TestGetRoot(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Basic`, t, func() {
-		dirs := make(isolated.ScatterGather)
+		dirs := make(scatterGather)
 		So(dirs.Add("wd1", "rel"), ShouldBeNil)
 		So(dirs.Add("wd1", "rel2"), ShouldBeNil)
 

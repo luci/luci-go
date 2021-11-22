@@ -26,7 +26,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/casclient"
-	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	isol "go.chromium.org/luci/common/isolated"
@@ -65,7 +64,7 @@ working directory, '-paths :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
-	paths         isolated.ScatterGather
+	paths         scatterGather
 	dumpDigest    string
 	dumpStatsJSON string
 }
@@ -81,7 +80,7 @@ func (c *archiveRun) parse(a subcommands.Application, args []string) error {
 }
 
 // getRoot returns root directory if there is only one working directory.
-func getRoot(paths isolated.ScatterGather) (string, error) {
+func getRoot(paths scatterGather) (string, error) {
 	var rel0, wd0 string
 	pickedOne := false
 	for rel, wd := range paths {
