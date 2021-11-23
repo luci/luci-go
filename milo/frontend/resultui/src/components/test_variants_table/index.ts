@@ -71,6 +71,15 @@ export class TestVariantsTableElement extends MiloBaseElement {
         { fireImmediately: true }
       )
     );
+
+    // Sync column width from the user config.
+    this.addDisposer(
+      reaction(
+        () => this.configsStore.userConfigs.testResults.columnWidths,
+        (columnWidths) => this.tableState.setColumnWidths(columnWidths),
+        { fireImmediately: true }
+      )
+    );
   }
 
   private loadMore = reportErrorAsync(this, () => this.tableState.loadNextPage());
@@ -173,40 +182,42 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <div id="table-header">
-        <div><!-- Expand toggle --></div>
-        <milo-tvt-column-header
-          .propKey=${'status'}
-          .label=${/* invis char */ '\u2002' + 'S'}
-          .canHide=${false}
-        ></milo-tvt-column-header>
-        ${this.tableState.columnKeys.map(
-          (col, i) => html`<milo-tvt-column-header
-            .colIndex=${i}
-            .resizeTo=${(newWidth: number, finalized: boolean) => {
-              if (!finalized) {
-                const newColWidths = this.tableState.columnWidths.slice();
-                newColWidths[i] = newWidth;
-                // Update the style directly so lit-element doesn't need to
-                // re-render the component frequently.
-                // Live updating the width of the entire column can cause a bit
-                // of lag when there are many rows. Live updating just the
-                // column header is good enough.
-                this.tableHeaderEle?.style.setProperty('--columns', newColWidths.map((w) => w + 'px').join(' '));
-                return;
-              }
+      <div style="--tvt-columns: ${this.tableState.columnWidths.map((width) => width + 'px').join(' ')}">
+        <div id="table-header">
+          <div><!-- Expand toggle --></div>
+          <milo-tvt-column-header
+            .propKey=${'status'}
+            .label=${/* invis char */ '\u2002' + 'S'}
+            .canHide=${false}
+          ></milo-tvt-column-header>
+          ${this.tableState.columnKeys.map(
+            (col, i) => html`<milo-tvt-column-header
+              .colIndex=${i}
+              .resizeTo=${(newWidth: number, finalized: boolean) => {
+                if (!finalized) {
+                  const newColWidths = this.tableState.columnWidths.slice();
+                  newColWidths[i] = newWidth;
+                  // Update the style directly so lit-element doesn't need to
+                  // re-render the component frequently.
+                  // Live updating the width of the entire column can cause a bit
+                  // of lag when there are many rows. Live updating just the
+                  // column header is good enough.
+                  this.tableHeaderEle?.style.setProperty('--tvt-columns', newColWidths.map((w) => w + 'px').join(' '));
+                  return;
+                }
 
-              this.tableHeaderEle?.style.removeProperty('--columns');
-              this.configsStore.userConfigs.testResults.columnWidths[col] = newWidth;
-            }}
-            .propKey=${col}
-            .label=${getPropKeyLabel(col)}
-          ></milo-tvt-column-header>`
-        )}
-        <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
-        </milo-tvt-column-header>
+                this.tableHeaderEle?.style.removeProperty('--tvt-columns');
+                this.configsStore.userConfigs.testResults.columnWidths[col] = newWidth;
+              }}
+              .propKey=${col}
+              .label=${getPropKeyLabel(col)}
+            ></milo-tvt-column-header>`
+          )}
+          <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
+          </milo-tvt-column-header>
+        </div>
+        <div id="test-variant-list" tabindex="0">${this.renderAllVariants()}</div>
       </div>
-      <div id="test-variant-list" tabindex="0">${this.renderAllVariants()}</div>
     `;
   }
 
@@ -214,15 +225,21 @@ export class TestVariantsTableElement extends MiloBaseElement {
     commonStyle,
     colorClasses,
     css`
+      :host {
+        display: block;
+        --tvt-top-offset: 0px;
+      }
+
       #table-header {
         display: grid;
-        grid-template-columns: 24px 24px var(--columns) 1fr;
+        grid-template-columns: 24px 24px var(--tvt-columns) 1fr;
         grid-gap: 5px;
         line-height: 24px;
         padding: 2px 2px 2px 10px;
         font-weight: bold;
         position: sticky;
-        top: 39px;
+        top: var(--tvt-top-offset);
+        border-top: 1px solid var(--divider-color);
         border-bottom: 1px solid var(--divider-color);
         background-color: var(--block-background-color);
         z-index: 2;
@@ -249,7 +266,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
         grid-gap: 5px;
         padding: 2px 2px 2px 10px;
         position: sticky;
-        top: 67px;
+        top: calc(var(--tvt-top-offset) + 29px);
         font-size: 14px;
         background-color: var(--block-background-color);
         border-top: 1px solid var(--divider-color);
@@ -258,7 +275,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
         z-index: 1;
       }
       .group-header:first-child {
-        top: 68px;
+        top: calc(var(--tvt-top-offset) + 30px);
         border-top: none;
       }
       .group-header.expanded:not(.empty) {

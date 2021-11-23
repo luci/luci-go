@@ -108,14 +108,6 @@ export class TestResultsTabElement extends MiloBaseElement {
         { fireImmediately: true }
       )
     );
-
-    this.addDisposer(
-      reaction(
-        () => this.configsStore.userConfigs.testResults.columnWidths,
-        (columnWidths) => this.invocationState.setColumnWidths(columnWidths),
-        { fireImmediately: true }
-      )
-    );
   }
 
   private renderBody() {
@@ -136,9 +128,7 @@ export class TestResultsTabElement extends MiloBaseElement {
       ${this.invocationState.warning
         ? html`<div id="test-results-tab-warning">${this.invocationState.warning}</div>`
         : ''}
-      <milo-test-variants-table
-        style="--columns: ${this.invocationState.columnWidths.map((width) => width + 'px').join(' ')}"
-      ></milo-test-variants-table>
+      <milo-test-variants-table></milo-test-variants-table>
     `;
   }
 
@@ -174,7 +164,6 @@ export class TestResultsTabElement extends MiloBaseElement {
         position: sticky;
         top: 0px;
         background: white;
-        border-bottom: 1px solid var(--divider-color);
         z-index: 3;
       }
       milo-test-search-filter {
@@ -201,6 +190,10 @@ export class TestResultsTabElement extends MiloBaseElement {
         height: 24px;
         line-height: 24px;
         text-align: center;
+      }
+
+      milo-test-variants-table {
+        --tvt-top-offset: 38px;
       }
     `,
   ];

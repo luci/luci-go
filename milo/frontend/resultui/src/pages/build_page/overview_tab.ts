@@ -283,7 +283,7 @@ export class OverviewTabElement extends MobxLitElement {
       <div id="failed-tests-section-body">
         ${testLoader?.firstPageLoaded
           ? html`
-              <div style="--columns: ${columnWidths}">${this.renderFailedTestList()}</div>
+              <div style="--tvt-columns: ${columnWidths}">${this.renderFailedTestList()}</div>
               <div id="failed-test-count">
                 ${testLoader.unfilteredUnexpectedVariantsCount === 0
                   ? 'No failed tests.'
