@@ -26,6 +26,7 @@ import {
 import { TestHistoryLoader } from './test_history_loader';
 
 const entry1 = {
+  invocationIds: ['inv'],
   invocationTimestamp: '2021-11-05T00:00:01Z',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
@@ -34,6 +35,7 @@ const entry1 = {
 };
 
 const entry2 = {
+  invocationIds: ['inv'],
   invocationTimestamp: '2021-11-05T00:00:00Z',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
@@ -42,6 +44,7 @@ const entry2 = {
 };
 
 const entry3 = {
+  invocationIds: ['inv'],
   invocationTimestamp: '2021-11-05T00:00:00Z',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
@@ -50,6 +53,7 @@ const entry3 = {
 };
 
 const entry4 = {
+  invocationIds: ['inv'],
   invocationTimestamp: '2021-11-04T00:00:00Z',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
@@ -58,6 +62,7 @@ const entry4 = {
 };
 
 const entry5 = {
+  invocationIds: ['inv'],
   invocationTimestamp: '2021-11-03T00:00:00Z',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',

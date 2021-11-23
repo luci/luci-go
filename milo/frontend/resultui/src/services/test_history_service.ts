@@ -29,6 +29,7 @@ import { parseProtoDuration } from '../libs/time_utils';
 import {
   GetTestResultHistoryRequest,
   GetTestResultHistoryResponseEntry,
+  parseTestResultName,
   ResultDb,
   TestExoneration,
   TestResult,
@@ -51,6 +52,10 @@ export interface TestVariantSummary {
 }
 
 export interface TestVariantHistoryEntry {
+  // This should've been a root invocation ID for this entry, but we don't have
+  // that data now. So instead, we extracts all unique invocation IDs from the
+  // test results.
+  readonly invocationIds: readonly string[];
   readonly invocationTimestamp: string;
   readonly variant?: Variant;
   readonly variantHash: string;
@@ -129,6 +134,10 @@ export class TestHistoryService {
     let tvhEntry: DeepMutable<TestVariantHistoryEntry> | null = null;
 
     for await (const trh of trhEntryIter) {
+      // Theoretically, we should use the root invocation ID to determine
+      // whether test results belong to the same test variant history entry.
+      // But we don't have the root invocation ID. Using timestamp should be
+      // good enough in most cases.
       const sameTVHEntry =
         tvhEntry !== null &&
         trh.invocationTimestamp === tvhEntry.invocationTimestamp &&
@@ -149,6 +158,7 @@ export class TestHistoryService {
 
       // Then create a new entry.
       tvhEntry = {
+        invocationIds: [],
         invocationTimestamp: trh.invocationTimestamp,
         variant: trh.result.variant,
         variantHash: trh.result.variantHash || '',
@@ -269,6 +279,9 @@ function computedTestVariantStatus(
  */
 function finalizedTVEntry(tvhEntry: DeepMutable<TestVariantHistoryEntry>, results: TestResult[]) {
   tvhEntry.status = computedTestVariantStatus(results, []);
+
+  const invIds = new Set(results.map((r) => parseTestResultName(r.name).invocationId));
+  tvhEntry.invocationIds = [...invIds.keys()].sort();
 
   const statusDurations = results
     .filter((r) => r.duration)
