@@ -30,10 +30,12 @@ import {
   GetTestResultHistoryRequest,
   GetTestResultHistoryResponseEntry,
   parseTestResultName,
+  QueryTestResultsRequest,
   ResultDb,
   TestExoneration,
   TestResult,
   TestStatus,
+  TestVariant,
   TestVariantStatus,
   TimeRange,
   Variant,
@@ -67,6 +69,13 @@ export interface TestVariantHistoryEntry {
 export interface QueryTestHistoryResponse {
   readonly entries: readonly TestVariantHistoryEntry[];
   readonly nextPageToken?: string;
+}
+
+export interface GetTestVariantRequest {
+  readonly testId: string;
+  readonly variant: Variant;
+  readonly variantHash: string;
+  readonly invocationIds: readonly string[];
 }
 
 /**
@@ -227,6 +236,43 @@ export class TestHistoryService {
 
   async queryTestHistory(req: QueryTestHistoryRequest, cacheOpt: CacheOption = {}) {
     return this.cachedQueryTestHistoryImpl(cacheOpt, req);
+  }
+
+  private getTestVariantImpl = async (req: GetTestVariantRequest): Promise<TestVariant> => {
+    let pageToken: string | null = '';
+    const results: TestResult[] = [];
+    while (pageToken !== null) {
+      const qtrReq: QueryTestResultsRequest = {
+        invocations: req.invocationIds.map((invId) => 'invocations/' + invId),
+        readMask: '*',
+        predicate: {
+          testIdRegexp: escapeStringRegexp(req.testId),
+          variant: { equals: req.variant },
+        },
+        pageToken,
+      };
+      const res = await this.resultdb.queryTestResults(qtrReq);
+
+      results.push(...(res.testResults || []));
+      pageToken = res.nextPageToken || null;
+    }
+    return {
+      testId: req.testId,
+      variant: req.variant,
+      variantHash: req.variantHash,
+      results: results.map((result) => ({ result })),
+      status: computedTestVariantStatus(results, []),
+    };
+  };
+
+  private cachedGetTestVariantImpl = cached(this.getTestVariantImpl, { key: (req) => stableStringify(req) });
+
+  // TODO(crbug/1266759): once we have the root invocation ID, we can switch to
+  // use BatchGetTestVariants RPC instead. However, we will need to make
+  // BatchGetTestVariants support querying multiple root invocations to reduce
+  // the number of RPC calls.
+  async getTestVariant(req: GetTestVariantRequest, cacheOpt: CacheOption = {}) {
+    return this.cachedGetTestVariantImpl(cacheOpt, req);
   }
 }
 
