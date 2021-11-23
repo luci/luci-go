@@ -99,11 +99,15 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
             this.uncommittedSortingKeys,
             (newKeys) => (this.uncommittedSortingKeys = newKeys)
           )}
-          ${this.renderPropKeysConfigRow(
-            'Group by',
-            this.uncommittedGroupingKeys,
-            (newKeys) => (this.uncommittedGroupingKeys = newKeys)
-          )}
+          ${
+            this.tableState.enablesGrouping
+              ? this.renderPropKeysConfigRow(
+                  'Group by',
+                  this.uncommittedGroupingKeys,
+                  (newKeys) => (this.uncommittedGroupingKeys = newKeys)
+                )
+              : ''
+          }
           </tr>
         </table>
         <mwc-button

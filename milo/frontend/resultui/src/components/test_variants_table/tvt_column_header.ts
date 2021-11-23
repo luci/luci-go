@@ -98,7 +98,10 @@ export class TestVariantsTableColumnHeader extends MobxLitElement {
       <mwc-menu x="0" y="20" ?open=${this.menuIsOpen} @closed=${() => (this.menuIsOpen = false)}>
         <mwc-list-item @click=${() => this.sortColumn(true)}>Sort in ascending order</mwc-list-item>
         <mwc-list-item @click=${() => this.sortColumn(false)}>Sort in descending order</mwc-list-item>
-        <mwc-list-item style=${styleMap({ display: this.canGroup ? '' : 'none' })} @click=${() => this.groupRows()}>
+        <mwc-list-item
+          style=${styleMap({ display: this.tableState.enablesGrouping && this.canGroup ? '' : 'none' })}
+          @click=${() => this.groupRows()}
+        >
           Group by ${this.label}
         </mwc-list-item>
         <mwc-list-item style=${styleMap({ display: this.canHide ? '' : 'none' })} @click=${() => this.hideColumn()}>

@@ -85,6 +85,7 @@ export class InvocationState implements TestVariantTableState {
     return this.customSortingKeys || this.defaultSortingKeys;
   }
 
+  readonly enablesGrouping = true;
   @observable.ref private customGroupingKeys?: readonly string[];
   setGroupingKeys(v: readonly string[]): void {
     this.customGroupingKeys = v;

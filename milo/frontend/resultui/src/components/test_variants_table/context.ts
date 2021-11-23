@@ -34,6 +34,7 @@ export interface TestVariantTableState {
   readonly columnWidths: readonly number[];
   setColumnWidths(v: { readonly [key: string]: number }): void;
 
+  readonly enablesGrouping: boolean;
   readonly defaultGroupingKeys: readonly string[];
   readonly groupingKeys: readonly string[];
   setGroupingKeys(v: readonly string[]): void;

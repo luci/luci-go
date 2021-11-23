@@ -114,6 +114,20 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   @observable private collapsedVariantGroups = new Set<string>();
   private renderVariantGroup(group: VariantGroup) {
+    if (!this.tableState.enablesGrouping) {
+      return repeat(
+        group.variants,
+        (v) => `${v.testId} ${v.variantHash}`,
+        (v) => html`
+          <milo-test-variant-entry
+            .variant=${v}
+            .columnGetters=${this.columnGetters}
+            .expanded=${this.tableState.testVariantCount === 1}
+          ></milo-test-variant-entry>
+        `
+      );
+    }
+
     const groupId = JSON.stringify(group.def);
     const expanded = !this.collapsedVariantGroups.has(groupId);
     return html`
