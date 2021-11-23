@@ -16,7 +16,6 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
-import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import '../../expandable_entry';
@@ -48,6 +47,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
+  @observable.ref hideTestName = false;
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -170,10 +170,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     }
     return html`
       <div id="basic-info">
-        <a href=${this.sourceUrl} target="_blank" style=${styleMap({ display: this.sourceUrl ? '' : 'none' })}
-          >source</a
-        >
-        ${this.sourceUrl ? '|' : ''}
+        ${this.sourceUrl ? html`<a href=${this.sourceUrl} target="_blank">source</a> |` : ''}
         <div id="test-id">
           <span class="greyed-out" title=${this.variant.testId}>ID: ${this.variant.testId}</span>
           <milo-copy-to-clipboard
@@ -235,28 +232,32 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
           </mwc-icon>
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
-          <div id="test-name">
-            <span title=${this.longName}>${this.shortName}</span>
-            <milo-copy-to-clipboard
-              .textToCopy=${this.longName}
-              @click=${(e: Event) => {
-                e.stopPropagation();
-                this.trackInteraction();
-              }}
-              title="copy test name to clipboard"
-            ></milo-copy-to-clipboard>
-            <milo-copy-to-clipboard
-              id="link-copy-button"
-              .textToCopy=${() => this.genTestLink()}
-              @click=${(e: Event) => {
-                e.stopPropagation();
-                this.trackInteraction();
-              }}
-              title="copy link to the test"
-            >
-              <mwc-icon slot="copy-icon">link</mwc-icon>
-            </milo-copy-to-clipboard>
-          </div>
+          ${this.hideTestName
+            ? ''
+            : html`
+                <div id="test-name">
+                  <span title=${this.longName}>${this.shortName}</span>
+                  <milo-copy-to-clipboard
+                    .textToCopy=${this.longName}
+                    @click=${(e: Event) => {
+                      e.stopPropagation();
+                      this.trackInteraction();
+                    }}
+                    title="copy test name to clipboard"
+                  ></milo-copy-to-clipboard>
+                  <milo-copy-to-clipboard
+                    id="link-copy-button"
+                    .textToCopy=${() => this.genTestLink()}
+                    @click=${(e: Event) => {
+                      e.stopPropagation();
+                      this.trackInteraction();
+                    }}
+                    title="copy link to the test"
+                  >
+                    <mwc-icon slot="copy-icon">link</mwc-icon>
+                  </milo-copy-to-clipboard>
+                </div>
+              `}
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>
       </milo-expandable-entry>

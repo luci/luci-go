@@ -45,8 +45,22 @@ export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
   @observable.ref @consumeTestVariantTableState() tableState!: TestVariantTableState;
 
+  @observable.ref hideTestName = false;
+
   @computed private get columnGetters() {
     return this.tableState.columnKeys.map((col) => createTVPropGetter(col));
+  }
+
+  @computed private get columnWidths() {
+    const config = this.tableState.columnWidths.map((width) => width + 'px');
+
+    // If we are hiding test name, extend the last colum to take the rest of the
+    // table width.
+    if (this.hideTestName && config.length > 0) {
+      config.pop();
+      config.push('1fr');
+    }
+    return config.join(' ');
   }
 
   toggleAllVariants(expand: boolean) {
@@ -123,6 +137,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .variant=${v}
             .columnGetters=${this.columnGetters}
             .expanded=${this.tableState.testVariantCount === 1}
+            .hideTestName=${this.hideTestName}
           ></milo-test-variant-entry>
         `
       );
@@ -166,6 +181,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .variant=${v}
             .columnGetters=${this.columnGetters}
             .expanded=${this.tableState.testVariantCount === 1}
+            .hideTestName=${this.hideTestName}
           ></milo-test-variant-entry>
         `
       )}
@@ -196,7 +212,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <div style="--tvt-columns: ${this.tableState.columnWidths.map((width) => width + 'px').join(' ')}">
+      <div style="--tvt-columns: ${this.columnWidths}">
         <div id="table-header">
           <div><!-- Expand toggle --></div>
           <milo-tvt-column-header
@@ -227,8 +243,12 @@ export class TestVariantsTableElement extends MiloBaseElement {
               .label=${getPropKeyLabel(col)}
             ></milo-tvt-column-header>`
           )}
-          <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
-          </milo-tvt-column-header>
+          ${this.hideTestName
+            ? ''
+            : html`
+                <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
+                </milo-tvt-column-header>
+              `}
         </div>
         <div id="test-variant-list" tabindex="0">${this.renderAllVariants()}</div>
       </div>
