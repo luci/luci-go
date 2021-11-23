@@ -104,7 +104,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
         <span
           class="active-text"
           style=${styleMap({
-            display: !this.tableState.loadedAllTestVariants && this.tableState.readyToLoad ? 'none' : '',
+            display: !this.tableState.loadedAllTestVariants && this.tableState.readyToLoad ? '' : 'none',
           })}
           >${this.renderLoadMore()}</span
         >
