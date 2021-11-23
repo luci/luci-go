@@ -82,6 +82,9 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
         width=${INNER_CELL_SIZE}
         height=${INNER_CELL_SIZE}
         fill=${this.pageState.scaleDurationColor(averageDurationMs)}
+        @click=${() => {
+          this.pageState.selectedTvhEntries = entries!;
+        }}
       />
     `;
   }

@@ -16,7 +16,9 @@ import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from 
 import { css, customElement, html, property } from 'lit-element';
 import { observable, reaction } from 'mobx';
 
+import '../../components/overlay';
 import '../../components/status_bar';
+import '../../components/test_variants_table';
 import './date_axis';
 import './duration_graph';
 import './duration_legend';
@@ -24,6 +26,7 @@ import './graph_config';
 import './status_graph';
 import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
+import { provideTestVariantTableState } from '../../components/test_variants_table/context';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { GraphType, provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer, provider } from '../../libs/context';
@@ -35,7 +38,7 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref @consumeAppState() appState!: AppState;
-  @property() @provideTestHistoryPageState() pageState!: TestHistoryPageState;
+  @property() @provideTestHistoryPageState() @provideTestVariantTableState() pageState!: TestHistoryPageState;
 
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
@@ -87,7 +90,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         </tr>
       </table>
       <milo-status-bar .components=${[{ color: 'var(--active-color)', weight: 1 }]}></milo-status-bar>
-      ${this.renderBody()}
+      ${this.renderBody()}${this.renderOverlay()}
     `;
   }
 
@@ -113,6 +116,23 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           ? html`<milo-th-duration-legend id="extra"></milo-th-duration-legend>`
           : ''}
       </div>
+    `;
+  }
+
+  private renderOverlay() {
+    if (!this.pageState) {
+      return html``;
+    }
+
+    return html`
+      <milo-overlay
+        ?show=${this.pageState.selectedTvhEntries.length !== 0}
+        @dismiss=${() => (this.pageState.selectedTvhEntries = [])}
+      >
+        <div id="table-container">
+          <milo-test-variants-table .hideTestName=${true}></milo-test-variants-table>
+        </div>
+      </milo-overlay>
     `;
   }
 
@@ -148,6 +168,15 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         grid-template-areas:
           'v-table x-axis extra'
           'v-table graph extra';
+      }
+
+      #table-container {
+        background-color: white;
+        position: absolute;
+        bottom: 0px;
+        width: 100vw;
+        height: 60vh;
+        overflow-y: scroll;
       }
 
       #variant-def-table {

@@ -89,7 +89,15 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
           : '/ui/immutable/svgs/check_circle_24dp.svg';
       return svg`
         <g transform="translate(${index * CELL_SIZE + ICON_PADDING}, 0)">
-          <image href=${img} y=${ICON_PADDING} height="24" width="24" />
+          <image
+            href=${img}
+            y=${ICON_PADDING}
+            height="24"
+            width="24"
+            @click=${() => {
+              this.pageState.selectedTvhEntries = entries;
+            }}
+          />
         </g>
       `;
     }
@@ -119,6 +127,14 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
           x=${CELL_SIZE / 2}
           y=${CELL_SIZE / 2}
         >${count}</text>
+        <rect
+          width=${INNER_CELL_SIZE}
+          height=${INNER_CELL_SIZE}
+          fill="transparent"
+          @click=${() => {
+            this.pageState.selectedTvhEntries = entries;
+          }}
+        />
       </g>
     `;
   }
