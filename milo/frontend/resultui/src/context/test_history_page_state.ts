@@ -14,11 +14,14 @@
 
 import { interpolateOranges, scaleLinear, scaleSequential } from 'd3';
 import { DateTime } from 'luxon';
-import { computed, observable, reaction } from 'mobx';
+import { comparer, computed, observable, reaction } from 'mobx';
 
+import { TestVariantTableState, VariantGroup } from '../components/test_variants_table/context';
 import { createContextLink } from '../libs/context';
+import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryLoader } from '../models/test_history_loader';
-import { TestHistoryService } from '../services/test_history_service';
+import { createTVCmpFn, getCriticalVariantKeys } from '../services/resultdb';
+import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
 
 export const enum GraphType {
   STATUS = 'STATUS',
@@ -37,7 +40,7 @@ const SCALE_COLOR = scaleLinear().range([0.1, 1]).domain([0, 1]);
 /**
  * Records the test history page state.
  */
-export class TestHistoryPageState {
+export class TestHistoryPageState implements TestVariantTableState {
   readonly testHistoryLoader: TestHistoryLoader;
   readonly now = DateTime.now().startOf('day').plus({ hours: 12 });
   @observable.ref days = 14;
@@ -79,6 +82,44 @@ export class TestHistoryPageState {
     return scaleSequential((x) => interpolateOranges(SCALE_COLOR(x))).domain([this.minDurationMs, this.maxDurationMs]);
   }
 
+  @computed({ equals: comparer.shallow }) get criticalVariantKeys(): readonly string[] {
+    return getCriticalVariantKeys(this.testHistoryLoader.variants.map(([_, v]) => v));
+  }
+
+  @observable.ref private customColumnKeys?: readonly string[];
+  @computed get defaultColumnKeys(): readonly string[] {
+    return this.criticalVariantKeys.map((k) => 'v.' + k);
+  }
+  setColumnKeys(v: readonly string[]): void {
+    this.customColumnKeys = v;
+  }
+  @computed({ equals: comparer.shallow }) get columnKeys(): readonly string[] {
+    return this.customColumnKeys || this.defaultColumnKeys;
+  }
+
+  @observable.ref private customColumnWidths: { readonly [key: string]: number } = {};
+  @computed get columnWidths() {
+    return this.columnKeys.map((col) => this.customColumnWidths[col] ?? 100);
+  }
+  setColumnWidths(v: { readonly [key: string]: number }): void {
+    this.customColumnWidths = v;
+  }
+
+  readonly enablesGrouping = false;
+  readonly defaultGroupingKeys = [];
+  readonly groupingKeys: readonly string[] = [];
+  setGroupingKeys() {}
+
+  @observable.ref private customSortingKeys?: readonly string[];
+  readonly defaultSortingKeys: readonly string[] = ['status'];
+  @computed get sortingKeys(): readonly string[] {
+    return this.customSortingKeys || this.defaultSortingKeys;
+  }
+  setSortingKeys(v: readonly string[]): void {
+    this.customSortingKeys = v;
+  }
+
+  @observable.ref isDisposed = false;
   private disposers: Array<() => void> = [];
   constructor(readonly realm: string, readonly testId: string, readonly testHistoryService: TestHistoryService) {
     this.testHistoryLoader = new TestHistoryLoader(
@@ -92,15 +133,70 @@ export class TestHistoryPageState {
     this.disposers.push(
       reaction(
         () => [this.testHistoryLoader, this.endDate],
-        () => {
-          if (!this.testHistoryLoader) {
-            return;
-          }
-          this.testHistoryLoader.loadUntil(this.endDate);
-        },
+        () => this.testHistoryLoader.loadUntil(this.endDate),
         { fireImmediately: true }
       )
     );
+
+    // Ensure the first page of test history entry details are loaded / being
+    // loaded.
+    this.disposers.push(
+      reaction(
+        () => this.entriesLoader,
+        () => this.entriesLoader?.loadFirstPage(),
+        { fireImmediately: true }
+      )
+    );
+  }
+
+  @computed({ keepAlive: true })
+  private get entriesLoader() {
+    if (this.isDisposed) {
+      return null;
+    }
+    return new TestHistoryEntriesLoader(this.testId, this.selectedTvhEntries, this.testHistoryService);
+  }
+
+  @observable.ref selectedTvhEntries: readonly TestVariantHistoryEntry[] = [];
+
+  @computed get variantGroups(): readonly VariantGroup[] {
+    if (this.entriesLoader!.testVariants.length === 0) {
+      return [];
+    }
+
+    const cmpFn = createTVCmpFn(this.sortingKeys);
+    return [
+      {
+        def: [],
+        variants: [...this.entriesLoader!.testVariants].sort(cmpFn),
+      },
+    ];
+  }
+
+  @computed
+  get testVariantCount() {
+    return this.entriesLoader!.testVariants.length;
+  }
+  @computed get unfilteredTestVariantCount() {
+    return this.entriesLoader!.testVariants.length;
+  }
+
+  readonly readyToLoad = true;
+  @computed get isLoading() {
+    return this.entriesLoader!.isLoading;
+  }
+  get loadedAllTestVariants() {
+    return this.entriesLoader!.loadedAllTestVariants;
+  }
+  get loadedFirstPage() {
+    return this.entriesLoader!.loadedFirstPage;
+  }
+
+  loadFirstPage() {
+    return this.entriesLoader!.loadFirstPage();
+  }
+  loadNextPage() {
+    return this.entriesLoader!.loadNextPage();
   }
 
   /**
@@ -108,9 +204,14 @@ export class TestHistoryPageState {
    * Must be called before the object is GCed.
    */
   dispose() {
+    this.isDisposed = true;
     for (const disposer of this.disposers) {
       disposer();
     }
+
+    // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
+    // is set to true so they no longer subscribes to any external observable.
+    this.entriesLoader;
   }
 }
 

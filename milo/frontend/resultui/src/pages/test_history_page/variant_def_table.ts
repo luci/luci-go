@@ -13,12 +13,11 @@
 // limitations under the License.
 
 import { css, customElement, html } from 'lit-element';
-import { comparer, computed, observable } from 'mobx';
+import { computed, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
-import { getCriticalVariantKeys } from '../../services/resultdb';
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 @customElement('milo-th-variant-def-table')
@@ -30,21 +29,17 @@ export class TestHistoryVariantDefTableElement extends MiloBaseElement {
     return this.pageState.testHistoryLoader?.variants || [];
   }
 
-  @computed({ equals: comparer.shallow }) private get criticalVariantKeys() {
-    return getCriticalVariantKeys(this.variants.map(([_, v]) => v));
-  }
-
   protected render() {
     return html`
       <table>
         <thead>
-          ${this.criticalVariantKeys.map((k) => html`<th>${k}</th>`)}
+          ${this.pageState.criticalVariantKeys.map((k) => html`<th>${k}</th>`)}
         </thead>
         <tbody>
           ${this.variants.map(
             ([_, v]) => html`
               <tr>
-                ${this.criticalVariantKeys.map((k) => html`<td>${v.def[k] || ''}</td>`)}
+                ${this.pageState.criticalVariantKeys.map((k) => html`<td>${v.def[k] || ''}</td>`)}
               </tr>
             `
           )}
