@@ -30,6 +30,9 @@ import (
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 func cmdLog(authOpts auth.Options) *subcommands.Command {
@@ -108,8 +111,12 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 		return err
 	}
 
-	res, err := g.Log(ctx, req)
-	if err != nil {
+	var res *gitilespb.LogResponse
+	if err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		var err error
+		res, err = g.Log(ctx, req)
+		return grpcutil.WrapIfTransient(err)
+	}, nil); err != nil {
 		return err
 	}
 

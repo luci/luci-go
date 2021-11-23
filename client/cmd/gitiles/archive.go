@@ -29,6 +29,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 func cmdArchive(authOpts auth.Options) *subcommands.Command {
@@ -108,8 +111,12 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		return err
 	}
 
-	res, err := g.Archive(ctx, req)
-	if err != nil {
+	var res *gitilespb.ArchiveResponse
+	if err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		var err error
+		res, err = g.Archive(ctx, req)
+		return grpcutil.WrapIfTransient(err)
+	}, nil); err != nil {
 		return err
 	}
 
