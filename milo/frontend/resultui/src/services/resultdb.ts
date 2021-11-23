@@ -320,11 +320,30 @@ export class ResultDb {
   }
 }
 
+export interface TestResultIdentifier {
+  readonly invocationId: string;
+  readonly testId: string;
+  readonly resultId: string;
+}
+
+/**
+ * Parses the test result name and get the individual components.
+ */
+export function parseTestResultName(name: string) {
+  const match = name.match(/^invocations\/(.*?)\/tests\/(.*?)\/results\/(.*?)$/)!;
+  const [, invocationId, testId, resultId] = match as string[];
+  return {
+    invocationId,
+    testId,
+    resultId,
+  };
+}
+
 /**
  * Parses the artifact name and get the individual components.
  */
 export function parseArtifactName(artifactName: string): ArtifactIdentifier {
-  const match = artifactName.match(/invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)/)!;
+  const match = artifactName.match(/^invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)$/)!;
 
   const [, invocationId, testId, resultId, artifactId] = match as string[];
 

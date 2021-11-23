@@ -33,7 +33,7 @@ import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { displayCompactDuration, parseProtoDuration } from '../../../libs/time_utils';
 import { unwrapObservable } from '../../../libs/unwrap_observable';
 import { getRawArtifactUrl, router } from '../../../routes';
-import { Artifact, ListArtifactsResponse, TestResult } from '../../../services/resultdb';
+import { Artifact, ListArtifactsResponse, parseTestResultName, TestResult } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -76,7 +76,7 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed
   private get parentInvId() {
-    return /^invocations\/(.+?)\/.+$/.exec(this.testResult.name)![1];
+    return parseTestResultName(this.testResult.name).invocationId;
   }
 
   @computed
