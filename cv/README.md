@@ -47,7 +47,70 @@ TODO(crbug.com/1225047): update this doc.
      - [internal/rpc](./internal/rpc) pRPC handlers, including "admin" API not
        exposed in public `api` dir.
 
-## Developer Guide.
+## Developer Guide
+
+### Error handling guide
+
+
+Like all other LUCI go code:
+
+  * SHOULD wrap errors with
+    [`errors.Annotate`](https://pkg.go.dev/go.chromium.org/luci/common/errors#Annotate)
+    to provide additional context. Unlike other error-wrapping packages, it
+    also captures the call stack.
+
+  * SHOULD avoid ignoring errors. If it's justified, add a comment in code and
+    if necessary log the error.
+
+  * SHOULD use
+    [`appstatus`](https://pkg.go.dev/go.chromium.org/luci/grpc/appstatus)
+    on errors in RPC-handling codepaths.
+
+LUCI CV also follows these conventions, which in some cases differ from other
+LUCI Go code:
+
+  * SHOULD use CV's `common.LogError(ctx, err)` for logging error + stack trace
+    instead of `errors.Log(ctx, err)`.
+    The CV's version packs the entire stack into as few log entries as possible,
+    leading to a better debugging experience with Cloud Logging.
+
+  * Tag the error with `transient.Tag` if the function call can succeed on a
+    retry. For example, most Datastore errors different from NoSuchEntity
+    SHOULD be thus tagged.
+
+  * SHOULD use [`common.TQifyError`
+    ](https://pkg.go.dev/go.chromium.org/luci/cv/internal/common#TQifyError)
+    or its custom version `common.TQIfy{...}.Error(ctx, err)` before returning
+    from a TQ task handler. This func logs the error with appropriate severity
+    and with stack trace as necessary (via `common.LogError`). Additionally,
+    it converts the error to an appropriate `server/tq` tag as needed.
+    The custom `common.TQIfy` SHOULD be used to reduce noise in
+    logs and oncall alerting from the frequent errors during normal operation
+    which don't critically harm the service, e.g. "ErrStaleGerritData".
+
+  * MAY panic when a function precondition fails, e.g. sqrt(x) may panic if
+    x is negative. This is like an assert in Python / C / C++, which is contrary
+    to Go's standard guidance.
+
+  * MUST return a singular error from a function instead of
+    `errors.MultiError` or similar multi-error holders unless all of the below
+    hold true, which was so far very rare in CV code:
+
+      * the function signature clearly states that a multi-error is returned,
+        e.g., `func loadMany(clids ... int64) ([]*CL, errors.MultiError)`;
+      * the caller must examine each individual error, e.g. choosing to create
+        missing CLs based on loadMany() errors;
+      * no transient.Tag or annotation attached to the mutli-error itself, though
+        an individual sub-error may have them.
+
+  * SHOULD use [`common.MostSevereError`
+    ](https://pkg.go.dev/go.chromium.org/luci/cv/internal/common#MostSevereError)
+    on a multi-error before returning. For example, a common pattern to choose 1
+    error after parallelizing is
+    `return common.MostSevereError(parallel.FanOut(...))`;
+      * Individual errors which are thus ignored MAY be logged. This isn't
+        required because in practice most such errors are usually correlated,
+        and the most severe one is thus typically sufficient for debugging.
 
 ### Full end to end testing of new features
 
