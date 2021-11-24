@@ -60,6 +60,15 @@ func TestReportBuilderMetrics(t *testing.T) {
 				ctx,
 				&model.Bucket{Parent: model.ProjectKey(ctx, prj), ID: bkt},
 				&model.Builder{Parent: model.BucketKey(ctx, prj, bkt), ID: builder},
+				&model.BuilderStat{ID: prj + ":" + bkt + ":" + builder},
+			)
+		}
+		deleteBuilder := func(builder string) error {
+			return datastore.Delete(
+				ctx,
+				&model.Bucket{Parent: model.ProjectKey(ctx, prj), ID: bkt},
+				&model.Builder{Parent: model.BucketKey(ctx, prj, bkt), ID: builder},
+				&model.BuilderStat{ID: prj + ":" + bkt + ":" + builder},
 			)
 		}
 
@@ -72,8 +81,18 @@ func TestReportBuilderMetrics(t *testing.T) {
 			So(store.Get(target("b3"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
 
 			Convey("w/o removed builder", func() {
-				So(datastore.Delete(ctx, model.BuilderKey(ctx, prj, bkt, "b1")), ShouldBeNil)
+				So(deleteBuilder("b1"), ShouldBeNil)
 				So(ReportBuilderMetrics(ctx, service, job, ins), ShouldBeNil)
+				So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
+				So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
+			})
+
+			Convey("w/o inactive builder", func() {
+				// Let's pretend that b1 was inactive for 4 weeks, and
+				// got unregistered from the BuilderStat.
+				So(datastore.Delete(ctx, &model.BuilderStat{ID: prj + ":" + bkt + ":b1"}), ShouldBeNil)
+				So(ReportBuilderMetrics(ctx, service, job, ins), ShouldBeNil)
+				// b1 should no longer be reported in the presence metric.
 				So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
 				So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
 			})

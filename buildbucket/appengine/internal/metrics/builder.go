@@ -16,8 +16,10 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
 	"reflect"
+	"strings"
 
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -87,12 +89,13 @@ func ReportBuilderMetrics(ctx context.Context, serviceName, jobName, insID strin
 	// Reset the metric to stop reporting no-longer-existing builders.
 	tsmon.GetState(ctx).Store().Reset(ctx, V2.BuilderPresence)
 
-	q := datastore.NewQuery(model.BuilderKind).KeysOnly(true)
-	return datastore.RunBatch(ctx, 256, q, func(bk *datastore.Key) error {
+	q := datastore.NewQuery(model.BuilderStatKind).KeysOnly(true)
+	return datastore.RunBatch(ctx, 256, q, func(k *datastore.Key) error {
+		project, bucket, builder := mustParseBuilderStatID(k.StringID())
 		tctx := target.Set(ctx, &Builder{
-			Project: bk.Parent().Parent().StringID(),
-			Bucket:  bk.Parent().StringID(),
-			Builder: bk.StringID(),
+			Project: project,
+			Bucket:  bucket,
+			Builder: builder,
 
 			ServiceName: serviceName,
 			JobName:     jobName,
@@ -101,4 +104,13 @@ func ReportBuilderMetrics(ctx context.Context, serviceName, jobName, insID strin
 		V2.BuilderPresence.Set(tctx, true)
 		return nil
 	})
+}
+
+func mustParseBuilderStatID(id string) (project, bucket, builder string) {
+	parts := strings.Split(id, ":")
+	if len(parts) != 3 {
+		panic(fmt.Errorf("invalid BuilderStatID: %s", id))
+	}
+	project, bucket, builder = parts[0], parts[1], parts[2]
+	return
 }
