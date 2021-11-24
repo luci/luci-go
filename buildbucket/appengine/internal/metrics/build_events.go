@@ -36,26 +36,34 @@ func BuildCreated(ctx context.Context, b *model.Build) {
 
 // BuildStarted updates metrics for a build start event.
 func BuildStarted(ctx context.Context, b *model.Build) {
-	lbkn, bn := legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder
+	bucket := legacyBucketName(b.Proto.Builder)
+	builder := b.Proto.Builder.Builder
 	isCan := b.Proto.Canary
 
-	V1.BuildCountStarted.Add(ctx, 1, lbkn, bn, isCan)
+	V1.BuildCountStarted.Add(ctx, 1, bucket, builder, isCan)
 	if b.Proto.GetStartTime() != nil {
 		startT := b.Proto.StartTime.AsTime()
-		V1.BuildDurationScheduling.Add(ctx, startT.Sub(b.CreateTime).Seconds(), lbkn, bn, "", "", "", isCan)
+		V1.BuildDurationScheduling.Add(
+			ctx, startT.Sub(b.CreateTime).Seconds(),
+			bucket, builder, "", "", "", isCan)
 	}
 }
 
 // BuildCompleted updates metrics for a build completion event.
 func BuildCompleted(ctx context.Context, b *model.Build) {
-	r, fr, cr := getLegacyMetricFields(b)
-	lbkn, bn := legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder
-	endT, isCan := b.Proto.EndTime.AsTime(), b.Proto.Canary
+	bucket := legacyBucketName(b.Proto.Builder)
+	builder := b.Proto.Builder.Builder
+	isCan := b.Proto.Canary
+	reason, failReason, cancelReason := getLegacyMetricFields(b)
+	end := b.Proto.EndTime.AsTime()
 
-	V1.BuildCountCompleted.Add(ctx, 1, lbkn, bn, r, fr, cr, isCan)
-	V1.BuildDurationCycle.Add(ctx, endT.Sub(b.CreateTime).Seconds(), lbkn, bn, r, fr, cr, isCan)
+	V1.BuildCountCompleted.Add(ctx, 1, bucket, builder, reason, failReason, cancelReason, isCan)
+	V1.BuildDurationCycle.Add(
+		ctx, end.Sub(b.CreateTime).Seconds(),
+		bucket, builder, reason, failReason, cancelReason, isCan)
 	if b.Proto.StartTime != nil {
-		startT := b.Proto.StartTime.AsTime()
-		V1.BuildDurationRun.Add(ctx, endT.Sub(startT).Seconds(), lbkn, bn, r, fr, cr, isCan)
+		V1.BuildDurationRun.Add(
+			ctx, end.Sub(b.Proto.StartTime.AsTime()).Seconds(),
+			bucket, builder, reason, failReason, cancelReason, isCan)
 	}
 }

@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 
@@ -27,6 +26,8 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
+
+	"go.chromium.org/luci/buildbucket/appengine/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -41,39 +42,40 @@ func TestReportBuilderMetrics(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 
 		store := tsmon.Store(ctx)
-		sn, jn, insID := "service", "job", "ins-0"
-		target := func(prj, bk, bu string) context.Context {
+		service, job, ins := "service", "job", "ins-0"
+		prj, bkt := "infra", "ci"
+		target := func(builder string) context.Context {
 			return target.Set(ctx, &Builder{
 				Project:     prj,
-				Bucket:      bk,
-				Builder:     bu,
-				ServiceName: sn,
-				JobName:     jn,
-				InstanceID:  insID,
+				Bucket:      bkt,
+				Builder:     builder,
+				ServiceName: service,
+				JobName:     job,
+				InstanceID:  ins,
 			})
 		}
 
-		createBuilder := func(prj, bk, bu string) error {
+		createBuilder := func(builder string) error {
 			return datastore.Put(
 				ctx,
-				&model.Bucket{Parent: model.ProjectKey(ctx, prj), ID: bk},
-				&model.Builder{Parent: model.BucketKey(ctx, prj, bk), ID: bu},
+				&model.Bucket{Parent: model.ProjectKey(ctx, prj), ID: bkt},
+				&model.Builder{Parent: model.BucketKey(ctx, prj, bkt), ID: builder},
 			)
 		}
 
 		Convey("report v2.BuilderPresence", func() {
-			So(createBuilder("cr", "ci", "b1"), ShouldBeNil)
-			So(createBuilder("cr", "ci", "b2"), ShouldBeNil)
-			So(ReportBuilderMetrics(ctx, sn, jn, insID), ShouldBeNil)
-			So(store.Get(target("cr", "ci", "b1"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
-			So(store.Get(target("cr", "ci", "b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
-			So(store.Get(target("cr", "ci", "b3"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
+			So(createBuilder("b1"), ShouldBeNil)
+			So(createBuilder("b2"), ShouldBeNil)
+			So(ReportBuilderMetrics(ctx, service, job, ins), ShouldBeNil)
+			So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
+			So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
+			So(store.Get(target("b3"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
 
 			Convey("w/o removed builder", func() {
-				So(datastore.Delete(ctx, model.BuilderKey(ctx, "cr", "ci", "b1")), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx, sn, jn, insID), ShouldBeNil)
-				So(store.Get(target("cr", "ci", "b1"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
-				So(store.Get(target("cr", "ci", "b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
+				So(datastore.Delete(ctx, model.BuilderKey(ctx, prj, bkt, "b1")), ShouldBeNil)
+				So(ReportBuilderMetrics(ctx, service, job, ins), ShouldBeNil)
+				So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
+				So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
 			})
 		})
 	})
