@@ -227,13 +227,14 @@ func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 	}
 	deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Annotate(err, "failed to call LoadIsolateForConfig: %s", opts.Isolate).Err()
 	}
 
 	deps, rootDir, err := processDependencies(deps, isolateDir, opts)
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Annotate(err, "failed to casll processDependencies: %s", opts.Isolate).Err()
 	}
+
 	relDeps := make([]string, len(deps))
 	for i, dep := range deps {
 		rel, err := filepath.Rel(rootDir, dep)
