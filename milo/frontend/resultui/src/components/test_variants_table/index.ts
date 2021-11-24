@@ -52,15 +52,12 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   @computed private get columnWidths() {
-    const config = this.tableState.columnWidths.map((width) => width + 'px');
-
-    // If we are hiding test name, extend the last colum to take the rest of the
-    // table width.
-    if (this.hideTestName && config.length > 0) {
-      config.pop();
-      config.push('1fr');
+    if (this.hideTestName && this.tableState.columnWidths.length > 0) {
+      const ret = this.tableState.columnWidths.slice();
+      ret.pop();
+      return ret;
     }
-    return config.join(' ');
+    return this.tableState.columnWidths;
   }
 
   toggleAllVariants(expand: boolean) {
@@ -212,7 +209,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <div style="--tvt-columns: ${this.columnWidths}">
+      <div style="--tvt-columns: ${this.columnWidths.map((width) => width + 'px').join(' ')}">
         <div id="table-header">
           <div><!-- Expand toggle --></div>
           <milo-tvt-column-header
@@ -222,10 +219,13 @@ export class TestVariantsTableElement extends MiloBaseElement {
           ></milo-tvt-column-header>
           ${this.tableState.columnKeys.map(
             (col, i) => html`<milo-tvt-column-header
-              .colIndex=${i}
+              .colIndex=${
+                // When hiding test name, don't make the last column resizable.
+                this.tableState.columnKeys.length - 1 === i && this.hideTestName ? undefined : i
+              }
               .resizeTo=${(newWidth: number, finalized: boolean) => {
                 if (!finalized) {
-                  const newColWidths = this.tableState.columnWidths.slice();
+                  const newColWidths = this.columnWidths.slice();
                   newColWidths[i] = newWidth;
                   // Update the style directly so lit-element doesn't need to
                   // re-render the component frequently.
