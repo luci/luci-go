@@ -24,7 +24,7 @@ var (
 		BuilderPresence metric.Bool
 	}{
 		BuilderPresence: metric.NewBoolWithTargetType(
-			"v2/builder/presence",
+			"buildbucket/v2/builder/presence",
 			(&Builder{}).Type(),
 			"A constant, always-true metric that indicates the presence of LUCI Builder",
 			nil,
