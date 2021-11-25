@@ -24,6 +24,7 @@ export enum GA_CATEGORIES {
   TEST_VARIANT_WITH_UNEXPECTED_RESULTS = 'Test Variant with Unexpected Results',
   LEGACY_BUILD_PAGE = 'Legacy Build Page',
   PROJECT_BUILD_PAGE = 'Project Build Page',
+  HISTORY_PAGE = 'History Page',
 }
 
 export enum GA_ACTIONS {

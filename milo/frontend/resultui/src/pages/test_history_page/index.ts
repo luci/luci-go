@@ -16,7 +16,8 @@ import '@material/mwc-button';
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html, property } from 'lit-element';
-import { observable, reaction } from 'mobx';
+import { DateTime } from 'luxon';
+import { observable, reaction, when } from 'mobx';
 
 import '../../components/overlay';
 import '../../components/status_bar';
@@ -34,6 +35,7 @@ import { TestVariantsTableElement } from '../../components/test_variants_table';
 import { provideTestVariantTableState } from '../../components/test_variants_table/context';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { GraphType, provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
+import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
@@ -78,6 +80,26 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         {
           fireImmediately: true,
         }
+      )
+    );
+
+    // Track the time it takes to load all the test history in the past week.
+    // The rendering time is not record. But it should be negligible.
+    const oneWeekAgo = DateTime.now().minus({ weeks: 1 });
+    this.addDisposer(
+      when(
+        () => Boolean(this.pageState?.testHistoryLoader.getEntries('', oneWeekAgo)),
+        () =>
+          trackEvent(
+            GA_CATEGORIES.HISTORY_PAGE,
+            GA_ACTIONS.LOADING_TIME,
+            generateRandomLabel(VISIT_ID + '_'),
+            // TODO(weiweilin): this is only accurate when the test history page
+            // is opened in a new tab. We should add a mechanism to consistently
+            // record page selection time. (The first selected page should still
+            // use TIME_ORIGIN as page selection time).
+            Date.now() - TIME_ORIGIN
+          )
       )
     );
   }
