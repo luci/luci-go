@@ -13,13 +13,13 @@
 // limitations under the License.
 
 import { css, customElement, html, svg } from 'lit-element';
-import { DateTime } from 'luxon';
+import { DateTime, Duration } from 'luxon';
 import { observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
-import { parseProtoDuration } from '../../libs/time_utils';
+import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
@@ -82,10 +82,15 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
         width=${INNER_CELL_SIZE}
         height=${INNER_CELL_SIZE}
         fill=${this.pageState.scaleDurationColor(averageDurationMs)}
+        style="cursor: pointer;"
         @click=${() => {
           this.pageState.selectedTvhEntries = entries!;
         }}
-      />
+      >
+        <title>Average Duration: ${displayDuration(
+          Duration.fromMillis(averageDurationMs)
+        )}\nClick to view test run details.</title>
+      </rect>
     `;
   }
 

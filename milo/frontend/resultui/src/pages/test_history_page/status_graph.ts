@@ -80,6 +80,13 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
       counts[entry.status]++;
     }
 
+    const title = svg`<title>Unexpected: ${counts[TestVariantStatus.UNEXPECTED]}
+Unexpectedly Skipped: ${counts[TestVariantStatus.UNEXPECTEDLY_SKIPPED]}
+Flaky: ${counts[TestVariantStatus.FLAKY]}
+Exonerated: ${counts[TestVariantStatus.EXONERATED]}
+Expected: ${counts[TestVariantStatus.EXPECTED]}
+Click to view test details.</title>`;
+
     let previousHeight = 0;
 
     if (counts[TestVariantStatus.EXPECTED] === entries.length) {
@@ -94,10 +101,13 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
             y=${ICON_PADDING}
             height="24"
             width="24"
+            style="cursor: pointer;"
             @click=${() => {
               this.pageState.selectedTvhEntries = entries;
             }}
-          />
+          >
+            ${title}
+          </image>
         </g>
       `;
     }
@@ -131,10 +141,13 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
           width=${INNER_CELL_SIZE}
           height=${INNER_CELL_SIZE}
           fill="transparent"
+          style="cursor: pointer;"
           @click=${() => {
             this.pageState.selectedTvhEntries = entries;
           }}
-        />
+        >
+          ${title}
+        </rect>
       </g>
     `;
   }
