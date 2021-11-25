@@ -73,9 +73,6 @@ export class AppState {
     return this.cachedBuildId.get(stableStringify([builderId, buildNum]));
   }
 
-  // Whether the test results tab loading time has been recorded.
-  sentTestResultsTabLoadingTimeToGA = false;
-
   @observable.ref private isDisposed = false;
 
   @observable.ref authState: AuthState | null = null;

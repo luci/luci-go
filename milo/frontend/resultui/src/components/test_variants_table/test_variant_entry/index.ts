@@ -22,7 +22,7 @@ import '../../expandable_entry';
 import '../../copy_to_clipboard';
 import './result_entry';
 import { AppState, consumeAppState } from '../../../context/app_state';
-import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../../libs/analytics_utils';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
@@ -65,7 +65,6 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
   }
 
   @observable.ref private shouldRenderContent = false;
-  private rendered = false;
 
   @computed
   private get shortName() {
@@ -224,7 +223,6 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
   }
 
   protected render() {
-    this.rendered = true;
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <div id="header" slot="header">
@@ -262,19 +260,6 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
         <div id="body" slot="content">${this.renderBody()}</div>
       </milo-expandable-entry>
     `;
-  }
-
-  protected updated() {
-    if (!this.rendered || this.appState.sentTestResultsTabLoadingTimeToGA) {
-      return;
-    }
-    this.appState.sentTestResultsTabLoadingTimeToGA = true;
-    trackEvent(
-      GA_CATEGORIES.TEST_RESULTS_TAB,
-      GA_ACTIONS.LOADING_TIME,
-      generateRandomLabel(VISIT_ID + '_'),
-      Date.now() - this.appState.tabSelectionTime
-    );
   }
 
   static styles = [
