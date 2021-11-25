@@ -123,7 +123,11 @@ func (b *botsRun) main(_ subcommands.Application) error {
 	return nil
 }
 
-func (b *botsRun) Run(a subcommands.Application, _ []string, _ subcommands.Env) int {
+func (b *botsRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+	if len(args) != 0 {
+		fmt.Fprintf(a.GetErr(), "%s: unknown args: %s\n", a.GetName(), args)
+		return 1
+	}
 	if err := b.Parse(); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

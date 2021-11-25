@@ -131,7 +131,11 @@ func (t *tasksRun) main(_ subcommands.Application) error {
 	return nil
 }
 
-func (t *tasksRun) Run(a subcommands.Application, _ []string, _ subcommands.Env) int {
+func (t *tasksRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+	if len(args) != 0 {
+		fmt.Fprintf(a.GetErr(), "%s: unknown args: %s\n", a.GetName(), args)
+		return 1
+	}
 	if err := t.Parse(); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
