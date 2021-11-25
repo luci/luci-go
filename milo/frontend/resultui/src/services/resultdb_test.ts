@@ -136,7 +136,7 @@ describe('getCriticalVariantKeys', () => {
       { def: { key1: 'val1', key2: 'val2' } },
       { def: { key1: 'val1', key2: 'val2' } },
     ]);
-    assert.deepEqual(keys, []);
+    assert.deepEqual(keys, ['key1']);
   });
 
   it('when some variants are the different', () => {

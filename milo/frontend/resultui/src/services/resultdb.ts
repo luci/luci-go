@@ -521,5 +521,10 @@ export function getCriticalVariantKeys(variants: readonly Variant[]): string[] {
     }
   }
 
+  // Add at least one key to the critical key list.
+  if (criticalKeys.length === 0 && orderedKeys.length !== 0) {
+    criticalKeys.push(orderedKeys[0]);
+  }
+
   return criticalKeys;
 }
