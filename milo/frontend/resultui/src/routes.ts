@@ -233,6 +233,7 @@ router.setRoutes({
     },
     {
       path: '/test/:realm/:test_id',
+      name: 'test-history',
       action: async (_ctx, cmd) => {
         await import(
           /* webpackChunkName: "test_history_page" */

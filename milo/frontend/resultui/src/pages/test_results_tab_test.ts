@@ -88,6 +88,7 @@ describe('Test Results Tab', () => {
       selectedTabId: '',
       resultDb: {
         queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
+        getInvocation: (() => Promise.race([])) as typeof ResultDb.prototype.getInvocation,
       },
     } as AppState;
     const configsStore = new UserConfigsStore();
@@ -137,6 +138,7 @@ describe('Test Results Tab', () => {
         selectedTabId: '',
         resultDb: {
           queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
+          getInvocation: (() => Promise.race([])) as typeof ResultDb.prototype.getInvocation,
         },
       } as AppState;
       configsStore = new UserConfigsStore();

@@ -57,6 +57,8 @@ export interface TestVariantTableState {
   readonly loadedFirstPage: boolean;
   loadFirstPage(): Promise<void>;
   loadNextPage(): Promise<void>;
+
+  getHistoryUrl(testId: string): string;
 }
 
 export const [provideTestVariantTableState, consumeTestVariantTableState] = createContextLink<TestVariantTableState>();

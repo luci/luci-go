@@ -47,6 +47,7 @@ export enum InvocationState {
 export interface Invocation {
   readonly interrupted: boolean;
   readonly name: string;
+  readonly realm: string;
   readonly state: InvocationState;
   readonly createTime: string;
   readonly finalizeTime: string;

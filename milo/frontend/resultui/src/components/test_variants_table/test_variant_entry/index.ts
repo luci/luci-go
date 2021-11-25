@@ -48,6 +48,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
   @observable.ref hideTestName = false;
+  @observable.ref historyUrl = '';
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -169,6 +170,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     }
     return html`
       <div id="basic-info">
+        ${this.historyUrl ? html`<a href=${this.historyUrl} target="_blank">history</a> |` : ''}
         ${this.sourceUrl ? html`<a href=${this.sourceUrl} target="_blank">source</a> |` : ''}
         <div id="test-id">
           <span class="greyed-out" title=${this.variant.testId}>ID: ${this.variant.testId}</span>

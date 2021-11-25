@@ -199,6 +199,11 @@ export class TestHistoryPageState implements TestVariantTableState {
     return this.entriesLoader!.loadNextPage();
   }
 
+  // Don't display history URL when the user is already on the history page.
+  getHistoryUrl() {
+    return '';
+  }
+
   /**
    * Perform cleanup.
    * Must be called before the object is GCed.
