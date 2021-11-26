@@ -186,6 +186,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
         <mwc-icon-button icon="close" slot="dismiss" @click=${() => (this.showUpdateBanner = false)}></mwc-icon-button>
       </mwc-snackbar>
       <milo-tooltip></milo-tooltip>
+      ${this.appState.banners.map((banner) => html`<div class="banner-container">${banner}</div>`)}
       <div id="container">
         <div id="title-container">
           <a href="/" id="title-link">
@@ -230,6 +231,15 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
         padding: 10px 0;
         display: flex;
       }
+      .banner-container {
+        width: 100%;
+        background-color: #feb;
+        padding: 3px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 12px;
+      }
+
       #title-container {
         display: flex;
         flex: 1 1 100%;

@@ -65,6 +65,11 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
   connectedCallback() {
     super.connectedCallback();
 
+    const banner = html`This page is currently in beta and the loading time could be slow. See the
+      <a href="https://crbug.com/1266759" target="_blank">tracking bug</a> for details.`;
+    this.appState.addBanner(banner);
+    this.addDisposer(() => this.appState.removeBanner(banner));
+
     // Set up TestHistoryPageState.
     this.addDisposer(
       reaction(
