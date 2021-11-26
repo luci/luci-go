@@ -25,7 +25,7 @@ export class TestHistoryEntriesLoader {
     readonly testId: string,
     readonly tvhEntries: readonly TestVariantHistoryEntry[],
     readonly testHistoryService: TestHistoryService,
-    readonly pageSize = 10,
+    readonly pageSize = 10
   ) {}
 
   @observable.shallow private _testVariants: TestVariant[] = [];
@@ -67,6 +67,7 @@ export class TestHistoryEntriesLoader {
             invocationIds: entry.invocationIds,
             variant: entry.variant || { def: {} },
             variantHash: entry.variantHash,
+            invocationTimestamp: entry.invocationTimestamp,
           });
         })
     );

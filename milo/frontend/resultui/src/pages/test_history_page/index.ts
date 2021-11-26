@@ -183,7 +183,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
               <mwc-icon id="close-tvt" @click=${() => (this.pageState.selectedTvhEntries = [])}>close</mwc-icon>
             </milo-hotkey>
           </div>
-          <milo-test-variants-table .hideTestName=${true}></milo-test-variants-table>
+          <milo-test-variants-table .hideTestName=${true} .showTimestamp=${true}></milo-test-variants-table>
         </div>
       </milo-overlay>
     `;

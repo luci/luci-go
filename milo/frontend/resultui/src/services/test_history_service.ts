@@ -75,7 +75,15 @@ export interface GetTestVariantRequest {
   readonly testId: string;
   readonly variant: Variant;
   readonly variantHash: string;
+
+  // TODO(crbug/1266759): we don't know the root invocation ID, use a list of
+  // invocation IDs instead.
   readonly invocationIds: readonly string[];
+
+  // TODO(crbug/1266759): the server doesn't return the invocation timestamp of
+  // each test variant, so we pass the timestamp data from the test history
+  // entry.
+  readonly invocationTimestamp: string;
 }
 
 /**
@@ -262,6 +270,7 @@ export class TestHistoryService {
       variantHash: req.variantHash,
       results: results.map((result) => ({ result })),
       status: computedTestVariantStatus(results, []),
+      timestamp: req.invocationTimestamp,
     };
   };
 

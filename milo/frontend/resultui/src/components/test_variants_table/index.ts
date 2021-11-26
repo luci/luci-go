@@ -46,6 +46,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref @consumeTestVariantTableState() tableState!: TestVariantTableState;
 
   @observable.ref hideTestName = false;
+  @observable.ref showTimestamp = false;
 
   @computed private get columnGetters() {
     return this.tableState.columnKeys.map((col) => createTVPropGetter(col));
@@ -58,6 +59,15 @@ export class TestVariantsTableElement extends MiloBaseElement {
       return ret;
     }
     return this.tableState.columnWidths;
+  }
+
+  private getTvtColumns(columnWidths: readonly number[]) {
+    return (
+      '--tvt-columns: 24px ' +
+      (this.showTimestamp ? '135px ' : '') +
+      columnWidths.map((width) => width + 'px').join(' ') +
+      ' 1fr'
+    );
   }
 
   toggleAllVariants(expand: boolean) {
@@ -135,6 +145,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .columnGetters=${this.columnGetters}
             .expanded=${this.tableState.testVariantCount === 1}
             .hideTestName=${this.hideTestName}
+            .showTimestamp=${this.showTimestamp}
             .historyUrl=${this.tableState.getHistoryUrl(v.testId)}
           ></milo-test-variant-entry>
         `
@@ -180,6 +191,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .columnGetters=${this.columnGetters}
             .expanded=${this.tableState.testVariantCount === 1}
             .hideTestName=${this.hideTestName}
+            .showTimestamp=${this.showTimestamp}
             .historyUrl=${this.tableState.getHistoryUrl(v.testId)}
           ></milo-test-variant-entry>
         `
@@ -211,7 +223,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <div style="--tvt-columns: ${this.columnWidths.map((width) => width + 'px').join(' ')}">
+      <div style=${this.getTvtColumns(this.columnWidths)}>
         <div id="table-header">
           <div><!-- Expand toggle --></div>
           <milo-tvt-column-header
@@ -219,6 +231,15 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .label=${/* invis char */ '\u2002' + 'S'}
             .canHide=${false}
           ></milo-tvt-column-header>
+          ${this.showTimestamp
+            ? html`
+                <milo-tvt-column-header
+                  .propKey=${'timestamp'}
+                  .label=${'Date Time'}
+                  .canHide=${false}
+                ></milo-tvt-column-header>
+              `
+            : ''}
           ${this.tableState.columnKeys.map(
             (col, i) => html`<milo-tvt-column-header
               .colIndex=${
@@ -234,7 +255,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
                   // Live updating the width of the entire column can cause a bit
                   // of lag when there are many rows. Live updating just the
                   // column header is good enough.
-                  this.tableHeaderEle?.style.setProperty('--tvt-columns', newColWidths.map((w) => w + 'px').join(' '));
+                  this.tableHeaderEle?.style.setProperty('--tvt-columns', this.getTvtColumns(newColWidths));
                   return;
                 }
 
@@ -268,7 +289,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
       #table-header {
         display: grid;
-        grid-template-columns: 24px 24px var(--tvt-columns) 1fr;
+        grid-template-columns: 24px var(--tvt-columns);
         grid-gap: 5px;
         line-height: 24px;
         padding: 2px 2px 2px 10px;

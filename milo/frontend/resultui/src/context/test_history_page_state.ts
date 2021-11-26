@@ -111,7 +111,7 @@ export class TestHistoryPageState implements TestVariantTableState {
   setGroupingKeys() {}
 
   @observable.ref private customSortingKeys?: readonly string[];
-  readonly defaultSortingKeys: readonly string[] = ['status'];
+  readonly defaultSortingKeys: readonly string[] = [];
   @computed get sortingKeys(): readonly string[] {
     return this.customSortingKeys || this.defaultSortingKeys;
   }

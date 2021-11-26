@@ -16,6 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
+import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
 import '../../expandable_entry';
@@ -26,6 +27,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_u
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
+import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
 import { TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
@@ -49,6 +51,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
   @observable.ref hideTestName = false;
   @observable.ref historyUrl = '';
+  @observable.ref showTimestamp = false;
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -144,8 +147,15 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     return this.variant.results?.findIndex((e) => !e.result.expected) ?? -1;
   }
 
-  @computed get columnValues() {
+  @computed private get columnValues() {
     return this.columnGetters.map((fn) => fn(this.variant));
+  }
+
+  @computed private get dateTime() {
+    if (!this.variant.timestamp) {
+      return null;
+    }
+    return DateTime.fromISO(this.variant.timestamp);
   }
 
   private trackInteraction = () => {
@@ -231,6 +241,13 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
           </mwc-icon>
+          ${this.showTimestamp
+            ? html`
+                <div title=${this.dateTime?.toFormat(LONG_TIME_FORMAT) || ''}>
+                  ${this.dateTime?.toFormat(SHORT_TIME_FORMAT) || ''}
+                </div>
+              `
+            : ''}
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
           ${this.hideTestName
             ? ''
@@ -275,7 +292,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
       #header {
         display: grid;
-        grid-template-columns: 24px var(--tvt-columns) 1fr;
+        grid-template-columns: var(--tvt-columns);
         grid-gap: 5px;
         font-size: 16px;
         line-height: 24px;
