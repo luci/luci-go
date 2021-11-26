@@ -16,6 +16,7 @@ import '@material/mwc-button';
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html, property } from 'lit-element';
+import { styleMap } from 'lit-html/directives/style-map';
 import { DateTime } from 'luxon';
 import { observable, reaction, when } from 'mobx';
 
@@ -191,6 +192,10 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           <milo-test-variants-table .hideTestName=${true} .showTimestamp=${true}></milo-test-variants-table>
         </div>
       </milo-overlay>
+      <div
+        id="free-scroll-padding"
+        style=${styleMap({ display: this.pageState.selectedTvhEntries.length === 0 ? 'none' : '' })}
+      ></div>
     `;
   }
 
@@ -265,6 +270,11 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
       milo-test-variants-table {
         --tvt-top-offset: 38px;
+      }
+
+      #free-scroll-padding {
+        width: 100%;
+        height: 60vh;
       }
 
       #variant-def-table {

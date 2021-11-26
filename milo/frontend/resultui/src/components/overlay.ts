@@ -38,7 +38,7 @@ export class OverlayElement extends LitElement {
     #overlay {
       width: 100vw;
       height: 100vh;
-      position: absolute;
+      position: fixed;
       top: 0px;
       background: rgb(0 0 0 / 50%);
       z-index: 2;
