@@ -27,8 +27,6 @@ import (
 	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
 	clientswarming "go.chromium.org/luci/client/swarming"
 	"go.chromium.org/luci/common/errors"
-	commonisolated "go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exec2"
@@ -203,27 +201,26 @@ type UploadStats struct {
 	ItemsHot  []byte `json:"items_hot"`
 }
 
-func upload(ctx context.Context, client *isolatedclient.Client, baseDir, outDir string) (commonisolated.HexDigest, *UploadStats, error) {
+func upload(ctx context.Context, baseDir, outDir string) (*UploadStats, error) {
 	start := time.Now()
 	absOutDir := filepath.Join(baseDir, outDir)
 
 	isEmpty, err := filesystem.IsEmptyDir(absOutDir)
 	if err != nil {
-		return "", nil, errors.Annotate(err, "failed to call IsEmptyDir(%s)", absOutDir).Err()
+		return nil, errors.Annotate(err, "failed to call IsEmptyDir(%s)", absOutDir).Err()
 	}
 
 	var stats UploadStats
-	var digest commonisolated.HexDigest
 
 	if !isEmpty {
 		// TODO: implement CAS archive.
 	}
 
 	stats.Duration = time.Now().Sub(start)
-	return digest, &stats, nil
+	return &stats, nil
 }
 
-func uploadThenDelete(ctx context.Context, client *isolatedclient.Client, baseDir, outDir string) (digest commonisolated.HexDigest, stats *UploadStats, err error) {
+func uploadThenDelete(ctx context.Context, baseDir, outDir string) (stats *UploadStats, err error) {
 	start := time.Now()
 
 	defer func() {
@@ -235,10 +232,10 @@ func uploadThenDelete(ctx context.Context, client *isolatedclient.Client, baseDi
 		stats.Duration = time.Now().Sub(start)
 	}()
 
-	digest, stats, err = upload(ctx, client, baseDir, outDir)
+	stats, err = upload(ctx, baseDir, outDir)
 	if err != nil {
-		return "", nil, errors.Annotate(err, "failed to call upload").Err()
+		return nil, errors.Annotate(err, "failed to call upload").Err()
 	}
 
-	return digest, stats, nil
+	return stats, nil
 }
