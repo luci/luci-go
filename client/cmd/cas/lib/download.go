@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
-	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
@@ -485,7 +484,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			}
 		}
 
-		if err := isol.WriteStats(dsj, hot, cold); err != nil {
+		if err := writeStats(dsj, hot, cold); err != nil {
 			return errors.Annotate(err, "failed to write stats json").Err()
 		}
 	}

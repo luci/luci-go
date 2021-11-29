@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -167,7 +166,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 			}
 		}
 
-		if err := isol.WriteStats(dsj, notUploaded, uploaded); err != nil {
+		if err := writeStats(dsj, notUploaded, uploaded); err != nil {
 			return errors.Annotate(err, "failed to write stats json").Err()
 		}
 	}

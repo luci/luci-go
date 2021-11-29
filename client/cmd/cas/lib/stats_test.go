@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package isolated
+package lib
 
 import (
 	"math/rand"
@@ -22,7 +22,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestPack(t *testing.T) {
+func Testpack(t *testing.T) {
 	t.Parallel()
 	Convey(`Simple test for pack.`, t, func() {
 		Convey(`1m 1`, func() {
@@ -31,11 +31,11 @@ func TestPack(t *testing.T) {
 				array = append(array, int64(i))
 			}
 
-			data, err := Pack(array)
+			data, err := pack(array)
 			So(err, ShouldBeNil)
 			So(1000, ShouldBeGreaterThanOrEqualTo, len(data))
 
-			unpackedArray, err := Unpack(data)
+			unpackedArray, err := unpack(data)
 			So(err, ShouldBeNil)
 			So(array, ShouldResemble, unpackedArray)
 		})
@@ -46,11 +46,11 @@ func TestPack(t *testing.T) {
 				array = append(array, int64(i*1000))
 			}
 
-			data, err := Pack(array)
+			data, err := pack(array)
 			So(err, ShouldBeNil)
 			So(len(data), ShouldBeGreaterThan, 1000)
 
-			unpackedArray, err := Unpack(data)
+			unpackedArray, err := unpack(data)
 			So(err, ShouldBeNil)
 			So(array, ShouldResemble, unpackedArray)
 		})
@@ -65,21 +65,21 @@ func TestPack(t *testing.T) {
 				return array[i] <= array[j]
 			})
 
-			data, err := Pack(array)
+			data, err := pack(array)
 			So(err, ShouldBeNil)
 			So(len(data), ShouldBeGreaterThan, 2000)
 
-			unpackedArray, err := Unpack(data)
+			unpackedArray, err := unpack(data)
 			So(err, ShouldBeNil)
 			So(array, ShouldResemble, unpackedArray)
 		})
 
 		Convey(`empty`, func() {
-			data, err := Pack([]int64{})
+			data, err := pack([]int64{})
 			So(err, ShouldBeNil)
 			So(data, ShouldBeEmpty)
 
-			unpackedArray, err := Unpack([]byte{})
+			unpackedArray, err := unpack([]byte{})
 			So(err, ShouldBeNil)
 			So(unpackedArray, ShouldBeEmpty)
 		})

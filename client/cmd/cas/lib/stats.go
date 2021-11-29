@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package isolated
+package lib
 
 import (
 	"bytes"
@@ -24,8 +24,44 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Pack returns a deflate'd buffer of delta encoded varints.
-func Pack(values []int64) ([]byte, error) {
+// writeStats writes cache stats in packed format.
+func writeStats(path string, hot, cold []int64) error {
+	// Copy before sort.
+	cold = append([]int64{}, cold...)
+	hot = append([]int64{}, hot...)
+
+	sort.Slice(cold, func(i, j int) bool { return cold[i] < cold[j] })
+	sort.Slice(hot, func(i, j int) bool { return hot[i] < hot[j] })
+
+	packedCold, err := pack(cold)
+	if err != nil {
+		return errors.Annotate(err, "failed to pack uploaded items").Err()
+	}
+
+	packedHot, err := pack(hot)
+	if err != nil {
+		return errors.Annotate(err, "failed to pack not uploaded items").Err()
+	}
+
+	statsJSON, err := json.Marshal(struct {
+		ItemsCold []byte `json:"items_cold"`
+		ItemsHot  []byte `json:"items_hot"`
+	}{
+		ItemsCold: packedCold,
+		ItemsHot:  packedHot,
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal stats json").Err()
+	}
+	if err := ioutil.WriteFile(path, statsJSON, 0600); err != nil {
+		return errors.Annotate(err, "failed to write stats json").Err()
+	}
+
+	return nil
+}
+
+// pack returns a deflate'd buffer of delta encoded varints.
+func pack(values []int64) ([]byte, error) {
 	if len(values) == 0 {
 		return nil, nil
 	}
@@ -64,8 +100,8 @@ func Pack(values []int64) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// Unpack decompresses a deflate'd delta encoded list of varints.
-func Unpack(data []byte) ([]int64, error) {
+// unpack decompresses a deflate'd delta encoded list of varints.
+func unpack(data []byte) ([]int64, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -99,40 +135,4 @@ func Unpack(data []byte) ([]int64, error) {
 	}
 
 	return ret, nil
-}
-
-// WriteStats writes cache stats in packed format.
-func WriteStats(path string, hot, cold []int64) error {
-	// Copy before sort.
-	cold = append([]int64{}, cold...)
-	hot = append([]int64{}, hot...)
-
-	sort.Slice(cold, func(i, j int) bool { return cold[i] < cold[j] })
-	sort.Slice(hot, func(i, j int) bool { return hot[i] < hot[j] })
-
-	packedCold, err := Pack(cold)
-	if err != nil {
-		return errors.Annotate(err, "failed to pack uploaded items").Err()
-	}
-
-	packedHot, err := Pack(hot)
-	if err != nil {
-		return errors.Annotate(err, "failed to pack not uploaded items").Err()
-	}
-
-	statsJSON, err := json.Marshal(struct {
-		ItemsCold []byte `json:"items_cold"`
-		ItemsHot  []byte `json:"items_hot"`
-	}{
-		ItemsCold: packedCold,
-		ItemsHot:  packedHot,
-	})
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal stats json").Err()
-	}
-	if err := ioutil.WriteFile(path, statsJSON, 0600); err != nil {
-		return errors.Annotate(err, "failed to write stats json").Err()
-	}
-
-	return nil
 }
