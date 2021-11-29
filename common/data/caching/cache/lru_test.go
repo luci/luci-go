@@ -20,8 +20,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"go.chromium.org/luci/common/isolated"
 )
 
 func TestEntryJSON(t *testing.T) {
@@ -81,7 +79,7 @@ func TestLRU(t *testing.T) {
 	h := crypto.SHA1
 	l := makeLRUDict(h)
 
-	empty := isolated.HashBytes(h, nil)
+	empty := HashBytes(h, nil)
 	if got, want := l.touch(empty), false; got != want {
 		t.Errorf("l.touch(...)=%v; want %v", got, want)
 	}

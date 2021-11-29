@@ -22,12 +22,11 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/text/units"
-	"go.chromium.org/luci/common/isolated"
 )
 
 // entry is an entry in the orderedDict.
 type entry struct {
-	key        isolated.HexDigest
+	key        HexDigest
 	value      units.Size
 	lastAccess int64 // UTC time
 }
@@ -47,7 +46,7 @@ func (e *entry) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("invalid entry: expected 2 items: %s", string(data))
 	}
 	if key, ok := elems[0].(string); ok {
-		e.key = isolated.HexDigest(key)
+		e.key = HexDigest(key)
 		values, ok := elems[1].([]interface{})
 		if !ok {
 			return fmt.Errorf("invalid entry: expected array for second element: %s", string(data))
@@ -77,33 +76,33 @@ func (e *entry) UnmarshalJSON(data []byte) error {
 // orderedDict implements a dict that keeps ordering.
 type orderedDict struct {
 	ll      *list.List
-	entries map[isolated.HexDigest]*list.Element
+	entries map[HexDigest]*list.Element
 }
 
 func makeOrderedDict() orderedDict {
 	return orderedDict{
 		ll:      list.New(),
-		entries: map[isolated.HexDigest]*list.Element{},
+		entries: map[HexDigest]*list.Element{},
 	}
 }
 
 // keys returns the keys in order.
-func (o *orderedDict) keys() isolated.HexDigests {
-	out := make(isolated.HexDigests, 0, o.length())
+func (o *orderedDict) keys() HexDigests {
+	out := make(HexDigests, 0, o.length())
 	for e := o.ll.Front(); e != nil; e = e.Next() {
 		out = append(out, e.Value.(*entry).key)
 	}
 	return out
 }
 
-func (o *orderedDict) pop(key isolated.HexDigest) (units.Size, bool) {
+func (o *orderedDict) pop(key HexDigest) (units.Size, bool) {
 	if e, hit := o.entries[key]; hit {
 		return o.removeElement(e).value, true
 	}
 	return 0, false
 }
 
-func (o *orderedDict) popOldest() (isolated.HexDigest, units.Size) {
+func (o *orderedDict) popOldest() (HexDigest, units.Size) {
 	if e := o.ll.Back(); e != nil {
 		entry := o.removeElement(e)
 		return entry.key, entry.value
@@ -122,7 +121,7 @@ func (o *orderedDict) length() int {
 	return o.ll.Len()
 }
 
-func (o *orderedDict) pushFront(key isolated.HexDigest, value units.Size) {
+func (o *orderedDict) pushFront(key HexDigest, value units.Size) {
 	if e, ok := o.entries[key]; ok {
 		o.ll.MoveToFront(e)
 		e.Value.(*entry).value = value
@@ -132,7 +131,7 @@ func (o *orderedDict) pushFront(key isolated.HexDigest, value units.Size) {
 	o.entries[key] = o.ll.PushFront(&entry{key, value, time.Now().Unix()})
 }
 
-func (o *orderedDict) pushBack(key isolated.HexDigest, value units.Size, lastAccess int64) {
+func (o *orderedDict) pushBack(key HexDigest, value units.Size, lastAccess int64) {
 	if e, ok := o.entries[key]; ok {
 		o.ll.MoveToBack(e)
 		e.Value.(*entry).value = value
@@ -173,7 +172,7 @@ func (l *lruDict) IsDirty() bool {
 	return l.dirty
 }
 
-func (l *lruDict) keys() isolated.HexDigests {
+func (l *lruDict) keys() HexDigests {
 	return l.items.keys()
 }
 
@@ -181,14 +180,14 @@ func (l *lruDict) length() int {
 	return l.items.length()
 }
 
-func (l *lruDict) pop(key isolated.HexDigest) (units.Size, bool) {
+func (l *lruDict) pop(key HexDigest) (units.Size, bool) {
 	out, b := l.items.pop(key)
 	l.sum -= out
 	l.dirty = true
 	return out, b
 }
 
-func (l *lruDict) popOldest() (isolated.HexDigest, units.Size) {
+func (l *lruDict) popOldest() (HexDigest, units.Size) {
 	k, v := l.items.popOldest()
 	l.sum -= v
 	if k != "" {
@@ -197,13 +196,13 @@ func (l *lruDict) popOldest() (isolated.HexDigest, units.Size) {
 	return k, v
 }
 
-func (l *lruDict) pushFront(key isolated.HexDigest, value units.Size) {
+func (l *lruDict) pushFront(key HexDigest, value units.Size) {
 	l.items.pushFront(key, value)
 	l.sum += value
 	l.dirty = true
 }
 
-func (l *lruDict) touch(key isolated.HexDigest) bool {
+func (l *lruDict) touch(key HexDigest) bool {
 	l.dirty = true
 	if value, b := l.items.pop(key); b {
 		l.items.pushFront(key, value)

@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolated"
 	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
@@ -291,7 +290,7 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFile
 
 	start := time.Now()
 	for _, output := range largeOutputs {
-		if err := diskcache.AddFileWithoutValidation(ctx, isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
+		if err := diskcache.AddFileWithoutValidation(ctx, cache.HexDigest(output.Digest.Hash), output.Path); err != nil {
 			return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
 		}
 	}
@@ -411,13 +410,13 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			continue
 		}
 
-		if diskcache != nil && diskcache.Touch(isolated.HexDigest(output.Digest.Hash)) {
+		if diskcache != nil && diskcache.Touch(cache.HexDigest(output.Digest.Hash)) {
 			mode := 0o600
 			if output.IsExecutable {
 				mode = 0o700
 			}
 
-			if err := diskcache.Hardlink(isolated.HexDigest(output.Digest.Hash), path, os.FileMode(mode)); err != nil {
+			if err := diskcache.Hardlink(cache.HexDigest(output.Digest.Hash), path, os.FileMode(mode)); err != nil {
 				return err
 			}
 			continue

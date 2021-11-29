@@ -17,44 +17,42 @@ package cache
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/filesystem"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func testCache(t *testing.T, c *Cache) isolated.HexDigests {
-	var expected isolated.HexDigests
+func testCache(t *testing.T, c *Cache) HexDigests {
+	var expected HexDigests
 	Convey(`Common tests performed on a cache of objects.`, func() {
 		// c's policies must have MaxItems == 2 and MaxSize == 1024.
 		td := t.TempDir()
 		ctx := context.Background()
 
-		namespace := isolatedclient.DefaultNamespace
-		h := isolated.GetHash(namespace)
-		fakeDigest := isolated.HexDigest("0123456789012345678901234567890123456789")
-		badDigest := isolated.HexDigest("012345678901234567890123456789012345678")
+		h := crypto.SHA1
+		fakeDigest := HexDigest("0123456789012345678901234567890123456789")
+		badDigest := HexDigest("012345678901234567890123456789012345678")
 		emptyContent := []byte{}
-		emptyDigest := isolated.HashBytes(h, emptyContent)
+		emptyDigest := HashBytes(h, emptyContent)
 		file1Content := []byte("foo")
-		file1Digest := isolated.HashBytes(h, file1Content)
+		file1Digest := HashBytes(h, file1Content)
 		file2Content := []byte("foo bar")
-		file2Digest := isolated.HashBytes(h, file2Content)
+		file2Digest := HashBytes(h, file2Content)
 		hardlinkContent := []byte("hardlink")
-		hardlinkDigest := isolated.HashBytes(h, hardlinkContent)
+		hardlinkDigest := HashBytes(h, hardlinkContent)
 		largeContent := bytes.Repeat([]byte("A"), 1023)
-		largeDigest := isolated.HashBytes(h, largeContent)
+		largeDigest := HashBytes(h, largeContent)
 		tooLargeContent := bytes.Repeat([]byte("A"), 1025)
-		tooLargeDigest := isolated.HashBytes(h, tooLargeContent)
+		tooLargeDigest := HashBytes(h, tooLargeContent)
 
-		So(c.Keys(), ShouldResemble, isolated.HexDigests{})
+		So(c.Keys(), ShouldResemble, HexDigests{})
 
 		So(c.Touch(fakeDigest), ShouldBeFalse)
 		So(c.Touch(badDigest), ShouldBeFalse)
@@ -76,9 +74,9 @@ func testCache(t *testing.T, c *Cache) isolated.HexDigests {
 		So(c.Add(ctx, largeDigest, bytes.NewBuffer(largeContent)), ShouldBeNil)
 		So(c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
 		So(c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
-		So(c.Keys(), ShouldResemble, isolated.HexDigests{emptyDigest, largeDigest})
+		So(c.Keys(), ShouldResemble, HexDigests{emptyDigest, largeDigest})
 		c.Evict(emptyDigest)
-		So(c.Keys(), ShouldResemble, isolated.HexDigests{largeDigest})
+		So(c.Keys(), ShouldResemble, HexDigests{largeDigest})
 		So(c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
 
 		So(c.Add(ctx, file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
@@ -95,7 +93,7 @@ func testCache(t *testing.T, c *Cache) isolated.HexDigests {
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, file2Content)
 
-		expected = isolated.HexDigests{file2Digest, emptyDigest}
+		expected = HexDigests{file2Digest, emptyDigest}
 		So(c.Keys(), ShouldResemble, expected)
 
 		dest := filepath.Join(td, "foo")
@@ -116,7 +114,7 @@ func testCache(t *testing.T, c *Cache) isolated.HexDigests {
 		So(actual, ShouldResemble, hardlinkContent)
 
 		// |emptyDigest| is evicted.
-		expected = isolated.HexDigests{hardlinkDigest, file2Digest}
+		expected = HexDigests{hardlinkDigest, file2Digest}
 
 		So(c.Close(), ShouldBeNil)
 	})
@@ -128,8 +126,7 @@ func TestNew(t *testing.T) {
 		td := t.TempDir()
 
 		pol := Policies{MaxSize: 1024, MaxItems: 2}
-		namespace := isolatedclient.DefaultNamespace
-		h := isolated.GetHash(namespace)
+		h := crypto.SHA1
 		c, err := New(pol, td, h)
 		So(err, ShouldBeNil)
 		expected := testCache(t, c)
@@ -161,7 +158,7 @@ func TestNew(t *testing.T) {
 		So(ioutil.WriteFile(state, []byte("invalid"), os.ModePerm), ShouldBeNil)
 		So(ioutil.WriteFile(invalid, []byte("invalid"), os.ModePerm), ShouldBeNil)
 
-		c, err := New(Policies{}, dir, isolated.GetHash(isolatedclient.DefaultNamespace))
+		c, err := New(Policies{}, dir, crypto.SHA1)
 		So(err, ShouldNotBeNil)
 		if c == nil {
 			t.Errorf("c should not be nil: %v", err)
@@ -181,13 +178,12 @@ func TestNew(t *testing.T) {
 	Convey(`MinFreeSpace too big`, t, func() {
 		ctx := context.Background()
 		dir := t.TempDir()
-		namespace := isolatedclient.DefaultNamespace
-		h := isolated.GetHash(namespace)
+		h := crypto.SHA1
 		c, err := New(Policies{MaxSize: 10, MinFreeSpace: math.MaxInt64}, dir, h)
 		So(err, ShouldBeNil)
 
 		file1Content := []byte("foo")
-		file1Digest := isolated.HashBytes(h, file1Content)
+		file1Digest := HashBytes(h, file1Content)
 		So(c.Add(ctx, file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
 
 		So(c.Close(), ShouldBeNil)
@@ -196,13 +192,12 @@ func TestNew(t *testing.T) {
 	Convey(`MaxSize 0`, t, func() {
 		ctx := context.Background()
 		dir := t.TempDir()
-		namespace := isolatedclient.DefaultNamespace
-		h := isolated.GetHash(namespace)
+		h := crypto.SHA1
 		c, err := New(Policies{MaxSize: 0, MaxItems: 1}, dir, h)
 		So(err, ShouldBeNil)
 
 		file1Content := []byte("foo")
-		file1Digest := isolated.HashBytes(h, file1Content)
+		file1Digest := HashBytes(h, file1Content)
 		So(c.Add(ctx, file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
 		So(c.Keys(), ShouldHaveLength, 1)
 		So(c.Close(), ShouldBeNil)
@@ -210,12 +205,11 @@ func TestNew(t *testing.T) {
 
 	Convey(`HardLink will update used`, t, func() {
 		dir := t.TempDir()
-		namespace := isolatedclient.DefaultNamespace
-		h := isolated.GetHash(namespace)
+		h := crypto.SHA1
 		onDiskContent := []byte("on disk")
-		onDiskDigest := isolated.HashBytes(h, onDiskContent)
+		onDiskDigest := HashBytes(h, onDiskContent)
 		notOnDiskContent := []byte("not on disk")
-		notOnDiskDigest := isolated.HashBytes(h, notOnDiskContent)
+		notOnDiskDigest := HashBytes(h, notOnDiskContent)
 
 		c, err := New(Policies{}, dir, h)
 		defer func() { So(c.Close(), ShouldBeNil) }()
@@ -236,8 +230,7 @@ func TestNew(t *testing.T) {
 		ctx := context.Background()
 		dir := t.TempDir()
 		cache := filepath.Join(dir, "cache")
-		h := isolated.GetHash(isolatedclient.DefaultNamespace)
-
+		h := crypto.SHA1
 		c, err := New(Policies{
 			MaxSize:  1,
 			MaxItems: 1,
@@ -248,7 +241,7 @@ func TestNew(t *testing.T) {
 		empty := filepath.Join(dir, "empty")
 		So(ioutil.WriteFile(empty, nil, 0600), ShouldBeNil)
 
-		emptyHash := isolated.HashBytes(h, nil)
+		emptyHash := HashBytes(h, nil)
 
 		So(c.AddFileWithoutValidation(ctx, emptyHash, empty), ShouldBeNil)
 

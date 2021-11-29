@@ -32,7 +32,6 @@ import (
 
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 )
@@ -177,7 +176,7 @@ func (d *Cache) Close() error {
 }
 
 // Keys returns the list of all cached digests in LRU order.
-func (d *Cache) Keys() isolated.HexDigests {
+func (d *Cache) Keys() HexDigests {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.lru.keys()
@@ -194,7 +193,7 @@ func (d *Cache) TotalSize() units.Size {
 // cache.
 //
 // Returns true if item is in cache.
-func (d *Cache) Touch(digest isolated.HexDigest) bool {
+func (d *Cache) Touch(digest HexDigest) bool {
 	if !digest.Validate(d.h) {
 		return false
 	}
@@ -204,7 +203,7 @@ func (d *Cache) Touch(digest isolated.HexDigest) bool {
 }
 
 // Evict removes item from cache if it's there.
-func (d *Cache) Evict(digest isolated.HexDigest) {
+func (d *Cache) Evict(digest HexDigest) {
 	if !digest.Validate(d.h) {
 		return
 	}
@@ -215,7 +214,7 @@ func (d *Cache) Evict(digest isolated.HexDigest) {
 }
 
 // Read returns contents of the cached item.
-func (d *Cache) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
+func (d *Cache) Read(digest HexDigest) (io.ReadCloser, error) {
 	if !digest.Validate(d.h) {
 		return nil, os.ErrInvalid
 	}
@@ -242,7 +241,7 @@ func (d *Cache) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 }
 
 // Add reads data from src and stores it in cache.
-func (d *Cache) Add(ctx context.Context, digest isolated.HexDigest, src io.Reader) error {
+func (d *Cache) Add(ctx context.Context, digest HexDigest, src io.Reader) error {
 	return d.add(ctx, digest, src, nil)
 }
 
@@ -250,7 +249,7 @@ func (d *Cache) Add(ctx context.Context, digest isolated.HexDigest, src io.Reade
 // But this doesn't do any content validation.
 //
 // TODO(tikuta): make one function and control the behavior by option?
-func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest isolated.HexDigest, src string) error {
+func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest HexDigest, src string) error {
 	ctx, task := trace.NewTask(ctx, "AddFileWithoutValidation")
 	defer task.End()
 
@@ -297,7 +296,7 @@ func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest isolated.He
 
 // AddWithHardlink reads data from src and stores it in cache and hardlink file.
 // This is to avoid file removal by shrink in Add().
-func (d *Cache) AddWithHardlink(ctx context.Context, digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
+func (d *Cache) AddWithHardlink(ctx context.Context, digest HexDigest, src io.Reader, dest string, perm os.FileMode) error {
 	return d.add(ctx, digest, src, func() error {
 		if err := d.hardlinkUnlocked(digest, dest, perm); err != nil {
 			_ = os.Remove(d.itemPath(digest))
@@ -312,7 +311,7 @@ func (d *Cache) AddWithHardlink(ctx context.Context, digest isolated.HexDigest, 
 // Note that the behavior when dest already exists is undefined. It will work
 // on all POSIX and may or may not fail on Windows depending on the
 // implementation used. Do not rely on this behavior.
-func (d *Cache) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
+func (d *Cache) Hardlink(digest HexDigest, dest string, perm os.FileMode) error {
 	if runtime.GOOS == "darwin" {
 		// Accessing the path, which is being replaced, with os.Link
 		// seems to cause flaky 'operation not permitted' failure on
@@ -340,7 +339,7 @@ func (d *Cache) Used() []int64 {
 
 // Private details.
 
-func (d *Cache) add(ctx context.Context, digest isolated.HexDigest, src io.Reader, cb func() error) error {
+func (d *Cache) add(ctx context.Context, digest HexDigest, src io.Reader, cb func() error) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
@@ -359,7 +358,7 @@ func (d *Cache) add(ctx context.Context, digest isolated.HexDigest, src io.Reade
 		_ = os.Remove(fname)
 		return err
 	}
-	if d := isolated.Sum(h); d != digest {
+	if d := Sum(h); d != digest {
 		_ = os.Remove(fname)
 		return errors.Annotate(ErrInvalidHash, "invalid hash, got=%s, want=%s", d, digest).Err()
 	}
@@ -407,7 +406,7 @@ func (d *Cache) add(ctx context.Context, digest isolated.HexDigest, src io.Reade
 	return nil
 }
 
-func (d *Cache) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os.FileMode) error {
+func (d *Cache) hardlinkUnlocked(digest HexDigest, dest string, perm os.FileMode) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
@@ -456,7 +455,7 @@ func (d *Cache) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os
 	return nil
 }
 
-func (d *Cache) itemPath(digest isolated.HexDigest) string {
+func (d *Cache) itemPath(digest HexDigest) string {
 	return filepath.Join(d.path, string(digest))
 }
 

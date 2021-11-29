@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/embeddedkvs"
-	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/testing/testfs"
 )
 
@@ -113,7 +112,7 @@ func TestArchiveDownload(t *testing.T) {
 			defer func() {
 				So(diskcache.Close(), ShouldBeNil)
 			}()
-			So(diskcache.Touch(isolated.HexDigest(sha256hex(largeFile))), ShouldBeTrue)
+			So(diskcache.Touch(cache.HexDigest(sha256hex(largeFile))), ShouldBeTrue)
 		})
 
 		Convey("not use cache", func() {
