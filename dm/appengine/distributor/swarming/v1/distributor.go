@@ -152,14 +152,6 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 		}
 	}
 
-	isoCtx, cancel := context.WithTimeout(d, 30*time.Second)
-	defer cancel()
-	iso, err := prepIsolate(isoCtx, d.sCfg.Isolate.Url, desc, prev, params)
-	if err != nil {
-		err = errors.Annotate(err, "prepping Isolated").Err()
-		return
-	}
-
 	secretBytesRaw := &bytes.Buffer{}
 	marshaller := &jsonpb.Marshaler{OrigName: true}
 	if err = marshaller.Marshal(secretBytesRaw, auth); err != nil {
@@ -221,7 +213,6 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 				ExecutionTimeoutSecs: toIntSeconds(desc.Meta.Timeouts.Run),
 				GracePeriodSecs:      toIntSeconds(desc.Meta.Timeouts.Stop),
 				IoTimeoutSecs:        toIntSeconds(params.Scheduling.IoTimeout),
-				InputsRef:            iso,
 				SecretBytes:          secretBytes,
 			},
 
@@ -319,10 +310,6 @@ func (d *swarmingDist) GetStatus(q *dm.Quest_Desc, tok distributor.Token) (*dm.R
 		}
 		retData.SnapshotDimensions = snapshotDimensions(params, rslt.BotDimensions)
 
-		if ref := rslt.OutputsRef; ref != nil {
-			retData.IsolatedOutdir = &sv1.IsolatedRef{
-				Id: ref.Isolated, Server: ref.Isolatedserver}
-		}
 		data, err := (&jsonpb.Marshaler{OrigName: true}).MarshalToString(retData)
 		if err != nil {
 			panic(err)
