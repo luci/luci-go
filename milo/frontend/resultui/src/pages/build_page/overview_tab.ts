@@ -276,7 +276,7 @@ export class OverviewTabElement extends MobxLitElement {
 
     // Overview tab is more crowded than the test results tab.
     // Hide all additional columns.
-    const columnWidths = this.invocationState.columnWidths.map(() => '0').join(' ');
+    const columnWidths = '24px ' + this.invocationState.columnWidths.map(() => '0').join(' ') + ' 1fr';
 
     return html`
       <h3>Failed Tests (<a href=${testsTabUrl}>View All Test</a>)</h3>
