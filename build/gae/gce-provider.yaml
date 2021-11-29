@@ -1,0 +1,8 @@
+name: luci-go/gce-provider
+extends: base.yaml
+
+inputsdir: ../../gce/appengine
+
+build:
+  - go_gae_bundle: ${inputsdir}/frontend/app.yaml
+    dest: ${contextdir}/frontend

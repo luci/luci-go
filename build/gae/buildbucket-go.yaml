@@ -1,0 +1,11 @@
+name: luci-go/buildbucket-go
+extends: base.yaml
+
+inputsdir: ../../buildbucket/appengine
+
+sources:
+  - ../../buildbucket
+
+build:
+  - go_gae_bundle: ${inputsdir}/frontend/service-default-go.yaml
+    dest: ${contextdir}/frontend

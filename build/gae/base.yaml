@@ -1,0 +1,7 @@
+name: base
+
+infra:
+  dev:
+    storage: gs://chops-public-tarballs-dev/gae
+  prod:
+    storage: gs://chops-public-tarballs-prod/gae

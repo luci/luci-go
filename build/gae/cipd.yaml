@@ -1,0 +1,12 @@
+name: luci-go/cipd
+extends: base.yaml
+
+inputsdir: ../../cipd/appengine
+
+build:
+  - copy: ${inputsdir}/dispatch.yaml
+    dest: ${contextdir}/dispatch.yaml
+  - go_gae_bundle: ${inputsdir}/frontend/app.yaml
+    dest: ${contextdir}/frontend
+  - go_gae_bundle: ${inputsdir}/backend/service-backend.yaml
+    dest: ${contextdir}/backend

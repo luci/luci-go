@@ -1,0 +1,8 @@
+name: luci-go/cas-viewer
+extends: base.yaml
+
+inputsdir: ../../casviewer
+
+build:
+  - go_gae_bundle: ${inputsdir}/appengine/app.yaml
+    dest: ${contextdir}/appengine

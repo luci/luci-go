@@ -1,0 +1,8 @@
+name: luci-go/change-verifier
+extends: base.yaml
+
+inputsdir: ../../cv
+
+build:
+  - go_gae_bundle: ${inputsdir}/appengine/app.yaml
+    dest: ${contextdir}/appengine

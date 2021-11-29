@@ -1,0 +1,8 @@
+name: luci-go/luci-notify
+extends: base.yaml
+
+inputsdir: ../../luci_notify
+
+build:
+  - go_gae_bundle: ${inputsdir}/frontend/app.yaml
+    dest: ${contextdir}/frontend

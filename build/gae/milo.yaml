@@ -1,0 +1,15 @@
+name: luci-go/milo
+extends: base.yaml
+
+inputsdir: ../../milo
+
+build:
+  # This builds the frontend code updating ${inputsdir}/frontend/resultui/out.
+  - run: ['make', 'release']
+    cwd: ${inputsdir}/frontend/resultui
+
+  # This packages all Go code with its dependencies into _gopath/src/... It
+  # follows the symlinks in luci-go to pick up the built frontend code from
+  # resultui/out.
+  - go_gae_bundle: ${inputsdir}/frontend/appengine/app.yaml
+    dest: ${contextdir}/frontend/appengine

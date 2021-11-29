@@ -1,0 +1,10 @@
+name: luci-go/auth-service
+extends: base.yaml
+
+inputsdir: ../../auth_service
+
+build:
+  - go_gae_bundle: ${inputsdir}/services/frontend/service-defaultv2.yaml
+    dest: ${contextdir}/services/frontend
+  - go_gae_bundle: ${inputsdir}/services/backend/service-backendv2.yaml
+    dest: ${contextdir}/services/backend
