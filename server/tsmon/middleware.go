@@ -362,10 +362,10 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 //
 // Returns ErrNoTaskNumber if the task wasn't assigned a task number yet.
 func (s *State) ensureTaskNumAndFlush(c context.Context, state *tsmon.State, settings *Settings) error {
+	task := *state.Store().DefaultTarget().(*target.Task)
 	if s.TaskNumAllocator != nil {
 		// Notify the task number allocator that we are still alive and grab
 		// the TaskNum assigned to us.
-		task := *state.Store().DefaultTarget().(*target.Task)
 		switch num, err := s.TaskNumAllocator.NotifyTaskIsAlive(c, &task, s.instanceID); {
 		case err == nil:
 			task.TaskNum = int32(num)
@@ -383,8 +383,10 @@ func (s *State) ensureTaskNumAndFlush(c context.Context, state *tsmon.State, set
 		default:
 			return errors.Annotate(err, "failed to get a new task num for %q", s.instanceID).Err()
 		}
-		state.Store().SetDefaultTarget(&task)
+	} else {
+		task.TaskNum = 0
 	}
+	state.Store().SetDefaultTarget(&task)
 	return s.doFlush(c, state, settings)
 }
 
