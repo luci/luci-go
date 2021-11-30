@@ -1,5 +1,5 @@
 name: luci-go/scheduler
-extends: base.yaml
+extends: ../gae.yaml
 
 inputsdir: ../../scheduler/appengine
 

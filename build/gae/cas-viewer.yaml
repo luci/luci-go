@@ -1,5 +1,5 @@
 name: luci-go/cas-viewer
-extends: base.yaml
+extends: ../gae.yaml
 
 inputsdir: ../../casviewer
 

@@ -1,5 +1,5 @@
 name: luci-go/change-verifier
-extends: base.yaml
+extends: ../gae.yaml
 
 inputsdir: ../../cv
 

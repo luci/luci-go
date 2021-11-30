@@ -1,5 +1,5 @@
 name: luci-go/auth-service
-extends: base.yaml
+extends: ../gae.yaml
 
 inputsdir: ../../auth_service
 

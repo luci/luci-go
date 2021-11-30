@@ -1,5 +1,6 @@
-name: base
+name: gae
 
+# Base infra settings inherited by gae/*.yaml manifests.
 infra:
   dev:
     storage: gs://chops-public-tarballs-dev/gae

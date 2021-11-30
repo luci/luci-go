@@ -1,5 +1,5 @@
 name: luci-go/gce-provider
-extends: base.yaml
+extends: ../gae.yaml
 
 inputsdir: ../../gce/appengine
 

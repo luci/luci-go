@@ -1,5 +1,5 @@
 name: luci-go/token-server
-extends: base.yaml
+extends: ../gae.yaml
 
 inputsdir: ../../tokenserver/appengine
 
