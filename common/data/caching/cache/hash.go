@@ -18,6 +18,7 @@ import (
 	"crypto"
 	"encoding/hex"
 	"hash"
+	"io"
 )
 
 // HexDigest is the hash of a file that is hex-encoded. Only lower case letters
@@ -48,6 +49,16 @@ func (h HexDigests) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 // Sum is a shortcut to get a HexDigest from a hash.Hash.
 func Sum(h hash.Hash) HexDigest {
 	return HexDigest(hex.EncodeToString(h.Sum(nil)))
+}
+
+// Hash hashes a reader and returns a HexDigest from it.
+func Hash(h crypto.Hash, src io.Reader) (HexDigest, error) {
+	a := h.New()
+	_, err := io.Copy(a, src)
+	if err != nil {
+		return "", err
+	}
+	return Sum(a), nil
 }
 
 // HashBytes hashes content and returns a HexDigest from it.
