@@ -62,9 +62,12 @@ export default merge(common, {
       index: '/ui/index.html',
     },
     port: Number(new URL(cypressConfig.baseUrl || 'https://localhost:8080').port),
-    https: {
-      key: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.key')),
-      cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
+    server: {
+      type: 'https',
+      options: {
+        key: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.key')),
+        cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
+      },
     },
     onBeforeSetupMiddleware: (devServer) => {
       devServer.app.use((req, _res, next) => {

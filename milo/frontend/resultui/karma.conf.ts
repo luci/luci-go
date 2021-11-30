@@ -85,7 +85,7 @@ module.exports = (config: Config) => {
           TIME_ORIGIN: JSON.stringify(0),
         }),
         new ProvidePlugin({
-          process: 'process/browser',
+          process: 'process/browser.js',
         }),
       ],
     },
