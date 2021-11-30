@@ -118,7 +118,7 @@ func TestProcessIsolateFile(t *testing.T) {
 			Isolate: isolatePath,
 		}
 
-		deps, _, _, err := ProcessIsolate(opts)
+		deps, _, err := ProcessIsolate(opts)
 		So(err, ShouldBeNil)
 		for _, dep := range deps {
 			isDir, err := filesystem.IsDir(dep)
@@ -155,7 +155,7 @@ func TestProcessIsolateFile(t *testing.T) {
 			AllowMissingFileDir: false,
 		}
 
-		_, _, _, err := ProcessIsolate(opts)
+		_, _, err := ProcessIsolate(opts)
 		So(err, ShouldNotBeNil)
 
 		opts = &ArchiveOptions{
@@ -163,7 +163,7 @@ func TestProcessIsolateFile(t *testing.T) {
 			AllowMissingFileDir: true,
 		}
 
-		deps, _, _, err := ProcessIsolate(opts)
+		deps, _, err := ProcessIsolate(opts)
 		So(err, ShouldBeNil)
 		So(deps, ShouldResemble, []string{dir1 + osPathSeparator, filepath.Join(dir2, "foo")})
 	})

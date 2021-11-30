@@ -85,7 +85,7 @@ func (r *remapRun) Run(a subcommands.Application, args []string, _ subcommands.E
 }
 
 func (r *remapRun) main(a subcommands.Application, args []string) error {
-	deps, rootDir, _, err := isolate.ProcessIsolate(&r.ArchiveOptions)
+	deps, rootDir, err := isolate.ProcessIsolate(&r.ArchiveOptions)
 	if err != nil {
 		return errors.Annotate(err, "failed to process isolate").Err()
 	}

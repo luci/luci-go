@@ -63,12 +63,11 @@ func (c *checkRun) Parse(a subcommands.Application, args []string) error {
 func (c *checkRun) main(a subcommands.Application, args []string) error {
 	if !c.defaultFlags.Quiet {
 		fmt.Printf("Isolate:   %s\n", c.Isolate)
-		fmt.Printf("Isolated:  %s\n", c.Isolated)
 		fmt.Printf("Config:    %s\n", c.ConfigVariables)
 		fmt.Printf("Path:      %s\n", c.PathVariables)
 	}
 
-	deps, _, _, err := isolate.ProcessIsolate(&c.ArchiveOptions)
+	deps, _, err := isolate.ProcessIsolate(&c.ArchiveOptions)
 	if err != nil {
 		return errors.Annotate(err, "failed to process isolate").Err()
 	}

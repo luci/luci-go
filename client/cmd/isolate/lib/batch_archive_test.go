@@ -79,7 +79,6 @@ func TestInvalidArchiveCMD(t *testing.T) {
 func TestArchiveCMDParsing(t *testing.T) {
 	Convey(`Archive command line arguments should be parsed correctly.`, t, func() {
 		args := []string{
-			"--isolated", "../biz/bar.isolated",
 			"--isolate", "../boz/bar.isolate",
 			"--path-variable", "DEPTH", "../..",
 			"--path-variable", "PRODUCT_DIR", "../../out/Release",
@@ -89,7 +88,6 @@ func TestArchiveCMDParsing(t *testing.T) {
 		opts, err := parseArchiveCMD(args, root)
 		base := filepath.Dir(root)
 		So(opts.Isolate, ShouldResemble, filepath.Join(base, "boz", "bar.isolate"))
-		So(opts.Isolated, ShouldResemble, filepath.Join(base, "biz", "bar.isolated"))
 		So(err, ShouldBeNil)
 		So(stringmapflag.Value{"OS": "linux"}, ShouldResemble, opts.ConfigVariables)
 		if runtime.GOOS == "windows" {
@@ -100,19 +98,17 @@ func TestArchiveCMDParsing(t *testing.T) {
 	})
 }
 
-// Verify that if the isolate/isolated paths are absolute, we don't
+// Verify that if the isolate path is absolute, we don't
 // accidentally interpret them as relative to the cwd.
 func TestArchiveAbsolutePaths(t *testing.T) {
 	Convey(`Archive command line should correctly handle absolute paths.`, t, func() {
 		root := absToOS("e:", "/tmp/bar/")
 		args := []string{
-			"--isolated", root + "foo.isolated",
 			"--isolate", root + "foo.isolate",
 		}
 		opts, err := parseArchiveCMD(args, absToOS("x:", "/var/lib"))
 		So(err, ShouldBeNil)
 		So(opts.Isolate, ShouldResemble, root+"foo.isolate")
-		So(opts.Isolated, ShouldResemble, root+"foo.isolated")
 	})
 }
 

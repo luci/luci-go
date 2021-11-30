@@ -169,10 +169,6 @@ func (c *isolateFlags) Parse(cwd string) error {
 	if !filepath.IsAbs(c.Isolate) {
 		c.Isolate = filepath.Clean(filepath.Join(cwd, c.Isolate))
 	}
-
-	if c.Isolated != "" && !filepath.IsAbs(c.Isolated) {
-		c.Isolated = filepath.Clean(filepath.Join(cwd, c.Isolated))
-	}
 	return nil
 }
 
@@ -298,7 +294,7 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 	eg.Go(func() error {
 		defer close(inputC)
 		for i, o := range opts {
-			deps, path, _, err := isolate.ProcessIsolate(o)
+			deps, path, err := isolate.ProcessIsolate(o)
 			if err != nil {
 				return err
 			}

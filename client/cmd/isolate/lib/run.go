@@ -82,7 +82,7 @@ func (r *runRun) Run(a subcommands.Application, args []string, _ subcommands.Env
 }
 
 func (r *runRun) main(a subcommands.Application, args []string) error {
-	deps, rootDir, _, err := isolate.ProcessIsolate(&r.ArchiveOptions)
+	deps, rootDir, err := isolate.ProcessIsolate(&r.ArchiveOptions)
 	if err != nil {
 		return errors.Annotate(err, "failed to process isolate").Err()
 	}

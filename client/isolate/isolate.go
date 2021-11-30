@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
-	"go.chromium.org/luci/common/isolated"
 )
 
 // IsolatedGenJSONVersion is used in the batcharchive json format.
@@ -47,7 +46,6 @@ func IsValidVariable(variable string) bool {
 // ArchiveOptions for archiving trees.
 type ArchiveOptions struct {
 	Isolate             string              `json:"isolate"`
-	Isolated            string              `json:"isolated"`
 	IgnoredPathFilterRe string              `json:"ignored_path_filter_re"`
 	PathVariables       stringmapflag.Value `json:"path_variables"`
 	ConfigVariables     stringmapflag.Value `json:"config_variables"`
@@ -99,11 +97,6 @@ func (a *ArchiveOptions) PostProcess(cwd string) {
 		a.Isolate = filepath.Join(cwd, a.Isolate)
 	}
 	a.Isolate = filepath.Clean(a.Isolate)
-
-	if !filepath.IsAbs(a.Isolated) {
-		a.Isolated = filepath.Join(cwd, a.Isolated)
-	}
-	a.Isolated = filepath.Clean(a.Isolated)
 
 	for k, v := range a.PathVariables {
 		// This is due to a Windows + GYP specific issue, where double-quoted paths
@@ -191,28 +184,21 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 }
 
 // ProcessIsolate parses an isolate file, returning the list of dependencies
-// (both files and directories), the root directory and the initial Isolated struct.
-func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated, error) {
+func ProcessIsolate(opts *ArchiveOptions) ([]string, string, error) {
 	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
-		return nil, "", nil, errors.Annotate(err, "failed to read file: %s", opts.Isolate).Err()
+		return nil, "", errors.Annotate(err, "failed to read file: %s", opts.Isolate).Err()
 	}
 	deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", err
 	}
 
 	deps, rootDir, err := processDependencies(deps, isolateDir, opts)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", err
 	}
-	// Prepare the .isolated struct.
-	isol := &isolated.Isolated{
-		Algo:    "sha-1",
-		Files:   map[string]isolated.File{},
-		Version: isolated.IsolatedFormatVersion,
-	}
-	return deps, rootDir, isol, nil
+	return deps, rootDir, nil
 }
 
 // ProcessIsolateForCAS works similarly to ProcessIsolate. However, it is
