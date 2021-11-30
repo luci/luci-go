@@ -110,7 +110,7 @@ func MakeCLIDs(ids ...int64) CLIDs {
 	return ret
 }
 
-// CLIDsSet is convinience type to reduce the boilerplate.
+// CLIDsSet is convenience type to reduce the boilerplate.
 type CLIDsSet map[CLID]struct{}
 
 // MakeCLIDsSet returns new CLIDsSet from list of clids in int64.

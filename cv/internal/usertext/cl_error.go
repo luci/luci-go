@@ -266,7 +266,7 @@ var tmplReusedTrigger = tmplMust(`
 
 This may happen in rare circumstances such as moving a Gerrit Change to a new branch, abandoning & restoring the CL during an ongoing CQ Run, or when different users vote differently on a CQ label.
 
-Please re-trigger the CQ if neccessary.
+Please re-trigger the CQ if necessary.
 `)
 
 var tmplCommitBlocked = tmplMust(`

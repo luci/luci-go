@@ -92,7 +92,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 			Convey("skips creation", func() {
 				// This is a special case which isn't supposed to be needed,
-				// but it's kept here for completness.
+				// but it's kept here for completeness.
 				cl, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					return ErrStopMutation
 				})

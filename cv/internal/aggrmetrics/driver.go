@@ -33,12 +33,13 @@ const (
 	// If tsmon doesn't flush for this much time since the report is prepared,
 	// the report will be discarded.
 	//
-	// It should be longer than a typical tsmon flush interval and should account
-	// the fact that Driver.MinuteCron() and tsmon flush aren't synchronized.
+	// It should be longer than a typical tsmon flush interval and should
+	// account the fact that Driver.MinuteCron() and tsmon flush aren't
+	// synchronized.
 	reportTTL = 2 * time.Minute
 
-	// noFlushForTooLong defines threshold for emiting error to logs on unusually
-	// long durations without a tsmon flush.
+	// noFlushForTooLong defines threshold for emitting error to logs on
+	// unusually long durations without a tsmon flush.
 	noFlushForTooLong = 10 * time.Minute
 )
 
@@ -135,9 +136,9 @@ func (d *Driver) stageReports(ctx context.Context, reports []reportFunc, start t
 // tsmonCallback resets old data from registered metrics and possibly sets new
 // data.
 //
-// It's called by tsmon flush implementation on all CV processes,
-// but the new values should normally be set on just one of them on whichever
-// MinuteCron() was called last.
+// It's called by tsmon flush implementation on all CV processes, but the new
+// values should normally be set on just one of them on whichever MinuteCron()
+// was called last.
 func (d *Driver) tsmonCallback(ctx context.Context) {
 	d.m.Lock()
 	defer d.m.Unlock()

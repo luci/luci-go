@@ -196,7 +196,7 @@ func (h *Handler) OnRunsCreated(ctx context.Context, s *State, created common.Ru
 		}
 		return s, nil, nil
 	case prjpb.Status_STOPPED, prjpb.Status_STOPPING:
-		// This should not normally happen, but may under rare conditons.
+		// This should not normally happen, but may under rare conditions.
 		switch incomplete, err := incompleteRuns(ctx, remaining); {
 		case err != nil:
 			return nil, nil, err

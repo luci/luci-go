@@ -243,8 +243,8 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		// OK, proceed.
 	case gerritpb.ChangeStatus_ABANDONED, gerritpb.ChangeStatus_MERGED:
 		// CV doesn't care about such CLs beyond their status, so don't fetch
-		// additional details to avoid stumbiling into edge cases with how Gerrit
-		// treates abandoned and submitted CLs.
+		// additional details to avoid stumbiling into edge cases with how
+		// Gerrit treats abandoned and submitted CLs.
 		logging.Debugf(ctx, "%s is %s", f, ci.GetStatus())
 		return nil
 	default:
@@ -272,9 +272,9 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		eg, ectx := errgroup.WithContext(ctx)
 		eg.Go(func() error { return f.fetchFiles(ectx) })
 		eg.Go(func() error { return f.fetchRelated(ectx) })
-		// Meanwhile, compute soft deps. Currently, it's cheap operation.
-		// In the future, it may require sending another RPC to Gerrit,
-		// e.g. to fetch related CLs by topic.
+		// Meanwhile, compute soft deps. Currently, it's a cheap operation. In
+		// the future, it may require sending another RPC to Gerrit, e.g. to
+		// fetch related CLs by topic.
 		if err = f.setSoftDeps(); err != nil {
 			return err
 		}

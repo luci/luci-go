@@ -64,7 +64,7 @@ func TestTreeStatesClient(t *testing.T) {
 			}))
 			defer mockSrv.Close()
 			_, err := client.FetchLatest(ctx, mockSrv.URL)
-			So(err, ShouldErrLike, "received error when caling")
+			So(err, ShouldErrLike, "received error when calling")
 		})
 		Convey("Error if response is not JSON", func() {
 			mockSrv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {

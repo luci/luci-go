@@ -147,7 +147,7 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 	return action.Do(ctx)
 }
 
-// longOpCancellationChecker asynchroneously checks whether the given operation
+// longOpCancellationChecker asynchronously checks whether the given operation
 // was requested to be cancelled by the Run Manager.
 type longOpCancellationChecker struct {
 	// Options.

@@ -206,12 +206,12 @@ type testHandler struct {
 func validateStateMutation(passed, initialCopy, result *state.RunState) {
 	switch {
 	case cvtesting.SafeShouldResemble(result, initialCopy) == "":
-		// no state change, doesn't matter whether shallow copy is created or not.
+		// No state change; doesn't matter whether shallow copy is created or not.
 		return
 	case passed == result:
 		So(errors.New("handler mutated the input state but doesn't create a shallow copy before mutation"), ShouldBeNil)
 	case cvtesting.SafeShouldResemble(initialCopy, passed) != "":
-		So(errors.New("handler created a shallow copy but modifed addressable property in place; forgot to clone a proto?"), ShouldBeNil)
+		So(errors.New("handler created a shallow copy but modified addressable property in place; forgot to clone a proto?"), ShouldBeNil)
 	}
 }
 

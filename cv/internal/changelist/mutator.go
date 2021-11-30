@@ -120,7 +120,7 @@ var ErrStopMutation = errors.New("stop CL mutation")
 //
 // If no error is returned, Mutator proceeds saving the CL.
 //
-// If special ErrStopMutation is returned, Mutator aborts the tranasction and
+// If special ErrStopMutation is returned, Mutator aborts the transaction and
 // returns existing CL read from Datastore and no error. In the special case of
 // Upsert(), the returned CL may actually be nil if CL didn't exist.
 //

@@ -91,7 +91,8 @@ func (*pmReporter) prepare(ctx context.Context, activeProjects stringset.Set) (r
 	// projectEntitySizeEstimator objects. Note, that both objects have
 	// datastore's Kind is exactly the same (see `gae:"$kind..."` attribute in
 	// both structs.
-	// Finally, behind the scenes, datastore library should optimzie this to load
+	//
+	// Finally, behind the scenes, datastore library should optimize this to load
 	// only N entities instead of 2*N.
 	eSizes := make([]projectEntitySizeEstimator, activeProjects.Len())
 	entities := make([]prjmanager.Project, activeProjects.Len())

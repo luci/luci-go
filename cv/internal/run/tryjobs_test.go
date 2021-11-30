@@ -39,7 +39,7 @@ func TestSortTryjobs(t *testing.T) {
 		}
 		t5 := cv(5, 11)
 		t6 := cv(6, 12)
-		t7 := cv(8, 12) // dulicate BB ID is possible
+		t7 := cv(8, 12) // duplicate BB ID is possible
 		t8 := cv(9, 10)
 
 		So(sort(t7, t5, t8, t6), ShouldResembleProto, []*Tryjob{t5, t6, t7, t8})

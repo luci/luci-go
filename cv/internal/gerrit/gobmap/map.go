@@ -86,13 +86,13 @@ type mapPart struct {
 // However, there is no atomicity across entire project config. This means that
 // IF Update() is in progress from config versions 1 to 2, identified by
 //   hashes h1 and h2, respectively,
-// THEN two sequential calls to Lookup with diferent Gerrit repos may return
+// THEN two sequential calls to Lookup with different Gerrit repos may return
 // results based on @h2 at first and @h1 for the second, ie:
 //   Lookup(host1,repoA,...) -> @h2
 //   Lookup(host1,repoB,...) -> @h1
 //
 // Thus, a failed Update() may leave gobmap in a corrupted state, whereby some
-// Gerrit repos may represent old and some new config verisons. In such a
+// Gerrit repos may represent old and some new config versions. In such a
 // case it's important that Update() caller retries as soon as possible.
 //
 // TODO(crbug.com/1179286): make Update() incorruptible.

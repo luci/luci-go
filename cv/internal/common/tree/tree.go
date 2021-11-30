@@ -106,7 +106,7 @@ func (c httpClientImpl) FetchLatest(ctx context.Context, endpoint string) (Statu
 	}
 	if resp.StatusCode >= 400 {
 		logging.Errorf(ctx, "received error response when calling %s; response body: %q", url, string(bs))
-		return Status{}, errors.Reason("received error when caling %s", url).Err()
+		return Status{}, errors.Reason("received error when calling %s", url).Err()
 	}
 	var raw struct {
 		State string `json:"general_state"`

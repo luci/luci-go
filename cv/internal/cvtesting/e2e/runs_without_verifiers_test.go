@@ -751,7 +751,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			gf.PS(gPatchSet),
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
-			gf.Desc("This is the 3nd CL of the stack, which was CQ-ed"),
+			gf.Desc("This is the 3rd CL of the stack, which was CQ-ed"),
 			gf.CQ(+2, tStart, gf.U("user-2")),
 		)
 		ci4 := gf.CI(
