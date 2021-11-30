@@ -32,7 +32,7 @@ declare global {
 }
 
 export const STUB_REQUEST_OPTIONS: StubRequestsOption = {
-  matchHeaders: ['host', 'accept', 'content-type', 'origin', 'authorization'],
+  matchHeaders: ['host', 'accept', 'content-type', 'authorization'],
   matchRequest: (cached, incoming) =>
     deepEqual(
       { ...cached, body: removeDefaultProps(cached.body) },

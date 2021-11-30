@@ -61,7 +61,7 @@ describe('Pixel Viewer', () => {
 
     cy.get('#expected-image > img').then(([ele]) => {
       const rect = ele.getBoundingClientRect();
-      cy.get('#expected-image > img').trigger('mousemove', { clientX: rect.x + 60, clientY: rect.y + 18 });
+      cy.get('#expected-image > img').trigger('mousemove', { clientX: rect.x + 60, clientY: rect.y + 20 });
     });
     cy.matchImageSnapshot('pixel-viewer-after-move', {
       capture: 'viewport',
