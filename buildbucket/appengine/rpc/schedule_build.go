@@ -493,13 +493,14 @@ func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
 		return p.Version
 	}
 
+	cipdServer := globalCfg.GetCipd().GetServer()
 	// Exe + UserPackages.
-	// TODO(yuanjun): Set a global default CIPD server in SettingsCfg proto and fetch from it.
 	packages := make([]*pb.BuildInfra_BBAgent_Input_CIPDPackage, 0, 3+len(swarming.UserPackages))
 	packages = append(packages, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
 		Name:    build.Exe.CipdPackage,
 		Path:    "kitchen-checkout",
 		Version: build.Exe.CipdVersion,
+		Server:  cipdServer,
 	})
 
 	id := protoutil.FormatBuilderID(build.Builder)
@@ -515,6 +516,7 @@ func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
 			Name:    p.PackageName,
 			Path:    path,
 			Version: getVersion(p, build),
+			Server:  cipdServer,
 		})
 	}
 	sort.Slice(packages, func(i, j int) bool {

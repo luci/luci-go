@@ -31,6 +31,8 @@ message SettingsCfg {
 
   ExperimentSettings experiment = 5;
 
+  CipdSettings cipd = 6;
+
   // List of Gerrit hosts to force git authentication for.
   //
   // By default public hosts are accessed anonymously, and the anonymous access
@@ -153,4 +155,10 @@ message BuilderPredicate {
 message ResultDBSettings {
   // Hostname of the ResultDB instance to use, e.g. "results.api.cr.dev".
   string hostname = 1;
+}
+
+message CipdSettings {
+  // default CIPD server to use for this setting configuration,
+  // e.g. "chrome-infra-packages.appspot.com".
+  string server = 1;
 }

@@ -2411,6 +2411,9 @@ func TestScheduleBuild(t *testing.T) {
 						Version:     "kitchen-version",
 					},
 				},
+				Cipd: &pb.CipdSettings{
+					Server: "cipd_server",
+				},
 			}
 
 			setCIPDPackages(b, s)
@@ -2432,6 +2435,7 @@ func TestScheduleBuild(t *testing.T) {
 									Name:    "exe",
 									Path:    "kitchen-checkout",
 									Version: "exe-version",
+									Server:  "cipd_server",
 								},
 							},
 						},
