@@ -66,6 +66,7 @@ func main() {
 
 	server.Main(nil, mods, func(srv *server.Server) error {
 		o := srv.Options
+		srv.Context = metrics.WithServiceInfo(srv.Context, o.TsMonServiceName, o.TsMonJobName, o.Hostname)
 
 		// Init a new tsmon.State with the default task target,
 		// configured in luci/server. V1 metrics need it.
@@ -81,7 +82,7 @@ func main() {
 		}
 
 		cron.RegisterHandler("report_builder_metrics", func(_ context.Context) error {
-			if err := metrics.ReportBuilderMetrics(ctx, o.TsMonServiceName, o.TsMonJobName, o.Hostname); err != nil {
+			if err := metrics.ReportBuilderMetrics(ctx); err != nil {
 				return errors.Annotate(err, "computing builder metrics").Err()
 			}
 			if err := state.Flush(ctx, mon); err != nil {

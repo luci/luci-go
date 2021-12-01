@@ -89,7 +89,7 @@ func (b *Builder) PopulateProto(d *tsmonpb.MetricsCollection) {
 }
 
 // ReportBuilderMetrics computes and reports Builder metrics.
-func ReportBuilderMetrics(ctx context.Context, serviceName, jobName, insID string) error {
+func ReportBuilderMetrics(ctx context.Context) error {
 	// Reset the metric to stop reporting no-longer-existing builders.
 	tsmon.GetState(ctx).Store().Reset(ctx, V2.BuilderPresence)
 	luciBuckets, err := fetchLUCIBuckets(ctx)
@@ -112,6 +112,7 @@ func ReportBuilderMetrics(ctx context.Context, serviceName, jobName, insID strin
 			}
 
 			project, bucket, builder := mustParseBuilderStatID(work)
+			tctx := WithBuilder(ctx, project, bucket, builder)
 			legacyBucket := bucket
 			// V1 metrics format the bucket name in "luci.$project.$bucket"
 			// if the bucket config has a swarming config.
@@ -119,15 +120,6 @@ func ReportBuilderMetrics(ctx context.Context, serviceName, jobName, insID strin
 				legacyBucket = legacyBucketName(project, bucket)
 			}
 
-			tctx := target.Set(ctx, &Builder{
-				Project: project,
-				Bucket:  bucket,
-				Builder: builder,
-
-				ServiceName: serviceName,
-				JobName:     jobName,
-				InstanceID:  insID,
-			})
 			V2.BuilderPresence.Set(tctx, true)
 
 			taskC <- func() error {

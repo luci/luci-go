@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/target"
 
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
 	"go.chromium.org/luci/gae/impl/memory"
@@ -36,23 +35,15 @@ func TestReportBuilderMetrics(t *testing.T) {
 	t.Parallel()
 
 	Convey("ReportBuilderMetrics", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
 		store := tsmon.Store(ctx)
-		service, job, ins := "service", "job", "ins-0"
 		prj, bkt := "infra", "ci"
 		target := func(builder string) context.Context {
-			return target.Set(ctx, &Builder{
-				Project:     prj,
-				Bucket:      bkt,
-				Builder:     builder,
-				ServiceName: service,
-				JobName:     job,
-				InstanceID:  ins,
-			})
+			return WithBuilder(ctx, prj, bkt, builder)
 		}
 
 		createBuilder := func(builder string) error {
@@ -75,14 +66,14 @@ func TestReportBuilderMetrics(t *testing.T) {
 		Convey("report v2.BuilderPresence", func() {
 			So(createBuilder("b1"), ShouldBeNil)
 			So(createBuilder("b2"), ShouldBeNil)
-			So(ReportBuilderMetrics(ctx, service, job, ins), ShouldBeNil)
+			So(ReportBuilderMetrics(ctx), ShouldBeNil)
 			So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
 			So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
 			So(store.Get(target("b3"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
 
 			Convey("w/o removed builder", func() {
 				So(deleteBuilder("b1"), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx, service, job, ins), ShouldBeNil)
+				So(ReportBuilderMetrics(ctx), ShouldBeNil)
 				So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
 				So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
 			})
@@ -91,7 +82,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 				// Let's pretend that b1 was inactive for 4 weeks, and
 				// got unregistered from the BuilderStat.
 				So(datastore.Delete(ctx, &model.BuilderStat{ID: prj + ":" + bkt + ":b1"}), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx, service, job, ins), ShouldBeNil)
+				So(ReportBuilderMetrics(ctx), ShouldBeNil)
 				// b1 should no longer be reported in the presence metric.
 				So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
 				So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)

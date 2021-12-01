@@ -35,6 +35,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -51,6 +52,9 @@ func main() {
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
+		o := srv.Options
+		srv.Context = metrics.WithServiceInfo(srv.Context, o.TsMonServiceName, o.TsMonJobName, o.Hostname)
+
 		srv.PRPC.AccessControl = prpc.AllowOriginAll
 		srv.PRPC.Authenticator = &auth.Authenticator{
 			Methods: []auth.Method{
