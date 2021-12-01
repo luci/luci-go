@@ -198,11 +198,13 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
 		Eq("tags", "builder:"+builder).
 		Eq("status_v2", pb.Status_SCHEDULED).
-		Eq("experimental", false)
+		Eq("experimental", false).
+		Order("create_time").
+		Limit(1)
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
 		var b []*model.Build
-		if err := datastore.GetAll(ctx, q.Eq("never_leased", false).Order("create_time").Limit(1), &b); err != nil {
+		if err := datastore.GetAll(ctx, q.Eq("never_leased", false), &b); err != nil {
 			return err
 		}
 		if len(b) > 0 {
@@ -212,7 +214,7 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 	})
 	eg.Go(func() error {
 		var b []*model.Build
-		if err := datastore.GetAll(ctx, q.Eq("never_leased", true).Order("create_time").Limit(1), &b); err != nil {
+		if err := datastore.GetAll(ctx, q.Eq("never_leased", true), &b); err != nil {
 			return err
 		}
 		if len(b) > 0 {
