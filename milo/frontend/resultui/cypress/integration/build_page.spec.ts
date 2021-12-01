@@ -220,4 +220,15 @@ describe('Build Page', () => {
     cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview');
     cy.get('#summary-html'); // Ensure the overview tab is loaded.
   });
+
+  it('should display test name properly', () => {
+    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/overview');
+    cy.get('milo-test-variant-entry').then((ele) => {
+      const rect = ele[0].getBoundingClientRect();
+      cy.matchImageSnapshot('test-variant-entry', {
+        capture: 'viewport',
+        clip: { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
+      });
+    });
+  });
 });
