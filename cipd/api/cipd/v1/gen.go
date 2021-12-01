@@ -15,5 +15,7 @@
 //go:generate cproto -use-grpc-plugin
 //go:generate mockgen -source repo_grpc.pb.go -destination repo_grpc.mock.pb.go -package api
 
+// +build !copybara
+
 // Package api contains CIPD backend API definitions.
 package api
