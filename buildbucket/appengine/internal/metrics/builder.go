@@ -20,7 +20,11 @@ import (
 	"hash/fnv"
 	"reflect"
 	"strings"
+	"time"
 
+	"golang.org/x/sync/errgroup"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -31,6 +35,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
@@ -187,7 +192,58 @@ func fetchLUCIBuckets(ctx context.Context) (stringset.Set, error) {
 
 // reportMaxAge computes and reports the age of the oldest builds with SCHEDULED.
 func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder string) error {
-	// TODO(ddoman): implement me
+	var leasedCT, neverLeasedCT time.Time
+
+	q := datastore.NewQuery(model.BuildKind).
+		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
+		Eq("tags", "builder:"+builder).
+		Eq("status_v2", pb.Status_SCHEDULED).
+		Eq("experimental", false)
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		var b []*model.Build
+		if err := datastore.GetAll(ctx, q.Eq("never_leased", false).Order("create_time").Limit(1), &b); err != nil {
+			return err
+		}
+		if len(b) > 0 {
+			leasedCT = b[0].CreateTime
+		}
+		return nil
+	})
+	eg.Go(func() error {
+		var b []*model.Build
+		if err := datastore.GetAll(ctx, q.Eq("never_leased", true).Order("create_time").Limit(1), &b); err != nil {
+			return err
+		}
+		if len(b) > 0 {
+			neverLeasedCT = b[0].CreateTime
+		}
+		return nil
+	})
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	var max, neverLeasedMax float64
+	now := clock.Now(ctx)
+	if !neverLeasedCT.IsZero() {
+		neverLeasedMax = now.Sub(neverLeasedCT).Seconds()
+	}
+
+	// In V1, the metric value of a stream with "must_be_never_leased == false"
+	// is the age of the oldest build w/ "must_be_never_leased == true|false".
+	//
+	// That is, it's the age of the oldest build regardless of the value
+	// in must_be_never_leased.
+	if !leasedCT.IsZero() {
+		max = now.Sub(leasedCT).Seconds()
+	}
+	if max < neverLeasedMax {
+		max = neverLeasedMax
+	}
+	V1.MaxAgeScheduled.Set(ctx, max, legacyBucket, builder, false /*must_be_never_leased*/)
+	V1.MaxAgeScheduled.Set(ctx, neverLeasedMax, legacyBucket, builder, true)
+	V2.MaxAgeScheduled.Set(ctx, max)
 	return nil
 }
 

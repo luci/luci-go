@@ -16,18 +16,26 @@ package metrics
 
 import (
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 var (
 	// V2 is a collection of metric objects for V2 metrics.
 	V2 = struct {
 		BuilderPresence metric.Bool
+		MaxAgeScheduled metric.Float
 	}{
 		BuilderPresence: metric.NewBoolWithTargetType(
 			"buildbucket/v2/builder/presence",
 			(&Builder{}).Type(),
 			"A constant, always-true metric that indicates the presence of LUCI Builder",
 			nil,
+		),
+		MaxAgeScheduled: metric.NewFloatWithTargetType(
+			"buildbucket/v2/builds/max_age_scheduled",
+			(&Builder{}).Type(),
+			"Age of the oldest SCHEDULED build",
+			&types.MetricMetadata{Units: types.Seconds},
 		),
 	}
 )

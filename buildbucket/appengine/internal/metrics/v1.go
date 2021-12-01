@@ -29,13 +29,14 @@ import (
 var (
 	// A common set of field definitions for build metrics.
 	fieldDefs = map[string]field.Field{
-		"bucket":             field.String("bucket"),
-		"builder":            field.String("builder"),
-		"canary":             field.Bool("canary"),
-		"cancelation_reason": field.String("cancelation_reason"),
-		"failure_reason":     field.String("failure_reason"),
-		"result":             field.String("result"),
-		"user_agent":         field.String("user_agent"),
+		"bucket":               field.String("bucket"),
+		"builder":              field.String("builder"),
+		"canary":               field.Bool("canary"),
+		"cancelation_reason":   field.String("cancelation_reason"),
+		"failure_reason":       field.String("failure_reason"),
+		"must_be_never_leased": field.Bool("must_be_never_leased"),
+		"result":               field.String("result"),
+		"user_agent":           field.String("user_agent"),
 	}
 
 	// V1 is a collection of metric objects for V1 metrics.
@@ -46,6 +47,7 @@ var (
 		BuildDurationCycle      metric.CumulativeDistribution
 		BuildDurationRun        metric.CumulativeDistribution
 		BuildDurationScheduling metric.CumulativeDistribution
+		MaxAgeScheduled         metric.Float
 	}{
 		BuildCountCreated: metric.NewCounter(
 			"buildbucket/builds/created",
@@ -73,6 +75,12 @@ var (
 		BuildDurationScheduling: newbuildDurationMetric(
 			"buildbucket/builds/scheduling_durations",
 			"Duration between build creation and start",
+		),
+		MaxAgeScheduled: metric.NewFloat(
+			"buildbucket/builds/max_age_scheduled",
+			"Age of the oldest SCHEDULED build",
+			&types.MetricMetadata{Units: types.Seconds},
+			bFields("must_be_never_leased")...,
 		),
 	}
 )
