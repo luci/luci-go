@@ -129,6 +129,6 @@ func getLegacyMetricFields(b *model.Build) (result, failureR, cancelationR strin
 
 // legacyBucketName returns the V1 luci bucket name.
 // e.g., "luci.chromium.try".
-func legacyBucketName(bid *pb.BuilderID) string {
-	return fmt.Sprintf("luci.%s.%s", bid.Project, bid.Bucket)
+func legacyBucketName(project, bucket string) string {
+	return fmt.Sprintf("luci.%s.%s", project, bucket)
 }

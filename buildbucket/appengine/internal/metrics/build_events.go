@@ -31,12 +31,14 @@ func BuildCreated(ctx context.Context, b *model.Build) {
 			break
 		}
 	}
-	V1.BuildCountCreated.Add(ctx, 1, legacyBucketName(b.Proto.Builder), b.Proto.Builder.Builder, ua)
+	V1.BuildCountCreated.Add(
+		ctx, 1, legacyBucketName(b.Proto.Builder.Project, b.Proto.Builder.Bucket),
+		b.Proto.Builder.Builder, ua)
 }
 
 // BuildStarted updates metrics for a build start event.
 func BuildStarted(ctx context.Context, b *model.Build) {
-	bucket := legacyBucketName(b.Proto.Builder)
+	bucket := legacyBucketName(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
 	builder := b.Proto.Builder.Builder
 	isCan := b.Proto.Canary
 
@@ -51,7 +53,7 @@ func BuildStarted(ctx context.Context, b *model.Build) {
 
 // BuildCompleted updates metrics for a build completion event.
 func BuildCompleted(ctx context.Context, b *model.Build) {
-	bucket := legacyBucketName(b.Proto.Builder)
+	bucket := legacyBucketName(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
 	builder := b.Proto.Builder.Builder
 	isCan := b.Proto.Canary
 	reason, failReason, cancelReason := getLegacyMetricFields(b)

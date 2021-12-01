@@ -21,6 +21,9 @@ import (
 	"reflect"
 	"strings"
 
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 	tsmonpb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
@@ -28,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // Builder is a metric target that represents a LUCI Builder.
@@ -88,22 +92,80 @@ func (b *Builder) PopulateProto(d *tsmonpb.MetricsCollection) {
 func ReportBuilderMetrics(ctx context.Context, serviceName, jobName, insID string) error {
 	// Reset the metric to stop reporting no-longer-existing builders.
 	tsmon.GetState(ctx).Store().Reset(ctx, V2.BuilderPresence)
+	luciBuckets, err := fetchLUCIBuckets(ctx)
+	if err != nil {
+		return errors.Annotate(err, "fetching LUCI buckets w/ swarming config").Err()
+	}
+
+	workC := make(chan string, 16)
+	errC := parallel.Run(256, func(taskC chan<- func() error) {
+		for {
+			work, ok := <-workC
+			// if the context was canceled already, don't bother to exhaust
+			// workC completely.
+			//
+			// reportMaxAge and reportBuildCount terminate upon context cancelation.
+			// Therefore, all the active goroutines processing the generated tasks
+			// will also be terminated upon context cancelation.
+			if !ok || ctx.Err() != nil {
+				break
+			}
+
+			project, bucket, builder := mustParseBuilderStatID(work)
+			legacyBucket := bucket
+			// V1 metrics format the bucket name in "luci.$project.$bucket"
+			// if the bucket config has a swarming config.
+			if luciBuckets.Has(protoutil.FormatBucketID(project, bucket)) {
+				legacyBucket = legacyBucketName(project, bucket)
+			}
+
+			tctx := target.Set(ctx, &Builder{
+				Project: project,
+				Bucket:  bucket,
+				Builder: builder,
+
+				ServiceName: serviceName,
+				JobName:     jobName,
+				InstanceID:  insID,
+			})
+			V2.BuilderPresence.Set(tctx, true)
+
+			taskC <- func() error {
+				return errors.Annotate(
+					reportMaxAge(tctx, project, bucket, legacyBucket, builder),
+					"reportMaxAge",
+				).Err()
+			}
+			taskC <- func() error {
+				return errors.Annotate(
+					reportBuildCount(tctx, project, bucket, legacyBucket, builder),
+					"reportBuildCount",
+				).Err()
+			}
+		}
+	})
 
 	q := datastore.NewQuery(model.BuilderStatKind).KeysOnly(true)
-	return datastore.RunBatch(ctx, 256, q, func(k *datastore.Key) error {
-		project, bucket, builder := mustParseBuilderStatID(k.StringID())
-		tctx := target.Set(ctx, &Builder{
-			Project: project,
-			Bucket:  bucket,
-			Builder: builder,
-
-			ServiceName: serviceName,
-			JobName:     jobName,
-			InstanceID:  insID,
-		})
-		V2.BuilderPresence.Set(tctx, true)
+	err = datastore.RunBatch(ctx, 256, q, func(k *datastore.Key) error {
+		workC <- k.StringID()
 		return nil
 	})
+	close(workC)
+
+	errs := errors.MultiError(nil)
+	if err != nil {
+		errs = append(errs, errors.Annotate(err, "fetching BuilderStat(s)").Err())
+	}
+	for e := range errC {
+		if e == nil {
+			continue
+		}
+		errs = append(errs, e)
+	}
+	if len(errs) == 0 {
+		return nil
+	}
+	return errs
 }
 
 func mustParseBuilderStatID(id string) (project, bucket, builder string) {
@@ -113,4 +175,32 @@ func mustParseBuilderStatID(id string) (project, bucket, builder string) {
 	}
 	project, bucket, builder = parts[0], parts[1], parts[2]
 	return
+}
+
+// fetchLUCIBuckets returns a stringset.Set with the ID of the buckets
+// w/ swarming config.
+func fetchLUCIBuckets(ctx context.Context) (stringset.Set, error) {
+	ret := stringset.Set{}
+	err := datastore.RunBatch(
+		ctx, 128, datastore.NewQuery(model.BucketKind),
+		func(bucket *model.Bucket) error {
+			if bucket.Proto.GetSwarming() != nil {
+				ret.Add(protoutil.FormatBucketID(bucket.Parent.StringID(), bucket.ID))
+			}
+			return nil
+		},
+	)
+	return ret, err
+}
+
+// reportMaxAge computes and reports the age of the oldest builds with SCHEDULED.
+func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder string) error {
+	// TODO(ddoman): implement me
+	return nil
+}
+
+// reportBuildCount computes and reports # of builds with SCHEDULED and STARTED.
+func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builder string) error {
+	// TODO(ddoman): implement me
+	return nil
 }
