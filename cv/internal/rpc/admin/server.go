@@ -677,9 +677,15 @@ func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, err
 	case req.GetId() != 0:
 		cl = &changelist.CL{ID: common.CLID(req.GetId())}
 		err = datastore.Get(ctx, cl)
+		switch {
+		case err == datastore.ErrNoSuchEntity:
+			cl, err = nil, nil
+		case err != nil:
+			err = errors.Annotate(err, "failed to fetch CL by InternalID %d", req.GetId()).Tag(transient.Tag).Err()
+		}
 	case req.GetExternalId() != "":
 		eid = changelist.ExternalID(req.GetExternalId())
-		cl, err = eid.Get(ctx)
+		cl, err = eid.Load(ctx)
 	case req.GetGerritUrl() != "":
 		var host string
 		var change int64
@@ -691,19 +697,19 @@ func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, err
 		if err != nil {
 			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
 		}
-		cl, err = eid.Get(ctx)
+		cl, err = eid.Load(ctx)
 	default:
 		return nil, appstatus.Error(codes.InvalidArgument, "id or external_id or gerrit_url is required")
 	}
 
 	switch {
-	case err == datastore.ErrNoSuchEntity:
+	case err != nil:
+		return nil, err
+	case cl == nil:
 		if req.GetId() == 0 {
 			return nil, appstatus.Errorf(codes.NotFound, "CL %d not found", req.GetId())
 		}
 		return nil, appstatus.Errorf(codes.NotFound, "CL %s not found", eid)
-	case err != nil:
-		return nil, err
 	}
 	return cl, nil
 }

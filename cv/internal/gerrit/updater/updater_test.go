@@ -773,10 +773,7 @@ Cq-Depend: 101
 func getCL(ctx context.Context, host string, change int) *changelist.CL {
 	eid, err := changelist.GobID(host, int64(change))
 	So(err, ShouldBeNil)
-	cl, err := eid.Get(ctx)
-	if err == datastore.ErrNoSuchEntity {
-		return nil
-	}
+	cl, err := eid.Load(ctx)
 	So(err, ShouldBeNil)
 	return cl
 }

@@ -116,14 +116,14 @@ func ToUpdatedEvents(cls ...*CL) *CLUpdatedEvents {
 	return &CLUpdatedEvents{Events: events}
 }
 
-// Get reads a CL from Datastore.
+// Load reads a CL from Datastore.
 //
-// Returns datastore.ErrNoSuchEntity if it doesn't exist.
-func (eid ExternalID) Get(ctx context.Context) (*CL, error) {
+// Returns nil, nil if it doesn't exist.
+func (eid ExternalID) Load(ctx context.Context) (*CL, error) {
 	m := clMap{ExternalID: eid}
 	switch err := datastore.Get(ctx, &m); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, err
+		return nil, nil
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to get CLMap").Tag(transient.Tag).Err()
 	}
@@ -148,19 +148,17 @@ func (eid ExternalID) Get(ctx context.Context) (*CL, error) {
 // Panicks on errors.
 func (eid ExternalID) MustCreateIfNotExists(ctx context.Context) *CL {
 	// Fast path without transaction.
-	if cl, err := eid.Get(ctx); err != datastore.ErrNoSuchEntity {
+	if cl, err := eid.Load(ctx); err == nil && cl != nil {
 		return cl
 	}
 	var cl *CL
-	m := clMap{ExternalID: eid}
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
-		cl = nil
-		switch err = datastore.Get(ctx, &m); {
-		case err == nil:
-			cl, err = eid.Get(ctx)
+		cl, err = eid.Load(ctx)
+		switch {
+		case err != nil:
 			return err
-		case err != datastore.ErrNoSuchEntity:
-			return err
+		case cl != nil:
+			return nil
 		}
 		cl = &CL{
 			ExternalID: eid,
@@ -170,7 +168,7 @@ func (eid ExternalID) MustCreateIfNotExists(ctx context.Context) *CL {
 		if err := datastore.AllocateIDs(ctx, cl); err != nil {
 			return err
 		}
-		m.InternalID = cl.ID
+		m := clMap{ExternalID: eid, InternalID: cl.ID}
 		return datastore.Put(ctx, &m, cl)
 	}, nil)
 

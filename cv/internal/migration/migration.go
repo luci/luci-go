@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -167,11 +166,7 @@ func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationp
 	})
 	eg.Go(func() error {
 		var err error
-		cl, err = clExternalID.Get(ctx)
-		if err == datastore.ErrNoSuchEntity {
-			cl = nil
-			err = nil
-		}
+		cl, err = clExternalID.Load(ctx)
 		return err
 	})
 	if err = eg.Wait(); err != nil {

@@ -528,8 +528,9 @@ func TestMutatorConcurrent(t *testing.T) {
 			func(context.Context, string) error { return nil },
 			featureBreaker.DatastoreFeatures...,
 		)
-		cl, err := eid.Get(ctx)
+		cl, err := eid.Load(ctx)
 		So(err, ShouldBeNil)
+		So(cl, ShouldNotBeNil)
 		// Since all workers have succeeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)

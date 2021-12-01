@@ -78,7 +78,7 @@ func (ct ctest) runCLUpdaterAs(ctx context.Context, change int64, lProject strin
 	}), ShouldBeNil)
 	eid, err := changelist.GobID(ct.gHost, change)
 	So(err, ShouldBeNil)
-	cl, err := eid.Get(ctx)
+	cl, err := eid.Load(ctx)
 	So(err, ShouldBeNil)
 	So(cl, ShouldNotBeNil)
 	return cl

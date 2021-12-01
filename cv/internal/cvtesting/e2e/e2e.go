@@ -375,14 +375,11 @@ func (t *Test) LoadCL(ctx context.Context, id common.CLID) *changelist.CL {
 
 // LoadGerritCL returns CL entity or nil if not exists.
 func (t *Test) LoadGerritCL(ctx context.Context, gHost string, gChange int64) *changelist.CL {
-	switch cl, err := changelist.MustGobID(gHost, gChange).Get(ctx); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil
-	case err != nil:
+	cl, err := changelist.MustGobID(gHost, gChange).Load(ctx)
+	if err != nil {
 		panic(err)
-	default:
-		return cl
 	}
+	return cl
 }
 
 // MaxVote returns max vote of a Gerrit CL loaded from Gerrit fake.

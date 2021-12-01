@@ -81,8 +81,9 @@ func TestPurgeCL(t *testing.T) {
 		refreshCL()
 
 		loadCL := func() *changelist.CL {
-			cl, err := changelist.MustGobID(gHost, change).Get(ctx)
+			cl, err := changelist.MustGobID(gHost, change).Load(ctx)
 			So(err, ShouldBeNil)
+			So(cl, ShouldNotBeNil)
 			return cl
 		}
 		clBefore := loadCL()

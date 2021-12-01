@@ -95,20 +95,19 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 	if clidHint != 0 {
 		f.priorCL = &changelist.CL{ID: clidHint}
 		err = datastore.Get(ctx, f.priorCL)
+		if err == datastore.ErrNoSuchEntity {
+			return errors.Reason("clidHint %d doesn't refer to an existing CL (%s)", clidHint, f).Err()
+		}
 	} else {
-		f.priorCL, err = f.externalID.Get(ctx)
+		f.priorCL, err = f.externalID.Load(ctx) // nil, nil if not exists
 	}
 
 	switch {
-	case err == datastore.ErrNoSuchEntity:
-		if clidHint != 0 {
-			return errors.Reason("clidHint %d doesn't refer to an existing CL (%s)", clidHint, f).Err()
-		}
-		f.priorCL = nil
-		err = f.fetchNew(ctx)
-
 	case err != nil:
 		return err
+
+	case f.priorCL == nil:
+		err = f.fetchNew(ctx)
 
 	case f.priorCL.Snapshot == nil:
 		// CL exists, but without snapshot, usually because it was created as

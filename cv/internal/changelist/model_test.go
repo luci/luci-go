@@ -45,9 +45,10 @@ func TestCL(t *testing.T) {
 		eid, err := GobID("x-review.example.com", 12)
 		So(err, ShouldBeNil)
 
-		Convey("ExternalID.Get fails if CL doesn't exist", func() {
-			_, err := eid.Get(ctx)
-			So(err, ShouldResemble, datastore.ErrNoSuchEntity)
+		Convey("ExternalID.Get returns nil if CL doesn't exist", func() {
+			cl, err := eid.Load(ctx)
+			So(err, ShouldBeNil)
+			So(cl, ShouldBeNil)
 		})
 
 		Convey("ExternalID.MustCreateIfNotExists creates a CL", func() {
@@ -60,7 +61,7 @@ func TestCL(t *testing.T) {
 			So(cl.UpdateTime, ShouldResemble, epoch)
 
 			Convey("ExternalID.Get loads existing CL", func() {
-				cl2, err := eid.Get(ctx)
+				cl2, err := eid.Load(ctx)
 				So(err, ShouldBeNil)
 				So(cl2.ID, ShouldEqual, cl.ID)
 				So(cl2.ExternalID, ShouldEqual, eid)
@@ -82,11 +83,13 @@ func TestCL(t *testing.T) {
 			Convey("Delete works", func() {
 				err := Delete(ctx, cl.ID)
 				So(err, ShouldBeNil)
-				_, err = eid.Get(ctx)
-				So(err, ShouldResemble, datastore.ErrNoSuchEntity)
+				// Verify.
 				So(datastore.Get(ctx, cl), ShouldResemble, datastore.ErrNoSuchEntity)
+				cl2, err2 := eid.Load(ctx)
+				So(err2, ShouldBeNil)
+				So(cl2, ShouldBeNil)
 
-				Convey("delete is now noop", func() {
+				Convey("delete is now a noop", func() {
 					err := Delete(ctx, cl.ID)
 					So(err, ShouldBeNil)
 				})
