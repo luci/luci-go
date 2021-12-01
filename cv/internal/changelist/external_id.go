@@ -49,37 +49,37 @@ func MustGobID(host string, change int64) ExternalID {
 }
 
 // ParseGobID returns Gerrit host and change if this is a GobID.
-func (e ExternalID) ParseGobID() (host string, change int64, err error) {
-	parts := strings.Split(string(e), "/")
+func (eid ExternalID) ParseGobID() (host string, change int64, err error) {
+	parts := strings.Split(string(eid), "/")
 	if len(parts) != 3 || parts[0] != "gerrit" {
-		err = errors.Reason("%q is not a valid GobID", e).Err()
+		err = errors.Reason("%q is not a valid GobID", eid).Err()
 		return
 	}
 	host = parts[1]
 	change, err = strconv.ParseInt(parts[2], 10, 63)
 	if err != nil {
-		err = errors.Annotate(err, "%q is not a valid GobID", e).Err()
+		err = errors.Annotate(err, "%q is not a valid GobID", eid).Err()
 	}
 	return
 }
 
 // URL returns URL of the CL.
-func (e ExternalID) URL() (string, error) {
-	parts := strings.Split(string(e), "/")
+func (eid ExternalID) URL() (string, error) {
+	parts := strings.Split(string(eid), "/")
 	if len(parts) < 2 {
-		return "", errors.Reason("invalid ExternalID: %q", e).Err()
+		return "", errors.Reason("invalid ExternalID: %q", eid).Err()
 	}
 	switch kind := parts[0]; kind {
 	case "gerrit":
 		return fmt.Sprintf("https://%s/c/%s", parts[1], parts[2]), nil
 	default:
-		return "", errors.Reason("unrecognized ExternalID: %q", e).Err()
+		return "", errors.Reason("unrecognized ExternalID: %q", eid).Err()
 	}
 }
 
 // MustURL is like `URL()` but panic on err.
-func (e ExternalID) MustURL() string {
-	ret, err := e.URL()
+func (eid ExternalID) MustURL() string {
+	ret, err := eid.URL()
 	if err != nil {
 		panic(err)
 	}
