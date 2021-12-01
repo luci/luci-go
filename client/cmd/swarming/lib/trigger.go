@@ -214,7 +214,7 @@ func (c *triggerRun) Init(authFlags AuthFlags) {
 	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
 	c.Flags.StringVar(&c.isolated, "s", "", "Alias for -isolated.")
-	c.Flags.StringVar(&c.casInstance, "cas-instance", "", "CAS instance (GCP). Format is \"projects/<project_id>/instances/<instance_id>\". Default is contructed from -server.")
+	c.Flags.StringVar(&c.casInstance, "cas-instance", "", "CAS instance (GCP). Format is \"projects/<project_id>/instances/<instance_id>\". Default is constructed from -server.")
 	c.Flags.StringVar(&c.digest, "digest", "", "Digest of root directory uploaded to CAS `<Hash>/<Size>`.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	c.Flags.Var(&c.dimensions, "d", "Alias for -dimension.")
