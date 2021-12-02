@@ -15,24 +15,16 @@
 package lhttp
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-)
-
-const (
-	jsonContentType        = "application/json"
-	jsonContentTypeForPOST = "application/json; charset=utf-8"
 )
 
 // Handler is called once or multiple times for each HTTP request that is tried.
@@ -139,70 +131,4 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 		}
 		return status, err
 	}
-}
-
-// NewRequestJSON returns a retriable request calling a JSON endpoint.
-func NewRequestJSON(ctx context.Context, c *http.Client, rFn retry.Factory, url, method string, headers map[string]string, in, out interface{}) (func() (int, error), error) {
-	var encoded []byte
-	if in != nil {
-		var err error
-		if encoded, err = json.Marshal(in); err != nil {
-			return nil, errors.Annotate(err, "failed to marshal").Err()
-		}
-	}
-
-	return NewRequest(ctx, c, rFn, func() (*http.Request, error) {
-		var body io.Reader
-		if encoded != nil {
-			body = bytes.NewReader(encoded)
-		}
-
-		req, err := http.NewRequest(method, url, body)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to call http.NewRequest(%s, %s, ...)", method, url).Err()
-		}
-		if encoded != nil {
-			req.Header.Set("Content-Type", jsonContentTypeForPOST)
-		}
-		if headers != nil {
-			for k, v := range headers {
-				req.Header.Add(k, v)
-			}
-		}
-		return req, nil
-	}, func(resp *http.Response) error {
-		defer resp.Body.Close()
-		if ct := strings.ToLower(resp.Header.Get("Content-Type")); !strings.HasPrefix(ct, jsonContentType) {
-			// Non-retriable.
-			return errors.Reason("unexpected Content-Type, expected \"%s\", got \"%s\"", jsonContentType, ct).Err()
-		}
-		if out == nil {
-			// The client doesn't care about the response. Still ensure the response
-			// is valid json.
-			out = &map[string]interface{}{}
-		}
-		if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
-			// Retriable.
-			return errors.Annotate(err, "bad response %s", url).Tag(transient.Tag).Err()
-		}
-		return nil
-	}, nil), nil
-}
-
-// GetJSON is a shorthand. It returns the HTTP status code and error if any.
-func GetJSON(ctx context.Context, rFn retry.Factory, c *http.Client, url string, out interface{}) (int, error) {
-	req, err := NewRequestJSON(ctx, c, rFn, url, "GET", nil, nil, out)
-	if err != nil {
-		return 0, err
-	}
-	return req()
-}
-
-// PostJSON is a shorthand. It returns the HTTP status code and error if any.
-func PostJSON(ctx context.Context, rFn retry.Factory, c *http.Client, url string, headers map[string]string, in, out interface{}) (int, error) {
-	req, err := NewRequestJSON(ctx, c, rFn, url, "POST", headers, in, out)
-	if err != nil {
-		return 0, err
-	}
-	return req()
 }

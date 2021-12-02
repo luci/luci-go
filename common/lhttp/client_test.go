@@ -17,7 +17,6 @@ package lhttp
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -141,139 +140,6 @@ func TestNewRequestGETFail(t *testing.T) {
 		status, err := clientReq()
 		So(err.Error(), ShouldResemble, "gave up after 4 attempts: http request failed: Internal Server Error (HTTP 500)")
 		So(status, ShouldResemble, 500)
-	})
-}
-
-func TestGetJSON(t *testing.T) {
-	Convey(`HTTP GET JSON requests should be handled correctly.`, t, func(c C) {
-		ctx := context.Background()
-
-		// First call returns HTTP 500, second succeeds.
-		serverCalls := 0
-		ts := httptest.NewServer(handlerJSON(t, func(body io.Reader) interface{} {
-			serverCalls++
-			content, err := ioutil.ReadAll(body)
-			c.So(err, ShouldBeNil)
-			c.So(content, ShouldResemble, []byte{})
-			if serverCalls == 1 {
-				return nil
-			}
-			return map[string]string{"success": "yeah"}
-		}))
-		defer ts.Close()
-
-		actual := map[string]string{}
-		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
-		So(err, ShouldBeNil)
-		So(status, ShouldResemble, 200)
-		So(actual, ShouldResemble, map[string]string{"success": "yeah"})
-		So(serverCalls, ShouldResemble, 2)
-	})
-}
-
-func TestGetJSONBadResult(t *testing.T) {
-	Convey(`HTTP GET JSON bad requests should be handled correctly.`, t, func(c C) {
-		ctx := context.Background()
-
-		serverCalls := 0
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			serverCalls++
-			w.Header().Set("Content-Type", jsonContentType)
-			_, err := io.WriteString(w, "yo")
-			c.So(err, ShouldBeNil)
-		}))
-		defer ts.Close()
-
-		actual := map[string]string{}
-		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
-		So(err.Error(), ShouldResemble, "gave up after 4 attempts: failed to handle response: bad response "+ts.URL+": invalid character 'y' looking for beginning of value")
-		So(status, ShouldResemble, 200)
-		So(actual, ShouldResemble, map[string]string{})
-	})
-}
-
-func TestGetJSONBadResultIgnore(t *testing.T) {
-	Convey(`Bad results from GET JSON requests should be handled correctly.`, t, func(c C) {
-		ctx := context.Background()
-
-		serverCalls := 0
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			serverCalls++
-			w.Header().Set("Content-Type", jsonContentType)
-			_, err := io.WriteString(w, "yo")
-			c.So(err, ShouldBeNil)
-		}))
-		defer ts.Close()
-
-		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
-		So(err.Error(), ShouldResemble, "gave up after 4 attempts: failed to handle response: bad response "+ts.URL+": invalid character 'y' looking for beginning of value")
-		So(status, ShouldResemble, 200)
-	})
-}
-
-func TestGetJSONBadContentTypeIgnore(t *testing.T) {
-	Convey(`Invalid content in bad GET JSON requests should be handled correctly`, t, func(c C) {
-		ctx := context.Background()
-
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, err := io.WriteString(w, "{}")
-			c.So(err, ShouldBeNil)
-		}))
-		defer ts.Close()
-
-		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
-		So(err.Error(), ShouldResemble, "gave up after 4 attempts: failed to handle response: unexpected Content-Type, expected \"application/json\", got \"text/plain; charset=utf-8\"")
-		So(status, ShouldResemble, 200)
-	})
-}
-
-func TestPostJSON(t *testing.T) {
-	Convey(`HTTP POST JSON requests should be handled correctly.`, t, func(c C) {
-		ctx := context.Background()
-
-		// First call returns HTTP 500, second succeeds.
-		serverCalls := 0
-		ts := httptest.NewServer(handlerJSON(t, func(body io.Reader) interface{} {
-			serverCalls++
-			data := map[string]string{}
-			c.So(json.NewDecoder(body).Decode(&data), ShouldBeNil)
-			c.So(data, ShouldResemble, map[string]string{"in": "all"})
-			if serverCalls == 1 {
-				return nil
-			}
-			return map[string]string{"success": "yeah"}
-		}))
-		defer ts.Close()
-
-		in := map[string]string{"in": "all"}
-		actual := map[string]string{}
-		status, err := PostJSON(ctx, fast, http.DefaultClient, ts.URL, nil, in, &actual)
-		So(err, ShouldBeNil)
-		So(status, ShouldResemble, 200)
-		So(actual, ShouldResemble, map[string]string{"success": "yeah"})
-		So(serverCalls, ShouldResemble, 2)
-	})
-}
-
-func TestPostJSONwithHeaders(t *testing.T) {
-	Convey(`HTTP POST JSON requests should handle headers.`, t, func(c C) {
-		ctx := context.Background()
-
-		serverCalls := 0
-		ts := httptest.NewServer(
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				defer r.Body.Close()
-				w.Header().Set("Content-Type", jsonContentType)
-				c.So(json.NewEncoder(w).Encode(map[string]string{}), ShouldBeNil)
-				c.So(r.Header.Get("key"), ShouldResemble, "value")
-				serverCalls++
-			}))
-		defer ts.Close()
-
-		status, err := PostJSON(ctx, fast, http.DefaultClient, ts.URL, map[string]string{"key": "value"}, nil, nil)
-		So(err, ShouldBeNil)
-		So(status, ShouldResemble, 200)
-		So(serverCalls, ShouldResemble, 1)
 	})
 }
 
@@ -427,22 +293,4 @@ func (t *trackingReadCloser) Close() error {
 
 func fast() retry.Iterator {
 	return &retry.Limited{Retries: 3}
-}
-
-type jsonAPI func(body io.Reader) interface{}
-
-// handlerJSON converts a jsonAPI http handler to a proper http.Handler.
-func handlerJSON(t *testing.T, handler jsonAPI) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		Convey(`Test fixture for JSON http.`, t, func() {
-			defer r.Body.Close()
-			out := handler(r.Body)
-			if out == nil {
-				w.WriteHeader(500)
-			} else {
-				w.Header().Set("Content-Type", jsonContentType)
-				So(json.NewEncoder(w).Encode(out), ShouldBeNil)
-			}
-		})
-	})
 }
