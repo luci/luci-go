@@ -102,21 +102,10 @@ func ReportBuilderMetrics(ctx context.Context) error {
 		return errors.Annotate(err, "fetching LUCI buckets w/ swarming config").Err()
 	}
 
-	workC := make(chan string, 16)
-	errC := parallel.Run(256, func(taskC chan<- func() error) {
-		for {
-			work, ok := <-workC
-			// if the context was canceled already, don't bother to exhaust
-			// workC completely.
-			//
-			// reportMaxAge and reportBuildCount terminate upon context cancelation.
-			// Therefore, all the active goroutines processing the generated tasks
-			// will also be terminated upon context cancelation.
-			if !ok || ctx.Err() != nil {
-				break
-			}
-
-			project, bucket, builder := mustParseBuilderStatID(work)
+	return parallel.WorkPool(256, func(taskC chan<- func() error) {
+		q := datastore.NewQuery(model.BuilderStatKind)
+		err := datastore.RunBatch(ctx, 256, q, func(k *datastore.Key) error {
+			project, bucket, builder := mustParseBuilderStatID(k.StringID())
 			tctx := WithBuilder(ctx, project, bucket, builder)
 			legacyBucket := bucket
 			// V1 metrics format the bucket name in "luci.$project.$bucket"
@@ -124,7 +113,6 @@ func ReportBuilderMetrics(ctx context.Context) error {
 			if luciBuckets.Has(protoutil.FormatBucketID(project, bucket)) {
 				legacyBucket = legacyBucketName(project, bucket)
 			}
-
 			V2.BuilderPresence.Set(tctx, true)
 
 			taskC <- func() error {
@@ -139,30 +127,12 @@ func ReportBuilderMetrics(ctx context.Context) error {
 					"reportBuildCount",
 				).Err()
 			}
+			return nil
+		})
+		if err != nil {
+			taskC <- func() error { return errors.Annotate(err, "datastore.RunBatch").Err() }
 		}
 	})
-
-	q := datastore.NewQuery(model.BuilderStatKind).KeysOnly(true)
-	err = datastore.RunBatch(ctx, 256, q, func(k *datastore.Key) error {
-		workC <- k.StringID()
-		return nil
-	})
-	close(workC)
-
-	errs := errors.MultiError(nil)
-	if err != nil {
-		errs = append(errs, errors.Annotate(err, "fetching BuilderStat(s)").Err())
-	}
-	for e := range errC {
-		if e == nil {
-			continue
-		}
-		errs = append(errs, e)
-	}
-	if len(errs) == 0 {
-		return nil
-	}
-	return errs
 }
 
 func mustParseBuilderStatID(id string) (project, bucket, builder string) {
@@ -193,7 +163,6 @@ func fetchLUCIBuckets(ctx context.Context) (stringset.Set, error) {
 // reportMaxAge computes and reports the age of the oldest builds with SCHEDULED.
 func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder string) error {
 	var leasedCT, neverLeasedCT time.Time
-
 	q := datastore.NewQuery(model.BuildKind).
 		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
 		Eq("tags", "builder:"+builder).

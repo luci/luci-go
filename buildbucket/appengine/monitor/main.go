@@ -19,8 +19,11 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -82,12 +85,20 @@ func main() {
 		}
 
 		cron.RegisterHandler("report_builder_metrics", func(_ context.Context) error {
+			// allow at most 10 mins to run.
+			ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+			defer cancel()
+
+			start := clock.Now(ctx)
 			if err := metrics.ReportBuilderMetrics(ctx); err != nil {
 				return errors.Annotate(err, "computing builder metrics").Err()
 			}
+			logging.Infof(ctx, "computing builder metrics took %s", clock.Since(ctx, start))
+			start = clock.Now(ctx)
 			if err := state.Flush(ctx, mon); err != nil {
 				return errors.Annotate(err, "flushing builder metrics").Err()
 			}
+			logging.Infof(ctx, "flushing builder metrics took %s", clock.Since(ctx, start))
 			return nil
 		})
 
