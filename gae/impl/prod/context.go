@@ -16,24 +16,10 @@ package prod
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"net/http/cookiejar"
-	"net/url"
-	"strings"
 
-	"go.chromium.org/luci/gae/service/urlfetch"
-	gOAuth "golang.org/x/oauth2/google"
 	"google.golang.org/appengine"
-	"google.golang.org/appengine/remote_api"
 )
-
-// RemoteAPIScopes is the set of OAuth2 scopes needed for Remote API access.
-var RemoteAPIScopes = []string{
-	"https://www.googleapis.com/auth/appengine.apis",
-	"https://www.googleapis.com/auth/userinfo.email",
-	"https://www.googleapis.com/auth/cloud.platform",
-}
 
 var (
 	prodStateKey  = "contains the current *prodState"
@@ -85,78 +71,6 @@ func setupAECtx(c, aeCtx context.Context) context.Context {
 // AppEngine Context at their own risk.
 func Use(c context.Context, r *http.Request) context.Context {
 	return setupAECtx(c, appengine.NewContext(r))
-}
-
-// UseRemote is the same as Use, except that it lets you attach a context to
-// a remote host using the Remote API feature. See the docs for the
-// prerequisites.
-//
-// docs: https://cloud.google.com/appengine/docs/go/tools/remoteapi
-//
-// inOutCtx will be replaced with the new, derived context, if err is nil,
-// otherwise it's unchanged and continues to be safe-to-use.
-//
-// If client is nil, this will use create a new client, and will try to be
-// clever about it:
-//   * If you're creating a remote context FROM AppEngine, this will use
-//     urlfetch.Transport. This can be used to allow app-to-app remote_api
-//     control.
-//
-//   * If host starts with "localhost", this will create a regular http.Client
-//     with a cookiejar, and call the _ah/login API to log in as an admin with
-//     the user "admin@example.com".
-//
-//   * Otherwise, it will create a Google OAuth2 client with the following scopes:
-//       - "https://www.googleapis.com/auth/appengine.apis"
-//       - "https://www.googleapis.com/auth/userinfo.email"
-//       - "https://www.googleapis.com/auth/cloud.platform"
-//
-// It is important to note that this DOES NOT install the AppEngine SDK into the
-// supplied Context. See the warning in Use for more information.
-func UseRemote(inOutCtx *context.Context, host string, client *http.Client) (err error) {
-	if client == nil {
-		aeCtx := getAEContext(*inOutCtx)
-
-		if strings.HasPrefix(host, "localhost") {
-			transp := http.DefaultTransport
-			if aeCtx != nil {
-				transp = urlfetch.Get(*inOutCtx)
-			}
-
-			client = &http.Client{Transport: transp}
-			client.Jar, err = cookiejar.New(nil)
-			if err != nil {
-				return
-			}
-			u := fmt.Sprintf("http://%s/_ah/login?%s", host, url.Values{
-				"email":  {"admin@example.com"},
-				"admin":  {"True"},
-				"action": {"Login"},
-			}.Encode())
-
-			var rsp *http.Response
-			rsp, err = client.Get(u)
-			if err != nil {
-				return
-			}
-			defer rsp.Body.Close()
-		} else {
-			if aeCtx == nil {
-				aeCtx = context.Background()
-			}
-			client, err = gOAuth.DefaultClient(aeCtx, RemoteAPIScopes...)
-			if err != nil {
-				return
-			}
-		}
-	}
-
-	aeCtx, err := remote_api.NewRemoteContext(host, client)
-	if err != nil {
-		return
-	}
-	*inOutCtx = setupAECtx(*inOutCtx, aeCtx)
-	return nil
 }
 
 // prodState is the current production state.
