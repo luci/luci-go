@@ -111,33 +111,33 @@ func TestBuffer(t *testing.T) {
 			// no data races.
 			b.Maximum = 1
 
-			worker_started := make(chan int, iters+3) // tasks push here; buffered to avoid the need to drain.
-			wait := make(chan struct{})               // first task will wait until it is closed.
+			workerStarted := make(chan int, iters+3) // tasks push here; buffered to avoid the need to drain.
+			wait := make(chan struct{})              // first task will wait until it is closed.
 			gen := func(taskC chan<- func() error) {
 				// Start with 2 buffered tasks to fill our work channels so our buffer
 				// empty order is deterministic.
 				for i := -2; i < 0; i++ {
 					i := i
 					taskC <- func() error {
-						worker_started <- i
+						workerStarted <- i
 						<-wait
 						return nil
 					}
 				}
 				// Ensure 1 task has actually started execution. Note that the task is
 				// still running because it's blocked on `wait` channel.
-				<-worker_started
+				<-workerStarted
 				// Add `iters` tasks which should be executed in the right order.
 				for i := 0; i < iters; i++ {
 					i := i
 					taskC <- func() error {
-						worker_started <- i
+						workerStarted <- i
 						return numberError(i)
 					}
 				}
 				// Finally, add 1 more "sentinel" task ...
 				taskC <- func() error {
-					worker_started <- -3
+					workerStarted <- -3
 					<-wait
 					return nil
 				}
