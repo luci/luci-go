@@ -88,7 +88,6 @@ func readConfigCron(ctx context.Context, adminServer admin.AdminServer) error {
 	}{
 		{"ImportCAConfigs", adminServer.ImportCAConfigs},
 		{"ImportDelegationConfigs", adminServer.ImportDelegationConfigs},
-		{"ImportServiceAccountsConfigs", adminServer.ImportServiceAccountsConfigs},
 		{"ImportProjectIdentityConfigs", adminServer.ImportProjectIdentityConfigs},
 		{"ImportProjectOwnedAccountsConfigs", adminServer.ImportProjectOwnedAccountsConfigs},
 	}

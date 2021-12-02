@@ -57,7 +57,6 @@ func Main(init func(srv *server.Server, services *Services) error) {
 		adminSrv := adminsrv.NewServer(signer)
 		adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
 		adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
-		adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
 		adminSrv.ImportProjectIdentityConfigsRPC.SetupConfigValidation(&validation.Rules)
 		adminSrv.ImportProjectOwnedAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
 

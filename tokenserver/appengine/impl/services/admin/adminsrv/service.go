@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
 	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
-	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
 	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccountsv2"
 )
 
@@ -39,8 +38,6 @@ type AdminServer struct {
 	delegation.ImportDelegationConfigsRPC
 	delegation.InspectDelegationTokenRPC
 	machinetoken.InspectMachineTokenRPC
-	serviceaccounts.ImportServiceAccountsConfigsRPC
-	serviceaccounts.InspectOAuthTokenGrantRPC
 	projectscope.ImportProjectIdentityConfigsRPC
 	serviceaccountsv2.ImportProjectOwnedAccountsConfigsRPC
 }
@@ -58,13 +55,6 @@ func NewServer(signer signing.Signer) *AdminServer {
 		},
 		InspectMachineTokenRPC: machinetoken.InspectMachineTokenRPC{
 			Signer: signer,
-		},
-		ImportServiceAccountsConfigsRPC: serviceaccounts.ImportServiceAccountsConfigsRPC{
-			RulesCache: serviceaccounts.GlobalRulesCache,
-		},
-		InspectOAuthTokenGrantRPC: serviceaccounts.InspectOAuthTokenGrantRPC{
-			Signer: signer,
-			Rules:  serviceaccounts.GlobalRulesCache.Rules,
 		},
 		ImportProjectIdentityConfigsRPC: projectscope.ImportProjectIdentityConfigsRPC{},
 		ImportProjectOwnedAccountsConfigsRPC: serviceaccountsv2.ImportProjectOwnedAccountsConfigsRPC{

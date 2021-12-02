@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
 	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
-	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
 	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccountsv2"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
@@ -37,8 +36,6 @@ type serverImpl struct {
 
 	machinetoken.MintMachineTokenRPC
 	delegation.MintDelegationTokenRPC
-	serviceaccounts.MintOAuthTokenGrantRPC
-	serviceaccounts.MintOAuthTokenViaGrantRPC
 	projectscope.MintProjectTokenRPC
 	serviceaccountsv2.MintServiceAccountTokenRPC
 }
@@ -57,17 +54,6 @@ func NewServer(signer signing.Signer, prod bool) minter.TokenMinterServer {
 			Signer:   signer,
 			Rules:    delegation.GlobalRulesCache.Rules,
 			LogToken: delegation.NewTokenLogger(!prod),
-		},
-		MintOAuthTokenGrantRPC: serviceaccounts.MintOAuthTokenGrantRPC{
-			Signer:   signer,
-			Rules:    serviceaccounts.GlobalRulesCache.Rules,
-			LogGrant: serviceaccounts.NewGrantLogger(!prod),
-		},
-		MintOAuthTokenViaGrantRPC: serviceaccounts.MintOAuthTokenViaGrantRPC{
-			Signer:          signer,
-			Rules:           serviceaccounts.GlobalRulesCache.Rules,
-			MintAccessToken: auth.MintAccessTokenForServiceAccount,
-			LogOAuthToken:   serviceaccounts.NewOAuthTokenLogger(!prod),
 		},
 		MintProjectTokenRPC: projectscope.MintProjectTokenRPC{
 			Signer:            signer,
