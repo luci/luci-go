@@ -18,7 +18,6 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
-import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
@@ -383,44 +382,11 @@ message BuildInfra {
 
   // Buildbucket-specific information, captured at the build creation time.
   message Buildbucket {
-    // bbagent will interpret Agent.input, as well as update Agent.output.
+    // Agent.input is for informational. bbagent will use BBagent.Input fields to download stuff
+    // and then update Agent.output.
     message Agent {
-      // Source describes where the Agent should be fetched from.
-      message Source {
-        message CIPD {
-          // The CIPD package to use for the agent.
-          //
-          // Must end in "/${platform}" with no other CIPD variables.
-          // Will be expanded with CIPD's DescribeBootstrapBundle API
-          // into a full platform -> {hash, size, URL} mapping for TaskBackend
-          // RunTask.
-          //
-          // If using an experimental agent binary, please make sure the package
-          // prefix has been configured here -
-          // https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/main/configs/chrome-infra-packages/bootstrap.cfg
-          string package = 1;
-
-          // The CIPD version to use for the agent.
-          string version = 2;
-
-          // The CIPD server to use.
-          string server = 3;
-
-          // maps ${platform} -> instance_id for resolved agent packages.
-          //
-          // Will be overwritten at CreateBuild time, should be left empty
-          // when creating a new Build.
-          map<string, string> resolved_instances = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
-        }
-
-        oneof data_type {
-          CIPD cipd = 1;
-        }
-        // Other source mechanisms could be added in the future, such as GCS
-        // CAS or direct-download URLs. These would need to have a map of
-        // platform -> details.
-      }
       message Input {
+
         // maps relative-to-root directory to the data
         //
         // For now, data is only allowed at the 'leaves', e.g. you cannot
@@ -432,30 +398,17 @@ message BuildInfra {
         map<string, InputDataRef> data = 1;
       }
       message Output {
-        // The agent's resolved CIPD ${platform} (e.g. "linux-amd64",
-        // "windows-386", etc.).
-        //
-        // This is trivial for bbagent to calculate (unlike trying to embed
-        // its cipd package version inside or along with the executable).
-        // Buildbucket is doing a full package -> instance ID resolution at
-        // CreateBuild time anyway, so Agent.Source.resolved_instances
-        // will give the mapping from `agent_platform` to a precise instance_id
-        // which was used.
-        string agent_platform = 1;
-
         // maps relative-to-root directory to the fully-resolved ref.
         //
         // This will always have 1:1 mapping to Agent.Input.data
-        map<string, ResolvedDataRef> resolved_data = 2;
+        map<string, ResolvedDataRef> resolved_data = 1;
 
-        Status status = 3;
-        StatusDetails status_details = 4;
-        string summary_html = 5;
+        Status status = 2;
+        StatusDetails status_details = 3;
+        string summary_html = 4;
       }
-
-      Source source = 1;
-      Input input = 2;
-      Output output = 3;
+      Input input = 1;
+      Output output = 2;
     }
 
     reserved 4; // field "canary" was moved to Build message.
@@ -515,6 +468,11 @@ message BuildInfra {
     // the experiment should be set. If you see this, then please remove it
     // from your configuration and/or requests.
     map<string, ExperimentReason> experiment_reasons = 8;
+
+    // The agent binary (bbagent or kitchen) resolutions Buildbucket made for this build.
+    // This includes all agent_executable references supplied to
+    // the TaskBackend in "original" (CIPD) form, to facilitate debugging.
+    map<string, ResolvedDataRef> agent_executable = 9;
 
     Agent agent = 10;
 
@@ -671,6 +629,34 @@ message BuildInfra {
   // All paths are relateive to bbagent's working directory, and must be delimited
   // with slashes ("/"), regardless of the host OS.
   message BBAgent {
+    // BBAgent-specific input.
+    message Input {
+      // CIPD Packages to make available for this build.
+      message CIPDPackage {
+        // Name of this CIPD package.
+        //
+        // Required.
+        string name = 1;
+
+        // CIPD package version.
+        //
+        // Required.
+        string version = 2;
+
+        // CIPD server to fetch this package from.
+        //
+        // Required.
+        string server = 3;
+
+        // Path where this CIPD package should be installed.
+        //
+        // Required.
+        string path = 4;
+      }
+
+      repeated CIPDPackage cipd_packages = 1;
+    }
+
     // Path to the base of the user executable package.
     //
     // Required.
@@ -687,6 +673,8 @@ message BuildInfra {
     // has very low quota. Context needs to know all such hostnames in advance to
     // be able to force authenticated access to them.
     repeated string known_public_gerrit_hosts = 3;
+
+    Input input = 4;
   }
 
   // Backend-specific information.
