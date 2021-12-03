@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
@@ -476,58 +477,6 @@ func builderMatches(builder string, pred *pb.BuilderPredicate) bool {
 	return false
 }
 
-// setCIPDPackages computes the CIPD packages values from the given settings,
-// setting them in the proto. Mutates the given *pb.Build. build.Builder,
-// build.Canary, build.Exe.CipdPackage, and build.Infra.Bbagent.Input must be
-// set.
-func setCIPDPackages(build *pb.Build, globalCfg *pb.SettingsCfg) {
-	swarming := globalCfg.GetSwarming()
-	if swarming == nil {
-		return
-	}
-
-	getVersion := func(p *pb.SwarmingSettings_Package, b *pb.Build) string {
-		if b.Canary && p.VersionCanary != "" {
-			return p.VersionCanary
-		}
-		return p.Version
-	}
-
-	cipdServer := globalCfg.GetCipd().GetServer()
-	// Exe + UserPackages.
-	packages := make([]*pb.BuildInfra_BBAgent_Input_CIPDPackage, 0, 3+len(swarming.UserPackages))
-	packages = append(packages, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
-		Name:    build.Exe.CipdPackage,
-		Path:    "kitchen-checkout",
-		Version: build.Exe.CipdVersion,
-		Server:  cipdServer,
-	})
-
-	id := protoutil.FormatBuilderID(build.Builder)
-	for _, p := range swarming.UserPackages {
-		if !builderMatches(id, p.Builders) {
-			continue
-		}
-		path := UserPackageDir
-		if p.Subdir != "" {
-			path = fmt.Sprintf("%s/%s", path, p.Subdir)
-		}
-		packages = append(packages, &pb.BuildInfra_BBAgent_Input_CIPDPackage{
-			Name:    p.PackageName,
-			Path:    path,
-			Version: getVersion(p, build),
-			Server:  cipdServer,
-		})
-	}
-	sort.Slice(packages, func(i, j int) bool {
-		if packages[i].Path == packages[j].Path {
-			return packages[i].Name < packages[j].Name
-		}
-		return packages[i].Path < packages[j].Path
-	})
-	build.Infra.Bbagent.Input.CipdPackages = packages
-}
-
 // setDimensions computes the dimensions from the given request and builder
 // config, setting them in the proto. Mutates the given *pb.Build.
 // build.Infra.Swarming must be set (see setInfra).
@@ -808,7 +757,6 @@ func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, gl
 	build.Infra = &pb.BuildInfra{
 		Bbagent: &pb.BuildInfra_BBAgent{
 			CacheDir:               "cache",
-			Input:                  &pb.BuildInfra_BBAgent_Input{},
 			KnownPublicGerritHosts: globalCfg.GetKnownPublicGerritHosts(),
 			PayloadPath:            "kitchen-checkout",
 		},
@@ -1025,48 +973,106 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setInput(req, cfg, b)
 	setTags(req, b)
 	setTimeouts(req, cfg, b)
-	setExperiments(ctx, req, cfg, globalCfg, b) // Requires setExecutable, setInfra, setInput.
-	setCIPDPackages(b, globalCfg)               // Requires setExecutable, setInfra, setExperiments.
-	setInfraAgent(b)                            // Requires setInfra, setCIPDPackages
-	setInfraAgentExecutable(b, globalCfg)       // Requires setInfra
+	setExperiments(ctx, req, cfg, globalCfg, b)         // Requires setExecutable, setInfra, setInput.
+	if err := setInfraAgent(b, globalCfg); err != nil { // Requires setExecutable, setInfra, setExperiments.
+		// TODO(crbug.com/1266060) bubble up the error after TaskBackend workflow is ready.
+		// The current ScheduleBuild doesn't need this info. Swallow it to not interrupt the normal workflow.
+		logging.Warningf(ctx, "Failed to set build.Infra.Buildbucket.Agent for build %d: %s", b.Id, err)
+	}
 	return
 }
 
-// setInfraAgent maps the build.Infra.Bbagent.Input.CipdPackages values into
-// build.Infra.Buildbucket.Agent.Input.
-// Mutates the given *pb.Build. build.Infra.Bbagent.Input must be set.
-func setInfraAgent(build *pb.Build) {
+// setInfraAgent populate the agent info from the given settings.
+// Mutates the given *pb.Build.
+// The build.Builder, build.Canary, build.Exe, and build.Infra.Buildbucket must be set.
+func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
+	build.Infra.Buildbucket.Agent = &pb.BuildInfra_Buildbucket_Agent{}
+	setInfraAgentInputData(build, globalCfg)
+	if err := setInfraAgentSource(build, globalCfg); err != nil {
+		return err
+	}
+	return nil
+}
+
+// setInfraAgentInputData populate input cipd info from the given settings.
+// In the future, they can be also from per-builder-level or per-request-level.
+// Mutates the given *pb.Build.
+// The build.Builder, build.Canary, build.Exe, and build.Infra.Buildbucket.Agent must be set
+func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg) {
 	inputData := make(map[string]*pb.InputDataRef)
-	for _, pkg := range build.Infra.Bbagent.Input.CipdPackages {
-		if _, ok := inputData[pkg.Path]; !ok {
-			inputData[pkg.Path] = &pb.InputDataRef{
-				DataType: &pb.InputDataRef_Cipd{
-					Cipd: &pb.InputDataRef_CIPD{
-						Server: pkg.Server,
-					},
-				},
-			}
-			if strings.HasPrefix(pkg.Path, UserPackageDir) {
-				inputData[pkg.Path].OnPath = []string{pkg.Path, fmt.Sprintf("%s/%s", pkg.Path, "bin")}
-			}
-		}
-		inputData[pkg.Path].GetCipd().Specs = append(inputData[pkg.Path].GetCipd().Specs, &pb.InputDataRef_CIPD_PkgSpec{
-			Package: pkg.Name,
-			Version: pkg.Version,
-		})
+	build.Infra.Buildbucket.Agent.Input = &pb.BuildInfra_Buildbucket_Agent_Input{
+		Data: inputData,
+	}
+	cipdServer := globalCfg.GetCipd().GetServer()
+	// Exe
+	inputData["kitchen-checkout"] = &pb.InputDataRef{
+		DataType: &pb.InputDataRef_Cipd{
+			Cipd: &pb.InputDataRef_CIPD{
+				Server: cipdServer,
+				Specs: []*pb.InputDataRef_CIPD_PkgSpec{{
+					Package: build.Exe.CipdPackage,
+					Version: build.Exe.CipdVersion,
+				}},
+			},
+		},
 	}
 
-	build.Infra.Buildbucket.Agent = &pb.BuildInfra_Buildbucket_Agent{
-		Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-			Data: inputData,
-		},
-		Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+	// UserPackages
+	userPackages := globalCfg.GetSwarming().GetUserPackages()
+	if userPackages == nil {
+		return
+	}
+	id := protoutil.FormatBuilderID(build.Builder)
+	for _, p := range userPackages {
+		if !builderMatches(id, p.Builders) {
+			continue
+		}
+		path := UserPackageDir
+		if p.Subdir != "" {
+			path = fmt.Sprintf("%s/%s", path, p.Subdir)
+		}
+		if _, ok := inputData[path]; !ok {
+			inputData[path] = &pb.InputDataRef{
+				DataType: &pb.InputDataRef_Cipd{
+					Cipd: &pb.InputDataRef_CIPD{
+						Server: cipdServer,
+					},
+				},
+				OnPath: []string{path, fmt.Sprintf("%s/%s", path, "bin")},
+			}
+		}
+
+		inputData[path].GetCipd().Specs = append(inputData[path].GetCipd().Specs, &pb.InputDataRef_CIPD_PkgSpec{
+			Package: p.PackageName,
+			Version: extractCipdVersion(p, build),
+		})
 	}
 }
 
-// setInfraAgentExecutable resolve agent binaries for all platforms and set into infra.Buildbucket.agentExecutable.
-func setInfraAgentExecutable(build *pb.Build, globalCfg *pb.SettingsCfg) {
-	// TODO(crbug.com/1266060) set agentExecutable.
+// setInfraAgentSource extracts bbagent source info from the given settings.
+// In the future, they can be also from per-builder-level or per-request-level.
+// Mutates the given *pb.Build.
+// The build.Canary, build.Infra.Buildbucket.Agent must be set
+func setInfraAgentSource(build *pb.Build, globalCfg *pb.SettingsCfg) error {
+	bbagent := globalCfg.GetSwarming().GetBbagentPackage()
+	if bbagent == nil {
+		return nil
+	}
+
+	if !strings.HasSuffix(bbagent.PackageName, "/${platform}") {
+		return errors.New("bad settings: bbagent package name must end with '/${platform}'")
+	}
+	cipdHost := globalCfg.GetCipd().GetServer()
+	build.Infra.Buildbucket.Agent.Source = &pb.BuildInfra_Buildbucket_Agent_Source{
+		DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+			Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+				Package: bbagent.PackageName,
+				Version: extractCipdVersion(bbagent, build),
+				Server:  cipdHost,
+			},
+		},
+	}
+	return nil
 }
 
 // setExperimentsFromProto sets experiments in the model (see model/build.go).
@@ -1485,4 +1491,11 @@ func getValidBlds(blds []*model.Build, origErrs errors.MultiError, idxMapBlds []
 		}
 	}
 	return validBlds, idxMap
+}
+
+func extractCipdVersion(p *pb.SwarmingSettings_Package, b *pb.Build) string {
+	if b.Canary && p.VersionCanary != "" {
+		return p.VersionCanary
+	}
+	return p.Version
 }
