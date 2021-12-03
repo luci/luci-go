@@ -51,9 +51,9 @@ func TestReportBuilderMetrics(t *testing.T) {
 		store := tsmon.Store(ctx)
 		prj, bkt := "infra", "ci"
 		task := &target.Task{
-			ServiceName: "service",
+			ServiceName: "svc",
 			JobName:     "job",
-			HostName:    "ins-0",
+			HostName:    "ins",
 			TaskNum:     0,
 		}
 		store.SetDefaultTarget(task)

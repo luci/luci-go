@@ -36,11 +36,13 @@ var (
 		"failure_reason":       field.String("failure_reason"),
 		"must_be_never_leased": field.Bool("must_be_never_leased"),
 		"result":               field.String("result"),
+		"status":               field.String("status"),
 		"user_agent":           field.String("user_agent"),
 	}
 
 	// V1 is a collection of metric objects for V1 metrics.
 	V1 = struct {
+		BuildCount              metric.Int
 		BuildCountCreated       metric.Counter
 		BuildCountStarted       metric.Counter
 		BuildCountCompleted     metric.Counter
@@ -49,6 +51,11 @@ var (
 		BuildDurationScheduling metric.CumulativeDistribution
 		MaxAgeScheduled         metric.Float
 	}{
+		BuildCount: metric.NewInt(
+			"buildbucket/builds/count",
+			"Number of pending/running prod builds", nil,
+			bFields("status")...,
+		),
 		BuildCountCreated: metric.NewCounter(
 			"buildbucket/builds/created",
 			"Build creation", nil,

@@ -220,6 +220,27 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 
 // reportBuildCount computes and reports # of builds with SCHEDULED and STARTED.
 func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builder string) error {
-	// TODO(ddoman): implement me
+	var nScheduled, nStarted int64
+	q := datastore.NewQuery(model.BuildKind).
+		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
+		Eq("experimental", false).
+		Eq("tags", "builder:"+builder)
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() (err error) {
+		nScheduled, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_SCHEDULED))
+		return
+	})
+	eg.Go(func() (err error) {
+		nStarted, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_STARTED))
+		return
+	})
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	V1.BuildCount.Set(ctx, nScheduled, legacyBucket, builder, pb.Status_name[int32(pb.Status_SCHEDULED)])
+	V1.BuildCount.Set(ctx, nStarted, legacyBucket, builder, pb.Status_name[int32(pb.Status_STARTED)])
+	V2.BuildCount.Set(ctx, nScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
+	V2.BuildCount.Set(ctx, nStarted, pb.Status_name[int32(pb.Status_STARTED)])
 	return nil
 }

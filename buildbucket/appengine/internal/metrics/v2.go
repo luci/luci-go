@@ -15,6 +15,7 @@
 package metrics
 
 import (
+	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 )
@@ -22,9 +23,17 @@ import (
 var (
 	// V2 is a collection of metric objects for V2 metrics.
 	V2 = struct {
+		BuildCount      metric.Int
 		BuilderPresence metric.Bool
 		MaxAgeScheduled metric.Float
 	}{
+		BuildCount: metric.NewIntWithTargetType(
+			"buildbucket/v2/builds/count",
+			(&Builder{}).Type(),
+			"Number of pending/running prod builds",
+			nil,
+			field.String("status"),
+		),
 		BuilderPresence: metric.NewBoolWithTargetType(
 			"buildbucket/v2/builder/presence",
 			(&Builder{}).Type(),
