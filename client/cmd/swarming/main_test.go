@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,7 +38,10 @@ const IntegrationTestEnvVar = "INTEGRATION_TESTS"
 func init() {
 	// Unset SWARMING_TASK_ID environment variable, otherwise task trigger may
 	// fail for parent task association.
-	os.Unsetenv(lib.TaskIDEnvVar)
+	err := os.Unsetenv(lib.TaskIDEnvVar)
+	if err != nil {
+		log.Fatalf("Failed to unset env %v", err)
+	}
 }
 
 // runIntegrationTests true if integration tests should run.
