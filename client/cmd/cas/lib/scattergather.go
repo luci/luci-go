@@ -42,12 +42,12 @@ type scatterGather map[string]string
 // Add adds a (working directory, relative path) pair to the ScatterGather.
 //
 // Add returns an error if the relative path was already added.
-func (sc scatterGather) Add(wd string, rel string) error {
+func (sc *scatterGather) Add(wd, rel string) error {
 	cleaned := filepath.Clean(rel)
-	if _, ok := sc[cleaned]; ok {
+	if _, ok := (*sc)[cleaned]; ok {
 		return errors.Reason("name conflict %q", rel).Err()
 	}
-	sc[cleaned] = wd
+	(*sc)[cleaned] = wd
 	return nil
 }
 
