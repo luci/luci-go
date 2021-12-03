@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
 	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
-	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccountsv2"
+	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
 
@@ -37,7 +37,7 @@ type serverImpl struct {
 	machinetoken.MintMachineTokenRPC
 	delegation.MintDelegationTokenRPC
 	projectscope.MintProjectTokenRPC
-	serviceaccountsv2.MintServiceAccountTokenRPC
+	serviceaccounts.MintServiceAccountTokenRPC
 }
 
 // NewServer returns prod TokenMinterServer implementation.
@@ -61,12 +61,12 @@ func NewServer(signer signing.Signer, prod bool) minter.TokenMinterServer {
 			ProjectIdentities: projectidentity.ProjectIdentities,
 			LogToken:          projectscope.NewTokenLogger(!prod),
 		},
-		MintServiceAccountTokenRPC: serviceaccountsv2.MintServiceAccountTokenRPC{
+		MintServiceAccountTokenRPC: serviceaccounts.MintServiceAccountTokenRPC{
 			Signer:          signer,
-			Mapping:         serviceaccountsv2.GlobalMappingCache.Mapping,
+			Mapping:         serviceaccounts.GlobalMappingCache.Mapping,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,
 			MintIDToken:     auth.MintIDTokenForServiceAccount,
-			LogToken:        serviceaccountsv2.NewTokenLogger(!prod),
+			LogToken:        serviceaccounts.NewTokenLogger(!prod),
 		},
 	}
 }

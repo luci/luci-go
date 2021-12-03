@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package serviceaccountsv2 implements MintServiceAccountToken RPC.
-package serviceaccountsv2
+// Package serviceaccounts implements MintServiceAccountToken RPC.
+package serviceaccounts
