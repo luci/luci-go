@@ -15,11 +15,14 @@
 package tryjob
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // ExternalID is a unique ID deterministically constructed to identify tryjobs.
@@ -96,4 +99,31 @@ func (e ExternalID) kind() (string, error) {
 		return "", errors.Reason("invalid ExternalID: %q", s).Err()
 	}
 	return s[:idx], nil
+}
+
+// Load looks up a Tryjob entity
+//
+// If an entity referred to by the ExternalID does not exist in CV,
+// `nil, nil` will be returned.
+func (e ExternalID) Load(ctx context.Context) (*Tryjob, error) {
+	tjm := tryjobMap{ExternalID: e}
+	switch err := datastore.Get(ctx, &tjm); err {
+	case nil:
+		break
+	case datastore.ErrNoSuchEntity:
+		return nil, nil
+	default:
+		return nil, errors.Annotate(err, "resolving ExternalID %q to a Tryjob", e).Tag(transient.Tag).Err()
+	}
+
+	res := &Tryjob{ID: tjm.InternalID}
+	if err := datastore.Get(ctx, res); err != nil {
+		// It is unlikely that we'll find a tryjobMap referencing a Tryjob that
+		// doesn't exist. And if we do it'll most likely be due to a retention
+		// policy removing old entities, so the tryjobMap entity will be
+		// removed soon as well.
+		return nil, errors.Annotate(err, "retrieving Tryjob with ExternalID %q", e).Tag(transient.Tag).Err()
+	}
+
+	return res, nil
 }

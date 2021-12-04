@@ -34,13 +34,19 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// TODO(crbug.com/1227363): document.
+// UpdateTryjobTask checks the status of a Tryjob and updates its Datastore
+// entity, and notifies Runs which care about this Tryjob.
+//
+// Queue: "tryjob-update".
 type UpdateTryjobTask struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id         int64  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// id is the Tryjob entity datastore id. Internal to CV.
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// external_id is the id that identifies the tryjob in the backend.
+	// e.g. in the case of buildbucket, it's the build id.
 	ExternalId string `protobuf:"bytes,2,opt,name=external_id,json=externalId,proto3" json:"external_id,omitempty"`
 }
 

@@ -18,8 +18,15 @@ package cv.internal.tryjob;
 
 option go_package = "go.chromium.org/luci/cv/internal/tryjob;tryjob";
 
-// TODO(crbug.com/1227363): document.
+// UpdateTryjobTask checks the status of a Tryjob and updates its Datastore
+// entity, and notifies Runs which care about this Tryjob.
+//
+// Queue: "tryjob-update".
 message UpdateTryjobTask {
+  // id is the Tryjob entity datastore id. Internal to CV.
   int64 id = 1;
+
+  // external_id is the id that identifies the tryjob in the backend.
+  // e.g. in the case of buildbucket, it's the build id.
   string external_id = 2;
 }
