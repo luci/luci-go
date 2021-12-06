@@ -15,6 +15,9 @@
 package metrics
 
 import (
+	"math"
+
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -23,9 +26,15 @@ import (
 var (
 	// V2 is a collection of metric objects for V2 metrics.
 	V2 = struct {
-		BuildCount      metric.Int
-		BuilderPresence metric.Bool
-		MaxAgeScheduled metric.Float
+		BuildCount              metric.Int
+		BuildCountCreated       metric.Counter
+		BuildCountStarted       metric.Counter
+		BuildCountCompleted     metric.Counter
+		BuildDurationCycle      metric.CumulativeDistribution
+		BuildDurationRun        metric.CumulativeDistribution
+		BuildDurationScheduling metric.CumulativeDistribution
+		BuilderPresence         metric.Bool
+		MaxAgeScheduled         metric.Float
 	}{
 		BuildCount: metric.NewIntWithTargetType(
 			"buildbucket/v2/builds/count",
@@ -34,6 +43,61 @@ var (
 			nil,
 			field.String("status"),
 		),
+		BuildCountCreated: metric.NewCounterWithTargetType(
+			"buildbucket/v2/builds/created",
+			(&Builder{}).Type(),
+			"Build creation",
+			nil,
+			field.String("experiments"),
+		),
+		BuildCountStarted: metric.NewCounterWithTargetType(
+			"buildbucket/v2/builds/started",
+			(&Builder{}).Type(),
+			"Build start",
+			nil,
+			field.String("experiments"),
+		),
+		BuildCountCompleted: metric.NewCounterWithTargetType(
+			"buildbucket/v2/builds/completed",
+			(&Builder{}).Type(),
+			"Build completion, including success, failure and cancellation",
+			nil,
+			field.String("status"),
+			field.String("experiments"),
+		),
+		BuildDurationCycle: metric.NewCumulativeDistributionWithTargetType(
+			"buildbucket/v2/builds/cycle_durations",
+			(&Builder{}).Type(),
+			"Duration between build creation and completion",
+			&types.MetricMetadata{Units: types.Seconds},
+			// Bucketer for 1s..48h range
+			//
+			// python3 -c "print(((10**0.053)**100) / (60*60))"
+			// 55.42395319358006
+			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
+			field.String("status"),
+			field.String("experiments"),
+		),
+		BuildDurationRun: metric.NewCumulativeDistributionWithTargetType(
+			"buildbucket/v2/builds/run_durations",
+			(&Builder{}).Type(),
+			"Duration between build start and completion",
+			&types.MetricMetadata{Units: types.Seconds},
+			// Bucketer for 1s..48h range
+			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
+			field.String("status"),
+			field.String("experiments"),
+		),
+		BuildDurationScheduling: metric.NewCumulativeDistributionWithTargetType(
+			"buildbucket/v2/builds/scheduling_durations",
+			(&Builder{}).Type(),
+			"Duration between build creation and start",
+			&types.MetricMetadata{Units: types.Seconds},
+			// Bucketer for 1s..48h range
+			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
+			field.String("experiments"),
+		),
+
 		BuilderPresence: metric.NewBoolWithTargetType(
 			"buildbucket/v2/builder/presence",
 			(&Builder{}).Type(),
