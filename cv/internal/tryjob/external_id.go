@@ -20,9 +20,12 @@ import (
 	"strconv"
 	"strings"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/cv/internal/common"
 )
 
 // ExternalID is a unique ID deterministically constructed to identify tryjobs.
@@ -124,6 +127,68 @@ func (e ExternalID) Load(ctx context.Context) (*Tryjob, error) {
 		// removed soon as well.
 		return nil, errors.Annotate(err, "retrieving Tryjob with ExternalID %q", e).Tag(transient.Tag).Err()
 	}
-
 	return res, nil
+}
+
+// MustCreateIfNotExists is intended for testing only.
+//
+// If a Tryjob with this ExternalID exists, it loads it from datastore.
+// If it does not, it is created, saved and returned.
+// Panics on error.
+func (eid ExternalID) MustCreateIfNotExists(ctx context.Context) *Tryjob {
+	// Quick read-only path.
+	if tryjob, err := eid.Load(ctx); err == nil && tryjob != nil {
+		return tryjob
+	}
+	// Transaction path.
+	var tryjob *Tryjob
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		tryjob, err = eid.Load(ctx)
+		switch {
+		case err != nil:
+			return err
+		case tryjob != nil:
+			return nil
+		}
+		tryjob = &Tryjob{
+			ExternalID:       eid,
+			EVersion:         1,
+			EntityUpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+		}
+		if err := datastore.AllocateIDs(ctx, tryjob); err != nil {
+			return err
+		}
+		m := tryjobMap{ExternalID: eid, InternalID: tryjob.ID}
+		return datastore.Put(ctx, &m, tryjob)
+	}, nil)
+	if err != nil {
+		panic(err)
+	}
+	return tryjob
+}
+
+// Resolve converts ExternalIDs to internal TryjobIDs.
+func Resolve(ctx context.Context, eids ...ExternalID) ([]common.TryjobID, error) {
+	tjms := make([]tryjobMap, len(eids))
+	for i, eid := range eids {
+		tjms[i].ExternalID = eid
+	}
+
+	if errs := datastore.Get(ctx, tjms); errs != nil {
+		merr, _ := errs.(errors.MultiError)
+		if merr == nil {
+			return nil, errors.Annotate(errs, "failed to load tryjobMaps").Tag(transient.Tag).Err()
+		}
+		for _, err := range merr {
+			if err != nil && err != datastore.ErrNoSuchEntity {
+				return nil, errors.Annotate(common.MostSevereError(merr), "resolving ExternalIDs").Tag(transient.Tag).Err()
+			}
+		}
+	}
+
+	ret := make([]common.TryjobID, len(eids))
+	for i, tjm := range tjms {
+		ret[i] = tjm.InternalID
+	}
+	return ret, nil
 }

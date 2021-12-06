@@ -19,6 +19,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 )
 
 func TestExternalID(t *testing.T) {
@@ -45,6 +46,63 @@ func TestExternalID(t *testing.T) {
 
 			_, err = e.URL()
 			So(err, ShouldErrLike, "invalid ExternalID")
+		})
+	})
+	Convey("Resolve works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		host := "example.com"
+
+		Convey("None exist", func() {
+			ids := []ExternalID{
+				MustBuildbucketID(host, 101),
+				MustBuildbucketID(host, 102),
+				MustBuildbucketID(host, 103),
+			}
+			// None of ids[:] are created.
+
+			tjs, err := Resolve(ctx, ids...)
+			So(err, ShouldBeNil)
+			So(tjs, ShouldHaveLength, 3)
+			So(tjs[0], ShouldEqual, 0)
+			So(tjs[1], ShouldEqual, 0)
+			So(tjs[2], ShouldEqual, 0)
+		})
+		Convey("Some exist", func() {
+			ids := []ExternalID{
+				MustBuildbucketID(host, 201),
+				MustBuildbucketID(host, 202),
+				MustBuildbucketID(host, 203),
+			}
+			// ids[0] is not created.
+			ids[1].MustCreateIfNotExists(ctx)
+			ids[2].MustCreateIfNotExists(ctx)
+
+			tjs, err := Resolve(ctx, ids...)
+			So(err, ShouldBeNil)
+			So(tjs, ShouldHaveLength, 3)
+			So(tjs[0], ShouldEqual, 0)
+			So(tjs[1], ShouldNotEqual, 0)
+			So(tjs[2], ShouldNotEqual, 0)
+		})
+
+		Convey("All exist", func() {
+			ids := []ExternalID{
+				MustBuildbucketID(host, 301),
+				MustBuildbucketID(host, 302),
+				MustBuildbucketID(host, 303),
+			}
+			ids[0].MustCreateIfNotExists(ctx)
+			ids[1].MustCreateIfNotExists(ctx)
+			ids[2].MustCreateIfNotExists(ctx)
+
+			tjs, err := Resolve(ctx, ids...)
+			So(err, ShouldBeNil)
+			So(tjs, ShouldHaveLength, 3)
+			So(tjs[0], ShouldNotEqual, 0)
+			So(tjs[1], ShouldNotEqual, 0)
+			So(tjs[2], ShouldNotEqual, 0)
 		})
 	})
 }

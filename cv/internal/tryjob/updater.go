@@ -86,11 +86,15 @@ func (u *Updater) RegisterBackend(b updaterBackend) {
 //
 // At least one ID must be given.
 func (u *Updater) Schedule(ctx context.Context, id common.TryjobID, eid ExternalID) error {
-	// TODO(crbug.com/1227363): implement.
-	return nil
+	if id == 0 && eid == "" {
+		return errors.New("At least one of the tryjob's IDs must be given.")
+	}
+	// id will be set, but eid may not be. In such case, it's up to the task to
+	// resolve it.
+	return u.tqd.AddTask(ctx, &tq.Task{
+		Payload: &UpdateTryjobTask{ExternalId: string(eid), Id: int64(id)},
+	})
 }
-
-// implementation details.
 
 func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error {
 	// TODO(crbug.com/1227363): implement.
