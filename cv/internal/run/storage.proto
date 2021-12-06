@@ -309,6 +309,13 @@ message Tryjob {
   //  * tryjob was triggered by non-CV.
   bool reused = 6;
 
+  // If true, indicates this tryjob must pass in order for the Run to be
+  // considered successful.
+  //
+  // It is typically true when the tryjob is NOT experimental or triggered
+  // because of `Cq-Include-TryBot` git footer.
+  bool critical = 9;
+
   // Result of the tryjob.
   cv.internal.tryjob.Result result = 7;
 

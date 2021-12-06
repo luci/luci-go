@@ -158,8 +158,9 @@ func toRunTryjob(in *migrationpb.Tryjob) (*run.Tryjob, error) {
 				Builder: in.GetBuilder(),
 			}},
 		},
-		Reused: in.GetBuild().GetOrigin() == cvbqpb.Build_REUSED,
-		Status: tjStatus,
+		Reused:   in.GetBuild().GetOrigin() == cvbqpb.Build_REUSED,
+		Status:   tjStatus,
+		Critical: in.GetBuild().GetCritical(),
 		Result: &tryjob.Result{
 			Status:     resStatus,
 			CreateTime: in.GetCreateTime(),

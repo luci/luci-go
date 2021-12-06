@@ -98,7 +98,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 		}
 
 		tryjobCreateTime := timestamppb.New(ct.Clock.Now().Add(-time.Hour))
-		makeTryjob := func(id int64, s migrationpb.TryjobStatus, o cvbqpb.Build_Origin) *migrationpb.Tryjob {
+		makeTryjob := func(id int64, s migrationpb.TryjobStatus, o cvbqpb.Build_Origin, criticality bool) *migrationpb.Tryjob {
 			t := &migrationpb.Tryjob{
 				Builder:    bbTryjobDef(fmt.Sprintf("%s/try/bldr-%d", lProject, id)).GetBuildbucket().GetBuilder(),
 				CreateTime: tryjobCreateTime,
@@ -107,7 +107,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 					Host:     bbHost,
 					Id:       id,
 					Origin:   o,
-					Critical: true,
+					Critical: criticality,
 				},
 			}
 			return t
@@ -116,7 +116,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 		Convey("Update state when Run is RUNNING", func() {
 			// Send the first report.
 			ct.Clock.Add(time.Minute)
-			reported1001 := makeTryjob(1001, migrationpb.TryjobStatus_RUNNING, cvbqpb.Build_REUSED)
+			reported1001 := makeTryjob(1001, migrationpb.TryjobStatus_RUNNING, cvbqpb.Build_REUSED, true)
 			report(reported1001)
 			expected1001 := &run.Tryjob{
 				Definition: bbTryjobDef(fmt.Sprintf("%s/try/bldr-1001", lProject)),
@@ -125,6 +125,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 				Eversion:   0,
 				ExternalId: fmt.Sprintf("buildbucket/%s/1001", bbHost),
 				Reused:     true,
+				Critical:   true,
 				Status:     tryjob.Status_TRIGGERED,
 				Result: &tryjob.Result{
 					CreateTime: tryjobCreateTime,
@@ -136,7 +137,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 			}
 			// Send the second report.
 			ct.Clock.Add(time.Minute)
-			reported1002 := makeTryjob(1002, migrationpb.TryjobStatus_PENDING, cvbqpb.Build_NOT_REUSED)
+			reported1002 := makeTryjob(1002, migrationpb.TryjobStatus_PENDING, cvbqpb.Build_NOT_REUSED, false)
 			report(reported1001, reported1002)
 			expected1002 := &run.Tryjob{
 				Definition: bbTryjobDef(fmt.Sprintf("%s/try/bldr-1002", lProject)),
@@ -145,6 +146,7 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 				Eversion:   0,
 				ExternalId: fmt.Sprintf("buildbucket/%s/1002", bbHost),
 				Reused:     false,
+				Critical:   false,
 				Status:     tryjob.Status_TRIGGERED,
 				Result: &tryjob.Result{
 					CreateTime: tryjobCreateTime,
