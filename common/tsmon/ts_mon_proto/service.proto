@@ -3,12 +3,12 @@
 // found in the LICENSE file.
 syntax = "proto3";
 
-option go_package = "go.chromium.org/luci/common/tsmon/ts_mon_proto";
-
-package ts_mon.proto;
+package google.internal.prodx.mon.v1;
 
 import "google/rpc/status.proto";
 import "go.chromium.org/luci/common/tsmon/ts_mon_proto/metrics.proto";
+
+option go_package = "go.chromium.org/luci/common/tsmon/ts_mon_proto";
 
 service MonitoringService {
   rpc Insert(MonitoringInsertRequest) returns (MonitoringInsertResponse);
@@ -16,7 +16,7 @@ service MonitoringService {
 
 message MonitoringInsertRequest {
   reserved 1;  // deprecated
-  MetricsPayload payload = 2;
+  ts_mon.proto.MetricsPayload payload = 2;
 }
 
 message MonitoringInsertResponse {
