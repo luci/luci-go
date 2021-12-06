@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"sort"
 	"strconv"
 
@@ -30,10 +31,13 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	cvbq "go.chromium.org/luci/cv/internal/common/bq"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 const (
@@ -132,16 +136,19 @@ func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
 		StartTime:     timestamppb.New(r.CreateTime),
 		EndTime:       timestamppb.New(r.EndTime),
 		GerritChanges: gerritChanges,
-		// Builds, Substatus and HasCustomRequirement are not known to CV yet
-		// during the migration state, so they should be filled in with Attempt
+		Status:        attemptStatus(ctx, r),
+		// Substatus and HasCustomRequirement are not known to CV yet during the
+		// migration state, so they should be filled in with Attempt
 		// from CQD if possible.
-		Builds: nil,
-		Status: attemptStatus(ctx, r),
 		// TODO(crbug/1114686): Add a new FAILED_SUBMIT substatus, which
 		// should be used in the case that some CLs failed to submit after
 		// passing checks. (In this case, for backwards compatibility, we
 		// will set status = SUCCESS, substatus = FAILED_SUBMIT.)
 		Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
+	}
+
+	if a.Builds, err = computeAttemptBuilds(ctx, r); err != nil {
+		return nil, err
 	}
 	return a, nil
 }
@@ -166,11 +173,12 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 	if mode == run.FullRun {
 		// Mark the CL submit status as success if it appears in the submitted CLs
 		// list, and failure if it does not.
-		if _, ok := submitted[cl.ID]; ok {
+		switch _, submitted := submitted[cl.ID]; {
+		case submitted:
 			gc.SubmitStatus = cvbqpb.GerritChange_SUCCESS
-		} else if failed.Has(cl.ID) {
+		case failed.Has(cl.ID):
 			gc.SubmitStatus = cvbqpb.GerritChange_FAILURE
-		} else {
+		default:
 			gc.SubmitStatus = cvbqpb.GerritChange_PENDING
 		}
 	}
@@ -279,4 +287,66 @@ func computeCLGroupKey(cls []*run.RunCL, isEquivalent bool) string {
 		}
 	}
 	return hex.EncodeToString(h.Sum(nil)[:8])
+}
+
+func computeAttemptBuilds(ctx context.Context, r *run.Run) ([]*cvbqpb.Build, error) {
+	runTryjobs := r.Tryjobs.GetTryjobs()
+	if len(runTryjobs) == 0 {
+		return nil, nil
+	}
+	ret := make([]*cvbqpb.Build, len(runTryjobs))
+	cg, err := prjcfg.GetConfigGroup(ctx, r.ID.LUCIProject(), r.ConfigGroupID)
+	if err != nil {
+		return nil, err
+	}
+	buildersCfg := cg.Content.GetVerifiers().GetTryjob().GetBuilders()
+	builderCfgsByName := make(map[string]*cfgpb.Verifiers_Tryjob_Builder, len(buildersCfg))
+	for _, builderCfg := range buildersCfg {
+		builderCfgsByName[builderCfg.Name] = builderCfg
+		// Associate the builder config with the equivalent name as well because
+		// when CQDaemon reports Tryjobs, it just reports the launched builder name.
+		// Therefore, if CQDaemon decides to launch the equivalent builder, the
+		// definition stored in CV will be the equivalent builder instead of the
+		// main builder.
+		if equiName := builderCfg.GetEquivalentTo().GetName(); equiName != "" {
+			builderCfgsByName[equiName] = builderCfg
+		}
+	}
+	for i, tj := range runTryjobs {
+		var err error
+		b := &cvbqpb.Build{}
+		if b.Host, b.Id, err = tryjob.ExternalID(tj.ExternalId).ParseBuildbucketID(); err != nil {
+			return nil, err
+		}
+		builderName := bbBuilderNameFromDef(tj.GetDefinition())
+		builderCfg, ok := builderCfgsByName[builderName]
+		if !ok {
+			logging.Warningf(ctx, "CQDaemon reported tryjob with builder \""+
+				builderName+"\" that is not present in the ConfigGroup. This "+
+				"may happen when builder is removed from the config during the Run")
+		}
+		switch {
+		case tj.GetReused():
+			b.Origin = cvbqpb.Build_REUSED
+		case builderCfg.GetDisableReuse():
+			b.Origin = cvbqpb.Build_NOT_REUSABLE
+		default:
+			b.Origin = cvbqpb.Build_NOT_REUSED
+		}
+		b.Critical = tj.GetCritical()
+		ret[i] = b
+	}
+	return ret, nil
+}
+
+// bbBuilderNameFromDef returns Buildbucket builder name from Tryjob Definition.
+//
+// Returns the builder name in the format of "$project/$bucket/$builder".
+// Panics for non-buildbucket backend.
+func bbBuilderNameFromDef(def *tryjob.Definition) string {
+	if def.GetBuildbucket() == nil {
+		panic(fmt.Errorf("non-buildbucket backend is not supported; got %T", def.GetBackend()))
+	}
+	builder := def.GetBuildbucket().GetBuilder()
+	return fmt.Sprintf("%s/%s/%s", builder.Project, builder.Bucket, builder.Builder)
 }
