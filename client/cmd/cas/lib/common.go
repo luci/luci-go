@@ -66,12 +66,17 @@ func (c *commonFlags) Parse() error {
 		if logtostderr == nil {
 			return errors.Reason("logtostderr flag for glog not found").Err()
 		}
+		if err := logtostderr.Value.Set("true"); err != nil {
+			return errors.Annotate(err, "failed to set logstderr to true").Err()
+		}
+
 		v := flag.Lookup("v")
 		if v == nil {
 			return errors.Reason("v flag for glog not found").Err()
 		}
-		logtostderr.Value.Set("true")
-		v.Value.Set("9")
+		if err := v.Value.Set("9"); err != nil {
+			return errors.Annotate(err, "failed to set verbosity level to 9").Err()
+		}
 	}
 
 	if err := c.profiler.Start(); err != nil {
