@@ -197,7 +197,7 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 			"May be passed more than once, in which case the first one "+
 			"matching the spec's python_version will be used.")
 	fs.StringVar(&a.opts.EnvConfig.BaseDir, "vpython-root", a.opts.EnvConfig.BaseDir,
-		"Path to virtual environment root directory. Default is the working directory. "+
+		"Path to virtual environment root directory. "+
 			"If explicitly set to empty string, a temporary directory will be used and cleaned up "+
 			"on completion.")
 	fs.StringVar(&a.specPath, "vpython-spec", a.specPath,
