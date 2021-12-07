@@ -45,12 +45,24 @@ var ErrCantSatisfyMinTTL = errors.New("new item produced by the factory has insu
 type Cache struct {
 	// ProcessLRUCache is a handle to a process LRU cache that holds the data.
 	ProcessLRUCache caching.LRUHandle
+
 	// GlobalNamespace is a global cache namespace to use for the data.
 	GlobalNamespace string
+
 	// Marshal converts an item being cached to a byte blob.
 	Marshal func(item interface{}) ([]byte, error)
+
 	// Unmarshal takes output of Marshal and converts it to an item to return.
 	Unmarshal func(blob []byte) (interface{}, error)
+
+	// AllowNoProcessCacheFallback is true to allow bypassing all the caching if
+	// the process cache is not configured (which often happens in tests).
+	//
+	// When the process cache is not available, if AllowNoProcessCacheFallback is
+	// true, GetOrCreate would just always call the supplied callback to create
+	// the item. If AllowNoProcessCacheFallback is false, it would instead
+	// return caching.ErrNoProcessCache.
+	AllowNoProcessCacheFallback bool
 }
 
 // Option is a base interface of options for GetOrCreate call.
@@ -111,6 +123,14 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 
 	now := clock.Now(ctx)
 	lru := c.ProcessLRUCache.LRU(ctx)
+
+	if lru == nil {
+		if !c.AllowNoProcessCacheFallback {
+			return nil, caching.ErrNoProcessCache
+		}
+		item, _, err := fn()
+		return item, err
+	}
 
 	// Check that the item is in the local cache, its TTL is acceptable and we
 	// don't want to randomly prematurely expire it, see WithRandomizedExpiration.

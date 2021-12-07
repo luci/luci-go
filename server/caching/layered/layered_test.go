@@ -38,6 +38,36 @@ var testingCache = caching.RegisterLRUCache(0)
 func TestCache(t *testing.T) {
 	t.Parallel()
 
+	Convey("Without process cache", t, func() {
+		c := Cache{
+			ProcessLRUCache: testingCache,
+			GlobalNamespace: "namespace",
+			Marshal: func(item interface{}) ([]byte, error) {
+				return item.([]byte), nil
+			},
+			Unmarshal: func(blob []byte) (interface{}, error) {
+				return blob, nil
+			},
+		}
+
+		ctx := context.Background()
+
+		_, err := c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+			panic("should not be called")
+		})
+		So(err, ShouldEqual, caching.ErrNoProcessCache)
+
+		c.AllowNoProcessCacheFallback = true
+
+		calls := 0
+		_, err = c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+			calls += 1
+			return nil, 0, nil
+		})
+		So(err, ShouldBeNil)
+		So(calls, ShouldEqual, 1)
+	})
+
 	Convey("With fake time", t, func() {
 		ctx := context.Background()
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
