@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
+	"go.chromium.org/luci/server/caching"
 
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
@@ -39,6 +40,13 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func testingContext() context.Context {
+	ctx := context.Background()
+	ctx = memory.Use(ctx)
+	ctx = caching.WithEmptyProcessCache(ctx)
+	return ctx
+}
 
 func TestHasInBucketLegacy(t *testing.T) {
 	t.Parallel()
@@ -60,7 +68,7 @@ func TestHasInBucketLegacy(t *testing.T) {
 				authtest.MockMembership(writer, "writers"),
 			),
 		}
-		ctx := auth.WithState(memory.Use(context.Background()), s)
+		ctx := auth.WithState(testingContext(), s)
 
 		makeBucket := func(acls []*pb.Acl) {
 			So(datastore.Put(ctx, &model.Bucket{
@@ -137,13 +145,21 @@ func TestHasInBucketRealms(t *testing.T) {
 			reader = identity.Identity("user:reader@example.com")
 			writer = identity.Identity("user:writer@example.com")
 
-			appID     = "buildbucket-app-id"
-			projectID = "some-project"
-			bucketID  = "some-bucket"
-			realmID   = projectID + ":" + bucketID
+			appID            = "buildbucket-app-id"
+			projectID        = "some-project"
+			existingBucketID = "existing-bucket"
+			missingBucketID  = "missing-bucket"
+
+			existingRealmID = projectID + ":" + existingBucketID
+			missingRealmID  = projectID + ":" + missingBucketID
 		)
 
-		ctx := memory.Use(context.Background())
+		ctx := testingContext()
+
+		So(datastore.Put(ctx, &model.Bucket{
+			ID:     existingBucketID,
+			Parent: model.ProjectKey(ctx, projectID),
+		}), ShouldBeNil)
 
 		// Signer is used by ShouldEnforceRealmACL to discover service ID.
 		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
@@ -154,14 +170,17 @@ func TestHasInBucketRealms(t *testing.T) {
 		s := &authtest.FakeState{
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockMembership(admin, Administrators),
-				authtest.MockRealmData(realmID, &protocol.RealmData{
+				authtest.MockRealmData(existingRealmID, &protocol.RealmData{
+					EnforceInService: []string{appID},
+				}),
+				authtest.MockRealmData(missingRealmID, &protocol.RealmData{
 					EnforceInService: []string{appID},
 				}),
 			),
 		}
 		ctx = auth.WithState(ctx, s)
 
-		check := func(perm realms.Permission, caller identity.Identity) codes.Code {
+		check := func(bucketID string, perm realms.Permission, caller identity.Identity) codes.Code {
 			s.Identity = caller
 			err := HasInBucket(ctx, perm, projectID, bucketID)
 			if err == nil {
@@ -175,34 +194,56 @@ func TestHasInBucketRealms(t *testing.T) {
 		}
 
 		Convey("No ACLs", func() {
-			So(check(BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(BuildsGet, admin), ShouldEqual, codes.OK)
-			So(check(BuildsGet, reader), ShouldEqual, codes.NotFound)
-			So(check(BuildsGet, writer), ShouldEqual, codes.NotFound)
+			So(check(existingBucketID, BuildsGet, anon), ShouldEqual, codes.NotFound)
+			So(check(existingBucketID, BuildsGet, admin), ShouldEqual, codes.OK)
+			So(check(existingBucketID, BuildsGet, reader), ShouldEqual, codes.NotFound)
+			So(check(existingBucketID, BuildsGet, writer), ShouldEqual, codes.NotFound)
+
+			So(check(missingBucketID, BuildsGet, anon), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, BuildsGet, admin), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, BuildsGet, reader), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, BuildsGet, writer), ShouldEqual, codes.NotFound)
 		})
 
 		Convey("With ACLs", func() {
 			s.FakeDB.(*authtest.FakeDB).AddMocks(
-				authtest.MockPermission(reader, realmID, BuildersGet),
-				authtest.MockPermission(reader, realmID, BuildsGet),
+				authtest.MockPermission(reader, existingRealmID, BuildersGet),
+				authtest.MockPermission(reader, existingRealmID, BuildsGet),
+				authtest.MockPermission(writer, existingRealmID, BuildersGet),
+				authtest.MockPermission(writer, existingRealmID, BuildsGet),
+				authtest.MockPermission(writer, existingRealmID, BuildsCancel),
 
-				authtest.MockPermission(writer, realmID, BuildersGet),
-				authtest.MockPermission(writer, realmID, BuildsGet),
-				authtest.MockPermission(writer, realmID, BuildsCancel),
+				authtest.MockPermission(reader, missingRealmID, BuildersGet),
+				authtest.MockPermission(reader, missingRealmID, BuildsGet),
+				authtest.MockPermission(writer, missingRealmID, BuildersGet),
+				authtest.MockPermission(writer, missingRealmID, BuildsGet),
+				authtest.MockPermission(writer, missingRealmID, BuildsCancel),
 			)
 
 			Convey("Read perm", func() {
-				So(check(BuildsGet, anon), ShouldEqual, codes.NotFound)
-				So(check(BuildsGet, admin), ShouldEqual, codes.OK)
-				So(check(BuildsGet, reader), ShouldEqual, codes.OK)
-				So(check(BuildsGet, writer), ShouldEqual, codes.OK)
+				So(check(existingBucketID, BuildsGet, anon), ShouldEqual, codes.NotFound)
+				So(check(existingBucketID, BuildsGet, admin), ShouldEqual, codes.OK)
+				So(check(existingBucketID, BuildsGet, reader), ShouldEqual, codes.OK)
+				So(check(existingBucketID, BuildsGet, writer), ShouldEqual, codes.OK)
 			})
 
 			Convey("Write perm", func() {
-				So(check(BuildsCancel, anon), ShouldEqual, codes.NotFound)
-				So(check(BuildsCancel, admin), ShouldEqual, codes.OK)
-				So(check(BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
-				So(check(BuildsCancel, writer), ShouldEqual, codes.OK)
+				So(check(existingBucketID, BuildsCancel, anon), ShouldEqual, codes.NotFound)
+				So(check(existingBucketID, BuildsCancel, admin), ShouldEqual, codes.OK)
+				So(check(existingBucketID, BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
+				So(check(existingBucketID, BuildsCancel, writer), ShouldEqual, codes.OK)
+			})
+
+			Convey("Missing bucket", func() {
+				So(check(missingBucketID, BuildsGet, anon), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, BuildsGet, admin), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, BuildsGet, reader), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, BuildsGet, writer), ShouldEqual, codes.NotFound)
+
+				So(check(missingBucketID, BuildsCancel, anon), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, BuildsCancel, admin), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, BuildsCancel, reader), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, BuildsCancel, writer), ShouldEqual, codes.NotFound)
 			})
 		})
 	})
@@ -219,7 +260,7 @@ func TestGetRole(t *testing.T) {
 				authtest.MockMembership("user:writer@example.com", "readers"), // also a reader
 			),
 		}
-		ctx := auth.WithState(context.Background(), s)
+		ctx := auth.WithState(testingContext(), s)
 
 		role := func(id identity.Identity, acls []*pb.Acl) pb.Acl_Role {
 			r, err := getRole(ctx, id, acls)
@@ -294,7 +335,7 @@ func TestBucketsByPerm(t *testing.T) {
 	t.Parallel()
 
 	Convey("GetAccessibleBuckets", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := testingContext()
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity("user:user"),
 		})
@@ -370,7 +411,7 @@ func TestCanUpdateBuild(t *testing.T) {
 				authtest.MockMembership(member, UpdateBuildAllowedUsers),
 			),
 		}
-		ctx := auth.WithState(memory.Use(context.Background()), s)
+		ctx := auth.WithState(testingContext(), s)
 
 		Convey("With a member of the updater group", func() {
 			s.Identity = member

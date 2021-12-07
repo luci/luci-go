@@ -23,8 +23,10 @@ import (
 	"context"
 	"sort"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
@@ -34,6 +36,8 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -79,6 +83,76 @@ var minRolePerPerm = map[realms.Permission]pb.Acl_Role{
 	BuildersList: pb.Acl_READER,
 }
 
+// Cache "<project>/<bucket>" => wirepb-serialized pb.Bucket.
+//
+// Missing buckets are represented by empty pb.Bucket protos.
+var bucketCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(65536),
+	GlobalNamespace: "bucket_cache_v1",
+	Marshal: func(item interface{}) ([]byte, error) {
+		pb := item.(*pb.Bucket)
+		return proto.Marshal(pb)
+	},
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		pb := &pb.Bucket{}
+		if err := proto.Unmarshal(blob, pb); err != nil {
+			return nil, err
+		}
+		return pb, nil
+	},
+	AllowNoProcessCacheFallback: true, // allow skipping cache in tests
+}
+
+// getBucket fetches a cached bucket proto.
+//
+// The returned value can be up to a minute stale compared to the state in
+// the datastore.
+//
+// Returns:
+//   bucket, nil - on success.
+//   nil, nil - if the bucket is absent.
+//   nil, err - on internal errors.
+func getBucket(ctx context.Context, project, bucket string) (*pb.Bucket, error) {
+	if project == "" {
+		return nil, errors.Reason("project name is empty").Err()
+	}
+	if bucket == "" {
+		return nil, errors.Reason("bucket name is empty").Err()
+	}
+
+	item, err := bucketCache.GetOrCreate(ctx, project+"/"+bucket, func() (interface{}, time.Duration, error) {
+		entity := &model.Bucket{ID: bucket, Parent: model.ProjectKey(ctx, project)}
+		switch err := datastore.Get(ctx, entity); {
+		case err == nil:
+			// We rely on Name to not be empty for existing buckets. Make sure it is
+			// not empty.
+			bucketPB := entity.Proto
+			if bucketPB == nil {
+				bucketPB = &pb.Bucket{}
+			}
+			bucketPB.Name = bucket
+			return bucketPB, time.Minute, nil
+		case err == datastore.ErrNoSuchEntity:
+			// Cache "absence" for a shorter duration to make it harder to overflow
+			// the cache with requests for non-existing buckets.
+			return &pb.Bucket{}, 15 * time.Second, nil
+		default:
+			return nil, 0, errors.Annotate(err, "datastore error").Err()
+		}
+	}, layered.WithRandomizedExpiration(10*time.Second))
+	if err != nil {
+		return nil, err
+	}
+
+	// Name is always populated in existing buckets. It is never populated in
+	// missing buckets.
+	pb := item.(*pb.Bucket)
+	if pb.Name == "" {
+		return nil, nil
+	}
+	return pb, nil
+}
+
 // HasInBucket checks the caller has the given permission in the bucket.
 //
 // Returns appstatus errors. If the bucket doesn't exist returns NotFound.
@@ -87,6 +161,16 @@ var minRolePerPerm = map[realms.Permission]pb.Acl_Role{
 // doesn't have it. Returns PermissionDenied if the caller has the read
 // permission, but not the requested `perm`.
 func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket string) error {
+	// Referring to a non-existing bucket is NotFound, even if the requested
+	// permission available via the @root realm.
+	bucketPB, err := getBucket(ctx, project, bucket)
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch bucket %q", project+"/"+bucket).Err()
+	case bucketPB == nil:
+		return NotFoundErr(ctx)
+	}
+
 	realm := realms.Join(project, bucket)
 
 	switch yes, err := auth.ShouldEnforceRealmACL(ctx, realm); {
@@ -99,7 +183,7 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 
 	default:
 		// Make the legacy ACL check.
-		err := hasPermLegacy(ctx, perm, project, bucket)
+		err := hasPermLegacy(ctx, bucketPB, perm, project, bucket)
 
 		// If got some internal error (not an appstatus one), return it as is.
 		// It means the check itself failed.
@@ -165,7 +249,7 @@ func hasPermRealms(ctx context.Context, perm realms.Permission, project, bucket 
 //
 // Returns nil if the caller has the permission, an appstatus error if doesn't,
 // or some other error if the check itself failed.
-func hasPermLegacy(ctx context.Context, perm realms.Permission, project, bucket string) error {
+func hasPermLegacy(ctx context.Context, bucketPB *pb.Bucket, perm realms.Permission, project, bucket string) error {
 	bucketID := project + "/" + bucket // for error messages only
 
 	// Verify the permission is known at all.
@@ -174,22 +258,8 @@ func hasPermLegacy(ctx context.Context, perm realms.Permission, project, bucket 
 		return errors.Reason("checking unknown permission %q in %q", perm, bucketID).Err()
 	}
 
-	// Grab ACLs from the Bucket proto.
-	//
-	// TODO(vadimsh): It may make sense to cache the result in the process memory
-	// for a minute or so to reduce load on the datastore, this is a very hot code
-	// path.
-	bck := &model.Bucket{ID: bucket, Parent: model.ProjectKey(ctx, project)}
-	switch err := datastore.Get(ctx, bck); {
-	case err == datastore.ErrNoSuchEntity:
-		return NotFoundErr(ctx)
-	case err != nil:
-		return errors.Annotate(err, "failed to fetch %q bucket entity", bucketID).Err()
-	}
-
-	id := auth.CurrentIdentity(ctx)
-
 	// Projects can do anything in their own buckets regardless of ACLs.
+	id := auth.CurrentIdentity(ctx)
 	if id.Kind() == identity.Project && id.Value() == project {
 		return nil
 	}
@@ -203,7 +273,7 @@ func hasPermLegacy(ctx context.Context, perm realms.Permission, project, bucket 
 	}
 
 	// Find the "maximum" role of current identity in this bucket.
-	switch role, err := getRole(ctx, id, bck.Proto.GetAcls()); {
+	switch role, err := getRole(ctx, id, bucketPB.GetAcls()); {
 	case err != nil:
 		return err
 	case role < pb.Acl_READER:
