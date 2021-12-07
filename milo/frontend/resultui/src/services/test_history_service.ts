@@ -39,11 +39,13 @@ import {
   TestVariantStatus,
   TimeRange,
   Variant,
+  VariantPredicate,
 } from './resultdb';
 
 export interface QueryTestHistoryRequest {
   readonly realm: string;
   readonly testId: string;
+  readonly variantPredicate?: VariantPredicate;
   readonly pageSize?: number;
   readonly pageToken?: string;
   readonly timeRange: TimeRange;
@@ -99,6 +101,7 @@ export class TestHistoryService {
   private async *genTestResultHistoryEntry(
     realm: string,
     testId: string,
+    variantPredicate: VariantPredicate | undefined,
     timeRange: TimeRange
   ): AsyncGenerator<GetTestResultHistoryResponseEntry, void, undefined> {
     // '' -> first page, null -> no more pages.
@@ -109,25 +112,27 @@ export class TestHistoryService {
       const getTRHReq: GetTestResultHistoryRequest = {
         realm: realm,
         testIdRegexp: escapeStringRegexp(testId),
+        variantPredicate,
         timeRange: nextTimeRange,
         pageToken: nextPageToken,
       };
       const res = await this.resultdb.getTestResultHistory(getTRHReq, { skipUpdate: true });
+      const entries = res.entries || [];
 
       // This is the last page, yield every entries.
       if (!res.nextPageToken) {
         nextPageToken = null;
-        yield* res.entries;
+        yield* entries;
         continue;
       }
 
-      const lastEntry = res.entries[res.entries.length - 1];
+      const lastEntry = entries[entries.length - 1];
 
       // All the entries have the same timestamp. We can't emulate pagination by
       // advancing the time range.
-      if (res.entries[0].invocationTimestamp === lastEntry.invocationTimestamp) {
+      if (entries[0].invocationTimestamp === lastEntry.invocationTimestamp) {
         nextPageToken = res.nextPageToken;
-        yield* res.entries;
+        yield* entries;
         continue;
       }
 
@@ -137,15 +142,20 @@ export class TestHistoryService {
       nextPageToken = '';
       // Discard results with the same timestamp as nextTimeRange.latest.
       // They will be returned again in the next RPC call.
-      yield* res.entries.filter((e) => e.invocationTimestamp !== lastEntry.invocationTimestamp);
+      yield* entries.filter((e) => e.invocationTimestamp !== lastEntry.invocationTimestamp);
     }
   }
 
   /**
    * Create a generator that create test variant history entries and yield them.
    */
-  private async *genTestVariantHistoryEntry(realm: string, testId: string, timeRange: TimeRange) {
-    const trhEntryIter = this.genTestResultHistoryEntry(realm, testId, timeRange);
+  private async *genTestVariantHistoryEntry(
+    realm: string,
+    testId: string,
+    variantPredicate: VariantPredicate | undefined,
+    timeRange: TimeRange
+  ) {
+    const trhEntryIter = this.genTestResultHistoryEntry(realm, testId, variantPredicate, timeRange);
 
     let results: TestResult[] = [];
     let tvhEntry: DeepMutable<TestVariantHistoryEntry> | null = null;
@@ -201,7 +211,7 @@ export class TestHistoryService {
     // Recover the iterator when page token is used.
     const iter = req.pageToken
       ? this.pageIterCache[req.pageToken]()
-      : this.genTestVariantHistoryEntry(req.realm, req.testId, req.timeRange);
+      : this.genTestVariantHistoryEntry(req.realm, req.testId, req.variantPredicate, req.timeRange);
 
     const entries: TestVariantHistoryEntry[] = [];
     let remaining = req.pageSize || 100;

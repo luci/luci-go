@@ -276,7 +276,7 @@ export interface GetTestResultHistoryResponseEntry {
 }
 
 export interface GetTestResultHistoryResponse {
-  readonly entries: readonly GetTestResultHistoryResponseEntry[];
+  readonly entries?: readonly GetTestResultHistoryResponseEntry[];
   readonly nextPageToken: string;
 }
 
