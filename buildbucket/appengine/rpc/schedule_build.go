@@ -58,9 +58,6 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-// TODO(crbug.com/1254504): re-enable experiment_reasons when BQ export is in Go
-const ExperimentReasonsEnabled = false
-
 func min(i, j int) int {
 	if i < j {
 		return i
@@ -1073,11 +1070,6 @@ func setExperimentsFromProto(build *model.Build) {
 		if !setExps.Has(exp) {
 			build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
 		}
-	}
-	// TODO(iannucci): This is dirty; but we don't want ExperimentReasons leaking
-	// through to the exported build proto until BQ export can handle it.
-	if !ExperimentReasonsEnabled {
-		build.Proto.Infra.Buildbucket.ExperimentReasons = nil
 	}
 	for _, exp := range build.Proto.Input.Experiments {
 		build.Experiments = append(build.Experiments, fmt.Sprintf("+%s", exp))

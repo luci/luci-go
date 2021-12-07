@@ -2728,9 +2728,7 @@ func TestScheduleBuild(t *testing.T) {
 		}
 		initReasons := func() map[string]pb.BuildInfra_Buildbucket_ExperimentReason {
 			er := make(map[string]pb.BuildInfra_Buildbucket_ExperimentReason)
-			if ExperimentReasonsEnabled {
-				expect.Proto.Infra.Buildbucket.ExperimentReasons = er
-			}
+			expect.Proto.Infra.Buildbucket.ExperimentReasons = er
 			return er
 		}
 
@@ -2836,9 +2834,7 @@ func TestScheduleBuild(t *testing.T) {
 			er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 			er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-			if ExperimentReasonsEnabled {
-				So(ent, ShouldResemble, expect)
-			}
+			So(ent, ShouldResemble, expect)
 		})
 
 		Convey("legacy only", func() {
@@ -2857,9 +2853,7 @@ func TestScheduleBuild(t *testing.T) {
 			er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 			er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-			if ExperimentReasonsEnabled {
-				So(ent, ShouldResemble, expect)
-			}
+			So(ent, ShouldResemble, expect)
 		})
 
 		Convey("config only", func() {
@@ -2876,9 +2870,7 @@ func TestScheduleBuild(t *testing.T) {
 			er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG
 			er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG
 
-			if ExperimentReasonsEnabled {
-				So(ent, ShouldResemble, expect)
-			}
+			So(ent, ShouldResemble, expect)
 		})
 
 		Convey("override", func() {
@@ -2901,9 +2893,7 @@ func TestScheduleBuild(t *testing.T) {
 				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-				if ExperimentReasonsEnabled {
-					So(ent, ShouldResemble, expect)
-				}
+				So(ent, ShouldResemble, expect)
 			})
 
 			Convey("legacy > config", func() {
@@ -2924,9 +2914,7 @@ func TestScheduleBuild(t *testing.T) {
 				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-				if ExperimentReasonsEnabled {
-					So(ent, ShouldResemble, expect)
-				}
+				So(ent, ShouldResemble, expect)
 			})
 
 			Convey("request > config", func() {
@@ -2980,9 +2968,7 @@ func TestScheduleBuild(t *testing.T) {
 				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-				if ExperimentReasonsEnabled {
-					So(ent, ShouldResemble, expect)
-				}
+				So(ent, ShouldResemble, expect)
 			})
 		})
 
@@ -3004,11 +2990,9 @@ func TestScheduleBuild(t *testing.T) {
 					setExps()
 
 					So(ent.Proto.Input.Experiments, ShouldResemble, []string{"always"})
-					if ExperimentReasonsEnabled {
-						So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-							"always": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
-						})
-					}
+					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+						"always": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
+					})
 				})
 
 				Convey("can be overridden from request", func() {
@@ -3016,11 +3000,9 @@ func TestScheduleBuild(t *testing.T) {
 					setExps()
 
 					So(ent.Proto.Input.Experiments, ShouldBeEmpty)
-					if ExperimentReasonsEnabled {
-						So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-							"always": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
-						})
-					}
+					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+						"always": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+					})
 				})
 			})
 
@@ -3035,12 +3017,10 @@ func TestScheduleBuild(t *testing.T) {
 
 				So(ent.Proto.Input.Experiments, ShouldResemble, []string{"per.builder"})
 				So(ent.Experiments, ShouldContain, "-other.builder")
-				if ExperimentReasonsEnabled {
-					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-						"per.builder":   pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
-						"other.builder": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
-					})
-				}
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+					"per.builder":   pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
+					"other.builder": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
+				})
 			})
 
 			Convey("min value", func() {
@@ -3053,11 +3033,9 @@ func TestScheduleBuild(t *testing.T) {
 					setExps()
 
 					So(ent.Proto.Input.Experiments, ShouldResemble, []string{"min.value"})
-					if ExperimentReasonsEnabled {
-						So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-							"min.value": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_MINIMUM,
-						})
-					}
+					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+						"min.value": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_MINIMUM,
+					})
 				})
 
 				Convey("can be overridden from request", func() {
@@ -3065,11 +3043,9 @@ func TestScheduleBuild(t *testing.T) {
 					setExps()
 
 					So(ent.Proto.Input.Experiments, ShouldBeEmpty)
-					if ExperimentReasonsEnabled {
-						So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-							"min.value": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
-						})
-					}
+					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+						"min.value": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+					})
 				})
 			})
 
@@ -3080,13 +3056,11 @@ func TestScheduleBuild(t *testing.T) {
 				setExps()
 
 				So(ent.Proto.Input.Experiments, ShouldBeEmpty)
-				if ExperimentReasonsEnabled {
-					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-						"inactive": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_INACTIVE,
-						// Note that other_inactive wasn't requested in the build so it's
-						// absent here.
-					})
-				}
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+					"inactive": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_INACTIVE,
+					// Note that other_inactive wasn't requested in the build so it's
+					// absent here.
+				})
 			})
 		})
 	})
