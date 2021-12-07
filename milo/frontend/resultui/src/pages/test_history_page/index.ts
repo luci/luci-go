@@ -29,6 +29,7 @@ import './date_axis';
 import './duration_graph';
 import './duration_legend';
 import './graph_config';
+import './filter_box';
 import './status_graph';
 import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
@@ -140,6 +141,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     }
 
     return html`
+      <milo-th-filter-box></milo-th-filter-box>
       <milo-th-graph-config></milo-th-graph-config>
       <div id="main">
         <milo-th-variant-def-table id="variant-def-table"></milo-th-variant-def-table>
@@ -221,6 +223,11 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
         /* Shrink the first column */
         width: 0px;
+      }
+
+      milo-th-filter-box {
+        width: calc(100% - 10px);
+        margin: 5px;
       }
 
       #main {

@@ -29,7 +29,7 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
   @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
 
   protected render() {
-    const variants = this.pageState.testHistoryLoader!.variants;
+    const variants = this.pageState.filteredVariants;
     return html`
       <svg id="graph" height=${CELL_SIZE * variants.length}>
         ${variants.map(
@@ -50,7 +50,7 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
   }
 
   private renderEntries(vHash: string, date: DateTime, index: number) {
-    const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date);
+    const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date)?.filter(this.pageState.tvhEntryFilter);
     const durations = this.pageState.passOnlyDuration
       ? entries?.filter((e) => e.avgDurationPass).map((e) => e.avgDurationPass!)
       : entries?.filter((e) => e.avgDuration).map((e) => e.avgDuration!);

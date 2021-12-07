@@ -40,7 +40,7 @@ export class TestHistoryDurationLegendElement extends MiloBaseElement {
   }
 
   @computed private get scaleHeight() {
-    return this.pageState.testHistoryLoader.variants.length * CELL_SIZE + X_AXIS_HEIGHT - 2 * DURATION_LEGEND_PADDING;
+    return this.pageState.filteredVariants.length * CELL_SIZE + X_AXIS_HEIGHT - 2 * DURATION_LEGEND_PADDING;
   }
 
   @computed private get tickStepSizeMs() {
@@ -83,7 +83,7 @@ export class TestHistoryDurationLegendElement extends MiloBaseElement {
   }
 
   protected render() {
-    const variants = this.pageState.testHistoryLoader!.variants;
+    const variants = this.pageState.filteredVariants;
     return html`
       <svg height=${X_AXIS_HEIGHT + CELL_SIZE * variants.length} width=${Y_AXIS_WIDTH + DURATION_RECT_WIDTH}>
         <defs>

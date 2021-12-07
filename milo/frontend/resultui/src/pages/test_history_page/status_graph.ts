@@ -41,7 +41,7 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
   @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
 
   protected render() {
-    const variants = this.pageState.testHistoryLoader!.variants;
+    const variants = this.pageState.filteredVariants;
     return html`
       <svg id="graph" height=${CELL_SIZE * variants.length}>
         ${variants.map(
@@ -62,8 +62,8 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
   }
 
   private renderEntries(vHash: string, date: DateTime, index: number) {
-    const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date);
-    if (entries === null || entries.length === 0) {
+    const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date)?.filter(this.pageState.tvhEntryFilter);
+    if (!entries || entries.length === 0) {
       return null;
     }
 

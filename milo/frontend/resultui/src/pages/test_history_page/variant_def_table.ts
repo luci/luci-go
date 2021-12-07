@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
@@ -25,10 +25,6 @@ import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 export class TestHistoryVariantDefTableElement extends MiloBaseElement {
   @observable @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
 
-  @computed private get variants() {
-    return this.pageState.testHistoryLoader?.variants || [];
-  }
-
   protected render() {
     return html`
       <table>
@@ -36,7 +32,7 @@ export class TestHistoryVariantDefTableElement extends MiloBaseElement {
           ${this.pageState.criticalVariantKeys.map((k) => html`<th>${k}</th>`)}
         </thead>
         <tbody>
-          ${this.variants.map(
+          ${this.pageState.filteredVariants.map(
             ([_, v]) => html`
               <tr>
                 ${this.pageState.criticalVariantKeys.map((k) => html`<td>${v.def[k] || ''}</td>`)}

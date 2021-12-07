@@ -14,13 +14,14 @@
 
 import { interpolateOranges, scaleLinear, scaleSequential } from 'd3';
 import { DateTime } from 'luxon';
-import { comparer, computed, observable, reaction } from 'mobx';
+import { autorun, comparer, computed, observable, reaction } from 'mobx';
 
 import { TestVariantTableState, VariantGroup } from '../components/test_variants_table/context';
 import { createContextLink } from '../libs/context';
+import { parseTVHFilterQuery, parseVariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryLoader } from '../models/test_history_loader';
-import { createTVCmpFn, getCriticalVariantKeys } from '../services/resultdb';
+import { createTVCmpFn, getCriticalVariantKeys, Variant } from '../services/resultdb';
 import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
 
 export const enum GraphType {
@@ -53,6 +54,13 @@ export class TestHistoryPageState implements TestVariantTableState {
     return Array(this.days)
       .fill(0)
       .map((_, i) => this.now.minus({ days: i }));
+  }
+
+  @observable.ref filterText = '';
+  @observable.ref tvhEntryFilter = (_v: TestVariantHistoryEntry) => true;
+  @observable.ref private variantFilter = (_v: Variant) => true;
+  @computed get filteredVariants() {
+    return this.testHistoryLoader.variants.filter(([, v]) => this.variantFilter(v));
   }
 
   @observable.ref graphType = GraphType.STATUS;
@@ -146,6 +154,23 @@ export class TestHistoryPageState implements TestVariantTableState {
         () => this.entriesLoader?.loadFirstPage(),
         { fireImmediately: true }
       )
+    );
+
+    // Keep the filters in sync.
+    this.disposers.push(
+      autorun(() => {
+        try {
+          const newEntryFilter = parseTVHFilterQuery(this.filterText);
+          const [, newVariantFilter] = parseVariantFilter(this.filterText);
+
+          // Only update the filters after the query is successfully parsed.
+          this.tvhEntryFilter = newEntryFilter;
+          this.variantFilter = newVariantFilter;
+        } catch (e) {
+          //TODO(weiweilin): display the error to the user.
+          console.error(e);
+        }
+      })
     );
   }
 
