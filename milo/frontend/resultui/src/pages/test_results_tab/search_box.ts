@@ -23,7 +23,7 @@ import '../../components/hotkey';
 import { SuggestionEntry } from '../../components/auto_complete';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumer } from '../../libs/context';
-import { suggestSearchQuery } from '../../libs/search_query';
+import { suggestTestResultSearchQuery } from '../../libs/queries/tr_search_query';
 
 /**
  * An element that let the user search tests in the test results tab with DSL.
@@ -43,7 +43,7 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
     return this.invocationState.searchText.slice(0, searchTextPrefixLen);
   }
   @computed private get suggestions() {
-    return suggestSearchQuery(this.invocationState.searchText);
+    return suggestTestResultSearchQuery(this.invocationState.searchText);
   }
 
   protected render() {

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { html, TemplateResult } from 'lit-html';
+
 /**
  * Extend URL with methods that can be chained.
  */
@@ -115,4 +117,16 @@ export function roundDown(num: number, sortedRoundNumbers: readonly number[]) {
   }
 
   return lastNum;
+}
+
+/**
+ * Return a lit-html template that highlight the substring (case-insensitive)
+ * in the given fullString.
+ */
+export function highlight(fullString: string, subString: string): TemplateResult {
+  const matchStart = fullString.toUpperCase().search(subString.toUpperCase());
+  const prefix = fullString.slice(0, matchStart);
+  const matched = fullString.slice(matchStart, matchStart + subString.length);
+  const suffix = fullString.slice(matchStart + subString.length);
+  return html`${prefix}<strong>${matched}</strong>${suffix}`;
 }

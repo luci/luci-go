@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { html, TemplateResult } from 'lit-html';
+import { html } from 'lit-html';
 
-import { Suggestion } from '../components/auto_complete';
-import { TestVariant } from '../services/resultdb';
-import { parseProtoDuration } from './time_utils';
+import { Suggestion } from '../../components/auto_complete';
+import { TestVariant } from '../../services/resultdb';
+import { parseProtoDuration } from '../time_utils';
+import { highlight } from '../utils';
 
 const SPECIAL_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 
 export type TestVariantFilter = (v: TestVariant) => boolean;
 
-export function parseSearchQuery(searchQuery: string): TestVariantFilter {
+export function parseTestResultSearchQuery(searchQuery: string): TestVariantFilter {
   const filters = searchQuery.split(' ').map((query) => {
     const match = query.match(SPECIAL_QUERY_RE);
 
@@ -179,19 +180,7 @@ const QUERY_TYPE_SUGGESTIONS = [
   { type: '-VHash:', explanation: 'Exclude tests with the specified variant hash' },
 ];
 
-/**
- * Return a lit-html template that highlight the substring (case-insensitive)
- * in the given fullString.
- */
-function highlight(fullString: string, subString: string): TemplateResult {
-  const matchStart = fullString.toUpperCase().search(subString.toUpperCase());
-  const prefix = fullString.slice(0, matchStart);
-  const matched = fullString.slice(matchStart, matchStart + subString.length);
-  const suffix = fullString.slice(matchStart + subString.length);
-  return html`${prefix}<strong>${matched}</strong>${suffix}`;
-}
-
-export function suggestSearchQuery(query: string): readonly Suggestion[] {
+export function suggestTestResultSearchQuery(query: string): readonly Suggestion[] {
   if (query === '') {
     // Return some example queries when the query is empty.
     return [

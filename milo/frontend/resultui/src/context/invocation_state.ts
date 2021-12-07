@@ -19,7 +19,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { TestVariantTableState, VariantGroup } from '../components/test_variants_table/context';
 import { createContextLink } from '../libs/context';
-import { parseSearchQuery } from '../libs/search_query';
+import { parseTestResultSearchQuery } from '../libs/queries/tr_search_query';
 import { InnerTag, TAG_SOURCE } from '../libs/tag';
 import { unwrapObservable } from '../libs/unwrap_observable';
 import { TestLoader } from '../models/test_loader';
@@ -113,7 +113,7 @@ export class InvocationState implements TestVariantTableState {
     this.disposers.push(
       autorun(() => {
         try {
-          this.searchFilter = parseSearchQuery(this.searchText);
+          this.searchFilter = parseTestResultSearchQuery(this.searchText);
         } catch (e) {
           //TODO(weiweilin): display the error to the user.
           console.error(e);
