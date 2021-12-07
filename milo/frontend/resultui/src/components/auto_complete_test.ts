@@ -38,6 +38,7 @@ describe('auto_complete_test', () => {
   let autoSuggestionEle: AutoCompleteElement;
   let inputEle: HTMLInputElement;
   let suggestionSpy: SinonSpy<[SuggestionEntry], void>;
+  let completeSpy: SinonSpy<[], void>;
   before(async () => {
     autoSuggestionEle = await fixture<AutoCompleteElement>(html`
       <milo-auto-complete
@@ -49,6 +50,7 @@ describe('auto_complete_test', () => {
     `);
     inputEle = autoSuggestionEle.shadowRoot!.querySelector('input')!;
     suggestionSpy = sinon.spy(autoSuggestionEle, 'onSuggestionSelected');
+    completeSpy = sinon.spy(autoSuggestionEle, 'onComplete');
   });
   after(fixtureCleanup);
 
@@ -57,6 +59,7 @@ describe('auto_complete_test', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
     assert.strictEqual(suggestionSpy.getCall(0).args[0], suggestions[1]);
+    assert.strictEqual(completeSpy.callCount, 0);
   });
 
   it('should reset suggestion selection when suggestions are updated', () => {
@@ -70,6 +73,8 @@ describe('auto_complete_test', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
     assert.strictEqual(suggestionSpy.getCall(2).args[0], suggestions[0]);
+
+    assert.strictEqual(completeSpy.callCount, 0);
   });
 
   it('should skip suggestion headers when selecting with key strokes', () => {
@@ -88,6 +93,8 @@ describe('auto_complete_test', () => {
     simulateKeyStroke(inputEle, 'ArrowUp');
     simulateKeyStroke(inputEle, 'Enter');
     assert.strictEqual(suggestionSpy.getCall(4).args[0], suggestions[2]);
+
+    assert.strictEqual(completeSpy.callCount, 0);
   });
 
   it('should not navigate beyond boundary', () => {
@@ -109,5 +116,13 @@ describe('auto_complete_test', () => {
     }
     simulateKeyStroke(inputEle, 'Enter');
     assert.strictEqual(suggestionSpy.getCall(6).args[0], firstSelectableSuggestion);
+
+    assert.strictEqual(completeSpy.callCount, 0);
+  });
+
+  it('should call onComplete when user hit enter with completed query', () => {
+    autoSuggestionEle.value = 'search text ';
+    simulateKeyStroke(inputEle, 'Enter');
+    assert.strictEqual(completeSpy.callCount, 1);
   });
 });

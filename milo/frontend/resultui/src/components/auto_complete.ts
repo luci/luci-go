@@ -54,6 +54,7 @@ export class AutoCompleteElement extends MiloBaseElement {
 
   onValueUpdate = (_newVal: string) => {};
   onSuggestionSelected = (_suggestion: SuggestionEntry) => {};
+  onComplete = () => {};
 
   focus() {
     this.inputBox.focus();
@@ -190,9 +191,12 @@ export class AutoCompleteElement extends MiloBaseElement {
               case 'Enter':
                 if (this.selectedIndex !== -1) {
                   this.onSuggestionSelected(this.suggestions[this.selectedIndex] as SuggestionEntry);
-                } else if (this.value !== '' && !this.value.endsWith(' ')) {
-                  // Complete the current sub-query if it's not already completed.
-                  this.onValueUpdate(this.value + ' ');
+                } else {
+                  if (this.value !== '' && !this.value.endsWith(' ')) {
+                    // Complete the current sub-query if it's not already completed.
+                    this.onValueUpdate(this.value + ' ');
+                  }
+                  this.onComplete();
                 }
                 this.clearSuggestion();
                 break;
