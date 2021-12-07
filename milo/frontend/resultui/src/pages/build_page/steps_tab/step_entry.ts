@@ -19,29 +19,29 @@ import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
-import '../copy_to_clipboard';
-import '../expandable_entry';
-import '../log';
-import '../pin_toggle';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../libs/constants';
-import { lazyRendering, RenderPlaceHolder } from '../../libs/observer_element';
-import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
-import { StepExt } from '../../models/step_ext';
-import { BuildStatus } from '../../services/buildbucket';
-import colorClasses from '../../styles/color_classes.css';
-import commonStyle from '../../styles/common_style.css';
-import { MiloBaseElement } from '../milo_base';
-import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../tooltip';
+import '../../../components/copy_to_clipboard';
+import '../../../components/expandable_entry';
+import '../../../components/log';
+import '../../../components/pin_toggle';
+import { MiloBaseElement } from '../../../components/milo_base';
+import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
+import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../../libs/constants';
+import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
+import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
+import { StepExt } from '../../../models/step_ext';
+import { BuildStatus } from '../../../services/buildbucket';
+import colorClasses from '../../../styles/color_classes.css';
+import commonStyle from '../../../styles/common_style.css';
 
 /**
  * Renders a step.
  */
-@customElement('milo-build-step-entry')
+@customElement('milo-bp-step-entry')
 @lazyRendering
-export class BuildStepEntryElement extends MiloBaseElement implements RenderPlaceHolder {
+export class BuildPageStepEntryElement extends MiloBaseElement implements RenderPlaceHolder {
   @observable.ref
   @consumeConfigsStore()
   configsStore!: UserConfigsStore;
@@ -77,7 +77,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
     this.expandSubSteps = expand;
-    this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry').forEach((e) =>
+    this.shadowRoot!.querySelectorAll<BuildPageStepEntryElement>('milo-bp-step-entry').forEach((e) =>
       e.toggleAllSteps(expand)
     );
   }
@@ -103,9 +103,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
         ${this.logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
       ${this.step.children?.map(
-        (child) => html`
-          <milo-build-step-entry .step=${child} .expanded=${this.expandSubSteps}></milo-build-step-entry>
-        `
+        (child) => html`<milo-bp-step-entry .step=${child} .expanded=${this.expandSubSteps}></milo-bp-step-entry>`
       ) || ''}
     `;
   }
@@ -343,7 +341,7 @@ export class BuildStepEntryElement extends MiloBaseElement implements RenderPlac
         list-style-type: circle;
       }
 
-      milo-build-step-entry {
+      milo-bp-step-entry {
         margin-bottom: 2px;
 
         /* Always render all child steps. */

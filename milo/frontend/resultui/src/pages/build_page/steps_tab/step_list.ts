@@ -17,21 +17,21 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
-import './build_step_entry';
-import '../dot_spinner';
-import { BuildState, consumeBuildState } from '../../context/build_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
-import { consumer } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
-import { BuildStatus } from '../../services/buildbucket';
-import commonStyle from '../../styles/common_style.css';
-import { MiloBaseElement } from '../milo_base';
-import { BuildStepEntryElement } from './build_step_entry';
+import '../../../components/dot_spinner';
+import './step_entry';
+import { MiloBaseElement } from '../../../components/milo_base';
+import { BuildState, consumeBuildState } from '../../../context/build_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
+import { consumer } from '../../../libs/context';
+import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
+import { BuildStatus } from '../../../services/buildbucket';
+import commonStyle from '../../../styles/common_style.css';
+import { BuildPageStepEntryElement } from './step_entry';
 
-@customElement('milo-build-step-list')
+@customElement('milo-bp-step-list')
 @errorHandler(forwardWithoutMsg)
 @consumer
-export class BuildStepListElement extends MiloBaseElement {
+export class BuildPageStepListElement extends MiloBaseElement {
   @observable.ref
   @consumeConfigsStore()
   configsStore!: UserConfigsStore;
@@ -60,7 +60,7 @@ export class BuildStepListElement extends MiloBaseElement {
   }
 
   toggleAllSteps(expand: boolean) {
-    this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry').forEach((e) =>
+    this.shadowRoot!.querySelectorAll<BuildPageStepEntryElement>('milo-bp-step-entry').forEach((e) =>
       e.toggleAllSteps(expand)
     );
   }
@@ -79,9 +79,8 @@ export class BuildStepListElement extends MiloBaseElement {
 
   protected render = reportRenderError(this, () => {
     return html`
-      ${this.buildState.build?.rootSteps.map(
-        (step) => html`<milo-build-step-entry .step=${step}></milo-build-step-entry>`
-      ) || ''}
+      ${this.buildState.build?.rootSteps.map((step) => html`<milo-bp-step-entry .step=${step}></milo-bp-step-entry>`) ||
+      ''}
       <div class="list-entry" style=${styleMap({ display: this.noStepText ? '' : 'none' })}>${this.noStepText}</div>
       <div id="load" class="list-entry" style=${styleMap({ display: this.loaded ? 'none' : '' })}>
         Loading <milo-dot-spinner></milo-dot-spinner>
@@ -96,7 +95,7 @@ export class BuildStepListElement extends MiloBaseElement {
         display: block;
       }
 
-      milo-build-step-entry {
+      milo-bp-step-entry {
         margin-bottom: 2px;
       }
 

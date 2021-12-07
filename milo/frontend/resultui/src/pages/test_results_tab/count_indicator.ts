@@ -15,12 +15,12 @@
 import { css, customElement, html } from 'lit-element';
 import { reaction } from 'mobx';
 
-import './dot_spinner';
-import { consumeInvocationState, InvocationState } from '../context/invocation_state';
-import { consumer } from '../libs/context';
-import { errorHandler, forwardWithoutMsg, reportErrorAsync } from '../libs/error_handler';
-import { LoadingStage } from '../models/test_loader';
-import { MiloBaseElement } from './milo_base';
+import '../../components/dot_spinner';
+import { MiloBaseElement } from '../../components/milo_base';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import { consumer } from '../../libs/context';
+import { errorHandler, forwardWithoutMsg, reportErrorAsync } from '../../libs/error_handler';
+import { LoadingStage } from '../../models/test_loader';
 
 /**
  * Format number with a cap.
@@ -37,10 +37,10 @@ function formatNum(num: number, hasMore: boolean, cap?: number) {
 /**
  * Renders the number of most severe test failures in a badge.
  */
-@customElement('milo-test-count-indicator')
+@customElement('milo-trt-count-indicator')
 @errorHandler(forwardWithoutMsg, () => html``)
 @consumer
-export class TestCountIndicatorElement extends MiloBaseElement {
+export class TestResultsTabCountIndicatorElement extends MiloBaseElement {
   @consumeInvocationState() invState!: InvocationState;
 
   connectedCallback() {

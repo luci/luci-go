@@ -18,19 +18,19 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
-import './auto_complete';
-import './hotkey';
-import { consumeInvocationState, InvocationState } from '../context/invocation_state';
-import { consumer } from '../libs/context';
-import { suggestSearchQuery } from '../libs/search_query';
-import { SuggestionEntry } from './auto_complete';
+import '../../components/auto_complete';
+import '../../components/hotkey';
+import { SuggestionEntry } from '../../components/auto_complete';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import { consumer } from '../../libs/context';
+import { suggestSearchQuery } from '../../libs/search_query';
 
 /**
- * An element that let the user search tests with DSL.
+ * An element that let the user search tests in the test results tab with DSL.
  */
-@customElement('milo-test-search-filter')
+@customElement('milo-trt-search-box')
 @consumer
-export class TestSearchFilterElement extends MobxLitElement {
+export class TestResultTabSearchBoxElement extends MobxLitElement {
   @observable.ref
   @consumeInvocationState()
   invocationState!: InvocationState;

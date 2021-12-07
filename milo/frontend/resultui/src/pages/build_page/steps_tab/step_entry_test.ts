@@ -15,14 +15,14 @@
 import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { css, customElement, LitElement, property } from 'lit-element';
 
-import './build_step_entry';
-import { UserConfigsStore } from '../../context/user_configs';
-import { provider } from '../../libs/context';
-import { IntersectionNotifier, provideNotifier } from '../../libs/observer_element';
-import { StepExt } from '../../models/step_ext';
-import { BuildStatus } from '../../services/buildbucket';
+import './step_entry';
+import { UserConfigsStore } from '../../../context/user_configs';
+import { provider } from '../../../libs/context';
+import { IntersectionNotifier, provideNotifier } from '../../../libs/observer_element';
+import { StepExt } from '../../../models/step_ext';
+import { BuildStatus } from '../../../services/buildbucket';
 
-@customElement('milo-build-step-entry-test-notifier-provider')
+@customElement('milo-bp-step-entry-test-notifier-provider')
 @provider
 class NotifierProviderElement extends LitElement {
   @property()
@@ -42,7 +42,7 @@ class NotifierProviderElement extends LitElement {
   `;
 }
 
-describe('build_step_entry', () => {
+describe('bp_step_entry', () => {
   const configsStore = new UserConfigsStore();
   after(() => configsStore.dispose());
 
@@ -58,9 +58,9 @@ describe('build_step_entry', () => {
       index: 0,
     });
     await fixture<NotifierProviderElement>(html`
-      <milo-build-step-entry-test-notifier-provider>
-        <milo-build-step-entry .configsStore=${configsStore} .step=${step}></milo-build-step-entry>
-      </milo-build-step-entry-test-notifier-provider>
+      <milo-bp-step-entry-test-notifier-provider>
+        <milo-bp-step-entry .configsStore=${configsStore} .step=${step}></milo-bp-step-entry>
+      </milo-bp-step-entry-test-notifier-provider>
     `);
     await aTimeout(10);
 

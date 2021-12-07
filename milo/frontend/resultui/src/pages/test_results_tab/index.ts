@@ -16,20 +16,20 @@ import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { observable, reaction } from 'mobx';
 
-import '../components/dot_spinner';
-import '../components/hotkey';
-import '../components/test_search_filter';
-import '../components/test_variants_table';
-import '../components/test_variants_table/tvt_config_widget';
-import { MiloBaseElement } from '../components/milo_base';
-import { TestVariantsTableElement } from '../components/test_variants_table';
-import { AppState, consumeAppState } from '../context/app_state';
-import { consumeInvocationState, InvocationState } from '../context/invocation_state';
-import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
-import { consumer } from '../libs/context';
-import { errorHandler, forwardWithoutMsg, reportRenderError } from '../libs/error_handler';
-import commonStyle from '../styles/common_style.css';
+import '../../components/dot_spinner';
+import '../../components/hotkey';
+import '../../components/test_variants_table';
+import '../../components/test_variants_table/tvt_config_widget';
+import './search_box';
+import { MiloBaseElement } from '../../components/milo_base';
+import { TestVariantsTableElement } from '../../components/test_variants_table';
+import { AppState, consumeAppState } from '../../context/app_state';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
+import { consumer } from '../../libs/context';
+import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Display test results.
@@ -137,7 +137,7 @@ export class TestResultsTabElement extends MiloBaseElement {
       <div id="header">
         <milo-tvt-config-widget class="filters-container"></milo-tvt-config-widget>
         <div class="filters-container-delimiter"></div>
-        <milo-test-search-filter></milo-test-search-filter>
+        <milo-trt-search-box></milo-trt-search-box>
         <milo-hotkey key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(true)}>Expand All</mwc-button>
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
@@ -166,7 +166,7 @@ export class TestResultsTabElement extends MiloBaseElement {
         background: white;
         z-index: 3;
       }
-      milo-test-search-filter {
+      milo-trt-search-box {
         max-width: 1000px;
       }
       mwc-button {

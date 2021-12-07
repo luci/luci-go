@@ -21,8 +21,8 @@ describe('Steps & Logs Tab', () => {
   it('support expanding all steps by default', () => {
     cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/steps');
     cy.get('#expand-by-default').click();
-    cy.get('milo-expandable-entry milo-build-step-entry');
+    cy.get('milo-expandable-entry milo-bp-step-entry');
     cy.reload();
-    cy.get('milo-expandable-entry milo-build-step-entry');
+    cy.get('milo-expandable-entry milo-bp-step-entry');
   });
 });

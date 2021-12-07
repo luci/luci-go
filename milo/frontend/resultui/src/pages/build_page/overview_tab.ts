@@ -22,12 +22,12 @@ import { css, customElement, html, TemplateResult } from 'lit-element';
 import { computed, observable } from 'mobx';
 
 import '../../components/build_tag_row';
-import '../../components/build_step_list';
 import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
 import '../../components/test_variants_table/test_variant_entry';
 import '../../components/timestamp';
+import './steps_tab/step_list';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
@@ -369,7 +369,7 @@ export class OverviewTabElement extends MobxLitElement {
           />
           <label for="expand-by-default">Expand by default</label>
         </div>
-        <milo-build-step-list></milo-build-step-list>
+        <milo-bp-step-list></milo-bp-step-list>
       </div>
     `;
   }

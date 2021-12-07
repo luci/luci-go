@@ -16,16 +16,16 @@ import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
-import '../../components/build_step_list';
-import '../../components/hotkey';
-import { BuildStepEntryElement } from '../../components/build_step_list/build_step_entry';
-import { MiloBaseElement } from '../../components/milo_base';
-import { AppState, consumeAppState } from '../../context/app_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { consumer } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
-import commonStyle from '../../styles/common_style.css';
+import '../../../components/hotkey';
+import './step_list';
+import { MiloBaseElement } from '../../../components/milo_base';
+import { AppState, consumeAppState } from '../../../context/app_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
+import { consumer } from '../../../libs/context';
+import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
+import commonStyle from '../../../styles/common_style.css';
+import { BuildPageStepEntryElement } from './step_entry';
 
 @customElement('milo-steps-tab')
 @errorHandler(forwardWithoutMsg)
@@ -52,7 +52,7 @@ export class StepsTabElement extends MiloBaseElement {
   private allStepsWereExpanded = false;
   private toggleAllSteps(expand: boolean) {
     this.allStepsWereExpanded = expand;
-    this.shadowRoot!.querySelector<BuildStepEntryElement>('milo-build-step-list')!.toggleAllSteps(expand);
+    this.shadowRoot!.querySelector<BuildPageStepEntryElement>('milo-bp-step-list')!.toggleAllSteps(expand);
   }
   private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
@@ -108,7 +108,7 @@ export class StepsTabElement extends MiloBaseElement {
           </mwc-button>
         </milo-hotkey>
       </div>
-      <milo-build-step-list id="main" tabindex="0"></milo-build-step-list>
+      <milo-bp-step-list id="main" tabindex="0"></milo-bp-step-list>
     `;
   });
 
@@ -149,7 +149,7 @@ export class StepsTabElement extends MiloBaseElement {
         height: 100%;
       }
 
-      milo-build-step-list {
+      milo-bp-step-list {
         padding-top: 5px;
         padding-left: 10px;
         outline: none;

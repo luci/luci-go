@@ -17,10 +17,9 @@ import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from 
 import { css, customElement, html } from 'lit-element';
 import { computed, observable, reaction } from 'mobx';
 
-import '../../components/test_count_indicator';
 import '../../components/status_bar';
 import '../../components/tab_bar';
-import './invocation_details_tab';
+import '../test_results_tab/count_indicator';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { provideTestVariantTableState } from '../../components/test_variants_table/context';
@@ -141,7 +140,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
         .loading=${this.invocationState.invocation === null}
       ></milo-status-bar>
       <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}>
-        <milo-test-count-indicator slot="test-count-indicator"></milo-test-count-indicator>
+        <milo-trt-count-indicator slot="test-count-indicator"></milo-trt-count-indicator>
       </milo-tab-bar>
       <slot></slot>
     `;
@@ -163,8 +162,8 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
         padding-top: 10px;
       }
 
-      milo-test-count-indicator {
-        margin-right: -15px;
+      milo-trt-count-indicator {
+        margin-right: -13px;
       }
 
       #test-invocation-id {

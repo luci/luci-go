@@ -17,12 +17,17 @@ import { assert } from 'chai';
 import { customElement, html, LitElement, property } from 'lit-element';
 import sinon from 'sinon';
 
-import './test_count_indicator';
-import { AppState } from '../context/app_state';
-import { InvocationState, provideInvocationState } from '../context/invocation_state';
-import { provider } from '../libs/context';
-import { QueryTestVariantsRequest, QueryTestVariantsResponse, ResultDb, TestVariantStatus } from '../services/resultdb';
-import { TestCountIndicatorElement } from './test_count_indicator';
+import './count_indicator';
+import { AppState } from '../../context/app_state';
+import { InvocationState, provideInvocationState } from '../../context/invocation_state';
+import { provider } from '../../libs/context';
+import {
+  QueryTestVariantsRequest,
+  QueryTestVariantsResponse,
+  ResultDb,
+  TestVariantStatus,
+} from '../../services/resultdb';
+import { TestResultsTabCountIndicatorElement } from './count_indicator';
 
 const variant1 = {
   testId: 'a',
@@ -59,7 +64,7 @@ const variant5 = {
   status: TestVariantStatus.FLAKY,
 };
 
-@customElement('milo-test-count-indicator-context-provider')
+@customElement('milo-trt-count-indicator-context-provider')
 @provider
 class ContextProvider extends LitElement {
   @property()
@@ -86,11 +91,11 @@ describe('Test Count Indicator', () => {
 
     after(fixtureCleanup);
     const provider = await fixture<ContextProvider>(html`
-      <milo-test-context-provider .invocationState=${invocationState}>
-        <milo-test-count-indicator></milo-test-count-indicator>
-      </milo-test-context-provider>
+      <milo-trt-count-indicator-context-provider .invocationState=${invocationState}>
+        <milo-trt-count-indicator></milo-trt-count-indicator>
+      </milo-trt-count-indicator-context-provider>
     `);
-    const indicator = provider.querySelector<TestCountIndicatorElement>('milo-test-count-indicator')!;
+    const indicator = provider.querySelector<TestResultsTabCountIndicatorElement>('milo-trt-count-indicator')!;
 
     assert.strictEqual(queryTestVariantsStub.callCount, 1);
 

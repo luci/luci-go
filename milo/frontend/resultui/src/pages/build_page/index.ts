@@ -20,9 +20,9 @@ import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
 import { autorun, computed, observable, reaction, when } from 'mobx';
 
-import '../../components/test_count_indicator';
 import '../../components/status_bar';
 import '../../components/tab_bar';
+import '../test_results_tab/count_indicator';
 import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
@@ -508,7 +508,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         .loading=${!this.buildState.build}
       ></milo-status-bar>
       <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}>
-        <milo-test-count-indicator slot="test-count-indicator"></milo-test-count-indicator>
+        <milo-trt-count-indicator slot="test-count-indicator"></milo-trt-count-indicator>
       </milo-tab-bar>
       <slot></slot>
     `;
@@ -559,7 +559,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         padding-top: 10px;
       }
 
-      milo-test-count-indicator {
+      milo-trt-count-indicator {
         margin-right: -13px;
       }
 
