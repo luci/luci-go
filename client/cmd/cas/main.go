@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/casclient"
-	"go.chromium.org/luci/client/cmd/cas/lib"
+	"go.chromium.org/luci/client/cmd/cas/casimpl"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -80,8 +80,8 @@ func getApplication() *cli.Application {
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
 
-			lib.CmdArchive(af),
-			lib.CmdDownload(af),
+			casimpl.CmdArchive(af),
+			casimpl.CmdDownload(af),
 
 			authcli.SubcommandInfo(authOpts, "whoami", false),
 			authcli.SubcommandLogin(authOpts, "login", false),

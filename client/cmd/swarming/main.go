@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/casclient"
-	"go.chromium.org/luci/client/cmd/swarming/lib"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
@@ -84,27 +84,27 @@ func getApplication() *subcommands.DefaultApplication {
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
 			subcommands.Section("task related commands\n"),
-			lib.CmdCancelTask(af),
-			lib.CmdCollect(af),
-			lib.CmdReproduce(af),
-			lib.CmdRequestShow(af),
-			lib.CmdSpawnTasks(af),
-			lib.CmdTasks(af),
-			lib.CmdTrigger(af),
+			swarmingimpl.CmdCancelTask(af),
+			swarmingimpl.CmdCollect(af),
+			swarmingimpl.CmdReproduce(af),
+			swarmingimpl.CmdRequestShow(af),
+			swarmingimpl.CmdSpawnTasks(af),
+			swarmingimpl.CmdTasks(af),
+			swarmingimpl.CmdTrigger(af),
 			subcommands.Section("bot related commands\n"),
-			lib.CmdBots(af),
-			lib.CmdDeleteBots(af),
-			lib.CmdTerminateBot(af),
+			swarmingimpl.CmdBots(af),
+			swarmingimpl.CmdDeleteBots(af),
+			swarmingimpl.CmdTerminateBot(af),
 			subcommands.Section("other commands\n"),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(authOpts, "whoami", false),
 			authcli.SubcommandLogin(authOpts, "login", false),
 			authcli.SubcommandLogout(authOpts, "logout", false),
-			versioncli.CmdVersion(lib.SwarmingVersion),
+			versioncli.CmdVersion(swarmingimpl.SwarmingVersion),
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{
-			lib.TaskIDEnvVar: {
+			swarmingimpl.TaskIDEnvVar: {
 				Advanced: true,
 				ShortDesc: ("Used when processing new triggered tasks. Is used as the " +
 					"parent task ID for the newly triggered tasks."),

@@ -26,7 +26,7 @@ import (
 	"github.com/maruel/subcommands"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"go.chromium.org/luci/client/cmd/swarming/lib"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 )
 
@@ -38,7 +38,7 @@ const IntegrationTestEnvVar = "INTEGRATION_TESTS"
 func init() {
 	// Unset SWARMING_TASK_ID environment variable, otherwise task trigger may
 	// fail for parent task association.
-	err := os.Unsetenv(lib.TaskIDEnvVar)
+	err := os.Unsetenv(swarmingimpl.TaskIDEnvVar)
 	if err != nil {
 		log.Fatalf("Failed to unset env %v", err)
 	}
@@ -110,11 +110,11 @@ func triggerTask(t *testing.T, args []string) *swarming.SwarmingRpcsTaskRequestM
 }
 
 // readTriggerResults reads TriggerResults from output json file.
-func readTriggerResults(jsonPath string) *lib.TriggerResults {
+func readTriggerResults(jsonPath string) *swarmingimpl.TriggerResults {
 	resultsJSON, err := ioutil.ReadFile(jsonPath)
 	So(err, ShouldBeNil)
 
-	results := &lib.TriggerResults{}
+	results := &swarmingimpl.TriggerResults{}
 	err = json.Unmarshal(resultsJSON, results)
 	So(err, ShouldBeNil)
 

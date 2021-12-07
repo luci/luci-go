@@ -23,7 +23,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
@@ -100,7 +100,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 		UserID:          uid,
 		FinalBuildProto: "build.proto.json",
 		KitchenSupport:  c.kitchenSupport,
-		ParentTaskId:    os.Getenv(swarminglib.TaskIDEnvVar),
+		ParentTaskId:    os.Getenv(swarmingimpl.TaskIDEnvVar),
 		ResultDB:        c.resultdb,
 		NoLEDTag:        c.noLEDTag,
 	})
