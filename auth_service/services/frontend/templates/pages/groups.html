@@ -15,44 +15,44 @@
 
 <template id="edit-group-form-template">
   <div class="row mx-0 my-2">
-    <div class="row m-0 px-0 pt-1 border rounded" style="background-color: #f5f5f5;">
-      <h5>
-        <a id="group-heading">group name</a>
-        <a href="#" style="float: right; padding-left: 4px">
+    <div class="col m-0 pt-1 border rounded" style="background-color: #f5f5f5;">
+      <h5 class="d-flex">
+        <a class="p-1 text-decoration-none flex-grow-1 bd-highlight" id="group-heading" style="color: #333">group name</a>
+        <a class="p-1" href="#">
           <i class="bi bi-list-ul" style="font-size: 16px; color: #333"></i>
         </a>
-        <a href="#" style="float: right; padding-right: 4px">
+        <a class="p-1" href="#">
           <i class="bi bi-search" style="font-size: 16px; color: #333"></i>
         </a>
-        <a href="#" style="float: right; padding-right: 4px">
+        <a class="p-1" href="#">
           <i class="bi bi-calendar3" style="font-size: 16px; color: #333"></i>
         </a>
       </h5>
     </div>
   </div>
-  <form id="edit-group-form" class="p-1">
+  <form id="edit-group-form" class="">
     <div class="row mb-3">
-      <label for="description" class="col-sm-2 col-form-label">Description</label>
-      <div class="col-sm-10">
+      <label for="description" class="col-2 col-form-label">Description</label>
+      <div class="col">
         <textarea class="form-control" rows="3" id="description-box"></textarea>
       </div>
     </div>
     <div class="row">
-      <label for="owners" class="col-sm-2 col-form-label">Owners</label>
-      <div class="col-sm-10">
+      <label for="owners" class="col-2 col-form-label">Owners</label>
+      <div class="col">
         <textarea class="form-control" rows="1" id="owners-box"></textarea>
       </div>
     </div>
     <hr>
     <div class="row mb-3">
-      <label for="members" class="col-sm-2 col-form-label">Members</label>
-      <div class="col-sm-10">
+      <label for="members" class="col-2 col-form-label">Members</label>
+      <div class="col">
         <textarea class="form-control" rows="12" id="membersAndGlobs"></textarea>
       </div>
     </div>
     <div class="row">
-      <label for="subgroups" class="col-sm-2 col-form-label">Subgroups</label>
-      <div class="col-sm-10">
+      <label for="subgroups" class="col-2 col-form-label">Subgroups</label>
+      <div class="col">
         <textarea class="form-control" rows="5" id="nested"></textarea>
       </div>
     </div>
@@ -62,25 +62,23 @@
   </form>
 </template>
 
-<div class="container" id="content-box">
-  <div class="row mb-4 mt-2">
-    <div class="col px-0 py-0 me-2 border rounded">
-      <div class="row mb-2">
+  <div class="row">
+    <div class="col-4 my-2 border rounded">
+      <div class="row my-2">
         <form class="d-flex">
           <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
           <button class="btn btn-outline-success" type="submit">Search</button>
         </form>
       </div>
-      <div class="row me-1">
-        <ul class="navbar-nav-scroll" id="group-chooser">
+      <div class="row">
+        <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">
             <!-- Load group-scroller-row template. -->
         </ul>
       </div>
     </div>
-    <div class="col-md-8 px-2 pb-2 border rounded" id="group-content">
+    <div class="col my-2 ms-2 border rounded" id="group-content">
       <!-- Load group-form template here -->
     </div>
   </div>
-</div>
 
 {{end}}

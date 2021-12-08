@@ -6,12 +6,12 @@ Use of this source code is governed under the Apache License, Version 2.0.
 that can be found in the LICENSE file. -->
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>{{ template "title" .}}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="/static/bootstrap/js/bootstrap.bundle.min.js" type="text/javascript"></script>
-    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    <link href="/static/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" type="text/css">
+    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+    <link href="/static/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" type="text/css"/>
     <style>
       body {
         padding-top: 10px;
@@ -27,73 +27,74 @@ that can be found in the LICENSE file. -->
     <script src="/static/js/api.js"></script>
     <script src="/static/js/common.js"></script>
     <script type="text/javascript">
-      api.setXSRFToken("{{.XSRFToken}}");
+      api.setXSRFToken('{{.XSRFToken}}');
       api.startXSRFTokenAutoupdate();
     </script>
   </head>
 
   <body>
-    <!-- TODO(cjacomet): center this container.-->
-    <div class="container">
+    <div class="container-md">
       {{if .SimpleHeader}}
-        <div class="row-fluid">
-          <div class="col-md-10">
-            <h3>{{ template "title" .}}</h3>
-            <hr>
-          </div>
-        </div>
-      {{else}}
-        <div class="col-md-10 border rounded">
-          <nav class="navbar navbar-expand-md navbar-light bg-light">
-            <div class="container-fluid">
-              <a class="navbar-brand">Auth Service</a>
-              <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                  <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="groups">Groups</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="#">Changes</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="#">Lookup</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="#">Services</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="#">OAuth</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="ip_allowlists">IP Allowlists</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="#">Config</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="#">API</a>
-                  </li>
-                </ul>
-                <form class="d-flex" id="account-text-nav">
-                    <span class="navbar-text">{{ .User.Email }}</span>
-                    <a id="logout-btn" class="nav-link" href="{{ .LogoutURL }}">Logout</a>
-                </form>
-              </div>
-            </div>
-          </nav>
-        </div>
-      {{end}}
-
       <div class="row-fluid">
         <div class="col-md-10">
-          {{template "content" .}}
+          <h3>{{ template "title" .}}</h3>
+          <hr />
+        </div>
+      </div>
+      {{else}}
+      <nav class="navbar navbar-expand-xl navbar-light bg-light border rounded">
+        <div class="container-fluid">
+          <a class="navbar-brand">Auth Service</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="groups">Groups</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Changes</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Lookup</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Services</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">OAuth</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="ip_allowlists">IP Allowlists</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Config</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">API</a>
+              </li>
+            </ul>
+            <form class="d-flex" id="account-text-nav">
+              <span class="navbar-text">{{ .User.Email }}</span>
+              <a id="logout-btn" class="nav-link" href="{{ .LogoutURL }}">Logout</a>
+            </form>
+          </div>
+        </div>
+      </nav>
+      {{end}}
+      <div class="container-md">
+        <div class="row">
+          <div class="d-flex flex-column justify-content-center">{{template "content" .}}</div>
         </div>
       </div>
 
-      <div class="row-fluid">
-        <div class="col-md-10" id="version-div">
-          <hr>
-          <small class="pull-right">Version: {{.AppVersion}}</small>
+      <div class="container">
+        <div class="row">
+          <div class="col px-0" id="version-div">
+            <hr />
+            <small class="pull-right">Version: {{.AppVersion}}</small>
+          </div>
         </div>
       </div>
     </div>
