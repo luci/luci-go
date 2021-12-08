@@ -32,7 +32,7 @@ type grpcMonitor struct {
 }
 
 // NewGRPCMonitor creates a new Monitor object that sends metric by gRPC.
-func NewGRPCMonitor(ctx context.Context, chunkSize, conn *grpc.ClientConn) Monitor {
+func NewGRPCMonitor(ctx context.Context, conn *grpc.ClientConn) Monitor {
 	return &grpcMonitor{
 		client:    pb.NewMonitoringServiceClient(conn),
 		chunkSize: 500,
