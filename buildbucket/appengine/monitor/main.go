@@ -17,9 +17,10 @@ package main
 
 import (
 	"context"
-	"net/http"
-	"net/url"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/grpc/grpcmon"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -42,22 +44,28 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 )
 
-const prodXEndpoint = "https://prodxmon-pa.googleapis.com/v1:insert"
+// prodXGRPCTarget is the dial target for prodx grpc service.
+const prodXGRPCTarget = "prodxmon-pa.googleapis.com:443"
 
 func newMonitor(ctx context.Context, acc string) (monitor.Monitor, error) {
-	tr, err := auth.GetRPCTransport(
+	cred, err := auth.GetPerRPCCredentials(
 		ctx, auth.AsActor,
 		auth.WithServiceAccount(acc),
 		auth.WithScopes(monitor.ProdxmonScopes...),
 	)
 	if err != nil {
-		return nil, nil
+		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()
 	}
-	ep, err := url.Parse(prodXEndpoint)
+	conn, err := grpc.Dial(
+		prodXGRPCTarget,
+		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
+		grpc.WithPerRPCCredentials(cred),
+		grpcmon.WithClientRPCStatsMonitor(),
+	)
 	if err != nil {
-		return nil, nil
+		return nil, errors.Annotate(err, "failed to dial ProdX service(%s)", prodXGRPCTarget).Err()
 	}
-	return monitor.NewHTTPMonitor(ctx, &http.Client{Transport: tr}, ep)
+	return monitor.NewGRPCMonitor(ctx, conn), nil
 }
 
 func main() {
