@@ -16,8 +16,8 @@ import { html } from 'lit-html';
 
 import { Suggestion } from '../../components/auto_complete';
 import { TestVariant } from '../../services/resultdb';
+import { highlight } from '../lit_utils';
 import { parseProtoDuration } from '../time_utils';
-import { highlight } from '../utils';
 
 const SPECIAL_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 

@@ -19,7 +19,7 @@ import { html } from 'lit-html';
 import { Suggestion } from '../../components/auto_complete';
 import { Variant, VariantPredicate } from '../../services/resultdb';
 import { TestVariantHistoryEntry } from '../../services/test_history_service';
-import { highlight } from '../utils';
+import { highlight } from '../lit_utils';
 
 const FILTER_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 
