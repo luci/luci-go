@@ -100,7 +100,7 @@ func TestTouch(t *testing.T) {
 			So(Touch(path, time.Time{}, 0644), ShouldBeNil)
 			st, err = os.Lstat(path)
 			So(err, ShouldBeNil)
-			So(st.ModTime(), ShouldHappenOnOrAfter, pastModTime)
+			So(st.ModTime(), ShouldHappenOnOrAfter, initialModTime)
 		})
 
 		Convey(`Can update a populated file timestamp`, func() {

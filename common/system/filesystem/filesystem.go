@@ -56,7 +56,7 @@ func AbsPath(base *string) error {
 // If when is zero-value, time.Now will be used.
 func Touch(path string, when time.Time, mode os.FileMode) error {
 	// Try and create a file at the target path.
-	fd, err := os.OpenFile(path, (os.O_CREATE | os.O_RDWR), mode)
+	fd, err := os.OpenFile(path, (os.O_CREATE | os.O_RDWR | os.O_EXCL), mode)
 	if err == nil {
 		if err := fd.Close(); err != nil {
 			return errors.Annotate(err, "failed to close new file").Err()
@@ -70,7 +70,7 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 
 	// Couldn't create a new file. Either it exists already, it is a directory,
 	// or there was an OS-level failure. Since we can't really distinguish
-	// between these cases, try opening for write (update timestamp) and error
+	// between these cases, try Chtimes (update timestamp) and error
 	// if this fails.
 	if when.IsZero() {
 		when = time.Now()
