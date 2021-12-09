@@ -695,14 +695,19 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	build.Input.Experimental = selections[bb.ExperimentNonProduction]
 
 	// Set experimental values.
-	if selections[bb.ExperimentBBAgent] {
-		// Proto > experimental precedence.
-		if len(build.Exe.Cmd) == 0 {
-			build.Exe.Cmd = []string{"luciexe"}
-		}
-	}
-	// Ensure some command is set. Lowest precedence.
-	if len(build.Exe.Cmd) == 0 {
+	if len(build.Exe.Cmd) > 0 {
+		// If the user explicitly set Exe, that counts as a builder
+		// configuration.
+		er[bb.ExperimentBBAgent] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG
+
+		// If they explicitly picked recipes, this experiment is false.
+		// If they explicitly picked luciexe, this experiment is true
+		selections[bb.ExperimentBBAgent] = build.Exe.Cmd[0] != "recipes"
+	} else if selections[bb.ExperimentBBAgent] {
+		// User didn't explicitly set Exe, bbagent was selected
+		build.Exe.Cmd = []string{"luciexe"}
+	} else {
+		// User didn't explicitly set Exe, bbagent was not selected
 		build.Exe.Cmd = []string{"recipes"}
 	}
 

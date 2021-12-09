@@ -2756,6 +2756,21 @@ func TestScheduleBuild(t *testing.T) {
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"recipes"},
 				})
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED)
+			})
+
+			Convey("recipes (explicit)", func() {
+				ent.Proto.Exe.Cmd = []string{"recipes"}
+				req.Experiments[bb.ExperimentBBAgent] = false
+				setExps()
+
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					Cmd: []string{"recipes"},
+				})
+				So(ent.Proto.Input.Experiments, ShouldBeEmpty)
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG)
 			})
 
 			Convey("luciexe (experiment)", func() {
@@ -2767,6 +2782,8 @@ func TestScheduleBuild(t *testing.T) {
 				})
 				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
 				So(ent.Experiments, ShouldContain, "+"+bb.ExperimentBBAgent)
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED)
 			})
 
 			Convey("luciexe (explicit)", func() {
@@ -2776,16 +2793,22 @@ func TestScheduleBuild(t *testing.T) {
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"luciexe"},
 				})
+				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG)
 			})
 
 			Convey("cmd > experiment", func() {
-				req.Experiments[bb.ExperimentBBAgent] = true
+				req.Experiments[bb.ExperimentBBAgent] = false
 				ent.Proto.Exe.Cmd = []string{"command"}
 				setExps()
 
 				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
 					Cmd: []string{"command"},
 				})
+				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
+				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG)
 			})
 		})
 
