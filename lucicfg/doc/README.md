@@ -1016,6 +1016,7 @@ luci.project(
     acls = None,
     bindings = None,
     enforce_realms_in = None,
+    omit_lucicfg_metadata = None,
 )
 ```
 
@@ -1044,6 +1045,7 @@ be used to setup permissions that apply to all resources in the project. See
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets. Being gradually replaced by [luci.binding(...)](#luci.binding) in `bindings`.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the root realm. They will be inherited by all realms in the project. Will eventually replace `acls`.
 * **enforce_realms_in**: a list of LUCI service IDs that should enforce realms permissions across all realms. Used only during Realms migration to gradually roll out the enforcement. Can also be enabled realm-by-realm via `enforce_in` in [luci.realm(...)](#luci.realm).
+* **omit_lucicfg_metadata**: if True, do not generate `lucicfg {...}` block with lucicfg invocation details in `project.cfg`. This may be useful if you pass frequently changing `-var ...` when generating configs and the resulting generated `lucicfg { vars {...} }` metadata causes frequent merge conflicts. This option is **strongly discouraged** as it makes it impossible to reproducibly regenerate project configs in the LUCI automation (it doesn't know what var values to use). If you use this option, your project may be left out of automatic config migrations. If this happens, you'll need to manually complete the migration on-schedule in order to have your LUCI project continue to function.
 
 
 

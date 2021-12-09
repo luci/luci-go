@@ -196,6 +196,8 @@ def gen_project_cfg(ctx):
         allow_dots = True,
     )
 
+    emit_metadata = not __native__.running_tests and not proj.props.omit_lucicfg_metadata
+
     set_config(ctx, "project.cfg", config_pb.ProjectCfg(
         name = proj.props.name,
         access = access,
@@ -205,7 +207,7 @@ def gen_project_cfg(ctx):
             package_dir = __native__.package_dir(config_dir),
             entry_point = __native__.entry_point,
             vars = __native__.var_flags,
-        ) if not __native__.running_tests else None,
+        ) if emit_metadata else None,
     ))
 
 ################################################################################

@@ -38,7 +38,8 @@ def _project(
         tricium = None,
         acls = None,
         bindings = None,
-        enforce_realms_in = None):
+        enforce_realms_in = None,
+        omit_lucicfg_metadata = False):
     """Defines a LUCI project.
 
     There should be exactly one such definition in the top-level config file.
@@ -74,6 +75,17 @@ def _project(
         permissions across all realms. Used only during Realms migration to
         gradually roll out the enforcement. Can also be enabled realm-by-realm
         via `enforce_in` in luci.realm(...).
+      omit_lucicfg_metadata: if True, do not generate `lucicfg {...}` block
+        with lucicfg invocation details in `project.cfg`. This may be useful if
+        you pass frequently changing `-var ...` when generating configs and
+        the resulting generated `lucicfg { vars {...} }` metadata causes
+        frequent merge conflicts. This option is **strongly discouraged** as it
+        makes it impossible to reproducibly regenerate project configs in
+        the LUCI automation (it doesn't know what var values to use). If you use
+        this option, your project may be left out of automatic config
+        migrations. If this happens, you'll need to manually complete the
+        migration on-schedule in order to have your LUCI project continue to
+        function.
     """
     key = keys.project()
     graph.add_node(key, props = {
@@ -88,6 +100,7 @@ def _project(
         "swarming": service.from_host("swarming", swarming),
         "tricium": service.from_host("tricium", tricium),
         "acls": aclimpl.validate_acls(acls, project_level = True),
+        "omit_lucicfg_metadata": validate.bool("omit_lucicfg_metadata", omit_lucicfg_metadata, required = False, default = False),
     })
 
     # Convert legacy `acls` entries into binding(...) too.
