@@ -65,7 +65,7 @@ func newMonitor(ctx context.Context, acc string) (monitor.Monitor, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to dial ProdX service(%s)", prodXGRPCTarget).Err()
 	}
-	return monitor.NewGRPCMonitor(ctx, conn), nil
+	return monitor.NewGRPCMonitorWithChunkSize(ctx, 1024, conn), nil
 }
 
 func main() {
