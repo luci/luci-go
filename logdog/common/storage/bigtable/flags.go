@@ -33,6 +33,22 @@ type Flags struct {
 	Instance string
 	// LogTable is the name of the BigTable instance's log table.
 	LogTable string
+
+	// AppProfile is the BigTable application profile name to use (or "" for
+	// default).
+	//
+	// This is INTENTIONALLY not wired to a CLI flag; The value here is tied to
+	// the _code_, not the runtime environment of the code.
+	//
+	// The application profile must be configured in the GCP BigTable settings
+	// before use.
+	//
+	// However, in the future it may become necessary to disambiguate between e.g.
+	// prod and dev. If this is the case, then I would recommend StorageFromFlags
+	// adding "-prod" and "-dev" to the given AppProfile name here, rather than
+	// making it fully configurable as a CLI flag (to reduce coupling during
+	// rollouts).
+	AppProfile string
 }
 
 // Register registers flags in the flag set.
@@ -54,7 +70,7 @@ func (f *Flags) Validate() error {
 		return errors.New("-bigtable-instance is required")
 	}
 	if f.LogTable == "" {
-		return errors.New("-bigtable-log-table is required.")
+		return errors.New("-bigtable-log-table is required")
 	}
 	return nil
 }
@@ -65,7 +81,10 @@ func StorageFromFlags(ctx context.Context, f *Flags) (*Storage, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get the token source").Err()
 	}
-	client, err := bigtable.NewClient(ctx, f.Project, f.Instance, option.WithTokenSource(ts))
+	cCfg := bigtable.ClientConfig{
+		AppProfile: f.AppProfile,
+	}
+	client, err := bigtable.NewClientWithConfig(ctx, f.Project, f.Instance, cCfg, option.WithTokenSource(ts))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to construct BigTable client").Err()
 	}

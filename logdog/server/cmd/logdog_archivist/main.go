@@ -287,7 +287,8 @@ func main() {
 	flags := DefaultCommandLineFlags()
 	flags.Register(flag.CommandLine)
 
-	service.Main(func(srv *server.Server, impl *service.Implementations) error {
+	cfg := service.MainCfg{BigTableAppProfile: "archivist"}
+	service.Main(cfg, func(srv *server.Server, impl *service.Implementations) error {
 		if err := flags.Validate(); err != nil {
 			return err
 		}

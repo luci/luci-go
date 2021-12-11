@@ -61,9 +61,10 @@ func main() {
 
 	server.Main(&opts, modules, func(srv *server.Server) error {
 		storageFlags := bigtable.Flags{
-			Project:  os.Getenv("BIGTABLE_PROJECT"),
-			Instance: os.Getenv("BIGTABLE_INSTANCE"),
-			LogTable: os.Getenv("BIGTABLE_LOG_TABLE"),
+			Project:    os.Getenv("BIGTABLE_PROJECT"),
+			Instance:   os.Getenv("BIGTABLE_INSTANCE"),
+			LogTable:   os.Getenv("BIGTABLE_LOG_TABLE"),
+			AppProfile: "log-reader",
 		}
 		if err := storageFlags.Validate(); err != nil {
 			return err

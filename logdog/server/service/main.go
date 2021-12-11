@@ -18,7 +18,11 @@ import (
 	"context"
 	"flag"
 
+	// This import changes the behavior of datastore within this application
+	// to make datastore.Get always zero-out all struct fields prior to
+	// populating them from datastore.
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
+
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -35,8 +39,19 @@ type Implementations struct {
 	Coordinator logdog.ServicesClient // the bundling coordinator client
 }
 
+// MainCfg are global configuration options for `Main`.
+//
+// The settings here are tied to the code-to-be-executed, rather than the
+// the execution environment for the code.
+type MainCfg struct {
+	// The AppProfile for the global BigTable client for this service.
+	//
+	// If empty, the default application profile will be used.
+	BigTableAppProfile string
+}
+
 // Main initializes and runs a logdog microservice process.
-func Main(init func(srv *server.Server, impl *Implementations) error) {
+func Main(cfg MainCfg, init func(srv *server.Server, impl *Implementations) error) {
 	modules := []module.Module{
 		gaeemulation.NewModuleFromFlags(), // for fetching LUCI project configs
 	}
@@ -44,7 +59,9 @@ func Main(init func(srv *server.Server, impl *Implementations) error) {
 	coordFlags := coordinatorFlags{}
 	coordFlags.register(flag.CommandLine)
 
-	storageFlags := bigtable.Flags{}
+	storageFlags := bigtable.Flags{
+		AppProfile: cfg.BigTableAppProfile,
+	}
 	storageFlags.Register(flag.CommandLine)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
