@@ -16,9 +16,12 @@ package tsmon
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/registry"
@@ -159,12 +162,24 @@ func (s *State) RunGlobalCallbacks(ctx context.Context) {
 //
 // Uses given monitor if not nil, otherwise the State's current monitor.
 func (s *State) Flush(ctx context.Context, mon monitor.Monitor) error {
+	return s.ParallelFlush(ctx, mon, 1)
+}
+
+// ParallelFlush is similar to Flush, but sends multiple requests in parallel.
+//
+// This can be useful to optimize the total duration of flushing for an excessive
+// number of cells.
+//
+// Panics if workers < 1.
+func (s *State) ParallelFlush(ctx context.Context, mon monitor.Monitor, workers int) error {
 	if mon == nil {
 		mon = s.Monitor()
 	}
-
 	if mon == nil {
 		return errors.New("no tsmon Monitor is configured")
+	}
+	if workers < 1 {
+		panic(fmt.Errorf("tsmon.ParallelFlush: invalid # of workers(%d)", workers))
 	}
 
 	// Run any callbacks that have been registered to populate values in callback
@@ -178,26 +193,24 @@ func (s *State) Flush(ctx context.Context, mon monitor.Monitor) error {
 	if len(cells) == 0 {
 		return nil
 	}
-
 	// Split up the payload into chunks if there are too many cells.
 	chunkSize := mon.ChunkSize()
 	if chunkSize == 0 {
 		chunkSize = len(cells)
 	}
-
-	var lastErr error
-	for s := 0; s < len(cells); s += chunkSize {
-		e := s + chunkSize
-		if e > len(cells) {
-			e = len(cells)
+	err := parallel.WorkPool(workers, func(taskC chan<- func() error) {
+		for s := 0; s < len(cells); s += chunkSize {
+			start, end := s, s+chunkSize
+			if end > len(cells) {
+				end = len(cells)
+			}
+			taskC <- func() error {
+				return mon.Send(ctx, cells[start:end])
+			}
 		}
-		if err := mon.Send(ctx, cells[s:e]); err != nil {
-			lastErr = err
-		}
-	}
+	})
 	s.resetGlobalCallbackMetrics(ctx)
-
-	return lastErr
+	return err
 }
 
 // resetGlobalCallbackMetrics resets metrics produced by global callbacks.

@@ -103,7 +103,7 @@ func main() {
 			}
 			logging.Infof(ctx, "computing builder metrics took %s", clock.Since(ctx, start))
 			start = clock.Now(ctx)
-			if err := state.Flush(ctx, mon); err != nil {
+			if err := state.ParallelFlush(ctx, mon, 8); err != nil {
 				return errors.Annotate(err, "flushing builder metrics").Err()
 			}
 			logging.Infof(ctx, "flushing builder metrics took %s", clock.Since(ctx, start))
