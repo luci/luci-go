@@ -117,7 +117,7 @@ export class TestHistoryLoader {
    * Return true if all variants matches the predicate are discovered.
    * Return false otherwise.
    */
-  async discoverVariants(predicate: VariantPredicate | undefined, pages = 1) {
+  async discoverVariants(predicate: VariantPredicate | undefined) {
     const hash = stableStringify(predicate);
     let worker = this.workers.get(hash);
     if (!worker) {
@@ -125,11 +125,7 @@ export class TestHistoryLoader {
       this.workers.set(hash, worker);
     }
 
-    let next = await worker.next();
-    while (pages > 1 && !next.done) {
-      next = await worker.next();
-      pages--;
-    }
+    const next = await worker.next();
     return Boolean(next.done);
   }
 

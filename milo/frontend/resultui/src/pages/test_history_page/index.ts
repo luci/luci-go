@@ -20,6 +20,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { DateTime } from 'luxon';
 import { observable, reaction, when } from 'mobx';
 
+import '../../components/dot_spinner';
 import '../../components/overlay';
 import '../../components/status_bar';
 import '../../components/test_variants_table';
@@ -41,6 +42,11 @@ import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../.
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
+
+const LOADING_VARIANT_INFO_TOOLTIP =
+  'It may take several clicks to find any new variant. ' +
+  'If you know what your are looking for, please apply a filter instead. ' +
+  'This will be improved the in future.';
 
 @customElement('milo-test-history-page')
 @provider
@@ -171,7 +177,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         </tr>
       </table>
       <milo-status-bar .components=${[{ color: 'var(--active-color)', weight: 1 }]}></milo-status-bar>
-      ${this.renderBody()}${this.renderOverlay()}
+      ${this.renderBody()}${this.renderVariantCount()}${this.renderOverlay()}
     `;
   }
 
@@ -197,6 +203,36 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         ${this.pageState.graphType === GraphType.DURATION
           ? html`<milo-th-duration-legend id="extra"></milo-th-duration-legend>`
           : ''}
+      </div>
+    `;
+  }
+
+  private renderVariantCount() {
+    if (!this.pageState) {
+      return html``;
+    }
+
+    return html`
+      <div id="variant-count">
+        Showing
+        <i>${this.pageState.filteredVariants.length}</i>
+        variant${this.pageState.filteredVariants.length === 1 ? '' : 's'} that
+        <i>match${this.pageState.filteredVariants.length === 1 ? '' : 'es'} the filter</i>, out of
+        <i>${this.pageState.testHistoryLoader.variants.length}+</i> variants.
+        <span>
+          ${
+            !this.pageState.isDiscoveringVariants && !this.pageState.loadedAllVariants
+              ? html`
+                  <span class="active-text" @click=${() => this.pageState.discoverVariants()}>[load more]</span>
+                  <mwc-icon class="inline-icon" title=${LOADING_VARIANT_INFO_TOOLTIP}>info</mwc-icon>
+                `
+              : ''
+          }
+          ${
+            this.pageState.isDiscoveringVariants
+              ? html` <span class="active-text">loading <milo-dot-spinner></milo-dot-spinner></span>`
+              : ''
+          }
       </div>
     `;
   }
@@ -338,6 +374,15 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
       #extra {
         grid-area: extra;
+      }
+
+      #variant-count {
+        padding: 5px;
+      }
+
+      .inline-icon {
+        --mdc-icon-size: 1.2em;
+        vertical-align: text-top;
       }
     `,
   ];

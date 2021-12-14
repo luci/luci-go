@@ -64,6 +64,15 @@ export class TestHistoryPageState implements TestVariantTableState {
     return this.testHistoryLoader.variants.filter(([, v]) => this.variantFilter(v));
   }
 
+  @observable.ref private discoverVariantReqCount = 0;
+  @computed get isDiscoveringVariants() {
+    return this.discoverVariantReqCount > 0;
+  }
+  @observable.ref private _loadedAllVariants = false;
+  @computed get loadedAllVariants() {
+    return this._loadedAllVariants;
+  }
+
   @observable.ref graphType = GraphType.STATUS;
   @observable.ref xAxisType = XAxisType.DATE;
 
@@ -138,11 +147,14 @@ export class TestHistoryPageState implements TestVariantTableState {
       testHistoryService
     );
 
-    // Load at least 3 pages to find variants.
+    // When a new variant predicate is applied, trigger variant discovering.
     this.disposers.push(
       reaction(
         () => [this.testHistoryLoader, this.variantPredicate],
-        () => this.testHistoryLoader.discoverVariants(this.variantPredicate, 3),
+        () => {
+          this._loadedAllVariants = false;
+          this.discoverVariants();
+        },
         { fireImmediately: true }
       )
     );
@@ -174,6 +186,14 @@ export class TestHistoryPageState implements TestVariantTableState {
         }
       })
     );
+  }
+
+  async discoverVariants() {
+    this.discoverVariantReqCount++;
+    const req = this.testHistoryLoader.discoverVariants(this.variantPredicate);
+    req.finally(() => this.discoverVariantReqCount--);
+    this._loadedAllVariants = await req;
+    return this._loadedAllVariants;
   }
 
   @computed({ keepAlive: true })
