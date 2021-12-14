@@ -126,7 +126,16 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     const oneWeekAgo = DateTime.now().minus({ weeks: 1 });
     this.addDisposer(
       when(
-        () => Boolean(this.pageState?.testHistoryLoader.getEntries('', oneWeekAgo)),
+        () => {
+          if (!this.pageState) {
+            return false;
+          }
+          const loader = this.pageState.testHistoryLoader;
+          if (loader.variants.length === 0) {
+            return false;
+          }
+          return Boolean(loader.getEntries(loader.variants[0][0], oneWeekAgo));
+        },
         () =>
           trackEvent(
             GA_CATEGORIES.HISTORY_PAGE,
