@@ -146,7 +146,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .expanded=${this.tableState.testVariantCount === 1}
             .hideTestName=${this.hideTestName}
             .showTimestamp=${this.showTimestamp}
-            .historyUrl=${this.tableState.getHistoryUrl(v.testId)}
+            .historyUrl=${this.tableState.getHistoryUrl(v.testId, v.variantHash, v.variant || { def: {} })}
           ></milo-test-variant-entry>
         `
       );
@@ -192,7 +192,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .expanded=${this.tableState.testVariantCount === 1}
             .hideTestName=${this.hideTestName}
             .showTimestamp=${this.showTimestamp}
-            .historyUrl=${this.tableState.getHistoryUrl(v.testId)}
+            .historyUrl=${this.tableState.getHistoryUrl(v.testId, v.variantHash, v.variant || { def: {} })}
           ></milo-test-variant-entry>
         `
       )}
