@@ -75,6 +75,7 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
           .onValueUpdate=${(newVal: string) => (this.uncommittedFilterText = newVal)}
           .onSuggestionSelected=${(suggestion: SuggestionEntry) => {
             this.uncommittedFilterText = this.queryPrefix + suggestion.value! + ' ';
+            this.commitFilter();
           }}
           .onComplete=${() => this.commitFilter()}
         >
@@ -91,20 +92,24 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
                   slot="post-icon"
                   title="Clear"
                   style=${styleMap({ display: this.uncommittedFilterText === '' ? 'none' : '' })}
-                  @click=${() => (this.uncommittedFilterText = '')}
+                  @click=${() => {
+                    this.uncommittedFilterText = '';
+                    this.commitFilter();
+                  }}
                 >
                   close
                 </mwc-icon>
               `
             : html`
-                <mwc-icon
+                <div
                   id="commit-filter"
                   slot="post-icon"
                   title="Press Enter to apply the filter"
                   @click=${() => this.commitFilter()}
                 >
-                  keyboard_return
-                </mwc-icon>
+                  Apply
+                  <mwc-icon>keyboard_return</mwc-icon>
+                </div>
               `}
         </milo-auto-complete>
       </milo-hotkey>
@@ -136,6 +141,10 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
 
     #commit-filter {
       color: var(--active-color);
+      cursor: pointer;
+    }
+    #commit-filter mwc-icon {
+      vertical-align: middle;
     }
   `;
 }
