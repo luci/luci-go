@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html, svg } from 'lit-element';
-import { DateTime } from 'luxon';
+import { css, customElement, html, svg, SVGTemplateResult } from 'lit-element';
 import { observable } from 'mobx';
 
-import './graph_config';
 import '../../components/status_bar';
+import '../../components/dot_spinner';
+import './graph_config';
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { TestVariantStatus } from '../../services/resultdb';
+import { TestVariantHistoryEntry } from '../../services/test_history_service';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
@@ -53,7 +54,7 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
                 width=${CELL_SIZE * this.pageState.days + 2}
                 fill=${i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'}
               />
-              ${this.pageState.dates.map((d, j) => this.renderEntries(vHash, d, j))}
+              ${this.renderRow(vHash)}
             </g>
           `
         )}
@@ -61,12 +62,34 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
     `;
   }
 
-  private renderEntries(vHash: string, date: DateTime, index: number) {
-    const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date)?.filter(this.pageState.tvhEntryFilter);
-    if (!entries || entries.length === 0) {
-      return null;
-    }
+  private renderRow(vHash: string) {
+    const ret: SVGTemplateResult[] = [];
 
+    for (const [i, date] of this.pageState.dates.entries()) {
+      const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date)?.filter(this.pageState.tvhEntryFilter);
+      if (!entries) {
+        ret.push(svg`
+          <foreignObject x=${CELL_SIZE * i} width=${CELL_SIZE} height=${CELL_SIZE}>
+            <milo-dot-spinner></milo-dot-spinner>
+          </foreignObject>
+        `);
+        break;
+      }
+
+      if (entries.length === 0) {
+        continue;
+      }
+
+      ret.push(svg`
+        <g transform="translate(${i * CELL_SIZE}, 0)">
+          ${this.renderEntries(entries)}
+        </g>
+      `);
+    }
+    return ret;
+  }
+
+  private renderEntries(entries: TestVariantHistoryEntry[]) {
     const counts = {
       [TestVariantStatus.EXPECTED]: 0,
       [TestVariantStatus.EXONERATED]: 0,
@@ -95,20 +118,19 @@ Click to view test details.</title>`;
           ? '/ui/immutable/svgs/check_circle_stacked_24dp.svg'
           : '/ui/immutable/svgs/check_circle_24dp.svg';
       return svg`
-        <g transform="translate(${index * CELL_SIZE + ICON_PADDING}, 0)">
-          <image
-            href=${img}
-            y=${ICON_PADDING}
-            height="24"
-            width="24"
-            style="cursor: pointer;"
-            @click=${() => {
-              this.pageState.selectedTvhEntries = entries;
-            }}
-          >
-            ${title}
-          </image>
-        </g>
+        <image
+          href=${img}
+          x=${ICON_PADDING}
+          y=${ICON_PADDING}
+          height="24"
+          width="24"
+          style="cursor: pointer;"
+          @click=${() => {
+            this.pageState.selectedTvhEntries = entries;
+          }}
+        >
+          ${title}
+        </image>
       `;
     }
 
@@ -118,37 +140,35 @@ Click to view test details.</title>`;
       (this.pageState.countFlaky ? counts[TestVariantStatus.FLAKY] : 0);
 
     return svg`
-      <g transform="translate(${index * CELL_SIZE + CELL_PADDING}, ${CELL_PADDING})">
-        ${STATUS_ORDER.map((status) => {
-          const height = (INNER_CELL_SIZE * counts[status]) / entries.length;
-          const ele = svg`
-            <rect
-              class="${VARIANT_STATUS_CLASS_MAP[status]}"
-              y=${previousHeight}
-              width=${INNER_CELL_SIZE}
-              height=${height}
-            />
-          `;
-          previousHeight += height;
-          return ele;
-        })}
-        <text
-          class="count-label"
-          x=${CELL_SIZE / 2}
-          y=${CELL_SIZE / 2}
-        >${count}</text>
-        <rect
-          width=${INNER_CELL_SIZE}
-          height=${INNER_CELL_SIZE}
-          fill="transparent"
-          style="cursor: pointer;"
-          @click=${() => {
-            this.pageState.selectedTvhEntries = entries;
-          }}
-        >
-          ${title}
-        </rect>
-      </g>
+      ${STATUS_ORDER.map((status) => {
+        const height = (INNER_CELL_SIZE * counts[status]) / entries.length;
+        const ele = svg`
+          <rect
+            class="${VARIANT_STATUS_CLASS_MAP[status]}"
+            y=${previousHeight}
+            width=${INNER_CELL_SIZE}
+            height=${height}
+          />
+        `;
+        previousHeight += height;
+        return ele;
+      })}
+      <text
+        class="count-label"
+        x=${CELL_SIZE / 2 + CELL_PADDING}
+        y=${CELL_SIZE / 2 + CELL_PADDING}
+      >${count}</text>
+      <rect
+        width=${INNER_CELL_SIZE + CELL_PADDING}
+        height=${INNER_CELL_SIZE + CELL_PADDING}
+        fill="transparent"
+        style="cursor: pointer;"
+        @click=${() => {
+          this.pageState.selectedTvhEntries = entries;
+        }}
+      >
+        ${title}
+      </rect>
     `;
   }
 
@@ -179,6 +199,12 @@ Click to view test details.</title>`;
         fill: white;
         text-anchor: middle;
         alignment-baseline: central;
+      }
+
+      milo-dot-spinner {
+        color: var(--active-color);
+        font-size: 12px;
+        line-height: ${CELL_SIZE}px;
       }
     `,
   ];
