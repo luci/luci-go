@@ -299,7 +299,7 @@ func TestGetBuildForUpdate(t *testing.T) {
 	}
 
 	Convey("getBuildForUpdate", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "sv", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -394,6 +394,7 @@ func TestUpdateBuild(t *testing.T) {
 			),
 		}
 		ctx := auth.WithState(memory.Use(context.Background()), s)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)

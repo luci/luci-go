@@ -17,6 +17,8 @@ package model
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -183,6 +185,28 @@ func (b *Build) IterExperiments(cb func(enabled bool, exp string) bool) {
 	if !hadNonProd {
 		cb(false, bb.ExperimentNonProduction)
 	}
+}
+
+// ExperimentsString joins and returns the enabled experiments with "|".
+//
+// Returns "None" if no experiments were enabled in the build.
+func (b *Build) ExperimentsString() string {
+	if len(b.Experiments) == 0 {
+		return "None"
+	}
+
+	enables := make([]string, 0, len(b.Experiments))
+	b.IterExperiments(func(isEnabled bool, name string) bool {
+		if isEnabled {
+			enables = append(enables, name)
+		}
+		return true
+	})
+	if len(enables) > 0 {
+		sort.Strings(enables)
+		return strings.Join(enables, "|")
+	}
+	return "None"
 }
 
 // Load overwrites this representation of a build by reading the given

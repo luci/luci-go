@@ -20,52 +20,79 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // BuildCreated updates metrics for a build creation event.
 func BuildCreated(ctx context.Context, b *model.Build) {
-	var ua string
+	bpb := b.Proto.Builder
+
+	// v1
+	ua := ""
 	for _, tag := range b.Tags {
 		if k, v := strpair.Parse(tag); k == "user_agent" {
 			ua = v
 			break
 		}
 	}
-	V1.BuildCountCreated.Add(
-		ctx, 1, legacyBucketName(b.Proto.Builder.Project, b.Proto.Builder.Bucket),
-		b.Proto.Builder.Builder, ua)
+	V1.BuildCountCreated.Add(ctx, 1, legacyBucketName(bpb.Project, bpb.Bucket), bpb.Builder, ua)
+
+	// V2
+	ctx = WithBuilder(ctx, bpb.Project, bpb.Bucket, bpb.Builder)
+	V2.BuildCountCreated.Add(ctx, 1, b.ExperimentsString())
 }
 
 // BuildStarted updates metrics for a build start event.
 func BuildStarted(ctx context.Context, b *model.Build) {
-	bucket := legacyBucketName(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
-	builder := b.Proto.Builder.Builder
-	isCan := b.Proto.Canary
+	bp, bpb := b.Proto, b.Proto.Builder
+	var schD float64
 
-	V1.BuildCountStarted.Add(ctx, 1, bucket, builder, isCan)
-	if b.Proto.GetStartTime() != nil {
-		startT := b.Proto.StartTime.AsTime()
-		V1.BuildDurationScheduling.Add(
-			ctx, startT.Sub(b.CreateTime).Seconds(),
-			bucket, builder, "", "", "", isCan)
+	// v1
+	legacyBucket := legacyBucketName(bpb.Project, bpb.Bucket)
+	V1.BuildCountStarted.Add(ctx, 1, legacyBucket, bpb.Builder, bp.Canary)
+	if bp.StartTime != nil {
+		schD = bp.StartTime.AsTime().Sub(b.CreateTime).Seconds()
+		V1.BuildDurationScheduling.Add(ctx, schD, legacyBucket, bpb.Builder, "", "", "", bp.Canary)
+	}
+
+	// v2
+	ctx = WithBuilder(ctx, bpb.Project, bpb.Bucket, bpb.Builder)
+	exps := b.ExperimentsString()
+	V2.BuildCountStarted.Add(ctx, 1, exps)
+	if bp.StartTime != nil {
+		V2.BuildDurationScheduling.Add(ctx, schD, exps)
 	}
 }
 
 // BuildCompleted updates metrics for a build completion event.
 func BuildCompleted(ctx context.Context, b *model.Build) {
-	bucket := legacyBucketName(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
-	builder := b.Proto.Builder.Builder
-	isCan := b.Proto.Canary
-	reason, failReason, cancelReason := getLegacyMetricFields(b)
-	end := b.Proto.EndTime.AsTime()
+	bp, bpb := b.Proto, b.Proto.Builder
+	cycleD := bp.EndTime.AsTime().Sub(b.CreateTime).Seconds()
+	var runD float64
 
-	V1.BuildCountCompleted.Add(ctx, 1, bucket, builder, reason, failReason, cancelReason, isCan)
+	// v1
+	legacyBucket := legacyBucketName(bpb.Project, bpb.Bucket)
+	reason, failReason, cancelReason := getLegacyMetricFields(b)
+	V1.BuildCountCompleted.Add(
+		ctx, 1, legacyBucket, bpb.Builder,
+		reason, failReason, cancelReason, bp.Canary)
 	V1.BuildDurationCycle.Add(
-		ctx, end.Sub(b.CreateTime).Seconds(),
-		bucket, builder, reason, failReason, cancelReason, isCan)
-	if b.Proto.StartTime != nil {
+		ctx, cycleD, legacyBucket, bpb.Builder,
+		reason, failReason, cancelReason, bp.Canary)
+	if bp.StartTime != nil {
+		runD = bp.EndTime.AsTime().Sub(bp.StartTime.AsTime()).Seconds()
 		V1.BuildDurationRun.Add(
-			ctx, end.Sub(b.Proto.StartTime.AsTime()).Seconds(),
-			bucket, builder, reason, failReason, cancelReason, isCan)
+			ctx, runD, legacyBucket, bpb.Builder,
+			reason, failReason, cancelReason, bp.Canary)
+	}
+
+	// v2
+	ctx = WithBuilder(ctx, bpb.Project, bpb.Bucket, bpb.Builder)
+	exps := b.ExperimentsString()
+	status := pb.Status_name[int32(b.Status)]
+	V2.BuildCountCompleted.Add(ctx, 1, status, exps)
+	V2.BuildDurationCycle.Add(ctx, cycleD, status, exps)
+	if b.Proto.StartTime != nil {
+		V2.BuildDurationRun.Add(ctx, runD, status, exps)
 	}
 }

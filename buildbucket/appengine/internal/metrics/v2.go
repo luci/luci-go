@@ -97,7 +97,6 @@ var (
 			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
 			field.String("experiments"),
 		),
-
 		BuilderPresence: metric.NewBoolWithTargetType(
 			"buildbucket/v2/builder/presence",
 			(&Builder{}).Type(),

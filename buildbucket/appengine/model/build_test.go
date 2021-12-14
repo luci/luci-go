@@ -454,5 +454,22 @@ func TestBuild(t *testing.T) {
 				},
 			})
 		})
+
+		Convey("ExperimentsString", func() {
+			b := &Build{}
+			check := func(exps []string, enabled string) {
+				b.Experiments = exps
+				So(b.ExperimentsString(), ShouldEqual, enabled)
+			}
+
+			Convey("Returns None", func() {
+				check([]string{}, "None")
+			})
+
+			Convey("Sorted", func() {
+				exps := []string{"+exp4", "-exp3", "+exp1", "-exp10"}
+				check(exps, "exp1|exp4")
+			})
+		})
 	})
 }

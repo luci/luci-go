@@ -34,9 +34,15 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func fv(vs ...interface{}) []interface{} {
+// lfv generate field values for legacy metrics
+func lfv(vs ...interface{}) []interface{} {
 	ret := []interface{}{"luci.project.bucket", "builder"}
 	return append(ret, vs...)
+}
+
+// fv generate field values for v2 metrics.
+func fv(vs ...interface{}) []interface{} {
+	return vs
 }
 
 func pbTS(t time.Time) *timestamppb.Timestamp {
@@ -49,6 +55,8 @@ func TestBuildEvents(t *testing.T) {
 
 	Convey("Works", t, func() {
 		ctx, _ := tsmon.WithDummyInMemory(context.Background())
+		ctx = WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx = WithBuilder(ctx, "project", "bucket", "builder")
 		store := tsmon.Store(ctx)
 
 		b := &model.Build{
@@ -68,29 +76,51 @@ func TestBuildEvents(t *testing.T) {
 		Convey("buildCreated", func() {
 			b.Tags = []string{"os:linux"}
 			BuildCreated(ctx, b)
-			So(store.Get(ctx, V1.BuildCountCreated, time.Time{}, fv("")), ShouldEqual, 1)
+			So(store.Get(ctx, V1.BuildCountCreated, time.Time{}, lfv("")), ShouldEqual, 1)
+			So(store.Get(ctx, V2.BuildCountCreated, time.Time{}, fv("None")), ShouldEqual, 1)
 
+			// user_agent
 			b.Tags = []string{"user_agent:gerrit"}
 			BuildCreated(ctx, b)
-			So(store.Get(ctx, V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
+			So(store.Get(ctx, V1.BuildCountCreated, time.Time{}, lfv("gerrit")), ShouldEqual, 1)
+
+			// experiments
+			b.Experiments = []string{"+exp1"}
+			BuildCreated(ctx, b)
+			So(store.Get(ctx, V2.BuildCountCreated, time.Time{}, fv("exp1")), ShouldEqual, 1)
 		})
 
 		Convey("buildStarted", func() {
 			Convey("build/started", func() {
+				// canary
 				b.Proto.Canary = false
 				BuildStarted(ctx, b)
-				So(store.Get(ctx, V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+				So(store.Get(ctx, V1.BuildCountStarted, time.Time{}, lfv(false)), ShouldEqual, 1)
 
 				b.Proto.Canary = true
 				BuildStarted(ctx, b)
-				So(store.Get(ctx, V1.BuildCountStarted, time.Time{}, fv(true)), ShouldEqual, 1)
+				So(store.Get(ctx, V1.BuildCountStarted, time.Time{}, lfv(true)), ShouldEqual, 1)
+				So(store.Get(ctx, V2.BuildCountStarted, time.Time{}, fv("None")), ShouldEqual, 2)
+
+				// experiments
+				b.Experiments = []string{"+exp1"}
+				BuildStarted(ctx, b)
+				So(store.Get(ctx, V2.BuildCountStarted, time.Time{}, fv("exp1")), ShouldEqual, 1)
 			})
 
 			Convey("build/scheduling_durations", func() {
-				fields := fv("", "", "", true)
+				fields := lfv("", "", "", true)
 				b.Proto.StartTime = pbTS(b.CreateTime.Add(33 * time.Second))
 				BuildStarted(ctx, b)
 				val := store.Get(ctx, V1.BuildDurationScheduling, time.Time{}, fields)
+				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
+				val = store.Get(ctx, V2.BuildDurationScheduling, time.Time{}, fv("None"))
+				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
+
+				// experiments
+				b.Experiments = []string{"+exp1"}
+				BuildStarted(ctx, b)
+				val = store.Get(ctx, V2.BuildDurationScheduling, time.Time{}, fv("exp1"))
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
 			})
 		})
@@ -99,34 +129,58 @@ func TestBuildEvents(t *testing.T) {
 			Convey("builds/completed", func() {
 				b.Status = pb.Status_FAILURE
 				BuildCompleted(ctx, b)
-				fields := fv(model.Failure.String(), model.BuildFailure.String(), "", true)
-				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
+				v1fs := lfv(model.Failure.String(), model.BuildFailure.String(), "", true)
+				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, v1fs), ShouldEqual, 1)
+				v2fs := fv("FAILURE", "None")
+				So(store.Get(ctx, V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
 
 				b.Status = pb.Status_CANCELED
 				BuildCompleted(ctx, b)
-				fields = fv(model.Canceled.String(), "", model.ExplicitlyCanceled.String(), true)
-				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
+				v1fs = lfv(model.Canceled.String(), "", model.ExplicitlyCanceled.String(), true)
+				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, v1fs), ShouldEqual, 1)
+				v2fs[0] = "CANCELED"
+				So(store.Get(ctx, V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
 
 				b.Status = pb.Status_INFRA_FAILURE
 				BuildCompleted(ctx, b)
-				fields = fv(model.Failure.String(), model.InfraFailure.String(), "", true)
-				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
+				v1fs = lfv(model.Failure.String(), model.InfraFailure.String(), "", true)
+				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, v1fs), ShouldEqual, 1)
+				v2fs[0] = "INFRA_FAILURE"
+				So(store.Get(ctx, V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
 
 				// timeout
 				b.Status = pb.Status_INFRA_FAILURE
 				b.Proto.StatusDetails = &pb.StatusDetails{Timeout: &pb.StatusDetails_Timeout{}}
 				BuildCompleted(ctx, b)
-				fields = fv(model.Failure.String(), model.InfraFailure.String(), "", true)
-				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, fields), ShouldEqual, 1)
+				v1fs = lfv(model.Failure.String(), model.InfraFailure.String(), "", true)
+				So(store.Get(ctx, V1.BuildCountCompleted, time.Time{}, v1fs), ShouldEqual, 1)
+				v2fs = fv("INFRA_FAILURE", "None")
+				So(store.Get(ctx, V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 2)
+
+				// experiments
+				b.Status = pb.Status_SUCCESS
+				b.Experiments = []string{"+exp1", "+exp2"}
+				v2fs = fv("SUCCESS", "exp1|exp2")
+				BuildCompleted(ctx, b)
+				So(store.Get(ctx, V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
 			})
 
 			b.Status = pb.Status_SUCCESS
-			fields := fv(model.Success.String(), "", "", true)
+			v1fs := lfv("SUCCESS", "", "", true)
+			v2fs := fv("SUCCESS", "None")
 
 			Convey("builds/cycle_durations", func() {
 				b.Proto.EndTime = pbTS(b.CreateTime.Add(33 * time.Second))
 				BuildCompleted(ctx, b)
-				val := store.Get(ctx, V1.BuildDurationCycle, time.Time{}, fields)
+				val := store.Get(ctx, V1.BuildDurationCycle, time.Time{}, v1fs)
+				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
+				val = store.Get(ctx, V2.BuildDurationCycle, time.Time{}, v2fs)
+				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
+
+				// experiments
+				b.Experiments = []string{"+exp2", "+exp1"}
+				BuildCompleted(ctx, b)
+				val = store.Get(ctx, V2.BuildDurationCycle, time.Time{}, fv("SUCCESS", "exp1|exp2"))
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
 			})
 
@@ -135,7 +189,15 @@ func TestBuildEvents(t *testing.T) {
 				b.Proto.EndTime = pbTS(b.CreateTime.Add(33 * time.Second))
 
 				BuildCompleted(ctx, b)
-				val := store.Get(ctx, V1.BuildDurationRun, time.Time{}, fields)
+				val := store.Get(ctx, V1.BuildDurationRun, time.Time{}, v1fs)
+				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 30)
+				val = store.Get(ctx, V2.BuildDurationRun, time.Time{}, v2fs)
+				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 30)
+
+				// experiments
+				b.Experiments = []string{"+exp2", "+exp1"}
+				BuildCompleted(ctx, b)
+				val = store.Get(ctx, V2.BuildDurationRun, time.Time{}, fv("SUCCESS", "exp1|exp2"))
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 30)
 			})
 		})

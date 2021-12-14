@@ -109,7 +109,7 @@ func TestScheduleBuild(t *testing.T) {
 	})
 
 	Convey("fetchBuilderConfigs", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -270,7 +270,7 @@ func TestScheduleBuild(t *testing.T) {
 	})
 
 	Convey("generateBuildNumbers", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -383,6 +383,7 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("scheduleBuilds", t, func() {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -1326,7 +1327,7 @@ func TestScheduleBuild(t *testing.T) {
 	})
 
 	Convey("scheduleRequestFromTemplate", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -2671,6 +2672,7 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("setExperiments", t, func() {
 		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(1)))
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 
 		// settings.cfg
 		gCfg := &pb.SettingsCfg{
@@ -4434,6 +4436,7 @@ func TestScheduleBuild(t *testing.T) {
 	Convey("ScheduleBuild", t, func() {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -4819,6 +4822,7 @@ func TestScheduleBuild(t *testing.T) {
 	Convey("scheduleBuilds", t, func() {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
