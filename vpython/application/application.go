@@ -363,7 +363,7 @@ func (a *application) runDirect(c context.Context, cl *python.CommandLine, lp *l
 		return errors.Annotate(err, "could not find Python interpreter").Err()
 	}
 
-	logging.Infof(c, "Directly executing Python command with %v", i.Python)
+	logging.Infof(c, "Directly executing Python command with %v.", i.Python)
 	return vpython.Exec(c, i, cl, a.opts.Environ, "", nil)
 }
 
