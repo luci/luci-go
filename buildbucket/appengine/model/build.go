@@ -187,7 +187,7 @@ func (b *Build) IterExperiments(cb func(enabled bool, exp string) bool) {
 	}
 }
 
-// ExperimentsString joins and returns the enabled experiments with "|".
+// ExperimentsString sorts, joins, and returns the enabled experiments with "|".
 //
 // Returns "None" if no experiments were enabled in the build.
 func (b *Build) ExperimentsString() string {
