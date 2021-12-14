@@ -21,7 +21,7 @@ import { createContextLink } from '../libs/context';
 import { parseTVHFilterQuery, parseVariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryLoader } from '../models/test_history_loader';
-import { createTVCmpFn, getCriticalVariantKeys, Variant } from '../services/resultdb';
+import { createTVCmpFn, getCriticalVariantKeys, Variant, VariantPredicate } from '../services/resultdb';
 import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
 
 export const enum GraphType {
@@ -58,6 +58,7 @@ export class TestHistoryPageState implements TestVariantTableState {
 
   @observable.ref filterText = '';
   @observable.ref tvhEntryFilter = (_v: TestVariantHistoryEntry) => true;
+  @observable.ref private variantPredicate: VariantPredicate | undefined;
   @observable.ref private variantFilter = (_v: Variant) => true;
   @computed get filteredVariants() {
     return this.testHistoryLoader.variants.filter(([, v]) => this.variantFilter(v));
@@ -137,11 +138,11 @@ export class TestHistoryPageState implements TestVariantTableState {
       testHistoryService
     );
 
-    // Ensure all the entries are loaded / being loaded.
+    // Load at least 3 pages to find variants.
     this.disposers.push(
       reaction(
-        () => [this.testHistoryLoader, this.endDate],
-        () => this.testHistoryLoader.loadUntil(this.endDate),
+        () => [this.testHistoryLoader, this.variantPredicate],
+        () => this.testHistoryLoader.discoverVariants(this.variantPredicate, 3),
         { fireImmediately: true }
       )
     );
@@ -161,10 +162,11 @@ export class TestHistoryPageState implements TestVariantTableState {
       autorun(() => {
         try {
           const newEntryFilter = parseTVHFilterQuery(this.filterText);
-          const [, newVariantFilter] = parseVariantFilter(this.filterText);
+          const [newPredicate, newVariantFilter] = parseVariantFilter(this.filterText);
 
           // Only update the filters after the query is successfully parsed.
           this.tvhEntryFilter = newEntryFilter;
+          this.variantPredicate = newPredicate;
           this.variantFilter = newVariantFilter;
         } catch (e) {
           //TODO(weiweilin): display the error to the user.

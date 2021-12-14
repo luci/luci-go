@@ -12,45 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import stableStringify from 'fast-json-stable-stringify';
+import { groupBy } from 'lodash-es';
 import { DateTime } from 'luxon';
-import { comparer, computed, observable, untracked } from 'mobx';
+import { computed, observable } from 'mobx';
 
-import { Variant } from '../services/resultdb';
+import { Variant, VariantPredicate } from '../services/resultdb';
 import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
+import { TestHistoryVariantLoader } from './test_history_variant_loader';
 
 export class TestHistoryLoader {
-  @observable private _variants = new Map<string, Variant>();
+  /**
+   * variant hash -> TestHistoryVariantLoader
+   */
+  @observable private readonly loaders = new Map<string, TestHistoryVariantLoader>();
+
+  /**
+   * variant predicate hash -> Worker.
+   */
+  private workers = new Map<string, AsyncIterableIterator<null>>();
+
   @computed.struct get variants(): readonly [string, Variant][] {
-    return [...this._variants.entries()];
+    return [...this.loaders.entries()].map(([hash, loader]) => [hash, loader.variant]);
   }
-
-  /**
-   * variant hash -> (datetime str -> test variant history entries)
-   */
-  private readonly cache = new Map<string, Map<string, TestVariantHistoryEntry[]>>();
-
-  /**
-   * Test histories created after `loadedTime` are all loaded.
-   * Test histories created before `loadedTime` are yet to be loaded.
-   */
-  // Initialize to a future date. All the entries created after 1 year in the
-  // future can be considered loaded because we know they don't exist.
-  @observable.ref private loadedTime = DateTime.now().plus({ years: 1 });
-  @computed private get loadedTimeStr() {
-    return this.resolve(this.loadedTime);
-  }
-
-  /**
-   * When `this.worker.next()` is called, it will keep loading until
-   * 1. `loadedTime` < `targetTime`, and
-   * 2. `loadedTime` and `targetTime` resolves to different strings.
-   */
-  private targetTime = this.loadedTime;
-  @computed private get targetTimeStr() {
-    return this.resolve(this.targetTime);
-  }
-
-  private readonly worker: AsyncIterableIterator<null>;
 
   constructor(
     readonly realm: string,
@@ -68,64 +52,85 @@ export class TestHistoryLoader {
      */
     readonly resolve: (time: DateTime) => string,
     readonly testHistoryService: TestHistoryService
-  ) {
-    this.worker = this.workerGen();
-  }
+  ) {}
 
-  private async *workerGen() {
+  /**
+   * Return a generator that drives the discovery of new variants.
+   */
+  private async *workerGen(predicate: VariantPredicate | undefined) {
+    const visitedLoaders = new Set<TestHistoryVariantLoader>();
     let pageToken = '';
     for (;;) {
       const res = await this.testHistoryService.queryTestHistory({
         realm: this.realm,
         testId: this.testId,
         timeRange: {},
+        variantPredicate: predicate,
         pageToken: pageToken,
       });
 
-      for (const entry of res.entries) {
-        let variantCache = this.cache.get(entry.variantHash);
-        if (!variantCache) {
-          this._variants.set(entry.variantHash, entry.variant || { def: {} });
-          variantCache = new Map<string, TestVariantHistoryEntry[]>();
-          this.cache.set(entry.variantHash, variantCache);
-        }
+      if (res.entries.length) {
+        const loadedTime = DateTime.fromISO(res.entries[res.entries.length - 1].invocationTimestamp);
+        const groupedEntries = groupBy(res.entries, (entry) => entry.variantHash);
 
-        this.loadedTime = DateTime.fromISO(entry.invocationTimestamp);
-        let dateCache = variantCache.get(this.loadedTimeStr);
-        if (!dateCache) {
-          dateCache = [];
-          variantCache.set(this.loadedTimeStr, dateCache);
-        }
+        for (const [hash, group] of Object.entries(groupedEntries)) {
+          let loader = this.loaders.get(hash);
+          if (!loader) {
+            // If the variant is new, add a new loader for that variant.
+            loader = new TestHistoryVariantLoader(
+              this.realm,
+              this.testId,
+              group[0].variant || { def: {} },
+              this.resolve,
+              this.testHistoryService
+            );
+            this.loaders.set(hash, loader);
+          }
 
-        dateCache.push(entry);
+          // We mainly load those entries to get the variant definitions. But we
+          // can also reuse those entries in variant loaders.
+          loader.populateEntries(group, loadedTime);
+          visitedLoaders.add(loader);
+        }
       }
 
       if (!res.nextPageToken) {
-        // We've loaded all the entries. Set the loaded time to the earliest
-        // possible time.
-        this.loadedTime = DateTime.fromMillis(0);
+        // Since we reached the end of the page, all the variants this loader
+        // encountered can be considered finalized.
+        const after = DateTime.fromMillis(0);
+        for (const loader of visitedLoaders) {
+          loader.populateEntries([], after);
+        }
+
         return;
       }
 
       pageToken = res.nextPageToken;
 
-      // We've loaded all required entries. Yield back.
-      while (this.targetTime > this.loadedTime && this.targetTimeStr !== this.loadedTimeStr) {
-        yield null;
-      }
+      yield null;
     }
   }
 
   /**
-   * Load all entries that were created after `time`.
+   * Load variants that matches the predicate.
+   *
+   * Return true if all variants matches the predicate are discovered.
+   * Return false otherwise.
    */
-  async loadUntil(time: DateTime) {
-    if (time >= this.targetTime) {
-      return;
+  async discoverVariants(predicate: VariantPredicate | undefined, pages = 1) {
+    const hash = stableStringify(predicate);
+    let worker = this.workers.get(hash);
+    if (!worker) {
+      worker = this.workerGen(predicate);
+      this.workers.set(hash, worker);
     }
-    this.targetTime = time;
-    await this.worker.next();
-    return;
+
+    let next = await worker.next();
+    while (pages > 1 && !next.done) {
+      next = await worker.next();
+      pages--;
+    }
+    return Boolean(next.done);
   }
 
   /**
@@ -136,17 +141,12 @@ export class TestHistoryLoader {
    * If the entries associated with the specified variant hash and time slot
    * hasn't been loaded yet, return null.
    */
-  getEntries(variantHash: string, time: DateTime, noLoading = false): TestVariantHistoryEntry[] | null {
-    const timeStr = this.resolve(time);
-    const loaded = computed(() => time > this.loadedTime && this.loadedTimeStr !== timeStr).get();
-    if (!loaded) {
-      if (!noLoading) {
-        untracked(() => this.loadUntil(time));
-      }
+  getEntries(variantHash: string, time: DateTime, noLoading = false): readonly TestVariantHistoryEntry[] | null {
+    const vLoader = computed(() => this.loaders.get(variantHash)).get();
+    if (!vLoader) {
       return null;
     }
-    const dateStr = this.resolve(time);
-    const ret = computed(() => this.cache.get(variantHash)?.get(dateStr) || [], { equals: comparer.shallow }).get();
-    return ret;
+
+    return vLoader.getEntries(time, noLoading);
   }
 }
