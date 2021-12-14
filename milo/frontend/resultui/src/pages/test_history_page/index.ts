@@ -15,7 +15,7 @@
 import '@material/mwc-button';
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
-import { css, customElement, html, property } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { DateTime } from 'luxon';
 import { observable, reaction, when } from 'mobx';
@@ -47,10 +47,11 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref @consumeAppState() appState!: AppState;
-  @property() @provideTestHistoryPageState() @provideTestVariantTableState() pageState!: TestHistoryPageState;
+  @observable.ref @provideTestHistoryPageState() @provideTestVariantTableState() pageState!: TestHistoryPageState;
 
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
+  private initialFilterText = '';
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const realm = location.params['realm'];
@@ -60,6 +61,11 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     }
     this.realm = realm;
     this.testId = testId;
+
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.has('q')) {
+      this.initialFilterText = searchParams.get('q')!;
+    }
 
     return;
   }
@@ -81,12 +87,37 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
             return;
           }
 
+          const filterText = this.pageState ? this.pageState.filterText : this.initialFilterText;
           this.pageState?.dispose();
+
           this.pageState = new TestHistoryPageState(this.realm, this.testId, this.appState.testHistoryService);
+          this.pageState.filterText = filterText;
+          // Emulate @property() update.
+          this.updated(new Map([['pageState', this.pageState]]));
         },
         {
           fireImmediately: true,
         }
+      )
+    );
+
+    // Update the querystring when filters are updated.
+    this.addDisposer(
+      reaction(
+        () => {
+          const filterText = this.pageState ? this.pageState.filterText : this.initialFilterText;
+          const newSearchParams = new URLSearchParams({
+            ...(!filterText ? {} : { q: filterText }),
+          });
+          const newSearchParamsStr = newSearchParams.toString();
+          return newSearchParamsStr ? '?' + newSearchParamsStr : '';
+        },
+        (newQueryStr) => {
+          const location = window.location;
+          const newUrl = `${location.protocol}//${location.host}${location.pathname}${newQueryStr}`;
+          window.history.replaceState(null, '', newUrl);
+        },
+        { fireImmediately: true }
       )
     );
 
