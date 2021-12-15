@@ -23,10 +23,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-func setSysProcAttr(_ *exec.Cmd) {}
+func setSysProcAttr(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+}
 
 func (s *Subprocess) terminate() error {
-	if err := s.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+	if err := syscall.Kill(-s.cmd.Process.Pid, syscall.SIGTERM); err != nil {
 		return errors.Annotate(err, "send SIGTERM").Err()
 	}
 	return nil
