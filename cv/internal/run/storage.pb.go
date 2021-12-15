@@ -132,6 +132,60 @@ func (Status) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{0}
 }
 
+// Whom is a proto copy of
+// https://pkg.go.dev/go.chromium.org/luci/cv/internal/gerrit/cancel#Whom
+type OngoingLongOps_Op_TriggersCancellation_Whom int32
+
+const (
+	OngoingLongOps_Op_TriggersCancellation_NONE      OngoingLongOps_Op_TriggersCancellation_Whom = 0
+	OngoingLongOps_Op_TriggersCancellation_OWNER     OngoingLongOps_Op_TriggersCancellation_Whom = 1
+	OngoingLongOps_Op_TriggersCancellation_REVIEWERS OngoingLongOps_Op_TriggersCancellation_Whom = 2
+	OngoingLongOps_Op_TriggersCancellation_VOTERS    OngoingLongOps_Op_TriggersCancellation_Whom = 3
+)
+
+// Enum value maps for OngoingLongOps_Op_TriggersCancellation_Whom.
+var (
+	OngoingLongOps_Op_TriggersCancellation_Whom_name = map[int32]string{
+		0: "NONE",
+		1: "OWNER",
+		2: "REVIEWERS",
+		3: "VOTERS",
+	}
+	OngoingLongOps_Op_TriggersCancellation_Whom_value = map[string]int32{
+		"NONE":      0,
+		"OWNER":     1,
+		"REVIEWERS": 2,
+		"VOTERS":    3,
+	}
+)
+
+func (x OngoingLongOps_Op_TriggersCancellation_Whom) Enum() *OngoingLongOps_Op_TriggersCancellation_Whom {
+	p := new(OngoingLongOps_Op_TriggersCancellation_Whom)
+	*p = x
+	return p
+}
+
+func (x OngoingLongOps_Op_TriggersCancellation_Whom) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OngoingLongOps_Op_TriggersCancellation_Whom) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes[1].Descriptor()
+}
+
+func (OngoingLongOps_Op_TriggersCancellation_Whom) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes[1]
+}
+
+func (x OngoingLongOps_Op_TriggersCancellation_Whom) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OngoingLongOps_Op_TriggersCancellation_Whom.Descriptor instead.
+func (OngoingLongOps_Op_TriggersCancellation_Whom) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{7, 0, 0, 0}
+}
+
 // Trigger describes who/how CV was triggered on a specific CL.
 type Trigger struct {
 	state         protoimpl.MessageState
@@ -1632,6 +1686,7 @@ type OngoingLongOps_Op struct {
 	CancelRequested bool `protobuf:"varint,2,opt,name=cancel_requested,json=cancelRequested,proto3" json:"cancel_requested,omitempty"`
 	// Types that are assignable to Work:
 	//	*OngoingLongOps_Op_PostStartMessage
+	//	*OngoingLongOps_Op_CancelTriggers
 	Work isOngoingLongOps_Op_Work `protobuf_oneof:"work"`
 }
 
@@ -1695,6 +1750,13 @@ func (x *OngoingLongOps_Op) GetPostStartMessage() bool {
 	return false
 }
 
+func (x *OngoingLongOps_Op) GetCancelTriggers() *OngoingLongOps_Op_TriggersCancellation {
+	if x, ok := x.GetWork().(*OngoingLongOps_Op_CancelTriggers); ok {
+		return x.CancelTriggers
+	}
+	return nil
+}
+
 type isOngoingLongOps_Op_Work interface {
 	isOngoingLongOps_Op_Work()
 }
@@ -1704,7 +1766,145 @@ type OngoingLongOps_Op_PostStartMessage struct {
 	PostStartMessage bool `protobuf:"varint,3,opt,name=post_start_message,json=postStartMessage,proto3,oneof"`
 }
 
+type OngoingLongOps_Op_CancelTriggers struct {
+	CancelTriggers *OngoingLongOps_Op_TriggersCancellation `protobuf:"bytes,4,opt,name=cancel_triggers,json=cancelTriggers,proto3,oneof"`
+}
+
 func (*OngoingLongOps_Op_PostStartMessage) isOngoingLongOps_Op_Work() {}
+
+func (*OngoingLongOps_Op_CancelTriggers) isOngoingLongOps_Op_Work() {}
+
+type OngoingLongOps_Op_TriggersCancellation struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Requests []*OngoingLongOps_Op_TriggersCancellation_Request `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation) Reset() {
+	*x = OngoingLongOps_Op_TriggersCancellation{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[23]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OngoingLongOps_Op_TriggersCancellation) ProtoMessage() {}
+
+func (x *OngoingLongOps_Op_TriggersCancellation) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[23]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OngoingLongOps_Op_TriggersCancellation.ProtoReflect.Descriptor instead.
+func (*OngoingLongOps_Op_TriggersCancellation) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{7, 0, 0}
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation) GetRequests() []*OngoingLongOps_Op_TriggersCancellation_Request {
+	if x != nil {
+		return x.Requests
+	}
+	return nil
+}
+
+// Request is the trigger cancellation request of a CL.
+type OngoingLongOps_Op_TriggersCancellation_Request struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// internal CLID.
+	Clid int64 `protobuf:"varint,1,opt,name=clid,proto3" json:"clid,omitempty"`
+	// Message explains why trigger is cancelled. Will be posted to the CL.
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	// Whom to notify.
+	Notify []OngoingLongOps_Op_TriggersCancellation_Whom `protobuf:"varint,3,rep,packed,name=notify,proto3,enum=cv.internal.run.OngoingLongOps_Op_TriggersCancellation_Whom" json:"notify,omitempty"`
+	// Whom to add to the attention set.
+	AddToAttention []OngoingLongOps_Op_TriggersCancellation_Whom `protobuf:"varint,4,rep,packed,name=add_to_attention,json=addToAttention,proto3,enum=cv.internal.run.OngoingLongOps_Op_TriggersCancellation_Whom" json:"add_to_attention,omitempty"`
+	// Reason explains the reason of attention set change.
+	AddToAttentionReason string `protobuf:"bytes,5,opt,name=add_to_attention_reason,json=addToAttentionReason,proto3" json:"add_to_attention_reason,omitempty"`
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation_Request) Reset() {
+	*x = OngoingLongOps_Op_TriggersCancellation_Request{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation_Request) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OngoingLongOps_Op_TriggersCancellation_Request) ProtoMessage() {}
+
+func (x *OngoingLongOps_Op_TriggersCancellation_Request) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OngoingLongOps_Op_TriggersCancellation_Request.ProtoReflect.Descriptor instead.
+func (*OngoingLongOps_Op_TriggersCancellation_Request) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP(), []int{7, 0, 0, 0}
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation_Request) GetClid() int64 {
+	if x != nil {
+		return x.Clid
+	}
+	return 0
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation_Request) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation_Request) GetNotify() []OngoingLongOps_Op_TriggersCancellation_Whom {
+	if x != nil {
+		return x.Notify
+	}
+	return nil
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation_Request) GetAddToAttention() []OngoingLongOps_Op_TriggersCancellation_Whom {
+	if x != nil {
+		return x.AddToAttention
+	}
+	return nil
+}
+
+func (x *OngoingLongOps_Op_TriggersCancellation_Request) GetAddToAttentionReason() string {
+	if x != nil {
+		return x.AddToAttentionReason
+	}
+	return ""
+}
 
 var File_go_chromium_org_luci_cv_internal_run_storage_proto protoreflect.FileDescriptor
 
@@ -1920,12 +2120,12 @@ var file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = []byte{
 	0x6e, 0x61, 0x6c, 0x2e, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x75, 0x6c,
 	0x74, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x71, 0x64,
 	0x5f, 0x64, 0x65, 0x72, 0x69, 0x76, 0x65, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a,
-	0x63, 0x71, 0x64, 0x44, 0x65, 0x72, 0x69, 0x76, 0x65, 0x64, 0x22, 0xca, 0x02, 0x0a, 0x0e, 0x4f,
+	0x63, 0x71, 0x64, 0x44, 0x65, 0x72, 0x69, 0x76, 0x65, 0x64, 0x22, 0x8b, 0x07, 0x0a, 0x0e, 0x4f,
 	0x6e, 0x67, 0x6f, 0x69, 0x6e, 0x67, 0x4c, 0x6f, 0x6e, 0x67, 0x4f, 0x70, 0x73, 0x12, 0x3a, 0x0a,
 	0x03, 0x6f, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x63, 0x76, 0x2e,
 	0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4f, 0x6e, 0x67,
 	0x6f, 0x69, 0x6e, 0x67, 0x4c, 0x6f, 0x6e, 0x67, 0x4f, 0x70, 0x73, 0x2e, 0x4f, 0x70, 0x73, 0x45,
-	0x6e, 0x74, 0x72, 0x79, 0x52, 0x03, 0x6f, 0x70, 0x73, 0x1a, 0x9f, 0x01, 0x0a, 0x02, 0x4f, 0x70,
+	0x6e, 0x74, 0x72, 0x79, 0x52, 0x03, 0x6f, 0x70, 0x73, 0x1a, 0xe0, 0x05, 0x0a, 0x02, 0x4f, 0x70,
 	0x12, 0x36, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x08,
@@ -1935,26 +2135,62 @@ var file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = []byte{
 	0x74, 0x65, 0x64, 0x12, 0x2e, 0x0a, 0x12, 0x70, 0x6f, 0x73, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72,
 	0x74, 0x5f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x48,
 	0x00, 0x52, 0x10, 0x70, 0x6f, 0x73, 0x74, 0x53, 0x74, 0x61, 0x72, 0x74, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x42, 0x06, 0x0a, 0x04, 0x77, 0x6f, 0x72, 0x6b, 0x1a, 0x5a, 0x0a, 0x08, 0x4f,
-	0x70, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x38, 0x0a, 0x05, 0x76, 0x61, 0x6c,
-	0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e,
-	0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4f, 0x6e, 0x67, 0x6f, 0x69,
-	0x6e, 0x67, 0x4c, 0x6f, 0x6e, 0x67, 0x4f, 0x70, 0x73, 0x2e, 0x4f, 0x70, 0x52, 0x05, 0x76, 0x61,
-	0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x2a, 0xa0, 0x01, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74,
-	0x75, 0x73, 0x12, 0x16, 0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53,
-	0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x45,
-	0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e, 0x49,
-	0x4e, 0x47, 0x10, 0x02, 0x12, 0x1a, 0x0a, 0x16, 0x57, 0x41, 0x49, 0x54, 0x49, 0x4e, 0x47, 0x5f,
-	0x46, 0x4f, 0x52, 0x5f, 0x53, 0x55, 0x42, 0x4d, 0x49, 0x53, 0x53, 0x49, 0x4f, 0x4e, 0x10, 0x04,
-	0x12, 0x0e, 0x0a, 0x0a, 0x53, 0x55, 0x42, 0x4d, 0x49, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x10, 0x05,
-	0x12, 0x0e, 0x0a, 0x0a, 0x45, 0x4e, 0x44, 0x45, 0x44, 0x5f, 0x4d, 0x41, 0x53, 0x4b, 0x10, 0x40,
-	0x12, 0x0d, 0x0a, 0x09, 0x53, 0x55, 0x43, 0x43, 0x45, 0x45, 0x44, 0x45, 0x44, 0x10, 0x41, 0x12,
-	0x0a, 0x0a, 0x06, 0x46, 0x41, 0x49, 0x4c, 0x45, 0x44, 0x10, 0x42, 0x12, 0x0d, 0x0a, 0x09, 0x43,
-	0x41, 0x4e, 0x43, 0x45, 0x4c, 0x4c, 0x45, 0x44, 0x10, 0x43, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x72,
-	0x75, 0x6e, 0x3b, 0x72, 0x75, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x61, 0x67, 0x65, 0x12, 0x62, 0x0a, 0x0f, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x5f, 0x74, 0x72,
+	0x69, 0x67, 0x67, 0x65, 0x72, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x37, 0x2e, 0x63,
+	0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4f,
+	0x6e, 0x67, 0x6f, 0x69, 0x6e, 0x67, 0x4c, 0x6f, 0x6e, 0x67, 0x4f, 0x70, 0x73, 0x2e, 0x4f, 0x70,
+	0x2e, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x73, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x00, 0x52, 0x0e, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x54,
+	0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x73, 0x1a, 0xda, 0x03, 0x0a, 0x14, 0x54, 0x72, 0x69, 0x67,
+	0x67, 0x65, 0x72, 0x73, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x12, 0x5b, 0x0a, 0x08, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x3f, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c,
+	0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4f, 0x6e, 0x67, 0x6f, 0x69, 0x6e, 0x67, 0x4c, 0x6f, 0x6e, 0x67,
+	0x4f, 0x70, 0x73, 0x2e, 0x4f, 0x70, 0x2e, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x73, 0x43,
+	0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x52, 0x08, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x73, 0x1a, 0xac, 0x02,
+	0x0a, 0x07, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6c, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x63, 0x6c, 0x69, 0x64, 0x12, 0x18, 0x0a,
+	0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
+	0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x54, 0x0a, 0x06, 0x6e, 0x6f, 0x74, 0x69, 0x66,
+	0x79, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0e, 0x32, 0x3c, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74,
+	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4f, 0x6e, 0x67, 0x6f, 0x69, 0x6e,
+	0x67, 0x4c, 0x6f, 0x6e, 0x67, 0x4f, 0x70, 0x73, 0x2e, 0x4f, 0x70, 0x2e, 0x54, 0x72, 0x69, 0x67,
+	0x67, 0x65, 0x72, 0x73, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x57, 0x68, 0x6f, 0x6d, 0x52, 0x06, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x12, 0x66, 0x0a,
+	0x10, 0x61, 0x64, 0x64, 0x5f, 0x74, 0x6f, 0x5f, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x74, 0x69, 0x6f,
+	0x6e, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0e, 0x32, 0x3c, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74,
+	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4f, 0x6e, 0x67, 0x6f, 0x69, 0x6e,
+	0x67, 0x4c, 0x6f, 0x6e, 0x67, 0x4f, 0x70, 0x73, 0x2e, 0x4f, 0x70, 0x2e, 0x54, 0x72, 0x69, 0x67,
+	0x67, 0x65, 0x72, 0x73, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x57, 0x68, 0x6f, 0x6d, 0x52, 0x0e, 0x61, 0x64, 0x64, 0x54, 0x6f, 0x41, 0x74, 0x74, 0x65,
+	0x6e, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x35, 0x0a, 0x17, 0x61, 0x64, 0x64, 0x5f, 0x74, 0x6f, 0x5f,
+	0x61, 0x74, 0x74, 0x65, 0x6e, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x14, 0x61, 0x64, 0x64, 0x54, 0x6f, 0x41, 0x74, 0x74,
+	0x65, 0x6e, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x22, 0x36, 0x0a, 0x04,
+	0x57, 0x68, 0x6f, 0x6d, 0x12, 0x08, 0x0a, 0x04, 0x4e, 0x4f, 0x4e, 0x45, 0x10, 0x00, 0x12, 0x09,
+	0x0a, 0x05, 0x4f, 0x57, 0x4e, 0x45, 0x52, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x52, 0x45, 0x56,
+	0x49, 0x45, 0x57, 0x45, 0x52, 0x53, 0x10, 0x02, 0x12, 0x0a, 0x0a, 0x06, 0x56, 0x4f, 0x54, 0x45,
+	0x52, 0x53, 0x10, 0x03, 0x42, 0x06, 0x0a, 0x04, 0x77, 0x6f, 0x72, 0x6b, 0x1a, 0x5a, 0x0a, 0x08,
+	0x4f, 0x70, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x38, 0x0a, 0x05, 0x76, 0x61,
+	0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x63, 0x76, 0x2e, 0x69,
+	0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x4f, 0x6e, 0x67, 0x6f,
+	0x69, 0x6e, 0x67, 0x4c, 0x6f, 0x6e, 0x67, 0x4f, 0x70, 0x73, 0x2e, 0x4f, 0x70, 0x52, 0x05, 0x76,
+	0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x2a, 0xa0, 0x01, 0x0a, 0x06, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e,
+	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50,
+	0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e,
+	0x49, 0x4e, 0x47, 0x10, 0x02, 0x12, 0x1a, 0x0a, 0x16, 0x57, 0x41, 0x49, 0x54, 0x49, 0x4e, 0x47,
+	0x5f, 0x46, 0x4f, 0x52, 0x5f, 0x53, 0x55, 0x42, 0x4d, 0x49, 0x53, 0x53, 0x49, 0x4f, 0x4e, 0x10,
+	0x04, 0x12, 0x0e, 0x0a, 0x0a, 0x53, 0x55, 0x42, 0x4d, 0x49, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x10,
+	0x05, 0x12, 0x0e, 0x0a, 0x0a, 0x45, 0x4e, 0x44, 0x45, 0x44, 0x5f, 0x4d, 0x41, 0x53, 0x4b, 0x10,
+	0x40, 0x12, 0x0d, 0x0a, 0x09, 0x53, 0x55, 0x43, 0x43, 0x45, 0x45, 0x44, 0x45, 0x44, 0x10, 0x41,
+	0x12, 0x0a, 0x0a, 0x06, 0x46, 0x41, 0x49, 0x4c, 0x45, 0x44, 0x10, 0x42, 0x12, 0x0d, 0x0a, 0x09,
+	0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x4c, 0x45, 0x44, 0x10, 0x43, 0x42, 0x2a, 0x5a, 0x28, 0x67,
+	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
+	0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f,
+	0x72, 0x75, 0x6e, 0x3b, 0x72, 0x75, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1969,78 +2205,85 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescGZIP() []byt
 	return file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_go_chromium_org_luci_cv_internal_run_storage_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_goTypes = []interface{}{
-	(Status)(0),                                // 0: cv.internal.run.Status
-	(*Trigger)(nil),                            // 1: cv.internal.run.Trigger
-	(*Submission)(nil),                         // 2: cv.internal.run.Submission
-	(*Options)(nil),                            // 3: cv.internal.run.Options
-	(*LogEntries)(nil),                         // 4: cv.internal.run.LogEntries
-	(*LogEntry)(nil),                           // 5: cv.internal.run.LogEntry
-	(*Tryjobs)(nil),                            // 6: cv.internal.run.Tryjobs
-	(*Tryjob)(nil),                             // 7: cv.internal.run.Tryjob
-	(*OngoingLongOps)(nil),                     // 8: cv.internal.run.OngoingLongOps
-	(*LogEntry_Created)(nil),                   // 9: cv.internal.run.LogEntry.Created
-	(*LogEntry_Started)(nil),                   // 10: cv.internal.run.LogEntry.Started
-	(*LogEntry_ConfigChanged)(nil),             // 11: cv.internal.run.LogEntry.ConfigChanged
-	(*LogEntry_TryjobsRequirementUpdated)(nil), // 12: cv.internal.run.LogEntry.TryjobsRequirementUpdated
-	(*LogEntry_Info)(nil),                      // 13: cv.internal.run.LogEntry.Info
-	(*LogEntry_TryjobsUpdated)(nil),            // 14: cv.internal.run.LogEntry.TryjobsUpdated
-	(*LogEntry_TreeChecked)(nil),               // 15: cv.internal.run.LogEntry.TreeChecked
-	(*LogEntry_Waitlisted)(nil),                // 16: cv.internal.run.LogEntry.Waitlisted
-	(*LogEntry_AcquiredSubmitQueue)(nil),       // 17: cv.internal.run.LogEntry.AcquiredSubmitQueue
-	(*LogEntry_ReleasedSubmitQueue)(nil),       // 18: cv.internal.run.LogEntry.ReleasedSubmitQueue
-	(*LogEntry_CLSubmitted)(nil),               // 19: cv.internal.run.LogEntry.CLSubmitted
-	(*LogEntry_SubmissionFailure)(nil),         // 20: cv.internal.run.LogEntry.SubmissionFailure
-	(*LogEntry_RunEnded)(nil),                  // 21: cv.internal.run.LogEntry.RunEnded
-	(*OngoingLongOps_Op)(nil),                  // 22: cv.internal.run.OngoingLongOps.Op
-	nil,                                        // 23: cv.internal.run.OngoingLongOps.OpsEntry
-	(*timestamppb.Timestamp)(nil),              // 24: google.protobuf.Timestamp
-	(*tryjob.Requirement)(nil),                 // 25: cv.internal.tryjob.Requirement
-	(*tryjob.ExecutionState)(nil),              // 26: cv.internal.tryjob.ExecutionState
-	(*tryjob.Definition)(nil),                  // 27: cv.internal.tryjob.Definition
-	(tryjob.Status)(0),                         // 28: cv.internal.tryjob.Status
-	(*tryjob.Result)(nil),                      // 29: cv.internal.tryjob.Result
-	(*eventpb.SubmissionCompleted)(nil),        // 30: cv.internal.run.eventpb.SubmissionCompleted
+	(Status)(0), // 0: cv.internal.run.Status
+	(OngoingLongOps_Op_TriggersCancellation_Whom)(0), // 1: cv.internal.run.OngoingLongOps.Op.TriggersCancellation.Whom
+	(*Trigger)(nil),                                        // 2: cv.internal.run.Trigger
+	(*Submission)(nil),                                     // 3: cv.internal.run.Submission
+	(*Options)(nil),                                        // 4: cv.internal.run.Options
+	(*LogEntries)(nil),                                     // 5: cv.internal.run.LogEntries
+	(*LogEntry)(nil),                                       // 6: cv.internal.run.LogEntry
+	(*Tryjobs)(nil),                                        // 7: cv.internal.run.Tryjobs
+	(*Tryjob)(nil),                                         // 8: cv.internal.run.Tryjob
+	(*OngoingLongOps)(nil),                                 // 9: cv.internal.run.OngoingLongOps
+	(*LogEntry_Created)(nil),                               // 10: cv.internal.run.LogEntry.Created
+	(*LogEntry_Started)(nil),                               // 11: cv.internal.run.LogEntry.Started
+	(*LogEntry_ConfigChanged)(nil),                         // 12: cv.internal.run.LogEntry.ConfigChanged
+	(*LogEntry_TryjobsRequirementUpdated)(nil),             // 13: cv.internal.run.LogEntry.TryjobsRequirementUpdated
+	(*LogEntry_Info)(nil),                                  // 14: cv.internal.run.LogEntry.Info
+	(*LogEntry_TryjobsUpdated)(nil),                        // 15: cv.internal.run.LogEntry.TryjobsUpdated
+	(*LogEntry_TreeChecked)(nil),                           // 16: cv.internal.run.LogEntry.TreeChecked
+	(*LogEntry_Waitlisted)(nil),                            // 17: cv.internal.run.LogEntry.Waitlisted
+	(*LogEntry_AcquiredSubmitQueue)(nil),                   // 18: cv.internal.run.LogEntry.AcquiredSubmitQueue
+	(*LogEntry_ReleasedSubmitQueue)(nil),                   // 19: cv.internal.run.LogEntry.ReleasedSubmitQueue
+	(*LogEntry_CLSubmitted)(nil),                           // 20: cv.internal.run.LogEntry.CLSubmitted
+	(*LogEntry_SubmissionFailure)(nil),                     // 21: cv.internal.run.LogEntry.SubmissionFailure
+	(*LogEntry_RunEnded)(nil),                              // 22: cv.internal.run.LogEntry.RunEnded
+	(*OngoingLongOps_Op)(nil),                              // 23: cv.internal.run.OngoingLongOps.Op
+	nil,                                                    // 24: cv.internal.run.OngoingLongOps.OpsEntry
+	(*OngoingLongOps_Op_TriggersCancellation)(nil),         // 25: cv.internal.run.OngoingLongOps.Op.TriggersCancellation
+	(*OngoingLongOps_Op_TriggersCancellation_Request)(nil), // 26: cv.internal.run.OngoingLongOps.Op.TriggersCancellation.Request
+	(*timestamppb.Timestamp)(nil),                          // 27: google.protobuf.Timestamp
+	(*tryjob.Requirement)(nil),                             // 28: cv.internal.tryjob.Requirement
+	(*tryjob.ExecutionState)(nil),                          // 29: cv.internal.tryjob.ExecutionState
+	(*tryjob.Definition)(nil),                              // 30: cv.internal.tryjob.Definition
+	(tryjob.Status)(0),                                     // 31: cv.internal.tryjob.Status
+	(*tryjob.Result)(nil),                                  // 32: cv.internal.tryjob.Result
+	(*eventpb.SubmissionCompleted)(nil),                    // 33: cv.internal.run.eventpb.SubmissionCompleted
 }
 var file_go_chromium_org_luci_cv_internal_run_storage_proto_depIdxs = []int32{
-	24, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
-	24, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
-	24, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
-	5,  // 3: cv.internal.run.LogEntries.entries:type_name -> cv.internal.run.LogEntry
-	24, // 4: cv.internal.run.LogEntry.time:type_name -> google.protobuf.Timestamp
-	9,  // 5: cv.internal.run.LogEntry.created:type_name -> cv.internal.run.LogEntry.Created
-	10, // 6: cv.internal.run.LogEntry.started:type_name -> cv.internal.run.LogEntry.Started
-	11, // 7: cv.internal.run.LogEntry.config_changed:type_name -> cv.internal.run.LogEntry.ConfigChanged
-	12, // 8: cv.internal.run.LogEntry.tryjobs_requirement_updated:type_name -> cv.internal.run.LogEntry.TryjobsRequirementUpdated
-	14, // 9: cv.internal.run.LogEntry.tryjobs_updated:type_name -> cv.internal.run.LogEntry.TryjobsUpdated
-	13, // 10: cv.internal.run.LogEntry.info:type_name -> cv.internal.run.LogEntry.Info
-	15, // 11: cv.internal.run.LogEntry.tree_checked:type_name -> cv.internal.run.LogEntry.TreeChecked
-	16, // 12: cv.internal.run.LogEntry.waitlisted:type_name -> cv.internal.run.LogEntry.Waitlisted
-	17, // 13: cv.internal.run.LogEntry.acquired_submit_queue:type_name -> cv.internal.run.LogEntry.AcquiredSubmitQueue
-	18, // 14: cv.internal.run.LogEntry.released_submit_queue:type_name -> cv.internal.run.LogEntry.ReleasedSubmitQueue
-	19, // 15: cv.internal.run.LogEntry.cl_submitted:type_name -> cv.internal.run.LogEntry.CLSubmitted
-	20, // 16: cv.internal.run.LogEntry.submission_failure:type_name -> cv.internal.run.LogEntry.SubmissionFailure
-	21, // 17: cv.internal.run.LogEntry.run_ended:type_name -> cv.internal.run.LogEntry.RunEnded
-	25, // 18: cv.internal.run.Tryjobs.requirement:type_name -> cv.internal.tryjob.Requirement
-	25, // 19: cv.internal.run.Tryjobs.staging_requirement:type_name -> cv.internal.tryjob.Requirement
-	7,  // 20: cv.internal.run.Tryjobs.tryjobs:type_name -> cv.internal.run.Tryjob
-	24, // 21: cv.internal.run.Tryjobs.cqd_update_time:type_name -> google.protobuf.Timestamp
-	26, // 22: cv.internal.run.Tryjobs.state:type_name -> cv.internal.tryjob.ExecutionState
-	27, // 23: cv.internal.run.Tryjob.definition:type_name -> cv.internal.tryjob.Definition
-	28, // 24: cv.internal.run.Tryjob.status:type_name -> cv.internal.tryjob.Status
-	29, // 25: cv.internal.run.Tryjob.result:type_name -> cv.internal.tryjob.Result
-	23, // 26: cv.internal.run.OngoingLongOps.ops:type_name -> cv.internal.run.OngoingLongOps.OpsEntry
-	7,  // 27: cv.internal.run.LogEntry.TryjobsUpdated.tryjobs:type_name -> cv.internal.run.Tryjob
-	30, // 28: cv.internal.run.LogEntry.SubmissionFailure.event:type_name -> cv.internal.run.eventpb.SubmissionCompleted
-	24, // 29: cv.internal.run.OngoingLongOps.Op.deadline:type_name -> google.protobuf.Timestamp
-	22, // 30: cv.internal.run.OngoingLongOps.OpsEntry.value:type_name -> cv.internal.run.OngoingLongOps.Op
-	31, // [31:31] is the sub-list for method output_type
-	31, // [31:31] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	27, // 0: cv.internal.run.Trigger.time:type_name -> google.protobuf.Timestamp
+	27, // 1: cv.internal.run.Submission.deadline:type_name -> google.protobuf.Timestamp
+	27, // 2: cv.internal.run.Submission.last_tree_check_time:type_name -> google.protobuf.Timestamp
+	6,  // 3: cv.internal.run.LogEntries.entries:type_name -> cv.internal.run.LogEntry
+	27, // 4: cv.internal.run.LogEntry.time:type_name -> google.protobuf.Timestamp
+	10, // 5: cv.internal.run.LogEntry.created:type_name -> cv.internal.run.LogEntry.Created
+	11, // 6: cv.internal.run.LogEntry.started:type_name -> cv.internal.run.LogEntry.Started
+	12, // 7: cv.internal.run.LogEntry.config_changed:type_name -> cv.internal.run.LogEntry.ConfigChanged
+	13, // 8: cv.internal.run.LogEntry.tryjobs_requirement_updated:type_name -> cv.internal.run.LogEntry.TryjobsRequirementUpdated
+	15, // 9: cv.internal.run.LogEntry.tryjobs_updated:type_name -> cv.internal.run.LogEntry.TryjobsUpdated
+	14, // 10: cv.internal.run.LogEntry.info:type_name -> cv.internal.run.LogEntry.Info
+	16, // 11: cv.internal.run.LogEntry.tree_checked:type_name -> cv.internal.run.LogEntry.TreeChecked
+	17, // 12: cv.internal.run.LogEntry.waitlisted:type_name -> cv.internal.run.LogEntry.Waitlisted
+	18, // 13: cv.internal.run.LogEntry.acquired_submit_queue:type_name -> cv.internal.run.LogEntry.AcquiredSubmitQueue
+	19, // 14: cv.internal.run.LogEntry.released_submit_queue:type_name -> cv.internal.run.LogEntry.ReleasedSubmitQueue
+	20, // 15: cv.internal.run.LogEntry.cl_submitted:type_name -> cv.internal.run.LogEntry.CLSubmitted
+	21, // 16: cv.internal.run.LogEntry.submission_failure:type_name -> cv.internal.run.LogEntry.SubmissionFailure
+	22, // 17: cv.internal.run.LogEntry.run_ended:type_name -> cv.internal.run.LogEntry.RunEnded
+	28, // 18: cv.internal.run.Tryjobs.requirement:type_name -> cv.internal.tryjob.Requirement
+	28, // 19: cv.internal.run.Tryjobs.staging_requirement:type_name -> cv.internal.tryjob.Requirement
+	8,  // 20: cv.internal.run.Tryjobs.tryjobs:type_name -> cv.internal.run.Tryjob
+	27, // 21: cv.internal.run.Tryjobs.cqd_update_time:type_name -> google.protobuf.Timestamp
+	29, // 22: cv.internal.run.Tryjobs.state:type_name -> cv.internal.tryjob.ExecutionState
+	30, // 23: cv.internal.run.Tryjob.definition:type_name -> cv.internal.tryjob.Definition
+	31, // 24: cv.internal.run.Tryjob.status:type_name -> cv.internal.tryjob.Status
+	32, // 25: cv.internal.run.Tryjob.result:type_name -> cv.internal.tryjob.Result
+	24, // 26: cv.internal.run.OngoingLongOps.ops:type_name -> cv.internal.run.OngoingLongOps.OpsEntry
+	8,  // 27: cv.internal.run.LogEntry.TryjobsUpdated.tryjobs:type_name -> cv.internal.run.Tryjob
+	33, // 28: cv.internal.run.LogEntry.SubmissionFailure.event:type_name -> cv.internal.run.eventpb.SubmissionCompleted
+	27, // 29: cv.internal.run.OngoingLongOps.Op.deadline:type_name -> google.protobuf.Timestamp
+	25, // 30: cv.internal.run.OngoingLongOps.Op.cancel_triggers:type_name -> cv.internal.run.OngoingLongOps.Op.TriggersCancellation
+	23, // 31: cv.internal.run.OngoingLongOps.OpsEntry.value:type_name -> cv.internal.run.OngoingLongOps.Op
+	26, // 32: cv.internal.run.OngoingLongOps.Op.TriggersCancellation.requests:type_name -> cv.internal.run.OngoingLongOps.Op.TriggersCancellation.Request
+	1,  // 33: cv.internal.run.OngoingLongOps.Op.TriggersCancellation.Request.notify:type_name -> cv.internal.run.OngoingLongOps.Op.TriggersCancellation.Whom
+	1,  // 34: cv.internal.run.OngoingLongOps.Op.TriggersCancellation.Request.add_to_attention:type_name -> cv.internal.run.OngoingLongOps.Op.TriggersCancellation.Whom
+	35, // [35:35] is the sub-list for method output_type
+	35, // [35:35] is the sub-list for method input_type
+	35, // [35:35] is the sub-list for extension type_name
+	35, // [35:35] is the sub-list for extension extendee
+	0,  // [0:35] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_internal_run_storage_proto_init() }
@@ -2313,6 +2556,30 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*OngoingLongOps_Op_TriggersCancellation); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*OngoingLongOps_Op_TriggersCancellation_Request); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[4].OneofWrappers = []interface{}{
 		(*LogEntry_Created_)(nil),
@@ -2331,14 +2598,15 @@ func file_go_chromium_org_luci_cv_internal_run_storage_proto_init() {
 	}
 	file_go_chromium_org_luci_cv_internal_run_storage_proto_msgTypes[21].OneofWrappers = []interface{}{
 		(*OngoingLongOps_Op_PostStartMessage)(nil),
+		(*OngoingLongOps_Op_CancelTriggers)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   23,
+			NumEnums:      2,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -47,6 +47,7 @@ message LongOpCompleted {
 
   oneof result {
     PostStartMessage post_start_message = 3;
+    CancelTriggers cancel_triggers = 4;
   }
 
   message PostStartMessage {
@@ -57,5 +58,36 @@ message LongOpCompleted {
     // Approximate time when CV became certain that the message was posted on
     // the last CL.
     google.protobuf.Timestamp time = 3;
+  }
+
+  message CancelTriggers {
+    message Result {
+      // ID of the CL that this long op is trying to cancel its trigger.
+      int64 id = 1;
+      // The external id of the CL.
+      string external_id = 2;
+
+      message Success {
+        // The timestamp when trigger is successfully cancelled from LUCI CV
+        // PoV.
+        //
+        // It is possible by the time LUCI CV is trying to cancel the trigger,
+        // it has already been removed by the user. Therefore, this timestamp
+        // is the   time when LUCI CV observes that trigger is removed.
+        google.protobuf.Timestamp cancelled_at = 1;
+      }
+      message Failure {
+        // The message when CV failed to cancel the trigger.
+        string failure_message = 1;
+      }
+      oneof detail {
+        Success success_info = 3;
+        Failure failure_info = 4;
+      }
+    }
+    // The top-level long ops status will be SUCCEEDED iff all triggers are
+    // cancelled successfully, in other word, all results have `cancelled_at`
+    // set.
+    repeated Result results = 1;
   }
 }

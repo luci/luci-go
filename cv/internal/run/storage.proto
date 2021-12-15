@@ -336,9 +336,36 @@ message OngoingLongOps {
     // possible.
     bool cancel_requested = 2;
 
+    message TriggersCancellation {
+      // Whom is a proto copy of
+      // https://pkg.go.dev/go.chromium.org/luci/cv/internal/gerrit/cancel#Whom
+      enum Whom {
+        NONE = 0;
+        OWNER = 1;
+        REVIEWERS = 2;
+        VOTERS = 3;
+      }
+
+      // Request is the trigger cancellation request of a CL.
+      message Request {
+        // internal CLID.
+        int64 clid = 1;
+        // Message explains why trigger is cancelled. Will be posted to the CL.
+        string message = 2;
+        // Whom to notify.
+        repeated Whom notify = 3;
+        // Whom to add to the attention set.
+        repeated Whom add_to_attention = 4;
+        // Reason explains the reason of attention set change.
+        string add_to_attention_reason = 5;
+      }
+      repeated Request requests = 1;
+    }
+
     oneof work {
       // If true, posts a start message.
       bool post_start_message = 3;
+      TriggersCancellation cancel_triggers = 4;
     }
   }
   // Ops map operation ID to details.
