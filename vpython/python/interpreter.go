@@ -190,6 +190,7 @@ func (i *Interpreter) GetRuntime(c context.Context) (r *vpython.Runtime, err err
 		Hash:    hash,
 		Version: version.String(),
 		Prefix:  prefix,
+		Arch:    runtime.GOARCH,
 	}, nil
 }
 
@@ -282,6 +283,15 @@ func getHash(path string) (string, error) {
 		return "", err
 	}
 	if _, err := hash.Write([]byte(path)); err != nil {
+		return "", err
+	}
+	// Include GOARCH as part of cache for universal binary python on mac arm.
+	// We can't tell if the env was used under rosetta 2 from path and binary.
+	// NOTE: Vpython is not always the same architecture as cpython (e.g. vpython
+	// is arm64 while cpython is amd64), but we only care when cpython is an
+	// universal binary. In which case, the architecture which an universal
+	// cpython runs on is depending on the architecture of vpython.
+	if _, err := hash.Write([]byte(runtime.GOARCH)); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%X", hash.Sum32()), nil
