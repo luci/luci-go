@@ -17,11 +17,21 @@ package backend
 import (
 	"context"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/server/auth"
 )
 
 // MiloInternalService implements milopb.MiloInternal
 type MiloInternalService struct {
 	// GetGitClient returns a git client for the given context.
 	GetGitClient func(c context.Context) (git.Client, error)
+
+	// GetBuildersClient returns a buildbucket builders service for the given
+	// context.
+	GetBuildersClient func(c context.Context, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error)
+
+	// GetCachedAccessClient returns a cached access client for the given context.
+	GetCachedAccessClient func(c context.Context) (*common.CachedAccessClient, error)
 }
