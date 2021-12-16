@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion7
 type RunsClient interface {
 	// GetRun returns Run details.
 	GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*Run, error)
+	// SearchRuns searches for Runs.
+	SearchRuns(ctx context.Context, in *SearchRunsRequest, opts ...grpc.CallOption) (*SearchRunsResponse, error)
 }
 
 type runsClient struct {
@@ -39,12 +41,23 @@ func (c *runsClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc
 	return out, nil
 }
 
+func (c *runsClient) SearchRuns(ctx context.Context, in *SearchRunsRequest, opts ...grpc.CallOption) (*SearchRunsResponse, error) {
+	out := new(SearchRunsResponse)
+	err := c.cc.Invoke(ctx, "/cv.v0.Runs/SearchRuns", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RunsServer is the server API for Runs service.
 // All implementations must embed UnimplementedRunsServer
 // for forward compatibility
 type RunsServer interface {
 	// GetRun returns Run details.
 	GetRun(context.Context, *GetRunRequest) (*Run, error)
+	// SearchRuns searches for Runs.
+	SearchRuns(context.Context, *SearchRunsRequest) (*SearchRunsResponse, error)
 	mustEmbedUnimplementedRunsServer()
 }
 
@@ -54,6 +67,9 @@ type UnimplementedRunsServer struct {
 
 func (UnimplementedRunsServer) GetRun(context.Context, *GetRunRequest) (*Run, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRun not implemented")
+}
+func (UnimplementedRunsServer) SearchRuns(context.Context, *SearchRunsRequest) (*SearchRunsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchRuns not implemented")
 }
 func (UnimplementedRunsServer) mustEmbedUnimplementedRunsServer() {}
 
@@ -86,6 +102,24 @@ func _Runs_GetRun_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Runs_SearchRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchRunsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RunsServer).SearchRuns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cv.v0.Runs/SearchRuns",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RunsServer).SearchRuns(ctx, req.(*SearchRunsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Runs_ServiceDesc is the grpc.ServiceDesc for Runs service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -96,6 +130,10 @@ var Runs_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRun",
 			Handler:    _Runs_GetRun_Handler,
+		},
+		{
+			MethodName: "SearchRuns",
+			Handler:    _Runs_SearchRuns_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

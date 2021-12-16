@@ -34,9 +34,51 @@ service Runs {
 
   // GetRun returns Run details.
   rpc GetRun(GetRunRequest) returns (Run);
+
+  // SearchRuns searches for Runs.
+  rpc SearchRuns(SearchRunsRequest) returns (SearchRunsResponse);
 }
 
 message GetRunRequest {
   // ID is CV Run ID, e.g. "projects/chromium/runs/9991234120-1-badcafe"
   string id = 1;
+}
+
+// A request message for SearchRuns RPC.
+message SearchRunsRequest {
+  // Returned Runs must satisfy this predicate. Required.
+  RunPredicate predicate = 1;
+
+  // Number of Runs to return.
+  //
+  // TODO(qyearsley): Document the default page size after it is decided.
+  int32 page_size = 2;
+
+  // Value of SearchRunsResponse.next_page_token from the previous response.
+  // Use it to continue searching.
+  string page_token = 3;
+}
+
+// A response message for SearchRuns RPC.
+message SearchRunsResponse {
+  // Search results.
+  //
+  // Ordered by Run ID ascending; as a result, the Runs will be ordered by LUCI
+  // project in ascending lexicographic order and within each project will be
+  // ordered from newest to oldest.
+  repeated Run runs = 1;
+
+  // Value for SearchRunsRequest.page_token to continue searching.
+  string next_page_token = 2;
+}
+
+// A predicate for a SearchRuns query.
+//
+// If a field value is empty, it is ignored, unless stated otherwise.
+message RunPredicate {
+  // Limit results to this LUCI project. Required.
+  string project = 1;
+
+  // The Run must include each of these changes.
+  repeated GerritChange gerrit_changes = 2;
 }

@@ -82,6 +82,198 @@ func (x *GetRunRequest) GetId() string {
 	return ""
 }
 
+// A request message for SearchRuns RPC.
+type SearchRunsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Returned Runs must satisfy this predicate. Required.
+	Predicate *RunPredicate `protobuf:"bytes,1,opt,name=predicate,proto3" json:"predicate,omitempty"`
+	// Number of Runs to return.
+	//
+	// TODO(qyearsley): Document the default page size after it is decided.
+	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// Value of SearchRunsResponse.next_page_token from the previous response.
+	// Use it to continue searching.
+	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+}
+
+func (x *SearchRunsRequest) Reset() {
+	*x = SearchRunsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SearchRunsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchRunsRequest) ProtoMessage() {}
+
+func (x *SearchRunsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchRunsRequest.ProtoReflect.Descriptor instead.
+func (*SearchRunsRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *SearchRunsRequest) GetPredicate() *RunPredicate {
+	if x != nil {
+		return x.Predicate
+	}
+	return nil
+}
+
+func (x *SearchRunsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *SearchRunsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+// A response message for SearchRuns RPC.
+type SearchRunsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Search results.
+	//
+	// Ordered by Run ID ascending; as a result, the Runs will be ordered by LUCI
+	// project in ascending lexicographic order and within each project will be
+	// ordered from newest to oldest.
+	Runs []*Run `protobuf:"bytes,1,rep,name=runs,proto3" json:"runs,omitempty"`
+	// Value for SearchRunsRequest.page_token to continue searching.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+}
+
+func (x *SearchRunsResponse) Reset() {
+	*x = SearchRunsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SearchRunsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchRunsResponse) ProtoMessage() {}
+
+func (x *SearchRunsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchRunsResponse.ProtoReflect.Descriptor instead.
+func (*SearchRunsResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SearchRunsResponse) GetRuns() []*Run {
+	if x != nil {
+		return x.Runs
+	}
+	return nil
+}
+
+func (x *SearchRunsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// A predicate for a SearchRuns query.
+//
+// If a field value is empty, it is ignored, unless stated otherwise.
+type RunPredicate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Limit results to this LUCI project. Required.
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// The Run must include each of these changes.
+	GerritChanges []*GerritChange `protobuf:"bytes,2,rep,name=gerrit_changes,json=gerritChanges,proto3" json:"gerrit_changes,omitempty"`
+}
+
+func (x *RunPredicate) Reset() {
+	*x = RunPredicate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RunPredicate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunPredicate) ProtoMessage() {}
+
+func (x *RunPredicate) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunPredicate.ProtoReflect.Descriptor instead.
+func (*RunPredicate) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *RunPredicate) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *RunPredicate) GetGerritChanges() []*GerritChange {
+	if x != nil {
+		return x.GerritChanges
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_cv_api_v0_service_runs_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDesc = []byte{
@@ -93,13 +285,38 @@ var file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDesc = []byte{
 	0x2f, 0x63, 0x76, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x30, 0x2f, 0x72, 0x75, 0x6e, 0x2e, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x1f, 0x0a, 0x0d, 0x47, 0x65, 0x74, 0x52, 0x75, 0x6e, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x02, 0x69, 0x64, 0x32, 0x32, 0x0a, 0x04, 0x52, 0x75, 0x6e, 0x73, 0x12, 0x2a, 0x0a,
-	0x06, 0x47, 0x65, 0x74, 0x52, 0x75, 0x6e, 0x12, 0x14, 0x2e, 0x63, 0x76, 0x2e, 0x76, 0x30, 0x2e,
-	0x47, 0x65, 0x74, 0x52, 0x75, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0a, 0x2e,
-	0x63, 0x76, 0x2e, 0x76, 0x30, 0x2e, 0x52, 0x75, 0x6e, 0x42, 0x25, 0x5a, 0x23, 0x67, 0x6f, 0x2e,
-	0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63,
-	0x69, 0x2f, 0x63, 0x76, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x30, 0x3b, 0x63, 0x76, 0x70, 0x62,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x09, 0x52, 0x02, 0x69, 0x64, 0x22, 0x82, 0x01, 0x0a, 0x11, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68,
+	0x52, 0x75, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x31, 0x0a, 0x09, 0x70,
+	0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13,
+	0x2e, 0x63, 0x76, 0x2e, 0x76, 0x30, 0x2e, 0x52, 0x75, 0x6e, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63,
+	0x61, 0x74, 0x65, 0x52, 0x09, 0x70, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x1b,
+	0x0a, 0x09, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x05, 0x52, 0x08, 0x70, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x70,
+	0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x09, 0x70, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x5c, 0x0a, 0x12, 0x53, 0x65,
+	0x61, 0x72, 0x63, 0x68, 0x52, 0x75, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x1e, 0x0a, 0x04, 0x72, 0x75, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0a,
+	0x2e, 0x63, 0x76, 0x2e, 0x76, 0x30, 0x2e, 0x52, 0x75, 0x6e, 0x52, 0x04, 0x72, 0x75, 0x6e, 0x73,
+	0x12, 0x26, 0x0a, 0x0f, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f,
+	0x6b, 0x65, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6e, 0x65, 0x78, 0x74, 0x50,
+	0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x64, 0x0a, 0x0c, 0x52, 0x75, 0x6e, 0x50,
+	0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a,
+	0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65,
+	0x63, 0x74, 0x12, 0x3a, 0x0a, 0x0e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x5f, 0x63, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x63, 0x76, 0x2e,
+	0x76, 0x30, 0x2e, 0x47, 0x65, 0x72, 0x72, 0x69, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52,
+	0x0d, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x32, 0x75,
+	0x0a, 0x04, 0x52, 0x75, 0x6e, 0x73, 0x12, 0x2a, 0x0a, 0x06, 0x47, 0x65, 0x74, 0x52, 0x75, 0x6e,
+	0x12, 0x14, 0x2e, 0x63, 0x76, 0x2e, 0x76, 0x30, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x75, 0x6e, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0a, 0x2e, 0x63, 0x76, 0x2e, 0x76, 0x30, 0x2e, 0x52,
+	0x75, 0x6e, 0x12, 0x41, 0x0a, 0x0a, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x75, 0x6e, 0x73,
+	0x12, 0x18, 0x2e, 0x63, 0x76, 0x2e, 0x76, 0x30, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52,
+	0x75, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x63, 0x76, 0x2e,
+	0x76, 0x30, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x75, 0x6e, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x25, 0x5a, 0x23, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f,
+	0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x30, 0x3b, 0x63, 0x76, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -114,19 +331,28 @@ func file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDescGZIP() []byte
 	return file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_go_chromium_org_luci_cv_api_v0_service_runs_proto_goTypes = []interface{}{
-	(*GetRunRequest)(nil), // 0: cv.v0.GetRunRequest
-	(*Run)(nil),           // 1: cv.v0.Run
+	(*GetRunRequest)(nil),      // 0: cv.v0.GetRunRequest
+	(*SearchRunsRequest)(nil),  // 1: cv.v0.SearchRunsRequest
+	(*SearchRunsResponse)(nil), // 2: cv.v0.SearchRunsResponse
+	(*RunPredicate)(nil),       // 3: cv.v0.RunPredicate
+	(*Run)(nil),                // 4: cv.v0.Run
+	(*GerritChange)(nil),       // 5: cv.v0.GerritChange
 }
 var file_go_chromium_org_luci_cv_api_v0_service_runs_proto_depIdxs = []int32{
-	0, // 0: cv.v0.Runs.GetRun:input_type -> cv.v0.GetRunRequest
-	1, // 1: cv.v0.Runs.GetRun:output_type -> cv.v0.Run
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	3, // 0: cv.v0.SearchRunsRequest.predicate:type_name -> cv.v0.RunPredicate
+	4, // 1: cv.v0.SearchRunsResponse.runs:type_name -> cv.v0.Run
+	5, // 2: cv.v0.RunPredicate.gerrit_changes:type_name -> cv.v0.GerritChange
+	0, // 3: cv.v0.Runs.GetRun:input_type -> cv.v0.GetRunRequest
+	1, // 4: cv.v0.Runs.SearchRuns:input_type -> cv.v0.SearchRunsRequest
+	4, // 5: cv.v0.Runs.GetRun:output_type -> cv.v0.Run
+	2, // 6: cv.v0.Runs.SearchRuns:output_type -> cv.v0.SearchRunsResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_api_v0_service_runs_proto_init() }
@@ -148,6 +374,42 @@ func file_go_chromium_org_luci_cv_api_v0_service_runs_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SearchRunsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SearchRunsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_api_v0_service_runs_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RunPredicate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -155,7 +417,7 @@ func file_go_chromium_org_luci_cv_api_v0_service_runs_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_api_v0_service_runs_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
