@@ -39,6 +39,7 @@ var cachedSettingsCfg = cfgcache.Register(&cfgcache.Entry{
 // init registers validation rules.
 func init() {
 	validation.Rules.Add("services/${appid}", settingsCfgFilename, validateSettingsCfg)
+	validation.Rules.Add("regex:projects/.*", "${appid}.cfg", validateProjectCfg)
 }
 
 // validateSettingsCfg implements validation.Func and validates the content of
