@@ -58,7 +58,7 @@ message Acl {
   string identity = 3;
 }
 
-// A set of Acl messages. Can be referenced in a bucket by name.
+// DEPRECATED.
 message AclSet {
   // A name of the ACL set. Required. Must match regex '^[a-z0-9_]+$'.
   string name = 1;
@@ -230,101 +230,7 @@ message Builder {
   // Required, but defaults to deprecated Swarming.hostname.
   string swarming_host = 21;
 
-  // Names of mixins to apply to this builder definition.
-  //
-  // FLATTENING
-  //
-  // Final builder/mixin values are computed as follows:
-  // - start with an empty builder definition.
-  // - if this is a builder, apply values in a bucket's builder_defaults,
-  //   flattened in advance.
-  // - apply each mixin, flattened in advance, in the same order.
-  // - apply values in this builder/mixin.
-  //
-  // EXAMPLE
-  //
-  //   A definition
-  //
-  //     builder_mixins {
-  //       name: "foo"
-  //       dimensions: "os:Linux"
-  //       dimensions: "cpu:x86"
-  //       recipe {
-  //         repository: "https://example.com"
-  //         name: "x"
-  //       }
-  //     }
-  //     builder_mixins {
-  //       name: "bar"
-  //       dimensions: "cores:8"
-  //       dimensions: "cpu:x86-64"
-  //     }
-  //     bucket {
-  //       name: "luci.x.try"
-  //       swarming {
-  //         builders {
-  //           name: "release"
-  //           mixins: "foo"
-  //           mixins: "bar"
-  //           recipe {
-  //             name: "y"
-  //           }
-  //         }
-  //       }
-  //     }
-  //
-  //   is equivalent to
-  //
-  //     bucket {
-  //      name: "luci.x.try"
-  //      swarming {
-  //         builders {
-  //           name: "release"
-  //           dimensions: "os:Linux"
-  //           dimensions: "cpu:x86-64"
-  //           dimensions: "cores:8"
-  //           recipe {
-  //             repository: "https://example.com"
-  //             name: "y"
-  //           }
-  //         }
-  //       }
-  //     }
-  //
-  // A NOTE ON DIAMOND MERGES
-  //
-  // Given
-  //   B mixes in A and overrides some values defined in A
-  //   C mixes in A
-  //   D mixes in B and C
-  // B's overrides won't affect D because D mixes in C after B.
-  //
-  //   builder_mixins {
-  //     name: "A"
-  //     dimensions: "dim:a"
-  //   }
-  //   builder_mixins {
-  //     name: "B"
-  //     mixins: "A"
-  //     dimensions: "dim:b"
-  //   }
-  //   builder_mixins {
-  //     name: "C"
-  //     mixins: "A"
-  //   }
-  //   ...
-  //   builders {
-  //     name: "D"
-  //     mixins: "B"
-  //     mixins: "C"
-  //   }
-  //
-  // D's dim will be "a", not "b" because it is "a" in C which is applied after
-  // B.
-  //
-  // OTHER
-  //
-  // Circular references are prohibited.
+  // DEPRECATED.
   repeated string mixins = 10;
 
   // Builder category. Will be used for visual grouping, for example in Code Review.
@@ -337,19 +243,13 @@ message Builder {
 
   // A requirement for a bot to execute the build.
   //
-  // Supports 3 forms:
-  // - "<key>:" - exclude the defaults for the key.
-  //   Mutually exclusive with other forms.
+  // Supports 2 forms:
   // - "<key>:<value>" - require a bot with this dimension.
   //   This is a shortcut for "0:<key>:<value>", see below.
   // - "<expiration_secs>:<key>:<value>" - wait for up to expiration_secs.
   //   for a bot with the dimension.
   //   Supports multiple values for different keys and expiration_secs.
   //   expiration_secs must be a multiple of 60.
-  //
-  // When merging a set of dimensions S1 into S2, all dimensions in S1 with a
-  // key K replace all dimensions in S2 with K. This logic is used when applying
-  // builder mixins and dimensions specified in a build request.
   //
   // If this builder is defined in a bucket, dimension "pool" is defaulted
   // to the name of the bucket. See Bucket message below.
@@ -544,7 +444,7 @@ message Swarming {
   // https://{swarming_hostname}/user/task/{task_id}
   string url_format = 2;
 
-  // Defines default values for builders.
+  // DEPRECATED.
   Builder builder_defaults = 3;
 
   // Configuration for each builder.
@@ -566,9 +466,7 @@ message Bucket {
   // List of access control rules for the bucket.
   // The order does not matter.
   repeated Acl acls = 2;
-  // A list of ACL set names. Each ACL in each referenced ACL set will be
-  // included in this bucket.
-  // The order does not matter.
+  // DEPRECATED.
   repeated string acl_sets = 4;
   // Buildbucket-swarming integration.
   Swarming swarming = 3;
@@ -578,11 +476,9 @@ message Bucket {
 message BuildbucketCfg {
   // All buckets defined for this project.
   repeated Bucket buckets = 1;
-  // A list of ACL sets. Names must be unique.
+  // DEPRECATED.
   repeated AclSet acl_sets = 2;
-  // A list of builder mixin definitions.
-  // A mixin can be referenced in any builder defined within the BuildbucketCfg.
-  // See also Buider.mixins field.
+  // DEPRECATED.
   repeated Builder builder_mixins = 3;
 }
 

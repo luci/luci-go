@@ -220,7 +220,7 @@ func (x *Acl) GetIdentity() string {
 	return ""
 }
 
-// A set of Acl messages. Can be referenced in a bucket by name.
+// DEPRECATED.
 type AclSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -308,101 +308,7 @@ type Builder struct {
 	// Hostname of the swarming instance, e.g. "chromium-swarm.appspot.com".
 	// Required, but defaults to deprecated Swarming.hostname.
 	SwarmingHost string `protobuf:"bytes,21,opt,name=swarming_host,json=swarmingHost,proto3" json:"swarming_host,omitempty"`
-	// Names of mixins to apply to this builder definition.
-	//
-	// FLATTENING
-	//
-	// Final builder/mixin values are computed as follows:
-	// - start with an empty builder definition.
-	// - if this is a builder, apply values in a bucket's builder_defaults,
-	//   flattened in advance.
-	// - apply each mixin, flattened in advance, in the same order.
-	// - apply values in this builder/mixin.
-	//
-	// EXAMPLE
-	//
-	//   A definition
-	//
-	//     builder_mixins {
-	//       name: "foo"
-	//       dimensions: "os:Linux"
-	//       dimensions: "cpu:x86"
-	//       recipe {
-	//         repository: "https://example.com"
-	//         name: "x"
-	//       }
-	//     }
-	//     builder_mixins {
-	//       name: "bar"
-	//       dimensions: "cores:8"
-	//       dimensions: "cpu:x86-64"
-	//     }
-	//     bucket {
-	//       name: "luci.x.try"
-	//       swarming {
-	//         builders {
-	//           name: "release"
-	//           mixins: "foo"
-	//           mixins: "bar"
-	//           recipe {
-	//             name: "y"
-	//           }
-	//         }
-	//       }
-	//     }
-	//
-	//   is equivalent to
-	//
-	//     bucket {
-	//      name: "luci.x.try"
-	//      swarming {
-	//         builders {
-	//           name: "release"
-	//           dimensions: "os:Linux"
-	//           dimensions: "cpu:x86-64"
-	//           dimensions: "cores:8"
-	//           recipe {
-	//             repository: "https://example.com"
-	//             name: "y"
-	//           }
-	//         }
-	//       }
-	//     }
-	//
-	// A NOTE ON DIAMOND MERGES
-	//
-	// Given
-	//   B mixes in A and overrides some values defined in A
-	//   C mixes in A
-	//   D mixes in B and C
-	// B's overrides won't affect D because D mixes in C after B.
-	//
-	//   builder_mixins {
-	//     name: "A"
-	//     dimensions: "dim:a"
-	//   }
-	//   builder_mixins {
-	//     name: "B"
-	//     mixins: "A"
-	//     dimensions: "dim:b"
-	//   }
-	//   builder_mixins {
-	//     name: "C"
-	//     mixins: "A"
-	//   }
-	//   ...
-	//   builders {
-	//     name: "D"
-	//     mixins: "B"
-	//     mixins: "C"
-	//   }
-	//
-	// D's dim will be "a", not "b" because it is "a" in C which is applied after
-	// B.
-	//
-	// OTHER
-	//
-	// Circular references are prohibited.
+	// DEPRECATED.
 	Mixins []string `protobuf:"bytes,10,rep,name=mixins,proto3" json:"mixins,omitempty"`
 	// Builder category. Will be used for visual grouping, for example in Code Review.
 	Category string `protobuf:"bytes,6,opt,name=category,proto3" json:"category,omitempty"`
@@ -412,19 +318,13 @@ type Builder struct {
 	SwarmingTags []string `protobuf:"bytes,2,rep,name=swarming_tags,json=swarmingTags,proto3" json:"swarming_tags,omitempty"`
 	// A requirement for a bot to execute the build.
 	//
-	// Supports 3 forms:
-	// - "<key>:" - exclude the defaults for the key.
-	//   Mutually exclusive with other forms.
+	// Supports 2 forms:
 	// - "<key>:<value>" - require a bot with this dimension.
 	//   This is a shortcut for "0:<key>:<value>", see below.
 	// - "<expiration_secs>:<key>:<value>" - wait for up to expiration_secs.
 	//   for a bot with the dimension.
 	//   Supports multiple values for different keys and expiration_secs.
 	//   expiration_secs must be a multiple of 60.
-	//
-	// When merging a set of dimensions S1 into S2, all dimensions in S1 with a
-	// key K replace all dimensions in S2 with K. This logic is used when applying
-	// builder mixins and dimensions specified in a build request.
 	//
 	// If this builder is defined in a bucket, dimension "pool" is defaulted
 	// to the name of the bucket. See Bucket message below.
@@ -818,7 +718,7 @@ type Swarming struct {
 	// {swarming_hostname}, {task_id}, {bucket} and {builder}. Defaults to:
 	// https://{swarming_hostname}/user/task/{task_id}
 	UrlFormat string `protobuf:"bytes,2,opt,name=url_format,json=urlFormat,proto3" json:"url_format,omitempty"`
-	// Defines default values for builders.
+	// DEPRECATED.
 	BuilderDefaults *Builder `protobuf:"bytes,3,opt,name=builder_defaults,json=builderDefaults,proto3" json:"builder_defaults,omitempty"`
 	// Configuration for each builder.
 	// Swarming tasks are created only for builds for builders that are not
@@ -909,9 +809,7 @@ type Bucket struct {
 	// List of access control rules for the bucket.
 	// The order does not matter.
 	Acls []*Acl `protobuf:"bytes,2,rep,name=acls,proto3" json:"acls,omitempty"`
-	// A list of ACL set names. Each ACL in each referenced ACL set will be
-	// included in this bucket.
-	// The order does not matter.
+	// DEPRECATED.
 	AclSets []string `protobuf:"bytes,4,rep,name=acl_sets,json=aclSets,proto3" json:"acl_sets,omitempty"`
 	// Buildbucket-swarming integration.
 	Swarming *Swarming `protobuf:"bytes,3,opt,name=swarming,proto3" json:"swarming,omitempty"`
@@ -985,11 +883,9 @@ type BuildbucketCfg struct {
 
 	// All buckets defined for this project.
 	Buckets []*Bucket `protobuf:"bytes,1,rep,name=buckets,proto3" json:"buckets,omitempty"`
-	// A list of ACL sets. Names must be unique.
+	// DEPRECATED.
 	AclSets []*AclSet `protobuf:"bytes,2,rep,name=acl_sets,json=aclSets,proto3" json:"acl_sets,omitempty"`
-	// A list of builder mixin definitions.
-	// A mixin can be referenced in any builder defined within the BuildbucketCfg.
-	// See also Buider.mixins field.
+	// DEPRECATED.
 	BuilderMixins []*Builder `protobuf:"bytes,3,rep,name=builder_mixins,json=builderMixins,proto3" json:"builder_mixins,omitempty"`
 }
 
