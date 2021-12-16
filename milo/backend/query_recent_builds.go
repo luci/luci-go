@@ -44,6 +44,11 @@ var queryRecentBuildsPageSize = PageSizeLimiter{
 func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb.QueryRecentBuildsRequest) (_ *milopb.QueryRecentBuildsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 
+	// TODO(weiweilin): Re-enable the RPC after the ACL is fixed.
+	if true {
+		return nil, appstatus.Error(codes.Unavailable, "RPC unavailable")
+	}
+
 	// Validate request.
 	err = validatesQueryRecentBuildsRequest(req)
 	if err != nil {
