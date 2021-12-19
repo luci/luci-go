@@ -49,6 +49,9 @@ service MiloInternal {
 
   // Retrieves a list of builders in a project or a builder group.
   rpc ListBuilders(ListBuildersRequest) returns (ListBuildersResponse) {};
+
+  // Get the statistics associated with a builder.
+  rpc QueryBuilderStats(QueryBuilderStatsRequest) returns (BuilderStats) {};
 }
 
 // A request message for `QueryBlamelist` RPC.
@@ -210,4 +213,22 @@ message ListBuildersPageToken {
   //
   // Should not coexist with `NextBuildbucketPageToken`.
   int32 next_milo_builder_index = 2;
+}
+
+// A request message for `QueryBuilderStats` RPC.
+message QueryBuilderStatsRequest {
+  // The builder to query the stats from.
+  buildbucket.v2.BuilderID builder = 1;
+}
+
+// A message that contains some basic stats of a builder.
+message BuilderStats {
+  // The builder that the stats belongs to.
+  buildbucket.v2.BuilderID builder = 1;
+
+  // The number of pending builds associated with the builder.
+  int32 pending_builds_count = 2;
+
+  // The number of running builds associated with the builder.
+  int32 running_builds_count = 3;
 }
