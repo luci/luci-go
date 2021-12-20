@@ -499,7 +499,7 @@ export class OverviewTabElement extends MobxLitElement {
         }}
       >
         <mwc-textarea id="cancel-reason" label="Reason" required></mwc-textarea>
-        <mwc-button slot="primaryAction" dialogAction="cancel" dense unelevated>Cancel</mwc-button>
+        <mwc-button slot="primaryAction" dialogAction="cancel" dense unelevated>Confirm</mwc-button>
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
       </mwc-dialog>
       <div id="main">
