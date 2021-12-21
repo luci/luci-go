@@ -151,12 +151,15 @@ func (t *Test) SetUp() (context.Context, func()) {
 		cancelTimed()
 	})
 
+	// setup the test clock first so that logger can use test clock timestamp.
 	ctx = t.setUpTestClock(ctx)
-	// TODO(tandrii): make this logger emit testclock-based timestamps.
 	if testing.Verbose() {
+		// TODO(crbug/1282023): make this logger emit testclock-based timestamps.
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 	}
-
+	// setup timerCallback after setup logger so that the logging in the
+	// callback function can honor the verbose mode.
+	ctx = t.setTestClockTimerCB(ctx)
 	ctx = caching.WithEmptyProcessCache(ctx)
 	ctx = SetUpSecrets(ctx)
 
@@ -444,8 +447,6 @@ func maybeCleanupOldDSNamespaces(ctx context.Context) {
 }
 
 // setUpTestClock simulates passage of time w/o idling CPU.
-//
-// Moving test time forward if something we recognize waits for it.
 func (t *Test) setUpTestClock(ctx context.Context) context.Context {
 	if t.Clock != nil {
 		return clock.Set(ctx, t.Clock)
@@ -456,7 +457,12 @@ func (t *Test) setUpTestClock(ctx context.Context) context.Context {
 	now := time.Date(2020, time.February, 2, 13, 30, 00, 0, time.FixedZone("Fake local", 3*60*60))
 	So(now.Equal(utc), ShouldBeTrue)
 	ctx, t.Clock = testclock.UseTime(ctx, now)
+	return ctx
+}
 
+// setTestClockTimerCB moves test time forward if something we recognize waits
+// for it.
+func (t *Test) setTestClockTimerCB(ctx context.Context) context.Context {
 	// Testclock calls this callback every time something is waiting.
 	// To avoid getting stuck tests, we need to move testclock forward by the
 	// requested duration in most cases but not all.

@@ -18,8 +18,8 @@ import (
 	"errors"
 )
 
-// errCancelHonored is used inside this package to differentiate graceful honoring
-// of request to cancel the long operation from other error conditions.
+// errCancelHonored is used inside this package to differentiate graceful
+// honoring of request to cancel the long operation from other error conditions.
 //
 // It must never be returned outside this package.
 var errCancelHonored = errors.New("cancel request was honored")

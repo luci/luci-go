@@ -138,6 +138,12 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 			Env:      rm.env,
 			GFactory: rm.gFactory,
 		}
+	case *run.OngoingLongOps_Op_CancelTriggers:
+		action = &longops.CancelTriggersOp{
+			Base:              opBase,
+			GFactory:          rm.gFactory,
+			CancelConcurrency: 8,
+		}
 	default:
 		logging.Errorf(ctx, "unknown LongOp work %T", w)
 		// Fail task quickly for backwards compatibility in case of a rollback during

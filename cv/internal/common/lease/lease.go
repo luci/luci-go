@@ -63,15 +63,13 @@ type Application struct {
 }
 
 func (a *Application) validate(ctx context.Context) error {
-	switch now := clock.Now(ctx); {
+	switch {
 	case a == nil:
 		return errors.Reason("nil lease application").Err()
 	case !a.ResourceID.isValid():
 		return errors.Reason("invalid ResourceID: %q", a.ResourceID).Err()
 	case a.Holder == "":
 		return errors.Reason("empty lease Holder").Err()
-	case now.After(a.ExpireTime.Truncate(time.Millisecond)):
-		return errors.Reason("expect ExpireTime: %s larger than now: %s", a.ExpireTime.Truncate(time.Millisecond), now).Err()
 	}
 	return nil
 }
