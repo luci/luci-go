@@ -15,25 +15,30 @@
 package common
 
 import (
+	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-// Time2PBNillable is like timestamppb.New() but returns nil on zero time.
-func Time2PBNillable(t time.Time) *timestamppb.Timestamp {
-	if t.IsZero() {
-		return nil
-	}
-	return timestamppb.New(t)
-}
+func TestPB2Time(t *testing.T) {
+	t.Parallel()
 
-// PB2TimeNillable is the opposite of Time2PBNillable.
-//
-// ie same as pb.AsTime() but returns zero time if pb is nil.
-func PB2TimeNillable(pb *timestamppb.Timestamp) time.Time {
-	if pb == nil {
-		return time.Time{}
-	}
-	return pb.AsTime()
+	Convey("RoundTrip", t, func() {
+		Convey("Specified", func() {
+			t := testclock.TestRecentTimeUTC
+			pb := Time2PBNillable(t)
+			So(pb, ShouldResembleProto, Time2PBNillable(t))
+			So(pb, ShouldResembleProto, timestamppb.New(t))
+			So(PB2TimeNillable(pb), ShouldEqual, t)
+		})
+		Convey("Zero / nil", func() {
+			So(PB2TimeNillable(nil), ShouldEqual, time.Time{})
+			So(Time2PBNillable(time.Time{}), ShouldBeNil)
+		})
+	})
 }

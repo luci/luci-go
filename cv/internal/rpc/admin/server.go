@@ -167,7 +167,7 @@ func (a *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjec
 		resp.Logs[i] = &adminpb.ProjectLog{
 			Eversion:   l.EVersion,
 			State:      l.State,
-			UpdateTime: common.TspbNillable(l.UpdateTime),
+			UpdateTime: common.Time2PBNillable(l.UpdateTime),
 			Reasons:    &prjpb.LogReasons{Reasons: l.Reasons},
 		}
 	}
@@ -649,10 +649,10 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		Eversion:            r.EVersion,
 		Mode:                string(r.Mode),
 		Status:              r.Status,
-		CreateTime:          common.TspbNillable(r.CreateTime),
-		StartTime:           common.TspbNillable(r.StartTime),
-		UpdateTime:          common.TspbNillable(r.UpdateTime),
-		EndTime:             common.TspbNillable(r.EndTime),
+		CreateTime:          common.Time2PBNillable(r.CreateTime),
+		StartTime:           common.Time2PBNillable(r.StartTime),
+		UpdateTime:          common.Time2PBNillable(r.UpdateTime),
+		EndTime:             common.Time2PBNillable(r.EndTime),
 		Owner:               string(r.Owner),
 		ConfigGroupId:       string(r.ConfigGroupID),
 		Cls:                 common.CLIDsAsInt64s(r.CLs),
@@ -662,7 +662,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		Tryjobs:             r.Tryjobs,
 		OngoingLongOps:      r.OngoingLongOps,
 		Submission:          r.Submission,
-		LatestClsRefresh:    common.TspbNillable(r.LatestCLsRefresh),
+		LatestClsRefresh:    common.Time2PBNillable(r.LatestCLsRefresh),
 
 		LogEntries: logEntries,
 		Events:     events,
