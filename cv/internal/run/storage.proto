@@ -360,6 +360,11 @@ message OngoingLongOps {
         string add_to_attention_reason = 5;
       }
       repeated Request requests = 1;
+      // The status Run will transition to if all triggers are successfully
+      // cancelled.
+      //
+      // Must be one of the terminal statues.
+      Status run_status_if_succeeded = 2;
     }
 
     oneof work {

@@ -137,7 +137,7 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 	case eventpb.LongOpCompleted_SUCCEEDED:
 		// TODO(tandrii): simplify once all such events have timestamp.
 		if t := result.GetPostStartMessage().GetTime(); t != nil {
-			rs.LogInfoAt(logEntryLabelPostStartMessage, "posted start message on each CL", t.AsTime())
+			rs.LogInfoAt(t.AsTime(), logEntryLabelPostStartMessage, "posted start message on each CL")
 		} else {
 			rs.LogInfo(ctx, logEntryLabelPostStartMessage, "posted start message on each CL")
 		}

@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/tree"
@@ -162,14 +163,9 @@ func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error)
 // The actual long operation will be scheduled transactioncally with the Run
 // mutation.
 func (rs *RunState) EnqueueLongOp(op *run.OngoingLongOps_Op) string {
-	// Validate request.
-	switch {
-	case op.GetDeadline() == nil:
-		panic(fmt.Errorf("deadline is required"))
-	case op.GetWork() == nil:
-		panic(fmt.Errorf("work is required"))
+	if err := validateLongOp(op); err != nil {
+		panic(err)
 	}
-
 	// Find an ID which wasn't used yet.
 	// Use future EVersion as a prefix to ensure resulting ID is unique over Run's
 	// lifetime.
@@ -197,9 +193,23 @@ func (rs *RunState) EnqueueLongOp(op *run.OngoingLongOps_Op) string {
 	return id
 }
 
+func validateLongOp(op *run.OngoingLongOps_Op) error {
+	switch {
+	case op.GetDeadline() == nil:
+		return errors.New("deadline is required")
+	case op.GetWork() == nil:
+		return errors.New("work is required")
+	case op.GetCancelTriggers() != nil && run.IsEnded(op.GetCancelTriggers().GetRunStatusIfSucceeded()):
+		if targetStatus := op.GetCancelTriggers().GetRunStatusIfSucceeded(); run.IsEnded(targetStatus) {
+			return errors.Reason("expect terminal run status; got %s", targetStatus).Err()
+		}
+	}
+	return nil
+}
+
 // RequestLongOpCancellation records soft request to cancel a long running op.
 //
-// This request is asynchroneous but it's stored in the Run state.
+// This request is asynchronous but it's stored in the Run state.
 func (rs *RunState) RequestLongOpCancellation(opID string) {
 	if _, exists := rs.OngoingLongOps.GetOps()[opID]; !exists {
 		panic(fmt.Errorf("long Operation %q doesn't exist", opID))
@@ -227,11 +237,17 @@ func (rs *RunState) RemoveCompletedLongOp(opID string) {
 // Don't use for adding a complicated info formatted into the message string,
 // use a specialized LogEntry type instead.
 func (rs *RunState) LogInfo(ctx context.Context, label, message string) {
-	rs.LogInfoAt(label, message, clock.Now(ctx))
+	rs.LogInfoAt(clock.Now(ctx), label, message)
+}
+
+// LogInfof is like LogInfo but formats the message according to format
+// specifier.
+func (rs *RunState) LogInfof(ctx context.Context, label, format string, args ...interface{}) {
+	rs.LogInfo(ctx, label, fmt.Sprintf(format, args...))
 }
 
 // LogInfoAt is LogInfo with a custom timestamp.
-func (rs *RunState) LogInfoAt(label, message string, at time.Time) {
+func (rs *RunState) LogInfoAt(at time.Time, label, message string) {
 	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 		Time: timestamppb.New(at),
 		Kind: &run.LogEntry_Info_{
@@ -241,4 +257,10 @@ func (rs *RunState) LogInfoAt(label, message string, at time.Time) {
 			},
 		},
 	})
+}
+
+// LogInfofAt is like LogInfoAt but formats the message according to format
+// specifier.
+func (rs *RunState) LogInfofAt(at time.Time, label, format string, args ...interface{}) {
+	rs.LogInfoAt(at, label, fmt.Sprintf(format, args...))
 }

@@ -42,6 +42,10 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		panic(err)
 	case status == run.Status_SUBMITTING:
 		return &Result{State: rs, PreserveEvents: true}, nil
+	case isTriggersCancellationOngoing(rs):
+		// It's likely CL is updated due to trigger cancellation, defer the process
+		// of CLsUpdated event till triggers cancellation is done.
+		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "skipping OnCLUpdated because Run is %s", status)
 		return &Result{State: rs}, nil
@@ -147,4 +151,13 @@ func hasTriggerChanged(old, cur *run.Trigger, clURL string) string {
 		// user is not taken into account during ID generation.
 		return ""
 	}
+}
+
+func isTriggersCancellationOngoing(rs *state.RunState) bool {
+	for _, op := range rs.OngoingLongOps.GetOps() {
+		if op.GetCancelTriggers() != nil {
+			return true
+		}
+	}
+	return false
 }

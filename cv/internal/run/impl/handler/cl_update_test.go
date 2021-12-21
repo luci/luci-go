@@ -153,6 +153,30 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(res.PreserveEvents, ShouldBeTrue)
 		})
 
+		Convey("Preserve events for if trigger cancellation is ongoing", func() {
+			rs.OngoingLongOps = &run.OngoingLongOps{
+				Ops: map[string]*run.OngoingLongOps_Op{
+					"op_id": {
+						Work: &run.OngoingLongOps_Op_CancelTriggers{
+							CancelTriggers: &run.OngoingLongOps_Op_TriggersCancellation{
+								Requests: []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+									{
+										Clid:    1,
+										Message: "no perimission to Run",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
+			So(err, ShouldBeNil)
+			So(res.State, ShouldEqual, rs)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeTrue)
+		})
+
 		runAndVerifyCancelled := func(reason string) {
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)

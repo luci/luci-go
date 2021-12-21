@@ -1,0 +1,233 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package handler
+
+import (
+	"fmt"
+	"testing"
+	"time"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
+
+	. "github.com/smartystreets/goconvey/convey"
+)
+
+func TestOnCompletedCancelTriggers(t *testing.T) {
+	t.Parallel()
+
+	Convey("TestOnCompletedCancelTriggers works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject = "chromium"
+			gHost    = "example-review.googlesource.com"
+			opID     = "1-1"
+		)
+
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "single"}}})
+
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:            lProject + "/1111111111111-1-deadbeef",
+				Status:        run.Status_RUNNING,
+				Mode:          run.DryRun,
+				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				OngoingLongOps: &run.OngoingLongOps{
+					Ops: map[string]*run.OngoingLongOps_Op{
+						opID: {
+							Work: &run.OngoingLongOps_Op_CancelTriggers{
+								CancelTriggers: &run.OngoingLongOps_Op_TriggersCancellation{
+									Requests: []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+										{Clid: 1},
+									},
+									RunStatusIfSucceeded: run.Status_SUCCEEDED,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		result := &eventpb.LongOpCompleted{
+			OperationId: opID,
+		}
+		now := ct.Clock.Now()
+		h, _ := makeTestHandler(&ct)
+
+		assertHasLogEntry := func(rs *state.RunState, target *run.LogEntry) {
+			for _, le := range rs.LogEntries {
+				if proto.Equal(target, le) {
+					return
+				}
+			}
+			So(fmt.Sprintf("log entry is missing: %s", target), ShouldBeEmpty)
+		}
+
+		Convey("on expiration", func() {
+			result.Status = eventpb.LongOpCompleted_EXPIRED
+			res, err := h.OnLongOpCompleted(ctx, rs, result)
+			So(err, ShouldBeNil)
+			So(res.State.Status, ShouldEqual, run.Status_FAILED)
+			So(res.State.OngoingLongOps, ShouldBeNil)
+			assertHasLogEntry(res.State, &run.LogEntry{
+				Time: timestamppb.New(now),
+				Kind: &run.LogEntry_Info_{
+					Info: &run.LogEntry_Info{
+						Label:   logEntryLabelTriggerCancellation,
+						Message: fmt.Sprintf("failed to cancel the triggers of CLs within the %s deadline", maxTriggersCancellationDuration),
+					},
+				},
+			})
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+		})
+
+		Convey("on failure", func() {
+			result.Status = eventpb.LongOpCompleted_FAILED
+			result.Result = &eventpb.LongOpCompleted_CancelTriggers_{
+				CancelTriggers: &eventpb.LongOpCompleted_CancelTriggers{
+					Results: []*eventpb.LongOpCompleted_CancelTriggers_Result{
+						{
+							Id:         1,
+							ExternalId: string(changelist.MustGobID(gHost, 111)),
+							Detail: &eventpb.LongOpCompleted_CancelTriggers_Result_FailureInfo{
+								FailureInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Failure{
+									FailureMessage: "no permission to vote",
+								},
+							},
+						},
+					},
+				},
+			}
+			res, err := h.OnLongOpCompleted(ctx, rs, result)
+			So(err, ShouldBeNil)
+			So(res.State.Status, ShouldEqual, run.Status_FAILED)
+			So(res.State.OngoingLongOps, ShouldBeNil)
+			assertHasLogEntry(res.State, &run.LogEntry{
+				Time: timestamppb.New(now),
+				Kind: &run.LogEntry_Info_{
+					Info: &run.LogEntry_Info{
+						Label:   logEntryLabelTriggerCancellation,
+						Message: "failed to cancel the trigger of change https://example-review.googlesource.com/c/111. Reason: no permission to vote",
+					},
+				},
+			})
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+		})
+
+		Convey("on success", func() {
+			result.Status = eventpb.LongOpCompleted_SUCCEEDED
+			result.Result = &eventpb.LongOpCompleted_CancelTriggers_{
+				CancelTriggers: &eventpb.LongOpCompleted_CancelTriggers{
+					Results: []*eventpb.LongOpCompleted_CancelTriggers_Result{
+						{
+							Id:         1,
+							ExternalId: string(changelist.MustGobID(gHost, 111)),
+							Detail: &eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo{
+								SuccessInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Success{
+									CancelledAt: timestamppb.New(now.Add(-1 * time.Minute)),
+								},
+							},
+						},
+					},
+				},
+			}
+			res, err := h.OnLongOpCompleted(ctx, rs, result)
+			So(err, ShouldBeNil)
+			So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
+			So(res.State.OngoingLongOps, ShouldBeNil)
+			assertHasLogEntry(res.State, &run.LogEntry{
+				Time: timestamppb.New(now.Add(-1 * time.Minute)),
+				Kind: &run.LogEntry_Info_{
+					Info: &run.LogEntry_Info{
+						Label:   logEntryLabelTriggerCancellation,
+						Message: "successfully cancelled the trigger of change https://example-review.googlesource.com/c/111",
+					},
+				},
+			})
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+		})
+
+		Convey("on partial failure", func() {
+			result.Status = eventpb.LongOpCompleted_FAILED
+			rs.OngoingLongOps.GetOps()[opID].GetCancelTriggers().Requests =
+				[]*run.OngoingLongOps_Op_TriggersCancellation_Request{
+					{Clid: 1},
+					{Clid: 2},
+				}
+			result.Result = &eventpb.LongOpCompleted_CancelTriggers_{
+				CancelTriggers: &eventpb.LongOpCompleted_CancelTriggers{
+					Results: []*eventpb.LongOpCompleted_CancelTriggers_Result{
+						{
+							Id:         1,
+							ExternalId: string(changelist.MustGobID(gHost, 111)),
+							Detail: &eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo{
+								SuccessInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Success{
+									CancelledAt: timestamppb.New(now.Add(-1 * time.Minute)),
+								},
+							},
+						},
+						{
+							Id:         2,
+							ExternalId: string(changelist.MustGobID(gHost, 222)),
+							Detail: &eventpb.LongOpCompleted_CancelTriggers_Result_FailureInfo{
+								FailureInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Failure{
+									FailureMessage: "no permission to vote",
+								},
+							},
+						},
+					},
+				},
+			}
+			res, err := h.OnLongOpCompleted(ctx, rs, result)
+			So(err, ShouldBeNil)
+			So(res.State.Status, ShouldEqual, run.Status_FAILED)
+			So(res.State.OngoingLongOps, ShouldBeNil)
+			assertHasLogEntry(res.State, &run.LogEntry{
+				Time: timestamppb.New(now.Add(-1 * time.Minute)),
+				Kind: &run.LogEntry_Info_{
+					Info: &run.LogEntry_Info{
+						Label:   logEntryLabelTriggerCancellation,
+						Message: "successfully cancelled the trigger of change https://example-review.googlesource.com/c/111",
+					},
+				},
+			})
+			assertHasLogEntry(res.State, &run.LogEntry{
+				Time: timestamppb.New(now),
+				Kind: &run.LogEntry_Info_{
+					Info: &run.LogEntry_Info{
+						Label:   logEntryLabelTriggerCancellation,
+						Message: "failed to cancel the trigger of change https://example-review.googlesource.com/c/222. Reason: no permission to vote",
+					},
+				},
+			})
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+		})
+	})
+}
