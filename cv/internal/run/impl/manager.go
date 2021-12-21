@@ -292,6 +292,10 @@ type triageResult struct {
 		events  eventbox.Events
 		results []*eventpb.LongOpCompleted
 	}
+	tryjobUpdatedEvents struct {
+		events  eventbox.Events
+		tryjobs common.TryjobIDs
+	}
 	cqdVerificationCompletedEvents eventbox.Events
 	cqdTryjobsUpdated              eventbox.Events
 	nextReadyEventTime             time.Time
@@ -354,6 +358,11 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 	case *eventpb.Event_LongOpCompleted:
 		tr.longOpCompleted.events = append(tr.longOpCompleted.events, item)
 		tr.longOpCompleted.results = append(tr.longOpCompleted.results, e.GetLongOpCompleted())
+	case *eventpb.Event_TryjobsUpdated:
+		tr.tryjobUpdatedEvents.events = append(tr.tryjobUpdatedEvents.events, item)
+		for _, evt := range e.GetTryjobsUpdated().GetEvents() {
+			tr.tryjobUpdatedEvents.tryjobs = append(tr.tryjobUpdatedEvents.tryjobs, common.TryjobID(evt.GetTryjobId()))
+		}
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -399,7 +408,13 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.clUpdatedEvents.events, transitions)
 	}
-
+	if len(tr.tryjobUpdatedEvents.events) > 0 {
+		res, err := rp.handler.OnTryjobsUpdated(ctx, rs, tr.tryjobUpdatedEvents.tryjobs)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.tryjobUpdatedEvents.events, transitions)
+	}
 	if len(tr.cqdTryjobsUpdated) > 0 {
 		res, err := rp.handler.OnCQDTryjobsUpdated(ctx, rs)
 		if err != nil {

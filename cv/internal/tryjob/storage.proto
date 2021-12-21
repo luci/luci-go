@@ -210,3 +210,13 @@ message ExecutionState {
   // currently executing.
   int32 requirements_version = 2;
 }
+
+// TryjobUpdatedEvent describes which Tryjob entity is updated.
+message TryjobUpdatedEvent {
+  int64 tryjob_id = 1;
+}
+
+// TryjobUpdatedEvents is a batch of TryjobUpdatedEvent.
+message TryjobUpdatedEvents {
+  repeated TryjobUpdatedEvent events = 1;
+}

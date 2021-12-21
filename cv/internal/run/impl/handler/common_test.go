@@ -315,6 +315,16 @@ func (t *testHandler) OnLongOpCompleted(ctx context.Context, rs *state.RunState,
 	return res, err
 }
 
+func (t *testHandler) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryjobs common.TryjobIDs) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.OnTryjobsUpdated(ctx, rs, tryjobs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
 func (t *testHandler) TryResumeSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
 	initialCopy := rs.DeepCopy()
 	res, err := t.inner.TryResumeSubmission(ctx, rs)

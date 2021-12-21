@@ -40,7 +40,7 @@ type updaterBackend interface {
 
 // rmNotifier abstracts out Run Manager notifier.
 type rmNotifier interface {
-	NotifyTryjobUpdated(context.Context, common.RunID, common.TryjobID, int64)
+	NotifyTryjobsUpdated(context.Context, common.RunID, TryjobUpdatedEvents)
 }
 
 // Updater knows how to update Tryjobs, notifying other CV parts as needed.

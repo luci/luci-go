@@ -56,6 +56,7 @@ type Handler interface {
 	OnCLsUpdated(context.Context, *state.RunState, common.CLIDs) (*Result, error)
 
 	// UpdateConfig updates Run's config if possible.
+	//
 	// If Run is no longer viable, cancels the Run.
 	UpdateConfig(context.Context, *state.RunState, string) (*Result, error)
 
@@ -82,6 +83,9 @@ type Handler interface {
 
 	// OnLongOpCompleted proceses results of the completed long operation.
 	OnLongOpCompleted(ctx context.Context, rs *state.RunState, result *eventpb.LongOpCompleted) (*Result, error)
+
+	// OnTryjobsUpdated decides the next step for the given tryjobs and the run.
+	OnTryjobsUpdated(context.Context, *state.RunState, common.TryjobIDs) (*Result, error)
 
 	// TryResumeSubmission resumes not-yet-expired submission if the current task
 	// is a retry of the submission task.

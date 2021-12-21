@@ -28,11 +28,17 @@ import (
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
+
+// OnTryjobsUpdated implements Handler interface.
+func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryjobs common.TryjobIDs) (*Result, error) {
+	return nil, errors.New("not implemented")
+}
 
 // OnCQDTryjobsUpdated implements Handler interface.
 func (impl *Impl) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (*Result, error) {

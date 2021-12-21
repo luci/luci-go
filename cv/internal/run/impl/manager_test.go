@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -138,6 +139,29 @@ func TestRunManager(t *testing.T) {
 					})
 				},
 				"OnCLsUpdated",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_TryjobsUpdated{
+						TryjobsUpdated: &tryjob.TryjobUpdatedEvents{
+							Events: []*tryjob.TryjobUpdatedEvent{
+								{TryjobId: 10},
+							},
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.SendNow(ctx, runID, &eventpb.Event{
+						Event: &eventpb.Event_TryjobsUpdated{
+							TryjobsUpdated: &tryjob.TryjobUpdatedEvents{
+								Events: []*tryjob.TryjobUpdatedEvent{
+									{TryjobId: 10},
+								},
+							},
+						},
+					})
+				},
+				"OnTryjobsUpdated",
 			},
 			{
 				&eventpb.Event{
@@ -497,6 +521,15 @@ func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunS
 
 func (fh *fakeHandler) OnLongOpCompleted(ctx context.Context, rs *state.RunState, result *eventpb.LongOpCompleted) (*handler.Result, error) {
 	fh.addInvocation("OnLongOpCompleted")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
+	}, nil
+}
+
+func (fh *fakeHandler) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryjobs common.TryjobIDs) (*handler.Result, error) {
+	fh.addInvocation("OnTryjobsUpdated")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

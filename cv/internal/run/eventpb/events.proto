@@ -21,11 +21,13 @@ option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+import "go.chromium.org/luci/cv/internal/tryjob/storage.proto";
 import "go.chromium.org/luci/cv/internal/run/eventpb/longop.proto";
 import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
 
 // Event is a container for all kinds of events a Run Manager can receive.
 message Event {
+  // Next tag: 12
   oneof event {
     // On Start event, Run Manager will start the Run.
     //
@@ -59,9 +61,10 @@ message Event {
     // On LongOpCompleted event is sent by Run Manager to itself to mark
     // completion of a long operation.
     LongOpCompleted long_op_completed = 10;
-
-    // TODO(yiwzhang): Define following events that Run Manager may receive:
-    //  * TryjobUpdated
+    // On tryjobs_updated event, Run Manager decides the next step for those
+    // tryjobs (e.g. retry) and this Run (e.g. fail the Run for critical
+    // tryjob failure).
+    cv.internal.tryjob.TryjobUpdatedEvents tryjobs_updated = 11;
 
     // On CQDVerificationCompleted event, Run Manager will finalize the Run.
     //
