@@ -1,0 +1,19 @@
+{
+    "id": "8827882239020532625",
+    "builder": {
+        "project": "infra",
+        "bucket": "try",
+        "builder": "luci-go-try-bionic-64"
+    },
+    "createTime": "2021-12-14T09:01:02.595160611Z",
+    "updateTime": "2021-12-14T09:01:50.347934256Z",
+    "status": "FAILURE",
+    "output": {
+        "properties": {
+            "$recipe_engine/cq/output": "{\"retry\": \"OUTPUT_RETRY_ALLOWED\"}",
+            "do_not_retry": 980,
+            "failure_type": {"this": "should not be an object"},
+            "triggered_build_ids": "8832715138311111281"
+        }
+    }
+}

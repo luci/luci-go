@@ -1,0 +1,22 @@
+{
+    "id": "8831019329452572449",
+    "builder": {
+        "project": "cq-test",
+        "bucket": "try",
+        "builder": "reuse-own-mode-only"
+    },
+    "createTime": "2021-11-09T17:58:20.021310402Z",
+    "updateTime": "2021-11-09T17:59:23.643305501Z",
+    "status": "SUCCESS",
+    "output": {
+        "properties": {
+            "$recipe_engine/cq/output": {
+                "reuse": [
+                    {
+                        "modeRegexp": "DRY_RUN"
+                    }
+                ]
+            }
+        }
+    }
+}

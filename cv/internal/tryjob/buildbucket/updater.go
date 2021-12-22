@@ -22,7 +22,9 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/structmask"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
@@ -40,7 +42,7 @@ func (u *Updater) Kind() string {
 	return "buildbucket"
 }
 
-var tryjobBuildMask = &bbpb.BuildMask{
+var TryjobBuildMask = &bbpb.BuildMask{
 	Fields: &fieldmaskpb.FieldMask{
 		Paths: []string{"id", "status", "output.properties", "create_time", "update_time"},
 	},
@@ -69,20 +71,14 @@ func (u *Updater) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Stat
 		return 0, nil, err
 	}
 
-	build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID, Mask: tryjobBuildMask})
+	build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID, Mask: TryjobBuildMask})
 	if err != nil {
 		return 0, nil, err
 	}
-	return toTryjobStatusAndResult(build)
+	return toTryjobStatusAndResult(ctx, build)
 }
 
-func parseProperties(*bbpb.Build) (*recipe.Output, error) {
-	// TODO(crbug.com/1278474): Implement parsing and strong validations of
-	// output properties.
-	return &recipe.Output{}, nil
-}
-
-func toTryjobStatusAndResult(b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {
+func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {
 	s := tryjob.Status_STATUS_UNSPECIFIED
 	r := &tryjob.Result{
 		CreateTime: b.CreateTime,
@@ -94,15 +90,25 @@ func toTryjobStatusAndResult(b *bbpb.Build) (tryjob.Status, *tryjob.Result, erro
 			},
 		},
 	}
-	var err error
-	r.Output, err = parseProperties(b)
-	if err != nil {
-		return s, nil, err
+
+	buildResult := parseBuildResult(ctx, b)
+	r.Output = buildResult.output
+	if buildResult.error != nil {
+		logging.Debugf(ctx, "errors parsing recipe output: %s", buildResult.error)
+		if buildResult.error.WithSeverity(validation.Blocking) != nil {
+			r.Output = &recipe.Output{}
+			logging.Debugf(ctx, "ignoring recipe output due to blocking parsing errors")
+		}
 	}
+
 	switch b.Status {
 	case bbpb.Status_FAILURE:
 		s = tryjob.Status_ENDED
-		r.Status = tryjob.Result_FAILED_PERMANENTLY
+		if buildResult.isTransFailure {
+			r.Status = tryjob.Result_FAILED_TRANSIENTLY
+		} else {
+			r.Status = tryjob.Result_FAILED_PERMANENTLY
+		}
 	case bbpb.Status_INFRA_FAILURE, bbpb.Status_CANCELED:
 		s = tryjob.Status_ENDED
 		r.Status = tryjob.Result_FAILED_TRANSIENTLY

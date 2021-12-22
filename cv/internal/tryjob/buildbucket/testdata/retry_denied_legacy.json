@@ -1,0 +1,17 @@
+{
+    "id": "8827882239020532625",
+    "builder": {
+        "project": "infra",
+        "bucket": "try",
+        "builder": "luci-go-try-bionic-64"
+    },
+    "createTime": "2021-12-14T09:01:02.595160611Z",
+    "updateTime": "2021-12-14T09:01:50.347934256Z",
+    "status": "FAILURE",
+    "output": {
+        "properties": {
+            "do_not_retry": true,
+            "failure_type": "PATCH_FAILURE"
+        }
+    }
+}

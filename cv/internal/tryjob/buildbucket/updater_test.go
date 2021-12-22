@@ -15,6 +15,7 @@
 package buildbucket
 
 import (
+	"context"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -41,30 +42,32 @@ func TestToTryjobStatusAndResult(t *testing.T) {
 		var result *tryjob.Result
 		var err error
 
+		ctx := context.Background()
+
 		Convey("Returns an error", func() {
 			Convey("On an invalid build status", func() {
 				b.Status = bbpb.Status_ENDED_MASK
-				_, _, err := toTryjobStatusAndResult(b)
+				_, _, err := toTryjobStatusAndResult(ctx, b)
 				So(err, ShouldErrLike, "unexpected buildbucket status")
 			})
 		})
 		Convey("Parses a valid build proto", func() {
 			Convey("For a finished build", func() {
 				Convey("That succeeded", func() {
-					status, result, err = toTryjobStatusAndResult(b)
+					status, result, err = toTryjobStatusAndResult(ctx, b)
 					So(err, ShouldBeNil)
 					So(result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
 				})
 				Convey("That failed", func() {
 					Convey("Transiently", func() {
 						b.Status = bbpb.Status_INFRA_FAILURE
-						status, result, err = toTryjobStatusAndResult(b)
+						status, result, err = toTryjobStatusAndResult(ctx, b)
 						So(err, ShouldBeNil)
 						So(result.Status, ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
 					})
 					Convey("Permanently", func() {
 						b.Status = bbpb.Status_FAILURE
-						status, result, err = toTryjobStatusAndResult(b)
+						status, result, err = toTryjobStatusAndResult(ctx, b)
 						So(err, ShouldBeNil)
 						So(result.Status, ShouldEqual, tryjob.Result_FAILED_PERMANENTLY)
 					})
@@ -78,14 +81,14 @@ func TestToTryjobStatusAndResult(t *testing.T) {
 				Convey("That is already running", func() {
 					b.Status = bbpb.Status_STARTED
 				})
-				status, result, err = toTryjobStatusAndResult(b)
+				status, result, err = toTryjobStatusAndResult(ctx, b)
 				So(err, ShouldBeNil)
 				So(status, ShouldEqual, tryjob.Status_TRIGGERED)
 				So(result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
 			})
 			Convey("For a build that has been cancelled", func() {
 				b.Status = bbpb.Status_CANCELED
-				status, result, err = toTryjobStatusAndResult(b)
+				status, result, err = toTryjobStatusAndResult(ctx, b)
 				So(err, ShouldBeNil)
 				So(status, ShouldEqual, tryjob.Status_ENDED)
 				So(result.Status, ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)

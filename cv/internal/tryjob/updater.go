@@ -92,6 +92,7 @@ func (u *Updater) Schedule(ctx context.Context, id common.TryjobID, eid External
 	// id will be set, but eid may not be. In such case, it's up to the task to
 	// resolve it.
 	return u.tqd.AddTask(ctx, &tq.Task{
+		Title:   fmt.Sprintf("%d/%s", id, eid),
 		Payload: &UpdateTryjobTask{ExternalId: string(eid), Id: int64(id)},
 	})
 }
