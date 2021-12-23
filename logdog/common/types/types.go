@@ -17,12 +17,12 @@ package types
 // MessageIndex is a prefix or stream message index type.
 type MessageIndex int64
 
-// ContentType is a MIME-style content type.
+// ContentType is a HTTP Content-Type value.
 type ContentType string
 
 const (
-	// ContentTypeText is a stream content type for text streams
-	ContentTypeText ContentType = "text/plain"
+	// ContentTypeText is the default stream content type for text streams.
+	ContentTypeText ContentType = "text/plain; charset=utf-8"
 	// ContentTypeBinary is a stream content type for binary streams.
 	ContentTypeBinary = "application/octet-stream"
 

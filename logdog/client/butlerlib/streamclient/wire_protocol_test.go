@@ -102,7 +102,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 			So(flags.FromHandshake(conn), ShouldBeNil)
 			So(flags, ShouldResemble, streamproto.Flags{
 				Name:        "test",
-				ContentType: "text/plain",
+				ContentType: "text/plain; charset=utf-8",
 				Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 				Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 			})
@@ -164,7 +164,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 				So(flags.FromHandshake(conn), ShouldBeNil)
 				So(flags, ShouldResemble, streamproto.Flags{
 					Name:        "test",
-					ContentType: "text/plain",
+					ContentType: "text/plain; charset=utf-8",
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 					Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 				})
@@ -190,7 +190,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 				So(flags.FromHandshake(conn), ShouldBeNil)
 				So(flags, ShouldResemble, streamproto.Flags{
 					Name:        "test",
-					ContentType: "text/plain",
+					ContentType: "text/plain; charset=utf-8",
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 					Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 				})

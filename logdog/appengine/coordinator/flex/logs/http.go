@@ -472,24 +472,37 @@ func writeHTMLHeader(ctx *router.Context, data logData) {
 	}
 }
 
-// writeOKHeaders writes the http response headers in accordence with the
-// log stream type and user options.  The error is passed through.
+// writeOKHeaders writes the HTTP response headers in accordance with the log
+// stream type and user options. The error is passed through.
 func writeOKHeaders(ctx *router.Context, data logData) {
 	// Tell nginx not to buffer anything.
 	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
-	// Tell the browser to prefer https.
+	// Tell the browser to prefer HTTPS.
 	ctx.Writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 	// Set the correct content type based off the log stream and format.
-	contentType := data.logDesc.ContentType
-	if data.options.isHTML() {
-		// Only text/html is supported for HTML mode.
-		contentType = "text/html"
-	}
-	ctx.Writer.Header().Set("Content-Type", contentType)
+	ctx.Writer.Header().Set("Content-Type", contentTypeHeader(data))
 	ctx.Writer.WriteHeader(http.StatusOK)
 	if data.options.isHTML() {
 		writeHTMLHeader(ctx, data)
 	}
+}
+
+// contentTypeHeader returns the HTTP Content-Type header value to use, given
+// the content type from the log data.
+func contentTypeHeader(data logData) string {
+	contentType := data.logDesc.ContentType
+	if data.options.isHTML() {
+		// In the case of HTML, if no charset is specified we can assume it's
+		// UTF-8, as that's the default.
+		if contentType == "text/plain" {
+			return "text/html; charset=utf-8"
+		}
+		// If the log is text, we can serve it as HTML and retain the charset.
+		if strings.Contains(contentType, "text/plain; charset=") {
+			contentType = strings.Replace(contentType, "plain", "html", 1)
+		}
+	}
+	return contentType
 }
 
 // writeErrorPage renders an error page.
@@ -731,10 +744,10 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 		}
 
 		if log == nil {
-			// Nil log is a signal that the fetcher completed a cycle of fetches
-			// and is sleeping.  Flush out all the data in the ResponseWriter so that
-			// the user can see it.
-			// The go ResponseWriter will not flush until it reaches its threshold.
+			// Nil log is a signal that the fetcher completed a cycle of
+			// fetches and is sleeping. Flush out all the data in the
+			// ResponseWriter so that the user can see it. The Go
+			// ResponseWriter will not flush until it reaches its threshold.
 			flusher.Flush()
 		}
 	}

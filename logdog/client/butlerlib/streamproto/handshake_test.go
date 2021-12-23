@@ -78,7 +78,7 @@ func TestHandshakeProtocol(t *testing.T) {
 			Convey(`manually written handshake`, func() {
 				data := fmt.Sprintf(`{
 				"name": "test", "timestamp": %q,
-				"contentType": "text/plain",
+				"contentType": "text/plain; charset=utf-8",
 				"tags": {"foo": "bar", "baz": "qux"}
 			}`, date)
 				buf.Write(ProtocolFrameHeaderMagic)
@@ -88,7 +88,7 @@ func TestHandshakeProtocol(t *testing.T) {
 			Convey(`WriteHandshake`, func() {
 				f.Name = "test"
 				f.Timestamp = clockflag.Time(timestamp)
-				f.ContentType = "text/plain"
+				f.ContentType = "text/plain; charset=utf-8"
 				f.Tags = TagMap{
 					"foo": "bar",
 					"baz": "qux",
@@ -101,7 +101,7 @@ func TestHandshakeProtocol(t *testing.T) {
 
 			So(f, ShouldResemble, &Flags{
 				Name:        "test",
-				ContentType: "text/plain",
+				ContentType: "text/plain; charset=utf-8",
 				Timestamp:   clockflag.Time(timestamp),
 				Tags: map[string]string{
 					"baz": "qux",

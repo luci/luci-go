@@ -37,7 +37,7 @@ func TestOptions(t *testing.T) {
 			_, err := client.NewStream(ctx, "test")
 			So(err, ShouldBeNil)
 			defaultFlags := scFake.Data()["test"].GetFlags()
-			So(defaultFlags.ContentType, ShouldEqual, "text/plain")
+			So(defaultFlags.ContentType, ShouldEqual, "text/plain; charset=utf-8")
 			So(defaultFlags.Timestamp.Time(), ShouldEqual, testclock.TestTimeUTC)
 			So(defaultFlags.Tags, ShouldBeEmpty)
 		})

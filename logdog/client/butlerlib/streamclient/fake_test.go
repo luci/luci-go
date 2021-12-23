@@ -53,7 +53,7 @@ func TestFakeProtocol(t *testing.T) {
 				So(streamData.GetDatagrams(), ShouldResemble, []string{})
 				So(streamData.GetFlags(), ShouldResemble, streamproto.Flags{
 					Name:        "namespace/test",
-					ContentType: "text/plain",
+					ContentType: "text/plain; charset=utf-8",
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 					Timestamp:   clockflag.Time(testclock.TestTimeUTC),
 					Tags:        nil,

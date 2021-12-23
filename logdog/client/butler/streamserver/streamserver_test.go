@@ -255,7 +255,7 @@ func testClientServer(svr *StreamServer, client *streamclient.Client) {
 	So(err, ShouldBeNil)
 	So(desc, ShouldResemble, &logpb.LogStreamDescriptor{
 		Name:        "foo/bar",
-		ContentType: "text/plain",
+		ContentType: "text/plain; charset=utf-8",
 		Timestamp:   stamp,
 	})
 

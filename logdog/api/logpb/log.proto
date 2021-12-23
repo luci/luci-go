@@ -49,9 +49,10 @@ message LogStreamDescriptor {
   /*
    * The stream's content type (required).
    *
-   * This must be an HTTP Content-Type value. It is made available to LogDog
-   * clients when querying stream metadata. It will also be applied to archived
-   * binary log data.
+   * This must be an HTTP Content-Type value. Begins with MIME media type; may
+   * include a charset directive. It is made available to LogDog clients when
+   * querying stream metadata. It will also be applied to archived binary log
+   * data.
    */
   string content_type = 4;
 

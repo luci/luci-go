@@ -25,6 +25,8 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/logdog/api/logpb"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -38,6 +40,7 @@ func TestHTTP(t *testing.T) {
 		c, tc := testclock.UseTime(c, testclock.TestRecentTimeUTC)
 		tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
 		So(tls.Put(c), ShouldBeNil)
+
 		resp := httptest.NewRecorder()
 		var options userOptions
 
@@ -69,6 +72,8 @@ func TestHTTP(t *testing.T) {
 			})
 			So(serve(c, data, resp), ShouldBeNil)
 			So(resp.Body.String(), ShouldResemble, "log entry #0\n")
+			// Note: It's not helpful to assert HTTP header values here,
+			// because this tests serve(), which doesn't set HTTP headers.
 		})
 
 		Convey(`Single Log full HTML`, func() {
@@ -103,9 +108,10 @@ func TestHTTP(t *testing.T) {
 			So(body, ShouldEqual, fmt.Sprintf(`<div class="error line">LOGDOG ERROR: %s</div>`, template.HTMLEscapeString(msg)))
 		})
 	})
+
 }
 
-func TestLinkifyHelperFunction(t *testing.T) {
+func TestHelperFunctions(t *testing.T) {
 	t.Parallel()
 
 	Convey(`linkify changes URLs to HTML links`, t, func() {
@@ -172,5 +178,40 @@ func TestLinkifyHelperFunction(t *testing.T) {
 				`<span class="text">See <a href="https://crbug.com/1167332">https://crbug.com/1167332</a>.</span>`)
 		})
 
+	})
+
+	Convey(`contentTypeHeader adjusts based on format and data content type`, t, func() {
+		// Using incomplete logData as the headers only depend on metadata, not
+		// actual log responses. This is a small unit test only testing one
+		// small behavior which is not covered by the larger serve() tests
+		// above.
+
+		Convey(`Raw text with default text encoding`, func() {
+			So(contentTypeHeader(logData{
+				options: userOptions{format: "raw"},
+				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=utf-8"},
+			}), ShouldEqual, "text/plain; charset=utf-8")
+		})
+
+		Convey(`Raw text with alternate text encoding`, func() {
+			So(contentTypeHeader(logData{
+				options: userOptions{format: "raw"},
+				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=iso-unicorns"},
+			}), ShouldEqual, "text/plain; charset=iso-unicorns")
+		})
+
+		Convey(`HTML with default text encoding`, func() {
+			So(contentTypeHeader(logData{
+				options: userOptions{format: "full"},
+				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=utf-8"},
+			}), ShouldEqual, "text/html; charset=utf-8")
+		})
+
+		Convey(`HTML with alternate text encoding`, func() {
+			So(contentTypeHeader(logData{
+				options: userOptions{format: "full"},
+				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=iso-unicorns"},
+			}), ShouldEqual, "text/html; charset=iso-unicorns")
+		})
 	})
 }
