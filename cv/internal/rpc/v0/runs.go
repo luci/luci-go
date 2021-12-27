@@ -69,6 +69,11 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		return nil, err
 	}
 
+	return populateRunResponse(ctx, r)
+}
+
+// populateRunResponse constructs and populates a apiv0pb.Run to use in a response.
+func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, err error) {
 	rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
 	if err != nil {
 		return nil, err
@@ -102,7 +107,6 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		tryjobs[i] = &apiv0pb.Tryjob{
 			Status: versioning.TryjobStatusV0(tj.Status),
 		}
-		// result
 		if result := tj.GetResult(); result != nil {
 			tryjobs[i].Result = &apiv0pb.Tryjob_Result{
 				Status: versioning.TryjobResultStatusV0(result.Status),
