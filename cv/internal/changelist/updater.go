@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
@@ -160,9 +161,34 @@ func (u *Updater) RegisterBackend(b UpdaterBackend) {
 }
 
 // ScheduleBatch schedules update of several CLs.
-func (u *Updater) ScheduleBatch(ctx context.Context, task *BatchUpdateCLTask) error {
-	// TODO(tandrii): implement.
-	return nil
+//
+// If called in a transaction, enqueues exactly one TQ task transactionally.
+// This allows to write 1 Datastore entity during a transaction instead of N
+// entities if Schedule() was used for each CL.
+//
+// Otherwise, enqueues 1 TQ task per CL non-transactionally and in parallel.
+func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, cls []*CL) error {
+	tasks := make([]*UpdateCLTask, len(cls))
+	for i, cl := range cls {
+		tasks[i] = &UpdateCLTask{
+			LuciProject: luciProject,
+			ExternalId:  string(cl.ExternalID),
+			Id:          int64(cl.ID),
+		}
+	}
+
+	switch {
+	case len(tasks) == 1:
+		// Optimization for the most frequent use-case of single-CL Runs.
+		return u.Schedule(ctx, tasks[0])
+	case datastore.CurrentTransaction(ctx) == nil:
+		return u.handleBatch(ctx, &BatchUpdateCLTask{Tasks: tasks})
+	default:
+		return u.tqd.AddTask(ctx, &tq.Task{
+			Payload: &BatchUpdateCLTask{Tasks: tasks},
+			Title:   fmt.Sprintf("batch-%s-%d", luciProject, len(tasks)),
+		})
+	}
 }
 
 // Schedule dispatches a TQ task. It should be used instead of the direct
@@ -187,9 +213,24 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, payload *UpdateCLTask, de
 ///////////////////////////////////////////////////////////////////////////////
 // implementation details.
 
-func (u *Updater) handleBatch(ctx context.Context, task *BatchUpdateCLTask) error {
-	// TODO(tandrii): implement.
-	return nil
+func (u *Updater) handleBatch(ctx context.Context, batch *BatchUpdateCLTask) error {
+	total := len(batch.GetTasks())
+	err := parallel.WorkPool(min(16, total), func(work chan<- func() error) {
+		for _, task := range batch.GetTasks() {
+			task := task
+			work <- func() error { return u.Schedule(ctx, task) }
+		}
+	})
+	switch merrs, ok := err.(errors.MultiError); {
+	case err == nil:
+		return nil
+	case !ok:
+		return err
+	default:
+		failed, _ := merrs.Summary()
+		err = common.MostSevereError(merrs)
+		return errors.Annotate(err, "failed to schedule UpdateCLTask for %d out of %d CLs, keeping the most severe error", failed, total).Err()
+	}
 }
 
 func (u *Updater) handleCL(ctx context.Context, task *UpdateCLTask) error {

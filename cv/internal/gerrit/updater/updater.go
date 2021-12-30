@@ -253,6 +253,7 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 // This allows to write 1 Datastore entity during a transaction instead of N
 // entities if Schedule() was used for each CL.
 //
+//
 // Otherwise, enqueues 1 TQ task per CL non-transactionally.
 func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, cls []*changelist.CL) error {
 	tasks := make([]*RefreshGerritCL, len(cls))

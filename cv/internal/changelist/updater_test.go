@@ -16,6 +16,7 @@ package changelist
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
@@ -171,6 +173,65 @@ func TestUpdaterSchedule(t *testing.T) {
 			ct.Clock.Add(knownRefreshInterval)
 			So(u.Schedule(ctx, t), ShouldBeNil)
 			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{t, t, t})
+		})
+	})
+}
+
+func TestUpdaterBatch(t *testing.T) {
+	t.Parallel()
+
+	Convey("Correctly handle batches", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		sortedTQPayloads := func() []proto.Message {
+			payloads := ct.TQ.Tasks().Payloads()
+			sort.Slice(payloads, func(i, j int) bool {
+				return payloads[i].(*UpdateCLTask).GetExternalId() < payloads[j].(*UpdateCLTask).GetExternalId()
+			})
+			return payloads
+		}
+
+		u := NewUpdater(ct.TQDispatcher, nil)
+		clA := ExternalID("foo/a/1").MustCreateIfNotExists(ctx)
+		clB := ExternalID("foo/b/2").MustCreateIfNotExists(ctx)
+
+		expectedPayloads := []proto.Message{
+			&UpdateCLTask{
+				LuciProject: "proj",
+				ExternalId:  "foo/a/1",
+				Id:          int64(clA.ID),
+			},
+			&UpdateCLTask{
+				LuciProject: "proj",
+				ExternalId:  "foo/b/2",
+				Id:          int64(clB.ID),
+			},
+		}
+
+		Convey("outside of a transaction, enqueues individual tasks", func() {
+			Convey("special case of just one task", func() {
+				err := u.ScheduleBatch(ctx, "proj", []*CL{clA})
+				So(err, ShouldBeNil)
+				So(sortedTQPayloads(), ShouldResembleProto, expectedPayloads[:1])
+			})
+			Convey("multiple", func() {
+				err := u.ScheduleBatch(ctx, "proj", []*CL{clA, clB})
+				So(err, ShouldBeNil)
+				So(sortedTQPayloads(), ShouldResembleProto, expectedPayloads)
+			})
+		})
+
+		Convey("inside of a transaction, enqueues just one task", func() {
+			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return u.ScheduleBatch(ctx, "proj", []*CL{clA, clB})
+			}, nil)
+			So(err, ShouldBeNil)
+			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+			// Run just the batch task.
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchUpdateCLTaskClass))
+			So(sortedTQPayloads(), ShouldResembleProto, expectedPayloads)
 		})
 	})
 }
