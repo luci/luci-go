@@ -57,6 +57,8 @@ type Updater struct {
 // New creates a new Updater.
 func New(tqd *tq.Dispatcher, g gerrit.Factory, m *changelist.Mutator) *Updater {
 	u := &Updater{g, m, tqd}
+	// TODO(tandrii): remove these TQ classes after migrating to
+	// changelist.Updater.
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           TaskClass,
 		Prototype:    &RefreshGerritCL{},

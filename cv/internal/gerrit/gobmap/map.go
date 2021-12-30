@@ -247,6 +247,8 @@ func internalGroups(configGroups []*prjcfg.ConfigGroup) map[string]*cfgmatcher.G
 // Due to the ref_regexp[_exclude] options, CV can't ensure that each possible
 // combination is watched by at most one ConfigGroup, which is why this may
 // return multiple ConfigGroupIDs even for the same LUCI project.
+//
+// Always returns non-nil object, even if there are no watching projects.
 func Lookup(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error) {
 	// Fetch all MapPart entities for the given host and repo.
 	hostRepo := host + "/" + repo

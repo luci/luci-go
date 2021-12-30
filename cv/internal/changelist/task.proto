@@ -18,7 +18,32 @@ package cv.internal.changelist;
 
 option go_package = "go.chromium.org/luci/cv/internal/changelist;changelist";
 
+import "google/protobuf/timestamp.proto";
+
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+
+// UpdateCLTask is for updating a single CL.
+//
+// Queue: "update-cl".
+message UpdateCLTask {
+  string luci_project = 1;
+
+  // At least one of internal or external ID must be given.
+  int64 id = 2; // internal CLID
+  string external_id = 3;
+
+  google.protobuf.Timestamp updated_hint = 4;
+}
+
+// BatchUpdateCLTask is for updating many CLs.
+//
+// When executed, it just enqueues its tasks as individual UpdateCLTask TQ
+// for independent execution.
+//
+// Queue: "update-cl".
+message BatchUpdateCLTask {
+  repeated UpdateCLTask tasks = 1;
+}
 
 // BatchOnCLUpdatedTask notifies many Projects and Runs about updated CLs.
 //

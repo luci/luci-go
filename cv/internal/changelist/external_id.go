@@ -85,3 +85,12 @@ func (eid ExternalID) MustURL() string {
 	}
 	return ret
 }
+
+func (e ExternalID) kind() (string, error) {
+	s := string(e)
+	idx := strings.IndexRune(s, '/')
+	if idx <= 0 {
+		return "", errors.Reason("invalid ExternalID: %q", s).Err()
+	}
+	return s[:idx], nil
+}
