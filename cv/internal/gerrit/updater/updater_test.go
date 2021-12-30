@@ -219,7 +219,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 		f := fetcher{
 			change: 111,
 			host:   "host",
-			toUpdate: updateFields{
+			toUpdate: changelist.UpdateFields{
 				Snapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}}},
 			},
 		}

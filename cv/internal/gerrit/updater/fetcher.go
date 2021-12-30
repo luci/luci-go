@@ -87,7 +87,7 @@ type fetcher struct {
 	externalID changelist.ExternalID
 	priorCL    *changelist.CL
 
-	toUpdate updateFields
+	toUpdate changelist.UpdateFields
 }
 
 func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) {
@@ -160,7 +160,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 	switch {
 	case err != nil:
 		return err
-	case f.toUpdate.isEmpty():
+	case f.toUpdate.IsEmpty():
 		if f.priorCL == nil {
 			panic("update can't be skipped iff priorCL is not set")
 		}
@@ -176,7 +176,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 }
 
 func (f *fetcher) updateCLEntity(cl *changelist.CL) error {
-	if !f.toUpdate.apply(cl) {
+	if !f.toUpdate.Apply(cl) {
 		return changelist.ErrStopMutation
 	}
 	return nil
@@ -846,98 +846,4 @@ func needsRefresh(ctx context.Context, cl *changelist.CL, luciProject string) bo
 	default:
 		return false
 	}
-}
-
-// updateFields defines what parts of CL to update.
-//
-// At least one field must be specified.
-type updateFields struct {
-	// Snapshot overwrites existing CL snapshot if newer according to its
-	// .ExternalUpdateTime.
-	Snapshot *changelist.Snapshot
-
-	// ApplicableConfig overwrites existing CL ApplicableConfig if semantically
-	// different from existing one.
-	ApplicableConfig *changelist.ApplicableConfig
-
-	// AddDependentMeta adds or overwrites metadata per LUCI project in CL AsDepMeta.
-	// Doesn't affect metadata stored for projects not referenced here.
-	AddDependentMeta *changelist.Access
-
-	// DelAccess deletes Access records for the given projects.
-	DelAccess []string
-}
-
-// isEmpty returns true if no updates are necessary.
-func (u updateFields) isEmpty() bool {
-	return (u.Snapshot == nil &&
-		u.ApplicableConfig == nil &&
-		len(u.AddDependentMeta.GetByProject()) == 0 &&
-		len(u.DelAccess) == 0)
-}
-
-func (u updateFields) shouldUpdateSnapshot(cl *changelist.CL) bool {
-	switch {
-	case u.Snapshot == nil:
-		return false
-	case cl.Snapshot == nil:
-		return true
-	case cl.Snapshot.GetOutdated() != nil:
-		return true
-	case u.Snapshot.GetExternalUpdateTime().AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()):
-		return true
-	case cl.Snapshot.GetLuciProject() != u.Snapshot.GetLuciProject():
-		return true
-	default:
-		return false
-	}
-}
-
-func (u updateFields) apply(cl *changelist.CL) (changed bool) {
-	if u.ApplicableConfig != nil && !cl.ApplicableConfig.SemanticallyEqual(u.ApplicableConfig) {
-		cl.ApplicableConfig = u.ApplicableConfig
-		changed = true
-	}
-
-	if u.shouldUpdateSnapshot(cl) {
-		cl.Snapshot = u.Snapshot
-		changed = true
-	}
-
-	switch {
-	case u.AddDependentMeta == nil:
-	case cl.Access == nil || cl.Access.GetByProject() == nil:
-		cl.Access = u.AddDependentMeta
-		changed = true
-	default:
-		e := cl.Access.GetByProject()
-		for lProject, v := range u.AddDependentMeta.GetByProject() {
-			if v.GetNoAccessTime() == nil {
-				panic("NoAccessTime must be set")
-			}
-			old, exists := e[lProject]
-			if !exists || old.GetUpdateTime().AsTime().Before(v.GetUpdateTime().AsTime()) {
-				if old.GetNoAccessTime() != nil && old.GetNoAccessTime().AsTime().Before(v.GetNoAccessTime().AsTime()) {
-					v.NoAccessTime = old.NoAccessTime
-				}
-				e[lProject] = v
-				changed = true
-			}
-		}
-	}
-
-	if len(u.DelAccess) > 0 && len(cl.Access.GetByProject()) > 0 {
-		for _, p := range u.DelAccess {
-			if _, exists := cl.Access.GetByProject()[p]; exists {
-				changed = true
-				delete(cl.Access.ByProject, p)
-				if len(cl.Access.GetByProject()) == 0 {
-					cl.Access = nil
-					break
-				}
-			}
-		}
-	}
-
-	return
 }
