@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -384,10 +385,110 @@ func (u *Updater) handleBatch(ctx context.Context, batch *BatchUpdateCLTask) err
 }
 
 func (u *Updater) handleCL(ctx context.Context, task *UpdateCLTask) error {
-	ctx = logging.SetField(ctx, "project", task.GetLuciProject())
+	cl, err := u.preload(ctx, task)
+	if err != nil {
+		return common.TQifyError(ctx, err)
+	}
+	// cl.ID == 0 means CL doesn't yet exist.
+	ctx = logging.SetFields(ctx, logging.Fields{
+		"project": task.GetLuciProject(),
+		"id":      cl.ID,
+		"eid":     cl.ExternalID,
+	})
+
+	backend, err := u.backendFor(cl)
+	if err != nil {
+		return common.TQifyError(ctx, err)
+	}
+
+	if err := u.handleCLWithBackend(ctx, task, cl, backend); err != nil {
+		return backend.TQErrorSpec().Error(ctx, err)
+	}
+	return nil
+}
+
+func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, cl *CL, backend UpdaterBackend) error {
+	// Save ID and ExternalID before giving CL to backend to avoid accidental corruption.
+	id, eid := cl.ID, cl.ExternalID
+	skip, updateFields, err := u.trySkippingFetch(ctx, task, cl, backend)
+	switch {
+	case err != nil:
+		return err
+	case !skip:
+		updateFields, err = backend.Fetch(ctx, cl, task.GetLuciProject(), common.PB2TimeNillable(task.GetUpdatedHint()))
+		if err != nil {
+			return errors.Annotate(err, "%T.Fetch failed", backend).Err()
+		}
+	}
+
+	if updateFields.IsEmpty() {
+		logging.Debugf(ctx, "No update is necessary")
+		return nil
+	}
+
+	// Transactionally update the CL.
+	transClbk := func(latest *CL) error {
+		if changed := updateFields.Apply(latest); !changed {
+			// Someone, possibly even us in case of Datastore transaction retry, has
+			// already updated this CL.
+			return ErrStopMutation
+		}
+		return nil
+	}
+	if cl.ID == 0 {
+		_, err = u.mutator.Upsert(ctx, task.GetLuciProject(), eid, transClbk)
+	} else {
+		_, err = u.mutator.Update(ctx, task.GetLuciProject(), id, transClbk)
+	}
+	return err
+}
+
+// trySkippingFetch checks if a fetch from the backend can be skipped.
+//
+// Returns true if so.
+// NOTE: UpdateFields may be set if fetch can be skipped, meaning CL entity
+// should be updated in Datastore.
+func (u *Updater) trySkippingFetch(ctx context.Context, task *UpdateCLTask, cl *CL, backend UpdaterBackend) (bool, UpdateFields, error) {
 	// TODO(tandrii): implement.
-	// TODO(tandrii): use backend-provided TQIfy spec.
-	return common.TQifyError(ctx, nil)
+	return false, UpdateFields{}, nil
+}
+
+func (*Updater) preload(ctx context.Context, task *UpdateCLTask) (*CL, error) {
+	if task.GetLuciProject() == "" {
+		return nil, errors.New("invalid task input: LUCI project must be given")
+	}
+	eid := ExternalID(task.GetExternalId())
+	id := common.CLID(task.GetId())
+	switch {
+	case id != 0:
+		cl := &CL{ID: common.CLID(id)}
+		switch err := datastore.Get(ctx, cl); {
+		case err == datastore.ErrNoSuchEntity:
+			return nil, errors.Annotate(err, "CL %d %q doesn't exist in Datastore", id, task.GetExternalId()).Err()
+		case err != nil:
+			return nil, errors.Annotate(err, "failed to load CL %d", id).Tag(transient.Tag).Err()
+		case eid != "" && eid != cl.ExternalID:
+			return nil, errors.Reason("invalid task input: CL %d actually has %q ExternalID, not %q", id, cl.ExternalID, eid).Err()
+		default:
+			return cl, nil
+		}
+	case eid == "":
+		return nil, errors.Reason("invalid task input: either internal ID or ExternalID must be given").Err()
+	default:
+		switch cl, err := eid.Load(ctx); {
+		case err != nil:
+			return nil, errors.Annotate(err, "failed to load CL %q", eid).Tag(transient.Tag).Err()
+		case cl == nil:
+			// New CL to be created.
+			return &CL{
+				ExternalID: eid,
+				ID:         0, // will be populated later.
+				EVersion:   0,
+			}, nil
+		default:
+			return cl, nil
+		}
+	}
 }
 
 func (u *Updater) backendFor(cl *CL) (UpdaterBackend, error) {

@@ -24,9 +24,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -236,6 +239,346 @@ func TestUpdaterBatch(t *testing.T) {
 	})
 }
 
+// TestUpdaterWorkingHappyPath is the simplest test for an updater, which also
+// illustrates the simplest UpdaterBackend.
+func TestUpdaterHappyPath(t *testing.T) {
+	t.Parallel()
+
+	Convey("Updater's happy path with simplest possible backend", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		pm, rm := pmMock{}, rmMock{}
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm))
+		b := &fakeUpdaterBackend{}
+		u.RegisterBackend(b)
+
+		////////////////////////////////////////////
+		// Phase 1: import CL for the first time. //
+		////////////////////////////////////////////
+
+		b.fetchResult = UpdateFields{
+			Snapshot: &Snapshot{
+				ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
+				Patchset:              2,
+				MinEquivalentPatchset: 1,
+				LuciProject:           "luci-project",
+				Kind:                  nil, // but should be set in practice,
+			},
+			ApplicableConfig: &ApplicableConfig{
+				Projects: []*ApplicableConfig_Project{
+					{
+						Name:           "luci-project",
+						ConfigGroupIds: []string{"hash/name"},
+					},
+				},
+			},
+		}
+		// Actually run the Updater.
+		So(u.handleCL(ctx, &UpdateCLTask{
+			LuciProject: "luci-project",
+			ExternalId:  "fake/123",
+		}), ShouldBeNil)
+
+		// Ensure CL is created with correct data.
+		cl, err := ExternalID("fake/123").Load(ctx)
+		So(err, ShouldBeNil)
+		So(cl.Snapshot, ShouldResembleProto, b.fetchResult.Snapshot)
+		So(cl.ApplicableConfig, ShouldResembleProto, b.fetchResult.ApplicableConfig)
+		So(cl.UpdateTime, ShouldHappenWithin, time.Microsecond /*see DS.RoundTime()*/, ct.Clock.Now())
+
+		// Since there are no Runs associated with the CL, the outstanding TQ task
+		// should ultimately notify the Project Manager.
+		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+			"luci-project": {cl.ID: cl.EVersion},
+		})
+
+		// Later, a Run will start on this CL.
+		const runID = "luci-project/123-1-beef"
+		cl.IncompleteRuns = common.RunIDs{runID}
+		cl.EVersion++
+		So(datastore.Put(ctx, cl), ShouldBeNil)
+
+		///////////////////////////////////////////////////
+		// Phase 2: update the CL with the new patchset. //
+		///////////////////////////////////////////////////
+
+		ct.Clock.Add(time.Hour)
+		b.reset()
+		b.fetchResult.Snapshot = proto.Clone(cl.Snapshot).(*Snapshot)
+		b.fetchResult.Snapshot.ExternalUpdateTime = timestamppb.New(ct.Clock.Now())
+		b.fetchResult.Snapshot.Patchset++
+		b.lookupACfgResult = cl.ApplicableConfig // unchanged
+
+		// Actually run the Updater.
+		So(u.handleCL(ctx, &UpdateCLTask{
+			LuciProject: "luci-project",
+			ExternalId:  "fake/123",
+		}), ShouldBeNil)
+		cl2 := reloadCL(ctx, cl)
+
+		// The CL entity should have a new patchset and PM/RM should be notified.
+		So(cl2.Snapshot.GetPatchset(), ShouldEqual, 3)
+		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+			"luci-project": {cl.ID: cl2.EVersion},
+		})
+		So(rm.byRun, ShouldResemble, map[common.RunID]map[common.CLID]int64{
+			runID: {cl.ID: cl2.EVersion},
+		})
+	})
+}
+
+func TestUpdaterFetchedNoNewData(t *testing.T) {
+	t.Parallel()
+
+	Convey("Updater skips updating the CL when no new data is fetched", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		pm, rm := pmMock{}, rmMock{}
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm))
+		b := &fakeUpdaterBackend{}
+		u.RegisterBackend(b)
+
+		snap := &Snapshot{
+			ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
+			Patchset:              2,
+			MinEquivalentPatchset: 1,
+			LuciProject:           "luci-project",
+			Kind:                  nil, // but should be set in practice
+		}
+		acfg := &ApplicableConfig{Projects: []*ApplicableConfig_Project{
+			{
+				Name:           "luci-projectj",
+				ConfigGroupIds: []string{"hash/old"},
+			},
+		}}
+		// Put an existing CL.
+		cl := ExternalID("fake/1").MustCreateIfNotExists(ctx)
+		cl.ApplicableConfig = acfg
+		cl.Snapshot = snap
+		cl.EVersion++
+		So(datastore.Put(ctx, cl), ShouldBeNil)
+
+		Convey("updaterBackend is aware that there is no new data", func() {
+			b.fetchResult = UpdateFields{}
+		})
+		Convey("updaterBackend is not aware that it fetched the exact same data", func() {
+			b.fetchResult = UpdateFields{
+				Snapshot:         snap,
+				ApplicableConfig: acfg,
+			}
+		})
+
+		err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
+		So(err, ShouldBeNil)
+
+		// CL entity shouldn't change and notifications should not be emitted.
+		cl2 := reloadCL(ctx, cl)
+		So(cl2.EVersion, ShouldEqual, cl.EVersion)
+		// CL Mutator guarantees that EVersion is bumped on every write, but check
+		// the entire CL contents anyway in case there is a buggy by-pass of
+		// Mutator somewhere.
+		So(cl2, cvtesting.SafeShouldResemble, cl)
+		So(ct.TQ.Tasks(), ShouldBeEmpty)
+	})
+}
+
+func TestUpdaterAccessRestriction(t *testing.T) {
+	t.Parallel()
+
+	Convey("Updater works correctly when backend denies access to the CL", t, func() {
+		// This is a long test, don't debug it first if other TestUpdater* tests are
+		// also failing.
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		pm, rm := pmMock{}, rmMock{}
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm))
+		b := &fakeUpdaterBackend{}
+		u.RegisterBackend(b)
+
+		//////////////////////////////////////////////////////////////////////////
+		// Phase 1: prepare an old CL previously fetched for another LUCI project.
+		//////////////////////////////////////////////////////////////////////////
+
+		longTimeAgo := ct.Clock.Now().Add(-180 * 24 * time.Hour)
+		cl := ExternalID("fake/1").MustCreateIfNotExists(ctx)
+		cl.Snapshot = &Snapshot{
+			ExternalUpdateTime:    timestamppb.New(longTimeAgo),
+			Patchset:              2,
+			MinEquivalentPatchset: 1,
+			LuciProject:           "previously-existing-project",
+			Kind:                  nil, // but should be set in practice,
+		}
+		cl.ApplicableConfig = &ApplicableConfig{Projects: []*ApplicableConfig_Project{
+			{
+				Name:           "previously-existing-project",
+				ConfigGroupIds: []string{"old-hash/old-name"},
+			},
+		}}
+		alsoLongTimeAgo := longTimeAgo.Add(time.Minute)
+		cl.Access = &Access{ByProject: map[string]*Access_Project{
+			// One possibility is user makes a typo in the free-from Cq-Depend
+			// footer and accidentally referenced a CL from totally different
+			// project.
+			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
+		}}
+		cl.EVersion++
+		So(datastore.Put(ctx, cl), ShouldBeNil)
+
+		//////////////////////////////////////////////////////////////////////////
+		// Phase 2: simulate a Fetch which got access denied from backend.
+		//////////////////////////////////////////////////////////////////////////
+
+		b.fetchResult = UpdateFields{
+			ApplicableConfig: &ApplicableConfig{Projects: []*ApplicableConfig_Project{
+				// Note that the old project is no longer watching this CL.
+				{
+					Name:           "luci-project",
+					ConfigGroupIds: []string{"hash/name"},
+				},
+			}},
+			Snapshot: nil, // nothing was actually fetched.
+			AddDependentMeta: &Access{ByProject: map[string]*Access_Project{
+				"luci-project": {NoAccessTime: timestamppb.New(ct.Clock.Now())},
+			}},
+		}
+
+		err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
+		So(err, ShouldBeNil)
+
+		// Resulting CL entity should keep the Snapshot, rewrite ApplicableConfig,
+		// and merge Access.
+		cl2 := reloadCL(ctx, cl)
+		So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
+		So(cl2.ApplicableConfig, ShouldResembleProto, b.fetchResult.ApplicableConfig)
+		So(cl2.Access, ShouldResembleProto, &Access{ByProject: map[string]*Access_Project{
+			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
+			"luci-project":                         {NoAccessTime: timestamppb.New(ct.Clock.Now())},
+		}})
+		// Notifications doesn't have to be sent to the project with invalid deps,
+		// as this update is irrelevant to the project.
+		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+			"luci-project":                {cl.ID: cl2.EVersion},
+			"previously-existing-project": {cl.ID: cl2.EVersion},
+		})
+
+		//////////////////////////////////////////////////////////////////////////
+		// Phase 3: backend ACLs are fixed.
+		//////////////////////////////////////////////////////////////////////////
+		ct.Clock.Add(time.Hour)
+		b.reset()
+		b.fetchResult = UpdateFields{
+			Snapshot: &Snapshot{
+				ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
+				Patchset:              4,
+				MinEquivalentPatchset: 1,
+				LuciProject:           "luci-project",
+				Kind:                  nil, // but should be set in practice
+			},
+			ApplicableConfig: cl2.ApplicableConfig, // same as before
+			DelAccess:        []string{"luci-project"},
+		}
+		err = u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
+		So(err, ShouldBeNil)
+		cl3 := reloadCL(ctx, cl)
+		So(cl3.Snapshot, ShouldResembleProto, b.fetchResult.Snapshot)                      // replaced
+		So(cl3.ApplicableConfig, ShouldResembleProto, cl2.ApplicableConfig)                // same
+		So(cl3.Access, ShouldResembleProto, &Access{ByProject: map[string]*Access_Project{ // updated
+			// No more "luci-project" entry.
+			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
+		}})
+		// Notifications are still not sent to the project with invalid deps.
+		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+			"luci-project":                {cl.ID: cl3.EVersion},
+			"previously-existing-project": {cl.ID: cl3.EVersion},
+		})
+	})
+}
+
+func TestUpdaterHandlesErrors(t *testing.T) {
+	t.Parallel()
+
+	Convey("Updater handles errors", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		u := NewUpdater(ct.TQDispatcher, nil)
+
+		Convey("bails permanently in cases which should not happen", func() {
+			Convey("No ID given", func() {
+				err := u.handleCL(ctx, &UpdateCLTask{
+					LuciProject: "luci-project",
+				})
+				So(err, ShouldErrLike, "invalid task input")
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+			Convey("No LUCI project given", func() {
+				err := u.handleCL(ctx, &UpdateCLTask{
+					ExternalId: "fake/1",
+				})
+				So(err, ShouldErrLike, "invalid task input")
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+			Convey("Contradicting external and internal IDs", func() {
+				cl1 := ExternalID("fake/1").MustCreateIfNotExists(ctx)
+				cl2 := ExternalID("fake/2").MustCreateIfNotExists(ctx)
+				err := u.handleCL(ctx, &UpdateCLTask{
+					LuciProject: "luci-project",
+					Id:          int64(cl1.ID),
+					ExternalId:  string(cl2.ExternalID),
+				})
+				So(err, ShouldErrLike, "invalid task")
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+			Convey("Internal ID doesn't actually exist", func() {
+				// While in most cases this is a bug, it can happen in prod
+				// if an old CL is being deleted due to data retention policy at the
+				// same time as something else inside the CV is requesting a refresh of
+				// the CL against external system. One example of this is if a new CL
+				// mistakenly marked a very old CL as a dependency.
+				err := u.handleCL(ctx, &UpdateCLTask{
+					Id:          404,
+					LuciProject: "luci-project",
+				})
+				So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+			Convey("CL from unregistered backend", func() {
+				err := u.handleCL(ctx, &UpdateCLTask{
+					ExternalId:  "unknown/404",
+					LuciProject: "luci-project",
+				})
+				So(err, ShouldErrLike, "backend is not supported")
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+		})
+
+		Convey("Respects TQErrorSpec", func() {
+			ignoreMe := errors.New("ignore-me")
+			b := &fakeUpdaterBackend{
+				tqErrorSpec: common.TQIfy{
+					KnownIgnore: []error{ignoreMe},
+				},
+				fetchError: errors.Annotate(ignoreMe, "something went wrong").Err(),
+			}
+			u.RegisterBackend(b)
+			err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "lp", ExternalId: "fake/1"})
+			So(tq.Ignore.In(err), ShouldBeTrue)
+			So(err, ShouldErrLike, "ignore-me")
+		})
+	})
+}
+
 func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -352,4 +695,88 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 			So(scheduledUpdates(), ShouldResemble, eids(cl1, cl2, clBareBones))
 		})
 	})
+}
+
+// fakeUpdaterBackend is a fake UpdaterBackend.
+//
+// It provides functionality which is a subset of what gomock would generate,
+// but with additional assertions to validate the contract between Updater and
+// its backend.
+type fakeUpdaterBackend struct {
+	tqErrorSpec common.TQIfy
+
+	// LookupApplicableConfig related fields:
+
+	lookupACfgCL     *CL // copy
+	lookupACfgResult *ApplicableConfig
+	lookupACfgError  error
+
+	// Fetch related fields:
+	fetchCL          *CL // copy
+	fetchLUCIProject string
+	fetchUpdatedHint time.Time
+	fetchResult      UpdateFields
+	fetchError       error
+}
+
+func (f *fakeUpdaterBackend) Kind() string {
+	return "fake"
+}
+
+func (f *fakeUpdaterBackend) TQErrorSpec() common.TQIfy {
+	return f.tqErrorSpec
+}
+
+func (f *fakeUpdaterBackend) wasLookupApplicableConfigCalled() bool {
+	return f.lookupACfgCL != nil
+}
+
+func (f *fakeUpdaterBackend) LookupApplicableConfig(ctx context.Context, saved *CL) (*ApplicableConfig, error) {
+	So(f.wasLookupApplicableConfigCalled(), ShouldBeFalse)
+
+	// Check contract with a backend:
+	So(saved, ShouldNotBeNil)
+	So(saved.ID, ShouldNotEqual, 0)
+	So(saved.ExternalID, ShouldNotBeEmpty)
+	So(saved.Snapshot, ShouldNotBeNil)
+
+	// Shallow-copy to catch some mistakes in test.
+	f.lookupACfgCL = &CL{}
+	*f.lookupACfgCL = *saved
+	return f.lookupACfgResult, f.lookupACfgError
+}
+
+func (f *fakeUpdaterBackend) wasFetchCalled() bool {
+	return f.fetchCL != nil
+}
+
+func (f *fakeUpdaterBackend) Fetch(ctx context.Context, cl *CL, luciProject string, updatedHint time.Time) (UpdateFields, error) {
+	So(f.wasFetchCalled(), ShouldBeFalse)
+
+	// Check contract with a backend:
+	So(cl, ShouldNotBeNil)
+	So(cl.ExternalID, ShouldNotBeEmpty)
+
+	// Shallow-copy to catch some mistakes in test.
+	f.fetchCL = &CL{}
+	*f.fetchCL = *cl
+	f.fetchLUCIProject = luciProject
+	f.fetchUpdatedHint = updatedHint
+	return f.fetchResult, f.fetchError
+}
+
+// reset resets the fake for the next use.
+func (f *fakeUpdaterBackend) reset() {
+	*f = fakeUpdaterBackend{}
+}
+
+// reloadCL loads a new CL from Datastore.
+//
+// Doesn't re-use the object.
+func reloadCL(ctx context.Context, cl *CL) *CL {
+	ret := &CL{ID: cl.ID}
+	if err := datastore.Get(ctx, ret); err != nil {
+		panic(err)
+	}
+	return ret
 }
