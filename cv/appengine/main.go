@@ -52,7 +52,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	_ "go.chromium.org/luci/cv/internal/configs/validation" // Ensure registration of validation rules.
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
@@ -104,8 +104,11 @@ func main() {
 		pmNotifier := prjmanager.NewNotifier(&tq.Default)
 		runNotifier := run.NewNotifier(&tq.Default)
 		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
-		clUpdater := updater.New(&tq.Default, gFactory, clMutator)
-		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
+		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
+		gerritupdater.RegisterUpdater(clUpdater, gFactory)
+		// TODO(tandrii): delete gclUpdater.
+		gclUpdater := gerritupdater.New(&tq.Default, gFactory, clMutator)
+		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, gclUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {
 			return err
@@ -114,7 +117,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		_ = runimpl.New(runNotifier, pmNotifier, clMutator, clUpdater, gFactory, tc, bqc, env)
+		_ = runimpl.New(runNotifier, pmNotifier, clMutator, gclUpdater, gFactory, tc, bqc, env)
 
 		// Setup pRPC authentication.
 		srv.PRPC.Authenticator = &auth.Authenticator{
@@ -135,7 +138,7 @@ func main() {
 		})
 		adminpb.RegisterAdminServer(srv.PRPC, admin.New(
 			&tq.Default, &dsmapper.Default,
-			clUpdater, pmNotifier, runNotifier,
+			gclUpdater, pmNotifier, runNotifier,
 		))
 		apiv0pb.RegisterRunsServer(srv.PRPC, &rpcv0.RunsServer{})
 

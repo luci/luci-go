@@ -35,6 +35,57 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
+// RegisterUpdater register a Gerrit backend with the CL Updater.
+func RegisterUpdater(clUpdater *changelist.Updater, gFactory gerrit.Factory) {
+	clUpdater.RegisterBackend(&updaterBackend{
+		gFactory:  gFactory,
+		clUpdater: clUpdater,
+	})
+}
+
+// updaterBackend implements changelist.UpdaterBackend for Gerrit.
+type updaterBackend struct {
+	gFactory gerrit.Factory
+	// clUpdater is necessary to schedule async tasks to fetch newly-discovered
+	// dependencies of the currently updated CL.
+	clUpdater *changelist.Updater
+}
+
+// Kind implements the changelist.UpdaterBackend.
+func (u *updaterBackend) Kind() string {
+	return "gerrit"
+}
+
+// LookupApplicableConfig implements the changelist.UpdaterBackend.
+func (u *updaterBackend) LookupApplicableConfig(ctx context.Context, saved *changelist.CL) (*changelist.ApplicableConfig, error) {
+	// TODO(tandrii): Implement.
+	return nil, nil
+}
+
+// Update implements the changelist.UpdaterBackend.
+func (u *updaterBackend) Fetch(ctx context.Context, cl *changelist.CL, luciProject string, updatedHint time.Time) (changelist.UpdateFields, error) {
+	// TODO(tandrii): Implement.
+
+	// Meanwhile, return a permanent error to ensure tasks don't pile up here
+	// in case of a future rollback in prod from version which started using the
+	// new CL Updater to the legacy Gerrit updater. In such a case, it's fine to
+	// waste CL update tasks, as Gerrit poller + Run Manager will re-schedule
+	// new tasks to update CLs soon enough.
+	return changelist.UpdateFields{}, errors.Reason("not implemeneted").Err()
+}
+
+// TQErrorSpec implements the changelist.UpdaterBackend.
+func (u *updaterBackend) TQErrorSpec() common.TQIfy {
+	return common.TQIfy{
+		// Don't log the entire stack trace of stale data, which is sadly an
+		// hourly occurrence.
+		KnownRetry: []error{gerrit.ErrStaleData, gerrit.ErrOutOfQuota, gerrit.ErrGerritDeadlineExceeded},
+	}
+}
+
+// TODO(tandrii): move all functionality from `Updater` to either
+// `updaterBackend` or `changelist.Updater` and then remove `Updater.
+
 const (
 	TaskClass      = "refresh-gerrit-cl"
 	TaskClassBatch = "batch-refresh-gerrit-cl"
