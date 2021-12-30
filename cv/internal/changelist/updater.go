@@ -17,6 +17,7 @@ package changelist
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -47,6 +48,12 @@ const (
 	// knownRefreshInterval sets interval between refreshes of a CL when
 	// updatedHint is known.
 	knownRefreshInterval = 15 * time.Minute
+
+	// autoRefreshAfter makes CLs worthy of "blind" refresh.
+	//
+	// "blind" refresh means that CL is already stored in Datastore and is up to
+	// the date to the best knowledge of CV.
+	autoRefreshAfter = 2 * time.Hour
 )
 
 // UpdaterBackend abstracts out fetching CL details from code review backend.
@@ -300,6 +307,59 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, payload *UpdateCLTask, de
 	return u.tqd.AddTask(ctx, task)
 }
 
+// ResolveAndScheduleDepsUpdate resolves deps, creating new CL entities as
+// necessary, and schedules an update task for each dep which needs an update.
+//
+// It's meant to be used by the Updater backends.
+//
+// Returns a sorted slice of Deps by their CL ID, ready to be stored as
+// CL.Snapshot.Deps.
+func (u *Updater) ResolveAndScheduleDepsUpdate(ctx context.Context, luciProject string, deps map[ExternalID]DepKind) ([]*Dep, error) {
+	// Optimize for the most frequent case whereby deps are already known to CV
+	// and were updated recently enough that no task scheduling is even necessary.
+
+	// Batch-resolve external IDs to CLIDs, and load all existing CLs.
+	resolvingDeps, err := resolveDeps(ctx, luciProject, deps)
+	if err != nil {
+		return nil, err
+	}
+	// Identify indexes of deps which need to have an update task scheduled.
+	ret := make([]*Dep, len(deps))
+	var toSchedule []int // indexes
+	for i, d := range resolvingDeps {
+		if d.ready {
+			ret[i] = d.resolvedDep
+		} else {
+			// Also covers the case of a dep not yet having a CL entity.
+			toSchedule = append(toSchedule, i)
+		}
+	}
+	if len(toSchedule) == 0 {
+		// Quick path exit.
+		return sortDeps(ret), nil
+	}
+
+	errs := parallel.WorkPool(min(10, len(toSchedule)), func(work chan<- func() error) {
+		for _, i := range toSchedule {
+			i, d := i, resolvingDeps[i]
+			work <- func() error {
+				if err := d.createIfNotExists(ctx, u.mutator, luciProject); err != nil {
+					return err
+				}
+				if err := d.schedule(ctx, u, luciProject); err != nil {
+					return err
+				}
+				ret[i] = d.resolvedDep
+				return nil
+			}
+		}
+	})
+	if errs != nil {
+		return nil, common.MostSevereError(err)
+	}
+	return sortDeps(ret), nil
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // implementation details.
 
@@ -423,4 +483,120 @@ func makeTQTitleForHumans(t *UpdateCLTask) string {
 		sb.WriteString(h.AsTime().UTC().Format(time.RFC3339))
 	}
 	return sb.String()
+}
+
+func resolveDeps(ctx context.Context, luciProject string, deps map[ExternalID]DepKind) ([]resolvingDep, error) {
+	eids := make([]ExternalID, 0, len(deps))
+	ret := make([]resolvingDep, 0, len(deps))
+	for eid, kind := range deps {
+		eids = append(eids, eid)
+		ret = append(ret, resolvingDep{eid: eid, kind: kind})
+	}
+
+	ids, err := Lookup(ctx, eids)
+	if err != nil {
+		return nil, err
+	}
+	cls := make([]*CL, 0, len(deps))
+	for i, id := range ids {
+		if id > 0 {
+			cls = append(cls, &CL{ID: id})
+			ret[i].resolvedDep = &Dep{Clid: int64(id), Kind: ret[i].kind}
+		}
+	}
+	if len(cls) == 0 {
+		return ret, nil
+	}
+
+	if len(cls) > 500 {
+		// This may need optimizing if CV starts handling CLs with 1k dep to load CLs
+		// in batches and avoid excessive RAM usage.
+		logging.Warningf(ctx, "Loading %d CLs (deps) at once may lead to excessive RAM usage", len(cls))
+	}
+	if _, err := loadCLs(ctx, cls); err != nil {
+		return nil, err
+	}
+	// Must iterate `ids` since not every id has an entry in `cls`.
+	for i, id := range ids {
+		if id == 0 {
+			continue
+		}
+		cl := cls[0]
+		cls = cls[1:]
+		if !depNeedsRefresh(ctx, cl, luciProject) {
+			ret[i].ready = true
+		}
+	}
+	return ret, nil
+}
+
+// resolvingDep represents a dependency known by its external ID only being
+// resolved.
+//
+// Helper struct for the Updater.ResolveAndScheduleDeps.
+type resolvingDep struct {
+	eid         ExternalID
+	kind        DepKind
+	ready       bool // true if already up to date and .dep is populated.
+	resolvedDep *Dep // if nil, use createIfNotExists() to populate
+}
+
+func (d *resolvingDep) createIfNotExists(ctx context.Context, m *Mutator, luciProject string) error {
+	if d.resolvedDep != nil {
+		return nil // already exists
+	}
+	cl, err := m.Upsert(ctx, luciProject, d.eid, func(cl *CL) error {
+		// TODO: somehow record when CL was inserted to put a boundary on how long
+		// Project Manager should be waiting for the dep to be actually fetched &
+		// its entity updated in Datastore.
+		if cl.EVersion > 0 {
+			// If CL already exists, we don't need to modify it % above comment.
+			return ErrStopMutation
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	d.resolvedDep = &Dep{Clid: int64(cl.ID), Kind: d.kind}
+	return nil
+}
+
+func (d *resolvingDep) schedule(ctx context.Context, u *Updater, luciProject string) error {
+	return u.Schedule(ctx, &UpdateCLTask{
+		ExternalId:  string(d.eid),
+		Id:          d.resolvedDep.GetClid(),
+		LuciProject: luciProject,
+	})
+}
+
+// sortDeps sorts given slice by CLID ASC in place and returns it.
+func sortDeps(deps []*Dep) []*Dep {
+	sort.Slice(deps, func(i, j int) bool {
+		return deps[i].GetClid() < deps[j].GetClid()
+	})
+	return deps
+}
+
+// depNeedsRefresh returns true if the dependency CL needs a refresh in the
+// context of a specific LUCI project.
+func depNeedsRefresh(ctx context.Context, dep *CL, luciProject string) bool {
+	switch {
+	case dep == nil:
+		panic(fmt.Errorf("dep CL must not be nil"))
+	case dep.Snapshot == nil:
+		return true
+	case dep.Snapshot.GetOutdated() != nil:
+		return true
+	case dep.Snapshot.GetLuciProject() != luciProject:
+		return true
+	case clock.Since(ctx, dep.UpdateTime) > autoRefreshAfter:
+		// Strictly speaking, cl.UpdateTime isn't just changed on refresh, but also
+		// whenever Run starts/ends. However, the start of Run is usually
+		// happenening right after recent refresh, and end of Run is usually
+		// followed by the refresh.
+		return true
+	default:
+		return false
+	}
 }

@@ -235,3 +235,121 @@ func TestUpdaterBatch(t *testing.T) {
 		})
 	})
 }
+
+func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
+	t.Parallel()
+
+	Convey("ResolveAndScheduleDepsUpdate correctly resolves deps", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
+
+		scheduledUpdates := func() (out []string) {
+			for _, p := range ct.TQ.Tasks().Payloads() {
+				if task, ok := p.(*UpdateCLTask); ok {
+					// Each scheduled task should have ID set, as it is known,
+					// to save on future lookup.
+					So(task.GetId(), ShouldNotEqual, 0)
+					e := task.GetExternalId()
+					// But also ExternalID, primarily for debugging.
+					So(e, ShouldNotBeEmpty)
+					out = append(out, e)
+				}
+			}
+			sort.Strings(out)
+			return out
+		}
+		eids := func(cls ...*CL) []string {
+			out := make([]string, len(cls))
+			for i, cl := range cls {
+				out[i] = string(cl.ExternalID)
+			}
+			sort.Strings(out)
+			return out
+		}
+
+		// Setup 4 existing CLs in various states.
+		const lProject = "luci-project"
+		// Various backend IDs are used here for test readability and debug-ability
+		// only. In practice, all deps likely come from the same backend.
+		var (
+			clBareBones           = ExternalID("bare-bones/10").MustCreateIfNotExists(ctx)
+			clOld                 = ExternalID("old/11").MustCreateIfNotExists(ctx)
+			clUpToDate            = ExternalID("up-to-date/12").MustCreateIfNotExists(ctx)
+			clUpToDateDiffProject = ExternalID("up-to-date-diff-project/13").MustCreateIfNotExists(ctx)
+		)
+		clOld.UpdateTime = datastore.RoundTime(ct.Clock.Now().Add(-autoRefreshAfter - time.Minute).UTC())
+		clOld.Snapshot = &Snapshot{
+			ExternalUpdateTime:    timestamppb.New(clOld.UpdateTime),
+			Patchset:              1,
+			MinEquivalentPatchset: 1,
+			LuciProject:           lProject,
+		}
+		clUpToDate.Snapshot = proto.Clone(clOld.Snapshot).(*Snapshot)
+		clUpToDate.Snapshot.ExternalUpdateTime = timestamppb.New(ct.Clock.Now())
+		clUpToDateDiffProject.Snapshot = proto.Clone(clUpToDate.Snapshot).(*Snapshot)
+		clUpToDateDiffProject.Snapshot.LuciProject = "other-project"
+		So(datastore.Put(ctx, clOld, clUpToDate, clUpToDateDiffProject), ShouldBeNil)
+
+		Convey("no deps", func() {
+			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, nil)
+			So(err, ShouldBeNil)
+			So(deps, ShouldBeEmpty)
+		})
+
+		Convey("only existing CLs", func() {
+			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, map[ExternalID]DepKind{
+				clBareBones.ExternalID:           DepKind_SOFT,
+				clOld.ExternalID:                 DepKind_HARD,
+				clUpToDate.ExternalID:            DepKind_HARD,
+				clUpToDateDiffProject.ExternalID: DepKind_SOFT,
+			})
+			So(err, ShouldBeNil)
+			So(deps, ShouldResembleProto, sortDeps([]*Dep{
+				{Clid: int64(clBareBones.ID), Kind: DepKind_SOFT},
+				{Clid: int64(clOld.ID), Kind: DepKind_HARD},
+				{Clid: int64(clUpToDate.ID), Kind: DepKind_HARD},
+				{Clid: int64(clUpToDateDiffProject.ID), Kind: DepKind_SOFT},
+			}))
+			// Update for the `clUpToDate` is not necessary.
+			So(scheduledUpdates(), ShouldResemble, eids(clOld, clBareBones, clUpToDateDiffProject))
+		})
+
+		Convey("only new CLs", func() {
+			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, map[ExternalID]DepKind{
+				"new/1": DepKind_SOFT,
+				"new/2": DepKind_HARD,
+			})
+			So(err, ShouldBeNil)
+			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
+			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
+			So(deps, ShouldResembleProto, sortDeps([]*Dep{
+				{Clid: int64(cl1.ID), Kind: DepKind_SOFT},
+				{Clid: int64(cl2.ID), Kind: DepKind_HARD},
+			}))
+			So(scheduledUpdates(), ShouldResemble, eids(cl1, cl2))
+		})
+
+		Convey("mix old and new CLs", func() {
+			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, map[ExternalID]DepKind{
+				"new/1":                DepKind_SOFT,
+				"new/2":                DepKind_HARD,
+				clBareBones.ExternalID: DepKind_HARD,
+				clUpToDate.ExternalID:  DepKind_SOFT,
+			})
+			So(err, ShouldBeNil)
+			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
+			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
+			So(deps, ShouldResembleProto, sortDeps([]*Dep{
+				{Clid: int64(cl1.ID), Kind: DepKind_SOFT},
+				{Clid: int64(cl2.ID), Kind: DepKind_HARD},
+				{Clid: int64(clBareBones.ID), Kind: DepKind_HARD},
+				{Clid: int64(clUpToDate.ID), Kind: DepKind_SOFT},
+			}))
+			// Update for the `clUpToDate` is not necessary.
+			So(scheduledUpdates(), ShouldResemble, eids(cl1, cl2, clBareBones))
+		})
+	})
+}
