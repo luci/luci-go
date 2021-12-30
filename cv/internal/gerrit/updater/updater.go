@@ -33,13 +33,14 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 )
 
 // RegisterUpdater register a Gerrit backend with the CL Updater.
-func RegisterUpdater(clUpdater *changelist.Updater, gFactory gerrit.Factory) {
-	clUpdater.RegisterBackend(&updaterBackend{
+func RegisterUpdater(u *changelist.Updater, gFactory gerrit.Factory) {
+	u.RegisterBackend(&updaterBackend{
 		gFactory:  gFactory,
-		clUpdater: clUpdater,
+		clUpdater: u,
 	})
 }
 
@@ -58,20 +59,46 @@ func (u *updaterBackend) Kind() string {
 
 // LookupApplicableConfig implements the changelist.UpdaterBackend.
 func (u *updaterBackend) LookupApplicableConfig(ctx context.Context, saved *changelist.CL) (*changelist.ApplicableConfig, error) {
-	// TODO(tandrii): Implement.
-	return nil, nil
+	g := saved.Snapshot.GetGerrit()
+	if g == nil {
+		// Not enough info to decide.
+		return nil, nil
+	}
+	ci := g.GetInfo()
+	return gobmap.Lookup(ctx, g.GetHost(), ci.GetProject(), ci.GetRef())
 }
 
-// Update implements the changelist.UpdaterBackend.
+// Fetch implements the changelist.UpdaterBackend.
 func (u *updaterBackend) Fetch(ctx context.Context, cl *changelist.CL, luciProject string, updatedHint time.Time) (changelist.UpdateFields, error) {
-	// TODO(tandrii): Implement.
+	gHost, gChange, err := cl.ExternalID.ParseGobID()
+	if err != nil {
+		return changelist.UpdateFields{}, err
+	}
 
-	// Meanwhile, return a permanent error to ensure tasks don't pile up here
-	// in case of a future rollback in prod from version which started using the
-	// new CL Updater to the legacy Gerrit updater. In such a case, it's fine to
-	// waste CL update tasks, as Gerrit poller + Run Manager will re-schedule
-	// new tasks to update CLs soon enough.
-	return changelist.UpdateFields{}, errors.Reason("not implemeneted").Err()
+	f := fetcher{
+		gFactory:                     u.gFactory,
+		scheduleRefresh:              u.clUpdater.ScheduleDelayed,
+		resolveAndScheduleDepsUpdate: u.clUpdater.ResolveAndScheduleDepsUpdate,
+
+		luciProject: luciProject,
+		externalID:  cl.ExternalID,
+		host:        gHost,
+		change:      gChange,
+		updatedHint: updatedHint,
+	}
+	if cl.ID > 0 {
+		f.priorCL = cl
+	}
+
+	f.g, err = f.gFactory.MakeClient(ctx, f.host, f.luciProject)
+	if err != nil {
+		return changelist.UpdateFields{}, err
+	}
+
+	if err := f.fetch(ctx); err != nil {
+		return changelist.UpdateFields{}, err
+	}
+	return f.toUpdate, nil
 }
 
 // TQErrorSpec implements the changelist.UpdaterBackend.

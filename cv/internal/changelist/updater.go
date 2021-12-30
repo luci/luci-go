@@ -384,6 +384,11 @@ func (u *Updater) handleBatch(ctx context.Context, batch *BatchUpdateCLTask) err
 	}
 }
 
+// TODO: remove.
+func (u *Updater) HandleCL(ctx context.Context, task *UpdateCLTask) error {
+	return u.handleCL(ctx, task)
+}
+
 func (u *Updater) handleCL(ctx context.Context, task *UpdateCLTask) error {
 	cl, err := u.preload(ctx, task)
 	if err != nil {

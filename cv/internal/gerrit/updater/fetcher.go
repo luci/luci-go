@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -33,8 +32,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -59,7 +56,7 @@ const (
 	// autoRefreshAfter makes CLs worthy of "blind" refresh.
 	//
 	// "blind" refresh means that CL is already stored in Datastore and is up to
-	// the date to the best knowledge of CV.
+	// date to the best knowledge of CV.
 	autoRefreshAfter = 2 * time.Hour
 )
 
@@ -68,129 +65,28 @@ var errStaleOrNoAccess = errors.Annotate(gerrit.ErrStaleData, "either no access 
 // fetcher efficiently computes new snapshot by fetching data from Gerrit.
 //
 // It ensures each dependency is resolved to an existing CLID,
-// creating CLs in datastore as needed. Schedules tasks to update
+// creating CLs in the Datastore as needed. Schedules tasks to update
 // dependencies but doesn't wait for them to complete.
 //
-// The prior Snapshot, if given, can reduce RPCs made to Gerrit.
+// fetch is a single-use object.
 type fetcher struct {
-	clMutator       *changelist.Mutator
-	scheduleRefresh func(ctx context.Context, p *RefreshGerritCL, delay time.Duration) error
+	// Dependencies & input. Must be set.
+	gFactory                     gerrit.Factory
+	g                            gerrit.Client
+	scheduleRefresh              func(context.Context, *changelist.UpdateCLTask, time.Duration) error
+	resolveAndScheduleDepsUpdate func(ctx context.Context, luciProject string, deps map[changelist.ExternalID]changelist.DepKind) ([]*changelist.Dep, error)
+	luciProject                  string
+	host                         string
+	change                       int64
+	updatedHint                  time.Time
+	externalID                   changelist.ExternalID
+	priorCL                      *changelist.CL // not-nil, if CL already exists in Datastore.
 
-	luciProject string
-	host        string
-	change      int64
-	updatedHint time.Time
-
-	gFactory gerrit.Factory
-	g        gerrit.Client
-
-	externalID changelist.ExternalID
-	priorCL    *changelist.CL
-
+	// Result is stored here.
 	toUpdate changelist.UpdateFields
 }
 
-func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) {
-	// Check if CL already exists in Datastore.
-	if clidHint != 0 {
-		f.priorCL = &changelist.CL{ID: clidHint}
-		err = datastore.Get(ctx, f.priorCL)
-		if err == datastore.ErrNoSuchEntity {
-			return errors.Reason("clidHint %d doesn't refer to an existing CL (%s)", clidHint, f).Err()
-		}
-	} else {
-		f.priorCL, err = f.externalID.Load(ctx) // nil, nil if not exists
-	}
-
-	switch {
-	case err != nil:
-		return err
-
-	case f.priorCL == nil:
-		err = f.fetchNew(ctx)
-
-	case f.priorCL.Snapshot == nil:
-		// CL exists, but without snapshot, usually because it was created as
-		// a dependency of another CL.
-		err = f.fetchNew(ctx)
-
-	case needsRefresh(ctx, f.priorCL, f.luciProject) || f.updatedHint.IsZero():
-		logging.Debugf(ctx, "force updating %s", f)
-		err = f.fetchExisting(ctx)
-
-	case f.updatedHint.After(f.priorCL.Snapshot.GetExternalUpdateTime().AsTime()):
-		// Either force update or updatedHint is after the snapshot we already have.
-
-		// NOTE: ideally, we'd check whether the current project is watching the
-		// (host,repo,ref) which is stored in a snapshot. Unfortunately, ref is not
-		// immutable after a change creation, see Gerrit move API which is actually
-		// being used to transition to the main branch:
-		// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#move-change
-		// Therefore, here, proceed to fetchng snapshot.
-		logging.Debugf(ctx, "updating %s to at least %s", f, f.updatedHint)
-		err = f.fetchExisting(ctx)
-
-	default:
-		// Snapshot considered up-to-date, check if we can skip updates.
-		ci := f.priorCL.Snapshot.GetGerrit().GetInfo()
-		var acfg *changelist.ApplicableConfig
-		switch acfg, err = gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef()); {
-		case err != nil:
-			return err
-		case !f.priorCL.ApplicableConfig.SemanticallyEqual(acfg):
-			// Only update CL.ApplicableConfig in datastore iff it's materially different,
-			// since timestamp is almost guaranteed to be newer.
-			f.toUpdate.ApplicableConfig = acfg
-		}
-		switch {
-		case acfg.HasOnlyProject(f.luciProject) && f.priorCL.Snapshot.GetLuciProject() != f.luciProject:
-			// Snapshot considered up-to-date, but fetched in the context of a wrong
-			// project. Must re-fetch. It's OK to re-use prior snapshot so long as
-			// read access to Gerrit is verified.
-			logging.Warningf(ctx, "%s switches from %q to %q LUCI project", f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
-			err = f.fetchExisting(ctx)
-		case f.priorCL.Access.GetByProject()[f.luciProject] != nil:
-			logging.Debugf(ctx, "%s had access restriction before for %s", f, f.priorCL.Access.GetByProject()[f.luciProject])
-			err = f.fetchExisting(ctx)
-		default:
-			logging.Debugf(ctx, "%s skipping fetching Snapshot from Gerrit", f)
-		}
-	}
-
-	switch {
-	case err != nil:
-		return err
-	case f.toUpdate.IsEmpty():
-		if f.priorCL == nil {
-			panic("update can't be skipped iff priorCL is not set")
-		}
-		return nil
-	default:
-		if clid := f.clidIfKnown(); clid != 0 {
-			_, err = f.clMutator.Update(ctx, f.luciProject, clid, f.updateCLEntity)
-		} else {
-			_, err = f.clMutator.Upsert(ctx, f.luciProject, f.externalID, f.updateCLEntity)
-		}
-		return err
-	}
-}
-
-func (f *fetcher) updateCLEntity(cl *changelist.CL) error {
-	if !f.toUpdate.Apply(cl) {
-		return changelist.ErrStopMutation
-	}
-	return nil
-}
-
-// fetchExisting efficiently fetches new snapshot from Gerrit,
-// but it may re-use data from prior snapshot.
-func (f *fetcher) fetchExisting(ctx context.Context) error {
-	// TODO(tandrii): actually do this efficiently.
-	return f.fetchNew(ctx)
-}
-
-// fetchNew efficiently fetches fetchNew snapshot from Gerrit.
-func (f *fetcher) fetchNew(ctx context.Context) error {
+func (f *fetcher) fetch(ctx context.Context) error {
 	ci, err := f.fetchChangeInfo(ctx,
 		// These are expensive to compute for Gerrit,
 		// CV should not do this needlessly.
@@ -203,8 +99,13 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 		// Avoid asking Gerrit to perform expensive operation.
 		gerritpb.QueryOption_SKIP_MERGEABLE,
 	)
-	if err != nil || ci == nil {
+	switch {
+	case err != nil:
 		return err
+	case ci == nil:
+		// Don't proceed to fetching the other details, likely because CV lacks
+		// access to the CL or this LUCI project is no longer watching the CL.
+		return nil
 	}
 
 	f.toUpdate.Snapshot = &changelist.Snapshot{
@@ -242,8 +143,8 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		// OK, proceed.
 	case gerritpb.ChangeStatus_ABANDONED, gerritpb.ChangeStatus_MERGED:
 		// CV doesn't care about such CLs beyond their status, so don't fetch
-		// additional details to avoid stumbiling into edge cases with how
-		// Gerrit treats abandoned and submitted CLs.
+		// additional details to avoid stumbiling into edge cases with how Gerrit
+		// treats abandoned and submitted CLs.
 		logging.Debugf(ctx, "%s is %s", f, ci.GetStatus())
 		return nil
 	default:
@@ -271,9 +172,9 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		eg, ectx := errgroup.WithContext(ctx)
 		eg.Go(func() error { return f.fetchFiles(ectx) })
 		eg.Go(func() error { return f.fetchRelated(ectx) })
-		// Meanwhile, compute soft deps. Currently, it's a cheap operation. In
-		// the future, it may require sending another RPC to Gerrit, e.g. to
-		// fetch related CLs by topic.
+		// Meanwhile, compute soft deps. Currently, it's cheap operation.
+		// In the future, it may require sending another RPC to Gerrit,
+		// e.g. to fetch related CLs by topic.
 		if err = f.setSoftDeps(); err != nil {
 			return err
 		}
@@ -285,8 +186,6 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 	// Always run resolveDeps regardless of re-use of GitDeps/SoftDeps.
 	// CV retention policy deletes CLs not modified for a long time,
 	// which in some very rare case may affect a dep of this CL.
-	// TODO(tandrii): remove such risk by force-updating dep CLs to prevent
-	// retention policy from wiping them out.
 	if err := f.resolveDeps(ctx); err != nil {
 		return err
 	}
@@ -397,14 +296,11 @@ func (f *fetcher) setNoAccessAt(now, noAccessAt time.Time) {
 
 // rescheduleLater schedules the same task with a delay.
 func (f *fetcher) recheckAccessLater(ctx context.Context, delay time.Duration) error {
-	t := &RefreshGerritCL{
+	t := &changelist.UpdateCLTask{
 		LuciProject: f.luciProject,
-		Host:        f.host,
-		Change:      f.change,
-		ClidHint:    int64(f.clidIfKnown()),
-	}
-	if !f.updatedHint.IsZero() {
-		t.UpdatedHint = timestamppb.New(f.updatedHint)
+		ExternalId:  string(f.externalID),
+		Id:          int64(f.clidIfKnown()),
+		UpdatedHint: common.Time2PBNillable(f.updatedHint),
 	}
 	return f.scheduleRefresh(ctx, t, delay)
 }
@@ -651,63 +547,14 @@ func (f *fetcher) setSoftDeps() error {
 
 // resolveDeps resolves to CLID and triggers tasks for each of the soft and GerritGit dep.
 func (f *fetcher) resolveDeps(ctx context.Context) error {
-	eids, err := f.depsToExternalIDs()
+	depsMap, err := f.depsToExternalIDs()
 	if err != nil {
 		return err
 	}
-
-	lock := sync.Mutex{}
-	resolved := make([]*changelist.Dep, 0, len(eids))
-
-	addDep := func(depCL *changelist.CL, eid changelist.ExternalID, kind changelist.DepKind) error {
-		lock.Lock()
-		resolved = append(resolved, &changelist.Dep{Clid: int64(depCL.ID), Kind: kind})
-		lock.Unlock()
-
-		if needsRefresh(ctx, depCL, f.luciProject) {
-			depHost, depChange, err := eid.ParseGobID()
-			if err != nil {
-				panic("impossible: by construction, all deps are Gerrit, too")
-			}
-			return f.scheduleRefresh(ctx, &RefreshGerritCL{
-				LuciProject: f.luciProject,
-				Host:        depHost,
-				Change:      depChange,
-				ClidHint:    int64(depCL.ID),
-			}, 0 /*no delay*/)
-		}
-		return nil
+	resolved, err := f.resolveAndScheduleDepsUpdate(ctx, f.luciProject, depsMap)
+	if err != nil {
+		return err
 	}
-
-	errs := parallel.WorkPool(min(10, len(eids)), func(work chan<- func() error) {
-		for eid, kind := range eids {
-			eid, kind := eid, kind
-			work <- func() error {
-				depCL, err := f.clMutator.Upsert(ctx, f.luciProject, eid, func(cl *changelist.CL) error {
-					// TODO(tandrii): somehow record when CL was inserted,
-					// to put a boundary on how long ProjectManager should wait for
-					// the dependency to be fetched.
-					if cl.EVersion > 0 {
-						// If CL already exists, we don't need to modify it % above comment.
-						return changelist.ErrStopMutation
-					}
-					return nil
-				})
-				if err != nil {
-					return err
-				}
-				return addDep(depCL, eid, kind)
-			}
-		}
-	})
-	if errs != nil {
-		// All errors must be transient. Return any one of them.
-		return errs.(errors.MultiError).First()
-	}
-
-	sort.Slice(resolved, func(i, j int) bool {
-		return resolved[i].GetClid() < resolved[j].GetClid()
-	})
 	f.toUpdate.Snapshot.Deps = resolved
 	return nil
 }

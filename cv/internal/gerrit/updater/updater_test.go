@@ -24,192 +24,24 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-func TestSchedule(t *testing.T) {
-	t.Parallel()
-
-	Convey("Schedule works", t, func() {
-		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
-		defer cancel()
-
-		const lProject = "infra"
-		const gHost = "chromium-review.example.com"
-
-		// Each Schedule() moves clock forward by 1ns.
-		// This ensures that SortByETA returns tasks in the same order as scheduled,
-		// and makes tests deterministic w/o having to somehow sort individual proto
-		// messages.
-		const scheduleTimeIncrement = time.Nanosecond
-
-		u := New(ct.TQDispatcher, nil, nil)
-
-		do := func(t *RefreshGerritCL) []proto.Message {
-			So(u.Schedule(ctx, t), ShouldBeNil)
-			ct.Clock.Add(scheduleTimeIncrement)
-			return ct.TQ.Tasks().SortByETA().Payloads()
-		}
-
-		doTrans := func(t *RefreshGerritCL) []proto.Message {
-			err := datastore.RunInTransaction(ctx, func(tctx context.Context) error {
-				So(u.Schedule(tctx, t), ShouldBeNil)
-				return nil
-			}, nil)
-			So(err, ShouldBeNil)
-			ct.Clock.Add(scheduleTimeIncrement)
-			return ct.TQ.Tasks().SortByETA().Payloads()
-		}
-
-		doBatch := func(cls []*changelist.CL) []proto.Message {
-			err := datastore.RunInTransaction(ctx, func(tctx context.Context) error {
-				So(u.ScheduleBatch(tctx, lProject, cls), ShouldBeNil)
-				return nil
-			}, nil)
-			So(err, ShouldBeNil)
-			return ct.TQ.Tasks().SortByETA().Payloads()
-		}
-
-		taskMinimal := &RefreshGerritCL{
-			LuciProject: lProject,
-			Host:        gHost,
-			Change:      123,
-		}
-
-		Convey("Minimal task", func() {
-			So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal})
-
-			Convey("dedup works", func() {
-				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal})
-
-				Convey("but only within blindRefreshInterval", func() {
-					ct.Clock.Add(blindRefreshInterval - time.Second) // still within
-					So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal})
-					So(u.ScheduleDelayed(ctx, taskMinimal, time.Hour), ShouldBeNil) // definitely outside
-					So(ct.TQ.Tasks().SortByETA().Payloads(), ShouldResembleProto, []proto.Message{taskMinimal, taskMinimal})
-				})
-			})
-
-			Convey("transactional can't dedup, even with other transactional", func() {
-				So(doTrans(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal, taskMinimal})
-				So(doTrans(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal, taskMinimal, taskMinimal})
-			})
-
-			Convey("no dedup if different", func() {
-				taskAnother := proto.Clone(taskMinimal).(*RefreshGerritCL)
-				Convey("project", func() {
-					taskAnother.LuciProject = lProject + "2"
-					So(doTrans(taskAnother), ShouldResembleProto, []proto.Message{taskMinimal, taskAnother})
-				})
-				Convey("change", func() {
-					taskAnother.Change++
-					So(doTrans(taskAnother), ShouldResembleProto, []proto.Message{taskMinimal, taskAnother})
-				})
-				Convey("host", func() {
-					taskAnother.Host = gHost + "2"
-					So(doTrans(taskAnother), ShouldResembleProto, []proto.Message{taskMinimal, taskAnother})
-				})
-			})
-		})
-
-		Convey("CLID hint doesn't effect dedup", func() {
-			taskWithHint := proto.Clone(taskMinimal).(*RefreshGerritCL)
-			taskWithHint.ClidHint = 321
-			do(taskMinimal)
-			So(do(taskWithHint), ShouldResembleProto, []proto.Message{taskMinimal})
-		})
-
-		Convey("UpdateHint is de-duped with the same UpdatedHint, only", func() {
-			// updatedHint logically has no relationship to now, but realistically it's usually
-			// quite recent. So, use 1 hour ago.
-			updatedHintEpoch := ct.Clock.Now().Add(-time.Hour)
-			taskU0 := proto.Clone(taskMinimal).(*RefreshGerritCL)
-			taskU0.UpdatedHint = timestamppb.New(updatedHintEpoch)
-			taskU1 := proto.Clone(taskMinimal).(*RefreshGerritCL)
-			taskU1.UpdatedHint = timestamppb.New(updatedHintEpoch.Add(time.Second))
-
-			Convey("transactionally still no dedup", func() {
-				So(doTrans(taskU0), ShouldResembleProto, []proto.Message{taskU0})
-				So(doTrans(taskU0), ShouldResembleProto, []proto.Message{taskU0, taskU0})
-			})
-
-			Convey("only non-transactionally", func() {
-				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0})
-				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0})
-				So(do(taskU1), ShouldResembleProto, []proto.Message{taskU0, taskU1})
-				So(do(taskU1), ShouldResembleProto, []proto.Message{taskU0, taskU1})
-				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskU0, taskU1, taskMinimal})
-			})
-
-			Convey("only within knownRefreshInterval", func() {
-				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0})
-				ct.Clock.Add(knownRefreshInterval)
-				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0, taskU0})
-				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0, taskU0})
-				ct.Clock.Add(knownRefreshInterval)
-				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0, taskU0, taskU0})
-			})
-		})
-
-		Convey("BatchSchedule creates just one task within a transaction", func() {
-			cls := []*changelist.CL{
-				{ID: 1, ExternalID: changelist.MustGobID(gHost, 11)},
-				{ID: 2, ExternalID: changelist.MustGobID(gHost, 12)},
-				{ID: 3, ExternalID: changelist.MustGobID(gHost, 13)},
-			}
-			clMap := map[int64]*changelist.CL{
-				11: cls[0],
-				12: cls[1],
-				13: cls[2],
-			}
-			So(doBatch(cls), ShouldHaveLength, 1)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassBatch))
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, len(cls))
-			for _, p := range ct.TQ.Tasks().Payloads() {
-				t := p.(*RefreshGerritCL)
-				cl := clMap[t.GetChange()]
-				So(t, ShouldResembleProto, &RefreshGerritCL{
-					Change:      t.Change,
-					Host:        gHost,
-					ClidHint:    int64(cl.ID),
-					LuciProject: lProject,
-				})
-			}
-		})
-
-		Convey("BatchSchedule is just Schedule if there is just a single CL ", func() {
-			So(doBatch([]*changelist.CL{
-				{ID: 5, ExternalID: changelist.MustGobID(gHost, 15)},
-			}), ShouldHaveLength, 1)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
-				&RefreshGerritCL{
-					Change:      15,
-					Host:        gHost,
-					ClidHint:    5,
-					LuciProject: lProject,
-				},
-			})
-		})
-	})
-}
 
 func TestRelatedChangeProcessing(t *testing.T) {
 	t.Parallel()
@@ -347,17 +179,23 @@ func TestUpdateCLWorks(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 		gobmaptest.Update(ctx, lProject)
 
-		task := &RefreshGerritCL{
-			LuciProject: lProject,
-			Host:        gHost,
+		gu := &updaterBackend{
+			clUpdater: changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{})),
+			gFactory:  ct.GFactory(),
 		}
-		u := New(ct.TQDispatcher, ct.GFactory(), changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
+		gu.clUpdater.RegisterBackend(gu)
+		task := &changelist.UpdateCLTask{
+			LuciProject: lProject,
+			// Other fields set in individual tests below.
+		}
 
 		assertScheduled := func(expected ...int) {
 			var actual []int
 			for _, p := range ct.TQ.Tasks().Payloads() {
-				if t, ok := p.(*RefreshGerritCL); ok {
-					actual = append(actual, int(t.GetChange()))
+				if t, ok := p.(*changelist.UpdateCLTask); ok {
+					_, changeNumber, err := changelist.ExternalID(t.GetExternalId()).ParseGobID()
+					So(err, ShouldBeNil)
+					actual = append(actual, int(changeNumber))
 				}
 			}
 			sort.Ints(actual)
@@ -381,7 +219,7 @@ func TestUpdateCLWorks(t *testing.T) {
 
 					Convey("finalizes status after the grace duration", func() {
 						ct.Clock.Add(noAccessGraceDuration + time.Second)
-						So(u.Refresh(ctx, task), ShouldBeNil)
+						So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 
 						clAfter := getCL(ctx, gHost, change)
 						// NoAccessTime must remain unchanged.
@@ -394,21 +232,21 @@ func TestUpdateCLWorks(t *testing.T) {
 					})
 				}
 				Convey("HTTP 404", func() {
-					task.Change = 404
-					So(u.Refresh(ctx, task), ShouldBeNil)
+					task.ExternalId = string(changelist.MustGobID(gHost, 404))
+					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 					assertAccessDeniedTemporary(404)
 				})
 				Convey("HTTP 403", func() {
-					task.Change = 403
-					So(u.Refresh(ctx, task), ShouldBeNil)
+					task.ExternalId = string(changelist.MustGobID(gHost, 403))
+					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 					assertAccessDeniedTemporary(403)
 				})
 			})
 
 			Convey("because CL isn't watched by the LUCI project", func() {
 				verifyNoAccess := func() {
-					task.Change = 1
-					So(u.Refresh(ctx, task), ShouldBeNil)
+					task.ExternalId = string(changelist.MustGobID(gHost, 1))
+					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 					cl := getCL(ctx, gHost, 1)
 					So(cl, ShouldNotBeNil)
 					So(cl.Snapshot, ShouldBeNil)
@@ -455,25 +293,25 @@ func TestUpdateCLWorks(t *testing.T) {
 			ci500 := gf.CI(500, gf.Project(gRepo), gf.Ref("refs/heads/main"))
 			Convey("fail to fetch change details", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, err5xx, ci500))
-				task.Change = 500
-				So(u.Refresh(ctx, task), ShouldErrLike, "boo")
+				task.ExternalId = string(changelist.MustGobID(gHost, 500))
+				So(gu.clUpdater.HandleCL(ctx, task), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
 
 			Convey("fail to get filelist", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, okThenErr5xx(), ci500))
-				task.Change = 500
-				So(u.Refresh(ctx, task), ShouldErrLike, "boo")
+				task.ExternalId = string(changelist.MustGobID(gHost, 500))
+				So(gu.clUpdater.HandleCL(ctx, task), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
 		})
 
 		Convey("CL hint must actually exist", func() {
-			task.Change = 123
-			task.ClidHint = 848484881
-			So(u.Refresh(ctx, task), ShouldErrLike, "clidHint 848484881 doesn't refer to an existing CL")
+			task.ExternalId = string(changelist.MustGobID(gHost, 123))
+			task.Id = 848484881
+			So(gu.clUpdater.HandleCL(ctx, task), ShouldErrLike, "doesn't exist")
 		})
 
 		Convey("Fetch for the first time", func() {
@@ -500,8 +338,8 @@ Cq-Depend: 101
 			ct.GFake.SetDependsOn(gHost, ci, ciParent)
 			ct.GFake.SetDependsOn(gHost, ciParent, ciGrandpa)
 
-			task.Change = 123
-			So(u.Refresh(ctx, task), ShouldBeNil)
+			task.ExternalId = string(changelist.MustGobID(gHost, 123))
+			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 			cl := getCL(ctx, gHost, 123)
 			So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessGranted)
 			So(cl.Snapshot.GetGerrit().GetHost(), ShouldEqual, gHost)
@@ -543,24 +381,21 @@ Cq-Depend: 101
 				return expectedDeps[i].GetClid() < expectedDeps[j].GetClid()
 			})
 			So(cl.Snapshot.GetDeps(), ShouldResembleProto, expectedDeps)
-			expectedTasks := []*RefreshGerritCL{
+			expectedTasks := []*changelist.UpdateCLTask{
 				{
 					LuciProject: lProject,
-					Host:        gHost,
-					Change:      101,
-					ClidHint:    int64(getCL(ctx, gHost, 101).ID),
+					ExternalId:  string(changelist.MustGobID(gHost, 101)),
+					Id:          int64(getCL(ctx, gHost, 101).ID),
 				},
 				{
 					LuciProject: lProject,
-					Host:        gHost,
-					Change:      121,
-					ClidHint:    int64(getCL(ctx, gHost, 121).ID),
+					ExternalId:  string(changelist.MustGobID(gHost, 121)),
+					Id:          int64(getCL(ctx, gHost, 121).ID),
 				},
 				{
 					LuciProject: lProject,
-					Host:        gHost,
-					Change:      122,
-					ClidHint:    int64(getCL(ctx, gHost, 122).ID),
+					ExternalId:  string(changelist.MustGobID(gHost, 122)),
+					Id:          int64(getCL(ctx, gHost, 122).ID),
 				},
 			}
 			So(sortedRefreshTasks(ct), ShouldResembleProto, expectedTasks)
@@ -572,7 +407,7 @@ Cq-Depend: 101
 
 			Convey("Skips update with updatedHint", func() {
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
-				So(u.Refresh(ctx, task), ShouldBeNil)
+				So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
 			})
 
@@ -580,7 +415,7 @@ Cq-Depend: 101
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
 				cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
 				So(datastore.Put(ctx, cl), ShouldBeNil)
-				So(u.Refresh(ctx, task), ShouldBeNil)
+				So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion+1)
 			})
 
@@ -589,9 +424,8 @@ Cq-Depend: 101
 				task.UpdatedHint = timestamppb.New(
 					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Minute),
 				)
-				err := u.Refresh(ctx, task)
-				So(err, ShouldErrLike, "stale Gerrit data")
-				So(transient.Tag.In(err), ShouldBeTrue)
+				err := gu.clUpdater.HandleCL(ctx, task)
+				So(errors.Contains(err, gerrit.ErrStaleData), ShouldBeTrue)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
 			})
 
@@ -607,7 +441,7 @@ Cq-Depend: 101
 					// c.ACLs = okThenErr5xx()
 					gf.Files("crbug/1227384/detected.diff")(c.Info)
 				})
-				So(u.Refresh(ctx, task), ShouldBeNil)
+				So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				So(cl2.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble,
@@ -628,7 +462,7 @@ Cq-Depend: 101
 					})
 
 					task.UpdatedHint = nil
-					So(u.Refresh(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 					cl3 := getCL(ctx, gHost, 123)
 					So(cl3.EVersion, ShouldEqual, cl2.EVersion+1)
 					So(cl3.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
@@ -642,11 +476,10 @@ Cq-Depend: 101
 					// For each dep, a task should have been created, but 101 should have
 					// been de-duped with an earlier one. So, only 1 new task for 477:
 					So(sortedRefreshTasks(ct), ShouldResembleProto, append(expectedTasks,
-						&RefreshGerritCL{
+						&changelist.UpdateCLTask{
 							LuciProject: lProject,
-							Host:        gHostInternal,
-							Change:      477,
-							ClidHint:    int64(getCL(ctx, gHostInternal, 477).ID),
+							ExternalId:  string(changelist.MustGobID(gHostInternal, 477)),
+							Id:          int64(getCL(ctx, gHostInternal, 477).ID),
 						},
 					))
 				})
@@ -656,7 +489,7 @@ Cq-Depend: 101
 				ct.Clock.Add(time.Second)
 				prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
 				gobmaptest.Update(ctx, lProject)
-				So(u.Refresh(ctx, task), ShouldBeNil)
+				So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
@@ -677,7 +510,7 @@ Cq-Depend: 101
 				task.LuciProject = lProject2
 
 				Convey("with access", func() {
-					So(u.Refresh(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					So(cl2.Snapshot.GetLuciProject(), ShouldEqual, lProject2)
@@ -690,7 +523,7 @@ Cq-Depend: 101
 					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 						c.ACLs = gf.ACLRestricted("neither-lProject-nor-lProject2")
 					})
-					So(u.Refresh(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					// Snapshot is kept as is, incl. binding to old project and its ExternalUpdateTime.
@@ -712,9 +545,9 @@ Cq-Depend: 101
 
 			ci := gf.CI(101, gf.Project(gRepo), gf.Ref("refs/heads/main"))
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
-			task.Change = 101
-			task.ClidHint = int64(cl.ID)
-			So(u.Refresh(ctx, task), ShouldBeNil)
+			task.ExternalId = string(changelist.MustGobID(gHost, 101))
+			task.Id = int64(cl.ID)
+			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 
 			cl2 := getCL(ctx, gHost, 101)
 			So(cl2.EVersion, ShouldEqual, 2)
@@ -723,7 +556,7 @@ Cq-Depend: 101
 		})
 
 		Convey("Handles New -> Abandon -> Restored transitions correctly", func() {
-			task.Change = 123
+			task.ExternalId = string(changelist.MustGobID(gHost, 123))
 
 			// Start with a NEW Gerrit change.
 			ci := gf.CI(
@@ -734,7 +567,7 @@ Cq-Depend: 101
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci, ciParent))
 			ct.GFake.SetDependsOn(gHost, ci, ciParent)
 
-			So(u.Refresh(ctx, task), ShouldBeNil)
+			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 			v1 := getCL(ctx, gHost, 123)
 			So(v1.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 			So(v1.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "c/b.py"})
@@ -749,7 +582,7 @@ Cq-Depend: 101
 				c.Info.Status = gerritpb.ChangeStatus_ABANDONED
 				c.Info.Updated = timestamppb.New(ct.Clock.Now())
 			})
-			So(u.Refresh(ctx, task), ShouldBeNil)
+			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 			v2 := getCL(ctx, gHost, 123)
 			So(v2.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_ABANDONED)
 			// Files and deps don't have to be set as CV doesn't work with abandoned such CLs.
@@ -760,7 +593,7 @@ Cq-Depend: 101
 				c.Info.Status = gerritpb.ChangeStatus_NEW
 				c.Info.Updated = timestamppb.New(ct.Clock.Now())
 			})
-			So(u.Refresh(ctx, task), ShouldBeNil)
+			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
 			v3 := getCL(ctx, gHost, 123)
 			So(v3.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 			So(v3.Snapshot.GetGerrit().GetFiles(), ShouldResemble, v1.Snapshot.GetGerrit().GetFiles())
@@ -816,15 +649,28 @@ func okThenErr5xx() gf.AccessCheck {
 	}
 }
 
-func sortedRefreshTasks(ct cvtesting.Test) []*RefreshGerritCL {
-	ret := make([]*RefreshGerritCL, 0, len(ct.TQ.Tasks().Payloads()))
+func sortedRefreshTasks(ct cvtesting.Test) []*changelist.UpdateCLTask {
+	ret := make([]*changelist.UpdateCLTask, 0, len(ct.TQ.Tasks().Payloads()))
 	for _, m := range ct.TQ.Tasks().Payloads() {
-		v, ok := m.(*RefreshGerritCL)
+		v, ok := m.(*changelist.UpdateCLTask)
 		if ok {
 			ret = append(ret, v)
 		}
 	}
-	sort.SliceStable(ret, func(i, j int) bool { return ret[i].less(ret[j]) })
+	sort.SliceStable(ret, func(i, j int) bool {
+		switch a, b := ret[i], ret[j]; {
+		case a.GetExternalId() < b.GetExternalId():
+			return true
+		case a.GetExternalId() > b.GetExternalId():
+			return false
+		case a.GetLuciProject() < b.GetLuciProject():
+			return true
+		case a.GetLuciProject() > b.GetLuciProject():
+			return false
+		default:
+			return a.GetUpdatedHint().AsTime().Before(b.GetUpdatedHint().AsTime())
+		}
+	})
 	return ret
 }
 
