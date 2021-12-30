@@ -17,14 +17,17 @@ package changelist
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -36,6 +39,13 @@ const (
 	BatchUpdateCLTaskClass = "batch-update-cl"
 	// CLUpdateTaskClass is the Task Class ID of the UpdateCLTask.
 	UpdateCLTaskClass = "update-cl"
+
+	// blindRefreshInterval sets interval between blind refreshes of a CL.
+	blindRefreshInterval = time.Minute
+
+	// knownRefreshInterval sets interval between refreshes of a CL when
+	// updatedHint is known.
+	knownRefreshInterval = 15 * time.Minute
 )
 
 // UpdaterBackend abstracts out fetching CL details from code review backend.
@@ -157,14 +167,21 @@ func (u *Updater) ScheduleBatch(ctx context.Context, task *BatchUpdateCLTask) er
 
 // Schedule dispatches a TQ task. It should be used instead of the direct
 // tq.AddTask to allow for consistent de-duplication.
-func (u *Updater) Schedule(ctx context.Context, task *UpdateCLTask) error {
-	return u.ScheduleDelayed(ctx, task, 0)
+func (u *Updater) Schedule(ctx context.Context, payload *UpdateCLTask) error {
+	return u.ScheduleDelayed(ctx, payload, 0)
 }
 
-// ScheduleDelayed is same as Schedule but with a delay.
-func (u *Updater) ScheduleDelayed(ctx context.Context, task *UpdateCLTask, delay time.Duration) error {
-	// TODO(tandrii): implement.
-	return nil
+// ScheduleDelayed is the same as Schedule but with a delay.
+func (u *Updater) ScheduleDelayed(ctx context.Context, payload *UpdateCLTask, delay time.Duration) error {
+	task := &tq.Task{
+		Payload: payload,
+		Delay:   delay,
+		Title:   makeTQTitleForHumans(payload),
+	}
+	if datastore.CurrentTransaction(ctx) == nil {
+		task.DeduplicationKey = makeTaskDeduplicationKey(ctx, payload, delay)
+	}
+	return u.tqd.AddTask(ctx, task)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -193,4 +210,86 @@ func (u *Updater) backendFor(cl *CL) (UpdaterBackend, error) {
 		return b, nil
 	}
 	return nil, errors.Reason("%q backend is not supported", kind).Err()
+}
+
+// makeTaskDeduplicationKey returns TQ task deduplication key.
+func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.Duration) string {
+	// Dedup in the short term to avoid excessive number of refreshes,
+	// but ensure eventually calling Schedule with the same payload results in a
+	// new task. This is done by de-duping only within a single "epoch" window,
+	// which differs by CL to avoid synchronized herd of requests hitting
+	// a backend (e.g. Gerrit).
+	//
+	// +----------------------------------------------------------------------+
+	// |                 ... -> time goes forward -> ....                     |
+	// +----------------------------------------------------------------------+
+	// |                                                                      |
+	// | ... | epoch (N-1, CL-A) | epoch (N, CL-A) | epoch (N+1, CL-A) | ...  |
+	// |                                                                      |
+	// |            ... | epoch (N-1, CL-B) | epoch (N, CL-B) | ...           |
+	// +----------------------------------------------------------------------+
+	//
+	// Furthermore, de-dup window differs based on wheter updatedHint is given
+	// or it's a blind refresh.
+	interval := blindRefreshInterval
+	if t.GetUpdatedHint() != nil {
+		interval = knownRefreshInterval
+	}
+	// Prefer ExternalID if both ID and ExternalID are known, as the most frequent
+	// use-case for update via PubSub/Polling, which specifies ExternalID and may
+	// not resolve it to internal ID just yet.
+	uniqArg := t.GetExternalId()
+	if uniqArg == "" {
+		uniqArg = strconv.FormatInt(t.GetId(), 16)
+	}
+	epochOffset := common.DistributeOffset(interval, "update-cl", t.GetLuciProject(), uniqArg)
+	epochTS := clock.Now(ctx).Add(delay).Truncate(interval).Add(interval + epochOffset)
+
+	var sb strings.Builder
+	sb.WriteString("v0")
+	sb.WriteRune('\n')
+	sb.WriteString(t.GetLuciProject())
+	sb.WriteRune('\n')
+	sb.WriteString(uniqArg)
+	_, _ = fmt.Fprintf(&sb, "\n%x", epochTS.UnixNano())
+	if h := t.GetUpdatedHint(); h != nil {
+		_, _ = fmt.Fprintf(&sb, "\n%x", h.AsTime().UnixNano())
+	}
+	return sb.String()
+}
+
+// makeTQTitleForHumans makes human-readable TQ task title.
+//
+// WARNING: do not use for anything else. Doesn't guarantee uniqueness.
+//
+// It'll be visible in logs as the suffix of URL in Cloud Tasks console
+// and in the GAE requests log.
+//
+// The primary purpose is that quick search for specific CL in the GAE request
+// log alone, as opposed to searching through much larger and separate stderr
+// log of the process (which is where logging.Logf calls go into).
+//
+// For example, the title for the task with all the field specified:
+//   "proj/gerrit/chromium/1111111/u2016-02-03T04:05:06Z"
+func makeTQTitleForHumans(t *UpdateCLTask) string {
+	var sb strings.Builder
+	sb.WriteString(t.GetLuciProject())
+	if id := t.GetId(); id != 0 {
+		_, _ = fmt.Fprintf(&sb, "/%d", id)
+	}
+	if eid := t.GetExternalId(); eid != "" {
+		sb.WriteRune('/')
+		// Reduce verbosity in common case of Gerrit on googlesource.
+		// Although it's possible to delegate this to backend, the additional
+		// boilerplate isn't yet justified.
+		if kind, err := ExternalID(eid).kind(); err == nil && kind == "gerrit" {
+			eid = strings.Replace(eid, "-review.googlesource.com/", "/", 1)
+		}
+		sb.WriteString(eid)
+	}
+	if h := t.GetUpdatedHint(); h != nil {
+		sb.WriteString("/u")
+		sb.WriteString(h.AsTime().UTC().Format(time.RFC3339))
+	}
+	return sb.String()
 }

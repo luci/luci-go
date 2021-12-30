@@ -175,11 +175,11 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 
 	// If done within transaction or if must notify PM, can't use de-dup.
 	if datastore.CurrentTransaction(ctx) == nil {
-		// De-dup in the short term to avoid excessive number of refreshes, but
-		// ensure eventually calling Schedule with the same payload results in
-		// a new task. This is done by de-duping only within a single "epoch"
-		// window, which differs by CL to avoid synchronized herd of requests
-		// hitting Gerrit.
+		// Dedup in the short term to avoid excessive number of refreshes,
+		// but ensure eventually calling Schedule with the same payload results in a
+		// new task. This is done by de-duping only within a single "epoch" window,
+		// which differs by CL to avoid synchronized herd of requests hitting
+		// Gerrit.
 		//
 		// +----------------------------------------------------------------------+
 		// |                 ... -> time goes forward -> ....                     |
