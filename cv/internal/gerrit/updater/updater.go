@@ -223,7 +223,7 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, p *RefreshGerritCL, delay
 //
 // Prefer Schedule() instead of Refresh() in production.
 func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
-	f := fetcher{
+	f := fetcherlegacy{
 		gFactory:        u.gFactory,
 		clMutator:       u.clMutator,
 		scheduleRefresh: u.ScheduleDelayed,
