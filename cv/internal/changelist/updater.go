@@ -449,8 +449,100 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 // NOTE: UpdateFields may be set if fetch can be skipped, meaning CL entity
 // should be updated in Datastore.
 func (u *Updater) trySkippingFetch(ctx context.Context, task *UpdateCLTask, cl *CL, backend UpdaterBackend) (bool, UpdateFields, error) {
-	// TODO(tandrii): implement.
-	return false, UpdateFields{}, nil
+	if cl.ID == 0 || cl.Snapshot == nil || cl.Snapshot.GetOutdated() != nil || task.GetUpdatedHint() == nil {
+		return false, UpdateFields{}, nil
+	}
+	if task.GetUpdatedHint().AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()) {
+		// There is no confidence that Snapshot is up-to-date, so proceed fetching
+		// anyway.
+
+		// NOTE: it's tempting to check first whether the LUCI project is watching
+		// the CL given the existing Snapshot and skip the fetch if it's not the
+		// case. However, for Gerrit CLs, the ref is mutable after the CL
+		// creation and since ref is used to determine if CL is being watched,
+		// we can't skip the fetch. For an example, see Gerrit move API
+		// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#move-change
+		return false, UpdateFields{}, nil
+	}
+
+	// CL Snapshot is up to date, but does it belong to the right LUCI project?
+	acfg, err := backend.LookupApplicableConfig(ctx, cl)
+	if err != nil {
+		err = errors.Annotate(err, "%T.LookupApplicableConfig failed", backend).Err()
+		return false, UpdateFields{}, err
+	}
+	if acfg == nil {
+		// Insufficient saved CL, need to fetch before deciding if CL is watched.
+		return false, UpdateFields{}, err
+	}
+
+	// Update CL with the new set of watching projects if materially different,
+	// which should be saved to Datastore even if the fetch from Gerrit itself is
+	// skipped.
+	var toUpdate UpdateFields
+	if !cl.ApplicableConfig.SemanticallyEqual(acfg) {
+		toUpdate.ApplicableConfig = acfg
+	}
+
+	if !acfg.HasProject(task.GetLuciProject()) {
+		// This project isn't watching the CL, so no need to fetch.
+		//
+		// NOTE: even if the Snapshot was fetched in the context of this project before,
+		// we don't have to erase the Snapshot from the CL immediately: the update
+		// in cl.ApplicableConfig suffices to ensure that CV won't be using the
+		// Snapshot.
+		return true, toUpdate, nil
+	}
+
+	if !acfg.HasProject(cl.Snapshot.GetLuciProject()) {
+		// The Snapshot was previously fetched in the context of a project which is
+		// no longer watching the CL.
+		//
+		// This can happen in practice in case of e.g. newly created "chromium-mXXX"
+		// project to watch for a specific ref which was previously watched by a
+		// generic "chromium" project. A Snapshot of a CL on such a ref would have
+		// been fetched in the context of "chromium" first, and now it must be re-fetched
+		// under "chromium-mXXX" to verify that the new project hasn't lost access
+		// to the Gerrit CL.
+		logging.Warningf(ctx, "Detected switch from %q LUCI project", cl.Snapshot.GetLuciProject())
+		return false, toUpdate, nil
+	}
+
+	// At this point, these must be true:
+	// * the Snapshot is up-to-date to the best of CV knowledge;
+	// * this project is watching the CL, but there may be other projects, too;
+	// * the Snapshot was created by a project still watching the CL, but which may
+	//   differ from this project.
+	if len(acfg.GetProjects()) >= 2 {
+		// When there are several watching projects, projects shouldn't race
+		// re-fetching & saving Snapshot. No new Runs are going to be started on
+		// such CLs, so skip fetching new snapshot.
+		return true, toUpdate, nil
+	}
+
+	// There is just 1 project, so check the invariant.
+	if task.GetLuciProject() != cl.Snapshot.GetLuciProject() {
+		panic(fmt.Errorf("BUG: this project %q must have created the Snapshot, not %q", task.GetLuciProject(), cl.Snapshot.GetLuciProject()))
+	}
+
+	if restriction := cl.Access.GetByProject()[task.GetLuciProject()]; restriction != nil {
+		// For example, Gerrit has responded HTTP 403/404 before.
+		// Must fetch again to verify if restriction still holds.
+		logging.Debugf(ctx, "Detected prior access restriction: %s", restriction)
+		return false, toUpdate, nil
+	}
+
+	// Finally, do refresh if the CL entity is just really old.
+	if clock.Since(ctx, cl.UpdateTime) > autoRefreshAfter {
+		// Strictly speaking, cl.UpdateTime isn't just changed on refresh, but also
+		// whenever Run starts/ends. However, the start of Run is usually
+		// happenening right after recent refresh, and end of Run is usually
+		// followed by the refresh.
+		return false, toUpdate, nil
+	}
+
+	// OK, skip the fetch.
+	return true, toUpdate, nil
 }
 
 func (*Updater) preload(ctx context.Context, task *UpdateCLTask) (*CL, error) {

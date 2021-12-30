@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -575,6 +576,153 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 			err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "lp", ExternalId: "fake/1"})
 			So(tq.Ignore.In(err), ShouldBeTrue)
 			So(err, ShouldErrLike, "ignore-me")
+		})
+	})
+}
+
+func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
+	t.Parallel()
+
+	Convey("Updater skips fetching when possible", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
+		b := &fakeUpdaterBackend{}
+		u.RegisterBackend(b)
+
+		// Simulate a perfect case for avoiding the snapshot.
+		cl := ExternalID("fake/123").MustCreateIfNotExists(ctx)
+		cl.Snapshot = &Snapshot{
+			ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
+			Patchset:              2,
+			MinEquivalentPatchset: 1,
+			LuciProject:           "luci-project",
+			Kind:                  nil, // but should be set in practice,
+		}
+		cl.ApplicableConfig = &ApplicableConfig{
+			Projects: []*ApplicableConfig_Project{
+				{
+					Name:           "luci-project",
+					ConfigGroupIds: []string{"hash/name"},
+				},
+			},
+		}
+		cl.EVersion++
+		So(datastore.Put(ctx, cl), ShouldBeNil)
+
+		task := &UpdateCLTask{
+			LuciProject: "luci-project",
+			ExternalId:  string(cl.ExternalID),
+			UpdatedHint: timestamppb.New(ct.Clock.Now()),
+		}
+		// Typically, ApplicableConfig config (i.e. which LUCI project watch this
+		// CL) doesn't change, too.
+		b.lookupACfgResult = cl.ApplicableConfig
+
+		Convey("skips Fetch", func() {
+			Convey("happy path: everything is up to date", func() {
+				So(u.handleCL(ctx, task), ShouldBeNil)
+
+				cl2 := reloadCL(ctx, cl)
+				// Quick-fail if EVersion changes.
+				So(cl2.EVersion, ShouldEqual, cl.EVersion)
+				// Ensure nothing about the CL actually changed.
+				So(cl2, cvtesting.SafeShouldResemble, cl)
+
+				So(b.wasLookupApplicableConfigCalled(), ShouldBeTrue)
+				So(b.wasFetchCalled(), ShouldBeFalse)
+			})
+
+			Convey("special path: changed ApplicableConfig is saved", func() {
+				Convey("CL is not watched by any project", func(c C) {
+					b.lookupACfgResult = &ApplicableConfig{}
+				})
+				Convey("CL is watched by another project", func(c C) {
+					b.lookupACfgResult = &ApplicableConfig{Projects: []*ApplicableConfig_Project{
+						{
+							Name:           "other-project",
+							ConfigGroupIds: []string{"ohter-hash/other-name"},
+						},
+					}}
+				})
+				Convey("CL is additionally watched by another project", func(c C) {
+					b.lookupACfgResult.Projects = append(b.lookupACfgResult.Projects, &ApplicableConfig_Project{
+						Name:           "other-project",
+						ConfigGroupIds: []string{"ohter-hash/other-name"},
+					})
+				})
+				// Either way, fetch can be skipped & Snapshot can be preserved, but the
+				// ApplicableConfig must be updated.
+				So(u.handleCL(ctx, task), ShouldBeNil)
+				So(b.wasFetchCalled(), ShouldBeFalse)
+				cl2 := reloadCL(ctx, cl)
+				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
+				So(cl2.ApplicableConfig, ShouldResembleProto, b.lookupACfgResult)
+			})
+		})
+
+		Convey("doesn't skip Fetch because ...", func() {
+			saveCLAndRun := func() {
+				cl.EVersion++
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+				So(u.handleCL(ctx, task), ShouldBeNil)
+			}
+			Convey("no snapshot", func(c C) {
+				cl.Snapshot = nil
+				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+			Convey("snapshot marked outdated", func(c C) {
+				cl.Snapshot.Outdated = &Snapshot_Outdated{}
+				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+			Convey("snapshot is definitely old", func(c C) {
+				cl.Snapshot.ExternalUpdateTime.Seconds -= 3600
+				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+			Convey("snapshot might be old", func(c C) {
+				task.UpdatedHint = nil
+				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+			Convey("CL entity is really old", func(c C) {
+				ct.Clock.Add(autoRefreshAfter + time.Minute)
+				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+			Convey("snapshot is for a different project", func(c C) {
+				cl.Snapshot.LuciProject = "other"
+				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+			Convey("backend isn't sure about applicable config", func(c C) {
+				b.lookupACfgResult = nil
+				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+			Convey("CL entity has record of prior access restriction", func(c C) {
+				cl.Access = &Access{
+					ByProject: map[string]*Access_Project{
+						"luci-project": {
+							// In practice, actual fields are set, but they aren't important
+							// for this test.
+						},
+					},
+				}
+				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+		})
+
+		Convey("aborts before the Fetch because LookupApplicableConfig failed", func() {
+			b.lookupACfgError = errors.New("boo", transient.Tag)
+			err := u.handleCL(ctx, task)
+			So(err, ShouldErrLike, b.lookupACfgError)
+			So(b.wasFetchCalled(), ShouldBeFalse)
 		})
 	})
 }
