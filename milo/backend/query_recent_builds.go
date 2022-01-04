@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/buildbucket/access"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/pagination"
@@ -44,11 +45,6 @@ var queryRecentBuildsPageSize = PageSizeLimiter{
 func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb.QueryRecentBuildsRequest) (_ *milopb.QueryRecentBuildsResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 
-	// TODO(weiweilin): Re-enable the RPC after the ACL is fixed.
-	if true {
-		return nil, appstatus.Error(codes.Unavailable, "RPC unavailable")
-	}
-
 	// Validate request.
 	err = validatesQueryRecentBuildsRequest(req)
 	if err != nil {
@@ -56,15 +52,20 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 	}
 
 	// Perform ACL check.
-	allowed, err := common.IsAllowed(ctx, req.GetBuilder().GetProject())
+	bucketResourceID := common.BucketResourceID(req.Builder.Project, req.Builder.Bucket)
+	accessClient, err := s.GetCachedAccessClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if !allowed {
+	perms, err := accessClient.BucketPermissions(ctx, bucketResourceID)
+	if err != nil {
+		return nil, err
+	}
+	if !perms.Can(bucketResourceID, access.AccessBucket) {
 		if auth.CurrentIdentity(ctx) == identity.AnonymousIdentity {
 			return nil, appstatus.Error(codes.Unauthenticated, "not logged in")
 		}
-		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
+		return nil, appstatus.Error(codes.PermissionDenied, "no access to the bucket")
 	}
 
 	// Decode cursor from page token.

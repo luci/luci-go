@@ -23,8 +23,9 @@ import (
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/keyset"
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/buildbucket/access"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
@@ -33,24 +34,33 @@ import (
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 	"go.chromium.org/luci/server/secrets"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestQueryRecentBuilds(t *testing.T) {
-	// TODO(weiweilin): Re-enable the tests after the ACL is fixed.
-	if true {
-		return
-	}
-
 	t.Parallel()
 	Convey(`TestQueryRecentBuilds`, t, func() {
 		ctx := memory.Use(context.Background())
+
+		caches := make(map[string]caching.BlobCache)
+		ctx = caching.WithGlobalCache(ctx, func(namespace string) caching.BlobCache {
+			cache, ok := caches[namespace]
+			if !ok {
+				cache = &cachingtest.BlobCache{LRU: lru.New(0)}
+				caches[namespace] = cache
+			}
+			return cache
+		})
+
 		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
 		So(err, ShouldBeNil)
 		aead, err := aead.New(kh)
 		So(err, ShouldBeNil)
 		ctx = secrets.SetPrimaryTinkAEADForTest(ctx, aead)
+
 		datastore.GetTestable(ctx).AddIndexes(&datastore.IndexDefinition{
 			Kind: "BuildSummary",
 			SortBy: []datastore.IndexColumn{
@@ -59,7 +69,13 @@ func TestQueryRecentBuilds(t *testing.T) {
 			},
 		})
 		datastore.GetTestable(ctx).Consistent(true)
-		srv := &MiloInternalService{}
+
+		accessClient := access.TestClient{}
+		srv := &MiloInternalService{
+			GetCachedAccessClient: func(c context.Context) (*common.CachedAccessClient, error) {
+				return common.NewTestCachedAccessClient(&accessClient, caching.GlobalCache(c, "TestQueryBuilderStats")), nil
+			},
+		}
 
 		builder1 := &buildbucketpb.BuilderID{
 			Project: "fake_project",
@@ -99,15 +115,12 @@ func TestQueryRecentBuilds(t *testing.T) {
 		err = datastore.Put(ctx, builds)
 		So(err, ShouldBeNil)
 
-		err = datastore.Put(ctx, &common.Project{
-			ID:      "fake_project",
-			ACL:     common.ACL{Identities: []identity.Identity{"user"}},
-			LogoURL: "https://logo.com",
-		})
-		So(err, ShouldBeNil)
-
 		Convey(`get all recent builds`, func() {
 			c := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
+			// Mock the access client response.
+			accessClient.PermittedActionsResponse = access.Permissions{
+				"luci.fake_project.fake_bucket": access.AccessBucket,
+			}.ToProto(time.Hour)
 
 			res, err := srv.QueryRecentBuilds(c, &milopb.QueryRecentBuildsRequest{
 				Builder:  builder1,
@@ -148,6 +161,8 @@ func TestQueryRecentBuilds(t *testing.T) {
 		})
 
 		Convey(`reject users with no access`, func() {
+			accessClient.PermittedActionsResponse = access.Permissions{}.ToProto(time.Hour)
+
 			_, err := srv.QueryRecentBuilds(ctx, &milopb.QueryRecentBuildsRequest{
 				Builder:  builder1,
 				PageSize: 2,
