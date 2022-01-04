@@ -21,12 +21,10 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -67,7 +65,7 @@ func TestGetProject(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -77,7 +75,7 @@ func TestGetProject(t *testing.T) {
 			})
 			Convey("not exists", func() {
 				_, err := a.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldBeRPCNotFound)
 			})
 		})
 	})
@@ -99,7 +97,7 @@ func TestGetProjectLogs(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -134,7 +132,7 @@ func TestGetRun(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -144,11 +142,11 @@ func TestGetRun(t *testing.T) {
 			})
 			Convey("not exists", func() {
 				_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid + "cafe"})
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldBeRPCNotFound)
 			})
 			Convey("exists", func() {
 				_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
-				So(grpcutil.Code(err), ShouldEqual, codes.OK)
+				So(err, ShouldBeRPCOK)
 			})
 		})
 	})
@@ -169,7 +167,7 @@ func TestGetCL(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -201,7 +199,7 @@ func TestGetPoller(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -295,7 +293,7 @@ func TestSearchRuns(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -579,7 +577,7 @@ func TestDeleteProjectEvents(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -631,7 +629,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -680,7 +678,7 @@ func TestSendProjectEvent(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{Project: lProject})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -693,7 +691,7 @@ func TestSendProjectEvent(t *testing.T) {
 					Project: lProject,
 					Event:   &prjpb.Event{Event: &prjpb.Event_Poke{Poke: &prjpb.Poke{}}},
 				})
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldBeRPCNotFound)
 			})
 		})
 	})
@@ -717,7 +715,7 @@ func TestSendRunEvent(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SendRunEvent(ctx, &adminpb.SendRunEventRequest{Run: rid})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -730,7 +728,7 @@ func TestSendRunEvent(t *testing.T) {
 					Run:   rid,
 					Event: &eventpb.Event{Event: &eventpb.Event_Poke{Poke: &eventpb.Poke{}}},
 				})
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldBeRPCNotFound)
 			})
 		})
 	})
@@ -768,7 +766,7 @@ func TestScheduleTask(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.ScheduleTask(ctx, req)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -796,20 +794,17 @@ func TestScheduleTask(t *testing.T) {
 				Convey("Missing payload", func() {
 					req.ManageProject = nil
 					_, err := a.ScheduleTask(ctx, req)
-					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
-					So(err, ShouldErrLike, "none given")
+					So(err, ShouldBeRPCInvalidArgument, "none given")
 				})
 				Convey("Two payloads", func() {
 					req.KickManageProject = reqTrans.GetKickManageProject()
 					_, err := a.ScheduleTask(ctx, req)
-					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
-					So(err, ShouldErrLike, "but 2+ given")
+					So(err, ShouldBeRPCInvalidArgument, "but 2+ given")
 				})
 				Convey("Trans + DeduplicationKey is not allwoed", func() {
 					reqTrans.DeduplicationKey = "beef"
 					_, err := a.ScheduleTask(ctx, reqTrans)
-					So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
-					So(err, ShouldErrLike, `"KickManageProjectTask" is transactional`)
+					So(err, ShouldBeRPCInvalidArgument, `"KickManageProjectTask" is transactional`)
 				})
 			})
 		})

@@ -18,10 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/dsmapper"
@@ -32,6 +29,7 @@ import (
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDSMapperServer(t *testing.T) {
@@ -72,11 +70,11 @@ func TestDSMapperServer(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "upgrade-something"})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 			_, err = a.DSMGetJob(ctx, &adminpb.DSMJobID{Id: 1})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 			_, err = a.DSMAbortJob(ctx, &adminpb.DSMJobID{Id: 1})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey("with access", func() {
@@ -105,7 +103,7 @@ func TestDSMapperServer(t *testing.T) {
 				_, err = a.DSMAbortJob(ctx, jobID)
 				So(err, ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-				// This fails with
+				// This fails with:
 				//   "broken state, no ShardList entity for job 1"
 				// which is probably because job was aborted right after launching.
 				// job, err = d.DSMGetJob(ctx, jobID)
