@@ -77,6 +77,28 @@ router.setRoutes({
       ],
     },
     {
+      path: '/p/:project/builders',
+      name: 'project-builders',
+      action: async (_ctx, cmd) => {
+        await import(
+          /* webpackChunkName: "builders_page" */
+          './pages/builders_page'
+        );
+        return cmd.component('milo-builders-page');
+      },
+    },
+    {
+      path: '/p/:project/g/:group/builders',
+      name: 'group-builders',
+      action: async (_ctx, cmd) => {
+        await import(
+          /* webpackChunkName: "builders_page" */
+          './pages/builders_page'
+        );
+        return cmd.component('milo-builders-page');
+      },
+    },
+    {
       path: '/b/:build_id/:path*',
       name: 'build-short-link',
       action: async (_ctx, cmd) => {
