@@ -36,4 +36,18 @@ describe('Builders Page', () => {
     cy.get('milo-builders-page-row').should('have.length', 9);
     cy.get('#loading-row').contains('Showing 9 builders.');
   });
+
+  it('should render recent builds', () => {
+    cy.visit('/ui/p/chromium/builders');
+    cy.get('milo-builders-page-row:first-child')
+      .shadow()
+      .get('#builds')
+      .get('a:first-child')
+      .should('have.class', 'success-cell');
+    cy.get('milo-builders-page-row:nth-child(2)')
+      .shadow()
+      .get('#builds')
+      .get('a:nth-child(9)')
+      .should('have.class', 'failure-cell');
+  });
 });
